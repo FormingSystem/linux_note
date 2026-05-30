@@ -1,0 +1,231 @@
+{
+  "main": {
+    "id": "c6b11e7895e17882",
+    "type": "split",
+    "children": [
+      {
+        "id": "7d67ed7c95972bb7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9a993b61119d3d61",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "kernel/running-linux_kernel_P01/P02_Linux内核中常用的数据结构和算法.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "P02_Linux内核中常用的数据结构和算法"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "82c621b26ad90c5d",
+    "type": "split",
+    "children": [
+      {
+        "id": "35ebc25b102682b8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d787e2827f8900cd",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "c5c47800ea4b261e",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "include/linux/hash.h",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "5c7a21c3a19584d3",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 278.5
+  },
+  "right": {
+    "id": "4d8e55985b4496b6",
+    "type": "split",
+    "children": [
+      {
+        "id": "e576a4e9a66e30d1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "115af9bd71756810",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "appendix/kernel_model/Linux_kenel_组成/linux内核概貌.md",
+                "collapseAll": true,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "linux内核概貌 的反向链接列表"
+            }
+          },
+          {
+            "id": "8332af4098e8bf10",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "欢迎.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "欢迎 的出链列表"
+            }
+          },
+          {
+            "id": "ef8eaa47901e7c94",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "707d464a5047da3a",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "e457b0ba1a183509",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "kernel/running-linux_kernel_P01/P02_Linux内核中常用的数据结构和算法.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "P02_Linux内核中常用的数据结构和算法 的大纲"
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "bases:新建数据库": false,
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "pdf-plus:PDF++: Toggle auto-copy": false,
+      "pdf-plus:PDF++: Toggle auto-focus": false,
+      "pdf-plus:PDF++: Toggle auto-paste": false
+    }
+  },
+  "active": "9a993b61119d3d61",
+  "lastOpenFiles": [
+    "AI_application/gemini_ask_method.md",
+    "AI_application/Untitled.md",
+    "AI_application",
+    "Untitled Folder",
+    "appendix/kernel_data_structure/单链表_Linked_List.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第4部分：内核实战与应用/第7章_内核模块实战指南.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第3部分：高级进阶与性能调优/第5章_动态伸缩的rhashtable：无感扩容的艺术.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第4部分：内核实战与应用/第6章_哈希表在内核子系统中的影子（深度拆解篇）.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/临时大纲.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第4部分：内核实战与应用",
+    "appendix/kernel_source/include/linux/rhashtable-types.h.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第3部分：高级进阶与性能调优",
+    "README.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第3部分：高级进阶与性能调优/第4章_并发保护与RCU机制：多核下的读写博弈.md",
+    "appendix/kernel_source/include/linux/hash.h.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第2部分：Linux 内核 5.10 核心实现/第3章_算法之魂：哈希函数与位运算优化.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第2部分：Linux 内核 5.10 核心实现/第2章_内核基石：hlist非对称链表.md",
+    "appendix/kernel_source/include/linux/hashtable.h.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第2部分：Linux 内核 5.10 核心实现/第2章_内核基石：hlist 非对称链表.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第二部分：Linux 内核 5.10 核心实现/第3章：算法之魂：哈希函数与位运算优化.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第二部分：Linux 内核 5.10 核心实现/Untitled.md",
+    "工具配置_mm.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第二部分：Linux 内核 5.10 核心实现/第 2 章 内核基石：hlist 非对称链表.md",
+    "appendix/kernel_model/并发与竞争简介/第2篇_可见性与顺序/第11章_等待—唤醒写法：电平边沿与“锁内判断、醒后重检”.md",
+    "appendix/kernel_model/并发与竞争简介/第2篇_可见性与顺序/第10章_CPU↔设备 IO 顺序：_relaxed、mbrmbwmb与“确认点”.md",
+    "appendix/kernel_model/并发与竞争简介/第2篇_可见性与顺序/第9章_CPU↔CPU 可见性与顺序：READWRITE_ONCE 与发布-获取语义.md",
+    "驱动_mm.md",
+    "内核_mm.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第1部分：数据结构理论基础/第1章_哈希表核心原理：空间与时间的终极博弈.md",
+    "appendix/kernel_source/include/linux/types.h.md",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第2部分：Linux 内核 5.10 核心实现",
+    "appendix/kernel_data_structure/哈希表_Hash_Table/第1部分：数据结构理论基础",
+    "appendix/kernel_data_structure/哈希表_Hash_Table",
+    "appendix/kernel_data_structure/Untitled Folder",
+    "appendix/kernel_model/并发与竞争简介/第3篇_子模块详解",
+    "appendix/kernel_model/并发与竞争简介/第2篇_可见性与顺序",
+    "images/kernel/linux内核深度解析/boot_jump_linux函数.png",
+    "images/kernel/running_linux_kernel_P01/linux_kernel_component_archtecture.png",
+    "images/kernel/nxp/kernel_config_cross_compiler_for_makefile.png"
+  ]
+}
