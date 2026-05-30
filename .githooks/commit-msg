@@ -1,0 +1,38 @@
+#!/bin/sh
+
+msg_file="$1"
+subject="$(sed -n '1p' "$msg_file")"
+
+format_regex='^(add|update|rewrite|fix|structure|format|link|asset|meta|archive|chore)\([^)][^)]*\): .+$'
+
+if ! printf '%s\n' "$subject" | grep -Eq "$format_regex"; then
+  cat >&2 <<'EOF'
+提交信息格式错误。
+
+必须使用：
+  <类型>(<范围>): <一句话说明>
+
+类型只能是：
+  add update rewrite fix structure format link asset meta archive chore
+
+示例：
+  meta(git): 初始化文档提交规则
+EOF
+  exit 1
+fi
+
+description="$(printf '%s\n' "$subject" | sed 's/^[^:]*: //')"
+
+if ! printf '%s\n' "$description" | LC_ALL=C grep -q '[^ -~]'; then
+  cat >&2 <<'EOF'
+提交信息格式错误。
+
+<一句话说明> 必须采用中文描述，不能只写英文或纯 ASCII 内容。
+
+示例：
+  update(kernel): 补充链表遍历说明
+EOF
+  exit 1
+fi
+
+exit 0

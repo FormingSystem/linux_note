@@ -1,0 +1,22 @@
+{
+  "canvasSize": 8000,
+  "headLevel": 2,
+  "fontSize": 16,
+  "background": "transparent",
+  "layout": "mindmap",
+  "layoutDirect": "mindmap",
+  "protocol": "jump-to-pdf",
+  "registerPdfEvent": true,
+  "viewerTheme": 2,
+  "mindmapmode": "rich",
+  "parseMindMap": true,
+  "annotateTop": 0,
+  "annotateBottom": 0,
+  "showNodeBoard": true,
+  "useCustomShortcut": false,
+  "highlightFormat": "\nPage:{{page}}\n<span style=\"color:rgb({{color}})\">■</span>:{{highlightText}}\nComment:{{comment}}\n[📌]({{link}})\n^{{id}}\n",
+  "uid": "00p01101001200p00o00q00s00q01100p00o012",
+  "setup": 1771509047548,
+  "activeCode": "cac784a0f34997125bb72bea881bad877bf770615d6870b6203e941b3d49b65312a009baa6925bd9df4123560d109d39f51eab8d11107f5a5cbfb973afe20480d3c373f2ee08f5a9f374",
+  "mobileActiveCode": "02F00Y01r01k00Y01400Y00s01101l01o01101i01h00o01l01l01201h00p00p01o00o01200o01001301201o00s01100p00r00r01o00s01101201k00Y00i00Y02402001h02200Y01400Y01000Y00i00Y01l02201k01E01h02801l00Y01400Y01O01h01O00j01h01O00j01h01O00Y02H"
+}
