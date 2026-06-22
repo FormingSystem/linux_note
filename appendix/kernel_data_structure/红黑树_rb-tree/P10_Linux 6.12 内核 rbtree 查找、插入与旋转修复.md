@@ -52,9 +52,9 @@ __rb_rotate_set_parents()
 
 本章主要参照以下源码笔记：
 
-* [include/linux/rbtree.h](../../kernel_source/include/linux/rbtree.h.md)
-* [lib/rbtree.c](../../kernel_source/lib/rbtree.c.md)
-* [include/linux/rbtree_augmented.h](../../kernel_source/include/linux/rbtree_augmented.h.md)
+* [include/linux/rbtree.h](../../kernel_source/include/linux/rbtree.h)
+* [lib/rbtree.c](../../kernel_source/lib/rbtree.c)
+* [include/linux/rbtree_augmented.h](../../kernel_source/include/linux/rbtree_augmented.h)
 
 其中：
 
@@ -670,7 +670,7 @@ WRITE_ONCE() 可以避免遍历陷入临时环；
 
 `rb_link_node()` 源码展示：
 
-[include/linux/rbtree.h](../../kernel_source/include/linux/rbtree.h.md)
+[include/linux/rbtree.h](../../kernel_source/include/linux/rbtree.h)
 
 ```c
 static inline 
@@ -1053,7 +1053,7 @@ Linux rbtree 的新节点通过 __rb_parent_color 低位自然成为红色。
 
 `rb_set_parent_color()` 源码展示：
 
-[include/linux/rbtree_augmented.h](../../kernel_source/include/linux/rbtree_augmented.h.md)
+[include/linux/rbtree_augmented.h](../../kernel_source/include/linux/rbtree_augmented.h)
 
 ```c
 static inline void 
@@ -1067,7 +1067,7 @@ rb_set_parent_color(struct rb_node *rb, struct rb_node *p, int color)
 
 `rb_insert_color()` 源码展示：
 
-[lib/rbtree.c](../../kernel_source/lib/rbtree.c.md)
+[lib/rbtree.c](../../kernel_source/lib/rbtree.c)
 
 ```c
 /*
@@ -2120,7 +2120,7 @@ rb_insert_color() 或 rb_insert_augmented()
 
 源码展示：
 
-[include/linux/rbtree_augmented.h](../../kernel_source/include/linux/rbtree_augmented.h.md)
+[include/linux/rbtree_augmented.h](../../kernel_source/include/linux/rbtree_augmented.h)
 
 ```c
 /*
@@ -2168,7 +2168,7 @@ __rb_change_child(struct rb_node *old, struct rb_node *new,
 
 源码展示：
 
-[lib/rbtree.c](../../kernel_source/lib/rbtree.c.md)
+[lib/rbtree.c](../../kernel_source/lib/rbtree.c)
 
 ```c
 /*

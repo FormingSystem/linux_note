@@ -41,9 +41,9 @@ RCU 接口到底保证什么，不保证什么？
 本章主要参照：
 
 ```text
-../../kernel_source/include/linux/rbtree.h.md
-../../kernel_source/include/linux/rbtree_augmented.h.md
-../../kernel_source/lib/rbtree.c.md
+../../kernel_source/include/linux/rbtree.h
+../../kernel_source/include/linux/rbtree_augmented.h
+../../kernel_source/lib/rbtree.c
 ```
 
 其中：
@@ -1700,12 +1700,71 @@ VMA 是虚拟内存区域。
 
 Maple Tree 正是面向这类范围映射场景的更现代结构。
 
+更准确地说，新内核的 VMA 管理已经从传统：
+
+```text
+mm_struct
+	-> mmap        // VMA 链表
+	-> mm_rb       // VMA 红黑树
+```
+
+转向：
+
+```text
+mm_struct
+	-> mm_mt       // maple_tree
+```
+
+也就是：
+
+```c
+struct maple_tree mm_mt;
+```
+
+VMA 查找、遍历、插入、删除更多走 `maple_tree` / `vma_iterator` 这一套。
+
+Maple Tree 官方文档把它描述为一种 B-Tree 数据类型，优化用于保存非重叠范围，支持范围迭代、cache-efficient 的 previous / next 访问和 RCU-safe 模式，并明确说它最重要的用途是跟踪 VMA。([Linux Kernel Documentation](https://docs.kernel.org/core-api/maple_tree.html))
+
+Maple Tree 引入补丁系列也明确提到，它替换了 VMA 管理里的 augmented rbtree、VMA cache 和 VMA linked list；补丁组织中还包含从 `mm_struct` 移除 rbtree、引入 VMA iterator 等修改。([LKML](https://lkml.iu.edu/2202.1/09876.html))
+
+但这句话不能扩大成：
+
+```text
+新内核已经不用 rbtree；
+任务管理也改成 Maple Tree；
+所有有序集合都应该换成 Maple Tree。
+```
+
+更稳的边界是：
+
+| 子系统 | 新内核主要结构或方向 |
+| --- | --- |
+| 虚拟内存 VMA 管理 | Maple Tree |
+| 页缓存 / 一些整数 ID 索引 | XArray / radix tree 演进 |
+| 普通内核有序集合 | rbtree 仍然大量存在 |
+| 公平调度任务选择 | 从 CFS 语义走向 EEVDF，不是 Maple Tree |
+
+任务调度容易和这里混淆。
+
+老 CFS 经典讲法里，可运行实体按 `vruntime` 组织在 `tasks_timeline` 红黑树上。
+
+新内核公平调度的核心语义转向 EEVDF，关注的是 lag 和 virtual deadline，选择 eligible 且虚拟截止时间更早的任务。([Linux Kernel Documentation](https://docs.kernel.org/scheduler/sched-eevdf.html))
+
+这属于调度算法语义变化，不是“调度任务也改用 Maple Tree”。
+
 所以这里的学习重点是：
 
 ```text
 rbtree 适合有序对象集合；
 Maple Tree 更适合某些范围映射和 VMA 场景；
 数据结构选择要看访问模式，而不是只看复杂度公式。
+```
+
+一句话总结：
+
+```text
+Maple Tree 主要替代的是内存管理里的 VMA rbtree / linked list 模型；
+它不是泛泛替代整个内核中的 rbtree，也不是任务调度 EEVDF 的同义词。
 ```
 
 ------
@@ -1815,4 +1874,3 @@ cached / augmented / 并发 / 验证 / 场景
 ```
 
 下一章可以从红黑树扩展到 B 树 / B+ 树，重点不再是内存中的二叉平衡，而是多路平衡、页级索引和范围查询。
-

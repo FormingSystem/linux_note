@@ -98,7 +98,7 @@ static int __init my_driver_init(void)
 
 关于更多定义，可以参考 kernel 源码：
 
-[源文件 init.h](https://chatgpt.com/kernel_source/include/linux/init.h.md)
+[源文件 init.h](https://chatgpt.com/kernel_source/include/linux/init.h)
 
 其中包含：
 
@@ -207,7 +207,7 @@ int b = min(a++, 20);
 
 实现代码参考：
 
-[include/linux/kernel.h](https://chatgpt.com/kernel_source/include/linux/kernel.h.md)
+[include/linux/kernel.h](https://chatgpt.com/kernel_source/include/linux/kernel.h)
 
 ```c
 /**
@@ -348,7 +348,7 @@ include/linux/compiler*.h
 
 `__user` 定义参考：
 
-[include/linux/compiler_types.h](https://chatgpt.com/kernel_source/include/linux/compiler_types.h.md)
+[include/linux/compiler_types.h](https://chatgpt.com/kernel_source/include/linux/compiler_types.h)
 
 ------
 

@@ -1,5 +1,3 @@
-include/linux/rbtree_types.h
-```c
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 #ifndef _LINUX_RBTREE_TYPES_H
 #define _LINUX_RBTREE_TYPES_H
@@ -34,5 +32,3 @@ struct rb_root_cached {
 #define RB_ROOT_CACHED (struct rb_root_cached) { {NULL, }, NULL }
 
 #endif
-
-```
