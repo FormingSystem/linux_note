@@ -26,7 +26,7 @@
 
 ## 5.2 核心句柄：`struct rhashtable` 的实战意图
 
-观察源码 [include/linux/rhashtable-types.h](../../../kernel_source/include/linux/rhashtable-types.h.md) ，我们会发现它不是一个死板的数组，而是一个**异步管理中心**：
+观察源码 [include/linux/rhashtable-types.h](../../../kernel_source/include/linux/rhashtable-types.h) ，我们会发现它不是一个死板的数组，而是一个**异步管理中心**：
 
 ```c
 // 简化定义
@@ -88,7 +88,7 @@ struct rhashtable {
 | `automatic_shrinking` | 资源回收     | 在云原生等对内存敏感的场景，不用的空间要还给系统。           |
 | `key_offset`          | 零拷贝设计   | 哈希表不存数据副本，它直接通过偏移量去你的结构体里“勾”出 Key。 |
 
-`struct rhashtable_params` 定义位于 [include/linux/rhashtable-types.h](../../../kernel_source/include/linux/rhashtable-types.h.md) ：
+`struct rhashtable_params` 定义位于 [include/linux/rhashtable-types.h](../../../kernel_source/include/linux/rhashtable-types.h) ：
 
 ```c
 /**

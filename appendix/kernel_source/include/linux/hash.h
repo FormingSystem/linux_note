@@ -1,5 +1,3 @@
-include/linux/hash.h
-```c
 #ifndef _LINUX_HASH_H
 #define _LINUX_HASH_H
 /* Fast hashing routine for ints,  longs and pointers.
@@ -64,10 +62,7 @@ static inline u32 __hash_32_generic(u32 val)
 	return val * GOLDEN_RATIO_32;
 }
 
-#ifndef HAVE_ARCH_HASH_32
-#define hash_32 hash_32_generic
-#endif
-static inline u32 hash_32_generic(u32 val, unsigned int bits)
+static inline u32 hash_32(u32 val, unsigned int bits)
 {
 	/* High bits are more random, so use them. */
 	return __hash_32(val) >> (32 - bits);
@@ -104,4 +99,3 @@ static inline u32 hash32_ptr(const void *ptr)
 }
 
 #endif /* _LINUX_HASH_H */
-```

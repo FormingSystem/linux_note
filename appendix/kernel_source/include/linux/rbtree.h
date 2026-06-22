@@ -1,5 +1,3 @@
-include/linux/rbtree.h
-```c
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
   Red Black Trees
@@ -401,5 +399,3 @@ rb_next_match(const void *key, struct rb_node *node,
 	     (node); (node) = rb_next_match((key), (node), (cmp)))
 
 #endif	/* _LINUX_RBTREE_H */
-
-```

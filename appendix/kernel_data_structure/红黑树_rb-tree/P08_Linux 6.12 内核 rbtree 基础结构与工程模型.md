@@ -742,7 +742,7 @@ VMA 这类区间集合；
 
 ### 8.2.1 `include/linux/rbtree_types.h`：基础类型定义
 
-[include/linux/rbtree_types.h](../../kernel_source/include/linux/rbtree_types.h.md) 是阅读 Linux 6.12 rbtree 的入口文件。
+[include/linux/rbtree_types.h](../../kernel_source/include/linux/rbtree_types.h) 是阅读 Linux 6.12 rbtree 的入口文件。
 
 它定义三类基础结构：
 
@@ -1845,7 +1845,7 @@ rb_entry 负责从树节点找回业务对象。
 
 **rb_entry()源码**
 
-[include/linux/rbtree.h](../../kernel_source/include/linux/rbtree.h.md)
+[include/linux/rbtree.h](../../kernel_source/include/linux/rbtree.h)
 
 ```c
 #define	rb_entry(ptr, type, member) container_of(ptr, type, member)
