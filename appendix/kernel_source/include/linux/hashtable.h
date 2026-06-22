@@ -1,5 +1,3 @@
-include/linux/hashtable.h
-```c
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Statically sized hash table implementation
@@ -209,4 +207,3 @@ static inline void hash_del_rcu(struct hlist_node *node)
 
 
 #endif
-```

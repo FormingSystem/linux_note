@@ -6,10 +6,10 @@
 
 `hlist` 的核心设计哲学是**非对称性**。
 
-- **`struct hlist_head`（哈希桶头）**，定义位于 [include/linux/types.h](../../../kernel_source/include/linux/types.h.md)：
+- **`struct hlist_head`（哈希桶头）**，定义位于 [include/linux/types.h](../../../kernel_source/include/linux/types.h)：
   - 仅包含一个指针 `first`，指向链表的第一个节点。
   - **设计动机**：哈希表通常包含数以百万计的桶。如果每个桶头都用 `list_head`（16 字节），会占用大量内存。`hlist_head` 仅需 8 字节（64 位系统），直接将表头开销减半。
-- **`struct hlist_node`（数据节点）**，定义位于 [include/linux/types.h](../../../kernel_source/include/linux/types.h.md)：
+- **`struct hlist_node`（数据节点）**，定义位于 [include/linux/types.h](../../../kernel_source/include/linux/types.h)：
   - `next`：指向下一个节点的指针。
   - `pprev`：一个二级指针，指向前一个节点的 `next` 指针所在的地址。
 
@@ -213,7 +213,7 @@ flowchart TD
 
 详细定义说明：
 
-定义位于 [include/linux/hashtable.h](../../../kernel_source/include/linux/hashtable.h.md)。
+定义位于 [include/linux/hashtable.h](../../../kernel_source/include/linux/hashtable.h)。
 
 ```c
 /**
@@ -226,7 +226,7 @@ flowchart TD
 	hlist_add_head(node, &hashtable[hash_min(key, HASH_BITS(hashtable))])
 ```
 
-定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h.md)。
+定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h)。
 
 ```c 
 /**
@@ -266,7 +266,7 @@ void hash_del(struct hlist_node *node)
 
 详细定义说明：
 
-定义位于 [include/linux/hashtable.h](../../../kernel_source/include/linux/hashtable.h.md)。
+定义位于 [include/linux/hashtable.h](../../../kernel_source/include/linux/hashtable.h)。
 
 ```c
 /**
@@ -279,7 +279,7 @@ static inline void hash_del(struct hlist_node *node)
 }
 ```
 
-定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h.md)。
+定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h)。
 
 ```c
 /**
@@ -460,7 +460,7 @@ hlist_for_each_entry(obj, head, node) {
 }
 ```
 
-`hlist_for_each_entry()` 定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h.md)：
+`hlist_for_each_entry()` 定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h)：
 
 ```c
 /**
@@ -477,7 +477,7 @@ hlist_for_each_entry(obj, head, node) {
 
 #### `hlist_entry_safe()`定义
 
-获取 `pos` 的 `hlist_entry_safe()` 定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h.md)：
+获取 `pos` 的 `hlist_entry_safe()` 定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h)：
 
 ```c
 #define hlist_entry(ptr, type, member) container_of(ptr,type,member)
@@ -566,7 +566,7 @@ hlist_for_each_entry_safe(obj, tmp, my_head, node) {
 }
 ```
 
-`hlist_for_each_entry_safe()` 定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h.md)：
+`hlist_for_each_entry_safe()` 定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h)：
 
 ```c
 /**
