@@ -1,11 +1,30 @@
-include/linux/compiler_types.h
-```c
 /* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __LINUX_COMPILER_TYPES_H
 #define __LINUX_COMPILER_TYPES_H
 
+/*
+ * __has_builtin is supported on gcc >= 10, clang >= 3 and icc >= 21.
+ * In the meantime, to support gcc < 10, we implement __has_builtin
+ * by hand.
+ */
+#ifndef __has_builtin
+#define __has_builtin(x) (0)
+#endif
+
 #ifndef __ASSEMBLY__
 
+/*
+ * Skipped when running bindgen due to a libclang issue;
+ * see https://github.com/rust-lang/rust-bindgen/issues/2244.
+ */
+#if defined(CONFIG_DEBUG_INFO_BTF) && defined(CONFIG_PAHOLE_HAS_BTF_TAG) && \
+	__has_attribute(btf_type_tag) && !defined(__BINDGEN__)
+# define BTF_TYPE_TAG(value) __attribute__((btf_type_tag(#value)))
+#else
+# define BTF_TYPE_TAG(value) /* nothing */
+#endif
+
+/* sparse defines __CHECKER__; see Documentation/dev-tools/sparse.rst */
 #ifdef __CHECKER__
 /* address spaces */
 # define __kernel	__attribute__((address_space(0)))
@@ -18,6 +37,7 @@ static inline void __chk_io_ptr(const volatile void __iomem *ptr) { }
 /* context/locking */
 # define __must_hold(x)	__attribute__((context(x,1,1)))
 # define __acquires(x)	__attribute__((context(x,0,1)))
+# define __cond_acquires(x) __attribute__((context(x,0,-1)))
 # define __releases(x)	__attribute__((context(x,1,0)))
 # define __acquire(x)	__context__(x,1)
 # define __release(x)	__context__(x,-1)
@@ -34,16 +54,18 @@ static inline void __chk_io_ptr(const volatile void __iomem *ptr) { }
 # ifdef STRUCTLEAK_PLUGIN
 #  define __user	__attribute__((user))
 # else
-#  define __user
+#  define __user	BTF_TYPE_TAG(user)
 # endif
 # define __iomem
-# define __percpu
-# define __rcu
+# define __percpu	BTF_TYPE_TAG(percpu)
+# define __rcu		BTF_TYPE_TAG(rcu)
+
 # define __chk_user_ptr(x)	(void)0
 # define __chk_io_ptr(x)	(void)0
 /* context/locking */
 # define __must_hold(x)
 # define __acquires(x)
+# define __cond_acquires(x)
 # define __releases(x)
 # define __acquire(x)	(void)0
 # define __release(x)	(void)0
@@ -66,11 +88,87 @@ static inline void __chk_io_ptr(const volatile void __iomem *ptr) { }
 /* Attributes */
 #include <linux/compiler_attributes.h>
 
+#if CONFIG_FUNCTION_ALIGNMENT > 0
+#define __function_aligned		__aligned(CONFIG_FUNCTION_ALIGNMENT)
+#else
+#define __function_aligned
+#endif
+
+/*
+ *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-cold-function-attribute
+ *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Label-Attributes.html#index-cold-label-attribute
+ *
+ * When -falign-functions=N is in use, we must avoid the cold attribute as
+ * GCC drops the alignment for cold functions. Worse, GCC can implicitly mark
+ * callees of cold functions as cold themselves, so it's not sufficient to add
+ * __function_aligned here as that will not ensure that callees are correctly
+ * aligned.
+ *
+ * See:
+ *
+ *   https://lore.kernel.org/lkml/Y77%2FqVgvaJidFpYt@FVFF77S0Q05N
+ *   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88345#c9
+ */
+#if defined(CONFIG_CC_HAS_SANE_FUNCTION_ALIGNMENT) || (CONFIG_FUNCTION_ALIGNMENT == 0)
+#define __cold				__attribute__((__cold__))
+#else
+#define __cold
+#endif
+
+/*
+ * On x86-64 and arm64 targets, __preserve_most changes the calling convention
+ * of a function to make the code in the caller as unintrusive as possible. This
+ * convention behaves identically to the C calling convention on how arguments
+ * and return values are passed, but uses a different set of caller- and callee-
+ * saved registers.
+ *
+ * The purpose is to alleviates the burden of saving and recovering a large
+ * register set before and after the call in the caller.  This is beneficial for
+ * rarely taken slow paths, such as error-reporting functions that may be called
+ * from hot paths.
+ *
+ * Note: This may conflict with instrumentation inserted on function entry which
+ * does not use __preserve_most or equivalent convention (if in assembly). Since
+ * function tracing assumes the normal C calling convention, where the attribute
+ * is supported, __preserve_most implies notrace.  It is recommended to restrict
+ * use of the attribute to functions that should or already disable tracing.
+ *
+ * Optional: not supported by gcc.
+ *
+ * clang: https://clang.llvm.org/docs/AttributeReference.html#preserve-most
+ */
+#if __has_attribute(__preserve_most__) && (defined(CONFIG_X86_64) || defined(CONFIG_ARM64))
+# define __preserve_most notrace __attribute__((__preserve_most__))
+#else
+# define __preserve_most
+#endif
+
+/*
+ * Annotating a function/variable with __retain tells the compiler to place
+ * the object in its own section and set the flag SHF_GNU_RETAIN. This flag
+ * instructs the linker to retain the object during garbage-cleanup or LTO
+ * phases.
+ *
+ * Note that the __used macro is also used to prevent functions or data
+ * being optimized out, but operates at the compiler/IR-level and may still
+ * allow unintended removal of objects during linking.
+ *
+ * Optional: only supported since gcc >= 11, clang >= 13
+ *
+ *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-retain-function-attribute
+ * clang: https://clang.llvm.org/docs/AttributeReference.html#retain
+ */
+#if __has_attribute(__retain__) && \
+	(defined(CONFIG_LD_DEAD_CODE_DATA_ELIMINATION) || \
+	 defined(CONFIG_LTO_CLANG))
+# define __retain			__attribute__((__retain__))
+#else
+# define __retain
+#endif
+
 /* Compiler specific macros. */
 #ifdef __clang__
 #include <linux/compiler-clang.h>
-#elif defined(__INTEL_COMPILER)
-#include <linux/compiler-intel.h>
 #elif defined(__GNUC__)
 /* The above compilers also define __GNUC__, so order is important here. */
 #include <linux/compiler-gcc.h>
@@ -112,12 +210,6 @@ struct ftrace_likely_data {
 	unsigned long			constant;
 };
 
-#ifdef CONFIG_ENABLE_MUST_CHECK
-#define __must_check		__attribute__((__warn_unused_result__))
-#else
-#define __must_check
-#endif
-
 #if defined(CC_USING_HOTPATCH)
 #define notrace			__attribute__((hotpatch(0, 0)))
 #elif defined(CC_USING_PATCHABLE_FUNCTION_ENTRY)
@@ -133,8 +225,6 @@ struct ftrace_likely_data {
  * restore the lr register to the value before mcount was called.
  */
 #define __naked			__attribute__((__naked__)) notrace
-
-#define __compiler_offsetof(a, b)	__builtin_offsetof(a, b)
 
 /*
  * Prefer gnu_inline, so that extern inline functions do not emit an
@@ -195,19 +285,81 @@ struct ftrace_likely_data {
 # define __no_kasan_or_inline __always_inline
 #endif
 
-#define __no_kcsan __no_sanitize_thread
 #ifdef __SANITIZE_THREAD__
+/*
+ * Clang still emits instrumentation for __tsan_func_{entry,exit}() and builtin
+ * atomics even with __no_sanitize_thread (to avoid false positives in userspace
+ * ThreadSanitizer). The kernel's requirements are stricter and we really do not
+ * want any instrumentation with __no_kcsan.
+ *
+ * Therefore we add __disable_sanitizer_instrumentation where available to
+ * disable all instrumentation. See Kconfig.kcsan where this is mandatory.
+ */
+# define __no_kcsan __no_sanitize_thread __disable_sanitizer_instrumentation
+/*
+ * Type qualifier to mark variables where all data-racy accesses should be
+ * ignored by KCSAN. Note, the implementation simply marks these variables as
+ * volatile, since KCSAN will treat such accesses as "marked".
+ */
+# define __data_racy volatile
 # define __no_sanitize_or_inline __no_kcsan notrace __maybe_unused
+#else
+# define __no_kcsan
+# define __data_racy
+#endif
+
+#ifdef __SANITIZE_MEMORY__
+/*
+ * Similarly to KASAN and KCSAN, KMSAN loses function attributes of inlined
+ * functions, therefore disabling KMSAN checks also requires disabling inlining.
+ *
+ * __no_sanitize_or_inline effectively prevents KMSAN from reporting errors
+ * within the function and marks all its outputs as initialized.
+ */
+# define __no_sanitize_or_inline __no_kmsan_checks notrace __maybe_unused
 #endif
 
 #ifndef __no_sanitize_or_inline
 #define __no_sanitize_or_inline __always_inline
 #endif
 
+/*
+ * Apply __counted_by() when the Endianness matches to increase test coverage.
+ */
+#ifdef __LITTLE_ENDIAN
+#define __counted_by_le(member)	__counted_by(member)
+#define __counted_by_be(member)
+#else
+#define __counted_by_le(member)
+#define __counted_by_be(member)	__counted_by(member)
+#endif
+
+/* Do not trap wrapping arithmetic within an annotated function. */
+#ifdef CONFIG_UBSAN_SIGNED_WRAP
+# define __signed_wrap __attribute__((no_sanitize("signed-integer-overflow")))
+#else
+# define __signed_wrap
+#endif
+
 /* Section for code which can't be instrumented at all */
-#define noinstr								\
-	noinline notrace __attribute((__section__(".noinstr.text")))	\
-	__no_kcsan __no_sanitize_address __no_sanitize_coverage
+#define __noinstr_section(section)					\
+	noinline notrace __attribute((__section__(section)))		\
+	__no_kcsan __no_sanitize_address __no_profile __no_sanitize_coverage \
+	__no_sanitize_memory __signed_wrap
+
+#define noinstr __noinstr_section(".noinstr.text")
+
+/*
+ * The __cpuidle section is used twofold:
+ *
+ *  1) the original use -- identifying if a CPU is 'stuck' in idle state based
+ *     on it's instruction pointer. See cpu_in_idle().
+ *
+ *  2) supressing instrumentation around where cpuidle disables RCU; where the
+ *     function isn't strictly required for #1, this is interchangeable with
+ *     noinstr.
+ */
+#define __cpuidle __noinstr_section(".cpuidle.text")
 
 #endif /* __KERNEL__ */
 
@@ -222,15 +374,15 @@ struct ftrace_likely_data {
 # define __latent_entropy
 #endif
 
-#ifndef __randomize_layout
+#if defined(RANDSTRUCT) && !defined(__CHECKER__)
+# define __randomize_layout __designated_init __attribute__((randomize_layout))
+# define __no_randomize_layout __attribute__((no_randomize_layout))
+/* This anon struct can add padding, so only enable it under randstruct. */
+# define randomized_struct_fields_start	struct {
+# define randomized_struct_fields_end	} __randomize_layout;
+#else
 # define __randomize_layout __designated_init
-#endif
-
-#ifndef __no_randomize_layout
 # define __no_randomize_layout
-#endif
-
-#ifndef randomized_struct_fields_start
 # define randomized_struct_fields_start
 # define randomized_struct_fields_end
 #endif
@@ -239,8 +391,61 @@ struct ftrace_likely_data {
 # define __noscs
 #endif
 
-#ifndef asm_volatile_goto
-#define asm_volatile_goto(x...) asm goto(x)
+#ifndef __nocfi
+# define __nocfi
+#endif
+
+/*
+ * Any place that could be marked with the "alloc_size" attribute is also
+ * a place to be marked with the "malloc" attribute, except those that may
+ * be performing a _reallocation_, as that may alias the existing pointer.
+ * For these, use __realloc_size().
+ */
+#ifdef __alloc_size__
+# define __alloc_size(x, ...)	__alloc_size__(x, ## __VA_ARGS__) __malloc
+# define __realloc_size(x, ...)	__alloc_size__(x, ## __VA_ARGS__)
+#else
+# define __alloc_size(x, ...)	__malloc
+# define __realloc_size(x, ...)
+#endif
+
+/*
+ * When the size of an allocated object is needed, use the best available
+ * mechanism to find it. (For cases where sizeof() cannot be used.)
+ */
+#if __has_builtin(__builtin_dynamic_object_size)
+#define __struct_size(p)	__builtin_dynamic_object_size(p, 0)
+#define __member_size(p)	__builtin_dynamic_object_size(p, 1)
+#else
+#define __struct_size(p)	__builtin_object_size(p, 0)
+#define __member_size(p)	__builtin_object_size(p, 1)
+#endif
+
+/* Determine if an attribute has been applied to a variable. */
+#if __has_builtin(__builtin_has_attribute)
+#define __annotated(var, attr)	__builtin_has_attribute(var, attr)
+#else
+#define __annotated(var, attr)	(false)
+#endif
+
+/*
+ * Some versions of gcc do not mark 'asm goto' volatile:
+ *
+ *  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=103979
+ *
+ * We do it here by hand, because it doesn't hurt.
+ */
+#ifndef asm_goto_output
+#define asm_goto_output(x...) asm volatile goto(x)
+#endif
+
+/*
+ * Clang has trouble with constraints with multiple
+ * alternative behaviors (mainly "g" and "rm").
+ */
+#ifndef ASM_INPUT_G
+  #define ASM_INPUT_G "g"
+  #define ASM_INPUT_RM "rm"
 #endif
 
 #ifdef CONFIG_CC_HAS_ASM_INLINE
@@ -279,21 +484,16 @@ struct ftrace_likely_data {
 	(sizeof(t) == sizeof(char) || sizeof(t) == sizeof(short) || \
 	 sizeof(t) == sizeof(int) || sizeof(t) == sizeof(long))
 
-/* Compile time object size, -1 for unknown */
-#ifndef __compiletime_object_size
-# define __compiletime_object_size(obj) -1
-#endif
-#ifndef __compiletime_warning
-# define __compiletime_warning(message)
-#endif
-#ifndef __compiletime_error
-# define __compiletime_error(message)
-#endif
-
 #ifdef __OPTIMIZE__
 # define __compiletime_assert(condition, msg, prefix, suffix)		\
 	do {								\
-		extern void prefix ## suffix(void) __compiletime_error(msg); \
+		/*							\
+		 * __noreturn is needed to give the compiler enough	\
+		 * information to avoid certain possibly-uninitialized	\
+		 * warnings (regardless of the build failing).		\
+		 */							\
+		__noreturn extern void prefix ## suffix(void)		\
+			__compiletime_error(msg);			\
 		if (!(condition))					\
 			prefix ## suffix();				\
 	} while (0)
@@ -339,5 +539,8 @@ struct ftrace_likely_data {
 #define __diag_error(compiler, version, option, comment) \
 	__diag_ ## compiler(version, error, option)
 
+#ifndef __diag_ignore_all
+#define __diag_ignore_all(option, comment)
+#endif
+
 #endif /* __LINUX_COMPILER_TYPES_H */
-```
