@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "7d67ed7c95972bb7",
+        "id": "244baccdb1e7a22d",
         "type": "tabs",
         "children": [
           {
-            "id": "9a993b61119d3d61",
+            "id": "69f98a365c7ba574",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "appendix/kernel_data_structure/红黑树_rb-tree/P14_Maple Tree 与 VMA 管理.md",
+                "file": "appendix/kernel_data_structure/kref-引用计数/第 1 章：kref 要解决什么问题.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "P14_Maple Tree 与 VMA 管理"
+              "title": "第 1 章：kref 要解决什么问题"
             }
           }
         ]
@@ -78,8 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 278.5,
-    "collapsed": true
+    "width": 278.5
   },
   "right": {
     "id": "4d8e55985b4496b6",
@@ -157,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "appendix/kernel_data_structure/红黑树_rb-tree/P14_Maple Tree 与 VMA 管理.md",
+                "file": "appendix/kernel_data_structure/kref-引用计数/第 1 章：kref 要解决什么问题.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "P14_Maple Tree 与 VMA 管理 的大纲"
+              "title": "第 1 章：kref 要解决什么问题 的大纲"
             }
           }
         ],
@@ -187,8 +186,15 @@
       "pdf-plus:PDF++: Toggle auto-paste": false
     }
   },
-  "active": "9a993b61119d3d61",
+  "active": "69f98a365c7ba574",
   "lastOpenFiles": [
+    "appendix/kernel_data_structure/kref-引用计数/第 2 章：源码入口与结构定义.md",
+    "appendix/kernel_data_structure/单链表_Linked_List.md",
+    "未命名 1.base",
+    "未命名.base",
+    "appendix/kernel_data_structure/红黑树_rb-tree/P14_Maple Tree 与 VMA 管理.md",
+    "appendix/kernel_data_structure/kref-引用计数/第 1 章：kref 要解决什么问题.md",
+    "appendix/kernel_data_structure/kref-引用计数/Untitled.md",
     "appendix/kernel_source/mm/madvise.c",
     "appendix/kernel_source/drivers/base/core.c",
     "appendix/kernel_source/drivers/base",
@@ -197,9 +203,6 @@
     "appendix/kernel_source/lib/kobject.c",
     "appendix/kernel_source/include/linux/kobject.h",
     "appendix/kernel_source/Documentation/core-api/kobject.rst",
-    "appendix/kernel_source/include/linux/slab.h",
-    "appendix/kernel_source/include/linux/rculist.h",
-    "appendix/kernel_source/include/linux/rcupdate.h",
     "appendix/kernel_data_structure/kref-引用计数/大纲.md",
     "appendix/kernel_data_structure/红黑树_rb-tree/P15_Linux 6.12 Maple Tree 源码结构与 API 分层.md",
     "appendix/kernel_source/mm/mmap.c.md",
@@ -219,12 +222,8 @@
     "kernel/running-linux_kernel_P01/P02_Linux内核中常用的数据结构和算法.md",
     "AI_application/gemini_ask_method.md",
     "AI_application/Untitled.md",
-    "appendix/kernel_data_structure/单链表_Linked_List.md",
     "appendix/kernel_data_structure/哈希表_Hash_Table/第4部分：内核实战与应用/第7章_内核模块实战指南.md",
     "appendix/kernel_data_structure/哈希表_Hash_Table/第3部分：高级进阶与性能调优/第5章_动态伸缩的rhashtable：无感扩容的艺术.md",
-    "appendix/kernel_data_structure/哈希表_Hash_Table/第4部分：内核实战与应用/第6章_哈希表在内核子系统中的影子（深度拆解篇）.md",
-    "appendix/kernel_data_structure/哈希表_Hash_Table/临时大纲.md",
-    "appendix/kernel_source/include/linux/rhashtable-types.h.md",
     "images/kernel/linux内核深度解析/boot_jump_linux函数.png",
     "images/kernel/running_linux_kernel_P01/linux_kernel_component_archtecture.png",
     "images/kernel/nxp/kernel_config_cross_compiler_for_makefile.png"
