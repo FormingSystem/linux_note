@@ -10,7 +10,7 @@
 ref++;
 ref--;
 if (ref == 0)
-	kfree(obj);
+	kfree(refobj);
 ```
 
 那就已经偏了。
@@ -62,13 +62,13 @@ atomic
 例如：
 
 ```c
-struct my_obj *obj;
+struct my_refobj *refobj;
 ```
 
 这个变量只能说明：
 
 ```text
-obj 指向某个对象地址
+refobj 指向某个对象地址
 ```
 
 但它不能说明：
@@ -85,27 +85,27 @@ obj 指向某个对象地址
 看一个简化模型：
 
 ```c
-struct my_obj {
+struct my_refobj {
 	int state;
 };
 
-void thread_a(struct my_obj *obj)
+void thread_a(struct my_refobj *refobj)
 {
-	obj->state = 1;
+	refobj->state = 1;
 }
 
-void thread_b(struct my_obj *obj)
+void thread_b(struct my_refobj *refobj)
 {
-	kfree(obj);
+	kfree(refobj);
 }
 ```
 
 如果两个线程同时运行：
 
 ```text
-线程 A 正准备访问 obj->state
-线程 B 释放了 obj
-线程 A 继续访问 obj->state
+线程 A 正准备访问 refobj->state
+线程 B 释放了 refobj
+线程 A 继续访问 refobj->state
 ```
 
 那么线程 A 就会访问已经释放的内存。
@@ -136,7 +136,7 @@ UAF 不是“指针变量消失了”。
 也就是说：
 
 ```c
-obj
+refobj
 ```
 
 这个变量本身仍然有值。
@@ -168,12 +168,12 @@ obj
 sequenceDiagram
 	participant A as 执行路径 A
 	participant B as 执行路径 B
-	participant O as my_obj
+	participant O as my_refobj
 
-	A->>O: 保存裸指针 obj
-	B->>O: kfree(obj)
+	A->>O: 保存裸指针 refobj
+	B->>O: kfree(refobj)
 	Note over O: 对象生命周期结束
-	A->>O: obj->state = 1
+	A->>O: refobj->state = 1
 	Note over A,O: use-after-free
 ```
 
@@ -206,13 +206,13 @@ A 有指针。
 错误理解：
 
 ```text
-我手里有 obj 指针，所以对象一定还在。
+我手里有 refobj 指针，所以对象一定还在。
 ```
 
 正确理解：
 
 ```text
-我手里有 obj 指针，并且我持有一个引用，所以对象在我 put 之前不能被释放。
+我手里有 refobj 指针，并且我持有一个引用，所以对象在我 put 之前不能被释放。
 ```
 
 所以 `kref` 的核心语义是：
@@ -272,7 +272,7 @@ A 有指针。
 例如：
 
 ```c
-struct my_obj {
+struct my_refobj {
 	struct kref ref;
 	int state;
 };
@@ -281,8 +281,8 @@ struct my_obj {
 对象创建时：
 
 ```c
-obj = kzalloc(sizeof(*obj), GFP_KERNEL);
-kref_init(&obj->ref);
+refobj = kzalloc(sizeof(*refobj), GFP_KERNEL);
+kref_init(&refobj->ref);
 ```
 
 此时：
@@ -296,26 +296,26 @@ refcount = 1
 如果要把对象交给另一个执行路径长期使用：
 
 ```c
-kref_get(&obj->ref);
-pass_to_worker(obj);
+kref_get(&refobj->ref);
+pass_to_worker(refobj);
 ```
 
 worker 用完以后：
 
 ```c
-kref_put(&obj->ref, my_obj_release);
+kref_put(&refobj->ref, my_refobj_release);
 ```
 
 创建者自己不用了，也要：
 
 ```c
-kref_put(&obj->ref, my_obj_release);
+kref_put(&refobj->ref, my_refobj_release);
 ```
 
 当最后一个 `kref_put()` 让计数归零时：
 
 ```c
-my_obj_release()
+my_refobj_release()
 ```
 
 被调用，对象才真正释放。
@@ -373,6 +373,17 @@ lookup 后无保护 get：拿到的是悬挂指针
 对象内存还没有被释放
 ```
 
+这里说的“对象”，首先指自己定义并嵌入 `struct kref` 的对象，例如 `my_refobj`、request、session、cache entry 这类子系统内部对象。
+
+如果讨论的是 driver core 里的 `struct device`、`struct class`、`struct bus_type`，就不能把下面的 `my_refobj + kref + my_refobj_release` 模板直接套上去。它们属于基于 `kobject` 和设备模型封装好的框架对象，有自己的 `get_device()/put_device()`、`device_release()`、class/type release 分发规则。
+
+也就是说：
+
+```text
+裸 kref：讲自定义对象如何引用计数。
+device/class/bus：讲 driver core 如何分层管理框架对象。
+```
+
 它不能保证：
 
 ```text
@@ -380,12 +391,63 @@ lookup 后无保护 get：拿到的是悬挂指针
 对象状态不会被并发改变
 对象链表节点不会被并发删除
 对象内部缓存不会被并发破坏
+设备当前仍然可访问
+当前路径拥有设备的独占访问权
+lookup 拿到的裸指针一定还有效
+```
+
+这点在设备相关代码里尤其重要。
+
+`kref` 不是“设备安全代理”，也不是“设备完整托管器”。它不负责决定：
+
+```text
+设备是否 online
+设备是否已经 remove
+设备是否允许新请求
+当前路径是否持有设备锁
+多个线程是否可以同时操作设备寄存器或私有字段
+```
+
+这些都属于外层对象或框架自己的规则，通常由设备锁、对象锁、容器锁、RCU、状态机或设备模型自身的引用规则来保证。
+
+可以把分工画成这样：
+
+```mermaid
+flowchart TD
+	ptr["拿到对象指针<br/>lookup / 回调 / private_data"]
+	proof["外部机制先证明对象可用<br/>已有引用 / 设备锁 / 容器锁 / RCU / 状态机"]
+	kref["kref_get / kref_put<br/>生命周期引用"]
+	access["业务访问<br/>读写字段 / 操作设备 / 提交请求"]
+	sync["业务同步<br/>mutex / spinlock / 状态检查"]
+	release["最后一个 put<br/>release 销毁对象"]
+
+	ptr --> proof
+	proof --> kref
+	kref --> access
+	sync --> access
+	access --> kref
+	kref --> release
+
+	kref_scope["kref 只负责：对象内存不会在持有引用期间释放"]
+	biz_scope["业务负责：设备是否可用、字段是否互斥、lookup 是否安全"]
+
+	kref -.-> kref_scope
+	release -.-> kref_scope
+	proof -.-> biz_scope
+	sync -.-> biz_scope
+```
+
+所以更准确的使用前提是：
+
+```text
+不是拿到裸指针之后，靠 kref_get() 让一切变安全；
+而是外部规则已经证明对象有效之后，才能 kref_get() 延长生命周期。
 ```
 
 例如：
 
 ```c
-struct my_obj {
+struct my_refobj {
 	struct kref ref;
 	int state;
 };
@@ -394,29 +456,29 @@ struct my_obj {
 下面代码即使持有引用，也不一定是并发安全的：
 
 ```c
-kref_get(&obj->ref);
+kref_get(&refobj->ref);
 
-obj->state++;
+refobj->state++;
 
-kref_put(&obj->ref, my_obj_release);
+kref_put(&refobj->ref, my_refobj_release);
 ```
 
 `kref_get()` 只能说明：
 
 ```text
-obj 在当前引用释放前不会被 kfree
+refobj 在当前引用释放前不会被 kfree
 ```
 
 但它不说明：
 
 ```text
-obj->state++ 是互斥的
+refobj->state++ 是互斥的
 ```
 
 如果多个 CPU 同时执行：
 
 ```c
-obj->state++;
+refobj->state++;
 ```
 
 仍然会产生数据竞争。
@@ -424,7 +486,7 @@ obj->state++;
 正确设计通常需要：
 
 ```c
-struct my_obj {
+struct my_refobj {
 	struct kref ref;
 	struct mutex lock;
 	int state;
@@ -434,13 +496,13 @@ struct my_obj {
 然后：
 
 ```c
-kref_get(&obj->ref);
+kref_get(&refobj->ref);
 
-mutex_lock(&obj->lock);
-obj->state++;
-mutex_unlock(&obj->lock);
+mutex_lock(&refobj->lock);
+refobj->state++;
+mutex_unlock(&refobj->lock);
 
-kref_put(&obj->ref, my_obj_release);
+kref_put(&refobj->ref, my_refobj_release);
 ```
 
 这里分工是：
@@ -451,6 +513,15 @@ mutex 保护对象字段一致性
 ```
 
 这两个问题不能混在一起。
+
+如果换成自己封装的设备私有对象，也可以这样理解：
+
+```text
+kref 保证私有对象内存不会提前释放；
+设备锁保证私有对象状态和寄存器访问不会并发冲突；
+状态机保证设备当前是否 online、是否允许请求；
+lookup 保护保证从全局结构拿到私有对象时不是悬挂指针。
+```
 
 ------
 
@@ -478,8 +549,8 @@ mutex 保护对象字段一致性
 例如：
 
 ```text
-kref 解决：obj 会不会在我使用时被 free
-mutex 解决：obj->state 会不会被并发乱改
+kref 解决：refobj 会不会在我使用时被 free
+mutex 解决：refobj->state 会不会被并发乱改
 spinlock 解决：中断/软中断/多 CPU 下的短临界区保护
 RCU 解决：读侧无锁查找与延迟释放
 atomic 解决：单个变量的原子更新
@@ -634,10 +705,10 @@ removed
 
 等状态。
 
-例如设备对象还活着，但设备已经拔出：
+例如某个驱动内部私有对象还活着，但它代表的硬件已经拔出：
 
 ```c
-struct my_device {
+struct my_refobj {
 	struct kref ref;
 	struct mutex lock;
 	bool online;
@@ -647,26 +718,26 @@ struct my_device {
 访问时可能需要：
 
 ```c
-kref_get(&dev->ref);
+kref_get(&refobj->ref);
 
-mutex_lock(&dev->lock);
-if (!dev->online) {
-	mutex_unlock(&dev->lock);
-	kref_put(&dev->ref, my_device_release);
+mutex_lock(&refobj->lock);
+if (!refobj->online) {
+	mutex_unlock(&refobj->lock);
+	kref_put(&refobj->ref, my_refobj_release);
 	return -ENODEV;
 }
 
-/* 设备在线，执行操作 */
-mutex_unlock(&dev->lock);
+/* 硬件在线，执行操作 */
+mutex_unlock(&refobj->lock);
 
-kref_put(&dev->ref, my_device_release);
+kref_put(&refobj->ref, my_refobj_release);
 ```
 
 这里：
 
 ```text
-kref 保证 dev 没被释放
-online 状态判断保证 dev 当前是否可操作
+kref 保证 my_refobj 私有对象没被释放
+online 状态判断保证硬件当前是否可操作
 mutex 保证 online 状态检查和修改一致
 ```
 
@@ -679,14 +750,14 @@ mutex 保证 online 状态检查和修改一致
 假设有一个全局链表：
 
 ```c
-static LIST_HEAD(obj_list);
-static DEFINE_MUTEX(obj_list_lock);
+static LIST_HEAD(refobj_list);
+static DEFINE_MUTEX(refobj_list_lock);
 ```
 
 对象挂在链表里：
 
 ```c
-struct my_obj {
+struct my_refobj {
 	struct kref ref;
 	struct list_head node;
 	int id;
@@ -696,14 +767,14 @@ struct my_obj {
 错误查找模型：
 
 ```c
-struct my_obj *my_obj_lookup(int id)
+struct my_refobj *my_refobj_lookup(int id)
 {
-	struct my_obj *obj;
+	struct my_refobj *refobj;
 
-	list_for_each_entry(obj, &obj_list, node) {
-		if (obj->id == id) {
-			kref_get(&obj->ref);
-			return obj;
+	list_for_each_entry(refobj, &refobj_list, node) {
+		if (refobj->id == id) {
+			kref_get(&refobj->ref);
+			return refobj;
 		}
 	}
 
@@ -714,23 +785,23 @@ struct my_obj *my_obj_lookup(int id)
 这段代码的问题是：
 
 ```text
-如果没有锁保护 obj_list，
-查找过程中 obj 可能已经被别的路径删除并释放。
+如果没有锁保护 refobj_list，
+查找过程中 refobj 可能已经被别的路径删除并释放。
 ```
 
 也就是说：
 
 ```c
-kref_get(&obj->ref);
+kref_get(&refobj->ref);
 ```
 
 本身也需要一个前提：
 
 ```text
-obj 指向的内存此刻仍然是有效对象。
+refobj 指向的内存此刻仍然是有效对象。
 ```
 
-如果 `obj` 已经是悬挂指针，`kref_get()` 就是在已经释放的内存上加引用，毫无意义，甚至更危险。
+如果 `refobj` 已经是悬挂指针，`kref_get()` 就是在已经释放的内存上加引用，毫无意义，甚至更危险。
 
 正确方向是：
 
@@ -759,7 +830,7 @@ kref 保护对象拿到引用之后的生命周期
 对象内部嵌入 `struct kref`：
 
 ```c
-struct my_obj {
+struct my_refobj {
 	struct kref ref;
 	/* real fields */
 };
@@ -815,11 +886,11 @@ timer
 release 是最后引用释放点。
 
 ```c
-static void my_obj_release(struct kref *ref)
+static void my_refobj_release(struct kref *ref)
 {
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
+	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
 
-	kfree(obj);
+	kfree(refobj);
 }
 ```
 
@@ -850,7 +921,7 @@ if (count == 0)
 即使你能读出当前引用数，也不能据此写出可靠逻辑：
 
 ```c
-if (kref_read(&obj->ref) == 1) {
+if (kref_read(&refobj->ref) == 1) {
 	/* 我是不是最后一个？ */
 }
 ```
@@ -920,29 +991,29 @@ kref 只回答“对象还活着吗”，不回答“对象状态正确吗”。
 下面是一个典型错误：
 
 ```c
-struct my_obj {
+struct my_refobj {
 	struct kref ref;
 	int state;
 };
 
-static void my_obj_release(struct kref *ref)
+static void my_refobj_release(struct kref *ref)
 {
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
+	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
 
-	kfree(obj);
+	kfree(refobj);
 }
 
-void start_worker(struct my_obj *obj)
+void start_worker(struct my_refobj *refobj)
 {
-	queue_work(system_wq, &obj->work);
-	kref_get(&obj->ref);
+	queue_work(system_wq, &refobj->work);
+	kref_get(&refobj->ref);
 }
 ```
 
 这段代码的意图是：
 
 ```text
-把 obj 交给 worker 使用，所以给 worker 增加一个引用
+把 refobj 交给 worker 使用，所以给 worker 增加一个引用
 ```
 
 但是顺序错了。
@@ -950,8 +1021,8 @@ void start_worker(struct my_obj *obj)
 错误点在这里：
 
 ```c
-queue_work(system_wq, &obj->work);
-kref_get(&obj->ref);
+queue_work(system_wq, &refobj->work);
+kref_get(&refobj->ref);
 ```
 
 对象先交出去，后 get。
@@ -959,7 +1030,7 @@ kref_get(&obj->ref);
 如果 worker 很快运行，或者另一个路径释放对象，就可能出现：
 
 ```text
-obj 已经被释放
+refobj 已经被释放
 当前路径才执行 kref_get
 ```
 
@@ -968,8 +1039,8 @@ obj 已经被释放
 正确顺序应该是：
 
 ```c
-kref_get(&obj->ref);
-queue_work(system_wq, &obj->work);
+kref_get(&refobj->ref);
+queue_work(system_wq, &refobj->work);
 ```
 
 也就是：
@@ -994,9 +1065,9 @@ queue_work(system_wq, &obj->work);
 例如：
 
 ```c
-static void my_obj_do_something(struct my_obj *obj)
+static void my_refobj_do_something(struct my_refobj *refobj)
 {
-	obj->state = 1;
+	refobj->state = 1;
 }
 ```
 
@@ -1005,11 +1076,11 @@ static void my_obj_do_something(struct my_obj *obj)
 例如：
 
 ```c
-void caller(struct my_obj *obj)
+void caller(struct my_refobj *refobj)
 {
-	/* caller 已经持有 obj 的引用 */
+	/* caller 已经持有 refobj 的引用 */
 
-	my_obj_do_something(obj);
+	my_refobj_do_something(refobj);
 
 	/* caller 仍然持有引用 */
 }
@@ -1020,11 +1091,11 @@ void caller(struct my_obj *obj)
 但是如果函数内部要保存指针：
 
 ```c
-static struct my_obj *global_obj;
+static struct my_refobj *global_refobj;
 
-void remember_obj(struct my_obj *obj)
+void remember_refobj(struct my_refobj *refobj)
 {
-	global_obj = obj;
+	global_refobj = refobj;
 }
 ```
 
@@ -1033,17 +1104,17 @@ void remember_obj(struct my_obj *obj)
 这时必须设计引用规则：
 
 ```c
-void remember_obj(struct my_obj *obj)
+void remember_refobj(struct my_refobj *refobj)
 {
-	kref_get(&obj->ref);
-	global_obj = obj;
+	kref_get(&refobj->ref);
+	global_refobj = refobj;
 }
 ```
 
-后续替换或清理 `global_obj` 时，也必须：
+后续替换或清理 `global_refobj` 时，也必须：
 
 ```c
-kref_put(&global_obj->ref, my_obj_release);
+kref_put(&global_refobj->ref, my_refobj_release);
 ```
 
 所以判断是否需要 get 的关键不是函数层级，而是：
@@ -1069,13 +1140,13 @@ kref_put(&global_obj->ref, my_obj_release);
 例如：
 
 ```c
-/* 当前路径持有 obj 的一个引用 */
-enqueue_obj(obj);
+/* 当前路径持有 refobj 的一个引用 */
+enqueue_refobj(refobj);
 
-/* 从这里开始，当前路径不再访问 obj */
+/* 从这里开始，当前路径不再访问 refobj */
 ```
 
-如果 `enqueue_obj()` 的语义是：
+如果 `enqueue_refobj()` 的语义是：
 
 ```text
 队列接管当前引用
@@ -1084,9 +1155,9 @@ enqueue_obj(obj);
 那么这里不需要：
 
 ```c
-kref_get(&obj->ref);
-enqueue_obj(obj);
-kref_put(&obj->ref, my_obj_release);
+kref_get(&refobj->ref);
+enqueue_refobj(refobj);
+kref_put(&refobj->ref, my_refobj_release);
 ```
 
 这种 get 后马上 put 的写法可能是多余的。
@@ -1094,14 +1165,14 @@ kref_put(&obj->ref, my_obj_release);
 更清晰的写法是：
 
 ```c
-enqueue_obj(obj);
-/* ownership moved to queue, do not touch obj after this point */
+enqueue_refobj(refobj);
+/* ownership moved to queue, do not touch refobj after this point */
 ```
 
 但这个模型有一个严格要求：
 
 ```text
-handoff 之后，当前路径不能再访问 obj。
+handoff 之后，当前路径不能再访问 refobj。
 ```
 
 否则就变成：
@@ -1119,9 +1190,9 @@ handoff 之后，当前路径不能再访问 obj。
 ```c
 /*
  * Transfer our reference to the queue.
- * Do not touch obj after enqueue_obj().
+ * Do not touch refobj after enqueue_refobj().
  */
-enqueue_obj(obj);
+enqueue_refobj(refobj);
 ```
 
 这种注释不是废话，而是生命周期协议的一部分。
@@ -1183,6 +1254,7 @@ kref 不是“计数器 API”，而是 Linux 内核对象生命周期协议。
 锁顺序
 RCU grace period
 业务可用性判断
+设备独占访问和设备安全托管
 ```
 
 所以 `kref` 的正确使用方式是：
@@ -1192,6 +1264,7 @@ RCU grace period
 字段一致性用锁
 查找路径用锁或 RCU
 业务可用性用状态机
+设备访问安全由设备自己的锁和状态规则决定
 释放路径用 release 回调
 ```
 
