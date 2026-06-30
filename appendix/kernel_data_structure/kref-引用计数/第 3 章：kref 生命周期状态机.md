@@ -883,7 +883,7 @@ release 的职责应该是：
 ```
 
 
-### 3.7.3 release 里是否一定 kfree
+### 3.7.3 release 的最终释放方式不一定是 kfree
 
 不一定。
 
