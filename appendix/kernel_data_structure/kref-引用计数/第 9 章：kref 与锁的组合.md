@@ -203,6 +203,10 @@ mutex_unlock(&obj->lock);
 
 对象锁也不一定保护集合结构。
 
+**警告**
+
+> <span style="color:red;">说实话，我完全不认同这个ai总结的小结。不过我又觉得这个标题是需要提醒做到对锁职权分离的。所以保留下来。</span>
+
 例如：
 
 ```c
@@ -302,16 +306,79 @@ remove 路径不能同时 unlink + put 到 release。
 
 ------
 
-### 9.3.2 remove 时：先 unlink，再 put
+### 9.3.2 remove 时：先 unlink，再 put，但必须匹配集合引用
 
 对象从集合中删除时，常见顺序是：
 
 ```text
-先从集合中撤销可见性；
+先从集合中撤销可见性；（避免并发时，被别的地方从列表找到需要被ut的节点。针对最后一个引用释放）
 再释放集合持有的引用。
 ```
 
-示例：
+也就是：
+
+```text
+unlink first, put later.
+```
+
+但是这句话还不完整。
+
+更准确的规则应该是：
+
+```text
+unlink first, put later;
+unlink once, put once.
+```
+
+也就是说：
+
+```text
+只有本次 remove 确实撤销了集合中的可见性，
+才能释放集合持有的那一份引用。
+```
+
+如果对象根本不在集合中，却仍然调用 `kref_put()`，就不是“正常 remove”，而是多释放了一次引用。
+
+------
+
+假设对象结构如下：
+
+```c
+struct my_obj {
+	struct kref ref;
+	struct list_head node;
+	int id;
+};
+```
+
+对象初始化时，`node` 应该先初始化为空链表节点：
+
+```c
+void my_obj_init(struct my_obj *obj)
+{
+	kref_init(&obj->ref);
+	INIT_LIST_HEAD(&obj->node);
+}
+```
+
+如果集合会长期持有对象，那么对象加入集合时，集合应当获得一份引用：
+
+```c
+void my_obj_add(struct my_obj *obj)
+{
+	kref_get(&obj->ref);		/* 集合获得一份引用 */
+
+	mutex_lock(&my_obj_list_lock);
+	list_add(&obj->node, &my_obj_list);
+	mutex_unlock(&my_obj_list_lock);
+}
+```
+
+对应地，移出集合时，集合应该释放这份引用。
+
+------
+
+错误写法：
 
 ```c
 void my_obj_remove(struct my_obj *obj)
@@ -327,52 +394,222 @@ void my_obj_remove(struct my_obj *obj)
 }
 ```
 
-这里的逻辑是：
+这段代码的问题不在于没有检查 `kref_put()` 的返回值。
+
+`kref_put()` 的返回值表示：
 
 ```text
-持锁期间，新的 lookup 不会再找到 obj；
-释放锁之后，obj 已经从集合不可见；
-然后再 put 集合引用。
+这次 put 是否导致引用计数归零，并触发 release。
 ```
 
-如果这次 `kref_put()` 是最后一个引用，就会触发 release。
-
-这是安全的，因为：
+它不能回答：
 
 ```text
-obj 已经不在 list 中；
-新的 lookup 已经找不到它；
-全局集合中不会留下悬挂指针。
+这次 remove 是否真的删除了集合节点？
+这次 put 是否真的对应集合持有的那份引用？
 ```
 
-错误顺序：
+真正的问题是：
+
+```text
+即使 obj->node 已经不在 list 中，
+代码仍然会调用 kref_put()。
+```
+
+这会导致：
+
+```text
+没有 unlink；
+却执行了 put。
+```
+
+也就是：
+
+```text
+没有撤销集合引用；
+却释放了一次集合引用。
+```
+
+如果 `remove` 被重复调用，第二次调用就可能造成引用计数失衡：
+
+```text
+第一次 remove:
+    list_del_init()
+    kref_put()      正确释放集合引用
+
+第二次 remove:
+    list_empty() 为 true
+    没有 list_del_init()
+    仍然 kref_put()  多 put 一次
+```
+
+严重时会导致对象提前释放、UAF 或 double put。
+
+------
+
+更稳妥的写法是记录本次是否真的删除了节点：
 
 ```c
-void my_obj_remove_bad(struct my_obj *obj)
+void my_obj_remove(struct my_obj *obj)
 {
-	kref_put(&obj->ref, my_obj_release);
+	bool removed = false;
 
 	mutex_lock(&my_obj_list_lock);
-	list_del_init(&obj->node);
+
+	if (!list_empty(&obj->node)) {
+		list_del_init(&obj->node);
+		removed = true;
+	}
+
 	mutex_unlock(&my_obj_list_lock);
+
+	if (removed)
+		kref_put(&obj->ref, my_obj_release);
 }
 ```
 
-问题是：
+这个版本表达的语义是：
 
 ```text
-kref_put() 可能释放 obj；
-后续 list_del_init(&obj->node) 访问释放内存；
-其他 lookup 还可能从 list 中看到已释放对象。
+只有本次确实从集合中 unlink 了 obj，
+才释放集合持有的那份引用。
 ```
 
-所以 remove 的基本规则是：
+流程如下：
+
+```mermaid
+flowchart TD
+    A["my_obj_remove(obj)"] --> B["加 my_obj_list_lock"]
+    B --> C{"obj->node 是否在集合中?"}
+
+    C -- "是" --> D["list_del_init(&obj->node)"]
+    D --> E["removed = true"]
+    E --> F["解锁"]
+    F --> G["kref_put(&obj->ref, release)"]
+
+    C -- "否" --> H["不删除节点"]
+    H --> I["removed = false"]
+    I --> J["解锁"]
+    J --> K["不调用 kref_put"]
+```
+
+这时生命周期关系是匹配的：
 
 ```text
-unlink first, put later.
+list_del_init() 成功一次；
+集合引用 put 一次。
 ```
 
 ------
+
+不过，工程里还要区分两种 remove 语义。
+
+第一种是**幂等 remove**。
+
+也就是允许重复调用：
+
+```text
+对象在集合中：删除并 put；
+对象不在集合中：什么也不做。
+```
+
+这种情况下可以使用 `removed` 标志：
+
+```c
+void my_obj_remove(struct my_obj *obj)
+{
+	bool removed = false;
+
+	mutex_lock(&my_obj_list_lock);
+
+	if (!list_empty(&obj->node)) {
+		list_del_init(&obj->node);
+		removed = true;
+	}
+
+	mutex_unlock(&my_obj_list_lock);
+
+	if (removed)
+		kref_put(&obj->ref, my_obj_release);
+}
+```
+
+第二种是**非幂等 remove**。
+
+也就是调用者必须保证：
+
+```text
+obj 当前一定在集合中；
+remove 只能调用一次；
+重复 remove 是调用路径 bug。
+```
+
+这种情况下，不应该悄悄吞掉错误，而应该暴露错误：
+
+```c
+void my_obj_remove(struct my_obj *obj)
+{
+	mutex_lock(&my_obj_list_lock);
+
+	WARN_ON_ONCE(list_empty(&obj->node));
+	list_del_init(&obj->node);
+
+	mutex_unlock(&my_obj_list_lock);
+
+	kref_put(&obj->ref, my_obj_release);
+}
+```
+
+这个版本的含义是：
+
+```text
+remove 必须对应一个真实存在的集合引用；
+如果 obj 不在集合中，说明调用路径已经错了。
+```
+
+------
+
+无论采用哪种写法，都必须保证所有修改 `obj->node` 的路径使用同一把锁保护：
+
+```text
+lookup；
+add；
+remove；
+遍历；
+销毁前 unlink；
+```
+
+否则一个 CPU 判断 `!list_empty()` 的同时，另一个 CPU 也可能删除同一个节点，最终仍然会出现重复 unlink 或重复 put。
+
+所以集合删除的核心规则是：
+
+```text
+集合可见性和集合引用必须绑定。
+```
+
+可以总结成表：
+
+| 操作              | 集合可见性               | 集合引用            |
+| ----------------- | ------------------------ | ------------------- |
+| `list_add()`      | 对 lookup 可见           | 集合获得 1 份引用   |
+| `list_del_init()` | 对 lookup 不可见         | 集合释放 1 份引用   |
+| 没有 unlink       | 集合状态未变化           | 不应该 put 集合引用 |
+| 重复 remove       | 第二次没有集合引用可释放 | 再 put 就是 bug     |
+
+最终结论：
+
+```text
+remove 的顺序是 unlink first, put later；
+但 put 的前提是本次 remove 确实撤销了集合持有的引用。
+```
+
+更短的工程口诀是：
+
+```text
+unlink once, put once.
+```
+
+---
 
 ### 9.3.3 put 前后访问字段的边界
 
@@ -661,38 +898,247 @@ lookup 又从 list 中找到悬挂对象。
 
 ------
 
-### 9.3.7 对象状态和锁组合
+### 9.3.7 对象状态、集合锁与对象锁组合
 
-很多对象需要状态机。
+很多 `kref` 对象除了引用计数之外，还会有状态字段。
 
-例如：
+但是状态字段不能随便设计。
 
-```c
-enum my_obj_state {
-	OBJ_NEW,
-	OBJ_LIVE,
-	OBJ_DYING,
-	OBJ_DEAD,
-};
+在工程里，至少要先区分两类状态：
+
+```text
+生命周期状态：
+    描述对象是否已经发布、是否还能被 lookup 找到、是否正在退出。
+
+业务运行状态：
+    描述对象内部业务是否空闲、运行、停止、出错。
 ```
 
-状态字段通常要由锁保护：
+这两类状态的保护方式不同。
+
+生命周期状态通常和集合关系绑定。
+业务运行状态通常和对象内部字段绑定。
+
+因此可以把对象设计成：
 
 ```c
+enum my_obj_life_state {
+	MY_OBJ_NEW,
+	MY_OBJ_LIVE,
+	MY_OBJ_DYING,
+	MY_OBJ_DEAD,
+};
+
+enum my_obj_run_state {
+	MY_OBJ_IDLE,
+	MY_OBJ_RUNNING,
+	MY_OBJ_STOPPING,
+	MY_OBJ_ERROR,
+};
+
 struct my_obj {
+	int id;
+
 	struct kref ref;
-	struct mutex lock;
+
+	/*
+	 * node 和 life_state 由 my_obj_list_lock 保护。
+	 *
+	 * 它们共同表达：
+	 *     对象是否在全局集合中；
+	 *     对象是否允许被新的 lookup 找到。
+	 */
 	struct list_head node;
-	enum my_obj_state state;
+	enum my_obj_life_state life_state;
+
+	/*
+	 * run_state 和其他业务字段由 obj->lock 保护。
+	 *
+	 * 它们表达：
+	 *     对象内部业务是否正在运行；
+	 *     对象内部资源是否处于一致状态。
+	 */
+	struct mutex lock;
+	enum my_obj_run_state run_state;
+
+	/* 其他业务字段 */
 };
 ```
 
-lookup 时只允许拿到 `OBJ_LIVE` 对象：
+这里有三条分工：
+
+| 机制               | 保护内容                       |
+| ------------------ | ------------------------------ |
+| `my_obj_list_lock` | 全局链表、`node`、`life_state` |
+| `obj->lock`        | 对象内部业务字段、`run_state`  |
+| `kref`             | 对象内存生命周期               |
+
+一句话：
+
+```text
+list_lock 决定对象能不能被找到；
+obj->lock 决定对象内部业务状态是否一致；
+kref 决定对象内存能不能活到使用结束。
+```
+
+------
+
+#### 1. 生命周期状态必须和集合动作绑定
+
+如果 `life_state` 表示对象能不能被 lookup 找到，那么它就应该和 `node` 放在同一个保护域里。
+
+也就是说：
+
+```text
+MY_OBJ_LIVE 绑定 list_add()；
+MY_OBJ_DYING 绑定 list_del_init()。
+```
+
+不要把 `life_state` 当成一个可以随便单独修改的字段。
+
+生命周期流转如下：
+
+```mermaid
+stateDiagram-v2
+    [*] --> MY_OBJ_NEW: alloc + kref_init
+
+    MY_OBJ_NEW --> MY_OBJ_LIVE: publish
+    note right of MY_OBJ_LIVE
+        life_state = MY_OBJ_LIVE
+        list_add()
+        新 lookup 可以找到对象
+    end note
+
+    MY_OBJ_LIVE --> MY_OBJ_DYING: remove
+    note right of MY_OBJ_DYING
+        life_state = MY_OBJ_DYING
+        list_del_init()
+        新 lookup 不再找到对象
+        旧引用仍然可以继续存在
+    end note
+
+    MY_OBJ_DYING --> MY_OBJ_DEAD: last kref_put
+    note right of MY_OBJ_DEAD
+        release()
+        kfree()
+    end note
+
+    MY_OBJ_DEAD --> [*]
+```
+
+这里要注意：
+
+```text
+对象进入 MY_OBJ_DYING，不代表对象内存已经释放；
+它只代表对象已经从全局集合撤销，不再接受新的 lookup。
+```
+
+真正释放发生在最后一个引用释放之后。
+
+------
+
+#### 2. 创建对象：只有初始引用，还没有发布
+
+创建对象时，调用者拿到初始引用。
+
+```c
+struct my_obj *my_obj_alloc(int id)
+{
+	struct my_obj *obj;
+
+	obj = kzalloc(sizeof(*obj), GFP_KERNEL);
+	if (!obj)
+		return NULL;
+
+	obj->id = id;
+
+	kref_init(&obj->ref);
+
+	INIT_LIST_HEAD(&obj->node);
+	obj->life_state = MY_OBJ_NEW;
+
+	mutex_init(&obj->lock);
+	obj->run_state = MY_OBJ_IDLE;
+
+	return obj;
+}
+```
+
+此时对象状态是：
+
+```text
+调用者持有初始引用；
+对象还没有进入全局链表；
+lookup 找不到它；
+life_state == MY_OBJ_NEW。
+```
+
+------
+
+#### 3. 发布对象：让全局集合持有一份引用
+
+如果对象加入全局链表，并且之后可以通过 lookup 找到，那么全局链表本身应该持有一份引用。
+
+发布动作可以写成：
+
+```c
+int my_obj_publish(struct my_obj *obj)
+{
+	int ret = 0;
+
+	/*
+	 * 调用者必须已经持有 obj 的有效引用。
+	 */
+
+	mutex_lock(&my_obj_list_lock);
+
+	if (obj->life_state != MY_OBJ_NEW) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (!list_empty(&obj->node)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	/*
+	 * 从这里开始，list 持有一份引用。
+	 * 只要 obj 还在 my_obj_list 中，这份引用就托住对象内存。
+	 */
+	kref_get(&obj->ref);
+
+	obj->life_state = MY_OBJ_LIVE;
+	list_add(&obj->node, &my_obj_list);
+
+out:
+	mutex_unlock(&my_obj_list_lock);
+	return ret;
+}
+```
+
+这个函数表达的是一个完整动作：
+
+```text
+publish =
+    list 获得引用
+    life_state = MY_OBJ_LIVE
+    list_add()
+```
+
+这三件事应该在同一个集合锁保护下完成。
+
+------
+
+#### 4. lookup：只从集合中取得 LIVE 对象
+
+因为 `node` 和 `life_state` 都由 `my_obj_list_lock` 保护，所以 lookup 不需要拿 `obj->lock`。
 
 ```c
 struct my_obj *my_obj_lookup_get_live(int id)
 {
 	struct my_obj *obj;
+	struct my_obj *ret = NULL;
 
 	mutex_lock(&my_obj_list_lock);
 
@@ -700,69 +1146,17 @@ struct my_obj *my_obj_lookup_get_live(int id)
 		if (obj->id != id)
 			continue;
 
-		if (obj->state != OBJ_LIVE)
-			break;
-
-		kref_get(&obj->ref);
-		mutex_unlock(&my_obj_list_lock);
-		return obj;
-	}
-
-	mutex_unlock(&my_obj_list_lock);
-	return NULL;
-}
-```
-
-这里有一个设计点：
-
-```text
-state 由谁保护？
-```
-
-如果 `state` 由 `my_obj_list_lock` 保护，那么上面的代码成立。
-
-如果 `state` 由 `obj->lock` 保护，那么 lookup 时要考虑锁顺序：
-
-```text
-先拿 list_lock 找到对象；
-再拿 obj->lock 检查 state；
-然后 get；
-再释放锁。
-```
-
-但是这个组合要非常小心。
-
-因为在拿 `obj->lock` 之前，必须保证 `obj` 没有被释放。
-
-通常依赖：
-
-```text
-对象在 list 中时，list 持有引用；
-list_lock 持有期间，对象不会被 unlink + put；
-所以临界区内 obj 内存有效。
-```
-
-示例：
-
-```c
-struct my_obj *my_obj_lookup_get_live(int id)
-{
-	struct my_obj *obj, *ret = NULL;
-
-	mutex_lock(&my_obj_list_lock);
-
-	list_for_each_entry(obj, &my_obj_list, node) {
-		if (obj->id != id)
-			continue;
-
-		mutex_lock(&obj->lock);
-
-		if (obj->state == OBJ_LIVE) {
+		if (obj->life_state == MY_OBJ_LIVE) {
+			/*
+			 * obj 仍在 list 中；
+			 * list 持有对象引用；
+			 * my_obj_list_lock 持有期间，obj 不会被 unlink + put；
+			 * 所以这里 kref_get 是安全的。
+			 */
 			kref_get(&obj->ref);
 			ret = obj;
 		}
 
-		mutex_unlock(&obj->lock);
 		break;
 	}
 
@@ -772,23 +1166,438 @@ struct my_obj *my_obj_lookup_get_live(int id)
 }
 ```
 
-这个写法成立的前提是锁顺序固定：
+这个函数的语义是：
 
 ```text
-先 list_lock；
-再 obj->lock。
+如果对象仍然对 lookup 可见，就返回一份新的引用；
+如果对象不存在，或者已经从集合中撤销，就返回 NULL。
 ```
 
-其他路径不能反过来：
+调用者拿到对象后，必须负责释放引用：
+
+```c
+obj = my_obj_lookup_get_live(id);
+if (!obj)
+	return -ENOENT;
+
+ret = my_obj_do_something(obj);
+
+kref_put(&obj->ref, my_obj_release);
+```
+
+这里的 `LIVE` 只表示：
 
 ```text
-先 obj->lock；
-再 list_lock。
+对象仍然在全局集合中；
+新的 lookup 允许拿到它。
 ```
 
-否则可能死锁。
+它不表示：
+
+```text
+对象内部业务一定正在运行；
+对象一定可以执行任意操作。
+```
+
+业务状态要在后续操作里用 `obj->lock` 判断。
 
 ------
+
+#### 5. remove：从集合中撤销对象
+
+如果删除入口是按 `id` 删除，那么函数应该写成 `remove_by_id()`。
+
+它和 `lookup_get_live()` 是对称的：
+一个负责从集合中取得引用，另一个负责从集合中撤销可见性。
+
+```c
+int my_obj_remove_by_id(int id)
+{
+	struct my_obj *obj;
+	struct my_obj *obj_to_put = NULL;
+	int ret = -ENOENT;
+
+	mutex_lock(&my_obj_list_lock);
+
+	list_for_each_entry(obj, &my_obj_list, node) {
+		if (obj->id != id)
+			continue;
+
+		if (obj->life_state != MY_OBJ_LIVE) {
+			ret = -EINVAL;
+			break;
+		}
+
+		/*
+		 * remove 是一个完整动作：
+		 *
+		 *     life_state = MY_OBJ_DYING
+		 *     list_del_init()
+		 *
+		 * 这两件事都由 my_obj_list_lock 保护。
+		 */
+         mutex_lock(&obj->lock);
+		obj->life_state = MY_OBJ_DYING;
+		list_del_init(&obj->node); // 防止外部对象通过node查找链表，所以和状态修改合一起
+         mutex_unlock(&obj->lock);
+
+		/*
+		 * list 原本持有一份引用。
+		 * 从 list 删除后，这份引用需要释放。
+		 *
+		 * 先记录下来，等释放 list_lock 后再 put。
+		 */
+		obj_to_put = obj;
+		ret = 0;
+		break;
+	}
+
+	mutex_unlock(&my_obj_list_lock);
+
+	if (obj_to_put)
+		kref_put(&obj_to_put->ref, my_obj_release);
+
+	return ret;
+}
+```
+
+这里没有拿 `obj->lock`。
+
+原因是 remove 只处理集合可见性：
+
+```text
+life_state；
+node；
+list 持有的引用。
+```
+
+这些都归 `my_obj_list_lock` 管，不归 `obj->lock` 管。
+
+流程如下：
+
+```mermaid
+flowchart TD
+    A[remove_by_id 开始] --> B[拿 my_obj_list_lock]
+    B --> C[遍历 my_obj_list]
+    C --> D{id 匹配?}
+    D -- 否 --> C
+    D -- 是 --> E{life_state == MY_OBJ_LIVE?}
+    E -- 否 --> F[返回错误]
+    E -- 是 --> G[life_state = MY_OBJ_DYING]
+    G --> H[list_del_init 撤销集合可见性]
+    H --> I[记录 obj_to_put]
+    I --> J[释放 my_obj_list_lock]
+    F --> J
+    J --> K{obj_to_put != NULL?}
+    K -- 是 --> L[kref_put 释放 list 引用]
+    K -- 否 --> M[结束]
+    L --> M
+```
+
+这就是常见纪律：
+
+```text
+锁内撤销可见性；
+锁外释放集合引用。
+```
+
+`kref_put()` 放在锁外，是因为它可能触发最后一个引用释放，从而进入 `release()`。
+
+------
+
+#### 6. lookup 和 remove 的并发关系
+
+这个模型下，lookup 和 remove 只需要靠 `my_obj_list_lock` 串行化。
+
+##### lookup 先发生
+
+```mermaid
+sequenceDiagram
+    participant L as lookup 线程
+    participant R as remove 线程
+    participant Lock as my_obj_list_lock
+    participant Obj as obj
+
+    L->>Lock: mutex_lock
+    L->>Obj: 在 list 中找到 obj
+    L->>Obj: 检查 life_state == MY_OBJ_LIVE
+    L->>Obj: kref_get 获取调用者引用
+    L->>Lock: mutex_unlock
+
+    R->>Lock: mutex_lock
+    R->>Obj: life_state = MY_OBJ_DYING
+    R->>Obj: list_del_init
+    R->>Lock: mutex_unlock
+    R->>Obj: kref_put 释放 list 引用
+```
+
+这种情况下：
+
+```text
+lookup 已经拿到了自己的引用；
+remove 只是撤销集合可见性；
+对象不会因为 remove 立刻释放。
+```
+
+只要 lookup 调用者还没有 `kref_put()`，对象内存就还在。
+
+------
+
+##### remove 先发生
+
+```mermaid
+sequenceDiagram
+    participant R as remove 线程
+    participant L as lookup 线程
+    participant Lock as my_obj_list_lock
+    participant Obj as obj
+
+    R->>Lock: mutex_lock
+    R->>Obj: life_state = MY_OBJ_DYING
+    R->>Obj: list_del_init
+    R->>Lock: mutex_unlock
+    R->>Obj: kref_put 释放 list 引用
+
+    L->>Lock: mutex_lock
+    L->>Obj: 遍历 my_obj_list
+    L->>Obj: 找不到 obj
+    L->>Lock: mutex_unlock
+    L-->>L: 返回 NULL
+```
+
+这种情况下：
+
+```text
+remove 已经撤销集合可见性；
+新的 lookup 找不到对象；
+不会再产生新的外部引用。
+```
+
+------
+
+#### 7. 已有对象引用时，业务状态由对象锁保护
+
+`obj->lock` 不参与 lookup 可见性判断。
+
+它用于对象内部业务操作。
+
+例如启动对象：
+
+```c
+int my_obj_start(struct my_obj *obj)
+{
+	int ret = 0;
+
+	/*
+	 * 调用者必须已经持有 obj 引用。
+	 */
+
+	mutex_lock(&obj->lock);
+
+	if (obj->run_state != MY_OBJ_IDLE) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	obj->run_state = MY_OBJ_RUNNING;
+
+	/*
+	 * 这里执行真实启动动作，例如：
+	 *
+	 *     初始化硬件；
+	 *     启动队列；
+	 *     提交 work；
+	 *     打开 DMA；
+	 *     等等。
+	 */
+
+out:
+	mutex_unlock(&obj->lock);
+	return ret;
+}
+```
+
+停止对象：
+
+```c
+int my_obj_stop(struct my_obj *obj)
+{
+	int ret = 0;
+
+	/*
+	 * 调用者必须已经持有 obj 引用。
+	 */
+
+	mutex_lock(&obj->lock);
+
+	if (obj->run_state != MY_OBJ_RUNNING) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	obj->run_state = MY_OBJ_STOPPING;
+
+	/*
+	 * 这里执行真实停止动作，例如：
+	 *
+	 *     停止提交新请求；
+	 *     停 DMA；
+	 *     flush work；
+	 *     清理内部队列；
+	 *     等等。
+	 */
+
+	obj->run_state = MY_OBJ_IDLE;
+
+out:
+	mutex_unlock(&obj->lock);
+	return ret;
+}
+```
+
+这里修改 `run_state` 是合理的。
+
+因为它不是孤立改状态，而是和真实业务动作绑定：
+
+```text
+IDLE -> RUNNING：
+    对应 start 动作。
+
+RUNNING -> STOPPING -> IDLE：
+    对应 stop 动作。
+```
+
+------
+
+#### 8. release：最后引用释放后的销毁点
+
+`release` 是最后引用释放后的销毁点。
+
+它不负责把对象从全局链表中删除。
+
+对象进入 `release` 前，应该已经满足：
+
+```text
+对象不再对新的 lookup 可见；
+对象已经不在全局 list 中；
+没有其他引用持有者。
+```
+
+示例：
+
+```c
+static void my_obj_release(struct kref *ref)
+{
+	struct my_obj *obj;
+
+	obj = container_of(ref, struct my_obj, ref);
+
+	/*
+	 * release 不是 remove。
+	 * 到这里时，对象应该已经从全局集合撤销。
+	 */
+	WARN_ON_ONCE(!list_empty(&obj->node));
+	WARN_ON_ONCE(obj->life_state == MY_OBJ_LIVE);
+
+	obj->life_state = MY_OBJ_DEAD;
+
+	mutex_destroy(&obj->lock);
+
+	kfree(obj);
+}
+```
+
+这里的分工是：
+
+```text
+remove 负责撤销集合可见性；
+kref_put 负责释放某个持有者的引用；
+release 负责最后销毁对象。
+```
+
+不要把这三件事混成一个动作。
+
+------
+
+#### 9. 整体关系图
+
+```mermaid
+flowchart TD
+    A[my_obj_alloc] --> B[kref_init 初始引用]
+    B --> C[life_state = MY_OBJ_NEW]
+    C --> D[run_state = MY_OBJ_IDLE]
+
+    D --> E[my_obj_publish]
+    E --> F[kref_get list 引用]
+    F --> G[life_state = MY_OBJ_LIVE]
+    G --> H[list_add 到 my_obj_list]
+
+    H --> I[my_obj_lookup_get_live]
+    I --> J[kref_get 调用者引用]
+    J --> K[业务操作]
+    K --> L[kref_put 调用者引用]
+
+    H --> M[my_obj_remove_by_id]
+    M --> N[life_state = MY_OBJ_DYING]
+    N --> O[list_del_init]
+    O --> P[kref_put list 引用]
+
+    L --> Q{最后一个引用?}
+    P --> Q
+
+    Q -- 否 --> R[对象继续存在]
+    Q -- 是 --> S[my_obj_release]
+    S --> T[life_state = MY_OBJ_DEAD]
+    T --> U[kfree]
+```
+
+这张图里有三条线：
+
+```text
+发布线：
+    alloc -> publish -> list 可见
+
+查找线：
+    lookup -> kref_get -> 使用 -> kref_put
+
+删除线：
+    remove -> list 不可见 -> put list 引用 -> release
+```
+
+三条线不要混。
+
+------
+
+#### 10. 本节结论
+
+对象状态和锁组合时，先把状态语义分清楚。
+
+如果状态表达的是集合可见性：
+
+```text
+它应该和 list node 一起由 list_lock 保护；
+publish 时 state = LIVE + list_add；
+remove 时 state = DYING + list_del_init；
+lookup 在 list_lock 内完成查找、状态判断、kref_get。
+```
+
+如果状态表达的是对象内部业务：
+
+```text
+它应该由 obj->lock 保护；
+调用者必须已经持有对象引用；
+状态变化应该绑定 start、stop、reset、error 等真实动作。
+```
+
+最后总结：
+
+```text
+list_lock 保护“对象是否能被找到”；
+obj->lock 保护“对象内部状态是否一致”；
+kref 保护“对象内存是否仍然存在”。
+```
+
+---
 
 ### 9.3.8 锁顺序问题
 
@@ -947,7 +1756,9 @@ kref_put_mutex()/kref_put_lock() 是否真的比普通模板更清楚。
 
 ### 9.4.1 release 和锁的基本关系
 
-`release` 是最后一个引用释放时调用的回调。
+`release` 是最后一个引用释放时调用的回调。不同于驱动的remove，这里是说在应用过程中的数据，它可以被并发访问，如果使用了kref，那么就用release做内存回收。
+
+如果是驱动的状态清除，肯定只能够使用驱动的xxx_exit()接口。
 
 基本形式：
 
@@ -982,7 +1793,7 @@ release 里能不能访问全局集合？
 
 如果最后一个 put 在进程上下文，release 就在进程上下文。
 
-如果最后一个 put 在中断上下文，release 就在中断上下文。
+如果最后一个 put 在中断上下文，release 就在中断上下文。（中断中的release 无锁，也不可睡眠）
 
 如果最后一个 put 时持有某把锁，release 也可能在持锁状态下执行。
 
