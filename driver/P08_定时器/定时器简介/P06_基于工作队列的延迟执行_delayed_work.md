@@ -1,4 +1,4 @@
-# 第6章 基于工作队列的延迟执行：`delayed_work`
+# 第6章_基于工作队列的延迟执行_delayed_work
 
 > **章节内容说明**
 >  前五章我们已经把时间表示、基础/高精度定时器的边界讲清了：哪里可以睡、哪里不能睡，哪些场景对精度极端敏感，哪些只是需要“稍后再做”。本章承接这一脉络，讨论驱动里极为常见的一类需求——**“延迟一段时间后，在可睡眠上下文中做事”**。
@@ -6,7 +6,7 @@
 
 ------
 
-## 6.1 “需要睡”的延迟任务：为什么落到 `delayed_work`
+## 6.1_需要睡_的延迟任务_为什么落到_delayed_work
 
 **引入**
  很多驱动在中断中只得到一个“线索”：某个 GPIO 发生了边沿、某个控制器报告了“可能就绪”。真正要做的工作却并不适合在中断或软中断里完成：需要访问 I2C/SPI，可能要获取会睡眠的互斥锁，甚至还要等待一个状态稳定窗口（去抖）。这类工作具有两点共性：**允许睡眠**、**可以延后**。若仍强行放在 `timer_list`/`hrtimer` 回调里，回调一旦触发 `might_sleep()`，就会把系统拖入不确定状态。
@@ -22,16 +22,16 @@
 
 ------
 
-## 6.2 数据结构与调度路径：从“怎么看”到“怎么写”
+## 6.2_数据结构与调度路径_从_怎么看_到_怎么写
 
-### 6.2.1 数据结构视角（你需要知道的最少集合）
+### 6.2.1_数据结构视角(你需要知道的最少集合)
 
 - `struct delayed_work`：外观上是一份 `work_struct`，内部携带一个私有 `timer_list`。
 - 典型回溯路径：
    `work_struct*` → `to_delayed_work()` → `container_of()` 回到你的 `struct mydev`。
 - 这意味着：**回调函数形参类型是 `struct work_struct\*`**；若要触达你的设备数据，按上述两步安全回溯。
 
-### 6.2.2 初始化与队列选择：系统队列 vs 自建队列
+### 6.2.2_初始化与队列选择_系统队列_vs_自建队列
 
 **A. 用系统队列（简单起步）**
 
@@ -80,7 +80,7 @@ INIT_DEFERRABLE_WORK(&demo_dwork, demo_workfn);
 
 - “可以再晚些”的非关键任务，如统计/清理。**不要**用于有时限约束的周期逻辑。
 
-### 6.2.3 调度与周期：三种常用写法
+### 6.2.3_调度与周期_三种常用写法
 
 **一次性延迟**（只执行一次）
 
@@ -115,7 +115,7 @@ mod_delayed_work(md->wq, &md->poll_work, msecs_to_jiffies(next));
 
 > 这段在 §6.5 会扩展成完整的“退避/重试”范式。
 
-### 6.2.4 接口语义表（含“为什么”与“何时用”）
+### 6.2.4_接口语义表(含_为什么_与_何时用)
 
 | 接口                                 | 核心语义                                    | 何时用                                   | 为什么                       |
 | ------------------------------------ | ------------------------------------------- | ---------------------------------------- | ---------------------------- |
@@ -131,18 +131,18 @@ mod_delayed_work(md->wq, &md->poll_work, msecs_to_jiffies(next));
 
 ------
 
-## 6.3 退出与取消：把“停机”写成代码，不留口子
+## 6.3_退出与取消_把_停机_写成代码_不留口子
 
 **承转**
  许多驱动崩溃都不是发生在“功能在跑”的时候，而是发生在“功能要停”的时候：资源被回收，工作还在路上，下一次周期又被悄悄排上了日程。预防这种崩溃只有一条路径：**同步取消**。
 
-### 6.3.1 三个必须“同步取消”的节点
+### 6.3.1_三个必须_同步取消_的节点
 
 1. **`remove()`/出错回滚**：释放 GPIO/clk/内存前，`cancel_delayed_work_sync()` 保证回调不再运行。
 2. **`suspend()`**：系统或设备挂起时，停止一切定时工作，避免唤醒链路被意外触发；`resume()` 再按策略恢复。
 3. **销毁自建 wq**：依次 `cancel_delayed_work_sync()` → `destroy_workqueue()`，先停再拆队列。
 
-### 6.3.2 反例→复现→正例：把风险讲透
+### 6.3.2_反例_to_复现_to_正例_把风险讲透
 
 **反例（错误示范）**
  下面的 `remove()` 只做了 `flush`，回调末尾还有周期重启：
@@ -181,7 +181,7 @@ static int good_remove(struct platform_device *pdev)
 }
 ```
 
-### 6.3.3 与 devres 配合（把停机动作资源化）
+### 6.3.3_与_devres_配合(把停机动作资源化)
 
 没有通用的 `devm_delayed_work_*`。用 `devm_add_action_or_reset()` 把“同步取消 + 销毁 wq”注册为回滚动作：
 
@@ -218,18 +218,18 @@ static int my_probe(struct platform_device *pdev)
 
 ------
 
-## 6.4 与 `timer_list` / `hrtimer` 的取舍：把边界落回具体代码
+## 6.4_与_timer_list_/_hrtimer_的取舍_把边界落回具体代码
 
 **承接动机**
  选择错误的机制，往往不是因为你不懂接口，而是因为没有把“上下文限制”映射回“代码片段”。下面用可比对的片段把三者边界钉住。
 
-### 6.4.1 不能做什么（负面清单更有用）
+### 6.4.1_不能做什么(负面清单更有用)
 
 - **`timer_list` 回调**：**不能睡**，**不能**调用 `i2c_transfer()`、`gpiod_get_value_cansleep()`、`mutex_lock()`、`msleep()`；
 - **`hrtimer` 回调**：同样**不能睡**，且回调必须极短（否则影响全局时序）；
 - **`delayed_work` 回调**：可睡，但**不要**试图以它实现“亚毫秒相位对齐”的任务（抖动不可控）。
 
-### 6.4.2 三段对照代码（同一需求的三种落地）
+### 6.4.2_三段对照代码(同一需求的三种落地)
 
 **反例：把 I2C 放进 `timer_list` 回调**
 
@@ -275,7 +275,7 @@ INIT_DELAYED_WORK(&dw, slow_fn);
 queue_delayed_work(wq, &dw, msecs_to_jiffies(30));
 ```
 
-### 6.4.3 一张表收束选择逻辑
+### 6.4.3_一张表收束选择逻辑
 
 | 需求要点         | 推荐机制                      | 说明                       |
 | ---------------- | ----------------------------- | -------------------------- |
@@ -285,7 +285,7 @@ queue_delayed_work(wq, &dw, msecs_to_jiffies(30));
 
 ------
 
-## 6.x 可视化：`delayed_work` 触发到执行的链路
+## 6.5_x_可视化_delayed_work_触发到执行的链路
 
 ```mermaid
 flowchart TD
@@ -301,7 +301,7 @@ flowchart TD
 
 ------
 
-## 6.x 示例（与下节衔接）：一次性/固定周期最小模板
+## 6.6_x_示例(与下节衔接)_一次性/固定周期最小模板
 
 > 为了让后续“轮询、退避、重试”可以直接叠加，这里把最小模板写成可复用的骨架。下一批的 **§6.5** 会把它们扩展为完整范式，并与 `demo_led_key_int@0` 的去抖参数联动。
 
@@ -382,7 +382,7 @@ static void dwork_periodic_stop(struct dwork_periodic *p)
 
 ------
 
-## 6.x 调试与验证（为下一批的 6.6 铺垫）
+## 6.7_x_调试与验证(为下一批的_6.6_铺垫)
 
 - **确认是否真正执行**：在回调入口与出口打印 `ktime_get()` 时间戳；或启用 tracepoints：`workqueue:*` 与 `timer:*`。
 - **验证停机有效**：在 `remove()` 里先打点，再 `cancel_delayed_work_sync()`，确认其后不再进入回调。
@@ -392,13 +392,13 @@ static void dwork_periodic_stop(struct dwork_periodic *p)
 
 ------
 
-## 6.5 典型驱动场景：轮询、退避、重试
+## 6.8_典型驱动场景_轮询_退避_重试
 
 ------
 
-### 6.5.1 轮询（Polling）：当中断不足以表达“稳定状态”
+### 6.8.1_轮询(Polling)_当中断不足以表达_稳定状态
 
-#### 1 场景与目标
+#### (1)_1_场景与目标
 
 - **问题**：下降沿中断仅表示“曾经发生变化”，并不等价于“当前已稳定为按下”。机械抖动、电气毛刺、门限漂移都会造成“**中断 ≠ 稳态**”。
 - **目标**：在**可睡上下文**中引入一个**稳定判决窗口**（例如 20–30 ms），到点再做一次或两次读取，以**稳定值**为准触发业务；本例业务是“**按下→翻转 LED**”。
@@ -407,7 +407,7 @@ static void dwork_periodic_stop(struct dwork_periodic *p)
 
 ------
 
-#### 2 机制与设计
+#### (2)_2_机制与设计
 
 - **触发-评估分离**
    1）**线程化中断**（可睡）只进行两件事：
@@ -423,7 +423,7 @@ static void dwork_periodic_stop(struct dwork_periodic *p)
 
 ------
 
-#### 3 设备树映射（你的节点）
+#### (3)_3_设备树映射(你的节点)
 
 ```dts
 demo_led_key_int: led_key_int@0 {
@@ -446,7 +446,7 @@ demo_led_key_int: led_key_int@0 {
 
 ------
 
-#### 4 驱动示例（可直接编译上板）
+#### (4)_4_驱动示例(可直接编译上板)
 
 > 文件：`drivers/demo/demo_key_dw_min.c`
 >  关键点：**下降沿**触发、**线程化中断里即时翻转**（获得“跟手”手感）、**`delayed_work` 到点判稳并可能回滚**、**窗口内合并**。
@@ -644,7 +644,7 @@ MODULE_DESCRIPTION("Minimal debounce using delayed_work: instant toggle + delaye
 
 ------
 
-#### 5 执行路径可视化
+#### (5)_5_执行路径可视化
 
 ```mermaid
 sequenceDiagram
@@ -671,7 +671,7 @@ sequenceDiagram
 
 ------
 
-#### 6 上板验证与调参
+#### (6)_6_上板验证与调参
 
 - **最小实验**
    1）`insmod demo_key_dw_min.ko`；
@@ -684,7 +684,7 @@ sequenceDiagram
 
 ------
 
-#### 7 常见坑与对策
+#### (7)_7_常见坑与对策
 
 - **电平触发导致“卡顿”**：务必使用**下降沿**，不要用 `IRQF_TRIGGER_LOW`。
 - **窗口内多次触发**：用 `in_window` 合并；窗口结束时再清零。
@@ -693,7 +693,7 @@ sequenceDiagram
 
 ------
 
-#### 8 小结
+#### (8)_8_小结
 
 - 当“**边沿中断不足以表达稳定状态**”时，引入一个**稳定判决窗口**是必要的；
 - `timer_list/hrtimer` 的回调不可睡，不适合在窗口到点内做 `*_cansleep()` 读取或 `msleep()` 复采样；
@@ -704,9 +704,9 @@ sequenceDiagram
 
 ------
 
-### 6.5.2 指数退避（Backoff）：在失败压力下自我降噪
+### 6.8.2_指数退避(Backoff)_在失败压力下自我降噪
 
-#### 1 场景与目标
+#### (1)_1_场景与目标
 
 当**单次消抖窗口**内出现密集抖动（重复边沿风暴）时，如果仍以固定窗口处理，要么**手感受损**（窗口过大），要么**CPU 频繁被打扰**（窗口过小）。本节采用**门阀 + delayed_work**作为基础框架，再叠加**指数退避**：
 
@@ -714,7 +714,7 @@ sequenceDiagram
 - `delayed_work` 到点后**无条件翻转 LED**（可睡），并根据本窗口内被合并的中断**噪声计数**调整**下一次**的消抖延迟；
 - 退避**只影响下一次**，且**硬上限 200 ms**，避免“长时间假死”。
 
-#### 2 机制与算法
+#### (2)_2_机制与算法
 
 - **第一次中断**：`gate:0→1`，计算 `delay_ms = debounce_ms + min(backoff_base_ms << exp, backoff_max_ms)`，排一次 `mod_delayed_work(system_wq, delay_ms)`；同时将 `noise_hits=0`。
 - **窗口内后续中断**：不再排程，`noise_hits++`。
@@ -726,7 +726,7 @@ sequenceDiagram
   - 释放门阀 `gate:1→0`。
 - **不读取按键电平**、**不在 ISR 做退避早退门禁**。不会出现“卡住几分钟”的异常。
 
-#### 3 与设备树映射
+#### (3)_3_与设备树映射
 
 使用你的节点并逐项消费：
 
@@ -739,7 +739,7 @@ sequenceDiagram
 - `nxp,backoff-base-ms`：退避基准（默认 50 ms）；
 - `nxp,backoff-max-ms`：退避上限（默认/强制 ≤ 200 ms）。
 
-#### 4 驱动示例（完整，可直接编译）
+#### (4)_4_驱动示例(完整_可直接编译)
 
 > 文件：`drivers/demo/demo_key_dw_gate_backoff_dt.c`
 
@@ -968,7 +968,7 @@ MODULE_AUTHOR("Leaf & Co-Author");
 MODULE_DESCRIPTION("Delayed_work gate debounce + adaptive exponential backoff (<=200ms), IRQ edge from DT");
 ```
 
-#### 5 时序（门阀 + 指数退避）
+#### (5)_5_时序(门阀_+_指数退避)
 
 ```mermaid
 sequenceDiagram
@@ -994,14 +994,14 @@ sequenceDiagram
   WQ->>TH: gate=0 (释放门阀)
 ```
 
-#### 6 调参与预期
+#### (6)_6_调参与预期
 
 - **首按延迟**≈`debounce_ms + backoff(base<<exp)`；初始 `exp=0`，接近 `debounce_ms`。
 - **噪声大**：同一窗口内 `noise_hits≥2`，下一次 `exp+1`，最大不超过 `backoff_max_ms`（≤200 ms）。
 - **环境干净**：`noise_hits==0`，下一次 `exp-1`，手感回到轻快。
 - **触发沿**：由 DT 决定（你设为 **FALLING**）。若现场 **RISING** 更稳，只需改 DT，不改驱动。
 
-#### 7 调试与排错
+#### (7)_7_调试与排错
 
 - **现象：LED 迟迟不翻转**
   - 检查 `debounce_ms` 与 `backoff_max_ms` 是否被不合理放大；本实现无 ISR 早退门禁，不会“卡几分钟”。
@@ -1012,7 +1012,7 @@ sequenceDiagram
 - **PM 行为**
   - 休眠前取消 `delayed_work` 并清 `gate`/`noise_hits`；需要“唤醒即灵敏”时可在 `suspend()` 里把 `backoff_exp=0`。
 
-#### 8 小结
+#### (8)_8_小结
 
 - 在“门阀 + delayed_work”消抖骨架上加入**指数退避**，能够在噪声压力上升时**自动拉长下次消抖**，在干净阶段**收敛回短窗口**；
 - 全程**不读按键电平**、**不做 ISR 早退**，避免了“阻塞/卡死”类陷阱；
@@ -1020,11 +1020,11 @@ sequenceDiagram
 
 ------
 
-### 6.5.3 事务重试（Retry）：有超时的“完整一单”
+### 6.8.3_事务重试(Retry)_有超时的_完整一单
 
-#### delayed_work 版本
+#### (1)_delayed_work_版本
 
-##### 1 场景与目标
+##### 1)_1_场景与目标
 
 “完整一单”指一次**原子性的业务流程**：**按下**→**确认**→**释放**，全部成立才记一次成功。若中途任何环节失败（抖动导致的假按下、迟迟不释放等），则**在预算内重试**；超过预算则**放弃本单**并回到空闲。
  本节继续使用你的 **LED + 按键** 节点，通过 **delayed_work** 实现：
@@ -1037,7 +1037,7 @@ sequenceDiagram
 
 ------
 
-##### 2 策略与状态机（基于 delayed_work）
+##### 2)_2_策略与状态机(基于_delayed_work)
 
 - **门阀 gate（atomic）**：一次事务只排**一次**确认工作；窗口内后续边沿被合并。
 - **press_confirm_work（按下确认）**：延时 `debounce + backoff(exp)` 后**可睡读取**按键；
@@ -1052,7 +1052,7 @@ sequenceDiagram
 
 ------
 
-##### 3 示例驱动（完整，可编译）
+##### 3)_3_示例驱动(完整_可编译)
 
 > 文件：`drivers/demo/demo_key_dw_retry.c`
 >  与你的设备树**完全对齐**：FALLING 边沿、`nxp,debounce-ms`、`nxp,backoff-base-ms`、`nxp,backoff-max-ms(≤200)`。
@@ -1369,7 +1369,7 @@ MODULE_DESCRIPTION("delayed_work transaction retry: press-confirm + release-time
 
 ------
 
-##### 4 时序（“完整一单”：按下确认 + 释放超时 + 重试）
+##### 4)_4_时序(_完整一单_按下确认_+_释放超时_+_重试)
 
 ```mermaid
 sequenceDiagram
@@ -1406,14 +1406,14 @@ sequenceDiagram
 
 ------
 
-##### 5 调参与预期
+##### 5)_5_调参与预期
 
 - **手感**：首按延迟≈`debounce_ms + backoff(base<<exp)`（初始 `exp=0`，接近 `debounce_ms`）。
 - **释放时限**：`release_timeout_ms`（默认 150 ms）决定“完整一单”的完成窗口；
 - **重试预算**：`retry_max`（默认 3）限制一次事务的最长生存；
 - **指数退避**：成功时回落、失败时上升；上限 `backoff_max_ms≤200`，符合人机预期。
 
-##### 6 排错要点
+##### 6)_6_排错要点
 
 - **“一直不提交”**：查看日志中 `attempt` 是否持续增长且达上限，通常是释放超时；适当放宽 `release_timeout_ms` 或降低 `release_poll_ms`。
 - **“手感慢”**：减小 `debounce_ms` 或 `backoff_base_ms`；确保环境抖动不大，否则会频繁升指数。
@@ -1422,15 +1422,15 @@ sequenceDiagram
 
 ------
 
-##### 小结
+##### 7)_小结
 
 本节把一次按键视为**事务**，通过 **delayed_work** 在可睡环境下完成**按下确认**与**释放确认**，并以**指数退避 + 重试预算**在噪声环境中“既稳又不拖”。它与 6.5.1/6.5.2 共用同一骨架，但强调“**完整一单必须全部成立才提交**”。
 
-#### wait_event_timeout 版本
+#### (2)_wait_event_timeout_版本
 
 下面给出**`wait_event_timeout()` 版本**的“完整一单（按下确认 + 释放确认/超时 + 指数退避）”。\**要点\**：此版本需要**上升沿作为自然唤醒源**，因此 **DT 里中断类型需改为 `IRQ_TYPE_EDGE_BOTH`**（或至少包含 RISING）。
 
-##### 设备树（关键差异：双沿）
+##### 1)_设备树(关键差异_双沿)
 
 ```dts
 demo_led_key_int: led_key_int@0 {
@@ -1452,7 +1452,7 @@ demo_led_key_int: led_key_int@0 {
 };
 ```
 
-##### 驱动（完整，可编译，专用 WQ，等待用 `wait_event_timeout()`）
+##### 2)_驱动(完整_可编译_专用_WQ_等待用_wait_event_timeout())
 
 > 文件：`drivers/demo/demo_key_dw_retry_waitq.c`
 
@@ -1752,7 +1752,7 @@ MODULE_AUTHOR("Leaf & Co-Author");
 MODULE_DESCRIPTION("delayed_work + wait_event_timeout: press-confirm + release IRQ wake + retry with exponential backoff (<=200ms)");
 ```
 
-##### 使用与对比
+##### 3)_使用与对比
 
 - 本版本**需要 EDGE_BOTH**；RISING 仅用于**`wake_up()`**，不做重逻辑，CPU 开销极低。
 - `wait_event_timeout()` 让**释放阶段真正睡眠**，相对“轮询版”更省电、延迟也更小。
@@ -1760,7 +1760,7 @@ MODULE_DESCRIPTION("delayed_work + wait_event_timeout: press-confirm + release I
 
 ------
 
-## 6.6 示例代码与排错（完整驱动骨架 + 故障注入）
+## 6.9_示例代码与排错(完整驱动骨架_+_故障注入)
 
 > 下面给出**可编译、可装载**的最小驱动，囊括：
 >
@@ -2094,7 +2094,7 @@ flowchart TD
 
 ------
 
-## 6.7 小结
+## 6.10_小结
 
 - **范式沉淀**：
   - **轮询**：中断做“触发”，工作队列做“判稳与后台巡检”；活跃/空闲双周期在负载与响应间取平衡。

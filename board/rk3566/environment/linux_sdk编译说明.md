@@ -1,11 +1,11 @@
-# 资料下载
+# 第1章_资料下载
 
 泰山派的资料是放置于百度网盘的，他们目前好像是没有采用git来放置资料，所以非常low，很多文档更新不及时，比如编译流程。去他大爷！
 
 百度网盘：
 
 ```text
-百度网盘链接:https://pan.baidu.com/s/1HtnpytCBBqBOqZi8mfV4VQ?pwd=qcxx 
+百度网盘链接:https://pan.baidu.com/s/1HtnpytCBBqBOqZi8mfV4VQ?pwd=qcxx
 提取码：qcxx
 ```
 
@@ -33,9 +33,9 @@ linux sdk的文件包括有：
 
 
 
-# 源码镜像下载
+# 第2章_源码镜像下载
 
-## 镜像包说明
+## 2.1_镜像包说明
 
  解压缩“tspi_linux_sdk_repo_20240131.tar.gz”包后，出现一个.repo文件。.repo是Google 出的多 Git 仓管理器，目的是将一些仓库的历史版本进行映射管理，免得版本混乱（软件A和软件B的版本映射关系）。因此，点开这个.repo文件啥源码都看不到，要重新同步。
 
@@ -49,10 +49,10 @@ linux sdk的文件包括有：
 		看一下这个值是否和tspi_linux_sdk_repo_20240131_md5sum.txt内容一致
 	解压：
 		tar -xzf tspi_linux_sdk_repo_20240131.tar.gz
-		
+
 	解压完成后只有.repo目录我们还需要把代码同步出来
 		.repo/repo/repo sync -l -j88
-		
+
 3.buildroot_dl_4c7c9df616fb.tar.gz 这是是buildroot相关库，如果你的网络比较差很有可能编译的时候自动下载失败报错
 	下载完成后可以看看校验是否正常：
 		md5sum buildroot_dl_4c7c9df616fb.tar.gz
@@ -60,11 +60,11 @@ linux sdk的文件包括有：
 	解压：
 		把压缩包放在.repo同目录在解压，最终会解压到buildroot/dl目录
 		tar -xzf buildroot_dl_4c7c9df616fb.tar.gz
-		
+
 4.接下来可以参考编译教程进行编译了
 ```
 
-## 同步源码
+## 2.2_同步源码
 
 1. 准备好一个新的文件夹接收sdk，文件夹名字取名test或者别的，不然它会在.repo的同级目录下载源码更新。这时候如果有别的文件在就会非常混乱。
 2. 将.repo文件移动到test文件夹里面。
@@ -78,13 +78,13 @@ linux sdk的文件包括有：
 
 那么这里就基本把源码同步完了。
 
-## 将dl库文件添加到buildroot/dl
+## 2.3_将dl库文件添加到buildroot/dl
 
 根据“下载前必读.txt”文件第3步说明，将“md5sum buildroot_dl_4c7c9df616fb.tar.gz”（位于百度网盘sdk同级目录）在.repo同目录在解压，最终会解压到buildroot/dl目录
 
 现在基本文件已经具备了。还是编译环境方面的搭建。
 
-# python2.7下载
+# 第3章_python2.7下载
 
 在ubuntu22.04下载python2.7，因为泰山派的原生编译环境是ubuntu18，默认采用python2.7版本。
 
@@ -97,7 +97,7 @@ sudo apt-get install -y python2
 
 可以，用 Ubuntu 的 **update-alternatives** 做系统级“可切换”的 `python` 指向。但一定要注意：这会影响**所有**调用 `/usr/bin/python` 的脚本（可能有些脚本默认要 Python3）。更稳的是只在项目里用虚拟环境切换；不过如果你就是要系统级切换，按下面做。
 
-## 用 update-alternatives 切换到 Python 2.7（Ubuntu 22.04）
+## 3.1_用_update-alternatives_切换到_Python_2.7(Ubuntu_22.04)
 
 1. 安装 Python2（如果还没装）
 
@@ -146,7 +146,7 @@ sudo update-alternatives --set python /usr/bin/python3
 
 ------
 
-## 重要提醒（别踩坑）
+## 3.2_重要提醒(别踩坑)
 
 - **apt 与系统工具**基本都显式用 `python3`，切换 `python` 通常不会“炸 apt”，但第三方脚本若写的是 `#!/usr/bin/env python`，切到 2.7 后就会在 2.7 下跑——可能报语法错。
 - 如果只是为了某个老项目跑在 2.7，**更安全做法**是：
@@ -158,7 +158,7 @@ sudo update-alternatives --set python /usr/bin/python3
 
 ![image](../../../images/buildroot/taishanpi/python_version.png)
 
-# 编译环境安装
+# 第4章_编译环境安装
 
 ```shell
 sudo apt-get install git ssh make gcc libssl-dev liblz4-tool expect \
@@ -167,7 +167,7 @@ qemu-user-static live-build bison flex fakeroot cmake gcc-multilib \
 g++-multilib unzip device-tree-compiler ncurses-dev
 ```
 
-# 编译说明
+# 第5章_编译说明
 
 配置环境变量：根文件系统更新的位置
 
@@ -211,7 +211,7 @@ BoardConfig-rk3566-tspi-v10.mk
 
 ![image](../../../images/buildroot/taishanpi/IO_VCCIO7.png)
 
-# 重定义 fwriter_buffer 解决方法
+# 第6章_重定义_fwriter_buffer_解决方法
 
 如果采用ubuntu22的原生gcc（多半为gcc 11.x）,会触发重定义报错，log部分显示如下：
 
@@ -243,13 +243,13 @@ ERROR: exit code 1 from line 715:
     /usr/bin/time -f "you take %E to build builroot" $COMMON_DIR/mk-buildroot.sh $BOARD_CONFIG
 ```
 
-## 方法1：
+## 6.1_方法1
 
 1. 编译 Linux 如果遇到 [buildroot编译host-squashfs Building报错‘multiple definition of `bwriter_buffer‘’_squashfs multiple defin](https://blog.csdn.net/weixin_37933648/article/details/131461406) 问题可以使用以下方法解决
    1. 问题原因是多重定义  [stackoverflow.com](https://stackoverflow.com/questions/69908418/multiple-definition-of-first-defined-here-on-gcc-10-2-1-but-not-gcc-8-3-0)
    2. 解决方式：根据错误提示，找到对应文件夹修改文件 `mksquashfs.h` 在 136 行对应位置前添加 extern
 
-## 方法2，这个比较可靠些：
+## 6.2_方法2_这个比较可靠些
 
 创建文件“buildroot/package/squashfs/0001-multiple-definition.patch”，将下面的内容添加到该新建文件：
 
@@ -259,7 +259,7 @@ diff -ruN squashfs-3de1687d7432ea9b302c2db9521996f506c140a3/squashfs-tools/mksqu
 +++ squashfs-3de1687d7432ea9b302c2db9521996f506c140a3-patch/squashfs-tools/mksquashfs.h 2025-01-02 16:59:52.994326895 +0800
 @@ -133,7 +133,7 @@
  #define BLOCK_OFFSET 2
- 
+
  extern struct cache *reader_buffer, *fragment_buffer, *reserve_cache;
 -struct cache *bwriter_buffer, *fwriter_buffer;
 +extern struct cache *bwriter_buffer, *fwriter_buffer;
@@ -268,7 +268,7 @@ diff -ruN squashfs-3de1687d7432ea9b302c2db9521996f506c140a3/squashfs-tools/mksqu
  extern struct append_file **file_mapping;
 ```
 
-# 缺乏.br-external.mk构建规则
+# 第7章_缺乏.br-external.mk构建规则
 
 如果上述重定义出现bug之后，重新定义会出现如下bug提示：
 
@@ -287,7 +287,7 @@ ERROR: exit code 2 from line 858:
 
 直接重新构建recovery，这是因为之前重定义错误导致部分缓存出现bug没有重新构建，所以把它清除后重新构建就行，不能够直接运行 `./build.sh all`，必须要执行`./build.sh recovery`重新构建才行。然后再执行`./build.sh all`。
 
-# 编译完成
+# 第8章_编译完成
 
 完成结算log：
 

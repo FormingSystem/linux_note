@@ -1,4 +1,4 @@
-# 第7章 案例 A：LCD 触摸屏驱动（完整可编译）
+# 第7章_案例_A_LCD_触摸屏驱动(完整可编译)
 
 【章节内容说明】
 
@@ -13,9 +13,9 @@
 
 ------
 
-## 7.1 引入：场景与设计目标
+## 7.1_引入_场景与设计目标
 
-### 7.1.1 典型场景
+### 7.1.1_典型场景
 
 一个常见的嵌入式 HMI 场景：
 
@@ -47,7 +47,7 @@
      - 上报路径在 input core 内部只持有短暂自旋锁，不允许睡眠；
      - suspend/resume 必须与线程化 IRQ/工作队列协调（`disable_irq_sync()` 等）。
 
-### 7.1.2 本章驱动的设计目标
+### 7.1.2_本章驱动的设计目标
 
 本章的示例驱动 `demo_ts` 以如下目标为核心：
 
@@ -74,7 +74,7 @@
 
 ------
 
-## 7.2 数据结构视角：从硬件寄存器到 input_dev
+## 7.2_数据结构视角_从硬件寄存器到_input_dev
 
 本节从“数据形态”的角度出发，明确本例驱动涉及的三个层次数据结构：
 
@@ -82,7 +82,7 @@
 2. **驱动内部结构体**（状态管理与并发）
 3. **input core 结构体**（`struct input_dev` 以及 MT 槽位）
 
-### 7.2.1 控制器数据帧抽象
+### 7.2.1_控制器数据帧抽象
 
 具体芯片寄存器布局因厂商而异，本章采用一个虚构但典型的格式，不绑定任何真实型号，只抽象出驱动需要的关键字段：
 
@@ -109,7 +109,7 @@ struct demo_ts_hw_frame_header {
 - 一组 **读缓冲区**（`u8 buf[DEMO_TS_HW_FRAME_MAX_BYTES]`）；
 - 若干 **解析 helper 函数**，在 I²C 读取后从缓冲区抽取 `frame_id / point_count / point[]` 等字段。
 
-### 7.2.2 驱动内部状态结构体
+### 7.2.2_驱动内部状态结构体
 
 驱动内部通过一个主结构体 `struct demo_ts_data` 管理设备状态、并发控制以及与 input_dev 的关联：
 
@@ -150,7 +150,7 @@ struct demo_ts_data {
 - 统计字段：
   - `stat_frame_ok_cnt`、`stat_frame_retry_cnt`、`stat_frame_drop_cnt` 可结合 `debugfs` 或 tracepoint 用于分析质量问题。
 
-### 7.2.3 input core 与 MT 结构
+### 7.2.3_input_core_与_MT_结构
 
 在 input 层面，本章驱动主要使用：
 
@@ -171,11 +171,11 @@ struct demo_ts_data {
 
 ------
 
-## 7.3 开发者视角：驱动内完整路径
+## 7.3_开发者视角_驱动内完整路径
 
 本节从驱动作者的角度，把 “从 probe 到事件上报” 的内部路径串起来，明确每一步的上下文与不变量。
 
-### 7.3.1 probe() 主流程
+### 7.3.1_probe()_主流程
 
 `probe()` 的典型步骤如下（devres 版）：
 
@@ -221,7 +221,7 @@ struct demo_ts_data {
 - 未正确设置 `BTN_TOUCH`：
   - 某些用户态（特别是早期或简单库）依赖 `BTN_TOUCH` 来判断是否有触摸存在，会导致逻辑错误。
 
-### 7.3.2 IRQ 路径与“采集可睡、上报不睡”
+### 7.3.2_IRQ_路径与_采集可睡_上报不睡
 
 采用 `request_threaded_irq()` + `IRQF_ONESHOT` 的典型流程为：
 
@@ -251,7 +251,7 @@ struct demo_ts_data {
 - **上报**（`input_report_* + input_sync`）虽然在同一个线程里调用，但在调用点不持有自旋锁，也不再进行阻塞 I/O；
 - 整个 IRQ 线程的执行时间仍需控制在合理范围，以避免 input 事件积压。
 
-### 7.3.3 PM/Suspend-Resume 路径
+### 7.3.3_PM/Suspend-Resume_路径
 
 `suspend`/`resume` 的关键步骤：
 
@@ -278,11 +278,11 @@ struct demo_ts_data {
 
 ------
 
-## 7.4 用户/平台视角：设备树与硬件连接约定
+## 7.4_用户/平台视角_设备树与硬件连接约定
 
 本节从 **板级工程师/平台维护者** 的角度出发，给出一个完整的 DTS 片段，并以“四连问（作用/场景/不写后果/驱动落点）”说明关键属性。
 
-### 7.4.1 设备树示例片段
+### 7.4.1_设备树示例片段
 
 假定触摸屏挂在 `i2c1`，中断接到 `gpio1_15`，DTS 片段如下：
 
@@ -319,11 +319,11 @@ struct demo_ts_data {
 
 > 实际项目中 `pinctrl_demo_ts_int` 节点位于 `imx6ull-pinfunc` 的 pinctrl 配置中，此处略去。
 
-### 7.4.2 关键属性“四连问”说明
+### 7.4.2_关键属性_四连问_说明
 
 下表列出几个关键属性的“四连问”说明（仅列出本章用到的核心项）：
 
-#### 1）`touchscreen-size-x` / `touchscreen-size-y`
+#### (1)_touchscreen-size-x_/_touchscreen-size-y
 
 - **作用**
   - 描述触摸面板的物理分辨率（单位：像素），用于：
@@ -339,7 +339,7 @@ struct demo_ts_data {
     - `DEMO_TS_ABS_X_MAX_PX`、`DEMO_TS_ABS_Y_MAX_PX`；
   - 用于调用 `input_set_abs_params()` 设置 `min/max`，并可能用于内部钳位。
 
-#### 2）`touchscreen-max-fingers`
+#### (2)_touchscreen-max-fingers
 
 - **作用**
   - 声明控制器最多支持的同时触摸点数量。
@@ -355,7 +355,7 @@ struct demo_ts_data {
   - `probe()` 中读取并存入 `ts->max_fingers`；
   - 再用于 `input_mt_init_slots(input, ts->max_fingers, INPUT_MT_DIRECT);`。
 
-#### 3）`touchscreen-inverted-x` / `touchscreen-inverted-y`
+#### (3)_touchscreen-inverted-x_/_touchscreen-inverted-y
 
 - **作用**
   - 标记 X 或 Y 轴与屏幕坐标系的方向相反，需要在驱动中做 `x = max_x - x` 的转换。
@@ -371,7 +371,7 @@ struct demo_ts_data {
     - 若标记了 `inverted-x`，则 `x = max_x - x;`；
     - 若标记了 `inverted-y`，则 `y = max_y - y;`。
 
-#### 4）`wakeup-source`
+#### (4)_wakeup-source
 
 - **作用**
   - 标记此设备可以作为系统唤醒源，用于 PM 框架在 suspend 时保留必要的中断配置。
@@ -384,7 +384,7 @@ struct demo_ts_data {
   - `probe()` 中通过 `device_init_wakeup(&client->dev, true/false);` 配置；
   - PM 路径中可依据此标志决定是否在 suspend 时配置 wake-up。
 
-#### 5）`demo,frame-interval-ms` / `demo,fuzz-px`（自定义属性）
+#### (5)_demo,frame-interval-ms_/_demo,fuzz-px(自定义属性)
 
 - **作用**
   - `demo,frame-interval-ms`：建议的帧采样间隔（毫秒），用于驱动内的去抖/重读节奏控制；
@@ -403,11 +403,11 @@ struct demo_ts_data {
 
 ------
 
-## 7.5 可视化：数据流与并发关系图
+## 7.5_可视化_数据流与并发关系图
 
 本节用可视化方式把前面已经讲过的“采集可睡、上报不睡”“帧一致性”“PM 次序”等集中到一处，便于后续对照代码。
 
-### 7.5.1 数据流总览（采集 → 成帧 → 上报）
+### 7.5.1_数据流总览(采集_to_成帧_to_上报)
 
 ```mermaid
 flowchart TD
@@ -444,7 +444,7 @@ flowchart TD
 - `REPORT`：只做 input 上报，不再访问硬件，不做复杂逻辑。
 - `PM_S/PM_R`：负责关闭/恢复 IRQ 和电源；`suspended` 标志保证线程化 IRQ 在挂起期间不访问 I²C。
 
-### 7.5.2 典型时序：一次触摸帧 + Suspend/Resume
+### 7.5.2_典型时序_一次触摸帧_+_Suspend/Resume
 
 ```mermaid
 sequenceDiagram
@@ -462,7 +462,7 @@ sequenceDiagram
     T->>T: "检查 suspended=false ?"
     T->>H: "I²C 读一帧数据"
     T->>T: "检查 frame_id / point_count (一致性)"
-    T->>C: "input_mt_* + input_report_abs(...)" 
+    T->>C: "input_mt_* + input_report_abs(...)"
     T->>C: "input_sync() (帧结束)"
     C->>U: "(poll/read) 交付一帧 EV_ABS/EV_SYN"
 
@@ -488,11 +488,11 @@ sequenceDiagram
 
 ------
 
-## 7.6 示例代码：完整驱动 + Kconfig/Makefile/DTS
+## 7.6_示例代码_完整驱动_+_Kconfig/Makefile/DTS
 
 本节给出可直接放入内核树、编译通过的示例代码，结构上偏“教科书风格”，芯片寄存器解析部分使用虚构协议，但路径和接口均真实可用。
 
-### 7.6.1 头文件与参数宏
+### 7.6.1_头文件与参数宏
 
 文件：`drivers/input/touchscreen/demo_ts.c`
 
@@ -564,7 +564,7 @@ sequenceDiagram
 #define DEMO_TS_PROP_SIZE_Y		"touchscreen-size-y"
 ```
 
-### 7.6.2 驱动数据结构与硬件帧解析骨架
+### 7.6.2_驱动数据结构与硬件帧解析骨架
 
 ```c
 struct demo_ts_data {
@@ -620,7 +620,7 @@ struct demo_ts_hw_point {
 
 > 注意：`demo_ts_hw_point` 使用 `__be16` 只是示意“需要字节序转换”，真实芯片请按手册实现。
 
-#### 7.6.2.1 从缓冲区解析帧头与点
+#### (1)_从缓冲区解析帧头与点
 
 ```c
 /* 从缓冲区中解析一帧头部, 不做 I2C 访问 */
@@ -655,7 +655,7 @@ static struct demo_ts_hw_point *demo_ts_get_point(struct demo_ts_data *ts,
 }
 ```
 
-#### 7.6.2.2 帧一致性检查骨架
+#### (2)_帧一致性检查骨架
 
 ```c
 static bool demo_ts_is_frame_consistent(struct demo_ts_data *ts,
@@ -676,9 +676,9 @@ static bool demo_ts_is_frame_consistent(struct demo_ts_data *ts,
 
 ------
 
-### 7.6.3 I²C 读取一帧 + MT 上报路径
+### 7.6.3_I²C_读取一帧_+_MT_上报路径
 
-#### 7.6.3.1 读取一帧
+#### (1)_读取一帧
 
 ```c
 /* I2C 读取一帧数据到 frame_buf 中, 返回 0 表示成功 */
@@ -701,7 +701,7 @@ static int demo_ts_hw_read_frame(struct demo_ts_data *ts)
 }
 ```
 
-#### 7.6.3.2 解析并上报一帧
+#### (2)_解析并上报一帧
 
 ```c
 static void demo_ts_report_frame(struct demo_ts_data *ts,
@@ -769,7 +769,7 @@ static void demo_ts_report_frame(struct demo_ts_data *ts,
 > - `p->id % ts->max_fingers` 是简化处理，真实控制器应保证 id 与槽位映射稳定。
 > - 若需要处理“抬起”事件，应在没有出现在本帧中的旧槽位上调用 `input_mt_report_slot_state(..., false)`，此处略去以保持示例简洁。
 
-#### 7.6.3.3 线程化 IRQ 函数
+#### (3)_线程化_IRQ_函数
 
 ```c
 static irqreturn_t demo_ts_irq_thread(int irq, void *dev_id)
@@ -828,9 +828,9 @@ out_unlock:
 
 ------
 
-### 7.6.4 probe/remove/PM：devres 版本
+### 7.6.4_probe/remove/PM_devres_版本
 
-#### 7.6.4.1 probe()
+#### (1)_probe()
 
 ```c
 static int demo_ts_input_init(struct demo_ts_data *ts)
@@ -1004,7 +1004,7 @@ static int demo_ts_probe(struct i2c_client *client,
 }
 ```
 
-#### 7.6.4.2 remove() 与 PM 回调（devres 版）
+#### (2)_remove()_与_PM_回调(devres_版)
 
 ```c
 static int demo_ts_remove(struct i2c_client *client)
@@ -1061,7 +1061,7 @@ static SIMPLE_DEV_PM_OPS(demo_ts_pm_ops,
 			 demo_ts_resume);
 ```
 
-#### 7.6.4.3 非 devres 版本差异说明（片段）
+#### (3)_非_devres_版本差异说明(片段)
 
 非 devres 版本的差异主要在资源申请与释放上，例如：
 
@@ -1094,7 +1094,7 @@ if (error)
 
 ------
 
-### 7.6.5 i2c_device_id / of_match_table / 模块入口
+### 7.6.5_i2c_device_id_/_of_match_table_/_模块入口
 
 ```c
 static const struct i2c_device_id demo_ts_id[] = {
@@ -1129,7 +1129,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-### 7.6.6 Kconfig 与 Makefile 模板
+### 7.6.6_Kconfig_与_Makefile_模板
 
 `drivers/input/touchscreen/Kconfig` 中增加：
 
@@ -1153,7 +1153,7 @@ obj-$(CONFIG_TOUCHSCREEN_DEMO_TS)	+= demo_ts.o
 
 ------
 
-### 7.6.7 DTS 片段（最终版）
+### 7.6.7_DTS_片段(最终版)
 
 与前文 7.4 一致，这里给出可直接使用的片段：
 
@@ -1195,11 +1195,11 @@ obj-$(CONFIG_TOUCHSCREEN_DEMO_TS)	+= demo_ts.o
 
 ------
 
-## 7.7 调试与验证：从 `/proc` 到 `evtest`
+## 7.7_调试与验证_从_/proc_到_evtest
 
 本节给出一个带顺序的 bring-up checklist，帮助在真实板子上验证本章驱动。
 
-### 7.7.1 编译与加载
+### 7.7.1_编译与加载
 
 1. 在内核配置中启用：
    - `Device Drivers → Input device support → Touchscreens → Demo I2C multi-touchscreen` 设为 `M` 或 `Y`。
@@ -1207,7 +1207,7 @@ obj-$(CONFIG_TOUCHSCREEN_DEMO_TS)	+= demo_ts.o
    - `demo_ts.ko`。
 3. 确认 DTS 已正确合入，并重新编译/烧写 Device Tree Blob。
 
-### 7.7.2 `/proc/bus/input/devices` 初步检查
+### 7.7.2_/proc/bus/input/devices_初步检查
 
 在开发板上执行：
 
@@ -1227,7 +1227,7 @@ cat /proc/bus/input/devices
 - 检查 `i2c1`、DTS `compatible` 是否与驱动中的 `demo,imx6ull-lcd-mt-ts` 一致；
 - 检查 I²C 总线是否启用、地址是否正确（`0x38` 等）。
 
-### 7.7.3 使用 `evtest` 检查事件与帧语义
+### 7.7.3_使用_evtest_检查事件与帧语义
 
 1. 确认 `/dev/input/eventX` 对应 `demo_ts_mt_touchscreen`：
    - 执行 `evtest`，选择对应设备；
@@ -1242,7 +1242,7 @@ cat /proc/bus/input/devices
 
 - 根据实际现象调整 `touchscreen-inverted-x` / `touchscreen-inverted-y` 属性。
 
-### 7.7.4 使用 `EVIOCGABS` 验证 min/max/fuzz/flat/res
+### 7.7.4_使用_EVIOCGABS_验证_min/max/fuzz/flat/res
 
 可编写一个简单用户态程序或使用已有工具，检查 `ABS_MT_POSITION_X/Y` 的属性：
 
@@ -1252,7 +1252,7 @@ cat /proc/bus/input/devices
 - `flat` 一般为 0（触摸屏不需要 deadzone）；
 - `resolution` 为 `DEMO_TS_ABS_RES_DEFAULT_PPX`。
 
-### 7.7.5 挂起/恢复测试
+### 7.7.5_挂起/恢复测试
 
 1. 启用唤醒源（如果 DTS 中配置了 `wakeup-source`）；
 2. 执行：
@@ -1263,7 +1263,7 @@ cat /proc/bus/input/devices
    - 确认第一帧坐标正常，没有出现长时间的无效帧或“全零”帧；
    - 若出现，需要检查 `demo_ts_suspend()` / `demo_ts_resume()` 中的上电/初始化次序。
 
-### 7.7.6 常见故障定位路径
+### 7.7.6_常见故障定位路径
 
 1. **完全无事件**
    - 检查 I²C 是否能正常读写（`i2cdump`）；
@@ -1280,7 +1280,7 @@ cat /proc/bus/input/devices
 
 ------
 
-## 7.8 小结：从示例到可交付驱动
+## 7.8_小结_从示例到可交付驱动
 
 本章通过一个完整的 I²C 电容触摸屏驱动示例，把前几章的关键概念在代码层面落实：
 

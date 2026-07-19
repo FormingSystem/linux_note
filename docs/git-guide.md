@@ -1,8 +1,8 @@
-# 个人开发 Git 提交规则
+# 第1章_个人开发_Git_提交规则
 
 这份规则用于 `linux-note` 个人笔记仓库。目标不是把流程搞复杂，而是让每次提交都能说明“改了什么、为什么改、属于哪个学习方向”，以后回看历史时不用猜。
 
-## 分支定位
+## 1.1_分支定位
 
 当前仓库主要按两个长期分支维护：
 
@@ -19,7 +19,7 @@
 - 两个分支都可以更新通用文档，例如 `README.md`、`docs/`、工具说明，但提交信息要写清楚属于“规则/索引/排版”还是“内容新增”。
 - 远端以 GitHub 为准，`origin` 应指向 `https://github.com/FormingSystem/linux_kernel_and_driver_note.git`，不再推送 Gitee。
 
-## 提交前检查
+## 1.2_提交前检查
 
 本仓库使用版本化 Git hook 校验提交信息：
 
@@ -44,7 +44,7 @@ git diff
 - 没有误删另一个分支应该保留的目录。
 - Markdown 链接和图片路径尽量使用相对路径，方便 Obsidian 和普通阅读器同时打开。
 
-## 提交粒度
+## 1.3_提交粒度
 
 一次提交只做一类事情：
 
@@ -56,7 +56,7 @@ git diff
 
 避免把“新增驱动实验 + 重排内核章节 + 修改 README + 清理图片”塞进一个提交。真要一起做，也建议拆成多个 commit。
 
-## 提交信息格式
+## 1.4_提交信息格式
 
 推荐格式：
 
@@ -114,9 +114,9 @@ link(obsidian): 调整笔记链接管理说明
 chore(.gitignore): 忽略本地临时文件
 ```
 
-## 推荐工作流
+## 1.5_推荐工作流
 
-### 在 `master` 写驱动内容
+### 1.5.1_在_master_写驱动内容
 
 ```bash
 git switch master
@@ -128,7 +128,7 @@ git commit -m "add(driver): 新增 xxx 驱动实验笔记"
 git push origin master
 ```
 
-### 在 `obsidian_version` 整理内核和链接
+### 1.5.2_在_obsidian_version_整理内核和链接
 
 ```bash
 git switch obsidian_version
@@ -140,7 +140,7 @@ git commit -m "structure(kernel): 调整 xxx 章节链接结构"
 git push origin obsidian_version
 ```
 
-## 跨分支同步规则
+## 1.6_跨分支同步规则
 
 如果某个通用文件需要两个分支都保留，例如 `README.md`、`docs/git-guide.md`、`AGENTS.md`：
 
@@ -160,21 +160,21 @@ git status
 
 不要为了同步一个规则文件，直接把整个 `master` 合并进 `obsidian_version`。
 
-## Obsidian 使用注意
+## 1.7_Obsidian_使用注意
 
 - `obsidian_version` 分支用于 Obsidian 链接管理和重新排版，目录结构可以围绕阅读体验调整。
 - 移动 Markdown 文件时，优先用 Obsidian 内部移动功能，让链接自动更新。
 - `.obsidian/` 配置只有在确实影响阅读或链接管理时再提交。
 - 临时草稿、缓存、无关插件状态不建议提交。
 
-## 文件命名建议
+## 1.8_文件命名建议
 
 - 章节型笔记保留当前风格：`P01-主题.md`、`第1章_主题.md`。
 - 板级、芯片、外设相关文件名尽量包含对象：如 `imx6ull`、`rk3566`、`lcd`、`enet`。
 - 图片文件名尽量描述图的用途，不使用纯数字截图名。
 - 大范围改名或移动目录时单独提交，方便以后用 `git log --follow` 查历史。
 
-## 不建议提交的内容
+## 1.9_不建议提交的内容
 
 - 临时测试输出。
 - 编辑器缓存。

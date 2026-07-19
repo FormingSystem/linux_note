@@ -1,8 +1,8 @@
-# gpiod_get()
+# 第1章_gpiod_get()
 
 ------
 
-## 1 主题引入
+## 1.1_1_主题引入
 
 在 Linux 4.8 之后，GPIO 子系统逐渐由旧的整数型接口（`gpio_request()` / `gpio_direction_output()`）迁移至 **descriptor-based（描述符机制）**。在这种机制中，驱动不再直接操作 GPIO 号，而是通过一个抽象对象 [`struct gpio_desc`](#struct gpio_desc) 进行管理。
 
@@ -10,7 +10,7 @@
 
 ------
 
-## 2 函数原型与头文件位置
+## 1.2_2_函数原型与头文件位置
 
 ```c
 #include <linux/gpio/consumer.h>
@@ -147,7 +147,7 @@ EXPORT_SYMBOL_GPL(gpiod_get_index);
 
 ------
 
-## 3 参数与返回值详解
+## 1.3_3_参数与返回值详解
 
 | 参数       | 类型                 | 说明                                                         |
 | ---------- | -------------------- | ------------------------------------------------------------ |
@@ -156,7 +156,7 @@ EXPORT_SYMBOL_GPL(gpiod_get_index);
 | `flags`    | `enum gpiod_flags`   | 请求 GPIO 时的默认方向与初始值设置标志。                     |
 | **返回值** | `struct gpio_desc *` | 成功时返回 GPIO 描述符指针；失败返回错误指针 `ERR_PTR(-EINVAL / -ENOENT / -EPROBE_DEFER)` 等。 |
 
-## 3.1 `enum gpiod_flags` 枚举定义（部分）
+## 1.4_enum_gpiod_flags_枚举定义(部分)
 
 位于 `include/linux/gpio/consumer.h`：
 
@@ -172,7 +172,7 @@ enum gpiod_flags {
 
 ------
 
-## 4 设备树与 con_id 的关联逻辑
+## 1.5_4_设备树与_con_id_的关联逻辑
 
 `gpiod_get()` 从 `struct device` 对应的 **设备树节点** (`dev->of_node`) 中查找属性：
 
@@ -182,9 +182,9 @@ enum gpiod_flags {
 | `"enable"`    | `"enable-gpios"` | 查找 `"enable-gpios"`                 |
 | `NULL`        | `"gpios"`        | 默认查找 `"gpios"` 属性               |
 
-## 4.1 示例：设备树节点
+## 1.6_示例_设备树节点
 
-### 属性 gpios/gpio
+### 1.6.1_属性_gpios/gpio
 
 ```dts
 leds {
@@ -203,7 +203,7 @@ leds {
 desc = gpiod_get(dev, NULL, GPIOD_OUT_LOW);
 ```
 
-### 属性 \<name\>-gpios/gpio
+### 1.6.2_属性_\<name\>-gpios/gpio
 
 ```dts
 leds {
@@ -222,7 +222,7 @@ leds {
 desc = gpiod_get(dev, "switch", GPIOD_OUT_LOW);
 ```
 
-### 解析路径：
+### 1.6.3_解析路径
 
 ```
 → gpiod_get()
@@ -237,9 +237,9 @@ desc = gpiod_get(dev, "switch", GPIOD_OUT_LOW);
 
 ------
 
-## 5 数据结构视角
+## 1.7_5_数据结构视角
 
-### 5.1 `struct gpio_desc`
+### 1.7.1_struct_gpio_desc
 
 在上述示例中，通过 `gpiod_get() --> gpiod_get_index() --> of_find_gpio()` 接口中获取desc描述符。struct gpio_desc 参考 [附录 A/struct gipo_desc](#struct gpio_desc)。
 
@@ -253,7 +253,7 @@ gpiod_get_value(desc);
 
 ------
 
-## 6 调用链分析（内核执行路径）
+## 1.8_6_调用链分析(内核执行路径)
 
 ```mermaid
 sequenceDiagram
@@ -272,11 +272,11 @@ sequenceDiagram
 
 ------
 
-## 7 开发者视角：使用示例
+## 1.9_7_开发者视角_使用示例
 
-### 示例：GPIO 控制 LED
+### 1.9.1_示例_GPIO_控制_LED
 
-### 1. 设备树定义
+### 1.9.2_设备树定义
 
 ```dts
 leds {
@@ -287,7 +287,7 @@ leds {
 };
 ```
 
-### 2. 驱动实现
+### 1.9.3_驱动实现
 
 ```c
 static int demo_probe(struct platform_device *pdev)
@@ -313,7 +313,7 @@ static int demo_remove(struct platform_device *pdev)
 }
 ```
 
-### 说明
+### 1.9.4_说明
 
 - 在上述的驱动示例中，我们没有获取设备节点的操作。也就是说该示例默认 `pdev->dev` 里面要附带已经找到的设备树节点 `leds` 。如果没有这个操作。则需要开发者执行负责节点查找和绑定操作。
 - `"led0"` 对应 `"led0-gpios"`；
@@ -322,21 +322,21 @@ static int demo_remove(struct platform_device *pdev)
 
 ------
 
-## 8 用户视角与验证方式
+## 1.10_8_用户视角与验证方式
 
-### 8.1 验证驱动绑定
+### 1.10.1_验证驱动绑定
 
 ```bash
 dmesg | grep demo-led
 ```
 
-### 8.2 查看 GPIO 状态
+### 1.10.2_查看_GPIO_状态
 
 ```bash
 cat /sys/kernel/debug/gpio
 ```
 
-### 8.3 动态控制
+### 1.10.3_动态控制
 
 可通过 `sysfs` 或 `libgpiod` 工具直接验证是否可控：
 
@@ -348,7 +348,7 @@ gpioset gpiochip0 3=0
 
 ------
 
-## 9 错误处理与常见问题
+## 1.11_9_错误处理与常见问题
 
 | 错误码          | 含义             | 可能原因                          |
 | --------------- | ---------------- | --------------------------------- |
@@ -359,7 +359,7 @@ gpioset gpiochip0 3=0
 
 ------
 
-## 10 扩展接口族对比
+## 1.12_10_扩展接口族对比
 
 | 函数                   | 用途                        | 特点                          |
 | ---------------------- | --------------------------- | ----------------------------- |
@@ -371,7 +371,7 @@ gpioset gpiochip0 3=0
 
 ------
 
-## 11 小结
+## 1.13_11_小结
 
 | 项目     | 内容                                                   |
 | -------- | ------------------------------------------------------ |
@@ -388,11 +388,11 @@ gpioset gpiochip0 3=0
 
 ------
 
-# gpiod_get_from_of_node() 接口详解
+# 第2章_gpiod_get_from_of_node()_接口详解
 
 ------
 
-## 1 主题引入
+## 2.1_1_主题引入
 
 在驱动框架中，若我们已经明确拿到了某个设备树节点（`struct device_node *np`），则无需再依赖 `struct device`（如 `pdev->dev`）进行 GPIO 解析。
 
@@ -408,7 +408,7 @@ gpioset gpiochip0 3=0
 
 ------
 
-## 2 函数原型与头文件
+## 2.2_2_函数原型与头文件
 
 ```c
 #include <linux/gpio/consumer.h>
@@ -434,7 +434,7 @@ drivers/gpio/gpiolib.c
 
 ------
 
-## 3 参数说明
+## 2.3_3_参数说明
 
 | 参数名     | 类型                         | 说明                                                    |
 | ---------- | ---------------------------- | ------------------------------------------------------- |
@@ -447,7 +447,7 @@ drivers/gpio/gpiolib.c
 
 ------
 
-## 4 gpiod_flags 枚举（方向与初始电平）
+## 2.4_4_gpiod_flags_枚举(方向与初始电平)
 
 ```c
 enum gpiod_flags {
@@ -460,9 +460,9 @@ enum gpiod_flags {
 
 ------
 
-## 5 函数调用流程（源码层级）
+## 2.5_5_函数调用流程(源码层级)
 
-### 源码位置：`drivers/gpio/gpiolib-of.c`
+### 2.5.1_源码位置_drivers/gpio/gpiolib-of.c
 
 ```c
 /**
@@ -511,7 +511,7 @@ struct gpio_desc *gpiod_get_from_of_node(const struct device_node *node,
 EXPORT_SYMBOL_GPL(gpiod_get_from_of_node);
 ```
 
-### 调用链分析
+### 2.5.2_调用链分析
 
 ```mermaid
 sequenceDiagram
@@ -532,7 +532,7 @@ GPIOlib-->>Driver: struct gpio_desc *
 
 ------
 
-## 6 与 `gpiod_get()` 的对比
+## 2.6_6_与_gpiod_get()_的对比
 
 | 项目             | `gpiod_get()`                                  | `gpiod_get_from_of_node()`               |
 | ---------------- | ---------------------------------------------- | ---------------------------------------- |
@@ -545,9 +545,9 @@ GPIOlib-->>Driver: struct gpio_desc *
 
 ------
 
-## 7 典型使用场景
+## 2.7_7_典型使用场景
 
-### 示例 1：从子节点解析 GPIO（例如带多个子设备的 PMIC）
+### 2.7.1_示例_1_从子节点解析_GPIO(例如带多个子设备的_PMIC)
 
 ```dts
 pmic@60 {
@@ -561,7 +561,7 @@ pmic@60 {
 };
 ```
 
-#### 驱动代码
+#### (1)_驱动代码
 
 ```c
 static int regulator_probe(struct platform_device *pdev)
@@ -579,7 +579,7 @@ static int regulator_probe(struct platform_device *pdev)
 }
 ```
 
-#### **解析路径说明：**
+#### (2)_解析路径说明
 
 1. `np` → 当前 regulator 节点；
 2. `enable-gpios` → 读取 `<&pmic 5 GPIO_ACTIVE_HIGH>`；
@@ -590,7 +590,7 @@ static int regulator_probe(struct platform_device *pdev)
 
 ------
 
-### 示例 2：手动解析非当前设备的 GPIO
+### 2.7.2_示例_2_手动解析非当前设备的_GPIO
 
 假设有两个节点：
 
@@ -613,7 +613,7 @@ desc = gpiod_get_from_of_node(np, "led-gpios", 0, GPIOD_OUT_LOW, "hub-led");
 
 ------
 
-## 8 释放接口
+## 2.8_8_释放接口
 
 必须与 `gpiod_put()` 配对使用：
 
@@ -625,7 +625,7 @@ gpiod_put(desc);
 
 ------
 
-## 9 常见错误与排查
+## 2.9_9_常见错误与排查
 
 | 错误返回        | 原因                          | 解决方案                            |
 | --------------- | ----------------------------- | ----------------------------------- |
@@ -637,7 +637,7 @@ gpiod_put(desc);
 
 ------
 
-## 10 调试与验证
+## 2.10_10_调试与验证
 
 1. 打印解析结果：
 
@@ -659,7 +659,7 @@ gpiod_put(desc);
 
 ------
 
-## 11 小结
+## 2.11_11_小结
 
 | 项目     | 内容                                            |
 | -------- | ----------------------------------------------- |
@@ -673,11 +673,11 @@ gpiod_put(desc);
 | 配套接口 | `of_parse_phandle_with_args()`、`gpiod_put()`   |
 | 常见错误 | -ENOENT, -EINVAL, -EPROBE_DEFER, -EBUSY         |
 
-# gpiod_is_active_\*()
+# 第3章_gpiod_is_active_\*()
 
 ------
 
-## 1 总体概念
+## 3.1_1_总体概念
 
 `gpiod_is_active_*()` 并不是单一函数，而是一组接口，用于判断 GPIO 引脚的“逻辑激活状态”（active state），即：
 
@@ -687,7 +687,7 @@ gpiod_put(desc);
 
 ------
 
-## 2 常见函数列表
+## 3.2_2_常见函数列表
 
 | 函数名                                                    | 功能描述                                              | 适用场景                     |
 | --------------------------------------------------------- | ----------------------------------------------------- | ---------------------------- |
@@ -701,7 +701,7 @@ gpiod_put(desc);
 
 ------
 
-## 3 函数定义与所在文件
+## 3.3_3_函数定义与所在文件
 
 | 函数                                | 文件                     | 核心实现                                       |
 | ----------------------------------- | ------------------------ | ---------------------------------------------- |
@@ -711,9 +711,9 @@ gpiod_put(desc);
 
 ------
 
-## 4 函数语义精解
+## 3.4_4_函数语义精解
 
-### 4.1 `gpiod_is_active_low()`
+### 3.4.1_gpiod_is_active_low()
 
 **定义：**
 
@@ -743,7 +743,7 @@ else
 
 ------
 
-### 4.2 `gpiod_get_value_active()`
+### 3.4.2_gpiod_get_value_active()
 
 **定义：**
 
@@ -774,7 +774,7 @@ else
 
 ------
 
-### 4.3 `gpiod_get_value_cansleep_active()`
+### 3.4.3_gpiod_get_value_cansleep_active()
 
 **定义：**
 
@@ -798,7 +798,7 @@ if (active)
 
 ------
 
-### 4.4 `gpiod_is_active_high()`
+### 3.4.4_gpiod_is_active_high()
 
 **定义：**
 
@@ -813,7 +813,7 @@ bool gpiod_is_active_high(const struct gpio_desc *desc);
 
 ------
 
-## 5 设备树与逻辑映射关系
+## 3.5_5_设备树与逻辑映射关系
 
 | DTS 定义                      | 逻辑层解释       | `gpiod_is_active_low()` 结果 | 电平→逻辑有效映射 |
 | ----------------------------- | ---------------- | ---------------------------- | ----------------- |
@@ -822,7 +822,7 @@ bool gpiod_is_active_high(const struct gpio_desc *desc);
 
 ------
 
-## 6 典型应用场景
+## 3.6_6_典型应用场景
 
 1️⃣ **按钮或中断输入检测**
 
@@ -854,7 +854,7 @@ if (gpiod_get_value_active(irq_gpio))
 
 ------
 
-## 7 调试与验证方法
+## 3.7_7_调试与验证方法
 
 1️⃣ 查看 GPIO 极性
 
@@ -883,7 +883,7 @@ dev_dbg(dev, "GPIO %d is %sactive low\n",
 
 ------
 
-## 8 小结
+## 3.8_8_小结
 
 | 函数名                              | 主要功能                     | 是否考虑 Active-Low |
 | ----------------------------------- | ---------------------------- | ------------------- |
@@ -900,11 +900,11 @@ dev_dbg(dev, "GPIO %d is %sactive low\n",
 
 ------
 
-# gpiod_set|get_raw_*()
+# 第4章_gpiod_set|get_raw_*()
 
 ------
 
-## 1 概念总览
+## 4.1_1_概念总览
 
 在 GPIO 子系统中存在两类访问接口：
 
@@ -917,7 +917,7 @@ dev_dbg(dev, "GPIO %d is %sactive low\n",
 
 ------
 
-## 2 函数列表与定义位置
+## 4.2_2_函数列表与定义位置
 
 | 函数名                           | 作用                       | 定义位置（Linux 6.x）    |
 | -------------------------------- | -------------------------- | ------------------------ |
@@ -930,7 +930,7 @@ dev_dbg(dev, "GPIO %d is %sactive low\n",
 
 ------
 
-## 3 函数原型
+## 4.3_3_函数原型
 
 ```c
 int gpiod_get_raw_value(const struct gpio_desc *desc);
@@ -942,7 +942,7 @@ void gpiod_set_raw_value_cansleep(struct gpio_desc *desc, int value);
 
 ------
 
-## 4 参数与返回值说明
+## 4.4_4_参数与返回值说明
 
 | 参数    | 类型                 | 说明                                                     |
 | ------- | -------------------- | -------------------------------------------------------- |
@@ -952,7 +952,7 @@ void gpiod_set_raw_value_cansleep(struct gpio_desc *desc, int value);
 
 ------
 
-## 5 逻辑与原始接口的区别
+## 4.5_5_逻辑与原始接口的区别
 
 | 对比项                        | `gpiod_get_value()` / `set_value()` | `gpiod_get_raw_value()` / `set_raw_value()` |
 | ----------------------------- | ----------------------------------- | ------------------------------------------- |
@@ -963,7 +963,7 @@ void gpiod_set_raw_value_cansleep(struct gpio_desc *desc, int value);
 
 ------
 
-## 6 底层实现机制
+## 4.6_6_底层实现机制
 
 在 `drivers/gpio/gpiolib.c` 中可见简化实现：
 
@@ -990,9 +990,9 @@ int gpiod_get_value(const struct gpio_desc *desc)
 
 ------
 
-## 7 使用场景与实例
+## 4.7_7_使用场景与实例
 
-### 1️⃣ **调试硬件电平**
+### 4.7.1_1️⃣_调试硬件电平
 
 在调试阶段，如果怀疑 `GPIO_ACTIVE_LOW` 配置错误，可以直接读物理电平：
 
@@ -1001,7 +1001,7 @@ int val = gpiod_get_raw_value_cansleep(my_gpio);
 dev_info(dev, "Physical level = %d\n", val);
 ```
 
-### 2️⃣ **特殊控制器需要跳过逻辑层**
+### 4.7.2_2️⃣_特殊控制器需要跳过逻辑层
 
 某些驱动（如 PMIC、MCU GPIO 扩展芯片）在内部定义了自有极性逻辑，驱动编写者想完全绕过 DTS 的 Active-Low 转换：
 
@@ -1009,13 +1009,13 @@ dev_info(dev, "Physical level = %d\n", val);
 gpiod_set_raw_value(my_gpio, 1);  /* 直接输出高电平 */
 ```
 
-### 3️⃣ **快速原始信号测试**
+### 4.7.3_3️⃣_快速原始信号测试
 
 在调试外设握手信号（如 RESET, STROBE）时，用 `_raw_` 接口可准确观察电平行为。
 
 ------
 
-## 8 逻辑与原始接口对比示例
+## 4.8_8_逻辑与原始接口对比示例
 
 假设 DTS 中定义如下：
 
@@ -1032,7 +1032,7 @@ reset-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 
 ------
 
-## 9 cansleep 版本说明
+## 4.9_9_cansleep_版本说明
 
 | 函数                                                         | 是否可能睡眠 | 使用场合                                          |
 | ------------------------------------------------------------ | ------------ | ------------------------------------------------- |
@@ -1043,7 +1043,7 @@ reset-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 
 ------
 
-## 10 调试与验证
+## 4.10_10_调试与验证
 
 1️⃣ **查看 GPIO 状态：**
 
@@ -1064,7 +1064,7 @@ dev_info(dev, "logic=%d, raw=%d\n", logic, raw);
 
 ------
 
-## 11 小结
+## 4.11_11_小结
 
 | 函数名                           | 功能                   | 考虑极性 | 可睡眠 | 推荐用途            |
 | -------------------------------- | ---------------------- | -------- | ------ | ------------------- |
@@ -1085,11 +1085,11 @@ dev_info(dev, "logic=%d, raw=%d\n", logic, raw);
 
 
 
-# gpiod_get_value()
+# 第5章_gpiod_get_value()
 
 ------
 
-## 1 接口定义与位置
+## 5.1_1_接口定义与位置
 
 - **头文件**：`#include <linux/gpio/consumer.h>`
 
@@ -1103,7 +1103,7 @@ dev_info(dev, "logic=%d, raw=%d\n", logic, raw);
 
 ------
 
-## 2 作用（What）
+## 5.2_2_作用(What)
 
 在**非睡眠（原子）上下文**读取一根 GPIO 线的**逻辑值**（已按 active-low/active-high 做极性映射）：
 
@@ -1115,7 +1115,7 @@ dev_info(dev, "logic=%d, raw=%d\n", logic, raw);
 
 ------
 
-## 3 使用场景（When）
+## 5.3_3_使用场景(When)
 
 - 处在 **不可睡眠/原子** 路径：硬中断顶半部、`spin_lock_irqsave()` 保护区、`preempt_disable()` 区等。
 - 控制器为 **MMIO GPIO** 或保证读取不会触发睡眠。
@@ -1123,7 +1123,7 @@ dev_info(dev, "logic=%d, raw=%d\n", logic, raw);
 
 ------
 
-## 4 与相关接口的区别（Compare）
+## 5.4_4_与相关接口的区别(Compare)
 
 | 接口                             | 上下文     | 极性映射           | 返回          | 备注            |
 | -------------------------------- | ---------- | ------------------ | ------------- | --------------- |
@@ -1139,14 +1139,14 @@ dev_info(dev, "logic=%d, raw=%d\n", logic, raw);
 
 ------
 
-## 5 极性与返回语义（Logic vs Level）
+## 5.5_5_极性与返回语义(Logic_vs_Level)
 
 - 设备树/固件若将该线标注为 `GPIO_ACTIVE_LOW`，则函数会**自动取反**硬件电平，使返回值表示**逻辑“激活/非激活”**而非裸电平。
 - 需要“裸电平”作低级调试或时序诊断时，使用 `gpiod_get_raw_value()`。
 
 ------
 
-## 6 方向与可读性（Direction）
+## 5.6_6_方向与可读性(Direction)
 
 - **输入方向**：读取硬件输入寄存器或芯片 `get()` 回调。
 - **输出方向**：若控制器支持读回，则读硬件输出/数据寄存器；若不支持，可能读**软件缓存值**（由 gpiolib 维护）。因此：
@@ -1155,7 +1155,7 @@ dev_info(dev, "logic=%d, raw=%d\n", logic, raw);
 
 ------
 
-## 7 错误与返回值（Errors）
+## 5.7_7_错误与返回值(Errors)
 
 - 成功：`0` 或 `1`。
 - 失败：负 errno（如 `-EINVAL/-ENODEV` 等，取决于描述符有效性与芯片实现）。
@@ -1163,7 +1163,7 @@ dev_info(dev, "logic=%d, raw=%d\n", logic, raw);
 
 ------
 
-## 8 并发与性能（Concurrency & Perf）
+## 5.8_8_并发与性能(Concurrency_&_Perf)
 
 - 原子安全，适合中断等时延敏感路径。
 - 频繁批量读取多根线时，优先考虑 **批量 API**：
@@ -1172,9 +1172,9 @@ dev_info(dev, "logic=%d, raw=%d\n", logic, raw);
 
 ------
 
-## 9 典型用法（Snippets）
+## 5.9_9_典型用法(Snippets)
 
-### 9.1 原子路径读取（中断处理顶半部）
+### 5.9.1_原子路径读取(中断处理顶半部)
 
 ```c
 irqreturn_t foo_irq_handler(int irq, void *data)
@@ -1190,7 +1190,7 @@ irqreturn_t foo_irq_handler(int irq, void *data)
 }
 ```
 
-### 9.2 可睡眠路径请换用 `_cansleep`
+### 5.9.2_可睡眠路径请换用_cansleep
 
 ```c
 /* 进程上下文 / 工作队列 */
@@ -1200,7 +1200,7 @@ if (v < 0)
 /* 使用 v ... */
 ```
 
-### 9.3 读取原始电平（绕过极性）
+### 5.9.3_读取原始电平(绕过极性)
 
 ```c
 int level = gpiod_get_raw_value(f->g_line);   /* 0/1 = 物理电平 */
@@ -1208,7 +1208,7 @@ int level = gpiod_get_raw_value(f->g_line);   /* 0/1 = 物理电平 */
 
 ------
 
-## 10 最小检查清单（Checklist）
+## 5.10_10_最小检查清单(Checklist)
 
 -  `desc` 来源合法（`devm_gpiod_get*()`/`gpiod_get*()` 成功且非 `ERR_PTR`）。
 -  上下文是否可能睡眠？是 → 改用 `_cansleep`。
@@ -1218,7 +1218,7 @@ int level = gpiod_get_raw_value(f->g_line);   /* 0/1 = 物理电平 */
 
 ------
 
-## 11 结论
+## 5.11_11_结论
 
 `gpiod_get_value()` 用于**原子上下文**读取 GPIO 的**逻辑值**，自动处理 active-low 极性，返回 `0/1` 或负 errno。对于可能睡眠的控制器或进程上下文，使用 `gpiod_get_value_cansleep()`；需要物理电平则使用 `raw` 版本。
 
@@ -1228,9 +1228,9 @@ int level = gpiod_get_raw_value(f->g_line);   /* 0/1 = 物理电平 */
 
 ------
 
-# gpiod_set_value()
+# 第6章_gpiod_set_value()
 
-## 1 接口定义与位置
+## 6.1_1_接口定义与位置
 
 - **头文件**：`#include <linux/gpio/consumer.h>`
 
@@ -1244,7 +1244,7 @@ int level = gpiod_get_raw_value(f->g_line);   /* 0/1 = 物理电平 */
 
 ------
 
-## 2 作用（What）
+## 6.2_2_作用(What)
 
 将由 `desc` 标识的 GPIO 线路设置为**逻辑值**：
 
@@ -1254,7 +1254,7 @@ int level = gpiod_get_raw_value(f->g_line);   /* 0/1 = 物理电平 */
 
 ------
 
-## 3 上下文与睡眠约束（When）
+## 6.3_3_上下文与睡眠约束(When)
 
 - 该接口设计为**原子/不可睡眠路径**可用（如硬中断顶半部、`spin_lock` 区域内）。
 
@@ -1269,7 +1269,7 @@ int level = gpiod_get_raw_value(f->g_line);   /* 0/1 = 物理电平 */
 
 ------
 
-## 4 极性与 raw 语义（Polarity）
+## 6.4_4_极性与_raw_语义(Polarity)
 
 - **自动极性**：`gpiod_set_value()` 会根据 `GPIO_ACTIVE_LOW` 自动映射高/低电平，无需调用者手动取反。
 
@@ -1283,7 +1283,7 @@ int level = gpiod_get_raw_value(f->g_line);   /* 0/1 = 物理电平 */
 
 ------
 
-## 5 与 `_cansleep` 版本区别（Compare）
+## 6.5_5_与_cansleep_版本区别(Compare)
 
 | 接口                             | 可用于睡眠上下文 | 控制器可睡眠 | 极性映射 | 返回值 |
 | -------------------------------- | ---------------- | ------------ | -------- | ------ |
@@ -1296,7 +1296,7 @@ int level = gpiod_get_raw_value(f->g_line);   /* 0/1 = 物理电平 */
 
 ------
 
-## 6 方向配置关系（Direction）
+## 6.6_6_方向配置关系(Direction)
 
 - 本函数**不负责**设定方向。常见做法：
 
@@ -1316,7 +1316,7 @@ int level = gpiod_get_raw_value(f->g_line);   /* 0/1 = 物理电平 */
 
 ------
 
-## 7 返回值与错误处理
+## 6.7_7_返回值与错误处理
 
 - 原型为 `void`，不返回错误码。应在**获取阶段**（`gpiod_get*()`/`devm_gpiod_get*()`）与**方向配置**阶段处理错误：
 
@@ -1330,7 +1330,7 @@ int level = gpiod_get_raw_value(f->g_line);   /* 0/1 = 物理电平 */
 
 ------
 
-## 8 典型用法（Snippet）
+## 6.8_8_典型用法(Snippet)
 
 ```c
 struct gpio_desc *rst;
@@ -1355,14 +1355,14 @@ if (unlikely(gpiod_cansleep(rst))) {
 
 ------
 
-## 9 时序与性能（Timing/Perf）
+## 6.9_9_时序与性能(Timing/Perf)
 
 - 该接口适合 **MMIO** 型 GPIO 控制器（寄存器内存映射，写寄存器不睡眠），可用于高频翻转或严格时序控制（例如 bit-banging 的时钟/数据线）。
 - 对 **I²C/SPI/远端桥接** GPIO 控制器，应使用 `_cansleep` 版本；频繁翻转会引发总线开销，不适合做高速时序。
 
 ------
 
-## 10 常见误用与规避（Pitfalls）
+## 6.10_10_常见误用与规避(Pitfalls)
 
 1. **在 `gpiod_cansleep(desc)==true` 的线路上使用本函数** → 改用 `_cansleep`。
 2. **未设置为输出就调用** → 先在 `get` 时用 `GPIOD_OUT_*` 或显式 `gpiod_direction_output()`。
@@ -1372,7 +1372,7 @@ if (unlikely(gpiod_cansleep(rst))) {
 
 ------
 
-## 11 最小检查清单（Checklist）
+## 6.11_11_最小检查清单(Checklist)
 
 -  `desc` 获取成功且非空：`!IS_ERR_OR_NULL(desc)`
 -  控制器不可睡眠：`!gpiod_cansleep(desc)`
@@ -1388,9 +1388,9 @@ if (unlikely(gpiod_cansleep(rst))) {
 
 ---
 
-# gpiod_put()
+# 第7章_gpiod_put()
 
-## 1 接口定义与位置
+## 7.1_1_接口定义与位置
 
 - **头文件**：`#include <linux/gpio/consumer.h>`
 
@@ -1404,7 +1404,7 @@ if (unlikely(gpiod_cansleep(rst))) {
 
 ------
 
-## 2 作用（What）
+## 7.2_2_作用(What)
 
 释放通过 descriptor-based GPIO API 获取的**单个** GPIO 描述符 `desc`，撤销当前消费者与该 GPIO 线的绑定关系并减少引用计数。
 
@@ -1412,7 +1412,7 @@ if (unlikely(gpiod_cansleep(rst))) {
 
 ------
 
-## 3 上下文与睡眠约束（When）
+## 7.3_3_上下文与睡眠约束(When)
 
 - **要求可睡眠上下文**（进程上下文、`remove()`、关闭路径等）；**不要**在硬中断/不可睡眠环境中调用。
 - 该释放过程可能触发锁与同步，**不保证原子安全**。
@@ -1420,7 +1420,7 @@ if (unlikely(gpiod_cansleep(rst))) {
 
 ------
 
-## 4 极性与 raw 语义（Polarity）
+## 7.4_4_极性与_raw_语义(Polarity)
 
 与设置电平不同，`gpiod_put()` **不涉及极性/电平**：它仅释放描述符。若需要在释放前设置一个安全**逻辑电平**或**物理电平**，请分别使用：
 
@@ -1431,7 +1431,7 @@ gpiod_set_raw_value_cansleep(desc, 0/1);
 
 ------
 
-## 5 与 devres 版本区别（Compare）
+## 7.5_5_与_devres_版本区别(Compare)
 
 | 接口               | 获取方式            | 释放方式            | 释放时机                       |
 | ------------------ | ------------------- | ------------------- | ------------------------------ |
@@ -1443,7 +1443,7 @@ gpiod_set_raw_value_cansleep(desc, 0/1);
 
 ------
 
-## 6 与方向/状态的关系（Direction）
+## 7.6_6_与方向/状态的关系(Direction)
 
 - `gpiod_put()` **不改变**方向/电平。
 
@@ -1456,14 +1456,14 @@ gpiod_set_raw_value_cansleep(desc, 0/1);
 
 ------
 
-## 7 返回值与错误处理
+## 7.7_7_返回值与错误处理
 
 - 原型为 `void`，**不返回错误码**。
 - 资源管理的错误应在**获取阶段**与**方向配置**阶段处理（如 `IS_ERR()` 检查）；释放阶段应保证参数有效或为 NULL。
 
 ------
 
-## 8 典型用法（Snippet）
+## 7.8_8_典型用法(Snippet)
 
 **非 devres：**
 
@@ -1504,14 +1504,14 @@ led = NULL;
 
 ------
 
-## 9 时序与性能（Timing/Perf）
+## 7.9_9_时序与性能(Timing/Perf)
 
 - 仅做资源解绑与计数，不涉及实际 I/O 操作；但可能持锁/同步，**不适合在高频、时间敏感的原子路径**调用。
 - 在退出路径集中释放多个 GPIO 时，建议先统一设置安全电平，再批量 `gpiod_put()`，减少状态抖动。
 
 ------
 
-## 10 常见误用与规避（Pitfalls）
+## 7.10_10_常见误用与规避(Pitfalls)
 
 1. **在中断上下文调用** → 改至可睡眠上下文（如工作队列、`remove()`）。
 2. **对 `ERR_PTR` 调用** → 使用 `IS_ERR_OR_NULL()` 检查。
@@ -1521,7 +1521,7 @@ led = NULL;
 
 ------
 
-## 11 最小检查清单（Checklist）
+## 7.11_11_最小检查清单(Checklist)
 
 - `!in_interrupt()` 且当前上下文允许睡眠
 - `!IS_ERR_OR_NULL(desc)`

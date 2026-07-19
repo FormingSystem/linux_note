@@ -1,27 +1,27 @@
-# devm_gpiod_get()
+# 第1章_devm_gpiod_get()
 
-## 1 作用（是什么）
+## 1.1_1_作用(是什么)
 
 `devm_gpiod_get()` 用于**从固件节点（设备树/ACPI）解析并获取一个 GPIO 描述符 `struct gpio_desc \*`，并在获取时按照给定的初始化标志设置方向/初始电平**。该函数接口没有索引参数传递，因此只能用于单GPIO时使用。该资源通过 **devres** 框架自动托管：
 
 - `probe()` 成功后在 **`remove()` 或设备释放** 时自动回收；
 - `probe()` 任何阶段失败时，**已获取的 GPIO 会被自动回滚释放**。
 
-## 2 使用场景（什么时候用）
+## 1.2_2_使用场景(什么时候用)
 
 - 设备节点存在如 `reset-gpios`、`enable-gpios`、`cs-gpios` 等属性，需要在 `probe()` 中**一次性获取并初始化**；
 - 希望**避免手写释放路径**（减少泄漏/差错）；
 - 需要消费端 API 的**统一抽象**（`gpiod_*()`）而非老式 `gpio_*()` 编号式接口。
 - GPIO的属性配置只能是单引脚。
 
-## 3 不写的后果（如果不用它）
+## 1.3_3_不写的后果(如果不用它)
 
-- 若改用 [gpiod_get()](#gpiod_get())：你必须**显式在错误路径和 `remove()` 中释放**（调用 `gpiod_put()`），出错时更易遗漏；
+- 若改用 [gpiod_get()](#第1章_gpiod_get())：你必须**显式在错误路径和 `remove()` 中释放**（调用 `gpiod_put()`），出错时更易遗漏；
 - 若直接用旧式 `gpio_request()/gpio_direction_*()`：与现代 GPIO consumer 模型不一致，**无法透明处理 Active-Low/电气特性**，并且易与同一线的其它消费者冲突。
 
 ------
 
-## 4 函数原型与头文件
+## 1.4_4_函数原型与头文件
 
 ```c
 #include <linux/gpio/consumer.h>
@@ -37,7 +37,7 @@ struct gpio_desc *devm_gpiod_get(struct device *dev,
 
 ------
 
-## 5 参数与语义（精确定义）
+## 1.5_5_参数与语义(精确定义)
 
 | 参数     | 类型               | 语义与取值要求                                               |
 | -------- | ------------------ | ------------------------------------------------------------ |
@@ -56,7 +56,7 @@ struct gpio_desc *devm_gpiod_get(struct device *dev,
 
 ------
 
-## 6 返回值与错误码
+## 1.6_6_返回值与错误码
 
 - 成功：`struct gpio_desc *`（非 `ERR_PTR`），与 `dev` 绑定到 devres。
 - 失败：`ERR_PTR(<neg errno>)`，常见：
@@ -70,7 +70,7 @@ struct gpio_desc *devm_gpiod_get(struct device *dev,
 
 ------
 
-## 7 解析与绑定流程（数据结构视角）
+## 1.7_7_解析与绑定流程(数据结构视角)
 
 固件（DTS）到 consumer 的解析路径概要：
 
@@ -104,7 +104,7 @@ F --> G[&quot;devres 注册，绑定到 dev 生命周期&quot;]
 
 ------
 
-## 8 与其它获取接口的关系（选型）
+## 1.8_8_与其它获取接口的关系(选型)
 
 | 接口                                              | 特点                                    | 典型用途                   |
 | ------------------------------------------------- | --------------------------------------- | -------------------------- |
@@ -119,7 +119,7 @@ F --> G[&quot;devres 注册，绑定到 dev 生命周期&quot;]
 
 ------
 
-## 9 设备树属性命名与 `con_id` 映射
+## 1.9_9_设备树属性命名与_con_id_映射
 
 - `con_id = "reset"` → 查找属性 **`"reset-gpios"`**；
 - `con_id = NULL` → 查找 `"gpios"` 或由板级 **GPIO lookup table** 提供的匹配；
@@ -129,7 +129,7 @@ F --> G[&quot;devres 注册，绑定到 dev 生命周期&quot;]
 
 ------
 
-## 10 示例代码（完整 `probe()`）
+## 1.10_10_示例代码(完整_probe())
 
 ```c
 #include <linux/module.h>
@@ -207,7 +207,7 @@ demo@0 {
 
 ------
 
-## 11 常见误用与诊断
+## 1.11_11_常见误用与诊断
 
 1. **`dev` 未绑定设备树节点**
 
@@ -242,7 +242,7 @@ demo@0 {
 
 ------
 
-## 12 调试与验证方法
+## 1.12_12_调试与验证方法
 
 - **检查解析结果**
 
@@ -268,7 +268,7 @@ demo@0 {
 
 ------
 
-## 13 与中断的关系（简述）
+## 1.13_13_与中断的关系(简述)
 
 `devm_gpiod_get()` 获取的是**GPIO 线**的 consumer 句柄；若需要转为中断使用，通常：
 
@@ -277,7 +277,7 @@ demo@0 {
 
 ------
 
-## 14 最佳实践（驱动规范）
+## 1.14_14_最佳实践(驱动规范)
 
 - `probe()` 中用 `devm_gpiod_get*_optional()` 处理可选引脚；
 - 对输出脚，**在获取时就给出期望的初值**（`GPIOD_OUT_LOW/HIGH`），避免时序毛刺；
@@ -287,7 +287,7 @@ demo@0 {
 
 ------
 
-## 15 小结（要点回顾）
+## 1.15_15_小结(要点回顾)
 
 - **接口**：`devm_gpiod_get(dev, con_id, flags)`；
 - **资源管理**：devres 自动托管，免 `gpiod_put()`；
@@ -299,11 +299,11 @@ demo@0 {
 
 
 
-# devm_gpiod_get_index()
+# 第2章_devm_gpiod_get_index()
 
 ------
 
-## 1. 概要说明（功能定位）
+## 2.1_概要说明(功能定位)
 
 `devm_gpiod_get_index()`
  用于**从设备节点（device tree / ACPI / firmware node）中，按索引号获取指定功能的第 N 个 GPIO 引脚描述符**。
@@ -313,7 +313,7 @@ demo@0 {
 
 ------
 
-## 2. 函数原型与头文件
+## 2.2_函数原型与头文件
 
 ```c
 #include <linux/gpio/consumer.h>
@@ -330,7 +330,7 @@ devm_gpiod_get_index(struct device *dev,
 
 ------
 
-## 3. 参数详解
+## 2.3_参数详解
 
 | 参数名   | 类型               | 说明                                                         |
 | -------- | ------------------ | ------------------------------------------------------------ |
@@ -341,7 +341,7 @@ devm_gpiod_get_index(struct device *dev,
 
 ------
 
-## 4. 返回值与错误码
+## 2.4_返回值与错误码
 
 | 返回值               | 含义                             |
 | -------------------- | -------------------------------- |
@@ -362,9 +362,9 @@ if (IS_ERR(desc))
 
 ------
 
-## 5. 工作机制（内核数据流）
+## 2.5_工作机制(内核数据流)
 
-### 解析流程（核心路径）
+### 2.5.1_解析流程(核心路径)
 
 ```mermaid
 flowchart TD
@@ -377,7 +377,7 @@ A["devm_gpiod_get_index(dev, con_id, idx, flags)"]
  --> G["devres_add() → 自动释放绑定 dev"]
 ```
 
-### 数据结构关联
+### 2.5.2_数据结构关联
 
 | 结构体             | 关键字段                  | 说明                                   |
 | ------------------ | ------------------------- | -------------------------------------- |
@@ -388,7 +388,7 @@ A["devm_gpiod_get_index(dev, con_id, idx, flags)"]
 
 ------
 
-## 6. DTS 语法与解析规则
+## 2.6_DTS_语法与解析规则
 
 **DTS 示例：**
 
@@ -410,7 +410,7 @@ led-controller@0 {
 
 ------
 
-## 7. 典型用法示例
+## 2.7_典型用法示例
 
 ```c
 static int led_probe(struct platform_device *pdev)
@@ -443,7 +443,7 @@ static int led_probe(struct platform_device *pdev)
 
 ------
 
-## 8. 与其他接口的区别
+## 2.8_与其他接口的区别
 
 | 接口名                          | 解析对象     | 是否自动释放 | 支持索引 | 属性拼接         | 说明                 |
 | ------------------------------- | ------------ | ------------ | -------- | ---------------- | -------------------- |
@@ -455,7 +455,7 @@ static int led_probe(struct platform_device *pdev)
 
 ------
 
-## 9. 内核日志与验证
+## 2.9_内核日志与验证
 
 1. **查看 GPIO 消费者状态：**
 
@@ -485,7 +485,7 @@ static int led_probe(struct platform_device *pdev)
 
 ------
 
-## 10. 调用时机与推荐做法
+## 2.10_调用时机与推荐做法
 
 | 阶段                  | 是否推荐   | 原因                             |
 | --------------------- | ---------- | -------------------------------- |
@@ -496,7 +496,7 @@ static int led_probe(struct platform_device *pdev)
 
 ------
 
-## 11. 常见误区与诊断
+## 2.11_常见误区与诊断
 
 | 误区                      | 结果                   | 修正                                                |
 | ------------------------- | ---------------------- | --------------------------------------------------- |
@@ -508,7 +508,7 @@ static int led_probe(struct platform_device *pdev)
 
 ------
 
-## 12. 总结
+## 2.12_总结
 
 | 项目     | 内容                                                         |
 | -------- | ------------------------------------------------------------ |
@@ -523,11 +523,11 @@ static int led_probe(struct platform_device *pdev)
 
 
 
-# devm_gpiod_get_from_of_node()
+# 第3章_devm_gpiod_get_from_of_node()
 
 ------
 
-## 1. 函数定位与作用
+## 3.1_函数定位与作用
 
 **接口说明**：
 
@@ -544,7 +544,7 @@ static int led_probe(struct platform_device *pdev)
 
 ------
 
-## 2. 原型与头文件
+## 3.2_原型与头文件
 
 ```c
 #include <linux/gpio/consumer.h>
@@ -562,7 +562,7 @@ devm_gpiod_get_from_of_node(struct device *dev,
 
 ------
 
-## 3. 参数语义
+## 3.3_参数语义
 
 | 参数       | 类型                   | 要点                                                         |
 | ---------- | ---------------------- | ------------------------------------------------------------ |
@@ -575,7 +575,7 @@ devm_gpiod_get_from_of_node(struct device *dev,
 
 ------
 
-## 4. 返回值与错误码
+## 3.4_返回值与错误码
 
 - 成功：返回非错误指针的 `struct gpio_desc *`；
 - 失败：返回 `ERR_PTR(-Exxx)`。常见：
@@ -594,7 +594,7 @@ if (IS_ERR(desc))
 
 ------
 
-## 5. 行为细节与数据流
+## 3.5_行为细节与数据流
 
 - **固件极性/电气特性**（如 `GPIO_ACTIVE_LOW`、`GPIO_OPEN_DRAIN`、`GPIO_PULL_UP`）来自 **设备树属性 `<flags>`**，由 consumer 框架解析并体现在 `gpio_desc` 的逻辑层：
   - `gpiod_set_value()`/**_cansleep** 接受的是**逻辑值**（有效/无效），而非物理高低电平；
@@ -605,7 +605,7 @@ if (IS_ERR(desc))
 
 ------
 
-## 6. 与相近 API 的边界
+## 3.6_与相近_API_的边界
 
 | API                                 | 入口定位                                                     | 自动释放              | 方向/初值                        | 属性定位方式                    |
 | ----------------------------------- | ------------------------------------------------------------ | --------------------- | -------------------------------- | ------------------------------- |
@@ -623,9 +623,9 @@ if (IS_ERR(desc))
 
 ------
 
-## 7. 典型用法
+## 3.7_典型用法
 
-### 7.1 从子节点读取 GPIO（MFD/复合设备常见）
+### 3.7.1_从子节点读取_GPIO(MFD/复合设备常见)
 
 **DTS：**
 
@@ -674,7 +674,7 @@ static int demo_probe(struct platform_device *pdev)
 - `label` 会出现在 `/sys/kernel/debug/gpio` 里，便于排查谁占用该线；
 - 无需 `gpiod_put()`，devres 托管释放。
 
-### 7.2 同一属性多路 GPIO（用 `index` 选择）
+### 3.7.2_同一属性多路_GPIO(用_index_选择)
 
 **DTS：**
 
@@ -701,7 +701,7 @@ for (int i = 0; i < 3; i++) {
 
 ------
 
-## 8. 常见错误与诊断
+## 3.8_常见错误与诊断
 
 1. **`node` 非期望节点**
 
@@ -736,7 +736,7 @@ for (int i = 0; i < 3; i++) {
 
 ------
 
-## 9. 调试方法
+## 3.9_调试方法
 
 - **查看占用情况**：`cat /sys/kernel/debug/gpio`
 
@@ -755,7 +755,7 @@ for (int i = 0; i < 3; i++) {
 
 ------
 
-## 10. 小结（关键点归纳）
+## 3.10_小结(关键点归纳)
 
 - **接口**：`devm_gpiod_get_from_of_node(dev, node, propname, index, flags, label)`；
 - **用途**：从**任意指定 OF 节点**直接解析 GPIO，**获取即设向/初值**，并 **devres 自动释放**；
@@ -765,13 +765,13 @@ for (int i = 0; i < 3; i++) {
 
 
 
-# devm_gpiod_get_optional() 
+# 第4章_devm_gpiod_get_optional()
 
 devm_gpiod_get_optional() 的详细技术讲解，涵盖接口定义、语义说明、使用场景、返回值机制、与其他接口的关系以及典型驱动示例。
 
 ------
 
-## 1 函数原型
+## 4.1_1_函数原型
 
 ```c
 struct gpio_desc *devm_gpiod_get_optional(struct device *dev,
@@ -787,7 +787,7 @@ struct gpio_desc *devm_gpiod_get_optional(struct device *dev,
 
 ------
 
-## 2 函数作用
+## 4.2_2_函数作用
 
 `devm_gpiod_get_optional()` 用于**从设备树（或其他 GPIO 查找表）中获取一个 GPIO 描述符**，但与 `devm_gpiod_get()` 的区别在于：
 
@@ -797,7 +797,7 @@ struct gpio_desc *devm_gpiod_get_optional(struct device *dev,
 
 ------
 
-## 3 函数参数说明
+## 4.3_3_函数参数说明
 
 | 参数名   | 类型               | 说明                                                         |
 | -------- | ------------------ | ------------------------------------------------------------ |
@@ -807,7 +807,7 @@ struct gpio_desc *devm_gpiod_get_optional(struct device *dev,
 
 ------
 
-### 3.1 `con_id` 与设备树属性的映射关系
+### 4.3.1_con_id_与设备树属性的映射关系
 
 假设设备树节点如下：
 
@@ -828,7 +828,7 @@ reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
 
 ------
 
-### 3.2 `flags` 常用取值
+### 4.3.2_flags_常用取值
 
 | 宏                        | 含义                           |
 | ------------------------- | ------------------------------ |
@@ -840,7 +840,7 @@ reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
 
 ------
 
-## 4 返回值
+## 4.4_4_返回值
 
 | 返回值               | 含义                                       |
 | -------------------- | ------------------------------------------ |
@@ -850,7 +850,7 @@ reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
 
 ------
 
-### 注意事项
+### 4.4.1_注意事项
 
 - **NULL 不等于错误**：表示可选 GPIO 缺失，这通常是预期行为。
 - **IS_ERR_OR_NULL(desc)** 可用于统一判断：
@@ -865,7 +865,7 @@ if (IS_ERR_OR_NULL(desc)) {
 
 ------
 
-## 5 资源管理机制（devres）
+## 4.5_5_资源管理机制(devres)
 
 该函数前缀为 `devm_`，意味着它通过 **设备资源管理机制（Device Resource Management）** 自动注册释放回调。
 
@@ -881,9 +881,9 @@ if (IS_ERR_OR_NULL(desc)) {
 
 ------
 
-## 6 典型使用场景
+## 4.6_6_典型使用场景
 
-### 6.1 场景：可选复位引脚
+### 4.6.1_场景_可选复位引脚
 
 某些外设存在可选复位引脚：
 
@@ -909,7 +909,7 @@ static int mychip_probe(struct platform_device *pdev)
 
 ------
 
-### 6.2 场景：可选电源使能引脚
+### 4.6.2_场景_可选电源使能引脚
 
 ```dts
 mychip@0 {
@@ -930,7 +930,7 @@ if (!IS_ERR_OR_NULL(enable_gpio))
 
 ------
 
-## 7 与其他接口的对比
+## 4.7_7_与其他接口的对比
 
 | 接口                        | 缺少属性时行为        | 是否自动释放 | 用途                     |
 | --------------------------- | --------------------- | ------------ | ------------------------ |
@@ -942,7 +942,7 @@ if (!IS_ERR_OR_NULL(enable_gpio))
 
 ------
 
-## 8 底层调用流程（内核路径）
+## 4.8_8_底层调用流程(内核路径)
 
 ```mermaid
 flowchart TD
@@ -955,7 +955,7 @@ flowchart TD
 
 ------
 
-## 9 调试建议
+## 4.9_9_调试建议
 
 1. 启用调试日志：
 
@@ -973,7 +973,7 @@ flowchart TD
 
 ------
 
-## 10 小结
+## 4.10_10_小结
 
 | 项目           | 内容                                     |
 | -------------- | ---------------------------------------- |
@@ -992,11 +992,11 @@ flowchart TD
 
 
 
-# devm_gpiod_get_index_optional()
+# 第5章_devm_gpiod_get_index_optional()
 
 ------
 
-## 1 接口定义与位置
+## 5.1_1_接口定义与位置
 
 ```c
 #include <linux/gpio/consumer.h>
@@ -1013,7 +1013,7 @@ struct gpio_desc *devm_gpiod_get_index_optional(struct device *dev,
 
 ------
 
-## 2 函数作用（What）
+## 5.2_2_函数作用(What)
 
 该函数用于从 **设备树 (Device Tree)** 或 **板级描述 (board file / lookup table)** 中，
  为指定的设备 (`struct device *dev`) 获取某个命名的 GPIO 信号（consumer）。
@@ -1031,7 +1031,7 @@ struct gpio_desc *devm_gpiod_get_index_optional(struct device *dev,
 
 ------
 
-## 3 参数说明
+## 5.3_3_参数说明
 
 | 参数名   | 类型               | 含义                                                |
 | -------- | ------------------ | --------------------------------------------------- |
@@ -1042,7 +1042,7 @@ struct gpio_desc *devm_gpiod_get_index_optional(struct device *dev,
 
 ------
 
-## 4 可选获取的语义（optional）
+## 5.4_4_可选获取的语义(optional)
 
 `devm_gpiod_get_index_optional()` 的“optional”含义：
 
@@ -1059,7 +1059,7 @@ reset-gpios、enable-gpios、ctrl-gpios、optional interrupt lines 等。
 
 ------
 
-## 5 flags 参数取值（GPIO 初始化行为）
+## 5.5_5_flags_参数取值(GPIO_初始化行为)
 
 `flags` 取值来自 `enum gpiod_flags`（见 `include/linux/gpio/consumer.h`）：
 
@@ -1073,7 +1073,7 @@ reset-gpios、enable-gpios、ctrl-gpios、optional interrupt lines 等。
 
 ------
 
-## 6 典型使用场景
+## 5.6_6_典型使用场景
 
 在驱动中，经常用于一组相同功能 GPIO，例如：
 
@@ -1103,7 +1103,7 @@ for (i = 0; i < 2; i++) {
 
 ------
 
-## 7 返回值语义（Return Values）
+## 5.7_7_返回值语义(Return_Values)
 
 | 返回值类型               | 含义                              |
 | ------------------------ | --------------------------------- |
@@ -1123,7 +1123,7 @@ if (!desc)
 
 ------
 
-## 8 devm 自动管理机制（与资源回收）
+## 5.8_8_devm_自动管理机制(与资源回收)
 
 `devm_` 前缀表示该资源通过 **devres（Device Managed Resource）** 系统自动释放。
  这意味着：
@@ -1136,7 +1136,7 @@ if (!desc)
 
 ------
 
-## 9 函数调用路径（源码级）
+## 5.9_9_函数调用路径(源码级)
 
 核心流程（`drivers/gpio/gpiolib-devres.c`）：
 
@@ -1165,7 +1165,7 @@ struct gpio_desc *devm_gpiod_get_index_optional(struct device *dev,
 
 ------
 
-## 10 设备树示例（DTS）
+## 5.10_10_设备树示例(DTS)
 
 ```dts
 led-consumer {
@@ -1196,7 +1196,7 @@ for (i = 0; i < 2; i++)
 
 ------
 
-## 11 调试建议
+## 5.11_11_调试建议
 
 - 启用动态调试：
 
@@ -1214,7 +1214,7 @@ for (i = 0; i < 2; i++)
 
 ------
 
-## 12 使用建议与陷阱
+## 5.12_12_使用建议与陷阱
 
 ✅ **建议：**
 
@@ -1232,7 +1232,7 @@ for (i = 0; i < 2; i++)
 
 ------
 
-## 13总结表
+## 5.13_13总结表
 
 | 函数                              | 可选性 | 索引 | 自动释放 | 缺失时行为    |
 | --------------------------------- | ------ | ---- | -------- | ------------- |
@@ -1244,7 +1244,7 @@ for (i = 0; i < 2; i++)
 
 ------
 
-## 14 结论
+## 5.14_14_结论
 
 `devm_gpiod_get_index_optional()` 是 **GPIO consumer API** 中最灵活、安全的资源获取接口之一，
  具备以下特征：
@@ -1263,11 +1263,11 @@ for (i = 0; i < 2; i++)
 
 ---
 
-# devm_pinctrl_get()
+# 第6章_devm_pinctrl_get()
 
 ------
 
-## 1. 概要说明（功能定位）
+## 6.1_概要说明(功能定位)
 
 `devm_pinctrl_get()` 是 **pinctrl（pin control）子系统的设备管理型资源接口**，用于：
 
@@ -1279,7 +1279,7 @@ for (i = 0; i < 2; i++)
 
 ------
 
-## 2. 函数原型与头文件
+## 6.2_函数原型与头文件
 
 ```c
 #include <linux/pinctrl/consumer.h>
@@ -1292,7 +1292,7 @@ struct pinctrl *devm_pinctrl_get(struct device *dev);
 
 ------
 
-## 3. 参数与返回值
+## 6.3_参数与返回值
 
 | 参数  | 类型              | 说明                                                         |
 | ----- | ----------------- | ------------------------------------------------------------ |
@@ -1315,7 +1315,7 @@ struct pinctrl *devm_pinctrl_get(struct device *dev);
 
 ------
 
-## 4. 内核数据结构关联
+## 6.4_内核数据结构关联
 
 | 结构体                 | 关键字段                      | 说明                                           |
 | ---------------------- | ----------------------------- | ---------------------------------------------- |
@@ -1326,7 +1326,7 @@ struct pinctrl *devm_pinctrl_get(struct device *dev);
 
 ------
 
-## 5. 调用场景与使用目的
+## 6.5_调用场景与使用目的
 
 `devm_pinctrl_get()` 典型使用于设备驱动的 **probe()** 函数中，用于：
 
@@ -1338,7 +1338,7 @@ struct pinctrl *devm_pinctrl_get(struct device *dev);
 
 ------
 
-## 6. 内核工作机制（解析路径）
+## 6.6_内核工作机制(解析路径)
 
 ```mermaid
 flowchart TD
@@ -1355,7 +1355,7 @@ A["devm_pinctrl_get(dev)"]
 
 ------
 
-## 7. 与相关接口的区别
+## 6.7_与相关接口的区别
 
 | 接口                        | 是否自动释放 | 说明                                    |
 | --------------------------- | ------------ | --------------------------------------- |
@@ -1367,7 +1367,7 @@ A["devm_pinctrl_get(dev)"]
 
 ------
 
-## 8. DTS（设备树）对应关系
+## 6.8_DTS(设备树)对应关系
 
 **设备树示例：**
 
@@ -1414,7 +1414,7 @@ pinctrl_select_state(pctl, state_default);
 
 ------
 
-## 9. 驱动中典型使用模式
+## 6.9_驱动中典型使用模式
 
 ```c
 static int demo_probe(struct platform_device *pdev)
@@ -1458,7 +1458,7 @@ static int demo_remove(struct platform_device *pdev)
 
 ------
 
-## 10. 常见错误与排查方法
+## 6.10_常见错误与排查方法
 
 | 错误类型                      | 典型日志 / 现象                    | 可能原因                             |
 | ----------------------------- | ---------------------------------- | ------------------------------------ |
@@ -1477,7 +1477,7 @@ cat /sys/kernel/debug/pinctrl/*/pinmux-pins
 
 ------
 
-## 11. 与设备树属性的对应逻辑
+## 6.11_与设备树属性的对应逻辑
 
 | 属性名                          | 作用                                     |
 | ------------------------------- | ---------------------------------------- |
@@ -1495,7 +1495,7 @@ cat /sys/kernel/debug/pinctrl/*/pinmux-pins
 
 ------
 
-## 12. devm 自动释放机制说明
+## 6.12_devm_自动释放机制说明
 
 `devm_pinctrl_get()` 调用后，内核会注册一个 devres 资源节点：
 
@@ -1517,7 +1517,7 @@ devm_pinctrl_put(dev, pctl);
 
 ------
 
-## 13. 小结
+## 6.13_小结
 
 | 项目              | 内容                                                |
 | ----------------- | --------------------------------------------------- |

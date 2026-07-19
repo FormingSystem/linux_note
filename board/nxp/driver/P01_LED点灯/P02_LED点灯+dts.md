@@ -1,20 +1,22 @@
+# 第2章_LED点灯+dts
+
 此处为简写版本，方面背框架代码。详细内容参考：[P02-字符设备-LED点灯+dts.md](../../../driver/P01_字符驱动框架/P02_字符设备-LED点灯+dts.md)。
 
 
 
-### i.MX6ULL 基于设备树的 LED 驱动开发示例
+#### (1)_i.MX6ULL_基于设备树的_LED_驱动开发示例
 
 
-#### 一、设备树配置
+##### 1)_设备树配置
 需修改 `imx6ul-14x14-test.dtsi` 文件，完成引脚复用配置和 LED 节点定义。
 
-1. **引脚复用配置（添加到 `&iomuxc` 节点）** 
+1. **引脚复用配置（添加到 `&iomuxc` 节点）**
    定义 LED 引脚（GPIO1_IO03）的复用功能和电气属性：
-   
+
    ```dts
    &iomuxc {
        pinctrl-names = "default";
-   
+
        // LED 引脚配置组：复用为 GPIO 功能
        pinctrl_dt_led: dtledgrp {
            fsl,pins = <
@@ -25,10 +27,10 @@
        };
    };
    ```
-   
-2. **LED 设备节点（添加到根节点 `/` 下）** 
+
+2. **LED 设备节点（添加到根节点 `/` 下）**
    定义 LED 设备的硬件信息，关联 GPIO 控制器和引脚配置：
-   
+
    ```dts
    / {
        dt_led: led@0 {
@@ -40,8 +42,8 @@
        };
    };
    ```
-   
-3. **冲突处理** 
+
+3. **冲突处理**
    若引脚被其他设备（如 `tsc`）占用，注释冲突配置：
    ```dts
    // arch/arm/boot/dts/imx6ul-14x14-test.dtsi：
@@ -56,7 +58,7 @@
    ```
 
 
-#### 二、驱动代码实现（`dt_led.c`）
+##### 2)_驱动代码实现(dt_led.c)
 通过平台驱动框架匹配设备树节点，使用 GPIO 子系统 API 控制 LED。
 
 ```c
@@ -124,13 +126,13 @@ static enum led_action parse_user_input(const char *input, size_t len) {
         if (trimmed[0] == '0') return LED_ACT_ON;
         if (trimmed[0] == '1') return LED_ACT_OFF;
     }
-    
+
     // 2. 字符串解析：on/true/yes→点亮；off/false/no→熄灭（大小写不敏感）
     bool on;
     if (!kstrtobool(trimmed, &on)) {
         return on ? LED_ACT_ON : LED_ACT_OFF;
     }
-    
+
     // 3. 无法识别的输入→保持现状
     return LED_ACT_KEEP;
 }
@@ -149,43 +151,43 @@ static int led_release(struct inode *inode, struct file *file) {
 }
 
 // 写入接口：用户通过echo写入控制命令（如echo 0 > /dev/dt_led）
-static ssize_t led_write(struct file *file, const char __user *ubuf, 
+static ssize_t led_write(struct file *file, const char __user *ubuf,
                          size_t count, loff_t *ppos) {
     struct dt_led_dev *dev = file->private_data;
     size_t copy_len;
     enum led_action act;
 
     if (count == 0) return 0;
-    
+
     // 互斥锁保护：避免多线程同时写入
     mutex_lock(&dev->led_mutex);
-    
+
     // 1. 拷贝用户输入到内核缓冲区
     copy_len = min(count, (size_t)(BUFFER_SIZE - 1));
     if (copy_from_user(dev->buffer, ubuf, copy_len)) {
         mutex_unlock(&dev->led_mutex);
         return -EFAULT; // 拷贝失败（用户空间地址非法）
     }
-    
+
     // 2. 解析输入并执行动作
     act = parse_user_input(dev->buffer, copy_len);
     switch (act) {
         case LED_ACT_ON:
             led_set_state(true);
-            pr_info("[%s] LED turned ON (input: %.*s)\n", 
+            pr_info("[%s] LED turned ON (input: %.*s)\n",
                     DRIVER_NAME, (int)copy_len, dev->buffer);
             break;
         case LED_ACT_OFF:
             led_set_state(false);
-            pr_info("[%s] LED turned OFF (input: %.*s)\n", 
+            pr_info("[%s] LED turned OFF (input: %.*s)\n",
                     DRIVER_NAME, (int)copy_len, dev->buffer);
             break;
         case LED_ACT_KEEP:
-            pr_warn("[%s] unknown input: %.*s (keep state)\n", 
+            pr_warn("[%s] unknown input: %.*s (keep state)\n",
                     DRIVER_NAME, (int)copy_len, dev->buffer);
             break;
     }
-    
+
     mutex_unlock(&dev->led_mutex);
     return copy_len; // 返回实际写入字节数
 }
@@ -207,7 +209,7 @@ static int dt_led_probe(struct platform_device *pdev) {
     // 1. 初始化私有数据
     memset(&led_dev, 0, sizeof(struct dt_led_dev));
     mutex_init(&led_dev.led_mutex);
-    
+
     // 2. 从设备树获取GPIO资源（核心步骤）
     // devm_gpiod_get：自动管理GPIO资源，无需手动释放
     // 第二个参数NULL：匹配设备树"gpios"属性（无名称时）
@@ -217,14 +219,14 @@ static int dt_led_probe(struct platform_device *pdev) {
         dev_err(dev, "failed to get GPIO from device tree\n");
         return PTR_ERR(led_dev.gpiod);
     }
-    
+
     // 3. 申请设备号（动态分配，避免静态冲突）
     ret = alloc_chrdev_region(&led_dev.dev_num, 0, 1, DEVICE_NAME);
     if (ret < 0) {
         dev_err(dev, "failed to allocate device number\n");
         return ret;
     }
-    
+
     // 4. 初始化并注册字符设备
     cdev_init(&led_dev.led_cdev, &led_fops);
     led_dev.led_cdev.owner = THIS_MODULE;
@@ -233,7 +235,7 @@ static int dt_led_probe(struct platform_device *pdev) {
         dev_err(dev, "failed to add cdev\n");
         goto err_unregister_chrdev;
     }
-    
+
     // 5. 创建设备类（在/sys/class下生成dt_led_class）
     led_dev.led_class = class_create(THIS_MODULE, "dt_led_class");
     if (IS_ERR(led_dev.led_class)) {
@@ -241,20 +243,20 @@ static int dt_led_probe(struct platform_device *pdev) {
         ret = PTR_ERR(led_dev.led_class);
         goto err_cdev_del;
     }
-    
+
     // 6. 创建设备节点（在/dev下生成dt_led）
-    led_dev.led_device = device_create(led_dev.led_class, NULL, 
+    led_dev.led_device = device_create(led_dev.led_class, NULL,
                                        led_dev.dev_num, NULL, DEVICE_NAME);
     if (IS_ERR(led_dev.led_device)) {
         dev_err(dev, "failed to create device node\n");
         ret = PTR_ERR(led_dev.led_device);
         goto err_class_destroy;
     }
-    
+
     dev_info(dev, "LED driver probe success! Try: echo 0 > /dev/%s (ON), echo 1 > /dev/%s (OFF)\n",
              DEVICE_NAME, DEVICE_NAME);
     return 0;
-    
+
     // 错误处理：反向释放资源
 err_class_destroy:
     class_destroy(led_dev.led_class);
@@ -306,41 +308,41 @@ MODULE_ALIAS("imx6ull-dt-led");
 ```
 
 
-#### 三、编译与验证
-1. **Makefile（交叉编译配置）** 
-   
+##### 3)_编译与验证
+1. **Makefile（交叉编译配置）**
+
    ```makefile
    # 编译目标：dt_led.c -> dt_led.ko
    obj-m := dt_led.o
-   
+
    # 内核源码路径（改成你自己的）
    KDIR := /home/lizhaojun/linux/nxp/kernel/linux-imx-6.1
    PWD  := $(shell pwd)
-   
+
    # 默认目标：交叉编译 ARM 模块
    ARCH ?= arm
    CROSS_COMPILE ?= arm-none-linux-gnueabihf-
-   
+
    all:
    	$(MAKE) -C $(KDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) modules
-   
+
    clean:
    	$(MAKE) -C $(KDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) clean
    ```
-   
-2. **验证步骤** 
-   
-   - 编译设备树：`make imx6ul-14x14-test.dtb` 生成 `imx6ul-14x14-test.dtb` 并烧录到开发板。 
-   - 编译驱动：`make` 生成 `dt_led.ko`，拷贝到开发板。 
-   - 加载驱动：`insmod dt_led.ko`。 
-   - 控制 LED： 
+
+2. **验证步骤**
+
+   - 编译设备树：`make imx6ul-14x14-test.dtb` 生成 `imx6ul-14x14-test.dtb` 并烧录到开发板。
+   - 编译驱动：`make` 生成 `dt_led.ko`，拷贝到开发板。
+   - 加载驱动：`insmod dt_led.ko`。
+   - 控制 LED：
      ```bash
      echo 0 > /dev/dt_led  # 点亮 LED
      echo 1 > /dev/dt_led  # 熄灭 LED
      ```
 
 
-#### 核心逻辑总结
-1. 设备树：通过 `gpios` 和 `pinctrl` 属性定义 LED 硬件信息（引脚、复用、电平极性），与驱动解耦。 
-2. 驱动：通过 `of_device_id` 匹配设备树节点，使用 `devm_gpiod_get` 获取 GPIO 资源，通过 `gpiod_set_value` 控制电平。 
+##### 4)_核心逻辑总结
+1. 设备树：通过 `gpios` 和 `pinctrl` 属性定义 LED 硬件信息（引脚、复用、电平极性），与驱动解耦。
+2. 驱动：通过 `of_device_id` 匹配设备树节点，使用 `devm_gpiod_get` 获取 GPIO 资源，通过 `gpiod_set_value` 控制电平。
 3. 优势：更换 LED 引脚时无需修改驱动，仅需调整设备树配置，提升兼容性和开发效率。
