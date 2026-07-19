@@ -9,7 +9,7 @@
       
     - 1.1.4 链表操作（插入、删除、遍历等）
     
-- 1.2 [**哈希表（Hash Table）**](../../appendix/kernel_data_structure/哈希表_Hash_Table/第1部分_数据结构理论基础/第1章_哈希表核心原理_空间与时间的终极博弈.md)
+- 1.2 [**哈希表（Hash Table）**](../../appendix/kernel_data_structure/哈希表_Hash_Table/第1部分_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)
   - 1.2.1 基本原理
       
     - 1.2.2 内核实现：`hlist_head`, `hlist_node`
