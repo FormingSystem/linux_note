@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.time_management.定时器简介.p10_与_devres_驱动生命周期和_pm_的关系
+title: "与 devres 驱动生命周期和 PM 的关系"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第10章_与_devres_驱动生命周期和_PM_的关系
 
 > 章节内容说明：本章聚焦“时间/定时机制”与**资源管理（devres）**、**驱动生命周期（probe/remove/error path）**、**电源管理（suspend/resume/runtime PM）\**之间的耦合与收尾顺序。我们先阐明为什么内核没有通用的 `devm_timer_create()`；随后给出以 `devm_add_action_or_reset()` 为核心的资源化收尾模板；再讲定时器 + `delayed_work` 的\**正确停表顺序**与**并发边界**；最后讨论系统挂起/恢复对定时器的影响、补偿策略与唤醒配合（`wakeup_source`/RTC alarm/PM QoS）。

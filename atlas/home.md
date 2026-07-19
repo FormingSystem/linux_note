@@ -1,3 +1,12 @@
+---
+id: atlas.home
+title: "知识库导航"
+kind: track
+status: evolving
+domains:
+  - navigation
+---
+
 # 第1章_知识库导航
 
 ## 1.1_知识本体

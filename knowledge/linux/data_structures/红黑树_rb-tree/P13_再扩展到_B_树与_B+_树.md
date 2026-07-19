@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.红黑树_rb-tree.p13_再扩展到_b_树与_b_树
+title: "再扩展到 B 树与 B+ 树"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第13章_再扩展到_B_树与_B+_树
 
 ## 13.1_章节内容说明

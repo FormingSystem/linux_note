@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.irq.中断机制简介.p10_smp_与中断亲和性_ipi_机制
+title: "SMP 与中断亲和性 IPI 机制"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第10章_SMP_与中断亲和性_IPI_机制
 
 ## 10.1_章节内容说明

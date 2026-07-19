@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.gpio.gpio子模块详解
+title: "GPIO 总览与生态演进"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 [TOC]
 
 

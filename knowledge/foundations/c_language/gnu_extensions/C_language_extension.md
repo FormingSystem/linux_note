@@ -1,3 +1,12 @@
+---
+id: knowledge.foundations.c_language.gnu_extensions.c_language_extension
+title: "Linux 内核开发中的 GNU C 扩展与内核特有语法"
+kind: concept
+status: evolving
+domains:
+  - foundations
+---
+
 # 第1章_Linux_内核开发中的_GNU_C_扩展与内核特有语法
 
 学习 **Linux 内核** 开发时，除了熟悉标准 C 语法外，还需要了解一些 **GNU C 扩展** 和 **内核特有语法**。Linux 内核为了性能优化，例如减少指令数、提高缓存命中率，以及硬件交互，例如寄存器访问、内存对齐，大量使用了这些特性。

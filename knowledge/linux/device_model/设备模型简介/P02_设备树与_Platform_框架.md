@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.device_model.设备模型简介.p02_设备树与_platform_框架
+title: "设备树与 Platform 框架"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第2章_设备树与_Platform_框架
 
 ## 2.1_of_device_id_与_of_match_table_匹配机制详解

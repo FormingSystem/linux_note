@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.gpio.附录a_gpio_数据结构
+title: "struct gpio chip"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 (kernel 6.1 为基准)
 
 # 第1章_struct_gpio_chip

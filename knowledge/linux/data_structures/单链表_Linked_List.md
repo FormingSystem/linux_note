@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.单链表_linked_list
+title: "单链表(Singly Linked List)"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 
 # 第1章_单链表(Singly_Linked_List)
 

@@ -1,3 +1,12 @@
+---
+id: research.investigations.readme
+title: "问题调查入口"
+kind: investigation
+status: evolving
+domains:
+  - research
+---
+
 # 第1章_问题调查入口
 
 本目录接收尚未形成稳定知识结论的问题、假设、故障现象和调查记录。新建笔记先记录问题边界、环境、证据和下一步验证，再根据调查结果归入知识、工程、平台、实验或参考资料。

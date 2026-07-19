@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.io_model.async_notification.异步通知简介.p03_fasync_机制的历史与设计动机
+title: "fasync 机制的历史与设计动机"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第3章_fasync_机制的历史与设计动机
 
 > **章节内容说明**

@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.fundamentals.framework_model.kobject讲解
+title: "kobject讲解"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 ### 1.1.1_版本的_Linux_内核中的_kobject_数据结构讲解
 
 `kobject` 是 Linux 内核中的一个重要数据结构，它代表了内核中一个对象的抽象。它是内核中设备模型（Device Model）和对象管理的核心组成部分，几乎所有的内核对象（如设备、驱动、模块等）都通过 `kobject` 进行管理。

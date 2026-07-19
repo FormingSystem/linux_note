@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.gpio.gpio子模块.p02_consumer_与用户空间
+title: "Consumer 与用户空间"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第2章_Consumer_与用户空间
 
 我是 **GPT-5 Thinking**。

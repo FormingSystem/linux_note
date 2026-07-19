@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.fundamentals.running_linux_kernel.p02_linux内核中常用的数据结构和算法
+title: "Linux内核中常用的数据结构和算法"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第2章_Linux内核中常用的数据结构和算法
 
 #### (1)_内核数据结构总览

@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.io_model.async_notification.异步通知简介.p09_用户态编程_从_sigio_到_signalfdepoll
+title: "用户态编程 从 SIGIO 到 signalfdepoll"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第9章_用户态编程_从_SIGIO_到_signalfdepoll
 
 ## 9.1_用户态编程_从_SIGIO_到_signalfd/epoll

@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.irq.中断机制简介.p02_soc_视角下的中断体系
+title: "SoC 视角下的中断体系"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第2章_SoC_视角下的中断体系
 
 ## 2.1_章节内容说明

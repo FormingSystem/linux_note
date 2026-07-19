@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.irq.中断机制简介.p13_特殊与高优先级中断_nmi_定时器_性能中断
+title: "特殊与高优先级中断 NMI 定时器 性能中断"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第13章_特殊与高优先级中断_NMI_定时器_性能中断
 
 ## 13.1_章节内容说明

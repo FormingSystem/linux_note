@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p03_子模块详解.p19_rcu_读无锁_写延迟回收
+title: "RCU(读无锁 写延迟回收)"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第19章_RCU(读无锁_写延迟回收)
 
 明白，Leaf。你要的是一个**融合版**：既保留我之前那份深入机制（宽限期、内存序、域划分、SRCU）的解释深度，又要保持**你这套章节标准的排版骨架**（概念、模式、混搭、模板、表格），并且**用“三问法”（并发模型/读者行为/更新策略）**作为逻辑主线，真正体现 RCU 与 seqcount/seqlock 的对比地位。

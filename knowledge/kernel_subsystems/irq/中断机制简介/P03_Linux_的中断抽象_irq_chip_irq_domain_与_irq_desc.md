@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.irq.中断机制简介.p03_linux_的中断抽象_irq_chip_irq_domain_与_irq_desc
+title: "Linux 的中断抽象 irq chip irq domain 与 irq desc"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第3章_Linux_的中断抽象_irq_chip_irq_domain_与_irq_desc
 
 ## 3.1_本章目标

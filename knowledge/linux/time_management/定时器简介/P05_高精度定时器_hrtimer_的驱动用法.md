@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.time_management.定时器简介.p05_高精度定时器_hrtimer_的驱动用法
+title: "高精度定时器 hrtimer 的驱动用法"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第5章_高精度定时器_hrtimer_的驱动用法
 
 **章节内容说明**

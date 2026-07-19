@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p03_子模块详解.p26_dma与缓存一致性_mapunmapsync_门铃顺序
+title: "DMA与缓存一致性(mapunmapsync 门铃顺序)"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第26章_DMA与缓存一致性(mapunmapsync_门铃顺序)
 
 GPT-5 声明：下面开始直接进入 **第26章** 正文。

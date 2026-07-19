@@ -6,8 +6,8 @@ repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 usage() {
     cat <<'EOF'
 用法：
-  ./format.sh check [all|paths|headings|links] [--summary] [路径...]
-  ./format.sh fix   [all|paths|headings|links] [--summary] [路径...]
+  ./format.sh check [all|paths|headings|metadata|links] [--summary] [路径...]
+  ./format.sh fix   [all|paths|headings|metadata|links] [--summary] [路径...]
   ./format.sh doctor
   ./format.sh install
 
@@ -16,9 +16,10 @@ usage() {
   fix         写入所有可安全确定的修复
 
 范围：
-  all         文件与目录名、Markdown 标题、文档链接（默认）
+  all         路径、Markdown标题、元数据和文档链接（默认）
   paths       仅处理文件与目录名
   headings    仅处理 Markdown 标题及标题锚点
+  metadata    仅处理文档ID、标题、类型、状态和领域
   links       仅处理 Markdown、Obsidian、Canvas 和 Base 链接
 
 环境命令：
@@ -78,7 +79,7 @@ fi
 
 if (($# > 0)); then
     case "$1" in
-        all|paths|headings|links)
+        all|paths|headings|metadata|links)
             scope=$1
             shift
             ;;
@@ -112,19 +113,24 @@ case "$scope" in
     headings)
         exec "$repo_root/scripts/format_markdown.sh" "${arguments[@]}"
         ;;
+    metadata)
+        exec "$repo_root/scripts/format_metadata.sh" "${arguments[@]}"
+        ;;
     links)
         exec "$repo_root/scripts/update_links.sh" "${arguments[@]}"
         ;;
     all)
-        # 先改标题，再重命名路径，最后统一检查所有链接。
+        # 依次维护标题、元数据、路径和链接；元数据步骤不改正文标题。
         if [[ $action == check ]]; then
             status=0
             "$repo_root/scripts/format_markdown.sh" "${arguments[@]}" || status=1
+            "$repo_root/scripts/format_metadata.sh" "${arguments[@]}" || status=1
             "$repo_root/scripts/normalize_paths.sh" "${arguments[@]}" || status=1
             "$repo_root/scripts/update_links.sh" "${arguments[@]}" || status=1
             exit "$status"
         fi
         "$repo_root/scripts/format_markdown.sh" "${arguments[@]}"
+        "$repo_root/scripts/format_metadata.sh" "${arguments[@]}"
         "$repo_root/scripts/normalize_paths.sh" "${arguments[@]}"
         exec "$repo_root/scripts/update_links.sh" "${arguments[@]}"
         ;;

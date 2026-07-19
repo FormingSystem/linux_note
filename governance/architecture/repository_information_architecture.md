@@ -1,3 +1,12 @@
+---
+id: governance.architecture.repository_information_architecture
+title: "仓库信息架构设计"
+kind: reference
+status: evolving
+domains:
+  - governance
+---
+
 # 第1章_仓库信息架构设计
 
 ## 1.1_设计目标
@@ -169,7 +178,7 @@ linux-note/
 
 ## 1.7_文档元数据
 
-正式文档可以使用 YAML Front Matter 补充机器可读属性：
+正式 Markdown 必须使用 YAML Front Matter 保存机器可读属性：
 
 ```yaml
 ---
@@ -190,7 +199,20 @@ status: maintained
 ---
 ```
 
-元数据按知识治理需要逐步补充，不在目录重构阶段强制批量生成。已经人工确认的标题、序号和正文结构不得由元数据工具擅自改写。
+强制字段为 `id`、`title`、`kind`、`status` 和 `domains`：
+
+- `id` 是文档永久身份，创建后不因移动、改名或出版顺序变化而重算。
+- `title` 是不含阅读序号的可读标题。
+- `kind` 必须来自本规范的文档类型集合。
+- `status` 使用 `draft`、`evolving`、`maintained` 或 `archived`。
+- `domains` 记录能够可靠确认的知识领域。
+
+元数据工具只维护 Front Matter，不得改写人工确认的标题序号和正文结构。使用以下命令检查或补齐：
+
+```bash
+./format.sh check metadata --summary
+./format.sh fix metadata --summary
+```
 
 ## 1.8_命名与编号
 
@@ -247,6 +269,9 @@ Markdown 标题采用统一阅读序号：
 
 - 非法路径和文件名。
 - Markdown、Obsidian、Canvas 和 Base 断链。
+- 缺失或重复的文档 ID。
+- 缺失的 `title`、`kind`、`status` 和 `domains`。
+- 非法文档类型和维护状态。
 - 孤立知识文档。
 - 学习路线和出版清单中的失效引用。
 - 源码阅读缺少版本信息。

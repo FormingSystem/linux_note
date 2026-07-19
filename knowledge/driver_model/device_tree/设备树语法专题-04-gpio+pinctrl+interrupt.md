@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.device_tree.设备树语法专题-04-gpio_pinctrl_interrupt
+title: "GPIO + pinctrl + interrupt 的设备树语法与应用"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 > **第 1 章：GPIO + pinctrl + interrupt 在 Linux Kernel 6.1 及之后版本中的设备树语法与应用**
 
 ------

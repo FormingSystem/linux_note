@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.input.input_子系统简介.p03_先跑起来_最小可运行输入设备_hello_input
+title: "先跑起来 最小可运行输入设备(Hello, Input)"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第3章_先跑起来_最小可运行输入设备(Hello,_Input)
 
 > **章节内容说明**

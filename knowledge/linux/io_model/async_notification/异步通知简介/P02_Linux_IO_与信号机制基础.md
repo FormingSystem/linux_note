@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.io_model.async_notification.异步通知简介.p02_linux_io_与信号机制基础
+title: "Linux IO 与信号机制基础"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第2章_Linux_IO_与信号机制基础
 
 ## 2.1_Linux_I/O_与信号机制基础

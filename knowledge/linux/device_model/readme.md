@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.device_model.readme
+title: "readme"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 好的，按你给的34章内容，**分为 6 个部分**，不使用表格，只用数字分段：
 
 ------

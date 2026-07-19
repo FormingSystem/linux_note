@@ -1,3 +1,12 @@
+---
+id: repository.agents
+title: "Codex 项目上下文"
+kind: reference
+status: evolving
+domains:
+  - repository
+---
+
 # 第1章_Codex_项目上下文
 
 这是给 AI 协作者和以后打开仓库时快速恢复上下文用的文件。进入本仓库后，优先阅读本文件、`README.md` 和 `governance/architecture/repository_information_architecture.md`，再查看 Git 协作规则。
@@ -46,7 +55,7 @@
 - 路径禁止空格、中文标点、全角符号、连续下划线和首尾下划线。
 - 技术名词中具有语义的半角符号可以保留，例如 `u-boot`、`C++` 和版本号中的 `.`。
 - 文档中文标题保存在 Front Matter 的 `title` 和正文 H1 中。
-- 正式文档必须具有稳定 `id`、`title`、`kind` 和 `status`。
+- 正式文档必须具有稳定 `id`、`title`、`kind`、`status` 和 `domains`；使用 `./format.sh check metadata` 检查。
 - 移动或重命名后必须同步更新 Markdown、Obsidian、Canvas、Base 和图片引用。
 - 批量操作前检查冲突，操作后运行结构、链接和 `git diff --check` 检查。
 
@@ -76,7 +85,7 @@
 ./format.sh check links --summary path/to/note.md
 ./format.sh fix links --summary path/to/note.md
 
-# 全量执行 Markdown 标题、文件名和链接格式化
+# 全量执行标题、元数据、文件名和链接格式化
 ./format.sh fix all --summary
 ```
 
@@ -96,7 +105,7 @@
 - 中文描述修改2
 - ...
 ```
-.obsidian\workspace.json  等obsidian的链接管理相关的文档出现修改，就随着任何修改一起提交，并不比出现在git修改描述里，它的更新属于是obsidian链接发生变动，不必单独做提交说明。
+`.obsidian/workspace.json` 等 Obsidian 链接管理文件出现修改时，随对应内容一起提交。它们属于链接变化，不必单独拆分提交或写入提交说明。
 
 校验正则：
 

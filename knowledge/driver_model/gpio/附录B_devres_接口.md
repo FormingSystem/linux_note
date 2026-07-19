@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.gpio.附录b_devres_接口
+title: "devm gpiod get()"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第1章_devm_gpiod_get()
 
 ## 1.1_1_作用(是什么)

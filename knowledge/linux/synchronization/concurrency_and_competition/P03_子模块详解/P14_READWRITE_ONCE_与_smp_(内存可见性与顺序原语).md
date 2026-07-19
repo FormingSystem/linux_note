@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p03_子模块详解.p14_readwrite_once_与_smp_内存可见性与顺序原语
+title: "READWRITE ONCE 与 smp (内存可见性与顺序原语)"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第14章_READWRITE_ONCE_与_smp_(内存可见性与顺序原语)
 
 ## 14.1_READ/WRITE_ONCE_与_smp_*(内存可见性与顺序原语)

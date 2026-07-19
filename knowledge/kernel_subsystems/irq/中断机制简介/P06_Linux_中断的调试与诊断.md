@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.irq.中断机制简介.p06_linux_中断的调试与诊断
+title: "Linux 中断的调试与诊断"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第6章_Linux_中断的调试与诊断
 
 > 这一章的定位和前面几章不一样：前面是在“会写”，这一章是在“怎么确认它真的在跑、跑得对不对、哪一步卡了”。很多人卡在“我确信我写对了，但板子就是没反应”这一步，本章就是解决这个阶段的问题。

@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.input.input_子系统简介.p07_案例_a_lcd_触摸屏驱动_完整可编译
+title: "案例 A LCD 触摸屏驱动(完整可编译)"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第7章_案例_A_LCD_触摸屏驱动(完整可编译)
 
 【章节内容说明】

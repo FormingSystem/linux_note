@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.time_management.定时器简介.p06_基于工作队列的延迟执行_delayed_work
+title: "基于工作队列的延迟执行 delayed work"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第6章_基于工作队列的延迟执行_delayed_work
 
 > **章节内容说明**

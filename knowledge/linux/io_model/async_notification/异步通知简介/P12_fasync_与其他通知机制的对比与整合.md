@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.io_model.async_notification.异步通知简介.p12_fasync_与其他通知机制的对比与整合
+title: "fasync 与其他通知机制的对比与整合"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第12章_fasync_与其他通知机制的对比与整合
 
 ## 12.1_与其他通知机制的对比与整合

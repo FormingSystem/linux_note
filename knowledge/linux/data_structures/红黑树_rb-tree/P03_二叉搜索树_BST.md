@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.红黑树_rb-tree.p03_二叉搜索树_bst
+title: "二叉搜索树 BST"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第3章_二叉搜索树_BST
 
 ## 3.1_章节内容说明

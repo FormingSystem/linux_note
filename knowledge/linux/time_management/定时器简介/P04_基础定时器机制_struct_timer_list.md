@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.time_management.定时器简介.p04_基础定时器机制_struct_timer_list
+title: "基础定时器机制 struct timer list"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第4章_基础定时器机制_struct_timer_list
 
 **章节内容说明**

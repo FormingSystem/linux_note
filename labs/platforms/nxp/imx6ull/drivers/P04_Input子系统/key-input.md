@@ -1,3 +1,13 @@
+---
+id: labs.platforms.nxp.imx6ull.drivers.p04_input子系统.key-input
+title: "功能说明"
+kind: lab
+status: evolving
+domains:
+  - linux
+  - lab
+---
+
 # 第1章_功能说明
 
 完成一个input子系统的驱动，按键10ms抖动，然后将这个按键状态上报给input子系统。

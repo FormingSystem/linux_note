@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.architecture.modules_and_device_nodes.linux_驱动开发_makefile_指南
+title: "走进驱动的 Makefile"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 **注意**：以下内容出自GPT。
 
 

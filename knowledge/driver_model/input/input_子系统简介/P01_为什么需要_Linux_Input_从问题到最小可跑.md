@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.input.input_子系统简介.p01_为什么需要_linux_input_从问题到最小可跑
+title: "为什么需要 Linux Input 从问题到最小可跑"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第1章_为什么需要_Linux_Input_从问题到最小可跑
 
 ## 1.1_引入_/_背景_/_本章目标(以问题为入口)

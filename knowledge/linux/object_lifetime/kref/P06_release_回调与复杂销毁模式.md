@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.kref.p06_release_回调与复杂销毁模式
+title: "release 回调与复杂销毁模式"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第6章_release_回调与复杂销毁模式
 
 ## 6.1_本章主线

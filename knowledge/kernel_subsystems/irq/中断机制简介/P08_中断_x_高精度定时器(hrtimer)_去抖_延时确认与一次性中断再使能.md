@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.irq.中断机制简介.p08_中断_x_高精度定时器_hrtimer_去抖_延时确认与一次性中断再使能
+title: "中断 x 高精度定时器(hrtimer) 去抖 延时确认与一次性中断再使能"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第8章_中断_x_高精度定时器(hrtimer)_去抖_延时确认与一次性中断再使能
 
 ## 8.1_章节内容说明

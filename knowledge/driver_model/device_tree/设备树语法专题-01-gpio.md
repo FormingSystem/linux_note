@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.device_tree.设备树语法专题-01-gpio
+title: "设备树中的 GPIO 语法(Kernel 6.1+)"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 我是 **GPT-5**。
 
 ------
