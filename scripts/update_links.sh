@@ -1,0 +1,332 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+用法：
+  ./format.sh links [--apply] [--summary] [Markdown文件或目录...]
+
+默认仅扫描。不给路径时扫描全仓；指定文件或目录时只扫描对应 Markdown。
+自动修复仅用于唯一确定的目标；歧义链接和缺失资源只报告、不改写。
+EOF
+}
+
+mode=preview
+detail=true
+paths=()
+for argument in "$@"; do
+    case "$argument" in
+        --apply) mode=apply ;;
+        --summary) detail=false ;;
+        -h|--help) usage; exit 0 ;;
+        --*) printf '未知参数：%s\n' "$argument" >&2; exit 2 ;;
+        *) paths+=("$argument") ;;
+    esac
+done
+
+for command_name in git python3; do
+    command -v "$command_name" >/dev/null 2>&1 || {
+        printf '缺少依赖：%s\n' "$command_name" >&2
+        exit 127
+    }
+done
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+export PYTHONUTF8=1
+export PYTHONIOENCODING=utf-8
+
+python3 - "$mode" "$detail" "${paths[@]}" <<'PY'
+from __future__ import annotations
+
+import os
+import posixpath
+import re
+import subprocess
+import sys
+from collections import Counter, defaultdict
+from dataclasses import dataclass
+from pathlib import Path, PurePosixPath
+from urllib.parse import unquote
+
+APPLY = sys.argv[1] == "apply"
+DETAIL = sys.argv[2] == "true"
+SELECTIONS = [item.replace("\\", "/").removeprefix("./").rstrip("/") for item in sys.argv[3:]]
+EXTERNAL = re.compile(r"^(?:[A-Za-z][A-Za-z0-9+.-]*:|//|mailto:|data:)")
+HTML_LINK = re.compile(r"(?P<prefix>\b(?:src|href)=[\"'])(?P<target>[^\"']+)(?P<suffix>[\"'])", re.IGNORECASE)
+WIKI_LINK = re.compile(r"(?P<prefix>!?\[\[)(?P<body>[^\]]+)(?P<suffix>\]\])")
+
+
+@dataclass
+class Link:
+    start: int
+    end: int
+    target_start: int
+    target_end: int
+    target: str
+    kind: str
+
+
+def git_output(*arguments: str) -> bytes:
+    return subprocess.run(["git", *arguments], check=True, stdout=subprocess.PIPE).stdout
+
+
+def normalize_repo_path(value: str) -> str:
+    normalized = posixpath.normpath(value.replace("\\", "/"))
+    return "" if normalized == "." else normalized.removeprefix("./")
+
+
+def split_fragment(target: str) -> tuple[str, str]:
+    path, marker, fragment = target.partition("#")
+    return path, marker + fragment if marker else ""
+
+
+def markdown_links(content: str) -> list[Link]:
+    links: list[Link] = []
+    index = 0
+    while index < len(content) - 1:
+        open_paren = content.find("](", index)
+        if open_paren < 0:
+            break
+        cursor = open_paren + 2
+        depth = 1
+        escaped = False
+        while cursor < len(content):
+            character = content[cursor]
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+                if depth == 0:
+                    raw = content[open_paren + 2:cursor]
+                    if raw.startswith("<") and ">" in raw:
+                        close_angle = raw.find(">")
+                        target = raw[1:close_angle]
+                        offset = 1
+                    else:
+                        title_match = re.match(r"([^\s]+)(?:\s+[\"'].*)?$", raw, re.DOTALL)
+                        if not title_match:
+                            break
+                        target = title_match.group(1)
+                        offset = title_match.start(1)
+                    links.append(Link(open_paren, cursor + 1, open_paren + 2 + offset, open_paren + 2 + offset + len(target), target, "markdown"))
+                    break
+            cursor += 1
+        index = max(cursor + 1, open_paren + 2)
+    return links
+
+
+def collect_links(content: str) -> list[Link]:
+    links = markdown_links(content)
+    for match in WIKI_LINK.finditer(content):
+        body = match.group("body")
+        target = body.split("|", 1)[0]
+        start = match.start("body")
+        links.append(Link(match.start(), match.end(), start, start + len(target), target, "wiki"))
+    for match in HTML_LINK.finditer(content):
+        links.append(Link(match.start(), match.end(), match.start("target"), match.end("target"), match.group("target"), "html"))
+    ranges: list[tuple[int, int]] = []
+    offset = 0
+    in_fence = False
+    fence_marker = ""
+    for line in content.splitlines(keepends=True):
+        fence = re.match(r"^[ \t]*(`{3,}|~{3,})", line)
+        if fence:
+            marker = fence.group(1)[0]
+            if not in_fence:
+                in_fence, fence_marker = True, marker
+                ranges.append((offset, offset + len(line)))
+            elif marker == fence_marker:
+                ranges.append((offset, offset + len(line)))
+                in_fence, fence_marker = False, ""
+            offset += len(line)
+            continue
+        if in_fence:
+            ranges.append((offset, offset + len(line)))
+        else:
+            for inline in re.finditer(r"(`+)(.+?)\1", line):
+                ranges.append((offset + inline.start(), offset + inline.end()))
+        offset += len(line)
+
+    def is_code(position: int) -> bool:
+        return any(start <= position < end for start, end in ranges)
+
+    return sorted((link for link in links if not is_code(link.start)), key=lambda item: item.start)
+
+
+def rename_map() -> dict[str, str]:
+    raw = git_output("diff", "--name-status", "-z", "-M", "HEAD")
+    fields = [field.decode("utf-8") for field in raw.split(b"\0") if field]
+    result: dict[str, str] = {}
+    index = 0
+    while index < len(fields):
+        status = fields[index]
+        index += 1
+        if status.startswith("R") and index + 1 < len(fields):
+            old, new = fields[index], fields[index + 1]
+            result[normalize_repo_path(old)] = normalize_repo_path(new)
+            index += 2
+        elif index < len(fields):
+            index += 1
+    return result
+
+
+tracked_raw = git_output("-c", "core.quotePath=false", "ls-files", "-z", "-c", "-o", "--exclude-standard")
+tracked = [item.decode("utf-8") for item in tracked_raw.split(b"\0") if item]
+existing = {normalize_repo_path(path) for path in tracked if Path(path).exists()}
+markdown_files = sorted(path for path in existing if Path(path).suffix.casefold() in {".md", ".markdown"})
+
+selected = markdown_files
+if SELECTIONS:
+    selected = [
+        path for path in markdown_files
+        if any(path == scope or path.startswith(scope + "/") for scope in SELECTIONS)
+    ]
+    missing = [scope for scope in SELECTIONS if not any(path == scope or path.startswith(scope + "/") for path in selected)]
+    if missing:
+        raise SystemExit("没有找到受 Git 管理的 Markdown：" + ", ".join(missing))
+
+renames = rename_map()
+by_name: dict[str, list[str]] = defaultdict(list)
+by_stem: dict[str, list[str]] = defaultdict(list)
+for path in existing:
+    pure = PurePosixPath(path)
+    by_name[pure.name.casefold()].append(path)
+    by_stem[pure.stem.casefold()].append(path)
+
+
+def old_target_path(source: str, link_path: str, kind: str) -> str:
+    decoded = unquote(link_path).replace("\\", "/")
+    if decoded.startswith("/"):
+        return normalize_repo_path(decoded.lstrip("/"))
+    if kind == "wiki" and not decoded.startswith("."):
+        return normalize_repo_path(decoded)
+    return normalize_repo_path(posixpath.join(posixpath.dirname(source), decoded))
+
+
+def candidate_target(source: str, link_path: str, kind: str) -> tuple[str | None, str]:
+    old_path = old_target_path(source, link_path, kind)
+    variants = [old_path]
+    if not PurePosixPath(old_path).suffix:
+        variants.extend(old_path + extension for extension in (".md", ".markdown"))
+
+    name = PurePosixPath(old_path).name
+    extensionless = not PurePosixPath(name).suffix
+    if kind == "wiki" and "/" not in link_path.replace("\\", "/"):
+        short_pool = by_stem.get(name.casefold(), []) if extensionless else by_name.get(name.casefold(), [])
+        if len(short_pool) == 1:
+            return None, "valid"
+
+    if any(variant in existing for variant in variants):
+        return None, "valid"
+    for variant in variants:
+        if variant in renames:
+            return renames[variant], "rename"
+
+    pool = by_name.get(name.casefold(), [])
+    if extensionless:
+        pool = by_stem.get(name.casefold(), [])
+    if len(pool) == 1:
+        return pool[0], "unique"
+    if len(pool) > 1:
+        return None, "ambiguous"
+    return None, "missing"
+
+
+def render_target(source: str, target: str, original_path: str, fragment: str, kind: str) -> str:
+    if kind == "wiki":
+        rendered = target
+        if not PurePosixPath(original_path).suffix and PurePosixPath(rendered).suffix.casefold() in {".md", ".markdown"}:
+            rendered = str(PurePosixPath(rendered).with_suffix(""))
+    else:
+        rendered = posixpath.relpath(target, posixpath.dirname(source) or ".")
+        if original_path.startswith("./") and not rendered.startswith("."):
+            rendered = "./" + rendered
+    return rendered + fragment
+
+
+statistics = Counter(valid=0, external=0, anchor=0, updated=0, ambiguous=0, missing=0, obsidian=0)
+messages: list[str] = []
+
+for source in selected:
+    with open(source, "r", encoding="utf-8", newline="") as stream:
+        content = stream.read()
+    replacements: list[tuple[int, int, str]] = []
+    for link in collect_links(content):
+        target = link.target.strip()
+        if not target:
+            statistics["missing"] += 1
+            messages.append(f"MISSING {source}: 空链接")
+            continue
+        if EXTERNAL.match(target):
+            statistics["external"] += 1
+            continue
+        path_part, fragment = split_fragment(target)
+        if not path_part:
+            statistics["anchor"] += 1
+            continue
+        candidate, reason = candidate_target(source, path_part, link.kind)
+        if reason == "valid":
+            statistics["valid"] += 1
+            continue
+        if candidate is None:
+            statistics[reason] += 1
+            messages.append(f"{reason.upper()} {source}: {target}")
+            continue
+        rendered = render_target(source, candidate, path_part, fragment, link.kind)
+        if rendered != target:
+            replacements.append((link.target_start, link.target_end, rendered))
+            statistics["updated"] += 1
+            messages.append(f"UPDATE {source}: {target} -> {rendered} ({reason})")
+
+    if APPLY and replacements:
+        for start, end, rendered in sorted(replacements, reverse=True):
+            content = content[:start] + rendered + content[end:]
+        with open(source, "w", encoding="utf-8", newline="") as stream:
+            stream.write(content)
+
+if renames:
+    auxiliary = [
+        path for path in tracked
+        if (path.startswith(".obsidian/") and Path(path).suffix.casefold() == ".json")
+        or Path(path).suffix.casefold() in {".canvas", ".base"}
+    ]
+    for file_name in auxiliary:
+        try:
+            with open(file_name, "r", encoding="utf-8", newline="") as stream:
+                content = stream.read()
+        except (OSError, UnicodeDecodeError):
+            continue
+        original = content
+        for old, new in renames.items():
+            content = content.replace(old, new)
+            content = content.replace(old.replace("/", "\\"), new.replace("/", "\\"))
+        if content != original:
+            statistics["obsidian"] += 1
+            messages.append(f"OBSIDIAN {file_name}: 更新已重命名路径")
+            if APPLY:
+                with open(file_name, "w", encoding="utf-8", newline="") as stream:
+                    stream.write(content)
+
+print(
+    "链接扫描："
+    f"Markdown={len(selected)} "
+    f"有效={statistics['valid']} 外部={statistics['external']} 纯锚点={statistics['anchor']} "
+    f"可更新={statistics['updated']} 歧义={statistics['ambiguous']} 缺失={statistics['missing']} "
+    f"Obsidian配置={statistics['obsidian']}"
+)
+if DETAIL:
+    for message in messages:
+        print(message)
+if APPLY:
+    print(f"已更新链接：{statistics['updated']}")
+PY
+
+if [[ $mode == apply ]]; then
+    git diff --check
+    printf '链接更新完成；请检查缺失与歧义报告后再提交。\n'
+fi
