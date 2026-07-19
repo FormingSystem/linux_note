@@ -29,7 +29,7 @@
 
 # 第5章_虚拟机_NFS_和_tftp_配置
 
-虚拟机ubuntu22中配置nfs和tftp，参考[视频]((正点原子(第二期)手把手教你学Linux之ARM(MX6U)裸机篇)https://www.bilibili.com/video/BV1yE411h7uQ?vd_source=b387713a15d6517575ab4761525174e7)。
+虚拟机ubuntu22中配置nfs和tftp，参考[正点原子Linux之ARM裸机篇视频](https://www.bilibili.com/video/BV1yE411h7uQ?vd_source=b387713a15d6517575ab4761525174e7)。
 
 <iframe
   src="https://player.bilibili.com/player.html?bvid=BV1yE411h7uQ&autoplay=0"

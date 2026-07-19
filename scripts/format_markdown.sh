@@ -4,7 +4,8 @@ set -euo pipefail
 usage() {
     cat <<'EOF'
 用法：
-  ./format.sh md [--apply] [--summary] [Markdown文件或目录...]
+  ./format.sh check headings [--summary] [Markdown文件或目录...]
+  ./format.sh fix headings [--summary] [Markdown文件或目录...]
 
 默认仅预览；不给路径时处理 Git 管理的全部 Markdown 文件。
 标题序号：H1=第N章、H2=N.N、H3=N.N.N、H4=(N)、H5=N)、H6=a)。
@@ -294,7 +295,7 @@ if DETAIL:
             print(f"{file_name}:{line_number}: {old_title} -> {new_title}")
 
 if not APPLY:
-    raise SystemExit(0)
+    raise SystemExit(1 if change_count else 0)
 
 # 先写标题，再维护同文件锚点；跨文件中无歧义的同名锚点也一并更新。
 global_targets: dict[str, set[str]] = defaultdict(set)
