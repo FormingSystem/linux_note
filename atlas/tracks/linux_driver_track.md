@@ -26,7 +26,7 @@ domains:
 
 ## 1.3\_第二阶段\_驱动所需通用机制
 
-1. [并发与竞争简介](../../knowledge/linux/synchronization/driver_concurrency/并发与竞争简介)。
+1. [并发与竞争专题](../../knowledge/linux/synchronization/concurrency_and_competition/大纲.md)。
 2. [错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)。
 3. [devres API](../../knowledge/linux/object_lifetime/devres/devres_API说明.md)。
 4. [驱动中的时间问题](../../knowledge/linux/time_management/定时器简介/P01_驱动中的_时间问题_概述.md)，再按需要学习睡眠、timer、hrtimer 和 delayed work。
