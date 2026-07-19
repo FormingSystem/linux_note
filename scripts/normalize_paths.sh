@@ -74,7 +74,7 @@ def normalize_segment(segment: str) -> str:
     value = re.sub(r"\s+-\s+", "_", value)
     value = re.sub(r"^(P\d+)-", r"\1_", value)
     value = re.sub(r"\s+", "_", value)
-    value = re.sub(r"^第_?(\d+)_?章_?", lambda match: f"P{int(match.group(1)):02d}_", value)
+    value = re.sub(r"^第_?(\d+)_?(?:章|部分|篇)_?", lambda match: f"P{int(match.group(1)):02d}_", value)
     value = value.replace("↔", "_to_").replace("→", "_to_").replace("←", "_to_")
     value = value.replace("×", "_x_")
     value = value.translate(str.maketrans({"（": "(", "）": ")", "【": "(", "】": ")"}))
