@@ -34,7 +34,7 @@ Linux内核中提供了几种链表的实现方式，最常用的是通过内核
 
 # 第4章_怎么实现(底层原理_处理逻辑)
 
-在Linux内核中，单链表的实现是通过以下结构定义的，源文件 [include/linux/types.h](../../kernel_source/include/linux/types.h) ：
+在Linux内核中，单链表的实现是通过以下结构定义的，源文件 [include/linux/types.h](../kernel_source/include/linux/types.h) ：
 
 ```c
 struct list_head {
@@ -67,7 +67,7 @@ struct temp_data {
 
 # 第5章_怎么用(方法与步骤)
 
-关于List_head的接口都位于 [include/linux/list.h](../../kernel_source/include/linux/list.h)。
+关于List_head的接口都位于 [include/linux/list.h](../kernel_source/include/linux/list.h)。
 
 ## 5.1_链表初始化_INIT_LIST_HEAD()
 
