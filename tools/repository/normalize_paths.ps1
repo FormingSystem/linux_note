@@ -21,7 +21,7 @@ function Convert-PathSegment {
     $value = $value -replace '\s+', '_'
     $value = [regex]::Replace($value, '^第_?(\d+)_?章_?', {
         param($match)
-        return '第{0}章_' -f [int]$match.Groups[1].Value
+        return 'P{0:D2}_' -f [int]$match.Groups[1].Value
     })
     $value = $value.Replace('↔', '_to_').Replace('→', '_to_').Replace('←', '_to_')
     $value = $value.Replace('×', '_x_')
