@@ -12,6 +12,10 @@ function Convert-PathSegment {
     if ($Segment.Length -eq 0) { return '' }
 
     $value = $Segment
+    $value = [regex]::Replace($value, '^P0*(\d{1,2})(?=[_\-\s]|$)', {
+        param($match)
+        return 'P{0:D2}' -f [int]$match.Groups[1].Value
+    })
     $value = $value -replace '\s+-\s+', '_'
     $value = $value -replace '^(P\d+)-', '$1_'
     $value = $value -replace '\s+', '_'
