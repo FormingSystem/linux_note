@@ -61,40 +61,22 @@ BST 的插入规则本身很简单：
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["1"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		A_L[" "]
 		B["2"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		B_L[" "]
 		C["3"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		C_L[" "]
 		D["4"]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		D_L[" "]
 		E["5"]
-	end
 
-	subgraph level5[" "]
-		direction LR
 		E_L[" "]
 		E_R[" "]
-	end
 
 	A -->|L| A_L
 	A -->|R| B
@@ -119,12 +101,6 @@ graph TD
 	class B,C,D,E bad_node;
 	class A_L,B_L,C_L,D_L,E_L,E_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
-	style level5 fill:transparent,stroke:transparent;
 
 	linkStyle 0 stroke:transparent;
 	linkStyle 2 stroke:transparent;
@@ -158,40 +134,22 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["5"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["4"]
 		A_R[" "]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		C["3"]
 		B_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D["2"]
 		C_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		E["1"]
 		D_R[" "]
-	end
 
-	subgraph level5[" "]
-		direction LR
 		E_L[" "]
 		E_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| A_R
@@ -216,12 +174,6 @@ graph TD
 	class B,C,D,E bad_node;
 	class A_R,B_R,C_R,D_R,E_L,E_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
-	style level5 fill:transparent,stroke:transparent;
 
 	linkStyle 1 stroke:transparent;
 	linkStyle 3 stroke:transparent;
@@ -306,28 +258,16 @@ BST 的定义只有这些：
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["1"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		A_L[" "]
 		B["2"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		B_L[" "]
 		C["3"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		C_L[" "]
 		D["4"]
-	end
 
 	A -->|L| A_L
 	A -->|R| B
@@ -344,10 +284,6 @@ graph TD
 	class B,C,D bad_node;
 	class A_L,B_L,C_L ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
 
 	linkStyle 0 stroke:transparent;
 	linkStyle 2 stroke:transparent;
@@ -380,24 +316,15 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["4"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["2"]
 		C["6"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["3"]
 		F["5"]
 		G["7"]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -412,9 +339,6 @@ graph TD
 	class A root_node;
 	class B,C,D,E,F,G normal_node;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
 ```
 
 **这说明一个根本事实：**
@@ -475,24 +399,15 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["4"]
 		C["12"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["2"]
 		E["6"]
 		F["10"]
 		C_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -509,9 +424,6 @@ graph TD
 	class B,C,D,E,F normal_node;
 	class C_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
 
 	linkStyle 5 stroke:transparent;
 ```
