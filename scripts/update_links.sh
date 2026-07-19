@@ -304,8 +304,20 @@ if renames:
             continue
         original = content
         for old, new in renames.items():
-            content = content.replace(old, new)
-            content = content.replace(old.replace("/", "\\"), new.replace("/", "\\"))
+            # 只替换独立的仓库路径。新路径可能包含旧路径（例如
+            # assets/images/... 包含 images/...），边界限制保证重复运行幂等。
+            content = re.sub(
+                rf"(?<![A-Za-z0-9_.\\/\-]){re.escape(old)}",
+                lambda _match, value=new: value,
+                content,
+            )
+            old_windows = old.replace("/", "\\")
+            new_windows = new.replace("/", "\\")
+            content = re.sub(
+                rf"(?<![A-Za-z0-9_.\\/\-]){re.escape(old_windows)}",
+                lambda _match, value=new_windows: value,
+                content,
+            )
         if content != original:
             statistics["obsidian"] += 1
             messages.append(f"OBSIDIAN {file_name}: 更新已重命名路径")
