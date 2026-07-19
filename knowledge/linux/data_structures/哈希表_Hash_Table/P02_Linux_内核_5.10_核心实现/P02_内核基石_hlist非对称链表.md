@@ -626,7 +626,7 @@ rcu_read_unlock(); // 退出 RCU 临界区
 关于RCU的相关概念，参考如下链接：
 
 1. [第5章 读多写少路线：seqcountseqlock 与 RCU.md —— RCU：读无锁、写延迟回收](../../../synchronization/concurrency_and_competition/P01_并发脉络与概念缓冲/P05_读多写少路线_seqcountseqlock_与_RCU.md#5.2_RCU：读无锁、写延迟回收)。
-2. [第19章 RCU（读无锁、写延迟回收）.md](../../../synchronization/concurrency_and_competition/P03_子模块详解/P19_RCU(读无锁_写延迟回收).md)。
+2. [RCU 核心概念与工作机制](../../../synchronization/rcu/P01_RCU_核心概念与工作机制.md)。
 
 
 
@@ -1123,4 +1123,3 @@ flowchart TD
 3. **标准化**：统一的宏接口降低了开发难度。
 
 ------
-
