@@ -9,14 +9,14 @@
 
 ------
 
-# 第1章　pinctrl 总体概念与语法框架（Linux Kernel ≥ 6.1）
+# 第1章_pinctrl_总体概念与语法框架(Linux_Kernel_≥_6.1)
 
 > 本章聚焦：**语法 + 含义 + 使用场景 + 数据结构映射。**
 >  目标：让读者真正理解“为什么 DTS 要写这些属性，它们被内核怎么用”。
 
 ------
 
-## 1.1　主题引入：pinctrl 的存在意义
+## 1.1_主题引入_pinctrl_的存在意义
 
 在 SoC 上，每个引脚（Pin）往往能承担多个功能，如：
 
@@ -38,7 +38,7 @@
 
 ------
 
-## 1.2　pinctrl 框架三层模型
+## 1.2_pinctrl_框架三层模型
 
 ```mermaid
 flowchart TD
@@ -59,9 +59,9 @@ flowchart TD
 
 ------
 
-## 1.3　语法详解与使用语义
+## 1.3_语法详解与使用语义
 
-### 1.3.1　`pinctrl-names` —— 定义状态集合（名字空间）
+### 1.3.1_pinctrl-names_定义状态集合(名字空间)
 
 **语法：**
 
@@ -84,7 +84,7 @@ pinctrl-names = "default", "sleep", "idle";
 
 ------
 
-### 1.3.2　`pinctrl-0`, `pinctrl-1`, … —— 状态到配置的绑定
+### 1.3.2_pinctrl-0,_pinctrl-1,_…_状态到配置的绑定
 
 **语法：**
 
@@ -137,7 +137,7 @@ struct pinctrl_state {
 
 ------
 
-### 1.3.3　控制器节点与 `#pinctrl-cells` —— 参数格式定义
+### 1.3.3_控制器节点与_#pinctrl-cells_参数格式定义
 
 **语法：**
 
@@ -163,7 +163,7 @@ pinctrl: pinctrl@020e0000 {
 
 ------
 
-### 1.3.4　`fsl,pins` / `rockchip,pins` —— 引脚组配置数组
+### 1.3.4_fsl,pins_/_rockchip,pins_引脚组配置数组
 
 **语法：**
 
@@ -201,7 +201,7 @@ struct pinctrl_map {
 
 ------
 
-### 1.3.5　`bias-*`、`drive-strength` 等电气配置属性
+### 1.3.5_bias-*_drive-strength_等电气配置属性
 
 **语法：**
 
@@ -228,7 +228,7 @@ pinctrl_led: ledgrp {
 
 ------
 
-## 1.4　DTS → 数据结构映射总览表
+## 1.4_DTS_to_数据结构映射总览表
 
 | DTS 属性                   | 对应结构体             | 字段                 | 含义           |
 | -------------------------- | ---------------------- | -------------------- | -------------- |
@@ -240,9 +240,9 @@ pinctrl_led: ledgrp {
 
 ------
 
-## 1.5　实战：UART 与 LED 的组合场景
+## 1.5_实战_UART_与_LED_的组合场景
 
-### UART（多状态）
+### 1.5.1_UART(多状态)
 
 ```dts
 uart1: serial@02020000 {
@@ -258,7 +258,7 @@ uart1: serial@02020000 {
 
 ------
 
-### LED（单状态）
+### 1.5.2_LED(单状态)
 
 ```dts
 led@0 {
@@ -279,7 +279,7 @@ pinctrl_select_state(pinctrl, "default");
 
 ------
 
-## 1.6　验证与调试
+## 1.6_验证与调试
 
 | 方法         | 命令                                                         | 说明                   |
 | ------------ | ------------------------------------------------------------ | ---------------------- |
@@ -290,7 +290,7 @@ pinctrl_select_state(pinctrl, "default");
 
 ------
 
-## 1.7　小结
+## 1.7_小结
 
 | 关键点                                                 | 说明                         |
 | ------------------------------------------------------ | ---------------------------- |
@@ -302,14 +302,14 @@ pinctrl_select_state(pinctrl, "default");
 
 ------
 
-# 第2章　pinctrl 控制器节点语法详解
+# 第2章_pinctrl_控制器节点语法详解
 
 > 主题：深入讲解 **控制器节点（controller node）** 的语法、参数格式与其在内核结构体中的映射关系。
 >  目标：让读者理解 “控制器节点定义了什么、#pinctrl-cells 为什么重要、厂商语法差异体现在哪”。
 
 ------
 
-## 2.1　主题引入：控制器节点的本质
+## 2.1_主题引入_控制器节点的本质
 
 **控制器节点（pinctrl controller node）** 是设备树中所有引脚配置的根。
  它描述的不是某个外设，而是 SoC 芯片上**引脚复用硬件的寄存器块**。
@@ -323,7 +323,7 @@ pinctrl_select_state(pinctrl, "default");
 
 ------
 
-## 2.2　典型控制器节点语法结构
+## 2.2_典型控制器节点语法结构
 
 以 i.MX6ULL 为例：
 
@@ -346,7 +346,7 @@ pinctrl: pinctrl@020e0000 {
 
 ------
 
-### 2.2.1　`compatible`
+### 2.2.1_compatible
 
 **作用：** 告诉内核该控制器使用哪种厂商驱动解析。
 
@@ -366,7 +366,7 @@ struct pinctrl_dev {
 
 ------
 
-### 2.2.2　`reg`
+### 2.2.2_reg
 
 **作用：** 定义寄存器的物理地址和长度。
  驱动使用 `devm_ioremap_resource()` 将其映射到虚拟地址。
@@ -377,7 +377,7 @@ struct pinctrl_dev {
 
 ------
 
-### 2.2.3　`#pinctrl-cells`
+### 2.2.3_#pinctrl-cells
 
 **作用：** 决定 **phandle** 引用时的参数个数。
 
@@ -407,7 +407,7 @@ static int imx_pmx_dt_node_to_map(struct pinctrl_dev *pctldev,
 
 ------
 
-### 2.2.4　`#address-cells` / `#size-cells`
+### 2.2.4_#address-cells_/_#size-cells
 
 **作用：** 定义子节点中地址格式，常规固定值。
  一般 pinctrl 控制器不使用分段寻址，因此：
@@ -421,13 +421,13 @@ static int imx_pmx_dt_node_to_map(struct pinctrl_dev *pctldev,
 
 ------
 
-## 2.3　控制器子节点（引脚组节点）
+## 2.3_控制器子节点(引脚组节点)
 
 控制器下的每个子节点代表一组“可被外设引用的引脚状态配置”。
 
-### 2.3.1　常见写法
+### 2.3.1_常见写法
 
-#### （1）NXP i.MX6ULL
+#### (1)_NXP_i.MX6ULL
 
 ```dts
 pinctrl_uart1_default: uart1grp {
@@ -441,7 +441,7 @@ pinctrl_uart1_default: uart1grp {
 - `fsl,pins` 是 NXP 定义的属性；
 - 每行一对值：`PAD_FUNC` + `CONFIG_VAL`。
 
-#### （2）Rockchip RK3568
+#### (2)_Rockchip_RK3568
 
 ```dts
 uart2m0_xfer: uart2m0-xfer {
@@ -455,7 +455,7 @@ uart2m0_xfer: uart2m0-xfer {
 - 第 1、2、3 个数字分别是 bank、pin、mux；
 - `&pcfg_pull_up` 是电气配置结构体的引用。
 
-#### （3）Allwinner A100
+#### (3)_Allwinner_A100
 
 ```dts
 uart2_pins: uart2-pins {
@@ -471,7 +471,7 @@ uart2_pins: uart2-pins {
 
 ------
 
-### 2.3.2　属性详解
+### 2.3.2_属性详解
 
 | 属性                              | 含义                   | 是否厂商特定 | 示例           |
 | --------------------------------- | ---------------------- | ------------ | -------------- |
@@ -484,7 +484,7 @@ uart2_pins: uart2-pins {
 
 ------
 
-## 2.4　从 DTS 到内核的结构映射
+## 2.4_从_DTS_到内核的结构映射
 
 ```mermaid
 flowchart TD
@@ -514,7 +514,7 @@ flowchart TD
 
 ------
 
-## 2.5　应用场景：控制器节点的真实作用
+## 2.5_应用场景_控制器节点的真实作用
 
 | 场景                  | 控制器节点负责的部分                             |
 | --------------------- | ------------------------------------------------ |
@@ -531,7 +531,7 @@ flowchart TD
 
 ------
 
-## 2.6　调试与验证
+## 2.6_调试与验证
 
 | 检查项              | 命令                                               | 说明                     |
 | ------------------- | -------------------------------------------------- | ------------------------ |
@@ -542,7 +542,7 @@ flowchart TD
 
 ------
 
-## 2.7　小结
+## 2.7_小结
 
 | 关键点                                     | 内容                                                    |
 | ------------------------------------------ | ------------------------------------------------------- |
@@ -556,14 +556,14 @@ flowchart TD
 
 ------
 
-# 第3章　引脚复用（Pinmux）语法详解
+# 第3章_引脚复用(Pinmux)语法详解
 
 > 主题：讲清 `function`、`groups`、`pins` 三大核心属性的语法、语义、作用、场景与内核对应结构。
 >  示例平台：**NXP i.MX6ULL**（UART1 外设引脚复用）。
 
 ------
 
-## 3.1　主题引入：为什么要有 pinmux 机制？
+## 3.1_主题引入_为什么要有_pinmux_机制
 
 SoC 中的每个引脚通常可承担多种功能：
 
@@ -579,7 +579,7 @@ SoC 中的每个引脚通常可承担多种功能：
 
 ------
 
-## 3.2　完整示例：UART1 复用配置
+## 3.2_完整示例_UART1_复用配置
 
 下面是一个**可直接放入 imx6ull.dts 的完整示例**，演示 UART1 从 GPIO 模式切换到串口功能。
 
@@ -619,7 +619,7 @@ SoC 中的每个引脚通常可承担多种功能：
 
 ------
 
-## 3.3　语法分层解析
+## 3.3_语法分层解析
 
 | 层级     | 节点/属性               | 功能描述                 |
 | -------- | ----------------------- | ------------------------ |
@@ -629,7 +629,7 @@ SoC 中的每个引脚通常可承担多种功能：
 
 ------
 
-## 3.4　`function` —— 指定外设功能模式
+## 3.4_function_指定外设功能模式
 
 **通用语法（非 i.MX 特定）**
 
@@ -679,7 +679,7 @@ struct function_desc {
 
 ------
 
-## 3.5　`groups` —— 功能对应的引脚组
+## 3.5_groups_功能对应的引脚组
 
 **语法：**
 
@@ -726,7 +726,7 @@ struct group_desc {
 
 ------
 
-## 3.6　`pins` —— 直接声明引脚（通用方式）
+## 3.6_pins_直接声明引脚(通用方式)
 
 适用于 Allwinner / TI 等控制器：
 
@@ -751,7 +751,7 @@ bias-pull-up;
 
 ------
 
-## 3.7　示例解析：UART1 完整路径
+## 3.7_示例解析_UART1_完整路径
 
 ```mermaid
 sequenceDiagram
@@ -771,7 +771,7 @@ sequenceDiagram
 
 ------
 
-## 3.8　驱动层结构映射全景
+## 3.8_驱动层结构映射全景
 
 ```mermaid
 flowchart TD
@@ -790,7 +790,7 @@ flowchart TD
 
 ------
 
-## 3.9　验证：查看 UART1 的引脚复用状态
+## 3.9_验证_查看_UART1_的引脚复用状态
 
 ```bash
 # 查看已注册的控制器
@@ -816,7 +816,7 @@ pin 17 (UART1_RX) set to uart1
 
 ------
 
-## 3.10　小结
+## 3.10_小结
 
 | 关键属性                     | 作用                                                         | 若省略后果                  |
 | ---------------------------- | ------------------------------------------------------------ | --------------------------- |
@@ -830,14 +830,14 @@ pin 17 (UART1_RX) set to uart1
 
 
 
-# 第4章　引脚配置（Pinconf）语法详解
+# 第4章_引脚配置(Pinconf)语法详解
 
 > 本章承接第 3 章的 UART1 复用示例，讲解 **引脚电气特性配置（Pin Configuration, pinconf）** 的语法与在内核中的对应关系。
 >  重点：**bias-pull-up / drive-strength / slew-rate / output-high 等属性的真实作用、写法、场景与结构体映射。**
 
 ------
 
-## 4.1 主题引入：Pinmux 解决“连线”，Pinconf 解决“电气”
+## 4.1_主题引入_Pinmux_解决_连线_Pinconf_解决_电气
 
 pinmux 解决了“这个引脚连到哪个外设”，
  但**还没解决电气特性**——例如：
@@ -857,7 +857,7 @@ pinmux 解决了“这个引脚连到哪个外设”，
 
 ------
 
-## 4.2 完整示例：在 UART1 中添加 Pinconf 属性
+## 4.2_完整示例_在_UART1_中添加_Pinconf_属性
 
 ```dts
 / {
@@ -898,7 +898,7 @@ pinmux 解决了“这个引脚连到哪个外设”，
 
 ------
 
-## 4.3 常用 Pinconf 属性语法与含义
+## 4.3_常用_Pinconf_属性语法与含义
 
 | 属性                         | 作用               | 示例值              | 场景                            |
 | ---------------------------- | ------------------ | ------------------- | ------------------------------- |
@@ -916,9 +916,9 @@ pinmux 解决了“这个引脚连到哪个外设”，
 
 ------
 
-## 4.4 “作用”与“使用场景”对照解析
+## 4.4_作用_与_使用场景_对照解析
 
-### 4.4.1 `bias-*` 系列 —— 控制上拉下拉
+### 4.4.1_bias-*_系列_控制上拉下拉
 
 ```dts
 bias-pull-up;
@@ -942,7 +942,7 @@ bias-pull-up;
 
 ------
 
-### 4.4.2 `drive-strength` —— 输出电流能力
+### 4.4.2_drive-strength_输出电流能力
 
 ```dts
 drive-strength = <8>;
@@ -974,7 +974,7 @@ struct pinconf_ops {
 
 ------
 
-### 4.4.3 `slew-rate` —— 上升沿/下降沿速度
+### 4.4.3_slew-rate_上升沿/下降沿速度
 
 ```dts
 slew-rate = <1>;
@@ -995,7 +995,7 @@ slew-rate = <1>;
 
 ------
 
-### 4.4.4 `output-high` / `output-low`
+### 4.4.4_output-high_/_output-low
 
 ```dts
 output-high;
@@ -1012,7 +1012,7 @@ output-high;
 
 ------
 
-## 4.5 Pinconf 在内核中的数据结构映射
+## 4.5_Pinconf_在内核中的数据结构映射
 
 ```mermaid
 flowchart TD
@@ -1040,7 +1040,7 @@ static const struct pinconf_ops imx_pinconf_ops = {
 
 ------
 
-## 4.6 运行时验证
+## 4.6_运行时验证
 
 ```bash
 # 查看 pinconf 属性支持项
@@ -1055,7 +1055,7 @@ pin 16 (UART1_TX) bias-pull-up drive-strength=8 slew-rate=1
 
 ------
 
-## 4.7 总结与思维导图
+## 4.7_总结与思维导图
 
 ```mermaid
 mindmap
@@ -1083,7 +1083,7 @@ mindmap
 
 ------
 
-## 4.8 小结
+## 4.8_小结
 
 | 要点                                                         | 内容 |
 | ------------------------------------------------------------ | ---- |
@@ -1097,14 +1097,14 @@ mindmap
 
 
 
-# 第5章　设备节点中引用 pinctrl 的语法与状态切换机制
+# 第5章_设备节点中引用_pinctrl_的语法与状态切换机制
 
 > **主题：** 讲解设备节点中 `pinctrl-names`、`pinctrl-0`、`pinctrl-1` 等属性的**语法、运行逻辑、驱动交互**与**低功耗切换机制**。
 >  **目标：** 让读者理解 “为什么每个设备都要写 `pinctrl-names` / `pinctrl-0`”，“它在驱动什么时候被调用”，“状态切换到底改变了什么”。
 
 ------
 
-## 5.1　主题引入：设备如何“引用”引脚配置？
+## 5.1_主题引入_设备如何_引用_引脚配置
 
 在前几章中，我们定义了控制器节点（pinctrl@...）和引脚配置（pinctrl_led、pinctrl_uart1_default 等）。
  但仅仅定义这些还不够 —— **谁来用它？**
@@ -1123,7 +1123,7 @@ pinctrl-1 = <&pinctrl_uart1_sleep>;
 
 ------
 
-## 5.2　语法总览与逻辑关系
+## 5.2_语法总览与逻辑关系
 
 | 属性                        | 类型         | 含义                                |
 | --------------------------- | ------------ | ----------------------------------- |
@@ -1155,7 +1155,7 @@ uart1: serial@02020000 {
 
 ------
 
-## 5.3　具体示例：UART1 的两种状态配置
+## 5.3_具体示例_UART1_的两种状态配置
 
 ```dts
 pinctrl: pinctrl@020e0000 {
@@ -1203,9 +1203,9 @@ uart1: serial@02020000 {
 
 ------
 
-## 5.4　属性详细讲解与实际意义
+## 5.4_属性详细讲解与实际意义
 
-### 5.4.1　`pinctrl-names`
+### 5.4.1_pinctrl-names
 
 **语法：**
 
@@ -1242,7 +1242,7 @@ pinctrl_select_state(pinctrl, state);
 
 ------
 
-### 5.4.2　`pinctrl-<index>`
+### 5.4.2_pinctrl-<index>
 
 **语法：**
 
@@ -1288,7 +1288,7 @@ struct pinctrl_state {
 
 ------
 
-## 5.5　运行机制：从 DTS 到寄存器
+## 5.5_运行机制_从_DTS_到寄存器
 
 ```mermaid
 sequenceDiagram
@@ -1307,7 +1307,7 @@ sequenceDiagram
 
 ------
 
-## 5.6　驱动层交互代码（以 i.MX UART 为例）
+## 5.6_驱动层交互代码(以_i.MX_UART_为例)
 
 ```c
 static int imx_uart_probe(struct platform_device *pdev)
@@ -1342,7 +1342,7 @@ static int imx_uart_suspend(struct device *dev)
 
 ------
 
-## 5.7　验证与调试
+## 5.7_验证与调试
 
 | 检查内容                | 命令                                                         | 说明                           |
 | ----------------------- | ------------------------------------------------------------ | ------------------------------ |
@@ -1353,7 +1353,7 @@ static int imx_uart_suspend(struct device *dev)
 
 ------
 
-## 5.8　低功耗切换的实际意义
+## 5.8_低功耗切换的实际意义
 
 | 场景             | 切换行为                       | 效果                             |
 | ---------------- | ------------------------------ | -------------------------------- |
@@ -1368,7 +1368,7 @@ static int imx_uart_suspend(struct device *dev)
 
 ------
 
-## 5.9　数据结构映射总览
+## 5.9_数据结构映射总览
 
 ```mermaid
 flowchart TD
@@ -1396,7 +1396,7 @@ flowchart TD
 
 ------
 
-## 5.10　小结
+## 5.10_小结
 
 | 关键属性          | 含义             | 对应结构                    | 驱动调用                 |
 | ----------------- | ---------------- | --------------------------- | ------------------------ |
@@ -1417,7 +1417,7 @@ flowchart TD
 
 
 
-# 第6章　pinctrl 与 GPIO 的关系及语法交叉
+# 第6章_pinctrl_与_GPIO_的关系及语法交叉
 
 > **主题：** 本章讲解设备树中 **pinctrl 与 GPIO 子系统之间的关联语法**，重点是 `gpio-ranges`、`gpio-controller`、`gpio-line-names` 的语法、作用、场景与在内核中的映射关系。
 >  **目标：** 让读者理解 —— 为什么 GPIO 节点通常是 pinctrl 控制器的子节点、
@@ -1425,7 +1425,7 @@ flowchart TD
 
 ------
 
-## 6.1　主题引入：pinctrl 与 GPIO 的“层次关系”
+## 6.1_主题引入_pinctrl_与_GPIO_的_层次关系
 
 在 ARM SoC 架构中，**GPIO 并不是完全独立的模块**。
  绝大多数 SoC 的 GPIO 控制器都是 **pinctrl 控制器的一部分** 或 **其上层逻辑**：
@@ -1440,7 +1440,7 @@ flowchart TD
 
 ------
 
-## 6.2　完整示例：GPIO 控制器与 pinctrl 的绑定
+## 6.2_完整示例_GPIO_控制器与_pinctrl_的绑定
 
 以 **i.MX6ULL** 平台为例：
 
@@ -1473,7 +1473,7 @@ pinctrl: pinctrl@020e0000 {
 
 ------
 
-## 6.3　`gpio-controller` —— 声明 GPIO 控制功能
+## 6.3_gpio-controller_声明_GPIO_控制功能
 
 **语法：**
 
@@ -1505,7 +1505,7 @@ struct gpio_chip {
 
 ------
 
-## 6.4　`#gpio-cells` —— 定义 phandle 参数格式
+## 6.4_#gpio-cells_定义_phandle_参数格式
 
 **语法：**
 
@@ -1543,7 +1543,7 @@ led@0 {
 
 ------
 
-## 6.5　`gpio-ranges` —— 建立 pinctrl 与 GPIO 的索引映射
+## 6.5_gpio-ranges_建立_pinctrl_与_GPIO_的索引映射
 
 **语法：**
 
@@ -1588,7 +1588,7 @@ flowchart LR
 
 ------
 
-## 6.6　`gpio-line-names` —— 为引脚命名
+## 6.6_gpio-line-names_为引脚命名
 
 **语法：**
 
@@ -1626,7 +1626,7 @@ gpiochip0 - 32 lines:
 
 ------
 
-## 6.7　示例：GPIO + Pinmux + Pinconf 三层联合配置
+## 6.7_示例_GPIO_+_Pinmux_+_Pinconf_三层联合配置
 
 以下示例展示如何将 **GPIO1_IO03** 配置为 LED 控制输出，
  并通过 pinctrl 设置上拉与驱动强度。
@@ -1675,7 +1675,7 @@ gpiochip0 - 32 lines:
 
 ------
 
-## 6.8　内核数据结构映射关系
+## 6.8_内核数据结构映射关系
 
 ```mermaid
 flowchart TD
@@ -1698,7 +1698,7 @@ flowchart TD
 
 ------
 
-## 6.9　调试与验证
+## 6.9_调试与验证
 
 | 验证项                    | 命令                                          | 说明             |
 | ------------------------- | --------------------------------------------- | ---------------- |
@@ -1710,7 +1710,7 @@ flowchart TD
 
 ------
 
-## 6.10　小结
+## 6.10_小结
 
 | 概念              | 作用                                                         | 对应关系                          |
 | ----------------- | ------------------------------------------------------------ | --------------------------------- |
@@ -1730,14 +1730,14 @@ flowchart TD
 
 
 
-# 第7章　厂商特定 pinctrl 语法与差异对比
+# 第7章_厂商特定_pinctrl_语法与差异对比
 
 > **主题：** 本章系统分析三大主流 SoC（NXP i.MX、Rockchip、Allwinner）在设备树中定义 pinctrl 节点时的**语法差异与内部逻辑对应关系**。
 >  **目标：** 帮助读者理解每个厂商为什么要设计自己的 `fsl,pins`、`rockchip,pins`、`pins` 格式，以及这些语法与底层寄存器操作的对应方式。
 
 ------
 
-## 7.1　主题引入：通用框架与厂商扩展的关系
+## 7.1_主题引入_通用框架与厂商扩展的关系
 
 Linux 内核的 pinctrl 框架提供统一的抽象接口：
 
@@ -1753,7 +1753,7 @@ Linux 内核的 pinctrl 框架提供统一的抽象接口：
 
 ------
 
-## 7.2　三种语法形式总览对比
+## 7.2_三种语法形式总览对比
 
 | 厂商                         | 关键属性            | 示例                                              | 解析函数                          | 所属文件                                      |
 | ---------------------------- | ------------------- | ------------------------------------------------- | --------------------------------- | --------------------------------------------- |
@@ -1763,9 +1763,9 @@ Linux 内核的 pinctrl 框架提供统一的抽象接口：
 
 ------
 
-## 7.3　NXP i.MX 系列：`fsl,pins`
+## 7.3_NXP_i.MX_系列_fsl,pins
 
-### 7.3.1　示例
+### 7.3.1_示例
 
 ```dts
 pinctrl_uart1_default: uart1grp {
@@ -1776,7 +1776,7 @@ pinctrl_uart1_default: uart1grp {
 };
 ```
 
-### 7.3.2　语法说明
+### 7.3.2_语法说明
 
 每个 `<pad func conf>` 对应一组配置：
 
@@ -1785,7 +1785,7 @@ pinctrl_uart1_default: uart1grp {
 | `MX6UL_PAD_UART1_TX_DATA__UART1_DCE_TX` | **复用定义宏**：展开后包含 mux_reg、conf_reg、input_reg、mux_val |
 | `0x1b0b1`                               | **电气配置值**（pull-up、slew、drive 等位组合）              |
 
-### 7.3.3　驱动解析逻辑
+### 7.3.3_驱动解析逻辑
 
 ```c
 static int imx_pmx_dt_node_to_map(...)
@@ -1796,7 +1796,7 @@ static int imx_pmx_dt_node_to_map(...)
 }
 ```
 
-### 7.3.4　寄存器结构示意
+### 7.3.4_寄存器结构示意
 
 ```mermaid
 flowchart TD
@@ -1814,9 +1814,9 @@ flowchart TD
 
 ------
 
-## 7.4　Rockchip 系列：`rockchip,pins`
+## 7.4_Rockchip_系列_rockchip,pins
 
-### 7.4.1　示例
+### 7.4.1_示例
 
 ```dts
 uart2m0_xfer: uart2m0-xfer {
@@ -1827,7 +1827,7 @@ uart2m0_xfer: uart2m0-xfer {
 };
 ```
 
-### 7.4.2　语法结构
+### 7.4.2_语法结构
 
 | 参数序号 | 含义                        |
 | -------- | --------------------------- |
@@ -1836,7 +1836,7 @@ uart2m0_xfer: uart2m0-xfer {
 | 3️⃣        | 复用功能号（1 = UART）      |
 | 4️⃣        | 电气配置引用（phandle）     |
 
-### 7.4.3　电气配置节点
+### 7.4.3_电气配置节点
 
 ```dts
 pcfg_pull_up: pcfg-pull-up {
@@ -1848,7 +1848,7 @@ pcfg_pull_up: pcfg-pull-up {
 
 Rockchip 将电气参数单独抽象为 **配置节点**，以便多个 group 重用。
 
-### 7.4.4　驱动映射关系
+### 7.4.4_驱动映射关系
 
 ```c
 struct rockchip_pin_bank {
@@ -1863,9 +1863,9 @@ struct rockchip_pin_bank {
 
 ------
 
-## 7.5　Allwinner 系列：`pins` + `function`
+## 7.5_Allwinner_系列_pins_+_function
 
-### 7.5.1　示例
+### 7.5.1_示例
 
 ```dts
 uart2_pins: uart2-pins {
@@ -1876,13 +1876,13 @@ uart2_pins: uart2-pins {
 };
 ```
 
-### 7.5.2　语法特征
+### 7.5.2_语法特征
 
 - **纯字符串形式**，无需宏；
 - 由驱动根据引脚名解析成编号；
 - 支持通用属性（bias / drive / slew）。
 
-### 7.5.3　解析函数
+### 7.5.3_解析函数
 
 ```c
 sunxi_pinctrl_parse_pins(...)
@@ -1892,7 +1892,7 @@ sunxi_pinctrl_parse_pins(...)
 }
 ```
 
-### 7.5.4　寄存器结构（简化）
+### 7.5.4_寄存器结构(简化)
 
 | 位域  | 含义            |
 | ----- | --------------- |
@@ -1905,7 +1905,7 @@ Allwinner 采用**一寄存器多字段**方式，每个引脚只有一个 32-bi
 
 ------
 
-## 7.6　三者差异汇总表
+## 7.6_三者差异汇总表
 
 | 特征        | **NXP (i.MX)**             | **Rockchip (RK)**       | **Allwinner (sunxi)**         |
 | ----------- | -------------------------- | ----------------------- | ----------------------------- |
@@ -1919,7 +1919,7 @@ Allwinner 采用**一寄存器多字段**方式，每个引脚只有一个 32-bi
 
 ------
 
-## 7.7　示例对照：同一组 UART2 引脚配置
+## 7.7_示例对照_同一组_UART2_引脚配置
 
 | 平台                | DTS 写法                                              |
 | ------------------- | ----------------------------------------------------- |
@@ -1932,7 +1932,7 @@ Allwinner 采用**一寄存器多字段**方式，每个引脚只有一个 32-bi
 
 ------
 
-## 7.8　驱动框架统一性：pinctrl 子系统的抽象保证
+## 7.8_驱动框架统一性_pinctrl_子系统的抽象保证
 
 虽然各厂商 DTS 语法不同，但都通过同一个接口注册：
 
@@ -1962,7 +1962,7 @@ pinctrl_register(&pinctrl_desc, &pdev->dev, drvdata);
 
 ------
 
-## 7.9　可视化对照图
+## 7.9_可视化对照图
 
 ```mermaid
 flowchart TB
@@ -1988,7 +1988,7 @@ flowchart TB
 
 ------
 
-## 7.10　小结
+## 7.10_小结
 
 | 核心要点                                                     | 内容                                                        |
 | ------------------------------------------------------------ | ----------------------------------------------------------- |
@@ -2002,14 +2002,14 @@ flowchart TB
 
 
 
-# 第8章　pinctrl 驱动解析流程：从设备树到寄存器写入全过程
+# 第8章_pinctrl_驱动解析流程_从设备树到寄存器写入全过程
 
 > **主题：** 详细剖析从设备树 (`.dts`) 中的 pinctrl 节点定义，到内核启动时如何一步步解析节点、创建数据结构、匹配驱动、写入寄存器的完整生命周期。
 >  **目标：** 让读者能清晰理解 pinctrl 子系统如何把 DTS 中的“文字配置”转化为硬件寄存器的“电气状态”。
 
 ------
 
-## 8.1　主题引入：从 “DTS 一行配置” 到 “硬件一位寄存器”
+## 8.1_主题引入_从_DTS_一行配置_到_硬件一位寄存器
 
 在第 2～7 章中，我们学习了各种语法：
 
@@ -2025,7 +2025,7 @@ flowchart TB
 
 ------
 
-## 8.2　总体流程总览
+## 8.2_总体流程总览
 
 在系统启动阶段，从 **设备树解析 → 控制器注册 → 设备绑定 → 状态应用**
  整个流程可分为五个阶段：
@@ -2044,9 +2044,9 @@ flowchart TD
 
 ------
 
-## 8.3　阶段①：设备树加载（Boot 阶段）
+## 8.3_阶段①_设备树加载(Boot_阶段)
 
-### 8.3.1　入口点
+### 8.3.1_入口点
 
 设备树被加载后，所有节点以 `struct device_node` 形式保存在内核中：
 
@@ -2067,7 +2067,7 @@ struct device_node {
 
 ------
 
-## 8.4　阶段②：控制器驱动注册
+## 8.4_阶段②_控制器驱动注册
 
 pinctrl 的每个控制器（如 i.MX6ULL 的 IOMUXC）都有独立驱动。
 
@@ -2108,7 +2108,7 @@ int devm_pinctrl_register_and_init(
 
 ------
 
-## 8.5　阶段③：设备节点解析（of_pinctrl_init）
+## 8.5_阶段③_设备节点解析(of_pinctrl_init)
 
 当外设节点（如 UART1）被解析时，核心函数 `of_pinctrl_init()` 会被调用：
 
@@ -2131,7 +2131,7 @@ static int of_pinctrl_init(struct device *dev)
 
 ------
 
-## 8.6　阶段④：状态建立（pinctrl_state）
+## 8.6_阶段④_状态建立(pinctrl_state)
 
 每个状态（如 `"default"`、`"sleep"`）被封装为：
 
@@ -2167,7 +2167,7 @@ struct pinctrl_map {
 
 ------
 
-## 8.7　阶段⑤：状态应用（pinctrl_select_state）
+## 8.7_阶段⑤_状态应用(pinctrl_select_state)
 
 当驱动 probe 或系统 resume 时，内核执行：
 
@@ -2189,7 +2189,7 @@ int pinctrl_select_state(struct pinctrl *p, struct pinctrl_state *state)
 
 ------
 
-## 8.8　阶段⑥：硬件寄存器写入（最终落地）
+## 8.8_阶段⑥_硬件寄存器写入(最终落地)
 
 以 i.MX6ULL 为例，`imx_pinconf_set()` 最终执行寄存器写入：
 
@@ -2211,7 +2211,7 @@ static int imx_pinconf_set(struct pinctrl_dev *pctldev,
 
 ------
 
-## 8.9　整体时序图：从 DTS 到寄存器
+## 8.9_整体时序图_从_DTS_到寄存器
 
 ```mermaid
 sequenceDiagram
@@ -2231,7 +2231,7 @@ sequenceDiagram
 
 ------
 
-## 8.10　调试路径与验证方法
+## 8.10_调试路径与验证方法
 
 | 层级           | 命令                                               | 验证内容                  |
 | -------------- | -------------------------------------------------- | ------------------------- |
@@ -2243,7 +2243,7 @@ sequenceDiagram
 
 ------
 
-## 8.11　关键结构体全景图
+## 8.11_关键结构体全景图
 
 ```mermaid
 flowchart TD
@@ -2269,7 +2269,7 @@ flowchart TD
 
 ------
 
-## 8.12　流程总结（核心抽象）
+## 8.12_流程总结(核心抽象)
 
 | 阶段         | 内核调用                  | 数据结构        | 厂商钩子                   | 作用         |
 | ------------ | ------------------------- | --------------- | -------------------------- | ------------ |
@@ -2281,7 +2281,7 @@ flowchart TD
 
 ------
 
-## 8.13　小结
+## 8.13_小结
 
 | 层次                                                     | 说明 |
 | -------------------------------------------------------- | ---- |
@@ -2298,7 +2298,7 @@ flowchart TD
 
 
 
-# 第9章　pinctrl 调试与问题定位实战指南
+# 第9章_pinctrl_调试与问题定位实战指南
 
 > **主题：** 本章专注于实战调试，讲解开发者在内核驱动开发中如何定位与解决 pinctrl 相关错误。
 >  **核心内容：**
@@ -2310,7 +2310,7 @@ flowchart TD
 
 ------
 
-## 9.1　主题引入：为什么 pinctrl 问题最难调？
+## 9.1_主题引入_为什么_pinctrl_问题最难调
 
 在 Linux 驱动移植或定制过程中，
  **pinctrl 是最容易出错但最难排查的部分之一。**
@@ -2333,7 +2333,7 @@ flowchart TD
 
 ------
 
-## 9.2　常见错误与原因对照表
+## 9.2_常见错误与原因对照表
 
 | 内核日志片段                                     | 可能原因                                     | 解决方法                                      |
 | ------------------------------------------------ | -------------------------------------------- | --------------------------------------------- |
@@ -2346,7 +2346,7 @@ flowchart TD
 
 ------
 
-## 9.3　DebugFS：最强大的 pinctrl 调试入口
+## 9.3_DebugFS_最强大的_pinctrl_调试入口
 
 pinctrl 子系统在内核中自动创建了 debugfs 节点：
  `/sys/kernel/debug/pinctrl/`
@@ -2366,7 +2366,7 @@ pinctrl 子系统在内核中自动创建了 debugfs 节点：
 
 ------
 
-### 9.3.1　查看控制器信息
+### 9.3.1_查看控制器信息
 
 ```bash
 cat /sys/kernel/debug/pinctrl/*/info
@@ -2381,7 +2381,7 @@ pin base: 0
 number of pins: 150
 ```
 
-### 9.3.2　查看引脚定义
+### 9.3.2_查看引脚定义
 
 ```bash
 cat /sys/kernel/debug/pinctrl/*/pins
@@ -2394,7 +2394,7 @@ pin 16 (UART1_TX) 0x020E0068
 pin 17 (UART1_RX) 0x020E006C
 ```
 
-### 9.3.3　查看当前复用状态
+### 9.3.3_查看当前复用状态
 
 ```bash
 cat /sys/kernel/debug/pinctrl/*/pinmux-pins
@@ -2406,7 +2406,7 @@ cat /sys/kernel/debug/pinctrl/*/pinmux-pins
 pin 16 (UART1_TX) function uart1 group uart1_grp
 ```
 
-### 9.3.4　查看电气配置
+### 9.3.4_查看电气配置
 
 ```bash
 cat /sys/kernel/debug/pinctrl/*/pinconf-pins
@@ -2420,9 +2420,9 @@ pin 16 (UART1_TX) bias-pull-up drive-strength=8 slew-rate=1
 
 ------
 
-## 9.4　动态切换状态验证
+## 9.4_动态切换状态验证
 
-### 9.4.1　查看所有状态
+### 9.4.1_查看所有状态
 
 ```bash
 cat /sys/kernel/debug/pinctrl/*/states
@@ -2435,7 +2435,7 @@ default
 sleep
 ```
 
-### 9.4.2　手动切换状态
+### 9.4.2_手动切换状态
 
 ```bash
 echo sleep > /sys/kernel/debug/pinctrl/serial@02020000/state
@@ -2456,16 +2456,16 @@ pinctrl_select_state(pctl, pinctrl_lookup_state(pctl, "sleep"));
 
 ------
 
-## 9.5　验证寄存器写入效果
+## 9.5_验证寄存器写入效果
 
-### 9.5.1　查找寄存器地址
+### 9.5.1_查找寄存器地址
 
 在 i.MX6ULL 中：
 
 - `MUX_CTL` 寄存器基址：`0x020E0068`
 - `PAD_CTL` 寄存器基址：`0x020E02F4`
 
-### 9.5.2　使用 `devmem` 直接读写
+### 9.5.2_使用_devmem_直接读写
 
 ```bash
 # 读取复用寄存器
@@ -2485,9 +2485,9 @@ devmem 0x020E02F4
 
 ------
 
-## 9.6　典型问题复现与修复
+## 9.6_典型问题复现与修复
 
-### 9.6.1　案例一：`invalid function`
+### 9.6.1_案例一_invalid_function
 
 **现象：**
 
@@ -2508,7 +2508,7 @@ pinctrl-imx: invalid function uart3
 
 ------
 
-### 9.6.2　案例二：`gpio-ranges missing`
+### 9.6.2_案例二_gpio-ranges_missing
 
 **现象：**
 
@@ -2527,7 +2527,7 @@ gpio-ranges = <&pinctrl 0 0 32>;
 
 ------
 
-### 9.6.3　案例三：`failed to apply settings`
+### 9.6.3_案例三_failed_to_apply_settings
 
 **现象：**
 
@@ -2548,7 +2548,7 @@ pinctrl core: failed to apply settings for state 'default'
 
 ------
 
-### 9.6.4　案例四：电气配置未生效
+### 9.6.4_案例四_电气配置未生效
 
 **现象：**
  引脚能输出，但波形过弱或漂浮。
@@ -2561,7 +2561,7 @@ pinctrl core: failed to apply settings for state 'default'
 
 ------
 
-## 9.7　pinctrl 日志调试选项
+## 9.7_pinctrl_日志调试选项
 
 启用内核日志调试：
 
@@ -2581,7 +2581,7 @@ pinctrl-imx: set pin 16 mux=UART1_TX conf=0x1b0b1
 
 ------
 
-## 9.8　内核函数级调用路径（开发者视角）
+## 9.8_内核函数级调用路径(开发者视角)
 
 ```mermaid
 sequenceDiagram
@@ -2601,7 +2601,7 @@ sequenceDiagram
 
 ------
 
-## 9.9　pinctrl 调试 checklist（建议打印保存）
+## 9.9_pinctrl_调试_checklist(建议打印保存)
 
 | 调试目标         | 工具 / 命令                                    | 检查点             |
 | ---------------- | ---------------------------------------------- | ------------------ |
@@ -2615,7 +2615,7 @@ sequenceDiagram
 
 ------
 
-## 9.10　小结
+## 9.10_小结
 
 | 分类         | 核心要点                                                     |
 | ------------ | ------------------------------------------------------------ |
@@ -2634,7 +2634,7 @@ sequenceDiagram
 
 
 
-# 第10章　pinctrl 在 suspend/resume 与 Runtime PM 中的自动状态管理机制
+# 第10章_pinctrl_在_suspend/resume_与_Runtime_PM_中的自动状态管理机制
 
 > **主题：** 本章讲解内核如何在**系统挂起（suspend）**、**唤醒（resume）**、**运行时节能（Runtime PM）**中自动切换 `pinctrl-names` 中定义的 `"default"`、`"sleep"`、`"idle"` 等状态。
 >  **目标：**
@@ -2645,7 +2645,7 @@ sequenceDiagram
 
 ------
 
-## 10.1　主题引入：pinctrl 不是“静态配置”
+## 10.1_主题引入_pinctrl_不是_静态配置
 
 在传统嵌入式系统中，pinmux 配置通常只在启动阶段写一次就完。
  但在 Linux 中，**pinctrl 是动态的**：
@@ -2661,7 +2661,7 @@ Linux 内核通过 **pinctrl core + PM 通知链** 完成这些状态切换。
 
 ------
 
-## 10.2　设备树状态定义回顾
+## 10.2_设备树状态定义回顾
 
 典型 DTS 定义如下：
 
@@ -2683,7 +2683,7 @@ uart1: serial@02020000 {
 
 ------
 
-## 10.3　核心调用关系总览
+## 10.3_核心调用关系总览
 
 pinctrl 状态切换在 PM 框架中通过以下调用链完成：
 
@@ -2704,9 +2704,9 @@ sequenceDiagram
 
 ------
 
-## 10.4　状态切换核心函数
+## 10.4_状态切换核心函数
 
-### 10.4.1　`pinctrl_pm_select_default_state()`
+### 10.4.1_pinctrl_pm_select_default_state()
 
 ```c
 void pinctrl_pm_select_default_state(struct device *dev)
@@ -2720,7 +2720,7 @@ void pinctrl_pm_select_default_state(struct device *dev)
 - 在设备 probe 或 resume 阶段被调用；
 - 自动切换 `"default"` 状态。
 
-### 10.4.2　`pinctrl_pm_select_sleep_state()`
+### 10.4.2_pinctrl_pm_select_sleep_state()
 
 ```c
 void pinctrl_pm_select_sleep_state(struct device *dev)
@@ -2737,12 +2737,12 @@ void pinctrl_pm_select_sleep_state(struct device *dev)
 
 ------
 
-## 10.5　驱动框架中的整合
+## 10.5_驱动框架中的整合
 
 在设备驱动中（如 UART、I²C、SPI 等），通常不需要显式写入 pinctrl 调用，
  只要驱动注册了标准的 PM 回调，pinctrl 就会自动介入。
 
-### 10.5.1　以 UART 驱动为例
+### 10.5.1_以_UART_驱动为例
 
 ```c
 static const struct dev_pm_ops imx_uart_pm_ops = {
@@ -2769,12 +2769,12 @@ static int imx_uart_resume(struct device *dev)
 
 ------
 
-## 10.6　Runtime PM 支持（动态电源管理）
+## 10.6_Runtime_PM_支持(动态电源管理)
 
 Runtime PM 是一种**非系统休眠场景**的动态功耗管理机制：
  例如 UART 在无人使用时自动关电、关闭引脚驱动。
 
-### 10.6.1　调用链
+### 10.6.1_调用链
 
 ```mermaid
 sequenceDiagram
@@ -2791,7 +2791,7 @@ sequenceDiagram
     Device-->>Runtime: runtime_suspend 成功
 ```
 
-### 10.6.2　示例
+### 10.6.2_示例
 
 ```c
 static int uart_runtime_suspend(struct device *dev)
@@ -2811,7 +2811,7 @@ static int uart_runtime_resume(struct device *dev)
 
 ------
 
-## 10.7　典型状态切换时序
+## 10.7_典型状态切换时序
 
 以 **i.MX6ULL + UART1** 为例：
 
@@ -2832,7 +2832,7 @@ sequenceDiagram
 
 ------
 
-## 10.8　可视化寄存器变化（以 i.MX6ULL 为例）
+## 10.8_可视化寄存器变化(以_i.MX6ULL_为例)
 
 | 阶段    | MUX 寄存器      | PAD 寄存器                     | 引脚状态 |
 | ------- | --------------- | ------------------------------ | -------- |
@@ -2849,7 +2849,7 @@ devmem 0x020E02F4  # PAD_CTL
 
 ------
 
-## 10.9　驱动与 pinctrl 的解耦优势
+## 10.9_驱动与_pinctrl_的解耦优势
 
 | 场景            | pinctrl 自动行为      | 驱动是否需要参与 |
 | --------------- | --------------------- | ---------------- |
@@ -2863,15 +2863,15 @@ devmem 0x020E02F4  # PAD_CTL
 
 ------
 
-## 10.10　调试 suspend/resume 切换
+## 10.10_调试_suspend/resume_切换
 
-### 10.10.1　查看当前状态
+### 10.10.1_查看当前状态
 
 ```bash
 cat /sys/kernel/debug/pinctrl/serial@02020000/state
 ```
 
-### 10.10.2　手动触发挂起
+### 10.10.2_手动触发挂起
 
 ```bash
 echo mem > /sys/power/state
@@ -2884,7 +2884,7 @@ cat /sys/kernel/debug/pinctrl/serial@02020000/state
 # 输出应为：sleep
 ```
 
-### 10.10.3　唤醒后验证
+### 10.10.3_唤醒后验证
 
 ```bash
 cat /sys/kernel/debug/pinctrl/serial@02020000/state
@@ -2893,7 +2893,7 @@ cat /sys/kernel/debug/pinctrl/serial@02020000/state
 
 ------
 
-## 10.11　自定义状态扩展
+## 10.11_自定义状态扩展
 
 有时，除了 `"default"` 与 `"sleep"`，
  还需要额外的 `"idle"`、`"low-speed"` 等中间状态：
@@ -2920,7 +2920,7 @@ pinctrl_select_state(pctl, s_idle);
 
 ------
 
-## 10.12　pinctrl 与 Device PM Framework 的关系
+## 10.12_pinctrl_与_Device_PM_Framework_的关系
 
 ```mermaid
 flowchart LR
@@ -2937,7 +2937,7 @@ flowchart LR
 
 ------
 
-## 10.13　常见问题与解决方案
+## 10.13_常见问题与解决方案
 
 | 问题                 | 原因                                  | 解决方法                                                     |
 | -------------------- | ------------------------------------- | ------------------------------------------------------------ |
@@ -2948,7 +2948,7 @@ flowchart LR
 
 ------
 
-## 10.14　小结
+## 10.14_小结
 
 | 层级         | 内容                                                         |
 | ------------ | ------------------------------------------------------------ |
@@ -2968,7 +2968,7 @@ flowchart LR
 
 
 
-# 第11章　pinctrl 与中断（interrupts）子系统的协作机制
+# 第11章_pinctrl_与中断(interrupts)子系统的协作机制
 
 > **主题：** 解析当一个 GPIO 引脚既作为普通 I/O，又可复用为中断输入时，
 >  pinctrl 与中断控制器（IRQ subsystem）如何协同工作。
@@ -2981,7 +2981,7 @@ flowchart LR
 
 ------
 
-## 11.1　主题引入：GPIO 与 IRQ 的关系
+## 11.1_主题引入_GPIO_与_IRQ_的关系
 
 在多数 SoC（如 i.MX、RK、Allwinner）中，一个 GPIO 引脚既能：
 
@@ -3005,7 +3005,7 @@ flowchart LR
 
 ------
 
-## 11.2　设备树语法：中断属性总览
+## 11.2_设备树语法_中断属性总览
 
 在 DTS 中，一个设备节点若有中断输入，一般需要以下属性：
 
@@ -3018,7 +3018,7 @@ flowchart LR
 
 ------
 
-### 11.2.1　控制器节点（以 ARM GIC 为例）
+### 11.2.1_控制器节点(以_ARM_GIC_为例)
 
 ```dts
 gic: interrupt-controller@00a01000 {
@@ -3040,7 +3040,7 @@ gic: interrupt-controller@00a01000 {
 
 ------
 
-### 11.2.2　GPIO 控制器节点（可生成中断）
+### 11.2.2_GPIO_控制器节点(可生成中断)
 
 ```dts
 gpio1: gpio@0209c000 {
@@ -3062,7 +3062,7 @@ gpio1: gpio@0209c000 {
 
 ------
 
-### 11.2.3　外设节点引用示例
+### 11.2.3_外设节点引用示例
 
 ```dts
 button@0 {
@@ -3085,7 +3085,7 @@ button@0 {
 
 ------
 
-## 11.3　pinctrl 在中断流程中的角色
+## 11.3_pinctrl_在中断流程中的角色
 
 在中断生效前，必须确保：
 
@@ -3109,7 +3109,7 @@ pinctrl_button: buttongrp {
 
 ------
 
-## 11.4　从设备树到内核结构体的映射路径
+## 11.4_从设备树到内核结构体的映射路径
 
 ```mermaid
 flowchart TD
@@ -3134,9 +3134,9 @@ flowchart TD
 
 ------
 
-## 11.5　驱动示例：GPIO 按键中断
+## 11.5_驱动示例_GPIO_按键中断
 
-### 11.5.1　DTS 部分
+### 11.5.1_DTS_部分
 
 ```dts
 button@0 {
@@ -3149,7 +3149,7 @@ button@0 {
 };
 ```
 
-### 11.5.2　驱动部分（简化示例）
+### 11.5.2_驱动部分(简化示例)
 
 ```c
 static irqreturn_t btn_irq_handler(int irq, void *dev_id)
@@ -3178,7 +3178,7 @@ static int button_probe(struct platform_device *pdev)
 
 ------
 
-## 11.6　触发类型详解
+## 11.6_触发类型详解
 
 | 宏定义                  | 含义       |
 | ----------------------- | ---------- |
@@ -3193,7 +3193,7 @@ static int button_probe(struct platform_device *pdev)
 
 ------
 
-## 11.7　结构体关联视图
+## 11.7_结构体关联视图
 
 ```mermaid
 flowchart TB
@@ -3220,7 +3220,7 @@ flowchart TB
 
 ------
 
-## 11.8　pinctrl 与中断的关键接口联系
+## 11.8_pinctrl_与中断的关键接口联系
 
 | 函数                     | 所属模块        | 作用                  |
 | ------------------------ | --------------- | --------------------- |
@@ -3232,7 +3232,7 @@ flowchart TB
 
 ------
 
-## 11.9　调试与验证步骤
+## 11.9_调试与验证步骤
 
 1️⃣ **查看 GPIO 控制器注册情况**
 
@@ -3261,7 +3261,7 @@ cat /sys/kernel/debug/pinctrl/*/pinconf-pins | grep GPIO1_IO03
 
 ------
 
-## 11.10　常见问题与排查
+## 11.10_常见问题与排查
 
 | 现象                      | 原因                         | 解决方案                         |
 | ------------------------- | ---------------------------- | -------------------------------- |
@@ -3273,7 +3273,7 @@ cat /sys/kernel/debug/pinctrl/*/pinconf-pins | grep GPIO1_IO03
 
 ------
 
-## 11.11　关键调试技巧
+## 11.11_关键调试技巧
 
 - 打开中断调试日志：
 
@@ -3296,7 +3296,7 @@ cat /sys/kernel/debug/pinctrl/*/pinconf-pins | grep GPIO1_IO03
 
 ------
 
-## 11.12　小结
+## 11.12_小结
 
 | 层级          | 说明                                           |
 | ------------- | ---------------------------------------------- |
@@ -3316,7 +3316,7 @@ cat /sys/kernel/debug/pinctrl/*/pinconf-pins | grep GPIO1_IO03
 
 
 
-# 第12章　GPIO 控制器（gpio-controller）与 pinctrl 的整合机制
+# 第12章_GPIO_控制器(gpio-controller)与_pinctrl_的整合机制
 
 > **主题：** 讲解 Linux 内核如何通过 `gpio-ranges`、`pinctrl_gpio_request()`、`pinmux_request_gpio()` 等机制，
 >  将 **GPIO 子系统 (gpiolib)** 与 **pinctrl 子系统** 打通，从而实现从 DTS 到硬件引脚的完整映射。
@@ -3330,7 +3330,7 @@ cat /sys/kernel/debug/pinctrl/*/pinconf-pins | grep GPIO1_IO03
 
 ------
 
-## 12.1　主题引入：为什么要整合 GPIO 与 pinctrl？
+## 12.1_主题引入_为什么要整合_GPIO_与_pinctrl
 
 > pinctrl 管 “引脚复用与电气特性”，
 > gpiolib 管 “GPIO 编号与方向电平”。
@@ -3358,9 +3358,9 @@ flowchart LR
 
 ------
 
-## 12.2　设备树语法：`gpio-controller` 与 `gpio-ranges`
+## 12.2_设备树语法_gpio-controller_与_gpio-ranges
 
-### 12.2.1　典型节点定义（以 i.MX6ULL 为例）
+### 12.2.1_典型节点定义(以_i.MX6ULL_为例)
 
 ```dts
 gpio1: gpio@0209c000 {
@@ -3382,7 +3382,7 @@ gpio1: gpio@0209c000 {
 
 ------
 
-## 12.3　gpio-ranges 的真实含义
+## 12.3_gpio-ranges_的真实含义
 
 `gpio-ranges` 语法格式如下：
 
@@ -3404,7 +3404,7 @@ gpio-ranges = <&pinctrl_controller gpio_offset pin_offset count>;
 
 ------
 
-### 12.3.1　结构体落点
+### 12.3.1_结构体落点
 
 该属性由内核解析为：
 
@@ -3430,7 +3430,7 @@ void pinctrl_add_gpio_range(struct pinctrl_dev *pctldev,
 
 ------
 
-## 12.4　系统解析流程：从 DTS 到结构体的落地
+## 12.4_系统解析流程_从_DTS_到结构体的落地
 
 ```mermaid
 sequenceDiagram
@@ -3449,9 +3449,9 @@ sequenceDiagram
 
 ------
 
-## 12.5　驱动中的请求路径：`gpio_request()` 到 `pinctrl_gpio_request()`
+## 12.5_驱动中的请求路径_gpio_request()_到_pinctrl_gpio_request()
 
-### 12.5.1　调用栈
+### 12.5.1_调用栈
 
 ```c
 gpio_request(gpio, "name")
@@ -3466,7 +3466,7 @@ gpio_request(gpio, "name")
 
 ------
 
-### 12.5.2　关键代码片段（来自 `drivers/pinctrl/pinmux.c`）
+### 12.5.2_关键代码片段(来自_drivers/pinctrl/pinmux.c)
 
 ```c
 int pinmux_request_gpio(struct pinctrl_dev *pctldev, unsigned pin)
@@ -3482,7 +3482,7 @@ int pinmux_request_gpio(struct pinctrl_dev *pctldev, unsigned pin)
 
 ------
 
-## 12.6　验证流程（以 i.MX6ULL 为例）
+## 12.6_验证流程(以_i.MX6ULL_为例)
 
 假设 DTS 中定义：
 
@@ -3513,7 +3513,7 @@ pinctrl-imx: pinmux_set_gpio 3 -> GPIO1_IO03 (mux=GPIO mode)
 
 ------
 
-## 12.7　pinctrl 与 GPIO 编号体系的区别
+## 12.7_pinctrl_与_GPIO_编号体系的区别
 
 | 分类          | 对象        | 编号逻辑                   | 典型用途                           |
 | ------------- | ----------- | -------------------------- | ---------------------------------- |
@@ -3523,7 +3523,7 @@ pinctrl-imx: pinmux_set_gpio 3 -> GPIO1_IO03 (mux=GPIO mode)
 
 ------
 
-### 12.7.1　查看映射表
+### 12.7.1_查看映射表
 
 ```bash
 cat /sys/kernel/debug/pinctrl/*/gpio-ranges
@@ -3541,7 +3541,7 @@ gpio-range: gpio1 -> pinctrl@020e0000 base 0 pin_base 0 npins 32
 
 ------
 
-## 12.8　驱动层的常见问题与排查
+## 12.8_驱动层的常见问题与排查
 
 | 错误信息                                | 原因                 | 解决方案                        |
 | --------------------------------------- | -------------------- | ------------------------------- |
@@ -3553,7 +3553,7 @@ gpio-range: gpio1 -> pinctrl@020e0000 base 0 pin_base 0 npins 32
 
 ------
 
-## 12.9　完整流程总览图
+## 12.9_完整流程总览图
 
 ```mermaid
 flowchart TB
@@ -3577,7 +3577,7 @@ flowchart TB
 
 ------
 
-## 12.10　调试命令汇总
+## 12.10_调试命令汇总
 
 | 目的                  | 命令                                           | 示例输出                                     |
 | --------------------- | ---------------------------------------------- | -------------------------------------------- |
@@ -3589,7 +3589,7 @@ flowchart TB
 
 ------
 
-## 12.11　内核核心函数表
+## 12.11_内核核心函数表
 
 | 函数                              | 模块         | 作用                 |
 | --------------------------------- | ------------ | -------------------- |
@@ -3602,7 +3602,7 @@ flowchart TB
 
 ------
 
-## 12.12　小结
+## 12.12_小结
 
 | 层级                                        | 说明                                                     |
 | ------------------------------------------- | -------------------------------------------------------- |
@@ -3622,7 +3622,7 @@ flowchart TB
 
 
 
-# 第13章　pinctrl 与 gpiochip 的动态交互机制
+# 第13章_pinctrl_与_gpiochip_的动态交互机制
 
 > **主题：** 讲解在 Linux 运行时，一个引脚如何在 **GPIO 模式** 与 **外设复用模式** 之间安全切换，
 >  内核如何通过 `pinctrl_gpio_request()` / `pinctrl_gpio_free()` / `pinmux_request_gpio()` / `pinmux_enable_setting()` 等机制动态管理资源。
@@ -3635,7 +3635,7 @@ flowchart TB
 
 ------
 
-## 13.1　主题引入：GPIO 不是永远的 GPIO
+## 13.1_主题引入_GPIO_不是永远的_GPIO
 
 在 SoC 中，大部分引脚的功能是**复用的**。
  例如：
@@ -3655,7 +3655,7 @@ flowchart TB
 
 ------
 
-## 13.2　系统层级关系图
+## 13.2_系统层级关系图
 
 ```mermaid
 flowchart LR
@@ -3676,7 +3676,7 @@ flowchart LR
 
 ------
 
-## 13.3　引脚在两大子系统间的生命周期
+## 13.3_引脚在两大子系统间的生命周期
 
 | 阶段      | 执行函数                                | 作用                          |
 | --------- | --------------------------------------- | ----------------------------- |
@@ -3695,7 +3695,7 @@ flowchart LR
 
 ------
 
-## 13.4　调用路径详解：GPIO 模式申请
+## 13.4_调用路径详解_GPIO_模式申请
 
 ```c
 gpio_request(3, "led");
@@ -3706,7 +3706,7 @@ gpio_request(3, "led");
                      └─> drv->pinmux_ops->set_mux(GPIO_MODE)
 ```
 
-### 13.4.1　pinctrl_gpio_request()
+### 13.4.1_pinctrl_gpio_request()
 
 ```c
 int pinctrl_gpio_request(unsigned gpio)
@@ -3722,7 +3722,7 @@ int pinctrl_gpio_request(unsigned gpio)
 }
 ```
 
-### 13.4.2　厂商实现：以 i.MX 为例
+### 13.4.2_厂商实现_以_i.MX_为例
 
 ```c
 static int imx_pinmux_gpio_request_enable(struct pinctrl_dev *pctldev,
@@ -3736,7 +3736,7 @@ static int imx_pinmux_gpio_request_enable(struct pinctrl_dev *pctldev,
 
 ------
 
-## 13.5　GPIO 模式释放流程
+## 13.5_GPIO_模式释放流程
 
 当驱动执行：
 
@@ -3762,9 +3762,9 @@ gpio_free()
 
 ------
 
-## 13.6　动态复用切换：GPIO → 外设
+## 13.6_动态复用切换_GPIO_to_外设
 
-### 示例场景
+### 13.6.1_示例场景
 
 在运行时，需要把 GPIO3（LED 控制）切换为 UART1_TX：
 
@@ -3785,7 +3785,7 @@ pinctrl_select_state()
 
 ------
 
-## 13.7　核心结构体关联图
+## 13.7_核心结构体关联图
 
 ```mermaid
 flowchart TB
@@ -3809,7 +3809,7 @@ flowchart TB
 
 ------
 
-## 13.8　动态冲突检测机制
+## 13.8_动态冲突检测机制
 
 Linux 会在以下情况下拒绝复用操作：
 
@@ -3824,9 +3824,9 @@ Linux 会在以下情况下拒绝复用操作：
 
 ------
 
-## 13.9　动态调试：追踪引脚复用切换
+## 13.9_动态调试_追踪引脚复用切换
 
-### 13.9.1　查看当前所有 GPIO
+### 13.9.1_查看当前所有_GPIO
 
 ```bash
 cat /sys/kernel/debug/gpio
@@ -3839,7 +3839,7 @@ gpiochip0: GPIOs 0-31, parent: platform/gpio@0209c000
  gpio-3   (led               ) out hi
 ```
 
-### 13.9.2　查看引脚当前复用功能
+### 13.9.2_查看引脚当前复用功能
 
 ```bash
 cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep 3
@@ -3851,7 +3851,7 @@ cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep 3
 pin 3 (GPIO1_IO03) function gpio group gpio1_3_grp
 ```
 
-### 13.9.3　释放后再看
+### 13.9.3_释放后再看
 
 ```bash
 echo 3 > /sys/class/gpio/unexport
@@ -3868,7 +3868,7 @@ pin 3 (GPIO1_IO03) function uart1-tx
 
 ------
 
-## 13.10　运行时复用典型应用场景
+## 13.10_运行时复用典型应用场景
 
 | 场景                | 动态切换逻辑                      | 应用示例          |
 | ------------------- | --------------------------------- | ----------------- |
@@ -3879,9 +3879,9 @@ pin 3 (GPIO1_IO03) function uart1-tx
 
 ------
 
-## 13.11　运行时冲突案例分析
+## 13.11_运行时冲突案例分析
 
-### 案例一：复用冲突导致 GPIO 请求失败
+### 13.11.1_案例一_复用冲突导致_GPIO_请求失败
 
 **日志：**
 
@@ -3902,7 +3902,7 @@ pinctrl_select_state(p, pinctrl_lookup_state(p, "gpio"));
 
 ------
 
-### 案例二：设备树缺少 gpio-ranges
+### 13.11.2_案例二_设备树缺少_gpio-ranges
 
 **现象：**
  `gpio_request()` 返回 -EINVAL
@@ -3919,7 +3919,7 @@ gpio-ranges = <&pinctrl 0 0 32>;
 
 ------
 
-## 13.12　pinctrl 与 gpiolib 的相互调用逻辑
+## 13.12_pinctrl_与_gpiolib_的相互调用逻辑
 
 ```mermaid
 sequenceDiagram
@@ -3936,7 +3936,7 @@ sequenceDiagram
 
 ------
 
-## 13.13　调试技巧与命令
+## 13.13_调试技巧与命令
 
 | 目标                  | 命令                                                         |
 | --------------------- | ------------------------------------------------------------ |
@@ -3948,7 +3948,7 @@ sequenceDiagram
 
 ------
 
-## 13.14　小结
+## 13.14_小结
 
 | 层级             | 内容                       |
 | ---------------- | -------------------------- |
@@ -3969,7 +3969,7 @@ sequenceDiagram
 
 ------
 
-# 第14章　pinctrl 子系统全景回顾与综合示例
+# 第14章_pinctrl_子系统全景回顾与综合示例
 
 > **主题：** 通过一个完整的示例（基于 **NXP i.MX6ULL**），把设备树语法、pinctrl 驱动解析、GPIO 绑定、状态切换、低功耗管理与调试方法全部串联起来。
 >  **目标：**
@@ -3981,7 +3981,7 @@ sequenceDiagram
 
 ------
 
-## 14.1　实验平台与目标说明
+## 14.1_实验平台与目标说明
 
 | 项目         | 内容                                                         |
 | ------------ | ------------------------------------------------------------ |
@@ -3993,7 +3993,7 @@ sequenceDiagram
 
 ------
 
-## 14.2　完整 DTS 示例
+## 14.2_完整_DTS_示例
 
 ```dts
 / {
@@ -4058,7 +4058,7 @@ sequenceDiagram
 
 ------
 
-## 14.3　语法结构与内核数据结构映射表
+## 14.3_语法结构与内核数据结构映射表
 
 | DTS 节点                      | 内核结构体                  | 作用                     |
 | ----------------------------- | --------------------------- | ------------------------ |
@@ -4072,7 +4072,7 @@ sequenceDiagram
 
 ------
 
-## 14.4　驱动注册与状态切换过程
+## 14.4_驱动注册与状态切换过程
 
 ```mermaid
 sequenceDiagram
@@ -4103,7 +4103,7 @@ sequenceDiagram
 
 ------
 
-## 14.5　内核关键函数调用路径
+## 14.5_内核关键函数调用路径
 
 | 阶段       | 函数                       | 作用               |
 | ---------- | -------------------------- | ------------------ |
@@ -4116,9 +4116,9 @@ sequenceDiagram
 
 ------
 
-## 14.6　驱动应用示例（LED + UART）
+## 14.6_驱动应用示例(LED_+_UART)
 
-### 14.6.1　LED 驱动简化代码
+### 14.6.1_LED_驱动简化代码
 
 ```c
 #define LED_GPIO  3
@@ -4139,7 +4139,7 @@ static int led_probe(struct platform_device *pdev)
 gpio_request() → pinctrl_gpio_request() → pinmux_request_gpio()
 ```
 
-### 14.6.2　UART 驱动状态切换
+### 14.6.2_UART_驱动状态切换
 
 ```c
 static int imx_uart_suspend(struct device *dev)
@@ -4157,7 +4157,7 @@ static int imx_uart_resume(struct device *dev)
 
 ------
 
-## 14.7　调试与验证命令
+## 14.7_调试与验证命令
 
 | 目的       | 命令                                                  | 输出示例              |
 | ---------- | ----------------------------------------------------- | --------------------- |
@@ -4171,7 +4171,7 @@ static int imx_uart_resume(struct device *dev)
 
 ------
 
-## 14.8　动态测试步骤
+## 14.8_动态测试步骤
 
 1️⃣ **启动系统后查看默认状态**
 
@@ -4203,7 +4203,7 @@ devmem 0x020E0068
 
 ------
 
-## 14.9　pinctrl 整体结构全景图
+## 14.9_pinctrl_整体结构全景图
 
 ```mermaid
 flowchart TB
@@ -4219,7 +4219,7 @@ flowchart TB
 
 ------
 
-## 14.10　调试脚本（可直接放入 BusyBox 系统验证）
+## 14.10_调试脚本(可直接放入_BusyBox_系统验证)
 
 ```bash
 #!/bin/sh
@@ -4241,7 +4241,7 @@ devmem 0x020E0068
 
 ------
 
-## 14.11　知识体系回顾图谱
+## 14.11_知识体系回顾图谱
 
 ```mermaid
 mindmap
@@ -4271,7 +4271,7 @@ root((pinctrl 子系统))
 
 ------
 
-## 14.12　章节小结
+## 14.12_章节小结
 
 | 层级         | 内容                                        |
 | ------------ | ------------------------------------------- |
@@ -4292,7 +4292,7 @@ root((pinctrl 子系统))
 
 ------
 
-# 📘附录A　Linux pinctrl / GPIO 子系统速查手册（Kernel 6.1+）
+# 第15章_附录A_Linux_pinctrl_/_GPIO_子系统速查手册(Kernel_6.1+)
 
 > **用途：**
 >  作为随书附录或开发现场调试手册，
@@ -4300,7 +4300,7 @@ root((pinctrl 子系统))
 
 ------
 
-## A.1　核心结构体速查表（数据结构视角）
+## 15.1_A.1_核心结构体速查表(数据结构视角)
 
 | 结构体名                    | 所在模块         | 功能描述                                | 常见成员                                      |
 | --------------------------- | ---------------- | --------------------------------------- | --------------------------------------------- |
@@ -4318,7 +4318,7 @@ root((pinctrl 子系统))
 
 ------
 
-## A.2　关键函数速查表（调用链视角）
+## 15.2_A.2_关键函数速查表(调用链视角)
 
 | 函数名                              | 模块         | 调用时机              | 主要作用                                 |
 | ----------------------------------- | ------------ | --------------------- | ---------------------------------------- |
@@ -4342,7 +4342,7 @@ root((pinctrl 子系统))
 
 ------
 
-## A.3　设备树关键属性速查表（语法视角）
+## 15.3_A.3_设备树关键属性速查表(语法视角)
 
 | 属性名                            | 作用                | 示例                                  | 说明                          |
 | --------------------------------- | ------------------- | ------------------------------------- | ----------------------------- |
@@ -4359,7 +4359,7 @@ root((pinctrl 子系统))
 
 ------
 
-## A.4　调试命令速查表（debugfs 与用户态工具）
+## 15.4_A.4_调试命令速查表(debugfs_与用户态工具)
 
 | 调试目的         | 命令 / 路径                                                  | 示例输出                 |
 | ---------------- | ------------------------------------------------------------ | ------------------------ |
@@ -4378,7 +4378,7 @@ root((pinctrl 子系统))
 
 ------
 
-## A.5　pinctrl 子系统时序图（全景回顾）
+## 15.5_A.5_pinctrl_子系统时序图(全景回顾)
 
 ```mermaid
 sequenceDiagram
@@ -4400,7 +4400,7 @@ sequenceDiagram
 
 ------
 
-## A.6　典型验证脚本模板（适合 NFS/BusyBox 环境）
+## 15.6_A.6_典型验证脚本模板(适合_NFS/BusyBox_环境)
 
 ```bash
 #!/bin/sh
@@ -4425,7 +4425,7 @@ cat /sys/kernel/debug/gpio
 
 ------
 
-## A.7　学习与工程移植建议
+## 15.7_A.7_学习与工程移植建议
 
 | 阶段     | 学习重点                          | 建议                                      |
 | -------- | --------------------------------- | ----------------------------------------- |
@@ -4437,7 +4437,7 @@ cat /sys/kernel/debug/gpio
 
 ------
 
-## ✅ 附录总结
+## 15.8_附录总结
 
 | 分类           | 内容摘要                                                     |
 | -------------- | ------------------------------------------------------------ |

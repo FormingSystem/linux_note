@@ -4,21 +4,23 @@ set -euo pipefail
 usage() {
     cat <<'EOF'
 用法：
-  ./format.sh           # 仅预览
-  ./format.sh --apply   # 执行重命名并更新引用
-  ./format.sh --help
+  ./format.sh names [--apply] [路径...]
 
 依赖：bash、git、Python 3（MSYS2 可安装 mingw-w64-ucrt-x86_64-python）
 EOF
 }
 
 mode=preview
-case "${1:-}" in
-    '') ;;
-    --apply) mode=apply ;;
-    -h|--help) usage; exit 0 ;;
-    *) printf '未知参数：%s\n' "$1" >&2; usage >&2; exit 2 ;;
-esac
+paths=()
+for argument in "$@"; do
+    case "$argument" in
+        --apply) mode=apply ;;
+        --summary) ;;
+        -h|--help) usage; exit 0 ;;
+        --*) printf '未知参数：%s\n' "$argument" >&2; exit 2 ;;
+        *) paths+=("$argument") ;;
+    esac
+done
 
 for command_name in git python3; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
@@ -35,7 +37,7 @@ cd "$repo_root"
 
 export PYTHONUTF8=1
 export PYTHONIOENCODING=utf-8
-python3 - "$mode" <<'PY'
+python3 - "$mode" "${paths[@]}" <<'PY'
 from __future__ import annotations
 
 import os
@@ -46,6 +48,7 @@ from collections import defaultdict
 from pathlib import Path
 
 APPLY = sys.argv[1] == "apply"
+SELECTIONS = [item.replace("\\", "/").removeprefix("./").rstrip("/") for item in sys.argv[2:]]
 TEXT_EXTENSIONS = {
     ".md", ".markdown", ".json", ".mm", ".txt", ".rst",
     ".c", ".h", ".css", ".js", ".yml", ".yaml",
@@ -104,7 +107,13 @@ def normalize_link_target(target: str) -> str:
 
 tracked_raw = run("git", "-c", "core.quotePath=false", "ls-files", "-z", capture=True).stdout
 tracked = [item.decode("utf-8") for item in tracked_raw.split(b"\0") if item]
-mapping = {old: normalize_path(old) for old in tracked}
+selected = tracked
+if SELECTIONS:
+    selected = [
+        path for path in tracked
+        if any(path == scope or path.startswith(scope + "/") for scope in SELECTIONS)
+    ]
+mapping = {old: normalize_path(old) for old in selected}
 mapping = {old: new for old, new in mapping.items() if old != new}
 
 targets: dict[str, list[str]] = defaultdict(list)

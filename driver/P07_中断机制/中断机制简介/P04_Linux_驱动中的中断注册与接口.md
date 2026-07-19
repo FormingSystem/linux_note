@@ -1,4 +1,4 @@
-# 第4章 Linux 驱动中的中断注册与接口
+# 第4章_Linux_驱动中的中断注册与接口
 
 本章是在前面三章的基础上继续往“能写驱动”这一步走的。
 
@@ -10,7 +10,7 @@
 
 ------
 
-## 4.1 章节内容说明
+## 4.1_章节内容说明
 
 本章分成几条线并行展开：
 
@@ -24,7 +24,7 @@
 
 ------
 
-## 4.2 驱动视角下的中断处理路径回顾
+## 4.2_驱动视角下的中断处理路径回顾
 
 在进具体 API 之前，先把上一章的路径用驱动的口吻再说一遍，免得弄混：
 
@@ -43,11 +43,11 @@
 
 ------
 
-## 4.3 获取 IRQ 号的几种路径
+## 4.3_获取_IRQ_号的几种路径
 
 这一小节专门把“怎么拿到那个 IRQ 整数”说全，因为这一步经常让人卡住，尤其是“我写了一个纯字符设备，怎么也拿不到 platform_get_irq()”。
 
-### 4.3.1 标准场景：platform 设备，用 `platform_get_irq()`
+### 4.3.1_标准场景_platform_设备_用_platform_get_irq()
 
 **前提**：你的设备是 DTS/ACPI 里描述出来的，内核已经把它变成了一个 `struct platform_device`，也就是你是在 `.probe()` 里写代码。
 
@@ -81,7 +81,7 @@ static int my_probe(struct platform_device *pdev)
 
 ------
 
-### 4.3.2 同样是 platform，但要“再钉一次类型”
+### 4.3.2_同样是_platform_但要_再钉一次类型
 
 DTS 里一般已经写了触发方式，但驱动也常常这么做：
 
@@ -98,7 +98,7 @@ irq_set_irq_type(irq, IRQ_TYPE_EDGE_FALLING);
 
 ------
 
-### 4.3.3 字符设备 / misc 设备：用 `of_irq_get()`
+### 4.3.3_字符设备_/_misc_设备_用_of_irq_get()
 
 **场景**：你注册的是 `miscdevice` / `cdev`，但这个设备在 DTS 里是有一个节点的。那就可以这样拿：
 
@@ -137,7 +137,7 @@ static int __init my_init(void)
 
 ------
 
-### 4.3.4 没有 `struct device`，但知道 DTS 路径：用 `of_find_node_* + irq_of_parse_and_map()`
+### 4.3.4_没有_struct_device_但知道_DTS_路径_用_of_find_node_*_+_irq_of_parse_and_map()
 
 **场景**：老项目、实验模块、不想/不能重构成 platform 驱动，但又想从 DTS 拿 IRQ。
 
@@ -164,7 +164,7 @@ ret = request_irq(irq, my_isr, 0, "my-int-demo", NULL);
 
 ------
 
-### 4.3.5 最兜底：模块参数传 IRQ
+### 4.3.5_最兜底_模块参数传_IRQ
 
 **场景**：完全没 DTS，也不是 platform，就想测一下一条中断。
 
@@ -184,7 +184,7 @@ static int __init my_init(void)
 
 ------
 
-### 4.3.6 获取 IRQ 号的选择顺序
+### 4.3.6_获取_IRQ_号的选择顺序
 
 可以总结成一张小表：
 
@@ -199,11 +199,11 @@ static int __init my_init(void)
 
 ------
 
-## 4.4 中断注册的核心接口
+## 4.4_中断注册的核心接口
 
 拿到 IRQ 号以后，下一步就是“把我的处理函数挂上去”。Linux 给的选择不止一个，我们分三档讲。
 
-### 4.4.1 最原始的：`request_irq()`
+### 4.4.1_最原始的_request_irq()
 
 ```c
 int request_irq(unsigned int irq,
@@ -223,7 +223,7 @@ int request_irq(unsigned int irq,
 
 ------
 
-### 4.4.2 更省心的：`devm_request_irq()`
+### 4.4.2_更省心的_devm_request_irq()
 
 ```c
 int devm_request_irq(struct device *dev,
@@ -239,7 +239,7 @@ int devm_request_irq(struct device *dev,
 
 ------
 
-### 4.4.3 能线程化的：`request_threaded_irq()`
+### 4.4.3_能线程化的_request_threaded_irq()
 
 ```c
 int request_threaded_irq(unsigned int irq,
@@ -260,7 +260,7 @@ int request_threaded_irq(unsigned int irq,
 
 ------
 
-## 4.5 常用配套接口
+## 4.5_常用配套接口
 
 这些接口跟“注册”是绑在一起要讲的，不然你会写出“一进中断就再也出不来了”的代码。
 
@@ -280,7 +280,7 @@ int request_threaded_irq(unsigned int irq,
 
 ------
 
-## 4.6 示例：GPIO 按键中断驱动（平台版）
+## 4.6_示例_GPIO_按键中断驱动(平台版)
 
 这是一个最贴近你板子场景的写法，省略错误处理后大致如下：
 
@@ -324,7 +324,7 @@ return devm_request_threaded_irq(&pdev->dev, irq,
 
 ------
 
-## 4.7 调试与排错要点（跟本章内容相关的部分）
+## 4.7_调试与排错要点(跟本章内容相关的部分)
 
 1. **拿错 IRQ**：`platform_get_irq()` 返回负数；或拿到的号在 `/proc/interrupts` 里根本没动 → 看 DTS / 看 `interrupt-parent`；
 2. **触发类型不对**：能进一次后面不进了 → 很可能是边沿/电平没对上，驱动里再 `irq_set_irq_type()` 一次；
@@ -334,7 +334,7 @@ return devm_request_threaded_irq(&pdev->dev, irq,
 
 ------
 
-## 4.8 小结
+## 4.8_小结
 
 - 想要“像 platform_get_irq() 那样一句话拿到中断”，前提就是：**你的设备要被内核当成一个真正的设备**，也就是你要有 `struct device`；字符设备本身是不带这个能力的；
 - 获取 IRQ 的路径可以合在一张图里理解：

@@ -1,4 +1,6 @@
-# 第 2 章 Linux I/O 与信号机制基础
+# 第2章_Linux_IO_与信号机制基础
+
+## 2.1_Linux_I/O_与信号机制基础
 
 > 章节内容说明：本章从内核与用户态双视角，回顾异步通知相关的基础：
 >
@@ -10,9 +12,9 @@
 
 ------
 
-## 2.1 文件描述符与 VFS 基础回顾
+### 2.1.1_文件描述符与_VFS_基础回顾
 
-### 2.1.1 引入：为什么先讲 VFS 和 fd
+#### (1)_引入_为什么先讲_VFS_和_fd
 
 fasync 机制所有行为都“挂”在 **文件描述符（fd）** 上：
 
@@ -34,7 +36,7 @@ fasync 机制所有行为都“挂”在 **文件描述符（fd）** 上：
 
 ------
 
-### 2.1.2 数据结构视角：fd / struct file / inode 的最小关系
+#### (2)_数据结构视角_fd_/_struct_file_/_inode_的最小关系
 
 从数据结构角度看，与本书主题直接相关的主要对象是：
 
@@ -72,7 +74,7 @@ fasync 机制所有行为都“挂”在 **文件描述符（fd）** 上：
 
 ------
 
-### 2.1.3 开发者视角：打开设备后内核内部发生了什么
+#### (3)_开发者视角_打开设备后内核内部发生了什么
 
 以一个典型字符设备 `/dev/demo_async` 为例，从驱动开发者角度理解打开过程（只保留与 fasync 相关的重要节点）：
 
@@ -96,12 +98,12 @@ fasync 机制所有行为都“挂”在 **文件描述符（fd）** 上：
    static int demo_open(struct inode *inode, struct file *filp)
    {
    	struct demo_async_dev *ddev;
-   
+
    	ddev = container_of(inode->i_cdev, struct demo_async_dev, cdev);
    	filp->private_data = ddev;	/* 绑定设备实例 */
-   
+
    	/* 此处可根据需要初始化 per-open 状态，如非阻塞标志缓存等 */
-   
+
    	return 0;
    }
    ```
@@ -117,7 +119,7 @@ fasync 机制所有行为都“挂”在 **文件描述符（fd）** 上：
 
 ------
 
-### 2.1.4 用户 / 平台视角：fd 的生命周期与多进程/多 fd 情况
+#### (4)_用户_/_平台视角_fd_的生命周期与多进程/多_fd_情况
 
 从用户和系统层面，fd 生命周期和共享方式会直接影响异步通知行为：
 
@@ -164,7 +166,7 @@ fasync 机制所有行为都“挂”在 **文件描述符（fd）** 上：
 
 ------
 
-### 2.1.5 可视化：从 fd 到驱动回调的路径图
+#### (5)_可视化_从_fd_到驱动回调的路径图
 
 用一张简单的图来总结“用户态 fd → 内核 VFS → 驱动”的路径：
 
@@ -193,7 +195,7 @@ flowchart LR
 
 ------
 
-### 2.1.6 示例代码：最小字符设备骨架（带 .fasync 预留位）
+#### (6)_示例代码_最小字符设备骨架(带.fasync_预留位)
 
 这里给出一个“只展示关键字段”的骨架，后续章节会在这个基础上逐步填充 fasync 相关内容：
 
@@ -278,7 +280,7 @@ static const struct file_operations demo_fops = {
 
 ------
 
-### 2.1.7 调试与验证视角：从用户态 fd 映射到内核对象
+#### (7)_调试与验证视角_从用户态_fd_映射到内核对象
 
 在调试异步通知问题时，经常需要回答问题：
 
@@ -292,12 +294,12 @@ static const struct file_operations demo_fops = {
    static int demo_open(struct inode *inode, struct file *filp)
    {
    	struct demo_async_dev *ddev;
-   
+
    	ddev = container_of(inode->i_cdev, struct demo_async_dev, cdev);
    	filp->private_data = ddev;
-   
+
    	pr_info("demo_async: open, filp=%p, ddev=%p\n", filp, ddev);
-   
+
    	return 0;
    }
    ```
@@ -313,7 +315,7 @@ static const struct file_operations demo_fops = {
 
 ------
 
-### 2.1.8 小结：本节对后续 fasync 内容的支撑作用
+#### (8)_小结_本节对后续_fasync_内容的支撑作用
 
 本节的核心结论：
 
@@ -329,9 +331,9 @@ static const struct file_operations demo_fops = {
 
 ------
 
-## 2.2 阻塞 I/O 与非阻塞 I/O 的行为差异
+### 2.1.2_阻塞_I/O_与非阻塞_I/O_的行为差异
 
-### 2.2.1 引入：为什么要先把阻塞 / 非阻塞讲清楚
+#### (1)_引入_为什么要先把阻塞_/_非阻塞讲清楚
 
 fasync 依赖 `file->f_flags` 里的标志位（包括 `FASYNC`），而 **`O_NONBLOCK` 与阻塞读写的语义**，直接决定：
 
@@ -353,7 +355,7 @@ fasync 依赖 `file->f_flags` 里的标志位（包括 `FASYNC`），而 **`O_NO
 
 ------
 
-### 2.2.2 数据结构视角：`file->f_flags` 中的 `O_NONBLOCK`
+#### (2)_数据结构视角_file->f_flags_中的_O_NONBLOCK
 
 在内核中，阻塞/非阻塞行为主要通过 `file->f_flags` 里的 `O_NONBLOCK` 标志控制：
 
@@ -392,7 +394,7 @@ fasync 依赖 `file->f_flags` 里的标志位（包括 `FASYNC`），而 **`O_NO
 
 ------
 
-### 2.2.3 开发者视角：`read()` 在阻塞/非阻塞场景下的典型写法
+#### (3)_开发者视角_read()_在阻塞/非阻塞场景下的典型写法
 
 一个合理的 `.read()` 实现，通常要满足以下模式：
 
@@ -446,7 +448,7 @@ static ssize_t demo_read(struct file *filp, char __user *buf,
 
 ------
 
-### 2.2.4 用户 / 平台视角：阻塞/非阻塞对应用行为的影响
+#### (4)_用户_/_平台视角_阻塞/非阻塞对应用行为的影响
 
 从用户态和系统层面看，阻塞/非阻塞的选择直接影响：
 
@@ -482,7 +484,7 @@ static ssize_t demo_read(struct file *filp, char __user *buf,
 
 ------
 
-### 2.2.5 可视化：阻塞 / 非阻塞 `read()` 流程对比
+#### (5)_可视化_阻塞_/_非阻塞_read()_流程对比
 
 用一张简图描述“在没有数据时调用 read()”的两种情况：
 
@@ -506,11 +508,11 @@ flowchart TD
 
 ------
 
-### 2.2.6 示例代码：用户态阻塞 / 非阻塞示例对比
+#### (6)_示例代码_用户态阻塞_/_非阻塞示例对比
 
 这里给出两个极简用户态示例，用来对比行为。
 
-#### 1）阻塞模式
+##### 1)_阻塞模式
 
 ```c
 /* demo_block_read_user.c */
@@ -549,7 +551,7 @@ int main(void)
 }
 ```
 
-#### 2）非阻塞 + 简单轮询模式（仅用于对比，不推荐长期使用）
+##### 2)_非阻塞_+_简单轮询模式(仅用于对比_不推荐长期使用)
 
 ```c
 /* demo_nonblock_poll_user.c */
@@ -598,7 +600,7 @@ int main(void)
 
 ------
 
-### 2.2.7 调试与验证：判断当前是阻塞还是非阻塞行为
+#### (7)_调试与验证_判断当前是阻塞还是非阻塞行为
 
 在调试驱动和应用时，常见问题之一是：
 
@@ -640,7 +642,7 @@ int main(void)
 
 ------
 
-### 2.2.8 小结：阻塞 / 非阻塞与后续 fasync 的关系
+#### (8)_小结_阻塞_/_非阻塞与后续_fasync_的关系
 
 本节要点可以压缩为：
 
@@ -658,9 +660,9 @@ int main(void)
 
 ------
 
-## 2.3 select/poll/epoll 的事件等待模型
+### 2.1.3_select/poll/epoll_的事件等待模型
 
-### 2.3.1 引入：为什么要在 fasync 之前先讲 poll/epoll
+#### (1)_引入_为什么要在_fasync_之前先讲_poll/epoll
 
 在绝大多数驱动中，**`poll` / `epoll` 是事件通知的“基础设施”**，fasync 只是一个额外分支：
 
@@ -677,7 +679,7 @@ int main(void)
 
 ------
 
-### 2.3.2 数据结构视角：`wait_queue` + `poll_table` + eventpoll
+#### (2)_数据结构视角_wait_queue_+_poll_table_+_eventpoll
 
 从内核实现上看，`select`/`poll`/`epoll` 的核心在于一组数据结构协同工作：
 
@@ -740,7 +742,7 @@ int main(void)
 
 ------
 
-### 2.3.3 开发者视角：`.poll` 的标准实现模式
+#### (3)_开发者视角.poll_的标准实现模式
 
 对驱动开发者来说，“写好 `.poll()`”通常遵循以下模式：
 
@@ -760,12 +762,12 @@ int main(void)
    static int demo_open(struct inode *inode, struct file *filp)
    {
    	struct demo_async_dev *ddev;
-   
+
    	ddev = container_of(inode->i_cdev, struct demo_async_dev, cdev);
    	filp->private_data = ddev;
-   
+
    	/* 确保等待队列已经初始化，一般在 probe 里 init_waitqueue_head() 即可 */
-   
+
    	return 0;
    }
    ```
@@ -777,16 +779,16 @@ int main(void)
    {
    	struct demo_async_dev *ddev = filp->private_data;
    	unsigned int mask = 0;
-   
+
    	/* 1. 建立 poll 与等待队列的关联：后续 wake_up(&ddev->wq) 时能唤醒 poll */
    	poll_wait(filp, &ddev->wq, wait);
-   
+
    	/* 2. 根据内部状态设置就绪掩码 */
    	if (ddev->data_ready)
    		mask |= POLLIN | POLLRDNORM;
-   
+
    	/* 若支持写就绪，则在此处根据可写条件设置 POLLOUT/POLLWRNORM */
-   
+
    	return mask;
    }
    ```
@@ -798,10 +800,10 @@ int main(void)
    {
    	/* 更新内部状态，示例：设置 data_ready 为 true */
    	ddev->data_ready = true;
-   
+
    	/* 唤醒等待队列上的任务（包括阻塞 read 和 poll） */
    	wake_up_interruptible(&ddev->wq);
-   
+
    	/* 后续章节会在这里补上 kill_fasync() 调用 */
    }
    ```
@@ -814,7 +816,7 @@ int main(void)
 
 ------
 
-### 2.3.4 用户 / 平台视角：select/poll/epoll 的使用模型
+#### (4)_用户_/_平台视角_select/poll/epoll_的使用模型
 
 从应用程序角度，三者的典型使用方式是：
 
@@ -839,7 +841,7 @@ int main(void)
 
 ------
 
-### 2.3.5 可视化：poll/epoll 的事件流与等待队列关系
+#### (5)_可视化_poll/epoll_的事件流与等待队列关系
 
 先看 `poll()` 的简化流程：
 
@@ -862,9 +864,9 @@ flowchart TD
 
 ------
 
-### 2.3.6 示例代码：驱动 `.poll` + 用户态 `poll` / `epoll` 示例
+#### (6)_示例代码_驱动.poll_+_用户态_poll_/_epoll_示例
 
-#### 1）驱动 `.poll` 完整一点的示例
+##### 1)_驱动.poll_完整一点的示例
 
 ```c
 /* demo_async_poll.c */
@@ -892,7 +894,7 @@ static unsigned int demo_poll(struct file *filp, poll_table *wait)
 }
 ```
 
-#### 2）用户态 `poll` 示例（与 2.2 中不同，这次侧重事件循环）
+##### 2)_用户态_poll_示例(与_2.2_中不同_这次侧重事件循环)
 
 ```c
 /* demo_user_poll_loop.c */
@@ -957,7 +959,7 @@ int main(void)
 }
 ```
 
-#### 3）用户态 `epoll` 示例骨架
+##### 3)_用户态_epoll_示例骨架
 
 ```c
 /* demo_user_epoll.c */
@@ -1048,7 +1050,7 @@ out:
 
 ------
 
-### 2.3.7 调试与验证：常见 `.poll` 问题与排查方法
+#### (7)_调试与验证_常见.poll_问题与排查方法
 
 在驱动中实现 `.poll` 时，常见错误及排查思路如下：
 
@@ -1105,7 +1107,7 @@ out:
 
 ------
 
-### 2.3.8 小结：`poll/epoll` 在 fasync 体系中的基础角色
+#### (8)_小结_poll/epoll_在_fasync_体系中的基础角色
 
 本节的关键结论：
 
@@ -1126,9 +1128,9 @@ out:
 
 ------
 
-## 2.4 Linux 信号子系统概要（同步 vs 异步、可重入性、信号队列）
+### 2.1.4_Linux_信号子系统概要(同步_vs_异步_可重入性_信号队列)
 
-### 2.4.1 引入：为什么在讲 fasync 之前必须理解信号
+#### (1)_引入_为什么在讲_fasync_之前必须理解信号
 
 fasync 的终点是 **信号**：
 
@@ -1150,7 +1152,7 @@ fasync 的终点是 **信号**：
 
 ------
 
-### 2.4.2 数据结构视角：task_struct 与信号队列的最小模型
+#### (2)_数据结构视角_task_struct_与信号队列的最小模型
 
 在内核内部，信号子系统与几个核心结构相关（只说和本书相关的部分）：
 
@@ -1186,7 +1188,7 @@ fasync 的终点是 **信号**：
 
 ------
 
-### 2.4.3 开发者视角：驱动能看到/能做的信号操作
+#### (3)_开发者视角_驱动能看到/能做的信号操作
 
 从驱动代码的角度，你通常不会直接操作信号队列数据结构，而是通过几个接口间接参与信号系统：
 
@@ -1225,7 +1227,7 @@ fasync 的终点是 **信号**：
 
 ------
 
-### 2.4.4 用户 / 平台视角：信号的基本行为规则
+#### (4)_用户_/_平台视角_信号的基本行为规则
 
 从用户态程序和系统视角来看，信号的基本规则如下（与 fasync/SIGIO 直接相关）：
 
@@ -1256,7 +1258,7 @@ fasync 的终点是 **信号**：
 
 ------
 
-### 2.4.5 可视化：从驱动 `kill_fasync` 到用户 handler 的路径
+#### (5)_可视化_从驱动_kill_fasync_到用户_handler_的路径
 
 用一张图简化描述“fasync 触发 → 信号子系统 → 用户态”的路径：
 
@@ -1282,7 +1284,7 @@ flowchart TD
 
 ------
 
-### 2.4.6 示例代码：信号 handler 与 signalfd 的两种用法
+#### (6)_示例代码_信号_handler_与_signalfd_的两种用法
 
 这里列出两个用户态模式：
 
@@ -1290,39 +1292,39 @@ flowchart TD
 
    ```c
    /* demo_sigio_handler.c */
-   
+
    #include <stdio.h>
    #include <unistd.h>
    #include <fcntl.h>
    #include <signal.h>
    #include <string.h>
    #include <errno.h>
-   
+
    #define DEMO_USER_READ_BUF_SIZE_BYTES	128
-   
+
    static volatile sig_atomic_t g_sigio_flag = 0;
    static int g_fd = -1;
-   
+
    static void demo_sigio_handler(int signo)
    {
    	/* 只做极简单的标记，避免在handler中做复杂操作 */
    	if (signo == SIGIO)
    		g_sigio_flag = 1;
    }
-   
+
    int main(void)
    {
    	struct sigaction sa;
    	int flags;
    	char buf[DEMO_USER_READ_BUF_SIZE_BYTES];
    	ssize_t n;
-   
+
    	g_fd = open("/dev/demo_async", O_RDONLY | O_NONBLOCK);
    	if (g_fd < 0) {
    		perror("open");
    		return 1;
    	}
-   
+
    	memset(&sa, 0, sizeof(sa));
    	sa.sa_handler = demo_sigio_handler;
    	sigemptyset(&sa.sa_mask);
@@ -1332,31 +1334,31 @@ flowchart TD
    		close(g_fd);
    		return 1;
    	}
-   
+
    	if (fcntl(g_fd, F_SETOWN, getpid()) < 0) {
    		perror("F_SETOWN");
    		close(g_fd);
    		return 1;
    	}
-   
+
    	flags = fcntl(g_fd, F_GETFL);
    	if (flags < 0) {
    		perror("F_GETFL");
    		close(g_fd);
    		return 1;
    	}
-   
+
    	if (fcntl(g_fd, F_SETFL, flags | FASYNC | O_NONBLOCK) < 0) {
    		perror("F_SETFL");
    		close(g_fd);
    		return 1;
    	}
-   
+
    	for (;;) {
    		/* 简单轮询标志，实际工程中可用条件变量等更优方案 */
    		if (g_sigio_flag) {
    			g_sigio_flag = 0;
-   
+
    			for (;;) {
    				n = read(g_fd, buf, sizeof(buf));
    				if (n < 0) {
@@ -1368,11 +1370,11 @@ flowchart TD
    				/* 处理数据，略 */
    			}
    		}
-   
+
    		/* 做一些其他工作，避免忙等，这里简单sleep */
    		usleep(10000);
    	}
-   
+
    out:
    	close(g_fd);
    	return 0;
@@ -1383,7 +1385,7 @@ flowchart TD
 
    ```c
    /* demo_sigio_signalfd.c */
-   
+
    #define _GNU_SOURCE
    #include <stdio.h>
    #include <unistd.h>
@@ -1393,23 +1395,23 @@ flowchart TD
    #include <sys/signalfd.h>
    #include <string.h>
    #include <errno.h>
-   
+
    #define DEMO_USER_EPOLL_MAX_EVENTS	8
    #define DEMO_USER_READ_BUF_SIZE_BYTES	128
-   
+
    int main(void)
    {
    	int fd_dev, fd_sfd, epfd;
    	sigset_t mask;
    	struct epoll_event ev, events[DEMO_USER_EPOLL_MAX_EVENTS];
    	char buf[DEMO_USER_READ_BUF_SIZE_BYTES];
-   
+
    	fd_dev = open("/dev/demo_async", O_RDONLY | O_NONBLOCK);
    	if (fd_dev < 0) {
    		perror("open dev");
    		return 1;
    	}
-   
+
    	/* 屏蔽SIGIO，使其不再以“传统信号”形式打断线程 */
    	sigemptyset(&mask);
    	sigaddset(&mask, SIGIO);
@@ -1418,36 +1420,36 @@ flowchart TD
    		close(fd_dev);
    		return 1;
    	}
-   
+
    	fd_sfd = signalfd(-1, &mask, SFD_NONBLOCK | SFD_CLOEXEC);
    	if (fd_sfd < 0) {
    		perror("signalfd");
    		close(fd_dev);
    		return 1;
    	}
-   
+
    	if (fcntl(fd_dev, F_SETOWN, getpid()) < 0) {
    		perror("F_SETOWN");
    		goto out;
    	}
-   
+
    	int flags = fcntl(fd_dev, F_GETFL);
    	if (flags < 0) {
    		perror("F_GETFL");
    		goto out;
    	}
-   
+
    	if (fcntl(fd_dev, F_SETFL, flags | FASYNC | O_NONBLOCK) < 0) {
    		perror("F_SETFL");
    		goto out;
    	}
-   
+
    	epfd = epoll_create1(0);
    	if (epfd < 0) {
    		perror("epoll_create1");
    		goto out;
    	}
-   
+
    	memset(&ev, 0, sizeof(ev));
    	ev.events = EPOLLIN;
    	ev.data.fd = fd_sfd;
@@ -1455,31 +1457,31 @@ flowchart TD
    		perror("epoll_ctl signalfd");
    		goto out_ep;
    	}
-   
+
    	/* 如需同时监控设备fd的可读事件，也可以把fd_dev加到epoll中 */
-   
+
    	for (;;) {
    		int nready = epoll_wait(epfd, events, DEMO_USER_EPOLL_MAX_EVENTS, -1);
    		int i;
-   
+
    		if (nready < 0) {
    			if (errno == EINTR)
    				continue;
    			perror("epoll_wait");
    			break;
    		}
-   
+
    		for (i = 0; i < nready; i++) {
    			if (events[i].data.fd == fd_sfd && (events[i].events & EPOLLIN)) {
    				struct signalfd_siginfo si;
    				ssize_t n;
-   
+
    				n = read(fd_sfd, &si, sizeof(si));
    				if (n != sizeof(si)) {
    					perror("read signalfd");
    					continue;
    				}
-   
+
    				if (si.ssi_signo == SIGIO) {
    					/* 收到来自fasync的SIGIO，读取设备数据 */
    					for (;;) {
@@ -1496,7 +1498,7 @@ flowchart TD
    			}
    		}
    	}
-   
+
    out_ep:
    	close(epfd);
    out:
@@ -1513,7 +1515,7 @@ flowchart TD
 
 ------
 
-### 2.4.7 调试与验证：信号相关问题的常用检查手段
+#### (7)_调试与验证_信号相关问题的常用检查手段
 
 在调试 fasync/SIGIO 场景时，常见问题是“驱动看起来在发信号，用户态却收不到或行为异常”。可以按以下步骤排查：
 
@@ -1543,7 +1545,7 @@ flowchart TD
 
 ------
 
-### 2.4.8 小结：信号子系统在 fasync 中扮演的角色
+#### (8)_小结_信号子系统在_fasync_中扮演的角色
 
 本节的关键点可以归纳为：
 
@@ -1575,9 +1577,9 @@ flowchart TD
 
 ------
 
-## 2.5 SIGIO / SIGPOLL 与 I/O 事件的关系
+### 2.1.5_SIGIO_/_SIGPOLL_与_I/O_事件的关系
 
-### 2.5.1 引入：为什么是 SIGIO / SIGPOLL，而不是别的信号
+#### (1)_引入_为什么是_SIGIO_/_SIGPOLL_而不是别的信号
 
 在 fasync 机制里，驱动调用 `kill_fasync()` 时，常见的调用形式是：
 
@@ -1605,7 +1607,7 @@ kill_fasync(&ddev->fasync_queue, SIGIO, POLL_IN);
 
 ------
 
-### 2.5.2 数据结构视角：sig、band 与 poll 事件掩码的映射
+#### (2)_数据结构视角_sig_band_与_poll_事件掩码的映射
 
 从内核信号与 I/O 层的抽象看，几个关键元素是：
 
@@ -1649,7 +1651,7 @@ kill_fasync(&ddev->fasync_queue, SIGIO, POLL_IN);
 
 ------
 
-### 2.5.3 开发者视角：驱动如何选择 sig 与 band
+#### (3)_开发者视角_驱动如何选择_sig_与_band
 
 从驱动开发者角度，通常需要做三件事：
 
@@ -1667,13 +1669,13 @@ kill_fasync(&ddev->fasync_queue, SIGIO, POLL_IN);
    ```c
    /* 新数据可读 */
    kill_fasync(&ddev->fasync_queue, SIGIO, POLL_IN);
-   
+
    /* 可写（缓冲腾出空间） */
    kill_fasync(&ddev->fasync_queue, SIGIO, POLL_OUT);
-   
+
    /* 错误事件 */
    kill_fasync(&ddev->fasync_queue, SIGIO, POLL_ERR);
-   
+
    /* 挂断/设备不可用 */
    kill_fasync(&ddev->fasync_queue, SIGIO, POLL_HUP);
    ```
@@ -1695,7 +1697,7 @@ kill_fasync(&ddev->fasync_queue, SIGIO, POLL_IN);
 
 ------
 
-### 2.5.4 用户 / 平台视角：用户态如何利用 sig 与 band 信息
+#### (4)_用户_/_平台视角_用户态如何利用_sig_与_band_信息
 
 从用户态程序视角，可以用三种层级程度来使用 `SIGIO` / `SIGPOLL`：
 
@@ -1724,7 +1726,7 @@ kill_fasync(&ddev->fasync_queue, SIGIO, POLL_IN);
 
 ------
 
-### 2.5.5 可视化：`band` 与 `.poll()` 掩码的对应关系
+#### (5)_可视化_band_与.poll()_掩码的对应关系
 
 用一张简化的关系图表示“驱动内部状态 → `.poll()` 掩码 → `kill_fasync` band → 用户态处理”的关系：
 
@@ -1752,7 +1754,7 @@ flowchart TD
 
 ------
 
-### 2.5.6 示例代码：驱动中合理使用 SIGIO/SIGPOLL 与 band
+#### (6)_示例代码_驱动中合理使用_SIGIO/SIGPOLL_与_band
 
 这里给出驱动侧一段相对完整的事件通知代码，涵盖读、写、错误三类场景。
 
@@ -1840,7 +1842,7 @@ static unsigned int demo_poll(struct file *filp, poll_table *wait)
 
 ------
 
-### 2.5.7 调试与验证：如何确认 band 与 poll 掩码一致
+#### (7)_调试与验证_如何确认_band_与_poll_掩码一致
 
 在调试 fasync 时，经常要检查“驱动通知的 band 与 `.poll()` 掩码是否一致”。常见方法：
 
@@ -1850,29 +1852,29 @@ static unsigned int demo_poll(struct file *filp, poll_table *wait)
    static void demo_notify_read_ready(struct demo_async_dev *ddev)
    {
    	unsigned int band = DEMO_EVENT_READ_READY;
-   
+
    	ddev->data_ready = true;
    	pr_debug("demo_async: notify read ready, band=0x%x\n", band);
-   
+
    	wake_up_interruptible(&ddev->wq);
-   
+
    	if (ddev->fasync_queue)
    		kill_fasync(&ddev->fasync_queue, SIGIO, band);
    }
-   
+
    static unsigned int demo_poll(struct file *filp, poll_table *wait)
    {
    	struct demo_async_dev *ddev = filp->private_data;
    	unsigned int mask = 0;
-   
+
    	poll_wait(filp, &ddev->wq, wait);
-   
+
    	if (ddev->data_ready)
    		mask |= DEMO_EVENT_READ_READY;
-   
+
    	pr_debug("demo_async: poll, data_ready=%d, mask=0x%x\n",
    		 ddev->data_ready, mask);
-   
+
    	return mask;
    }
    ```
@@ -1903,7 +1905,7 @@ static unsigned int demo_poll(struct file *filp, poll_table *wait)
 
 ------
 
-### 2.5.8 小结：SIGIO / SIGPOLL 与 I/O 事件的精确对应
+#### (8)_小结_SIGIO_/_SIGPOLL_与_I/O_事件的精确对应
 
 本节可以总结为以下几点：
 
