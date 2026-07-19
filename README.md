@@ -8,18 +8,11 @@
 
 完整设计见：[仓库信息架构设计](governance/architecture/repository_information_architecture.md)。
 
-## 1.1_分支说明
+## 1.1_仓库定位
 
-当前主要维护这些分支：
+本仓库统一管理计算机系统基础、Linux 通用机制、内核子系统、驱动模型、系统软件、平台实现、实验、项目和源码研究。技术方向通过知识地图和学习路线组织，不通过分支隔离内容。
 
-| 分支 | 用途 |
-| --- | --- |
-| `master` | 驱动开发主线，保留 `driver/`、`board/`、驱动实验、板级移植等内容 |
-| `obsidian_version` | Obsidian 管理和内核笔记整理分支，用于链接维护、目录重排和内核主题笔记整理 |
-| `rough_version` | 粗整理/临时整理分支 |
-| `upgrade_change_list_head_for_kernel` | 早期链表相关内容升级整理分支 |
-
-远端以 GitHub 为准，`origin` 指向：
+远端仓库为：
 
 ```text
 https://github.com/FormingSystem/linux_kernel_and_driver_note.git
@@ -29,13 +22,18 @@ https://github.com/FormingSystem/linux_kernel_and_driver_note.git
 
 | 目录 | 内容 |
 | --- | --- |
-| `kernel/` | Linux 内核入门和主题笔记 |
-| `driver/` | 通用驱动开发笔记 |
-| `board/` | 具体开发板、芯片平台、移植和外设实验 |
-| `appendix/` | 数据结构、内核模型、源码阅读、C 语言扩展等附录 |
-| `images/` | 笔记中引用的图片资源 |
-| `tools/` | Typora、Obsidian、AI 使用方法、笔记规划等工具说明 |
-| `docs/` | Git 规则、协作说明等仓库元文档 |
+| `atlas/` | 知识地图、学习路线、索引和路线图 |
+| `knowledge/` | 基础知识、Linux 机制、内核子系统、驱动模型和系统软件 |
+| `engineering/` | 工程方法、构建、移植、调试、测试和发布流程 |
+| `platforms/` | 架构、SoC、开发板和 BSP 差异 |
+| `labs/` | 验证单一结论的最小可复现实验 |
+| `projects/` | 多机制组合的完整项目 |
+| `research/` | 源码阅读、调用链、调查和基准证据 |
+| `reference/` | API、命令、术语、标准和外部资料 |
+| `publications/` | 书籍、文章、编排清单、模板和构建产物 |
+| `tools/` | 编辑器、Obsidian、AI 和仓库工具说明 |
+| `governance/` | 架构、规范、模板、模式和迁移记录 |
+| `assets/` | 图片、图表、附件、数据集和归档文件 |
 | `AGENTS.md` | 给 AI 协作者读取的项目上下文 |
 
 ## 1.3_阅读方式
@@ -87,7 +85,7 @@ meta(git): 更新个人提交规则
 详细规则见：
 
 ```text
-docs/git-guide.md
+governance/conventions/git_guide.md
 ```
 
 ## 1.6_常用_AI
@@ -131,7 +129,7 @@ AI 主要用于主题拆解、章节扩写、概念对比、代码解释和结�
 本仓库的部分目录中可能包含基于 Linux kernel 源码整理的阅读材料，例如：
 
 ```text
-appendix/kernel_source/
+research/source_reading/linux/
 ```
 
 该目录名称保留为当前仓库历史结构，不代表其中内容是 Linux kernel 官方源码仓库，也不代表该目录下所有文件都是未经加工的原始源码文件。
