@@ -96,7 +96,7 @@ void dev_show_all(void)
 ```
 
 > `[INV]`：读区内禁止修改链表结构。
->  `[MIX]`：写侧仍需自互斥（`spin_lock()`），但读侧完全无锁。
+>  `[MIX]`：写侧仍需自行互斥；读侧不获取传统共享读锁，但仍执行配置相关的生命周期标记和 RCU 指针访问。
 
 ------
 
@@ -105,8 +105,8 @@ void dev_show_all(void)
 | 操作     | 安全点                 | 机制                     |
 | -------- | ---------------------- | ------------------------ |
 | 添加节点 | 加锁串行               | 结构一致                 |
-| 删除节点 | RCU 删除 + 延迟释放    | 确保读者不会访问已删节点 |
-| 遍历     | `rcu_read_lock()` 保护 | 无锁快照读取             |
+| 删除节点 | RCU 删除 + 延迟释放    | 允许旧读者继续访问已摘除节点而不发生 UAF |
+| 遍历     | `rcu_read_lock()` 保护 | 在生命周期保护区内遍历；不自动形成字段快照 |
 
 `list_add_rcu()` / `list_del_rcu()` 与 `list_for_each_entry_rcu()` 实现了完整的 RCU 链表支持。
 
@@ -251,7 +251,7 @@ void free_ctx_cb(struct rcu_head *head)
 }
 ```
 
-> `[MIX]`：RCU 控制可见性；`kref` 控制生命周期。
+> `[MIX]`：RCU 保护从共享入口查找并尝试增引用的窗口；成功取得的 `kref` 负责离开 RCU 后的长期生命周期。
 >  `[INV]`：仅当引用为 0 且宽限期结束时，才真正释放对象。
 
 ------
@@ -424,7 +424,7 @@ void remove_node(struct node *n)
 }
 ```
 
-> `[INV]`：释放必须延迟到所有读者退出后。
+> `[INV]`：释放必须延迟到覆盖取消发布前潜在旧读者的宽限期之后。
 >  `[CHECK]`：卸载模块前应执行 `rcu_barrier()` 确保所有回调完成。
 
 ------
@@ -506,10 +506,10 @@ void show_table(void)
 
 | 接口                          | 功能             | 场景       |
 | ----------------------------- | ---------------- | ---------- |
-| `synchronize_rcu()`           | 阻塞等待读者退出 | 卸载、解绑 |
-| `synchronize_rcu_expedited()` | 加速等待         | 紧急场景   |
-| `synchronize_sched()`         | 调度点同步       | 调度上下文 |
-| `synchronize_srcu()`          | 睡眠安全 RCU     | 线程化环境 |
+| `synchronize_rcu()`           | 阻塞等待覆盖调用前旧读者的普通 GP | 可阻塞控制路径 |
+| `synchronize_rcu_expedited()` | 请求 expedited GP，代价更高      | 确有紧迫延迟要求且评估过系统代价的路径 |
+| `synchronize_sched()`         | Linux 5.0 起已并入普通 RCU 语义的兼容接口 | 阅读旧代码时识别；新代码优先使用当前 RCU API |
+| `synchronize_srcu()`          | 等待指定 `srcu_struct` 域中调用前的旧读者 | 使用 SRCU 私有域的路径 |
 
 > `[CHECK]`：`synchronize_rcu()` 不能在中断上下文调用。
 
@@ -566,7 +566,7 @@ bool is_ready(void)
 | [CHECK] 写侧是否使用 `rcu_assign_pointer()`                  | 防止乱序写   | □    |
 | [CHECK] 是否使用 `kfree_rcu()` / `call_rcu()` 延迟释放       | 防止悬空访问 | □    |
 | [CHECK] 遍历是否采用 `list_for_each_entry_rcu()`             | 防止读写竞态 | □    |
-| [CHECK] 模块退出是否执行 `rcu_barrier()` / `synchronize_rcu()` | 保证清理完全 | □    |
+| [CHECK] 模块退出是否区分 GP 与回调退场 | `synchronize_rcu()` 只等 GP；模块可能留下指向本模块代码的已排队回调时使用 `rcu_barrier()` | □ |
 
 ------
 
