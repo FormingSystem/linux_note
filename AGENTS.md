@@ -1,33 +1,35 @@
 # 第1章_Codex_项目上下文
 
-这是给 AI 协作者和以后打开仓库时快速恢复上下文用的文件。进入本仓库后，优先阅读本文件，再查看 `README.md` 和 `docs/git-guide.md`。
+这是给 AI 协作者和以后打开仓库时快速恢复上下文用的文件。进入本仓库后，优先阅读本文件、`README.md` 和 `governance/architecture/repository_information_architecture.md`，再查看 Git 协作规则。
 
 ## 1.1_项目定位
 
-`linux-note` 是个人 Linux 学习笔记仓库，内容覆盖 Linux 内核、驱动开发、板级移植、工具配置和资料附录。Markdown 文件既是当前笔记形态，也是后续整理成 Word/PDF 的素材。
+`linux-note` 是面向长期维护的计算机系统与 Linux 知识库，内容覆盖基础理论、Linux 通用机制、内核子系统、驱动模型、系统软件、工程方法、平台实现、实验、项目和源码研究。Markdown 文件既是知识本体，也是后续编排 HTML、Word 和 PDF 的素材。
 
-## 1.2_分支约定
+## 1.2_信息架构约定
 
-- `master`：驱动开发主线，保留 `driver/`、`board/`、驱动实验、板级移植等内容。
-- `obsidian_version`：Obsidian 管理和内核笔记整理分支，用于链接维护和重新排版；该分支已删除驱动部分，避免影响 Obsidian 中的内核笔记整理。
-
-处理文件时注意：
-
-- 不要在 `obsidian_version` 中主动恢复 `driver/` 目录，除非用户明确要求。
-- 驱动相关新增内容优先放到 `master`。
-- 内核主题、资料附录、索引、链接结构调整优先放到 `obsidian_version`。
-- 通用规则文档可以在两个分支同步，但不要用大范围 merge 误带目录。
-- 远端以 GitHub 为准，`origin` 指向 `https://github.com/FormingSystem/linux_kernel_and_driver_note.git`，不再推送 Gitee。
+- 知识正文按本质存入 `knowledge`，不按学习专题复制。
+- 工程方法、平台差异、实验、综合项目和源码证据分别进入 `engineering`、`platforms`、`labs`、`projects` 和 `research`。
+- 专题、路线和知识地图进入 `atlas`，只组织链接。
+- 出版物通过 `publications/manifests` 编排，知识正文不固化书籍章号。
+- 仓库规范进入 `governance`，图片和附件进入 `assets`。
+- 目录表达主要归属，跨领域关系通过稳定文档 ID、元数据、索引和链接表达。
+- 仓库不设置通用杂物目录，无法形成稳定结论的内容进入 `research/investigations`。
 
 ## 1.3_目录速览
 
-- `kernel/`：Linux 内核主题笔记。
-- `driver/`：通用驱动开发笔记，主要属于 `master`。
-- `board/`：具体开发板、芯片平台、移植和驱动实验。
-- `appendix/`：内核模型、数据结构、源码阅读、C 语言扩展等附录。
-- `images/`：各主题图片资源。
-- `tools/`：Typora、Obsidian、AI 使用方法、笔记规划等工具类说明。
-- `docs/`：仓库协作规则、Git 规则等元文档。
+- `atlas/`：知识地图、学习路线、索引和路线图。
+- `knowledge/`：基础知识、Linux 机制、内核子系统、驱动模型和系统软件。
+- `engineering/`：工程方法、构建、移植、调试、测试和发布流程。
+- `platforms/`：架构、SoC、开发板和 BSP 差异。
+- `labs/`：验证单一结论的最小可复现实验。
+- `projects/`：组合多个机制的完整项目。
+- `research/`：源码阅读、调用链、调查和基准证据。
+- `reference/`：API、命令、术语、标准和外部资料。
+- `publications/`：书籍、文章、编排清单、模板和构建产物。
+- `tools/`：编辑器、Obsidian、AI 和仓库工具说明。
+- `governance/`：架构、规范、模板、模式和迁移记录。
+- `assets/`：图片、图表、附件、数据集和归档文件。
 
 ## 1.4_写作与编辑偏好
 
@@ -39,72 +41,24 @@
 
 ## 1.5_文件与目录命名规范
 
-本规范适用于仓库内全部文件和目录。目标是让路径同时兼容 Obsidian、普通 Markdown 阅读器和命令行工具。
+- 顶层和领域目录使用稳定英文 `snake_case` 名称。
+- 知识文件使用稳定语义名称，不把出版章号作为文件身份。
+- 路径禁止空格、中文标点、全角符号、连续下划线和首尾下划线。
+- 技术名词中具有语义的半角符号可以保留，例如 `u-boot`、`C++` 和版本号中的 `.`。
+- 文档中文标题保存在 Front Matter 的 `title` 和正文 H1 中。
+- 正式文档必须具有稳定 `id`、`title`、`kind` 和 `status`。
+- 移动或重命名后必须同步更新 Markdown、Obsidian、Canvas、Base 和图片引用。
+- 批量操作前检查冲突，操作后运行结构、链接和 `git diff --check` 检查。
 
-- 中文文字可以保留；禁止出现在路径中的是中文标点、全角符号和其他可能干扰 Markdown 链接解析的符号。
-- 路径中禁止出现空格；需要分隔语义时统一使用单个半角下划线 `_`。
-- 已使用 `Pxx` 编号的章节统一采用 `PXX_NAME`：`P` 大写、编号固定两位、编号与名称之间使用一个 `_`，例如 `P01_文件名字.md`。
-- `P1_主题`、`P001_主题`、`P01 - 主题`、`P01-主题` 和 `P01_-_主题` 均不符合规范，应整理为 `P01_主题`。超过 `P99` 时再统一讨论扩展方案，不提前混用三位编号。
-- 已使用“第几章”“第几部分”或“第几篇”的文件与目录也必须转换为 `PXX_NAME`，例如 `第1章_主题.md`、`第1部分_主题`、`第1篇_主题` 均转换为 `P01_主题`，仓库内不保留多套编号体系。
-- 没有 `Pxx`、“第几章”“第几部分”或“第几篇”编号的现有文件和目录，不补编号、不改写原有名称结构；仅清除空格、中文标点和非法符号等链接风险。
-- 中文括号 `（）`、方头括号 `【】` 转为半角括号 `()`；其余中文标点通常转为 `_`，并合并连续下划线。
-- 技术名词内部原有且具有语义的半角符号可以保留，例如 `u-boot`、`rb-tree`、`C++`、`gpio+pinctrl` 和版本号中的 `.`。
-- 禁止使用 `_-_`、连续下划线、首尾下划线，以及仅为视觉排版加入的连接符。
-- 新建或重命名路径后，必须同步更新 Markdown 链接、Obsidian Wiki 链接、图片引用和 `.obsidian` 中记录的路径。
-- 批量调整前先检查命名冲突，调整后执行链接检查和 `git diff --check`；不得仅重命名文件而遗留失效链接。
+## 1.6_Markdown与出版序号规范
 
-仓库根目录提供 Bash 入口，文件路径实现位于 `scripts/normalize_paths.sh`：
-
-```bash
-# 仅预览文件和目录名
-./format.sh check paths
-
-# 执行重命名并同步更新链接
-./format.sh fix paths
-```
-
-脚本预览输出 `待重命名文件：0`，表示当前受版本控制的路径已符合规范。新增内容也必须直接采用本规范命名，不应依赖事后批量修复。
-
-## 1.6_Markdown标题序号规范
-
-Markdown 标题采用适合后续合并并转换为 HTML、Word 或 PDF 的出版物连续序号。`PXX_NAME.md` 中的 `XX` 是章号，正文必须包含对应的文档章标题。
-
-```markdown
-# 第5章_文件系统构建与定制
-## 5.1_引言
-### 5.1.1_为什么需要文件系统
-#### (1)_根文件系统的职责
-##### 1)_用户空间支持
-###### a)_基础目录
-```
-
-- H1：`第N章_NAME`，章号取自文件名的 `PXX`。
-- H2：`N.N_NAME`。
-- H3：`N.N.N_NAME`。
-- H4：`(N)_NAME`。
-- H5：`N)_NAME`。
-- H6：`a)_NAME`、`b)_NAME`，超过 26 项后使用 `aa)`、`ab)`。
-- 每级序号在父标题内重新计数，标题层级不得超过 Markdown 原生 H6。
-- 标题中的中文文字可以保留，但标题正文不使用空格、中文标点、全角符号或装饰 Emoji；序号与标题之间使用 `_`。
-- `PXX` 文件缺少章标题时，格式化脚本补充 H1，并将原有标题下移一级，使各文件合并后章号保持连续。
-- 无 `PXX` 文件名的独立 Markdown 保留自身文档边界，并从第 1 章开始编号。
-- 标题修改后必须同步维护 Markdown 锚点和 Obsidian Wiki 锚点。
-
-统一入口支持全仓和单文件操作：
-
-```bash
-# 全量预览或修复：文件名 + Markdown 标题
-./format.sh check all --summary
-./format.sh fix all --summary
-
-# 仅处理 Markdown 标题
-./format.sh check headings --summary
-./format.sh fix headings --summary
-
-# 仅处理一个 Markdown 文件
-./format.sh check headings appendix/GNU_environment/buildroot/P05_文件系统构建与定制.md
-./format.sh fix headings appendix/GNU_environment/buildroot/P05_文件系统构建与定制.md
-```
+- 知识正文 H1 使用文档标题，不写固定书籍章号。
+- H2 至 H6 表达文档内部层级，不把某本书的全局章节号固化进知识正文。
+- 实验步骤、连续教程和学习路线阶段可以使用局部顺序编号。
+- `publications/manifests` 决定书籍章节顺序。
+- 出版构建阶段生成连续章、节编号并重写内部锚点。
+- 同一份知识文档进入不同出版物时可以获得不同编号。
+- 标题变化后必须同步维护 Markdown 和 Obsidian 锚点。
 
 ## 1.7_格式化与链接维护
 
