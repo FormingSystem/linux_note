@@ -1,19 +1,19 @@
 ---
 id: knowledge.kernel_subsystems.fundamentals.running_linux_kernel.readme
-title: "参考书籍说明"
-kind: subsystem
+title: "奔跑吧 Linux 内核"
+kind: publication
 status: evolving
 domains:
+  - publication
   - linux
-  - kernel
 ---
 
-# 第1章_参考书籍说明
+# 第1章_奔跑吧Linux内核
 
-1. 参考书籍《奔跑吧Linux内核 入门篇 第二版 (笨叔, 陈悦) 》；
+1. 参考书籍《奔跑吧 Linux 内核（入门篇·第 2 版）》，作者笨叔、陈悦；
 2. ISBN：978-7-115-55560-1；
 
-# 第2章_阅读说明
+## 1.1_阅读说明
 
 因为版权问题，不会按照原书内容说明，仅仅是跟着AI生成文档做出说明，把原书内容作为大纲补充；如果笔记有误，请自行纠正；
 
@@ -23,14 +23,14 @@ domains:
 * 分支为：imx_5.4.70_2.3.0；
 * 操作系统：ubuntu22.04;
 
-# 第3章_大纲目录
+## 1.2_大纲目录
 
-# 第4章_Linux_Kernel_数据结构学习大纲
+## 1.3_Linux_Kernel_数据结构学习大纲
 
 ## 4.1_环境准备与基础
 ### 4.1.1_开发环境搭建
-- 获取内核源码（5.4/6.1版本）：参考 [imx_v8_config_kernel编译说明.md](../../../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md)
-- 配置编译环境：[imx6ull-移植u-boot-2025.04_and_kernel-6.1.md](../../../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)
+- 获取内核源码（5.4/6.1版本）：参考 [imx_v8_config_kernel编译说明.md](../../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md)
+- 配置编译环境：[imx6ull-移植u-boot-2025.04_and_kernel-6.1.md](../../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)
 - QEMU调试环境：问过AI后，感觉没有必要装这个调试环境；
 - 内核模块开发基础
 
@@ -261,4 +261,3 @@ domains:
 5. 阅读相关内核补丁了解演变
 
 这个大纲从基础到高级系统性地覆盖了Linux内核主要数据结构。建议按照顺序学习，并结合实际内核代码进行实践。
-
