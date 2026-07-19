@@ -864,7 +864,7 @@ SoC IOMUX 控制器
 
 ### 3.2.2\_主要数据结构
 
-#### (1)\_[struct\_pinctrl\_desc](./附录A_gpio_数据结构.md#struct_pinctrl_desc)(定义一个\_pinctrl\_控制器)
+#### (1)\_[struct\_pinctrl\_desc](./附录A_gpio_数据结构.md#struct\_pinctrl\_desc)(定义一个\_pinctrl\_控制器)
 
 `struct pinctrl_desc` 详细定义请参考 （[附录 A/ struct pinctrl_desc](./附录A_gpio_数据结构.md#struct pinctrl_desc)）:
 
@@ -879,7 +879,7 @@ struct pinctrl_desc {
 };
 ```
 
-#### (2)\_[struct\_pinctrl\_state](./附录A_gpio_数据结构.md#struct_pinctrl_state)(一组\_状态设置\_如\_default/sleep)
+#### (2)\_[struct\_pinctrl\_state](./附录A_gpio_数据结构.md#struct\_pinctrl\_state)(一组\_状态设置\_如\_default/sleep)
 
 ```c
 /**
@@ -895,7 +895,7 @@ struct pinctrl_state {
 };
 ```
 
-#### (3)\_[struct\_gpio\_chip](./附录A_gpio_数据结构.md#struct_gpio_chip)(GPIO\_控制器抽象)
+#### (3)\_[struct\_gpio\_chip](./附录A_gpio_数据结构.md#struct\_gpio\_chip)(GPIO\_控制器抽象)
 
 详细定义参考[附录 A / struct gpio_chip](./附录A_gpio_数据结构.md#struct gpio_chip)。
 
