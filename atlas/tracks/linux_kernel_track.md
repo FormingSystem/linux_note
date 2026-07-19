@@ -27,7 +27,7 @@ domains:
 
 ## 1.3_第二阶段_数据组织与对象生命周期
 
-1. [单链表](../../knowledge/linux/data_structures/单链表_Linked_List.md)。
+1. [单链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)。
 2. [哈希表理论基础](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)。
 3. [Linux hlist](../../knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md)。
 4. [红黑树基础](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md)，随后按目录序号读至 Linux rbtree 和 Maple Tree。
