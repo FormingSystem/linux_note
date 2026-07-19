@@ -40,9 +40,10 @@ domains:
 
 1. 按序阅读[并发脉络与概念缓冲](../../knowledge/linux/synchronization/concurrency_and_competition/P01_并发脉络与概念缓冲)。
 2. 按序阅读[可见性与顺序](../../knowledge/linux/synchronization/concurrency_and_competition/P02_可见性与顺序)。
-3. 从[自旋锁](../../knowledge/linux/synchronization/concurrency_and_competition/P03_子模块详解/P16_自旋锁(不可睡侧).md)开始，按任务选读锁、等待队列、completion、工作队列和 RCU。
-4. 按序阅读[中断机制](../../knowledge/kernel_subsystems/irq/中断机制简介)，重点理解硬中断、线程化中断和下半部的执行约束。
-5. 阅读[时间管理](../../knowledge/linux/time_management/定时器简介)，区分忙等待、睡眠、timer、hrtimer 与 delayed work。
+3. 从[自旋锁](../../knowledge/linux/synchronization/concurrency_and_competition/P03_子模块详解/P16_自旋锁(不可睡侧).md)开始，按章阅读互斥锁、seqcount/seqlock 和[第 19 章 RCU 导读](../../knowledge/linux/synchronization/concurrency_and_competition/P03_子模块详解/P19_RCU(读无锁_写延迟回收).md)。
+4. 从第 19 章进入[RCU 专题大纲](../../knowledge/linux/synchronization/rcu/大纲.md)，学习宽限期回收、内存顺序、SRCU 与对象保活；完成后返回第 20 章继续等待队列、completion 和工作队列。
+5. 按序阅读[中断机制](../../knowledge/kernel_subsystems/irq/中断机制简介)，重点理解硬中断、线程化中断和下半部的执行约束。
+6. 阅读[时间管理](../../knowledge/linux/time_management/定时器简介)，区分忙等待、睡眠、timer、hrtimer 与 delayed work。
 
 阶段验收：面对一段内核代码，能判断其执行上下文、能否睡眠、需要哪类同步以及退出时如何取消异步工作。
 

@@ -97,6 +97,9 @@ domains:
 
 ### 1.4.2\_RCU(读无锁\_写延迟回收)
 
+1. 先阅读当前并发专题中的[第 19 章 RCU 导读](P03_子模块详解/P19_RCU(读无锁_写延迟回收).md)，完成从 seqcount/seqlock 到 RCU 的概念过渡。
+2. 再按[RCU 专题大纲](../rcu/大纲.md)进入拆分后的完整正文。
+
 - 〔概念〕发布/读取/宽限期回收
 - 〔核心用法模式〕`assign_pointer/dereference` + `call_rcu/synchronize_rcu`
 - 〔混搭与边界〕与 kref 的保活；与等待队列/自旋
