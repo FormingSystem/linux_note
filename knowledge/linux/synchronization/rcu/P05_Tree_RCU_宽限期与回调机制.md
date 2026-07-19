@@ -18,6 +18,8 @@ topics:
 
 一个 Tree RCU GP 需要证明：在 GP 开始前已存在的相关读侧临界区已经全部结束。这不是对某个对象的引用计数，而是对 CPU 和被抢占任务的执行轨迹做保守判定。
 
+因此，写者既不会查询“对象 A 当前被谁引用”，也不是毫无依据地等一段时间。GP 初始化出的 `qsmask`、各 CPU 的 QS/EQS 状态，以及 PREEMPT_RCU 的 `blkd_tasks`/`gp_tasks`，明确表示哪些 CPU 或任务仍可能承载 GP 前的旧读者。RCU 等待这些状态被真实推进，而不是等待一个固定超时。
+
 ## 5.2\_rcu\_data、rcu\_node\_和\_rcu\_state
 
 | 层次 | 职责 |
@@ -27,6 +29,8 @@ topics:
 | `rcu_state` | 全局 GP 序列、GP 线程、层次树和全局调度状态 |
 
 `rcu_node->qsmask` 中的位表示当前 GP 仍在等待哪些 CPU 或子节点。叶节点的位清零后，`rcu_report_qs_rnp()` 向父节点逐层上报；根节点的等待位全部清零且没有仍在阻塞本 GP 的旧任务读者时，GP 才能完成。
+
+源码中的完成判定不是抽象比喻：`rcu_gp_init()` 将各节点的 `qsmask` 初始化为 `qsmaskinit`；`rcu_report_qs_rnp()` 清除已报告的位，并在 `qsmask != 0` 或 `gp_tasks != NULL` 时停止向上汇报。只有本层位全部清零且没有阻塞当前 GP 的任务，报告才能继续传播到根节点。
 
 ## 5.3\_宽限期线程主线
 
@@ -44,6 +48,30 @@ flowchart TD
 ```
 
 `rcu_gp_init()` 使用 `rcu_seq_start()` 推进 `gp_seq`，再处理 CPU online/offline 缓冲状态并初始化各层节点。`rcu_gp_fqs_loop()` 负责正常等待和必要时的 force-quiescent-state 扫描。
+
+### 5.3.1\_GP\_完成后如何通知等待者和回调系统
+
+读者状态不会逐个唤醒调用 `synchronize_rcu()` 的写者。CPU/任务状态先汇聚到 `rcu_node` 根节点；最后一项 GP 条件满足后，RCU core 完成 GP 序列推进，再分别处理两类消费者：
+
+```text
+QS/EQS 与 blocked-task 状态
+    ↓ rcu_report_qs_rnp() 逐层传播
+根节点确认 qsmask == 0 且无阻塞当前 GP 的 gp_tasks
+    ↓
+GP 完成，gp_seq 推进
+    ├─ 同步等待链：完成 synchronize_rcu() 对应请求，唤醒阻塞调用者
+    └─ 异步回调链：rcu_advance_cbs() 把满足 GP 的回调推进到 DONE
+                         ↓
+                     rcu_core()/nocb CB 线程执行回调
+```
+
+这里有三种不同的“通知”，不能混写：
+
+1. CPU/任务向 RCU core 报告自身已跨过安全边界。
+2. RCU 层次树向 GP core 汇报本轮等待条件已收敛。
+3. GP core 在 GP 完成后唤醒同步等待者，或使异步回调获得执行资格。
+
+整个过程都不包含“对象 A 的最后一个实际读者通知写者”，因为 Tree RCU 从未建立对象到读者的映射。
 
 ## 5.4\_强制静止状态扫描不是强制结束读者
 

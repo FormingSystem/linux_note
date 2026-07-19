@@ -93,6 +93,16 @@ Linux 6.12.20 中，[`rcu_assign_pointer()`](../../../../research/source_reading
 
 假设更新者在时刻 `T` 取消旧对象的发布，一个与该更新关联的宽限期必须覆盖所有在 `T` 之前已经开始的相关读侧临界区。它不需要等待 `T` 之后才开始的新读者。
 
+这里必须区分“对象追踪”和“读者状态追踪”：
+
+- Tree RCU 不记录哪个 CPU 或任务读取了对象 A，也没有按地址建立读者映射树。
+- `rcu_read_lock()` / `rcu_read_unlock()` 会建立并更新读侧生命周期状态；它们不是“完全没有通知”的空壳。
+- 非抢占 Tree RCU 通过禁止读侧跨越调度点，并结合 CPU 后续报告的 QS/EQS，证明 GP 前的旧读者已经结束。
+- `PREEMPT_RCU` 还维护 `current->rcu_read_lock_nesting`；临界区中被抢占的任务会进入 `rcu_node->blkd_tasks`，并通过 `gp_tasks` 等状态继续阻塞相应 GP。
+- 因此，RCU 子系统追踪的是“哪些 CPU／任务仍可能属于本 GP 开始前的旧读者集合”，而不是“谁正在读取地址 A”。
+
+所谓“通知”也应按这个边界理解：CPU 的 QS/EQS 报告、调度器登记被抢占读者、任务退出最外层读侧临界区后的状态推进，都会把读者生命周期信息交给 RCU；但不存在逐对象询问或逐地址通知。
+
 ```mermaid
 sequenceDiagram
     participant R1 as 旧读者
