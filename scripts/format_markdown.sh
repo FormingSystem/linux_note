@@ -144,12 +144,15 @@ def headings_outside_fences(lines: list[str]) -> list[tuple[int, int, str]]:
 
 
 raw = subprocess.run(
-    ["git", "-c", "core.quotePath=false", "ls-files", "-z"],
+    ["git", "-c", "core.quotePath=false", "ls-files", "-z", "-c", "-o", "--exclude-standard"],
     check=True,
     stdout=subprocess.PIPE,
 ).stdout
 tracked = [item.decode("utf-8") for item in raw.split(b"\0") if item]
-markdown_files = [path for path in tracked if Path(path).suffix.casefold() in {".md", ".markdown"}]
+markdown_files = [
+    path for path in tracked
+    if Path(path).exists() and Path(path).suffix.casefold() in {".md", ".markdown"}
+]
 selected = markdown_files
 if SELECTIONS:
     selected = [
