@@ -15,4 +15,3 @@
 ## 1.4_linux内核概貌
 
 参考：[linux内核概貌.md](../../../linux/architecture/kernel_composition/linux内核概貌.md)
-
