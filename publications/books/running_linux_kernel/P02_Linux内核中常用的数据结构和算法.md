@@ -36,13 +36,17 @@ domains:
 
     - 1.3.3 应用场景：内存管理、进程调度
 
-- 1.4 **AVL树（AVL Tree）**
+- 1.4 **AVL树（AVL Tree，理论对照）**
 
     - 1.4.1 基本原理
 
-    - 1.4.2 内核实现：`struct avl_tree`
+    - 1.4.2 与红黑树的平衡策略和旋转次数对比
 
-    - 1.4.3 自平衡策略与旋转
+    - 1.4.3 Linux 内核没有提供通用的 AVL 树 API，也没有标准的 `struct avl_tree`
+
+    - 1.4.4 内核模块可以按业务需要自行实现 AVL，但通常应优先使用内核 `rbtree`
+
+> **归属说明：** AVL 树在这里用于理解自平衡搜索树及其与红黑树的取舍，不应被理解为 Linux 内核已经提供的通用容器。Linux 内核正式提供的红黑树接口位于 `include/linux/rbtree.h`，核心实现位于 `lib/rbtree.c`，增强接口位于 `include/linux/rbtree_augmented.h`。官方文档说明，红黑树与 AVL 树相比，查找仍为 `O(log n)`，插入和删除的平衡旋转分别最多为 2 次和 3 次，因而具有有界的最坏情况更新性能。参见 [Linux 内核 rbtree 官方文档](https://docs.kernel.org/core-api/rbtree.html)。
 
 - 1.5 **跳表（Skip List）**
 
