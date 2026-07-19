@@ -1,6 +1,6 @@
 ---
 id: knowledge.linux.synchronization.rcu.variants_memory_ordering_boundaries
-title: "RCU 变体 内存序与使用边界"
+title: "RCU 内存序与使用边界复盘"
 kind: mechanism
 status: evolving
 domains:
@@ -12,7 +12,7 @@ topics:
   - memory_ordering
 ---
 
-# 第13章\_RCU\_变体\_内存序与使用边界
+# 第13章\_RCU\_内存序与使用边界复盘
 
 最后一章不再引入一套新的入门模型，而是换几个容易出错的角度复盘整个专题：读侧域如何选择、发布—取得契约在哪里成立、宽限期不保证什么，以及 SRCU 与锁组合时的边界。
 
