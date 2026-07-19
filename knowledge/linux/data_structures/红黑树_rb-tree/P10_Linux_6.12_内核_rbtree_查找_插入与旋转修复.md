@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.红黑树_rb-tree.p10_linux_6.12_内核_rbtree_查找_插入与旋转修复
+title: "Linux 6.12 内核 rbtree 查找 插入与旋转修复"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第10章_Linux_6.12_内核_rbtree_查找_插入与旋转修复
 
 ## 10.1_章节内容说明

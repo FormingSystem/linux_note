@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.device_tree.设备树语法专题-02-pinctrl
+title: "pinctrl 总体概念与语法框架(Linux Kernel ≥ 6.1)"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 [TOC]
 
  因此，我会重新输出《第1章：pinctrl 总体概念与语法框架（正式增强版）》——

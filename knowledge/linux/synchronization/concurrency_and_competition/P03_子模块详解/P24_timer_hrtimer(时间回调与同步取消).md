@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p03_子模块详解.p24_timer_hrtimer_时间回调与同步取消
+title: "timer hrtimer(时间回调与同步取消)"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第24章_timer_hrtimer(时间回调与同步取消)
 
 ## 24.1_timer_/_hrtimer(时间回调与同步取消)

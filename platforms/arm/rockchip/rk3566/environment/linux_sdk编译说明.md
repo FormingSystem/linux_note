@@ -1,3 +1,13 @@
+---
+id: platforms.arm.rockchip.rk3566.environment.linux_sdk编译说明
+title: "资料下载"
+kind: platform
+status: evolving
+domains:
+  - linux
+  - platform
+---
+
 # 第1章_资料下载
 
 泰山派的资料是放置于百度网盘的，他们目前好像是没有采用git来放置资料，所以非常low，很多文档更新不及时，比如编译流程。去他大爷！

@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.device_tree.设备树语法专题-04-gpio_pinctrl_interrupt示例
+title: "系统结构总览与工程语义基础"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 好的 ✅
  从现在开始，我将正式进入《GPIO + pinctrl + interrupt 工程实例语法与机制解析》
  ——**以 i.MX6ULL 与 RK356x 系列为参考平台**的正式出版式写作阶段。

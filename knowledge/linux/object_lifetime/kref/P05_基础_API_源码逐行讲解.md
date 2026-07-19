@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.kref.p05_基础_api_源码逐行讲解
+title: "基础 API 源码逐行讲解"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第5章_基础_API_源码逐行讲解
 
 ## 5.1_本章主线

@@ -1,3 +1,13 @@
+---
+id: labs.platforms.nxp.imx6ull.drivers.p03_key_led_interrupt.p03_key_interrupt_wakeup_kernel
+title: "key interrupt wakeup kernel"
+kind: lab
+status: evolving
+domains:
+  - linux
+  - lab
+---
+
 # 第3章_key_interrupt_wakeup_kernel
 
 ## 3.1_实验目的

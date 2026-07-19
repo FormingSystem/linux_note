@@ -1,3 +1,13 @@
+---
+id: platforms.arm.nxp.imx6ull.porting.imx_v8_config_kernel编译说明
+title: "下载编译器"
+kind: platform
+status: evolving
+domains:
+  - linux
+  - platform
+---
+
 # 第1章_下载编译器
 
 编译器版本：

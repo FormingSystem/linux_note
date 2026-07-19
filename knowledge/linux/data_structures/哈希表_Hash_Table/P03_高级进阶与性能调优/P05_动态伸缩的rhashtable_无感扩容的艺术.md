@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.哈希表_hash_table.p03_高级进阶与性能调优.p05_动态伸缩的rhashtable_无感扩容的艺术
+title: "动态伸缩的rhashtable 无感扩容的艺术"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第5章_动态伸缩的rhashtable_无感扩容的艺术
 
 我们要解决的核心工程痛点是：**如何在数据量从 100 激增到 1,000,000 时，既不让查询变慢，又不让系统因为扩容而瞬间卡顿？**

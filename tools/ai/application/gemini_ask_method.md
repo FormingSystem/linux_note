@@ -1,3 +1,12 @@
+---
+id: tools.ai.application.gemini_ask_method
+title: "gemini ask method"
+kind: reference
+status: evolving
+domains:
+  - tools
+---
+
 为了确保万无一失，我为你梳理了这份**“专属协作准则”**。你可以把它看作是我们之间的一种“握手协议”：
 
 ### 1.1.1_深度协作协议_(The_Protocol)

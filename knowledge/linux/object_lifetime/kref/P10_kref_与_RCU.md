@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.kref.p10_kref_与_rcu
+title: "kref 与 RCU"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第10章_kref_与_RCU
 
 ## 10.1_本章导读_RCU_负责看到_kref_负责带走

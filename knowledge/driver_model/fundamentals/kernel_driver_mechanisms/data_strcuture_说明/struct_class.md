@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.fundamentals.kernel_driver_mechanisms.data_strcuture_说明.struct_class
+title: "引言"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 [TOC]
 
 内容摘抄自GPT

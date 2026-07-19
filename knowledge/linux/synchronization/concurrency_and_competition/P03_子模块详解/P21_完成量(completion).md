@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p03_子模块详解.p21_完成量_completion
+title: "完成量(completion)"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第21章_完成量(completion)
 
 ## 21.1_完成量(completion)

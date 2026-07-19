@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.tracing.logging.linux_内核日志
+title: "一条日志是怎样 出现 的"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第1章_一条日志是怎样_出现_的
 
 > 读完本章，你会清楚一条内核日志从函数调用到屏幕/日志文件的**完整旅程**，知道“为什么我打了日志却看不见”。

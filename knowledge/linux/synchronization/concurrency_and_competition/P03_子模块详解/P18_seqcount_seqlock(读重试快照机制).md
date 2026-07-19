@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p03_子模块详解.p18_seqcount_seqlock_读重试快照机制
+title: "seqcount seqlock(读重试快照机制)"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第18章_seqcount_seqlock(读重试快照机制)
 
 ## 18.1_seqcount_/_seqlock(读重试快照机制)

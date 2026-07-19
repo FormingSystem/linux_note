@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.gpio.附录e_of_xxx_函数簇
+title: "of get named gpiod flags()"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第1章_of_get_named_gpiod_flags()
 
 ## 1.1_1_主题引入

@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.红黑树_rb-tree.p14_maple_tree_与_vma_管理
+title: "Maple Tree 与 VMA 管理"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第14章_Maple_Tree_与_VMA_管理
 
 ## 14.1_专有名词说明

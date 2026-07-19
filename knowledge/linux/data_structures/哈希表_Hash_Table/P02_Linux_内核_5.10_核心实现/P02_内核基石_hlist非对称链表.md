@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.哈希表_hash_table.p02_linux_内核_5.10_核心实现.p02_内核基石_hlist非对称链表
+title: "内核基石 hlist非对称链表"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第2章_内核基石_hlist非对称链表
 
 ## 2.1_内核基石_hlist_非对称链表

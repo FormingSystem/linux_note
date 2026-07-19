@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p03_子模块详解.p27_生命周期与引用_kobjectdevice_devres_kref_getput
+title: "生命周期与引用(kobjectdevice devres kref getput)"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第27章_生命周期与引用(kobjectdevice_devres_kref_getput)
 
 ## 27.1_生命周期与引用(kobject/device_devres_kref_get/put)

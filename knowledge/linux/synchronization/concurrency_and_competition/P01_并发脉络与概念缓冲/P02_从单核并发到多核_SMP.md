@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p01_并发脉络与概念缓冲.p02_从单核并发到多核_smp
+title: "从单核并发到多核 SMP"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第2章_从单核并发到多核_SMP
 
 ------

@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.红黑树_rb-tree.p09_linux_6.12_内核_rbtree_嵌入式节点与使用者接口
+title: "Linux 6.12 内核 rbtree 嵌入式节点与使用者接口"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第9章_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口
 
 ## 9.1_章节内容说明

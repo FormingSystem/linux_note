@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.device_model.设备模型简介.p03_电源_sysfs_与层级事件
+title: "电源 sysfs 与层级事件"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第3章_电源_sysfs_与层级事件
 
 ## 3.1_电源管理(PM)在设备模型中的集成

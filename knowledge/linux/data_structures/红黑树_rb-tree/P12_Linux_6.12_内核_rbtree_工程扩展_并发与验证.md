@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.红黑树_rb-tree.p12_linux_6.12_内核_rbtree_工程扩展_并发与验证
+title: "Linux 6.12 内核 rbtree 工程扩展 并发与验证"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第12章_Linux_6.12_内核_rbtree_工程扩展_并发与验证
 
 ## 12.1_章节内容说明
