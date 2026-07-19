@@ -165,9 +165,9 @@ flowchart TD
 
 ------
 
-上一篇：[RCU 类型语义与 SRCU](P11_RCU_类型语义与_SRCU.md)。
+上一篇：[RCU 类型语义与 Sparse 检查](P11_RCU_类型语义与_Sparse_检查.md)。
 
-下一篇：[RCU 变体、内存序与使用边界](P13_RCU_变体_内存序与使用边界.md)。
+下一篇：[RCU 内存序与使用边界复盘](P13_RCU_内存序与使用边界复盘.md)。
 
 
 
