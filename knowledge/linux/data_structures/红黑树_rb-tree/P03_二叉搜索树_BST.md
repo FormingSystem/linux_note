@@ -80,34 +80,22 @@ BST 的左右方向不是装饰信息，而是带有明确语义：
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		F["14"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		G["4"]
 		H["7"]
 		I["13"]
 		F_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -130,10 +118,6 @@ graph TD
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,D_L,D_R,F_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 6 stroke:transparent;
@@ -156,30 +140,18 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		B_L[" "]
 		D["9"]
 		C_L[" "]
 		C_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -196,10 +168,6 @@ graph TD
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class B_L,C_L,C_R,D_L,D_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
 
 	linkStyle 2 stroke:transparent;
 	linkStyle 4 stroke:transparent;
@@ -242,44 +210,29 @@ BST 查找的基本逻辑非常直接：
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		F["14"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		G["4"]
 		H["7"]
 		I["13"]
 		F_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		G_L[" "]
 		G_R[" "]
 		H_L[" "]
 		H_R[" "]
 		I_L[" "]
 		I_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -314,11 +267,6 @@ graph TD
 	class C_L,D_L,D_R,F_R,G_L,G_R,H_L,H_R,I_L,I_R ghost;
 	class A,B,E,H path;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 0 stroke:#d97706,stroke-width:2px;
 	linkStyle 3 stroke:#d97706,stroke-width:2px;
@@ -376,40 +324,22 @@ BST 的查找复杂度不是直接由节点数 `n` 决定，而是由**树高 `h
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["1"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		A_L[" "]
 		B["2"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		B_L[" "]
 		C["3"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		C_L[" "]
 		D["4"]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		D_L[" "]
 		E["5"]
-	end
 
-	subgraph level5[" "]
-		direction LR
 		E_L[" "]
 		E_R[" "]
-	end
 
 	A -->|L| A_L
 	A -->|R| B
@@ -429,12 +359,6 @@ graph TD
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class A_L,B_L,C_L,D_L,E_L,E_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
-	style level5 fill:transparent,stroke:transparent;
 
 	linkStyle 0 stroke:transparent;
 	linkStyle 2 stroke:transparent;
@@ -466,40 +390,25 @@ BST 插入的第一步，不是直接挂节点，而是先做一次“查找式�
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		C_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		F["4"]
 		G["7"]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		F_L[" "]
 		F_R[" "]
 		G_L[" "]
 		G_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -525,11 +434,6 @@ graph TD
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,C_R,D_L,D_R,F_L,F_R,G_L,G_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 5 stroke:transparent;
@@ -553,46 +457,28 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		C_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		F["4"]
 		G["7"]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		F_L[" "]
 		H["5"]
 		G_L[" "]
 		G_R[" "]
-	end
 
-	subgraph level5[" "]
-		direction LR
 		H_L[" "]
 		H_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -621,12 +507,6 @@ graph TD
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,C_R,D_L,D_R,F_L,G_L,G_R,H_L,H_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
-	style level5 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 5 stroke:transparent;
@@ -694,40 +574,25 @@ BST 删除比查找和插入复杂得多，因为删除一个节点后，必须�
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		C_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		F["4"]
 		G["7"]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		F_L[" "]
 		F_R[" "]
 		G_L[" "]
 		G_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -753,11 +618,6 @@ graph TD
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,C_R,D_L,D_R,F_L,F_R,G_L,G_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 5 stroke:transparent;
@@ -775,38 +635,23 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		C_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		F["4"]
 		E_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		F_L[" "]
 		F_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -829,11 +674,6 @@ graph TD
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,C_R,D_L,D_R,E_R,F_L,F_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 5 stroke:transparent;
@@ -856,30 +696,18 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		B_L[" "]
 		B_R[" "]
 		C_L[" "]
 		D["14"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -896,10 +724,6 @@ graph TD
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class B_L,B_R,C_L,D_L,D_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
 
 	linkStyle 2 stroke:transparent;
 	linkStyle 3 stroke:transparent;
@@ -912,24 +736,15 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["14"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		B_L[" "]
 		B_R[" "]
 		C_L[" "]
 		C_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -943,9 +758,6 @@ graph TD
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class B_L,B_R,C_L,C_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
 
 	linkStyle 2 stroke:transparent;
 	linkStyle 3 stroke:transparent;
@@ -1022,44 +834,29 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		F["14"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		G["4"]
 		H["7"]
 		I["13"]
 		F_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		G_L[" "]
 		G_R[" "]
 		H_L[" "]
 		H_R[" "]
 		I_L[" "]
 		I_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -1091,11 +888,6 @@ graph TD
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,D_L,D_R,F_R,G_L,G_R,H_L,H_R,I_L,I_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 6 stroke:transparent;
@@ -1124,42 +916,27 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["10"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["14"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		F["13"]
 		C_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		G["4"]
 		H["7"]
 		F_L[" "]
 		F_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		G_L[" "]
 		G_R[" "]
 		H_L[" "]
 		H_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -1188,11 +965,6 @@ graph TD
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_R,D_L,D_R,F_L,F_R,G_L,G_R,H_L,H_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 5 stroke:transparent;
 	linkStyle 6 stroke:transparent;
@@ -1535,44 +1307,29 @@ flowchart TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		F["14"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		G["4"]
 		H["7"]
 		I["13"]
 		F_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		G_L[" "]
 		G_R[" "]
 		H_L[" "]
 		H_R[" "]
 		I_L[" "]
 		I_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -1611,11 +1368,6 @@ graph TD
 	class H target;
 	class C_L,D_L,D_R,F_R,G_L,G_R,H_L,H_R,I_L,I_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 6 stroke:transparent;
@@ -1633,42 +1385,27 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		F["14"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		G["4"]
 		E_R[" "]
 		I["13"]
 		F_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		G_L[" "]
 		G_R[" "]
 		I_L[" "]
 		I_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -1703,11 +1440,6 @@ graph TD
 	class E parent;
 	class C_L,D_L,D_R,E_R,F_R,G_L,G_R,I_L,I_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 6 stroke:transparent;
@@ -1746,42 +1478,27 @@ delete node
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		F["14"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		G["4"]
 		E_R[" "]
 		H["13"]
 		F_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		G_L[" "]
 		G_R[" "]
 		H_L[" "]
 		H_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -1818,11 +1535,6 @@ graph TD
 	class H replace;
 	class C_L,D_L,D_R,E_R,F_R,G_L,G_R,H_L,H_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 6 stroke:transparent;
@@ -1839,40 +1551,25 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		H["13"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		G["4"]
 		E_R[" "]
 		H_L[" "]
 		H_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		G_L[" "]
 		G_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -1905,11 +1602,6 @@ graph TD
 	class H replace;
 	class C_L,D_L,D_R,E_R,H_L,H_R,G_L,G_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 6 stroke:transparent;
@@ -1945,38 +1637,23 @@ delete node(14)
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		C_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		F["4"]
 		E_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		F_L[" "]
 		F_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -2007,11 +1684,6 @@ graph TD
 	class F replace;
 	class C_L,C_R,D_L,D_R,E_R,F_L,F_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 5 stroke:transparent;
@@ -2026,32 +1698,20 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		F["4"]
 		C_L[" "]
 		C_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		F_L[" "]
 		F_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -2078,10 +1738,6 @@ graph TD
 	class F replace;
 	class C_L,C_R,D_L,D_R,F_L,F_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 5 stroke:transparent;
@@ -2128,40 +1784,25 @@ delete node(6)
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		C_L[" "]
 		H["13"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		G["4"]
 		E_R[" "]
 		H_L[" "]
 		H_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		G_L[" "]
 		G_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -2195,11 +1836,6 @@ graph TD
 	class H moved;
 	class C_L,D_L,D_R,E_R,H_L,H_R,G_L,G_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 6 stroke:transparent;
@@ -2223,38 +1859,23 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["10"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		H["13"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["1"]
 		E["6"]
 		H_L[" "]
 		H_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		G["4"]
 		E_R[" "]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		G_L[" "]
 		G_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| H
@@ -2284,11 +1905,6 @@ graph TD
 	class H moved;
 	class H_L,H_R,D_L,D_R,E_R,G_L,G_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 5 stroke:transparent;
@@ -2354,27 +1970,16 @@ root(8)->key = successor(10)->key
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["4"]
 		C["12"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["2"]
 		E["6"]
 		F["10"]
 		G["14"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		H["1"]
 		I["3"]
 		J["5"]
@@ -2383,7 +1988,6 @@ graph TD
 		M["11"]
 		N["13"]
 		O["15"]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -2414,37 +2018,22 @@ graph TD
 	class N replace;
 	class G parent;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
 ```
 
 删除后：
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["4"]
 		C["13"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["2"]
 		E["6"]
 		F["10"]
 		G["14"]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		H["1"]
 		I["3"]
 		J["5"]
@@ -2453,7 +2042,6 @@ graph TD
 		M["11"]
 		G_L[" "]
 		O["15"]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -2484,10 +2072,6 @@ graph TD
 	class G parent;
 	class G_L ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
 
 	linkStyle 12 stroke:transparent;
 ```
@@ -2548,46 +2132,28 @@ parent_of_successor(14)->left = nullptr
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["20"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["10"]
 		C["30"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["5"]
 		E["15"]
 		C_L[" "]
 		C_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		H["12"]
 		I["18"]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		H_L[" "]
 		J["13"]
 		I_L[" "]
 		I_R[" "]
-	end
 
-	subgraph level5[" "]
-		direction LR
 		J_L[" "]
 		J_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -2625,12 +2191,6 @@ graph TD
 	class J moved;
 	class C_L,C_R,D_L,D_R,H_L,I_L,I_R,J_L,J_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
-	style level5 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 5 stroke:transparent;
@@ -2647,40 +2207,25 @@ graph TD
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["20"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["12"]
 		C["30"]
-	end
 
-	subgraph level2[" "]
-		direction LR
 		D["5"]
 		E["15"]
 		C_L[" "]
 		C_R[" "]
-	end
 
-	subgraph level3[" "]
-		direction LR
 		D_L[" "]
 		D_R[" "]
 		J["13"]
 		I["18"]
-	end
 
-	subgraph level4[" "]
-		direction LR
 		J_L[" "]
 		J_R[" "]
 		I_L[" "]
 		I_R[" "]
-	end
 
 	A -->|L| B
 	A -->|R| C
@@ -2713,11 +2258,6 @@ graph TD
 	class J moved;
 	class C_L,C_R,D_L,D_R,J_L,J_R,I_L,I_R ghost;
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
-	style level2 fill:transparent,stroke:transparent;
-	style level3 fill:transparent,stroke:transparent;
-	style level4 fill:transparent,stroke:transparent;
 
 	linkStyle 4 stroke:transparent;
 	linkStyle 5 stroke:transparent;

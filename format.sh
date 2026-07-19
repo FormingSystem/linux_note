@@ -6,8 +6,8 @@ repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 usage() {
     cat <<'EOF'
 用法：
-  ./format.sh check [all|paths|headings|metadata|links] [--summary] [路径...]
-  ./format.sh fix   [all|paths|headings|metadata|links] [--summary] [路径...]
+  ./format.sh check [all|paths|headings|metadata|links|mermaid] [--summary] [路径...]
+  ./format.sh fix   [all|paths|headings|metadata|links|mermaid] [--summary] [路径...]
   ./format.sh doctor
   ./format.sh install
 
@@ -21,6 +21,7 @@ usage() {
   headings    仅处理 Markdown 标题及标题锚点
   metadata    仅处理文档ID、标题、类型、状态和领域
   links       仅处理 Markdown、Obsidian、Canvas 和 Base 链接
+  mermaid     检查或修复跨渲染器不兼容的 Mermaid 伪层级子图
 
 环境命令：
   doctor      只读扫描系统、版本、编码和仓库环境
@@ -79,7 +80,7 @@ fi
 
 if (($# > 0)); then
     case "$1" in
-        all|paths|headings|metadata|links)
+        all|paths|headings|metadata|links|mermaid)
             scope=$1
             shift
             ;;
@@ -119,6 +120,12 @@ case "$scope" in
     links)
         exec "$repo_root/scripts/update_links.sh" "${arguments[@]}"
         ;;
+    mermaid)
+        if [[ $action == fix ]]; then
+            exec "$repo_root/scripts/fix_mermaid_level_subgraphs.sh" fix
+        fi
+        exec "$repo_root/scripts/fix_mermaid_level_subgraphs.sh" check
+        ;;
     all)
         # 依次维护标题、元数据、路径和链接；元数据步骤不改正文标题。
         if [[ $action == check ]]; then
@@ -127,11 +134,13 @@ case "$scope" in
             "$repo_root/scripts/format_metadata.sh" "${arguments[@]}" || status=1
             "$repo_root/scripts/normalize_paths.sh" "${arguments[@]}" || status=1
             "$repo_root/scripts/update_links.sh" "${arguments[@]}" || status=1
+            "$repo_root/scripts/fix_mermaid_level_subgraphs.sh" check || status=1
             exit "$status"
         fi
         "$repo_root/scripts/format_markdown.sh" "${arguments[@]}"
         "$repo_root/scripts/format_metadata.sh" "${arguments[@]}"
         "$repo_root/scripts/normalize_paths.sh" "${arguments[@]}"
-        exec "$repo_root/scripts/update_links.sh" "${arguments[@]}"
+        "$repo_root/scripts/update_links.sh" "${arguments[@]}"
+        exec "$repo_root/scripts/fix_mermaid_level_subgraphs.sh" fix
         ;;
 esac

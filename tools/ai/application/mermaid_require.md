@@ -15,9 +15,10 @@ domains:
 
 ## 1.1_基本原则
 
-1. 所有 Mermaid 图都要保证能在 **Typora 的 Mermaid 渲染环境**中正常使用。
+1. 所有 Mermaid 图都要保证能在 **Typora、VS Code Markdown Preview 和 GitHub** 中正常使用。
 2. 输出时使用 **原生 Mermaid 语法**。
-3. **不要做 HTML 实体转义**。
+3. 布局以节点之间的真实连线为准，不使用只为某一个渲染器对齐的伪层级子图。
+4. **不要做 HTML 实体转义**。
    也就是说，不要再写这类内容：
    - `"`
    - `<`
@@ -72,37 +73,31 @@ linkStyle 0 stroke:transparent;
 
 ------
 
-## 1.4_分层树图的推荐写法
+## 1.4_树图的跨渲染器兼容写法
 
-为了保证树图稳定、对称、可读，优先使用 **分层 subgraph** 方式组织节点。
+为了让树图在 Typora、VS Code 和 GitHub 中保持一致，应直接声明父子关系，让 Mermaid 根据真实边计算层级。
 典型写法如下：
 
 ```mermaid
 graph TD
-	subgraph level0[" "]
-		direction LR
 		A["8"]
-	end
 
-	subgraph level1[" "]
-		direction LR
 		B["3"]
 		C["10"]
-	end
 
 	A -->|L| B
 	A -->|R| C
 
-	style level0 fill:transparent,stroke:transparent;
-	style level1 fill:transparent,stroke:transparent;
 ```
 
 要求：
 
-1. 每一层用一个 `subgraph levelX[" "]`
-2. 子图内部一般使用 `direction LR`
-3. 子图背景和边框设为透明
-4. 树图中尽量按层展开，不要随意堆节点
+1. 使用 `graph TD` 或 `flowchart TB` 表达自上而下的树。
+2. 按从根到叶子的顺序声明节点和边。
+3. 左右孩子使用 `-->|L|` 和 `-->|R|` 标明语义。
+4. 不要使用 `subgraph level0[" "]`、`direction LR` 和透明子图强制对齐层级。
+5. Mermaid 在子图节点与外部节点相连时可能忽略子图内部方向，导致 VS Code 和 GitHub 把整棵树挤成一列。
+6. 确实需要表达业务分组时才使用 `subgraph`，不要把它当作树的排版容器。
 
 ------
 
@@ -211,6 +206,7 @@ flowchart TD
 4. 图、正文、代码三套命名不一致
 5. 只画形状，不强调关键节点颜色
 6. 二叉树层次混乱，不按层展开
+7. 使用 `level0...levelN` 透明子图和内部 `direction LR` 模拟树层级
 
 ------
 
@@ -218,6 +214,6 @@ flowchart TD
 
 可以把你的 Mermaid 要求压缩成这句备注：
 
-> Mermaid 图统一使用原生语法，节点标签一律用英文双引号；树图必须补透明占位节点保持结构稳定，分层绘制并用颜色标记关键节点；图中命名需与正文、算法、代码保持一致，不做 HTML 实体转义。
+> Mermaid 图统一使用原生语法，节点标签一律用英文双引号；树图通过真实父子连线形成层级，必要时补透明占位节点并用颜色标记关键节点；禁止使用透明 `level` 子图强制排版，图中命名需与正文、算法、代码保持一致。
 
 如果你要，我可以继续帮你整理成一个更短的“可直接贴在笔记首页的 Mermaid 规范模板”。
