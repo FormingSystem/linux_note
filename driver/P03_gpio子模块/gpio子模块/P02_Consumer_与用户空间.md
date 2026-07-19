@@ -1,10 +1,12 @@
+# 第2章_Consumer_与用户空间
+
 我是 **GPT-5 Thinking**。
 
 ------
 
-# 第 4 章：GPIO Consumer 描述符 API（内核侧）
+## 2.1_GPIO_Consumer_描述符_API(内核侧)
 
-## 4.1 主题引入
+### 2.1.1_主题引入
 
 **本章要解决的问题：**
 
@@ -25,9 +27,9 @@
 
 ------
 
-## 4.2 数据结构视角（原理 & 调用链）
+### 2.1.2_数据结构视角(原理_&_调用链)
 
-### 4.2.1 核心对象与职责
+#### (1)_核心对象与职责
 
 | 对象/概念                      | 作用                                  | 典型来源/使用                                                |
 | ------------------------------ | ------------------------------------- | ------------------------------------------------------------ |
@@ -41,7 +43,7 @@
 
 > **逻辑 vs 物理电平**：`gpiod_set_value(desc, 1)` 表示“**逻辑 1**”。若 `active_low`，则最终写入**物理低电平**。原始模式用 `gpiod_set_raw_value()`。
 
-### 4.2.2 调用链（驱动侧 → gpiolib → 控制器）
+#### (2)_调用链(驱动侧_to_gpiolib_to_控制器)
 
 ```mermaid
 flowchart TD
@@ -60,9 +62,9 @@ H --> I[硬件寄存器]
 
 ------
 
-## 4.3 开发者视角（API 用法与最小驱动）
+### 2.1.3_开发者视角(API_用法与最小驱动)
 
-### 4.3.1 与 DeviceTree 的标准约定（Consumer）
+#### (1)_与_DeviceTree_的标准约定(Consumer)
 
 常见属性：`<name>-gpios = <&chip pin flags>;`
  示例（与第 3 章风格一致）：
@@ -83,7 +85,7 @@ mydev@0 {
 };
 ```
 
-### 4.3.2 API 速查表（常用子集）
+#### (2)_API_速查表(常用子集)
 
 | 需求                 | 首选接口                                     | 备注                                      |
 | -------------------- | -------------------------------------------- | ----------------------------------------- |
@@ -98,7 +100,7 @@ mydev@0 {
 
 ------
 
-### 4.3.3 可运行最小驱动：多路 GPIO 的 Consumer 示例
+#### (3)_可运行最小驱动_多路_GPIO_的_Consumer_示例
 
 **目标**：演示 **必须/可选/按索引** 三种获取方式，统一处理 **active_low**，导出几个 sysfs 属性便于验证。
 
@@ -266,9 +268,9 @@ obj-m += leaf_gpiod_consumer_demo.o
 
 ------
 
-## 4.4 用户视角（如何操作/验证）
+### 2.1.4_用户视角(如何操作/验证)
 
-### 4.4.1 上电自检（字符设备与工具）
+#### (1)_上电自检(字符设备与工具)
 
 ```bash
 ls /dev/gpiochip*
@@ -276,7 +278,7 @@ gpiodetect
 gpioinfo gpiochip0     # 观察 consumer 名称与 active-low 标记
 ```
 
-### 4.4.2 驱动导出的 sysfs 属性
+#### (2)_驱动导出的_sysfs_属性
 
 ```bash
 cd /sys/bus/platform/devices
@@ -291,7 +293,7 @@ echo 1 | sudo tee ctrl0
 echo 0 | sudo tee ctrl1
 ```
 
-### 4.4.3 与 libgpiod 交叉验证
+#### (3)_与_libgpiod_交叉验证
 
 ```bash
 # 比对 sysfs 的写入效果与芯片线电平变化
@@ -303,9 +305,9 @@ gpioset gpiochip0 <line>=1   # 注意进程持有语义
 
 ------
 
-## 4.5 可视化图示
+### 2.1.5_可视化图示
 
-### 4.5.1 获取与控制流程（flowchart）
+#### (1)_获取与控制流程(flowchart)
 
 ```mermaid
 flowchart TD
@@ -318,7 +320,7 @@ E --> G[gpio_chip -> HW]
 F --> G[gpio_chip -> HW]
 ```
 
-### 4.5.2 驱动-用户交互（sequenceDiagram）
+#### (2)_驱动-用户交互(sequenceDiagram)
 
 ```mermaid
 sequenceDiagram
@@ -339,7 +341,7 @@ HW-->>U: 引脚电平变化（外设响应）
 
 ------
 
-## 4.6 调试与验证（Checklist）
+### 2.1.6_调试与验证(Checklist)
 
 | 现象                                | 可能原因                       | 排查与修复                                                   |
 | ----------------------------------- | ------------------------------ | ------------------------------------------------------------ |
@@ -363,9 +365,9 @@ dmesg -w
 
 ------
 
-## 4.7 小结
+### 2.1.7_小结
 
-### 4.7.1 API 要点表
+#### (1)_API_要点表
 
 | 类别   | 推荐做法                                       | 反例/不推荐                    |
 | ------ | ---------------------------------------------- | ------------------------------ |
@@ -380,9 +382,9 @@ dmesg -w
 
 ------
 
-## 4.8 `_cansleep` 系列函数（结构化详解）
+### 2.1.8_cansleep_系列函数(结构化详解)
 
-### 4.8.1 背景与术语
+#### (1)_背景与术语
 
 - **描述符 API：** gpiolib 提供两套读写接口（“逻辑值”与“原始值”各一套）：
   - 逻辑值（考虑极性）：
@@ -398,7 +400,7 @@ dmesg -w
 
 ------
 
-### 4.8.2 语义与上下文约束
+#### (2)_语义与上下文约束
 
 - **可睡眠上下文（✅ 可用 `_cansleep`）：** 线程上下文（`probe/remove`、普通 file ops、`workqueue`、`kthread`）、**threaded IRQ** 处理函数。
 - **原子上下文（❌ 禁止 `_cansleep`）：** 硬中断上半部、软中断/tasklet、自旋锁持有区、硬定时器回调等。
@@ -408,7 +410,7 @@ dmesg -w
 
 ------
 
-### 4.8.3 选择规则（决策树）
+#### (3)_选择规则(决策树)
 
 1. **先判上下文**：当前是否允许睡眠？
 2. **再判线能力**：`gpiod_cansleep(desc)` 返回是否可能睡眠？
@@ -429,7 +431,7 @@ D -->|No| H[用 非 _cansleep]
 
 ------
 
-### 4.8.4 控制器分类与判断方法
+#### (4)_控制器分类与判断方法
 
 - **SoC GPIO（MMIO，常见于 `pinctrl-<SoC>` 旗下）**：通常 `can_sleep=false`。
 
@@ -446,7 +448,7 @@ D -->|No| H[用 非 _cansleep]
 
 ------
 
-### 4.8.5 逻辑值与原始电平（与极性的一致处理）
+#### (5)_逻辑值与原始电平(与极性的一致处理)
 
 - **逻辑值接口**：`gpiod_get/set_value[_cansleep]()` —— 自动考虑 DT 的 `GPIO_ACTIVE_LOW/HIGH`。
 - **原始值接口**：`gpiod_get/set_raw_value[_cansleep]()` —— 不做极性映射。
@@ -474,7 +476,7 @@ static inline int gpiod_get_logic_safe(struct gpio_desc *d, bool active_low)
 
 ------
 
-### 4.8.6 编码模板（可直接复用）
+#### (6)_编码模板(可直接复用)
 
 **A）通用读写模板（可睡/不可睡自适应）**
 
@@ -523,7 +525,7 @@ irqreturn_t my_irq_thread(int irq, void *data)
 
 ------
 
-### 4.8.7 端到端示例 A：I²C 扩展器（`can_sleep=true`）
+#### (7)_端到端示例_A_I²C_扩展器(can_sleep=true)
 
 **场景：** PCF8574 等 I²C GPIO 控制 LED，在中断事件里翻转 LED。
 
@@ -568,7 +570,7 @@ devm_request_threaded_irq(dev, irq, my_top, my_thread,
 
 ------
 
-### 4.8.8 端到端示例 B：SoC GPIO（`can_sleep=false`）硬中断快路径
+#### (8)_端到端示例_B_SoC_GPIO(can_sleep=false)硬中断快路径
 
 **场景：** SoC 内部 GPIO 控制一个引脚脉冲，要求中断上半部立刻拉高 10us 再拉低。
 
@@ -590,7 +592,7 @@ static irqreturn_t my_top_fast(int irq, void *p)
 
 ------
 
-### 4.8.9 调试与验证方法
+#### (9)_调试与验证方法
 
 1. **检查谁在使用 GPIO：**
 
@@ -611,7 +613,7 @@ static irqreturn_t my_top_fast(int irq, void *p)
 
 ------
 
-### 4.8.10 常见问题与修复
+#### (10)_常见问题与修复
 
 | 问题                                 | 典型根因                              | 修复建议                                                     |
 | ------------------------------------ | ------------------------------------- | ------------------------------------------------------------ |
@@ -622,14 +624,14 @@ static irqreturn_t my_top_fast(int irq, void *p)
 
 ------
 
-### 4.8.11 兼容性与性能注意
+#### (11)_兼容性与性能注意
 
 - 在**可睡上下文**对 `can_sleep=false` 的线调用 `*_cansleep` **没有功能问题**；只是多了一次 `might_sleep()` 检查的开销，通常可忽略。
 - 在**原子上下文**调用 `*_cansleep` **不被允许**，即使底层当前不会睡，也会触发检查告警。
 
 ------
 
-### 4.8.12 小结
+#### (12)_小结
 
 - **规则**：先判上下文、再判 `gpiod_cansleep(desc)`，据此选择 `_cansleep` 或非 `_cansleep`。
 - **实践**：可睡上下文统一用 `*_cansleep`，原子上下文仅在 `can_sleep=false` 时使用非 `_cansleep`。
@@ -642,9 +644,9 @@ static irqreturn_t my_top_fast(int irq, void *p)
 
 ------
 
-# 第 5 章：字符设备 ABI 与 libgpiod（用户态）
+## 2.2_字符设备_ABI_与_libgpiod(用户态)
 
-## 5.1 主题引入
+### 2.2.1_主题引入
 
 **本章要解决的问题：**
 
@@ -661,7 +663,7 @@ static irqreturn_t my_top_fast(int irq, void *p)
 
 ------
 
-## 5.2 概念与时间线
+### 2.2.2_概念与时间线
 
 - **4.8（2016）**：首次引入 **GPIO chardev v1**（/dev/gpiochipN）。
 - **5.10（2020）**：引入 **GPIO chardev v2**（增强批量请求、事件、设置）。v1 仍可回退。
@@ -670,7 +672,7 @@ static irqreturn_t my_top_fast(int irq, void *p)
 
 ------
 
-## 5.3 角色与对象（用户空间视角）
+### 2.2.3_角色与对象(用户空间视角)
 
 | 对象                                                         | 含义/职责                            | 典型作用                                                 |
 | ------------------------------------------------------------ | ------------------------------------ | -------------------------------------------------------- |
@@ -683,9 +685,9 @@ static irqreturn_t my_top_fast(int irq, void *p)
 
 ------
 
-## 5.4 工具法（零代码快速验证）
+### 2.2.4_工具法(零代码快速验证)
 
-### 5.4.1 安装与自检
+#### (1)_安装与自检
 
 - RootFS 中安装 **libgpiod-tools**（Buildroot、Yocto 或手工交叉编译，见第 2 章补充）。
 
@@ -697,7 +699,7 @@ static irqreturn_t my_top_fast(int irq, void *p)
   gpioinfo gpiochip0  # 列出线的名称、方向、active-low、consumer 等
   ```
 
-### 5.4.2 读写与持有语义
+#### (2)_读写与持有语义
 
 ```bash
 # 读一根线（逻辑值；自动考虑 active-low）
@@ -712,7 +714,7 @@ gpioset -m exit gpiochip0 3=1
 
 > “进程持有语义”：**谁持有就谁生效**。工具退出会释放行，电平可能回到默认或被其他消费者接管。
 
-### 5.4.3 边沿事件监听
+#### (3)_边沿事件监听
 
 ```bash
 # 监听两根输入线的上/下沿，打印时间戳
@@ -721,11 +723,11 @@ gpiomon --rising --falling gpiochip0 5 6
 
 ------
 
-## 5.5 C 语言：libgpiod 2.x 最小示例
+### 2.2.5_C_语言_libgpiod_2.x_最小示例
 
 > 下面两段 C 代码分别演示 **输出** 与 **事件输入**。均基于 **libgpiod 2.x** 的对象式 API（`chip` / `line_settings` / `line_config` / `request`）。
 
-### 5.5.1 单线输出（设为高，再拉低）
+#### (1)_单线输出(设为高_再拉低)
 
 ```c
 // build: cc -Wall -O2 -o gpio_out gpio_out.c -lgpiod
@@ -758,10 +760,10 @@ int main(void)
     gpiod_request_config_set_consumer(rc, "gpio_out_demo");
 
     req = gpiod_chip_request_lines(chip, rc, lc);
-    if (!req) { 
-        perror("request_lines"); 
-        ret = 1; 
-        goto out; 
+    if (!req) {
+        perror("request_lines");
+        ret = 1;
+        goto out;
     }
 
     // 注意：请求内索引 0 对应 offsets[0]（即芯片偏移 3）
@@ -783,7 +785,7 @@ out:
 - `gpiod_line_request_set_value(req, **索引** , value)`：**索引**是你在 `add_line_settings()` 里传入 offsets 的顺序（0..N-1），不是原始 offset。
 - `ACTIVE/INACTIVE` 是**逻辑值**。若线为 active-low，逻辑 1 会写入物理低电平（底层映射）。
 
-### 5.5.2 单线输入 + 边沿事件（RISING/FALLING）
+#### (2)_单线输入_+_边沿事件(RISING/FALLING)
 
 ```c
 // build: cc -Wall -O2 -o gpio_evt gpio_evt.c -lgpiod
@@ -814,9 +816,9 @@ int main(void)
     int ret = 0;
 
     chip = gpiod_chip_open_by_name(chipname);
-    if (!chip) { 
-        perror("chip_open"); 
-        return 1; 
+    if (!chip) {
+        perror("chip_open");
+        return 1;
     }
 
     ls = gpiod_line_settings_new();
@@ -866,9 +868,9 @@ out:
 
 ------
 
-## 5.6 目录结构与交互流程（图示）
+### 2.2.6_目录结构与交互流程(图示)
 
-### 5.6.1 用户态请求流程（flowchart）
+#### (1)_用户态请求流程(flowchart)
 
 ```mermaid
 flowchart TD
@@ -881,7 +883,7 @@ F -->|输出| G["line_request_set_value(s)"]
 F -->|输入/事件| H[wait_edge_events + read_edge_events]
 ```
 
-### 5.6.2 事件读取时序（sequenceDiagram）
+#### (2)_事件读取时序(sequenceDiagram)
 
 ```mermaid
 sequenceDiagram
@@ -904,7 +906,7 @@ APP-->>APP: 处理回调/打印时间戳
 
 ------
 
-## 5.7 常见错误与排查
+### 2.2.7_常见错误与排查
 
 | 现象/报错                                | 可能原因                               | 解决                                              |
 | ---------------------------------------- | -------------------------------------- | ------------------------------------------------- |
@@ -923,7 +925,7 @@ APP-->>APP: 处理回调/打印时间戳
 
 ------
 
-## 5.8 与内核/设备树的衔接（回顾要点）
+### 2.2.8_与内核/设备树的衔接(回顾要点)
 
 - 用户态的逻辑成立，前提是：
    **① pinmux 已将目标 PAD 复用为 GPIO**，**② pinconf 电气设置合理**（上拉/下拉/驱动），**③ 控制器驱动已注册 gpiochip**。
@@ -934,9 +936,9 @@ APP-->>APP: 处理回调/打印时间戳
 
 ------
 
-## 5.9 小结
+### 2.2.9_小结
 
-### 5.9.1 工具与 API 对照
+#### (1)_工具与_API_对照
 
 | 目标            | 工具命令                                 | C API（libgpiod 2.x）                                     |
 | --------------- | ---------------------------------------- | --------------------------------------------------------- |

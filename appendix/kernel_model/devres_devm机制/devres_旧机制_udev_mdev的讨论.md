@@ -1,13 +1,13 @@
 我是 **GPT-5**。
 
-# 第1章：内核资源管理与用户态设备管理的全景与对比
+# 第1章_内核资源管理与用户态设备管理的全景与对比
 
 > 读者画像：嵌入式 Linux 驱动/系统工程师（内核 6.1 及相近版本）。
 >  目标：用一章建立“大地图”，把 `devm`、旧机制（非 `devm`）、`udev`、`mdev` 四个关键词放在同一条软硬件链路里，明确边界、接口与协作方式；为后续各分章的深入做准备。
 
 ------
 
-## 1.1 为什么要同时理解这四个概念？
+## 1.1_为什么要同时理解这四个概念
 
 在一个完整的设备启用路径上，你会同时遇到**内核侧**与**用户态侧**两类问题：
 
@@ -21,7 +21,7 @@
 
 ------
 
-## 1.2 一张图看全链路（从硬件到 /dev）
+## 1.2_一张图看全链路(从硬件到_/dev)
 
 ```mermaid
 flowchart TD
@@ -40,34 +40,34 @@ flowchart TD
 
 ------
 
-## 1.3 四个关键词的最小定义
+## 1.3_四个关键词的最小定义
 
-### 1.3.1 `devm`（内核）
+### 1.3.1_devm(内核)
 
 - **是什么**：device-managed 资源管理；将“释放动作”挂在 `struct device` 的 **devres 栈**，设备解绑/注销时按 **LIFO** 自动调用释放回调。
 - **解决什么**：把 `probe()` 的**失败回滚**与卸载清理变成“自动”，极简错误路径。
 - **不做什么**：不负责 `/dev` 节点；不托管“状态”（时钟启停、电源上/下电、pinctrl 状态切换仍需手动配对回退）。
 
-### 1.3.2 旧机制（非 `devm`）
+### 1.3.2_旧机制(非_devm)
 
 - **是什么**：传统“谁申请谁释放”的模式：`kzalloc`/`ioremap`/`gpiod_get`/`request_irq`… + 在错误路径与 `remove()` 中**显式** `kfree`/`iounmap`/`gpiod_put`/`free_irq`…
 - **优缺点**：自由度高、可精确控制时点，但错误路径冗长、易漏导致泄漏/悬挂。
 
-### 1.3.3 `udev`（用户态）
+### 1.3.3_udev(用户态)
 
 - **是什么**：systemd-udevd（或 eudev）守护进程，监听内核 **uevent**，按 **rules** 创建/删除 `/dev/*` 节点、设置权限/属主/组、创建符号链接、执行脚本。
 - **典型命令**：`udevadm monitor/info/trigger/settle`。
 
-### 1.3.4 `mdev`（用户态，BusyBox）
+### 1.3.4_mdev(用户态_BusyBox)
 
 - **是什么**：轻量设备管理器；通过 `/proc/sys/kernel/hotplug`（热插拔）或 `mdev -s`（冷插拔）工作；规则在 `/etc/mdev.conf`，语法简洁、体积极小。
 - **适用**：极简 rootfs、启动时间敏感场景。
 
 ------
 
-## 1.4 两组核心对比（先给结论）
+## 1.4_两组核心对比(先给结论)
 
-### 1.4.1 `devm` vs 旧机制（内核资源管理）
+### 1.4.1_devm_vs_旧机制(内核资源管理)
 
 | 维度     | `devm`                                     | 旧机制（非 `devm`）                          |
 | -------- | ------------------------------------------ | -------------------------------------------- |
@@ -78,7 +78,7 @@ flowchart TD
 
 > 牢记：**句柄托管 ≠ 状态托管**（clk/regulator/pinctrl 的启停/切换必须手动配对）。
 
-### 1.4.2 `udev` vs `mdev`（用户态设备管理）
+### 1.4.2_udev_vs_mdev(用户态设备管理)
 
 | 维度   | `udev`                           | `mdev`                              |
 | ------ | -------------------------------- | ----------------------------------- |
@@ -90,7 +90,7 @@ flowchart TD
 
 ------
 
-## 1.5 跨层职责边界：`devm` vs（`udev/mdev`）
+## 1.5_跨层职责边界_devm_vs(udev/mdev)
 
 - **`devm`**：只管**内核里**资源（句柄/映射/对象）的分配与释放，帮助你写出**简洁安全**的 `probe()/remove()`。
 - **`udev/mdev`**：只管**用户态** `/dev` 的出现方式（名称、权限、链接、脚本），以及冷/热插拔策略。
@@ -98,9 +98,9 @@ flowchart TD
 
 ------
 
-## 1.6 一页速用模板（实操起点）
+## 1.6_一页速用模板(实操起点)
 
-### 1.6.1 `devm` 风格的 `probe()/remove()`（缩略版）
+### 1.6.1_devm_风格的_probe()/remove()(缩略版)
 
 ```c
 static int foo_probe(struct platform_device *pdev)
@@ -136,7 +136,7 @@ static int foo_remove(struct platform_device *pdev)
 }
 ```
 
-#### devm回滚机制说明
+#### (1)_devm回滚机制说明
 
 **提问：**
 
@@ -147,7 +147,7 @@ static int foo_remove(struct platform_device *pdev)
 
 **具体怎么回事？**
 
-##### 回收触发时机与顺序（关键点）
+##### 1)_回收触发时机与顺序(关键点)
 
 当设备解绑（driver unbind）或被注销（device unregister）、模块卸载等发生时，内核 driver core 会按如下顺序处理：
 
@@ -161,7 +161,7 @@ static int foo_remove(struct platform_device *pdev)
    - 如果在 `probe()` 过程中已经用了一些 `devm_*` 接口，然后中途 `return -Exxx`，**这些已登记的 devm 资源同样会被自动回滚释放**。
    - 如果使用了 `devres_open_group()/devres_remove_group()` 做阶段化初始化，也会得到相同的“一键回滚”效果。
 
-##### 你需要在 `remove()` 里做什么（而 `devm` 不会做的）？
+##### 2)_你需要在_remove()_里做什么(而_devm_不会做的)
 
 - **时钟启停**：`clk_prepare_enable()` ↔ `clk_disable_unprepare()`
 - **电源上/下电**：`regulator_enable()` ↔ `regulator_disable()`
@@ -172,7 +172,7 @@ static int foo_remove(struct platform_device *pdev)
 > 核心记忆：**devm 托管“句柄/映射/对象”，不托管“状态”**。
 >  状态一定要在 `remove()`（或 runtime PM 的 suspend/resume 路径）里**显式配对回退**。
 
-##### Do / Don’t 清单
+##### 3)_Do_/_Don_t_清单
 
 - ✅ 在 `probe()` 中尽量用 `devm_*` 获取句柄/映射（失败即可直接 `return`）。
 - ✅ 在 `remove()` 中**只**做状态回退（关时钟、掉电、切回休眠 pinctrl），**不要**手动释放 `devm_*` 资源。
@@ -180,7 +180,7 @@ static int foo_remove(struct platform_device *pdev)
 - ❌ 不要依赖 `devm` 去帮你“关电/关时钟/切 pinctrl”——它不会做。
 - ❌ 不要把需要跨设备/跨生命周期共享的资源交给 `devm`（会被提前释放）。
 
-##### 一个迷你时序对照
+##### 4)_一个迷你时序对照
 
 ```
 probe():
@@ -198,14 +198,14 @@ unbind/remove:
   devres_release_all(dev)     <-- devm 自动释放所有句柄/映射（LIFO）
 ```
 
-##### 小结一句
+##### 5)_小结一句
 
 - 你理解得对：**即使没有 `remove()`，或 `remove()` 没有把 `devm_\*` 资源逐一释放，`devm` 也会在解绑/注销时自动把它们清掉**。
 - 但这并不等于“什么都不用做”，因为**设备的运行状态**（时钟、电源、pinctrl 等）**仍需要你在 `remove()`/PM 路径里亲手复位**。
 
 
 
-### 1.6.2 `udev` 规则（示例）
+### 1.6.2_udev_规则(示例)
 
 ```
 # /etc/udev/rules.d/99-foo.rules
@@ -213,7 +213,7 @@ SUBSYSTEM=="gpio", KERNEL=="gpiochip*", MODE="0660", GROUP="gpio"
 SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/foo0"
 ```
 
-### 1.6.3 `mdev` 规则（示例）
+### 1.6.3_mdev_规则(示例)
 
 ```
 # /etc/mdev.conf
@@ -223,7 +223,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 ------
 
-## 1.7 调试与评审 Checklist
+## 1.7_调试与评审_Checklist
 
 - **驱动侧**
   - `probe()` 失败路径是否“直接 return”（而不是手写释放）？
@@ -238,7 +238,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 ------
 
-## 1.8 本书使用方式与约定
+## 1.8_本书使用方式与约定
 
 - **内核版本**：以 6.1 为参照，接口在 5.x/6.x 间普遍适用；GPIO 统一使用 **gpiod 描述符** 风格。
 - **代码风格**：以 `platform_driver` 为主，示例涵盖 GPIO/IRQ/CLK/Regulator/Pinctrl。
@@ -249,7 +249,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 ------
 
-### 本章小结
+### 1.8.1_本章小结
 
 - 你现在应已建立“同一条链路上的两对概念”：
   - **内核侧**：`devm` vs 旧机制；
@@ -264,15 +264,15 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 ------
 
-# 第2章：`devm` 与旧机制（非 `devm`）——定义、流程、边界、示例
+# 第2章_devm_与旧机制(非_devm)_定义_流程_边界_示例
 
 > 目标：给出明确的技术定义与操作流程，阐明 `devm` 的职责与非职责，与旧机制的差异，以及在 `probe()`、失败回滚、`remove()`/解绑各阶段的行为。示例基于 Linux 6.1。
 
 ------
 
-## 2.1 定义
+## 2.1_定义
 
-### 2.1.1 `devm`（device-managed resources）
+### 2.1.1_devm(device-managed_resources)
 
 - 机制：对某些资源的**申请**与**释放**建立严格的一对一关系；资源的释放动作与 `struct device` 的生命周期绑定。
 - 实现要点：每次调用 `devm_…` 接口，都会在该 `device` 的 **devres** 列表中登记一个“释放回调 + 资源指针/参数”的记录；在设备解绑/释放时，核心层按**后进先出（LIFO）**顺序调用这些回调。
@@ -282,7 +282,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
   3. 模块卸载导致的设备释放。
 - 目标：在上述时机**自动**执行已登记的释放动作，避免手写回滚与遗漏释放。
 
-#### 回滚机制
+#### (1)_回滚机制
 
 **提问：**
 
@@ -293,12 +293,12 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 你的理解里有两点需要更正和明确：
 
-##### 结论（精确表述）
+##### 1)_结论(精确表述)
 
 1. **没有“守护进程”**、也没有异步“任务队列”。`devm` 在内核中通过 `struct device` 里的 **devres 链表/栈** 记录“释放回调 + 资源指针”。释放是在**当前调用路径内同步执行**，不是后台线程。
 2. **`devm` 只负责对象/句柄/映射的释放**，**不负责运行状态复位**。因此 `remove()`（以及必要的 PM 路径）必须手动关闭时钟、电源、切回 pinctrl 等。
 
-##### 精确流程
+##### 2)_精确流程
 
 - **probe() 阶段：**
    每次调用 `devm_*`，都会向该 `device` 的 devres 栈登记一个释放记录。
@@ -308,12 +308,12 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
   2. `remove()` 返回后，核心层**同步**按 LIFO 执行 devres 回收，释放所有 `devm_*` 管理的对象/句柄/映射。
   3. 即使没有 `remove()`，devres 回收仍会执行；但**状态**不会被自动复位，这会留下错误的硬件工作状态或功耗问题。
 
-##### 术语校正
+##### 3)_术语校正
 
 - 不是“资源回滚处理任务队列”。建议使用：**“`struct device` 的 devres 链表（按 LIFO 释放）”**。
 - 不是“守护进程接手”。正确表述：**驱动核心在解绑/失败路径中调用 devres 回收函数，同步执行释放回调**。
 
-##### 使用要求（避免误用）
+##### 4)_使用要求(避免误用)
 
 - **不要**在 `remove()` 再手动释放 `devm_*` 获取的对象（避免二次释放）；
 - **必须**在 `remove()`/PM 中回退**状态**（时钟、电源、pinctrl、工作队列/定时器等无 devm 版本的实体）；
@@ -322,7 +322,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 
 
-### 2.1.2 旧机制（非 `devm`）
+### 2.1.2_旧机制(非_devm)
 
 - 机制：开发者使用传统接口（如 `kzalloc`、`ioremap`、`gpiod_get`、`request_irq` 等）自行申请资源，并在所有失败路径与 `remove()` 中**显式**调用对应释放接口（`kfree`、`iounmap`、`gpiod_put`、`free_irq` 等）。
 - 特点：释放时机与顺序完全由驱动作者控制；需要在所有早退点与卸载路径中保持释放逻辑完备且有序。
@@ -331,7 +331,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 ------
 
-## 2.2 职责边界（必须区分的两类操作）
+## 2.2_职责边界(必须区分的两类操作)
 
 1. **可由 `devm` 托管的“对象/句柄/映射”**
 
@@ -346,7 +346,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
    - 行为：上述对象在解绑/失败时由 `devm` 自动调用对应释放回调。**不要**在 `remove()` 中重复释放这类对象。
 
-     
+
 
 2. **`devm` 不托管的“运行状态”**（必须由驱动显式配对）
 
@@ -359,21 +359,21 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 ------
 
-## 2.3 时序与控制流
+## 2.3_时序与控制流
 
-### 2.3.1 `probe()` 成功路径
+### 2.3.1_probe()_成功路径
 
 1. 调用若干 `devm_*` 接口登记可托管对象；
 2. 执行必要的“状态启用”（如 `clk_prepare_enable()`、`regulator_enable()`、`pinctrl_select_state(default)`）；
 3. 返回 0。
 
-### 2.3.2 `probe()` 失败路径（早退）
+### 2.3.2_probe()_失败路径(早退)
 
 - 驱动直接 `return -Exxx`；
 - 核心层对**已登记**的 `devm_*` 资源按 LIFO 顺序**自动回滚**；
 - 驱动不需要手写对应对象的释放代码。
 
-### 2.3.3 解绑/卸载路径
+### 2.3.3_解绑/卸载路径
 
 1. 若驱动提供 `remove()`：核心层先调用 `remove()`，驱动在此**回退“状态”**（时钟、电源、pinctrl 等），**不**释放已托管对象；
 2. `remove()` 返回后，核心层调用 devres 回收流程，按 LIFO 顺序对所有登记的 `devm_*` 对象执行释放回调；
@@ -381,7 +381,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 ------
 
-## 2.4 与旧机制的差异要点
+## 2.4_与旧机制的差异要点
 
 | 维度          | `devm`                                          | 旧机制（非 `devm`）                           |
 | ------------- | ----------------------------------------------- | --------------------------------------------- |
@@ -393,7 +393,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 ------
 
-## 2.5 代码框架（最小充分示例）
+## 2.5_代码框架(最小充分示例)
 
 > 说明：仅展示关键位置与必须的回退点；省略无关细节。
 
@@ -456,7 +456,7 @@ static int foo_remove(struct platform_device *pdev)
 
 ------
 
-## 2.6 分阶段初始化的回滚（可选增强）
+## 2.6_分阶段初始化的回滚(可选增强)
 
 当 `probe()` 很长且分阶段初始化时，可使用 devres 分组接口控制某一阶段的批量回滚：
 
@@ -475,7 +475,7 @@ devres_close_group(dev, g);  /* 固化阶段 A 的资源 */
 
 ------
 
-## 2.7 何时不使用 `devm`
+## 2.7_何时不使用_devm
 
 - 资源生命周期**跨越当前 `device`**（如导出给其他设备或全局持有）；
 - 需要在 `probe()` 内某个特定时点**立即释放**对象（早于解绑时机）；
@@ -485,7 +485,7 @@ devres_close_group(dev, g);  /* 固化阶段 A 的资源 */
 
 ------
 
-## 2.8 验证与排查
+## 2.8_验证与排查
 
 1. **失败注入**：在 `probe()` 中故意返回错误；观察对象是否被完整回滚（结合 KASAN/kmemleak）。
 2. **卸载/重载压力**：循环 `rmmod/insmod` 若干次，确认无重复映射、无悬挂 IRQ、无内存/资源泄漏。
@@ -494,7 +494,7 @@ devres_close_group(dev, g);  /* 固化阶段 A 的资源 */
 
 ------
 
-## 2.9 结论
+## 2.9_结论
 
 - `devm` 负责“对象/句柄/映射”的**自动释放**，与 `device` 生命周期绑定；与 `remove()` 的存在与否**无关**。
 - “运行状态”（时钟、电源、pinctrl 等）**不在 `devm` 范围内**，**必须**由驱动在 `remove()`/PM 路径显式回退。
@@ -504,13 +504,13 @@ devres_close_group(dev, g);  /* 固化阶段 A 的资源 */
 
 
 
-# 第3章：用户态设备管理 —— `udev` 与 `mdev` 的通路、规则与差异
+# 第3章_用户态设备管理_udev_与_mdev_的通路_规则与差异
 
 > 目标：给出 `udev` 与 `mdev` 的严格定义、事件通路、规则语法、调试方法与差异；确保从内核 uevent 到 `/dev` 节点生成的各环节均可定位与验证。本章不使用比喻。
 
 ------
 
-## 3.1 定义与分层位置
+## 3.1_定义与分层位置
 
 - **`udev`（systemd-udevd/eudev）**
    用户空间守护进程，监听内核通过 netlink 发送的 **uevent**；依据规则文件创建/删除 **`/dev/\*` 节点**，设置 **权限/属主/组**，创建 **符号链接**，执行 **用户脚本**。
@@ -521,7 +521,7 @@ devres_close_group(dev, g);  /* 固化阶段 A 的资源 */
 
 ------
 
-## 3.2 全通路流程（内核 → 用户态 → `/dev`）
+## 3.2_全通路流程(内核_to_用户态_to_/dev)
 
 1. 设备被枚举或状态变化，内核 **kobject** 产生 **uevent**（`ACTION=add/remove/change` 等，携带 `SUBSYSTEM`、`KERNEL` 名、若干 `ATTR{}` 与 `ENV{}`）。
 2. `udev`（守护进程）或 `mdev`（由 hotplug 调用或手动扫描）接收事件。
@@ -533,14 +533,14 @@ devres_close_group(dev, g);  /* 固化阶段 A 的资源 */
 
 ------
 
-## 3.3 `udev`：规则与工具
+## 3.3_udev_规则与工具
 
-### 3.3.1 规则文件与优先级
+### 3.3.1_规则文件与优先级
 
 - 目录：`/etc/udev/rules.d/`；文件按 **字典序** 解析，前面的规则先匹配。
 - 语法：一行若干 **匹配键** 与 **动作键**，使用逗号分隔。
 
-### 3.3.2 常用匹配键
+### 3.3.2_常用匹配键
 
 - `KERNEL==`：匹配内核设备名（如 `ttyUSB*`、`sda*`）。
 - `SUBSYSTEM==`：匹配子系统（如 `tty`、`block`、`gpio`、`net`）。
@@ -550,21 +550,21 @@ devres_close_group(dev, g);  /* 固化阶段 A 的资源 */
 - `ENV{var}==`：匹配环境变量。
 - `ACTION==`：匹配 `add`/`remove`/`change`。
 
-### 3.3.3 常用动作键
+### 3.3.3_常用动作键
 
 - `MODE=`、`OWNER=`、`GROUP=`：设置权限与属主/组（如 `0660`、`root`、`dialout`）。
 - `NAME=`：重命名设备节点（慎用，通常保持内核名）。
 - `SYMLINK+=`：创建符号链接（推荐用于稳定别名）。
 - `RUN+=`：执行脚本或命令（在 `add`/`remove` 时机）。
 
-### 3.3.4 变量占位
+### 3.3.4_变量占位
 
 - `%k`：内核名（如 `ttyUSB0`）。
 - `%p`：sysfs 设备路径。
 - `%E{VAR}`：环境变量。
 - 其他变量见 `man udev`。
 
-### 3.3.5 规则示例
+### 3.3.5_规则示例
 
 **串口：统一权限与别名**
 
@@ -587,7 +587,7 @@ SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", \
 KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"
 ```
 
-### 3.3.6 调试命令
+### 3.3.6_调试命令
 
 - 监听事件：
    `udevadm monitor --kernel --udev`
@@ -602,9 +602,9 @@ KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"
 
 ------
 
-## 3.4 `mdev`：配置与运行方式
+## 3.4_mdev_配置与运行方式
 
-### 3.4.1 启动与触发
+### 3.4.1_启动与触发
 
 - 热插拔：
    `echo /sbin/mdev > /proc/sys/kernel/hotplug`
@@ -612,7 +612,7 @@ KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"
 - 冷插拔扫描（启动或必要时）：
    `mdev -s`
 
-### 3.4.2 配置文件 `/etc/mdev.conf` 语法
+### 3.4.2_配置文件_/etc/mdev.conf_语法
 
 - 基本行格式：
    `正则  用户:组  权限  [@|$|*脚本或命令]`
@@ -627,7 +627,7 @@ KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"
 ^gpiochip[0-9]+$  root:gpio     0660   @/usr/sbin/post-add.sh $MDEV
 ```
 
-### 3.4.3 初始化脚本片段（BusyBox 系）
+### 3.4.3_初始化脚本片段(BusyBox_系)
 
 ```sh
 # /etc/init.d/S10mdev
@@ -635,13 +635,13 @@ echo /sbin/mdev > /proc/sys/kernel/hotplug
 mdev -s   # 冷插拔扫描
 ```
 
-### 3.4.4 环境变量
+### 3.4.4_环境变量
 
 - `mdev` 触发脚本时常用变量：`$MDEV`（内核名），`$SUBSYSTEM`，`$ACTION` 等，便于脚本内区分场景。
 
 ------
 
-## 3.5 `udev` 与 `mdev` 对比
+## 3.5_udev_与_mdev_对比
 
 | 维度       | `udev`                                | `mdev`                            |
 | ---------- | ------------------------------------- | --------------------------------- |
@@ -655,14 +655,14 @@ mdev -s   # 冷插拔扫描
 
 ------
 
-## 3.6 端到端示例（同一硬件，两种方案）
+## 3.6_端到端示例(同一硬件_两种方案)
 
 目标：USB 转串口 `ttyUSB*`，要求：
 
 - `/dev/serial/%k` 符号链接；
 - 权限 `0660`，属组 `dialout`。
 
-### 3.6.1 `udev` 方案
+### 3.6.1_udev_方案
 
 ```
 # /etc/udev/rules.d/99-serial.rules
@@ -675,7 +675,7 @@ SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0660", GROUP="dialout", SYMLINK+="ser
 2. 插拔设备或 `udevadm trigger`
 3. `udevadm monitor` 观察事件，`ls -l /dev/serial/ttyUSB*` 核对权限与链接
 
-### 3.6.2 `mdev` 方案
+### 3.6.2_mdev_方案
 
 ```
 # /etc/mdev.conf
@@ -690,7 +690,7 @@ SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0660", GROUP="dialout", SYMLINK+="ser
 
 ------
 
-## 3.7 故障定位流程
+## 3.7_故障定位流程
 
 1. **确认驱动是否 `probe()` 成功**
    - `dmesg` 检查绑定日志；若失败，此阶段无需看 `udev/mdev`。
@@ -710,7 +710,7 @@ SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0660", GROUP="dialout", SYMLINK+="ser
 
 ------
 
-## 3.8 常见问题与修正
+## 3.8_常见问题与修正
 
 | 问题               | 现象                              | 原因                          | 修正                                                         |
 | ------------------ | --------------------------------- | ----------------------------- | ------------------------------------------------------------ |
@@ -723,7 +723,7 @@ SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0660", GROUP="dialout", SYMLINK+="ser
 
 ------
 
-## 3.9 与第2章的接口关系说明（边界复核）
+## 3.9_与第2章的接口关系说明(边界复核)
 
 - `udev/mdev` 决定 `/dev` 节点的**存在、权限、命名、脚本**；
 - `devm`/旧机制决定驱动内资源的**申请/释放**；
@@ -732,7 +732,7 @@ SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0660", GROUP="dialout", SYMLINK+="ser
 
 ------
 
-## 3.10 评审与交付清单
+## 3.10_评审与交付清单
 
 -  仅启用 `udev` 或 `mdev` 之一。
 -  关键设备的规则覆盖：权限、属组、稳定命名（符号链接）。
@@ -743,7 +743,7 @@ SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0660", GROUP="dialout", SYMLINK+="ser
 
 ------
 
-### 本章小结
+### 3.10.1_本章小结
 
 - `udev` 与 `mdev` 都是用户态设备管理器，均基于内核 uevent，作用是 `/dev` 节点及其策略。
 - `udev` 特点是表达力高、工具完善；`mdev` 特点是轻量、易集成。
@@ -754,13 +754,13 @@ SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0660", GROUP="dialout", SYMLINK+="ser
 
 我是 **GPT-5**。
 
-# 第4章：`devm` 与（`udev/mdev`）的协作、端到端范例与排障
+# 第4章_devm_与(udev/mdev)的协作_端到端范例与排障
 
 > 目标：给出从 `probe()` 到 `/dev` 的**完整技术路径**与**验证方法**，明确各阶段输入/输出、接口与失败处理；提供 `udev` 版与 `mdev` 版各一套可直接落地的示例与排障流程。本章不使用比喻。
 
 ------
 
-## 4.1 角色与接口边界（复核）
+## 4.1_角色与接口边界(复核)
 
 - **驱动内核侧**：
   - **资源对象/句柄/映射** → 使用 `devm_*`（或旧机制）申请；解绑/失败时释放；
@@ -773,7 +773,7 @@ SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0660", GROUP="dialout", SYMLINK+="ser
 
 ------
 
-## 4.2 端到端流程（时序）
+## 4.2_端到端流程(时序)
 
 ```mermaid
 sequenceDiagram
@@ -799,7 +799,7 @@ sequenceDiagram
 
 ------
 
-## 4.3 驱动侧实现要点（统一模板）
+## 4.3_驱动侧实现要点(统一模板)
 
 1. **对象/映射使用 `devm_\*`**：`devm_platform_ioremap_resource(_byname)`、`devm_gpiod_get*`、`devm_request_threaded_irq`、`devm_clk_get(_bulk)`、`devm_regulator_get(_bulk)`、`devm_pinctrl_get` 等。
 2. **状态显式启用/关闭**：
@@ -811,7 +811,7 @@ sequenceDiagram
 
 ------
 
-## 4.4 用户态实现要点（`udev` 与 `mdev` 二选一）
+## 4.4_用户态实现要点(udev_与_mdev_二选一)
 
 - **`udev`**：
   - 规则放在 `/etc/udev/rules.d/NN-name.rules`；
@@ -825,9 +825,9 @@ sequenceDiagram
 
 ------
 
-## 4.5 端到端示例 A（`udev` 方案）
+## 4.5_端到端示例_A(udev_方案)
 
-### 4.5.1 驱动关键片段
+### 4.5.1_驱动关键片段
 
 ```c
 /* probe() */
@@ -853,7 +853,7 @@ clk_disable_unprepare(priv->clk);
 return 0;
 ```
 
-### 4.5.2 `udev` 规则（GPIO chardev + 自定义字符设备）
+### 4.5.2_udev_规则(GPIO_chardev_+_自定义字符设备)
 
 ```
 # /etc/udev/rules.d/99-foo.rules
@@ -862,7 +862,7 @@ KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"
 SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/foo0"
 ```
 
-### 4.5.3 验证流程
+### 4.5.3_验证流程
 
 1. `udevadm control --reload-rules`
 2. 触发：插拔或 `udevadm trigger`
@@ -871,9 +871,9 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 ------
 
-## 4.6 端到端示例 B（`mdev` 方案）
+## 4.6_端到端示例_B(mdev_方案)
 
-### 4.6.1 启动脚本
+### 4.6.1_启动脚本
 
 ```sh
 # /etc/init.d/S10mdev
@@ -881,14 +881,14 @@ echo /sbin/mdev > /proc/sys/kernel/hotplug
 mdev -s
 ```
 
-### 4.6.2 `/etc/mdev.conf`
+### 4.6.2_/etc/mdev.conf
 
 ```
 ^gpiochip[0-9]+$  root:gpio   0660
 ^foo[0-9]+$       root:users  0660   @/usr/bin/foo-post.sh $MDEV
 ```
 
-### 4.6.3 验证流程
+### 4.6.3_验证流程
 
 1. 执行 `S10mdev` 或重启；
 2. `mdev -s`（如需要）；
@@ -896,7 +896,7 @@ mdev -s
 
 ------
 
-## 4.7 排障决策树（从驱动到用户态）
+## 4.7_排障决策树(从驱动到用户态)
 
 ```mermaid
 flowchart TD
@@ -914,7 +914,7 @@ flowchart TD
 
 ------
 
-## 4.8 CI/回归建议（可脚本化）
+## 4.8_CI/回归建议(可脚本化)
 
 1. **驱动健壮性**
    - 失败注入：在 `probe()` 关键点返回错误，确认 `devm` 自动回滚；
@@ -942,7 +942,7 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ------
 
-## 4.9 典型错误与修正
+## 4.9_典型错误与修正
 
 | 问题                       | 根因                                        | 修正                                               |
 | -------------------------- | ------------------------------------------- | -------------------------------------------------- |
@@ -955,7 +955,7 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ------
 
-## 4.10 交付文档与配置清单
+## 4.10_交付文档与配置清单
 
 - 驱动：`probe/remove` 时序、`devm` 使用点、状态启停清单；
 - 用户态：`udev` 或 `mdev` 选型、规则文件、目标用户组与权限约定、冷插拔执行点；
@@ -964,7 +964,7 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ------
 
-### 本章小结
+### 4.10.1_本章小结
 
 - `devm` 与（`udev/mdev`）在不同层面工作：一个负责驱动内对象/映射的申请与释放，一个负责 `/dev` 节点与策略。
 - 端到端路径需同时正确：驱动成功、事件到达、规则匹配、节点/权限正确。
@@ -974,15 +974,15 @@ assert_dev /dev/gpiochip0 660 gpio
 
 我是 **GPT-5**。
 
-# 第5章（附录 A）：`devm` 常用接口速查（Linux 6.1 基线）
+# 第5章_(附录_A)_devm_常用接口速查(Linux_6.1_基线)
 
 > 目标：按子系统分类，提供**逐接口**的速查信息：**功能 → 头文件 → 原型 → 返回/错误 → 释放语义/生命周期 → 要点/差异**。不包含比喻。
 
 ------
 
-## 5.1 核心机制与分组
+## 5.1_核心机制与分组
 
-### 5.1.1 `devm_add_action`
+### 5.1.1_devm_add_action
 
 - 功能：为无 `devm_*` 版本的资源注册受设备生命周期管理的释放回调。
 - 头文件：`<linux/device.h>`
@@ -991,13 +991,13 @@ assert_dev /dev/gpiochip0 660 gpio
 - 释放语义：解绑/注销或 `probe()` 早退时按 LIFO 同步执行 `action(data)`。
 - 要点：回调内应可在解绑路径同步执行；仅封装“对象/句柄”的释放，不替代运行状态回退。
 
-### 5.1.2 `devm_add_action_or_reset`
+### 5.1.2_devm_add_action_or_reset
 
 - 功能：同上；若注册失败，**立即**执行一次 `action(data)`。
 - 原型：`int devm_add_action_or_reset(struct device *dev, void (*action)(void *), void *data);`
 - 要点：优先使用此版本以避免半初始化。
 
-### 5.1.3 `devres_open_group` / `devres_close_group` / `devres_remove_group`
+### 5.1.3_devres_open_group_/_devres_close_group_/_devres_remove_group
 
 - 功能：阶段化回滚。
 - 头文件：`<linux/device.h>`
@@ -1009,9 +1009,9 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ------
 
-## 5.2 内存与字符串
+## 5.2_内存与字符串
 
-### 5.2.1 `devm_kzalloc`
+### 5.2.1_devm_kzalloc
 
 - 功能：零清内存，随设备生命周期释放。
 - 头文件：`<linux/device.h>`, `<linux/slab.h>`
@@ -1020,17 +1020,17 @@ assert_dev /dev/gpiochip0 660 gpio
 - 释放语义：解绑/失败自动释放。
 - 要点：仅用于与该 `device` 同生命周期的数据。
 
-### 5.2.2 `devm_kcalloc`
+### 5.2.2_devm_kcalloc
 
 - 功能：`n * size` 数组分配（含溢出检查）。
 - 原型：`void *devm_kcalloc(struct device *dev, size_t n, size_t size, gfp_t gfp);`
 
-### 5.2.3 `devm_kmemdup`
+### 5.2.3_devm_kmemdup
 
 - 功能：按大小复制缓冲区。
 - 原型：`void *devm_kmemdup(struct device *dev, const void *src, size_t size, gfp_t gfp);`
 
-### 5.2.4 `devm_kstrdup`
+### 5.2.4_devm_kstrdup
 
 - 功能：复制以 `\0` 结尾字符串。
 - 原型：`char *devm_kstrdup(struct device *dev, const char *s, gfp_t gfp);`
@@ -1038,9 +1038,9 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ------
 
-## 5.3 I/O 资源与寄存器映射
+## 5.3_I/O_资源与寄存器映射
 
-### 5.3.1 `devm_ioremap`
+### 5.3.1_devm_ioremap
 
 - 功能：将物理地址映射为内核虚拟地址。
 - 头文件：`<linux/io.h>`
@@ -1049,28 +1049,28 @@ assert_dev /dev/gpiochip0 660 gpio
 - 释放语义：解绑/失败自动 `iounmap()`。
 - 要点：不做资源冲突检查。
 
-### 5.3.2 `devm_ioremap_resource`
+### 5.3.2_devm_ioremap_resource
 
 - 功能：基于 `struct resource` 映射并检查冲突。
 - 原型：`void __iomem *devm_ioremap_resource(struct device *dev, const struct resource *res);`
 - 要点：优先使用，避免冲突。
 
-### 5.3.3 `devm_platform_ioremap_resource`
+### 5.3.3_devm_platform_ioremap_resource
 
 - 功能：对 `platform_device` 的第 `index` 个内存资源映射（含检查）。
 - 头文件：`<linux/platform_device.h>`
 - 原型：`void __iomem *devm_platform_ioremap_resource(struct platform_device *pdev, unsigned int index);`
 
-### 5.3.4 `devm_platform_ioremap_resource_byname`
+### 5.3.4_devm_platform_ioremap_resource_byname
 
 - 功能：按资源名映射（含检查）。
 - 原型：`void __iomem *devm_platform_ioremap_resource_byname(struct platform_device *pdev, const char *name);`
 
 ------
 
-## 5.4 GPIO（消费者 gpiod）
+## 5.4_GPIO(消费者_gpiod)
 
-### 5.4.1 `devm_gpiod_get`
+### 5.4.1_devm_gpiod_get
 
 - 功能：按连接 ID 获取 GPIO 描述符（可设置方向/初值）。
 - 头文件：`<linux/gpio/consumer.h>`
@@ -1079,22 +1079,22 @@ assert_dev /dev/gpiochip0 660 gpio
 - 释放语义：解绑/失败自动 `gpiod_put()`。
 - 要点：`flags` 常用 `GPIOD_OUT_LOW/HIGH`、`GPIOD_IN`；与 `*-gpios` 匹配。
 
-### 5.4.2 `devm_gpiod_get_optional`
+### 5.4.2_devm_gpiod_get_optional
 
 - 功能：资源可缺省。
 - 原型：`struct gpio_desc *devm_gpiod_get_optional(struct device *dev, const char *con_id, enum gpiod_flags flags);`
 - 要点：需对 `NULL` 进行判定。
 
-### 5.4.3 `devm_gpiod_get_index`
+### 5.4.3_devm_gpiod_get_index
 
 - 功能：同一连接 ID 下按下标获取第 `index` 个 GPIO。
 - 原型：`struct gpio_desc *devm_gpiod_get_index(struct device *dev, const char *con_id, unsigned int index, enum gpiod_flags flags);`
 
 ------
 
-## 5.5 IRQ
+## 5.5_IRQ
 
-### 5.5.1 `devm_request_irq`
+### 5.5.1_devm_request_irq
 
 - 功能：申请中断线并注册顶半部处理函数。
 - 头文件：`<linux/interrupt.h>`
@@ -1103,22 +1103,22 @@ assert_dev /dev/gpiochip0 660 gpio
 - 释放语义：解绑/失败自动 `free_irq()`。
 - 要点：顶半部不可调用可睡眠 API。
 
-### 5.5.2 `devm_request_threaded_irq`
+### 5.5.2_devm_request_threaded_irq
 
 - 功能：申请中断线并注册顶半部与线程化底半部。
 - 原型：`int devm_request_threaded_irq(struct device *dev, unsigned int irq, irq_handler_t handler, irq_handler_t thread_fn, unsigned long flags, const char *name, void *dev_id);`
 - 要点：`thread_fn` 可睡眠；常配 `IRQF_ONESHOT`。
 
-### 5.5.3 `devm_free_irq`
+### 5.5.3_devm_free_irq
 
 - 功能：在解绑前**提前**释放由 `devm_request_*_irq` 申请的中断。
 - 原型：`void devm_free_irq(struct device *dev, unsigned int irq, void *dev_id);`
 
 ------
 
-## 5.6 时钟（Common Clock Framework）
+## 5.6_时钟(Common_Clock_Framework)
 
-### 5.6.1 `devm_clk_get`
+### 5.6.1_devm_clk_get
 
 - 功能：获取时钟句柄。
 - 头文件：`<linux/clk.h>`
@@ -1127,7 +1127,7 @@ assert_dev /dev/gpiochip0 660 gpio
 - 释放语义：解绑/失败自动 `clk_put()`。
 - 要点：启停属于**状态**，使用 `clk_prepare_enable()` / `clk_disable_unprepare()` 手动配对。
 
-### 5.6.2 `devm_clk_bulk_get`
+### 5.6.2_devm_clk_bulk_get
 
 - 功能：批量获取时钟句柄并在失败时统一回滚。
 - 原型：`int devm_clk_bulk_get(struct device *dev, int num_clks, struct clk_bulk_data *clks);`
@@ -1135,9 +1135,9 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ------
 
-## 5.7 电源（Regulator）
+## 5.7_电源(Regulator)
 
-### 5.7.1 `devm_regulator_get`
+### 5.7.1_devm_regulator_get
 
 - 功能：获取 regulator 句柄。
 - 头文件：`<linux/regulator/consumer.h>`
@@ -1146,27 +1146,27 @@ assert_dev /dev/gpiochip0 660 gpio
 - 释放语义：解绑/失败自动 put。
 - 要点：`regulator_enable()/disable()` 为**状态**，需手动配对。
 
-### 5.7.2 `devm_regulator_get_optional`
+### 5.7.2_devm_regulator_get_optional
 
 - 功能：可缺省版本。
 - 原型：`struct regulator *devm_regulator_get_optional(struct device *dev, const char *id);`
 
-### 5.7.3 `devm_regulator_bulk_get`
+### 5.7.3_devm_regulator_bulk_get
 
 - 功能：批量获取。
 - 原型：`int devm_regulator_bulk_get(struct device *dev, int num, struct regulator_bulk_data *consumers);`
 - 返回/错误：`0` 或 `-Exxx`。
 
-### 5.7.4 `devm_regulator_put`
+### 5.7.4_devm_regulator_put
 
 - 功能：**提前**释放一个由 `devm` 获取的 regulator（一般不必调用）。
 - 原型：`void devm_regulator_put(struct regulator *regulator);`
 
 ------
 
-## 5.8 Reset 控制
+## 5.8_Reset_控制
 
-### 5.8.1 `devm_reset_control_get`
+### 5.8.1_devm_reset_control_get
 
 - 功能：获取复位控制句柄。
 - 头文件：`<linux/reset.h>`
@@ -1175,26 +1175,26 @@ assert_dev /dev/gpiochip0 660 gpio
 - 释放语义：解绑/失败自动 put。
 - 要点：复位的 assert/deassert/pulse 时序由驱动控制（状态不托管）。
 
-### 5.8.2 `devm_reset_control_get_exclusive`
+### 5.8.2_devm_reset_control_get_exclusive
 
 - 功能：独占复位控制句柄。
 - 原型：`struct reset_control *devm_reset_control_get_exclusive(struct device *dev, const char *id);`
 
-### 5.8.3 `devm_reset_control_get_shared`
+### 5.8.3_devm_reset_control_get_shared
 
 - 功能：共享复位控制句柄。
 - 原型：`struct reset_control *devm_reset_control_get_shared(struct device *dev, const char *id);`
 
-### 5.8.4 `devm_reset_control_get_optional`
+### 5.8.4_devm_reset_control_get_optional
 
 - 功能：可缺省版本。
 - 原型：`struct reset_control *devm_reset_control_get_optional(struct device *dev, const char *id);`
 
 ------
 
-## 5.9 DMA 引擎
+## 5.9_DMA_引擎
 
-### 5.9.1 `devm_dma_request_chan`
+### 5.9.1_devm_dma_request_chan
 
 - 功能：按名称请求 DMA 通道。
 - 头文件：`<linux/dmaengine.h>`
@@ -1205,9 +1205,9 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ------
 
-## 5.10 PHY
+## 5.10_PHY
 
-### 5.10.1 `devm_phy_get`
+### 5.10.1_devm_phy_get
 
 - 功能：获取 PHY 句柄。
 - 头文件：`<linux/phy/phy.h>`
@@ -1218,9 +1218,9 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ------
 
-## 5.11 pinctrl
+## 5.11_pinctrl
 
-### 5.11.1 `devm_pinctrl_get`
+### 5.11.1_devm_pinctrl_get
 
 - 功能：获取 pinctrl 句柄。
 - 头文件：`<linux/pinctrl/consumer.h>`
@@ -1231,9 +1231,9 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ------
 
-## 5.12 注册类接口（示例）
+## 5.12_注册类接口(示例)
 
-### 5.12.1 `devm_led_classdev_register`
+### 5.12.1_devm_led_classdev_register
 
 - 功能：注册 LED class 设备，解绑自动注销。
 - 头文件：`<linux/leds.h>`
@@ -1241,7 +1241,7 @@ assert_dev /dev/gpiochip0 660 gpio
 - 返回/错误：`0` 或 `-Exxx`。
 - 要点：并发访问同步需由驱动处理。
 
-### 5.12.2 `devm_thermal_zone_of_sensor_register`
+### 5.12.2_devm_thermal_zone_of_sensor_register
 
 - 功能：向 thermal 框架注册 OF 传感器，解绑自动注销。
 - 头文件：`<linux/thermal.h>`
@@ -1252,7 +1252,7 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ------
 
-## 5.13 全局要求与错误模式复核
+## 5.13_全局要求与错误模式复核
 
 - `devm` 仅托管**对象/句柄/映射**释放；**不**托管**运行状态**（时钟启停、电源上/下电、pinctrl 状态、PHY 电源、线程/定时器等）。
 - `probe()` 任意点失败可直接返回；已登记的 `devm` 资源会按 LIFO 回滚。

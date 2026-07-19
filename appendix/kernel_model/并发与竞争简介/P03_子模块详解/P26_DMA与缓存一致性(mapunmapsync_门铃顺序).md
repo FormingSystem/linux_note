@@ -1,3 +1,5 @@
+# 第26章_DMA与缓存一致性(mapunmapsync_门铃顺序)
+
 GPT-5 声明：下面开始直接进入 **第26章** 正文。
  （严格按你第23章以来的排版方式、仍采用“三步讲解法”+你固定的章节八步法。
  篇幅巨大 → 本回复仅输出 **26.1（引入 + 章节内容说明）**，到“八步法 step1 是什么/历史定位”为止。
@@ -5,12 +7,12 @@ GPT-5 声明：下面开始直接进入 **第26章** 正文。
 
 ------
 
-# 第26章　DMA 与缓存一致性（map/unmap/sync、门铃顺序）
+## 26.1_DMA_与缓存一致性(map/unmap/sync_门铃顺序)
 
 > 本章节围绕 **CPU ↔ DMA device** 之间最硬核的一致性语义。
 >  它不是“哪句 API 会 flush cache”这么浅层，而是：**DMA 是另一条访存路径**，它绕过 CPU cache，所以**语义基础不在“cache flush”层面，而在“共享内存一致性契约”层面**。
 
-## 章节内容说明
+### 26.1.1_章节内容说明
 
 | 本章问题域                 | 精确描述                                                     |
 | -------------------------- | ------------------------------------------------------------ |
@@ -24,13 +26,13 @@ GPT-5 声明：下面开始直接进入 **第26章** 正文。
 
 ------
 
-## 26.1　step1：是什么（历史渊源、定位）
+### 26.1.2_step1_是什么(历史渊源_定位)
 
 > DMA 的本体不是“搬数据的加速器”。
 >  DMA 的本体：**非 CPU 访存路径**。
 >  它打破了“CPU cache 是唯一的最新 copy”这种朴素模型。
 
-### 历史时间轴（严格语义）
+#### (1)_历史时间轴(严格语义)
 
 | 阶段                                | 解决的问题                                 | 新问题                                      |
 | ----------------------------------- | ------------------------------------------ | ------------------------------------------- |
@@ -42,7 +44,7 @@ GPT-5 声明：下面开始直接进入 **第26章** 正文。
 > 所以本章**不是**在解释“Linux 如何 flush”，而是解释：
 >  Linux 如何在**两个访存主体（CPU / device）**之间设立“可见性边界”。
 
-### 结论（必须从一开始就钉死）
+#### (2)_结论(必须从一开始就钉死)
 
 > DMA 缓冲区不是“malloc → 用就行”。
 >  DMA 缓冲区必须是 **按照“访存路径可见性区段”** 来管理的。
@@ -53,7 +55,7 @@ GPT-5 声明：下面开始直接进入 **第26章** 正文。
 
 ------
 
-## 26.2　step2：干什么（要解决的问题）
+### 26.1.3_step2_干什么(要解决的问题)
 
 > 这一节必须把“dma_map/unmap/sync”从“API 操作”提升为“**语义开关**”。
 
@@ -76,7 +78,7 @@ DMA 世界里的问题不是“flush cache”，
 
 ------
 
-### 解决的核心问题 = “设备读/写权限边界”
+#### (1)_解决的核心问题_=_设备读/写权限边界
 
 DMA sync API 的语义不是“cache flush”，
  而是 —— **让对方访存路径能看见一个一致的 copy**。
@@ -93,7 +95,7 @@ DMA sync API 的语义不是“cache flush”，
 
 ------
 
-### 为什么 unmap 是**语义断点**
+#### (2)_为什么_unmap_是语义断点
 
 `dma_unmap_*()` = 声明“这一段 DMA 会话结束”。
 
@@ -122,7 +124,7 @@ writel(doorbell)
 
 ------
 
-### devres 版本：为什么存在 & 差异
+#### (3)_devres_版本_为什么存在_&_差异
 
 | API                       | devres 版本                | 作用差异（严格语义）                                        |
 | ------------------------- | -------------------------- | ----------------------------------------------------------- |
@@ -137,9 +139,9 @@ writel(doorbell)
 
 ------
 
-## 26.3　step3：怎么实现（底层原理、处理逻辑）
+### 26.1.4_step3_怎么实现(底层原理_处理逻辑)
 
-### 26.3-A　Coherent DMA 的语义与实现基线
+#### (1)_A_Coherent_DMA_的语义与实现基线
 
 **结论先行（严格语义）：**
 
@@ -192,12 +194,12 @@ static int my_probe(struct platform_device *pdev)
 
 ------
 
-### 26.3-B　Noncoherent + `map/sync/unmap` 状态机
+#### (2)_B_Noncoherent_+_map/sync/unmap_状态机
 
 **核心抽象**：noncoherent buffer 的“有效副本”会在 **CPU cache** 与 **DRAM** 两处切换。
  Linux 以 **状态机** 方式控制“读写所有权”与“哪份 copy 有效”。
 
-#### 1）状态机（从 CPU→设备→CPU 的常见闭环）
+##### 1)_状态机(从_CPU_to_设备_to_CPU_的常见闭环)
 
 ```mermaid
 stateDiagram-v2
@@ -219,7 +221,7 @@ stateDiagram-v2
 > [INV] `map_*()` 常用于 **一次性/流式（streaming）** 传输起始；`sync_*()` 常用于 **分段/重复** 边界。
 >  [MIX] 同一块 noncoherent buffer 可以在多轮 DMA 中复用：使用 `sync_for_device` / `sync_for_cpu` 形成短边界，减少反复 map/unmap 的开销。
 
-#### 2）API 与方向（读/写语义）
+##### 2)_API_与方向(读/写语义)
 
 - **设备读**（CPU→设备）：
   - `dma_map_single(dev, cpu_addr, len, DMA_TO_DEVICE)`
@@ -232,7 +234,7 @@ stateDiagram-v2
 
 > [PIT] 方向参数错误会导致“写不见/读到旧值”。**严格按数据流方向传递 `DMA_TO_DEVICE` / `DMA_FROM_DEVICE`。**
 
-#### 3）门铃顺序（noncoherent 必须遵守）
+##### 3)_门铃顺序(noncoherent_必须遵守)
 
 典型提交序：
 
@@ -254,7 +256,7 @@ consume_results();
 
 > [CHECK] **门铃必须在 sync_for_device 之后**；完成后 **先确认 DMA 完成，再 sync_for_cpu**。
 
-#### 4）devres 与 streaming 映射
+##### 4)_devres_与_streaming_映射
 
 - `dmam_alloc_noncoherent()`：只解决 **生命周期自动回收**；不会自动插入任何 sync。
 - `devm_dma_map_*()`（部分平台/辅助封装）：自动 unmap，但**不会**插入正确的 **sync/doorbell** 序列。
@@ -263,7 +265,7 @@ consume_results();
 
 ------
 
-### 26.3-C　IOMMU / ATS / SMMU 与一致性层级
+#### (3)_C_IOMMU_/_ATS_/_SMMU_与一致性层级
 
 > 目的：把“地址转换 / 访问隔离 / 一致性”三个维度对齐，避免混用概念。
 
@@ -281,11 +283,11 @@ consume_results();
 
 ------
 
-## 26.3 小结与三张表（本章工作版）
+### 26.1.5_小结与三张表(本章工作版)
 
 > 这是后续“固定三表”的工作版草案，本章末（26.8）给出定稿版。
 
-### 表1（概念区分表 · 工作版）
+#### (1)_表1(概念区分表_工作版)
 
 | 概念               | 定义                           | 是否影响 sync 必要性 |
 | ------------------ | ------------------------------ | -------------------- |
@@ -294,7 +296,7 @@ consume_results();
 | IOMMU              | 设备地址翻译与隔离             | 否（独立维度）       |
 | ATS                | 设备缓存地址翻译条目           | 否（独立维度）       |
 
-### 表2（用法速览表 · 工作版）
+#### (2)_表2(用法速览表_工作版)
 
 | 场景                               | 推荐 API/顺序                                                |
 | ---------------------------------- | ------------------------------------------------------------ |
@@ -303,7 +305,7 @@ consume_results();
 | coherent 单次提交                  | 配置描述符 → `wmb()` → `writel(doorbell)`                    |
 | 循环复用同一 buffer（noncoherent） | 每轮：`sync_for_device` / 结束：`sync_for_cpu`，必要时保留映射避免反复 map/unmap |
 
-### 表3（核对表 · 工作版）
+#### (3)_表3(核对表_工作版)
 
 - [CHECK] 你能在代码中**指出**每个 **语义断点**（map/sync/unmap/doorbell）吗？
 - [CHECK] 对每段 DMA，是否**明确方向**（`DMA_TO_DEVICE` / `DMA_FROM_DEVICE`）？
@@ -315,7 +317,7 @@ consume_results();
 
 ------
 
-## 26.4　step4：怎么用（方法与步骤）
+### 26.1.6_step4_怎么用(方法与步骤)
 
 > 现在进入“实操写法”。
 >  每一步必须明确：**这是 data 可见性语义** 还是 **这是 control commit → doorbell**。
@@ -324,7 +326,7 @@ consume_results();
 
 ------
 
-### 26.4.1 Streaming：一次性 DMA 输出，noncoherent buffer
+#### (1)_Streaming_一次性_DMA_输出_noncoherent_buffer
 
 **时序（非转义 mermaid）**
 
@@ -384,7 +386,7 @@ void irq_done(struct device *dev, dma_addr_t dma_addr, size_t len)
 
 ------
 
-### 26.4.2 Streaming：一次性 DMA 输出，coherent buffer
+#### (2)_Streaming_一次性_DMA_输出_coherent_buffer
 
 变化只有一条：
 
@@ -406,7 +408,7 @@ writel(DOORBELL_KICK, regs + DOORBELL);
 
 ------
 
-### 26.4.3 Ring buffer（可循环复用，noncoherent buffer）
+#### (3)_Ring_buffer(可循环复用_noncoherent_buffer)
 
 > Streaming = map/unmap 一次就结束
 >  Ring buffer = 一个映射，多轮 sync_for_device / sync_for_cpu 循环切换 ownership
@@ -450,9 +452,9 @@ consume(n);
 
 ------
 
-## 26.5　step5：通用接口/工具方法表与逐步详解
+### 26.1.7_step5_通用接口/工具方法表与逐步详解
 
-### 26.5.1 方向判定表（DMA_TO_DEVICE / DMA_FROM_DEVICE / DMA_BIDIRECTIONAL）
+#### (1)_方向判定表(DMA_TO_DEVICE_/_DMA_FROM_DEVICE_/_DMA_BIDIRECTIONAL)
 
 | 数据流向（语义）                       | 设备行为   | CPU 行为         | `map/sync` 方向     | 说明                                                    |
 | -------------------------------------- | ---------- | ---------------- | ------------------- | ------------------------------------------------------- |
@@ -465,7 +467,7 @@ consume(n);
 
 ------
 
-### 26.5.2 基础 API 速查表（noncoherent 常用）
+#### (2)_基础_API_速查表(noncoherent_常用)
 
 | 类别             | API                                                   | 作用                                          | 返回/参数要点                | 常见坑                                                     |
 | ---------------- | ----------------------------------------------------- | --------------------------------------------- | ---------------------------- | ---------------------------------------------------------- |
@@ -485,7 +487,7 @@ consume(n);
 
 ------
 
-### 26.5.3 coherent / noncoherent 与分配/释放
+#### (3)_coherent_/_noncoherent_与分配/释放
 
 | 需求                        | 非 devres                                            | devres（推荐）                                         | 语义                                              |
 | --------------------------- | ---------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------- |
@@ -498,7 +500,7 @@ consume(n);
 
 ------
 
-### 26.5.4 sg / sgtable 模板
+#### (4)_sg_/_sgtable_模板
 
 **提交前置：构建 sg**
 
@@ -543,7 +545,7 @@ dma_unmap_sg(dev, sgl, nr_segs, DMA_TO_DEVICE);
 
 ------
 
-### 26.5.5 dmaengine 简明对照（不代替 map/sync；它是“通道调度层”）
+#### (5)_dmaengine_简明对照(不代替_map/sync_它是_通道调度层)
 
 | 概念                                                         | 作用          | 典型调用                                     | 与本章语义关系                        |
 | ------------------------------------------------------------ | ------------- | -------------------------------------------- | ------------------------------------- |
@@ -557,7 +559,7 @@ dma_unmap_sg(dev, sgl, nr_segs, DMA_TO_DEVICE);
 
 ------
 
-### 26.5.6 屏障与门铃顺序（固定放置点）
+#### (6)_屏障与门铃顺序(固定放置点)
 
 | 位置                           | 必要性 | 典型指令                   | 说明                                      |
 | ------------------------------ | ------ | -------------------------- | ----------------------------------------- |
@@ -570,7 +572,7 @@ dma_unmap_sg(dev, sgl, nr_segs, DMA_TO_DEVICE);
 
 ------
 
-### 26.5.7 典型探测/移除流程骨架（含能力检测）
+#### (7)_典型探测/移除流程骨架(含能力检测)
 
 ```c
 static int my_probe(struct platform_device *pdev)
@@ -606,7 +608,7 @@ static int my_remove(struct platform_device *pdev)
 
 ------
 
-### 26.5.8 常见坑清单（PIT）
+#### (8)_常见坑清单(PIT)
 
 - 把 **coherent** 当作“可以不讲顺序”——错误。它只免 **data 可见性 sync**，**不免** 门铃/屏障。
 - `dma_unmap_sg()` 用了 `mapped`——错误，必须用原始 `nents`。
@@ -621,7 +623,7 @@ static int my_remove(struct platform_device *pdev)
 
 ------
 
-### 26.5.9 最小对照：devres vs 非 devres
+#### (9)_最小对照_devres_vs_非_devres
 
 | 能力点             | 非 devres                                      | devres                                 | 谁负责同步/顺序                  |
 | ------------------ | ---------------------------------------------- | -------------------------------------- | -------------------------------- |
@@ -642,9 +644,9 @@ static int my_remove(struct platform_device *pdev)
 
 ------
 
-## 26.6　step6：对比 / 避坑 / 限制 / 注意点
+### 26.1.8_step6_对比_/_避坑_/_限制_/_注意点
 
-### 26.6.1 语义等价改写表（coherent vs noncoherent）
+#### (1)_语义等价改写表(coherent_vs_noncoherent)
 
 | 项目                     | coherent 区域 写法                                          | noncoherent 区域 写法          | 语义本体         |
 | ------------------------ | ----------------------------------------------------------- | ------------------------------ | ---------------- |
@@ -658,7 +660,7 @@ static int my_remove(struct platform_device *pdev)
 
 ------
 
-### 26.6.2 门铃前屏障：怎么选
+#### (2)_门铃前屏障_怎么选
 
 | 问题                                       | 正确放置                           | 错误示例                                    |
 | ------------------------------------------ | ---------------------------------- | ------------------------------------------- |
@@ -672,7 +674,7 @@ static int my_remove(struct platform_device *pdev)
 
 ------
 
-### 26.6.3 relaxed 与非 relaxed 边界
+#### (3)_relaxed_与非_relaxed_边界
 
 | API              | 是否次序化内存？ | 是否次序化 I/O？     | 是否可以替代 wmb？             |
 | ---------------- | ---------------- | -------------------- | ------------------------------ |
@@ -689,7 +691,7 @@ static int my_remove(struct platform_device *pdev)
 
 ------
 
-### 26.6.4 64bit doorbell / descriptor 拆写竞态
+#### (4)_64bit_doorbell_/_descriptor_拆写竞态
 
 如果门铃寄存器是 64bit split 成两个 32bit 写：
 
@@ -709,7 +711,7 @@ writel(DOORBELL_FIRE, regs + DB_FIRE);
 
 ------
 
-### 26.6.5 IOMMU ON/OFF 与一致性无关
+#### (5)_IOMMU_ON/OFF_与一致性无关
 
 | 是否启用 IOMMU | 是否改变 sync 需要？ | 解释                   |
 | -------------- | -------------------- | ---------------------- |
@@ -720,7 +722,7 @@ writel(DOORBELL_FIRE, regs + DB_FIRE);
 
 ------
 
-### 26.6.6 外设 SRAM / TCM 不是特权区
+#### (6)_外设_SRAM_/_TCM_不是特权区
 
 很多 SoC 提供 “外设 SRAM / TCM” 用于 DMA：
 
@@ -734,7 +736,7 @@ writel(DOORBELL_FIRE, regs + DB_FIRE);
 
 ------
 
-### 26.6.7 三大误解（反例语句）
+#### (7)_三大误解(反例语句)
 
 | 错误直觉                  | 为什么错                                                |
 | ------------------------- | ------------------------------------------------------- |
@@ -744,7 +746,7 @@ writel(DOORBELL_FIRE, regs + DB_FIRE);
 
 ------
 
-### 26.6.8 总的避坑句型（可打印贴纸）
+#### (8)_总的避坑句型(可打印贴纸)
 
 > coherent 只让“数据同步”自动化，
 >  **不让“控制提交次序”自动化**。
@@ -758,9 +760,9 @@ writel(DOORBELL_FIRE, regs + DB_FIRE);
 
 ------
 
-## 26.7　step7：完整示例与讲解（ring buffer + streaming sync）
+### 26.1.9_step7_完整示例与讲解(ring_buffer_+_streaming_sync)
 
-### 26.7.1 运行机理时序（非转义 mermaid）
+#### (1)_运行机理时序(非转义_mermaid)
 
 ```mermaid
 sequenceDiagram
@@ -781,7 +783,7 @@ sequenceDiagram
 
 ------
 
-### 26.7.2 设备假设
+#### (2)_设备假设
 
 - 一组寄存器：
   - `SRC_LO`, `SRC_HI`：源地址低/高 32 位
@@ -793,7 +795,7 @@ sequenceDiagram
 
 ------
 
-### 26.7.3 关键结构体与常量
+#### (3)_关键结构体与常量
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -841,7 +843,7 @@ struct leaf_dma {
 
 ------
 
-### 26.7.4 probe：资源、掩码、ring 初始化与**预映射**
+#### (4)_probe_资源_掩码_ring_初始化与预映射
 
 > 预映射（`dma_map_single(..., DMA_TO_DEVICE)`）一次；循环中**只做 `dma_sync_\*`** 切换所有权，避免频繁 map/unmap。
 
@@ -894,7 +896,7 @@ static int leaf_probe(struct platform_device *pdev)
 
 ------
 
-### 26.7.5 IRQ：完成路径（DATA→CPU）
+#### (5)_IRQ_完成路径(DATA_to_CPU)
 
 ```c
 static irqreturn_t leaf_irq(int irq, void *data)
@@ -932,7 +934,7 @@ static irqreturn_t leaf_irq(int irq, void *data)
 
 ------
 
-### 26.7.6 提交一次：**DATA→DEV → CTRL → BARRIER → COMMIT**
+#### (6)_提交一次_DATA_to_DEV_to_CTRL_to_BARRIER_to_COMMIT
 
 ```c
 static int leaf_kick_one(struct leaf_dma *ld, const void *src, size_t n)
@@ -941,7 +943,7 @@ static int leaf_kick_one(struct leaf_dma *ld, const void *src, size_t n)
     struct rb_slot *s;
     u32 lo, hi;
 
-    if (n > BUF_LEN) 
+    if (n > BUF_LEN)
         return -EINVAL;
 
     spin_lock_irqsave(&ld->lock, flags);
@@ -985,7 +987,7 @@ static int leaf_kick_one(struct leaf_dma *ld, const void *src, size_t n)
 
 ------
 
-### 26.7.7 一个阻塞式“发送多包”的演示入口（可选）
+#### (7)_一个阻塞式_发送多包_的演示入口(可选)
 
 ```c
 static int leaf_send_loop(struct leaf_dma *ld, const void *buf, size_t n, int times)
@@ -1005,7 +1007,7 @@ static int leaf_send_loop(struct leaf_dma *ld, const void *buf, size_t n, int ti
 
 ------
 
-### 26.7.8 remove：回收与**反映射**
+#### (8)_remove_回收与反映射
 
 ```c
 static int leaf_remove(struct platform_device *pdev)
@@ -1027,7 +1029,7 @@ static int leaf_remove(struct platform_device *pdev)
 
 ------
 
-### 26.7.9 平台匹配骨架
+#### (9)_平台匹配骨架
 
 ```c
 static const struct of_device_id leaf_of_match[] = {
@@ -1051,7 +1053,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-### 26.7.10 逐点讲解（把“语义断点”贴在代码上）
+#### (10)_逐点讲解(把_语义断点_贴在代码上)
 
 - **`dma_map_single`（probe 时）**：为每个槽位建立设备可见地址；这是一段**会话起点**。
   - 若你选择“每轮都 `dma_map_single`”，也成立，但 ring 模式通常**预映射**更省开销。
@@ -1064,14 +1066,14 @@ MODULE_LICENSE("GPL");
 
 ------
 
-### 26.7.11 coherent 变体（最小改动）
+#### (11)_coherent_变体(最小改动)
 
 - 若环缓冲改成 **coherent**：把 `kmalloc` → `dmam_alloc_coherent`；**删除** `dma_sync_single_for_device/for_cpu`；其余 **CTRL/BARRIER/COMMIT** 不变。
 - 仍需 `wmb()` 与 `writel(KICK)` 的次序：**coherent 只影响 DATA，不影响 CONTROL**。
 
 ------
 
-### 26.7.12 自检清单（贴到代码前）
+#### (12)_自检清单(贴到代码前)
 
 - [CHECK] 你能在代码中**定位**：DATA/CTRL/BARRIER/COMMIT 四个标签吗？
 - [CHECK] `DMA_TO_DEVICE`/`DMA_FROM_DEVICE` 是否按**设备视角**填写？
@@ -1084,9 +1086,9 @@ MODULE_LICENSE("GPL");
 
 ------
 
-## 26.8　step8：总结
+### 26.1.10_step8_总结
 
-### 26.8.1 三个不可折叠的契约（总纲）
+#### (1)_三个不可折叠的契约(总纲)
 
 1. **DATA 一致性契约（CPU↔设备的数据副本）**
 
@@ -1108,7 +1110,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-### 26.8.2 一页速查表（终稿）
+#### (2)_一页速查表(终稿)
 
 | 主题                      | 必做                     | 典型 API/指令                            | 说明                        |
 | ------------------------- | ------------------------ | ---------------------------------------- | --------------------------- |
@@ -1123,7 +1125,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-### 26.8.3 合法的“简写变体”与“禁配对照”
+#### (3)_合法的_简写变体_与_禁配对照
 
 - **合法简写（coherent 区域）**：
    仅删除 `sync_for_device / sync_for_cpu`，**保留** `wmb()+doorbell`。
@@ -1137,7 +1139,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-### 26.8.4 20 行以内：提交函数模板（可直接粘贴）
+#### (4)_20_行以内_提交函数模板(可直接粘贴)
 
 > 适用于 **noncoherent & DMA_TO_DEVICE**；coherent 时仅去掉第 1 行 `sync_for_device`。
 
@@ -1162,7 +1164,7 @@ static inline void dma_kick_to_device(struct device *dev,
 
 ------
 
-### 26.8.5 本章交付核对表（打印即用）
+#### (5)_本章交付核对表(打印即用)
 
 - [CHECK] 你能在代码中标出 **DATA/CONTROL/BARRIER/COMMIT** 四类语句吗？
 - [CHECK] coherent 只取消 DATA 步骤，**未**动 CONTROL/BARRIER/COMMIT。
@@ -1175,7 +1177,7 @@ static inline void dma_kick_to_device(struct device *dev,
 
 ------
 
-### 26.8.6 章节收尾
+#### (6)_章节收尾
 
 - **DMA ≠ flush 技巧**，而是 **两条访存路径的契约**：DATA（副本一致性）与 CONTROL/COMMIT（提交顺序）。
 - coherent 只影响 DATA；**门铃顺序永远独立**。
@@ -1183,7 +1185,7 @@ static inline void dma_kick_to_device(struct device *dev,
 
 —— **第26章完** ——
 
-## 26.9　本章出现的coherent是啥？
+### 26.1.11_本章出现的coherent是啥
 
 GPT-5 回答：
 
@@ -1191,7 +1193,7 @@ GPT-5 回答：
 
 ------
 
-### coherent 不是 API
+#### (1)_coherent_不是_API
 
 **coherent 是“这个 DMA buffer 拥不拥有硬件层面的 CPU↔设备 cache 一致性”**
 
@@ -1209,7 +1211,7 @@ GPT-5 回答：
 
 ------
 
-### Linux 是怎么得知“这个区域 coherent 吗”？
+#### (2)_Linux_是怎么得知_这个区域_coherent_吗
 
 关键判断函数：
 
@@ -1233,7 +1235,7 @@ if (dma_is_coherent(dev))
 
 ------
 
-### 那 coherent buffer 从哪里来？
+#### (3)_那_coherent_buffer_从哪里来
 
 不是“用什么 API 才 coherent”
  而是“这个 API 分配的区域是否 coherent 是由平台决定”
@@ -1255,7 +1257,7 @@ dmam_alloc_coherent()   <-- devres 版本
 
 ------
 
-### 所以最终正确理解（精炼一句话）
+#### (4)_所以最终正确理解(精炼一句话)
 
 | 概念        | 本体是？                                         |
 | ----------- | ------------------------------------------------ |

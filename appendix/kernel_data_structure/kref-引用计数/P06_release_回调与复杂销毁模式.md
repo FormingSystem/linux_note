@@ -1,6 +1,6 @@
-# 第 6 章：release 回调与复杂销毁模式
+# 第6章_release_回调与复杂销毁模式
 
-## 6.1 本章主线
+## 6.1_本章主线
 
 前面已经讲过：
 
@@ -82,7 +82,7 @@ release 不是“释放内存函数”，而是对象生命周期的最终收口
 
 ------
 
-## 6.2 先看完整模板：release 只是最后一站
+## 6.2_先看完整模板_release_只是最后一站
 
 复杂对象销毁不能从 release 开始理解。
 
@@ -213,7 +213,7 @@ flowchart TD
 
 ------
 
-## 6.3 release 的责任域和非责任域
+## 6.3_release_的责任域和非责任域
 
 进入 release 时，最理想的状态是：
 
@@ -256,11 +256,11 @@ release 通常不应该承担：
 
 ------
 
-## 6.4 release 的触发条件和基本释放范围
+## 6.4_release_的触发条件和基本释放范围
 
 这一组小节只回答 release 最基础的问题：它什么时候被调用，以及它到底释放哪些资源。
 
-### 6.4.1 release 的触发条件
+### 6.4.1_release_的触发条件
 
 `release()` 只在一种情况下被调用：
 
@@ -300,7 +300,7 @@ release 是生命周期终点，不是普通清理阶段。
 这些都属于“复活对象”的错误倾向。
 
 
-### 6.4.2 release 负责释放什么
+### 6.4.2_release_负责释放什么
 
 最简单的对象只需要释放本体：
 
@@ -371,7 +371,7 @@ refobj->dev
 ```
 
 
-### 6.4.3 release 只释放对象“拥有”的资源
+### 6.4.3_release_只释放对象_拥有_的资源
 
 release 不应该盲目释放所有字段指向的东西。
 
@@ -422,11 +422,11 @@ release 的职责是释放对象拥有的生命周期资源，而不是释放对
 
 ------
 
-## 6.5 外部可见性：脱链应该由谁负责
+## 6.5_外部可见性_脱链应该由谁负责
 
 对象如果还能从全局结构或外部子系统找到，release 就很容易变成悬挂指针制造点。这里先讲可见性撤销的责任边界。
 
-### 6.5.1 release 前必须明确对象是否已经脱链
+### 6.5.1_release_前必须明确对象是否已经脱链
 
 如果对象挂在全局结构里，例如：
 
@@ -464,7 +464,7 @@ static void my_refobj_release(struct kref *ref)
 这类 bug 非常危险。
 
 
-### 6.5.2 release 前脱链模型
+### 6.5.2_release_前脱链模型
 
 一种常见设计是：
 
@@ -519,7 +519,7 @@ release 只验证对象已经不可被 lookup；
 这也是很多对象管理场景的常见模型。
 
 
-### 6.5.3 release 内脱链模型
+### 6.5.3_release_内脱链模型
 
 另一种设计是：
 
@@ -569,11 +569,11 @@ release 可以脱链，但必须有锁语义保证。
 
 ------
 
-## 6.6 release 的执行上下文和锁语义
+## 6.6_release_的执行上下文和锁语义
 
 release 在哪里执行，取决于最后一个 put 发生在哪里。上下文不清楚，复杂 release 就没有安全基础。
 
-### 6.6.1 release 能否睡眠取决于最后 put 上下文
+### 6.6.1_release_能否睡眠取决于最后_put_上下文
 
 release 是否能睡眠，取决于它被什么上下文调用。
 
@@ -623,7 +623,7 @@ sleeping function called from invalid context
 这比 release 代码本身更重要。
 
 
-### 6.6.2 普通 kref_put 下的 release 上下文
+### 6.6.2_普通_kref_put_下的_release_上下文
 
 普通 `kref_put()` 不改变当前上下文。
 
@@ -666,7 +666,7 @@ release 是否能做复杂清理，取决于对象设计是否保证：
 ```
 
 
-### 6.6.3 release 在持 mutex 状态下执行
+### 6.6.3_release_在持_mutex_状态下执行
 
 如果使用：
 
@@ -737,7 +737,7 @@ static void my_refobj_release_locked(struct kref *ref)
 ```
 
 
-### 6.6.4 release 在持 spinlock 状态下执行
+### 6.6.4_release_在持_spinlock_状态下执行
 
 如果使用：
 
@@ -786,11 +786,11 @@ spinlock 下 release 更适合做短小动作：
 
 ------
 
-## 6.7 异步路径：work、timer、callback 的引用闭环
+## 6.7_异步路径_work_timer_callback_的引用闭环
 
 异步路径的问题通常不是 release 代码本身，而是 work/timer/callback 是否拥有引用、谁负责取消、谁负责 put 没有定义清楚。
 
-### 6.7.1 release 和 workqueue 的收尾关系
+### 6.7.1_release_和_workqueue_的收尾关系
 
 如果对象里有 `work_struct`：
 
@@ -847,7 +847,7 @@ static void my_refobj_workfn(struct work_struct *work)
 所以只要 work 还没结束，对象就不会 release。
 
 
-### 6.7.2 release 中 cancel_work_sync 的风险
+### 6.7.2_release_中_cancel_work_sync_的风险
 
 有些设计会在 release 里取消 work：
 
@@ -898,7 +898,7 @@ release 等待 work 结束
 不要让 release 和 work 引用关系相互纠缠。
 
 
-### 6.7.3 release 和 timer 的收尾关系
+### 6.7.3_release_和_timer_的收尾关系
 
 timer 比 work 更容易出错，因为 timer 回调可能在软中断上下文运行。
 
@@ -979,7 +979,7 @@ timer 引用必须有唯一释放者：
 否则会少 put 或多 put。
 
 
-### 6.7.4 release 不应该负责模糊的 timer 语义
+### 6.7.4_release_不应该负责模糊的_timer_语义
 
 错误倾向：
 
@@ -1015,7 +1015,7 @@ release 只检查 timer 已经不再活动，或只释放对象本体。
 ```
 
 
-### 6.7.5 release 和 callback 的关系
+### 6.7.5_release_和_callback_的关系
 
 对象经常注册给某个子系统回调：
 
@@ -1074,7 +1074,7 @@ unregister_callback 返回后，不会再有新的 callback 进入；
 如果 unregister 只是不再新增 callback，但不等待已有 callback，那么还需要额外同步机制。
 
 
-### 6.7.6 release 不能替代 unregister
+### 6.7.6_release_不能替代_unregister
 
 不要把 unregister 全部推到 release 里。
 
@@ -1123,11 +1123,11 @@ release 只处理对象已经不可见之后的最终销毁。
 
 ------
 
-## 6.8 RCU 边界：生命周期结束不等于内存立刻回收
+## 6.8_RCU_边界_生命周期结束不等于内存立刻回收
 
 RCU 场景下，kref 生命周期可以结束，但对象内存可能还要撑过 grace period。
 
-### 6.8.1 release 和 RCU 的边界
+### 6.8.1_release_和_RCU_的边界
 
 如果对象可以被 RCU 读侧看到，那么 release 里不能简单：
 
@@ -1187,7 +1187,7 @@ kref 生命周期已经结束；
 ```
 
 
-### 6.8.2 kref 归零和内存真正释放不是永远同一时刻
+### 6.8.2_kref_归零和内存真正释放不是永远同一时刻
 
 普通裸 kref 对象：
 
@@ -1229,11 +1229,11 @@ refcount 到 0 后，对象不能再被 get 或重新发布；
 
 ------
 
-## 6.9 release 的禁区、检查和状态边界
+## 6.9_release_的禁区_检查和状态边界
 
 这一组内容不是孤立错误清单，而是在说明 release 作为生命周期终点时，哪些动作已经太晚，哪些检查适合留下。
 
-### 6.9.1 release 里不能重新发布对象
+### 6.9.1_release_里不能重新发布对象
 
 release 中最危险的错误之一是试图“复活对象”。
 
@@ -1282,7 +1282,7 @@ kref release 结束对象生命周期；
 不能在 release 里把同一个对象原地复活。
 
 
-### 6.9.2 release 中的调试检查
+### 6.9.2_release_中的调试检查
 
 复杂对象的 release 里适合放一些调试检查。
 
@@ -1324,7 +1324,7 @@ callback 是否已经 unregister
 这些 WARN 不是为了替代正确逻辑，而是为了尽早暴露生命周期协议错误。
 
 
-### 6.9.3 release 和对象状态
+### 6.9.3_release_和对象状态
 
 有些对象会有状态字段：
 
@@ -1380,7 +1380,7 @@ release 只验证对象已经停止，并释放内存和剩余资源。
 因为 release 发生的时机取决于最后一个引用，不一定是适合停硬件、关中断、等待线程的时机。
 
 
-### 6.9.4 release 不应承担过多业务逻辑
+### 6.9.4_release_不应承担过多业务逻辑
 
 release 的职责应该尽量收敛：
 
@@ -1420,11 +1420,11 @@ release 阶段做最终资源释放。
 
 ------
 
-## 6.10 推荐销毁阶段和完整示例
+## 6.10_推荐销毁阶段和完整示例
 
 回到本章开头的完整模板：复杂对象应该把销毁拆成阶段，而不是把所有动作塞进 release。
 
-### 6.10.1 复杂对象销毁的推荐阶段
+### 6.10.1_复杂对象销毁的推荐阶段
 
 对于复杂对象，推荐把销毁拆成多个阶段，而不是全塞进 release。
 
@@ -1465,7 +1465,7 @@ my_refobj_destroy()
 ```
 
 
-### 6.10.2 一个复杂 release 示例
+### 6.10.2_一个复杂_release_示例
 
 下面给一个相对合理的复杂对象模型。
 
@@ -1537,7 +1537,7 @@ stop
 这是一种更容易维护的模型。
 
 
-### 6.10.3 release 过度复杂的反例
+### 6.10.3_release_过度复杂的反例
 
 反例：
 
@@ -1580,11 +1580,11 @@ release 中拿多个锁，锁顺序复杂；
 
 ------
 
-## 6.11 命名、注释和检查清单
+## 6.11_命名_注释和检查清单
 
 最后把 release 的上下文要求写进函数名、注释和检查清单，方便以后代码审查。
 
-### 6.11.1 release 函数命名建议
+### 6.11.1_release_函数命名建议
 
 release 函数名最好表达对象类型和上下文。
 
@@ -1648,7 +1648,7 @@ static void my_refobj_release_locked(struct kref *ref)
 ```
 
 
-### 6.11.2 release 注释应该写什么
+### 6.11.2_release_注释应该写什么
 
 复杂对象建议在 release 附近写清楚：
 
@@ -1688,11 +1688,11 @@ static void my_refobj_release(struct kref *ref)
 这类注释可以直接服务代码审查。
 
 
-### 6.11.3 release 的最小检查清单
+### 6.11.3_release_的最小检查清单
 
 写 release 前，先回答下面问题。
 
-#### 资源归属
+#### (1)_资源归属
 
 ```text
 哪些字段由对象分配？
@@ -1701,7 +1701,7 @@ static void my_refobj_release(struct kref *ref)
 哪些字段是静态内存？
 ```
 
-#### 外部可见性
+#### (2)_外部可见性
 
 ```text
 对象是否还在 list/hash/xarray/idr？
@@ -1710,7 +1710,7 @@ static void my_refobj_release(struct kref *ref)
 对象是否还能被 RCU 读侧看到？
 ```
 
-#### 异步路径
+#### (3)_异步路径
 
 ```text
 work 是否可能还在运行？
@@ -1719,7 +1719,7 @@ callback 是否可能并发进入？
 中断路径是否可能使用对象？
 ```
 
-#### 上下文
+#### (4)_上下文
 
 ```text
 最后一个 put 可能发生在哪里？
@@ -1729,7 +1729,7 @@ release 是否会拿 mutex？
 release 是否会调用等待函数？
 ```
 
-#### 最终释放
+#### (5)_最终释放
 
 ```text
 使用 kfree？
@@ -1741,7 +1741,7 @@ release 是否会调用等待函数？
 
 ------
 
-## 6.12 本章小结
+## 6.12_本章小结
 
 本章讲的是复杂 release 模式。
 

@@ -1,10 +1,10 @@
-# 第 2 章　能力与属性声明（`input_set_capability()` 与位图）
+# 第2章_能力与属性声明(input_set_capability()_与位图)
 
 > 章节内容说明：本章从**问题→作用→定位→细节**出发，聚焦“**驱动在注册前如何把‘我会产什么事件’说清楚**”。覆盖 `evbit/keybit/relbit/absbit/propbit` 位图、`input_set_capability()`、`INPUT_PROP_DIRECT/POINTER`、以及与 `input_set_abs_params()`、MT 初始化的**联动关系**。本章给出**可直接嵌入的最小模板**，并提供**验证口径**（`EVIOCGBIT/EVIOCGABS`、`evtest`）。
 
 ------
 
-## 2.1　引入 / 背景 / 本章目标（以问题为入口）
+## 2.1_引入_/_背景_/_本章目标(以问题为入口)
 
 **现实问题**
 
@@ -21,7 +21,7 @@
 
 ------
 
-## 2.2　数据结构视角（位图与属性位）
+## 2.2_数据结构视角(位图与属性位)
 
 - **能力位图（Capabilities bitmaps）**：位于 `struct input_dev` 中，用于**注册前**声明。常用成员：
   - `evbit`：事件类型集合（如 `EV_KEY/EV_REL/EV_ABS/EV_SYN/EV_MSC/EV_SW/...`）。
@@ -39,9 +39,9 @@
 
 ------
 
-## 2.3　开发者视角（“四连问”：作用 / 场景 / 不写或写错的后果 / 驱动落点）
+## 2.3_开发者视角(_四连问_作用_/_场景_/_不写或写错的后果_/_驱动落点)
 
-### 2.3.1 `input_set_capability()`
+### 2.3.1_input_set_capability()
 
 ```c
 void input_set_capability(struct input_dev *dev, unsigned int type, unsigned int code);
@@ -63,14 +63,14 @@ void input_set_capability(struct input_dev *dev, unsigned int type, unsigned int
   4. （如为多点）`input_mt_init_slots()`；
   5. `input_register_device()`。
 
-### 2.3.2 `__set_bit(bit, dev->propbit/evbit/...)`
+### 2.3.2_set_bit(bit,_dev->propbit/evbit/...)
 
 - **作用**：直接置位，不含“联动”；常用于属性位或一次性启用事件类型。
   - 例：`__set_bit(INPUT_PROP_DIRECT, dev->propbit);`
   - 例：`__set_bit(EV_REP, dev->evbit);`（键盘类重复）
 - **注意**：对 `EV_ABS` 轴，仍需 `input_set_abs_params()` 补齐 `absinfo`，否则元数据不全。
 
-### 2.3.3 `input_set_capability()` 使用说明
+### 2.3.3_input_set_capability()_使用说明
 
 提问：
 
@@ -87,7 +87,7 @@ void input_set_capability(struct input_dev *dev, unsigned int type, unsigned int
 
 ------
 
-#### 1. 驱动里是怎么调用的？
+#### (1)_驱动里是怎么调用的
 
 典型流程（你以后写自己的 input 驱动基本就这样）：
 
@@ -130,7 +130,7 @@ static int demo_input_probe(struct platform_device *pdev)
 
 ------
 
-#### 2. input_set_capability 内核内部到底干了啥？
+#### (2)_input_set_capability_内核内部到底干了啥
 
 看 `struct input_dev`，里面有一堆 bitmap 字段：([kernel.org](https://www.kernel.org/doc/html/v4.17/driver-api/input.html?utm_source=chatgpt.com))
 
@@ -198,9 +198,9 @@ void input_set_capability(struct input_dev *dev,
 
 ------
 
-#### 3. 这些 capability 在哪里用？
+#### (3)_这些_capability_在哪里用
 
-##### 3.1 input_register_device 时匹配 handler
+##### 1)_input_register_device_时匹配_handler
 
 在 `input_register_device()` 里，input core 会遍历所有注册过的 `input_handler`，调用它们的 `match()` 方法，看这个 handler 是否对当前 `input_dev` 感兴趣。`match()` 内一般就是看：
 
@@ -215,7 +215,7 @@ void input_set_capability(struct input_dev *dev,
 
 **结论：** capability 直接决定“这个 `input_dev` 会接到哪些上层 handler（evdev/mousedev/joydev 等）”。
 
-##### 3.2 用户空间 ioctl 查询能力
+##### 2)_用户空间_ioctl_查询能力
 
 用户空间通过 `EVIOCGBIT`、`EVIOCGABS` 等 ioctl，从 `/dev/input/eventX` 中把这些 bitmap 和 abs 参数读出来。内核就是把 `input_dev` 里的 `evbit/keybit/absbit/absinfo` 原样拷给用户。([kernel.org](https://www.kernel.org/doc/html/v4.12/driver-api/input.html?utm_source=chatgpt.com))
 
@@ -223,7 +223,7 @@ void input_set_capability(struct input_dev *dev,
 
 ------
 
-#### 4. 为什么参数只能是内核规定的宏？
+#### (4)_为什么参数只能是内核规定的宏
 
 `EV_*` / `KEY_*` / `REL_*` / `ABS_*` 等宏，其实是**内核 + glibc + libinput + X11/Wayland 等的一套协议常量集合**：([sbexr.rabexc.org](https://sbexr.rabexc.org/latest/sources/a3/b80d6024bd7deb.html?utm_source=chatgpt.com))
 
@@ -241,7 +241,7 @@ void input_set_capability(struct input_dev *dev,
 
 ------
 
-#### 5. 一个 input_dev 会设置多少东西？
+#### (5)_一个_input_dev_会设置多少东西
 
 回到你最后的问题：
 
@@ -273,7 +273,7 @@ void input_set_capability(struct input_dev *dev,
 
 ------
 
-#### 6. 跟你现在的理解对齐一下
+#### (6)_跟你现在的理解对齐一下
 
 你原来的困惑可以这样重述和校正：
 
@@ -290,7 +290,7 @@ void input_set_capability(struct input_dev *dev,
      - 回答用户空间的能力查询（ioctl/evtest 等）；
      - 过滤/解释事件流。
 
-### 2.3.4 `input_set_capability()` 参数关系说明
+### 2.3.4_input_set_capability()_参数关系说明
 
 ```c
 void input_set_capability(struct input_dev *dev, unsigned int type, unsigned int code);
@@ -316,7 +316,7 @@ void input_set_capability(struct input_dev *dev, unsigned int type, unsigned int
 
 ------
 
-#### 1. `type` 是“事件类别空间”
+#### (1)_type_是_事件类别空间
 
 在 `struct input_event` 里，`type` 是一个 16bit 的整数，对应 `EV_*` 宏：([android.googlesource.com](https://android.googlesource.com/kernel/msm/%2B/android-6.0.1_r0.102/include/uapi/linux/input.h?utm_source=chatgpt.com))
 
@@ -358,7 +358,7 @@ unsigned long evbit[BITS_TO_LONGS(EV_CNT)];
 
 ------
 
-#### 2. `code` 是“类型内部的子编号”
+#### (2)_code_是_类型内部的子编号
 
 当 `type` 已经确定为某一类之后，`code` 的含义完全由该类决定，分别对应不同的宏空间（也在 `input-event-codes.h` 里）：([docs.kernel.org](https://docs.kernel.org/input/input.html?utm_source=chatgpt.com))
 
@@ -403,7 +403,7 @@ unsigned long ffbit[BITS_TO_LONGS(FF_CNT)];
 
 ---
 
-#### 3. `input_set_capability` 一次可以设置多个bit类型吗？
+#### (3)_input_set_capability_一次可以设置多个bit类型吗
 
 **提问：**
 
@@ -420,7 +420,7 @@ unsigned long ffbit[BITS_TO_LONGS(FF_CNT)];
 
 ------
 
-#### 4. `input_set_capability(type, code)` 在底层到底做了什么？
+#### (4)_input_set_capability(type,_code)_在底层到底做了什么
 
 它的逻辑可以简化理解为两步（伪代码概念化，和内核实现匹配）：([兰德利](https://landley.net/kdocs/Documentation/DocBook/xhtml-nochunks/device-drivers.html?utm_source=chatgpt.com))
 
@@ -460,9 +460,9 @@ void input_set_capability(struct input_dev *dev,
 
 ------
 
-#### 5. 运行时上报事件时，`type` 和 `code` 又如何配合？
+#### (5)_运行时上报事件时_type_和_code_又如何配合
 
-##### 5.1 报告事件：`input_report_*` → `input_event`
+##### 1)_报告事件_input_report_*_to_input_event
 
 内核有一堆内联函数：([sbexr.rabexc.org](https://sbexr.rabexc.org/latest/sources/a3/b80d6024bd7deb.html?utm_source=chatgpt.com))
 
@@ -506,7 +506,7 @@ static inline void input_report_abs(struct input_dev *dev,
 
 只是再加上第三个值 `value` 才构成完整的一条 input_event。
 
-##### 5.2 用户态看到的也是 `(type, code, value)`
+##### 2)_用户态看到的也是_(type,_code,_value)
 
 `/dev/input/eventX` 读出来的就是 `struct input_event` 数组；用户空间的头文件也是同一套宏：([android.googlesource.com](https://android.googlesource.com/kernel/msm/%2B/android-6.0.1_r0.102/include/uapi/linux/input.h?utm_source=chatgpt.com))
 
@@ -518,9 +518,9 @@ static inline void input_report_abs(struct input_dev *dev,
 
 ------
 
-#### 6. handler/驱动层面如何利用这对 `(type, code)`？
+#### (6)_handler/驱动层面如何利用这对_(type,_code)
 
-##### 6.1 handler 挂接时看 capability（只看位图）
+##### 1)_handler_挂接时看_capability(只看位图)
 
 当你 `input_register_device(dev)` 时，input core 会遍历所有 `input_handler`：([docs.kernel.org](https://docs.kernel.org/driver-api/input.html?utm_source=chatgpt.com))
 
@@ -532,7 +532,7 @@ static inline void input_report_abs(struct input_dev *dev,
 
 这里 handler 只关心 **“哪一位被置 1”**，也就是 `type` + `code` 的 capability 组合。
 
-##### 6.2 handler 收到事件时看 `(type, code)`
+##### 2)_handler_收到事件时看_(type,_code)
 
 收到 `input_event(dev, type, code, value)` 后，handler 的 `event()` 会再次用 `(type, code)`：
 
@@ -548,7 +548,7 @@ static inline void input_report_abs(struct input_dev *dev,
 
 ------
 
-#### 7. 把关系总结成一句话
+#### (7)_把关系总结成一句话
 
 你可以把 **`type` 和 `code` 的关系**在脑子里固定成下面这句话（没有比喻，只是定义）：
 
@@ -562,13 +562,13 @@ static inline void input_report_abs(struct input_dev *dev,
 
 ---
 
-### 2.3.5 input子系统框架说明
+### 2.3.5_input子系统框架说明
 
 下面用**一个流程图（初始化/注册）+ 一个时序图（事件上报）**，把你关心的 *input 运行框架* 和 `input_set_capability()`、`type/code`、多设备不冲突等问题完整串起来。
 
 ------
 
-#### 一、整体逻辑先压成三句话
+#### (1)_整体逻辑先压成三句话
 
 1. **驱动在 probe 阶段：**
     分配 `input_dev` → 用 `input_set_capability()` 填能力位图（`evbit`/`keybit`/`relbit`/`absbit` …）→ `input_register_device()` 注册。
@@ -579,7 +579,7 @@ static inline void input_report_abs(struct input_dev *dev,
 
 ------
 
-#### 二、初始化/注册流程图：`input_set_capability()` 的位置
+#### (2)_初始化/注册流程图_input_set_capability()_的位置
 
 ```mermaid
 flowchart TD
@@ -608,7 +608,7 @@ flowchart TD
 
 ------
 
-#### 三、事件上报时序图：`type/code` 怎么一路传到用户态
+#### (3)_事件上报时序图_type/code_怎么一路传到用户态
 
 下面这张时序图描述“**一次按键事件** 从硬件到用户程序”的完整路径：
 
@@ -651,7 +651,7 @@ sequenceDiagram
 
 ------
 
-#### 四、把“input 运行框架”再压缩成一个工程视角总结
+#### (4)_把_input_运行框架_再压缩成一个工程视角总结
 
 你可以直接这样记（或者当成文档里的概述段落）：
 
@@ -666,7 +666,7 @@ sequenceDiagram
 
 ------
 
-## 2.4　用户 / 平台视角（声明如何被用户态消费）
+## 2.4_用户_/_平台视角(声明如何被用户态消费)
 
 - `evdev` 通过 `EVIOCGBIT`/`EVIOCGABS` 暴露**能力**与**轴元数据**；桌面堆栈（如 libinput）据此**分类**设备、选择**策略**（手势、加速度、死区、坐标映射）。
 - 误置属性位（DIRECT/POINTER）会导致错误策略（如直触被当成相对指针，发生意外加速度/加速度曲线）。
@@ -674,7 +674,7 @@ sequenceDiagram
 
 ------
 
-## 2.5　可视化图示（注册前声明路径）
+## 2.5_可视化图示(注册前声明路径)
 
 ```mermaid
 flowchart LR
@@ -688,11 +688,11 @@ flowchart LR
 
 ------
 
-## 2.6　示例代码（可直接复用的声明模板）
+## 2.6_示例代码(可直接复用的声明模板)
 
 > 说明：以下均为**可嵌入函数**，在 `probe()` 或初始化阶段调用；**注册前**完成。
 
-### 2.6.1 键设备能力声明（含可选自动重复）
+### 2.6.1_键设备能力声明(含可选自动重复)
 
 ```c
 /* SPDX-License-Identifier: GPL-2.0 */
@@ -720,7 +720,7 @@ static inline int demo_setup_caps_keys(struct input_dev *idev)
 }
 ```
 
-### 2.6.2 触摸（单点或多点）能力与属性声明
+### 2.6.2_触摸(单点或多点)能力与属性声明
 
 ```c
 /* SPDX-License-Identifier: GPL-2.0 */
@@ -792,7 +792,7 @@ static inline int demo_setup_caps_touch_st(struct input_dev *idev)
 }
 ```
 
-### 2.6.3 相对指针（鼠标类）能力声明
+### 2.6.3_相对指针(鼠标类)能力声明
 
 ```c
 /* SPDX-License-Identifier: GPL-2.0 */
@@ -821,7 +821,7 @@ static inline int demo_setup_caps_mouse(struct input_dev *idev)
 
 ------
 
-## 2.7　调试与验证（命令与预期）
+## 2.7_调试与验证(命令与预期)
 
 1. **列出能力位图**（`EVIOCGBIT`，`evtest` 已内置显示）
 
@@ -852,7 +852,7 @@ static inline int demo_setup_caps_mouse(struct input_dev *idev)
 
 ------
 
-## 2.8　小结
+## 2.8_小结
 
 - **本质**：能力与属性声明是**驱动对系统的“契约”**——“我会产哪些事件、这些事件的物理边界与单位是什么、我属于直触还是指针”。
 - **执行要点**：

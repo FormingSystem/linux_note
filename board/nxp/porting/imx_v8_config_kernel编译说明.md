@@ -1,4 +1,4 @@
-# 下载编译器
+# 第1章_下载编译器
 
 编译器版本：
 
@@ -50,7 +50,7 @@ installed all required packages below in order to build these host tools::
    ```shell
    # /etc/profile: system-wide .profile file for the Bourne shell (sh(1))
    # and Bourne compatible shells (bash(1), ksh(1), ash(1), ...).
-   
+
    if [ "${PS1-}" ]; then
      if [ "${BASH-}" ] && [ "$BASH" != "/bin/sh" ]; then
        # The file bash.bashrc already sets the default PS1.
@@ -66,7 +66,7 @@ installed all required packages below in order to build these host tools::
        fi
      fi
    fi
-   
+
    if [ -d /etc/profile.d ]; then
      for i in /etc/profile.d/*.sh; do
        if [ -r $i ]; then
@@ -75,18 +75,18 @@ installed all required packages below in order to build these host tools::
      done
      unset i
    fi
-   
+
    export PATH=$PATH:/usr/local/cross_compiler/arm/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf/bin
    # export PATH=$PATH:/usr/local/cross_compiler/arm64/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin
    export PATH=$PATH:/usr/local/cross_compiler/arm64/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin
    ```
 
-# kernel获取
+# 第2章_kernel获取
 
 * 官网github地址：[imx_5.4.70_2.3.0](https://github.com/nxp-imx/linux-imx/tree/imx_5.4.70_2.3.0#)
 * 下载下来后文件的名字是 `linux-imx`，为了区分，我将名字改为：`linux-imx-5.4`，后续的所有跟内核有关的目录都是以此目录为根目录进行讨论；
 
-# 配置makefile
+# 第3章_配置makefile
 
 向kernel顶层makefile填充如下参数：
 
@@ -99,7 +99,7 @@ CROSS_COMPILE ?= aarch64-none-linux-gnu-
 
 ![image](../../../images/kernel/nxp/kernel_config_cross_compiler_for_makefile.png)
 
-# 编译kernel
+# 第4章_编译kernel
 
 ```shell
 make distclean
@@ -122,7 +122,7 @@ dts  Image  Image.gz  install.sh  Makefile
 >
 > <span style="color:red;font-weight:bold;">回答:</span>
 >
-> 在 i.MX aarch64（ARM64）架构中弃用 
+> 在 i.MX aarch64（ARM64）架构中弃用
 >
 > `zImage` 而转向 `Image`，并非因为 `zImage` 有严重缺陷，而是 Linux 内核社区在设计 ARM64 架构时，为了**简化内核结构、提高启动标准化程度**而做出的工程决策。
 >
