@@ -11,13 +11,32 @@
             "id": "c3bf3980e4dacba7",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "appendix/kernel_data_structure/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "新标签页"
+              "title": "P02_内核基石_hlist非对称链表"
+            }
+          },
+          {
+            "id": "6bd93275cfeb887d",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "appendix/kernel_data_structure/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "P02_内核基石_hlist非对称链表"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -152,12 +171,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "appendix/kernel_data_structure/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "大纲"
+              "title": "P02_内核基石_hlist非对称链表 的大纲"
             }
           }
         ],
@@ -181,8 +201,10 @@
       "pdf-plus:PDF++: Toggle auto-paste": false
     }
   },
-  "active": "d787e2827f8900cd",
+  "active": "6bd93275cfeb887d",
   "lastOpenFiles": [
+    "appendix/kernel_data_structure/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
+    "appendix/kernel_model/Linux_内核模块与设备节点/Linux_内核模块与设备节点操作基础.md",
     "appendix/kernel_data_structure/kref-引用计数/P06_release_回调与复杂销毁模式.md",
     "appendix/kernel_data_structure/kref-引用计数/Untitled.md",
     "appendix/kernel_data_structure/kref-引用计数/P05_基础_API_源码逐行讲解.md",
@@ -217,8 +239,6 @@
     "appendix/kernel_data_structure/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md",
     "appendix/kernel_source/lib/rbtree.c.md",
     "appendix/kernel_source/include/linux/rbtree.h.md",
-    "appendix/kernel_source/include/linux/rbtree_types.h.md",
-    "kernel/running-linux_kernel_P01/P02_Linux内核中常用的数据结构和算法.md",
     "images/kernel/linux内核深度解析/boot_jump_linux函数.png",
     "images/kernel/running_linux_kernel_P01/linux_kernel_component_archtecture.png",
     "images/kernel/nxp/kernel_config_cross_compiler_for_makefile.png"
