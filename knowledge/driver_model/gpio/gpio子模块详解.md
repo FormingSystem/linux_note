@@ -2107,4 +2107,3 @@ static irqreturn_t my_top_fast(int irq, void *p)
 
 **一句话总结：**
  **在能睡的地方使用 `\*_cansleep`，在不能睡的地方只操作 `can_sleep=false` 的 GPIO；拿不准就用 `gpiod_cansleep()` 判定并迁移到可睡上下文。**
-

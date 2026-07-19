@@ -151,7 +151,10 @@ if SELECTIONS:
     selected = [path for path in markdown if any(path == scope or path.startswith(scope + "/") for scope in SELECTIONS)]
     missing = [scope for scope in SELECTIONS if not any(path == scope or path.startswith(scope + "/") for path in selected)]
     if missing:
-        raise SystemExit("没有找到 Markdown：" + ", ".join(missing))
+        raise SystemExit(
+            "没有找到 Markdown：" + ", ".join(missing)
+            + "\n提示：Bash 中请使用正斜杠路径，或给含反斜杠的完整路径加引号。"
+        )
 
 records: dict[str, dict[str, object]] = {}
 contents: dict[str, tuple[str, int]] = {}

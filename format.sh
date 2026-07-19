@@ -12,7 +12,7 @@ usage() {
   ./format.sh install
 
 动作：
-  check       只检查并预览，不修改文件（默认）
+  check       只检查并预览，不修改文件
   fix         写入所有可安全确定的修复
 
 范围：
@@ -32,9 +32,19 @@ usage() {
   -h, --help  显示帮助
 
 路径可以是单个文件、多个文件或目录；省略路径时处理全仓。
+在 Bash 中推荐使用正斜杠路径；使用 Windows 反斜杠路径时必须给整个路径加引号。
+
+示例：
+  ./format.sh fix headings knowledge/foundations/example.md
+  ./format.sh fix headings 'knowledge\foundations\example.md'
 
 EOF
 }
+
+if (($# == 0)); then
+    usage
+    exit 0
+fi
 
 action=check
 scope=all
