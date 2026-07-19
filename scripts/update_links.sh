@@ -189,7 +189,10 @@ if SELECTIONS:
     ]
     missing = [scope for scope in SELECTIONS if not any(path == scope or path.startswith(scope + "/") for path in selected)]
     if missing:
-        raise SystemExit("没有找到受 Git 管理的 Markdown：" + ", ".join(missing))
+        raise SystemExit(
+            "没有找到 Markdown：" + ", ".join(missing)
+            + "\n提示：Bash 中请使用正斜杠路径，或给含反斜杠的完整路径加引号。"
+        )
 
 renames = rename_map()
 by_name: dict[str, list[str]] = defaultdict(list)
