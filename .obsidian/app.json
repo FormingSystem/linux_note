@@ -2,7 +2,8 @@
   "alwaysUpdateLinks": true,
   "readableLineLength": false,
   "showLineNumber": true,
-  "newFileLocation": "root",
-  "attachmentFolderPath": "/",
+  "newFileLocation": "folder",
+  "newFileFolderPath": "research/investigations",
+  "attachmentFolderPath": "assets/attachments",
   "newLinkFormat": "relative"
 }
