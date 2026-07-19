@@ -9,13 +9,13 @@ domains:
   - driver
 ---
 
-# 第1章_Linux驱动开发学习路线
+# 第1章\_Linux驱动开发学习路线
 
-## 1.1_路线目标
+## 1.1\_路线目标
 
 本路线以“能写、能解释、能排错”为目标，从最小模块和字符设备逐步进入设备模型、设备树、GPIO、中断与 Input 子系统。默认具备 C 语言、基本 Linux 命令和交叉编译经验。
 
-## 1.2_第一阶段_模块与字符设备
+## 1.2\_第一阶段\_模块与字符设备
 
 1. [Linux 内核模块与设备节点操作入门](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)。
 2. [Linux 驱动开发 Makefile 指南](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_驱动开发_Makefile_指南.md)。
@@ -24,7 +24,7 @@ domains:
 
 阶段验收：能独立完成模块装卸、设备号分配、`cdev` 注册、设备节点创建和基础文件操作。
 
-## 1.3_第二阶段_驱动所需通用机制
+## 1.3\_第二阶段\_驱动所需通用机制
 
 1. [并发与竞争简介](../../knowledge/linux/synchronization/driver_concurrency/并发与竞争简介)。
 2. [错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)。
@@ -34,7 +34,7 @@ domains:
 
 阶段验收：能为共享状态选择同步方法，正确管理失败路径和卸载路径，并为设备事件选择用户态通知方式。
 
-## 1.4_第三阶段_设备模型与Platform
+## 1.4\_第三阶段\_设备模型与Platform
 
 1. 按序完成[设备模型](../../knowledge/linux/device_model/设备模型简介)。
 2. 阅读[驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md)。
@@ -43,7 +43,7 @@ domains:
 
 阶段验收：能解释 device、driver、bus 的匹配过程，并把寄存器、中断和 GPIO 等硬件资源从设备树传递给驱动。
 
-## 1.5_第四阶段_GPIO_中断与Input
+## 1.5\_第四阶段\_GPIO\_中断与Input
 
 1. 按序完成[GPIO 子模块](../../knowledge/driver_model/gpio/gpio子模块)。
 2. 阅读[Linux 驱动中的中断注册与接口](../../knowledge/kernel_subsystems/irq/中断机制简介/P04_Linux_驱动中的中断注册与接口.md)。
@@ -52,7 +52,7 @@ domains:
 
 阶段验收：能实现 GPIO 输入输出、中断与去抖，并能说明 Input 事件从驱动上报到用户态读取的路径。
 
-## 1.6_第五阶段_平台验证
+## 1.6\_第五阶段\_平台验证
 
 建议依次完成现有 i.MX6ULL 实验：
 
@@ -64,6 +64,6 @@ domains:
 
 每个实验都应核对加载与卸载、失败清理、并发访问、设备树绑定和用户态验证，不只以“现象出现”作为完成标准。
 
-## 1.7_扩展方向
+## 1.7\_扩展方向
 
 完成主线后，可进入[i.MX6ULL 的 U-Boot 与内核移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)和[Buildroot](../../knowledge/system_software/buildroot/P00_全书学习地图.md)，把单个驱动放回完整嵌入式 Linux 系统中理解。

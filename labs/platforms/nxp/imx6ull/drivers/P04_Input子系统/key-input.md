@@ -8,11 +8,11 @@ domains:
   - lab
 ---
 
-# 第1章_功能说明
+# 第1章\_功能说明
 
 完成一个input子系统的驱动，按键10ms抖动，然后将这个按键状态上报给input子系统。
 
-# 第2章_设备树
+# 第2章\_设备树
 
 ```dts
 demo_key: demo-key@0 {
@@ -40,7 +40,7 @@ demo_key: demo-key@0 {
 };
 ```
 
-# 第3章_驱动代码
+# 第3章\_驱动代码
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -429,7 +429,7 @@ int main(int argc, char **argv)
 }
 ```
 
-# 第4章_log
+# 第4章\_log
 
 ```shell
 ~ # cd /mnt/nfs/driver/

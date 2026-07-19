@@ -8,9 +8,9 @@ domains:
   - kernel
 ---
 
-# 第8章_中断_x_高精度定时器(hrtimer)_去抖_延时确认与一次性中断再使能
+# 第8章\_中断\_x\_高精度定时器(hrtimer)\_去抖\_延时确认与一次性中断再使能
 
-## 8.1_章节内容说明
+## 8.1\_章节内容说明
 
 本章把“中断里不能睡、却想做**精准时间窗**与**一次性再使能**”的问题，用 **hrtimer** 给出系统化解法，覆盖：
 
@@ -22,7 +22,7 @@ domains:
 
 ------
 
-## 8.2_为什么要用_hrtimer_做中断去抖与_再使能
+## 8.2\_为什么要用\_hrtimer\_做中断去抖与\_再使能
 
 **目标**：在“中断极短路径”里实现**精确的消抖/延时确认**，并且保证**这段时间内不再重入**，到点**自动再使能**。
 
@@ -38,7 +38,7 @@ domains:
 
 ------
 
-## 8.3_hrtimer_基础_你必须知道的_6_个点
+## 8.3\_hrtimer\_基础\_你必须知道的\_6\_个点
 
 1. **上下文**：hrtimer 回调运行在 softirq（`HRTIMER_SOFTIRQ`）上下文，**不可睡**，不能做可能阻塞的 I/O；
 2. **时钟源**：常用 `CLOCK_MONOTONIC`；
@@ -51,7 +51,7 @@ domains:
 
 ------
 
-## 8.4_三种_中断_x_hrtimer_协同思路
+## 8.4\_三种\_中断\_x\_hrtimer\_协同思路
 
 采用相同的设备树设定：
 
@@ -100,7 +100,7 @@ install:
 
 
 
-### 8.4.1_模式A_hardirq_立刻关线_to_启动_hrtimer_to_到点再开线(一次性再使能)
+### 8.4.1\_模式A\_hardirq\_立刻关线\_to\_启动\_hrtimer\_to\_到点再开线(一次性再使能)
 
 - 目标：严格控制**窗口内不再重入**；
 - 实现：`disable_irq_nosync(irq)`（**不能**在中断上下文用 `disable_irq()`）→ `hrtimer_start()`；
@@ -108,13 +108,13 @@ install:
 - 适用：GPIO 边沿触发、机械按键典型需求；
 - 注意：**不适合共享中断线**（会把别的设备也关了）。
 
-### 8.4.2_模式B_hardirq_锁存_to_threaded_IRQ_只排_hrtimer(延时确认)_to_回调里排_work
+### 8.4.2\_模式B\_hardirq\_锁存\_to\_threaded\_IRQ\_只排\_hrtimer(延时确认)\_to\_回调里排\_work
 
 - 目标：窗口内合并多次边沿，回调触发一次“确认处理”；
 - 优点：中断线程极短，回调里不睡，真正业务在 work 里；
 - 适用：既要“像中断”又要有“定时确认”的场景。
 
-### 8.4.3_模式C_只用_hrtimer_做_延后消费_不关线
+### 8.4.3\_模式C\_只用\_hrtimer\_做\_延后消费\_不关线
 
 - 目标：不关 IRQ，仅避免“过于密集”的消费；
 - 适用：事件频率可接受、允许重入但要合并；
@@ -130,7 +130,7 @@ install:
 
 ------
 
-## 8.5_代码模板(模式A)_关线去抖_+_hrtimer_到时再开_+_work_中消费
+## 8.5\_代码模板(模式A)\_关线去抖\_+\_hrtimer\_到时再开\_+\_work\_中消费
 
 > 语义：第一次边沿到来 → **关这条 IRQ 线** → 启动 hrtimer（如 30ms）→ 到点**开线**并只消费**一次**事件。
 >
@@ -320,7 +320,7 @@ MODULE_DESCRIPTION("GPIO key: disable_irq_nosync + hrtimer debounce + enable_irq
 
 ------
 
-## 8.6_什么时候用_disable_irq_nosync()_什么时候不用
+## 8.6\_什么时候用\_disable\_irq\_nosync()\_什么时候不用
 
 - **用**：你明确要“窗口内**彻底禁止**再进”这条 IRQ（机械按键、极端抖动、某些电平敏感外设的一次性确认）。
 - **不用**：共享中断线（你会把别人也关掉）、事件频率很高（关来开去成本太高）、你只想“合并处理而非禁止进入”。
@@ -330,7 +330,7 @@ MODULE_DESCRIPTION("GPIO key: disable_irq_nosync + hrtimer debounce + enable_irq
 
 ------
 
-## 8.7_模式_B_threaded_IRQ_+_hrtimer_延时确认(不关线)完整示例
+## 8.7\_模式\_B\_threaded\_IRQ\_+\_hrtimer\_延时确认(不关线)完整示例
 
 这一版的出发点是：**我想用中断+定时器做延时确认，但我又不想把这根 IRQ 整体关掉**。
  和 8.6 那个“先 `disable_irq_nosync()` 再 hrtimer 到期再开”不一样，这一版的策略是：
@@ -347,7 +347,7 @@ MODULE_DESCRIPTION("GPIO key: disable_irq_nosync + hrtimer debounce + enable_irq
 
 ------
 
-### 8.7.1_动作流程
+### 8.7.1\_动作流程
 
 1. GPIO 按键产生一次下降沿 → 触发中断
 2. **threaded IRQ** 收到这次中断，做的事很轻：记录“有事件” + 启动/刷新 hrtimer
@@ -359,7 +359,7 @@ MODULE_DESCRIPTION("GPIO key: disable_irq_nosync + hrtimer debounce + enable_irq
 
 ------
 
-### 8.7.2_完整代码
+### 8.7.2\_完整代码
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -544,7 +544,7 @@ MODULE_DESCRIPTION("i.MX6ULL: threaded IRQ + hrtimer soft debounce window (REL, 
 
 ------
 
-### 8.7.3_本示例的特点
+### 8.7.3\_本示例的特点
 
 1. **不关线**：整个过程中没有 `disable_irq_nosync()`，所以不会影响共享中断；
 2. **多次抖动会被“刷新”**：hrtimer 用的是 `HRTIMER_MODE_ABS` + 重新 `start`，所以只会以最后一次为准；
@@ -555,7 +555,7 @@ MODULE_DESCRIPTION("i.MX6ULL: threaded IRQ + hrtimer soft debounce window (REL, 
 
 ------
 
-### 8.7.4_适用/不适用场景
+### 8.7.4\_适用/不适用场景
 
 - 适用：按键、轻量 GPIO 事件、共享 IRQ、希望最后一次为准
 - 不适用：极端高频中断（会频繁 start hrtimer）、一定要立刻屏蔽这根线的场景（应用 8.5 的“再使能窗口”）
@@ -572,9 +572,9 @@ MODULE_DESCRIPTION("i.MX6ULL: threaded IRQ + hrtimer soft debounce window (REL, 
 
 ------
 
-## 8.8_模式C_hrtimer_+_work_合并抖动(最后一次为准)
+## 8.8\_模式C\_hrtimer\_+\_work\_合并抖动(最后一次为准)
 
-### 8.8.1_机制要点(极简回顾)
+### 8.8.1\_机制要点(极简回顾)
 
 - **IRQ 顶半部**只做：`hrtimer_start(..., HRTIMER_MODE_REL)`（每次中断都重启计时器）。
 - **hrtimer 到期**视为“这段时间再无新的抖动”，在回调里**仅**调度 `work`。
@@ -583,7 +583,7 @@ MODULE_DESCRIPTION("i.MX6ULL: threaded IRQ + hrtimer soft debounce window (REL, 
 
 ------
 
-### 8.8.2_源码(单文件驱动_可直接编译为模块)
+### 8.8.2\_源码(单文件驱动\_可直接编译为模块)
 
 文件：`drivers/leaf/leaf_key_debounce_hrtimer.c`
 
@@ -743,7 +743,7 @@ MODULE_LICENSE("GPL");
 
 ```
 
-#### (1)_关于_devm_与非_devm
+#### (1)\_关于\_devm\_与非\_devm
 
 - 这里使用 `devm_kzalloc / devm_gpiod_get / devm_request_irq` 等 **devres** 接口，让资源在 `device` 生命周期内自动释放，避免忘记 `free_irq()/gpio_put()`。
 - 若改为**非 devm_**：
@@ -755,7 +755,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-## 8.9_调试核对表
+## 8.9\_调试核对表
 
 1. **上下文**：hrtimer 回调不可睡，**不要**做 I2C/SPI/printk；
 2. **关线 API**：中断上下文只能 `disable_irq_nosync()`，**不要** `disable_irq()`；
@@ -767,7 +767,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-## 8.10_常见踩坑与对照
+## 8.10\_常见踩坑与对照
 
 | 现象                      | 常见原因                                         | 快速修复                                      |
 | ------------------------- | ------------------------------------------------ | --------------------------------------------- |
@@ -779,7 +779,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-## 8.11_小结
+## 8.11\_小结
 
 - **hrtimer = 精准时间窗控制**，特别适合“**一次性再使能**”与“**延时确认**”；
 - 结合 `disable_irq_nosync()` 可构建“窗口内绝不重入”的强语义（**但避免共享中断线**）；

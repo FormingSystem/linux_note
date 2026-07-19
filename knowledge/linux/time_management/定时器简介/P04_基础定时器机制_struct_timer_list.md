@@ -8,14 +8,14 @@ domains:
   - kernel
 ---
 
-# 第4章_基础定时器机制_struct_timer_list
+# 第4章\_基础定时器机制\_struct\_timer\_list
 
 **章节内容说明**
  本章聚焦内核基础定时器 `struct timer_list`：先阐明其本质（软中断驱动的异步回调），再给出数据结构与初始化方式（旧/新接口对照），并系统解释 `add_timer()` / `mod_timer()` / `del_timer_sync()` 的语义与竞态。随后说明周期性定时器的正确写法与不可取模式，给出可视化流程图与完整示例，最后做小结与排错要点。读者完成本章后，应能编写**可回收、可证伪、无竞态**的基础内核定时器代码。
 
 ------
 
-## 4.1_定时器在内核中的本质(软中断驱动的异步回调)
+## 4.1\_定时器在内核中的本质(软中断驱动的异步回调)
 
 **是什么**
  `timer_list` 是内核的低精度（由 HZ/tick 驱动，或高精度配置下仍走通用队列）软件定时器。到期时由 **TIMER_SOFTIRQ** 在软中断上下文中执行回调函数 `timer_list->function()`。
@@ -36,7 +36,7 @@ domains:
 
 ------
 
-## 4.2_数据结构与初始化方式(旧接口_vs_新接口)
+## 4.2\_数据结构与初始化方式(旧接口\_vs\_新接口)
 
 **结构体要点（Linux ≥ 4.15 同样适用到 6.1+）**
 
@@ -78,7 +78,7 @@ static void demo_timer_cb(struct timer_list *t)
 
 ------
 
-## 4.3_add_timer()_mod_timer()_del_timer_sync()_的语义
+## 4.3\_add\_timer()\_mod\_timer()\_del\_timer\_sync()\_的语义
 
 - `add_timer(struct timer_list *timer)`
    将**未入队**的定时器按 `expires` 插入。若已在队列中，**不得**再 `add_timer()`。
@@ -94,7 +94,7 @@ static void demo_timer_cb(struct timer_list *t)
 
 ------
 
-## 4.4_回调与设备生命周期的竞态问题
+## 4.4\_回调与设备生命周期的竞态问题
 
 **问题根因**
  回调运行在软中断上下文，与驱动的 `remove()`/错误路径并发：
@@ -115,7 +115,7 @@ static void demo_timer_cb(struct timer_list *t)
 
 ------
 
-## 4.5_周期性定时器的正确写法
+## 4.5\_周期性定时器的正确写法
 
 **不要**在回调里直接自旋忙等或长事务。
  **正确做法**：在回调尾部以相对时间重新 `mod_timer()`，保证**无漂移或可控漂移**。
@@ -137,7 +137,7 @@ mod_timer(&dd->tmr, dd->next);
 
 ------
 
-## 4.6_可视化_timer_触发流程图(Mermaid)
+## 4.6\_可视化\_timer\_触发流程图(Mermaid)
 
 > 说明：严格按你的 Mermaid 转义规则输出（`"`→`"`，`<`→`<`，`>`→`>`）
 
@@ -159,9 +159,9 @@ flowchart TD
 
 ------
 
-## 4.7_示例代码与常见错误
+## 4.7\_示例代码与常见错误
 
-### 4.7.1_一次性超时(去抖/延迟执行)最小可用例
+### 4.7.1\_一次性超时(去抖/延迟执行)最小可用例
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -219,7 +219,7 @@ MODULE_LICENSE("GPL");
 - ❌ 退出时用 `del_timer()` 而不是 `del_timer_sync()`：回调仍可能并发执行。
 - ❌ 回调里做可睡操作（如 `msleep()`、`mutex_lock()`）：会触发 `might_sleep()` 警告或死锁风险。
 
-### 4.7.2_周期性定时器(校正漂移版)
+### 4.7.2\_周期性定时器(校正漂移版)
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -277,7 +277,7 @@ module_exit(periodic_exit);
 MODULE_LICENSE("GPL");
 ```
 
-### 4.7.3_回调需要睡_的分层范式(定时器_+_工作队列)
+### 4.7.3\_回调需要睡\_的分层范式(定时器\_+\_工作队列)
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -339,7 +339,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-## 4.8_小结
+## 4.8\_小结
 
 - `timer_list` 的回调在 **TIMER_SOFTIRQ** 中运行，**不可睡**，非常适合轻量、延后触发的内核态任务。
 - 统一使用 `timer_setup()` 初始化；**首/再启动**一律用 `mod_timer()`；资源回收**必须** `del_timer_sync()`。
