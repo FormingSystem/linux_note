@@ -146,7 +146,7 @@ git mv <旧路径> <新路径>
 
 - 目录和文件归属遵守 `governance/architecture/repository_information_architecture.md`。
 - 顶层与领域目录使用英文 `snake_case`。
-- 知识文件使用稳定语义名称，出版章号不作为永久身份。
+- 章节型文件使用 `PXX_NAME`，正文保留统一阅读序号；非章节文件使用稳定语义名称。
 - 路径禁止空格、中文标点、全角符号和连续下划线。
 - 大范围结构调整单独提交，方便使用 `git log --follow` 查看历史。
 
