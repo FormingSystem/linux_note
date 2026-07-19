@@ -11,7 +11,7 @@ domains:
 
 (kernel 6.1 为基准)
 
-# 第1章_struct_gpio_chip
+# 第1章\_struct\_gpio\_chip
 
 ```c
 // include/linux/gpio/driver.h
@@ -294,7 +294,7 @@ struct gpio_chip {
 };
 ```
 
-# 第2章_struct_gpio_irq_chip
+# 第2章\_struct\_gpio\_irq\_chip
 
 ```c
 // include/linux/gpio/driver.h
@@ -582,7 +582,7 @@ struct gpio_irq_chip {
 };
 ```
 
-# 第3章_struct_gpio_desc
+# 第3章\_struct\_gpio\_desc
 
 ```c
 // drivers/gpio/gpiolib.h
@@ -648,7 +648,7 @@ struct gpio_desc {
 };
 ```
 
-# 第4章_struct_pinctrl_desc
+# 第4章\_struct\_pinctrl\_desc
 
 ```c
 // include/linux/pinctrl/pinctrl.h
@@ -694,7 +694,7 @@ struct pinctrl_desc {
 
 
 
-# 第5章_struct_pinctrl_state
+# 第5章\_struct\_pinctrl\_state
 
 ```c
 // drivers/pinctrl/core.h
@@ -715,11 +715,11 @@ struct pinctrl_state {
 
 
 
-# 第6章_struct_of_phandle_args
+# 第6章\_struct\_of\_phandle\_args
 
 ------
 
-## 6.1_1_主题引入
+## 6.1\_1\_主题引入
 
 在设备树（Device Tree, DT）中，一个节点经常通过如下形式引用其他节点的资源：
 
@@ -740,15 +740,15 @@ interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>;
 
 ------
 
-## 6.2_2_结构体定义与头文件位置
+## 6.2\_2\_结构体定义与头文件位置
 
-### 6.2.1_源码位置
+### 6.2.1\_源码位置
 
 ```
 include/linux/of.h
 ```
 
-### 6.2.2_定义
+### 6.2.2\_定义
 
 ```c
 struct of_phandle_args {
@@ -758,7 +758,7 @@ struct of_phandle_args {
 };
 ```
 
-### 6.2.3_宏定义
+### 6.2.3\_宏定义
 
 ```c
 #define MAX_PHANDLE_ARGS 16
@@ -768,7 +768,7 @@ struct of_phandle_args {
 
 ------
 
-## 6.3_3_成员详解
+## 6.3\_3\_成员详解
 
 | 成员名       | 类型                   | 说明                                                       |
 | ------------ | ---------------------- | ---------------------------------------------------------- |
@@ -778,9 +778,9 @@ struct of_phandle_args {
 
 ------
 
-## 6.4_4_语义与数据流关系
+## 6.4\_4\_语义与数据流关系
 
-### 6.4.1_设备树中引用模型
+### 6.4.1\_设备树中引用模型
 
 ```dts
 leds {
@@ -811,11 +811,11 @@ struct of_phandle_args args = {
 
 ------
 
-## 6.5_5_典型调用链与解析函数
+## 6.5\_5\_典型调用链与解析函数
 
 Linux 提供一系列解析接口，以 `of_parse_phandle_with_*` 为前缀。
 
-### 6.5.1_典型函数_of_parse_phandle_with_args()
+### 6.5.1\_典型函数\_of\_parse\_phandle\_with\_args()
 
 ```c
 int of_parse_phandle_with_args(const struct device_node *np,
@@ -837,7 +837,7 @@ int of_parse_phandle_with_args(const struct device_node *np,
 
 > 从指定设备节点中解析出属性 `list_name`，读取对应的 phandle，并根据 provider 节点的 `#*-cells` 数量，提取出所有参数值填充到 `of_phandle_args` 中。
 
-### 6.5.2_内核执行路径(以_GPIO_为例)
+### 6.5.2\_内核执行路径(以\_GPIO\_为例)
 
 ```mermaid
 sequenceDiagram
@@ -854,7 +854,7 @@ OF_Core-->>Consumer: 返回 struct of_phandle_args 填充结果
 
 ------
 
-## 6.6_6_与_GPIO_框架的结合
+## 6.6\_6\_与\_GPIO\_框架的结合
 
 `gpiolib` 内部即通过该结构体实现设备树解析：
 
@@ -882,9 +882,9 @@ int of_get_named_gpiod_flags(struct device_node *np,
 
 ------
 
-## 6.7_7_跨子系统使用示例
+## 6.7\_7\_跨子系统使用示例
 
-### 6.7.1_中断控制器(IRQ)
+### 6.7.1\_中断控制器(IRQ)
 
 ```dts
 interrupts = <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
@@ -904,7 +904,7 @@ args.args_count = 3;
 args.args = { 74, 0, IRQ_TYPE_LEVEL_HIGH };
 ```
 
-### 6.7.2_时钟控制器(Clock)
+### 6.7.2\_时钟控制器(Clock)
 
 ```dts
 clocks = <&clk 3>;
@@ -924,7 +924,7 @@ args.args_count = 1;
 args.args[0] = 3;
 ```
 
-### 6.7.3_pinctrl
+### 6.7.3\_pinctrl
 
 ```dts
 pinctrl-0 = <&pinctrl_led>;
@@ -946,9 +946,9 @@ args.args[0] = 0;
 
 ------
 
-## 6.8_8_调试与验证方法
+## 6.8\_8\_调试与验证方法
 
-### 6.8.1_使用内核日志输出
+### 6.8.1\_使用内核日志输出
 
 在调用 `of_parse_phandle_with_args()` 后可手动打印结果：
 
@@ -963,7 +963,7 @@ pr_info("phandle: %pOF, args_count=%d, args[0]=%d, args[1]=%d\n",
 phandle: /soc/gpio@0209c000, args_count=2, args[0]=3, args[1]=1
 ```
 
-### 6.8.2_确认解析路径
+### 6.8.2\_确认解析路径
 
 使用内核调试开关：
 
@@ -974,7 +974,7 @@ dmesg | grep gpio
 
 ------
 
-## 6.9_9_关键特性与优点
+## 6.9\_9\_关键特性与优点
 
 | 特性     | 说明                            |
 | -------- | ------------------------------- |
@@ -986,7 +986,7 @@ dmesg | grep gpio
 
 ------
 
-## 6.10_10_小结
+## 6.10\_10\_小结
 
 | 项目          | 内容                                                 |
 | ------------- | ---------------------------------------------------- |

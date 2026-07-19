@@ -8,7 +8,7 @@ domains:
   - kernel
 ---
 
-# 第1章_devm_API接口文档说明
+# 第1章\_devm\_API接口文档说明
 
 提问：
 
@@ -18,14 +18,14 @@ domains:
 
 下面这些来源最系统、最权威，按优先级给你列好，并说明怎么查：
 
-## 1.1_官方内核文档(首选)
+## 1.1\_官方内核文档(首选)
 
 - **Devres 总文档**（在线）：*“Devres – Managed Device Resource”*（driver-model/devres）。这是 `devm`/devres 的权威说明，含工作机制、调用时机、释放顺序等。([Linux Kernel 文档](https://docs.kernel.org/driver-api/driver-model/devres.html?utm_source=chatgpt.com))
 - **历史版纯文本**（同内容的早期文档）：`Documentation/driver-model/devres.txt`。适合快速浏览。([kernel.org](https://www.kernel.org/doc/Documentation/driver-model/devres.txt?utm_source=chatgpt.com))
 
 > 如果你要看**内核 6.1 对应版本**的在线文档，也可以在 6.1 文档站点按主题跳转；例如 auxiliary bus 文档中也示例性提到 `devm_add_action_or_reset()` 的使用场景。([kernel.org](https://www.kernel.org/doc/html/v6.1/driver-api/auxiliary_bus.html?utm_source=chatgpt.com))
 
-## 1.2_源码位置(实现_&_接口宣告)
+## 1.2\_源码位置(实现\_&\_接口宣告)
 
 - **实现**：`lib/devres.c`（核心 devres 实现、释放流程、分组接口等）。可以直接对照阅读。([docs.huihoo.com](https://docs.huihoo.com/doxygen/linux/kernel/3.7/lib_2devres_8c.html?utm_source=chatgpt.com))
 
@@ -37,7 +37,7 @@ domains:
 
   结合 `scripts/kernel-doc` 注释阅读（本地生成 API HTML 见下）。
 
-## 1.3_本地生成可浏览_HTML_文档
+## 1.3\_本地生成可浏览\_HTML\_文档
 
 - 在内核源码根目录执行：
 
@@ -48,7 +48,7 @@ domains:
 
   这样能得到与你的源码版本**完全一致**的 `devm`/devres 文档与各子系统的 API 页面（比网上搜索更对版）。该文档集合的入口是 *The Linux driver implementer’s API guide*。([infradead.org](https://www.infradead.org/~mchehab/rst_conversion/driver-api/index.html?utm_source=chatgpt.com))
 
-## 1.4_扩展阅读(背景与实践)
+## 1.4\_扩展阅读(背景与实践)
 
 - **LWN 文章**：对设备模型与 devres 的背景有不错的讲解与历史线索，适合理解设计动机与使用边界。([LWN.net](https://lwn.net/Articles/645810/?utm_source=chatgpt.com))
 - **演示/讲义**：Haifux 的 *Managed Resource Allocation in Linux Device Drivers*（讲座 PDF），用实例解释 devres 的数据结构与调用路径。([haifux.org](https://www.haifux.org/lectures/323/haifux-devres.pdf?utm_source=chatgpt.com))
@@ -61,11 +61,11 @@ domains:
 
 ------
 
-# 第2章_devm_接口_作用与区别(按子系统)
+# 第2章\_devm\_接口\_作用与区别(按子系统)
 
-## 2.1_核心机制_/_分组接口
+## 2.1\_核心机制\_/\_分组接口
 
-### 2.1.1_devm_add_action
+### 2.1.1\_devm\_add\_action
 
 **功能**：为“没有 `devm_*` 版本”的资源注册一个**受设备生命周期管理**的释放回调。
  **原型**：`int devm_add_action(struct device *dev, void (*action)(void *), void *data);`
@@ -79,14 +79,14 @@ domains:
    **使用要点**：回调内必须满足可在解绑路径**同步**执行（不可睡眠要求取决于上下文，一般可睡眠）。
    **常见误用**：把“运行状态复位”（如时钟关闭）只放进 `action` 而不在 `remove()`/PM 配对；应在 `remove()`/PM 明确回退状态。
 
-### 2.1.2_devm_add_action_or_reset
+### 2.1.2\_devm\_add\_action\_or\_reset
 
 **功能**：与 `devm_add_action` 相同，但**注册失败**时会**立即**执行一次 `action(data)`，避免半初始化。
  **原型**：`int devm_add_action_or_reset(struct device *dev, void (*action)(void *), void *data);`
  **差异点**：失败时“即时回滚”。
  **适用**：没有 `devm_*` 版本、且初始化流程中间失败风险高的资源。
 
-### 2.1.3_devres_open_group
+### 2.1.3\_devres\_open\_group
 
 **功能**：开启一个 devres 资源分组，便于阶段化回滚。
  **原型**：`struct devres_group *devres_open_group(struct device *dev, void *id, gfp_t gfp);`
@@ -94,13 +94,13 @@ domains:
  **返回值**：组指针或 `NULL`。
  **使用要点**：在阶段开始处调用，随后登记的 `devm_*` 资源会进入该组。
 
-### 2.1.4_devres_close_group
+### 2.1.4\_devres\_close\_group
 
 **功能**：关闭先前 `open_group` 的分组，固化该组资源。
  **原型**：`void devres_close_group(struct device *dev, struct devres_group *grp);`
  **使用要点**：阶段成功后调用，使该组不再被 `remove_group` 撤销。
 
-### 2.1.5_devres_remove_group
+### 2.1.5\_devres\_remove\_group
 
 **功能**：撤销（回滚）`open_group` 之后登记的资源。
  **原型**：`void devres_remove_group(struct device *dev, void *id);`
@@ -108,9 +108,9 @@ domains:
 
 ------
 
-## 2.2_内存与字符串
+## 2.2\_内存与字符串
 
-### 2.2.1_devm_kzalloc
+### 2.2.1\_devm\_kzalloc
 
 **功能**：分配零清内存，绑定设备生命周期。
  **原型**：`void *devm_kzalloc(struct device *dev, size_t size, gfp_t gfp);`
@@ -118,20 +118,20 @@ domains:
  **释放**：解绑/失败时自动释放。
  **要点**：仅用于**随设备生命周期**存在的内存；跨设备/全局内存不要使用。
 
-### 2.2.2_devm_kcalloc
+### 2.2.2\_devm\_kcalloc
 
 **功能**：分配 `n * size` 零清数组，带溢出检查。
  **原型**：`void *devm_kcalloc(struct device *dev, size_t n, size_t size, gfp_t gfp);`
  **返回/释放**：同上。
  **要点**：用于数组元素计数明确的场景；避免整数溢出。
 
-### 2.2.3_devm_kmemdup
+### 2.2.3\_devm\_kmemdup
 
 **功能**：分配并拷贝指定大小的缓冲区。
  **原型**：`void *devm_kmemdup(struct device *dev, const void *src, size_t size, gfp_t gfp);`
  **返回/释放**：同上。
 
-### 2.2.4_devm_kstrdup
+### 2.2.4\_devm\_kstrdup
 
 **功能**：复制以 `\0` 结尾字符串。
  **原型**：`char *devm_kstrdup(struct device *dev, const char *s, gfp_t gfp);`
@@ -140,9 +140,9 @@ domains:
 
 ------
 
-## 2.3_I/O_资源与寄存器映射
+## 2.3\_I/O\_资源与寄存器映射
 
-### 2.3.1_devm_ioremap
+### 2.3.1\_devm\_ioremap
 
 **功能**：将物理地址映射为内核虚拟地址。
  **原型**：`void __iomem *devm_ioremap(struct device *dev, resource_size_t offset, size_t size);`
@@ -150,21 +150,21 @@ domains:
  **释放**：解绑/失败时自动 `iounmap()`。
  **要点**：**不**做资源冲突检查；通常更推荐使用 `_resource` 族。
 
-### 2.3.2_devm_ioremap_resource
+### 2.3.2\_devm\_ioremap\_resource
 
 **功能**：对 `struct resource` 指定的区域进行**冲突检查**后映射。
  **原型**：`void __iomem *devm_ioremap_resource(struct device *dev, const struct resource *res);`
  **返回**：同上。
  **区别**：比 `devm_ioremap` 多了资源有效性/冲突检测；**优先使用**。
 
-### 2.3.3_devm_platform_ioremap_resource
+### 2.3.3\_devm\_platform\_ioremap\_resource
 
 **功能**：对 `platform_device` 的第 `index` 个内存资源进行检查并映射（简写）。
  **原型**：`void __iomem *devm_platform_ioremap_resource(struct platform_device *pdev, unsigned int index);`
  **返回/释放**：同上。
  **要点**：适用于平台驱动；`index` 自 0 起。
 
-### 2.3.4_devm_platform_ioremap_resource_byname
+### 2.3.4\_devm\_platform\_ioremap\_resource\_byname
 
 **功能**：按资源名进行检查并映射。
  **原型**：`void __iomem *devm_platform_ioremap_resource_byname(struct platform_device *pdev, const char *name);`
@@ -172,9 +172,9 @@ domains:
 
 ------
 
-## 2.4_GPIO(gpiod_消费者)
+## 2.4\_GPIO(gpiod\_消费者)
 
-### 2.4.1_devm_gpiod_get
+### 2.4.1\_devm\_gpiod\_get
 
 **功能**：按连接 ID 获取一个 GPIO 描述符，并可指定初始方向/电平。
  **原型**：`struct gpio_desc *devm_gpiod_get(struct device *dev, const char *con_id, enum gpiod_flags flags);`
@@ -183,14 +183,14 @@ domains:
  **要点**：`flags` 常用 `GPIOD_OUT_LOW/HIGH`、`GPIOD_IN`；与 DT 的 `*-gpios` 属性匹配。
  **误用**：使用旧整数 GPIO 接口；未考虑极性导致上电瞬态错误。
 
-### 2.4.2_devm_gpiod_get_optional
+### 2.4.2\_devm\_gpiod\_get\_optional
 
 **功能**：同 3.1，但**资源可缺省**。
  **原型**：`struct gpio_desc *devm_gpiod_get_optional(struct device *dev, const char *con_id, enum gpiod_flags flags);`
  **区别**：资源不存在时可能返回 `NULL`（具体取决于解析路径），需在调用者做 `NULL` 判定。
  **适用**：硬件版本差异导致 GPIO 可有可无。
 
-### 2.4.3_devm_gpiod_get_index
+### 2.4.3\_devm\_gpiod\_get\_index
 
 **功能**：获取同一连接 ID 下第 `index` 个 GPIO。
  **原型**：`struct gpio_desc *devm_gpiod_get_index(struct device *dev, const char *con_id, unsigned int index, enum gpiod_flags flags);`
@@ -198,9 +198,9 @@ domains:
 
 ------
 
-## 2.5_IRQ
+## 2.5\_IRQ
 
-### 2.5.1_devm_request_irq
+### 2.5.1\_devm\_request\_irq
 
 **功能**：申请中断线并注册**顶半部**处理函数。
  **原型**：`int devm_request_irq(struct device *dev, unsigned int irq, irq_handler_t handler, unsigned long flags, const char *name, void *dev_id);`
@@ -208,7 +208,7 @@ domains:
  **释放**：解绑/失败时自动 `free_irq()`。
  **要点**：`handler` 中不得执行可睡眠操作。
 
-### 2.5.2_devm_request_threaded_irq
+### 2.5.2\_devm\_request\_threaded\_irq
 
 **功能**：申请中断线，注册**顶半部**与**线程化底半部**。
  **原型**：`int devm_request_threaded_irq(struct device *dev, unsigned int irq, irq_handler_t handler, irq_handler_t thread_fn, unsigned long flags, const char *name, void *dev_id);`
@@ -216,7 +216,7 @@ domains:
  **要点**：`thread_fn` 可睡眠；常配合 `IRQF_ONESHOT`。
  **误用**：在 `handler` 执行可睡眠 API；未正确设置触发类型导致抖动。
 
-### 2.5.3_devm_free_irq
+### 2.5.3\_devm\_free\_irq
 
 **功能**：**提前**释放由 `devm_request_*_irq` 申请的中断。
  **原型**：`void devm_free_irq(struct device *dev, unsigned int irq, void *dev_id);`
@@ -224,9 +224,9 @@ domains:
 
 ------
 
-## 2.6_时钟(Common_Clock_Framework)
+## 2.6\_时钟(Common\_Clock\_Framework)
 
-### 2.6.1_devm_clk_get
+### 2.6.1\_devm\_clk\_get
 
 **功能**：获取一个时钟**句柄**。
  **原型**：`struct clk *devm_clk_get(struct device *dev, const char *id);`
@@ -234,7 +234,7 @@ domains:
  **释放**：解绑/失败时自动 `clk_put()`。
  **要点（关键）**：`devm` **只托管句柄**；`clk_prepare_enable()` / `clk_disable_unprepare()`（**状态**）需在 `probe/remove/PM` 显式配对。
 
-### 2.6.2_devm_clk_bulk_get
+### 2.6.2\_devm\_clk\_bulk\_get
 
 **功能**：批量获取多个时钟句柄并在失败时统一回滚。
  **原型**：`int devm_clk_bulk_get(struct device *dev, int num_clks, struct clk_bulk_data *clks);`
@@ -244,9 +244,9 @@ domains:
 
 ------
 
-## 2.7_电源(Regulator)
+## 2.7\_电源(Regulator)
 
-### 2.7.1_devm_regulator_get
+### 2.7.1\_devm\_regulator\_get
 
 **功能**：获取一个 regulator 句柄。
  **原型**：`struct regulator *devm_regulator_get(struct device *dev, const char *id);`
@@ -254,13 +254,13 @@ domains:
  **释放**：解绑/失败时自动 put。
  **要点（关键）**：`regulator_enable()`/`regulator_disable()`（**状态**）需在 `probe/remove/PM` 显式配对；`devm` 不托管电源启停。
 
-### 2.7.2_devm_regulator_get_optional
+### 2.7.2\_devm\_regulator\_get\_optional
 
 **功能**：与 6.1 相同，但资源可缺省。
  **原型**：`struct regulator *devm_regulator_get_optional(struct device *dev, const char *id);`
  **适用**：硬件版本差异。
 
-### 2.7.3_devm_regulator_bulk_get
+### 2.7.3\_devm\_regulator\_bulk\_get
 
 **功能**：批量获取 regulator。
  **原型**：`int devm_regulator_bulk_get(struct device *dev, int num_consumers, struct regulator_bulk_data *consumers);`
@@ -268,7 +268,7 @@ domains:
  **释放**：解绑/失败时自动 put。
  **要点**：启停同样需要批量 `enable/disable` 自行配对。
 
-### 2.7.4_devm_regulator_put(少用)
+### 2.7.4\_devm\_regulator\_put(少用)
 
 **功能**：**提前**释放一个 `devm` 获取的 regulator 引用。
  **原型**：`void devm_regulator_put(struct regulator *regulator);`
@@ -276,9 +276,9 @@ domains:
 
 ------
 
-## 2.8_Reset_控制
+## 2.8\_Reset\_控制
 
-### 2.8.1_devm_reset_control_get
+### 2.8.1\_devm\_reset\_control\_get
 
 **功能**：获取复位控制句柄。
  **原型**：`struct reset_control *devm_reset_control_get(struct device *dev, const char *id);`
@@ -286,28 +286,28 @@ domains:
  **释放**：解绑/失败时自动 put。
  **要点**：具体复位时序（assert/deassert/pulse）由驱动控制；状态需在 `remove()/PM` 按需要复位。
 
-### 2.8.2_devm_reset_control_get_exclusive
+### 2.8.2\_devm\_reset\_control\_get\_exclusive
 
 **功能**：获取**独占**复位控制句柄。
  **原型**：`struct reset_control *devm_reset_control_get_exclusive(struct device *dev, const char *id);`
  **差异**：拒绝共享。适用于硬件要求严格独占的复位线。
 
-### 2.8.3_devm_reset_control_get_shared
+### 2.8.3\_devm\_reset\_control\_get\_shared
 
 **功能**：获取**共享**复位控制句柄。
  **原型**：`struct reset_control *devm_reset_control_get_shared(struct device *dev, const char *id);`
  **差异**：允许共享；注意并发与引用计数。
 
-### 2.8.4_devm_reset_control_get_optional
+### 2.8.4\_devm\_reset\_control\_get\_optional
 
 **功能**：可缺省版本。
  **原型**：`struct reset_control *devm_reset_control_get_optional(struct device *dev, const char *id);`
 
 ------
 
-## 2.9_DMA_引擎
+## 2.9\_DMA\_引擎
 
-### 2.9.1_devm_dma_request_chan
+### 2.9.1\_devm\_dma\_request\_chan
 
 **功能**：按名称从 DMA 引擎请求一个通道。
  **原型**：`struct dma_chan *devm_dma_request_chan(struct device *dev, const char *name);`
@@ -317,9 +317,9 @@ domains:
 
 ------
 
-## 2.10_PHY
+## 2.10\_PHY
 
-### 2.10.1_devm_phy_get
+### 2.10.1\_devm\_phy\_get
 
 **功能**：获取 PHY 句柄。
  **原型**：`struct phy *devm_phy_get(struct device *dev, const char *string);`
@@ -329,9 +329,9 @@ domains:
 
 ------
 
-## 2.11_pinctrl
+## 2.11\_pinctrl
 
-### 2.11.1_devm_pinctrl_get
+### 2.11.1\_devm\_pinctrl\_get
 
 **功能**：获取 pinctrl 句柄。
  **原型**：`struct pinctrl *devm_pinctrl_get(struct device *dev);`
@@ -341,18 +341,18 @@ domains:
 
 ------
 
-## 2.12_平台辅助_中断号/资源获取(非_devm_但常与_devm_组合)
+## 2.12\_平台辅助\_中断号/资源获取(非\_devm\_但常与\_devm\_组合)
 
 > 以下接口不是 `devm_*`，但与上面接口配合频繁，单独列出以免混淆。
 
-### 2.12.1_platform_get_irq
+### 2.12.1\_platform\_get\_irq
 
 **功能**：从 `platform_device` 获取中断号。
  **原型**：`int platform_get_irq(struct platform_device *pdev, unsigned int num);`
  **返回**：`>=0` 的 IRQ 号或 `-Exxx`。
  **组合**：获取到 IRQ 后，**再**调用 `devm_request_*_irq` 进行托管。
 
-### 2.12.2_platform_get_resource
+### 2.12.2\_platform\_get\_resource
 
 **功能**：从 `platform_device` 获取 `struct resource`。
  **原型**：`struct resource *platform_get_resource(struct platform_device *pdev, unsigned int type, unsigned int num);`
@@ -360,16 +360,16 @@ domains:
 
 ------
 
-## 2.13_注册类(示例)
+## 2.13\_注册类(示例)
 
-### 2.13.1_devm_led_classdev_register
+### 2.13.1\_devm\_led\_classdev\_register
 
 **功能**：注册 LED class 设备，解绑自动注销。
  **原型**：`int devm_led_classdev_register(struct device *dev, struct led_classdev *led_cdev);`
  **返回**：`0` 或 `-Exxx`。
  **要点**：并发访问的同步由驱动负责。
 
-### 2.13.2_devm_thermal_zone_of_sensor_register
+### 2.13.2\_devm\_thermal\_zone\_of\_sensor\_register
 
 **功能**：向 thermal 框架注册 OF 传感器，解绑自动注销。
  **原型**：`int devm_thermal_zone_of_sensor_register(struct device *dev, int id, void *data, const struct thermal_zone_of_device_ops *ops);`
@@ -380,7 +380,7 @@ domains:
 
 ------
 
-## 2.14_全局注意事项(统一要求)
+## 2.14\_全局注意事项(统一要求)
 
 - `devm` 仅托管**对象/句柄/映射**的释放；**不托管运行状态**（时钟启停、电源上/下电、pinctrl 状态、PHY 电源/初始化、工作队列/定时器等）。
 - `probe()` 任意位置失败可直接返回；已登记的 `devm` 资源将按 LIFO 回滚。
@@ -395,7 +395,7 @@ domains:
 
 ------
 
-# 第3章_关键区别总表(同族接口横向对比)
+# 第3章\_关键区别总表(同族接口横向对比)
 
 | 类别         | 接口                                              | 主要区别点             | 推荐                          |
 | ------------ | ------------------------------------------------- | ---------------------- | ----------------------------- |
@@ -411,7 +411,7 @@ domains:
 
 ------
 
-# 第4章_常见误用与修正
+# 第4章\_常见误用与修正
 
 1. **在 `remove()` 手动释放 `devm_\*` 资源** → 可能二次释放。
     **修正**：`remove()` 只回退“状态”，对象/句柄由 devres 回收。
@@ -426,7 +426,7 @@ domains:
 
 ------
 
-# 第5章_最小决策规则(学习与实战)
+# 第5章\_最小决策规则(学习与实战)
 
 - 句柄/映射/对象在**同一设备生命周期内** → 使用 `devm_*`。
 - 需要**阶段化回滚** → 使用分组接口。

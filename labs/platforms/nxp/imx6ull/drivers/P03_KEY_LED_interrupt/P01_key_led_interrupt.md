@@ -8,15 +8,15 @@ domains:
   - lab
 ---
 
-# 第1章_key_led_interrupt
+# 第1章\_key\_led\_interrupt
 
-## 1.1_实验目的
+## 1.1\_实验目的
 
 通过key的中断方式来更改led的输出状态，并且实现key的消抖处理。
 
 
 
-## 1.2_电路图
+## 1.2\_电路图
 
 key，led：
 
@@ -24,7 +24,7 @@ key，led：
 
 
 
-## 1.3_设备树
+## 1.3\_设备树
 
 ```dts
 	demo_led_key_int: led_key_int@0 {
@@ -56,9 +56,9 @@ key，led：
 
 
 
-## 1.4_驱动代码
+## 1.4\_驱动代码
 
-### 1.4.1_makefile
+### 1.4.1\_makefile
 
 ```makefile
 tartget_p := key_led_int
@@ -86,7 +86,7 @@ install:
 
 
 
-### 1.4.2_C源码
+### 1.4.2\_C源码
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -305,7 +305,7 @@ MODULE_DESCRIPTION("i.MX6ULL: falling-edge key toggles ACTIVE_LOW LED once (hard
 
 
 
-### 1.4.3_log
+### 1.4.3\_log
 
 ```shell
 /mnt/nfs/driver # insmod key_led_int.ko

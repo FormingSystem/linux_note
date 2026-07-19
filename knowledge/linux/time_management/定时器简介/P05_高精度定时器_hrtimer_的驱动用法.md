@@ -8,14 +8,14 @@ domains:
   - kernel
 ---
 
-# 第5章_高精度定时器_hrtimer_的驱动用法
+# 第5章\_高精度定时器\_hrtimer\_的驱动用法
 
 **章节内容说明**
  本章聚焦 `hrtimer`：阐明其适用动机与与 `timer_list` 的边界，给出核心数据结构与回调语义，系统说明相对/绝对模式与周期重启的三种写法（朴素/前推/前推校正），强调上下文限制与“不可睡”的约束，并给出“`hrtimer` + 工作队列”的分层模式模板、完整示例与调试要点。读者完成本章后，应能编写**高精度、无漂移、可回收**的高分辨率定时器代码。
 
 ------
 
-## 5.1_为什么不是所有驱动都适合用_timer_list
+## 5.1\_为什么不是所有驱动都适合用\_timer\_list
 
 **是什么 / 定位**
  `hrtimer` 提供**纳秒级**时间基（`ktime_t`），在启用 **`CONFIG_HIGH_RES_TIMERS`** 的系统上以高分辨率硬件时钟事件驱动；在未启用高分模式时，仍可退化但语义保持一致。
@@ -39,7 +39,7 @@ domains:
 
 ------
 
-## 5.2_hrtimer_的核心结构与回调语义
+## 5.2\_hrtimer\_的核心结构与回调语义
 
 **核心结构**
 
@@ -91,9 +91,9 @@ enum hrtimer_restart my_cb(struct hrtimer *t)
 
 ------
 
-## 5.3_相对/绝对模式与周期重启
+## 5.3\_相对/绝对模式与周期重启
 
-### 5.3.1_一次性_相对/绝对
+### 5.3.1\_一次性\_相对/绝对
 
 - **相对**：`hrtimer_start(&hrt, ktime_set(0, ns), HRTIMER_MODE_REL);`
 - **绝对**：`hrtimer_start(&hrt, abs_kt, HRTIMER_MODE_ABS);`（`abs_kt` 相对 `CLOCK_MONOTONIC` 的绝对时间点）
@@ -126,7 +126,7 @@ dt_led: led@0 {
 
 
 
-### 5.3.2_周期(写法一_朴素重启)
+### 5.3.2\_周期(写法一\_朴素重启)
 
 ```c
 enum hrtimer_restart cb(struct hrtimer *t)
@@ -141,16 +141,16 @@ enum hrtimer_restart cb(struct hrtimer *t)
 
 ------
 
-#### (1)_完整驱动示例
+#### (1)\_完整驱动示例
 
-##### 1)_功能要点
+##### 1)\_功能要点
 
 - 以 `CLOCK_MONOTONIC`、相对模式启动 `hrtimer`。
 - 回调内做少量“忙等待”来模拟处理耗时（不可睡），用来直观看到漂移。
 - 回调**最后**用 `hrtimer_start(t, period, HRTIMER_MODE_REL)` 朴素重启（而不是 `hrtimer_forward_now()`）。
 - 退出路径严格：先状态位 → `hrtimer_cancel()` → 打印统计。
 
-#### (2)_代码(可直接粘贴编译)
+#### (2)\_代码(可直接粘贴编译)
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -393,7 +393,7 @@ module_platform_driver(dt_led_drv);
 
 ```
 
-#### (3)_使用与观察
+#### (3)\_使用与观察
 
 **加载与参数**
 
@@ -432,7 +432,7 @@ log:
 
 ------
 
-#### (4)_朴素重启_vs_推荐前推
+#### (4)\_朴素重启\_vs\_推荐前推
 
 - 朴素重启（本节）：`hrtimer_start(t, period, HRTIMER_MODE_REL);`
   - **优点**：写法简单、直观；
@@ -443,7 +443,7 @@ log:
 
 ------
 
-#### (5)_调试与验证建议
+#### (5)\_调试与验证建议
 
 - 配合 `trace-cmd`/`ftrace` 记录 `hrtimer` 事件与回调时间戳，核对 `jitter` 计算是否一致（第13章会给出详细手册化步骤）。
 - 将 `work_ns` 设为 0/50us/200us 做 A/B 对比；在 PREEMPT/RT、NO_HZ 情况下记录差异。
@@ -451,7 +451,7 @@ log:
 
 ------
 
-#### (6)_常见错误(针对朴素重启)
+#### (6)\_常见错误(针对朴素重启)
 
 - **在回调里做可睡操作**：`mutex_lock()`、`msleep()` 等会触发问题；回调上下文不可睡。
 - **未在退出时调用 `hrtimer_cancel()`**：导致“幽灵回调”撞上释放后的内存。
@@ -460,7 +460,7 @@ log:
 
 ------
 
-### 5.3.3_周期(写法二_hrtimer_forward_now()_前推)
+### 5.3.3\_周期(写法二\_hrtimer\_forward\_now()\_前推)
 
 ```c
 enum hrtimer_restart cb(struct hrtimer *t)
@@ -485,7 +485,7 @@ enum hrtimer_restart cb(struct hrtimer *t)
 
 ------
 
-#### (1)_源码_基于_hrtimer_forward_now()_的稳定周期_LED_闪烁驱动
+#### (1)\_源码\_基于\_hrtimer\_forward\_now()\_的稳定周期\_LED\_闪烁驱动
 
 > 文件名示例：`leaf_hrtimer_periodic_forward.c`
 
@@ -729,7 +729,7 @@ module_platform_driver(dt_led_drv);
 
 ------
 
-##### 1)_关键点讲解
+##### 1)\_关键点讲解
 
 1. **稳定周期的来源**
     `hrtimer_forward_now(&timer, interval)` 以**当前“now”**为基准递推下一个到期时间，避免回调执行耗时导致的周期累积漂移；若一次执行稍慢，不会把“慢的时间”叠加到下一拍。
@@ -747,7 +747,7 @@ module_platform_driver(dt_led_drv);
 
 ------
 
-##### 2)_使用与验证
+##### 2)\_使用与验证
 
 log:
 
@@ -772,7 +772,7 @@ log:
 
 ------
 
-##### 3)_与_5.3.2(朴素重启法)的差异总结
+##### 3)\_与\_5.3.2(朴素重启法)的差异总结
 
 - **相位与频率稳定性**：前推法以“现在”为基准递推，周期更稳，不会把上一拍的延迟折算进下一拍；朴素重启法容易产生“周期走慢”。
 - **代码结构**：前推法回调更聚焦，状态机更清晰；朴素重启法常见 `hrtimer_start()` 的相位处理分散在多处。
@@ -780,7 +780,7 @@ log:
 
 
 
-### 5.3.4_周期(写法三_基于上次计划时刻的校正)
+### 5.3.4\_周期(写法三\_基于上次计划时刻的校正)
 
 ```c
 /* 设备结构保存下一次到期锚点 next */
@@ -813,9 +813,9 @@ enum hrtimer_restart cb(struct hrtimer *t)
 
 ------
 
-#### (1)_hrtimer_锚点校正法_LED_反转(基于上次计划时刻推进)
+#### (1)\_hrtimer\_锚点校正法\_LED\_反转(基于上次计划时刻推进)
 
-##### 1)_源码_hrtimer_dt_led_toggle_anchor.c
+##### 1)\_源码\_hrtimer\_dt\_led\_toggle\_anchor.c
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -1109,7 +1109,7 @@ module_platform_driver(dt_led_drv);
 
 ------
 
-#### (2)_写法三的关键语义(对比_5.3.2_/_5.3.3)
+#### (2)\_写法三的关键语义(对比\_5.3.2\_/\_5.3.3)
 
 - **5.3.2 朴素重启**：下一次触发以“当前回调时刻”为基点 → **累积漂移显著**。
 - **5.3.3 前推法**：以“当前时刻”为基点前推一个周期 → 漂移显著降低，但**长阻塞**后依旧会把相位推迟。
@@ -1119,7 +1119,7 @@ module_platform_driver(dt_led_drv);
 
 ------
 
-## 5.4_上下文限制与不能睡的问题
+## 5.4\_上下文限制与不能睡的问题
 
 - 回调处于**软中断**语义（HRTIMER_SOFTIRQ 路径）；PREEMPT_RT 等环境下可能线程化，但**不要**因此进行可睡操作。
 - 禁止：`mutex_lock()`、`msleep()`、`kmalloc(GFP_KERNEL)` 等潜在睡眠路径。
@@ -1128,7 +1128,7 @@ module_platform_driver(dt_led_drv);
 
 ------
 
-## 5.5_hrtimer_+_工作队列的分层处理模式
+## 5.5\_hrtimer\_+\_工作队列的分层处理模式
 
 **模式目标**
 
@@ -1149,9 +1149,9 @@ module_platform_driver(dt_led_drv);
 
 ------
 
-## 5.6_示例代码与调试
+## 5.6\_示例代码与调试
 
-### 5.6.1_一次性超时(纳秒级)
+### 5.6.1\_一次性超时(纳秒级)
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -1198,7 +1198,7 @@ module_exit(demo_exit);
 MODULE_LICENSE("GPL");
 ```
 
-### 5.6.2_周期稳定(hrtimer_forward_now()_推荐式)
+### 5.6.2\_周期稳定(hrtimer\_forward\_now()\_推荐式)
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -1249,7 +1249,7 @@ module_exit(p_exit);
 MODULE_LICENSE("GPL");
 ```
 
-### 5.6.3_分层(hrtimer_+_workqueue_可睡事务)
+### 5.6.3\_分层(hrtimer\_+\_workqueue\_可睡事务)
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -1320,7 +1320,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-## 5.7_小结
+## 5.7\_小结
 
 - `hrtimer` 适用于**高精度、低抖动**的定时需求，支持**相对/绝对**到期，并提供**前推**API 以降低漂移。
 - 回调语义：**不可睡**；需要睡操作时采用“`hrtimer` 触发 + `workqueue` 处理”的**分层模式**。

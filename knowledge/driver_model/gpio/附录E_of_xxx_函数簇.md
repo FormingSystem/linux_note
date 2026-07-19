@@ -9,9 +9,9 @@ domains:
   - driver
 ---
 
-# 第1章_of_get_named_gpiod_flags()
+# 第1章\_of\_get\_named\_gpiod\_flags()
 
-## 1.1_1_主题引入
+## 1.1\_1\_主题引入
 
 在 Linux 设备树机制中，GPIO 控制器节点负责描述硬件引脚资源，而外设设备节点通过 GPIO 相关属性（如 `reset-gpios`、`enable-gpios`、`cs-gpios` 等）引用这些引脚。驱动程序需要将设备树中描述的 GPIO 信息解析为内核可操作的结构体（`struct gpio_desc *`），从而控制引脚电平或方向。
 
@@ -19,7 +19,7 @@ domains:
 
 ------
 
-## 1.2_2_函数原型与头文件
+## 1.2\_2\_函数原型与头文件
 
 ```c
 #include <linux/of_gpio.h>
@@ -32,7 +32,7 @@ struct gpio_desc *of_get_named_gpiod_flags(struct device_node *np,
 
 ------
 
-## 1.3_3_参数说明
+## 1.3\_3\_参数说明
 
 | 参数名     | 类型                   | 说明                                                         |
 | ---------- | ---------------------- | ------------------------------------------------------------ |
@@ -43,7 +43,7 @@ struct gpio_desc *of_get_named_gpiod_flags(struct device_node *np,
 
 ------
 
-## 1.4_4_返回值说明
+## 1.4\_4\_返回值说明
 
 | 返回值               | 含义                                         |
 | -------------------- | -------------------------------------------- |
@@ -52,7 +52,7 @@ struct gpio_desc *of_get_named_gpiod_flags(struct device_node *np,
 
 ------
 
-## 1.5_5_主要功能
+## 1.5\_5\_主要功能
 
 此函数用于：
 
@@ -63,7 +63,7 @@ struct gpio_desc *of_get_named_gpiod_flags(struct device_node *np,
 
 ------
 
-## 1.6_6_内部调用流程(开发者视角)
+## 1.6\_6\_内部调用流程(开发者视角)
 
 以下为函数内部核心执行路径：
 
@@ -91,7 +91,7 @@ G --> H["返回 gpio_desc 指针"]
 
 ------
 
-## 1.7_7_设备树语法与匹配示例
+## 1.7\_7\_设备树语法与匹配示例
 
 假设设备树如下：
 
@@ -126,7 +126,7 @@ if (flags & OF_GPIO_ACTIVE_LOW)
 
 ------
 
-## 1.8_8_与_gpiod_get()_的区别
+## 1.8\_8\_与\_gpiod\_get()\_的区别
 
 | 对比项       | of_get_named_gpiod_flags() | gpiod_get()                                 |
 | ------------ | -------------------------- | ------------------------------------------- |
@@ -138,7 +138,7 @@ if (flags & OF_GPIO_ACTIVE_LOW)
 
 ------
 
-## 1.9_9_flags_标志位取值
+## 1.9\_9\_flags\_标志位取值
 
 `enum of_gpio_flags` 定义于 `include/linux/of_gpio.h`：
 
@@ -163,7 +163,7 @@ enum of_gpio_flags {
 
 ------
 
-## 1.10_10_调用时机(典型用法)
+## 1.10\_10\_调用时机(典型用法)
 
 在 **probe() 函数** 中解析 DTS：
 
@@ -191,7 +191,7 @@ static int demo_probe(struct platform_device *pdev)
 
 ------
 
-## 1.11_11_驱动绑定关系
+## 1.11\_11\_驱动绑定关系
 
 `of_get_named_gpiod_flags()` 只是**设备树解析层**函数，不涉及驱动匹配。
  通常流程如下：
@@ -206,21 +206,21 @@ D --> E["gpiod_set_value()/get_value() 控制引脚"]
 
 ------
 
-## 1.12_12_调试与验证
+## 1.12\_12\_调试与验证
 
-### 1.12.1_检查设备树内容
+### 1.12.1\_检查设备树内容
 
 ```bash
 cat /sys/firmware/devicetree/base/.../status-gpios
 ```
 
-### 1.12.2_检查_GPIO_映射
+### 1.12.2\_检查\_GPIO\_映射
 
 ```bash
 cat /sys/kernel/debug/gpio
 ```
 
-### 1.12.3_动态验证
+### 1.12.3\_动态验证
 
 ```bash
 echo 1 > /sys/class/gpio/gpio3/value
@@ -234,7 +234,7 @@ pr_info("gpio = %d, flags = 0x%x\n", desc_to_gpio(desc), flags);
 
 ------
 
-## 1.13_13_小结
+## 1.13\_13\_小结
 
 | 项目     | 内容                                     |
 | -------- | ---------------------------------------- |

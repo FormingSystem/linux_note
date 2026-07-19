@@ -8,9 +8,9 @@ domains:
   - lab
 ---
 
-# 第3章_key_interrupt_wakeup_kernel
+# 第3章\_key\_interrupt\_wakeup\_kernel
 
-## 3.1_实验目的
+## 3.1\_实验目的
 
 通过key的中断方式来更改led的输出状态，并且实现key的唤醒实验。
 
@@ -22,7 +22,7 @@ domains:
 
 
 
-## 3.2_电路图
+## 3.2\_电路图
 
 key，led：
 
@@ -30,7 +30,7 @@ key，led：
 
 
 
-## 3.3_设备树
+## 3.3\_设备树
 
 ```dts
 	demo_led_key_int: led_key_int@0 {
@@ -83,9 +83,9 @@ key，led：
 
 
 
-## 3.4_驱动代码
+## 3.4\_驱动代码
 
-### 3.4.1_makefile
+### 3.4.1\_makefile
 
 ```makefile
 tartget_p := key_led_int
@@ -113,7 +113,7 @@ install:
 
 
 
-### 3.4.2_C源码
+### 3.4.2\_C源码
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -342,7 +342,7 @@ MODULE_LICENSE("GPL");
 
 
 
-### 3.4.3_log
+### 3.4.3\_log
 
 ```shell
 /mnt/nfs/driver # insmod key_led_int.ko				   # 加载驱动
@@ -378,7 +378,7 @@ MODULE_LICENSE("GPL");
 /mnt/nfs/driver #
 ```
 
-### 3.4.4_注意事项
+### 3.4.4\_注意事项
 
 * 不要对 devm_request_threaded_irq() 接口采用 irqflag: IRQF_NO_SUSPEND。虽然会有唤醒功能，但是查询的时候会找不到。
 * 让kernel睡眠可以使用：`echo mem > /sys/power/state` shell 命令。

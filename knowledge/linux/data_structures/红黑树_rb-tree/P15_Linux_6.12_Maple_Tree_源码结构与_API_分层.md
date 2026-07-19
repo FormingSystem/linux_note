@@ -8,7 +8,7 @@ domains:
   - kernel
 ---
 
-# 第15章_Linux_6.12_Maple_Tree_源码结构与_API_分层
+# 第15章\_Linux\_6.12\_Maple\_Tree\_源码结构与\_API\_分层
 
 第 14 章已经把 Maple Tree 放回了正确的位置：它主要是 Linux 新内核里 VMA 管理从 `rbtree + linked list + vmacache` 迁移出来后的核心索引结构，不是所有红黑树的替代品，也不是调度器从 CFS 走到 EEVDF 的原因。
 
@@ -38,7 +38,7 @@ domains:
 
 ------
 
-## 15.1_本章涉及的源码文件
+## 15.1\_本章涉及的源码文件
 
 本章主要对照这些 Linux 6.12 源码文件：
 
@@ -97,7 +97,7 @@ mm_types.h → mm.h → mmap.c / memory.c → maple_tree.c
 
 ------
 
-## 15.2_从官方文档先抓住_Maple_Tree_的语义
+## 15.2\_从官方文档先抓住\_Maple\_Tree\_的语义
 
 官方文档对 Maple Tree 的定位很明确：它是一种 B-Tree 风格的数据结构，面向“非重叠范围”的索引。范围可以大到一段地址区间，也可以小到只有一个 index。
 
@@ -180,7 +180,7 @@ VMA 管理大量使用高级 API，因为它经常需要：
 
 ------
 
-## 15.3_struct_maple_tree_树对象本身
+## 15.3\_struct\_maple\_tree\_树对象本身
 
 先看 Maple Tree 最外层对象。
 
@@ -282,7 +282,7 @@ flowchart TD
 
 ------
 
-## 15.4_struct_maple_node_真正装_pivot_和_slot_的节点
+## 15.4\_struct\_maple\_node\_真正装\_pivot\_和\_slot\_的节点
 
 Maple Tree 的节点不是一个“只有左右孩子”的二叉节点，而是多路节点。
 
@@ -467,7 +467,7 @@ pivot[i] 是 slot[i] 覆盖范围的包含式上界。
 
 ------
 
-## 15.5_指针低位编码_Maple_Tree_的_隐形字段
+## 15.5\_指针低位编码\_Maple\_Tree\_的\_隐形字段
 
 源码里说 Maple Tree 会把一些信息挤进指针低位。
 
@@ -574,7 +574,7 @@ flowchart LR
 
 ------
 
-## 15.6_struct_ma_state_Maple_Tree_高级_API_的状态机
+## 15.6\_struct\_ma\_state\_Maple\_Tree\_高级\_API\_的状态机
 
 如果说 `struct maple_tree` 是树对象，`struct maple_node` 是节点对象，那么 `struct ma_state` 就是“拿着地图在树里走的人”。
 
@@ -709,7 +709,7 @@ static inline void vma_iter_invalidate(struct vma_iterator *vmi)
 
 ------
 
-## 15.7_用一个复杂_VMA_场景理解_ma_state
+## 15.7\_用一个复杂\_VMA\_场景理解\_ma\_state
 
 假设某进程地址空间里有下面这些 VMA：
 
@@ -816,7 +816,7 @@ flowchart TD
 
 ------
 
-## 15.8_普通_API_mtree_*()_和_mt_*()
+## 15.8\_普通\_API\_mtree\_*()\_和\_mt\_*()
 
 普通 API 的特点是：调用者不用自己维护 `ma_state`。
 
@@ -836,7 +836,7 @@ void *mtree_erase(struct maple_tree *mt, unsigned long index);
 void *mt_find(struct maple_tree *mt, unsigned long *index, unsigned long max);
 ```
 
-### 15.8.1_mtree_load()_精确点查找
+### 15.8.1\_mtree\_load()\_精确点查找
 
 源码位置：[lib/maple_tree.c](../../../../research/source_reading/linux/lib/maple_tree.c)
 
@@ -909,7 +909,7 @@ struct vm_area_struct *vma_lookup(struct mm_struct *mm, unsigned long addr)
 }
 ```
 
-### 15.8.2_mtree_store_range()_范围写入
+### 15.8.2\_mtree\_store\_range()\_范围写入
 
 源码简化后：
 
@@ -965,7 +965,7 @@ mtree_store_range()
 
 这和 rbtree 非常不一样。rbtree 没有这种通用写入 API，使用者必须自己写比较、自己找到插入位置、自己调用 `rb_link_node()` 和 `rb_insert_color()`。
 
-### 15.8.3_mt_find()_从某点向后找第一个_entry
+### 15.8.3\_mt\_find()\_从某点向后找第一个\_entry
 
 `mt_find()` 是理解 `find_vma()` 的关键。
 
@@ -1041,7 +1041,7 @@ entry = mas_state_walk(&mas)
 
 ------
 
-## 15.9_高级_API_mas_*()_是真正的状态机接口
+## 15.9\_高级\_API\_mas\_*()\_是真正的状态机接口
 
 高级 API 的入口集中在 [include/linux/maple_tree.h](../../../../research/source_reading/linux/include/linux/maple_tree.h)：
 
@@ -1107,7 +1107,7 @@ struct vm_area_struct *vma_find(struct vma_iterator *vmi, unsigned long max)
 
 ------
 
-## 15.10_VMA_接入层_mm_struct.mm_mt
+## 15.10\_VMA\_接入层\_mm\_struct.mm\_mt
 
 现在看 VMA 是怎么接入 Maple Tree 的。
 
@@ -1202,7 +1202,7 @@ flowchart LR
 
 ------
 
-## 15.11_VMA_封装函数_把半开区间翻译成_Maple_Tree_闭区间
+## 15.11\_VMA\_封装函数\_把半开区间翻译成\_Maple\_Tree\_闭区间
 
 源码位置：[include/linux/mm.h](../../../../research/source_reading/linux/include/linux/mm.h)
 
@@ -1331,7 +1331,7 @@ flowchart TD
 
 ------
 
-## 15.12_mmap.c_里的三个查找入口
+## 15.12\_mmap.c\_里的三个查找入口
 
 VMA 相关源码里经常出现三个名字：
 
@@ -1343,7 +1343,7 @@ find_vma_intersection()
 
 它们不是同义词。
 
-### 15.12.1_vma_lookup()_只查这个地址有没有_VMA
+### 15.12.1\_vma\_lookup()\_只查这个地址有没有\_VMA
 
 源码位置：[include/linux/mm.h](../../../../research/source_reading/linux/include/linux/mm.h)
 
@@ -1369,7 +1369,7 @@ addr 必须落在某个 VMA 范围内，才返回这个 VMA。
 如果 addr 位于两个 VMA 之间的 gap，返回 NULL。
 ```
 
-### 15.12.2_find_vma()_查这个地址_或者地址之后的第一个_VMA
+### 15.12.2\_find\_vma()\_查这个地址\_或者地址之后的第一个\_VMA
 
 源码位置：[mm/mmap.c](../../../../research/source_reading/linux/mm/mmap.c)
 
@@ -1400,7 +1400,7 @@ struct vm_area_struct *find_vma(struct mm_struct *mm, unsigned long addr)
 
 这和很多页表或内存布局检查有关，因为内核经常需要知道“当前位置附近的 VMA 顺序”。
 
-### 15.12.3_find_vma_intersection()_查范围是否与_VMA_相交
+### 15.12.3\_find\_vma\_intersection()\_查范围是否与\_VMA\_相交
 
 源码位置：[mm/mmap.c](../../../../research/source_reading/linux/mm/mmap.c)
 
@@ -1485,7 +1485,7 @@ flowchart LR
 
 ------
 
-## 15.13_find_vma_prev()_为什么还要找_previous
+## 15.13\_find\_vma\_prev()\_为什么还要找\_previous
 
 `find_vma_prev()` 在 [mm/mmap.c](../../../../research/source_reading/linux/mm/mmap.c) 里：
 
@@ -1580,7 +1580,7 @@ flowchart LR
 
 ------
 
-## 15.14_page_fault_unmap_free_pgtables_为什么也会碰_Maple_Tree
+## 15.14\_page\_fault\_unmap\_free\_pgtables\_为什么也会碰\_Maple\_Tree
 
 不要把 Maple Tree 只理解成 `mmap()` 时用的数据结构。
 
@@ -1676,7 +1676,7 @@ flowchart TD
 
 ------
 
-## 15.15_ma_state_和_VMA_iterator_的一张总图
+## 15.15\_ma\_state\_和\_VMA\_iterator\_的一张总图
 
 把前面的内容合并，可以得到下面这张源码调用地图。
 
@@ -1748,7 +1748,7 @@ VMA 主要通过 vma_iterator / vma_iter_* 把 VMA 半开区间翻译成 Maple T
 
 ------
 
-## 15.16_这一章没有展开的内容
+## 15.16\_这一章没有展开的内容
 
 本章只是源码结构和 API 分层，不展开这些细节：
 
@@ -1786,7 +1786,7 @@ VMA 主要通过 vma_iterator / vma_iter_* 把 VMA 半开区间翻译成 Maple T
 
 ------
 
-## 15.17_本章小结
+## 15.17\_本章小结
 
 本章先把 Maple Tree 源码阅读的入口搭起来了。
 

@@ -8,7 +8,7 @@ domains:
   - platform
 ---
 
-# 第1章_下载编译器
+# 第1章\_下载编译器
 
 编译器版本：
 
@@ -91,12 +91,12 @@ installed all required packages below in order to build these host tools::
    export PATH=$PATH:/usr/local/cross_compiler/arm64/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin
    ```
 
-# 第2章_kernel获取
+# 第2章\_kernel获取
 
 * 官网github地址：[imx_5.4.70_2.3.0](https://github.com/nxp-imx/linux-imx/tree/imx_5.4.70_2.3.0#)
 * 下载下来后文件的名字是 `linux-imx`，为了区分，我将名字改为：`linux-imx-5.4`，后续的所有跟内核有关的目录都是以此目录为根目录进行讨论；
 
-# 第3章_配置makefile
+# 第3章\_配置makefile
 
 向kernel顶层makefile填充如下参数：
 
@@ -109,7 +109,7 @@ CROSS_COMPILE ?= aarch64-none-linux-gnu-
 
 ![image](../../../../../assets/images/kernel/nxp/kernel_config_cross_compiler_for_makefile.png)
 
-# 第4章_编译kernel
+# 第4章\_编译kernel
 
 ```shell
 make distclean

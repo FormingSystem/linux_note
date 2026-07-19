@@ -12,9 +12,9 @@ domains:
 
 
 
-# 第1章_走进驱动的_Makefile
+# 第1章\_走进驱动的\_Makefile
 
-## 1.1_为什么它和应用程序不一样
+## 1.1\_为什么它和应用程序不一样
 
 写过用户态应用的同学都知道：应用的 Makefile 通常很啰嗦。
  你得告诉 `gcc`：源文件在哪、库路径在哪、要链接哪些库，最后要生成什么可执行文件。
@@ -36,7 +36,7 @@ all:
 
 ------
 
-## 1.2_那么_KDIR_究竟是什么
+## 1.2\_那么\_KDIR\_究竟是什么
 
 很多初学者一开始都会搞糊涂：`KDIR` 到底是 **宿主机的内核目录**，还是 **目标板的内核目录**？
 
@@ -86,7 +86,7 @@ clean:
 
 ------
 
-## 1.3_编译之前的准备工作
+## 1.3\_编译之前的准备工作
 
 在 `KDIR` 指向的内核目录里，还需要做一些准备工作：
 
@@ -106,7 +106,7 @@ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabihf- prepare modules_prepare
 
 ------
 
-## 1.4_编译与加载
+## 1.4\_编译与加载
 
 准备好之后，在你的驱动目录里：
 
@@ -131,7 +131,7 @@ insmod /tmp/mydriver.ko
 
 ------
 
-## 1.5_本章小结
+## 1.5\_本章小结
 
 - 驱动的 Makefile 之所以简洁，是因为真正的编译由内核的 Kbuild 完成；
 - `KDIR` 永远是宿主机上的内核源码路径，交叉编译时要指向目标板的那份源码树；
@@ -140,7 +140,7 @@ insmod /tmp/mydriver.ko
 
 ------
 
-# 第2章_从单文件到多文件_Makefile_的演进
+# 第2章\_从单文件到多文件\_Makefile\_的演进
 
 在上一章里，我们用一个最小的 Makefile 就编译出了 `mydriver.ko`。
  那只是最简单的情况：一个 `.c` 文件对应一个 `.ko` 模块。
@@ -154,7 +154,7 @@ insmod /tmp/mydriver.ko
 
 ------
 
-## 2.1_单文件驱动(回顾)
+## 2.1\_单文件驱动(回顾)
 
 目录结构：
 
@@ -184,7 +184,7 @@ clean:
 
 ------
 
-## 2.2_多文件合并成一个模块
+## 2.2\_多文件合并成一个模块
 
 假设你把驱动分成了三个文件：
 
@@ -228,7 +228,7 @@ clean:
 
 ------
 
-## 2.3_多个独立模块
+## 2.3\_多个独立模块
 
 再进一步：假设你写了两个驱动，`foo.c` 和 `bar.c`，希望分别编译成 `foo.ko` 和 `bar.ko`，而不是一个大模块。
 
@@ -266,7 +266,7 @@ bar.ko
 
 ------
 
-## 2.4_小结
+## 2.4\_小结
 
 - **单文件驱动**：最常见的入门案例，直接 `obj-m := mydriver.o`。
 - **多文件合并成一个模块**：用 `模块名-objs := file1.o file2.o ...`。
@@ -279,7 +279,7 @@ bar.ko
 
 ------
 
-# 第3章_把驱动集成进内核源码树
+# 第3章\_把驱动集成进内核源码树
 
 在前两章里，我们的驱动都是**外部模块**（out-of-tree module）。
  它们像插件一样，单独编译成 `.ko` 文件，再手动用 `insmod` 或 `modprobe` 加载。
@@ -295,7 +295,7 @@ bar.ko
 
 ------
 
-## 3.1_内核源码树中的目录结构
+## 3.1\_内核源码树中的目录结构
 
 假设我们要把驱动放在源码树的：
 
@@ -318,7 +318,7 @@ linux-imx-6.1/
 
 ------
 
-## 3.2_内核树内的_Makefile
+## 3.2\_内核树内的\_Makefile
 
 在这个目录下，我们写的 Makefile 和外部模块有些不同：
 
@@ -341,7 +341,7 @@ mydevice-objs := mydriver_main.o foo.o bar.o
 
 ------
 
-## 3.3_配套的_Kconfig
+## 3.3\_配套的\_Kconfig
 
 为了让这个 `CONFIG_MYDEVICE` 出现在 `make menuconfig` 里，我们要写一个 `Kconfig` 文件：
 
@@ -362,7 +362,7 @@ config MYDEVICE
 
 ------
 
-## 3.4_把_Kconfig_接到主菜单里
+## 3.4\_把\_Kconfig\_接到主菜单里
 
 单独写了 `drivers/mydevice/Kconfig` 还不够，我们要在上一级目录（比如 `drivers/Kconfig`）里把它“挂上去”：
 
@@ -376,7 +376,7 @@ source "drivers/mydevice/Kconfig"
 
 ------
 
-## 3.5_使用_menuconfig_选择
+## 3.5\_使用\_menuconfig\_选择
 
 当你在 `make menuconfig` 里操作时：
 
@@ -388,7 +388,7 @@ Kbuild 会根据这个选项，自动控制 Makefile 里的 `obj-$(CONFIG_MYDEVI
 
 ------
 
-## 3.6_小结
+## 3.6\_小结
 
 - **外部模块**：灵活，适合开发调试，Makefile 用 `obj-m`。
 - **源码树内模块**：规范，适合产品化，Makefile 用 `obj-$(CONFIG_xxx)`，配合 `Kconfig`。
@@ -396,7 +396,7 @@ Kbuild 会根据这个选项，自动控制 Makefile 里的 `obj-$(CONFIG_MYDEVI
 
 ------
 
-# 第4章_常见问题与排查技巧
+# 第4章\_常见问题与排查技巧
 
 驱动编译、加载过程中，常常会遇到一些“看似玄学”的报错：
 
@@ -408,7 +408,7 @@ Kbuild 会根据这个选项，自动控制 Makefile 里的 `obj-$(CONFIG_MYDEVI
 
 ------
 
-## 4.1_Unknown_symbol_报错
+## 4.1\_Unknown\_symbol\_报错
 
 **现象：**
  在目标板上执行 `insmod mydriver.ko` 后，`dmesg` 打印：
@@ -442,7 +442,7 @@ mydriver: Unknown symbol xxx (err 0)
 
 ------
 
-## 4.2_Invalid_module_format_/_vermagic_不匹配
+## 4.2\_Invalid\_module\_format\_/\_vermagic\_不匹配
 
 **现象：**
  `insmod` 时提示：
@@ -483,7 +483,7 @@ vermagic: 5.10.72 SMP mod_unload ARMv7 p2v8 …
 
 ------
 
-## 4.3_缺少内核头文件
+## 4.3\_缺少内核头文件
 
 **现象：**
  编译时出现：
@@ -506,7 +506,7 @@ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabihf- prepare modules_prepare
 
 ------
 
-## 4.4_模块安装路径与加载问题
+## 4.4\_模块安装路径与加载问题
 
 **场景：**
  有时我们希望 `modprobe` 自动加载模块，而不是手动 `insmod`。
@@ -533,7 +533,7 @@ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabihf- prepare modules_prepare
 
 ------
 
-## 4.5_Kbuild_报错排查技巧
+## 4.5\_Kbuild\_报错排查技巧
 
 有时 `make` 报的错误很长，让人摸不着头脑。排查时可以这样做：
 
@@ -553,7 +553,7 @@ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabihf- prepare modules_prepare
 
 ------
 
-## 4.6_本章小结
+## 4.6\_本章小结
 
 - **Unknown symbol** → 符号没导出或版本不一致；
 - **Invalid module format** → vermagic 不匹配；
@@ -565,7 +565,7 @@ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabihf- prepare modules_prepare
 
 ------
 
-# 第5章_Makefile_进阶技巧
+# 第5章\_Makefile\_进阶技巧
 
 在前几章，我们写的 Makefile 都是“能用”的版本。
  但如果项目一大、驱动一多，你会发现：
@@ -578,7 +578,7 @@ make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabihf- prepare modules_prepare
 
 ------
 
-## 5.1_参数可配置化
+## 5.1\_参数可配置化
 
 之前我们把 `ARCH` 和 `CROSS_COMPILE` 写死了：
 
@@ -620,7 +620,7 @@ clean:
 
 ------
 
-## 5.2_支持多平台构建
+## 5.2\_支持多平台构建
 
 有些人希望在同一个项目里，同时支持：
 
@@ -649,7 +649,7 @@ make ARCH=x86      # 编译宿主机调试用驱动
 
 ------
 
-## 5.3_条件编译(兼容不同内核版本)
+## 5.3\_条件编译(兼容不同内核版本)
 
 驱动开发经常遇到 API 改动，比如老版本内核用 `getnstimeofday()`，新版本改成了 `ktime_get_real_ts64()`。
 
@@ -687,7 +687,7 @@ endif
 
 ------
 
-## 5.4_公共_Makefile_模板
+## 5.4\_公共\_Makefile\_模板
 
 当驱动越来越多时，通常会写一个“顶层 Makefile”，所有子目录共享：
 
@@ -719,7 +719,7 @@ obj-m := foo.o
 
 ------
 
-## 5.5_小结
+## 5.5\_小结
 
 - `ARCH`、`CROSS_COMPILE` 可以写成可配置的，避免硬编码。
 - 可以在一个 Makefile 里支持多平台：x86 调试，ARM 发布。
@@ -728,7 +728,7 @@ obj-m := foo.o
 
 ------
 
-# 第6章_完整案例_Hello_驱动
+# 第6章\_完整案例\_Hello\_驱动
 
 到目前为止，我们讲了很多 Makefile 的写法、变体和技巧。
  但纸上得来终觉浅，最好的办法是跟着一个实际例子走一遍。
@@ -737,7 +737,7 @@ obj-m := foo.o
 
 ------
 
-## 6.1_驱动源码_hello.c
+## 6.1\_驱动源码\_hello.c
 
 新建一个目录 `hello_driver/`，里面放一个 `hello.c`：
 
@@ -774,7 +774,7 @@ MODULE_VERSION("1.0");                  // 模块版本
 
 ------
 
-## 6.2_配套_Makefile
+## 6.2\_配套\_Makefile
 
 在同一目录下写一个 `Makefile`：
 
@@ -809,7 +809,7 @@ clean:
 
 ------
 
-## 6.3_编译
+## 6.3\_编译
 
 在宿主机进入驱动目录：
 
@@ -828,7 +828,7 @@ hello.ko
 
 ------
 
-## 6.4_拷贝到目标板
+## 6.4\_拷贝到目标板
 
 用 `scp` 或者 U 盘都行。示例（假设目标板 IP 是 192.168.31.50）：
 
@@ -838,7 +838,7 @@ scp hello.ko root@192.168.31.50:/tmp/
 
 ------
 
-## 6.5_在目标板上加载与卸载
+## 6.5\_在目标板上加载与卸载
 
 在目标板上执行：
 
@@ -871,7 +871,7 @@ dmesg | tail -n 5
 
 ------
 
-## 6.6_小结
+## 6.6\_小结
 
 通过这个 Hello 驱动，我们完整跑通了一个流程：
 
@@ -894,7 +894,7 @@ dmesg | tail -n 5
 
 ------
 
-# 第7章_进阶案例_字符设备驱动
+# 第7章\_进阶案例\_字符设备驱动
 
 在第 6 章里，我们写了一个最小的 “Hello 驱动”，加载和卸载时在 `dmesg` 里打印信息。
  但那个驱动没有和用户态交互，只能算是“能跑”。
@@ -903,7 +903,7 @@ dmesg | tail -n 5
 
 ------
 
-## 7.1_驱动源码_chardev.c
+## 7.1\_驱动源码\_chardev.c
 
 在 `chardev_driver/` 目录下写一个 `chardev.c`：
 
@@ -1019,7 +1019,7 @@ MODULE_VERSION("1.0");
 
 ------
 
-## 7.2_配套_Makefile
+## 7.2\_配套\_Makefile
 
 ```makefile
 # 编译目标：chardev.c -> chardev.ko
@@ -1041,7 +1041,7 @@ clean:
 
 ------
 
-## 7.3_编译与安装
+## 7.3\_编译与安装
 
 在宿主机：
 
@@ -1063,7 +1063,7 @@ scp chardev.ko root@192.168.31.50:/tmp/
 
 ------
 
-## 7.4_在目标板上加载
+## 7.4\_在目标板上加载
 
 1. 加载模块：
 
@@ -1087,7 +1087,7 @@ scp chardev.ko root@192.168.31.50:/tmp/
 
 ------
 
-## 7.5_用户态测试
+## 7.5\_用户态测试
 
 写数据：
 
@@ -1110,7 +1110,7 @@ chardev: read 13 bytes
 
 ------
 
-## 7.6_小结
+## 7.6\_小结
 
 通过这个例子，你学会了：
 
@@ -1131,7 +1131,7 @@ chardev: read 13 bytes
 
 ------
 
-# 第8章_模块调试与优化
+# 第8章\_模块调试与优化
 
 驱动开发的难点不在“能编译”，而在“能跑”。
  一个 `.ko` 编出来，能不能正常插拔、和用户态交互、在不同内核版本下稳定工作，才是考验。
@@ -1140,7 +1140,7 @@ chardev: read 13 bytes
 
 ------
 
-## 8.1_ccflags-y_给模块加编译选项
+## 8.1\_ccflags-y\_给模块加编译选项
 
 在普通应用程序的 Makefile 里，我们经常用 `CFLAGS` 来加警告开关、调试宏。
  在内核模块里，对应的变量是 **`ccflags-y`**。
@@ -1171,7 +1171,7 @@ printk(KERN_INFO "Debug: function=%s line=%d\n", __func__, __LINE__);
 
 ------
 
-## 8.2_调试日志优化_宏封装
+## 8.2\_调试日志优化\_宏封装
 
 写驱动时，我们常用 `printk` 打日志，但裸写 `printk` 会让日志乱七八糟。
  建议写一个宏：
@@ -1197,7 +1197,7 @@ log_err("failed to register device\n");
 
 ------
 
-## 8.3_导出符号(EXPORT_SYMBOL)
+## 8.3\_导出符号(EXPORT\_SYMBOL)
 
 有时候你写的驱动模块里有一些函数，想让其他模块调用，就要导出符号。
 
@@ -1219,7 +1219,7 @@ EXPORT_SYMBOL(my_helper_function);
 
 ------
 
-## 8.4_查看模块信息
+## 8.4\_查看模块信息
 
 编译好的 `.ko` 可以用 `modinfo` 查看：
 
@@ -1244,7 +1244,7 @@ vermagic:       6.1.22 SMP mod_unload ARMv7
 
 ------
 
-## 8.5_让_Makefile_帮你快速调试
+## 8.5\_让\_Makefile\_帮你快速调试
 
 在 Makefile 里，我们还可以加一些快捷目标：
 
@@ -1271,7 +1271,7 @@ make reload
 
 ------
 
-## 8.6_本章小结
+## 8.6\_本章小结
 
 - `ccflags-y` 可以给模块加编译参数，比如 `-Wall`、`-DDEBUG`；
 - 建议用日志宏封装 `printk`，让输出更规范；
@@ -1289,7 +1289,7 @@ make reload
 
 ------
 
-# 第9章_同时管理多个驱动目录
+# 第9章\_同时管理多个驱动目录
 
 到目前为止，我们的案例都是“单个驱动目录 + 一个 Makefile”。
  但在实际项目里，驱动往往会被拆分成多个目录：
@@ -1303,7 +1303,7 @@ make reload
 
 ------
 
-## 9.1_顶层_+_子目录结构
+## 9.1\_顶层\_+\_子目录结构
 
 假设我们有三个驱动：
 
@@ -1329,7 +1329,7 @@ drivers/
 
 ------
 
-## 9.2_顶层_Makefile
+## 9.2\_顶层\_Makefile
 
 在顶层 `drivers/Makefile` 里，我们只需要声明：
 
@@ -1343,7 +1343,7 @@ obj-m += lcd/
 
 ------
 
-## 9.3_子目录_Makefile
+## 9.3\_子目录\_Makefile
 
 每个子目录只关心自己的模块：
 
@@ -1375,7 +1375,7 @@ lcd.ko
 
 ------
 
-## 9.4_混合模式_一个子目录多个文件
+## 9.4\_混合模式\_一个子目录多个文件
 
 如果 `lcd` 驱动比较复杂，由多个文件组成，可以在 `lcd/Makefile` 里写：
 
@@ -1388,7 +1388,7 @@ lcd-objs := lcd_main.o lcd_ctrl.o lcd_dma.o
 
 ------
 
-## 9.5_扩展_源码树内的管理
+## 9.5\_扩展\_源码树内的管理
 
 如果你要把整个 `drivers/` 目录挂到内核源码树里，那就在 `drivers/Kconfig` 里加：
 
@@ -1410,7 +1410,7 @@ obj-$(CONFIG_LCD) += lcd/
 
 ------
 
-## 9.6_批量清理与编译
+## 9.6\_批量清理与编译
 
 当驱动数量多时，可以在顶层 Makefile 里写一个批量清理：
 
@@ -1425,7 +1425,7 @@ clean:
 
 ------
 
-## 9.7_小结
+## 9.7\_小结
 
 - 用 **顶层 + 子目录** 的方式组织驱动目录，清晰又可扩展。
 - 顶层 Makefile 负责声明子目录，子目录 Makefile 各自独立维护。
@@ -1448,14 +1448,14 @@ clean:
 
 ------
 
-# 第10章_实战锦囊_最佳实践
+# 第10章\_实战锦囊\_最佳实践
 
 写驱动的 Makefile，看似只是几行代码，但细节决定成败。
  这一章，我们来总结一些 **经验法则**，帮助你在实际开发中少踩坑、多省力。
 
 ------
 
-## 10.1_保持_Makefile_简洁
+## 10.1\_保持\_Makefile\_简洁
 
 **原则**：能写一行，不写两行。
 
@@ -1474,7 +1474,7 @@ all:
 
 ------
 
-## 10.2_参数要可配置
+## 10.2\_参数要可配置
 
 不要把 `ARCH` 和 `CROSS_COMPILE` 写死，支持命令行覆盖：
 
@@ -1495,7 +1495,7 @@ CROSS_COMPILE ?= arm-none-linux-gnueabihf-
 
 ------
 
-## 10.3_外部模块_vs_内核集成
+## 10.3\_外部模块\_vs\_内核集成
 
 - **外部模块 (`obj-m`)**
   - 适合开发调试阶段；
@@ -1513,7 +1513,7 @@ CROSS_COMPILE ?= arm-none-linux-gnueabihf-
 
 ------
 
-## 10.4_版本匹配是第一要务
+## 10.4\_版本匹配是第一要务
 
 最常见的坑：
 
@@ -1535,7 +1535,7 @@ CROSS_COMPILE ?= arm-none-linux-gnueabihf-
 
 ------
 
-## 10.5_善用调试手段
+## 10.5\_善用调试手段
 
 - 在 Makefile 加：
 
@@ -1557,7 +1557,7 @@ CROSS_COMPILE ?= arm-none-linux-gnueabihf-
 
 ------
 
-## 10.6_多驱动项目的组织
+## 10.6\_多驱动项目的组织
 
 - 顶层 Makefile 声明子目录：
 
@@ -1581,7 +1581,7 @@ CROSS_COMPILE ?= arm-none-linux-gnueabihf-
 
 ------
 
-## 10.7_一键调试
+## 10.7\_一键调试
 
 在 Makefile 里加：
 
@@ -1599,7 +1599,7 @@ reload: all unload load
 
 ------
 
-## 10.8_何时使用_EXPORT_SYMBOL
+## 10.8\_何时使用\_EXPORT\_SYMBOL
 
 - 如果你写的驱动只在自己模块内用，不需要导出符号。
 
@@ -1617,7 +1617,7 @@ reload: all unload load
 
 ------
 
-## 10.9_最终口诀
+## 10.9\_最终口诀
 
 1. **简单** —— Makefile 只声明，不写编译细节。
 2. **匹配** —— KDIR 必须与目标板内核完全一致。
@@ -1627,7 +1627,7 @@ reload: all unload load
 
 ------
 
-## 10.10_本书总结
+## 10.10\_本书总结
 
 从第 1 章到第 10 章，我们走过了：
 

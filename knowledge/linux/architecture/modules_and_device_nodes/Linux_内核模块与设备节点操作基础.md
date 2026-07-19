@@ -12,9 +12,9 @@ domains:
 
 ------
 
-# 第1章_设备号与设备节点_从_0_到多实例
+# 第1章\_设备号与设备节点\_从\_0\_到多实例
 
-## 1.1_设备号_dev_t_主/次的来龙去脉
+## 1.1\_设备号\_dev\_t\_主/次的来龙去脉
 
 - `dev_t` = 主设备号（major） + 次设备号（minor）。
 - 设备号只存在于内核表里；**用户空间要访问**，必须在 `/dev` 里有**设备节点**（一个“特殊文件”），其元信息携带（major, minor）。
@@ -38,9 +38,9 @@ domains:
 
 ------
 
-## 1.2_手工节点_vs_自动节点_两条路线
+## 1.2\_手工节点\_vs\_自动节点\_两条路线
 
-### 1.2.1_路线_A_手工节点(mknod)
+### 1.2.1\_路线\_A\_手工节点(mknod)
 
 - 适合：裁剪 rootfs、没有 udev/devtmpfs 的环境；教学、快速验证。
 
@@ -56,7 +56,7 @@ domains:
   - 你在驱动里注册的 `(major, minor)` 必须 **一模一样** 填到 `mknod`；
   - 否则打开 `/dev/<name>` 时内核会报 `No such device`，因为设备号对不上。
 
-### 1.2.2_路线_B_自动节点(class_+_device)
+### 1.2.2\_路线\_B\_自动节点(class\_+\_device)
 
 - 适合：现代发行版/开发板（默认启用 devtmpfs/udev）。
 
@@ -80,7 +80,7 @@ domains:
 
 ------
 
-## 1.3_「一看就会」的映射关系图
+## 1.3\_「一看就会」的映射关系图
 
 **驱动侧：**
 
@@ -99,9 +99,9 @@ alloc_chrdev_region(&base, 0, count, "demo");
 
 ------
 
-# 第2章_代码上手_单/多实例_+_静/动设备号_+_自动/手工节点
+# 第2章\_代码上手\_单/多实例\_+\_静/动设备号\_+\_自动/手工节点
 
-## 2.1_简单模版(面试专用)
+## 2.1\_简单模版(面试专用)
 
 下面把“面试速写版字符设备”整理成一章可直接带走的小模板：一手代码、一手思路，5–10 分钟能写完且能跑。
 
@@ -110,7 +110,7 @@ alloc_chrdev_region(&base, 0, count, "demo");
 
 ------
 
-### 2.1.1_清单与结构
+### 2.1.1\_清单与结构
 
 ```
 simple_chardev/
@@ -118,7 +118,7 @@ simple_chardev/
 └── simple_chardev.c
 ```
 
-#### (1)_Makefile
+#### (1)\_Makefile
 
 ```make
 # 编译目标：simple_chardev.c -> simple_chardev.ko
@@ -139,7 +139,7 @@ clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) clean
 ```
 
-#### (2)_simple_chardev.c
+#### (2)\_simple\_chardev.c
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -364,9 +364,9 @@ MODULE_DESCRIPTION("Simple char device (with pr_fmt + dev_fmt)");
 
 ------
 
-### 2.1.2_代码走读(面试把控重点)
+### 2.1.2\_代码走读(面试把控重点)
 
-#### (1)_重点提示
+#### (1)\_重点提示
 
 - **设备号**：`alloc_chrdev_region(&dev, 0, 1, DRIVER_NAME)` 动态拿 `major`；卸载时 `unregister_chrdev_region(dev, 1)`。
 - **cdev 生命周期**：`cdev_init→cdev_add→cdev_del`。
@@ -379,9 +379,9 @@ MODULE_DESCRIPTION("Simple char device (with pr_fmt + dev_fmt)");
 
 ------
 
-#### (2)_demo_字符设备驱动框架流程
+#### (2)\_demo\_字符设备驱动框架流程
 
-##### 1)_总览(驱动入口)
+##### 1)\_总览(驱动入口)
 
 ```mermaid
 flowchart TD
@@ -393,7 +393,7 @@ flowchart TD
 
 ------
 
-##### 2)_打开与释放
+##### 2)\_打开与释放
 
 ```mermaid
 flowchart TD
@@ -405,7 +405,7 @@ flowchart TD
 
 ------
 
-##### 3)_读操作
+##### 3)\_读操作
 
 ```mermaid
 flowchart TD
@@ -417,7 +417,7 @@ flowchart TD
 
 ------
 
-##### 4)_写操作
+##### 4)\_写操作
 
 ```mermaid
 flowchart TD
@@ -429,7 +429,7 @@ flowchart TD
 
 ------
 
-##### 5)_llseek_操作
+##### 5)\_llseek\_操作
 
 ```mermaid
 flowchart TD
@@ -445,7 +445,7 @@ flowchart TD
 
 ------
 
-#### (3)_demo_字符设备整体调用流程
+#### (3)\_demo\_字符设备整体调用流程
 
 ```mermaid
 flowchart TD
@@ -462,7 +462,7 @@ flowchart TD
 
 ------
 
-### 2.1.3_构建与快速验证
+### 2.1.3\_构建与快速验证
 
 ```bash
 make
@@ -504,7 +504,7 @@ sudo rmmod simple_chardev
 
 ------
 
-### 2.1.4_头文件对照(记住就能写)
+### 2.1.4\_头文件对照(记住就能写)
 
 | 能力/接口                    | 头文件              |
 | ---------------------------- | ------------------- |
@@ -518,7 +518,7 @@ sudo rmmod simple_chardev
 
 ------
 
-### 2.1.5_面试_加分项_一键改
+### 2.1.5\_面试\_加分项\_一键改
 
 1. **静态主设备号**
 
@@ -542,7 +542,7 @@ sudo rmmod simple_chardev
 
 ------
 
-### 2.1.6_常见坑与排查
+### 2.1.6\_常见坑与排查
 
 - **`cat /dev/simpchr` 不退出？**
    你的实现是“文件式”而非“流式管道”；读空返回 0（EOF），`cat` 会退出。若卡住，多半是用户态还没读到 EOF（比如有人后台写入追加，`cat` 一直读）。
@@ -551,7 +551,7 @@ sudo rmmod simple_chardev
 
 ------
 
-### 2.1.7_复盘笔记(面试现场要说的点)
+### 2.1.7\_复盘笔记(面试现场要说的点)
 
 - `alloc_chrdev_region`/`cdev_init+add`/`class_create+device_create` 是“外部模块字符设备”的黄金三步。
 - `read/write/llseek` 都遵循 `*ppos` 契约，`write` 支持 `O_APPEND`。
@@ -562,7 +562,7 @@ sudo rmmod simple_chardev
 
 这一章的目的就是“面试 5–10 分钟写出能跑的字符驱动”。等要写正式项目时，再换用你前面那份“环形缓冲 + poll/阻塞”的全功能模板即可。祝面试顺利！
 
-## 2.2_完整模版(项目专用)
+## 2.2\_完整模版(项目专用)
 
 太好了，那我直接把整套程序**重构成“项目模板级”版本**：
 
@@ -578,7 +578,7 @@ sudo rmmod simple_chardev
 
 ------
 
-### 2.2.1_目录结构
+### 2.2.1\_目录结构
 
 ```
 chardev_template/
@@ -588,7 +588,7 @@ chardev_template/
 
 ------
 
-### 2.2.2_Makefile(外部模块标准写法)
+### 2.2.2\_Makefile(外部模块标准写法)
 
 ```make
 # 编译目标：chardev_template.c -> chardev_template.ko
@@ -611,7 +611,7 @@ clean:
 
 ------
 
-### 2.2.3_chardev_template.c
+### 2.2.3\_chardev\_template.c
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -1004,7 +1004,7 @@ MODULE_DESCRIPTION("Character device template: multi-minor, ring buffer, poll, E
 
 ------
 
-### 2.2.4_使用方式(一看就会)
+### 2.2.4\_使用方式(一看就会)
 
 ```bash
 # 1) 编译 & 加载
@@ -1045,7 +1045,7 @@ sudo rmmod chardev_template
 
 ------
 
-### 2.2.5_设计取舍与延展点
+### 2.2.5\_设计取舍与延展点
 
 - 采用**环形缓冲区**+等待队列，语义是“流式设备”，所以 `.llseek = no_llseek`；这比“线性内存+ppos”的教学示例更贴合实际数据流设备（串口/管道类）。
 - 提供 `blocking` 模块参数：默认阻塞行为（若 `O_NONBLOCK` 会覆盖）；也可以设为非阻塞默认。
@@ -1065,7 +1065,7 @@ sudo rmmod chardev_template
 
 如果你还想要**线性文件语义**（支持 `O_APPEND` 和 `llseek`）的“并行模板”，我也可以再给你一份“linear 版”的骨架；你就能根据业务类型二选一或都保留两种设备类型。
 
-### 2.2.6_头文件速查(和接口一一对齐)
+### 2.2.6\_头文件速查(和接口一一对齐)
 
 | 接口                                                         | 头文件              |
 | ------------------------------------------------------------ | ------------------- |
@@ -1080,11 +1080,11 @@ sudo rmmod chardev_template
 
 ------
 
-# 第3章_跑起来_四种典型场景的_一键流程
+# 第3章\_跑起来\_四种典型场景的\_一键流程
 
 > 下面所有步骤都**可直接复制执行**。你可以多换几组参数，马上感受到“静/动 + 自动/手工 + 多实例”的组合差异。
 
-## 3.1_场景_A_动态设备号_+_自动节点(最省心_推荐)
+## 3.1\_场景\_A\_动态设备号\_+\_自动节点(最省心\_推荐)
 
 注意：上面所有的 `xxx.ko` 文件在下面统一叫做 `demo.ko` 。
 
@@ -1109,7 +1109,7 @@ cat /dev/demo1
 sudo rmmod demo
 ```
 
-## 3.2_场景_B_动态设备号_+_手工_mknod(无_devtmpfs/udev_的板子)
+## 3.2\_场景\_B\_动态设备号\_+\_手工\_mknod(无\_devtmpfs/udev\_的板子)
 
 ```bash
 sudo insmod demo.ko major=0 count=2 auto_node=0 devbase=demo
@@ -1127,7 +1127,7 @@ sudo rmmod demo
 sudo rm -f /dev/demo0 /dev/demo1
 ```
 
-## 3.3_场景_C_静态设备号_+_手工_mknod(老派_可控)
+## 3.3\_场景\_C\_静态设备号\_+\_手工\_mknod(老派\_可控)
 
 ```bash
 # 假设我们要用 major=240，确保系统没占用（cat /proc/devices 查看）
@@ -1145,7 +1145,7 @@ sudo rmmod demo
 sudo rm -f /dev/demo*
 ```
 
-## 3.4_场景_D_静态设备号_+_自动节点(稳定主号_+_自动体验)
+## 3.4\_场景\_D\_静态设备号\_+\_自动节点(稳定主号\_+\_自动体验)
 
 ```bash
 sudo insmod demo.ko major=240 count=1 auto_node=1 devbase=demo
@@ -1157,9 +1157,9 @@ sudo rmmod demo
 
 ------
 
-# 第4章_深入与排错_把坑一次性踩完
+# 第4章\_深入与排错\_把坑一次性踩完
 
-## 4.1_/dev/demo0_是普通文件_不是字符设备
+## 4.1\_/dev/demo0\_是普通文件\_不是字符设备
 
 ```bash
 ls -l /dev/demo0
@@ -1169,7 +1169,7 @@ sudo rm -f /dev/demo0
 
 重新创建（或用自动节点）。
 
-## 4.2_echo_>_/dev/demo0_没任何_printk
+## 4.2\_echo\_>\_/dev/demo0\_没任何\_printk
 
 - 核对节点设备号：
 
@@ -1181,7 +1181,7 @@ sudo rm -f /dev/demo0
 
 - 确认模块已加载、未卸载：`lsmod | grep demo`
 
-## 4.3_rmmod:_Module_demo_is_in_use
+## 4.3\_rmmod:\_Module\_demo\_is\_in\_use
 
 - 有进程没关设备：
 
@@ -1192,13 +1192,13 @@ sudo rm -f /dev/demo0
 
 - 关掉占用进程再卸载。
 
-## 4.4_同名模块/设备号冲突
+## 4.4\_同名模块/设备号冲突
 
 - 静态 major 要先查 `/proc/devices`，避免撞车；
 - 动态分配一般不冲突；
 - 模块名冲突时，第二次 `insmod` 会报 `File exists`。
 
-## 4.5_让_udev_给你固定权限/固定软链名
+## 4.5\_让\_udev\_给你固定权限/固定软链名
 
 `/etc/udev/rules.d/90-demo.rules`：
 
@@ -1217,7 +1217,7 @@ sudo udevadm trigger
 
 ------
 
-# 第5章_附录_A_精讲「多实例」的_3_种常见写法
+# 第5章\_附录\_A\_精讲「多实例」的\_3\_种常见写法
 
 1. **连续 minor（最常见）**
     `alloc_chrdev_region(&base, 0, count, "demo")` → `dev = base + i`
@@ -1230,7 +1230,7 @@ sudo udevadm trigger
 
 ------
 
-# 第6章_附录_B_一个小小用户态测试程序(对比_shell)
+# 第6章\_附录\_B\_一个小小用户态测试程序(对比\_shell)
 
 `test_rw.c`（一次性读写验证某个实例）：
 
@@ -1265,7 +1265,7 @@ int main(int argc, char **argv) {
 
 ------
 
-# 第7章_结尾_你该从这份笔记收获到的_硬核要点
+# 第7章\_结尾\_你该从这份笔记收获到的\_硬核要点
 
 - **设备号是内核识别你的驱动的唯一钥匙**：`dev_t = (major, minor)`；
 - **mknod 的数字必须与驱动注册一致**：否则永远进不到你的 `read/write`；
