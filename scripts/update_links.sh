@@ -4,7 +4,8 @@ set -euo pipefail
 usage() {
     cat <<'EOF'
 用法：
-  ./format.sh links [--apply] [--summary] [Markdown文件或目录...]
+  ./format.sh check links [--summary] [Markdown文件或目录...]
+  ./format.sh fix links [--summary] [Markdown文件或目录...]
 
 默认仅扫描。不给路径时扫描全仓；指定文件或目录时只扫描对应 Markdown。
 自动修复仅用于唯一确定的目标；歧义链接和缺失资源只报告、不改写。
@@ -324,6 +325,9 @@ if DETAIL:
         print(message)
 if APPLY:
     print(f"已更新链接：{statistics['updated']}")
+else:
+    problems = statistics["updated"] + statistics["ambiguous"] + statistics["missing"] + statistics["obsidian"]
+    raise SystemExit(1 if problems else 0)
 PY
 
 if [[ $mode == apply ]]; then
