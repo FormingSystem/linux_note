@@ -1,11 +1,11 @@
 ---
 id: knowledge.kernel_subsystems.fundamentals.running_linux_kernel.p04_uboot启动流程说明
 title: "uboot启动流程说明"
-kind: subsystem
+kind: publication
 status: evolving
 domains:
   - linux
-  - kernel
+  - publication
 ---
 
 # 第4章_uboot启动流程说明
