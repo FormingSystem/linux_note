@@ -26,7 +26,7 @@ domains:
 远端仓库为：
 
 ```text
-https://github.com/FormingSystem/linux_kernel_and_driver_note.git
+https://github.com/FormingSystem/linux_note.git
 ```
 
 ## 1.2_目录说明
