@@ -1,4 +1,4 @@
-# 第 3 章 “先跑起来”：最小可运行输入设备（Hello, Input）
+# 第3章_先跑起来_最小可运行输入设备(Hello,_Input)
 
 > **章节内容说明**
 >  本章只做一件事：构造一个**完全不依赖真实硬件**、但能被内核识别、能被 `evtest` 打开、并可在后续章节中轻松插入真实采集逻辑的“最小输入设备”。
@@ -6,11 +6,11 @@
 
 ------
 
-## 3.1 目标与边界：什么叫“最小可运行输入设备”？
+## 3.1_目标与边界_什么叫_最小可运行输入设备
 
-### 3.1.1 是什么（定义）
+### 3.1.1_是什么(定义)
 
-**最小可运行输入设备**，在本章中指： 
+**最小可运行输入设备**，在本章中指：
 
 1. 内核中存在一个 `struct input_dev` 实例；
 2. 已通过 `input_register_device()` 注册；
@@ -29,7 +29,7 @@
 
 ------
 
-### 3.1.2 干什么（要解决的问题）
+### 3.1.2_干什么(要解决的问题)
 
 从开发者视角，本章要解决的典型问题是：
 
@@ -43,7 +43,7 @@
 
 ------
 
-### 3.1.3 怎么实现（机制层面的最小要求）
+### 3.1.3_怎么实现(机制层面的最小要求)
 
 要让一个 input 设备真正“存在”于系统中，**内核侧的最小路径**只有三步：
 
@@ -61,11 +61,11 @@
 
 ------
 
-## 3.2 数据结构视角：最小 `input_dev` 要填哪些字段？
+## 3.2_数据结构视角_最小_input_dev_要填哪些字段
 
 本节只看一件事：**在一个“最小可用”的 `struct input_dev` 上，必须填哪些内容**，否则即使注册成功也几乎无法调试或使用。
 
-### 3.2.1 关键字段与“四连问”表（作用 / 场景 / 不写后果 / 驱动落点）
+### 3.2.1_关键字段与_四连问_表(作用_/_场景_/_不写后果_/_驱动落点)
 
 | 项目                        | 作用                                     | 典型使用场景                     | 不写 / 写错的后果                                 | 驱动落点                                           |
 | --------------------------- | ---------------------------------------- | -------------------------------- | ------------------------------------------------- | -------------------------------------------------- |
@@ -86,7 +86,7 @@
 
 ------
 
-### 3.2.2 能力位的最小声明模式
+### 3.2.2_能力位的最小声明模式
 
 为了统一后续书稿，本书对“能力声明”采用如下模式：
 
@@ -109,13 +109,13 @@ input_set_capability(dev, EV_KEY, KEY_ENTER);
 
 ------
 
-## 3.3 开发者视角：最小设备注册三件套（allocate → setup → register）
+## 3.3_开发者视角_最小设备注册三件套(allocate_to_setup_to_register)
 
 本节从**“怎么写”**的角度，给出**模块形式**与**platform driver 形式**的最小模板，并对 devres / 非 devres 的差异做精确说明。
 
 ------
 
-### 3.3.1 三件套概览（抽象步骤）
+### 3.3.1_三件套概览(抽象步骤)
 
 对于任意 input 驱动，最小的 probe 或 init 流程可以抽象为：
 
@@ -134,9 +134,9 @@ input_set_capability(dev, EV_KEY, KEY_ENTER);
 
 ------
 
-### 3.3.2 四连问版解读（三件套逐项）
+### 3.3.2_四连问版解读(三件套逐项)
 
-#### 3.3.2.1 `input_allocate_device()` / `devm_input_allocate_device()`
+#### (1)_input_allocate_device()_/_devm_input_allocate_device()
 
 - **作用：** 分配并初始化 `struct input_dev`，设置内部锁、回调默认值等；
 - **使用场景：** 所有 input 驱动都必须通过这两个 API（之一）分配设备；
@@ -146,7 +146,7 @@ input_set_capability(dev, EV_KEY, KEY_ENTER);
   - 模块式虚拟设备：`demo_input_init()` 中使用 `input_allocate_device()`；
   - platform 驱动：`demo_probe()` 中使用 `devm_input_allocate_device(&pdev->dev)`。
 
-#### 3.3.2.2 能力与元数据声明（`input_set_capability()` 等）
+#### (2)_能力与元数据声明(input_set_capability()_等)
 
 - **作用：** 告诉 Input Core 该设备支持哪些类型的事件、哪些 code；
 - **典型场景：**
@@ -157,7 +157,7 @@ input_set_capability(dev, EV_KEY, KEY_ENTER);
 - **驱动落点：**
   - 必须在 `input_register_device()` 前完成，放在 probe/init 的中间位置。
 
-#### 3.3.2.3 `input_register_device()`
+#### (3)_input_register_device()
 
 - **作用：** 将 `input_dev` 注册到 Input Core，并为其创建处理层设备节点；
 - **使用场景：** 所有 input 驱动的最后一步；
@@ -170,9 +170,9 @@ input_set_capability(dev, EV_KEY, KEY_ENTER);
 
 ------
 
-### 3.3.3 devres 与非 devres：精确差异与推荐写法
+### 3.3.3_devres_与非_devres_精确差异与推荐写法
 
-#### 3.3.3.1 非 devres 写法（模块 / 早期代码常见）
+#### (1)_非_devres_写法(模块_/_早期代码常见)
 
 - **分配：** `input_allocate_device()`；
 - **释放：**
@@ -184,7 +184,7 @@ input_set_capability(dev, EV_KEY, KEY_ENTER);
 - 所有退出路径都要自己写，容易漏；
 - 适合简单模块、教学 demo 或无 `struct device` 场景。
 
-#### 3.3.3.2 devres 写法（推荐做法）
+#### (2)_devres_写法(推荐做法)
 
 在 platform/i2c/spi 等驱动中，推荐：
 
@@ -199,7 +199,7 @@ input_set_capability(dev, EV_KEY, KEY_ENTER);
 
 ------
 
-### 3.3.4 可视化：probe 中的最小流程
+### 3.3.4_可视化_probe_中的最小流程
 
 ```mermaid
 flowchart TD
@@ -213,12 +213,12 @@ flowchart TD
 
 ------
 
-### 3.3.5 示例代码（最小注册骨架）
+### 3.3.5_示例代码(最小注册骨架)
 
 > 本小节只给“注册骨架”，不实现上报逻辑。
 >  上报虚拟 3 帧事件（按下→移动→抬起）将在后续 3.4 单独展开。
 
-#### 3.3.5.1 模块形式：纯虚拟最小输入设备（非 devres）
+#### (1)_模块形式_纯虚拟最小输入设备(非_devres)
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -294,7 +294,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-#### 3.3.5.2 platform driver 形式：devres + 普通注册
+#### (2)_platform_driver_形式_devres_+_普通注册
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -397,7 +397,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-### 3.3.6 调试与验证（模块 / platform 通用）
+### 3.3.6_调试与验证(模块_/_platform_通用)
 
 1. **加载模块后检查：**
 
@@ -431,7 +431,7 @@ evtest /dev/input/eventX
 
 ------
 
-### 3.3.7 小结与下一步衔接
+### 3.3.7_小结与下一步衔接
 
 本节完成了以下目标：
 
@@ -453,7 +453,7 @@ evtest /dev/input/eventX
 
 ------
 
-## 3.4 3 帧虚拟事件：按下 → 移动 → 抬起
+## 3.4_3_帧虚拟事件_按下_to_移动_to_抬起
 
 > 本节在上一节“最小设备注册三件套”的基础上，**让设备真正产生事件帧**。
 >  我们会构造一个纯虚拟的 3 帧序列：
@@ -461,7 +461,7 @@ evtest /dev/input/eventX
 
 ------
 
-### 3.4.1 是什么：Input 的“帧”与 `struct input_event`
+### 3.4.1_是什么_Input_的_帧_与_struct_input_event
 
 内核向用户态上报事件的最小单元是：
 
@@ -493,7 +493,7 @@ struct input_event {
 
 ------
 
-### 3.4.2 要干什么：构造 3 帧虚拟序列
+### 3.4.2_要干什么_构造_3_帧虚拟序列
 
 本节我们构造一个**纯虚拟**的 3 帧序列，用一个内核延迟工作（`delayed_work`）在模块加载后自动上报：
 
@@ -511,9 +511,9 @@ struct input_event {
 
 ------
 
-### 3.4.3 怎么实现：上报路径“不睡”的设计
+### 3.4.3_怎么实现_上报路径_不睡_的设计
 
-#### 3.4.3.1 “采集可睡、上报不睡”的具体含义
+#### (1)_采集可睡_上报不睡_的具体含义
 
 - **采集可睡**：从硬件读取数据（I²C、SPI、ADC 等）可以在进程上下文中使用可睡眠 API；
 - **上报不睡**：从 `input_report_*()` 到 `input_sync()` 的路径内部不睡眠，可以在 IRQ、softirq、workqueue、进程上下文中被调用。
@@ -523,7 +523,7 @@ struct input_event {
 - **没有真实采集**，因此我们只需要关心“上报不睡”；
 - 我们用 `delayed_work` 定期调度，工作函数可以睡，但在调用 `input_report_*()` 本身不睡。
 
-#### 3.4.3.2 上报序列的一般模式
+#### (2)_上报序列的一般模式
 
 1. 在某个上下文（IRQ、workqueue、线程等）中获得一组样本；
 2. 按顺序调用对应的 `input_report_key()` / `input_report_abs()` 等；
@@ -541,9 +541,9 @@ input_sync(dev);
 
 ------
 
-### 3.4.4 可视化：3 帧序列的时序
+### 3.4.4_可视化_3_帧序列的时序
 
-#### 3.4.4.1 驱动到用户态的时序图
+#### (1)_驱动到用户态的时序图
 
 ```mermaid
 sequenceDiagram
@@ -579,7 +579,7 @@ sequenceDiagram
 
 ------
 
-### 3.4.5 示例代码：模块形式，加载后自动上报 3 帧
+### 3.4.5_示例代码_模块形式_加载后自动上报_3_帧
 
 > 说明：
 >
@@ -767,7 +767,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-### 3.4.6 用 `evtest` 观察 3 帧
+### 3.4.6_用_evtest_观察_3_帧
 
 1. 编译并加载模块：
 
@@ -816,7 +816,7 @@ Event: type 00 (EV_SYN), code 00 (SYN_REPORT), value 0
 
 ------
 
-### 3.4.7 小结
+### 3.4.7_小结
 
 - 理解了 **帧（frame） = 多个 input_event + 一个 SYN_REPORT**；
 - 用 3 帧虚拟序列把“按下 → 移动 → 抬起”完整走了一遍；
@@ -825,16 +825,16 @@ Event: type 00 (EV_SYN), code 00 (SYN_REPORT), value 0
 
 
 
-## 3.5 `EVIOCGABS` 与 ABS 元数据验收
+## 3.5_EVIOCGABS_与_ABS_元数据验收
 
 > 目标：在前面 3.3 / 3.4 已经完成“最小设备 + 3 帧虚拟 ABS 事件”的基础上，本节给出**用户态验收方案**：
 >  用 `EVIOCGABS` 读取 `ABS_X / ABS_Y` 的 `min/max/fuzz/flat/res` 等元数据，确认驱动里设置的参数已经正确暴露给用户态，并能长期作为后续触摸/摇杆驱动的自测模板。
 
 ------
 
-### 3.5.1 是什么：ABS 元数据与 `EVIOCGABS`
+### 3.5.1_是什么_ABS_元数据与_EVIOCGABS
 
-#### 3.5.1.1 ABS 元数据的概念
+#### (1)_ABS_元数据的概念
 
 对于所有 `EV_ABS` 类型的轴（如 `ABS_X`、`ABS_Y`、`ABS_PRESSURE`、`ABS_MT_POSITION_X` 等），Input Core 为每个轴维护一组**元数据**，包括：
 
@@ -851,7 +851,7 @@ input_set_abs_params(dev, axis, min, max, fuzz, flat);
 
 或直接写 `input_dev->absinfo[axis]` 来设置。
 
-#### 3.5.1.2 `struct input_absinfo`
+#### (2)_struct_input_absinfo
 
 用户态通过 `EVIOCGABS` 读取的结构体是：
 
@@ -871,7 +871,7 @@ struct input_absinfo {
 - `value`：最近一次上报的该轴值；
 - 其它 5 个字段就是元数据本身。
 
-#### 3.5.1.3 `EVIOCGABS` 是什么
+#### (3)_EVIOCGABS_是什么
 
 `EVIOCGABS` 是 evdev 的一个 `ioctl`：
 
@@ -885,7 +885,7 @@ int ioctl(int fd, EVIOCGABS(axis), struct input_absinfo *abs);
 
 ------
 
-### 3.5.2 干什么：为什么一定要验收 ABS 元数据？
+### 3.5.2_干什么_为什么一定要验收_ABS_元数据
 
 在本书的 Input 模型里，**驱动只做“声明边界 + 成帧上报”，策略交给用户态**。
  ABS 元数据正是“声明边界”的关键部分：
@@ -907,7 +907,7 @@ int ioctl(int fd, EVIOCGABS(axis), struct input_absinfo *abs);
 
 ------
 
-### 3.5.3 怎么实现：内核中的数据路径示意
+### 3.5.3_怎么实现_内核中的数据路径示意
 
 从驱动设置到用户态 `EVIOCGABS` 的路径大致是：
 
@@ -929,7 +929,7 @@ flowchart LR
 
 ------
 
-### 3.5.4 怎么用：用户态验收流程
+### 3.5.4_怎么用_用户态验收流程
 
 给出一个标准的验收流程，默认你已经用上一节的 `demo_minimal_input_frames` 驱动跑起来了。
 
@@ -955,9 +955,9 @@ evtest /dev/input/eventX
 
 ------
 
-### 3.5.5 接口与结构速查表
+### 3.5.5_接口与结构速查表
 
-#### 3.5.5.1 ioctl 宏
+#### (1)_ioctl_宏
 
 ```c
 int ioctl(int fd, EVIOCGABS(axis), struct input_absinfo *abs);
@@ -967,7 +967,7 @@ int ioctl(int fd, EVIOCGABS(axis), struct input_absinfo *abs);
 - **axis**：一个 `ABS_*` 编号，如 `ABS_X`、`ABS_Y`；
 - 返回值：`0` 成功，`-1` 失败（`errno` 提供错误原因）。
 
-#### 3.5.5.2 `struct input_absinfo` 字段语义速查
+#### (2)_struct_input_absinfo_字段语义速查
 
 | 字段         | 作用                   | 典型来源                              |
 | ------------ | ---------------------- | ------------------------------------- |
@@ -982,7 +982,7 @@ int ioctl(int fd, EVIOCGABS(axis), struct input_absinfo *abs);
 
 ------
 
-### 3.5.6 对比 / 避坑 / 限制
+### 3.5.6_对比_/_避坑_/_限制
 
 1. **只用 evtest 不够精确：**
    - evtest 可以粗略显示 min/max/fuzz/flat，但不显示 resolution；
@@ -1008,7 +1008,7 @@ int ioctl(int fd, EVIOCGABS(axis), struct input_absinfo *abs);
 
 ------
 
-### 3.5.7 完整示例：用户态 C 工具读取 `ABS_X/ABS_Y` 元数据
+### 3.5.7_完整示例_用户态_C_工具读取_ABS_X/ABS_Y_元数据
 
 下面是一个可直接编译的用户态小工具，用来读取指定 event 设备上 `ABS_X` 与 `ABS_Y` 的 `struct input_absinfo` 内容，并打印出来，用于对比驱动中的宏。
 
@@ -1119,7 +1119,7 @@ gcc -Wall -O2 -o demo_evdev_absinfo demo_evdev_absinfo.c
 
 ------
 
-### 3.5.8 小结：从“能看见事件”到“能信任元数据”
+### 3.5.8_小结_从_能看见事件_到_能信任元数据
 
 本节把前面的“最小设备 + 3 帧事件”向前推进了一步：
 
@@ -1136,14 +1136,14 @@ gcc -Wall -O2 -o demo_evdev_absinfo demo_evdev_absinfo.c
 
 
 
-## 3.6 本章 Bring-up Checklist 与最小模板整理
+## 3.6_本章_Bring-up_Checklist_与最小模板整理
 
 > 本节把 **3.1～3.5** 的内容收束成一套“照着做就能跑通”的核对表与最小模板，便于你在真实项目里复用。
 >  目标是：**从空目录开始，到能用 `evtest + EVIOCGABS` 验收**，步骤清晰、可脚本化。
 
 ------
 
-### 3.6.1 Bring-up 步骤总览（一步步照做）
+### 3.6.1_Bring-up_步骤总览(一步步照做)
 
 从零开始的推荐流程：
 
@@ -1184,7 +1184,7 @@ gcc -Wall -O2 -o demo_evdev_absinfo demo_evdev_absinfo.c
 
 ------
 
-### 3.6.2 Bring-up 核对表（表格版）
+### 3.6.2_Bring-up_核对表(表格版)
 
 以“本章完成度”为维度的核对表：
 
@@ -1203,12 +1203,12 @@ gcc -Wall -O2 -o demo_evdev_absinfo demo_evdev_absinfo.c
 
 ------
 
-### 3.6.3 最小 Kconfig / Makefile 模板（可直接合入内核树）
+### 3.6.3_最小_Kconfig_/_Makefile_模板(可直接合入内核树)
 
 > 说明：这里给出的是“教学用子目录”的典型写法，你可以根据自己的工程结构调整路径与符号名称。
 >  代码风格按照内核规范缩进。
 
-#### 3.6.3.1 Kconfig 片段
+#### (1)_Kconfig_片段
 
 ```none
 config INPUT_DEMO_MINIMAL_FRAMES
@@ -1228,7 +1228,7 @@ config INPUT_DEMO_MINIMAL_FRAMES
 source "drivers/input/demo/hello_input/Kconfig"
 ```
 
-#### 3.6.3.2 Makefile 片段
+#### (2)_Makefile_片段
 
 ```none
 obj-$(CONFIG_INPUT_DEMO_MINIMAL_FRAMES)	+= demo_minimal_input_frames.o
@@ -1258,7 +1258,7 @@ make modules
 
 ------
 
-### 3.6.4 故障 → 定位表：从症状反推哪个环节没做对
+### 3.6.4_故障_to_定位表_从症状反推哪个环节没做对
 
 这部分是最贴近实战的“反向表”：根据你在 bring-up 时遇到的表现，直接定位到具体环节。
 
@@ -1274,7 +1274,7 @@ make modules
 
 ------
 
-### 3.6.5 最小模板清单：你应该留下哪些文件供复用？
+### 3.6.5_最小模板清单_你应该留下哪些文件供复用
 
 结合本章内容，一个可长期复用的“Hello, Input 模板包”至少包括：
 
@@ -1301,7 +1301,7 @@ make modules
 
 ------
 
-### 3.6.6 小结：从“跑起来”到“可复用”
+### 3.6.6_小结_从_跑起来_到_可复用
 
 至此，第 3 章的核心目标已经完成：
 

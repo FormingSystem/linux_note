@@ -1,4 +1,6 @@
-# 实验目的：
+# 第2章_key_led_interrupt_move_shake_01
+
+## 2.1_实验目的
 
 通过key的中断方式来更改led的输出状态，并且实现key的消抖处理。
 
@@ -9,7 +11,7 @@
 
 
 
-# 电路图：
+## 2.2_电路图
 
 key，led：
 
@@ -17,7 +19,7 @@ key，led：
 
 
 
-# 设备树：
+## 2.3_设备树
 
 ```dts
 	demo_led_key_int: led_key_int@0 {
@@ -34,7 +36,7 @@ key，led：
 		nxp,debounce-ms = <30>;	/* 软件去抖动 */
 		status = "okay";
 	};
-	
+
 &iomuxc {
 	...
 	pinctrl_led_key_int: ledkey_int{
@@ -49,9 +51,9 @@ key，led：
 
 
 
-# 驱动代码
+## 2.4_驱动代码
 
-## makefile
+### 2.4.1_makefile
 
 ```makefile
 tartget_p := key_led_int
@@ -79,7 +81,7 @@ install:
 
 
 
-## C源码
+### 2.4.2_C源码
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -257,7 +259,7 @@ MODULE_DESCRIPTION("GPIO key: disable_irq_nosync + hrtimer debounce + enable_irq
 
 
 
-## log：
+### 2.4.3_log
 
 ```shell
 ~ # cd /mnt/nfs/driver/

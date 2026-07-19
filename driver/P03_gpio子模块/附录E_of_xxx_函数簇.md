@@ -1,6 +1,6 @@
-# of_get_named_gpiod_flags()
+# 第1章_of_get_named_gpiod_flags()
 
-## 1 主题引入
+## 1.1_1_主题引入
 
 在 Linux 设备树机制中，GPIO 控制器节点负责描述硬件引脚资源，而外设设备节点通过 GPIO 相关属性（如 `reset-gpios`、`enable-gpios`、`cs-gpios` 等）引用这些引脚。驱动程序需要将设备树中描述的 GPIO 信息解析为内核可操作的结构体（`struct gpio_desc *`），从而控制引脚电平或方向。
 
@@ -8,7 +8,7 @@
 
 ------
 
-## 2 函数原型与头文件
+## 1.2_2_函数原型与头文件
 
 ```c
 #include <linux/of_gpio.h>
@@ -21,7 +21,7 @@ struct gpio_desc *of_get_named_gpiod_flags(struct device_node *np,
 
 ------
 
-## 3 参数说明
+## 1.3_3_参数说明
 
 | 参数名     | 类型                   | 说明                                                         |
 | ---------- | ---------------------- | ------------------------------------------------------------ |
@@ -32,7 +32,7 @@ struct gpio_desc *of_get_named_gpiod_flags(struct device_node *np,
 
 ------
 
-## 4 返回值说明
+## 1.4_4_返回值说明
 
 | 返回值               | 含义                                         |
 | -------------------- | -------------------------------------------- |
@@ -41,7 +41,7 @@ struct gpio_desc *of_get_named_gpiod_flags(struct device_node *np,
 
 ------
 
-## 5 主要功能
+## 1.5_5_主要功能
 
 此函数用于：
 
@@ -52,7 +52,7 @@ struct gpio_desc *of_get_named_gpiod_flags(struct device_node *np,
 
 ------
 
-## 6 内部调用流程（开发者视角）
+## 1.6_6_内部调用流程(开发者视角)
 
 以下为函数内部核心执行路径：
 
@@ -80,7 +80,7 @@ G --> H["返回 gpio_desc 指针"]
 
 ------
 
-## 7 设备树语法与匹配示例
+## 1.7_7_设备树语法与匹配示例
 
 假设设备树如下：
 
@@ -115,7 +115,7 @@ if (flags & OF_GPIO_ACTIVE_LOW)
 
 ------
 
-## 8 与 gpiod_get() 的区别
+## 1.8_8_与_gpiod_get()_的区别
 
 | 对比项       | of_get_named_gpiod_flags() | gpiod_get()                                 |
 | ------------ | -------------------------- | ------------------------------------------- |
@@ -127,7 +127,7 @@ if (flags & OF_GPIO_ACTIVE_LOW)
 
 ------
 
-## 9 flags 标志位取值
+## 1.9_9_flags_标志位取值
 
 `enum of_gpio_flags` 定义于 `include/linux/of_gpio.h`：
 
@@ -152,7 +152,7 @@ enum of_gpio_flags {
 
 ------
 
-## 10 调用时机（典型用法）
+## 1.10_10_调用时机(典型用法)
 
 在 **probe() 函数** 中解析 DTS：
 
@@ -180,7 +180,7 @@ static int demo_probe(struct platform_device *pdev)
 
 ------
 
-## 11 驱动绑定关系
+## 1.11_11_驱动绑定关系
 
 `of_get_named_gpiod_flags()` 只是**设备树解析层**函数，不涉及驱动匹配。
  通常流程如下：
@@ -195,21 +195,21 @@ D --> E["gpiod_set_value()/get_value() 控制引脚"]
 
 ------
 
-## 12 调试与验证
+## 1.12_12_调试与验证
 
-### 检查设备树内容：
+### 1.12.1_检查设备树内容
 
 ```bash
 cat /sys/firmware/devicetree/base/.../status-gpios
 ```
 
-### 检查 GPIO 映射：
+### 1.12.2_检查_GPIO_映射
 
 ```bash
 cat /sys/kernel/debug/gpio
 ```
 
-### 动态验证：
+### 1.12.3_动态验证
 
 ```bash
 echo 1 > /sys/class/gpio/gpio3/value
@@ -223,7 +223,7 @@ pr_info("gpio = %d, flags = 0x%x\n", desc_to_gpio(desc), flags);
 
 ------
 
-## 13 小结
+## 1.13_13_小结
 
 | 项目     | 内容                                     |
 | -------- | ---------------------------------------- |

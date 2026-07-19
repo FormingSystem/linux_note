@@ -2,9 +2,9 @@
 
 
 
-# 第 1 章：GPIO 总览与生态演进
+# 第1章_GPIO_总览与生态演进
 
-## 1.1 主题引入
+## 1.1_主题引入
 
 **本章要解决的问题**：
 
@@ -15,7 +15,7 @@
 
 **为什么重要**：很多旧文档仍以 `/sys/class/gpio`（sysfs）为例，但**官方已明确将其标注为废弃**，并引导新项目使用 **字符设备 ABI（/dev/gpiochipN）+ libgpiod**；同时内核驱动编程应以 **描述符 API（`gpiod_*`）** 为中心，不再使用旧的整数 API（`gpio_*`）。这些变化不是“6.1 才出现”，而是**逐步发生**并在 6.x 时代完全稳固。([kernel.org](https://www.kernel.org/doc/html/next/admin-guide/gpio/sysfs.html?utm_source=chatgpt.com))
 
-### 1.1.1 关键里程碑（时间线）
+### 1.1.1_关键里程碑(时间线)
 
 | 年份 / 版本       | 事件                               | 含义                                                         |
 | ----------------- | ---------------------------------- | ------------------------------------------------------------ |
@@ -27,13 +27,13 @@
 
 > 结论：到 **6.1** 时，推荐组合已非常明确——**驱动用 `gpiod_*`，用户态走字符设备 + libgpiod**，sysfs 仅维护兼容。([kernel.org](https://www.kernel.org/doc/html/next/admin-guide/gpio/sysfs.html?utm_source=chatgpt.com))
 >
-> [buildroot 添加 libgpiod 工具说明参考](../../board/nxp/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md#buildroot 下载工具): buildroot 下载工具。libgpiod 属于用户工具，不属于内核固定模块，需要手动安装到根文件系统，因此需要采用 buildroot 重新下载搭建 libgpiod 工具。
+> [buildroot 添加 libgpiod 工具说明参考](../../board/nxp/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md#第11章_buildroot_下载工具): buildroot 下载工具。libgpiod 属于用户工具，不属于内核固定模块，需要手动安装到根文件系统，因此需要采用 buildroot 重新下载搭建 libgpiod 工具。
 
 ------
 
-## 1.2 数据结构视角
+## 1.2_数据结构视角
 
-### 1.2.1 Provider（控制器）侧
+### 1.2.1_Provider(控制器)侧
 
 - **[struct gpio_chip](./附录A_gpio_数据结构.md#struct gpio_chip)**：
 
@@ -43,7 +43,7 @@
 
   - 详细代码参考 [附录A/struct gpio_chip](./附录A_gpio_数据结构.md#struct gpio_chip) 。
 
-    
+
 
 - **[struct gpio_irq_chip](./附录A_gpio_数据结构.md#struct gpio_irq_chip)**（内嵌在 `gpio_chip` 中）：
 
@@ -51,12 +51,12 @@
 
   - 详细代码参考 [附录A/struct gpio_irq_chip](./附录A_gpio_数据结构.md#struct gpio_irq_chip) 。
 
-    
+
 
 
 > **cells 提示**：GPIO 控制器节点多用 `#gpio-cells = <2>`（如 `<pin flags>`）；而 GIC 这类**顶层中断控制器**常用 `#interrupt-cells = <3>`（类型/编号/触发），二者语义层级不同（第 6 章详述）。
 
-### 1.2.2 Consumer（外设驱动）侧
+### 1.2.2_Consumer(外设驱动)侧
 
 - **[struct gpio_desc](./附录A_gpio_数据结构.md#struct gpio_desc)**：
 
@@ -65,9 +65,9 @@
   - 方向/电平通过 `gpiod_direction_*()`、`gpiod_set/get_value[_cansleep]()`；
   - 依据 `gpiod_cansleep()` 决定是否必须使用 `_cansleep` 变体。([docs.kernel.org](https://docs.kernel.org/driver-api/gpio/consumer.html?utm_source=chatgpt.com))
 
-  
 
-### 1.2.3 用户空间 ABI
+
+### 1.2.3_用户空间_ABI
 
 - **字符设备**：
 
@@ -75,7 +75,7 @@
   - 配合 **libgpiod** 工具（`gpiodetect / gpioinfo / gpioget / gpioset / gpiomon / gpiofind`）与 C API 使用。
   - **v2 ABI 自 5.10 起提供**。([libgpiod.readthedocs.io](https://libgpiod.readthedocs.io/en/latest/gpio_tools.html?utm_source=chatgpt.com))
 
-  
+
 
 - **sysfs**：
 
@@ -84,9 +84,9 @@
 
 ------
 
-## 1.3 开发者视角（今天应该怎样写）
+## 1.3_开发者视角(今天应该怎样写)
 
-### 1.3.1 驱动迁移“三步走”（按时间线给出依据）
+### 1.3.1_驱动迁移_三步走_(按时间线给出依据)
 
 1. **内核 Consumer 代码**：
 
@@ -94,7 +94,7 @@
 
    * 想要看完整的devres API接口参考本地文档 [devres API说明.md](../../appendix/kernel_model/devres_devm机制/devres_API说明.md)，或者直接查阅[devres官方公告](https://docs.kernel.org/driver-api/driver-model/devres.html?utm_source=chatgpt.com)。
 
-     
+
 
 2. **用户空间**：
 
@@ -102,7 +102,7 @@
 
    * **libgpiod core API** 文档参考 [libgpiod core API官方文档](https://libgpiod.readthedocs.io/en/stable/core_api.html)。
 
-     
+
 
 3. **控制器驱动（Provider）**：
 
@@ -112,7 +112,7 @@
 
 
 
-### 1.3.2 Kconfig 清单（6.1 基线）
+### 1.3.2_Kconfig_清单(6.1_基线)
 
 - `CONFIG_GPIOLIB=y`、`CONFIG_GPIO_CDEV=y`（字符设备）
 - 目标 SoC/扩展器的具体 GPIO 控制器驱动
@@ -121,9 +121,9 @@
 
 ------
 
-## 1.4 用户视角（他们能看到/如何验证）
+## 1.4_用户视角(他们能看到/如何验证)
 
-### 1.4.1 libgpiod 工具最小闭环
+### 1.4.1_libgpiod_工具最小闭环
 
 **注意**：libgpiod 属于用户态工具，需要手动集成到 **rootfs** (根文件系统) 在中才能使用。否则下述命令将会提示找不到命令。
 
@@ -198,15 +198,15 @@ gpiochip0 - 32 lines:
 
 
 
-### 1.4.2 “状态保持”语义提示
+### 1.4.2_状态保持_语义提示
 
 - `gpioset` 的输出状态**由持有请求的进程维持**；进程退出后状态不再保证。
 
 ------
 
-## 1.5 可视化图示
+## 1.5_可视化图示
 
-### 1.5.1 总体调用链（flowchart）
+### 1.5.1_总体调用链(flowchart)
 
 ```mermaid
 flowchart TD
@@ -221,7 +221,7 @@ flowchart TD
   G -->|No| I["原子上下文, 快速访问"]
 ```
 
-### 1.5.2 用户写入到 LED 的时序（sequenceDiagram）
+### 1.5.2_用户写入到_LED_的时序(sequenceDiagram)
 
 ```mermaid
 sequenceDiagram
@@ -244,9 +244,9 @@ sequenceDiagram
 
 ------
 
-## 1.6 示例代码（最小可用）
+## 1.6_示例代码(最小可用)
 
-### 1.6.1 内核 Consumer（仅演示“描述符 API”用法）
+### 1.6.1_内核_Consumer(仅演示_描述符_API_用法)
 
 ```c
 // demo_gpiod_consumer.c — 6.x 最小消费示例（仅演示关键路径）
@@ -284,7 +284,7 @@ MODULE_LICENSE("GPL");
 > * 仅使用 `gpiod_*` 描述符 API；
 > * 依据可睡眠属性选择 `_cansleep` 变体。([git.ti.com](https://git.ti.com/cgit/ti-linux-kernel/ti-linux-kernel/tree/Documentation/gpio/consumer.txt?h=linux-3.14.y&utm_source=chatgpt.com))
 
-### 1.6.2 用户态（libgpiod C API：一读一写）
+### 1.6.2_用户态(libgpiod_C_API_一读一写)
 
 ```c
 // u_gpiod_basic.c — 通过字符设备 ABI 读/写一根线（v2 自 5.10 起）
@@ -309,7 +309,7 @@ int main(void) {
 
 ------
 
-## 1.7 调试与验证
+## 1.7_调试与验证
 
 1. **字符设备/工具链自检**
 
@@ -337,19 +337,19 @@ int main(void) {
    ```shell
    ~ # sudo mount -t debugfs none /sys/kernel/debug
    -/bin/sh: sudo: not found
-   
+
    ~ # mount -t debugfs none /sys/kernel/debug
    ~ # cat /sys/kernel/debug/gpio
    gpiochip0: GPIOs 0-31, parent: platform/209c000.gpio, 209c000.gpio:
     gpio-9   (                    |regulator-sd1-vmmc  ) out hi
     gpio-19  (                    |cd                  ) in  lo IRQ ACTIVE LOW
-   
+
    gpiochip1: GPIOs 32-63, parent: platform/20a0000.gpio, 20a0000.gpio:
-   
+
    gpiochip2: GPIOs 64-95, parent: platform/20a4000.gpio, 20a4000.gpio:
-   
+
    gpiochip3: GPIOs 96-127, parent: platform/20a8000.gpio, 20a8000.gpio:
-   
+
    gpiochip4: GPIOs 128-159, parent: platform/20ac000.gpio, 20ac000.gpio:
     gpio-130 (                    |regulator-peri-3v3  ) out lo ACTIVE LOW
     gpio-132 (                    |Headphone detection ) in  lo IRQ
@@ -358,7 +358,7 @@ int main(void) {
    ~ #
    ```
 
-   
+
 
 3. **常见问题清单（按时间线给出定位方向）**
 
@@ -366,7 +366,7 @@ int main(void) {
 
   - 不是 bug——**已弃用**，新项目应改用字符设备 ABI（4.8 起有、5.10 起 v2）。([kernel.org](https://www.kernel.org/doc/html/next/admin-guide/gpio/sysfs.html?utm_source=chatgpt.com))
 
-    
+
 
 - **`gpioset` 状态“自动复原”**：
 
@@ -374,7 +374,7 @@ int main(void) {
 
   - 参考工具手册的说明（可用超时/交互模式/守护方式）。([manpages.debian.org](https://manpages.debian.org/experimental/gpiod/gpioset.1.en.html?utm_source=chatgpt.com))
 
-    
+
 
 - **驱动仍用 `gpio_\*`**：
 
@@ -383,9 +383,9 @@ int main(void) {
 
 ------
 
-## 1.8 小结
+## 1.8_小结
 
-### 1.8.1 对比表：历史接口 vs 今天的推荐实践
+### 1.8.1_对比表_历史接口_vs_今天的推荐实践
 
 | 维度       | 旧 sysfs `/sys/class/gpio`（2.6 时代兴起） | **字符设备 `/dev/gpiochipN`（4.8 引入，5.10 起 v2，推荐）** |
 | ---------- | ------------------------------------------ | ----------------------------------------------------------- |
@@ -398,7 +398,7 @@ int main(void) {
 
 ------
 
-### 参考资料
+### 1.8.2_参考资料
 
 | 内容                                               | 说明                                                         |
 | -------------------------------------------------- | ------------------------------------------------------------ |
@@ -408,15 +408,15 @@ int main(void) {
 | **早期 3.14 文档（描述符 vs 整数接口）**           | TI 维护的 3.14 文档副本。([git.ti.com](https://git.ti.com/cgit/ti-linux-kernel/ti-linux-kernel/tree/Documentation/gpio/consumer.txt?h=linux-3.14.y&utm_source=chatgpt.com)) |
 | **libgpiod 工具手册**                              | 命令及用法。([libgpiod.readthedocs.io](https://libgpiod.readthedocs.io/en/latest/gpio_tools.html?utm_source=chatgpt.com)) |
 
-# 第 2 章：设备树中的 GPIO 基础语义
+# 第2章_设备树中的_GPIO_基础语义
 
-## 2.1 主题引入
+## 2.1_主题引入
 
 **本章要解决的问题**：
 
 * 如何在 DeviceTree（DT）中**准确描述** GPIO 控制器（Provider）与使用 GPIO 的外设（Consumer），并让内核在启动时把 DT 信息正确映射到 **gpiolib 描述符 API** 与 **字符设备 ABI**？
 
-> [buildroot 添加 libgpiod 工具说明参考](../../board/nxp/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md#buildroot 下载工具): buildroot 下载工具。libgpiod 属于用户工具，不属于内核固定模块，需要手动安装到根文件系统，因此需要采用 buildroot 重新下载搭建 libgpiod 工具。
+> [buildroot 添加 libgpiod 工具说明参考](../../board/nxp/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md#第11章_buildroot_下载工具): buildroot 下载工具。libgpiod 属于用户工具，不属于内核固定模块，需要手动安装到根文件系统，因此需要采用 buildroot 重新下载搭建 libgpiod 工具。
 
 
 
@@ -429,15 +429,15 @@ int main(void) {
 
 ------
 
-## 2.2 数据结构视角（DT 基本语义）
+## 2.2_数据结构视角(DT_基本语义)
 
-### 2.2.1 Provider 侧常用属性（GPIO 控制器节点）
+### 2.2.1_Provider_侧常用属性(GPIO_控制器节点)
 
-- `gpio-controller`：布尔属性，声明该节点是一个 GPIO 控制器。参考 [附录D/gpio-controller](./附录D_gpio_设备树语法.md#gpio-controller)。
+- `gpio-controller`：布尔属性，声明该节点是一个 GPIO 控制器。参考 [附录D/gpio-controller](./附录D_gpio_设备树语法.md#第3章_gpio-controller)。
 - `#gpio-cells = <2>`：GPIO 说明符（specifier）单元数。**通用为 2**：`<pin flags>`。参考 [附录D/gpio-cells](./附录D_gpio_设备树语法.md#gpio-cells)。
   - `pin`：该控制器内部的**偏移号**（从 0 开始）。
   - `flags`：位掩码（见 2.2.3），如 `GPIO_ACTIVE_LOW/OPEN_DRAIN/PULL_UP` 等。
-- `gpio-ranges`（可选）：把本控制器的 GPIO 号段映射到 **pinctrl** 的管脚号段，用于 pinctrl 与 gpiolib 的一致性。参考 [附录D/gpio-ranges](./附录D_gpio_设备树语法.md#gpio-ranges)。
+- `gpio-ranges`（可选）：把本控制器的 GPIO 号段映射到 **pinctrl** 的管脚号段，用于 pinctrl 与 gpiolib 的一致性。参考 [附录D/gpio-ranges](./附录D_gpio_设备树语法.md#第4章_gpio-ranges)。
 - `gpio-line-names`（可选）：为每根线命名，`gpioinfo` 会显示，便于调试。
 - **若本 GPIO 控制器还能充当中断控制器**：
   - `interrupt-controller`、`#interrupt-cells = <2>`（多见 `<hwirq type>`），以及连接父中断域的 `interrupts`/`interrupt-parent`。
@@ -447,7 +447,7 @@ int main(void) {
 
 
 
-### 2.2.2 Consumer 侧约定（外设节点如何引用 GPIO）
+### 2.2.2_Consumer_侧约定(外设节点如何引用_GPIO)
 
 - **通用书写**：`<name>-gpios = <&chip pin flags>;`
 
@@ -458,11 +458,11 @@ int main(void) {
     	pinctrl-names = "default";
     	pinctrl-0 = <&pinctrl_enet1
     				 &pinctrl_enet1_reset>;	// 添加复位控制引脚
-    
+
     	phy-reset-gpios = <&gpio5 7 GPIO_ACTIVE_LOW>;		// phy-reset-gpios
     	...
     };
-    
+
     spi-4 {
         compatible = "spi-gpio";
         pinctrl-names = "default";
@@ -474,7 +474,7 @@ int main(void) {
         num-chipselects = <1>;
         #address-cells = <1>;
         #size-cells = <0>;
-    
+
         gpio_spi: gpio@0 {
             compatible = "fairchild,74hc595";
             gpio-controller;
@@ -490,7 +490,7 @@ int main(void) {
 
   - 在驱动里以 `devm_gpiod_get(dev, "reset", ...)` 等方式取到 [struct gpio_desc](#struct gpio_desc)。
 
-    
+
 
 - **标准子系统**：
 
@@ -500,9 +500,9 @@ int main(void) {
 
   - `regulator`/`mmc`/`spi` 等均有各自 binding 里定义的 `*-gpios` 属性名。
 
-    
 
-### 2.2.3 `flags` 常用取值（来自 `dt-bindings/gpio/gpio.h`）
+
+### 2.2.3_flags_常用取值(来自_dt-bindings/gpio/gpio.h)
 
 - **极性**：`GPIO_ACTIVE_HIGH`（默认） / `GPIO_ACTIVE_LOW`。
 - **电气属性**：`GPIO_OPEN_DRAIN`、`GPIO_OPEN_SOURCE`、`GPIO_PULL_UP`、`GPIO_PULL_DOWN`（是否生效取决于控制器/引脚是否支持，通过 pinctrl/pinconf 更可靠）。
@@ -514,9 +514,9 @@ int main(void) {
 
 ------
 
-## 2.3 开发者视角（如何写/改）
+## 2.3_开发者视角(如何写/改)
 
-### 2.3.1 最小控制器节点（演示）
+### 2.3.1_最小控制器节点(演示)
 
 ```dts
 mygpio: gpio-controller@40000000 {
@@ -544,7 +544,7 @@ mygpio: gpio-controller@40000000 {
 };
 ```
 
-### 2.3.2 最小消费节点（两种典型方式）
+### 2.3.2_最小消费节点(两种典型方式)
 
 **A. 用通用子系统（gpio-leds）**
 
@@ -571,7 +571,7 @@ mydev@0 {
 };
 ```
 
-### 2.3.3 pinctrl 绑定与“换脚”操作要点
+### 2.3.3_pinctrl_绑定与_换脚_操作要点
 
 **核心原则**：**引脚复用（mux）与电气（pull/drive）应在 pinctrl 中描述；GPIO 控制/状态在 gpiolib/驱动中完成。换脚时先改 pinctrl**，再确保 `*-gpios` 的 `<&chip pin flags>` 与之对应。
 
@@ -592,7 +592,7 @@ leds {
     compatible = "gpio-leds";
     pinctrl-names = "default";
     pinctrl-0 = <&pinctrl_led>;
-    
+
     led0 {
         gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
         default-state = "off";
@@ -613,7 +613,7 @@ leds {
     compatible = "gpio-leds";
     pinctrl-names = "default";
     pinctrl-0 = <&led0>;
-    
+
     led0 {
         gpios = <&gpio0 RK_PA3 GPIO_ACTIVE_LOW>;  // 与 pinctrl 一致
         default-state = "off";
@@ -623,7 +623,7 @@ leds {
 
 > 实务建议：**换脚**时先在 pinctrl 修改到新 PAD/管脚，再把 `<chip, pin>` 对应到新偏移；避免只改 `gpios` 却忘了更新 pinmux，导致“方向/电平操作都正常但硬件没反应”。
 
-### 2.3.4 `gpio-hog`：上电即固定占用的线
+### 2.3.4_gpio-hog_上电即固定占用的线
 
 ```dts
 &gpio1 {
@@ -642,7 +642,7 @@ leds {
 
 ------
 
-### 2.3.5 小节：通过 devres 接口获取设备树中的 GPIO 属性
+### 2.3.5_小节_通过_devres_接口获取设备树中的_GPIO_属性
 
 本节说明如何使用 **devm_gpiod_get\*** 系列接口读取设备树中定义的 GPIO 属性。示例基于以下节点：
 
@@ -657,7 +657,7 @@ mydev@0 {
 
 ------
 
-#### 1）标准写法（推荐方式）
+#### (1)_标准写法(推荐方式)
 
 在设备树中，GPIO 属性通常以 `<names>-gpios` 命名。推荐将属性写成如下格式：
 
@@ -684,7 +684,7 @@ gpiod_set_value_cansleep(led, 1);
 gpiod_set_value_cansleep(led, 0);
 ```
 
-##### 🔹说明
+##### 1)_说明
 
 - `devm_gpiod_get()` 与 `devm_gpiod_get_optional()` 均由 **devres** 管理；
   驱动卸载或 probe 失败时自动释放资源。
@@ -696,9 +696,9 @@ gpiod_set_value_cansleep(led, 0);
 
 ------
 
-#### 2）非标准属性名（无法使用 `*-gpios`）
+#### (2)_非标准属性名(无法使用_*-gpios)
 
-若设备树中属性名为 **`gpio-led`**，则标准接口无法识别该命名方式。此时应通过设备节点访问gpio属性，使用 [devm_gpiod_get_from_of_node()](./附录B_devres_接口.md#devm_gpiod_get_from_of_node())：
+若设备树中属性名为 **`gpio-led`**，则标准接口无法识别该命名方式。此时应通过设备节点访问gpio属性，使用 [devm_gpiod_get_from_of_node()](./附录B_devres_接口.md#第3章_devm_gpiod_get_from_of_node())：
 
 ```c
 #include <linux/gpio/consumer.h>
@@ -717,7 +717,7 @@ if (IS_ERR(led))
 gpiod_set_value_cansleep(led, 1);
 ```
 
-##### 🔹说明
+##### 1)_说明
 
 - `devm_gpiod_get_from_of_node()`：允许显式指定属性名，无需遵循 “`*-gpios`” 命名规则。
 - 参数含义：
@@ -726,11 +726,11 @@ gpiod_set_value_cansleep(led, 1);
   - `0`：索引（第几个 GPIO）；
   - `GPIOD_OUT_LOW`：配置方向；
   - `"led"`：日志标签（label）。
-- 详细参考 [附录B/devm_gpiod_get_from_of_node()](./附录B_devres_接口.md#devm_gpiod_get_from_of_node())
+- 详细参考 [附录B/devm_gpiod_get_from_of_node()](./附录B_devres_接口.md#第3章_devm_gpiod_get_from_of_node())
 
 ------
 
-#### 3）多 GPIO 组（带索引的读取）
+#### (3)_多_GPIO_组(带索引的读取)
 
 若同一前缀对应多路 GPIO，可使用带索引的接口 `devm_gpiod_get_index()`：
 
@@ -745,15 +745,15 @@ led0 = devm_gpiod_get_index(dev, "led", 0, GPIOD_OUT_LOW);
 led1 = devm_gpiod_get_index(dev, "led", 1, GPIOD_OUT_LOW);
 ```
 
-##### 🔹说明
+##### 1)_说明
 
 - `devm_gpiod_get_index()` 允许按序号获取 `led-gpios` 中的多个条目；
 - 适合多路 LED、复数控制信号等场景。
-- `devm_gpiod_get_index()` 说明参考[附录B/devm_gpiod_get_index()](./附录B_devres_接口.md#devm_gpiod_get_index())。
+- `devm_gpiod_get_index()` 说明参考[附录B/devm_gpiod_get_index()](./附录B_devres_接口.md#第2章_devm_gpiod_get_index())。
 
 ------
 
-#### 4）gpios 标准但是无名称属性获取
+#### (4)_gpios_标准但是无名称属性获取
 
 设备树代码示例：
 
@@ -789,7 +789,7 @@ return 0;
 
 
 
-#### 5）小结
+#### (5)_小结
 
 | 使用场景                  | 推荐接口                                           | 属性命名示例               | 备注                          |
 | ------------------------- | -------------------------------------------------- | -------------------------- | ----------------------------- |
@@ -800,7 +800,7 @@ return 0;
 
 ------
 
-#### 6）最佳实践建议
+#### (6)_最佳实践建议
 
 1. **命名规范化**：优先使用 `*-gpios` 形式，兼容性最佳。
 2. **避免手动释放**：统一采用 `devm_` 前缀接口，由设备资源框架自动管理。
@@ -810,9 +810,9 @@ return 0;
 
 
 
-# 第 3 章：pinctrl / pinmux 与 GPIO 的关系
+# 第3章_pinctrl_/_pinmux_与_GPIO_的关系
 
-## 3.1 主题引入
+## 3.1_主题引入
 
 **本章要解决的问题：**
 
@@ -831,9 +831,9 @@ return 0;
 
 ------
 
-## 3.2 数据结构视角（内核架构关系）
+## 3.2_数据结构视角(内核架构关系)
 
-### 3.2.1 三层核心结构
+### 3.2.1_三层核心结构
 
 在 Linux 内核中，pinctrl 与 GPIO 的关系可以抽象为下图：
 
@@ -851,9 +851,9 @@ SoC IOMUX 控制器
 
 ------
 
-### 3.2.2 主要数据结构
+### 3.2.2_主要数据结构
 
-#### 1）[struct pinctrl_desc](./附录A_gpio_数据结构.md#struct pinctrl_desc)（定义一个 pinctrl 控制器）
+#### (1)_[struct_pinctrl_desc](./附录A_gpio_数据结构.md#struct_pinctrl_desc)(定义一个_pinctrl_控制器)
 
 `struct pinctrl_desc` 详细定义请参考 （[附录 A/ struct pinctrl_desc](./附录A_gpio_数据结构.md#struct pinctrl_desc)）:
 
@@ -868,7 +868,7 @@ struct pinctrl_desc {
 };
 ```
 
-#### 2）[struct pinctrl_state](./附录A_gpio_数据结构.md#struct pinctrl_state)（一组“状态设置”，如 default/sleep）
+#### (2)_[struct_pinctrl_state](./附录A_gpio_数据结构.md#struct_pinctrl_state)(一组_状态设置_如_default/sleep)
 
 ```c
 /**
@@ -884,7 +884,7 @@ struct pinctrl_state {
 };
 ```
 
-#### 3）[struct gpio_chip](./附录A_gpio_数据结构.md#struct gpio_chip)（GPIO 控制器抽象）
+#### (3)_[struct_gpio_chip](./附录A_gpio_数据结构.md#struct_gpio_chip)(GPIO_控制器抽象)
 
 详细定义参考[附录 A / struct gpio_chip](./附录A_gpio_数据结构.md#struct gpio_chip)。
 
@@ -907,7 +907,7 @@ struct gpio_chip {
 
 ------
 
-### 3.2.3 设备树绑定关系
+### 3.2.3_设备树绑定关系
 
 设备树中 `pinctrl` 节点通常定义在 SoC 的 IOMUX 控制器下：
 
@@ -945,7 +945,7 @@ leds {
 
 讲解下这里的设备树属性映射关系：
 
-#### pinctrl-names 与 pinctrl-N 属性
+#### (1)_pinctrl-names_与_pinctrl-N_属性
 
 在设备树中，pinctrl-names 与 pinctrl-N 个数是一一对应的。如果没有形成一一映射关系，就说明驱动中不会用到缺乏定义的 pinctrl-N，并且是个残缺的设备树定义。
 
@@ -962,18 +962,18 @@ leds {
   ```dts
   &usdhc1 {
   	pinctrl-names = "default", "state_100mhz", "state_200mhz";	// 对应pinctrl-N
-  	
+
   	pinctrl-0 = <&pinctrl_usdhc1>;							  // 对应pinctrl-names
   	pinctrl-1 = <&pinctrl_usdhc1_100mhz>;
   	pinctrl-2 = <&pinctrl_usdhc1_200mhz>;
-  	
+
   	cd-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
   	keep-power-in-suspend;
   	wakeup-source;
   	vmmc-supply = <&reg_sd1_vmmc>;
   	status = "okay";
   };
-  
+
   &iomuxc {
   	...
       pinctrl_usdhc1: usdhc1grp {
@@ -989,7 +989,7 @@ leds {
               MX6UL_PAD_GPIO1_IO09__GPIO1_IO09        0x17059 /* SD1 RESET */
           >;
       };
-  
+
       pinctrl_usdhc1_100mhz: usdhc1grp100mhz {
           fsl,pins = <
               MX6UL_PAD_SD1_CMD__USDHC1_CMD     0x170b9
@@ -998,10 +998,10 @@ leds {
               MX6UL_PAD_SD1_DATA1__USDHC1_DATA1 0x170b9
               MX6UL_PAD_SD1_DATA2__USDHC1_DATA2 0x170b9
               MX6UL_PAD_SD1_DATA3__USDHC1_DATA3 0x170b9
-  
+
           >;
       };
-  
+
       pinctrl_usdhc1_200mhz: usdhc1grp200mhz {
           fsl,pins = <
               MX6UL_PAD_SD1_CMD__USDHC1_CMD     0x170f9
@@ -1015,11 +1015,11 @@ leds {
   };
   ```
 
-  
+
 
 ------
 
-## 3.3 开发者视角（如何正确协同）
+## 3.3_开发者视角(如何正确协同)
 
 本小节主讲：
 
@@ -1027,7 +1027,7 @@ leds {
 * 驱动中如何获取对应的 pinctrl；
 * 多 pinctrl 的示例；
 
-### 3.3.1 编写 pinctrl 节点的基本步骤
+### 3.3.1_编写_pinctrl_节点的基本步骤
 
 1. **查 SoC IOMUX 表**：确定目标 PAD。
 2. **定义 pinctrl 子节点**：在 pinctrl 控制器下编写 `default/sleep` 等状态。
@@ -1058,7 +1058,7 @@ leds {
 
 
 
-### 3.3.2 驱动中调用 pinctrl API（最小模式）
+### 3.3.2_驱动中调用_pinctrl_API(最小模式)
 
 ```c
 struct pinctrl *pinctrl;
@@ -1073,12 +1073,12 @@ if (!IS_ERR(state))
     pinctrl_select_state(pinctrl, state);
 ```
 
-> `devm_pinctrl_get()`：自动解析 `pinctrl-names`。详情参考 [附录B/devm_pinctrl_get()](./附录B_devres_接口.md#devm_pinctrl_get())。
+> `devm_pinctrl_get()`：自动解析 `pinctrl-names`。详情参考 [附录B/devm_pinctrl_get()](./附录B_devres_接口.md#第6章_devm_pinctrl_get())。
 > `pinctrl_select_state()`：在 default/sleep 等状态间切换。
 
 ------
 
-### 3.3.3 多状态切换示例（DT + 驱动）
+### 3.3.3_多状态切换示例(DT_+_驱动)
 
 **DT：**
 
@@ -1112,7 +1112,7 @@ pinctrl_select_state(pinctrl, pinctrl_lookup_state(pinctrl, "sleep"));
 
 ------
 
-### 3.3.4 GPIO 与 pinctrl 的依赖关系
+### 3.3.4_GPIO_与_pinctrl_的依赖关系
 
 | 项目                      | 由谁负责       | 生效阶段       |
 | ------------------------- | -------------- | -------------- |
@@ -1123,9 +1123,9 @@ pinctrl_select_state(pinctrl, pinctrl_lookup_state(pinctrl, "sleep"));
 
 ------
 
-## 3.4 实战：最小可运行驱动（pinctrl + gpiod + PM + sysfs）
+## 3.4_实战_最小可运行驱动(pinctrl_+_gpiod_+_PM_+_sysfs)
 
-### 3.4.1 DTS
+### 3.4.1_DTS
 
 ```dts
 /* 1) IOMUX/pinctrl：把目标 PAD 复用为 GPIO，并配置电气 */
@@ -1160,7 +1160,7 @@ mydev@0 {
 };
 ```
 
-### 3.4.2 驱动源码（Linux 6.x 可编，逻辑闭环）
+### 3.4.2_驱动源码(Linux_6.x_可编_逻辑闭环)
 
 ```c
 // drivers/misc/leaf_pinctrl_gpiod_demo.c
@@ -1190,9 +1190,9 @@ static int __mydev_apply_logic(struct mydev *m, int on)
 
     if (gpiod_cansleep(m->status)) {
         ret = gpiod_set_value_cansleep(m->status, level);
-    } else { 
-        gpiod_set_value(m->status, level); 
-        ret = 0; 
+    } else {
+        gpiod_set_value(m->status, level);
+        ret = 0;
     }
 
     if (!ret)
@@ -1236,26 +1236,26 @@ static int mydev_probe(struct platform_device *pdev)
     int ret, def = 0;
 
     m = devm_kzalloc(dev, sizeof(*m), GFP_KERNEL);
-    if (!m) 
+    if (!m)
         return -ENOMEM;
-    
+
     m->dev = dev;
     platform_set_drvdata(pdev, m);
 
     /* 1) pinctrl 获取与切到 default */
     m->pctl = devm_pinctrl_get(dev);
-    if (IS_ERR(m->pctl)) 
+    if (IS_ERR(m->pctl))
         return PTR_ERR(m->pctl);
-    
+
     m->st_default = pinctrl_lookup_state(m->pctl, "default");
     m->st_sleep   = pinctrl_lookup_state(m->pctl, "sleep");  /* 可能不存在 */
     mydev_select_state(m, m->st_default);
 
     /* 2) 获取 GPIO 描述符（输出口，默认安全值） */
     m->status = devm_gpiod_get(dev, "status", GPIOD_OUT_LOW);
-    if (IS_ERR(m->status)) 
+    if (IS_ERR(m->status))
         return PTR_ERR(m->status);
-    
+
     m->active_low = gpiod_is_active_low(m->status);
 
     /* 3) 读取默认逻辑态并应用 */
@@ -1264,7 +1264,7 @@ static int mydev_probe(struct platform_device *pdev)
 
     /* 4) 导出简易 sysfs 属性：/sys/bus/platform/devices/<dev>/led */
     ret = device_create_file(dev, &dev_attr_led);
-    if (ret) 
+    if (ret)
         return ret;
 
     dev_info(dev, "ready: active_low=%d default=%d\n", m->active_low, m->logical_on);
@@ -1300,7 +1300,7 @@ static const struct dev_pm_ops mydev_pm_ops = {
 };
 
 static const struct of_device_id mydev_of_match[] = {
-    { .compatible = "leaf,mydev-demo" }, 
+    { .compatible = "leaf,mydev-demo" },
     { /* 哨兵 */}
 };
 MODULE_DEVICE_TABLE(of, mydev_of_match);
@@ -1328,9 +1328,9 @@ MODULE_DESCRIPTION("Demo: pinctrl + gpiod + sysfs + suspend/resume");
 
 ------
 
-## 3.5 用户视角（验证是否配置正确）
+## 3.5_用户视角(验证是否配置正确)
 
-### 3.5.1 查看 pinctrl 控制器及引脚状态（debugfs）
+### 3.5.1_查看_pinctrl_控制器及引脚状态(debugfs)
 
 ```bash
 sudo mount -t debugfs none /sys/kernel/debug
@@ -1339,7 +1339,7 @@ cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep -E 'GPIO1_IO03|mydev'
 cat /sys/kernel/debug/pinctrl/*/pinconf-pins | grep GPIO1_IO03
 ```
 
-### 3.5.2 验证 GPIO 模式（libgpiod）
+### 3.5.2_验证_GPIO_模式(libgpiod)
 
 ```bash
 gpiodetect
@@ -1348,7 +1348,7 @@ gpioset gpiochip0 3=0   # 进程持有语义：退出后状态可能恢复
 gpioget gpiochip0 3
 ```
 
-### 3.5.3 验证 sysfs 属性（驱动导出）
+### 3.5.3_验证_sysfs_属性(驱动导出)
 
 ```bash
 cd /sys/bus/platform/devices
@@ -1358,7 +1358,7 @@ echo 1 | sudo tee <devdir>/led   # 亮
 echo 0 | sudo tee <devdir>/led   # 灭
 ```
 
-### 3.5.4 检测状态切换（休眠/唤醒）
+### 3.5.4_检测状态切换(休眠/唤醒)
 
 ```bash
 sudo sh -c 'echo mem > /sys/power/state'
@@ -1367,9 +1367,9 @@ dmesg | tail -n 50   # 观察 default/sleep 切换
 
 ------
 
-## 3.6 可视化图示
+## 3.6_可视化图示
 
-### 3.6.1 pinctrl 与 GPIO 交互流程
+### 3.6.1_pinctrl_与_GPIO_交互流程
 
 ```mermaid
 flowchart TD
@@ -1381,7 +1381,7 @@ E --> F[gpiolib/gpio_chip 操作电平]
 F --> G[硬件 PAD 输出/输入]
 ```
 
-### 3.6.2 状态切换时序
+### 3.6.2_状态切换时序
 
 ```mermaid
 sequenceDiagram
@@ -1399,7 +1399,7 @@ H-->>D: 确认状态切换完成
 
 ------
 
-## 3.7 调试与验证技巧
+## 3.7_调试与验证技巧
 
 | 问题现象            | 排查方向                       | 常见原因                     |
 | ------------------- | ------------------------------ | ---------------------------- |
@@ -1413,7 +1413,7 @@ H-->>D: 确认状态切换完成
 
 ------
 
-## 3.8 小结
+## 3.8_小结
 
 | 模块    | 功能          | 控制层         | 关键位置                     |
 | ------- | ------------- | -------------- | ---------------------------- |
@@ -1425,9 +1425,9 @@ H-->>D: 确认状态切换完成
 **一句话总结：**
 	**pinctrl 决定“脚干什么”，GPIO 决定“怎么干”**；default/sleep 两态 + 逻辑映射 + 用户态验证，缺一不可。
 
-# 第 4 章：GPIO Consumer 描述符 API（内核侧）
+# 第4章_GPIO_Consumer_描述符_API(内核侧)
 
-## 4.1 主题引入
+## 4.1_主题引入
 
 **本章要解决的问题：**
 
@@ -1448,23 +1448,23 @@ H-->>D: 确认状态切换完成
 
 ------
 
-## 4.2 数据结构视角（原理 & 调用链）
+## 4.2_数据结构视角(原理_&_调用链)
 
-### 4.2.1 核心对象与职责
+### 4.2.1_核心对象与职责
 
 | 对象/概念                                                    | 作用                                  | 典型来源/使用                                                |
 | ------------------------------------------------------------ | ------------------------------------- | ------------------------------------------------------------ |
 | [`struct gpio_desc`](./附录A_gpio_数据结构.md#struct gpio_desc) | **不透明句柄**，代表一根 GPIO 线      | `devm_gpiod_get*(dev,"name",flags)` 获取；`gpiod_put()` 释放（devm 自动） |
-| [`gpiod_is_active_low()`](./附录C_gpiod_接口.md#gpiod_is_active_\*()) | 读取**极性**信息（低有效时取反）      | 与 DT `GPIO_ACTIVE_LOW/HIGH` 对应                            |
-| [`gpiod_get_value[_cansleep]()`](./附录C：gpiod 接口.md#gpiod_is_active_\*()) | 读电平（逻辑值：已考虑 `active_low`） | 中断/睡眠上下文选用 `_cansleep` 变体                         |
-| [`gpiod_set_value[_cansleep]()`](./附录C：gpiod 接口.md#gpiod_is_active_\*()) | 写电平（逻辑值）                      | 同上；需先设置方向                                           |
+| [`gpiod_is_active_low()`](./附录C_gpiod_接口.md#第3章_gpiod_is_active_\*()) | 读取**极性**信息（低有效时取反）      | 与 DT `GPIO_ACTIVE_LOW/HIGH` 对应                            |
+| [`gpiod_get_value[_cansleep]()`](./附录C：gpiod 接口.md#第3章_gpiod_is_active_\*()) | 读电平（逻辑值：已考虑 `active_low`） | 中断/睡眠上下文选用 `_cansleep` 变体                         |
+| [`gpiod_set_value[_cansleep]()`](./附录C：gpiod 接口.md#第3章_gpiod_is_active_\*()) | 写电平（逻辑值）                      | 同上；需先设置方向                                           |
 | [`gpiod_set/get_raw_*()`](./附录C_gpiod_接口.md#gpiod_set\|get_raw_*()) | **原始电平**（不做 active_low 取反）  | 少用，调试/特殊场景才需要                                    |
 | `GPIOD_OUT_LOW/HIGH`                                         | 获取时指定**方向+默认电平**           | 避免“先输出后置值”的毛刺                                     |
 | `GPIOD_IN`                                                   | 获取为输入                            | 与 `gpiod_direction_input()` 等价                            |
 
 > **逻辑 vs 物理电平**：`gpiod_set_value(desc, 1)` 表示“**逻辑 1**”。若 `active_low`，则最终写入**物理低电平**。原始模式用 `gpiod_set_raw_value()`。
 
-### 4.2.2 调用链（驱动侧 → gpiolib → 控制器）
+### 4.2.2_调用链(驱动侧_to_gpiolib_to_控制器)
 
 ```mermaid
 flowchart TD
@@ -1483,9 +1483,9 @@ H --> I[硬件寄存器]
 
 ------
 
-## 4.3 开发者视角（API 用法与最小驱动）
+## 4.3_开发者视角(API_用法与最小驱动)
 
-### 4.3.1 与 DeviceTree 的标准约定（Consumer）
+### 4.3.1_与_DeviceTree_的标准约定(Consumer)
 
 常见属性：`<name>-gpios = <&chip pin flags>;`
  示例（与第 3 章风格一致）：
@@ -1506,7 +1506,7 @@ mydev@0 {
 };
 ```
 
-### 4.3.2 API 速查表（常用子集）
+### 4.3.2_API_速查表(常用子集)
 
 | 需求                 | 首选接口                                     | 备注                                      |
 | -------------------- | -------------------------------------------- | ----------------------------------------- |
@@ -1521,7 +1521,7 @@ mydev@0 {
 
 ------
 
-### 4.3.3 可运行最小驱动：多路 GPIO 的 Consumer 示例
+### 4.3.3_可运行最小驱动_多路_GPIO_的_Consumer_示例
 
 **目标**：演示 **必须/可选/按索引** 三种获取方式，统一处理 **active_low**，导出几个 sysfs 属性便于验证。
 
@@ -1545,9 +1545,9 @@ struct lgcd {
 static int lgcd_set_logic(struct gpio_desc *g, bool alow, int on)
 {
     int level = alow ? !on : on;
-    if (!g) 
+    if (!g)
         return -ENODEV;
-    
+
     if (gpiod_cansleep(g)) {
         gpiod_set_value_cansleep(g, level);
     }
@@ -1558,7 +1558,7 @@ static int lgcd_set_logic(struct gpio_desc *g, bool alow, int on)
 static int lgcd_get_logic(struct gpio_desc *g, bool alow)
 {
     int v = gpiod_get_value_cansleep(g);
-    if (v < 0) 
+    if (v < 0)
         return v;
     return alow ? !v : v;
 }
@@ -1572,11 +1572,11 @@ static ssize_t status_show(struct device *dev, struct device_attribute *a, char 
 
 static ssize_t status_store(struct device *dev, struct device_attribute *a, const char *buf, size_t cnt)
 {
-    struct lgcd *d = dev_get_drvdata(dev); 
+    struct lgcd *d = dev_get_drvdata(dev);
     int on;
-    if (kstrtoint(buf, 0, &on) || (on&~1)) 
+    if (kstrtoint(buf, 0, &on) || (on&~1))
         return -EINVAL;
-    
+
     return lgcd_set_logic(d->g_status, d->status_active_low, on) ? -EIO : cnt;
 }
 static DEVICE_ATTR_RW(status);
@@ -1584,21 +1584,21 @@ static DEVICE_ATTR_RW(status);
 static ssize_t reset_show(struct device *dev, struct device_attribute *a, char *buf)
 {
     struct lgcd *d = dev_get_drvdata(dev);
-    if (!d->g_reset) 
+    if (!d->g_reset)
         return sysfs_emit(buf, "NA\n");
-    
+
     return sysfs_emit(buf, "%d\n", lgcd_get_logic(d->g_reset, d->reset_active_low));
 }
 
 static ssize_t reset_store(struct device *dev, struct device_attribute *a, const char *buf, size_t cnt)
 {
     struct lgcd *d = dev_get_drvdata(dev); int on;
-    if (!d->g_reset) 
+    if (!d->g_reset)
         return -ENODEV;
-    
-    if (kstrtoint(buf, 0, &on) || (on&~1)) 
+
+    if (kstrtoint(buf, 0, &on) || (on&~1))
         return -EINVAL;
-    
+
     return lgcd_set_logic(d->g_reset, d->reset_active_low, on) ? -EIO : cnt;
 }
 static DEVICE_ATTR_RW(reset);
@@ -1608,21 +1608,21 @@ static ssize_t ctrlN_show(struct device *dev, struct device_attribute *a, char *
 {
     struct lgcd *d = dev_get_drvdata(dev);
     int idx = (a->attr.name[4] - '0'); /* "ctrl0"/"ctrl1" */
-    if (idx < 0 || idx > 1 || !d->g_ctrl[idx]) 
+    if (idx < 0 || idx > 1 || !d->g_ctrl[idx])
         return -ENODEV;
-    
+
     return sysfs_emit(buf, "%d\n", lgcd_get_logic(d->g_ctrl[idx], d->ctrl_active_low[idx]));
 }
 
 static ssize_t ctrlN_store(struct device *dev, struct device_attribute *a, const char *buf, size_t cnt)
 {
     struct lgcd *d = dev_get_drvdata(dev); int on, idx = (a->attr.name[4] - '0');
-    if (idx < 0 || idx > 1 || !d->g_ctrl[idx]) 
+    if (idx < 0 || idx > 1 || !d->g_ctrl[idx])
         return -ENODEV;
-    
-    if (kstrtoint(buf, 0, &on) || (on&~1)) 
+
+    if (kstrtoint(buf, 0, &on) || (on&~1))
         return -EINVAL;
-    
+
     return lgcd_set_logic(d->g_ctrl[idx], d->ctrl_active_low[idx], on) ? -EIO : cnt;
 }
 static DEVICE_ATTR(ctrl0, 0644, ctrlN_show, ctrlN_store);
@@ -1641,40 +1641,40 @@ static int lgcd_probe(struct platform_device *pdev)
     int i, ret;
 
     d = devm_kzalloc(dev, sizeof(*d), GFP_KERNEL);
-    if (!d) 
+    if (!d)
         return -ENOMEM;
-    
+
     d->dev = dev;
     platform_set_drvdata(pdev, d);
 
     /* 1) 必须存在的 status 线（输出低为安全态） */
     d->g_status = devm_gpiod_get(dev, "status", GPIOD_OUT_LOW);
-    if (IS_ERR(d->g_status)) 
+    if (IS_ERR(d->g_status))
         return PTR_ERR(d->g_status);
-    
+
     d->status_active_low = gpiod_is_active_low(d->g_status);
 
     /* 2) 可选的 reset 线（缺失则允许继续） */
     d->g_reset = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_HIGH);
-    if (IS_ERR(d->g_reset)) 
+    if (IS_ERR(d->g_reset))
         return PTR_ERR(d->g_reset);
-    
-    if (d->g_reset) 
+
+    if (d->g_reset)
         d->reset_active_low = gpiod_is_active_low(d->g_reset);
 
     /* 3) 同名属性 ctrl-gpios，按索引 0/1 获取 */
     for (i = 0; i < 2; i++) {
         d->g_ctrl[i] = devm_gpiod_get_index_optional(dev, "ctrl", i, GPIOD_OUT_LOW);
-        if (IS_ERR(d->g_ctrl[i])) 
+        if (IS_ERR(d->g_ctrl[i]))
             return PTR_ERR(d->g_ctrl[i]);
-        
-        if (d->g_ctrl[i]) 
+
+        if (d->g_ctrl[i])
             d->ctrl_active_low[i] = gpiod_is_active_low(d->g_ctrl[i]);
     }
 
     /* 4) 导出属性组：/sys/bus/platform/devices/.../{status,reset,ctrl0,ctrl1} */
     ret = sysfs_create_group(&dev->kobj, &lgcd_group);
-    if (ret) 
+    if (ret)
         return ret;
 
     dev_info(dev, "consumer ready (status%s, reset%s, ctrl[0..1])\n",
@@ -1689,7 +1689,7 @@ static int lgcd_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id lgcd_of_match[] = {
-    { .compatible = "leaf,mydev-consumer" }, 
+    { .compatible = "leaf,mydev-consumer" },
     { }
 };
 MODULE_DEVICE_TABLE(of, lgcd_of_match);
@@ -1725,9 +1725,9 @@ obj-m += leaf_gpiod_consumer_demo.o
 
 ------
 
-## 4.4 用户视角（如何操作/验证）
+## 4.4_用户视角(如何操作/验证)
 
-### 4.4.1 上电自检（字符设备与工具）
+### 4.4.1_上电自检(字符设备与工具)
 
 ```bash
 ls /dev/gpiochip*
@@ -1735,7 +1735,7 @@ gpiodetect
 gpioinfo gpiochip0     # 观察 consumer 名称与 active-low 标记
 ```
 
-### 4.4.2 驱动导出的 sysfs 属性
+### 4.4.2_驱动导出的_sysfs_属性
 
 ```bash
 cd /sys/bus/platform/devices
@@ -1750,7 +1750,7 @@ echo 1 | sudo tee ctrl0
 echo 0 | sudo tee ctrl1
 ```
 
-### 4.4.3 与 libgpiod 交叉验证
+### 4.4.3_与_libgpiod_交叉验证
 
 ```bash
 # 比对 sysfs 的写入效果与芯片线电平变化
@@ -1762,9 +1762,9 @@ gpioset gpiochip0 <line>=1   # 注意进程持有语义
 
 ------
 
-## 4.5 可视化图示
+## 4.5_可视化图示
 
-### 4.5.1 获取与控制流程（flowchart）
+### 4.5.1_获取与控制流程(flowchart)
 
 ```mermaid
 flowchart TD
@@ -1777,7 +1777,7 @@ flowchart TD
     F --> G[gpio_chip -> HW]
 ```
 
-### 4.5.2 驱动-用户交互（sequenceDiagram）
+### 4.5.2_驱动-用户交互(sequenceDiagram)
 
 ```mermaid
 sequenceDiagram
@@ -1798,7 +1798,7 @@ HW-->>U: 引脚电平变化（外设响应）
 
 ------
 
-## 4.6 调试与验证（Checklist）
+## 4.6_调试与验证(Checklist)
 
 | 现象                                | 可能原因                       | 排查与修复                                                   |
 | ----------------------------------- | ------------------------------ | ------------------------------------------------------------ |
@@ -1822,9 +1822,9 @@ dmesg -w
 
 ------
 
-## 4.7 小结
+## 4.7_小结
 
-### 4.7.1 API 要点表
+### 4.7.1_API_要点表
 
 | 类别   | 推荐做法                                       | 反例/不推荐                    |
 | ------ | ---------------------------------------------- | ------------------------------ |
@@ -1839,9 +1839,9 @@ dmesg -w
 
 ------
 
-## 4.8 `_cansleep` 系列函数（结构化详解）
+## 4.8_cansleep_系列函数(结构化详解)
 
-### 4.8.1 背景与术语
+### 4.8.1_背景与术语
 
 - **描述符 API：** gpiolib 提供两套读写接口（“逻辑值”与“原始值”各一套）：
   - 逻辑值（考虑极性）：
@@ -1857,7 +1857,7 @@ dmesg -w
 
 ------
 
-### 4.8.2 语义与上下文约束
+### 4.8.2_语义与上下文约束
 
 - **可睡眠上下文（✅ 可用 `_cansleep`）：** 线程上下文（`probe/remove`、普通 file ops、`workqueue`、`kthread`）、**threaded IRQ** 处理函数。
 - **原子上下文（❌ 禁止 `_cansleep`）：** 硬中断上半部、软中断/tasklet、自旋锁持有区、硬定时器回调等。
@@ -1867,7 +1867,7 @@ dmesg -w
 
 ------
 
-### 4.8.3 选择规则（决策树）
+### 4.8.3_选择规则(决策树)
 
 1. **先判上下文**：当前是否允许睡眠？
 2. **再判线能力**：`gpiod_cansleep(desc)` 返回是否可能睡眠？
@@ -1888,7 +1888,7 @@ D -->|No| H[用 非 _cansleep]
 
 ------
 
-### 4.8.4 控制器分类与判断方法
+### 4.8.4_控制器分类与判断方法
 
 - **SoC GPIO（MMIO，常见于 `pinctrl-<SoC>` 旗下）**：通常 `can_sleep=false`。
 
@@ -1905,7 +1905,7 @@ D -->|No| H[用 非 _cansleep]
 
 ------
 
-### 4.8.5 逻辑值与原始电平（与极性的一致处理）
+### 4.8.5_逻辑值与原始电平(与极性的一致处理)
 
 - **逻辑值接口**：`gpiod_get/set_value[_cansleep]()` —— 自动考虑 DT 的 `GPIO_ACTIVE_LOW/HIGH`。
 - **原始值接口**：`gpiod_get/set_raw_value[_cansleep]()` —— 不做极性映射。
@@ -1933,7 +1933,7 @@ static inline int gpiod_get_logic_safe(struct gpio_desc *d, bool active_low)
 
 ------
 
-### 4.8.6 编码模板（可直接复用）
+### 4.8.6_编码模板(可直接复用)
 
 **A）通用读写模板（可睡/不可睡自适应）**
 
@@ -1982,7 +1982,7 @@ irqreturn_t my_irq_thread(int irq, void *data)
 
 ------
 
-### 4.8.7 端到端示例 A：I²C 扩展器（`can_sleep=true`）
+### 4.8.7_端到端示例_A_I²C_扩展器(can_sleep=true)
 
 **场景：** PCF8574 等 I²C GPIO 控制 LED，在中断事件里翻转 LED。
 
@@ -2027,7 +2027,7 @@ devm_request_threaded_irq(dev, irq, my_top, my_thread,
 
 ------
 
-### 4.8.8 端到端示例 B：SoC GPIO（`can_sleep=false`）硬中断快路径
+### 4.8.8_端到端示例_B_SoC_GPIO(can_sleep=false)硬中断快路径
 
 **场景：** SoC 内部 GPIO 控制一个引脚脉冲，要求中断上半部立刻拉高 10us 再拉低。
 
@@ -2049,7 +2049,7 @@ static irqreturn_t my_top_fast(int irq, void *p)
 
 ------
 
-### 4.8.9 调试与验证方法
+### 4.8.9_调试与验证方法
 
 1. **检查谁在使用 GPIO：**
 
@@ -2070,7 +2070,7 @@ static irqreturn_t my_top_fast(int irq, void *p)
 
 ------
 
-### 4.8.10 常见问题与修复
+### 4.8.10_常见问题与修复
 
 | 问题                                 | 典型根因                              | 修复建议                                                     |
 | ------------------------------------ | ------------------------------------- | ------------------------------------------------------------ |
@@ -2081,14 +2081,14 @@ static irqreturn_t my_top_fast(int irq, void *p)
 
 ------
 
-### 4.8.11 兼容性与性能注意
+### 4.8.11_兼容性与性能注意
 
 - 在**可睡上下文**对 `can_sleep=false` 的线调用 `*_cansleep` **没有功能问题**；只是多了一次 `might_sleep()` 检查的开销，通常可忽略。
 - 在**原子上下文**调用 `*_cansleep` **不被允许**，即使底层当前不会睡，也会触发检查告警。
 
 ------
 
-### 4.8.12 小结
+### 4.8.12_小结
 
 - **规则**：先判上下文、再判 `gpiod_cansleep(desc)`，据此选择 `_cansleep` 或非 `_cansleep`。
 - **实践**：可睡上下文统一用 `*_cansleep`，原子上下文仅在 `can_sleep=false` 时使用非 `_cansleep`。

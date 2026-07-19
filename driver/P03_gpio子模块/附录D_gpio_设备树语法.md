@@ -1,10 +1,10 @@
 （imx6ull, kernel 6.1为基准）
 
-# #gpio-cells
+# 第1章_#gpio-cells
 
 ------
 
-## 1 主题引入
+## 1.1_1_主题引入
 
 在设备树（Device Tree）中，GPIO 控制器（GPIO Controller）是通过一组标准属性定义的节点。其中最核心的属性之一便是 **`#gpio-cells`** —— 它决定了“消费者（consumer）节点”在引用 GPIO 时，参数应包含多少个单元（cell）以及每个单元的含义。
 
@@ -12,9 +12,9 @@
 
 ------
 
-## 2 语法定义与基本格式
+## 1.2_2_语法定义与基本格式
 
-### 2.1 定义位置
+### 1.2.1_定义位置
 
 `#gpio-cells` 必须定义在 **GPIO 控制器节点** 内部，不能出现在消费者节点中。
  示例如下：
@@ -30,7 +30,7 @@ gpio1: gpio@0209c000 {
 };
 ```
 
-### 2.2 基本语法格式
+### 1.2.2_基本语法格式
 
 ```dts
 #gpio-cells = <N>;
@@ -38,7 +38,7 @@ gpio1: gpio@0209c000 {
 
 - `N` 为整数，表示每个 GPIO 句柄（phandle）引用时需要携带多少个参数单元。
 
-### 2.3 语义解释
+### 1.2.3_语义解释
 
 | 参数          | 说明                                                         |
 | ------------- | ------------------------------------------------------------ |
@@ -47,9 +47,9 @@ gpio1: gpio@0209c000 {
 
 ------
 
-## 3 典型取值与含义
+## 1.3_3_典型取值与含义
 
-### 3.1 N = 2 —— 最常见模式（Linux Kernel 通用模型）
+### 1.3.1_N_=_2_最常见模式(Linux_Kernel_通用模型)
 
 大部分 SoC（如 NXP i.MX、TI AM335x、Allwinner、Rockchip）均采用：
 
@@ -74,7 +74,7 @@ Linux 内核中约定：
 - `GPIO_ACTIVE_LOW`：低电平表示激活；
 - 对应定义位于 `include/dt-bindings/gpio/gpio.h`。
 
-### 3.2 N = 1 —— 极简模型
+### 1.3.2_N_=_1_极简模型
 
 当平台硬件或驱动默认固定极性时（如所有信号均高电平有效），则仅需提供引脚编号：
 
@@ -90,7 +90,7 @@ gpios = <&gpio1 5>;
 
 此时驱动默认认为为 `GPIO_ACTIVE_HIGH`。
 
-### 3.3 N = 3 —— 扩展模型
+### 1.3.3_N_=_3_扩展模型
 
 部分 SoC（如 **ARMv8-A** 某些平台）或 **PMIC 芯片** 需要在描述中包含更多参数，如：
 
@@ -114,9 +114,9 @@ gpios = <&gpio3 12 GPIO_ACTIVE_HIGH &gpio_flags>;
 
 ------
 
-## 4 数据结构视角（内核解析机制）
+## 1.4_4_数据结构视角(内核解析机制)
 
-### 4.1 关键结构体关系图
+### 1.4.1_关键结构体关系图
 
 ```mermaid
 flowchart TD
@@ -132,7 +132,7 @@ H --> I["生成 struct gpio_desc 实例"]
 
 ------
 
-### 4.2 核心结构体
+### 1.4.2_核心结构体
 
 **内核中用于保存解析结果的结构体：**
 
@@ -145,7 +145,7 @@ struct of_phandle_args {
 ```
 
 * 其中 `args_count` 就来源于设备树的 `#gpio-cells`。Linux 提供一系列解析接口，以 `of_parse_phandle_with_*` 为前缀。
-* 关于 of_phandle_args 参考 [附录 A/struct of_phandle_args](#struct of_phandle_args)。
+* 关于 of_phandle_args 参考 [附录 A/struct of_phandle_args](#第6章_struct_of_phandle_args)。
 
 
 
@@ -155,9 +155,9 @@ struct of_phandle_args {
 
 ------
 
-## 5 开发者视角：编写与解析逻辑
+## 1.5_5_开发者视角_编写与解析逻辑
 
-### 5.1 控制器侧定义（provider）
+### 1.5.1_控制器侧定义(provider)
 
 在控制器驱动的 `of_xlate` 函数中实现参数解析。例如：
 
@@ -174,7 +174,7 @@ static int imx_gpio_xlate(struct gpio_chip *gc,
 
 此函数实现了对 `<gpio_number, flags>` 两个单元的解析，对应 `#gpio-cells = <2>`。
 
-### 5.2 消费者侧引用（consumer）
+### 1.5.2_消费者侧引用(consumer)
 
 消费者节点（例如 LED、按键、复位引脚）通过 phandle 引用：
 
@@ -189,15 +189,15 @@ leds {
 ```
 
 * 由内核的 `gpiod_get_from_of_node()` 完成解析，并生成对应的 `struct gpio_desc`。
-* 关于 `gpiod_get_from_of_node()` 参考 [附录 B/gpiod_get_from_of_node() 接口详解](#gpiod_get_from_of_node() 接口详解)。
+* 关于 `gpiod_get_from_of_node()` 参考 [附录 B/gpiod_get_from_of_node() 接口详解](#第2章_gpiod_get_from_of_node()_接口详解)。
 
 
 
 ------
 
-## 6 用户视角验证与调试
+## 1.6_6_用户视角验证与调试
 
-### 6.1 查看解析是否正确
+### 1.6.1_查看解析是否正确
 
 ```bash
 cat /sys/kernel/debug/gpio
@@ -205,7 +205,7 @@ cat /sys/kernel/debug/gpio
 
 可查看每个 GPIO 的名称、状态及标志。
 
-### 6.2 内核日志
+### 1.6.2_内核日志
 
 在 `drivers/gpio/gpiolib-of.c` 中可打开调试信息：
 
@@ -214,7 +214,7 @@ pr_debug("parsed GPIO %d from %pOF with flags 0x%x\n",
          gpio, np, flags);
 ```
 
-### 6.3 典型错误信息
+### 1.6.3_典型错误信息
 
 若 `#gpio-cells` 未定义或数量不匹配：
 
@@ -230,7 +230,7 @@ GPIO property size mismatch in node /leds
 
 ------
 
-## 7 可视化图示：引用关系
+## 1.7_7_可视化图示_引用关系
 
 ```mermaid
 flowchart LR
@@ -244,7 +244,7 @@ A -->|"phandle reference"| B
 
 ------
 
-## 8 调试与验证步骤总结
+## 1.8_8_调试与验证步骤总结
 
 | 步骤 | 操作                          | 目的                                               |
 | ---- | ----------------------------- | -------------------------------------------------- |
@@ -256,7 +256,7 @@ A -->|"phandle reference"| B
 
 ------
 
-## 9 小结
+## 1.9_9_小结
 
 | 项目           | 内容                                                        |
 | -------------- | ----------------------------------------------------------- |
@@ -273,11 +273,11 @@ A -->|"phandle reference"| B
 
 
 
-# \<name\>-gpios/gpio
+# 第2章_\<name\>-gpios/gpio
 
 ------
 
-## 1 主题引入
+## 2.1_1_主题引入
 
 在设备树中，任何需要使用 GPIO 引脚的外设节点，都必须通过 `<name>-gpios` 或 `gpios` 属性来描述与 GPIO 控制器（provider）的连接关系。
 
@@ -288,21 +288,21 @@ A -->|"phandle reference"| B
 
 ------
 
-## 2 语法格式
+## 2.2_2_语法格式
 
-### 2.1 通用格式
+### 2.2.1_通用格式
 
 ```dts
 <name>-gpios = <&gpio-controller offset flags>;
 ```
 
-### 2.2 单 GPIO 情况
+### 2.2.2_单_GPIO_情况
 
 ```dts
 reset-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 ```
 
-### 2.3 多 GPIO 情况
+### 2.2.3_多_GPIO_情况
 
 ```dts
 data-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>,
@@ -310,7 +310,7 @@ data-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>,
               <&gpio1 5 GPIO_ACTIVE_HIGH>;
 ```
 
-### 2.4 无命名前缀（历史形式）
+### 2.2.4_无命名前缀(历史形式)
 
 ```dts
 gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
@@ -320,7 +320,7 @@ gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 
 ------
 
-## 3 属性字段含义
+## 2.3_3_属性字段含义
 
 | 字段               | 含义                               | 示例                                     |
 | ------------------ | ---------------------------------- | ---------------------------------------- |
@@ -339,9 +339,9 @@ gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 
 ------
 
-## 4 数据结构视角
+## 2.4_4_数据结构视角
 
-### 4.1 内核解析入口
+### 2.4.1_内核解析入口
 
 位于 `drivers/gpio/gpiolib-of.c`：
 
@@ -358,7 +358,7 @@ struct gpio_desc *of_get_named_gpiod_flags(struct device_node *np,
 2. 获取第 `index` 个单元；
 3. 读取引用 phandle → 对应 `struct gpio_chip`；
 4. 返回 `gpio_desc *`（GPIO 逻辑描述符）。
-5. 详细说明参考 [附录 C/of_get_named_gpiod_flags()](#of_get_named_gpiod_flags()) 
+5. 详细说明参考 [附录 C/of_get_named_gpiod_flags()](#第1章_of_get_named_gpiod_flags())
 
 驱动侧封装了更简洁的单GPIO版本：
 
@@ -370,13 +370,13 @@ struct gpio_desc *devm_gpiod_get(struct device *dev,
 
 > 其中 `con_id` 对应 `<name>`，即属性名前缀部分。例如 `devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH)` → 查找 `reset-gpios`。
 >
-> 详细参考 [附录 C/devm_gpiod_get()](#devm_gpiod_get())
+> 详细参考 [附录 C/devm_gpiod_get()](#第1章_devm_gpiod_get())
 
 ------
 
-## 5 开发者视角
+## 2.5_5_开发者视角
 
-### 5.1 驱动中解析 GPIO
+### 2.5.1_驱动中解析_GPIO
 
 ```c
 struct gpio_desc *reset_gpio;
@@ -397,7 +397,7 @@ if (IS_ERR(reset_gpio))
 
 ------
 
-### 5.2 多 GPIO 数组
+### 2.5.2_多_GPIO_数组
 
 驱动可使用：
 
@@ -417,7 +417,7 @@ data-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>,
 
 ------
 
-### 5.3 不写的后果
+### 2.5.3_不写的后果
 
 | 缺失内容                       | 结果                                             |
 | ------------------------------ | ------------------------------------------------ |
@@ -428,7 +428,7 @@ data-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>,
 
 ------
 
-## 6 用户视角：DTS 实例
+## 2.6_6_用户视角_DTS_实例
 
 ```dts
 gpio1: gpio@0209c000 {
@@ -460,9 +460,9 @@ wifi: wifi-module@1 {
 
 ------
 
-## 7 可视化图示
+## 2.7_7_可视化图示
 
-### 7.1 Provider → Consumer 解析流
+### 2.7.1_Provider_to_Consumer_解析流
 
 ```mermaid
 flowchart TD
@@ -476,9 +476,9 @@ flowchart TD
 
 ------
 
-## 8 示例代码
+## 2.8_8_示例代码
 
-### 8.1 驱动端（消费者）
+### 2.8.1_驱动端(消费者)
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -538,7 +538,7 @@ wifi-demo wifi-module@1: WiFi module powered up
 
 ------
 
-## 9 调试与验证
+## 2.9_9_调试与验证
 
 | 检查项                 | 命令                                                         | 说明                               |
 | ---------------------- | ------------------------------------------------------------ | ---------------------------------- |
@@ -549,7 +549,7 @@ wifi-demo wifi-module@1: WiFi module powered up
 
 ------
 
-## 10 小结
+## 2.10_10_小结
 
 | 项目       | 说明                                                         |
 | ---------- | ------------------------------------------------------------ |
@@ -565,9 +565,9 @@ wifi-demo wifi-module@1: WiFi module powered up
 
 
 
-# gpio-controller
+# 第3章_gpio-controller
 
-## 1 主题引入
+## 3.1_1_主题引入
 
 `gpio-controller` 是 GPIO 子系统中最核心的设备树属性之一。 它标识一个设备节点具备“**GPIO 控制器功能**”，是系统识别该节点为“GPIO provider（提供者）”的唯一条件。
 
@@ -580,7 +580,7 @@ wifi-demo wifi-module@1: WiFi module powered up
 
 ------
 
-## 2 语法格式
+## 3.2_2_语法格式
 
 ```
 gpioX: gpio-controller@address {
@@ -605,9 +605,9 @@ gpioX: gpio-controller@address {
 
 ------
 
-# gpio-ranges
+# 第4章_gpio-ranges
 
-## 1 主题引入
+## 4.1_1_主题引入
 
 在 Linux 内核的 **pin controller（pinctrl）** 与 **GPIO 子系统** 中，`gpio-ranges` 属性用于**建立 GPIO 控制器编号空间与 pin controller 内部 pin 编号空间之间的映射关系**。
 
@@ -619,7 +619,7 @@ gpioX: gpio-controller@address {
 
 ------
 
-## 2 属性语法
+## 4.2_2_属性语法
 
 ```dts
 gpio-ranges = <&pinctrl N M C>;
@@ -634,7 +634,7 @@ gpio-ranges = <&pinctrl N1 M1 C1>,
 
 ------
 
-## 3 参数语义解释
+## 4.3_3_参数语义解释
 
 | 参数         | 含义                               | 类型    | 作用                                    |
 | ------------ | ---------------------------------- | ------- | --------------------------------------- |
@@ -650,15 +650,15 @@ gpio-ranges = <&pinctrl N1 M1 C1>,
 
 ------
 
-## 4 使用场景与必要性
+## 4.4_4_使用场景与必要性
 
-### (1) **GPIO 控制器必须与 pinctrl 建立映射**
+### 4.4.1_GPIO_控制器必须与_pinctrl_建立映射
 
 - Linux 内核中，GPIO 控制器往往是 SoC 的一部分（例如 i.MX6ULL 的 IOMUXC）。
 - 驱动通过 `gpiochip_add_pin_range()` 注册映射表。
 - `gpio-ranges` 属性提供该映射信息，使内核知道：**“这个 GPIO 控制器管理的是 pinctrl 中哪一段 pin”**。
 
-### (2) **Pinmux 与 GPIO 的切换依赖该映射**
+### 4.4.2_Pinmux_与_GPIO_的切换依赖该映射
 
 - 在使用 `pinctrl` 配置引脚复用时，pinctrl 子系统需要反查 GPIO 引脚对应的物理 pin。
 - 若没有 `gpio-ranges`，`pinctrl` 无法确定 GPIO 的物理 pad，导致：
@@ -668,16 +668,16 @@ gpio-ranges = <&pinctrl N1 M1 C1>,
 
 ------
 
-## 5 驱动层解析机制（开发者视角）
+## 4.5_5_驱动层解析机制(开发者视角)
 
 内核中，`gpio-ranges` 的解析主要发生在 **GPIO 控制器注册阶段**：
 
-### 源码路径（Linux 6.1）：
+### 4.5.1_源码路径(Linux_6.1)
 
 - `drivers/gpio/gpiolib-of.c`
 - `of_gpiochip_add_pin_range()`
 
-### 调用链：
+### 4.5.2_调用链
 
 ```mermaid
 flowchart TD
@@ -688,7 +688,7 @@ D --> E["gpiochip_add_pin_range(chip, pinctrl_dev, start_gpio, start_pin, npins)
 E --> F["记录到 chip->pin_ranges[]"]
 ```
 
-### 内核数据结构：
+### 4.5.3_内核数据结构
 
 | 结构体               | 关键成员      | 说明                                            |
 | -------------------- | ------------- | ----------------------------------------------- |
@@ -698,9 +698,9 @@ E --> F["记录到 chip->pin_ranges[]"]
 
 ------
 
-## 6 示例：i.MX6ULL
+## 4.6_6_示例_i.MX6ULL
 
-### 节点定义：
+### 4.6.1_节点定义
 
 ```dts
 pinctrl: iomuxc@20e0000 {
@@ -727,7 +727,7 @@ gpio1: gpio@0209c000 {
 
 ------
 
-## 7 内核行为验证（注册日志）
+## 4.7_7_内核行为验证(注册日志)
 
 加载驱动后，可在内核日志中看到类似输出：
 
@@ -740,7 +740,7 @@ pinctrl core: added pinctrl range for gpio1
 
 ------
 
-## 8 常见错误与后果（用户视角）
+## 4.8_8_常见错误与后果(用户视角)
 
 | 问题               | 现象                 | 原因                        |
 | ------------------ | -------------------- | --------------------------- |
@@ -751,7 +751,7 @@ pinctrl core: added pinctrl range for gpio1
 
 ------
 
-## 9 多控制器映射示例（RK3568）
+## 4.9_9_多控制器映射示例(RK3568)
 
 ```dts
 pinctrl: pinctrl@fe740000 {
@@ -782,7 +782,7 @@ gpio1: gpio@fe750000 {
 
 ------
 
-## 10 内核验证命令
+## 4.10_10_内核验证命令
 
 在目标系统中：
 
@@ -801,7 +801,7 @@ gpiochip1: GPIOs 32-63, parent: platform/gpio@020a0000, pinctrl range 32-63
 
 ------
 
-## 11 对驱动的影响（开发者视角）
+## 4.11_11_对驱动的影响(开发者视角)
 
 驱动中常用以下操作：
 
@@ -826,7 +826,7 @@ gpio_direction_output();
 
 ------
 
-## 12 数据流总结
+## 4.12_12_数据流总结
 
 ```mermaid
 flowchart TD
@@ -839,7 +839,7 @@ E --> F["GPIO 操作 → 定位物理 PAD"]
 
 ------
 
-## 13 小结
+## 4.13_13_小结
 
 | 项目     | 内容                                               |
 | -------- | -------------------------------------------------- |

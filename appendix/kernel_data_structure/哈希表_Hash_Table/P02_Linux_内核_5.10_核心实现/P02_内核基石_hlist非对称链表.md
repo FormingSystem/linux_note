@@ -1,8 +1,10 @@
-# 第 2 章 内核基石：hlist 非对称链表
+# 第2章_内核基石_hlist非对称链表
+
+## 2.1_内核基石_hlist_非对称链表
 
 在 Linux 内核（5.10 及其前后版本）中，标准的双向链表 `list_head` 固然强大，但在构建大型哈希表时，它显得过于“奢侈”。为了节省宝贵的内存，内核引入了专门为哈希表设计的 **hlist**。
 
-## 2.1_结构定义：非对称的艺术
+### 2.1.1_结构定义_非对称的艺术
 
 `hlist` 的核心设计哲学是**非对称性**。
 
@@ -13,7 +15,7 @@
   - `next`：指向下一个节点的指针。
   - `pprev`：一个二级指针，指向前一个节点的 `next` 指针所在的地址。
 
-### 内核源码结构定义：
+#### (1)_内核源码结构定义
 
 ```c
 struct hlist_head {
@@ -28,15 +30,15 @@ struct hlist_node {
 
 ------
 
-## 2.2 `pprev` 指针：内核级的工程智慧
+### 2.1.2_pprev_指针_内核级的工程智慧
 
 这是 `hlist` 最精妙的设计。在普通的双向链表中，`prev` 指向的是前一个结构体；而在 `hlist` 中，`pprev` 指向的是**“前一个元素的 `next` 属性所在的内存地址”**。
 
-### 为什么要这么做？
+#### (1)_为什么要这么做
 
 在哈希表中，链表的第一个节点的前驱是 `hlist_head`，而中间节点的前驱是 `hlist_node`。
 
-- 如果使用普通 `prev` 指针，删除节点时必须通过 `if` 判断：当前是不是头节点？建议参考代码 [2.3.3 节点删除：`hash_del()`](#2.3.3_节点删除：`hash_del()`) 辅助理解。
+- 如果使用普通 `prev` 指针，删除节点时必须通过 `if` 判断：当前是不是头节点？建议参考代码 [2.3.3 节点删除：`hash_del()`](#(3)_节点删除_hash_del()) 辅助理解。
 
 - **使用 `pprev` 的优势**：无论节点在什么位置，删除操作都可以统一为一行代码：
 
@@ -45,11 +47,11 @@ struct hlist_node {
     ```c
     *(node->pprev) = node->next;
     ```
-  
-  - 这意味着内核代码可以消灭条件分支，极大地优化了指令流水线性能。
-  
 
-### 数据结构关联图（中文说明）
+  - 这意味着内核代码可以消灭条件分支，极大地优化了指令流水线性能。
+
+
+#### (2)_数据结构关联图(中文说明)
 
 ```mermaid
 graph LR
@@ -101,18 +103,18 @@ graph TD
 
 ------
 
-## 2.3 核心操作 API：增、删、查
+### 2.1.3_核心操作_API_增_删_查
 
 内核通过一套精密的宏来封装这些复杂的指针操作，确保开发者不会因手动操作 `pprev` 而崩溃。
 
-### 2.3.1 初始化与定义
+#### (1)_初始化与定义
 
 在内核模块中，我们可以静态或动态地初始化哈希表。
 
 - **静态定义**：`DEFINE_HASHTABLE(name, bits);`（定义一个 $2^{bits}$ 大小的哈希表）。
 - **动态初始化**：`hash_init(table_name);`。
 
-### 2.3.2 节点插入：`hash_add()`
+#### (2)_节点插入_hash_add()
 
 内核默认使用**“头插法”**，因为这不需要遍历链表，时间复杂度恒定为 $O(1)$。下面是简要说明，后面有详细定义说明：
 
@@ -140,7 +142,7 @@ void hash_add(struct hlist_head *head, struct hlist_node *node)
 flowchart LR
     H[桶头 head.first] -->|原本指向| A[节点 A]
     N[新节点 node.next] -->|1.指向 A| A
-    
+
     style N fill:#f9f,stroke:#333,stroke-width:2px
 ```
 
@@ -148,7 +150,7 @@ flowchart LR
 
 **第二步：更新原首节点的前驱回指**
 
-**代码：** 
+**代码：**
 
 ```c
 if (head->first)
@@ -162,7 +164,7 @@ flowchart LR
     H[桶头 head.first] --> A[节点 A]
     N[新节点 node] -->|next 成员| A
     A -->|2.修改 A.pprev 指向| N
-    
+
     style A fill:#e1f5fe,stroke:#01579b
     style N fill:#f9f,stroke:#333,stroke-width:2px
 ```
@@ -179,7 +181,7 @@ flowchart LR
 flowchart TD
     H[桶头 head.first] -->|3.更新指向| N[新节点 node]
     N --> A[节点 A]
-    
+
     style H fill:#fff9c4,stroke:#fbc02d
     style N fill:#f9f,stroke:#333,stroke-width:2px
 ```
@@ -197,7 +199,7 @@ flowchart TD
     N[新节点 node] -->|4.node.pprev 指向头指针地址| H[桶头 head.first]
     H --> N
     N -->|next| A[节点 A]
-    
+
     style N fill:#f9f,stroke:#333,stroke-width:2px
     style H fill:#fff9c4,stroke:#fbc02d
 ```
@@ -228,7 +230,7 @@ flowchart TD
 
 定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h)。
 
-```c 
+```c
 /**
  * hlist_add_head - add a new entry at the beginning of the hlist
  * @n: new entry to be added
@@ -248,7 +250,7 @@ static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
 }
 ```
 
-### 2.3.3_节点删除：`hash_del()`
+#### (3)_节点删除_hash_del()
 
 得益于 `pprev`，删除操作变得异常简洁且安全。下面是精简说明，后面有详细定义说明：
 
@@ -381,16 +383,16 @@ static inline void INIT_HLIST_NODE(struct hlist_node *h)
 >     A2 -->|无需 READ_ONCE| A3[逻辑稳定: 无竞争修改]
 >     A3 --> A4["执行 WRITE_ONCE(*pprev, next)"]
 >     end
-> 
+>
 >     subgraph CPU_B_无锁读者_RCU
 >     B1[rcu_read_lock] --> B2[hlist_for_each_entry_rcu]
 >     B2 -->|内部包含 READ_ONCE| B3{读取指针}
 >     B3 -->|看到原子更新| B4[安全继续遍历]
 >     B3 -->|若无 WRITE_ONCE| B5[由于撕裂导致内核崩溃]
 >     end
-> 
+>
 >     A4 -.->|确保修改对读者原子可见| B3
->     
+>
 >     style A4 fill:#fff9c4,stroke:#fbc02d
 >     style B4 fill:#e8f5e9,stroke:#2e7d32
 > ```
@@ -417,7 +419,7 @@ static inline void INIT_HLIST_NODE(struct hlist_node *h)
 
 ------
 
-## 2.4 遍历宏：如何高效访问数据
+### 2.1.4_遍历宏_如何高效访问数据
 
 内核提供了多种遍历宏，最常用的是 `hlist_for_each_entry`。
 
@@ -439,7 +441,7 @@ struct my_node {
 };
 ```
 
-### 1. 标准遍历：`hlist_for_each_entry`
+#### (1)_标准遍历_hlist_for_each_entry
 
 这是最常用的宏，适用于简单的读取场景。它直接从桶头（`hlist_head`）开始，顺着 `next` 指针一路向后。
 
@@ -475,7 +477,7 @@ hlist_for_each_entry(obj, head, node) {
 	     pos = hlist_entry_safe((pos)->member.next, typeof(*(pos)), member))
 ```
 
-#### `hlist_entry_safe()`定义
+##### 1)_hlist_entry_safe()定义
 
 获取 `pos` 的 `hlist_entry_safe()` 定义位于 [include/linux/list.h](../../../kernel_source/include/linux/list.h)：
 
@@ -544,7 +546,7 @@ hlist_for_each_entry(obj, head, node) {
 
 ------
 
-### 2. 安全遍历：`hlist_for_each_entry_safe`
+#### (2)_安全遍历_hlist_for_each_entry_safe
 
 **核心痛点**：如果你在遍历过程中调用了 `hash_del(obj)`，当前节点的 `next` 指针可能会被修改。此时再执行下一次循环的 `pos = pos->next` 就会导致内核崩溃（Kernel Panic）。
 
@@ -582,13 +584,13 @@ hlist_for_each_entry_safe(obj, tmp, my_head, node) {
 	     pos = hlist_entry_safe(n, typeof(*pos), member))
 ```
 
-当条件语句中 `pos` 不为空时，执行 `n = pos->member.next; return 1` 。 
+当条件语句中 `pos` 不为空时，执行 `n = pos->member.next; return 1` 。
 
-`hlist_entry_safe()`说明：[`hlist_entry_safe()`定义](#`hlist_entry_safe()`定义)。
+`hlist_entry_safe()`说明：[`hlist_entry_safe()`定义](#1)_hlist_entry_safe()定义)。
 
 ------
 
-### 3. 无锁遍历：`hlist_for_each_entry_rcu`
+#### (3)_无锁遍历_hlist_for_each_entry_rcu
 
 在 5.10 内核中，为了追求极致的性能，读取操作通常不加锁。此宏配合 `rcu_read_lock()` 使用，确保在不影响并发写入的情况下，读取者能看到一致的链表视图。
 
@@ -604,7 +606,7 @@ rcu_read_lock(); // 进入 RCU 临界区
 hlist_for_each_entry_rcu(obj, &my_hashtable[hash_min(key, HASH_BITS)], node) {
     if (obj->key == key) {
         pr_info("RCU 查找到数据: %s\n", obj->value);
-        break; 
+        break;
     }
 }
 
@@ -643,11 +645,11 @@ rcu_read_unlock(); // 退出 RCU 临界区
 >  struct hlist_node node; // 嵌入哈希节点
 >  struct rcu_head rcu;    // 用于异步回收内存
 > };
-> 
+>
 > /* 定义一个 2^10 = 1024 桶的哈希表 */
-> DECLARE_HASHTABLE(user_htable, 10); 
+> DECLARE_HASHTABLE(user_htable, 10);
 > /* 写者必须持有的锁，用于保护拓扑结构修改 */
-> DEFINE_SPINLOCK(user_htable_lock); 
+> DEFINE_SPINLOCK(user_htable_lock);
 > ```
 >
 > ------
@@ -661,10 +663,10 @@ rcu_read_unlock(); // 退出 RCU 临界区
 > {
 >  struct user_session *sess;
 >  unsigned int key = hash_min(id, 10);
-> 
+>
 >  /* 1. 声明进入 RCU 读取临界区 */
->  rcu_read_lock(); 
-> 
+>  rcu_read_lock();
+>
 >  /* 2. 无锁遍历特定桶 */
 >  // obj: 返回的结构体指针
 >  // &user_htable[key]: 目标桶头指针
@@ -676,7 +678,7 @@ rcu_read_unlock(); // 退出 RCU 临界区
 >          return sess;
 >      }
 >  }
-> 
+>
 >  /* 3. 退出 RCU 读取临界区 */
 >  rcu_read_unlock();
 >  return NULL;
@@ -693,7 +695,7 @@ rcu_read_unlock(); // 退出 RCU 临界区
 > >
 > > 在传统的锁定机制中，你必须指定要锁定的对象（例如 `spin_lock(&my_lock)`），因为锁是**局部**的。但 RCU 的读取端设计追求的是**极致的零开销**，它的实现逻辑决定了它不需要知道你在读“哪一个”数据结构。
 > >
-> > - **声明而非锁定**：`rcu_read_lock()` 并不是去获取某个锁对象，它更像是一个“声明”。它告诉内核：“当前的 CPU 进入了 RCU 读取状态，在这个状态退出之前，请不要回收任何被删除的内存节点”。   
+> > - **声明而非锁定**：`rcu_read_lock()` 并不是去获取某个锁对象，它更像是一个“声明”。它告诉内核：“当前的 CPU 进入了 RCU 读取状态，在这个状态退出之前，请不要回收任何被删除的内存节点”。
 > > - **底层实现（以非抢占内核为例）**：在很多内核配置中，`rcu_read_lock()` 实际上只是禁用了内核抢占（Preemption），或者仅仅是增加了一个每 CPU 变量的计数。它不需要针对特定的哈希表或数据结构进行操作，因此不需要传递参数。
 > > - **全局可见性**：由于它改变的是当前执行线程或 CPU 的状态，内核的回收机制（Grace Period 追踪）会自动感知到这个状态。
 > >
@@ -757,9 +759,9 @@ rcu_read_unlock(); // 退出 RCU 临界区
 > >     spin_lock(&user_htable_lock);
 > >     hlist_del_rcu(&sess->node); // 1. 逻辑删除，读者仍可能在读旧内存
 > >     spin_unlock(&user_htable_lock);
-> > 
+> >
 > >     synchronize_rcu();          // 2. 阻塞！等待所有并发读者离开
-> >     
+> >
 > >     kfree(sess);                // 3. 安全释放内存
 > > }
 > > ```
@@ -782,14 +784,14 @@ rcu_read_unlock(); // 退出 RCU 临界区
 > >     struct user_session *sess = container_of(rh, struct user_session, rcu);
 > >     kfree(sess); //
 > > }
-> > 
+> >
 > > void delete_user_async(struct user_session *sess) {
 > >     spin_lock(&user_htable_lock);
 > >     hlist_del_rcu(&sess->node); //
 > >     spin_unlock(&user_htable_lock);
-> > 
+> >
 > >     // 立即返回，不阻塞！内核会在安全时刻调用回调函数
-> >     call_rcu(&sess->rcu, user_session_reclaim); 
+> >     call_rcu(&sess->rcu, user_session_reclaim);
 > > }
 > > ```
 > >
@@ -801,21 +803,21 @@ rcu_read_unlock(); // 退出 RCU 临界区
 > > flowchart TD
 > >     W_Del[1.写者: 执行 hlist_del_rcu] --> W_Pub[2.逻辑移除: 新读者已看不见该节点]
 > >     W_Pub --> GP{宽限期检测}
-> >     
+> >
 > >     subgraph Readers [存量读者]
 > >     R1[读者 A: 正在访问节点]
 > >     R2[读者 B: 正在访问节点]
 > >     end
-> >     
+> >
 > >     GP -->|等待| R1
 > >     GP -->|等待| R2
-> >     
+> >
 > >     R1 -->|退出 rcu_read_unlock| Done1[CPU 经历静止状态]
 > >     R2 -->|退出 rcu_read_unlock| Done2[CPU 经历静止状态]
-> >     
+> >
 > >     Done1 --> Finish[3.宽限期结束]
 > >     Done2 --> Finish
-> >     
+> >
 > >     Finish --> Free[4.执行 kfree 释放内存]
 > > ```
 > >
@@ -858,14 +860,14 @@ rcu_read_unlock(); // 退出 RCU 临界区
 > void add_user_session(struct user_session *new_sess)
 > {
 >     unsigned int key = hash_min(new_sess->user_id, 10);
-> 
+>
 >     /* 1. 写者之间必须互斥 */
 >     spin_lock(&user_htable_lock);
-> 
+>
 >     /* 2. 使用 RCU 版本的添加函数 */
 >     // 它内部包含 WRITE_ONCE 和内存屏障，确保读者看到的是初始化好的节点
 >     hlist_add_head_rcu(&new_sess->node, &user_htable[key]);
-> 
+>
 >     spin_unlock(&user_htable_lock);
 > }
 > ```
@@ -898,14 +900,14 @@ rcu_read_unlock(); // 退出 RCU 临界区
 >     R3 --> R4[即使此时写者删除了 B]
 >     R4 --> R5[由于 B 的内存未释放, 读者仍能安全完成当前节点访问]
 >     end
-> 
+>
 >     subgraph 写者视角
 >     W1[锁定 Spinlock] --> W2[从链表移除 B: hlist_del_rcu]
 >     W2 --> W3[释放 Spinlock]
 >     W3 --> W4[进入宽限期: 等待所有读取者]
 >     W4 --> W5[真正释放内存: kfree]
 >     end
-> 
+>
 >     W2 -.->|读者仍能通过旧指针看到 B| R4
 > ```
 >
@@ -920,7 +922,7 @@ rcu_read_unlock(); // 退出 RCU 临界区
 >
 > > **技术笔记**：在 RCU 哈希表中，写入者是“孤独的痛苦者”，它需要负责加锁、拷贝副本（可选）、原子发布以及等待宽限期；而读取者则是“快乐的白嫖者”，只需确保在读取期间不被系统抢占即可。
 >
-> 
+>
 >
 > <span style="color:red;">写者示例：</span>
 >
@@ -946,24 +948,24 @@ rcu_read_unlock(); // 退出 RCU 临界区
 > {
 >     struct user_session *new_sess;
 >     unsigned int key = hash_min(id, 10);
-> 
+>
 >     /* 1. 准备工作：在锁外分配内存，减少锁持有时间 */
 >     new_sess = kzalloc(sizeof(*new_sess), GFP_KERNEL);
 >     if (!new_sess)
 >         return -ENOMEM;
-> 
+>
 >     new_sess->user_id = id;
 >     strlcpy(new_sess->username, name, sizeof(new_sess->username));
-> 
+>
 >     /* 2. 写者互斥：修改哈希表拓扑结构必须加锁保护 */
 >     spin_lock(&user_htable_lock);
-> 
+>
 >     /* 3. 原子发布：使用 RCU 版本的添加宏
 >      * 它包含 WRITE_ONCE 和内存屏障，确保读者看到的是完整初始化的节点 */
 >     hlist_add_head_rcu(&new_sess->node, &user_htable[key]);
-> 
+>
 >     spin_unlock(&user_htable_lock);
->     
+>
 >     return 0;
 > }
 > ```
@@ -984,22 +986,22 @@ rcu_read_unlock(); // 退出 RCU 临界区
 >     struct user_session *sess;
 >     struct hlist_node *tmp;
 >     unsigned int key = hash_min(id, 10);
-> 
+>
 >     /* 1. 写者互斥锁 */
 >     spin_lock(&user_htable_lock);
->     
+>
 >     /* 2. 查找并逻辑删除 */
 >     hlist_for_each_entry_safe(sess, tmp, &user_htable[key], node) {
 >         if (sess->user_id == id) {
 >             /* 逻辑删除：将节点从链表中摘除
 >              * 此时读者可能仍持有该节点的旧指针并在访问 */
 >             hlist_del_rcu(&sess->node);
->             
+>
 >             spin_unlock(&user_htable_lock);
-> 
+>
 >             /* 3. 等待宽限期：阻塞直到所有当前的读者退出 */
 >             synchronize_rcu();
-> 
+>
 >             /* 4. 物理释放：现在没有任何读者能访问 sess 了 */
 >             kfree(sess);
 >             return;
@@ -1020,19 +1022,19 @@ rcu_read_unlock(); // 退出 RCU 临界区
 >     struct user_session *sess = container_of(rh, struct user_session, rcu);
 >     kfree(sess); //
 > }
-> 
+>
 > void delete_user_async(int id)
 > {
 >     struct user_session *sess;
 >     struct hlist_node *tmp;
 >     unsigned int key = hash_min(id, 10);
-> 
+>
 >     spin_lock(&user_htable_lock);
 >     hlist_for_each_entry_safe(sess, tmp, &user_htable[key], node) {
 >         if (sess->user_id == id) {
 >             hlist_del_rcu(&sess->node); //
 >             spin_unlock(&user_htable_lock);
-> 
+>
 >             /* 异步注册：不阻塞，立即返回 */
 >             call_rcu(&sess->rcu, user_session_free_cb);
 >             return;
@@ -1052,19 +1054,19 @@ rcu_read_unlock(); // 退出 RCU 临界区
 >     W1[写者持有锁] --> W2[hlist_del_rcu]
 >     W2 --> W3[释放锁]
 >     end
-> 
+>
 >     subgraph Step_2 [2.逻辑脱离]
 >     W3 -->|节点 B 已移出链表| Readers[旧读者 A/B 仍可能持有 B 的指针]
 >     end
-> 
+>
 >     subgraph Step_3 [3.宽限期]
 >     Readers -->|退出 rcu_read_unlock| GP[宽限期 Grace Period 结束]
 >     end
-> 
+>
 >     subgraph Step_4 [4.物理销毁]
 >     GP --> Free[执行 kfree 释放内存]
 >     end
-> 
+>
 >     style W2 fill:#f9f,stroke:#333
 >     style GP fill:#fff9c4,stroke:#fbc02d
 > ```
@@ -1081,7 +1083,7 @@ rcu_read_unlock(); // 退出 RCU 临界区
 
 
 
-### 遍历机制逻辑图
+#### (4)_遍历机制逻辑图
 
 ```mermaid
 flowchart TD
@@ -1094,7 +1096,7 @@ flowchart TD
     Next -- 无 --> NotFound[返回 NULL]
 ```
 
-### 总结：如何选择接口？
+#### (5)_总结_如何选择接口
 
 | **宏接口**                  | **必须持有锁** | **允许删除节点** | **适用场景**                       |
 | --------------------------- | -------------- | ---------------- | ---------------------------------- |
@@ -1102,7 +1104,7 @@ flowchart TD
 | `hlist_for_each_entry_safe` | 是 (Spinlock)  | **是**           | 清理哈希表、批量删除。             |
 | `hlist_for_each_entry_rcu`  | 否 (RCU Lock)  | **否**           | 网络协议栈、PID 查找等高并发场景。 |
 
-## 第 2 章小结
+### 2.1.5_小结
 
 `hlist` 是 Linux 内核对哈希表极致优化的体现：
 

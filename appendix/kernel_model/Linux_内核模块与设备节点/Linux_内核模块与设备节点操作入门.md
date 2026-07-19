@@ -2,7 +2,7 @@
 
 **内容摘抄自GPT。**
 
-# 第 1 章 模块与设备节点基础
+# 第1章_模块与设备节点基础
 
 在 Linux 内核开发中，驱动模块（`.ko` 文件）和设备节点（`/dev/xxx`）是一对常常让初学者困惑的组合。
  许多同学第一次写好驱动、编译成 `.ko` 文件后，迫不及待地执行：
@@ -23,7 +23,7 @@ echo "123" > /dev/demo
 
 ------
 
-## 1.1 内核模块的生命周期
+## 1.1_内核模块的生命周期
 
 一个内核模块是内核功能的扩展单元。它就像一块可以插拔的“乐高积木”，在需要时加载进内核，不需要时卸载出去。
 
@@ -60,7 +60,7 @@ echo "123" > /dev/demo
 
 ------
 
-## 1.2 设备号与设备节点
+## 1.2_设备号与设备节点
 
 Linux 的设备访问机制是通过“主设备号 + 次设备号”来区分的。
  你可以把它类比为“电话区号 + 分机号”：
@@ -80,14 +80,14 @@ ret = alloc_chrdev_region(&devnum, 0, 1, "mychardev");
 
 ------
 
-## 1.3 设备节点的创建
+## 1.3_设备节点的创建
 
 在 Linux 中，字符设备驱动的灵魂在于 **设备号** 与 **设备节点**。驱动注册了设备号，内核才知道有这样一个设备；而用户空间要访问这个设备，则必须通过 `/dev` 下的设备节点。
  因此，理解设备节点的创建方式，是从“模块”走向“驱动”的必经之路。
 
 ------
 
-### 1.3.1 设备号的来源
+### 1.3.1_设备号的来源
 
 设备号由 **主设备号（major）** 和 **次设备号（minor）** 组成，内核通过二者唯一标识一个设备。
 
@@ -98,7 +98,7 @@ ret = alloc_chrdev_region(&devnum, 0, 1, "mychardev");
    ```c
    #define DEMO_MAJOR 200
    #define DEMO_MINOR 0
-   
+
    dev_t devnum = MKDEV(DEMO_MAJOR, DEMO_MINOR);
    ret = register_chrdev_region(devnum, 1, "demo");
    ```
@@ -119,7 +119,7 @@ ret = alloc_chrdev_region(&devnum, 0, 1, "mychardev");
 
 ------
 
-### 1.3.2 手工创建设备节点：mknod
+### 1.3.2_手工创建设备节点_mknod
 
 驱动虽然注册了设备号，但 `/dev` 下默认不会有对应节点。
  我们可以用 `mknod` 命令来手工创建：
@@ -158,7 +158,7 @@ sudo mknod /dev/demo c 240 0
 
 ------
 
-### 1.3.3 自动创建设备节点：class + device
+### 1.3.3_自动创建设备节点_class_+_device
 
 在现代 Linux 中，更推荐使用自动创建机制：
  在驱动里调用 `class_create()` 和 `device_create()`，即可在加载时由 `devtmpfs`/`udev` 自动生成节点：
@@ -173,7 +173,7 @@ device_create(cls, NULL, devnum, NULL, "demo");
 
 ------
 
-### 1.3.4 两种方式的比较
+### 1.3.4_两种方式的比较
 
 | 方式                           | 优点                   | 缺点                         | 适用场景                 |
 | ------------------------------ | ---------------------- | ---------------------------- | ------------------------ |
@@ -182,7 +182,7 @@ device_create(cls, NULL, devnum, NULL, "demo");
 
 ------
 
-### 1.3.5 小结
+### 1.3.5_小结
 
 设备号是驱动在内核中的“身份证”，而设备节点则是用户空间访问它的“入口”。
 
@@ -199,7 +199,7 @@ device_create(cls, NULL, devnum, NULL, "demo");
 
 ------
 
-## 1.4 模块与设备节点的关系
+## 1.4_模块与设备节点的关系
 
 现在我们可以清楚地看到：
 
@@ -213,13 +213,13 @@ device_create(cls, NULL, devnum, NULL, "demo");
 
 ------
 
-# 第 2 章 实验流程：从 insmod 到设备访问
+# 第2章_实验流程_从_insmod_到设备访问
 
 本章我们通过一个最小字符设备驱动，演示完整的加载、创建设备节点、读写验证的流程。这样可以把前一章的概念变成实操体验。
 
 ------
 
-## 2.1 准备驱动代码
+## 2.1_准备驱动代码
 
 先写一个最简版的字符设备驱动 `demo.c`：
 
@@ -311,7 +311,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-## 2.2 编译驱动模块
+## 2.2_编译驱动模块
 
 编写 `Makefile`：
 
@@ -335,7 +335,7 @@ make
 
 ------
 
-## 2.3 加载模块
+## 2.3_加载模块
 
 加载模块：
 
@@ -366,7 +366,7 @@ ls -l /dev/demo
 
 ------
 
-## 2.4 读写验证
+## 2.4_读写验证
 
 写入：
 
@@ -398,7 +398,7 @@ dmesg | tail
 
 ------
 
-## 2.5 卸载模块
+## 2.5_卸载模块
 
 卸载：
 
@@ -417,7 +417,7 @@ dmesg | tail
 
 ------
 
-## 2.6 小结
+## 2.6_小结
 
 通过这个实验我们完整走了一遍流程：
 
@@ -443,13 +443,13 @@ dmesg | tail
 
 ------
 
-# 第 3 章 常见问题与排查
+# 第3章_常见问题与排查
 
 虽然我们在第二章已经能够顺利加载模块、自动生成 `/dev/demo` 并进行读写，但在实际开发中，驱动新手往往会遇到各种困惑。本章我们就像“常见疑难解答”一样，总结几个高频问题，并给出排查思路。
 
 ------
 
-## 3.1 为什么 `insmod demo.ko` 后没有 `/dev/demo`？
+## 3.1_为什么_insmod_demo.ko_后没有_/dev/demo
 
 **原因 1：驱动代码里没有 `device_create()`**
 
@@ -469,7 +469,7 @@ dmesg | tail
 
 ------
 
-## 3.2 为什么 `echo "111" > /dev/demo` 没有任何日志？
+## 3.2_为什么_echo_"111"_>_/dev/demo_没有任何日志
 
 **可能情况：**
 
@@ -497,7 +497,7 @@ dmesg | tail
 
 ------
 
-## 3.3 为什么 `cat /dev/demo` 会打印出 “111”？
+## 3.3_为什么_cat_/dev/demo_会打印出_111
 
 这其实是一个 **典型的误会**。
 
@@ -509,7 +509,7 @@ dmesg | tail
 
 ------
 
-## 3.4 为什么卸载模块 `rmmod demo` 失败，提示 “Device or resource busy”？
+## 3.4_为什么卸载模块_rmmod_demo_失败_提示_Device_or_resource_busy
 
 **原因：**
 
@@ -534,7 +534,7 @@ dmesg | tail
 
 ------
 
-## 3.5 为什么 `rmmod demo` 后 `/dev/demo` 节点还在？
+## 3.5_为什么_rmmod_demo_后_/dev/demo_节点还在
 
 **原因：**
 
@@ -552,7 +552,7 @@ dmesg | tail
 
 ------
 
-## 3.6 为什么卸载再加载，会报 “File exists”？
+## 3.6_为什么卸载再加载_会报_File_exists
 
 **原因：**
 
@@ -567,7 +567,7 @@ dmesg | tail
 
 ------
 
-## 3.7 为什么 `modinfo demo.ko` 报错？
+## 3.7_为什么_modinfo_demo.ko_报错
 
 如果你在目标板上执行 `modinfo demo.ko`，报错：
 
@@ -604,13 +604,13 @@ modinfo: can't open '/lib/modules/6.1.xx/modules.dep'
 
 ------
 
-# 第 4 章 完整实验复盘
+# 第4章_完整实验复盘
 
 在这一章，我们将把前面讲解的内容串成一条完整实验路线。你可以在开发板或虚拟机上按步骤操作，并对照日志，验证驱动和设备节点的行为。
 
 ------
 
-## 4.1 准备工作
+## 4.1_准备工作
 
 1. **源文件：`demo.c`**
 
@@ -623,33 +623,33 @@ modinfo: can't open '/lib/modules/6.1.xx/modules.dep'
    #include <linux/cdev.h>
    #include <linux/device.h>
    #include <linux/uaccess.h>
-   
+
    static dev_t devnum;
    static struct cdev my_cdev;
    static struct class *cls;
-   
+
    static int my_open(struct inode *inode, struct file *file) {
        printk(KERN_INFO "demo: open()\n");
        return 0;
    }
-   
+
    static int my_release(struct inode *inode, struct file *file) {
        printk(KERN_INFO "demo: release()\n");
        return 0;
    }
-   
+
    static ssize_t my_read(struct file *file, char __user *buf,
                           size_t count, loff_t *ppos) {
        printk(KERN_INFO "demo: read()\n");
        return 0;
    }
-   
+
    static ssize_t my_write(struct file *file, const char __user *buf,
                            size_t count, loff_t *ppos) {
        printk(KERN_INFO "demo: write(), count=%zu\n", count);
        return count;
    }
-   
+
    static struct file_operations fops = {
        .owner   = THIS_MODULE,
        .open    = my_open,
@@ -657,32 +657,32 @@ modinfo: can't open '/lib/modules/6.1.xx/modules.dep'
        .read    = my_read,
        .write   = my_write,
    };
-   
+
    static int __init my_init(void) {
        int ret;
-   
+
        ret = alloc_chrdev_region(&devnum, 0, 1, "demo");
        if (ret < 0) return ret;
-   
+
        cdev_init(&my_cdev, &fops);
        ret = cdev_add(&my_cdev, devnum, 1);
        if (ret < 0) {
            unregister_chrdev_region(devnum, 1);
            return ret;
        }
-   
+
        cls = class_create(THIS_MODULE, "demo_class");
        if (IS_ERR(cls)) {
            cdev_del(&my_cdev);
            unregister_chrdev_region(devnum, 1);
            return PTR_ERR(cls);
        }
-   
+
        device_create(cls, NULL, devnum, NULL, "demo"); // 自动创建设备节点
        printk(KERN_INFO "demo: loaded, major=%d\n", MAJOR(devnum));
        return 0;
    }
-   
+
    static void __exit my_exit(void) {
        device_destroy(cls, devnum);
        class_destroy(cls);
@@ -690,7 +690,7 @@ modinfo: can't open '/lib/modules/6.1.xx/modules.dep'
        unregister_chrdev_region(devnum, 1);
        printk(KERN_INFO "demo: unloaded\n");
    }
-   
+
    module_init(my_init);
    module_exit(my_exit);
    MODULE_LICENSE("GPL");
@@ -700,10 +700,10 @@ modinfo: can't open '/lib/modules/6.1.xx/modules.dep'
 
    ```make
    obj-m += demo.o
-   
+
    all:
    	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
-   
+
    clean:
    	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
    ```
@@ -718,7 +718,7 @@ modinfo: can't open '/lib/modules/6.1.xx/modules.dep'
 
 ------
 
-## 4.2 加载模块
+## 4.2_加载模块
 
 ```bash
 sudo insmod demo.ko
@@ -738,7 +738,7 @@ dmesg | tail
 
 ------
 
-## 4.3 确认设备节点
+## 4.3_确认设备节点
 
 ```bash
 ls -l /dev/demo
@@ -757,7 +757,7 @@ crw------- 1 root root 240, 0 Jan  1 00:00 /dev/demo
 
 ------
 
-## 4.4 写入测试
+## 4.4_写入测试
 
 ```bash
 echo "hello" > /dev/demo
@@ -779,7 +779,7 @@ dmesg | tail
 
 ------
 
-## 4.5 读取测试
+## 4.5_读取测试
 
 ```bash
 cat /dev/demo
@@ -801,7 +801,7 @@ dmesg | tail
 
 ------
 
-## 4.6 卸载模块
+## 4.6_卸载模块
 
 ```bash
 sudo rmmod demo
@@ -835,7 +835,7 @@ ls: cannot access '/dev/demo': No such file or directory
 
 ------
 
-## 4.7 实验总结
+## 4.7_实验总结
 
 通过这次实验，你已经完成了一个**完整的生命周期**：
 
@@ -858,14 +858,14 @@ ls: cannot access '/dev/demo': No such file or directory
 
 ------
 
-# 第 5 章 扩展实验：实现内存缓冲区
+# 第5章_扩展实验_实现内存缓冲区
 
 在前面的实验里，我们的 `my_read()` 总是返回 0（EOF），`my_write()` 只是打印日志。虽然能证明驱动逻辑没问题，但并没有形成数据交互。
  本章我们将为字符设备增加一个内存缓冲区，完成“写入-读取”的闭环。
 
 ------
 
-## 5.1 驱动代码修改
+## 5.1_驱动代码修改
 
 在 `demo.c` 里，增加一个静态缓冲区和长度记录：
 
@@ -923,7 +923,7 @@ static ssize_t my_write(struct file *file, const char __user *buf,
 
 ------
 
-## 5.2 重新编译并加载
+## 5.2_重新编译并加载
 
 ```bash
 make clean && make
@@ -938,7 +938,7 @@ ls -l /dev/demo
 
 ------
 
-## 5.3 写入数据
+## 5.3_写入数据
 
 ```bash
 echo "Hello Kernel" > /dev/demo
@@ -958,7 +958,7 @@ demo: write(), count=13
 
 ------
 
-## 5.4 读取数据
+## 5.4_读取数据
 
 ```bash
 cat /dev/demo
@@ -980,7 +980,7 @@ demo: read(), count=65536, ppos=0
 
 ------
 
-## 5.5 多次写入与覆盖
+## 5.5_多次写入与覆盖
 
 再次写入：
 
@@ -1006,7 +1006,7 @@ demo: read(), count=65536, ppos=0
 
 ------
 
-## 5.6 卸载与清理
+## 5.6_卸载与清理
 
 ```bash
 sudo rmmod demo
@@ -1022,7 +1022,7 @@ demo: unloaded
 
 ------
 
-## 5.7 小结
+## 5.7_小结
 
 通过增加一个缓冲区，我们把最初只能“打印日志”的 demo 驱动，扩展成了一个真正能“存取数据”的字符设备：
 
@@ -1045,9 +1045,9 @@ demo: unloaded
 
 ------
 
-# 第 6 章 并发与锁
+# 第6章_并发与锁
 
-## 6.1 为什么要考虑并发？
+## 6.1_为什么要考虑并发
 
 Linux 是一个多任务操作系统。想象这样一个场景：
 
@@ -1061,7 +1061,7 @@ Linux 是一个多任务操作系统。想象这样一个场景：
 
 ------
 
-## 6.2 内核同步原语
+## 6.2_内核同步原语
 
 Linux 内核为并发访问提供了多种同步机制：
 
@@ -1074,7 +1074,7 @@ Linux 内核为并发访问提供了多种同步机制：
 
 ------
 
-## 6.3 在 demo 驱动中加入互斥锁
+## 6.3_在_demo_驱动中加入互斥锁
 
 在 `demo.c` 中加入一个全局的 `struct mutex`：
 
@@ -1146,7 +1146,7 @@ static ssize_t my_write(struct file *file, const char __user *buf,
 
 ------
 
-## 6.4 测试并发场景
+## 6.4_测试并发场景
 
 1. 编译并加载新模块：
 
@@ -1182,7 +1182,7 @@ demo: read(), count=65536, ppos=0
 
 ------
 
-## 6.5 小结
+## 6.5_小结
 
 通过引入 `mutex`，我们解决了并发访问导致的数据错乱问题。这里有几点要特别注意：
 
