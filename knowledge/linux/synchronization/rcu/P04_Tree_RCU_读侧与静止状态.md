@@ -14,6 +14,25 @@ topics:
 
 # 第4章\_Tree\_RCU\_读侧与静止状态
 
+硬件不知道哪一段 C 代码是 RCU 临界区，也不知道对象何时可以释放。因此，“旧读者已经离场”必须由内核软件证明。本章从读侧入口开始，追踪任务、CPU、调度器和上下文跟踪怎样留下并更新状态，也就是 RCU 真正的通知机制。
+
+```mermaid
+sequenceDiagram
+    participant R as 读者任务
+    participant S as 调度器／context tracking
+    participant D as 每 CPU rcu_data
+    participant N as rcu_node
+    R->>R: rcu_read_lock() 留下读侧状态
+    alt 临界区内被抢占（PREEMPT_RCU）
+        S->>N: 将旧读者挂入 blkd_tasks
+        R->>N: 最外层 unlock 后解除阻塞状态
+    else CPU 穿过 QS／EQS
+        S->>D: 报告该 CPU 跨过安全边界
+        D->>N: 清除本 GP 的等待位
+    end
+    Note over N: 通知的是 CPU／任务状态，不是对象地址
+```
+
 ## 4.1\_读侧的真实代价取决于配置
 
 `rcu_read_lock()` 是公共封装，内部调用 `__rcu_read_lock()`。Linux 6.12.20 存在两条重要路径：
@@ -67,7 +86,7 @@ if (old)
 	kfree_rcu(old, rcu);
 ```
 
-### 4.1.2\_所谓“通知机制”具体通知什么
+### 4.1.2\_所谓\_通知机制\_具体通知什么
 
 RCU 的确有通知和状态推进机制，但不是读者调用 `rcu_read_unlock()` 后直接向某个写者发送“对象 A 已读完”的消息。通知内容是：
 
@@ -174,6 +193,6 @@ sequenceDiagram
 - [`tree_plugin.h`](../../../../research/source_reading/linux/kernel/rcu/tree_plugin.h)：PREEMPT_RCU nesting、context switch 与 blocked readers。
 - [`tree.c`](../../../../research/source_reading/linux/kernel/rcu/tree.c)：dynticks/EQS 快照、`rcu_sched_clock_irq()` 和 force-QS。
 
-上一篇：[RCU 种类与内核配置](P03_RCU_种类与内核配置.md)。
+上一篇：[RCU 的硬件基础与内存模型](P03_RCU_的硬件基础与内存模型.md)。
 
 下一篇：[Tree RCU 宽限期与回调机制](P05_Tree_RCU_宽限期与回调机制.md)。
