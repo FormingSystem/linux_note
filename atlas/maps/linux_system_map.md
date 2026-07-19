@@ -43,7 +43,7 @@ Linux 内核结构、模块与数据结构
 
 | 机制 | 解决的问题 | 当前入口 |
 | --- | --- | --- |
-| 数据结构 | 如何组织和检索内核对象 | [单链表](../../knowledge/linux/data_structures/单链表_Linked_List.md)、[哈希表](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)、[红黑树](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md) |
+| 数据结构 | 如何组织和检索内核对象 | [单链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)、[哈希表](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)、[红黑树](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md) |
 | 并发与同步 | 如何处理竞争、可见性和执行上下文约束 | [并发脉络与概念缓冲](../../knowledge/linux/synchronization/concurrency_and_competition/P01_并发脉络与概念缓冲/P01_从单核轮询到中断驱动.md) |
 | 生命周期 | 如何确保对象被安全持有和释放 | [kref](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)、[devres](../../knowledge/linux/object_lifetime/devres/devres_API说明.md) |
 | 时间管理 | 如何完成延时、超时和定时回调 | [驱动中的时间问题](../../knowledge/linux/time_management/定时器简介/P01_驱动中的_时间问题_概述.md) |
