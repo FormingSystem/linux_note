@@ -1,18 +1,18 @@
 ---
 id: knowledge.kernel_subsystems.fundamentals.running_linux_kernel.p02_linux内核中常用的数据结构和算法
 title: "Linux内核中常用的数据结构和算法"
-kind: subsystem
+kind: publication
 status: evolving
 domains:
   - linux
-  - kernel
+  - publication
 ---
 
 # 第2章_Linux内核中常用的数据结构和算法
 
 #### (1)_内核数据结构总览
 
-- 1.1 [**链表（Linked List）**](../../../linux/data_structures/单链表_Linked_List.md)
+- 1.1 [**链表（Linked List）**](../../../knowledge/linux/data_structures/单链表_Linked_List.md)
   - 1.1.1 单链表
 
     - 1.1.2 双向链表
@@ -21,7 +21,7 @@ domains:
 
     - 1.1.4 链表操作（插入、删除、遍历等）
 
-- 1.2 [**哈希表（Hash Table）**](../../../linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)
+- 1.2 [**哈希表（Hash Table）**](../../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)
   - 1.2.1 基本原理
 
     - 1.2.2 内核实现：`hlist_head`, `hlist_node`
