@@ -3696,7 +3696,7 @@ console::askfirst:-/bin/sh
 
 * 笔者这里是将开发板链接到路由器上的，只需要保证同一个网段即可。如果与笔记本或者台式电脑直连，读者需要设置虚拟机的网络桥接网络为复制本地网络状态。
 
-  ![image](F:\git_storage\linux-kernel_and_driver_note\images\uboot\net_config_test.png)
+  ![image](../../../../../assets/images/uboot/net_config_test.png)
 
   只有勾上它，才能够在同一个网卡上ping通。至于为什么要这么操作，这只是笔者的一个成功案例，并不是权威，仅做参考。
 
