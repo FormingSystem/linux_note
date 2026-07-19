@@ -4,9 +4,9 @@ set -euo pipefail
 usage() {
     cat <<'EOF'
 用法：
-  ./format           # 仅预览
-  ./format --apply   # 执行重命名并更新引用
-  ./format --help
+  ./format.sh           # 仅预览
+  ./format.sh --apply   # 执行重命名并更新引用
+  ./format.sh --help
 
 依赖：bash、git、Python 3（MSYS2 可安装 mingw-w64-ucrt-x86_64-python）
 EOF
