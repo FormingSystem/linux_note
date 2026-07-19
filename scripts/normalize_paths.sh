@@ -4,7 +4,8 @@ set -euo pipefail
 usage() {
     cat <<'EOF'
 用法：
-  ./format.sh names [--apply] [路径...]
+  ./format.sh check paths [路径...]
+  ./format.sh fix paths [路径...]
 
 依赖：bash、git、Python 3（MSYS2 可安装 mingw-w64-ucrt-x86_64-python）
 EOF
@@ -136,7 +137,7 @@ print(f"待重命名文件：{len(mapping)}")
 if not APPLY:
     for old, new in mapping.items():
         print(f"{old} -> {new}")
-    raise SystemExit(0)
+    raise SystemExit(1 if mapping else 0)
 
 updated: dict[str, str] = {}
 markdown_link = re.compile(r"(?P<prefix>!?\[[^\]]*\]\()(?P<target>[^)]+)(?P<suffix>\))")
