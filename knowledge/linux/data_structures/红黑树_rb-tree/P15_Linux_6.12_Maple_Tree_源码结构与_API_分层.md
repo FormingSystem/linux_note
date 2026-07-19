@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.红黑树_rb-tree.p15_linux_6.12_maple_tree_源码结构与_api_分层
+title: "Linux 6.12 Maple Tree 源码结构与 API 分层"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第15章_Linux_6.12_Maple_Tree_源码结构与_API_分层
 
 第 14 章已经把 Maple Tree 放回了正确的位置：它主要是 Linux 新内核里 VMA 管理从 `rbtree + linked list + vmacache` 迁移出来后的核心索引结构，不是所有红黑树的替代品，也不是调度器从 CFS 走到 EEVDF 的原因。

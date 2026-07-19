@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p02_可见性与顺序.p10_cpu_to_设备_io_顺序_relaxed_mbrmbwmb与_确认点
+title: "CPU to 设备 IO 顺序 relaxed mbrmbwmb与 确认点"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第10章_CPU_to_设备_IO_顺序_relaxed_mbrmbwmb与_确认点
 
 ## 10.1_CPU_to_设备_I/O_顺序_*_relaxed_mb/rmb/wmb_与_确认点

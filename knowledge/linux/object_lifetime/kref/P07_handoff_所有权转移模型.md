@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.kref.p07_handoff_所有权转移模型
+title: "handoff 所有权转移模型"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第7章_handoff_所有权转移模型
 
 ## 7.1_本章定位

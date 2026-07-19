@@ -1,3 +1,13 @@
+---
+id: labs.platforms.nxp.imx6ull.drivers.p01_led点灯.p01_led点灯_ioremap
+title: "LED点灯+ioremap"
+kind: lab
+status: evolving
+domains:
+  - linux
+  - lab
+---
+
 # 第1章_LED点灯+ioremap
 
 好的 ✅

@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.kref.p03_kref_生命周期状态机
+title: "kref 生命周期状态机"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第3章_kref_生命周期状态机
 
 ## 3.1_本章主线

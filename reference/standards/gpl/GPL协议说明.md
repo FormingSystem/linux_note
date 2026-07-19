@@ -1,3 +1,12 @@
+---
+id: reference.standards.gpl.gpl协议说明
+title: "GPL 协议说明(总论)"
+kind: reference
+status: evolving
+domains:
+  - reference
+---
+
 我是 **GPT-5**。
 
 # 第1章_GPL_协议说明(总论)

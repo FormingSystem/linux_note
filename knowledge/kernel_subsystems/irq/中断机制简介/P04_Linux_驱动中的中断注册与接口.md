@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.irq.中断机制简介.p04_linux_驱动中的中断注册与接口
+title: "Linux 驱动中的中断注册与接口"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第4章_Linux_驱动中的中断注册与接口
 
 本章是在前面三章的基础上继续往“能写驱动”这一步走的。

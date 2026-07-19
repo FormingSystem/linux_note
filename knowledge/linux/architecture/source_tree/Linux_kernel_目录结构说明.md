@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.architecture.source_tree.linux_kernel_目录结构说明
+title: "/arch"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 以下是 **Linux 内核目录** 的详细讲解，包含每个目录的 **英文全称** 和其功能说明：
 
 # 第1章_/arch

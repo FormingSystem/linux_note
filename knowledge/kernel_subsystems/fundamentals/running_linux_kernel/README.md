@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.fundamentals.running_linux_kernel.readme
+title: "参考书籍说明"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第1章_参考书籍说明
 
 1. 参考书籍《奔跑吧Linux内核 入门篇 第二版 (笨叔, 陈悦) 》；

@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.kref.p09_kref_与锁的组合
+title: "kref 与锁的组合"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第9章_kref_与锁的组合
 
 ## 9.1_本章定位

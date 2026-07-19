@@ -1,3 +1,13 @@
+---
+id: labs.platforms.nxp.imx6ull.drivers.p03_key_led_interrupt.p01_key_led_interrupt
+title: "key led interrupt"
+kind: lab
+status: evolving
+domains:
+  - linux
+  - lab
+---
+
 # 第1章_key_led_interrupt
 
 ## 1.1_实验目的

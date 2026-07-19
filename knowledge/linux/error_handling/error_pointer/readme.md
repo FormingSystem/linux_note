@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.error_handling.error_pointer.readme
+title: "模块 Linux 内核错误指针机制(Error Pointer System)"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 非常好，这次你指的“整个模块”应当是围绕 **Linux 内核错误指针机制模块（Error Pointer System）** 本身的系统性章节，而不仅是它与 devres 的结合。
 
 我将以“出版级书籍结构”给出完整模块大纲（相当于一个多章专题），它可直接并入你现有的《Linux 驱动开发与内核机制》体系中。

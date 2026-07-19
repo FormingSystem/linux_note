@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p03_子模块详解.p15_io_顺序_readlwritel_与_relaxed_mbrmbwmb
+title: "IO 顺序 readlwritel 与 relaxed + mbrmbwmb"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第15章_IO_顺序_readlwritel_与_relaxed_+_mbrmbwmb
 
 ## 15.1_I/O_顺序_readl/writel_与_*_relaxed_+_mb/rmb/wmb

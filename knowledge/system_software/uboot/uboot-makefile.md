@@ -1,3 +1,13 @@
+---
+id: knowledge.system_software.uboot.uboot-makefile
+title: "阅读说明"
+kind: engineering
+status: evolving
+domains:
+  - linux
+  - system
+---
+
 > [!NOTE]
 >
 >

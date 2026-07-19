@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.input.input_子系统简介.p06_api_家族总览与_四连问_方法论
+title: "API 家族总览与 四连问 方法论"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第6章_API_家族总览与_四连问_方法论
 
 > **章节内容说明**

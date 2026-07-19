@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.kref.p11_kref_refcount_t_kobject_的边界
+title: "kref refcount t kobject 的边界"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第11章_kref_refcount_t_kobject_的边界
 
 ## 11.1_本章导读_先分清对象层次

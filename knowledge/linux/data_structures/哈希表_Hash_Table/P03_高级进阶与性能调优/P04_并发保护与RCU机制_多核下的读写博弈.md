@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.哈希表_hash_table.p03_高级进阶与性能调优.p04_并发保护与rcu机制_多核下的读写博弈
+title: "并发保护与RCU机制 多核下的读写博弈"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第4章_并发保护与RCU机制_多核下的读写博弈
 
 我们接下来，把“背景”这个地基打扎实。如果不理解多核 CPU 之间那种“令人抓狂”的同步成本，RCU 看起来就像是一个为了炫技而存在的复杂算法。

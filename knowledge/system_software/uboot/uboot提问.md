@@ -1,3 +1,13 @@
+---
+id: knowledge.system_software.uboot.uboot提问
+title: "SPL和main构建的时候 是如何区分对应的函数不会冲突的"
+kind: engineering
+status: evolving
+domains:
+  - linux
+  - system
+---
+
 # 第1章_SPL和main构建的时候_是如何区分对应的函数不会冲突的
 
 uboot 的common/spl.c和common/board_r.c都有board_init_r()的定义，它两是如何解决重定义冲突的？

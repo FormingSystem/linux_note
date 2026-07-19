@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p02_可见性与顺序.p09_cpu_to_cpu_可见性与顺序_readwrite_once_与发布-获取语义
+title: "CPU to CPU 可见性与顺序 READWRITE ONCE 与发布-获取语义"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第9章_CPU_to_CPU_可见性与顺序_READWRITE_ONCE_与发布-获取语义
 
 ## 9.1_CPU_to_CPU_可见性与顺序_READ/WRITE_ONCE_与发布-获取语义

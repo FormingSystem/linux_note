@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.character_device.p01_设备号框架简介.p05_字符设备从_inode-i_cdev_到设备读写的完整过程
+title: "字符设备从 inode-i cdev 到设备读写的完整过程"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第5章_字符设备从_inode-i_cdev_到设备读写的完整过程
 
 ## 5.1_字符设备从_inode->i_cdev_到设备读写的完整过程

@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.红黑树_rb-tree.p04_为什么_bst_会退化
+title: "为什么 BST 会退化"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第4章_为什么_BST_会退化
 
 ## 4.1_章节内容说明

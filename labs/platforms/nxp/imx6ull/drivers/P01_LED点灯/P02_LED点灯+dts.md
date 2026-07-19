@@ -1,3 +1,13 @@
+---
+id: labs.platforms.nxp.imx6ull.drivers.p01_led点灯.p02_led点灯_dts
+title: "LED点灯+dts"
+kind: lab
+status: evolving
+domains:
+  - linux
+  - lab
+---
+
 # 第2章_LED点灯+dts
 
 此处为简写版本，方面背框架代码。详细内容参考：[P02-字符设备-LED点灯+dts.md](../../../../../../knowledge/driver_model/character_device/P02_字符设备-LED点灯+dts.md)。

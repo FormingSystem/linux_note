@@ -1,3 +1,13 @@
+---
+id: knowledge.system_software.linker.lds_基础语法
+title: "链接脚本基础结构与核心语法"
+kind: engineering
+status: evolving
+domains:
+  - linux
+  - system
+---
+
 信息摘抄自ChatGPT.
 
 # 第1章_链接脚本基础结构与核心语法

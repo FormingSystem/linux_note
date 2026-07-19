@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.input.input_子系统简介.p02_能力与属性声明_input_set_capability_与位图
+title: "能力与属性声明(input set capability() 与位图)"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第2章_能力与属性声明(input_set_capability()_与位图)
 
 > 章节内容说明：本章从**问题→作用→定位→细节**出发，聚焦“**驱动在注册前如何把‘我会产什么事件’说清楚**”。覆盖 `evbit/keybit/relbit/absbit/propbit` 位图、`input_set_capability()`、`INPUT_PROP_DIRECT/POINTER`、以及与 `input_set_abs_params()`、MT 初始化的**联动关系**。本章给出**可直接嵌入的最小模板**，并提供**验证口径**（`EVIOCGBIT/EVIOCGABS`、`evtest`）。

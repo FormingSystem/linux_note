@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.character_device.p01_设备号框架简介.附录a_同步机制中的_interruptible
+title: "附录A 同步机制中的 interruptible"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 明白了！我将从**逻辑框架**的角度出发，逐步展开讲解 `mutex_lock()` 和 `mutex_lock_interruptible()` 的区别及 `interruptible` 后缀的意义，并结合应用场景逐步深入。以下是基于动态讲解的结构。
 
 ### 1.1.1_标题_mutex_lock()_和_mutex_lock_interruptible()_中_interruptible_的意义

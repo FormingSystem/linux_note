@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.device_tree.readme
+title: "文档结构"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第1章_文档结构
 
 本节文件夹结构：

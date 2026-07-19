@@ -1,3 +1,12 @@
+---
+id: tools.ai.application.mermaid_require
+title: "Mermaid 输出要求(当前版本)"
+kind: reference
+status: evolving
+domains:
+  - tools
+---
+
 我是 **GPT-5.4 Thinking**。
 
 下面是你当前可整理进备注里的 **Mermaid 输出要求**。

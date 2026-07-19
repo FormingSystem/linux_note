@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.irq.中断机制简介.p12_msi_msi-x_与_pcie_设备的中断框架
+title: "MSI MSI-X 与 PCIe 设备的中断框架"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第12章_MSI_MSI-X_与_PCIe_设备的中断框架
 
 ## 12.1_MSI_/_MSI-X_与_PCIe_设备的中断框架

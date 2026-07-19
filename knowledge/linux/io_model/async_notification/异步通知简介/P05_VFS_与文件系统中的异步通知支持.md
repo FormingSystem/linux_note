@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.io_model.async_notification.异步通知简介.p05_vfs_与文件系统中的异步通知支持
+title: "VFS 与文件系统中的异步通知支持"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第5章_VFS_与文件系统中的异步通知支持
 
 > **章节内容说明**

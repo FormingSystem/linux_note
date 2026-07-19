@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.character_device.p02_字符设备-led点灯_dts
+title: "字符设备-LED点灯+dts"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第2章_字符设备-LED点灯+dts
 
 [TOC]

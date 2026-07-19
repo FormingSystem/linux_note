@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.gpio.附录d_gpio_设备树语法
+title: "#gpio-cells"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 （imx6ull, kernel 6.1为基准）
 
 # 第1章_#gpio-cells

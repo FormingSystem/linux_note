@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p01_并发脉络与概念缓冲.p06_cpu_to_设备的顺序与一致性
+title: "CPU to 设备的顺序与一致性"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第6章_CPU_to_设备的顺序与一致性
 
 ------

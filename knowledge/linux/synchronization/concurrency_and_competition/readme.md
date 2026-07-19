@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.readme
+title: "Linux 驱动开发 并发与竞争 模块化实操大纲(含表格体系)"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 好的。下面是按你最新要求整理的**模块中心、开发者视角优先、配套“概念区分表/用法速览表/核对表”的总大纲**。
  说明：前半“概念→模式→机制”不引入具体工作环境；后段再进入装配与项目。每章固定插入表格位置，以免阅读跑散。
 

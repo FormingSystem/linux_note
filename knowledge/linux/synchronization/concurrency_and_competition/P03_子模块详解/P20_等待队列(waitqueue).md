@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p03_子模块详解.p20_等待队列_waitqueue
+title: "等待队列(waitqueue)"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 好的，Leaf。我们正式进入下一章。
 
 ------

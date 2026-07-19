@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.io_model.blocking_io.poll与epoll的区别
+title: "poll 机制 从用户等待到驱动唤醒的完整链路"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第1章_poll_机制_从用户等待到驱动唤醒的完整链路
 
 ------

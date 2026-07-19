@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p02_可见性与顺序.p12_短临界区_vs_长操作_数据面与控制面分离
+title: "短临界区 vs 长操作 数据面与控制面分离"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第12章_短临界区_vs_长操作_数据面与控制面分离
 
 ------

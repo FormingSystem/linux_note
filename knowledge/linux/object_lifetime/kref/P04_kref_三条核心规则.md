@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.kref.p04_kref_三条核心规则
+title: "kref 三条核心规则"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第4章_kref_三条核心规则
 
 ## 4.1_本章主线_三条规则是生命周期纪律

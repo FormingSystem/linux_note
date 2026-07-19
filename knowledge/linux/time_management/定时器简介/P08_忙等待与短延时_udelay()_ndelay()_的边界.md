@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.time_management.定时器简介.p08_忙等待与短延时_udelay_ndelay_的边界
+title: "忙等待与短延时 udelay() ndelay() 的边界"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第8章_忙等待与短延时_udelay()_ndelay()_的边界
 
 ## 8.1_忙等待与短延时_udelay()_/_ndelay()_的边界

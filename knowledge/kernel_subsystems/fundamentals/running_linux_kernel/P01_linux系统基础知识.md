@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.fundamentals.running_linux_kernel.p01_linux系统基础知识
+title: "linux系统基础知识"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第1章_linux系统基础知识
 
 ## 1.1_imx_编译5.4内核

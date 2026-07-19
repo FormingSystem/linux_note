@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.kref.p01_kref_要解决什么问题
+title: "kref 要解决什么问题"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第1章_kref_要解决什么问题
 
 ## 1.1_本章主线

@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.synchronization.concurrency_and_competition.p01_并发脉络与概念缓冲.p05_读多写少路线_seqcountseqlock_与_rcu
+title: "读多写少路线 seqcountseqlock 与 RCU"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第5章_读多写少路线_seqcountseqlock_与_RCU
 
 ## 5.1_读多写少路线_seqcount/seqlock_与_RCU

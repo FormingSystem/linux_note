@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.architecture.modules_and_device_nodes.linux_内核模块与设备节点操作入门
+title: "模块与设备节点基础"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 ------
 
 **内容摘抄自GPT。**

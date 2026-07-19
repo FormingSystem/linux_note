@@ -1,3 +1,12 @@
+---
+id: repository.readme
+title: "Linux 内核与驱动学习笔记"
+kind: reference
+status: evolving
+domains:
+  - repository
+---
+
 # 第1章_Linux_内核与驱动学习笔记
 
 这是一个个人计算机系统与 Linux 学习知识库，内容覆盖基础理论、Linux 通用机制、内核子系统、驱动模型、系统软件、平台实现、实验、项目和源码研究。
@@ -7,6 +16,8 @@
 仓库采用知识本体、工程应用、实践验证、研究证据、导航编排和仓库治理分层的信息架构。知识正文只保存一次，专题和学习路线负责组织链接，实验负责验证，源码阅读负责提供版本证据。正文保留统一阅读序号，出版清单负责多文档顺序和跨文档连续性。
 
 完整设计见：[仓库信息架构设计](governance/architecture/repository_information_architecture.md)。
+
+每篇 Markdown 都包含 `id`、`title`、`kind`、`status` 和 `domains` 元数据。`id` 用于长期引用，正文继续采用统一章节序号保证阅读定位。可用 `./format.sh check all --summary` 同时检查标题、元数据、路径和链接。
 
 ## 1.1_仓库定位
 

@@ -1,3 +1,12 @@
+---
+id: tools.typora.typora配置展示
+title: "文件"
+kind: reference
+status: evolving
+domains:
+  - tools
+---
+
 # 第1章_文件
 
 ![image](../../assets/images/tools/typora/config_01.png)

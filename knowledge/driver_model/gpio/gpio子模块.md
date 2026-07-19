@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.gpio.gpio子模块
+title: "GPIO 总览与生态演进(以 6.1 为基线 按时间线叙述)"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 [TOC]
 
 我是 **GPT-5 Thinking**。

@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.data_structures.红黑树_rb-tree.p08_linux_6.12_内核_rbtree_基础结构与工程模型
+title: "Linux 6.12 内核 rbtree 基础结构与工程模型"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第8章_Linux_6.12_内核_rbtree_基础结构与工程模型
 
 ## 8.1_章节内容说明
