@@ -623,10 +623,11 @@ hlist_for_each_entry_rcu(obj, &my_hashtable[hash_min(key, HASH_BITS)], node) {
 rcu_read_unlock(); // 退出 RCU 临界区
 ```
 
-关于RCU的相关概念，参考如下链接：
+本节只说明 `hlist_for_each_entry_rcu()` 怎样用于哈希桶遍历。RCU 的问题背景、硬件基础、通知机制和通用 API 不在本章重复维护，统一参考如下入口：
 
-1. [第5章 读多写少路线：seqcountseqlock 与 RCU.md —— RCU：读无锁、写延迟回收](../../../synchronization/concurrency_and_competition/P01_并发脉络与概念缓冲/P05_读多写少路线_seqcountseqlock_与_RCU.md#5.2_RCU：读无锁、写延迟回收)。
-2. [RCU 核心概念与工作机制](../../../synchronization/rcu/P01_RCU_核心概念与工作机制.md)。
+1. [RCU 专题大纲](../../../synchronization/rcu/大纲.md)。
+2. [为什么需要 RCU](../../../synchronization/rcu/P01_为什么需要_RCU.md)。
+3. [RCU 核心概念与工作机制](../../../synchronization/rcu/P02_RCU_核心概念与工作机制.md)。
 
 
 
