@@ -118,6 +118,6 @@ srcu_read_unlock(&config_srcu, idx);
 
 上一篇：[RCU 集成模式与常见误用](P11_RCU_集成模式与常见误用.md)。
 
-下一步：[Linux 6.12 Tree RCU 与 SRCU 源码导读](../../../../research/source_reading/linux/rcu/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)。
+下一步：[Linux 6.12 Tree RCU 与 SRCU 源码导读](../../../../research/source_reading/rcu/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)。
 
 

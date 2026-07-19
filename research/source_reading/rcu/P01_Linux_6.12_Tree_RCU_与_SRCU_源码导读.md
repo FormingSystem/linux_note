@@ -24,18 +24,18 @@ source_version: "6.12.20"
 
 | 文件 | 主要内容 |
 | --- | --- |
-| [`include/linux/rcupdate.h`](../include/linux/rcupdate.h) | 公共 RCU API、指针发布/取得、读侧标记、`kfree_rcu()` |
-| [`include/linux/rculist.h`](../include/linux/rculist.h) | list/hlist 的 RCU 发布、删除和遍历宏 |
-| [`include/linux/rcu_segcblist.h`](../include/linux/rcu_segcblist.h) | 分段回调列表的公共结构与接口 |
-| [`kernel/rcu/tree.h`](../kernel/rcu/tree.h) | `rcu_node`、`rcu_data`、`rcu_state` 等 Tree RCU 核心结构 |
-| [`kernel/rcu/tree.c`](../kernel/rcu/tree.c) | GP 线程、静止状态上报、回调推进与执行 |
-| [`kernel/rcu/tree_plugin.h`](../kernel/rcu/tree_plugin.h) | PREEMPT_RCU 等配置相关的读者跟踪实现 |
-| [`kernel/rcu/tree_exp.h`](../kernel/rcu/tree_exp.h) | expedited grace period |
-| [`kernel/rcu/tree_nocb.h`](../kernel/rcu/tree_nocb.h) | `rcu_nocbs` 回调 offload |
-| [`kernel/rcu/tree_stall.h`](../kernel/rcu/tree_stall.h) | RCU CPU stall 检测与诊断 |
-| [`include/linux/srcu.h`](../include/linux/srcu.h) | SRCU 公共 API 和读侧封装 |
-| [`include/linux/srcutree.h`](../include/linux/srcutree.h) | `srcu_data`、`srcu_node`、`srcu_usage`、`srcu_struct` |
-| [`kernel/rcu/srcutree.c`](../kernel/rcu/srcutree.c) | Tree SRCU 初始化、GP、回调和同步等待 |
+| [`include/linux/rcupdate.h`](../linux/include/linux/rcupdate.h) | 公共 RCU API、指针发布/取得、读侧标记、`kfree_rcu()` |
+| [`include/linux/rculist.h`](../linux/include/linux/rculist.h) | list/hlist 的 RCU 发布、删除和遍历宏 |
+| [`include/linux/rcu_segcblist.h`](../linux/include/linux/rcu_segcblist.h) | 分段回调列表的公共结构与接口 |
+| [`kernel/rcu/tree.h`](../linux/kernel/rcu/tree.h) | `rcu_node`、`rcu_data`、`rcu_state` 等 Tree RCU 核心结构 |
+| [`kernel/rcu/tree.c`](../linux/kernel/rcu/tree.c) | GP 线程、静止状态上报、回调推进与执行 |
+| [`kernel/rcu/tree_plugin.h`](../linux/kernel/rcu/tree_plugin.h) | PREEMPT_RCU 等配置相关的读者跟踪实现 |
+| [`kernel/rcu/tree_exp.h`](../linux/kernel/rcu/tree_exp.h) | expedited grace period |
+| [`kernel/rcu/tree_nocb.h`](../linux/kernel/rcu/tree_nocb.h) | `rcu_nocbs` 回调 offload |
+| [`kernel/rcu/tree_stall.h`](../linux/kernel/rcu/tree_stall.h) | RCU CPU stall 检测与诊断 |
+| [`include/linux/srcu.h`](../linux/include/linux/srcu.h) | SRCU 公共 API 和读侧封装 |
+| [`include/linux/srcutree.h`](../linux/include/linux/srcutree.h) | `srcu_data`、`srcu_node`、`srcu_usage`、`srcu_struct` |
+| [`kernel/rcu/srcutree.c`](../linux/kernel/rcu/srcutree.c) | Tree SRCU 初始化、GP、回调和同步等待 |
 
 ## 1.3\_Tree\_RCU\_的三层状态
 
@@ -158,5 +158,5 @@ flowchart TD
 4. 能解释 `rcu_segcblist` 为什么不能只是一个普通 FIFO。
 5. 能说明 Tree SRCU 两 index 读计数与私有域的关系。
 
-专题入口：[RCU 专题大纲](../../../../knowledge/linux/synchronization/rcu/大纲.md)。
+专题入口：[RCU 专题大纲](../../../knowledge/linux/synchronization/rcu/大纲.md)。
 

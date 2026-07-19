@@ -4054,7 +4054,7 @@ graph TD
 	writer_lock["写侧加锁"]
 	erase_node["rb_erase 摘除"]
 	call_rcu_node["call_rcu 延迟释放"]
-	grace_period["等待所有旧读者退出"]
+	grace_period["GP 覆盖摘除前潜在旧读者"]
 	free_obj["释放对象"]
 
 	rcu_read --> search_rcu
@@ -4207,4 +4207,3 @@ rb_erase(&item->rb, &tree->root);
 ```text
 Linux rbtree 的使用者不是调用一个现成 map，而是把业务对象、排序规则、生命周期和 rbtree 底层接口组合成一个可靠的工程容器。
 ```
-

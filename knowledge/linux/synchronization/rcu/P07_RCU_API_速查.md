@@ -19,6 +19,18 @@ topics:
 2. “可以在某上下文调用”与“函数本身是否阻塞”是两个不同问题。
 3. 下表以仓库内 Linux 6.12.20 的 [`rcupdate.h`](../../../../research/source_reading/linux/include/linux/rcupdate.h)、[`srcu.h`](../../../../research/source_reading/linux/include/linux/srcu.h)、[`tree.c`](../../../../research/source_reading/linux/kernel/rcu/tree.c) 和 [`srcutree.c`](../../../../research/source_reading/linux/kernel/rcu/srcutree.c) 为版本边界。
 
+### 7.1.1\_先按调用链选择接口
+
+| 目标 | 正确调用链 |
+| --- | --- |
+| 临界区内读取 | `rcu_read_lock()` → `rcu_dereference()` → 使用 → `rcu_read_unlock()` |
+| 查找后长期持有 | 在上述区间内安全取得 kref/refcount → `rcu_read_unlock()` → 使用 → `put()` |
+| 同步替换并释放 | 更新锁内替换/摘除 → 解锁 → `synchronize_rcu()` → `kfree()` |
+| 异步替换并释放 | 更新锁内替换/摘除 → 解锁 → `call_rcu()` 或 `kfree_rcu()` |
+| 模块卸载等待回调代码退场 | 阻止产生新回调并取消发布 → 按业务停止读写路径 → `rcu_barrier()` 等待先前排队回调执行完 |
+
+`synchronize_rcu()`、`call_rcu()` 和 `kfree_rcu()` 是不同的回收路径选择，不应在同一对象上无依据地叠加。`rcu_barrier()` 也不是普通对象删除时的 GP 替代品。
+
 ## 7.2\_读侧标记与指针取得
 
 | 接口 | 作用 | 关键边界 |
