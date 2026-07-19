@@ -19,7 +19,7 @@ function Convert-PathSegment {
     $value = $value -replace '\s+-\s+', '_'
     $value = $value -replace '^(P\d+)-', '$1_'
     $value = $value -replace '\s+', '_'
-    $value = [regex]::Replace($value, '^第_?(\d+)_?章_?', {
+    $value = [regex]::Replace($value, '^第_?(\d+)_?(?:章|部分|篇)_?', {
         param($match)
         return 'P{0:D2}_' -f [int]$match.Groups[1].Value
     })
