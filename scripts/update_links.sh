@@ -45,15 +45,19 @@ import posixpath
 import re
 import subprocess
 import sys
+from difflib import get_close_matches
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from urllib.parse import unquote
+from urllib.parse import unquote, urlsplit
 
 APPLY = sys.argv[1] == "apply"
 DETAIL = sys.argv[2] == "true"
 SELECTIONS = [item.replace("\\", "/").removeprefix("./").rstrip("/") for item in sys.argv[3:]]
 EXTERNAL = re.compile(r"^(?:[A-Za-z][A-Za-z0-9+.-]*:|//|mailto:|data:)")
+WINDOWS_ABSOLUTE = re.compile(r"^[A-Za-z]:[\\/]")
+POSIX_ABSOLUTE = re.compile(r"^/(?!/)")
+LOCAL_URI = re.compile(r"^(?:file:|vscode-resource:|file\+\.vscode-resource)", re.IGNORECASE)
 HTML_LINK = re.compile(r"(?P<prefix>\b(?:src|href)=[\"'])(?P<target>[^\"']+)(?P<suffix>[\"'])", re.IGNORECASE)
 WIKI_LINK = re.compile(r"(?P<prefix>!?\[\[)(?P<body>[^\]]+)(?P<suffix>\]\])")
 
@@ -75,6 +79,12 @@ def git_output(*arguments: str) -> bytes:
 def normalize_repo_path(value: str) -> str:
     normalized = posixpath.normpath(value.replace("\\", "/"))
     return "" if normalized == "." else normalized.removeprefix("./")
+
+
+def normalize_link_path(value: str) -> str:
+    """区分Markdown字符转义与Windows目录分隔符。"""
+    unescaped = re.sub(r"\\([_*.()\[\]#])", r"\1", unquote(value))
+    return unescaped.replace("\\", "/")
 
 
 def split_fragment(target: str) -> tuple[str, str]:
@@ -178,8 +188,15 @@ def rename_map() -> dict[str, str]:
 
 tracked_raw = git_output("-c", "core.quotePath=false", "ls-files", "-z", "-c", "-o", "--exclude-standard")
 tracked = [item.decode("utf-8") for item in tracked_raw.split(b"\0") if item]
-existing = {normalize_repo_path(path) for path in tracked if Path(path).exists()}
-markdown_files = sorted(path for path in existing if Path(path).suffix.casefold() in {".md", ".markdown"})
+existing_files = {normalize_repo_path(path) for path in tracked if Path(path).exists()}
+existing_directories = {
+    str(parent)
+    for path in existing_files
+    for parent in PurePosixPath(path).parents
+    if str(parent) != "."
+}
+existing = existing_files | existing_directories
+markdown_files = sorted(path for path in existing_files if Path(path).suffix.casefold() in {".md", ".markdown"})
 
 selected = markdown_files
 if SELECTIONS:
@@ -204,7 +221,7 @@ for path in existing:
 
 
 def old_target_path(source: str, link_path: str, kind: str) -> str:
-    decoded = unquote(link_path).replace("\\", "/")
+    decoded = normalize_link_path(link_path)
     if decoded.startswith("/"):
         return normalize_repo_path(decoded.lstrip("/"))
     if kind == "wiki" and not decoded.startswith("."):
@@ -212,8 +229,53 @@ def old_target_path(source: str, link_path: str, kind: str) -> str:
     return normalize_repo_path(posixpath.join(posixpath.dirname(source), decoded))
 
 
+def windows_repo_path(link_path: str) -> str | None:
+    """将当前仓库内的Windows绝对路径转换为仓库相对路径。"""
+    decoded = normalize_link_path(link_path)
+    if not WINDOWS_ABSOLUTE.match(decoded):
+        return None
+    root = Path.cwd().resolve().as_posix().rstrip("/")
+    prefix = root + "/"
+    if not decoded.casefold().startswith(prefix.casefold()):
+        return None
+    return normalize_repo_path(decoded[len(prefix):])
+
+
+def local_uri_file_path(link_path: str) -> str:
+    """从file或vscode-resource URI中提取本地文件路径。"""
+    parsed = urlsplit(link_path)
+    decoded = unquote(parsed.path).replace("\\", "/")
+    if parsed.netloc and parsed.scheme.casefold() == "file":
+        decoded = f"//{parsed.netloc}{decoded}"
+    if re.match(r"^/[A-Za-z]:/", decoded):
+        decoded = decoded[1:]
+    return decoded
+
+
 def candidate_target(source: str, link_path: str, kind: str) -> tuple[str | None, str]:
-    old_path = old_target_path(source, link_path, kind)
+    absolute_path = False
+    if LOCAL_URI.match(link_path):
+        local_path = local_uri_file_path(link_path)
+        candidate, reason = candidate_target(source, local_path, kind)
+        if candidate is not None:
+            return candidate, "absolute"
+        return None, reason if reason in {"ambiguous", "local_absolute"} else "local_absolute"
+    if WINDOWS_ABSOLUTE.match(link_path):
+        repository_path = windows_repo_path(link_path)
+        if repository_path is None:
+            decoded = unquote(link_path).replace("\\", "/")
+            name = PurePosixPath(decoded).name
+            pool = by_name.get(name.casefold(), [])
+            if len(pool) == 1:
+                return pool[0], "absolute"
+            if len(pool) > 1:
+                return None, "ambiguous"
+            return None, "local_absolute"
+        old_path = repository_path
+        absolute_path = True
+    else:
+        old_path = old_target_path(source, link_path, kind)
+        absolute_path = bool(POSIX_ABSOLUTE.match(link_path))
     variants = [old_path]
     if not PurePosixPath(old_path).suffix:
         variants.extend(old_path + extension for extension in (".md", ".markdown"))
@@ -226,6 +288,8 @@ def candidate_target(source: str, link_path: str, kind: str) -> tuple[str | None
             return None, "valid"
 
     if any(variant in existing for variant in variants):
+        if absolute_path:
+            return next(variant for variant in variants if variant in existing), "absolute"
         return None, "valid"
     for variant in variants:
         if variant in renames:
@@ -253,8 +317,24 @@ def render_target(source: str, target: str, original_path: str, fragment: str, k
     return rendered + fragment
 
 
-statistics = Counter(valid=0, external=0, anchor=0, updated=0, ambiguous=0, missing=0, obsidian=0)
+statistics = Counter(valid=0, external=0, anchor=0, updated=0, ambiguous=0, missing=0, local_absolute=0, obsidian=0)
 messages: list[str] = []
+
+
+def link_location(content: str, position: int) -> tuple[int, int]:
+    line = content.count("\n", 0, position) + 1
+    line_start = content.rfind("\n", 0, position) + 1
+    return line, position - line_start + 1
+
+
+def candidate_hints(link_path: str, limit: int = 6) -> list[str]:
+    decoded = normalize_link_path(link_path)
+    name = PurePosixPath(decoded).name.casefold()
+    direct = sorted(set(by_name.get(name, []) + by_stem.get(PurePosixPath(name).stem, [])))
+    if direct:
+        return direct[:limit]
+    close_names = get_close_matches(name, list(by_name), n=limit, cutoff=0.55)
+    return [path for close_name in close_names for path in by_name[close_name]][:limit]
 
 for source in selected:
     with open(source, "r", encoding="utf-8", newline="") as stream:
@@ -262,11 +342,13 @@ for source in selected:
     replacements: list[tuple[int, int, str]] = []
     for link in collect_links(content):
         target = link.target.strip()
+        line, column = link_location(content, link.target_start)
+        location = f"{source}:{line}:{column}"
         if not target:
             statistics["missing"] += 1
-            messages.append(f"MISSING {source}: 空链接")
+            messages.append(f"MISSING {location}: 空链接（类型={link.kind}）")
             continue
-        if EXTERNAL.match(target):
+        if EXTERNAL.match(target) and not WINDOWS_ABSOLUTE.match(target) and not LOCAL_URI.match(target):
             statistics["external"] += 1
             continue
         path_part, fragment = split_fragment(target)
@@ -279,13 +361,15 @@ for source in selected:
             continue
         if candidate is None:
             statistics[reason] += 1
-            messages.append(f"{reason.upper()} {source}: {target}")
+            hints = candidate_hints(path_part)
+            suffix = "；候选=" + " | ".join(hints) if hints else "；候选=无"
+            messages.append(f"{reason.upper()} {location}: {target}（类型={link.kind}）{suffix}")
             continue
         rendered = render_target(source, candidate, path_part, fragment, link.kind)
         if rendered != target:
             replacements.append((link.target_start, link.target_end, rendered))
             statistics["updated"] += 1
-            messages.append(f"UPDATE {source}: {target} -> {rendered} ({reason})")
+            messages.append(f"UPDATE {location}: {target} -> {rendered}（依据={reason}）")
 
     if APPLY and replacements:
         for start, end, rendered in sorted(replacements, reverse=True):
@@ -333,15 +417,22 @@ print(
     f"Markdown={len(selected)} "
     f"有效={statistics['valid']} 外部={statistics['external']} 纯锚点={statistics['anchor']} "
     f"可更新={statistics['updated']} 歧义={statistics['ambiguous']} 缺失={statistics['missing']} "
+    f"本地绝对路径={statistics['local_absolute']} "
     f"Obsidian配置={statistics['obsidian']}"
 )
-if DETAIL:
-    for message in messages:
+for message in messages:
+    if DETAIL or message.startswith(("MISSING ", "AMBIGUOUS ", "LOCAL_ABSOLUTE ")):
         print(message)
 if APPLY:
     print(f"已更新链接：{statistics['updated']}")
+    unresolved = statistics["ambiguous"] + statistics["missing"] + statistics["local_absolute"]
+    if unresolved:
+        raise SystemExit(f"仍有未解决链接：{unresolved}")
 else:
-    problems = statistics["updated"] + statistics["ambiguous"] + statistics["missing"] + statistics["obsidian"]
+    problems = (
+        statistics["updated"] + statistics["ambiguous"] + statistics["missing"]
+        + statistics["local_absolute"] + statistics["obsidian"]
+    )
     raise SystemExit(1 if problems else 0)
 PY
 
