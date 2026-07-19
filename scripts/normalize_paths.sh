@@ -169,6 +169,9 @@ print(f"已重命名文件：{len(mapping)}")
 PY
 
 if [[ $mode == apply ]]; then
+    while IFS= read -r -d '' empty_dir; do
+        rmdir -- "$empty_dir"
+    done < <(find . -depth -type d -empty -not -path './.git*' -print0)
     git diff --check
     printf '规范化完成；请检查 git diff 后再提交。\n'
 fi
