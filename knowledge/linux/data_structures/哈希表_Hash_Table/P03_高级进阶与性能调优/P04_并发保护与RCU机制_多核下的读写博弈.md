@@ -34,7 +34,7 @@ domains:
 
 #### (2)\_深度解密\_缓存行跳动(Cache\_Line\_Bouncing)与\_MESI\_协议
 
-要理解锁为什么慢，必须看 CPU 是如何“对话”的。现代 CPU 依靠 **MESI 协议** 保证各核心缓存（L1/L2）中的数据一致性。
+要理解锁为什么慢，必须看 CPU 是如何“对话”的。现代 CPU 依靠 [**MESI 协议**](../../../../foundations/computer_architecture/cache_coheren/内存一致性_MESI.md) 保证各核心缓存（L1/L2）中的数据一致性。
 
 ##### 1)\_原子操作的\_伪装
 

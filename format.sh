@@ -32,11 +32,13 @@ usage() {
   -h, --help  显示帮助
 
 路径可以是单个文件、多个文件或目录；省略路径时处理全仓。
-在 Bash 中推荐使用正斜杠路径；使用 Windows 反斜杠路径时必须给整个路径加引号。
+路径解析兼容正斜杠、Windows反斜杠、盘符绝对路径，以及UCRT中被反斜杠或空格拆散的复制路径；
+只有在仓库内唯一匹配时才会自动还原，存在歧义时不会猜测。
 
 示例：
   ./format.sh fix headings knowledge/foundations/example.md
   ./format.sh fix headings 'knowledge\foundations\example.md'
+  ./format.sh fix headings F:\repo\knowledge\foundations\example.md
 
 EOF
 }
@@ -112,6 +114,106 @@ for argument in "$@"; do
             ;;
     esac
 done
+
+# Bash 会在脚本接收参数前处理未加引号的反斜杠和空格。对于从 Windows
+# 终端或编辑器复制的路径，只能依据仓库中的真实路径做唯一反向匹配。
+path_key() {
+    local value=${1,,}
+    value=${value//\\/}
+    value=${value//\//}
+    value=${value//:/}
+    value=${value//\*/_}
+    value=${value//$' '/}
+    value=${value//$'\t'/}
+    PATH_KEY=$value
+}
+
+resolve_path_arguments() {
+    local -a inventory=() inventory_relative=() inventory_keys=() resolved=()
+    local candidate relative normalized key joined joined_key relative_key absolute_key key_index
+    local index next match_count matched consumed needs_inventory=false
+
+    # 常规相对路径和加引号的Windows路径可以直接完成规范化，无需扫描仓库。
+    for index in "${!arguments[@]}"; do
+        candidate=${arguments[index]}
+        [[ $candidate == --* ]] && continue
+        normalized=${candidate//\\//}
+        if [[ -e $repo_root/$normalized || -e $normalized ]]; then
+            arguments[index]=$normalized
+        else
+            needs_inventory=true
+        fi
+    done
+    [[ $needs_inventory == false ]] && return 0
+
+    while IFS= read -r -d '' candidate; do
+        relative=${candidate#./}
+        inventory+=("$candidate")
+        inventory_relative+=("$relative")
+        path_key "$relative"
+        relative_key=$PATH_KEY
+        path_key "$repo_root/$relative"
+        absolute_key=$PATH_KEY
+        inventory_keys+=("$relative_key|$absolute_key")
+    done < <(cd "$repo_root" && find . -path './.git' -prune -o -print0)
+
+    index=0
+    while ((index < ${#arguments[@]})); do
+        candidate=${arguments[index]}
+        if [[ $candidate == --* ]]; then
+            resolved+=("$candidate")
+            ((index += 1))
+            continue
+        fi
+
+        normalized=${candidate//\\//}
+        if [[ -e $repo_root/$normalized || -e $normalized ]]; then
+            resolved+=("$normalized")
+            ((index += 1))
+            continue
+        fi
+
+        joined=$candidate
+        matched=
+        consumed=1
+        for ((next = index; next < ${#arguments[@]}; next++)); do
+            if ((next > index)); then
+                [[ ${arguments[next]} == --* ]] && break
+                joined+="${arguments[next]}"
+                consumed=$((next - index + 1))
+            fi
+            path_key "$joined"
+            joined_key=$PATH_KEY
+            match_count=0
+            matched=
+            for key_index in "${!inventory[@]}"; do
+                IFS='|' read -r relative_key absolute_key <<< "${inventory_keys[key_index]}"
+                if [[ $joined_key == "$relative_key" || $joined_key == "$absolute_key" ]]; then
+                    matched=${inventory_relative[key_index]}
+                    ((match_count += 1))
+                fi
+            done
+            if ((match_count == 1)); then
+                break
+            fi
+            matched=
+        done
+
+        if [[ -n $matched ]]; then
+            printf '已识别Windows路径：%s\n' "$matched" >&2
+            resolved+=("$matched")
+            ((index += consumed))
+        else
+            resolved+=("$candidate")
+            ((index += 1))
+        fi
+    done
+    arguments=("${resolved[@]}")
+}
+
+if ((${#arguments[@]} > 0)); then
+    resolve_path_arguments
+fi
 
 if [[ $action == fix ]]; then
     arguments=(--apply "${arguments[@]}")
