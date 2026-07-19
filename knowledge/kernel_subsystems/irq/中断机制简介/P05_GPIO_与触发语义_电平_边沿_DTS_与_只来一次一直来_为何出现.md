@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.irq.中断机制简介.p05_gpio_与触发语义_电平_边沿_dts_与_只来一次一直来_为何出现
+title: "GPIO 与触发语义 电平 边沿 DTS 与 只来一次一直来 为何出现"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第5章_GPIO_与触发语义_电平_边沿_DTS_与_只来一次一直来_为何出现
 
 ## 5.1_GPIO_与触发语义_电平_边沿_DTS_与_只来一次/一直来_为何出现

@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.gpio.附录c_gpiod_接口
+title: "gpiod get()"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第1章_gpiod_get()
 
 ------

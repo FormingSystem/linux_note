@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.time_management.定时器简介.p02_linux_时间基础与_timekeeping_框架速览
+title: "Linux 时间基础与 timekeeping 框架速览"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第2章_Linux_时间基础与_timekeeping_框架速览
 
 ## 2.1_章节内容说明

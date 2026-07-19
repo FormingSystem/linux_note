@@ -1,3 +1,13 @@
+---
+id: platforms.arm.nxp.imx6ull.porting.imx6ull-移植u-boot-2025.04_and_kernel-6.1
+title: "阅读人群"
+kind: platform
+status: evolving
+domains:
+  - linux
+  - platform
+---
+
 > [!NOTE]
 >
 > 本文档的网络参考网址：https://blog.csdn.net/charlie114514191/article/details/147116372。

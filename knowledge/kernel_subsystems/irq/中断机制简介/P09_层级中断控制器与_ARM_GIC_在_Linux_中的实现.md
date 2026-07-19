@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.irq.中断机制简介.p09_层级中断控制器与_arm_gic_在_linux_中的实现
+title: "层级中断控制器与 ARM GIC 在 Linux 中的实现"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第9章_层级中断控制器与_ARM_GIC_在_Linux_中的实现
 
 ## 9.1_章节内容说明

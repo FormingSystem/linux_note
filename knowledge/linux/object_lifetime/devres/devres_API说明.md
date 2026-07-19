@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.devres.devres_api说明
+title: "devm API接口文档说明"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第1章_devm_API接口文档说明
 
 提问：

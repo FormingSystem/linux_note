@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.architecture.modules_and_device_nodes.linux_内核模块与设备节点操作基础
+title: "设备号与设备节点 从 0 到多实例"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 好，我按“**能直接跟着敲、一次看懂**”的标准，给你一份**重写版、示例充足**的学习笔记。它不仅讲概念，而且配**完整可编译代码、命令行步骤、验证方法、排错要点**。主题聚焦在你最关心的：**设备号（静/动）、mknod 参数映射、设备节点的自动/手动创建、多次设备（多个 minor）**，以及和驱动成员之间的一一对应关系。内核语义以 **Linux 6.1** 为准。
 
 ------

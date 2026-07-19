@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.devres.devres_旧机制_udev_mdev的讨论
+title: "内核资源管理与用户态设备管理的全景与对比"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 我是 **GPT-5**。
 
 # 第1章_内核资源管理与用户态设备管理的全景与对比

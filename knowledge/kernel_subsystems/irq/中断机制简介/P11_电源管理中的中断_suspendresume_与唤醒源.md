@@ -1,3 +1,13 @@
+---
+id: knowledge.kernel_subsystems.irq.中断机制简介.p11_电源管理中的中断_suspendresume_与唤醒源
+title: "电源管理中的中断 suspendresume 与唤醒源"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第11章_电源管理中的中断_suspendresume_与唤醒源
 
 ## 11.1_电源管理中的中断_suspend/resume_与唤醒源

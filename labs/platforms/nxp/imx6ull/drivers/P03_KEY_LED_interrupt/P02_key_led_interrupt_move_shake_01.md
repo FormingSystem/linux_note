@@ -1,3 +1,13 @@
+---
+id: labs.platforms.nxp.imx6ull.drivers.p03_key_led_interrupt.p02_key_led_interrupt_move_shake_01
+title: "key led interrupt move shake 01"
+kind: lab
+status: evolving
+domains:
+  - linux
+  - lab
+---
+
 # 第2章_key_led_interrupt_move_shake_01
 
 ## 2.1_实验目的

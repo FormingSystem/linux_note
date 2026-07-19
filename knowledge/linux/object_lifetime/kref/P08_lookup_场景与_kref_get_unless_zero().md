@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.object_lifetime.kref.p08_lookup_场景与_kref_get_unless_zero
+title: "lookup 场景与 kref get unless zero()"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第8章_lookup_场景与_kref_get_unless_zero()
 
 ## 8.1_本章定位

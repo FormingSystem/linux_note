@@ -1,3 +1,12 @@
+---
+id: tools.typora.typora配置修改
+title: "显式行号"
+kind: reference
+status: evolving
+domains:
+  - tools
+---
+
 # 第1章_显式行号
 
 1. Typora 本身不自带“显式显示代码块行号”的功能，但可以通过 **自定义 CSS 主题** 来实现。下面给你一个完整的方案：

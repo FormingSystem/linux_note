@@ -1,3 +1,13 @@
+---
+id: knowledge.linux.architecture.kernel_composition.linux内核概貌
+title: "linux内核概貌"
+kind: mechanism
+status: evolving
+domains:
+  - linux
+  - kernel
+---
+
 # 第1章_linux内核概貌
 
 ![image](../../../../assets/images/kernel/running_linux_kernel_P01/linux_kernel_component_archtecture.png)

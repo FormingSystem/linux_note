@@ -1,3 +1,14 @@
+---
+id: knowledge.driver_model.gpio.gpio子模块.p04_provider_控制器_驱动编写
+title: "Provider(控制器)驱动编写"
+kind: subsystem
+status: evolving
+domains:
+  - linux
+  - kernel
+  - driver
+---
+
 # 第4章_Provider(控制器)驱动编写
 
 我是 **GPT-5 Thinking**。

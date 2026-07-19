@@ -1,3 +1,12 @@
+---
+id: governance.conventions.git_guide
+title: "Git协作与提交规范"
+kind: reference
+status: evolving
+domains:
+  - governance
+---
+
 # 第1章_Git协作与提交规范
 
 本规范用于保持知识库历史清晰、结构调整可审计，并确保 Markdown、Obsidian 和出版构建所依赖的路径关系完整。
