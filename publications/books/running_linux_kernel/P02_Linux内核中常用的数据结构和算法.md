@@ -12,7 +12,7 @@ domains:
 
 #### (1)_内核数据结构总览
 
-- 1.1 [**链表（Linked List）**](../../../knowledge/linux/data_structures/单链表_Linked_List.md)
+- 1.1 [**链表（Linked List）**](../../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)
   - 1.1.1 单链表
 
     - 1.1.2 双向链表
@@ -28,7 +28,7 @@ domains:
 
     - 1.2.3 哈希冲突与解决
 
-- 1.3 **红黑树（Red-Black Tree）**
+- 1.3 [**红黑树（Red-Black Tree）**](../../../knowledge/linux/data_structures/红黑树_rb-tree/大纲.md)
 
     - 1.3.1 基本原理
 
