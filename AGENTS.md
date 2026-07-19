@@ -83,7 +83,7 @@
 
 ## 1.8_Git_提交约定
 
-详细规则见 `docs/git-guide.md`。简要约定：
+详细规则见 `governance/conventions/git_guide.md`。简要约定：
 
 本仓库使用 `.githooks/commit-msg` 做本地提交信息校验，当前本地仓库应配置 `git config core.hooksPath .githooks`。
 
