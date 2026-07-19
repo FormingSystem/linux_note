@@ -53,14 +53,14 @@
 - 新建或重命名路径后，必须同步更新 Markdown 链接、Obsidian Wiki 链接、图片引用和 `.obsidian` 中记录的路径。
 - 批量调整前先检查命名冲突，调整后执行链接检查和 `git diff --check`；不得仅重命名文件而遗留失效链接。
 
-仓库提供统一检查和整改脚本：
+仓库根目录提供 Bash 入口，具体实现位于 `scripts/normalize_paths.sh`：
 
-```powershell
+```bash
 # 仅预览，不修改
-& .\tools\repository\normalize_paths.ps1
+./normalize_paths.sh
 
 # 执行重命名并同步更新链接
-& .\tools\repository\normalize_paths.ps1 -Apply
+./normalize_paths.sh --apply
 ```
 
 脚本预览输出 `待重命名文件：0`，表示当前受版本控制的路径已符合规范。新增内容也必须直接采用本规范命名，不应依赖事后批量修复。
