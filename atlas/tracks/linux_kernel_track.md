@@ -9,13 +9,13 @@ domains:
   - kernel
 ---
 
-# 第1章_Linux内核机制学习路线
+# 第1章\_Linux内核机制学习路线
 
-## 1.1_路线目标
+## 1.1\_路线目标
 
 本路线面向希望建立 Linux 内核整体模型的读者。完成后应能说明内核如何启动、代码运行在哪些上下文、共享对象如何同步和回收，以及设备如何纳入统一模型。
 
-## 1.2_第一阶段_内核边界与源码定位
+## 1.2\_第一阶段\_内核边界与源码定位
 
 1. [宏内核和微内核](../../knowledge/foundations/operating_systems/concepts/宏内核和微内核.md)。
 2. [Linux 内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)。
@@ -25,7 +25,7 @@ domains:
 
 阶段验收：能从功能需求判断大致源码目录，区分用户空间、内核空间和模块边界。
 
-## 1.3_第二阶段_数据组织与对象生命周期
+## 1.3\_第二阶段\_数据组织与对象生命周期
 
 1. [单链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)。
 2. [哈希表理论基础](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)。
@@ -36,7 +36,7 @@ domains:
 
 阶段验收：能解释嵌入式节点、容器对象、所有权、引用计数和资源托管的边界。
 
-## 1.4_第三阶段_并发与事件
+## 1.4\_第三阶段\_并发与事件
 
 1. 按序阅读[并发脉络与概念缓冲](../../knowledge/linux/synchronization/concurrency_and_competition/P01_并发脉络与概念缓冲)。
 2. 按序阅读[可见性与顺序](../../knowledge/linux/synchronization/concurrency_and_competition/P02_可见性与顺序)。
@@ -46,7 +46,7 @@ domains:
 
 阶段验收：面对一段内核代码，能判断其执行上下文、能否睡眠、需要哪类同步以及退出时如何取消异步工作。
 
-## 1.5_第四阶段_设备与I_O
+## 1.5\_第四阶段\_设备与I\_O
 
 1. 按序阅读[设备模型](../../knowledge/linux/device_model/设备模型简介)。
 2. 阅读[错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)。
@@ -56,7 +56,7 @@ domains:
 
 阶段验收：能描述设备注册、匹配、节点暴露、阻塞唤醒和异步通知之间的完整路径。
 
-## 1.6_阅读方法
+## 1.6\_阅读方法
 
 - 每一阶段先画对象关系和调用方向，再进入 API 细节。
 - 对版本敏感的实现记录内核版本；稳定文档只保留跨版本成立的模型。

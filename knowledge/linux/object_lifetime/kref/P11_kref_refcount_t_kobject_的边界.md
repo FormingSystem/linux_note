@@ -8,9 +8,9 @@ domains:
   - kernel
 ---
 
-# 第11章_kref_refcount_t_kobject_的边界
+# 第11章\_kref\_refcount\_t\_kobject\_的边界
 
-## 11.1_本章导读_先分清对象层次
+## 11.1\_本章导读\_先分清对象层次
 
 前面章节一直在讲裸 `kref`：
 
@@ -102,9 +102,9 @@ flowchart TD
 
 ------
 
-## 11.2_底层计数工具_atomic_t_refcount_t_kref
+## 11.2\_底层计数工具\_atomic\_t\_refcount\_t\_kref
 
-### 11.2.1_atomic_t_通用原子计数工具
+### 11.2.1\_atomic\_t\_通用原子计数工具
 
 `atomic_t` 是底层原子变量。
 
@@ -179,7 +179,7 @@ atomic_t 可以实现计数；
 
 ------
 
-### 11.2.2_refcount_t_引用计数安全原语
+### 11.2.2\_refcount\_t\_引用计数安全原语
 
 `refcount_t` 是比 `atomic_t` 更接近引用计数语义的底层工具。
 
@@ -261,7 +261,7 @@ kref 负责“对象生命周期引用计数模板”。
 
 ------
 
-### 11.2.3_kref_对象生命周期引用计数封装
+### 11.2.3\_kref\_对象生命周期引用计数封装
 
 `kref` 是对 `refcount_t` 的再封装。
 
@@ -361,7 +361,7 @@ kref 是生命周期工具；
 
 ------
 
-### 11.2.4_kref_和_refcount_t_的关系
+### 11.2.4\_kref\_和\_refcount\_t\_的关系
 
 可以这样理解：
 
@@ -447,9 +447,9 @@ kobject。
 
 ------
 
-## 11.3_kobject_边界_引用计数之外的对象模型
+## 11.3\_kobject\_边界\_引用计数之外的对象模型
 
-### 11.3.1_kobject_不只是引用计数
+### 11.3.1\_kobject\_不只是引用计数
 
 `kobject` 经常让人误解。
 
@@ -565,7 +565,7 @@ kobject 是带引用计数的内核对象模型。
 
 ------
 
-### 11.3.2_kobject_的_release_和_kref_release_的区别
+### 11.3.2\_kobject\_的\_release\_和\_kref\_release\_的区别
 
 裸 kref 的 release 是这样：
 
@@ -651,7 +651,7 @@ kobject 内部也管理引用；
 
 ------
 
-### 11.3.3_为什么不要为了引用计数强行引入_kobject
+### 11.3.3\_为什么不要为了引用计数强行引入\_kobject
 
 如果你的对象只是驱动内部对象：
 
@@ -718,9 +718,9 @@ flowchart TD
 
 ------
 
-## 11.4_driver_core_边界_device_class_bus_不是裸_kref
+## 11.4\_driver\_core\_边界\_device\_class\_bus\_不是裸\_kref
 
-### 11.4.1_device_driver_core_已经封装好的对象模型
+### 11.4.1\_device\_driver\_core\_已经封装好的对象模型
 
 `struct device` 是 driver core 的设备对象。
 
@@ -816,7 +816,7 @@ device 是 driver core 的类型化对象。
 
 ------
 
-### 11.4.2_get_device/put_device_和_kref_get/kref_put_的区别
+### 11.4.2\_get\_device/put\_device\_和\_kref\_get/kref\_put\_的区别
 
 从表面看：
 
@@ -900,7 +900,7 @@ kref_put(&obj->ref, my_obj_release);
 
 ------
 
-### 11.4.3_device_release_不是_my_obj_release
+### 11.4.3\_device\_release\_不是\_my\_obj\_release
 
 裸 kref release：
 
@@ -979,7 +979,7 @@ release 才是最终释放点。
 
 ------
 
-### 11.4.4_class_release_也不是_my_obj_release
+### 11.4.4\_class\_release\_也不是\_my\_obj\_release
 
 `struct class` 也是 driver core 的分类对象。
 
@@ -1064,7 +1064,7 @@ driver 是驱动实例；
 
 ------
 
-### 11.4.5_bus_type_不是引用计数对象模板
+### 11.4.5\_bus\_type\_不是引用计数对象模板
 
 `struct bus_type` 是 driver core 中描述一类总线的结构。
 
@@ -1125,9 +1125,9 @@ PM 回调。
 
 ------
 
-## 11.5_分层对照_裸_kref_driver_core_和私有引用
+## 11.5\_分层对照\_裸\_kref\_driver\_core\_和私有引用
 
-### 11.5.1_裸_kref_对象和_driver_core_对象的对比
+### 11.5.1\_裸\_kref\_对象和\_driver\_core\_对象的对比
 
 这一节把边界集中放到一张表里。
 
@@ -1184,7 +1184,7 @@ flowchart TD
 
 ------
 
-### 11.5.2_为什么裸_kref_示例不能直接套到_device/class/bus
+### 11.5.2\_为什么裸\_kref\_示例不能直接套到\_device/class/bus
 
 前面章节里经常用这种对象：
 
@@ -1268,7 +1268,7 @@ device/class/bus 讲的是 driver core 已经封装好的分层对象模型。
 
 ------
 
-### 11.5.3_kobject_和_device_中仍然可以有私有_kref_吗
+### 11.5.3\_kobject\_和\_device\_中仍然可以有私有\_kref\_吗
 
 可以，但要非常谨慎。
 
@@ -1337,7 +1337,7 @@ get_device 保护 device 对象生命周期；
 
 所以如果一个结构里同时存在 `struct device` 和私有 `struct kref`，需要明确两张表。
 
-#### (1)_device_引用表
+#### (1)\_device\_引用表
 
 ```text
 引用对象：
@@ -1354,7 +1354,7 @@ release：
     driver core 设备对象生命周期
 ```
 
-#### (2)_私有_kref_引用表
+#### (2)\_私有\_kref\_引用表
 
 ```text
 引用对象：
@@ -1375,7 +1375,7 @@ release：
 
 ------
 
-### 11.5.4_一个典型的分层结构
+### 11.5.4\_一个典型的分层结构
 
 假设你写一个驱动，里面有设备对象和用户会话对象：
 
@@ -1455,7 +1455,7 @@ session release 是否能访问 mdev？
 
 ------
 
-### 11.5.5_container_of_在不同层次中的作用
+### 11.5.5\_container\_of\_在不同层次中的作用
 
 裸 kref：
 
@@ -1522,7 +1522,7 @@ flowchart TD
 
 ------
 
-### 11.5.6_不同层次的_get/put_命名规律
+### 11.5.6\_不同层次的\_get/put\_命名规律
 
 可以把命名规律记成下面这样：
 
@@ -1570,9 +1570,9 @@ fput(file);
 
 ------
 
-## 11.6_本章常见误解
+## 11.6\_本章常见误解
 
-### 11.6.1_误解一_kobject_是高级_kref
+### 11.6.1\_误解一\_kobject\_是高级\_kref
 
 错误。
 
@@ -1586,7 +1586,7 @@ kobject 是带引用计数、名字、父子层级、ktype、sysfs 表示和 kse
 
 ------
 
-### 11.6.2_误解二_device_就是内嵌_kref_的对象
+### 11.6.2\_误解二\_device\_就是内嵌\_kref\_的对象
 
 错误。
 
@@ -1608,7 +1608,7 @@ put_device(dev);
 
 ------
 
-### 11.6.3_误解三_class/bus_是_device_的总引用管理器
+### 11.6.3\_误解三\_class/bus\_是\_device\_的总引用管理器
 
 错误。
 
@@ -1623,7 +1623,7 @@ device 是设备实例；
 
 ------
 
-### 11.6.4_误解四_release_都是_kfree
+### 11.6.4\_误解四\_release\_都是\_kfree
 
 错误。
 
@@ -1654,7 +1654,7 @@ device release:
 
 ------
 
-### 11.6.5_误解五_get_device_可以替代私有_kref
+### 11.6.5\_误解五\_get\_device\_可以替代私有\_kref
 
 不一定。
 
@@ -1678,7 +1678,7 @@ struct device 对象生命周期。
 
 ------
 
-### 11.6.6_误解六_私有_kref_可以替代_get_device
+### 11.6.6\_误解六\_私有\_kref\_可以替代\_get\_device
 
 也不一定。
 
@@ -1698,7 +1698,7 @@ driver core 对 struct device 的生命周期规则。
 
 ------
 
-## 11.7_选择规则
+## 11.7\_选择规则
 
 写代码时可以按下面规则选择。
 
@@ -1737,7 +1737,7 @@ flowchart TD
 
 ------
 
-## 11.8_和前面章节的关系
+## 11.8\_和前面章节的关系
 
 第 1 章讲：
 
@@ -1796,7 +1796,7 @@ flowchart TD
 
 ------
 
-## 11.9_本章检查清单
+## 11.9\_本章检查清单
 
 看到一个引用计数对象时，先问这些问题：
 
@@ -1834,7 +1834,7 @@ kobject_init(...)
 
 ------
 
-## 11.10_本章小结
+## 11.10\_本章小结
 
 本章核心不是学习更多 API，而是分清层次。
 

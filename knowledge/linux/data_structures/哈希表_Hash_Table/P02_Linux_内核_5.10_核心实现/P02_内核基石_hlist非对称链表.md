@@ -8,13 +8,13 @@ domains:
   - kernel
 ---
 
-# 第2章_内核基石_hlist非对称链表
+# 第2章\_内核基石\_hlist非对称链表
 
-## 2.1_内核基石_hlist_非对称链表
+## 2.1\_内核基石\_hlist\_非对称链表
 
 在 Linux 内核（5.10 及其前后版本）中，标准的双向链表 `list_head` 固然强大，但在构建大型哈希表时，它显得过于“奢侈”。为了节省宝贵的内存，内核引入了专门为哈希表设计的 **hlist**。
 
-### 2.1.1_结构定义_非对称的艺术
+### 2.1.1\_结构定义\_非对称的艺术
 
 `hlist` 的核心设计哲学是**非对称性**。
 
@@ -25,7 +25,7 @@ domains:
   - `next`：指向下一个节点的指针。
   - `pprev`：一个二级指针，指向前一个节点的 `next` 指针所在的地址。
 
-#### (1)_内核源码结构定义
+#### (1)\_内核源码结构定义
 
 ```c
 struct hlist_head {
@@ -40,11 +40,11 @@ struct hlist_node {
 
 ------
 
-### 2.1.2_pprev_指针_内核级的工程智慧
+### 2.1.2\_pprev\_指针\_内核级的工程智慧
 
 这是 `hlist` 最精妙的设计。在普通的双向链表中，`prev` 指向的是前一个结构体；而在 `hlist` 中，`pprev` 指向的是**“前一个元素的 `next` 属性所在的内存地址”**。
 
-#### (1)_为什么要这么做
+#### (1)\_为什么要这么做
 
 在哈希表中，链表的第一个节点的前驱是 `hlist_head`，而中间节点的前驱是 `hlist_node`。
 
@@ -61,7 +61,7 @@ struct hlist_node {
   - 这意味着内核代码可以消灭条件分支，极大地优化了指令流水线性能。
 
 
-#### (2)_数据结构关联图(中文说明)
+#### (2)\_数据结构关联图(中文说明)
 
 ```mermaid
 graph LR
@@ -113,18 +113,18 @@ graph TD
 
 ------
 
-### 2.1.3_核心操作_API_增_删_查
+### 2.1.3\_核心操作\_API\_增\_删\_查
 
 内核通过一套精密的宏来封装这些复杂的指针操作，确保开发者不会因手动操作 `pprev` 而崩溃。
 
-#### (1)_初始化与定义
+#### (1)\_初始化与定义
 
 在内核模块中，我们可以静态或动态地初始化哈希表。
 
 - **静态定义**：`DEFINE_HASHTABLE(name, bits);`（定义一个 $2^{bits}$ 大小的哈希表）。
 - **动态初始化**：`hash_init(table_name);`。
 
-#### (2)_节点插入_hash_add()
+#### (2)\_节点插入\_hash\_add()
 
 内核默认使用**“头插法”**，因为这不需要遍历链表，时间复杂度恒定为 $O(1)$。下面是简要说明，后面有详细定义说明：
 
@@ -260,7 +260,7 @@ static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
 }
 ```
 
-#### (3)_节点删除_hash_del()
+#### (3)\_节点删除\_hash\_del()
 
 得益于 `pprev`，删除操作变得异常简洁且安全。下面是精简说明，后面有详细定义说明：
 
@@ -429,7 +429,7 @@ static inline void INIT_HLIST_NODE(struct hlist_node *h)
 
 ------
 
-### 2.1.4_遍历宏_如何高效访问数据
+### 2.1.4\_遍历宏\_如何高效访问数据
 
 内核提供了多种遍历宏，最常用的是 `hlist_for_each_entry`。
 
@@ -451,7 +451,7 @@ struct my_node {
 };
 ```
 
-#### (1)_标准遍历_hlist_for_each_entry
+#### (1)\_标准遍历\_hlist\_for\_each\_entry
 
 这是最常用的宏，适用于简单的读取场景。它直接从桶头（`hlist_head`）开始，顺着 `next` 指针一路向后。
 
@@ -487,7 +487,7 @@ hlist_for_each_entry(obj, head, node) {
 	     pos = hlist_entry_safe((pos)->member.next, typeof(*(pos)), member))
 ```
 
-##### 1)_hlist_entry_safe()定义
+##### 1)\_hlist\_entry\_safe()定义
 
 获取 `pos` 的 `hlist_entry_safe()` 定义位于 [include/linux/list.h](../../../../../research/source_reading/linux/include/linux/list.h)：
 
@@ -556,7 +556,7 @@ hlist_for_each_entry(obj, head, node) {
 
 ------
 
-#### (2)_安全遍历_hlist_for_each_entry_safe
+#### (2)\_安全遍历\_hlist\_for\_each\_entry\_safe
 
 **核心痛点**：如果你在遍历过程中调用了 `hash_del(obj)`，当前节点的 `next` 指针可能会被修改。此时再执行下一次循环的 `pos = pos->next` 就会导致内核崩溃（Kernel Panic）。
 
@@ -600,7 +600,7 @@ hlist_for_each_entry_safe(obj, tmp, my_head, node) {
 
 ------
 
-#### (3)_无锁遍历_hlist_for_each_entry_rcu
+#### (3)\_无锁遍历\_hlist\_for\_each\_entry\_rcu
 
 在 5.10 内核中，为了追求极致的性能，读取操作通常不加锁。此宏配合 `rcu_read_lock()` 使用，确保在不影响并发写入的情况下，读取者能看到一致的链表视图。
 
@@ -1093,7 +1093,7 @@ rcu_read_unlock(); // 退出 RCU 临界区
 
 
 
-#### (4)_遍历机制逻辑图
+#### (4)\_遍历机制逻辑图
 
 ```mermaid
 flowchart TD
@@ -1106,7 +1106,7 @@ flowchart TD
     Next -- 无 --> NotFound[返回 NULL]
 ```
 
-#### (5)_总结_如何选择接口
+#### (5)\_总结\_如何选择接口
 
 | **宏接口**                  | **必须持有锁** | **允许删除节点** | **适用场景**                       |
 | --------------------------- | -------------- | ---------------- | ---------------------------------- |
@@ -1114,7 +1114,7 @@ flowchart TD
 | `hlist_for_each_entry_safe` | 是 (Spinlock)  | **是**           | 清理哈希表、批量删除。             |
 | `hlist_for_each_entry_rcu`  | 否 (RCU Lock)  | **否**           | 网络协议栈、PID 查找等高并发场景。 |
 
-### 2.1.5_小结
+### 2.1.5\_小结
 
 `hlist` 是 Linux 内核对哈希表极致优化的体现：
 

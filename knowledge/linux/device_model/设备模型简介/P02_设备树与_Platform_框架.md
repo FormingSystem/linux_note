@@ -8,11 +8,11 @@ domains:
   - kernel
 ---
 
-# 第2章_设备树与_Platform_框架
+# 第2章\_设备树与\_Platform\_框架
 
-## 2.1_of_device_id_与_of_match_table_匹配机制详解
+## 2.1\_of\_device\_id\_与\_of\_match\_table\_匹配机制详解
 
-### 2.1.1_主题引入
+### 2.1.1\_主题引入
 
 Linux 设备模型的匹配机制中，**of_device_id 表（又称 of_match_table）** 是设备树（Device Tree, DT）环境下最核心的匹配结构。它建立了驱动与设备树节点之间的“语言桥梁”。
 
@@ -20,7 +20,7 @@ Linux 设备模型的匹配机制中，**of_device_id 表（又称 of_match_tabl
 
 ------
 
-### 2.1.2_设计哲学
+### 2.1.2\_设计哲学
 
 Linux 的设备树匹配机制遵循以下原则：
 
@@ -35,9 +35,9 @@ Linux 的设备树匹配机制遵循以下原则：
 
 ------
 
-### 2.1.3_数据结构视角
+### 2.1.3\_数据结构视角
 
-#### (1)_struct_of_device_id
+#### (1)\_struct\_of\_device\_id
 
 位于 `include/linux/mod_devicetable.h`：
 
@@ -59,7 +59,7 @@ struct of_device_id {
 
 ------
 
-#### (2)_驱动结构中的关联
+#### (2)\_驱动结构中的关联
 
 驱动在定义时，将匹配表指向 `driver.of_match_table`：
 
@@ -84,7 +84,7 @@ static struct platform_driver led_driver = {
 
 ------
 
-#### (3)_MODULE_DEVICE_TABLE_宏展开
+#### (3)\_MODULE\_DEVICE\_TABLE\_宏展开
 
 `MODULE_DEVICE_TABLE(of, led_of_match);`
  此宏位于 `include/linux/module.h`：
@@ -104,9 +104,9 @@ static struct platform_driver led_driver = {
 
 ------
 
-### 2.1.4_开发者视角
+### 2.1.4\_开发者视角
 
-#### (1)_匹配过程分析
+#### (1)\_匹配过程分析
 
 匹配核心逻辑在 `drivers/of/device.c`：
 
@@ -163,7 +163,7 @@ bool of_device_is_compatible(const struct device_node *device,
 
 ------
 
-#### (2)_匹配优先级
+#### (2)\_匹配优先级
 
 匹配优先顺序（针对 platform、i2c、spi 等总线均一致）：
 
@@ -193,7 +193,7 @@ led@0 {
 
 ------
 
-#### (3)_多兼容匹配表(SoC_区分)
+#### (3)\_多兼容匹配表(SoC\_区分)
 
 常见于不同硬件平台共享同一驱动源码时：
 
@@ -218,7 +218,7 @@ if (match)
 
 ------
 
-#### (4)_of_match_ptr()_辅助宏
+#### (4)\_of\_match\_ptr()\_辅助宏
 
 某些驱动在非设备树环境下也会编译，因此常使用：
 
@@ -240,7 +240,7 @@ if (match)
 
 ------
 
-### 2.1.5_用户视角
+### 2.1.5\_用户视角
 
 在用户空间，匹配成功的设备节点会反映到 sysfs：
 
@@ -264,7 +264,7 @@ modprobe led_driver
 
 ------
 
-### 2.1.6_完整匹配过程可视化
+### 2.1.6\_完整匹配过程可视化
 
 ```mermaid
 sequenceDiagram
@@ -285,9 +285,9 @@ sequenceDiagram
 
 ------
 
-### 2.1.7_示例_多_compatible_匹配验证
+### 2.1.7\_示例\_多\_compatible\_匹配验证
 
-#### (1)_设备树定义
+#### (1)\_设备树定义
 
 ```dts
 led@0 {
@@ -295,7 +295,7 @@ led@0 {
 };
 ```
 
-#### (2)_驱动定义
+#### (2)\_驱动定义
 
 ```c
 static const struct of_device_id led_of_match[] = {
@@ -312,7 +312,7 @@ static const struct of_device_id led_of_match[] = {
 
 ------
 
-### 2.1.8_调试与验证
+### 2.1.8\_调试与验证
 
 | 检查项              | 命令                                                         | 说明             |
 | ------------------- | ------------------------------------------------------------ | ---------------- |
@@ -324,7 +324,7 @@ static const struct of_device_id led_of_match[] = {
 
 ------
 
-### 2.1.9_小结
+### 2.1.9\_小结
 
 | 概念     | 数据结构                   | 核心接口            | 作用            |
 | -------- | -------------------------- | ------------------- | --------------- |
@@ -345,9 +345,9 @@ static const struct of_device_id led_of_match[] = {
 
 ---
 
-## 2.2_platform_device_与_platform_driver_框架
+## 2.2\_platform\_device\_与\_platform\_driver\_框架
 
-### 2.2.1_主题引入
+### 2.2.1\_主题引入
 
 在 Linux 设备模型体系中，`platform_device` 与 `platform_driver` 是最常见的一对设备-驱动结构。
  它们主要服务于**片上外设（SoC on-chip peripherals）**，
@@ -363,9 +363,9 @@ static const struct of_device_id led_of_match[] = {
 
 ------
 
-### 2.2.2_设计哲学
+### 2.2.2\_设计哲学
 
-#### (1)_platform_框架的定位
+#### (1)\_platform\_框架的定位
 
 Platform 机制用于统一管理：
 
@@ -380,7 +380,7 @@ Platform 机制用于统一管理：
 
 ------
 
-#### (2)_三层结构模型
+#### (2)\_三层结构模型
 
 ```mermaid
 flowchart TD
@@ -394,9 +394,9 @@ flowchart TD
 
 ------
 
-### 2.2.3_数据结构视角
+### 2.2.3\_数据结构视角
 
-#### (1)_struct_platform_device
+#### (1)\_struct\_platform\_device
 
 位于 `include/linux/platform_device.h`：
 
@@ -421,7 +421,7 @@ struct platform_device {
 
 ------
 
-#### (2)_struct_platform_driver
+#### (2)\_struct\_platform\_driver
 
 ```c
 struct platform_driver {
@@ -440,7 +440,7 @@ struct platform_driver {
 
 ------
 
-#### (3)_struct_resource(硬件资源表)
+#### (3)\_struct\_resource(硬件资源表)
 
 ```c
 struct resource {
@@ -461,13 +461,13 @@ struct resource {
 
 ------
 
-### 2.2.4_开发者视角
+### 2.2.4\_开发者视角
 
-#### (1)_注册设备
+#### (1)\_注册设备
 
 两种方式：
 
-##### 1)_静态注册(设备树方式)
+##### 1)\_静态注册(设备树方式)
 
 在设备树定义：
 
@@ -481,7 +481,7 @@ led@0 {
 
 → 内核解析后自动生成 `platform_device` 并注册。
 
-##### 2)_动态注册(代码方式)
+##### 2)\_动态注册(代码方式)
 
 ```c
 static struct resource led_res[] = {
@@ -504,7 +504,7 @@ platform_device_register(&led_device);
 
 ------
 
-#### (2)_注册驱动
+#### (2)\_注册驱动
 
 ```c
 static int led_probe(struct platform_device *pdev)
@@ -551,7 +551,7 @@ module_platform_driver(led_driver);
 
 ------
 
-#### (3)_匹配机制回顾
+#### (3)\_匹配机制回顾
 
 当内核注册设备或驱动时，执行路径如下：
 
@@ -575,7 +575,7 @@ flowchart TD
 
 ------
 
-#### (4)_资源解析接口
+#### (4)\_资源解析接口
 
 Platform 框架提供一系列解析函数：
 
@@ -606,7 +606,7 @@ static int led_probe(struct platform_device *pdev)
 
 ------
 
-### 2.2.5_用户视角
+### 2.2.5\_用户视角
 
 在 sysfs 中，platform 框架对应的层次：
 
@@ -631,7 +631,7 @@ cat /sys/bus/platform/devices/led_driver.0/modalias
 
 ------
 
-### 2.2.6_可视化_注册与匹配流程图
+### 2.2.6\_可视化\_注册与匹配流程图
 
 ```mermaid
 sequenceDiagram
@@ -651,7 +651,7 @@ sequenceDiagram
 
 ------
 
-### 2.2.7_调试与验证
+### 2.2.7\_调试与验证
 
 | 检查项        | 命令                                          | 说明           |
 | ------------- | --------------------------------------------- | -------------- |
@@ -663,7 +663,7 @@ sequenceDiagram
 
 ------
 
-### 2.2.8_小结
+### 2.2.8\_小结
 
 | 层次     | 数据结构                 | 核心函数                     | 作用                |
 | -------- | ------------------------ | ---------------------------- | ------------------- |
@@ -684,9 +684,9 @@ sequenceDiagram
 
 ------
 
-## 2.3_class_与设备分类机制
+## 2.3\_class\_与设备分类机制
 
-### 2.3.1_主题引入
+### 2.3.1\_主题引入
 
 Linux 内核设备模型中，`class` 是连接**内核设备体系**与**用户空间设备节点**的重要中间层。
  它定义了一类功能相似设备的集合（如字符设备、LED、I2C、SPI、USB、GPIO 等）。
@@ -715,9 +715,9 @@ Linux 内核设备模型中，`class` 是连接**内核设备体系**与**用户
 
 ------
 
-### 2.3.2_设计哲学
+### 2.3.2\_设计哲学
 
-#### (1)_class_的存在意义
+#### (1)\_class\_的存在意义
 
 在设备模型中，设备（`device`）本身与驱动（`driver`）是一一匹配的。
  但是不同设备可能属于相同“功能类别”（如所有 LED 设备都属于 LED 类）。
@@ -732,7 +732,7 @@ Linux 内核设备模型中，`class` 是连接**内核设备体系**与**用户
 
 ------
 
-#### (2)_关系图
+#### (2)\_关系图
 
 ```mermaid
 flowchart TD
@@ -745,9 +745,9 @@ flowchart TD
 
 ------
 
-### 2.3.3_数据结构视角
+### 2.3.3\_数据结构视角
 
-#### (1)_struct_class
+#### (1)\_struct\_class
 
 位于 `include/linux/device/class.h`：
 
@@ -774,7 +774,7 @@ struct class {
 
 ------
 
-#### (2)_struct_device_与_class_的关系
+#### (2)\_struct\_device\_与\_class\_的关系
 
 `struct device` 中包含：
 
@@ -792,9 +792,9 @@ struct device {
 
 ------
 
-### 2.3.4_开发者视角
+### 2.3.4\_开发者视角
 
-#### (1)_注册_class
+#### (1)\_注册\_class
 
 驱动中注册类：
 
@@ -830,7 +830,7 @@ struct class *class_create(struct module *owner, const char *name)
 
 ------
 
-#### (2)_注册设备节点(device_create)
+#### (2)\_注册设备节点(device\_create)
 
 与 class 关联的设备节点通过：
 
@@ -850,7 +850,7 @@ struct device *device_create(struct class *class,
 4. 创建 `/sys/class/<class>/<device>/`;
 5. 触发 uevent → udev 自动创建设备文件 `/dev/<device>`。
 
-##### 1)_示例
+##### 1)\_示例
 
 ```c
 dev_t devt;
@@ -867,7 +867,7 @@ device_create(led_class, NULL, devt, NULL, "demo0");
 
 ------
 
-#### (3)_销毁设备与类
+#### (3)\_销毁设备与类
 
 ```c
 device_destroy(led_class, devt);
@@ -878,7 +878,7 @@ class_destroy(led_class);
 
 ------
 
-#### (4)_dev_uevent_与设备节点生成机制
+#### (4)\_dev\_uevent\_与设备节点生成机制
 
 每次 `device_create()` 调用时：
 
@@ -889,7 +889,7 @@ class_destroy(led_class);
 
 ------
 
-### 2.3.5_用户视角
+### 2.3.5\_用户视角
 
 从用户空间看，`class` 决定了 `/sys/class` 目录层级。
  不同类别的驱动对应不同路径：
@@ -907,7 +907,7 @@ class_destroy(led_class);
 
 ------
 
-### 2.3.6_完整流程可视化
+### 2.3.6\_完整流程可视化
 
 ```mermaid
 sequenceDiagram
@@ -927,7 +927,7 @@ sequenceDiagram
 
 ------
 
-### 2.3.7_示例_字符设备与_class_集成
+### 2.3.7\_示例\_字符设备与\_class\_集成
 
 ```c
 static struct class *demo_class;
@@ -970,7 +970,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-### 2.3.8_调试与验证
+### 2.3.8\_调试与验证
 
 | 检查项          | 命令                                       | 说明                 |
 | --------------- | ------------------------------------------ | -------------------- |
@@ -982,7 +982,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-### 2.3.9_小结
+### 2.3.9\_小结
 
 | 层次         | 数据结构                            | 核心函数                               | 作用             |
 | ------------ | ----------------------------------- | -------------------------------------- | ---------------- |
@@ -1003,9 +1003,9 @@ MODULE_LICENSE("GPL");
 
 ------
 
-## 2.4_device_attribute_与驱动属性文件机制
+## 2.4\_device\_attribute\_与驱动属性文件机制
 
-### 2.4.1_主题引入
+### 2.4.1\_主题引入
 
 Linux 内核的 **sysfs 属性文件机制** 是驱动开发中与用户空间交互的关键接口之一。
  开发者可以通过 `DEVICE_ATTR_*()` 系列宏在 `/sys/` 下创建可读写的文件，
@@ -1023,7 +1023,7 @@ sysfs 文件机制是 Linux 驱动模型的统一标准，
 
 ------
 
-### 2.4.2_设计哲学
+### 2.4.2\_设计哲学
 
 | 原则           | 说明                                            |
 | -------------- | ----------------------------------------------- |
@@ -1036,9 +1036,9 @@ sysfs 文件机制是 Linux 驱动模型的统一标准，
 
 ------
 
-### 2.4.3_数据结构视角
+### 2.4.3\_数据结构视角
 
-#### (1)_struct_device_attribute
+#### (1)\_struct\_device\_attribute
 
 位于 `include/linux/device.h`：
 
@@ -1060,7 +1060,7 @@ struct device_attribute {
 
 ------
 
-#### (2)_struct_attribute
+#### (2)\_struct\_attribute
 
 ```c
 struct attribute {
@@ -1076,9 +1076,9 @@ struct attribute {
 
 ------
 
-### 2.4.4_开发者视角
+### 2.4.4\_开发者视角
 
-#### (1)_定义属性文件
+#### (1)\_定义属性文件
 
 ```c
 static ssize_t status_show(struct device *dev,
@@ -1095,7 +1095,7 @@ static ssize_t status_store(struct device *dev,
 }
 ```
 
-#### (2)_声明属性
+#### (2)\_声明属性
 
 使用内核提供的宏族：
 
@@ -1106,7 +1106,7 @@ static ssize_t status_store(struct device *dev,
 | `DEVICE_ATTR_RW(name)`                 | 可读写属性 | 0644       |
 | `DEVICE_ATTR_WO(name)`                 | 只写属性   | 0200       |
 
-##### 1)_示例
+##### 1)\_示例
 
 ```c
 static DEVICE_ATTR_RW(status);
@@ -1121,7 +1121,7 @@ struct device_attribute dev_attr_status =
 
 ------
 
-#### (3)_注册属性文件
+#### (3)\_注册属性文件
 
 驱动初始化阶段：
 
@@ -1132,7 +1132,7 @@ int device_create_file(struct device *dev,
 
 用于在 `/sys/...` 下创建属性文件。
 
-##### 1)_示例
+##### 1)\_示例
 
 ```c
 device_create_file(&pdev->dev, &dev_attr_status);
@@ -1152,7 +1152,7 @@ device_remove_file(&pdev->dev, &dev_attr_status);
 
 ------
 
-#### (4)_批量属性文件_attribute_group
+#### (4)\_批量属性文件\_attribute\_group
 
 如果属性较多，可以用组注册：
 
@@ -1180,7 +1180,7 @@ sysfs_remove_group(&pdev->dev.kobj, &led_attr_group);
 
 ------
 
-#### (5)_show/store_调用时机
+#### (5)\_show/store\_调用时机
 
 | 操作 | 用户命令                   | 调用函数         |
 | ---- | -------------------------- | ---------------- |
@@ -1210,7 +1210,7 @@ driver-defined show()/store()
 
 ------
 
-### 2.4.5_用户视角
+### 2.4.5\_用户视角
 
 从用户层面看，sysfs 属性文件的访问就像普通文本文件：
 
@@ -1230,7 +1230,7 @@ echo OFF > /sys/class/demo/demo0/status
 
 ------
 
-### 2.4.6_可视化_属性文件交互流程
+### 2.4.6\_可视化\_属性文件交互流程
 
 ```mermaid
 sequenceDiagram
@@ -1252,7 +1252,7 @@ sequenceDiagram
 
 ------
 
-### 2.4.7_示例_在_platform_驱动中添加属性文件
+### 2.4.7\_示例\_在\_platform\_驱动中添加属性文件
 
 ```c
 static ssize_t status_show(struct device *dev,
@@ -1294,7 +1294,7 @@ sysfs:
 
 ------
 
-### 2.4.8_调试与验证
+### 2.4.8\_调试与验证
 
 | 检查项       | 命令                                    | 说明                 |
 | ------------ | --------------------------------------- | -------------------- |
@@ -1306,7 +1306,7 @@ sysfs:
 
 ------
 
-### 2.4.9_小结
+### 2.4.9\_小结
 
 | 层次     | 数据结构                             | 核心接口               | 说明         |
 | -------- | ------------------------------------ | ---------------------- | ------------ |
@@ -1328,9 +1328,9 @@ sysfs:
 
 ------
 
-## 2.5_devres_资源管理机制(devm_系列)
+## 2.5\_devres\_资源管理机制(devm\_系列)
 
-### 2.5.1_主题引入
+### 2.5.1\_主题引入
 
 在 Linux 驱动中，资源的申请与释放是一项极易出错的工作。
  传统写法需要在 `probe()` 成功路径和失败路径分别处理内存、IO、GPIO、时钟、中断等资源释放：
@@ -1359,7 +1359,7 @@ release_mem_region(...);
 
 ------
 
-### 2.5.2_设计哲学
+### 2.5.2\_设计哲学
 
 | 原则             | 说明                                         |
 | ---------------- | -------------------------------------------- |
@@ -1372,9 +1372,9 @@ release_mem_region(...);
 
 ------
 
-### 2.5.3_数据结构视角
+### 2.5.3\_数据结构视角
 
-#### (1)_struct_devres_node
+#### (1)\_struct\_devres\_node
 
 定义于 `drivers/base/devres.c`：
 
@@ -1392,7 +1392,7 @@ struct devres_node {
 
 ------
 
-#### (2)_struct_devres
+#### (2)\_struct\_devres
 
 每个资源都封装成一个 devres 对象：
 
@@ -1407,7 +1407,7 @@ struct devres {
 
 ------
 
-#### (3)_struct_devres_group
+#### (3)\_struct\_devres\_group
 
 用于成组管理多个资源（可批量释放）：
 
@@ -1420,7 +1420,7 @@ struct devres_group {
 
 ------
 
-#### (4)_struct_device_与_devres_链表
+#### (4)\_struct\_device\_与\_devres\_链表
 
 每个 `struct device` 中都维护一个 devres 链表：
 
@@ -1441,9 +1441,9 @@ devres_release_all(dev);
 
 ------
 
-### 2.5.4_开发者视角
+### 2.5.4\_开发者视角
 
-#### (1)_devm_资源生命周期
+#### (1)\_devm\_资源生命周期
 
 ```mermaid
 flowchart TD
@@ -1455,7 +1455,7 @@ flowchart TD
 
 ------
 
-#### (2)_常用_devm_系列接口
+#### (2)\_常用\_devm\_系列接口
 
 | 接口                      | 作用                  | 对应传统函数                          |
 | ------------------------- | --------------------- | ------------------------------------- |
@@ -1470,7 +1470,7 @@ flowchart TD
 
 ------
 
-#### (3)_devm_kzalloc()_示例
+#### (3)\_devm\_kzalloc()\_示例
 
 ```c
 struct my_device {
@@ -1495,7 +1495,7 @@ static int my_probe(struct platform_device *pdev)
 
 ------
 
-#### (4)_devm_ioremap_resource()_示例
+#### (4)\_devm\_ioremap\_resource()\_示例
 
 ```c
 static int led_probe(struct platform_device *pdev)
@@ -1521,7 +1521,7 @@ devres_add(dev, release_ioremap);
 
 ------
 
-#### (5)_devm_request_irq()_示例
+#### (5)\_devm\_request\_irq()\_示例
 
 ```c
 static irqreturn_t led_irq_handler(int irq, void *dev_id)
@@ -1547,7 +1547,7 @@ static int led_probe(struct platform_device *pdev)
 
 ------
 
-#### (6)_devm_机制下的回滚保证
+#### (6)\_devm\_机制下的回滚保证
 
 如果在 probe 阶段某一步失败：
 
@@ -1570,7 +1570,7 @@ static int my_probe(struct platform_device *pdev)
 
 ------
 
-### 2.5.5_用户视角
+### 2.5.5\_用户视角
 
 从用户角度看，devm 机制不可见；
  但它保证 `/sys/bus/...` 设备卸载后系统状态一致、资源无残留。
@@ -1586,7 +1586,7 @@ rmmod led_driver
 
 ------
 
-### 2.5.6_可视化_devm_管理流程图
+### 2.5.6\_可视化\_devm\_管理流程图
 
 ```mermaid
 sequenceDiagram
@@ -1605,7 +1605,7 @@ sequenceDiagram
 
 ------
 
-### 2.5.7_调试与验证
+### 2.5.7\_调试与验证
 
 | 检查项           | 方式                                   | 说明                           |
 | ---------------- | -------------------------------------- | ------------------------------ |
@@ -1616,7 +1616,7 @@ sequenceDiagram
 
 ------
 
-### 2.5.8_小结
+### 2.5.8\_小结
 
 | 层次     | 结构体                                   | 关键函数                                | 说明             |
 | -------- | ---------------------------------------- | --------------------------------------- | ---------------- |
@@ -1638,9 +1638,9 @@ sequenceDiagram
 
 ------
 
-## 2.6_driver_core_核心管理机制
+## 2.6\_driver\_core\_核心管理机制
 
-### 2.6.1_主题引入
+### 2.6.1\_主题引入
 
 **driver core** 是 Linux 内核中负责管理**设备与驱动之间关系**的核心子系统。
  它位于 `drivers/base/` 目录下，是所有设备模型的统一实现基础。
@@ -1657,9 +1657,9 @@ driver core 的存在，使得：
 
 ------
 
-### 2.6.2_设计哲学
+### 2.6.2\_设计哲学
 
-#### (1)_核心目标
+#### (1)\_核心目标
 
 | 目标         | 说明                                                         |
 | ------------ | ------------------------------------------------------------ |
@@ -1671,7 +1671,7 @@ driver core 的存在，使得：
 
 ------
 
-#### (2)_核心目录结构(Linux_6.1+)
+#### (2)\_核心目录结构(Linux\_6.1+)
 
 ```
 drivers/base/
@@ -1686,9 +1686,9 @@ drivers/base/
 
 ------
 
-### 2.6.3_数据结构视角
+### 2.6.3\_数据结构视角
 
-#### (1)_核心结构体关系
+#### (1)\_核心结构体关系
 
 ```mermaid
 flowchart TD
@@ -1703,7 +1703,7 @@ flowchart TD
 
 ------
 
-#### (2)_核心函数映射表
+#### (2)\_核心函数映射表
 
 | 功能       | 接口                                  | 实现文件   |
 | ---------- | ------------------------------------- | ---------- |
@@ -1716,9 +1716,9 @@ flowchart TD
 
 ------
 
-### 2.6.4_开发者视角
+### 2.6.4\_开发者视角
 
-#### (1)_设备注册流程
+#### (1)\_设备注册流程
 
 ```c
 int device_register(struct device *dev)
@@ -1728,7 +1728,7 @@ int device_register(struct device *dev)
 }
 ```
 
-##### 1)_device_initialize()
+##### 1)\_device\_initialize()
 
 - 设置默认引用计数；
 - 初始化 devres；
@@ -1736,7 +1736,7 @@ int device_register(struct device *dev)
 - 初始化互斥锁；
 - 建立 sysfs 层基础。
 
-##### 2)_device_add()
+##### 2)\_device\_add()
 
 位于 `drivers/base/core.c`：
 
@@ -1756,7 +1756,7 @@ int device_add(struct device *dev)
 
 ------
 
-#### (2)_驱动注册流程
+#### (2)\_驱动注册流程
 
 ```c
 int driver_register(struct device_driver *drv)
@@ -1766,7 +1766,7 @@ int driver_register(struct device_driver *drv)
 }
 ```
 
-##### 1)_bus_add_driver()
+##### 1)\_bus\_add\_driver()
 
 ```c
 int bus_add_driver(struct device_driver *drv)
@@ -1776,7 +1776,7 @@ int bus_add_driver(struct device_driver *drv)
 }
 ```
 
-##### 2)_driver_attach()
+##### 2)\_driver\_attach()
 
 会调用 `bus_for_each_dev()` 遍历所有设备，并执行匹配流程：
 
@@ -1791,7 +1791,7 @@ bus_for_each_dev()
 
 ------
 
-#### (3)_设备与驱动匹配时机
+#### (3)\_设备与驱动匹配时机
 
 | 注册顺序               | 匹配触发函数         | 描述                     |
 | ---------------------- | -------------------- | ------------------------ |
@@ -1802,7 +1802,7 @@ bus_for_each_dev()
 
 ------
 
-#### (4)_deferred_probe_机制
+#### (4)\_deferred\_probe\_机制
 
 在复杂的设备依赖关系中（如设备依赖时钟、regulator），
  若 probe 阶段发现依赖尚未准备好，驱动可以返回 `-EPROBE_DEFER`。
@@ -1825,7 +1825,7 @@ if (ret == -EPROBE_DEFER) {
 
 ------
 
-### 2.6.5_用户视角
+### 2.6.5\_用户视角
 
 从用户空间角度看，driver core 的行为体现在 sysfs 层：
 
@@ -1850,7 +1850,7 @@ if (ret == -EPROBE_DEFER) {
 
 ------
 
-### 2.6.6_核心执行流程(可视化)
+### 2.6.6\_核心执行流程(可视化)
 
 ```mermaid
 sequenceDiagram
@@ -1870,7 +1870,7 @@ sequenceDiagram
 
 ------
 
-### 2.6.7_典型路径追踪(Platform_为例)
+### 2.6.7\_典型路径追踪(Platform\_为例)
 
 | 阶段       | 函数                         | 文件位置     | 描述                   |
 | ---------- | ---------------------------- | ------------ | ---------------------- |
@@ -1883,7 +1883,7 @@ sequenceDiagram
 
 ------
 
-### 2.6.8_调试与验证
+### 2.6.8\_调试与验证
 
 | 检查项                | 命令                                   | 说明              |
 | --------------------- | -------------------------------------- | ----------------- |
@@ -1895,7 +1895,7 @@ sequenceDiagram
 
 ------
 
-### 2.6.9_小结
+### 2.6.9\_小结
 
 | 功能模块   | 核心函数                                | 文件     | 说明                    |
 | ---------- | --------------------------------------- | -------- | ----------------------- |

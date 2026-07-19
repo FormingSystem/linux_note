@@ -8,16 +8,16 @@ domains:
   - lab
 ---
 
-# 第2章_LED点灯+dts
+# 第2章\_LED点灯+dts
 
 此处为简写版本，方面背框架代码。详细内容参考：[P02-字符设备-LED点灯+dts.md](../../../../../../knowledge/driver_model/character_device/P02_字符设备-LED点灯+dts.md)。
 
 
 
-#### (1)_i.MX6ULL_基于设备树的_LED_驱动开发示例
+#### (1)\_i.MX6ULL\_基于设备树的\_LED\_驱动开发示例
 
 
-##### 1)_设备树配置
+##### 1)\_设备树配置
 需修改 `imx6ul-14x14-test.dtsi` 文件，完成引脚复用配置和 LED 节点定义。
 
 1. **引脚复用配置（添加到 `&iomuxc` 节点）**
@@ -68,7 +68,7 @@ domains:
    ```
 
 
-##### 2)_驱动代码实现(dt_led.c)
+##### 2)\_驱动代码实现(dt\_led.c)
 通过平台驱动框架匹配设备树节点，使用 GPIO 子系统 API 控制 LED。
 
 ```c
@@ -318,7 +318,7 @@ MODULE_ALIAS("imx6ull-dt-led");
 ```
 
 
-##### 3)_编译与验证
+##### 3)\_编译与验证
 1. **Makefile（交叉编译配置）**
 
    ```makefile
@@ -352,7 +352,7 @@ MODULE_ALIAS("imx6ull-dt-led");
      ```
 
 
-##### 4)_核心逻辑总结
+##### 4)\_核心逻辑总结
 1. 设备树：通过 `gpios` 和 `pinctrl` 属性定义 LED 硬件信息（引脚、复用、电平极性），与驱动解耦。
 2. 驱动：通过 `of_device_id` 匹配设备树节点，使用 `devm_gpiod_get` 获取 GPIO 资源，通过 `gpiod_set_value` 控制电平。
 3. 优势：更换 LED 引脚时无需修改驱动，仅需调整设备树配置，提升兼容性和开发效率。

@@ -7,11 +7,11 @@ domains:
   - navigation
 ---
 
-# 第1章_知识库导航
+# 第1章\_知识库导航
 
 本页是知识库的统一入口。`atlas` 只组织链接和阅读顺序，不保存知识正文；具体结论仍以各领域文档为准。
 
-## 1.1_按目标进入
+## 1.1\_按目标进入
 
 | 目标 | 入口 | 适合场景 |
 | --- | --- | --- |
@@ -21,7 +21,7 @@ domains:
 | 查找现有内容 | [仓库内容索引](indexes/content_index.md) | 按领域定位文档、实验和研究材料 |
 | 规划后续建设 | [知识库建设路线图](roadmaps/content_roadmap.md) | 查看内容覆盖、缺口和维护优先级 |
 
-## 1.2_按内容类型进入
+## 1.2\_按内容类型进入
 
 - 知识本体：[基础知识](../knowledge/foundations)、[Linux 通用机制](../knowledge/linux)、[内核子系统](../knowledge/kernel_subsystems)、[驱动模型](../knowledge/driver_model)、[系统软件](../knowledge/system_software)。
 - 平台与验证：[平台实现](../platforms)、[实验](../labs)。
@@ -29,7 +29,7 @@ domains:
 - 电子书与出版物：[《奔跑吧 Linux 内核》](../publications/books/running_linux_kernel/README.md)。
 - 仓库维护：[信息架构设计](../governance/architecture/repository_information_architecture.md)、[Git 协作与提交规范](../governance/conventions/git_guide.md)。
 
-## 1.3_导航约定
+## 1.3\_导航约定
 
 - 地图说明知识之间的关系，路线规定建议阅读顺序，索引回答“内容在哪里”，路线图记录建设计划。
 - 路线中的“选读”表示可按任务跳过，不表示内容不重要。

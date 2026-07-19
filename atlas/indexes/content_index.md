@@ -8,18 +8,18 @@ domains:
   - repository
 ---
 
-# 第1章_仓库内容索引
+# 第1章\_仓库内容索引
 
 本索引按内容本质提供稳定入口。专题内部的章节顺序以目录中的 `PXX` 文件和大纲为准。
 
-## 1.1_基础知识
+## 1.1\_基础知识
 
 | 领域 | 当前内容 |
 | --- | --- |
 | 操作系统概念 | [宏内核和微内核](../../knowledge/foundations/operating_systems/concepts/宏内核和微内核.md) |
 | C 语言扩展 | [GNU C 扩展](../../knowledge/foundations/c_language/gnu_extensions/C_language_extension.md) |
 
-## 1.2_Linux通用机制
+## 1.2\_Linux通用机制
 
 | 领域 | 当前内容入口 |
 | --- | --- |
@@ -32,7 +32,7 @@ domains:
 | 设备模型 | [设备模型专题](../../knowledge/linux/device_model/设备模型简介) |
 | 错误处理 | [错误指针](../../knowledge/linux/error_handling/error_pointer) |
 
-## 1.3_内核子系统与驱动模型
+## 1.3\_内核子系统与驱动模型
 
 | 领域 | 当前内容入口 |
 | --- | --- |
@@ -45,7 +45,7 @@ domains:
 | Input | [input](../../knowledge/driver_model/input/readme.md) |
 | misc 设备 | [misc](../../knowledge/driver_model/misc/readme.md) |
 
-## 1.4_系统软件
+## 1.4\_系统软件
 
 | 领域 | 当前内容入口 |
 | --- | --- |
@@ -54,7 +54,7 @@ domains:
 | 链接脚本 | [LDS 基础语法](../../knowledge/system_software/linker/lds_基础语法.md) |
 | U-Boot | [Makefile](../../knowledge/system_software/uboot/uboot-makefile.md)、[问题记录](../../knowledge/system_software/uboot/uboot提问.md) |
 
-## 1.5_平台_实验_研究与参考
+## 1.5\_平台\_实验\_研究与参考
 
 | 类型 | 当前内容入口 |
 | --- | --- |
@@ -65,13 +65,13 @@ domains:
 | 源码阅读 | [Linux 源码阅读目录](../../research/source_reading/linux) |
 | 标准 | [GPL 协议说明](../../reference/standards/gpl/GPL协议说明.md) |
 
-## 1.6_电子书与出版物
+## 1.6\_电子书与出版物
 
 | 书名 | 当前内容入口 |
 | --- | --- |
 | 《奔跑吧 Linux 内核（入门篇·第 2 版）》 | [电子书说明与目录](../../publications/books/running_linux_kernel/README.md) |
 
-## 1.7_维护入口
+## 1.7\_维护入口
 
 - [知识库导航](../home.md)
 - [知识库建设路线图](../roadmaps/content_roadmap.md)

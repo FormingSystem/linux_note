@@ -8,7 +8,7 @@ usage() {
   ./format.sh fix headings [--summary] [Markdown文件或目录...]
 
 默认仅预览；不给路径时处理 Git 管理的全部 Markdown 文件。
-标题序号：H1=第N章、H2=N.N、H3=N.N.N、H4=(N)、H5=N)、H6=a)。
+标题序号：H1=第N章、H2=N.N、H3=N.N.N、H4=(N)、H5=N)、H6=a)；标题下划线统一写成 \_。
 EOF
 }
 
@@ -56,6 +56,16 @@ SETEXT = re.compile(r"^[ \t]*(=+|-+)[ \t]*$")
 CHINESE_PUNCTUATION = re.compile(r"[：，。、“”‘’？！；、·—]")
 
 
+def unescape_title_underscores(value: str) -> str:
+    """将标题源码中的一个或多个反斜杠加下划线还原为规范文本。"""
+    return re.sub(r"\\+_", "_", value)
+
+
+def escape_title_underscores(value: str) -> str:
+    """转义标题中的下划线，避免不同 Markdown 渲染器将其解析为强调。"""
+    return value.replace("_", r"\_")
+
+
 def alpha_number(number: int) -> str:
     result = ""
     while number:
@@ -65,7 +75,7 @@ def alpha_number(number: int) -> str:
 
 
 def strip_old_number(title: str, level: int) -> str:
-    value = title.strip().rstrip("#").rstrip()
+    value = unescape_title_underscores(title.strip().rstrip("#").rstrip())
     value = value.replace("`", "").replace("**", "").replace("__", "")
     value = value.lstrip()
     while value and unicodedata.category(value[0]) in {"So", "Cs"}:
@@ -93,6 +103,7 @@ def strip_old_number(title: str, level: int) -> str:
 
 
 def normalize_text(value: str) -> str:
+    value = unescape_title_underscores(value)
     value = value.replace("`", "").replace("**", "").replace("__", "")
     value = "".join(character for character in value if unicodedata.category(character) not in {"So", "Cs"})
     value = re.sub(r"\s+-\s+", "_", value)
@@ -278,8 +289,10 @@ for file_name in selected:
         else:
             title_source = strip_old_number(old_title, level)
         title_text = normalize_text(title_source)
-        new_title = sequence(level, counters) + "_" + title_text
-        anchors.append((old_title, new_title))
+        new_anchor = sequence(level, counters) + "_" + title_text
+        new_title = escape_title_underscores(new_anchor)
+        old_anchor = unescape_title_underscores(old_title)
+        anchors.append((old_anchor, new_anchor))
         if old_title == new_title:
             continue
         newline = "\r\n" if line.endswith("\r\n") else "\n" if line.endswith("\n") else ""

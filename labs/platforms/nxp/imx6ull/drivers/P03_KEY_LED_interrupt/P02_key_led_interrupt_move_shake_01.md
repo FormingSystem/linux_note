@@ -8,9 +8,9 @@ domains:
   - lab
 ---
 
-# 第2章_key_led_interrupt_move_shake_01
+# 第2章\_key\_led\_interrupt\_move\_shake\_01
 
-## 2.1_实验目的
+## 2.1\_实验目的
 
 通过key的中断方式来更改led的输出状态，并且实现key的消抖处理。
 
@@ -21,7 +21,7 @@ domains:
 
 
 
-## 2.2_电路图
+## 2.2\_电路图
 
 key，led：
 
@@ -29,7 +29,7 @@ key，led：
 
 
 
-## 2.3_设备树
+## 2.3\_设备树
 
 ```dts
 	demo_led_key_int: led_key_int@0 {
@@ -61,9 +61,9 @@ key，led：
 
 
 
-## 2.4_驱动代码
+## 2.4\_驱动代码
 
-### 2.4.1_makefile
+### 2.4.1\_makefile
 
 ```makefile
 tartget_p := key_led_int
@@ -91,7 +91,7 @@ install:
 
 
 
-### 2.4.2_C源码
+### 2.4.2\_C源码
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -269,7 +269,7 @@ MODULE_DESCRIPTION("GPIO key: disable_irq_nosync + hrtimer debounce + enable_irq
 
 
 
-### 2.4.3_log
+### 2.4.3\_log
 
 ```shell
 ~ # cd /mnt/nfs/driver/

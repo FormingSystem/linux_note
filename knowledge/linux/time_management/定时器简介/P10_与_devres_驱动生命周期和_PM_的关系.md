@@ -8,13 +8,13 @@ domains:
   - kernel
 ---
 
-# 第10章_与_devres_驱动生命周期和_PM_的关系
+# 第10章\_与\_devres\_驱动生命周期和\_PM\_的关系
 
 > 章节内容说明：本章聚焦“时间/定时机制”与**资源管理（devres）**、**驱动生命周期（probe/remove/error path）**、**电源管理（suspend/resume/runtime PM）\**之间的耦合与收尾顺序。我们先阐明为什么内核没有通用的 `devm_timer_create()`；随后给出以 `devm_add_action_or_reset()` 为核心的资源化收尾模板；再讲定时器 + `delayed_work` 的\**正确停表顺序**与**并发边界**；最后讨论系统挂起/恢复对定时器的影响、补偿策略与唤醒配合（`wakeup_source`/RTC alarm/PM QoS）。
 
 ------
 
-## 10.1_主题引入_为什么需要在_时间_上谈资源管理与_PM
+## 10.1\_主题引入\_为什么需要在\_时间\_上谈资源管理与\_PM
 
 - 定时器（`timer_list`/`hrtimer`）、延迟工作（`delayed_work`）本质上是**异步执行的控制流**。它们不直接占用硬件资源，但会在**回调**里访问设备资源（GPIO、clk、regmap、I/O 内存等）。
 - 设备的**销毁、挂起**如果与**在途回调**交叠，会产生**悬空访问**、**顺序不一致**与**死锁**。
@@ -22,7 +22,7 @@ domains:
 
 ------
 
-## 10.2_数据结构视角_devres_时间基与_PM_框架的交界
+## 10.2\_数据结构视角\_devres\_时间基与\_PM\_框架的交界
 
 - **devres（设备资源管理）**：以 `devm_*` 系列封装为代表，按设备生命周期自动回收资源。其范式适合**一次性分配、可线性回收**的对象（GPIO/clk/regmap/内存等）。
 - **定时机制对象**
@@ -36,7 +36,7 @@ domains:
 
 ------
 
-## 10.3_开发者视角一_为什么内核没有通用的_devm_timer_create()
+## 10.3\_开发者视角一\_为什么内核没有通用的\_devm\_timer\_create()
 
 **核心原因（机制本质与约束）**
 
@@ -62,9 +62,9 @@ domains:
 
 ------
 
-## 10.4_开发者视角二_用_devm_add_action_or_reset()_资源化收尾
+## 10.4\_开发者视角二\_用\_devm\_add\_action\_or\_reset()\_资源化收尾
 
-### 10.4.1_通用范式(推荐)
+### 10.4.1\_通用范式(推荐)
 
 ```c
 static void demo_timers_release(void *data)
@@ -89,7 +89,7 @@ if (ret)
 - 若 probe 中途失败，`or_reset` 语义会**立即执行 release**，避免半拉子定时器遗留。
 - 这并不替代你在 `remove()` 中的停表；`remove()` 内仍应该调用**相同的 release** 或等价逻辑，以实现**对称**。
 
-### 10.4.2_停表的正确顺序(timer_+_delayed_work_+_hrtimer)
+### 10.4.2\_停表的正确顺序(timer\_+\_delayed\_work\_+\_hrtimer)
 
 **通例**（以第9章示例的三件套为例）：
 
@@ -104,16 +104,16 @@ if (ret)
 
 ------
 
-## 10.5_开发者视角三_与_PM_的协作与补偿
+## 10.5\_开发者视角三\_与\_PM\_的协作与补偿
 
-### 10.5.1_系统挂起(suspend)下的行为特征
+### 10.5.1\_系统挂起(suspend)下的行为特征
 
 - **普通 `timer_list`/`hrtimer`（CLOCK_MONOTONIC）在系统挂起时被冻结，不会走时钟，更不会唤醒系统**。
 - 如需“准时唤醒”，应使用**RTC alarm**或 SoC 提供的 **alarmtimer** 机制，配合：
   - `device_init_wakeup(dev, true)`、`pm_wakeup_event(dev, msec)`
   - 平衡功耗与时效性时，可加 `pm_qos_request`（避免进入过深 C-state 影响唤醒延迟）。
 
-### 10.5.2_恢复(resume)后的补偿策略
+### 10.5.2\_恢复(resume)后的补偿策略
 
 - 若你的任务为**周期性维护**，在 `resume` 后应：
   - 读取**挂起前时间点**与恢复后的 `ktime_get_boottime_ns()`；
@@ -121,7 +121,7 @@ if (ret)
   - 重新 `mod_timer()` / `hrtimer_start()`。
 - 对**超时类**（事务 watchdog），通常在 `suspend` 前就**停表/取消**；`resume` 后按状态机决定是否**重启或上报超时**（视业务语义）。
 
-### 10.5.3_runtime_PM_与工作队列
+### 10.5.3\_runtime\_PM\_与工作队列
 
 - 若 `delayed_work` 会**访问可能在 runtime suspend 中关闭的资源**（如 regmap/clk），需在回调中显式 `pm_runtime_get_sync()`/`pm_runtime_put()`，或在调度前确保设备已处于**活跃**态。
 - 结合 `autosuspend` 时，定时周期太短会**打断省电效果**，建议：
@@ -130,7 +130,7 @@ if (ret)
 
 ------
 
-## 10.6_可视化_生命周期与停表顺序(含_PM)
+## 10.6\_可视化\_生命周期与停表顺序(含\_PM)
 
 ```mermaid
 flowchart TD
@@ -144,7 +144,7 @@ flowchart TD
 
 ------
 
-## 10.7_示例代码_devres_收尾_+_PM_钩子_+_正确停表顺序
+## 10.7\_示例代码\_devres\_收尾\_+\_PM\_钩子\_+\_正确停表顺序
 
 > 说明：基于第9章 `demo_priv` 扩展，加入 devres 释放动作与 PM 衔接；展示“remove/错误路径/PM”三处的一致性。内核版本面向 6.1+。
 
@@ -310,14 +310,14 @@ MODULE_DESCRIPTION("Demo: devres + timers/works + PM coordination");
 
 ------
 
-## 10.8_用户视角_可配置与文档化
+## 10.8\_用户视角\_可配置与文档化
 
 - 在 `sysfs`/`debugfs` 中声明与 PM 相关的**策略开关**（例如：挂起前是否停周期、恢复后的补偿模式、是否允许唤醒）。
 - 面向现场运维提供**两套预置**：**省电优先**（挂起停表、恢复对齐）与**时效优先**（RTC 唤醒 + `wakeup_source` 保护关键窗口）。
 
 ------
 
-## 10.9_调试与验证
+## 10.9\_调试与验证
 
 | 目标                             | 方法                                                         |
 | -------------------------------- | ------------------------------------------------------------ |
@@ -329,7 +329,7 @@ MODULE_DESCRIPTION("Demo: devres + timers/works + PM coordination");
 
 ------
 
-## 10.10_小结
+## 10.10\_小结
 
 1. **没有 `devm_timer_create()` 是合理的**：定时/工作属于**控制流**，需要**显式的同步停表**保证无在途回调。
 2. **`devm_add_action_or_reset()` 是资源化收尾的抓手**：将“停表与同步”统一纳入设备回收序列，覆盖 error/remove。

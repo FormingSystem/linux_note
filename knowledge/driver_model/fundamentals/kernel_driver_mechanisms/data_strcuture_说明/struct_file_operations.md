@@ -13,7 +13,7 @@ domains:
 
 内容摘抄至GPT。
 
-# 第1章_成员介绍
+# 第1章\_成员介绍
 
 ```c
 struct file_operations {
@@ -63,63 +63,63 @@ struct file_operations {
 } __randomize_layout;
 ```
 
-## 1.1_基础元信息
+## 1.1\_基础元信息
 
-### 1.1.1_struct_module_*owner;
+### 1.1.1\_struct\_module\_*owner;
 
 - **作用**：指向实现这套回调的内核模块（一般写 `owner = THIS_MODULE;`）。
 - **意义**：内核在执行回调前会对该模块做引用计数，避免卸载中的竞态。
 - **注意**：内建（built-in）驱动可置空，但模块形式强烈建议设为 `THIS_MODULE`。
 
-### 1.1.2_int_(*open)(struct_inode_*,_struct_file_*);
+### 1.1.2\_int\_(*open)(struct\_inode\_*,\_struct\_file\_*);
 
 - **时机**：`open(2)` 或首次 `fget`() 时调用。
 - **用途**：初始化 `file->private_data`、检查权限/状态、增加设备使用计数等。
 - **返回**：0 成功，负错误码失败（如 `-EBUSY`、`-ENODEV`）。
 
-### 1.1.3_int_(*release)(struct_inode_*,_struct_file_*);
+### 1.1.3\_int\_(*release)(struct\_inode\_*,\_struct\_file\_*);
 
 - **时机**：最后一个文件引用关闭时（`close(2)` / `fput`）。
 - **用途**：清理 `private_data`、释放资源、降低使用计数。
 - **误区**：不是每次 `close(2)` 都会立即调用，需等到最后一个引用释放。
 
-### 1.1.4_int_(*flush)(struct_file_*,_fl_owner_t_id);
+### 1.1.4\_int\_(*flush)(struct\_file\_*,\_fl\_owner\_t\_id);
 
 - **语义**：与 `release` 不同，`flush` 对于同一 `struct file` 可能被多次调用，常用于网络/驱动层同步数据、终止 pending I/O。
 - **大多场景可不实现**。
 
 ------
 
-## 1.2_读写/迭代_I/O
+## 1.2\_读写/迭代\_I/O
 
-### 1.2.1_ssize_t_(*read)(struct_file_*,_char_user_*,_size_t,_loff_t_*);
+### 1.2.1\_ssize\_t\_(*read)(struct\_file\_*,\_char\_user\_*,\_size\_t,\_loff\_t\_*);
 
-### 1.2.2_ssize_t_(*write)(struct_file_*,_const_char_user_*,_size_t,_loff_t_*);
+### 1.2.2\_ssize\_t\_(*write)(struct\_file\_*,\_const\_char\_user\_*,\_size\_t,\_loff\_t\_*);
 
 - **传统 read/write** 路径（基于单缓冲）。
 - **偏移量**：通过 `*ppos`（`loff_t *`）读写并更新；若是非寻址设备（管道/字符设备），通常忽略或使用内部指针。
 - **与 iter 关系**：如果实现了 `read_iter`/`write_iter`，VFS 优先选择 iter 版本；否则回退到 `read`/`write`。
 
-### 1.2.3_ssize_t_(*read_iter)(struct_kiocb_*,_struct_iov_iter_*);
+### 1.2.3\_ssize\_t\_(*read\_iter)(struct\_kiocb\_*,\_struct\_iov\_iter\_*);
 
-### 1.2.4_ssize_t_(*write_iter)(struct_kiocb_*,_struct_iov_iter_*);
+### 1.2.4\_ssize\_t\_(*write\_iter)(struct\_kiocb\_*,\_struct\_iov\_iter\_*);
 
 - **现代零拷贝/聚集 I/O** 接口，支持 `iov_iter`（用户 iovec、内核缓冲、pipe、xarray 等多种后端）。
 - **优势**：与 AIO/io_uring/`splice` 等更好集成；推荐**优先实现 iter 版本**。
 - **返回**：实际处理的字节数或错误码。
 
-### 1.2.5_int_(*iopoll)(struct_kiocb_*,_struct_io_comp_batch_*,_unsigned_int_flags);
+### 1.2.5\_int\_(*iopoll)(struct\_kiocb\_*,\_struct\_io\_comp\_batch\_*,\_unsigned\_int\_flags);
 
 - **用途**：配合 **io_uring** 的 polled I/O（旋转轮询完成队列），适用于支持轮询完成的设备（如部分 NVMe）。
 - **语义**：检查并收割已完成的 I/O，填充 `io_comp_batch`，返回剩余/进度。
 
 ------
 
-## 1.3_目录遍历
+## 1.3\_目录遍历
 
-### 1.3.1_int_(*iterate)(struct_file_*,_struct_dir_context_*);
+### 1.3.1\_int\_(*iterate)(struct\_file\_*,\_struct\_dir\_context\_*);
 
-### 1.3.2_int_(*iterate_shared)(struct_file_*,_struct_dir_context_*);
+### 1.3.2\_int\_(*iterate\_shared)(struct\_file\_*,\_struct\_dir\_context\_*);
 
 - **用途**：实现 `readdir(3)` 语义，向 `dir_context` 回调目录项。
 - **差别**：`iterate_shared` 允许并发更友好（读共享锁），是更现代的选择；老式 `iterate` 通常在独占锁下运行。
@@ -127,9 +127,9 @@ struct file_operations {
 
 ------
 
-## 1.4_定位/锁
+## 1.4\_定位/锁
 
-### 1.4.1_loff_t_(*llseek)(struct_file_*,_loff_t,_int);
+### 1.4.1\_loff\_t\_(*llseek)(struct\_file\_*,\_loff\_t,\_int);
 
 - **用途**：实现 `lseek(2)`/`llseek(2)` 逻辑。
 - **常用缺省**：
@@ -137,9 +137,9 @@ struct file_operations {
   - `generic_file_llseek` / `default_llseek`：普通文件的标准实现。
 - **注意**：必须处理 `SEEK_SET/SEEK_CUR/SEEK_END`；检查越界（返回 `-EINVAL`）。
 
-### 1.4.2_int_(*lock)(struct_file_*,_int,_struct_file_lock_*);
+### 1.4.2\_int\_(*lock)(struct\_file\_*,\_int,\_struct\_file\_lock\_*);
 
-### 1.4.3_int_(*flock)(struct_file_*,_int,_struct_file_lock_*);
+### 1.4.3\_int\_(*flock)(struct\_file\_*,\_int,\_struct\_file\_lock\_*);
 
 - **`lock`**：POSIX 记录锁（`fcntl(F_SETLK)` 等），支持区域锁。
 - **`flock`**：BSD 风格整文件锁（`flock(2)`）。
@@ -147,24 +147,24 @@ struct file_operations {
 
 ------
 
-## 1.5_同步/异步_刷盘
+## 1.5\_同步/异步\_刷盘
 
-### 1.5.1_int_(*fsync)(struct_file_*,_loff_t,_loff_t,_int_datasync);
+### 1.5.1\_int\_(*fsync)(struct\_file\_*,\_loff\_t,\_loff\_t,\_int\_datasync);
 
 - **语义**：把文件指定范围的脏数据/元数据落盘。`datasync!=0` 时可仅保证数据持久性。
 - **返回**：0 成功；出错返回负值（如存储介质错误）。
 - **注意**：确保 barrier/flush 的正确性（文件系统层通常已实现好）。
 
-### 1.5.2_int_(*fasync)(int,_struct_file_*,_int);
+### 1.5.2\_int\_(*fasync)(int,\_struct\_file\_*,\_int);
 
 - **用途**：支持 `F_SETFL(O_ASYNC)` 和 `SIGIO` 异步通知（tty/网络设备常用）。
 - **典型**：字符设备在有数据就绪时向拥有者进程发 `SIGIO`。
 
 ------
 
-## 1.6_事件与复用
+## 1.6\_事件与复用
 
-### 1.6.1_poll_t_(*poll)(struct_file_*,_struct_poll_table_struct_*);
+### 1.6.1\_poll\_t\_(*poll)(struct\_file\_*,\_struct\_poll\_table\_struct\_*);
 
 - **用途**：支持 `poll(2)/select(2)/epoll(7)`。
 - **返回**：`POLLIN/POLLOUT/POLLERR/...` 位图。
@@ -172,117 +172,117 @@ struct file_operations {
 
 ------
 
-## 1.7_控制/杂项
+## 1.7\_控制/杂项
 
-### 1.7.1_long_(*unlocked_ioctl)(struct_file_*,_unsigned_int,_unsigned_long);
+### 1.7.1\_long\_(*unlocked\_ioctl)(struct\_file\_*,\_unsigned\_int,\_unsigned\_long);
 
 - **设备控制命令**：用户空间 `ioctl(fd, cmd, arg)`.
 - **unlocked**：不再使用 BKL（大内核锁）；需要你自己做并发保护。
 - **约定**：命令号用 `_IO/_IOR/_IOW/_IOWR` 定义；检查 `arg` 指针合法并 `copy_{to,from}_user()`。
 
-### 1.7.2_long_(*compat_ioctl)(struct_file_*,_unsigned_int,_unsigned_long);
+### 1.7.2\_long\_(*compat\_ioctl)(struct\_file\_*,\_unsigned\_int,\_unsigned\_long);
 
 - **32 位兼容层**：在 64 位内核上跑 32 位用户程序时，对结构体布局/指针大小不同的 `ioctl` 做转换。
 - **仅在需要兼容时实现**。
 
-### 1.7.3_int_(*check_flags)(int);
+### 1.7.3\_int\_(*check\_flags)(int);
 
 - **用途**：过滤/调整 `fcntl(F_SETFL)` 设置（例如拒绝不支持的标志）。
 - **返回**：0 或负错误码。
 
-### 1.7.4_int_(*fadvise)(struct_file_*,_loff_t,_loff_t,_int);
+### 1.7.4\_int\_(*fadvise)(struct\_file\_*,\_loff\_t,\_loff\_t,\_int);
 
 - **`posix_fadvise`** 实现钩子，提供访问模式 hint（`POSIX_FADV_*`），便于缓存策略优化。
 
 ------
 
-## 1.8_映射与地址空间
+## 1.8\_映射与地址空间
 
-### 1.8.1_int_(*mmap)(struct_file_*,_struct_vm_area_struct_*);
+### 1.8.1\_int\_(*mmap)(struct\_file\_*,\_struct\_vm\_area\_struct\_*);
 
 - **用途**：实现 `mmap(2)`，把文件/设备映射到用户虚拟地址。
 - **常见**：驱动里映射设备寄存器/显存/环形缓冲；文件系统里由 `filemap` 层接管。
 - **安全**：根据 `vma->vm_flags` 判断可写/可执行/共享，设置 `vm_ops` 并管理页错误处理。
 
-### 1.8.2_unsigned_long_(*get_unmapped_area)(struct_file_*,_unsigned_long,_unsigned_long,_unsigned_long,_unsigned_long);
+### 1.8.2\_unsigned\_long\_(*get\_unmapped\_area)(struct\_file\_*,\_unsigned\_long,\_unsigned\_long,\_unsigned\_long,\_unsigned\_long);
 
 - **用途**：为 `mmap` 选地址起点（地址选择策略）。大多数情况下用内核通用实现，特殊硬件/对齐需求才自定义。
 
-### 1.8.3_unsigned_long_mmap_supported_flags;
+### 1.8.3\_unsigned\_long\_mmap\_supported\_flags;
 
 - **用途**：声明该文件支持的 `mmap` 标志位（如 `MAP_SYNC` 等），便于内核快速拒绝不支持的标志。
 
-### 1.8.4_#ifndef_CONFIG_MMU
+### 1.8.4\_#ifndef\_CONFIG\_MMU
 
-### 1.8.5_unsigned_(*mmap_capabilities)(struct_file_*);
+### 1.8.5\_unsigned\_(*mmap\_capabilities)(struct\_file\_*);
 
 - **无 MMU 系统**：声明映射能力（如可执行/可写），嵌入式极简系统才用得到。
 
 ------
 
-## 1.9_零拷贝/数据通道
+## 1.9\_零拷贝/数据通道
 
-### 1.9.1_ssize_t_(*sendpage)(struct_file_*,_struct_page_*,_int,_size_t,_loff_t_*,_int);
+### 1.9.1\_ssize\_t\_(*sendpage)(struct\_file\_*,\_struct\_page\_*,\_int,\_size\_t,\_loff\_t\_*,\_int);
 
 - **用途**：把页直接“发送”到文件/套接字/设备（历史接口，很多子系统已转向 `splice`/`iter`）。
 - **逐渐边缘化**：新代码优先用 `splice`/`iter`。
 
-### 1.9.2_ssize_t_(*splice_read)(struct_file_*,_loff_t_*,_struct_pipe_inode_info_*,_size_t,_unsigned_int);
+### 1.9.2\_ssize\_t\_(*splice\_read)(struct\_file\_*,\_loff\_t\_*,\_struct\_pipe\_inode\_info\_*,\_size\_t,\_unsigned\_int);
 
-### 1.9.3_ssize_t_(*splice_write)(struct_pipe_inode_info_*,_struct_file_*,_loff_t_*,_size_t,_unsigned_int);
+### 1.9.3\_ssize\_t\_(*splice\_write)(struct\_pipe\_inode\_info\_*,\_struct\_file\_*,\_loff\_t\_*,\_size\_t,\_unsigned\_int);
 
 - **用途**：`splice(2)` 的文件端实现，支持**零拷贝**在文件与管道之间搬运数据。
 - **优势**：减少用户态缓冲往返拷贝，特别适合大数据传输。
 
-### 1.9.4_ssize_t_(*copy_file_range)(struct_file_*,_loff_t,_struct_file_*,_loff_t,_size_t,_unsigned_int);
+### 1.9.4\_ssize\_t\_(*copy\_file\_range)(struct\_file\_*,\_loff\_t,\_struct\_file\_*,\_loff\_t,\_size\_t,\_unsigned\_int);
 
 - **用途**：`copy_file_range(2)`，由内核在文件之间直接拷贝（可能由底层存储 offload）。
 - **优势**：可避免把数据搬到用户态再写回，提高效率与一致性。
 
-### 1.9.5_loff_t_(*remap_file_range)(struct_file_*in,_loff_t_pos_in,_struct_file_*out,_loff_t_pos_out,_loff_t_len,_unsigned_int_flags);
+### 1.9.5\_loff\_t\_(*remap\_file\_range)(struct\_file\_*in,\_loff\_t\_pos\_in,\_struct\_file\_*out,\_loff\_t\_pos\_out,\_loff\_t\_len,\_unsigned\_int\_flags);
 
 - **用途**：`remap_file_range(2)`，在同一文件或不同文件间“重映射/克隆”区间（快照/写时复制）。
 - **示例**：btrfs/xfs 等支持高效“克隆复制”。
 
 ------
 
-## 1.10_文件租约/预分配/FD_信息
+## 1.10\_文件租约/预分配/FD\_信息
 
-### 1.10.1_int_(*setlease)(struct_file_*,_long,_struct_file_lock_,_void);
+### 1.10.1\_int\_(*setlease)(struct\_file\_*,\_long,\_struct\_file\_lock\_,\_void);
 
 - **用途**：实现 `fcntl(F_SETLEASE)` 文件租约（通知机制，网络文件系统常用）。
 
-### 1.10.2_long_(*fallocate)(struct_file_*file,_int_mode,_loff_t_offset,_loff_t_len);
+### 1.10.2\_long\_(*fallocate)(struct\_file\_*file,\_int\_mode,\_loff\_t\_offset,\_loff\_t\_len);
 
 - **用途**：`fallocate(2)` 预留空间、打洞（`FALLOC_FL_PUNCH_HOLE`）、零填等。
 - **文件系统**：由 FS 决定如何高效实现。
 
-### 1.10.3_void_(*show_fdinfo)(struct_seq_file_*m,_struct_file_*f);
+### 1.10.3\_void\_(*show\_fdinfo)(struct\_seq\_file\_*m,\_struct\_file\_*f);
 
 - **用途**：向 `/proc/<pid>/fdinfo/<fd>` 输出自定义的 FD 调试信息（通过 seq_file 安全输出）。
 
 ------
 
-## 1.11_io_uring_专用
+## 1.11\_io\_uring\_专用
 
-### 1.11.1_int_(*uring_cmd)(struct_io_uring_cmd_*ioucmd,_unsigned_int_issue_flags);
+### 1.11.1\_int\_(*uring\_cmd)(struct\_io\_uring\_cmd\_*ioucmd,\_unsigned\_int\_issue\_flags);
 
-### 1.11.2_int_(*uring_cmd_iopoll)(struct_io_uring_cmd_*,_struct_io_comp_batch_*,_unsigned_int_poll_flags);
+### 1.11.2\_int\_(*uring\_cmd\_iopoll)(struct\_io\_uring\_cmd\_*,\_struct\_io\_comp\_batch\_*,\_unsigned\_int\_poll\_flags);
 
 - **用途**：面向 `io_uring` 的“直通命令”通道（比如 NVMe passthrough、驱动自定义命令），能更低成本地把用户态命令送达设备。
 - **iopoll**：与 polled I/O 配合实现忙轮询完成。
 
 ------
 
-### 1.11.3_其他
+### 1.11.3\_其他
 
-### 1.11.4_int_(*check_flags)(int);(已上)
+### 1.11.4\_int\_(*check\_flags)(int);(已上)
 
-### 1.11.5_int_(*mmap),_mmap_supported_flags(已上)
+### 1.11.5\_int\_(*mmap),\_mmap\_supported\_flags(已上)
 
 ------
 
-## 1.12_常见实现建议(经验卡片)
+## 1.12\_常见实现建议(经验卡片)
 
 - **owner**：模块里务必设 `THIS_MODULE`。
 - **读写**：新驱动优先实现 `read_iter/write_iter`；传统 `read/write` 由辅助封装或留空。
@@ -298,9 +298,9 @@ struct file_operations {
 
 
 
-# 第2章_从_文件_到_file_operations
+# 第2章\_从\_文件\_到\_file\_operations
 
-### 2.1.1_用户态的直觉_一切皆文件
+### 2.1.1\_用户态的直觉\_一切皆文件
 
 在 Linux/UNIX 世界里，我们常说“一切皆文件”。这不是一句口号，而是 VFS（Virtual File System，虚拟文件系统）给出的抽象：
 
@@ -312,7 +312,7 @@ struct file_operations {
 
 ------
 
-### 2.1.2_VFS_的穿针引线
+### 2.1.2\_VFS\_的穿针引线
 
 Linux 内核把用户态的系统调用统一收口到 VFS 层。VFS 并不关心对象是文件、目录还是设备，而是依赖每个对象的**操作函数表**来完成具体工作。
 
@@ -370,7 +370,7 @@ struct file_operations {
 
 ------
 
-### 2.1.3_一个简单的类比
+### 2.1.3\_一个简单的类比
 
 你可以把 `file_operations` 理解为 **C++ 虚函数表**：
 
@@ -389,7 +389,7 @@ ssize_t vfs_read(...) {
 
 ------
 
-### 2.1.4_为什么我们需要关心它
+### 2.1.4\_为什么我们需要关心它
 
 如果你要写：
 
@@ -401,7 +401,7 @@ ssize_t vfs_read(...) {
 
 ------
 
-### 2.1.5_最小化的例子
+### 2.1.5\_最小化的例子
 
 来看一个“hello world”风格的字符设备驱动，只实现 `open` 和 `release`：
 
@@ -453,7 +453,7 @@ MODULE_LICENSE("GPL");
 
 ------
 
-### 2.1.6_小结
+### 2.1.6\_小结
 
 - `file_operations` 是 VFS 和具体对象之间的桥梁；
 - 并不是所有回调都要实现，只实现你需要的；
@@ -466,7 +466,7 @@ MODULE_LICENSE("GPL");
 
 ---
 
-# 第3章_最常用的成员详解
+# 第3章\_最常用的成员详解
 
 在本章，我们依次讲解以下常见成员：
 
@@ -482,9 +482,9 @@ MODULE_LICENSE("GPL");
 
 ------
 
-## 3.1_.owner_模块的自我保护
+## 3.1\_.owner\_模块的自我保护
 
-### 3.1.1_概念
+### 3.1.1\_概念
 
 - 类型：`struct module *owner`
 
@@ -496,15 +496,15 @@ MODULE_LICENSE("GPL");
   .owner = THIS_MODULE,
   ```
 
-### 3.1.2_为什么重要
+### 3.1.2\_为什么重要
 
 假如你忘了设置 `.owner`，那么用户在操作设备过程中卸载了模块，VFS 就可能跳到一个已释放的函数地址，引发 **内核崩溃**。
 
 ------
 
-## 3.2_.open_打开设备的入口
+## 3.2\_.open\_打开设备的入口
 
-### 3.2.1_概念
+### 3.2.1\_概念
 
 - 类型：`int (*open)(struct inode *, struct file *)`
 - 作用：当用户调用 `open("/dev/xxx")` 时，VFS 会调用这里。
@@ -513,7 +513,7 @@ MODULE_LICENSE("GPL");
   - 检查资源是否可用（例如设备是否正忙）；
   - 增加设备的使用计数。
 
-### 3.2.2_示例
+### 3.2.2\_示例
 
 ```c
 static int demo_open(struct inode *inode, struct file *filp)
@@ -527,14 +527,14 @@ static int demo_open(struct inode *inode, struct file *filp)
 
 ------
 
-## 3.3_.release_关闭设备的清理
+## 3.3\_.release\_关闭设备的清理
 
-### 3.3.1_概念
+### 3.3.1\_概念
 
 - 类型：`int (*release)(struct inode *, struct file *)`
 - 作用：当用户关闭最后一个 `fd` 时调用，用于清理资源。
 
-### 3.3.2_示例
+### 3.3.2\_示例
 
 ```c
 static int demo_release(struct inode *inode, struct file *filp)
@@ -546,9 +546,9 @@ static int demo_release(struct inode *inode, struct file *filp)
 
 ------
 
-## 3.4_.llseek_文件偏移的管理
+## 3.4\_.llseek\_文件偏移的管理
 
-### 3.4.1_概念
+### 3.4.1\_概念
 
 - 类型：`loff_t (*llseek)(struct file *, loff_t, int)`
 - 作用：实现 `lseek(2)`，修改 `file->f_pos`。
@@ -556,7 +556,7 @@ static int demo_release(struct inode *inode, struct file *filp)
   - `no_llseek`：不支持定位；
   - `default_llseek`：常规实现，支持 SEEK_SET/SEEK_CUR/SEEK_END。
 
-### 3.4.2_示例
+### 3.4.2\_示例
 
 ```c
 static loff_t demo_llseek(struct file *filp, loff_t off, int whence)
@@ -581,9 +581,9 @@ static loff_t demo_llseek(struct file *filp, loff_t off, int whence)
 
 ------
 
-## 3.5_.read_/.write_数据交换的核心
+## 3.5\_.read\_/.write\_数据交换的核心
 
-### 3.5.1_概念
+### 3.5.1\_概念
 
 - `read`：`ssize_t (*read)(struct file *, char __user *, size_t, loff_t *)`
 - `write`：`ssize_t (*write)(struct file *, const char __user *, size_t, loff_t *)`
@@ -592,7 +592,7 @@ static loff_t demo_llseek(struct file *filp, loff_t off, int whence)
   - 必须使用 `copy_to_user` / `copy_from_user` 与用户空间交换；
   - 返回值是**实际传输的字节数**，错误时返回负数。
 
-### 3.5.2_示例
+### 3.5.2\_示例
 
 ```c
 static ssize_t demo_read(struct file *filp, char __user *ubuf,
@@ -633,9 +633,9 @@ static ssize_t demo_write(struct file *filp, const char __user *ubuf,
 
 ------
 
-## 3.6_.poll_事件通知
+## 3.6\_.poll\_事件通知
 
-### 3.6.1_概念
+### 3.6.1\_概念
 
 - 类型：`__poll_t (*poll)(struct file *, struct poll_table_struct *)`
 - 作用：支持 `select/poll/epoll` 系统调用，告诉用户当前文件是否可读/可写/出错。
@@ -643,7 +643,7 @@ static ssize_t demo_write(struct file *filp, const char __user *ubuf,
   - `poll_wait(filp, &queue, wait)` 注册等待队列；
   - 根据条件返回 `POLLIN/POLLOUT/POLLERR`。
 
-### 3.6.2_示例
+### 3.6.2\_示例
 
 ```c
 static __poll_t demo_poll(struct file *filp, struct poll_table_struct *wait)
@@ -664,16 +664,16 @@ static __poll_t demo_poll(struct file *filp, struct poll_table_struct *wait)
 
 ------
 
-## 3.7_.unlocked_ioctl_控制接口
+## 3.7\_.unlocked\_ioctl\_控制接口
 
-### 3.7.1_概念
+### 3.7.1\_概念
 
 - 类型：`long (*unlocked_ioctl)(struct file *, unsigned int, unsigned long)`
 - 作用：处理用户的 `ioctl(2)` 控制命令。
 - 定义命令号时用 `_IO/_IOR/_IOW/_IOWR` 宏。
 - 需要 `copy_{to,from}_user` 与用户交换数据。
 
-### 3.7.2_示例
+### 3.7.2\_示例
 
 ```c
 #define DEMO_IOC_MAGIC  'd'
@@ -697,7 +697,7 @@ static long demo_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 ------
 
-## 3.8_完整的_file_operations
+## 3.8\_完整的\_file\_operations
 
 ```c
 static const struct file_operations demo_fops = {
@@ -724,7 +724,7 @@ static const struct file_operations demo_fops = {
 
 ------
 
-## 3.9_小结
+## 3.9\_小结
 
 - `.owner` 保证模块安全；
 - `.open` / `.release` 管理资源；
@@ -741,9 +741,9 @@ static const struct file_operations demo_fops = {
 
 ---
 
-# 第4章_完整示例_一个可用的字符设备驱动
+# 第4章\_完整示例\_一个可用的字符设备驱动
 
-## 4.1_目标与设计
+## 4.1\_目标与设计
 
 我们实现一个 `/dev/fops_demo` 字符设备，具备：
 
@@ -762,7 +762,7 @@ static const struct file_operations demo_fops = {
 
 ------
 
-## 4.2_内核模块代码(可粘贴)
+## 4.2\_内核模块代码(可粘贴)
 
 创建目录 `fops_demo/`，保存为 `fops_demo.c`：
 
@@ -977,7 +977,7 @@ module_exit(demo_exit);
 
 ------
 
-## 4.3_Makefile(内核外部模块)
+## 4.3\_Makefile(内核外部模块)
 
 同目录新建 `Makefile`。如你在 PC 上本机测试：
 
@@ -998,7 +998,7 @@ clean:
 
 ------
 
-## 4.4_编译与加载
+## 4.4\_编译与加载
 
 ```bash
 make
@@ -1011,7 +1011,7 @@ dmesg | tail
 
 ------
 
-## 4.5_快速交互(Shell)
+## 4.5\_快速交互(Shell)
 
 ```bash
 # 写入
@@ -1025,11 +1025,11 @@ sudo dd if=/dev/fops_demo bs=4 count=3 status=none | hexdump -C
 
 ------
 
-## 4.6_用户态测试程序(C)
+## 4.6\_用户态测试程序(C)
 
 提供两个小程序：一个阻塞读 + poll 等待；一个执行 ioctl。
 
-### 4.6.1_阻塞读_+_poll
+### 4.6.1\_阻塞读\_+\_poll
 
 保存为 `poll_read.c`：
 
@@ -1073,7 +1073,7 @@ int main(void) {
 2. 终端 B：`echo "from B" | sudo tee /dev/fops_demo`
 3. A 会被唤醒并打印数据。
 
-### 4.6.2_ioctl_小工具
+### 4.6.2\_ioctl\_小工具
 
 保存为 `demo_ioctl.c`：
 
@@ -1118,7 +1118,7 @@ sudo ./demo_ioctl 12
 
 ------
 
-## 4.7_代码走读与要点回顾
+## 4.7\_代码走读与要点回顾
 
 - **状态结构 `demo_state`**：集中管理缓冲、长度、等待队列与锁；所有 fd 共享（单实例设备）。若你需要“每个 fd 一个上下文”，可在 `open` 时分配，将指针放入 `file->private_data`，在 `release` 里释放。
 - **`read` 阻塞/非阻塞**：根据 `O_NONBLOCK` 决定直接返回 `-EAGAIN` 还是 `wait_event_interruptible()` 等待。
@@ -1129,7 +1129,7 @@ sudo ./demo_ioctl 12
 
 ------
 
-## 4.8_常见变形与扩展
+## 4.8\_常见变形与扩展
 
 - **环形缓冲**：将线性 `buf + f_pos` 改为 `head/tail` 环形队列，`poll` 在队列非空/未满时返回对应位。
 - **`read_iter/write_iter`**：将 `read/write` 换成 iter 版本（第 4 章详解），更适配零拷贝与 `io_uring`。
@@ -1139,7 +1139,7 @@ sudo ./demo_ioctl 12
 
 ------
 
-## 4.9_小结
+## 4.9\_小结
 
 本章给出了一份**可运行的 `file_operations` 样板**：安全、清晰、容易扩展。掌握这个模板，你能快速把任何“字节流式”的设备/伪文件原型跑起来，再按需要逐步升级为环形缓冲、iter I/O、mmap 等。
 
@@ -1149,9 +1149,9 @@ sudo ./demo_ioctl 12
 
 ---
 
-# 第5章_读写的现代道路_read_iter_/_write_iter
+# 第5章\_读写的现代道路\_read\_iter\_/\_write\_iter
 
-## 5.1_为什么要用_*_iter
+## 5.1\_为什么要用\_*\_iter
 
 传统的 `.read/.write` 每次只处理一段用户缓冲（单个 `void *buf + size`），而现代内核 I/O 越来越多地面对：
 
@@ -1166,7 +1166,7 @@ sudo ./demo_ioctl 12
 
 ------
 
-## 5.2_必会_API_速览
+## 5.2\_必会\_API\_速览
 
 - `size_t iov_iter_count(const struct iov_iter *iter)`
    剩余可传输的字节数（像 `readable bytes`）。
@@ -1181,7 +1181,7 @@ sudo ./demo_ioctl 12
 
 ------
 
-## 5.3_把第_3_章的驱动改造成_iter_版本
+## 5.3\_把第\_3\_章的驱动改造成\_iter\_版本
 
 我们保留第 3 章的设计：同样的 `demo_state`，同样的阻塞/非阻塞策略、等待队列与 `poll`。只是把 `.read/.write` 改成 `.read_iter/.write_iter`。
 
@@ -1191,7 +1191,7 @@ sudo ./demo_ioctl 12
 2. 内部实现改用 `copy_to_iter`/`copy_from_iter` + `iov_iter_count`。
 3. 其余逻辑（等待/唤醒/锁）不变。
 
-### 5.3.1_核心实现
+### 5.3.1\_核心实现
 
 ```c
 /* 读 iter：无数据阻塞，非阻塞返回 -EAGAIN；一次尽量拷贝更多 */
@@ -1266,7 +1266,7 @@ static ssize_t demo_write_iter(struct kiocb *iocb, struct iov_iter *from)
 }
 ```
 
-### 5.3.2_更新_file_operations
+### 5.3.2\_更新\_file\_operations
 
 ```c
 static const struct file_operations demo_fops = {
@@ -1285,7 +1285,7 @@ static const struct file_operations demo_fops = {
 
 ------
 
-## 5.4_语义与返回值_别踩这些坑
+## 5.4\_语义与返回值\_别踩这些坑
 
 - **返回值 = 实际处理的字节数**；出错返回负值。
   - 允许 **短读/短写**：比如缓冲区不够，或迭代器端供给不足。
@@ -1298,7 +1298,7 @@ static const struct file_operations demo_fops = {
 
 ------
 
-## 5.5_与_AIO_io_uring_的关系
+## 5.5\_与\_AIO\_io\_uring\_的关系
 
 - `read_iter/write_iter` 与 **AIO**/ **io_uring** 是天然契合的：
   - 这些框架在内核里最终都能以 `iov_iter` 形式“把数据端摆到你面前”。
@@ -1307,7 +1307,7 @@ static const struct file_operations demo_fops = {
 
 ------
 
-## 5.6_与_splice/零拷贝的关系
+## 5.6\_与\_splice/零拷贝的关系
 
 - `splice` 路径也能用 `iov_iter` 抽象（如 pipe-backed iter）。
 - 如果你要做 **文件<->管道** 的零拷贝数据泵，考虑实现 `->splice_read/->splice_write`；
@@ -1315,7 +1315,7 @@ static const struct file_operations demo_fops = {
 
 ------
 
-## 5.7_进一步优化与常见变体
+## 5.7\_进一步优化与常见变体
 
 - **环形缓冲**：把线性 `f_pos/datalen` 换成 `head/tail`，读写各自前进；`copy_to_iter/copy_from_iter` 可分两段处理“回绕”。
 - **大块路径**：当 `iov_iter_is_kvec()` 或“后端就是页”时，可用页级 API（如 `iov_iter_get_pages*` 家族）做 DMA 映射/直接提交（需结合你的 6.1 版本提供的具体 helper），减少中间拷贝。
@@ -1323,7 +1323,7 @@ static const struct file_operations demo_fops = {
 
 ------
 
-## 5.8_小结
+## 5.8\_小结
 
 - `read_iter/write_iter` 是 6.x 时代的 **首选读写回调**：与分散/聚集、AIO/io_uring、管道/页更好地融合。
 - 核心用法很简单：`iov_iter_count` 决定目标字节数，`copy_to_iter/copy_from_iter` 完成搬运。
@@ -1336,9 +1336,9 @@ static const struct file_operations demo_fops = {
 
 ---
 
-# 第6章_mmap_的正确打开方式
+# 第6章\_mmap\_的正确打开方式
 
-## 6.1_为什么要支持_mmap
+## 6.1\_为什么要支持\_mmap
 
 - **性能需求**：避免 `copy_to_user/copy_from_user` 的双拷贝；
 - **硬件特性**：很多设备有 DMA 缓冲或寄存器区域，用户态需要直接访问；
@@ -1348,7 +1348,7 @@ static const struct file_operations demo_fops = {
 
 ------
 
-## 6.2_mmap_的回调原型
+## 6.2\_mmap\_的回调原型
 
 在 `file_operations` 里：
 
@@ -1364,7 +1364,7 @@ int (*mmap)(struct file *filp, struct vm_area_struct *vma);
 
 ------
 
-## 6.3_常见的三种映射类型
+## 6.3\_常见的三种映射类型
 
 1. **设备 I/O 内存**（寄存器、DMA buffer）：
     使用 `remap_pfn_range()`。
@@ -1378,11 +1378,11 @@ int (*mmap)(struct file *filp, struct vm_area_struct *vma);
 
 ------
 
-## 6.4_示例_共享内核缓冲区
+## 6.4\_示例\_共享内核缓冲区
 
 假设我们分配了一块内核缓冲 `kmalloc`，用户态可通过 `mmap` 直接看到它。
 
-### 6.4.1_驱动代码片段
+### 6.4.1\_驱动代码片段
 
 ```c
 #define BUF_SIZE PAGE_SIZE * 2  /* 8KB */
@@ -1436,7 +1436,7 @@ static void __exit demo_exit(void)
 
 ------
 
-## 6.5_用户态测试程序
+## 6.5\_用户态测试程序
 
 保存为 `mmap_test.c`：
 
@@ -1484,7 +1484,7 @@ sudo ./mmap_test
 
 ------
 
-## 6.6_注意事项与常见坑
+## 6.6\_注意事项与常见坑
 
 1. **页对齐**：`mmap` 映射必须是页粒度（`PAGE_SIZE`），否则失败。
    - 用户传入的 `len` 会被内核页对齐。
@@ -1504,7 +1504,7 @@ sudo ./mmap_test
 
 ------
 
-## 6.7_扩展思路
+## 6.7\_扩展思路
 
 - **vm_ops + 页错误处理**：
    如果缓冲很大，可以按需分配页，在 `fault` 回调里 `vm_insert_page()`，延迟映射。
@@ -1517,7 +1517,7 @@ sudo ./mmap_test
 
 ------
 
-## 6.8_小结
+## 6.8\_小结
 
 - `mmap` 提供了高性能的共享内存机制，是很多设备驱动的核心能力。
 - 核心函数：`remap_pfn_range()` / `remap_vmalloc_range()` / `vm_insert_page()`。
@@ -1530,9 +1530,9 @@ sudo ./mmap_test
 
 ------
 
-# 第7章_目录型接口_iterate_与文件系统驱动
+# 第7章\_目录型接口\_iterate\_与文件系统驱动
 
-## 7.1_背景与意义
+## 7.1\_背景与意义
 
 前几章的 `read/write/mmap` 等操作，主要面向 **字节流文件**（如 `/dev/fops_demo`）。但在 Linux 里，**目录本身也是文件**，只不过它的 `file_operations` 不一样。
 
@@ -1544,14 +1544,14 @@ sudo ./mmap_test
 
 VFS 就会调用目录文件的 `.iterate` 或 `.iterate_shared` 回调，要求驱动或文件系统把该目录下的条目一个个“塞给 VFS”。
 
-### 7.1.1_两个版本
+### 7.1.1\_两个版本
 
 - `.iterate`：旧接口，只能在不加锁的场景下用；
 - `.iterate_shared`：较新的推荐接口，支持并发读目录时共享锁（RCU 安全）。
 
 ------
 
-## 7.2_接口原型
+## 7.2\_接口原型
 
 ```c
 int (*iterate) (struct file *file, struct dir_context *ctx);
@@ -1563,7 +1563,7 @@ int (*iterate_shared) (struct file *file, struct dir_context *ctx);
 
 关键在于 `dir_emit()` 系列函数，它们用于把一个目录项“交给” VFS。
 
-### 7.2.1_常用函数
+### 7.2.1\_常用函数
 
 - `dir_emit(ctx, name, namelen, ino, type)`
   - 把一个目录项写入用户态缓冲；
@@ -1573,11 +1573,11 @@ int (*iterate_shared) (struct file *file, struct dir_context *ctx);
 
 ------
 
-## 7.3_示例_最小的内存虚拟目录
+## 7.3\_示例\_最小的内存虚拟目录
 
 我们写一个伪文件系统驱动，它在 `/proc` 下创建一个目录 `/proc/demo_dir`，里面有两个“虚拟文件”：`foo` 和 `bar`。用户 `ls /proc/demo_dir` 就能看到它们。
 
-### 7.3.1_核心代码
+### 7.3.1\_核心代码
 
 ```c
 #include <linux/module.h>
@@ -1636,7 +1636,7 @@ module_exit(demo_exit);
 
 ------
 
-## 7.4_编译与运行
+## 7.4\_编译与运行
 
 1. 编译内核模块并加载：
 
@@ -1665,7 +1665,7 @@ module_exit(demo_exit);
 
 ------
 
-## 7.5_ctx->pos_与偏移管理
+## 7.5\_ctx->pos\_与偏移管理
 
 `struct dir_context` 有一个 `loff_t pos` 成员，记录当前目录遍历的偏移。
 
@@ -1677,7 +1677,7 @@ module_exit(demo_exit);
 
 ------
 
-## 7.6_使用场景
+## 7.6\_使用场景
 
 - **procfs/debugfs/sysfs**：虚拟文件系统最常见的用途。
 - **自定义文件系统**：实现自己的 `super_block` / `inode` / `file_operations`，再通过 `iterate_shared` 列出子文件。
@@ -1685,7 +1685,7 @@ module_exit(demo_exit);
 
 ------
 
-## 7.7_常见坑
+## 7.7\_常见坑
 
 1. **别忘记 `.` 和 `..`**：很多工具依赖它们，推荐直接用 `dir_emit_dots()`。
 2. **权限**：目录必须有 `x` 权限才能遍历，否则 `ls` 看不到内容。
@@ -1694,7 +1694,7 @@ module_exit(demo_exit);
 
 ------
 
-## 7.8_小结
+## 7.8\_小结
 
 - `iterate/iterate_shared` 让你定义“目录型文件”的内容；
 - 本质是：把目录项一个个 `dir_emit()` 给 VFS；
@@ -1707,9 +1707,9 @@ module_exit(demo_exit);
 
 ------
 
-# 第8章_异步与高性能接口_aio,_uring_cmd,_fadvise
+# 第8章\_异步与高性能接口\_aio,\_uring\_cmd,\_fadvise
 
-## 8.1_背景
+## 8.1\_背景
 
 传统 `read/write` 是同步阻塞调用：用户发出系统调用 → 内核执行完 → 返回结果。
  但现代 I/O 有几个趋势：
@@ -1727,9 +1727,9 @@ module_exit(demo_exit);
 
 ------
 
-## 8.2_uring_cmd_io_uring_的驱动扩展
+## 8.2\_uring\_cmd\_io\_uring\_的驱动扩展
 
-### 8.2.1_接口原型
+### 8.2.1\_接口原型
 
 ```c
 int (*uring_cmd)(struct io_uring_cmd *ioucmd, unsigned int issue_flags);
@@ -1738,18 +1738,18 @@ int (*uring_cmd)(struct io_uring_cmd *ioucmd, unsigned int issue_flags);
 - **ioucmd**：描述一次来自 io_uring 的命令；
 - **issue_flags**：提交标志。
 
-### 8.2.2_特点
+### 8.2.2\_特点
 
 - 不再局限于“读写字节流”，而是允许驱动定义自己的命令协议；
 - 类似于异步版的 `ioctl`，但集成在 io_uring 的 **SQE/CQE 队列模型**里；
 - 返回后，结果通过 CQE（完成队列）异步交给用户态。
 
-### 8.2.3_使用场景
+### 8.2.3\_使用场景
 
 - **存储驱动**：NVMe 就大量使用 `uring_cmd`，因为 NVMe 命令集天然异步；
 - **网络/专用设备**：需要低延迟提交/完成队列的硬件。
 
-### 8.2.4_简化示例(伪代码)
+### 8.2.4\_简化示例(伪代码)
 
 ```c
 static int demo_uring_cmd(struct io_uring_cmd *ioucmd, unsigned int flags)
@@ -1775,9 +1775,9 @@ static int demo_uring_cmd(struct io_uring_cmd *ioucmd, unsigned int flags)
 
 ------
 
-## 8.3_uring_cmd_iopoll_轮询完成路径
+## 8.3\_uring\_cmd\_iopoll\_轮询完成路径
 
-### 8.3.1_接口原型
+### 8.3.1\_接口原型
 
 ```c
 int (*uring_cmd_iopoll)(struct io_uring_cmd *, struct io_comp_batch *,
@@ -1790,9 +1790,9 @@ int (*uring_cmd_iopoll)(struct io_uring_cmd *, struct io_comp_batch *,
 
 ------
 
-## 8.4_fadvise_用户给内核的_I/O_提示
+## 8.4\_fadvise\_用户给内核的\_I/O\_提示
 
-### 8.4.1_接口原型
+### 8.4.1\_接口原型
 
 ```c
 int (*fadvise)(struct file *, loff_t offset, loff_t len, int advice);
@@ -1808,12 +1808,12 @@ int (*fadvise)(struct file *, loff_t offset, loff_t len, int advice);
   - `POSIX_FADV_WILLNEED`：用户希望预取；
   - `POSIX_FADV_DONTNEED`：用户不再需要缓存的数据。
 
-### 8.4.2_作用
+### 8.4.2\_作用
 
 - 给驱动或文件系统一个机会来调整缓存、预取、回收策略；
 - 在块设备 / 文件系统驱动里很有用（比如提前做 readahead 或丢掉 page cache）。
 
-### 8.4.3_简单示例
+### 8.4.3\_简单示例
 
 ```c
 static int demo_fadvise(struct file *filp, loff_t off, loff_t len, int advice)
@@ -1826,7 +1826,7 @@ static int demo_fadvise(struct file *filp, loff_t off, loff_t len, int advice)
 
 ------
 
-## 8.5_与传统_AIO_的区别
+## 8.5\_与传统\_AIO\_的区别
 
 - **老接口**：`aio_read/aio_write` 已被废弃，维护成本高，且和普通 read/write 语义重复。
 - **新接口**：统一使用 `read_iter/write_iter` + io_uring，避免重复代码。
@@ -1834,7 +1834,7 @@ static int demo_fadvise(struct file *filp, loff_t off, loff_t len, int advice)
 
 ------
 
-## 8.6_实际驱动中怎么用
+## 8.6\_实际驱动中怎么用
 
 1. **如果是字符设备驱动**：
    - 通常不用实现 `uring_cmd`，`read_iter/write_iter` 就够了；
@@ -1848,7 +1848,7 @@ static int demo_fadvise(struct file *filp, loff_t off, loff_t len, int advice)
 
 ------
 
-## 8.7_小结
+## 8.7\_小结
 
 - **`uring_cmd`**：驱动在 io_uring 下暴露自定义命令接口，支持异步通知；
 - **`uring_cmd_iopoll`**：提供忙轮询完成机制，适合超低延迟硬件；
@@ -1861,9 +1861,9 @@ static int demo_fadvise(struct file *filp, loff_t off, loff_t len, int advice)
 
 ------
 
-# 第9章_同步控制与文件锁_lock,_flock,_setlease
+# 第9章\_同步控制与文件锁\_lock,\_flock,\_setlease
 
-## 9.1_为什么要有文件锁
+## 9.1\_为什么要有文件锁
 
 Linux 是一个多进程、多线程系统：
 
@@ -1881,15 +1881,15 @@ int (*setlease)(struct file *, long, struct file_lock **, void **);
 
 ------
 
-## 9.2_lock_POSIX_锁
+## 9.2\_lock\_POSIX\_锁
 
-### 9.2.1_概念
+### 9.2.1\_概念
 
 - 对应用户态的 `fcntl(fd, F_SETLK, ...)`；
 - 支持 **记录锁**（record locking），即锁定文件的某个字节区间（不是整个文件）；
 - 常用于数据库、日志文件，多个进程可并发访问不同区间。
 
-### 9.2.2_回调原型
+### 9.2.2\_回调原型
 
 ```c
 int lock(struct file *filp, int cmd, struct file_lock *fl);
@@ -1898,7 +1898,7 @@ int lock(struct file *filp, int cmd, struct file_lock *fl);
 - `cmd`：锁操作（F_SETLK, F_GETLK, F_SETLKW）；
 - `fl`：描述锁的类型、范围（start, end, type=读/写锁）。
 
-### 9.2.3_驱动如何实现
+### 9.2.3\_驱动如何实现
 
 大多数驱动直接调用 **内核提供的通用文件锁管理**：
 
@@ -1916,15 +1916,15 @@ static int demo_lock(struct file *filp, int cmd, struct file_lock *fl)
 
 ------
 
-## 9.3_flock_BSD_风格锁
+## 9.3\_flock\_BSD\_风格锁
 
-### 9.3.1_概念
+### 9.3.1\_概念
 
 - 对应用户态的 `flock(fd, LOCK_EX)` / `LOCK_SH`；
 - 作用在整个文件，而不是字节区间；
 - 实现起来比 `lock` 简单。
 
-### 9.3.2_回调原型
+### 9.3.2\_回调原型
 
 ```c
 int flock(struct file *filp, int cmd, struct file_lock *fl);
@@ -1932,7 +1932,7 @@ int flock(struct file *filp, int cmd, struct file_lock *fl);
 
 - `cmd`：LOCK_SH（共享锁）、LOCK_EX（排它锁）、LOCK_UN（解锁）。
 
-### 9.3.3_驱动实现
+### 9.3.3\_驱动实现
 
 通常直接调用内核的 helper：
 
@@ -1945,16 +1945,16 @@ static int demo_flock(struct file *filp, int cmd, struct file_lock *fl)
 
 ------
 
-## 9.4_setlease_文件租约(Lease)
+## 9.4\_setlease\_文件租约(Lease)
 
-### 9.4.1_概念
+### 9.4.1\_概念
 
 - 对应用户态 `fcntl(fd, F_SETLEASE, F_RDLCK/F_WRLCK/F_UNLCK)`；
 - 本质是一种 **文件缓存一致性机制**，常用于 NFS、分布式文件系统：
   - 应用可以“租赁”一个文件，在 lease 期间假设没人改它；
   - 如果有其他进程要访问，内核会通知租约持有者（通过信号），让它释放或降级。
 
-### 9.4.2_回调原型
+### 9.4.2\_回调原型
 
 ```c
 int setlease(struct file *filp, long arg,
@@ -1965,14 +1965,14 @@ int setlease(struct file *filp, long arg,
 - `flp`：返回租约锁对象；
 - `priv`：驱动可存放自定义私有数据。
 
-### 9.4.3_应用场景
+### 9.4.3\_应用场景
 
 - 本地文件系统：内核已有通用实现；
 - 分布式文件系统（如 NFS、Ceph）：驱动/内核模块必须实现自己的租约管理，确保一致性。
 
 ------
 
-## 9.5_例子_让字符设备支持_flock
+## 9.5\_例子\_让字符设备支持\_flock
 
 在很多简单字符设备驱动中（如串口 `/dev/ttyS0`），我们需要保证只有一个进程能独占设备。可以利用 `flock` 接口做到这一点。
 
@@ -2023,7 +2023,7 @@ flock(fd, LOCK_EX);  // 独占设备
 
 ------
 
-## 9.6_常见坑
+## 9.6\_常见坑
 
 1. **混淆 flock 与 lock**
    - flock 作用在整个文件；
@@ -2038,7 +2038,7 @@ flock(fd, LOCK_EX);  // 独占设备
 
 ------
 
-## 9.7_小结
+## 9.7\_小结
 
 - `lock`：实现 POSIX 记录锁，精细到字节区间；
 - `flock`：实现 BSD 风格整文件锁，常用于设备独占；
@@ -2051,9 +2051,9 @@ flock(fd, LOCK_EX);  // 独占设备
 
 ------
 
-# 第10章_零拷贝与_splice_sendpage,_splice_read,_splice_write,_copy_file_range
+# 第10章\_零拷贝与\_splice\_sendpage,\_splice\_read,\_splice\_write,\_copy\_file\_range
 
-## 10.1_背景_为什么需要零拷贝
+## 10.1\_背景\_为什么需要零拷贝
 
 普通 I/O 流程：
 
@@ -2070,7 +2070,7 @@ flock(fd, LOCK_EX);  // 独占设备
 
 ------
 
-## 10.2_相关接口
+## 10.2\_相关接口
 
 `file_operations` 里提供了几组零拷贝接口：
 
@@ -2085,9 +2085,9 @@ flock(fd, LOCK_EX);  // 独占设备
 
 ------
 
-## 10.3_sendpage
+## 10.3\_sendpage
 
-### 10.3.1_原型
+### 10.3.1\_原型
 
 ```c
 ssize_t (*sendpage)(struct file *file, struct page *page,
@@ -2097,7 +2097,7 @@ ssize_t (*sendpage)(struct file *file, struct page *page,
 - 把 `page` 的一部分内容直接“发”到文件/设备。
 - 常见实现：网络设备 → socket。
 
-### 10.3.2_使用场景
+### 10.3.2\_使用场景
 
 - 发送大文件到 TCP 连接：
   - 用户态调用 `sendfile()`，VFS 就会触发 `sendpage`。
@@ -2105,9 +2105,9 @@ ssize_t (*sendpage)(struct file *file, struct page *page,
 
 ------
 
-## 10.4_splice_read_/_splice_write
+## 10.4\_splice\_read\_/\_splice\_write
 
-### 10.4.1_原型
+### 10.4.1\_原型
 
 ```c
 ssize_t (*splice_read)(struct file *, loff_t *ppos,
@@ -2120,16 +2120,16 @@ ssize_t (*splice_write)(struct pipe_inode_info *,
 - **splice_read**：从文件读数据，直接写入管道页缓冲；
 - **splice_write**：从管道页缓冲直接写入文件。
 
-### 10.4.2_使用场景
+### 10.4.2\_使用场景
 
 - `splice()` 系统调用：用户把文件描述符和 pipe 绑定，实现内核内数据搬运；
 - 视频流、日志管道、大规模复制时，极大减少用户态参与。
 
 ------
 
-## 10.5_copy_file_range
+## 10.5\_copy\_file\_range
 
-### 10.5.1_原型
+### 10.5.1\_原型
 
 ```c
 ssize_t (*copy_file_range)(struct file *file_in, loff_t pos_in,
@@ -2141,7 +2141,7 @@ ssize_t (*copy_file_range)(struct file *file_in, loff_t pos_in,
 - 文件到文件的复制，避免用户缓冲区中转；
 - 对支持的文件系统（ext4、xfs 等），甚至可以直接拷贝元数据，完全零拷贝。
 
-### 10.5.2_示例(用户态)
+### 10.5.2\_示例(用户态)
 
 ```c
 int fd1 = open("bigfile", O_RDONLY);
@@ -2151,7 +2151,7 @@ copy_file_range(fd1, NULL, fd2, NULL, 1<<20, 0);  // 拷贝 1MB
 
 ------
 
-## 10.6_示例_用_splice_把设备数据送到用户_socket
+## 10.6\_示例\_用\_splice\_把设备数据送到用户\_socket
 
 驱动里实现 `.splice_read`，模拟从内核缓冲搬数据到 pipe：
 
@@ -2183,7 +2183,7 @@ cat /dev/fops_demo | nc -l 1234
 
 ------
 
-## 10.7_实际驱动中该怎么做
+## 10.7\_实际驱动中该怎么做
 
 1. **字符设备驱动**
    - 一般只实现 `read/write` 就够了；
@@ -2195,7 +2195,7 @@ cat /dev/fops_demo | nc -l 1234
 
 ------
 
-## 10.8_常见坑
+## 10.8\_常见坑
 
 - **页对齐**：零拷贝通常要求页对齐，否则会回退到普通拷贝。
 - **内核回退机制**：
@@ -2205,7 +2205,7 @@ cat /dev/fops_demo | nc -l 1234
 
 ------
 
-## 10.9_小结
+## 10.9\_小结
 
 - **sendpage**：零拷贝到 socket；
 - **splice_read/splice_write**：文件 ↔ pipe ↔ 文件的零拷贝；
@@ -2220,9 +2220,9 @@ cat /dev/fops_demo | nc -l 1234
 
 ------
 
-# 第11章_调试与信息展示_show_fdinfo,_seq_file,_debugfs
+# 第11章\_调试与信息展示\_show\_fdinfo,\_seq\_file,\_debugfs
 
-## 11.1_背景
+## 11.1\_背景
 
 驱动开发时常遇到需求：
 
@@ -2238,9 +2238,9 @@ Linux 提供了几个机制：
 
 ------
 
-## 11.2_show_fdinfo_每个_fd_的信息
+## 11.2\_show\_fdinfo\_每个\_fd\_的信息
 
-### 11.2.1_回调原型
+### 11.2.1\_回调原型
 
 ```c
 void (*show_fdinfo)(struct seq_file *m, struct file *f);
@@ -2250,7 +2250,7 @@ void (*show_fdinfo)(struct seq_file *m, struct file *f);
 - `seq_file *m` 是输出流，可以 `seq_printf()`；
 - `struct file *f` 是对应的文件。
 
-### 11.2.2_示例
+### 11.2.2\_示例
 
 ```c
 static void demo_show_fdinfo(struct seq_file *m, struct file *f)
@@ -2281,9 +2281,9 @@ cat /proc/$(pidof cat)/fdinfo/3
 
 ------
 
-## 11.3_seq_file_格式化输出的黄金标准
+## 11.3\_seq\_file\_格式化输出的黄金标准
 
-### 11.3.1_为什么需要
+### 11.3.1\_为什么需要
 
 直接用 `read()` 输出字符串很容易出错（缓冲区不够、seek 混乱）。
  `seq_file` 提供一个统一模式：
@@ -2292,7 +2292,7 @@ cat /proc/$(pidof cat)/fdinfo/3
 - 避免重复代码；
 - 常见于 `/proc/net/*`, `/proc/meminfo` 等。
 
-### 11.3.2_使用流程
+### 11.3.2\_使用流程
 
 实现几个回调，挂到 `seq_operations`：
 
@@ -2329,15 +2329,15 @@ static const struct seq_operations demo_seq_ops = {
 
 ------
 
-## 11.4_debugfs_驱动开发者的乐园
+## 11.4\_debugfs\_驱动开发者的乐园
 
-### 11.4.1_特点
+### 11.4.1\_特点
 
 - 专门用于调试，不会出现在生产系统默认挂载点；
 - 用户可在 `/sys/kernel/debug/<yourdir>` 看到内容；
 - 支持简单的读写接口：`debugfs_create_file`, `debugfs_create_u32`, `debugfs_create_blob` 等。
 
-### 11.4.2_示例
+### 11.4.2\_示例
 
 ```c
 #include <linux/debugfs.h>
@@ -2368,7 +2368,7 @@ cat /sys/kernel/debug/fops_demo/datalen
 
 ------
 
-## 11.5_选择哪种方式
+## 11.5\_选择哪种方式
 
 - **`show_fdinfo`**
   - 精细到“某个 fd 的上下文”；
@@ -2382,7 +2382,7 @@ cat /sys/kernel/debug/fops_demo/datalen
 
 ------
 
-## 11.6_示例_把_demo_驱动状态展示出来
+## 11.6\_示例\_把\_demo\_驱动状态展示出来
 
 综合前几章的 `demo_state`：
 
@@ -2420,7 +2420,7 @@ static void __exit demo_exit(void)
 
 ------
 
-## 11.7_小结
+## 11.7\_小结
 
 - `show_fdinfo`：精细化到 **文件描述符级别**，用于调试单个 fd；
 - `seq_file`：内核推荐的“文本输出框架”，避免 `read()` 出错；
@@ -2434,9 +2434,9 @@ static void __exit demo_exit(void)
 
 ------
 
-# 第12章_高级内存管理接口
+# 第12章\_高级内存管理接口
 
-## 12.1_背景
+## 12.1\_背景
 
 前面第 5 章已经介绍了基本的 `mmap`。但在 Linux 内核里，文件还可以进一步参与 **虚拟内存分配策略** 和 **跨文件映射/复制优化**。
  对应的回调有：
@@ -2448,9 +2448,9 @@ static void __exit demo_exit(void)
 
 ------
 
-## 12.2_get_unmapped_area_控制地址空间选择
+## 12.2\_get\_unmapped\_area\_控制地址空间选择
 
-### 12.2.1_原型
+### 12.2.1\_原型
 
 ```c
 unsigned long (*get_unmapped_area)(struct file *file,
@@ -2460,7 +2460,7 @@ unsigned long (*get_unmapped_area)(struct file *file,
                                    unsigned long flags);
 ```
 
-### 12.2.2_作用
+### 12.2.2\_作用
 
 当用户调用 `mmap()` 时，内核需要找到一块合适的虚拟地址区间。
 
@@ -2472,7 +2472,7 @@ unsigned long (*get_unmapped_area)(struct file *file,
 
 此时驱动可以提供自己的 `get_unmapped_area`。
 
-### 12.2.3_示例
+### 12.2.3\_示例
 
 ```c
 static unsigned long demo_get_unmapped_area(struct file *file,
@@ -2494,22 +2494,22 @@ static unsigned long demo_get_unmapped_area(struct file *file,
 
 ------
 
-## 12.3_mmap_supported_flags_允许哪些_mmap_标志
+## 12.3\_mmap\_supported\_flags\_允许哪些\_mmap\_标志
 
-### 12.3.1_原型
+### 12.3.1\_原型
 
 ```c
 unsigned long (*mmap_supported_flags)(struct file *file);
 ```
 
-### 12.3.2_作用
+### 12.3.2\_作用
 
 用户调用 `mmap()` 时可以传递 `MAP_*` 标志，比如 `MAP_SHARED`, `MAP_PRIVATE`, `MAP_LOCKED` 等。
 
 - 默认情况下，内核会检查这些标志是否合法；
 - 但驱动可用 `mmap_supported_flags` 指定“我支持哪些标志”。
 
-### 12.3.3_示例
+### 12.3.3\_示例
 
 ```c
 static unsigned long demo_mmap_supported_flags(struct file *file)
@@ -2522,11 +2522,11 @@ static unsigned long demo_mmap_supported_flags(struct file *file)
 
 ------
 
-## 12.4_copy_file_range_文件间的高效复制
+## 12.4\_copy\_file\_range\_文件间的高效复制
 
 这一点在 **第 9 章**已经讲过基础，这里更深入。
 
-### 12.4.1_原型
+### 12.4.1\_原型
 
 ```c
 ssize_t (*copy_file_range)(struct file *file_in, loff_t pos_in,
@@ -2534,22 +2534,22 @@ ssize_t (*copy_file_range)(struct file *file_in, loff_t pos_in,
                            size_t len, unsigned int flags);
 ```
 
-### 12.4.2_用途
+### 12.4.2\_用途
 
 - 避免用户态缓冲；
 - 文件系统可以直接复制数据块；
 - 存储驱动甚至能调用硬件 offload（比如 NVMe 的 “copy” 命令）。
 
-### 12.4.3_实现思路
+### 12.4.3\_实现思路
 
 大多数自制驱动直接返回 `-EOPNOTSUPP`（不支持），让内核回退到通用路径。
  如果你写文件系统，则需要结合 **页缓存/page cache** 或 **元数据** 完成高效复制。
 
 ------
 
-## 12.5_remap_file_range_文件数据的映射/重定向
+## 12.5\_remap\_file\_range\_文件数据的映射/重定向
 
-### 12.5.1_原型
+### 12.5.1\_原型
 
 ```c
 loff_t (*remap_file_range)(struct file *file_in, loff_t pos_in,
@@ -2557,19 +2557,19 @@ loff_t (*remap_file_range)(struct file *file_in, loff_t pos_in,
                            loff_t len, unsigned int remap_flags);
 ```
 
-### 12.5.2_区别于_copy_file_range
+### 12.5.2\_区别于\_copy\_file\_range
 
 - **copy_file_range**：实际拷贝数据；
 - **remap_file_range**：可能直接修改元数据指向（COW 或 reflink），避免真正复制。
 
-### 12.5.3_应用
+### 12.5.3\_应用
 
 - 高级文件系统（如 btrfs、xfs）支持 **reflink**：
   - 文件 A 的部分区间“映射”到文件 B；
   - 修改时触发 COW（写时复制）；
 - 大文件的快速 clone（比如 `cp --reflink=always`）。
 
-### 12.5.4_示例(文件系统里)
+### 12.5.4\_示例(文件系统里)
 
 ```c
 static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
@@ -2583,7 +2583,7 @@ static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
 
 ------
 
-## 12.6_实际驱动中的意义
+## 12.6\_实际驱动中的意义
 
 - **字符设备驱动**：
   - 一般只用到 `get_unmapped_area`（比如显卡、FPGA 驱动需要特殊内存区域）。
@@ -2595,7 +2595,7 @@ static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
 
 ------
 
-## 12.7_常见坑
+## 12.7\_常见坑
 
 1. **地址冲突**：`get_unmapped_area` 必须返回不与现有 VMA 冲突的区间，否则 `mmap` 失败。
 2. **标志支持不完整**：如果忘记实现 `mmap_supported_flags`，用户可能传入不合理标志，导致不可预期结果。
@@ -2604,7 +2604,7 @@ static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
 
 ------
 
-## 12.8_小结
+## 12.8\_小结
 
 - **get_unmapped_area**：驱动可决定 mmap 的地址布局；
 - **mmap_supported_flags**：限制 mmap 标志，保证安全性；
@@ -2617,9 +2617,9 @@ static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
 
 ------
 
-# 第13章_异步通知与数据一致性_fasync,_fsync,_flush
+# 第13章\_异步通知与数据一致性\_fasync,\_fsync,\_flush
 
-## 13.1_背景
+## 13.1\_背景
 
 驱动开发中，我们经常遇到两个问题：
 
@@ -2638,21 +2638,21 @@ static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
 
 ------
 
-## 13.2_fasync_异步通知
+## 13.2\_fasync\_异步通知
 
-### 13.2.1_原型
+### 13.2.1\_原型
 
 ```c
 int (*fasync)(int fd, struct file *filp, int on);
 ```
 
-### 13.2.2_用法
+### 13.2.2\_用法
 
 - 当用户调用 `fcntl(fd, F_SETFL, O_ASYNC)` 时，内核会调用驱动的 `fasync` 回调；
 - 驱动要维护一个 `fasync_struct` 链表；
 - 当有事件发生时，用 `kill_fasync()` 给用户进程发 `SIGIO`。
 
-### 13.2.3_示例_字符设备的异步通知
+### 13.2.3\_示例\_字符设备的异步通知
 
 ```c
 #include <linux/fs.h>
@@ -2689,9 +2689,9 @@ fcntl(fd, F_SETOWN, getpid());      // 设置接收 SIGIO 的进程
 
 ------
 
-## 13.3_fsync_数据同步
+## 13.3\_fsync\_数据同步
 
-### 13.3.1_原型
+### 13.3.1\_原型
 
 ```c
 int (*fsync)(struct file *filp, loff_t start, loff_t end, int datasync);
@@ -2701,12 +2701,12 @@ int (*fsync)(struct file *filp, loff_t start, loff_t end, int datasync);
 - `datasync=1`：只保证数据（不强制 metadata）；
 - `datasync=0`：数据 + 元数据都要刷新。
 
-### 13.3.2_用法
+### 13.3.2\_用法
 
 - 字符设备通常返回 0（无意义）；
 - 块设备/文件系统必须实现，把缓存写回硬件。
 
-### 13.3.3_简化示例
+### 13.3.3\_简化示例
 
 ```c
 static int demo_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
@@ -2719,9 +2719,9 @@ static int demo_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
 
 ------
 
-## 13.4_flush_文件描述符关闭时的钩子
+## 13.4\_flush\_文件描述符关闭时的钩子
 
-### 13.4.1_原型
+### 13.4.1\_原型
 
 ```c
 int (*flush)(struct file *filp, fl_owner_t id);
@@ -2730,12 +2730,12 @@ int (*flush)(struct file *filp, fl_owner_t id);
 - 当进程关闭文件描述符时调用（即使 `release` 还没触发）；
 - 主要用于“进程级别”的资源清理，比如终止 I/O 请求。
 
-### 13.4.2_与_release_的区别
+### 13.4.2\_与\_release\_的区别
 
 - `release`：当**最后一个** fd 被关闭时调用；
 - `flush`：每次 fd 被关闭都会调用（即使还有别的进程打开）。
 
-### 13.4.3_示例
+### 13.4.3\_示例
 
 ```c
 static int demo_flush(struct file *filp, fl_owner_t id)
@@ -2747,7 +2747,7 @@ static int demo_flush(struct file *filp, fl_owner_t id)
 
 ------
 
-## 13.5_综合示例_带异步通知的输入设备
+## 13.5\_综合示例\_带异步通知的输入设备
 
 ```c
 static struct fasync_struct *demo_async_queue;
@@ -2775,7 +2775,7 @@ static void demo_new_data(void)
 
 ------
 
-## 13.6_常见坑
+## 13.6\_常见坑
 
 1. **忘记 fasync_helper**
    - 必须在 `fasync` 回调里调用 `fasync_helper()`，否则链表不会维护。
@@ -2790,7 +2790,7 @@ static void demo_new_data(void)
 
 ------
 
-## 13.7_小结
+## 13.7\_小结
 
 - `fasync`：支持异步通知（SIGIO），常用于输入/网络/串口类设备；
 - `fsync`：保证数据落盘/写入硬件，块设备和文件系统驱动必需；
@@ -2802,9 +2802,9 @@ static void demo_new_data(void)
 
 ------
 
-# 第14章_文件空间管理与范围操作
+# 第14章\_文件空间管理与范围操作
 
-## 14.1_背景
+## 14.1\_背景
 
 在现代存储和文件系统中，除了简单的读写，还需要一些**范围级操作**：
 
@@ -2820,16 +2820,16 @@ Linux 为此在 `file_operations` 提供了如下回调：
 
 ------
 
-## 14.2_fallocate_文件空间预分配
+## 14.2\_fallocate\_文件空间预分配
 
-### 14.2.1_原型
+### 14.2.1\_原型
 
 ```c
 long (*fallocate)(struct file *file, int mode,
                   loff_t offset, loff_t len);
 ```
 
-### 14.2.2_功能
+### 14.2.2\_功能
 
 - 对应用户态 `fallocate(2)` 系统调用；
 - 用来：
@@ -2837,13 +2837,13 @@ long (*fallocate)(struct file *file, int mode,
   - 在某个范围打空洞（punch hole，释放物理块）；
   - 设定文件大小。
 
-### 14.2.3_常见_mode
+### 14.2.3\_常见\_mode
 
 - `FALLOC_FL_KEEP_SIZE`：分配块，但不改变文件大小；
 - `FALLOC_FL_PUNCH_HOLE`：打空洞，需要与 `FALLOC_FL_KEEP_SIZE` 一起使用；
 - `FALLOC_FL_ZERO_RANGE`：将范围置零。
 
-### 14.2.4_示例(文件系统驱动里)
+### 14.2.4\_示例(文件系统驱动里)
 
 ```c
 static long demo_fallocate(struct file *file, int mode,
@@ -2866,7 +2866,7 @@ static long demo_fallocate(struct file *file, int mode,
 
 ------
 
-## 14.3_copy_file_range_高效文件复制
+## 14.3\_copy\_file\_range\_高效文件复制
 
 在第 9 章我们介绍过零拷贝的 `copy_file_range`。这里补充实际文件系统中的优化：
 
@@ -2876,7 +2876,7 @@ static long demo_fallocate(struct file *file, int mode,
   - ext4：直接拷贝页缓存 + 元数据更新；
   - xfs / btrfs：支持 `reflink`，不复制数据块，只复制元数据引用。
 
-### 14.3.1_用户态示例
+### 14.3.1\_用户态示例
 
 ```c
 int fd1 = open("file1", O_RDONLY);
@@ -2888,9 +2888,9 @@ copy_file_range(fd1, NULL, fd2, NULL, 1<<20, 0);  // 复制 1MB
 
 ------
 
-## 14.4_remap_file_range_文件区间重映射
+## 14.4\_remap\_file\_range\_文件区间重映射
 
-### 14.4.1_原型
+### 14.4.1\_原型
 
 ```c
 loff_t (*remap_file_range)(struct file *file_in, loff_t pos_in,
@@ -2898,18 +2898,18 @@ loff_t (*remap_file_range)(struct file *file_in, loff_t pos_in,
                            loff_t len, unsigned int remap_flags);
 ```
 
-### 14.4.2_功能
+### 14.4.2\_功能
 
 - 对应用户态 `remap_file_range(2)` 系统调用；
 - 允许在文件间 **共享区间（COW）**，而不是复制；
 - 常见于 **btrfs/xfs 的 reflink clone**。
 
-### 14.4.3_典型_remap_flags
+### 14.4.3\_典型\_remap\_flags
 
 - `REMAP_FILE_DEDUP`：数据去重（不同文件共享同一数据块）；
 - `REMAP_FILE_CAN_SHORTEN`：允许截断目标文件。
 
-### 14.4.4_示例(伪代码)
+### 14.4.4\_示例(伪代码)
 
 ```c
 static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
@@ -2924,7 +2924,7 @@ static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
 
 ------
 
-## 14.5_场景对比
+## 14.5\_场景对比
 
 | 操作               | 行为            | 是否真正复制数据      | 典型应用               |
 | ------------------ | --------------- | --------------------- | ---------------------- |
@@ -2935,7 +2935,7 @@ static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
 
 ------
 
-## 14.6_常见应用案例
+## 14.6\_常见应用案例
 
 1. **数据库系统**
    - 使用 `fallocate` 预分配日志文件，避免运行时碎片。
@@ -2947,7 +2947,7 @@ static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
 
 ------
 
-## 14.7_小结
+## 14.7\_小结
 
 - **fallocate**：文件空间预分配或打洞；
 - **copy_file_range**：文件复制的零拷贝优化；
@@ -2960,9 +2960,9 @@ static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
 
 ------
 
-# 第15章_兼容性与_32_位支持
+# 第15章\_兼容性与\_32\_位支持
 
-## 15.1_背景
+## 15.1\_背景
 
 在 x86_64、ARMv8 等 64 位平台上，Linux 内核支持运行 **32 位用户态程序**。
  这时会遇到几个问题：
@@ -2978,21 +2978,21 @@ static loff_t demo_remap_file_range(struct file *in, loff_t pos_in,
 
 ------
 
-## 15.2_compat_ioctl_32_位_ioctl_兼容层
+## 15.2\_compat\_ioctl\_32\_位\_ioctl\_兼容层
 
-### 15.2.1_原型
+### 15.2.1\_原型
 
 ```c
 long (*compat_ioctl)(struct file *file, unsigned int cmd, unsigned long arg);
 ```
 
-### 15.2.2_场景
+### 15.2.2\_场景
 
 - 用户态是 32 位程序，调用 `ioctl(fd, cmd, arg)`；
 - 内核是 64 位，此时 `arg` 指针需要解释成 32 位布局；
 - 如果驱动实现了 `compat_ioctl`，内核会优先走它。
 
-### 15.2.3_举例
+### 15.2.3\_举例
 
 假设有一个 ioctl 命令传递结构体：
 
@@ -3005,7 +3005,7 @@ struct demo_data {
 
 在 32 位应用里，`__u64 ptr` 其实是 32 位宽度的指针，需要在 `compat_ioctl` 里转成 64 位指针。
 
-### 15.2.4_示例实现
+### 15.2.4\_示例实现
 
 ```c
 #ifdef CONFIG_COMPAT
@@ -3056,9 +3056,9 @@ static const struct file_operations demo_fops = {
 
 ------
 
-## 15.3_mmap_capabilities_无_MMU_系统下的_mmap
+## 15.3\_mmap\_capabilities\_无\_MMU\_系统下的\_mmap
 
-### 15.3.1_原型
+### 15.3.1\_原型
 
 ```c
 #ifndef CONFIG_MMU
@@ -3066,18 +3066,18 @@ unsigned (*mmap_capabilities)(struct file *file);
 #endif
 ```
 
-### 15.3.2_背景
+### 15.3.2\_背景
 
 - 在没有 MMU 的嵌入式系统里，`mmap` 受限；
 - 驱动需要告诉内核：自己支持哪些 mmap 能力。
 
-### 15.3.3_常见返回值
+### 15.3.3\_常见返回值
 
 - `0`：不支持；
 - `PROT_READ | PROT_WRITE`：支持读写；
 - `VM_MAYSHARE`：允许共享。
 
-### 15.3.4_示例
+### 15.3.4\_示例
 
 ```c
 #ifndef CONFIG_MMU
@@ -3090,7 +3090,7 @@ static unsigned demo_mmap_capabilities(struct file *file)
 
 ------
 
-## 15.4_实际驱动中的策略
+## 15.4\_实际驱动中的策略
 
 - **PC/服务器驱动**：
   - 几乎只需要 `compat_ioctl`，因为很多用户空间库可能仍然是 32 位。
@@ -3104,7 +3104,7 @@ static unsigned demo_mmap_capabilities(struct file *file)
 
 ------
 
-## 15.5_常见坑
+## 15.5\_常见坑
 
 1. **结构体布局不兼容**
    - 指针大小、对齐不同，必须在 `compat_ioctl` 里手动转换。
@@ -3115,7 +3115,7 @@ static unsigned demo_mmap_capabilities(struct file *file)
 
 ------
 
-## 15.6_小结
+## 15.6\_小结
 
 - **`compat_ioctl`**：解决 32 位用户态和 64 位内核之间的 ioctl 参数兼容；
 - **`mmap_capabilities`**：解决无 MMU 平台下的 mmap 能力声明；
@@ -3127,9 +3127,9 @@ static unsigned demo_mmap_capabilities(struct file *file)
 
 ------
 
-# 第16章_文件操作的整体设计模式与最佳实践
+# 第16章\_文件操作的整体设计模式与最佳实践
 
-## 16.1_回顾_file_operations_的角色
+## 16.1\_回顾\_file\_operations\_的角色
 
 - **桥梁**：连接 **VFS（虚拟文件系统层）** 与 **具体驱动实现**。
 - **入口表**：定义了所有可能的文件操作，从 `open` 到 `mmap`，从 `ioctl` 到 `splice`。
@@ -3139,9 +3139,9 @@ static unsigned demo_mmap_capabilities(struct file *file)
 
 ------
 
-## 16.2_驱动类型与典型回调组合
+## 16.2\_驱动类型与典型回调组合
 
-### 16.2.1_字符设备驱动(串口_I²C_GPIO)
+### 16.2.1\_字符设备驱动(串口\_I²C\_GPIO)
 
 - 必须：`open`, `read`, `write`, `release`
 - 常用：`poll`, `fasync`（异步通知），`ioctl`（配置）
@@ -3164,7 +3164,7 @@ static const struct file_operations uart_fops = {
 
 ------
 
-### 16.2.2_块设备驱动(硬盘_SD_卡)
+### 16.2.2\_块设备驱动(硬盘\_SD\_卡)
 
 - 必须：`open`, `release`, `ioctl`
 - 高级：`fsync`（强制落盘），`fallocate`（预分配），`remap_file_range`（快照/克隆）
@@ -3174,7 +3174,7 @@ static const struct file_operations uart_fops = {
 
 ------
 
-### 16.2.3_文件系统驱动(ext4,_btrfs,_nfs)
+### 16.2.3\_文件系统驱动(ext4,\_btrfs,\_nfs)
 
 - 必须：几乎全部接口都可能用到；
 - `iterate_shared`（目录遍历）、`mmap`, `get_unmapped_area`, `copy_file_range`, `remap_file_range` 等都必不可少；
@@ -3184,7 +3184,7 @@ static const struct file_operations uart_fops = {
 
 ------
 
-### 16.2.4_内存映射型设备(显卡_FPGA_DSP)
+### 16.2.4\_内存映射型设备(显卡\_FPGA\_DSP)
 
 - 必须：`mmap`, `get_unmapped_area`, `mmap_supported_flags`
 - 常用：`poll`, `fasync`（事件通知）
@@ -3194,7 +3194,7 @@ static const struct file_operations uart_fops = {
 
 ------
 
-## 16.3_设计思路与裁剪方法
+## 16.3\_设计思路与裁剪方法
 
 1. **最小化原则**
    - 只实现真正需要的回调，其余置 `NULL`。
@@ -3209,7 +3209,7 @@ static const struct file_operations uart_fops = {
 
 ------
 
-## 16.4_开发与调试建议
+## 16.4\_开发与调试建议
 
 - **调试接口**：善用 `debugfs` 和 `seq_file`，不要依赖 `printk`。
 - **用户态模拟**：写简单的 `cat`, `echo`, `dd`, `ioctl` 测试程序。
@@ -3221,7 +3221,7 @@ static const struct file_operations uart_fops = {
 
 ------
 
-## 16.5_常见陷阱与最佳实践
+## 16.5\_常见陷阱与最佳实践
 
 1. **阻塞与非阻塞**
    - `read`/`write` 应正确处理 `O_NONBLOCK`。
@@ -3236,7 +3236,7 @@ static const struct file_operations uart_fops = {
 
 ------
 
-## 16.6_总结
+## 16.6\_总结
 
 - `file_operations` 是 **Linux 驱动与 VFS 的契约**；
 - 驱动根据自身定位裁剪接口，不必“全家桶”；
