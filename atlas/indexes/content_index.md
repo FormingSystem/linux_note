@@ -29,7 +29,7 @@ domains:
 | 并发同步 | [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md)、[RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md) |
 | 对象生命周期 | [kref](../../knowledge/linux/object_lifetime/kref)、[devres](../../knowledge/linux/object_lifetime/devres) |
 | 时间管理 | [定时器专题](../../knowledge/linux/time_management/定时器简介) |
-| I/O 模型 | [阻塞 I/O](../../knowledge/linux/io_model/blocking_io)、[异步通知](../../knowledge/linux/io_model/async_notification/异步通知简介) |
+| I/O 模型 | [阻塞 I/O](../../knowledge/linux/io_model/blocking_io)、[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md) |
 | 设备模型 | [设备模型专题](../../knowledge/linux/device_model/设备模型简介) |
 | 错误处理 | [错误指针](../../knowledge/linux/error_handling/error_pointer) |
 
