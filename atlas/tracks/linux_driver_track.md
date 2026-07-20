@@ -19,8 +19,8 @@ domains:
 
 1. [Linux 内核模块与设备节点操作入门](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)。
 2. [Linux 驱动开发 Makefile 指南](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_驱动开发_Makefile_指南.md)。
-3. 按序完成[设备号框架](../../knowledge/driver_model/character_device/P01_设备号框架简介)。
-4. 阅读[字符设备模块详解](../../knowledge/driver_model/character_device/P03_字符设备模块详解.md)。
+3. 按序完成[字符设备专题](../../knowledge/driver_model/character_device/大纲.md)。
+4. 结合[字符设备驱动模板](../../knowledge/driver_model/character_device/P05_字符设备驱动模板.md)完成最小驱动。
 
 阶段验收：能独立完成模块装卸、设备号分配、`cdev` 注册、设备节点创建和基础文件操作。
 
