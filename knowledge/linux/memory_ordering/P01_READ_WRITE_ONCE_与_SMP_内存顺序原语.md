@@ -44,7 +44,7 @@ sequenceDiagram
     P->>P: store-release(flag, 1)
     C->>C: load-acquire(flag)
     C->>C: 若看到 1，再读取 data
-    Note over P,C: acquire 读到 release 发布值时，data=42 对消费者可见
+    Note over P,C: acquire 读到 release 发布值时，<br/>data=42 对消费者可见
 ```
 
 ## 1.3\_READ\_ONCE\_与\_WRITE\_ONCE
