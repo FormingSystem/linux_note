@@ -12,6 +12,8 @@ domains: [linux, kernel, driver]
 
 节点消失只阻止按路径开始的新访问；`cdev_del()` 阻止新的设备号映射；已经打开的 file 已保存驱动 `f_op` 和 `private_data`，VMA、IRQ/DMA 请求也可能继续引用设备状态。
 
+VFS 的 close、`fput()`、VMA 和通用 file/inode 回收关系见 [VFS 对象回收](../../kernel_subsystems/vfs/P21_file_dentry_inode与superblock回收.md)。字符设备 remove 还必须在这一通用生命周期之外排空设备私有请求和硬件回调。
+
 ## 9.2\_remove\_必须完成四个阶段
 
 ```mermaid
