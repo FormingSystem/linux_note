@@ -627,7 +627,8 @@ rcu_read_unlock(); // 退出 RCU 临界区
 
 1. [RCU 专题大纲](../../../synchronization/rcu/大纲.md)。
 2. [为什么需要 RCU](../../../synchronization/rcu/P01_为什么需要_RCU.md)。
-3. [RCU 核心概念与工作机制](../../../synchronization/rcu/P02_RCU_核心概念与工作机制.md)。
+3. [RCU 抽象机制推演](../../../synchronization/rcu/P02_RCU_抽象机制推演.md)。
+4. [Linux Tree RCU 状态与通知机制](../../../synchronization/rcu/P04_Linux_Tree_RCU_状态与通知机制.md)。
 
 
 

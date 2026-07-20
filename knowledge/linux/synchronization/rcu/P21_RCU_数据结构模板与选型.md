@@ -1,6 +1,6 @@
 ---
 id: knowledge.linux.synchronization.rcu.templates_selection_checklist
-title: "RCU 模板 选型与核对"
+title: "RCU 数据结构模板与选型"
 kind: mechanism
 status: evolving
 domains:
@@ -11,11 +11,11 @@ topics:
   - rcu
 ---
 
-# 第9章\_RCU\_模板\_选型与核对
+# 第21章\_RCU\_数据结构模板与选型
 
 API 表解决“某个函数做什么”，却不能自动组成正确程序。本章把分散接口拼成一条完整生命期：写者准备并发布新对象、读者在正确域内取得指针、旧对象取消发布，最后同步或异步回收。
 
-## 9.1\_最小模板\_全局\_RCU\_+\_异步释放
+## 21.1\_最小模板\_全局\_RCU\_+\_异步释放
 
 ```c
 /* [INV] 定义共享对象指针 */
@@ -49,7 +49,7 @@ void read_data(void)
 
 ------
 
-## 9.2\_RCU\_与\_seqcount/seqlock\_对比矩阵
+## 21.2\_RCU\_与\_seqcount/seqlock\_对比矩阵
 
 | 特征       | RCU            | seqcount_t           | seqlock_t      |
 | ---------- | -------------- | -------------------- | -------------- |
@@ -63,7 +63,7 @@ void read_data(void)
 
 ------
 
-## 9.3\_时序图\_新旧并存与宽限期释放
+## 21.3\_时序图\_新旧并存与宽限期释放
 
 ```mermaid
 sequenceDiagram
@@ -88,7 +88,7 @@ sequenceDiagram
 
 ------
 
-## 9.4\_核对表
+## 21.4\_核对表
 
 | 检查项                         | 目标          | 状态 |
 | ------------------------------ | ------------- | ---- |
@@ -100,7 +100,7 @@ sequenceDiagram
 
 ------
 
-## 9.5\_小结
+## 21.5\_小结
 
 - RCU 以“读侧不与写者争抢同一把锁 + 新旧版本并存 + 延迟回收”保护读多写少对象；
 - 它的安全来自发布—取得契约、读侧标记和宽限期回收；
@@ -109,9 +109,9 @@ sequenceDiagram
 - 与 `seqcount_t` / `seqlock_t` 相比，RCU 放弃即时一致性，换来极高的读扩展性。
 
 
-上一篇：[RCU API 速查](P08_RCU_API_速查.md)。
+上一篇：[RCU API 速查](P20_RCU_通用API与调用契约.md)。
 
-下一篇：[RCU 驱动应用模式](P10_RCU_驱动应用模式.md)。
+下一篇：[RCU 驱动应用模式](P22_RCU_驱动与子系统应用模式.md)。
 
 
 
