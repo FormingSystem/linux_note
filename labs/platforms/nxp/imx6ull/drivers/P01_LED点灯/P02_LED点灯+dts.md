@@ -10,7 +10,7 @@ domains:
 
 # 第2章\_LED点灯+dts
 
-此处为简写版本，方面背框架代码。详细内容参考：[P02-字符设备-LED点灯+dts.md](../../../../../../knowledge/driver_model/character_device/P02_字符设备-LED点灯+dts.md)。
+此处为便于记忆框架的简写版本。完整的平台实验见：[i.MX6ULL字符设备LED与设备树完整实验](P03_字符设备_LED与设备树完整实验.md)。字符设备通用模型见：[字符设备专题大纲](../../../../../../knowledge/driver_model/character_device/大纲.md)。
 
 
 
