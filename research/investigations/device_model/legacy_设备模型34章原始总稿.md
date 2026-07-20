@@ -1,8 +1,8 @@
 ---
-id: knowledge.linux.device_model.设备模型简介
-title: "Linux 设备模型系统(Device Model System)"
-kind: mechanism
-status: evolving
+id: research.investigations.device_model.legacy_34_chapters
+title: "设备模型 34 章原始总稿迁移核对源"
+kind: investigation
+status: archived
 domains:
   - linux
   - kernel
@@ -11,6 +11,10 @@ domains:
 [TOC]
 
 
+
+# 设备模型旧稿使用说明
+
+本文件是 2026-07 设备模型专题因果重构前的 34 章原始总稿，只用于核对旧示例和确认知识点是否已经迁入 `knowledge/linux/device_model/`。它不是权威教程入口，不参与默认阅读路线；正文中的重复、版本陈旧结论和调用链必须重新用 Linux 6.12.20 源码验证后才能迁回知识正文。
 
 # 第1章\_Linux\_设备模型系统(Device\_Model\_System)
 
@@ -10763,4 +10767,3 @@ Linux 的 **Driver Core** 是一个贯穿内核各层的统一管理框架。
 >  实现了内核对象的统一生命周期、属性暴露与依赖管理。
 
 ------
-
