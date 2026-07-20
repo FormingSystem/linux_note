@@ -44,7 +44,7 @@ domains:
 | 字符设备 | [character_device](../../knowledge/driver_model/character_device) |
 | 设备树与 Platform | [device_tree](../../knowledge/driver_model/device_tree)、[platform_bus](../../knowledge/driver_model/platform_bus/readme.md) |
 | GPIO | [gpio](../../knowledge/driver_model/gpio) |
-| Input | [input](../../knowledge/driver_model/input/readme.md) |
+| Input | [专题大纲](../../knowledge/driver_model/input/大纲.md) |
 | misc 设备 | [misc](../../knowledge/driver_model/misc/readme.md) |
 
 ## 1.4\_系统软件

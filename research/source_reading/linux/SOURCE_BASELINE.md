@@ -72,3 +72,17 @@ domains:
 ## 1.5\_已有其他机制证据
 
 本目录还保存 RCU、kobject、引用计数、内存管理和数据结构等已有源码。后续会根据实际来源逐步核对其版本；在完成核对前，不应仅凭目录共存就断言所有旧文件都来自本章记录的 6.12.20 基线。
+
+## 1.6\_Input\_子系统证据
+
+| 相对路径 | 主要用途 |
+| --- | --- |
+| `drivers/input/input.c` | 设备与 handler 注册、事件过滤和分发、能力及 devres 生命周期 |
+| `drivers/input/evdev.c` | evdev 客户端缓冲、read/poll/ioctl 与 `SYN_DROPPED` |
+| `drivers/input/input-mt.c` | MT slot、tracking ID 辅助和帧同步 |
+| `include/linux/input.h`、`include/linux/input/mt.h` | Input 内核对象与 MT 接口 |
+| `include/uapi/linux/input.h`、`include/uapi/linux/input-event-codes.h` | evdev ABI 与标准事件编号 |
+| `Documentation/input/input-programming.rst` | Input 驱动编程说明 |
+| `Documentation/input/multi-touch-protocol.rst` | 多点触控 Protocol A/B 契约 |
+
+专题导读见 [`drivers/input/README.md`](drivers/input/README.md)。
