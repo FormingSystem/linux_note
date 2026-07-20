@@ -16,7 +16,7 @@ topics:
 
 ## 4.1\_本章要回答的问题
 
-RCU 的问题动机、硬件基础、读侧通知、宽限期和通用 API 已统一收拢到[RCU 专题](../../../synchronization/rcu/大纲.md)。如果尚不能解释“取消发布为什么不等于可以立即释放”，应先阅读[为什么需要 RCU](../../../synchronization/rcu/P01_为什么需要_RCU.md)到[Tree RCU 宽限期与回调机制](../../../synchronization/rcu/P05_Tree_RCU_宽限期与回调机制.md)。
+RCU 的问题动机、硬件基础、读侧通知、宽限期和通用 API 已统一收拢到[RCU 专题](../../../synchronization/rcu/大纲.md)。如果尚不能解释“取消发布为什么不等于可以立即释放”，应先阅读[为什么需要 RCU](../../../synchronization/rcu/P01_为什么需要_RCU.md)到[Tree RCU 宽限期与回调机制](../../../synchronization/rcu/P06_Tree_RCU_GP请求与全局生命周期.md)。
 
 本章不再重复通用 RCU 教程，只回答它落到哈希桶和 hlist 后新增的问题：
 
@@ -98,7 +98,7 @@ kfree_rcu(entry, rcu);
 
 `hlist_del_rcu()` 不负责写者互斥，也不负责等待 GP。这三个责任必须分开审查。
 
-这里使用 `kfree_rcu()` 的理由和内部 GP/回调推进过程属于通用机制，分别参见[宽限期与回调机制](../../../synchronization/rcu/P05_Tree_RCU_宽限期与回调机制.md)和[RCU API 速查](../../../synchronization/rcu/P08_RCU_API_速查.md)。哈希表章节只需确认：节点已经取消发布，而且写侧锁已经释放，最终回收才进入 RCU 回调路径。
+这里使用 `kfree_rcu()` 的理由和内部 GP/回调推进过程属于通用机制，分别参见[宽限期与回调机制](../../../synchronization/rcu/P06_Tree_RCU_GP请求与全局生命周期.md)和[RCU API 速查](../../../synchronization/rcu/P20_RCU_通用API与调用契约.md)。哈希表章节只需确认：节点已经取消发布，而且写侧锁已经释放，最终回收才进入 RCU 回调路径。
 
 ## 4.5\_一个完整的\_hlist\_RCU\_模型
 
@@ -169,5 +169,5 @@ static bool lookup_value(struct table_bucket *bucket, int key, int *value)
 进一步阅读：
 
 - [RCU 专题大纲](../../../synchronization/rcu/大纲.md)：从问题、硬件和通知机制开始的完整阅读路径。
-- [RCU 模板、选型与核对](../../../synchronization/rcu/P09_RCU_模板_选型与核对.md)：通用调用模板和审查清单。
+- [RCU 模板、选型与核对](../../../synchronization/rcu/P21_RCU_数据结构模板与选型.md)：通用调用模板和审查清单。
 - [kref 与 RCU](../../../object_lifetime/kref/P10_kref_与_RCU.md)：查找后需要跨出读侧临界区长期持有节点时的专门讨论。
