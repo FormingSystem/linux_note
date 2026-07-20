@@ -20,23 +20,8 @@
               "icon": "lucide-file",
               "title": "P02_内核基石_hlist非对称链表"
             }
-          },
-          {
-            "id": "6bd93275cfeb887d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "P02_内核基石_hlist非对称链表"
-            }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -201,44 +186,44 @@
       "pdf-plus:PDF++: Toggle auto-paste": false
     }
   },
-  "active": "6bd93275cfeb887d",
+  "active": "c3bf3980e4dacba7",
   "lastOpenFiles": [
+    "knowledge/linux/synchronization/rcu/P19_Tasks_RCU与Tiny_RCU实现边界.md",
+    "knowledge/linux/synchronization/rcu/P16_Tree_RCU_CPU热插拔与回调迁移.md",
+    "knowledge/linux/synchronization/rcu/P15_Tree_RCU_同步等待与rcu_barrier.md",
+    "knowledge/linux/synchronization/rcu/P14_Tree_RCU_NOCB回调卸载.md",
+    "knowledge/linux/synchronization/rcu/P13_Tree_RCU_回调执行_批处理与限流.md",
+    "knowledge/linux/synchronization/rcu/P12_Tree_RCU_rcu_segcblist回调状态机.md",
+    "knowledge/linux/synchronization/rcu/P11_Tree_RCU_Expedited_GP.md",
+    "knowledge/linux/synchronization/rcu/P10_Tree_RCU_force_QS迟延与Stall.md",
+    "knowledge/linux/synchronization/rcu/P09_Tree_RCU_rcu_node树与分层汇聚.md",
+    "knowledge/linux/synchronization/rcu/P08_Tree_RCU_QS_EQS与Context_Tracking.md",
+    "knowledge/linux/synchronization/rcu/P07_Tree_RCU_读者状态与被抢占任务.md",
+    "knowledge/linux/synchronization/rcu/P05_Tree_RCU_初始化_拓扑与执行上下文.md",
+    "knowledge/linux/synchronization/rcu/P25_RCU_内存序_误用与选择边界.md",
+    "knowledge/linux/synchronization/rcu/P24_RCU_调试验证与集成误用.md",
+    "knowledge/linux/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md",
+    "knowledge/linux/synchronization/rcu/P22_RCU_驱动与子系统应用模式.md",
+    "knowledge/linux/synchronization/rcu/P21_RCU_数据结构模板与选型.md",
+    "knowledge/linux/synchronization/rcu/P20_RCU_通用API与调用契约.md",
+    "knowledge/linux/synchronization/rcu/P18_SRCU_私有域与双_index_状态机.md",
+    "knowledge/linux/synchronization/rcu/P17_RCU_实现家族与内核配置.md",
+    "knowledge/linux/synchronization/rcu/P06_Tree_RCU_GP请求与全局生命周期.md",
+    "knowledge/linux/synchronization/rcu/P02_Tree_RCU_状态拓扑与通知机制.md",
+    "knowledge/linux/synchronization/rcu/P04_Linux_Tree_RCU_状态与通知机制.md",
+    "knowledge/linux/synchronization/rcu/P03_RCU_机制完善_硬件与运行约束.md",
+    "knowledge/linux/synchronization/rcu/P02_RCU_抽象机制推演.md",
     "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
-    "knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作基础.md",
-    "knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md",
-    "knowledge/linux/object_lifetime/kref/Untitled.md",
-    "knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md",
-    "knowledge/linux/object_lifetime/kref/P04_kref_三条核心规则.md",
-    "knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md",
-    "knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md",
     "research/source_reading/linux/include/linux/atomic/atomic-instrumented.h",
     "research/source_reading/linux/include/linux/atomic",
-    "knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md",
-    "knowledge/linux/data_structures/单链表_Linked_List.md",
     "未命名 1.base",
     "未命名.base",
-    "knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md",
     "research/source_reading/linux/mm/madvise.c",
     "research/source_reading/linux/drivers/base/core.c",
     "research/source_reading/linux/drivers/base",
     "research/source_reading/linux/drivers",
     "research/source_reading/linux/include/linux/device.h",
     "research/source_reading/linux/lib/kobject.c",
-    "knowledge/linux/object_lifetime/kref/大纲.md",
-    "knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md",
-    "research/source_reading/linux/mm/mmap.c.md",
-    "research/source_reading/linux/mm/memory.c.md",
-    "research/source_reading/linux/include/linux/mm.h.md",
-    "research/source_reading/linux/include/linux/mm_types.h.md",
-    "research/source_reading/linux/Documentation/core-api/maple_tree.rst.md",
-    "research/source_reading/linux/lib/maple_tree.c.md",
-    "research/source_reading/linux/include/linux/maple_tree.h.md",
-    "research/source_reading/linux/include/linux/rbtree_augmented.h.md",
-    "knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md",
-    "knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md",
-    "knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md",
-    "research/source_reading/linux/lib/rbtree.c.md",
-    "research/source_reading/linux/include/linux/rbtree.h.md",
     "assets/images/kernel/linux内核深度解析/boot_jump_linux函数.png",
     "assets/images/kernel/running_linux_kernel_P01/linux_kernel_component_archtecture.png",
     "assets/images/kernel/nxp/kernel_config_cross_compiler_for_makefile.png"
