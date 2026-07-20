@@ -12,6 +12,8 @@ domains: [linux, kernel, driver]
 
 `read/write` 在系统调用返回后不再直接使用用户缓冲区；`mmap()` 建立的 VMA 却可能在 `close(fd)` 后继续存在。于是设备对象、映射内存和硬件资源不能只绑定到 `file->release()`。
 
+VFS 如何从 file 建立 VMA、在 page fault 时取得文件页以及维持 `vm_file` 引用，见 [文件 mmap 与 page fault](../../kernel_subsystems/vfs/P18_文件mmap与page_fault.md)。本章只解释设备 MMIO、DMA 缓冲区和可热拔硬件带来的额外约束。
+
 ```mermaid
 sequenceDiagram
     participant P as 进程
