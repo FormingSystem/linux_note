@@ -1,6 +1,6 @@
 ---
 id: knowledge.linux.synchronization.rcu.integration_misuse
-title: "RCU 集成模式与常见误用"
+title: "RCU 调试、验证与集成误用"
 kind: mechanism
 status: evolving
 domains:
@@ -11,11 +11,24 @@ topics:
   - rcu
 ---
 
-# 第12章\_RCU\_集成模式与常见误用
+# 第24章\_RCU\_调试验证与集成误用
 
 RCU 很少孤立存在：写者仍可能需要锁，对象离开读侧区间后可能需要引用计数，工作队列和模块卸载又引入新的生命期。本章从组合关系检查正确性，不再重复基础 API。
 
-## 12.1\_RCU\_机制在驱动中的集成模式与常见误用
+## 24.1\_先判断是哪条状态链停滞
+
+调试 RCU 不能只搜索“谁调用了 `synchronize_rcu()`”。应先区分：GP 是否未完成、回调是否已经成熟但未执行、nocb 线程是否未运行，还是对象在取消发布前后违反了生命周期协议。
+
+| 现象 | 优先检查 |
+| --- | --- |
+| RCU stall | 未报告 CPU、被抢占旧任务、长时间关中断、GP kthread调度 |
+| 回调积压 | `rcu_segcblist` 分段、RCU core/nocb CB kthread、批处理限流 |
+| `rcu_barrier()` 久等 | 各 CPU 回调、nocb bypass、CPU hotplug/迁移 |
+| UAF | 取消发布与最终释放之间是否真正经过对应 GP |
+
+Linux 6.12.20 可结合 `kernel/rcu/tree_stall.h` 的 stall 输出、RCU tracepoint、lockdep/Sparse 报告和 `kernel/rcu/rcutorture.c` 的压力模型定位。`rcutorture` 用来验证实现和配置组合，不替代具体业务对象生命周期测试。
+
+## 24.2\_RCU\_机制在驱动中的集成模式与常见误用
 
 #### (1)\_章节内容说明
 
@@ -165,9 +178,9 @@ flowchart TD
 
 ------
 
-上一篇：[RCU 类型语义与 Sparse 检查](P11_RCU_类型语义与_Sparse_检查.md)。
+上一篇：[RCU 类型语义与 Sparse 检查](P23_RCU_类型语义_Sparse与Lockdep.md)。
 
-下一篇：[RCU 内存序与使用边界复盘](P13_RCU_内存序与使用边界复盘.md)。
+下一篇：[RCU 内存序与使用边界复盘](P25_RCU_内存序_误用与选择边界.md)。
 
 
 

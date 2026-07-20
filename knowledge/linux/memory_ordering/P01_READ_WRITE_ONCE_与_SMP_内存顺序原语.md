@@ -101,7 +101,7 @@ if (smp_load_acquire(&obj->ready))
 
 仅凭 C 语言的 `if` 不应随意构造无锁内存序。编译器可能进行推测、值推导或控制流变换。必须使用 Linux 内存模型明确支持的原语和模式。
 
-RCU 的 `rcu_dereference()` 会处理单次取指针、编译器约束、地址依赖和检查语义；不要用裸 `READ_ONCE()` 替代它。详见 [RCU 内存序与使用边界](../synchronization/rcu/P13_RCU_内存序与使用边界复盘.md)。
+RCU 的 `rcu_dereference()` 会处理单次取指针、编译器约束、地址依赖和检查语义；不要用裸 `READ_ONCE()` 替代它。详见 [RCU 内存序与使用边界](../synchronization/rcu/P25_RCU_内存序_误用与选择边界.md)。
 
 ## 1.7\_常见模式
 

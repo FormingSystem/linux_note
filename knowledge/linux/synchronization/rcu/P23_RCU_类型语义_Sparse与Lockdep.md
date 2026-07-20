@@ -1,6 +1,6 @@
 ---
 id: knowledge.linux.synchronization.rcu.type_semantics_srcu
-title: "__rcu 类型语义与 Sparse 检查"
+title: "RCU 类型语义、Sparse 与 Lockdep"
 kind: mechanism
 status: evolving
 domains:
@@ -11,7 +11,7 @@ topics:
   - rcu
 ---
 
-# 第11章\_RCU\_类型语义与\_Sparse\_检查
+# 第23章\_RCU\_类型语义\_Sparse与\_Lockdep
 
 代码在运行时“看起来能工作”还不够，编译期也应尽量暴露错误的指针取得方式。本章集中讨论 `__rcu` 与 Sparse 类型检查，不再重复 SRCU 的运行机制和接口。
 
@@ -26,7 +26,7 @@ flowchart TD
     F -->|是| H[SRCU 或独立引用]
 ```
 
-## 11.1\_rcu\_修饰符与\_RCU\_类型语义
+## 23.1\_rcu\_修饰符与\_RCU\_类型语义
 
 #### (1)\_章节内容说明
 
@@ -231,10 +231,16 @@ void show_all(void)
 
 ------
 
-## 11.2\_本章边界
+## 23.2\_Lockdep检查的是运行时保护条件
 
-本章只维护 `__rcu` 类型语义和 Sparse 检查。SRCU 的私有域、双 index、宽限期状态机统一阅读[SRCU 私有域与双 index 运行机制](P07_SRCU_私有域与双_index_运行机制.md)，接口统一查阅[RCU API 速查](P08_RCU_API_速查.md)，驱动场景则放在[RCU 驱动应用模式](P10_RCU_驱动应用模式.md)。
+Sparse 通过 `__rcu` address space 检查类型层面的错误解引用；lockdep 则帮助验证调用点是否处于声明的 RCU 读侧、更新锁或其他允许条件中。`rcu_dereference_check()` 一类接口把“RCU 读侧成立，或者指定更新锁成立”的逻辑条件显式交给检查器。
 
-上一篇：[RCU 驱动应用模式](P10_RCU_驱动应用模式.md)。
+两者不能证明对象一定存活到读侧之外，也不能替代写者互斥和 GP 后回收协议：**类型正确、保护条件正确和生命周期正确是三层独立检查。**
 
-下一篇：[RCU 集成模式与常见误用](P12_RCU_集成模式与常见误用.md)。
+## 23.3\_本章边界
+
+本章只维护 `__rcu` 类型语义和 Sparse 检查。SRCU 的私有域、双 index、宽限期状态机统一阅读[SRCU 私有域与双 index 运行机制](P18_SRCU_私有域与双_index_状态机.md)，接口统一查阅[RCU API 速查](P20_RCU_通用API与调用契约.md)，驱动场景则放在[RCU 驱动应用模式](P22_RCU_驱动与子系统应用模式.md)。
+
+上一篇：[RCU 驱动应用模式](P22_RCU_驱动与子系统应用模式.md)。
+
+下一篇：[RCU 集成模式与常见误用](P24_RCU_调试验证与集成误用.md)。

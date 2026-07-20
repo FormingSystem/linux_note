@@ -1,6 +1,6 @@
 ---
 id: knowledge.linux.synchronization.rcu.variants_memory_ordering_boundaries
-title: "RCU 内存序与使用边界复盘"
+title: "RCU 内存序、误用与选择边界"
 kind: mechanism
 status: evolving
 domains:
@@ -12,7 +12,7 @@ topics:
   - memory_ordering
 ---
 
-# 第13章\_RCU\_内存序与使用边界复盘
+# 第25章\_RCU\_内存序\_误用与选择边界
 
 最后一章不再引入一套新的入门模型，而是换几个容易出错的角度复盘整个专题：读侧域如何选择、发布—取得契约在哪里成立、宽限期不保证什么，以及 SRCU 与锁组合时的边界。
 
@@ -29,7 +29,7 @@ flowchart TD
     E -->|否| P[发布—取得 + GP 回收]
 ```
 
-## 13.1\_先确定读侧域
+## 25.1\_先确定读侧域
 
 选择 RCU 接口时，不能只看“读多写少”，还必须确定读者的执行上下文、是否需要主动阻塞，以及更新者等待的是哪一类读者。
 
@@ -42,7 +42,7 @@ flowchart TD
 
 Linux 6.12.20 的 [`rcupdate.h`](../../../../research/source_reading/linux/include/linux/rcupdate.h) 明确说明，从 Linux 5.0 开始，普通 `synchronize_rcu()` 和 `call_rcu()` 也会考虑禁止抢占、软中断或中断的区域。因此，不应再把 RCU-bh 描述成一个拥有独立宽限期的“SoftIRQ 域”。
 
-## 13.2\_读侧上下文不决定是否使用\_SRCU
+## 25.2\_读侧上下文不决定是否使用\_SRCU
 
 “工作队列中必须用 SRCU”或“线程化中断中必须用 SRCU”都不准确。这些上下文允许睡眠，但不代表每一段代码都会睡眠。
 
@@ -54,9 +54,9 @@ Linux 6.12.20 的 [`rcupdate.h`](../../../../research/source_reading/linux/inclu
 
 只有保护区必须跨越主动阻塞，或设计本身需要私有域时，SRCU 才是直接候选。
 
-## 13.3\_发布\_取得契约
+## 25.3\_发布\_取得契约
 
-### 13.3.1\_rcu\_assign\_pointer()
+### 25.3.1\_rcu\_assign\_pointer()
 
 Linux 6.12.20 的宏实现对非 `NULL` 常量路径调用：
 
@@ -66,7 +66,7 @@ smp_store_release(&p, RCU_INITIALIZER(v));
 
 它的意义是“对象初始化先于指针发布”。对于常量 `NULL` 则可以走 `WRITE_ONCE()` 特殊路径，所以不能把整个宏简单写成“它等于 `smp_wmb()`”。
 
-### 13.3.2\_rcu\_dereference()
+### 25.3.2\_rcu\_dereference()
 
 `rcu_dereference()` 组合了单次取值、编译器约束、架构所需的依赖顺序以及 RCU/Sparse/lockdep 检查。它依赖从取得的指针到后续对象访问的地址依赖。
 
@@ -78,7 +78,7 @@ smp_store_release(&p, RCU_INITIALIZER(v));
 
 工程上应保持简单模式：用 `rcu_dereference()` 取得指针，然后直接通过该指针访问已初始化的对象。
 
-### 13.3.3\_更新侧取值
+### 25.3.3\_更新侧取值
 
 更新者在已持有更新锁时，应使用：
 
@@ -88,7 +88,7 @@ old = rcu_dereference_protected(ptr, lockdep_is_held(&update_lock));
 
 如果需要“取得旧指针 + 发布新指针”，可使用 `rcu_replace_pointer()`。只检查指针是否为 `NULL` 而不解引用时，才考虑 `rcu_access_pointer()`。
 
-## 13.4\_宽限期不是一个发布屏障
+## 25.4\_宽限期不是一个发布屏障
 
 | 接口 | 是否阻塞调用者 | 完成条件 | 主要用途 |
 | --- | --- | --- | --- |
@@ -99,7 +99,7 @@ old = rcu_dereference_protected(ptr, lockdep_is_held(&update_lock));
 
 `synchronize_rcu()` 和 `call_rcu()` 具有明确的宽限期与内存顺序保证，但它们不代替用于发布指针的 `rcu_assign_pointer()`，也不代替用于字段不变量的锁。
 
-## 13.5\_SRCU\_的域与死锁边界
+## 25.5\_SRCU\_的域与死锁边界
 
 SRCU 使用 `struct srcu_struct` 表示私有域。读侧必须保留 `srcu_read_lock()` 返回的 index，并在同一上下文中传给 `srcu_read_unlock()`：
 
@@ -120,7 +120,7 @@ srcu_read_unlock(&config_srcu, idx);
 - lock/unlock 必须在同一上下文中成对。
 - 不得在某个 SRCU 域的读侧临界区内等待同一域的宽限期，包括经由锁依赖间接等待，否则会形成死锁。
 
-## 13.6\_选型核对表
+## 25.6\_选型核对表
 
 | 问题 | 倾向选择 |
 | --- | --- |
@@ -131,7 +131,7 @@ srcu_read_unlock(&config_srcu, idx);
 | 需要离开 RCU 后继续使用对象？ | 在 RCU 临界区内安全取得 kref/refcount |
 | 模块卸载时还可能有回调指向模块代码？ | 取消发布后使用 `rcu_barrier()` 等待已排队回调 |
 
-上一篇：[RCU 集成模式与常见误用](P12_RCU_集成模式与常见误用.md)。
+上一篇：[RCU 集成模式与常见误用](P24_RCU_调试验证与集成误用.md)。
 
 下一步：[Linux 6.12 Tree RCU 与 SRCU 源码导读](../../../../research/source_reading/rcu/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)。
 
