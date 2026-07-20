@@ -38,11 +38,11 @@ domains:
 
 ## 1.4\_第三阶段\_并发与事件
 
-1. 按序阅读[并发脉络与概念缓冲](../../knowledge/linux/synchronization/concurrency_and_competition/P01_并发脉络与概念缓冲)。
-2. 按序阅读[可见性与顺序](../../knowledge/linux/synchronization/concurrency_and_competition/P02_可见性与顺序)。
-3. 从[自旋锁](../../knowledge/linux/synchronization/concurrency_and_competition/P03_子模块详解/P16_自旋锁(不可睡侧).md)开始，按章阅读互斥锁、seqcount/seqlock 和[第 19 章 RCU 导读](../../knowledge/linux/synchronization/concurrency_and_competition/P03_子模块详解/P19_RCU(读无锁_写延迟回收).md)。
-4. 从第 19 章进入[RCU 专题大纲](../../knowledge/linux/synchronization/rcu/大纲.md)，学习宽限期回收、内存顺序、SRCU 与对象保活；完成后返回第 20 章继续等待队列、completion 和工作队列。
-5. 按序阅读[中断机制](../../knowledge/kernel_subsystems/irq/中断机制简介)，重点理解硬中断、线程化中断和下半部的执行约束。
+1. 从[同步机制总纲](../../knowledge/linux/synchronization/大纲.md)建立“竞争、顺序、互斥、等待和生命周期”问题地图。
+2. 阅读[内存顺序](../../knowledge/linux/memory_ordering/大纲.md)，再进入[锁机制](../../knowledge/linux/synchronization/locks/大纲.md)，先区分可睡与不可睡上下文。
+3. 对照学习[seqcount/seqlock](../../knowledge/linux/synchronization/sequence_counters/大纲.md)与[RCU](../../knowledge/linux/synchronization/rcu/大纲.md)，理解读重试和延迟回收解决的是不同问题。
+4. 阅读[等待队列与完成量](../../knowledge/linux/waiting_notification/大纲.md)，掌握条件等待、事件完成和唤醒规则。
+5. 按序阅读[中断机制](../../knowledge/kernel_subsystems/irq/中断机制简介)，再阅读[工作队列](../../knowledge/kernel_subsystems/workqueue/大纲.md)，理解执行上下文如何约束同步选择。
 6. 阅读[时间管理](../../knowledge/linux/time_management/定时器简介)，区分忙等待、睡眠、timer、hrtimer 与 delayed work。
 
 阶段验收：面对一段内核代码，能判断其执行上下文、能否睡眠、需要哪类同步以及退出时如何取消异步工作。
