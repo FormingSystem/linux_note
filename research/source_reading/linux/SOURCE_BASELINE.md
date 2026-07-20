@@ -54,6 +54,21 @@ domains:
 | `include/linux/file.h` | file/fd 辅助接口 |
 | `drivers/base/devtmpfs.c` | devtmpfs 设备节点处理 |
 
-## 1.4\_已有其他机制证据
+## 1.4\_VFS\_扩展证据
+
+| 相对路径 | 主要用途 |
+| --- | --- |
+| `fs/fs_context.c`、`include/linux/fs_context.h` | 挂载上下文、参数解析和建树事务 |
+| `fs/mount.h`、`fs/pnode.c` | 内部 mount 状态和传播关系 |
+| `fs/file_table.c` | file 分配、`fput()` 与释放 |
+| `mm/filemap.c` | 页缓存、通用 buffered I/O 和文件 fault |
+| `mm/page-writeback.c`、`fs/fs-writeback.c` | dirty 节流、inode/folio 写回 |
+| `fs/sync.c` | sync、fsync 和同步入口 |
+| `fs/direct-io.c`、`fs/iomap/direct-io.c` | Direct I/O 请求与完成 |
+| `fs/notify/`、`include/linux/fsnotify*.h` | fsnotify group、mark、event 和 VFS 通知入口 |
+| `fs/ramfs/inode.c`、`fs/libfs.c` | 最小内存文件系统和通用文件系统辅助实现 |
+| `fs/anon_inodes.c`、`fs/pipe.c` | 匿名 file 与 pipe 特殊接入 |
+
+## 1.5\_已有其他机制证据
 
 本目录还保存 RCU、kobject、引用计数、内存管理和数据结构等已有源码。后续会根据实际来源逐步核对其版本；在完成核对前，不应仅凭目录共存就断言所有旧文件都来自本章记录的 6.12.20 基线。
