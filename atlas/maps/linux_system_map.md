@@ -53,7 +53,7 @@ Linux 内核结构、模块与数据结构
 ## 1.4\_子系统与驱动模型
 
 - [中断的定位与演化](../../knowledge/kernel_subsystems/irq/中断机制简介/P01_中断的定位与演化.md)解释硬件事件进入 Linux 后的处理链。
-- [设备模型基础与对象模型](../../knowledge/linux/device_model/设备模型简介/P01_基础与对象模型.md)解释 kobject、device、driver、bus 与 class 的关系。
+- [设备模型抽象机制与 Driver Core 状态拓扑](../../knowledge/linux/device_model/大纲.md)解释 kobject、device、driver、bus 与 class 的关系，以及注册、匹配和生命周期状态机。
 - [驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md)把公共机制映射到驱动结构。
 - [字符设备最小模型](../../knowledge/driver_model/character_device/P01_字符设备最小模型.md)解释设备号、`cdev`、VFS 与文件操作如何形成用户入口。
 - [GPIO 总体框架](../../knowledge/driver_model/gpio/gpio子模块/P01_基础与总体框架.md)连接控制器、消费者、设备树与中断。

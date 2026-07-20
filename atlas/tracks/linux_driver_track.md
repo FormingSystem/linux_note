@@ -36,7 +36,7 @@ domains:
 
 ## 1.4\_第三阶段\_设备模型与Platform
 
-1. 按序完成[设备模型](../../knowledge/linux/device_model/设备模型简介)。
+1. 按序完成[Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)。
 2. 阅读[驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md)。
 3. 按序完成[设备树与 Platform 开发](../../knowledge/driver_model/device_tree/设备树+platform开发)。
 4. 选读[GPIO 与 pinctrl 设备树示例](../../knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md)。
