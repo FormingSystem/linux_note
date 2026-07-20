@@ -19,8 +19,9 @@ domains:
 
 1. [Linux 内核模块与设备节点操作入门](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)。
 2. [Linux 驱动开发 Makefile 指南](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_驱动开发_Makefile_指南.md)。
-3. 按序完成[字符设备专题](../../knowledge/driver_model/character_device/大纲.md)。
-4. 结合[字符设备驱动模板](../../knowledge/driver_model/character_device/P10_字符设备驱动模板.md)完成最小驱动。
+3. 先阅读[VFS 的对象拓扑](../../knowledge/kernel_subsystems/vfs/P03_VFS_状态与对象拓扑.md)、[open 状态机](../../knowledge/kernel_subsystems/vfs/P12_open状态机.md)和[fd/file 生命周期](../../knowledge/kernel_subsystems/vfs/P13_fd_table与file生命周期.md)，明确字符设备接入的上游边界；VFS 自身的完整路线仍以[VFS 专题大纲](../../knowledge/kernel_subsystems/vfs/大纲.md)为准。
+4. 按序完成[字符设备专题](../../knowledge/driver_model/character_device/大纲.md)。
+5. 结合[字符设备驱动模板](../../knowledge/driver_model/character_device/P10_字符设备驱动模板.md)完成最小驱动。
 
 阶段验收：能独立完成模块装卸、设备号分配、`cdev` 注册、设备节点创建和基础文件操作。
 

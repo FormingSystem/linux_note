@@ -114,4 +114,4 @@ Linux 6.12.20 的主要入口包括：
 - `fs/inode.c`、`fs/dcache.c`、`fs/super.c`：核心对象缓存和生命周期；
 - `include/linux/fs.h`、`include/linux/dcache.h`、`include/linux/mount.h`：主要结构和契约。
 
-下一章先建立完整对象与状态地图：[VFS 状态与对象拓扑](P02_VFS_状态与对象拓扑.md)。
+下一章不直接背结构字段，而是从最小方案推导这些对象为什么出现：[VFS 抽象机制推演](P02_VFS抽象机制推演.md)。

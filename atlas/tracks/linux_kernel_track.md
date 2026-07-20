@@ -49,13 +49,14 @@ domains:
 
 ## 1.5\_第四阶段\_设备与I\_O
 
-1. 按序阅读[Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)。
-2. 阅读[错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)。
-3. 阅读[poll 与 epoll 的区别](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)。
-4. 按序阅读[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md)。
-5. 阅读[Linux 内核日志](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md)，建立最基本的观测手段。
+1. 按序阅读[VFS 子系统专题](../../knowledge/kernel_subsystems/vfs/大纲.md)，建立 path、mount、dentry、inode、file、页缓存和回收的完整模型。
+2. 按序阅读[Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)。
+3. 阅读[错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)。
+4. 阅读[poll 与 epoll 的区别](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)。
+5. 按序阅读[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md)。
+6. 阅读[Linux 内核日志](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md)，建立最基本的观测手段。
 
-阶段验收：能描述设备注册、匹配、节点暴露、阻塞唤醒和异步通知之间的完整路径。
+阶段验收：能描述路径和打开文件怎样进入 I/O，设备怎样注册、匹配和暴露节点，以及阻塞唤醒和异步通知怎样接回用户接口。
 
 ## 1.6\_阅读方法
 
