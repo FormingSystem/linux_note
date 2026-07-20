@@ -47,7 +47,7 @@ Linux 内核结构、模块与数据结构
 | 并发与同步 | 如何处理竞争、可见性和执行上下文约束 | [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md) |
 | 生命周期 | 如何确保对象被安全持有和释放 | [kref](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)、[devres](../../knowledge/linux/object_lifetime/devres/devres_API说明.md) |
 | 时间管理 | 如何完成延时、超时和定时回调 | [驱动中的时间问题](../../knowledge/linux/time_management/定时器简介/P01_驱动中的_时间问题_概述.md) |
-| I/O 模型 | 用户进程如何等待或接收设备事件 | [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)、[异步通知](../../knowledge/linux/io_model/async_notification/异步通知简介/P01_异步通知全景与知识地图.md) |
+| I/O 模型 | 用户进程如何等待或接收设备事件 | [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)、[异步通知](../../knowledge/linux/io_model/async_notification/P01_异步通知全景与知识地图.md) |
 | 错误处理 | 如何在指针返回值中表达错误 | [错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md) |
 
 ## 1.4\_子系统与驱动模型

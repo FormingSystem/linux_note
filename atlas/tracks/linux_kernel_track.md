@@ -52,7 +52,7 @@ domains:
 1. 按序阅读[设备模型](../../knowledge/linux/device_model/设备模型简介)。
 2. 阅读[错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)。
 3. 阅读[poll 与 epoll 的区别](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)。
-4. 按序阅读[异步通知](../../knowledge/linux/io_model/async_notification/异步通知简介)。
+4. 按序阅读[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md)。
 5. 阅读[Linux 内核日志](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md)，建立最基本的观测手段。
 
 阶段验收：能描述设备注册、匹配、节点暴露、阻塞唤醒和异步通知之间的完整路径。

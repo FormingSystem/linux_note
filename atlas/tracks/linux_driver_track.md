@@ -30,7 +30,7 @@ domains:
 2. [错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)。
 3. [devres API](../../knowledge/linux/object_lifetime/devres/devres_API说明.md)。
 4. [驱动中的时间问题](../../knowledge/linux/time_management/定时器简介/P01_驱动中的_时间问题_概述.md)，再按需要学习睡眠、timer、hrtimer 和 delayed work。
-5. [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)及[异步通知](../../knowledge/linux/io_model/async_notification/异步通知简介)。
+5. [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)及[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md)。
 
 阶段验收：能为共享状态选择同步方法，正确管理失败路径和卸载路径，并为设备事件选择用户态通知方式。
 
