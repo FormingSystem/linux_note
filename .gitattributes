@@ -1,7 +1,11 @@
 * text=auto
+.gitattributes text eol=lf
 *.md text eol=lf
 *.sh text eol=lf
 *.json text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
 .githooks/* text eol=lf
+research/source_reading/linux/**/*.c text eol=lf
+research/source_reading/linux/**/*.h text eol=lf
+research/source_reading/linux/**/*.rst text eol=lf
