@@ -43,80 +43,80 @@ Linux通用机制
 
 ```text
 linux-note/
-├── atlas/
-│   ├── maps/
-│   ├── tracks/
-│   ├── indexes/
-│   └── roadmaps/
-├── knowledge/
-│   ├── foundations/
-│   │   ├── computer_architecture/
-│   │   ├── operating_systems/
-│   │   ├── c_language/
-│   │   ├── algorithms/
-│   │   ├── data_structures/
-│   │   └── concurrency_theory/
-│   ├── linux/
-│   │   ├── architecture/
-│   │   ├── execution_context/
-│   │   ├── synchronization/
-│   │   ├── memory_ordering/
-│   │   ├── waiting_notification/
-│   │   ├── time_management/
-│   │   ├── memory_management/
-│   │   ├── object_lifetime/
-│   │   ├── error_handling/
-│   │   ├── io_model/
-│   │   ├── device_model/
-│   │   └── data_structures/
-│   ├── kernel_subsystems/
-│   ├── driver_model/
-│   └── system_software/
-├── engineering/
-│   ├── driver_development/
-│   ├── kernel_development/
-│   ├── system_build/
-│   ├── bsp_porting/
-│   ├── performance/
-│   ├── debugging/
-│   ├── testing/
-│   └── release/
-├── platforms/
-│   ├── arm/
-│   ├── arm64/
-│   ├── riscv/
-│   └── x86/
-├── labs/
-│   ├── foundations/
-│   ├── kernel/
-│   ├── drivers/
-│   ├── system/
-│   ├── platforms/
-│   └── debugging/
-├── projects/
-├── research/
-│   ├── source_reading/
-│   ├── call_traces/
-│   ├── benchmarks/
-│   ├── investigations/
-│   └── reading_notes/
-├── reference/
-├── publications/
-│   ├── books/
-│   ├── articles/
-│   ├── manifests/
-│   ├── templates/
-│   └── output/
-├── tools/
-├── governance/
-│   ├── architecture/
-│   ├── conventions/
-│   ├── templates/
-│   ├── schemas/
-│   └── migration/
-├── assets/
-├── scripts/
-└── tests/
+├── atlas/                         # 知识地图与学习编排
+│   ├── maps/                      # 知识地图
+│   ├── tracks/                    # 学习路线
+│   ├── indexes/                   # 内容索引
+│   └── roadmaps/                  # 建设与学习路线图
+├── knowledge/                     # 稳定、可复用的权威知识
+│   ├── foundations/               # 计算机基础理论
+│   │   ├── computer_architecture/ # 计算机体系结构
+│   │   ├── operating_systems/     # 操作系统原理
+│   │   ├── c_language/            # C 语言
+│   │   ├── algorithms/            # 算法
+│   │   ├── data_structures/       # 通用数据结构
+│   │   └── concurrency_theory/    # 并发理论
+│   ├── linux/                     # Linux 通用机制
+│   │   ├── architecture/          # Linux 架构与源码组织
+│   │   ├── execution_context/     # 执行上下文
+│   │   ├── synchronization/       # 同步与并发控制
+│   │   ├── memory_ordering/       # 内存顺序与屏障
+│   │   ├── waiting_notification/  # 等待与通知
+│   │   ├── time_management/       # 时间管理
+│   │   ├── memory_management/     # 内存管理
+│   │   ├── object_lifetime/       # 对象生命周期
+│   │   ├── error_handling/        # 错误处理
+│   │   ├── io_model/              # I/O 模型
+│   │   ├── device_model/          # Linux 设备模型
+│   │   └── data_structures/       # Linux 专用数据结构
+│   ├── kernel_subsystems/          # 内核子系统
+│   ├── driver_model/               # 驱动模型与设备类别
+│   └── system_software/            # 系统软件
+├── engineering/                    # 工程方法与流程
+│   ├── driver_development/         # 驱动开发方法
+│   ├── kernel_development/         # 内核开发方法
+│   ├── system_build/               # 系统构建
+│   ├── bsp_porting/                # BSP 移植
+│   ├── performance/                # 性能分析与优化
+│   ├── debugging/                  # 调试方法
+│   ├── testing/                    # 测试方法
+│   └── release/                    # 发布流程
+├── platforms/                      # 平台与架构差异
+│   ├── arm/                        # ARM 平台
+│   ├── arm64/                      # ARM64 平台
+│   ├── riscv/                      # RISC-V 平台
+│   └── x86/                        # x86 平台
+├── labs/                           # 最小可复现实验
+│   ├── foundations/                # 基础理论实验
+│   ├── kernel/                     # 内核机制实验
+│   ├── drivers/                    # 驱动实验
+│   ├── system/                     # 系统软件实验
+│   ├── platforms/                  # 平台实验
+│   └── debugging/                  # 调试实验
+├── projects/                       # 综合项目
+├── research/                       # 研究证据与过程记录
+│   ├── source_reading/             # 源码阅读
+│   ├── call_traces/                # 调用链追踪
+│   ├── benchmarks/                 # 基准测试
+│   ├── investigations/             # 问题调查
+│   └── reading_notes/              # 阅读记录
+├── reference/                      # 查询型参考资料
+├── publications/                   # 出版物编排与产物
+│   ├── books/                      # 书籍工程
+│   ├── articles/                   # 文章工程
+│   ├── manifests/                  # 内容编排清单
+│   ├── templates/                  # 出版模板
+│   └── output/                     # 构建产物
+├── tools/                          # 工具使用说明
+├── governance/                     # 仓库治理规范
+│   ├── architecture/               # 信息架构
+│   ├── conventions/                # 协作与写作约定
+│   ├── templates/                  # 文档模板
+│   ├── schemas/                    # 元数据模式
+│   └── migration/                  # 迁移记录
+├── assets/                         # 图片、附件与数据集
+├── scripts/                        # 自动化脚本
+└── tests/                          # 仓库工具测试
 ```
 
 空目录不使用占位文件。只有出现正式内容时才进入 Git。
