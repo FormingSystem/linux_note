@@ -30,7 +30,7 @@ domains:
 | 对象生命周期 | [kref](../../knowledge/linux/object_lifetime/kref)、[devres](../../knowledge/linux/object_lifetime/devres) |
 | 时间管理 | [定时器专题](../../knowledge/linux/time_management/定时器简介) |
 | I/O 模型 | [阻塞 I/O](../../knowledge/linux/io_model/blocking_io)、[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md) |
-| 设备模型 | [设备模型专题](../../knowledge/linux/device_model/设备模型简介) |
+| 设备模型 | [设备模型专题](../../knowledge/linux/device_model/大纲.md) |
 | 错误处理 | [错误指针](../../knowledge/linux/error_handling/error_pointer) |
 
 ## 1.3\_内核子系统与驱动模型
@@ -38,6 +38,7 @@ domains:
 | 领域 | 当前内容入口 |
 | --- | --- |
 | 中断 | [中断机制专题](../../knowledge/kernel_subsystems/irq/中断机制简介) |
+| VFS | [VFS 子系统专题](../../knowledge/kernel_subsystems/vfs/大纲.md) |
 | 日志与跟踪 | [Linux 内核日志](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md) |
 | 驱动基础 | [驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model) |
 | 字符设备 | [character_device](../../knowledge/driver_model/character_device) |
@@ -76,6 +77,7 @@ domains:
 
 - [知识库导航](../home.md)
 - [知识库建设路线图](../roadmaps/content_roadmap.md)
+- [Linux I/O 与驱动子系统建设路线](../roadmaps/linux_io_driver_subsystems.md)
 - [仓库信息架构设计](../../governance/architecture/repository_information_architecture.md)
 - [Git 协作与提交规范](../../governance/conventions/git_guide.md)
 - [全量目录重构记录](../../governance/migration/P01_全量目录重构记录.md)

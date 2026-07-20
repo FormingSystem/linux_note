@@ -49,7 +49,7 @@ domains:
 
 ## 1.5\_第四阶段\_设备与I\_O
 
-1. 按序阅读[设备模型](../../knowledge/linux/device_model/设备模型简介)。
+1. 按序阅读[Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)。
 2. 阅读[错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)。
 3. 阅读[poll 与 epoll 的区别](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)。
 4. 按序阅读[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md)。
