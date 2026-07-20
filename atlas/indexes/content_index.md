@@ -26,7 +26,7 @@ domains:
 | --- | --- |
 | 内核架构 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)、[模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes) |
 | 数据结构 | [单链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)、[哈希表专题](../../knowledge/linux/data_structures/哈希表_Hash_Table)、[红黑树专题](../../knowledge/linux/data_structures/红黑树_rb-tree) |
-| 并发同步 | [并发与竞争专题](../../knowledge/linux/synchronization/concurrency_and_competition/大纲.md)、[RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md) |
+| 并发同步 | [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md)、[RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md) |
 | 对象生命周期 | [kref](../../knowledge/linux/object_lifetime/kref)、[devres](../../knowledge/linux/object_lifetime/devres) |
 | 时间管理 | [定时器专题](../../knowledge/linux/time_management/定时器简介) |
 | I/O 模型 | [阻塞 I/O](../../knowledge/linux/io_model/blocking_io)、[异步通知](../../knowledge/linux/io_model/async_notification/异步通知简介) |
