@@ -46,10 +46,11 @@ domains:
 
 ## 1.5\_第四阶段\_GPIO\_中断与Input
 
-1. 按序完成[GPIO 子模块](../../knowledge/driver_model/gpio/gpio子模块)。
-2. 阅读[Linux 驱动中的中断注册与接口](../../knowledge/kernel_subsystems/irq/中断机制简介/P04_Linux_驱动中的中断注册与接口.md)。
-3. 阅读[GPIO 与触发语义](../../knowledge/kernel_subsystems/irq/中断机制简介/P05_GPIO_与触发语义_电平_边沿_DTS_与_只来一次一直来_为何出现.md)。
-4. 按序完成 [Input 子系统](../../knowledge/driver_model/input/大纲.md)。
+1. 按序完成 [GPIO 专题](../../knowledge/driver_model/gpio/大纲.md)。
+2. 阅读 [标准 GPIO Consumer 专题](../../knowledge/driver_model/gpio_consumers/大纲.md)，理解何时复用 `gpio-keys`、`gpio-leds`、regulator 等领域驱动。
+3. 阅读[Linux 驱动中的中断注册与接口](../../knowledge/kernel_subsystems/irq/中断机制简介/P04_Linux_驱动中的中断注册与接口.md)。
+4. 阅读[GPIO 与触发语义](../../knowledge/kernel_subsystems/irq/中断机制简介/P05_GPIO_与触发语义_电平_边沿_DTS_与_只来一次一直来_为何出现.md)。
+5. 按序完成 [Input 子系统](../../knowledge/driver_model/input/大纲.md)。
 
 阶段验收：能实现 GPIO 输入输出、中断与去抖，并能说明 Input 事件从驱动上报到用户态读取的路径。
 

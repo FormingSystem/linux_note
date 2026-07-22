@@ -57,7 +57,7 @@ Linux 内核结构、模块与数据结构
 - [设备模型抽象机制与 Driver Core 状态拓扑](../../knowledge/linux/device_model/大纲.md)解释 kobject、device、driver、bus 与 class 的关系，以及注册、匹配和生命周期状态机。
 - [驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md)把公共机制映射到驱动结构。
 - [字符设备最小模型](../../knowledge/driver_model/character_device/P01_字符设备最小模型.md)解释设备号、`cdev`、VFS 与文件操作如何形成用户入口。
-- [GPIO 总体框架](../../knowledge/driver_model/gpio/gpio子模块/P01_基础与总体框架.md)连接控制器、消费者、设备树与中断。
+- [GPIO 专题](../../knowledge/driver_model/gpio/大纲.md)从连接抽象、状态机和源码实现连接控制器、消费者、设备树与中断。
 - [旧式平台设备与资源机制](../../knowledge/driver_model/device_tree/设备树+platform开发/P01_旧式平台设备与资源机制.md)进入 Platform 与设备树匹配。
 - [Input 子系统起点](../../knowledge/driver_model/input/P01_从硬件样本到统一输入事件.md)从问题出发建立完整输入事件流水线。
 
