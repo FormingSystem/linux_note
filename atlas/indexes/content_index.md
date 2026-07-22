@@ -43,7 +43,7 @@ domains:
 | 驱动基础 | [驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model) |
 | 字符设备 | [character_device](../../knowledge/driver_model/character_device) |
 | 设备树与 Platform | [device_tree](../../knowledge/driver_model/device_tree)、[platform_bus](../../knowledge/driver_model/platform_bus/readme.md) |
-| GPIO | [gpio](../../knowledge/driver_model/gpio) |
+| GPIO | [GPIO 专题](../../knowledge/driver_model/gpio/大纲.md)、[标准 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/大纲.md) |
 | Input | [专题大纲](../../knowledge/driver_model/input/大纲.md) |
 | misc 设备 | [misc](../../knowledge/driver_model/misc/readme.md) |
 
