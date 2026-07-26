@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "id": "linux.data_structures.hash_table",
   "title": "哈希表：从直接定位到内核并发索引",
   "subtitle": "从“为什么不逐项比较”开始，沿着映射、冲突、hlist 和动态伸缩建立能解释工程取舍的索引模型。",
@@ -13,9 +13,9 @@
     {"source_id":"linux-note","id":"knowledge.linux.data_structures.哈希表_hash_table.p03_高级进阶与性能调优.p05_动态伸缩的rhashtable_无感扩容的艺术","path":"knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P05_动态伸缩的rhashtable_无感扩容的艺术.md"}
   ],
   "stages": {
-    "learning":{"title":"主题导学","purpose":"提炼定位、冲突和负载变化的因果主线，并保留原文追溯入口。","items_file":"learning_guides.json"},
-    "guided":{"title":"提示提问","purpose":"用具体桶状态逐步建立查找和删除模型。","items_file":"guided_questions.json"},
-    "reconstruction":{"title":"脱稿输出","purpose":"独立重建对象、桶、链和并发保护之间的关系。","items_file":"model_tasks.json"},
-    "professional":{"title":"专业案例","purpose":"根据分布、读写比和伸缩约束选择索引方案。","items_file":"professional_cases.json"}
+    "learning":{"title":"专题电子书","purpose":"沿目录和章节推导定位、冲突、内核布局与动态伸缩。","book_file":"book.json"},
+    "guided":{"title":"提示提问","purpose":"用具体桶状态逐步建立查找和删除模型。","items_file":"training/guided_questions.json"},
+    "reconstruction":{"title":"脱稿输出","purpose":"独立重建对象、桶、链和并发保护之间的关系。","items_file":"training/model_tasks.json"},
+    "professional":{"title":"专业案例","purpose":"根据分布、读写比和伸缩约束选择索引方案。","items_file":"training/professional_cases.json"}
   }
 }

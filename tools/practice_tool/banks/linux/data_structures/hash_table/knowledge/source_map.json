@@ -1,0 +1,6 @@
+{"schema_version":1,"evidence":[
+  {"id":"linux.hash.evidence.mapping","claim_id":"linux.hash.claim.mapping_reduces_candidates","knowledge_ref":"knowledge.linux.data_structures.哈希表_hash_table.p01_数据结构理论基础.p01_哈希表核心原理_空间与时间的终极博弈","locator":"哈希映射","evidence_type":"explanation","review_status":"verified"},
+  {"id":"linux.hash.evidence.collision","claim_id":"linux.hash.claim.collisions_are_expected","knowledge_ref":"knowledge.linux.data_structures.哈希表_hash_table.p02_linux_内核_5.10_核心实现.p03_算法之魂_哈希函数与位运算优化","locator":"冲突与分布","evidence_type":"derivation","review_status":"verified"},
+  {"id":"linux.hash.evidence.hlist","claim_id":"linux.hash.claim.hlist_pprev_enables_delete","knowledge_ref":"knowledge.linux.data_structures.哈希表_hash_table.p02_linux_内核_5.10_核心实现.p02_内核基石_hlist非对称链表","locator":"hlist_node","evidence_type":"implementation","review_status":"verified"},
+  {"id":"linux.hash.evidence.resize","claim_id":"linux.hash.claim.resize_requires_transition","knowledge_ref":"knowledge.linux.data_structures.哈希表_hash_table.p03_高级进阶与性能调优.p05_动态伸缩的rhashtable_无感扩容的艺术","locator":"动态扩容","evidence_type":"implementation","review_status":"verified"}
+]}

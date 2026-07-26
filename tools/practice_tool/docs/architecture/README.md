@@ -33,10 +33,11 @@ architecture/
 ### 1.3.1\_产品设计
 
 1. [产品导航与交互设计](product/navigation_and_interaction.md)：大厅、训练库、路由、训练步骤和常规操作。
-2. [学习导引提炼标准](product/learning_guide_standard.md)：怎样把知识来源提炼成可学习、可核验和可追溯的导引。
-3. [知识提炼、训练适配与 AI 治理](product/content_adaptation_and_ai_governance.md)：授权、提示注入、证据、审核和发布。
-4. [训练会话状态与持久化](product/training_session_state_and_persistence.md)：状态机、解锁、自动保存、版本快照和恢复。
-5. [复习调度与训练历史](product/review_scheduling_and_history.md)：本次表现、掌握状态、复习时间和历史比较。
+2. [专题电子书与知识治理设计](product/topic_ebook_and_knowledge_governance.md)：目录、章节、声明、证据、纠错和训练绑定。
+3. [专题电子书编写与提炼标准](product/topic_ebook_editorial_standard.md)：怎样把知识来源提炼成有目录、有章节、可核验和可追溯的专题书。
+4. [知识提炼、训练适配与 AI 治理](product/content_adaptation_and_ai_governance.md)：授权、提示注入、证据、审核和发布。
+5. [训练会话状态与持久化](product/training_session_state_and_persistence.md)：状态机、阶段访问、位置记忆、自动保存、版本快照和恢复。
+6. [复习调度与训练历史](product/review_scheduling_and_history.md)：本次表现、掌握状态、复习时间和历史比较。
 
 ### 1.3.2\_工程设计
 
@@ -55,7 +56,8 @@ architecture/
 | --- | --- |
 | 当前完成度、验证结果和已知风险 | `implementation_status.md` |
 | 大厅、主导航、页面和按钮语义 | `product/navigation_and_interaction.md` |
-| 学习导引结构和提炼要求 | `product/learning_guide_standard.md` |
+| 专题电子书、章节、声明、证据和纠错 | `product/topic_ebook_and_knowledge_governance.md` |
+| 专题电子书结构和提炼要求 | `product/topic_ebook_editorial_standard.md` |
 | AI 提炼、证据、审核和发布 | `product/content_adaptation_and_ai_governance.md` |
 | 会话、步骤、保存和恢复 | `product/training_session_state_and_persistence.md` |
 | 复习、掌握状态和历史 | `product/review_scheduling_and_history.md` |

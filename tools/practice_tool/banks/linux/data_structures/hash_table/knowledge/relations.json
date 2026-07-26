@@ -1,0 +1,5 @@
+{"schema_version":1,"relations":[
+  {"from":"linux.hash.claim.mapping_reduces_candidates","type":"requires","to":"linux.hash.claim.collisions_are_expected"},
+  {"from":"linux.hash.claim.collisions_are_expected","type":"implements","to":"linux.hash.claim.hlist_pprev_enables_delete"},
+  {"from":"linux.hash.claim.collisions_are_expected","type":"causes","to":"linux.hash.claim.resize_requires_transition"}
+]}

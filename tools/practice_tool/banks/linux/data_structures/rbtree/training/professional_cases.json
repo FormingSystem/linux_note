@@ -1,6 +1,8 @@
 [
   {
     "id":"linux.rbtree.case.timer_index",
+    "chapter_ids":["linux.rbtree.chapter.problem","linux.rbtree.chapter.constraints","linux.rbtree.chapter.linux"],
+    "claim_ids":["linux.rbtree.claim.bst_can_degenerate","linux.rbtree.claim.constraints_bound_height","linux.rbtree.claim.linux_caller_owns_policy"],
     "title":"高频更新时间索引的结构选择",
     "difficulty":"intermediate",
     "background":"内核模块维护两万条可取消定时任务，需要按到期时间取最早任务，也需要按已知对象删除。到期时间分布不均，任务持续插入和取消。",

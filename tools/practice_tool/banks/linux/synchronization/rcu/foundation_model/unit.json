@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "id": "linux.synchronization.rcu",
   "title": "RCU：从旧读者边界到安全回收",
   "subtitle": "不从 API 名称开始，而是追踪旧指针怎样留在读者手中，以及更新者凭什么证明对象已经可以回收。",
@@ -12,9 +12,9 @@
     {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.tree_state","path":"knowledge/linux/synchronization/rcu/P04_Linux_Tree_RCU_状态与通知机制.md"}
   ],
   "stages": {
-    "learning":{"title":"主题导学","purpose":"从旧指针仍被持有的问题推导发布、等待和回收边界。","items_file":"learning_guides.json"},
-    "guided":{"title":"提示提问","purpose":"用多 CPU 交错逐步建立旧读者集合模型。","items_file":"guided_questions.json"},
-    "reconstruction":{"title":"脱稿输出","purpose":"独立重建发布、宽限期和安全回收时序。","items_file":"model_tasks.json"},
-    "professional":{"title":"专业案例","purpose":"根据读写比、内存预算和生命期约束选择同步方案。","items_file":"professional_cases.json"}
+    "learning":{"title":"专题电子书","purpose":"沿目录和章节推导旧读者、发布、宽限期、状态汇聚与回收。","book_file":"book.json"},
+    "guided":{"title":"提示提问","purpose":"用多 CPU 交错逐步建立旧读者集合模型。","items_file":"training/guided_questions.json"},
+    "reconstruction":{"title":"脱稿输出","purpose":"独立重建发布、宽限期和安全回收时序。","items_file":"training/model_tasks.json"},
+    "professional":{"title":"专业案例","purpose":"根据读写比、内存预算和生命期约束选择同步方案。","items_file":"training/professional_cases.json"}
   }
 }

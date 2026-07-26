@@ -30,3 +30,4 @@ rejected
 2. [0002：采用本地优先持久化](0002-local-first-persistence.md)
 3. [0003：训练会话冻结不可变计划快照](0003-immutable-training-plan-snapshot.md)
 4. [0004：AI 只生成需要人工审核的草稿](0004-ai-draft-requires-review.md)
+5. [0005：专题电子书取代单篇学习导引](0005-topic-ebook-content-model.md)

@@ -1,6 +1,8 @@
 [
   {
     "id":"linux.rcu.case.registry",
+    "chapter_ids":["linux.rcu.chapter.old_reader","linux.rcu.chapter.grace_period","linux.rcu.chapter.cost"],
+    "claim_ids":["linux.rcu.claim.entry_update_not_reclaim","linux.rcu.claim.grace_period_bounds_old_readers","linux.rcu.claim.cost_moves_to_update"],
     "title":"高频查询注册表的同步选择",
     "difficulty":"advanced",
     "background":"64 核服务按 ID 查询设备对象，读写比约一千万比一。更新很少，对象允许延迟释放，但部分调用方想把对象地址带到异步任务中。",

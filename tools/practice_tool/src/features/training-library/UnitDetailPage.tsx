@@ -31,7 +31,7 @@ export default function UnitDetailPage() {
       <div className="notice"><span>知识来源</span>{content.unit.knowledge_refs.length} 个可追溯原文入口；训练内容为重新提炼，不复制原文。</div>
       <div className="actions home-actions">
         <Link className="button-link secondary" to="/library">返回训练库</Link>
-        <button className="primary" onClick={() => void start()}>{active ? "继续上次训练" : "从学习导引开始"} →</button>
+        <button className="primary" onClick={() => void start()}>{active ? "继续上次训练" : "从专题学习开始"} →</button>
       </div>
     </section>
   );

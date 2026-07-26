@@ -220,7 +220,7 @@ Ubuntu 22.04 不直接采用发行版仓库中的 Node.js，因为系统仓库�
 
 当前示范训练单元中的 `knowledge_refs.path` 指向 `linux-note` 的知识正文，用于追溯来源和在集成环境中定位文档。程序加载训练内容依赖稳定 ID 和 `banks` 内文件，不应根据外层仓库目录推导训练单元。未来独立拆仓时可以重新映射外部知识源地址，但不需要重写训练项目 ID。
 
-当前随版本提供 RCU、红黑树和哈希表三个示范训练单元，共 15 个训练任务。界面单元数量与 `banks/index.json` 一致；若显示数量不同，应先运行 `npm run check:data` 并确认浏览器没有继续访问旧的 Vite 进程。
+当前随版本提供 RCU、红黑树和哈希表三本专题电子书，共 12 个学习章节和 12 个训练任务。界面单元数量与 `banks/index.json` 一致；若显示数量不同，应先运行 `npm run check:data` 并确认浏览器没有继续访问旧的 Vite 进程。
 
 知识源通过 `PRACTICE_SOURCE_CONFIG` 指定。MSYS2 和 Ubuntu 22.04 使用同一个变量名与 JSON Schema：
 

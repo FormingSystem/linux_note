@@ -1,4 +1,4 @@
-import type { LoadedUnit, PracticeSession, TrainingStage } from "../../shared/types";
+import type { LearningChapter, LoadedUnit, PracticeSession, TopicBook, TrainingStage } from "../../shared/types";
 import { readAllRecords, readRecord, STORES, writeRecord } from "./database";
 
 function firstItem(content: LoadedUnit) {
@@ -20,6 +20,7 @@ export function createSession(content: LoadedUnit): PracticeSession {
     hintLevels: {},
     revealedItemIds: [],
     completedItemIds: [],
+    stagePositions: { learning: firstItem(content) },
     createdAt: now,
     updatedAt: now,
     completedAt: null,
@@ -32,7 +33,44 @@ export function saveSession(session: PracticeSession): Promise<void> {
 }
 
 export function loadSession(id: string): Promise<PracticeSession | undefined> {
-  return readRecord<PracticeSession>(STORES.sessions, id);
+  return readRecord<PracticeSession>(STORES.sessions, id).then((session) => session ? normalizeSession(session) : undefined);
+}
+
+function normalizeSession(session: PracticeSession): PracticeSession {
+  const learning = session.contentSnapshot.learning.map((guide, index) => {
+    const legacy = guide as LearningChapter & {
+      content_file?: string;
+      reading?: Array<{ heading: string; content: string }>;
+    };
+    if (legacy.content_markdown && legacy.file) return guide;
+    const contentMarkdown = (legacy.reading ?? []).map((section) => `## ${section.heading}\n\n${section.content}`).join("\n\n");
+    const { reading: _reading, content_file: _contentFile, ...current } = legacy;
+    return {
+      ...current,
+      file: `migrated/P${String(index + 1).padStart(2, "0")}_session_snapshot.md`,
+      estimated_minutes: legacy.estimated_minutes ?? 10,
+      prerequisites: legacy.prerequisites ?? [],
+      claim_ids: legacy.claim_ids ?? [],
+      content_markdown: legacy.content_markdown || contentMarkdown,
+    };
+  });
+  const existingBook = (session.contentSnapshot as LoadedUnit & { book?: TopicBook }).book;
+  const book: TopicBook = existingBook ?? {
+    schema_version: 1,
+    id: `${session.unitId}.migrated-book`,
+    title: session.unitTitle,
+    version: "0.0.0",
+    status: "archived",
+    outline_file: "migrated_outline.md",
+    outline_markdown: "# 已迁移的历史学习导引\n\n本会话创建于专题电子书协议启用之前，正文已经转换为只读章节快照。",
+    chapters: learning,
+    claims: [],
+  };
+  return {
+    ...session,
+    contentSnapshot: { ...session.contentSnapshot, book: { ...book, chapters: learning }, learning },
+    stagePositions: session.stagePositions ?? { [session.currentStage]: session.currentItemId },
+  };
 }
 
 export async function listSessions(): Promise<PracticeSession[]> {

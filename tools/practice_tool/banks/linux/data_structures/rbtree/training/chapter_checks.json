@@ -1,0 +1,6 @@
+[
+  {"chapter_id":"linux.rbtree.chapter.problem","check_questions":[{"question":"BST 退化时首先丢失什么？","answer":"搜索结果仍正确，首先丢失的是路径长度和复杂度保证。"}],"open_associations":["近乎只读的数据是否更适合排序数组？"],"topology_memory":{"prompt":"画出不利插入顺序到线性路径的因果链。","nodes":["插入顺序","树形","路径长度"],"links":["不利插入顺序 → 单侧树形","单侧树形 → 路径增长"]}},
+  {"chapter_id":"linux.rbtree.chapter.rotation","check_questions":[{"question":"旋转为什么不破坏有序性？","answer":"中间子树仍位于两个关键字之间，局部重排不改变中序顺序。"}],"open_associations":["如果节点还维护区间最大值，旋转后还需更新什么？"],"topology_memory":{"prompt":"画出父、子和中间子树的重排。","nodes":["父节点","子节点","中间子树"],"links":["中间子树 → 保持关键字区间","旋转 → 改变父子关系"]}},
+  {"chapter_id":"linux.rbtree.chapter.constraints","check_questions":[{"question":"颜色规则的工程作用是什么？","answer":"它们提供可局部检查和修复的结构编码，并限制全局高度。"}],"open_associations":["AVL 的更严格平衡会交换哪些成本？"],"topology_memory":{"prompt":"连接红色编码、黑高和高度上界。","nodes":["红节点","黑高","高度"],"links":["红节点 → 组合节点编码","黑高约束 → 高度上界"]}},
+  {"chapter_id":"linux.rbtree.chapter.linux","check_questions":[{"question":"Linux rbtree 为什么不自动并发安全？","answer":"它只维护链接和平衡，锁和对象生命期属于具体使用者。"}],"open_associations":["读多写少时可以怎样组合 RCU 与 rbtree？"],"topology_memory":{"prompt":"画出 rb_node、业务对象和使用者责任。","nodes":["rb_node","业务对象","调用者"],"links":["rb_node → 嵌入业务对象","调用者 → 比较/锁/生命期"]}}
+]

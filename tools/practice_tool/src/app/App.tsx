@@ -4,7 +4,7 @@ import LobbyPage from "../features/lobby/LobbyPage";
 import LibraryPage from "../features/training-library/LibraryPage";
 import UnitDetailPage from "../features/training-library/UnitDetailPage";
 import WorkspaceManager from "../features/training-management/WorkspaceManager";
-import SessionPage from "../features/practice-sessions/SessionPage";
+import SessionPage from "../features/practice-sessions";
 import SimplePage from "../shared/components/SimplePage";
 
 export default function App() {

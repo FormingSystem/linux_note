@@ -1,6 +1,8 @@
 [
   {
     "id":"linux.rcu.guided.published_not_free",
+    "chapter_ids":["linux.rcu.chapter.old_reader","linux.rcu.chapter.grace_period"],
+    "claim_ids":["linux.rcu.claim.entry_update_not_reclaim","linux.rcu.claim.grace_period_bounds_old_readers"],
     "title":"发布完成为什么不等于回收安全",
     "scenario":"CPU0 在 T0 取得 A；CPU1 在 T1 把入口切换为 B；CPU0 在 T2 继续读取 A。",
     "question":"如果 CPU1 在 T1 后立即释放 A，危险经过哪些步骤形成？",
@@ -11,6 +13,8 @@
   },
   {
     "id":"linux.rcu.guided.cost_transfer",
+    "chapter_ids":["linux.rcu.chapter.cost"],
+    "claim_ids":["linux.rcu.claim.cost_moves_to_update"],
     "title":"读侧减少的成本去了哪里",
     "scenario":"查询每秒发生数百万次，配置更新每分钟一次。系统希望普通读侧不共同修改全局锁字。",
     "question":"把共享读状态移出高频路径之后，哪些动作和成本转移到了更新与回收路径？",

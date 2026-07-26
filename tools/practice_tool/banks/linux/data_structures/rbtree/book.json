@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "id": "linux.data_structures.rbtree.book",
+  "title": "红黑树：从搜索树退化到 Linux rbtree",
+  "version": "1.0.0",
+  "status": "evolving",
+  "outline_file": "outline.md",
+  "chapters": [
+    {
+      "id": "linux.rbtree.chapter.problem",
+      "title": "正确的 BST 为什么仍会越来越慢",
+      "objective": "理解有序性只保证查找方向，并不保证路径长度。",
+      "file": "chapters/P01_bst_problem.md",
+      "estimated_minutes": 12,
+      "prerequisites": [],
+      "claim_ids": ["linux.rbtree.claim.bst_can_degenerate"],
+      "knowledge_refs": ["knowledge.linux.data_structures.红黑树_rb-tree.p03_二叉搜索树_bst", "knowledge.linux.data_structures.红黑树_rb-tree.p04_为什么_bst_会退化"]
+    },
+    {
+      "id": "linux.rbtree.chapter.rotation",
+      "title": "旋转怎样改变形状而保持有序",
+      "objective": "从关键字区间推导旋转保持中序顺序的原因。",
+      "file": "chapters/P02_rotation.md",
+      "estimated_minutes": 12,
+      "prerequisites": ["linux.rbtree.chapter.problem"],
+      "claim_ids": ["linux.rbtree.claim.rotation_preserves_order"],
+      "knowledge_refs": ["knowledge.linux.data_structures.红黑树_rb-tree.p05_旋转的作用与局部重排"]
+    },
+    {
+      "id": "linux.rbtree.chapter.constraints",
+      "title": "红黑约束怎样换来有界高度",
+      "objective": "把颜色理解为结构编码，并理解局部修复与全局高度之间的关系。",
+      "file": "chapters/P03_constraints.md",
+      "estimated_minutes": 15,
+      "prerequisites": ["linux.rbtree.chapter.rotation"],
+      "claim_ids": ["linux.rbtree.claim.constraints_bound_height"],
+      "knowledge_refs": ["knowledge.linux.data_structures.红黑树_rb-tree.p07_红黑树_把_2-3-4_树映射成二叉表示"]
+    },
+    {
+      "id": "linux.rbtree.chapter.linux",
+      "title": "Linux rbtree 的职责与使用者责任",
+      "objective": "区分通用平衡机制、内核节点布局与业务并发生命期责任。",
+      "file": "chapters/P04_linux_rbtree.md",
+      "estimated_minutes": 16,
+      "prerequisites": ["linux.rbtree.chapter.constraints"],
+      "claim_ids": ["linux.rbtree.claim.linux_caller_owns_policy"],
+      "knowledge_refs": ["knowledge.linux.data_structures.红黑树_rb-tree.p09_linux_6.12_内核_rbtree_嵌入式节点与使用者接口"]
+    }
+  ],
+  "knowledge": {
+    "claims_file": "knowledge/claims.json",
+    "relations_file": "knowledge/relations.json",
+    "source_map_file": "knowledge/source_map.json"
+  },
+  "training_plan": "training/plan.json"
+}

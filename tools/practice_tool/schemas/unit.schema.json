@@ -5,7 +5,7 @@
   "type": "object",
   "required": ["schema_version", "id", "title", "subtitle", "status", "estimated_minutes", "knowledge_refs", "stages"],
   "properties": {
-    "schema_version": { "const": 2 },
+    "schema_version": { "const": 3 },
     "id": { "type": "string", "pattern": "^[a-z0-9_.-]+$" },
     "title": { "type": "string", "minLength": 1 },
     "subtitle": { "type": "string", "minLength": 1 },
@@ -29,22 +29,32 @@
       "type": "object",
       "required": ["learning", "guided", "reconstruction", "professional"],
       "properties": {
-        "learning": { "$ref": "#/$defs/stage" },
-        "guided": { "$ref": "#/$defs/stage" },
-        "reconstruction": { "$ref": "#/$defs/stage" },
-        "professional": { "$ref": "#/$defs/stage" }
+        "learning": { "$ref": "#/$defs/learningStage" },
+        "guided": { "$ref": "#/$defs/trainingStage" },
+        "reconstruction": { "$ref": "#/$defs/trainingStage" },
+        "professional": { "$ref": "#/$defs/trainingStage" }
       },
       "additionalProperties": false
     }
   },
   "$defs": {
-    "stage": {
+    "learningStage": {
+      "type": "object",
+      "required": ["title", "purpose", "book_file"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 },
+        "book_file": { "type": "string", "const": "book.json" }
+      },
+      "additionalProperties": false
+    },
+    "trainingStage": {
       "type": "object",
       "required": ["title", "purpose", "items_file"],
       "properties": {
         "title": { "type": "string", "minLength": 1 },
         "purpose": { "type": "string", "minLength": 1 },
-        "items_file": { "type": "string", "pattern": "^[a-z0-9_]+\\.json$" }
+        "items_file": { "type": "string", "pattern": "^[a-z0-9_./-]+\\.json$" }
       },
       "additionalProperties": false
     }
