@@ -1,7 +1,10 @@
 {
   "name": "loop-knowledge-practice-tool",
+  "description": "回路（Loop）本地知识训练工具",
   "private": true,
   "version": "0.1.0",
+  "author": "FormingSystem",
+  "license": "GPL-2.0-only",
   "type": "module",
   "engines": {
     "node": ">=18"

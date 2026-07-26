@@ -205,6 +205,24 @@ blockquote { margin: 24px 0; padding: 22px 28px; color: var(--ink); background: 
 .empty-state { padding: 60px 20px; color: var(--muted); text-align: center; border: 1px dashed #c9cec6; }
 .home-actions { max-width: 520px; }
 
+.copyright-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 18px;
+  padding: 20px 24px 26px;
+  color: #6e756f;
+  background: #eef0eb;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.copyright-footer a {
+  color: var(--green);
+  text-decoration: none;
+}
+
 @media (max-width: 800px) {
   .session-meta { display: none; }
   main { grid-template-columns: 1fr; padding: 28px 16px 60px; }

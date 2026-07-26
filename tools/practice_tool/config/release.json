@@ -1,6 +1,13 @@
 {
   "schema_version": 1,
   "product": "loop-knowledge-practice-tool",
+  "display_name_zh": "回路",
+  "display_name_en": "Loop",
+  "copyright_holder": "FormingSystem",
+  "copyright_year": 2026,
+  "copyright_email": "lizhaojun97@qq.com",
+  "project_url": "https://github.com/FormingSystem",
+  "license": "GPL-2.0-only",
   "version": "0.1.0",
   "channel": "development",
   "repository_branch": "master",

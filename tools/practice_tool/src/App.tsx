@@ -123,7 +123,7 @@ function App() {
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">回</span>
-          <div><strong>回路</strong><span>Knowledge Practice</span></div>
+          <div><strong>回路 · Loop</strong><span>Knowledge Practice Tool</span></div>
         </div>
           <div className="session-meta">
             <span className="status-dot" />
@@ -245,6 +245,12 @@ function App() {
           )}
         </section>
       </main>
+      <footer className="copyright-footer">
+        <span>原创：回路（Loop）</span>
+        <span>Copyright © 2026 FormingSystem · GPL-2.0-only</span>
+        <a href="mailto:lizhaojun97@qq.com">联系：lizhaojun97@qq.com</a>
+        <span>二次开发请保留来源、项目地址及修改说明。</span>
+      </footer>
     </div>
   );
 }
@@ -405,7 +411,18 @@ function Feedback({ title, good, warning, warningTitle = "常见失真" }: { tit
 export default App;
 
 type SystemInfo = {
-  release: { version: string; channel: string; editable: false };
+  release: {
+    version: string;
+    channel: string;
+    display_name_zh: "回路";
+    display_name_en: "Loop";
+    copyright_holder: string;
+    copyright_year: number;
+    copyright_email: string;
+    project_url: string;
+    license: "GPL-2.0-only";
+    editable: false;
+  };
   security: { profile: string; bind_host: string; editable: false };
   update: {
     status: "idle" | "checking" | "current" | "available" | "error" | "updated";
