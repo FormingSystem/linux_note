@@ -84,7 +84,7 @@ $env:PRACTICE_SOURCE_CONFIG = "D:\notes\practice.sources.json"
 ```
 
 ```bash
-PRACTICE_SOURCE_CONFIG=/srv/notes/practice.sources.json bash ./start.sh
+PRACTICE_SOURCE_CONFIG=/srv/notes/practice.sources.json ./start.sh
 ```
 
 配置地址也可以是 HTTP/HTTPS URL；远程配置只能继续声明 `http` 知识源，不能借远程配置指向启动机器上的文件系统。没有指定环境变量时，工具只尝试读取自己的 `config/knowledge_sources.local.json`；该文件属于本机配置并被 Git 忽略。两者都不存在时工具仍可启动，但界面会明确显示“未配置知识源”。
@@ -100,20 +100,32 @@ start.cmd
 在 MSYS2/UCRT64 或 Linux 中进入本目录后执行：
 
 ```bash
-bash ./start.sh
+./start.sh
 ```
 
 工具自身的启动脚本会校验 Node.js 版本、安装首次运行所需的依赖并启动训练工具。浏览器由 Vite 在服务开始监听后打开，不使用固定延时猜测服务是否就绪。
 
 当前知识库根目录仍提供 `practice.cmd` 和 `practice.sh` 作为快捷入口，但它们只负责转发到本目录的 `start.cmd` 和 `start.sh`。训练工具的环境准备和启动逻辑不依赖仓库根目录，便于后续整体拆分为独立仓库。
 
-Linux 下的工具根目录和当前知识库根目录都提供不带扩展名的 `practice` 入口。查看工具定位、命令选项、环境变量和常用示例：
+进入工具根目录后，使用正式入口查看工具定位、命令选项、环境变量和常用示例：
 
 ```bash
-./practice --help
+./start.sh --help
 ```
 
-`--help` 在环境检查之前处理，不会下载 Node.js、安装 npm 依赖、启动 Vite 或打开浏览器。Windows 对应使用 `practice.cmd --help`，工具目录也可使用 `start.cmd --help`。
+`--help` 在环境检查之前处理，不会下载 Node.js、安装 npm 依赖、启动 Vite 或打开浏览器。Windows 对应使用 `start.cmd --help`。
+
+Bash Tab 补全可以安装到当前用户目录：
+
+```bash
+./start.sh --install-completion
+```
+
+安装器默认创建指向 **当前工具目录** 中 `scripts/completions/start.bash` 的符号链接；不支持符号链接时创建动态加载器，而不是复制静态快照。因此后续在当前目录执行 `git pull` 后，补全规则会直接跟随仓库更新。重新打开 Bash 后，输入 `./start.sh --` 再按 Tab 即可补全选项。只想在当前终端加载时执行：
+
+```bash
+source <(./start.sh --completion bash)
+```
 
 打开后先进入 **训练单元选择页**。可以按领域筛选或按题目、标签和模块名称搜索，然后选择单元进入三阶段训练。
 
@@ -126,7 +138,7 @@ start.cmd --upgrade
 ```
 
 ```bash
-bash ./start.sh --upgrade
+./start.sh --upgrade
 ```
 
 `--upgrade` 会强制重新执行版本选择，仍按 `24 → 22 → 20 → 18` 从高到低尝试官方可用版本，清除旧的本机就绪标记并重新运行 `npm install`，随后正常启动平台。它不会修改题库、知识正文、知识源配置或用户训练记录。
@@ -214,7 +226,7 @@ node_modules/
 
 ```bash
 cd path/to/practice_tool
-bash ./start.sh
+./start.sh
 ```
 
 也可以绕过启动器手动运行：
@@ -282,12 +294,10 @@ banks/index.json
 | --- | --- |
 | `start.cmd` | Windows 正式启动入口 |
 | `start.sh` | MSYS2/Linux 正式启动入口 |
-| `practice` | Linux 友好入口，转发到工具自身的 `start.sh` |
 | `scripts/install_environment.cmd` | Windows Node.js 自动安装 |
 | `scripts/install_environment.sh` | MSYS2/Linux Node.js 自动安装 |
 | `../../practice.cmd` | 当前知识库的 Windows 快捷入口，只转发到 `start.cmd` |
 | `../../practice.sh` | 当前知识库的 MSYS2/Linux 快捷入口，只转发到 `start.sh` |
-| `../../practice` | 当前知识库的 Linux 无扩展名快捷入口，只转发到工具的 `practice` |
 
 程序、题库协议、环境准备和启动逻辑全部留在工具目录。当前知识库根目录的两个文件不保存工具逻辑，移除后不影响从工具目录直接启动；拆分成独立仓库时不应复制这两个快捷入口。
 

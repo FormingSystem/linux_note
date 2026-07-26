@@ -19,15 +19,15 @@ practice - 本地知识训练工具
   训练工具独立保存题库和作答状态，通过显式知识源配置读取外部知识库。
 
 用法：
-  ./practice [选项]
-  ./practice.sh [选项]       # linux-note 仓库快捷入口
-  bash ./start.sh [选项]     # practice_tool 自身入口
+  ./start.sh [选项]
 
 选项：
   -h, --help                 显示本帮助，不安装环境或启动服务
   --upgrade                  更新兼容的 Node.js 运行时并刷新项目依赖
   --host <地址>              将参数继续传给 Vite
   --port <端口>              指定本地服务端口
+  --completion bash          输出 Bash Tab 补全脚本
+  --install-completion       安装当前用户的 Bash Tab 补全
 
 环境变量：
   PRACTICE_SOURCE_CONFIG     指定知识源配置文件
@@ -36,14 +36,43 @@ practice - 本地知识训练工具
   PRACTICE_NO_OPEN=1         启动后不自动打开浏览器
 
 示例：
-  ./practice
-  ./practice --upgrade
-  PRACTICE_NO_OPEN=1 ./practice --port 5174
+  ./start.sh
+  ./start.sh --upgrade
+  ./start.sh --install-completion
+  PRACTICE_NO_OPEN=1 ./start.sh --port 5174
 
 更多说明：
-  tools/practice_tool/README.md
+  README.md
 EOF
 }
+
+if [[ "${1:-}" = "--completion" ]]; then
+    if [[ "${2:-bash}" != "bash" ]]; then
+        printf '[practice] 暂不支持该补全类型：%s\n' "${2:-}" >&2
+        exit 2
+    fi
+    cat "$practice_dir/scripts/completions/start.bash"
+    exit 0
+fi
+
+if [[ "${1:-}" = "--install-completion" ]]; then
+    completion_dir="${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion/completions"
+    completion_source="$practice_dir/scripts/completions/start.bash"
+    completion_target="$completion_dir/start.sh"
+    mkdir -p "$completion_dir"
+    rm -f "$completion_target"
+    if ln -s "$completion_source" "$completion_target" 2>/dev/null; then
+        printf '[practice] Bash 补全已链接到当前工具目录：%s\n' "$completion_target"
+    else
+        printf 'source %q\n' "$completion_source" > "$completion_target"
+        printf '[practice] 当前系统无法创建符号链接，已安装动态加载器：%s\n' "$completion_target"
+    fi
+    printf '[practice] 补全源：%s\n' "$completion_source"
+    printf '%s\n' '[practice] 后续 Git 更新该源文件时，补全规则会同步更新。'
+    printf '%s\n' '[practice] 重新打开 Bash 后生效；当前终端可执行：'
+    printf '  source <(%q --completion bash)\n' "$practice_dir/start.sh"
+    exit 0
+fi
 
 for argument in "$@"; do
     case "$argument" in

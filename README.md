@@ -76,15 +76,15 @@ tools\practice_tool\start.cmd
 MSYS2/UCRT64 或 Linux 中可以执行：
 
 ```bash
-bash ./tools/practice_tool/start.sh
+./tools/practice_tool/start.sh
 ```
 
-仓库根目录的 `practice`、`practice.cmd` 和 `practice.sh` 是当前知识库提供的集成快捷入口，只转发到上述工具启动脚本，不承载环境准备、依赖安装或服务启动逻辑。第一次启动由工具自身检查 Node.js：现有版本达到最低兼容线时直接使用，否则按 `24 → 22 → 20 → 18` 寻找当前平台可用的最高版本。联网下载默认先尝试国内镜像，再回退到境外官方源；Windows 优先安装经过校验的便携 ZIP，并以 `winget` 作为最终后备，普通 Linux 把经过校验的归档安装到工具 `.local/runtime`，不替换系统 Node.js。依赖安装完成、Vite 开始监听后才打开浏览器。
+仓库根目录的 `practice.cmd` 和 `practice.sh` 是当前知识库提供的集成快捷入口，只转发到上述工具启动脚本，不承载环境准备、依赖安装或服务启动逻辑。第一次启动由工具自身检查 Node.js：现有版本达到最低兼容线时直接使用，否则按 `24 → 22 → 20 → 18` 寻找当前平台可用的最高版本。联网下载默认先尝试国内镜像，再回退到境外官方源；Windows 优先安装经过校验的便携 ZIP，并以 `winget` 作为最终后备，普通 Linux 把经过校验的归档安装到工具 `.local/runtime`，不替换系统 Node.js。依赖安装完成、Vite 开始监听后才打开浏览器。
 
-Linux 下可使用不带扩展名的快捷入口查看工具介绍，该命令不会安装环境或启动服务：
+Linux 下直接使用工具正式入口查看介绍，该命令不会安装环境或启动服务：
 
 ```bash
-./practice --help
+./tools/practice_tool/start.sh --help
 ```
 
 训练工具按可迁移到独立仓库的边界维护。当前仓库负责提供 Linux 知识正文和首批 RCU 训练内容，工具负责解释题库、运行训练和保存本地记录；根目录脚本、仓库治理文件和其他知识目录都不是工具运行时组件。
@@ -94,10 +94,10 @@ Linux 下可使用不带扩展名的快捷入口查看工具介绍，该命令�
 需要主动刷新 Node.js 本地运行时和项目依赖时，可以使用：
 
 ```bash
-bash ./practice.sh --upgrade
+./tools/practice_tool/start.sh --upgrade
 ```
 
-Windows 对应执行 `practice.cmd --upgrade`。该参数只更新训练工具的本机运行环境，不修改 `linux-note` 正文、题库或知识源配置。
+Windows 对应执行 `tools\practice_tool\start.cmd --upgrade`。该参数只更新训练工具的本机运行环境，不修改 `linux-note` 正文、题库或知识源配置。
 
 - [回路知识训练工具](tools/practice_tool/README.md)
 - [跨平台与仓库独立性设计](tools/practice_tool/docs/cross_platform_and_repository_independence.md)
