@@ -112,28 +112,32 @@ Windows MSYS2 与 Ubuntu 22.04 使用相同命令。该参数只更新训练工�
 
 ```bash
 git config core.hooksPath .githooks
+git config commit.template governance/templates/git_commit_message.txt
 ```
 
 提交信息格式：
 
 ```text
-<类型>(<范围>): <中文一句话说明>
+<类型>[(<project>/<module>)]!?: <中文结果>
+[可选：标题无法完整表达时才添加]
+- 描述1
+- 描述2
 ```
 
 类型固定为：
 
 ```text
-add update rewrite fix structure format link asset meta archive chore
+feat fix refactor perf security content docs test build ci release revert chore
 ```
 
 示例：
 
 ```text
-add(kernel): 新增 Linux 内核链表基础笔记
-update(driver): 补充字符设备驱动框架说明
-fix(appendix): 修正红黑树章节链接
-structure(obsidian): 调整内核笔记目录层级
-meta(git): 更新个人提交规则
+feat(practice/bank): 支持按模块导入题库
+refactor(practice/runtime)!: 移除旧启动流程
+fix(practice/install): 修正离线包摘要校验
+content(knowledge/rcu): 补充宽限期状态汇聚过程
+docs(repository/git): 更新分支与提交规范
 ```
 
 详细规则见：

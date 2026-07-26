@@ -1,0 +1,14 @@
+
+# <类型>[(<project>/<module>)]!?: <中文结果>
+# 标题能够完整说明时直接提交，不需要正文。
+# 只有多个结果或风险无法在标题中说清时，才保留以下列表：
+# - 描述1
+# - 描述2
+#
+# 类型：
+# feat fix refactor perf security content docs test build ci release revert chore
+#
+# 示例：
+# feat(practice/bank): 支持按模块和训练阶段导入题库
+# docs: 更新仓库使用说明
+# content(knowledge/rcu): 补充宽限期状态汇聚过程

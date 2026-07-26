@@ -131,32 +131,35 @@ domains:
 详细规则见 `governance/conventions/git_guide.md`。简要约定：
 
 本仓库使用 `.githooks/commit-msg` 做本地提交信息校验，当前本地仓库应配置 `git config core.hooksPath .githooks`。
+提交模板配置为 `git config commit.template governance/templates/git_commit_message.txt`。
 
 ```text
-<类型>(<范围>): <中文一句话说明>
-- 中文描述修改1
-- 中文描述修改2
-- ...
+<类型>[(<project>/<module>)]!?: <中文结果>
+[标题无法完整表达时才添加]
+- 描述1
+- 描述2
 ```
 `.obsidian/workspace.json` 等 Obsidian 链接管理文件出现修改时，随对应内容一起提交。它们属于链接变化，不必单独拆分提交或写入提交说明。
 
 校验正则：
 
 ```regex
-^(add|update|rewrite|fix|structure|format|link|asset|meta|archive|chore)\([^)]+\): .+$
+^(feat|fix|refactor|perf|security|content|docs|test|build|ci|release|revert|chore)(\([^/()[:space:]:]+(/[^/()[:space:]:]+)?\))?!?: .+$
 ```
 
-固定类型只能使用：`add`、`update`、`rewrite`、`fix`、`structure`、`format`、`link`、`asset`、`meta`、`archive`、`chore`。`<范围>` 可以自由编辑但不能为空；`<一句话说明>` 可以自由编辑，必须采用中文描述，且不能为空。
+类型只能使用：`feat`、`fix`、`refactor`、`perf`、`security`、`content`、`docs`、`test`、`build`、`ci`、`release`、`revert`、`chore`。`(<project>/<module>)` 整体可选，不设固定项目或语言列表；填写时按实际修改自由选择一到两级范围，中文和英文都合法，只禁止会破坏语法的空白、括号、冒号和额外斜杠。当前维护者习惯使用英文范围，但不得把个人习惯写成钩子的语言限制。结果说明必须包含中文。标题能够完整描述单一结果时直接提交，不得强制换行；只有多个结果、验证或风险无法在标题中说清时才增加 `- 描述` 列表。
 
 常见示例：
 
 ```text
-add(kernel): 新增 Linux 内核数据结构笔记
-update(driver): 补充字符设备驱动框架
-fix(appendix): 修正红黑树章节链接
-meta(git): 更新个人提交规则
-structure(kernel): 调整内核章节目录结构
+feat(practice/bank): 支持按模块导入题库
+refactor(practice/runtime)!: 移除旧启动流程
+fix(practice/install): 修正离线包摘要校验
+content(knowledge/rcu): 补充宽限期状态汇聚过程
+docs(repository/git): 更新分支与提交规范
 ```
+
+`master` 只接受验证通过的快进提交。已经推送或交付的提交使用 `revert` 撤销，不得 `reset`；只有开发者明确授权的全仓历史迁移才能在验证 bundle 备份后使用 `--force-with-lease`。
 
 ## 1.9\_代码提交
 
