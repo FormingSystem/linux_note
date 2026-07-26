@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "id": "linux.data_structures.rbtree",
+  "title": "红黑树：从退化问题到 Linux rbtree",
+  "subtitle": "先看一棵看似正确的搜索树如何被输入顺序拖垮，再沿着局部旋转、全局约束和内核对象布局建立完整模型。",
+  "status": "evolving",
+  "estimated_minutes": 55,
+  "knowledge_refs": [
+    {"source_id":"linux-note","id":"knowledge.linux.data_structures.红黑树_rb-tree.p03_二叉搜索树_bst","path":"knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md"},
+    {"source_id":"linux-note","id":"knowledge.linux.data_structures.红黑树_rb-tree.p04_为什么_bst_会退化","path":"knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md"},
+    {"source_id":"linux-note","id":"knowledge.linux.data_structures.红黑树_rb-tree.p05_旋转的作用与局部重排","path":"knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md"},
+    {"source_id":"linux-note","id":"knowledge.linux.data_structures.红黑树_rb-tree.p07_红黑树_把_2-3-4_树映射成二叉表示","path":"knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md"},
+    {"source_id":"linux-note","id":"knowledge.linux.data_structures.红黑树_rb-tree.p09_linux_6.12_内核_rbtree_嵌入式节点与使用者接口","path":"knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md"}
+  ],
+  "stages": {
+    "learning":{"title":"主题导学","purpose":"用经过筛选和重组的短材料建立问题、约束与机制主线。","items_file":"learning_guides.json"},
+    "guided":{"title":"提示提问","purpose":"用小场景暴露关键矛盾，逐步补全局部因果链。","items_file":"guided_questions.json"},
+    "reconstruction":{"title":"脱稿输出","purpose":"撤掉知识提示，独立重建结构、状态和操作过程。","items_file":"model_tasks.json"},
+    "professional":{"title":"专业案例","purpose":"根据负载和约束选择结构，并说明代价与边界。","items_file":"professional_cases.json"}
+  }
+}

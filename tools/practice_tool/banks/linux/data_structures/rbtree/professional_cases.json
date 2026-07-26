@@ -1,0 +1,17 @@
+[
+  {
+    "id":"linux.rbtree.case.timer_index",
+    "title":"高频更新时间索引的结构选择",
+    "difficulty":"intermediate",
+    "background":"内核模块维护两万条可取消定时任务，需要按到期时间取最早任务，也需要按已知对象删除。到期时间分布不均，任务持续插入和取消。",
+    "evidence":["普通 BST 压测中出现接近链表的树高","需要稳定的最坏查找路径","对象已经有独立生命期管理","结构更新由一把自旋锁串行化"],
+    "questions":["为什么普通 BST 风险不可接受？","红黑树解决和不解决什么？","怎样设计节点嵌入、比较和并发边界？","什么条件下应考虑其他结构？"],
+    "rubric":{
+      "diagnosis":["把风险定位到输入相关树高，而不是笼统说 BST 慢。"],
+      "solution":["在任务对象中嵌入节点并以到期时间加稳定次关键字比较。","由现有锁保护查找后的结构修改，使用者负责对象生命期。"],
+      "unavoidable_costs":["插入删除需要旋转和变色。","严格最早到期访问可考虑缓存最左节点，但要维护缓存。"],
+      "boundaries":["大量相同关键字要定义次序。","若主要需求变成大范围区间与稠密索引，应重新比较其他结构。"]
+    },
+    "knowledge_refs":["knowledge.linux.data_structures.红黑树_rb-tree.p04_为什么_bst_会退化","knowledge.linux.data_structures.红黑树_rb-tree.p09_linux_6.12_内核_rbtree_嵌入式节点与使用者接口"]
+  }
+]

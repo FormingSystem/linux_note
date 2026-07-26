@@ -1,47 +1,20 @@
 {
-  "schema_version": 1,
-  "id": "linux.rcu.foundation_model",
-  "title": "RCU：从读侧扩展性到宽限期证明",
-  "subtitle": "不从 API 开始背诵，而是沿着共享读状态的成本、旧对象生命期和多 CPU 安全证明，逐步建立可以脱稿调用的 RCU 基础模型。",
-  "status": "draft",
-  "estimated_minutes": 45,
+  "schema_version": 2,
+  "id": "linux.synchronization.rcu",
+  "title": "RCU：从旧读者边界到安全回收",
+  "subtitle": "不从 API 名称开始，而是追踪旧指针怎样留在读者手中，以及更新者凭什么证明对象已经可以回收。",
+  "status": "evolving",
+  "estimated_minutes": 55,
   "knowledge_refs": [
-    {
-      "source_id": "linux-note",
-      "id": "knowledge.linux.synchronization.rcu.why_rcu",
-      "path": "knowledge/linux/synchronization/rcu/P01_为什么需要_RCU.md"
-    },
-    {
-      "source_id": "linux-note",
-      "id": "knowledge.linux.synchronization.rcu.abstract_model",
-      "path": "knowledge/linux/synchronization/rcu/P02_RCU_抽象机制推演.md"
-    },
-    {
-      "source_id": "linux-note",
-      "id": "knowledge.linux.synchronization.rcu.constraints",
-      "path": "knowledge/linux/synchronization/rcu/P03_RCU_机制完善_硬件与运行约束.md"
-    },
-    {
-      "source_id": "linux-note",
-      "id": "knowledge.linux.synchronization.rcu.tree_state",
-      "path": "knowledge/linux/synchronization/rcu/P04_Linux_Tree_RCU_状态与通知机制.md"
-    }
+    {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.why_rcu","path":"knowledge/linux/synchronization/rcu/P01_为什么需要_RCU.md"},
+    {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.abstract_model","path":"knowledge/linux/synchronization/rcu/P02_RCU_抽象机制推演.md"},
+    {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.constraints","path":"knowledge/linux/synchronization/rcu/P03_RCU_机制完善_硬件与运行约束.md"},
+    {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.tree_state","path":"knowledge/linux/synchronization/rcu/P04_Linux_Tree_RCU_状态与通知机制.md"}
   ],
   "stages": {
-    "guided": {
-      "title": "轻量场景提示提问",
-      "purpose": "用小问题暴露关键矛盾，帮助形成局部因果链。",
-      "items_file": "guided_questions.json"
-    },
-    "reconstruction": {
-      "title": "小模块脱稿输出",
-      "purpose": "撤掉知识提示，独立重建时序、状态和通信。",
-      "items_file": "model_tasks.json"
-    },
-    "professional": {
-      "title": "工程案例分析",
-      "purpose": "诊断真实约束，给出方案并说明不可规避成本。",
-      "items_file": "professional_cases.json"
-    }
+    "learning":{"title":"主题导学","purpose":"从旧指针仍被持有的问题推导发布、等待和回收边界。","items_file":"learning_guides.json"},
+    "guided":{"title":"提示提问","purpose":"用多 CPU 交错逐步建立旧读者集合模型。","items_file":"guided_questions.json"},
+    "reconstruction":{"title":"脱稿输出","purpose":"独立重建发布、宽限期和安全回收时序。","items_file":"model_tasks.json"},
+    "professional":{"title":"专业案例","purpose":"根据读写比、内存预算和生命期约束选择同步方案。","items_file":"professional_cases.json"}
   }
 }

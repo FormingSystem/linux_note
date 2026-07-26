@@ -9,7 +9,7 @@ domains:
 
 # 第1章\_回路\_Loop\_知识训练工具
 
-**回路（Loop）** 是一个以模块化题库驱动的本地知识训练工具。中文正式名称为“回路”，英文正式名称为“Loop”。当前版本把外部知识来源组织成三阶段训练，不在题库中复制完整知识正文：
+**回路（Loop）** 是一个由外部知识源驱动的本地知识训练工具。中文正式名称为“回路”，英文正式名称为“Loop”。当前版本先把所选材料提炼成主题明确的学习导引，再进入提示提问、脱稿输出和专业案例训练；导引不复制完整知识正文，并保留稳定原文引用：
 
 1. **提示提问**：在具体小场景中逐级给出提示，辅助形成局部因果模型。
 2. **脱稿输出**：撤掉知识提示，独立重建边界清晰的时序、状态或通信模块。
@@ -21,9 +21,13 @@ domains:
 
 ```text
 banks/linux/synchronization/rcu/foundation_model/
+banks/linux/data_structures/rbtree/
+banks/linux/data_structures/hash_table/
 ```
 
-它引用 `linux-note` 中 `knowledge/linux/synchronization/rcu/P01`～`P04` 的稳定文档 ID，覆盖 RCU 的问题来源、抽象机制、真实约束和 Tree RCU 通信总览。RCU 是当前内容包，不是工具自身的领域限制。
+三个示范训练单元分别引用 `linux-note` 的 RCU、红黑树和哈希表权威正文。学习导引经过筛选、去噪和重新组织，不是原文导入；界面展示知识源、稳定文档 ID 和相对路径，便于追根溯源。用户分类和训练模块属于本地组织行为，不改变外部知识库目录。
+
+当前内容基线为 **3 个训练单元、15 个训练任务**。每个专题均包含一份主题导学、两道提示提问、一项脱稿输出和一个专业案例；主题导学包含有答案的核验问题、开放式联想和拓扑记忆训练。训练分类和用户训练模块支持创建、修改、移动或归类、合并、回收、恢复以及工作区导入导出。
 
 ## 1.1\_独立化边界
 
@@ -43,6 +47,11 @@ practice_tool/
 ├── package.json
 └── README.md
 ```
+
+业务前端采用 Feature-first 结构：`src/app` 负责装配，`src/features` 按训练业务组织，`src/infrastructure` 隔离浏览器存储和外部访问，`src/shared` 只保存无业务归属的基础类型。详细规则见：
+
+- [工程结构与模块边界](docs/architecture/project_structure_and_module_boundaries.md)
+- [学习导引提炼标准](docs/architecture/learning_guide_standard.md)
 
 以下内容属于当前 `linux-note` 的集成层，不属于工具核心：
 
@@ -147,7 +156,7 @@ source <(./start.sh --completion bash)
 
 补全覆盖全部正式选项，并会根据前一个参数补全 `--host`、`--port` 和 `--completion` 的可选值，不只是把某个缩写扩展成 `--upgrade`。安装器会幂等地在 `~/.bashrc` 登记动态加载行，因此后续新开的 Ubuntu 22.04 和 Windows MSYS2 UCRT64/UCRT32 Bash 都会自动加载，不需要每个终端重复执行 `source`。若当前终端尚未加载，只需执行上面的 `source` 一次。如需禁止正常启动时自动安装补全，可设置 `PRACTICE_AUTO_COMPLETION=0`。
 
-打开后先进入 **训练单元选择页**。可以按领域筛选或按题目、标签和模块名称搜索，然后选择单元进入三阶段训练。
+打开后先进入 **训练单元选择页**。可以搜索单元、管理用户分类和训练模块，然后依次进入学习导引、提示提问、脱稿输出和专业案例。
 
 ### 1.2.1\_主动升级运行环境
 
@@ -271,15 +280,16 @@ npm run check:data
 npm run build
 ```
 
-内容检查验证单元文件、三阶段题目结构、稳定 ID、引用关系和重复题目 ID。
+内容检查验证单元文件、学习导引与三阶段题目结构、稳定 ID、引用关系、必答问题、开放联想、拓扑记忆和重复题目 ID。
 同时检查知识源配置 Schema 示例，确保 Windows、Linux 和外部仓库使用同一份配置协议。
 
 ## 1.4\_新增单元
 
-每个单元使用四个文件：
+每个单元使用五个文件：
 
 ```text
 unit.json
+learning_guides.json
 guided_questions.json
 model_tasks.json
 professional_cases.json
@@ -293,20 +303,21 @@ banks/index.json
 
 新增题库目录并登记索引后，界面会自动发现和加载单元，不需要修改页面代码。
 
-索引中的主要分类字段为：
+索引字段只用于描述随版本发布的示范训练单元，不代表用户知识分类：
 
 | 字段 | 用途 |
 | --- | --- |
 | `domain` | 顶层知识领域，例如 `linux` |
-| `topic` | 领域内主题，例如 `synchronization` |
-| `module` | 可独立选择的机制模块，例如 `rcu` |
+| `topic` | 示例内容主题，例如 `data-structures` |
+| `module` | 示例训练单元标识，例如 `rbtree` |
 | `level` | 单元层次，例如 `foundation` |
 | `tags` | 用户搜索时使用的中文或英文关键词 |
 | `unit_file` | 单元入口文件相对 `banks/` 的路径 |
 
-用户不需要知道题库目录结构。平台首页会把这些字段转换为领域筛选、关键词搜索和单元卡片。
+用户不需要知道示范内容目录结构。平台首页使用这些字段完成搜索和单元卡片展示；用户自己的上下级分类由训练工作区独立管理。
 
-- `unit.json` 只保存单元身份、权威正文引用和三个阶段的入口。
+- `unit.json` 只保存单元身份、权威正文引用、学习导引和三个训练阶段的入口。
+- `learning_guides.json` 保存提炼后的主题正文、有答案问题、开放联想、拓扑记忆和原文依据。
 - `guided_questions.json` 保存轻量场景、递进提示和最小模型骨架。
 - `model_tasks.json` 保存无提示输出任务、输出约束和核验问题。
 - `professional_cases.json` 保存工程背景、证据、问题和专业评审维度。

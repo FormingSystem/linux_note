@@ -118,8 +118,8 @@ linux-note 或其他知识库
 ```json
 {
   "source_id": "linux-note",
-  "id": "knowledge.linux.synchronization.rcu.why_rcu",
-  "path": "knowledge/linux/synchronization/rcu/P01_为什么需要_RCU.md"
+  "id": "knowledge.linux.data_structures.红黑树_rb-tree.p04_为什么_bst_会退化",
+  "path": "knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md"
 }
 ```
 

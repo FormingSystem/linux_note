@@ -1,0 +1,22 @@
+[
+  {
+    "id":"linux.rbtree.guided.degeneration",
+    "title":"正确的 BST 为什么仍可能不可用",
+    "scenario":"服务把递增时间戳依次插入普通 BST，数据达到十万条后尾部查询耗时明显上升。",
+    "question":"从插入路径、树形变化和查询步骤解释性能怎样逐步恶化。",
+    "hints":["每次新关键字与当前最大值是什么关系？","新节点会落在已有树的哪一侧？","查找最后一个节点必须经过多少祖先？"],
+    "answer_framework":["递增关键字每次沿右孩子走到底。","新节点持续成为最右节点，树高接近节点数。","尾部查询从根逐层比较，成本从理想的对数级退化到线性级。"],
+    "common_mistakes":["只说树不平衡，不说明输入和指针变化。","把性能退化误写成查找结果错误。"],
+    "knowledge_refs":["knowledge.linux.data_structures.红黑树_rb-tree.p04_为什么_bst_会退化"]
+  },
+  {
+    "id":"linux.rbtree.guided.embedded_node",
+    "title":"内核为何把节点嵌入业务对象",
+    "scenario":"定时器对象需要按到期时间进入 rbtree，查找返回的是 rb_node 地址。",
+    "question":"业务对象、rb_node、关键字和树根分别由谁拥有，怎样从节点回到对象？",
+    "hints":["rb_node 是否保存业务关键字？","container_of 一类转换依赖什么布局关系？"],
+    "answer_framework":["业务对象拥有关键字并内嵌 rb_node。","rb_root 只保存树入口，链接指向内嵌节点。","比较逻辑由使用者读取业务字段实现。","命中后通过 rb_entry/container_of 从成员地址恢复宿主对象。"],
+    "common_mistakes":["认为通用 rbtree 自动保存和比较 key。","忽略对象释放必须晚于节点脱离和读者结束。"],
+    "knowledge_refs":["knowledge.linux.data_structures.红黑树_rb-tree.p09_linux_6.12_内核_rbtree_嵌入式节点与使用者接口"]
+  }
+]

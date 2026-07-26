@@ -1,0 +1,12 @@
+[
+  {
+    "id":"linux.rbtree.model.from_problem_to_kernel",
+    "title":"从退化现场重建到内核接口",
+    "output_type":"causal_model",
+    "prompt":"脱稿说明：普通 BST 在什么输入下退化，旋转保持什么不变量，红黑约束怎样限制路径，Linux 又把哪些职责留给使用者。",
+    "constraints":["至少包含一个具体插入序列","必须说明旋转前后的关键字区间","区分结构库保证与使用者责任"],
+    "required_outputs":["不利输入与单侧增长过程","中序有序性不变量","颜色/黑高约束的目的","rb_node 嵌入关系","比较、锁和生命期责任"],
+    "verification_questions":["只有旋转接口而没有修复条件能否保证高度？","rb_insert_color 是否知道业务关键字？"],
+    "knowledge_refs":["knowledge.linux.data_structures.红黑树_rb-tree.p04_为什么_bst_会退化","knowledge.linux.data_structures.红黑树_rb-tree.p05_旋转的作用与局部重排","knowledge.linux.data_structures.红黑树_rb-tree.p09_linux_6.12_内核_rbtree_嵌入式节点与使用者接口"]
+  }
+]

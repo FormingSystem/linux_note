@@ -1,0 +1,12 @@
+[
+  {
+    "id":"linux.hash_table.model.lookup_resize",
+    "title":"从查找到伸缩的完整结构模型",
+    "output_type":"state_ownership",
+    "prompt":"脱稿重建一个 Linux 风格哈希索引：业务键怎样到桶，节点怎样嵌入对象，冲突怎样遍历，对象增长后为什么要扩容，并发时还要保护哪些状态。",
+    "constraints":["画出或描述至少七个节点","区分索引可达性与对象生命期","不能用平均 O(1) 代替过程"],
+    "required_outputs":["键到桶索引的计算","桶头与 hlist 节点关系","完整键确认","负载因子上升与链增长","新旧桶迁移","结构更新与对象回收边界"],
+    "verification_questions":["扩容时只替换桶数组指针为何可能伤害旧读者？","从哈希表摘除对象是否等于可以立即释放？"],
+    "knowledge_refs":["knowledge.linux.data_structures.哈希表_hash_table.p01_数据结构理论基础.p01_哈希表核心原理_空间与时间的终极博弈","knowledge.linux.data_structures.哈希表_hash_table.p02_linux_内核_5.10_核心实现.p02_内核基石_hlist非对称链表","knowledge.linux.data_structures.哈希表_hash_table.p03_高级进阶与性能调优.p05_动态伸缩的rhashtable_无感扩容的艺术"]
+  }
+]

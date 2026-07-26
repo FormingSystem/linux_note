@@ -35,6 +35,7 @@ const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
 const sourceExamplePath = path.join(root, "config", "knowledge_sources.example.json");
 const sourceExample = JSON.parse(fs.readFileSync(sourceExamplePath, "utf8"));
 const requiredFields = {
+  learning: ["id", "title", "objective", "reading", "check_questions", "open_associations", "topology_memory", "knowledge_refs"],
   guided: ["id", "title", "scenario", "question", "hints", "answer_framework", "common_mistakes", "knowledge_refs"],
   reconstruction: ["id", "title", "output_type", "prompt", "constraints", "required_outputs", "verification_questions", "knowledge_refs"],
   professional: ["id", "title", "difficulty", "background", "evidence", "questions", "rubric", "knowledge_refs"]
@@ -89,6 +90,17 @@ for (const unitPath of findFiles(bankRoot, "unit.json")) {
       for (const ref of item.knowledge_refs || []) {
         if (!unit.knowledge_refs.some((known) => known.id === ref)) {
           errors.push(`${itemPath}[${index}]: 未在 unit.json 声明知识引用 ${ref}`);
+        }
+      }
+      if (stageName === "learning") {
+        if (!Array.isArray(item.reading) || item.reading.length === 0) errors.push(`${itemPath}[${index}]: 导学稿必须包含提炼后的主题正文`);
+        if (!Array.isArray(item.check_questions) || item.check_questions.length === 0) errors.push(`${itemPath}[${index}]: 导学稿必须包含有答案的核验问题`);
+        for (const question of item.check_questions || []) {
+          if (!question.question || !question.answer) errors.push(`${itemPath}[${index}]: 核验问题必须同时包含 question 和 answer`);
+        }
+        if (!Array.isArray(item.open_associations) || item.open_associations.length === 0) errors.push(`${itemPath}[${index}]: 导学稿必须包含开放式联想`);
+        if (!item.topology_memory?.prompt || !Array.isArray(item.topology_memory.nodes) || !Array.isArray(item.topology_memory.links)) {
+          errors.push(`${itemPath}[${index}]: 导学稿必须包含可重建的拓扑记忆任务`);
         }
       }
     }

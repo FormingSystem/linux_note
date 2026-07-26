@@ -1,18 +1,44 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "units": [
     {
-      "id": "linux.rcu.foundation_model",
-      "title": "RCU：从读侧扩展性到宽限期证明",
-      "summary": "从读写锁的共享读状态成本出发，推导发布、旧读者边界、宽限期和 Tree RCU 通信主线。",
+      "id": "linux.synchronization.rcu",
+      "title": "RCU：从旧读者边界到安全回收",
+      "summary": "从共享读状态的成本出发，推导发布、旧读者边界、宽限期和对象回收责任。",
       "domain": "linux",
       "topic": "synchronization",
       "module": "rcu",
       "level": "foundation",
-      "estimated_minutes": 45,
+      "estimated_minutes": 55,
       "status": "available",
       "unit_file": "linux/synchronization/rcu/foundation_model/unit.json",
-      "tags": ["RCU", "读写锁", "宽限期", "多CPU", "对象生命期"]
+      "tags": ["RCU", "宽限期", "对象生命期", "多CPU", "并发"]
+    },
+    {
+      "id": "linux.data_structures.rbtree",
+      "title": "红黑树：从退化问题到 Linux rbtree",
+      "summary": "从有序查找树的退化现场出发，推导旋转、平衡约束和 Linux 内核嵌入式节点模型。",
+      "domain": "linux",
+      "topic": "data-structures",
+      "module": "rbtree",
+      "level": "foundation",
+      "estimated_minutes": 55,
+      "status": "available",
+      "unit_file": "linux/data_structures/rbtree/unit.json",
+      "tags": ["BST", "红黑树", "旋转", "rbtree", "结构选择"]
+    },
+    {
+      "id": "linux.data_structures.hash_table",
+      "title": "哈希表：从直接定位到内核并发索引",
+      "summary": "围绕定位、冲突、hlist、负载变化和并发保护，建立可用于工程选择的哈希表模型。",
+      "domain": "linux",
+      "topic": "data-structures",
+      "module": "hash-table",
+      "level": "foundation",
+      "estimated_minutes": 55,
+      "status": "available",
+      "unit_file": "linux/data_structures/hash_table/unit.json",
+      "tags": ["哈希", "冲突", "hlist", "rhashtable", "并发"]
     }
   ]
 }

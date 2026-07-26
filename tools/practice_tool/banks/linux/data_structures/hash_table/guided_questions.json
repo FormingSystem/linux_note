@@ -1,0 +1,22 @@
+[
+  {
+    "id":"linux.hash_table.guided.collision",
+    "title":"桶定位为什么还不是查找完成",
+    "scenario":"键 18 和键 34 在 16 个桶中都映射到桶 2，查找键 34 时首先取得桶 2。",
+    "question":"接下来必须读取和比较什么，为什么不能只比较哈希值？",
+    "hints":["桶索引包含对象身份的全部信息吗？","碰撞链中可能有多少不同业务键？"],
+    "answer_framework":["读取桶头并沿冲突链访问候选对象。","从嵌入节点恢复业务对象并比较完整业务键。","哈希值或桶索引相同不能证明键相同。"],
+    "common_mistakes":["把桶命中等同于对象命中。","声称优秀哈希函数可以彻底消除冲突。"],
+    "knowledge_refs":["knowledge.linux.data_structures.哈希表_hash_table.p01_数据结构理论基础.p01_哈希表核心原理_空间与时间的终极博弈"]
+  },
+  {
+    "id":"linux.hash_table.guided.hlist_delete",
+    "title":"pprev 为什么不是普通 prev",
+    "scenario":"调用者已经持有待删除对象及其 hlist_node，但不知道前驱业务对象。",
+    "question":"pprev 保存在哪里、指向哪里，删除时怎样更新前后链接？",
+    "hints":["前一个链接位置可能在普通节点内，也可能在桶头内。","怎样用一种地址同时表示这两种位置？"],
+    "answer_framework":["当前节点保存 pprev，它指向指向自己的那个指针位置。","删除时把该位置改为当前 next。","若存在后继，再把后继 pprev 改为当前 pprev。","因此无需遍历寻找前驱业务对象。"],
+    "common_mistakes":["把 pprev 当成前驱节点地址。","只修改 next，不修复后继的 pprev。"],
+    "knowledge_refs":["knowledge.linux.data_structures.哈希表_hash_table.p02_linux_内核_5.10_核心实现.p02_内核基石_hlist非对称链表"]
+  }
+]
