@@ -24,11 +24,11 @@ export default function LobbyPage() {
         <div className="section-heading"><div><h2>继续训练</h2><p>进度保存在本机，刷新或关闭页面后仍可继续。</p></div></div>
         <div className="dashboard-grid">
           {active.map((session) => (
-            <article className="dashboard-card" key={session.id}>
+            <Link className="dashboard-card dashboard-card-link" key={session.id} to={`/sessions/${session.id}/${session.currentStage}/${session.currentItemId}`}>
               <span>{session.currentStage}</span><h3>{session.unitTitle}</h3>
               <p>上次训练：{new Date(session.updatedAt).toLocaleString()}</p>
-              <Link to={`/sessions/${session.id}/${session.currentStage}/${session.currentItemId}`}>继续训练 →</Link>
-            </article>
+              <b>继续训练 <i aria-hidden="true">→</i></b>
+            </Link>
           ))}
           {!active.length && <div className="empty-state">还没有进行中的训练。先从下方推荐专题开始。</div>}
         </div>
@@ -38,10 +38,10 @@ export default function LobbyPage() {
         <div className="section-heading"><div><h2>推荐专题</h2><p>这里完全来自题库索引，新增专题后会自动出现。</p></div><Link to="/library">查看全部</Link></div>
         <div className="dashboard-grid">
           {catalog.units.filter((item) => item.status === "available").slice(0, 3).map((unit) => (
-            <article className="dashboard-card" key={unit.id}>
+            <Link className="dashboard-card dashboard-card-link" key={unit.id} to={`/library/units/${unit.id}`}>
               <span>{unit.domain} / {unit.module}</span><h3>{unit.title}</h3><p>{unit.summary}</p>
-              <Link to={`/library/units/${unit.id}`}>查看单元 →</Link>
-            </article>
+              <b>查看单元 <i aria-hidden="true">→</i></b>
+            </Link>
           ))}
         </div>
       </section>

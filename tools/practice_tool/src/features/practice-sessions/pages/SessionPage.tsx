@@ -71,7 +71,7 @@ export default function SessionPage() {
     }
   }, [index, navigate, session, validStage]);
 
-  if (loadError) return <section className="panel error-state"><h1>无法继续训练</h1><p>{loadError}</p><Link to="/">返回大厅</Link></section>;
+  if (loadError) return <section className="panel error-state"><h1>无法继续训练</h1><p>{loadError}</p><Link className="button-link secondary" to="/">返回大厅</Link></section>;
   if (!session) return <section className="panel loading-state">正在恢复训练进度……</section>;
   if (!validStage) return <RedirectToCurrent session={session} />;
 

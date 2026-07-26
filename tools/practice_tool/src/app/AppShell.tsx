@@ -62,6 +62,7 @@ export default function AppShell() {
         {navigation.map(([path, label]) => (
           <NavLink key={path} to={path} end={path === "/"}>{label}</NavLink>
         ))}
+        <div id="app-context-actions" className="app-context-actions" aria-label="当前页面操作" />
         {inSession && <button onClick={() => navigate("/")}>保存并返回大厅</button>}
       </nav>
       <main className={inSession ? "main-layout session-layout" : "main-layout"}>
