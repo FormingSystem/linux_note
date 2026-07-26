@@ -6,7 +6,7 @@ import type {
 } from "../../../shared/types";
 import { loadSession, saveSession, stageItems } from "../../../infrastructure/persistence/sessionRepository";
 import StageRail from "../components/StageRail";
-import MarkdownGuide from "../components/MarkdownGuide";
+import MarkdownGuide, { markdownHeadings } from "../components/MarkdownGuide";
 import BookNavigation from "../components/BookNavigation";
 import { STAGES } from "../model/stages";
 
@@ -201,7 +201,35 @@ function RelatedChapters({ session, chapterIds, onSelect }: { session: PracticeS
 
 function LearningContent({ item, session, refs, revealed, onSelectChapter }: { item: LearningChapter; session: PracticeSession; refs: KnowledgeRef[]; revealed: boolean; onSelectChapter: (chapterId: string) => void }) {
   const claims = session.contentSnapshot.book.claims.filter((claim) => item.claim_ids.includes(claim.id));
-  return <><BookNavigation book={session.contentSnapshot.book} activeChapterId={item.id} completed={new Set(session.completedItemIds)} onSelect={(chapter) => onSelectChapter(chapter.id)} /><div className="learning-objective"><span>本章目标</span>{item.objective}</div><MarkdownGuide markdown={item.content_markdown} />{claims.length > 0 && <section className="chapter-claims"><span>本章知识声明</span>{claims.map((claim) => <div key={claim.id}><strong>{claim.statement}</strong><small>{claim.status} · {claim.id}</small></div>)}</section>}<SourceReferences references={refs} selectedIds={item.knowledge_refs} /><div className="topology-card"><span>拓扑记忆训练</span><p>{item.topology_memory.prompt}</p><div className="topology-nodes">{item.topology_memory.nodes.map((node) => <b key={node}>{node}</b>)}</div>{revealed && <ul>{item.topology_memory.links.map((link) => <li key={link}>{link}</li>)}</ul>}</div><div className="association-card"><span>开放式联想</span>{item.open_associations.map((question) => <p key={question}>↗ {question}</p>)}</div>{revealed && <div className="check-answers">{item.check_questions.map((entry) => <div key={entry.question}><strong>{entry.question}</strong><p>{entry.answer}</p></div>)}</div>}</>;
+  const book = session.contentSnapshot.book;
+  const headings = markdownHeadings(item.content_markdown);
+  const chapterIndex = book.chapters.findIndex((chapter) => chapter.id === item.id);
+  const previousChapter = book.chapters[chapterIndex - 1];
+  const nextChapter = book.chapters[chapterIndex + 1];
+  return <div className="ebook-reader">
+    <BookNavigation book={book} activeChapterId={item.id} completed={new Set(session.completedItemIds)} onSelect={(chapter) => onSelectChapter(chapter.id)} />
+    <main className="ebook-content">
+      <details className="book-outline">
+        <summary>全书导读</summary>
+        <MarkdownGuide markdown={book.outline_markdown} />
+      </details>
+      <div className="learning-objective"><span>本章目标</span>{item.objective}</div>
+      <MarkdownGuide markdown={item.content_markdown} headings={headings} />
+      {claims.length > 0 && <section className="chapter-claims"><span>本章知识声明</span>{claims.map((claim) => <div key={claim.id}><strong>{claim.statement}</strong><small>{claim.status} · {claim.id}</small></div>)}</section>}
+      <SourceReferences references={refs} selectedIds={item.knowledge_refs} />
+      <div className="topology-card"><span>拓扑记忆训练</span><p>{item.topology_memory.prompt}</p><div className="topology-nodes">{item.topology_memory.nodes.map((node) => <b key={node}>{node}</b>)}</div>{revealed && <ul>{item.topology_memory.links.map((link) => <li key={link}>{link}</li>)}</ul>}</div>
+      <div className="association-card"><span>开放式联想</span>{item.open_associations.map((question) => <p key={question}>↗ {question}</p>)}</div>
+      {revealed && <div className="check-answers">{item.check_questions.map((entry) => <div key={entry.question}><strong>{entry.question}</strong><p>{entry.answer}</p></div>)}</div>}
+      <nav className="chapter-pagination" aria-label="章节翻页">
+        {previousChapter ? <button onClick={() => onSelectChapter(previousChapter.id)}><small>上一章</small><strong>← {previousChapter.title}</strong></button> : <span />}
+        {nextChapter && <button onClick={() => onSelectChapter(nextChapter.id)}><small>下一章</small><strong>{nextChapter.title} →</strong></button>}
+      </nav>
+    </main>
+    <nav className="chapter-toc" aria-label="本章目录">
+      <strong>本章目录</strong>
+      {headings.length > 0 ? headings.map((heading) => <a className={`level-${heading.level}`} href={`#${heading.id}`} key={heading.id}>{heading.title}</a>) : <small>本章没有二级标题</small>}
+    </nav>
+  </div>;
 }
 
 function GuidedContent({ item, hintLevel, revealed, onHint }: { item: GuidedQuestion; hintLevel: number; revealed: boolean; onHint: () => void }) {

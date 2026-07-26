@@ -7,6 +7,8 @@ import WorkspaceManager from "../features/training-management/WorkspaceManager";
 import SessionPage from "../features/practice-sessions";
 import SettingsPage from "../features/settings/SettingsPage";
 import SimplePage from "../shared/components/SimplePage";
+import BookImporterPage from "../features/book-import/BookImporterPage";
+import ImportedBookReaderPage from "../features/book-import/ImportedBookReaderPage";
 
 export default function App() {
   return (
@@ -16,6 +18,8 @@ export default function App() {
           <Route index element={<LobbyPage />} />
           <Route path="library" element={<LibraryPage />} />
           <Route path="library/units/:unitId" element={<UnitDetailPage />} />
+          <Route path="library/import" element={<BookImporterPage />} />
+          <Route path="library/books/:bookId/:chapterId?" element={<ImportedBookReaderPage />} />
           <Route path="my-training" element={<WorkspaceManager />} />
           <Route path="sessions/:sessionId/:stage/:itemId" element={<SessionPage />} />
           <Route path="review" element={<SimplePage title="复习计划" description="完成训练后，系统会在这里汇总需要重建和部分输出的知识点。" />} />

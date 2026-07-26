@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import runtimeConfig from "virtual:practice-runtime-config";
 
+type ColorTheme = "light" | "dark";
+
 const navigation = [
   ["/", "大厅"],
   ["/library", "训练库"],
+  ["/library/import", "导入电子书"],
   ["/my-training", "我的训练"],
   ["/review", "复习"],
   ["/history", "历史"],
@@ -16,13 +19,26 @@ export default function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const inSession = location.pathname.startsWith("/sessions/");
+  const inBookImport = location.pathname === "/library/import";
+  const inBookReader = location.pathname.startsWith("/library/books/");
   const [systemInfo, setSystemInfo] = useState<SystemInfo>();
   const [updateBusy, setUpdateBusy] = useState(false);
   const [updateError, setUpdateError] = useState("");
+  const [theme, setTheme] = useState<ColorTheme>(() => {
+    const stored = localStorage.getItem("loop-color-theme");
+    if (stored === "light" || stored === "dark") return stored;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
   const refreshSystemInfo = async () => {
     const response = await fetch("/__practice/system", { cache: "no-store" });
     if (response.ok) setSystemInfo(await response.json() as SystemInfo);
   };
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    localStorage.setItem("loop-color-theme", theme);
+    window.dispatchEvent(new CustomEvent("loop-theme-change", { detail: theme }));
+  }, [theme]);
   useEffect(() => {
     void refreshSystemInfo();
     const timer = window.setInterval(() => void refreshSystemInfo(), 60_000);
@@ -53,19 +69,25 @@ export default function AppShell() {
           <span className="brand-mark">回</span>
           <span><strong>回路 · Loop</strong><small>Knowledge Practice Tool</small></span>
         </button>
-        <div className="session-meta"><span className="status-dot" />本地训练 · {runtimeConfig.sources.length} 个知识源</div>
+        <nav className="app-nav" aria-label="主导航">
+          {navigation.map(([path, label]) => (
+            <NavLink key={path} to={path} end={path === "/"}>{label}</NavLink>
+          ))}
+          <div id="app-context-actions" className="app-context-actions" aria-label="当前页面操作" />
+          {inSession && <button onClick={() => navigate("/")}>保存并返回大厅</button>}
+        </nav>
+        <div className="topbar-actions">
+          <div className="session-meta"><span className="status-dot" />本地训练 · {runtimeConfig.sources.length} 个知识源</div>
+          <button className="theme-toggle" onClick={() => setTheme((value) => value === "light" ? "dark" : "light")} aria-label={`切换到${theme === "light" ? "夜晚" : "白天"}模式`} title={`切换到${theme === "light" ? "夜晚" : "白天"}模式`}>
+            <span aria-hidden="true">{theme === "light" ? "☾" : "☀"}</span>
+            {theme === "light" ? "夜晚" : "白天"}
+          </button>
+        </div>
       </header>
       {systemInfo?.update.status === "available" && <div className="update-notice" role="status"><span>发现 {systemInfo.update.behind_count} 个更新 · 当前版本 {systemInfo.release.version}</span><button disabled={updateBusy} onClick={() => void applyUpdate()}>{updateBusy ? "更新中…" : "安全更新"}</button></div>}
       {systemInfo?.update.status === "updated" && <div className="update-notice" role="status"><span>{systemInfo.update.message}</span></div>}
       {updateError && <div className="update-notice update-error" role="alert"><span>更新未完成：{updateError}</span><button disabled={updateBusy} onClick={() => void applyUpdate()}>重试</button></div>}
-      <nav className="app-nav" aria-label="主导航">
-        {navigation.map(([path, label]) => (
-          <NavLink key={path} to={path} end={path === "/"}>{label}</NavLink>
-        ))}
-        <div id="app-context-actions" className="app-context-actions" aria-label="当前页面操作" />
-        {inSession && <button onClick={() => navigate("/")}>保存并返回大厅</button>}
-      </nav>
-      <main className={inSession ? "main-layout session-layout" : "main-layout"}>
+      <main className={inSession ? "main-layout session-layout" : inBookImport ? "main-layout book-import-layout" : inBookReader ? "main-layout book-reader-layout" : "main-layout"}>
         <Outlet />
       </main>
       <footer className="copyright-footer">
