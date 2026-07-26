@@ -124,12 +124,26 @@ export type WorkspaceData = {
   modules: UserTrainingModule[];
 };
 
-export type Review = {
+export type TrainingStage = "learning" | "guided" | "reconstruction" | "professional" | "summary";
+export type SessionStatus = "in_progress" | "paused" | "completed" | "abandoned";
+
+export type PracticeSession = {
+  id: string;
   unitId: string;
-  createdAt: string;
-  learningAnswers: Record<string, string>;
-  guidedAnswers: Record<string, string>;
-  modelAnswers: Record<string, string>;
-  caseAnswers: Record<string, string>;
+  unitTitle: string;
+  status: SessionStatus;
+  currentStage: TrainingStage;
+  currentItemId: string;
+  contentSnapshot: LoadedUnit;
+  answers: Record<string, string>;
   ratings: Record<string, Rating>;
+  hintLevels: Record<string, number>;
+  revealedItemIds: string[];
+  completedItemIds: string[];
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  revision: number;
 };
+
+export type SaveState = "clean" | "dirty" | "saving" | "saved" | "failed";
