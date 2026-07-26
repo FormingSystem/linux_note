@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://practice.local/schemas/security.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "profile", "bind_host", "allow_arbitrary_commands", "update_strategy", "require_clean_worktree_for_update", "software_registry", "editable"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "profile": { "const": "local-only" },
+    "bind_host": { "const": "127.0.0.1" },
+    "allow_arbitrary_commands": { "const": false },
+    "update_strategy": { "const": "git-ff-only" },
+    "require_clean_worktree_for_update": { "const": true },
+    "software_registry": { "const": ".local/software_registry.tsv" },
+    "editable": { "const": false }
+  }
+}

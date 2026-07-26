@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "product": "loop-knowledge-practice-tool",
+  "version": "0.1.0",
+  "channel": "development",
+  "repository_branch": "master",
+  "update_check_interval_minutes": 30,
+  "editable": false
+}

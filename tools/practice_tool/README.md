@@ -297,6 +297,8 @@ banks/index.json
 | `start_ucrt32.cmd` | 已有自定义 UCRT32 环境的兼容转发入口 |
 | `scripts/install_environment.sh` | MSYS2/Linux Node.js 自动安装 |
 | `scripts/lib/platform_environment.sh` | 平台识别、路径、工具和公共环境函数的唯一来源 |
+| `uninstall.sh` | MSYS2/Linux 两级卸载与所有权核对 |
+| `uninstall_windows.ps1` | 退出 MSYS2 后清理仅由工具安装的 MSYS2 根环境 |
 | `../../practice.cmd` | 当前知识库的 Windows 快捷入口，只转发到 UCRT64 Bash 中的 `start.sh` |
 | `../../practice.sh` | 当前知识库的 MSYS2/Linux 快捷入口，只转发到 `start.sh` |
 
@@ -309,3 +311,17 @@ banks/index.json
 - `完整输出`：不看提示即可覆盖任务的必要输出。
 
 评分是下一轮训练的调度输入，不代表知识本身的正确答案。
+
+## 1.7\_更新与卸载
+
+版本与安全清单随 Git 发布，浏览器只能读取。服务在后台低频检查仓库更新，仅在发现新提交时显示提示；用户主动点击后才执行 `git pull --ff-only`，工作区不干净时自动拒绝。
+
+```bash
+# 保留隔离运行环境与下载缓存
+./uninstall.sh --minimal
+
+# 额外删除仅由工具从无到有安装的软件与缓存
+./uninstall.sh --clean
+```
+
+外部已有软件在更新前必须取得用户确认。即使用户同意更新，其所有权也登记为 `external-updated`，干净卸载不会删除。完整设计见 [安全、版本更新与软件生命周期设计](docs/security_version_update_and_lifecycle.md)。

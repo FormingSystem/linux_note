@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Practice tool software registry record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "recorded_at",
+    "software_id",
+    "version_before",
+    "version_after",
+    "managed_path",
+    "ownership",
+    "cleanup_kind",
+    "source"
+  ],
+  "properties": {
+    "recorded_at": { "type": "string", "format": "date-time" },
+    "software_id": { "type": "string", "minLength": 1 },
+    "version_before": { "type": "string" },
+    "version_after": { "type": "string" },
+    "managed_path": { "type": "string" },
+    "ownership": { "enum": ["tool-owned", "external", "external-updated"] },
+    "cleanup_kind": { "enum": ["local-runtime", "download-cache", "msys-package", "msys-root", "none"] },
+    "source": { "type": "string" }
+  }
+}

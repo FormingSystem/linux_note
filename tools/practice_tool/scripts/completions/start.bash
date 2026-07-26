@@ -13,8 +13,11 @@ _practice_start_completion() {
         --completion)
             COMPREPLY=($(compgen -W 'bash' -- "$current"))
             ;;
+        --uninstall)
+            COMPREPLY=($(compgen -W 'minimal clean' -- "$current"))
+            ;;
         *)
-            COMPREPLY=($(compgen -W '-h --help --upgrade --host --port --completion --install-completion' -- "$current"))
+            COMPREPLY=($(compgen -W '-h --help --upgrade --host --port --completion --install-completion --uninstall' -- "$current"))
             ;;
     esac
 }

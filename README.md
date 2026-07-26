@@ -96,6 +96,7 @@ Windows MSYS2 与 Ubuntu 22.04 使用相同命令。该参数只更新训练工�
 - [回路知识训练工具](tools/practice_tool/README.md)
 - [跨平台与仓库独立性设计](tools/practice_tool/docs/cross_platform_and_repository_independence.md)
 - [跨平台环境、虚拟机验证与故障排查](tools/practice_tool/docs/environment_and_troubleshooting.md)
+- [安全、版本更新与软件生命周期设计](tools/practice_tool/docs/security_version_update_and_lifecycle.md)
 
 ## 1.4\_内容说明
 

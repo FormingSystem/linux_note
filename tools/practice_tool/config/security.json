@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "profile": "local-only",
+  "bind_host": "127.0.0.1",
+  "allow_arbitrary_commands": false,
+  "update_strategy": "git-ff-only",
+  "require_clean_worktree_for_update": true,
+  "software_registry": ".local/software_registry.tsv",
+  "editable": false
+}
