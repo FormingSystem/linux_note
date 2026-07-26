@@ -36,7 +36,7 @@ domains:
 - `research/`：源码阅读、调用链、调查和基准证据。
 - `reference/`：API、命令、术语、标准和外部资料。
 - `publications/`：书籍、文章、编排清单、模板和构建产物。
-- `tools/`：编辑器、Obsidian、AI 和仓库工具说明。
+- `tools/`：编辑器、Obsidian、AI和仓库工具说明。
 - `governance/`：架构、规范、模板、模式和迁移记录。
 - `assets/`：图片、图表、附件、数据集和归档文件。
 
@@ -179,3 +179,4 @@ structure(kernel): 调整内核章节目录结构
 - 涉及设备树、pinctrl、GPIO、时钟、中断控制器、SoC 外设或 BSP 补丁时，应将其视为 NXP i.MX6ULL/厂商树证据，正文标明平台与版本边界，不将厂商实现写成通用 Linux 契约。
 - 修改知识正文前可只读检索该源码树；不要在知识整理任务中改动、格式化或提交这棵外部源码。需要保存长期证据时，按仓库规范整理到 `research/source_reading/linux/`，并记录 Linux 版本、原始路径及必要的配置边界。
 - 若网络共享不可访问，应明确说明未完成源码核对，不得凭记忆伪造函数位置或版本结论。Git 因 UNC 目录所有权报告 `safe.directory` 时，不要擅自修改用户全局 Git 配置；读取普通源码文件不受此限制。
+
