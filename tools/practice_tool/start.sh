@@ -7,6 +7,19 @@ required_node_major=18
 local_node_bin="$practice_dir/.local/runtime/node/bin"
 ready_file="$practice_dir/.local/environment-ready-v3-node-compatible"
 practice_url="${PRACTICE_URL:-http://127.0.0.1:5173/}"
+upgrade_requested=0
+forwarded_args=()
+
+for argument in "$@"; do
+    case "$argument" in
+        --upgrade)
+            upgrade_requested=1
+            ;;
+        *)
+            forwarded_args+=("$argument")
+            ;;
+    esac
+done
 
 node_is_supported() {
     command -v node >/dev/null 2>&1 &&
@@ -16,6 +29,16 @@ node_is_supported() {
 if [[ -x "$local_node_bin/node" && -x "$local_node_bin/npm" ]]; then
     export PATH="$local_node_bin:$PATH"
     hash -r
+fi
+
+if [[ "$upgrade_requested" -eq 1 ]]; then
+    printf '%s\n' '[practice] 升级模式：重新选择官方最高可用兼容 Node.js，并刷新项目依赖……'
+    rm -f "$ready_file"
+    PRACTICE_FORCE_NODE_UPGRADE=1 bash "$practice_dir/scripts/install_environment.sh"
+    if [[ -x "$local_node_bin/node" && -x "$local_node_bin/npm" ]]; then
+        export PATH="$local_node_bin:$PATH"
+        hash -r
+    fi
 fi
 
 if ! node_is_supported || ! command -v npm >/dev/null 2>&1; then
@@ -88,4 +111,4 @@ if [[ "${PRACTICE_NO_OPEN:-0}" != "1" ]]; then
     vite_args+=(--open)
 fi
 
-"${npm_command[@]}" run dev -- "${vite_args[@]}" "$@"
+"${npm_command[@]}" run dev -- "${vite_args[@]}" "${forwarded_args[@]}"

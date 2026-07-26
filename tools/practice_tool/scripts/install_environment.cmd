@@ -8,12 +8,16 @@ if not errorlevel 1 (
     winget.exe install --id OpenJS.NodeJS.LTS --exact --silent --accept-package-agreements --accept-source-agreements >nul 2>nul
     if exist "%ProgramFiles%\nodejs\node.exe" (
         for /f "delims=" %%V in ('"%ProgramFiles%\nodejs\node.exe" -p "Number(process.versions.node.split('.')[0])"') do (
-            if %%V GEQ 18 exit /b 0
+            if "%PRACTICE_FORCE_NODE_UPGRADE%"=="1" (
+                if %%V GEQ 24 exit /b 0
+            ) else (
+                if %%V GEQ 18 exit /b 0
+            )
         )
     )
 )
 
-echo [practice] winget did not provide a compatible runtime. Trying official Node.js archives...
+echo [practice] Trying official Node.js archives as the compatibility fallback...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install_node_windows.ps1" -PracticeDir "%~dp0.."
 if errorlevel 1 (
     echo [practice] Unable to install a compatible Node.js release.

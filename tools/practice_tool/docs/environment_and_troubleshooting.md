@@ -68,6 +68,22 @@ http://127.0.0.1:5173/
 
 结束使用时，在运行服务的终端按 `Ctrl+C`。
 
+### 1.2.3\_主动升级
+
+普通启动只在 Node.js 缺失或低于最低兼容线时下载运行时。需要主动检查官方更新并刷新依赖时：
+
+```cmd
+start.cmd --upgrade
+```
+
+```bash
+bash ./start.sh --upgrade
+```
+
+位于 `linux-note` 根目录时也可以使用 `practice.cmd --upgrade` 或 `bash ./practice.sh --upgrade`。根快捷脚本只转发参数，升级逻辑仍由工具正式入口完成。
+
+升级模式会重新选择官方最高可用兼容 Node.js、删除本机环境就绪标记、重新执行 `npm install`，然后启动 Vite。它不执行 `git pull`，也不更新题库、知识源配置、知识正文或用户作答。
+
 ## 1.3\_第一次启动发生什么
 
 第一次启动执行以下流程：
