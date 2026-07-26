@@ -107,6 +107,14 @@ bash ./start.sh
 
 当前知识库根目录仍提供 `practice.cmd` 和 `practice.sh` 作为快捷入口，但它们只负责转发到本目录的 `start.cmd` 和 `start.sh`。训练工具的环境准备和启动逻辑不依赖仓库根目录，便于后续整体拆分为独立仓库。
 
+Linux 下的工具根目录和当前知识库根目录都提供不带扩展名的 `practice` 入口。查看工具定位、命令选项、环境变量和常用示例：
+
+```bash
+./practice --help
+```
+
+`--help` 在环境检查之前处理，不会下载 Node.js、安装 npm 依赖、启动 Vite 或打开浏览器。Windows 对应使用 `practice.cmd --help`，工具目录也可使用 `start.cmd --help`。
+
 打开后先进入 **训练单元选择页**。可以按领域筛选或按题目、标签和模块名称搜索，然后选择单元进入三阶段训练。
 
 ### 1.2.1\_主动升级运行环境
@@ -122,6 +130,8 @@ bash ./start.sh --upgrade
 ```
 
 `--upgrade` 会强制重新执行版本选择，仍按 `24 → 22 → 20 → 18` 从高到低尝试官方可用版本，清除旧的本机就绪标记并重新运行 `npm install`，随后正常启动平台。它不会修改题库、知识正文、知识源配置或用户训练记录。
+
+联网安装遵循就近源优先原则：默认先尝试国内 `npmmirror` 的 Node.js 镜像与 npm 仓库，失败后自动回退到 `nodejs.org` 和 `registry.npmjs.org` 官方源。该选择只作用于本次训练工具安装，不修改用户的全局 npm 配置。需要按所在国家、组织内网或自建镜像调整时，可用空格分隔的 `PRACTICE_NODE_DIST_SOURCES` 和 `PRACTICE_NPM_REGISTRIES` 环境变量覆盖源顺序。
 
 ### 1.2.2\_离线运行时缓存
 
@@ -188,11 +198,11 @@ node_modules/
 
 自动安装支持：
 
-- Windows：复用 Node.js 18 以上版本；缺失或过旧时优先通过 `winget` 安装最新 LTS，失败后从 Node.js 官方发行地址逐级选择兼容 ZIP。
+- Windows：复用 Node.js 18 以上版本；缺失或过旧时按有序下载源取得并校验兼容 ZIP，全部失败后才使用 `winget` 作为最终后备。
 - MSYS2/UCRT64：复用兼容的 Windows/MSYS2 Node.js；缺失或过旧时通过 MSYS2 `pacman` 安装当前环境对应的软件包，不使用 `sudo`。
-- 普通 Linux：依次查询 Node.js 官方 `latest-v24.x`、`latest-v22.x`、`latest-v20.x` 和 `latest-v18.x`，选择当前架构存在且能够成功下载的最高版本，校验 SHA-256 后安装到 `.local/runtime`。该过程不替换系统 Node.js，也不依赖发行版仓库中的版本。
+- 普通 Linux：依次查询各下载源的 `latest-v24.x`、`latest-v22.x`、`latest-v20.x` 和 `latest-v18.x`，每个版本先尝试国内镜像、再尝试官方源，选择当前架构存在且能够成功下载的最高版本，校验 SHA-256 后安装到 `.local/runtime`。该过程不替换系统 Node.js，也不依赖发行版仓库中的版本。
 
-普通 Linux 下载需要 `curl` 或 `wget`、`sha256sum`、`tar` 和 `gzip`。某个版本找不到、下载失败或没有当前架构归档时会自动尝试下一个版本。只有所有 **仍满足最低兼容线** 的官方版本都不可用时才停止；不能为了表面启动而退回到 Vite 无法运行的 Node.js 12。
+普通 Linux 下载需要 `curl` 或 `wget`、`sha256sum`、`tar` 和 `gzip`。某个源不可用时先切换下一源；某个版本找不到、下载失败或没有当前架构归档时再尝试下一个版本。只有所有 **仍满足最低兼容线** 的来源和版本都不可用时才停止；不能为了表面启动而退回到 Vite 无法运行的 Node.js 12。
 
 > MSYS2 的标准安装目录通常由当前用户直接维护，安装软件包使用 `pacman -S`，不应在前面添加 `sudo`。脚本会通过 `MSYSTEM` 和 `MINGW_PACKAGE_PREFIX` 识别 UCRT64、MINGW64 或 CLANG64，并选择匹配的软件包。
 
@@ -272,10 +282,12 @@ banks/index.json
 | --- | --- |
 | `start.cmd` | Windows 正式启动入口 |
 | `start.sh` | MSYS2/Linux 正式启动入口 |
+| `practice` | Linux 友好入口，转发到工具自身的 `start.sh` |
 | `scripts/install_environment.cmd` | Windows Node.js 自动安装 |
 | `scripts/install_environment.sh` | MSYS2/Linux Node.js 自动安装 |
 | `../../practice.cmd` | 当前知识库的 Windows 快捷入口，只转发到 `start.cmd` |
 | `../../practice.sh` | 当前知识库的 MSYS2/Linux 快捷入口，只转发到 `start.sh` |
+| `../../practice` | 当前知识库的 Linux 无扩展名快捷入口，只转发到工具的 `practice` |
 
 程序、题库协议、环境准备和启动逻辑全部留在工具目录。当前知识库根目录的两个文件不保存工具逻辑，移除后不影响从工具目录直接启动；拆分成独立仓库时不应复制这两个快捷入口。
 
