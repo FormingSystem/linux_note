@@ -61,27 +61,32 @@ Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，�
 
 ### 1.3.1\_知识训练工具
 
-仓库提供本地知识训练平台，用于按模块进行提示建模、脱稿输出和专业案例训练。程序、题库、环境脚本及完整说明统一位于：
+仓库当前内置独立运行的“回路”知识训练工具，用于按模块进行提示建模、脱稿输出和专业案例训练。工具程序、题库协议、环境脚本及自身文档统一位于：
 
 ```text
 tools/practice_tool/
 ```
 
-Windows 下最简单的入口是在仓库根目录双击：
+训练工具自身的启动入口位于 `tools/practice_tool`。Windows 下可以执行：
 
 ```text
-practice.cmd
+tools\practice_tool\start.cmd
 ```
 
-MSYS2/UCRT64 中从仓库根目录执行：
+MSYS2/UCRT64 或 Linux 中可以执行：
 
 ```bash
-bash ./practice.sh
+bash ./tools/practice_tool/start.sh
 ```
 
-第一次启动会自动检查 Node.js、尝试安装缺失环境并安装项目依赖；成功后写入本机就绪标记，后续启动直接进入平台。MSYS2/UCRT64 使用自身的 `pacman` 安装匹配环境，不需要 `sudo`。进入平台后先搜索并选择训练单元，再开始该单元的三阶段训练。
+仓库根目录的 `practice.cmd` 和 `practice.sh` 是当前知识库提供的集成快捷入口，只转发到上述工具启动脚本，不承载环境准备、依赖安装或服务启动逻辑。第一次启动由工具自身检查 Node.js、尝试安装缺失环境并安装项目依赖；成功后写入工具目录的本机就绪标记，后续启动直接进入平台。MSYS2/UCRT64 使用自身的 `pacman` 安装匹配环境，不需要 `sudo`。
+
+训练工具按可迁移到独立仓库的边界维护。当前仓库负责提供 Linux 知识正文和首批 RCU 训练内容，工具负责解释题库、运行训练和保存本地记录；根目录脚本、仓库治理文件和其他知识目录都不是工具运行时组件。
+
+当前仓库通过根目录的 `practice.sources.json` 声明 `linux-note` 知识源。快捷启动脚本只在用户没有主动指定时传入这份配置；用户设置的 `PRACTICE_SOURCE_CONFIG` 始终优先。训练工具通过 `source_id`、稳定文档 ID 和源内相对路径引用材料，不通过 `../..` 推断知识库位置。
 
 - [回路知识训练工具](tools/practice_tool/README.md)
+- [跨平台与仓库独立性设计](tools/practice_tool/docs/cross_platform_and_repository_independence.md)
 - [跨平台环境、虚拟机验证与故障排查](tools/practice_tool/docs/environment_and_troubleshooting.md)
 
 ## 1.4\_内容说明

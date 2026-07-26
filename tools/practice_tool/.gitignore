@@ -1,5 +1,6 @@
 node_modules/
 dist/
 .local/
+config/knowledge_sources.local.json
 *.log
 *.tsbuildinfo
