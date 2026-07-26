@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import type { ImportedBook } from "../../shared/types";
 import { loadImportedBook } from "../../infrastructure/persistence/importedBookRepository";
@@ -11,6 +11,7 @@ export default function ImportedBookReaderPage() {
   const [error, setError] = useState("");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
+  const contentRef = useRef<HTMLElement>(null);
   useEffect(() => { void loadImportedBook(bookId).then((value) => value ? setBook(value) : setError("电子书不存在或已被清理。")); }, [bookId]);
   const chapter = book?.chapters.find((item) => item.id === chapterId) ?? book?.chapters[0];
   useEffect(() => {
@@ -21,7 +22,7 @@ export default function ImportedBookReaderPage() {
     const hash = decodeURIComponent(window.location.hash.slice(1));
     window.requestAnimationFrame(() => {
       if (hash) document.getElementById(hash)?.scrollIntoView({ block: "start" });
-      else window.scrollTo({ top: 0 });
+      else contentRef.current?.scrollTo({ top: 0 });
     });
   }, [chapter]);
   useEffect(() => {
@@ -46,16 +47,15 @@ export default function ImportedBookReaderPage() {
     target.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   return <section className="imported-book-reader">
-    <header><div><span>{book.mode === "source" ? "原文阅读" : "专题电子书"} · {book.status === "published" ? "已发布" : "草稿"}</span><h1>{book.title}</h1><small>版本 {book.version} · 来源 {book.sourceId}</small></div><Link to="/library/import">返回书库</Link></header>
     <div className={`ebook-reader imported-reader-grid ${leftOpen ? "" : "left-collapsed"} ${rightOpen ? "" : "right-collapsed"}`}>
       <aside className={leftOpen ? "book-navigation reader-sidebar left-sidebar" : "reader-sidebar left-sidebar collapsed"}>
         <div className="reader-sidebar-header">
-          {leftOpen && <div className="book-navigation-heading"><span>章节目录</span><strong>{book.title}</strong></div>}
+          {leftOpen && <div className="book-navigation-heading"><Link to="/library/import">← 返回书库</Link><strong>{book.title}</strong></div>}
           <button className="reader-sidebar-toggle" aria-label={leftOpen ? "收起章节目录" : "展开章节目录"} title={leftOpen ? "收起章节目录" : "展开章节目录"} onClick={() => setLeftOpen((value) => !value)}>{leftOpen ? "‹" : "›"}</button>
         </div>
-        {leftOpen && <div className="reader-sidebar-scroll"><ol>{book.chapters.map((item) => <li key={item.id}><button className={item.id === chapter.id ? "active" : ""} onClick={() => selectChapter(item.id)}><span><strong>{item.title}</strong><small>{item.sourceName}</small></span></button></li>)}</ol></div>}
+        {leftOpen && <div className="reader-sidebar-scroll"><ol>{book.chapters.map((item) => <li key={item.id}><button className={item.id === chapter.id ? "active" : ""} title={`${item.title} · ${item.sourceName}`} onClick={() => selectChapter(item.id)}><span><strong>{item.title}</strong><small>{fileNameOf(item.sourceName)}</small></span></button></li>)}</ol></div>}
       </aside>
-      <main className="ebook-content">
+      <main ref={contentRef} className="ebook-content">
         <details className="book-outline"><summary>全书导读</summary><MarkdownGuide markdown={book.outlineMarkdown} /></details>
         {book.mode === "topic" && <div className="learning-objective"><span>本章目标</span>{chapter.objective}</div>}
         <MarkdownGuide markdown={chapter.markdown} headings={headings} />
@@ -71,4 +71,8 @@ export default function ImportedBookReaderPage() {
       </nav>
     </div>
   </section>;
+}
+
+function fileNameOf(sourceName: string) {
+  return sourceName.replaceAll("\\", "/").split("/").pop() || sourceName;
 }
