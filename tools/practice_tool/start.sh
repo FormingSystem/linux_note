@@ -5,9 +5,8 @@ set -euo pipefail
 practice_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$practice_dir/scripts/lib/platform_environment.sh"
 
-ready_file="$practice_dir/.local/environment-ready-v3-node-compatible"
-practice_url="${PRACTICE_URL:-http://127.0.0.1:5173/}"
 upgrade_requested=0
+install_requested=0
 forwarded_args=()
 
 show_help() {
@@ -24,6 +23,7 @@ show_help() {
 选项：
   -h, --help                 显示本帮助，不安装环境或启动服务
   --upgrade                  更新兼容的 Node.js 运行时并刷新项目依赖
+  --install                  只执行独立安装模块，不启动服务
   --host <地址>              将参数继续传给 Vite
   --port <端口>              指定本地服务端口
   --completion bash          输出 Bash Tab 补全脚本
@@ -40,6 +40,7 @@ show_help() {
 示例：
   ./start.sh
   ./start.sh --upgrade
+  ./start.sh --install
   ./start.sh --install-completion
   ./start.sh --uninstall minimal
   PRACTICE_NO_OPEN=1 ./start.sh --port 5174
@@ -141,6 +142,9 @@ for argument in "$@"; do
         --upgrade)
             upgrade_requested=1
             ;;
+        --install)
+            install_requested=1
+            ;;
         *)
             forwarded_args+=("$argument")
             ;;
@@ -152,70 +156,18 @@ if [[ "${PRACTICE_AUTO_COMPLETION:-1}" = "1" && -t 0 && -t 1 ]]; then
 fi
 
 practice_environment_init "$practice_dir"
-practice_activate_local_node
+
+if [[ "$install_requested" -eq 1 ]]; then
+    if [[ "$upgrade_requested" -eq 1 ]]; then
+        exec bash "$practice_dir/install.sh" --upgrade
+    fi
+    exec bash "$practice_dir/install.sh" --if-needed
+fi
 
 if [[ "$upgrade_requested" -eq 1 ]]; then
-    printf '%s\n' '[practice] 升级模式：重新选择官方最高可用兼容 Node.js，并刷新项目依赖……'
-    rm -f "$ready_file"
-    PRACTICE_FORCE_NODE_UPGRADE=1 bash "$practice_dir/scripts/install_environment.sh"
-    practice_activate_local_node
-fi
-
-if ! practice_node_is_supported; then
-    current_version="$(node --version 2>/dev/null || printf '未安装')"
-    printf '[practice] 当前 Node.js 为 %s，工具最低要求为 v%d。\n' "$current_version" "$PRACTICE_REQUIRED_NODE_MAJOR"
-    printf '%s\n' '[practice] 正在按就近镜像、官方源顺序准备最新兼容 Node.js；失败时会逐级回退……'
-    bash "$practice_dir/scripts/install_environment.sh"
-    practice_activate_local_node
-fi
-
-if ! practice_node_is_supported; then
-    printf '[practice] Node.js 环境仍不兼容，当前版本：%s。\n' "$(node --version 2>/dev/null || printf '未安装')" >&2
-    exit 1
-fi
-
-if practice_command_exists npm; then
-    npm_command=(npm)
+    bash "$practice_dir/install.sh" --upgrade
 else
-    printf '%s\n' '[practice] Node.js 环境准备后仍未找到 npm。' >&2
-    exit 1
+    bash "$practice_dir/install.sh" --if-needed
 fi
 
-cd "$practice_dir"
-
-install_dependencies() {
-    local registry
-    for registry in $PRACTICE_NPM_REGISTRIES; do
-        printf '[practice] 尝试 npm 下载源：%s\n' "$registry"
-        if "${npm_command[@]}" install --registry="$registry" --no-audit --no-fund --fetch-retries=2 --fetch-timeout=120000; then
-            return 0
-        fi
-        printf '[practice] 当前 npm 下载源不可用，切换下一源：%s\n' "$registry" >&2
-    done
-    return 1
-}
-
-if [[ ! -f "$ready_file" ]]; then
-    printf '%s\n' '[practice] 首次运行：正在检查并安装项目依赖……'
-    printf '%s\n' '[practice] 首次下载可能受网络速度影响；此阶段完成前不会打开浏览器。'
-    install_dependencies
-    mkdir -p .local
-    printf '%s\n' 'environment-ready-v3-node-compatible' > "$ready_file"
-    printf '%s\n' '[practice] 环境准备完成，以后启动将跳过此步骤。'
-fi
-
-if [[ ! -d node_modules ]]; then
-    rm -f "$ready_file"
-    printf '%s\n' '[practice] 依赖目录已被清理，正在重新准备……'
-    install_dependencies
-    mkdir -p .local
-    printf '%s\n' 'environment-ready-v3-node-compatible' > "$ready_file"
-fi
-
-printf '[practice] 正在启动：%s\n' "$practice_url"
-vite_args=(--host 127.0.0.1)
-if [[ "${PRACTICE_NO_OPEN:-0}" != "1" ]]; then
-    vite_args+=(--open)
-fi
-
-"${npm_command[@]}" run dev -- "${vite_args[@]}" "${forwarded_args[@]}"
+exec bash "$practice_dir/run.sh" "${forwarded_args[@]}"

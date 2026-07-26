@@ -15,7 +15,7 @@ domains:
 2. **脱稿输出**：撤掉知识提示，独立重建边界清晰的时序、状态或通信模块。
 3. **专业案例**：分析工程证据，给出诊断、方案、不可规避成本和选择边界。
 
-长期验证平台为 Windows 的 MSYS2 UCRT64/UCRT32 Bash，以及 Linux 的 Ubuntu 22.04 Bash。三个环境统一使用 `start.sh` 作为正式交互入口和 Tab 补全目标。PowerShell 只负责在尚未具备 MSYS2 的 Windows 上下载、安装和准备 UCRT 环境，不直接运行训练任务；CMD 不属于正式使用平台。
+长期验证平台为 Windows 的 MSYS2 UCRT64/UCRT32 Bash，以及 Linux 的 Ubuntu 22.04 Bash。三个环境统一使用 `start.sh` 作为便利编排入口；安装、运行和卸载分别由 `install.sh`、`run.sh` 和 `uninstall.sh` 独立负责。PowerShell 只负责在尚未具备 MSYS2 的 Windows 上下载、安装和准备 UCRT 环境，不直接运行训练任务；CMD 不属于正式使用平台。
 
 当前随工具提供的首个示例内容来自 `linux-note`，训练单元位于：
 
@@ -36,7 +36,10 @@ practice_tool/
 ├── schemas/                 # 内容数据协议
 ├── scripts/                 # 环境准备、统一平台层与内容检查
 ├── src/                     # 前端程序
-├── start.sh                 # MSYS2/Linux 正式入口
+├── start.sh                 # 首次安装与运行的便利编排入口
+├── install.sh               # 独立安装/升级模块
+├── run.sh                   # 纯运行模块，不执行安装
+├── uninstall.sh             # 独立两级卸载模块
 ├── package.json
 └── README.md
 ```
@@ -93,7 +96,20 @@ PRACTICE_SOURCE_CONFIG=/srv/notes/practice.sources.json ./start.sh
 ./start.sh
 ```
 
-工具自身的启动脚本会校验 Node.js 版本、安装首次运行所需的依赖并启动训练工具。浏览器由 Vite 在服务开始监听后打开，不使用固定延时猜测服务是否就绪。
+`start.sh` 只负责路由和首次运行编排：它先调用 `install.sh --if-needed`，安装模块返回成功后再把运行参数原样交给 `run.sh`。浏览器由 Vite 在服务开始监听后打开，不使用固定延时猜测服务是否就绪。
+
+三个生命周期模块也可以独立使用：
+
+```bash
+# 只安装环境和依赖，不启动服务
+./install.sh
+
+# 只运行；缺少环境时明确退出，不会偷偷安装
+./run.sh
+
+# 只卸载
+./uninstall.sh --minimal
+```
 
 `scripts/lib/platform_environment.sh` 是所有 Bash 脚本共享的平台环境层，集中提供 Ubuntu 22.04、MSYS2 UCRT64/UCRT32 的识别结果，工具根目录、本地运行时、缓存与离线表路径，CPU 架构、包管理器、Node.js 兼容线和下载源，以及下载、摘要校验、归档解压、路径解析与 MSYS2 Node.js 安装能力。
 
@@ -141,7 +157,13 @@ source <(./start.sh --completion bash)
 ./start.sh --upgrade
 ```
 
-`--upgrade` 会强制重新执行版本选择，仍按 `24 → 22 → 20 → 18` 从高到低尝试官方可用版本，清除旧的本机就绪标记并重新运行 `npm install`，随后正常启动平台。它不会修改题库、知识正文、知识源配置或用户训练记录。
+也可以只升级而不运行：
+
+```bash
+./install.sh --upgrade
+```
+
+`start.sh --upgrade` 会调用 `install.sh --upgrade`，安装完成后继续转入 `run.sh`；直接调用安装模块则只升级环境。升级仍按 `24 → 22 → 20 → 18` 从高到低尝试官方可用版本，清除旧的本机就绪标记并重新运行 `npm install`。它不会修改题库、知识正文、知识源配置或用户训练记录。
 
 联网安装遵循就近源优先原则：默认先尝试国内 `npmmirror` 的 Node.js 镜像与 npm 仓库，失败后自动回退到 `nodejs.org` 和 `registry.npmjs.org` 官方源。该选择只作用于本次训练工具安装，不修改用户的全局 npm 配置。需要按所在国家、组织内网或自建镜像调整时，可用空格分隔的 `PRACTICE_NODE_DIST_SOURCES` 和 `PRACTICE_NPM_REGISTRIES` 环境变量覆盖源顺序。
 
@@ -183,9 +205,11 @@ config/offline_node_packages.example.tsv
 
 ### 1.2.3\_第一次启动
 
-第一次运行启动入口时会依次执行：
+第一次运行 `start.sh` 时会依次执行：
 
 ```text
+start.sh 调用 install.sh --if-needed
+    ↓
 定位 Node.js/npm 并检查 Node.js 主版本
     ↓
 低于 v18 时按优先级准备官方兼容版本
@@ -193,6 +217,8 @@ config/offline_node_packages.example.tsv
 安装 practice_tool 项目依赖
     ↓
 写入 .local/environment-ready-v3-node-compatible
+    ↓
+start.sh 转交 run.sh
     ↓
 启动平台并打开浏览器
 ```
@@ -291,11 +317,13 @@ banks/index.json
 
 | 文件 | 职责 |
 | --- | --- |
-| `start.sh` | MSYS2/Linux 正式启动入口 |
+| `start.sh` | 首次安装、运行、升级和卸载命令的便利编排入口 |
+| `install.sh` | 独立准备 Node.js 与 npm 项目依赖，不启动服务 |
+| `run.sh` | 独立运行已安装的平台，环境缺失时拒绝隐式安装 |
 | `bootstrap_windows.ps1` | PowerShell 冷启动引导，只安装和准备 MSYS2 |
 | `start_ucrt64.cmd` | 可双击的 UCRT64 Bash 转发入口 |
 | `start_ucrt32.cmd` | 已有自定义 UCRT32 环境的兼容转发入口 |
-| `scripts/install_environment.sh` | MSYS2/Linux Node.js 自动安装 |
+| `scripts/install_environment.sh` | 安装模块内部使用的 MSYS2/Linux Node.js 运行时安装器 |
 | `scripts/lib/platform_environment.sh` | 平台识别、路径、工具和公共环境函数的唯一来源 |
 | `uninstall.sh` | MSYS2/Linux 两级卸载与所有权核对 |
 | `uninstall_windows.ps1` | 退出 MSYS2 后清理仅由工具安装的 MSYS2 根环境 |

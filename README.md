@@ -73,7 +73,7 @@ tools/practice_tool/
 ./tools/practice_tool/start.sh
 ```
 
-仓库根目录的 `practice.cmd` 和 `practice.sh` 是当前知识库提供的集成快捷入口，只转发到工具的 `start.sh`，不承载环境准备、依赖安装或服务启动逻辑。Windows 尚未安装 MSYS2 时由 PowerShell 引导脚本准备 UCRT64；正式运行统一通过 Unix 环境层选择 MSYS2 `pacman` 或 Ubuntu 22.04 隔离运行时。依赖安装完成、Vite 开始监听后才打开浏览器。
+仓库根目录的 `practice.cmd` 和 `practice.sh` 是当前知识库提供的集成快捷入口，只转发到工具的 `start.sh`，不承载环境准备、依赖安装或服务启动逻辑。工具内部将 `install.sh`、`run.sh` 和 `uninstall.sh` 分别作为安装、纯运行和卸载模块；`start.sh` 首次运行时可以调用安装模块，完成后再转入运行模块。Windows 尚未安装 MSYS2 时由 PowerShell 引导脚本准备 UCRT64；正式运行统一通过 Unix 环境层选择 MSYS2 `pacman` 或 Ubuntu 22.04 隔离运行时。依赖安装完成、Vite 开始监听后才打开浏览器。
 
 Linux 下直接使用工具正式入口查看介绍，该命令不会安装环境或启动服务：
 
