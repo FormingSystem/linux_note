@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import type { ImportedBook, TrainingCategory, WorkspaceData } from "../../shared/types";
 import { loadWorkspace, saveWorkspace } from "../../infrastructure/persistence/workspaceRepository";
@@ -22,11 +21,9 @@ export default function LibraryPage() {
   const [message, setMessage] = useState("");
   const [past, setPast] = useState<WorkspaceData[]>([]);
   const [future, setFuture] = useState<WorkspaceData[]>([]);
-  const [actionHost, setActionHost] = useState<HTMLElement | null>(null);
   const [importedBooks, setImportedBooks] = useState<ImportedBook[]>([]);
 
   useEffect(() => {
-    setActionHost(document.getElementById("app-context-actions"));
     void listImportedBooks().then((items) => setImportedBooks(items.filter((item) => item.status === "published")));
   }, []);
 
@@ -159,6 +156,23 @@ export default function LibraryPage() {
   };
 
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent("loop-history-state", { detail: { canUndo: past.length > 0, canRedo: future.length > 0 } }));
+  }, [future.length, past.length]);
+  useEffect(() => () => {
+    window.dispatchEvent(new CustomEvent("loop-history-state", { detail: { canUndo: false, canRedo: false } }));
+  }, []);
+  useEffect(() => {
+    const handleUndo = () => void undo();
+    const handleRedo = () => void redo();
+    window.addEventListener("loop-history-undo", handleUndo);
+    window.addEventListener("loop-history-redo", handleRedo);
+    return () => {
+      window.removeEventListener("loop-history-undo", handleUndo);
+      window.removeEventListener("loop-history-redo", handleRedo);
+    };
+  });
+
+  useEffect(() => {
     const handleHistoryShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target?.closest("input, textarea, select, [contenteditable='true']") || !(event.ctrlKey || event.metaKey)) return;
@@ -252,14 +266,6 @@ export default function LibraryPage() {
         onAddChild={() => { setEditor({ parentId: configTarget.value.id }); setConfigTarget(null); }}
         onTrash={() => trashCategory(configTarget.value)}
       />}
-      {actionHost && createPortal(
-        <div className="history-controls" aria-label="目录操作历史">
-          <span className="history-controls-label">操作历史</span>
-          <button type="button" disabled={!past.length} onClick={() => void undo()} title="撤销上一步操作（Ctrl+Z）"><HistoryIcon direction="back" /><span>撤销</span></button>
-          <button type="button" disabled={!future.length} onClick={() => void redo()} title="重做下一步操作（Ctrl+Shift+Z 或 Ctrl+Y）"><HistoryIcon direction="forward" /><span>重做</span></button>
-        </div>,
-        actionHost,
-      )}
     </section>
   );
 }
@@ -330,15 +336,6 @@ function ChevronIcon() {
   return (
     <svg className="chevron-icon" viewBox="0 0 16 16" aria-hidden="true">
       <path d="m5.5 3.75 4.25 4.25-4.25 4.25" />
-    </svg>
-  );
-}
-
-function HistoryIcon({ direction }: { direction: "back" | "forward" }) {
-  return (
-    <svg className={direction === "forward" ? "history-icon forward" : "history-icon"} viewBox="0 0 20 20" aria-hidden="true">
-      <path d="M7 6H4v-3" />
-      <path d="M4.5 6A7 7 0 1 1 3 12" />
     </svg>
   );
 }
