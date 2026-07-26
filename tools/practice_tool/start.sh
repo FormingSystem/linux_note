@@ -34,6 +34,7 @@ practice - 本地知识训练工具
   PRACTICE_NODE_DIST_SOURCES 按顺序指定 Node.js 下载源，使用空格分隔
   PRACTICE_NPM_REGISTRIES    按顺序指定 npm 下载源，使用空格分隔
   PRACTICE_NO_OPEN=1         启动后不自动打开浏览器
+  PRACTICE_AUTO_COMPLETION=0 禁止首次正常启动自动安装 Bash 补全
 
 示例：
   ./start.sh
@@ -46,6 +47,46 @@ practice - 本地知识训练工具
 EOF
 }
 
+install_bash_completion() {
+    local overwrite="${1:-0}"
+    local user_data_home completion_dir completion_source completion_target
+
+    if [[ -z "${HOME:-}" ]]; then
+        printf '%s\n' '[practice] 未检测到 HOME，跳过 Bash 补全安装。' >&2
+        return 1
+    fi
+
+    user_data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+    completion_dir="$user_data_home/bash-completion/completions"
+    completion_source="$practice_dir/scripts/completions/start.bash"
+    completion_target="$completion_dir/start.sh"
+    mkdir -p "$completion_dir"
+
+    if [[ -e "$completion_target" || -L "$completion_target" ]]; then
+        if [[ "$overwrite" != "1" ]]; then
+            return 0
+        fi
+        rm -f "$completion_target"
+    fi
+
+    if ln -s "$completion_source" "$completion_target" 2>/dev/null; then
+        printf '[practice] Bash 补全已链接到当前工具目录：%s\n' "$completion_target"
+    else
+        printf 'source %q\n' "$completion_source" > "$completion_target"
+        printf '[practice] 当前系统无法创建符号链接，已安装动态加载器：%s\n' "$completion_target"
+    fi
+    printf '[practice] 补全源：%s\n' "$completion_source"
+    printf '%s\n' '[practice] 后续 Git 更新该源文件时，补全规则会同步更新。'
+    printf '%s\n' '[practice] 当前 Bash 首次安装后请执行一次：'
+    printf '  source <(%q --completion bash)\n' "$practice_dir/start.sh"
+    if ! type _completion_loader >/dev/null 2>&1 &&
+        [[ ! -r /usr/share/bash-completion/bash_completion ]]; then
+        printf '%s\n' '[practice] 未检测到 bash-completion；请先通过系统包管理器安装，后续新终端才能自动加载补全。'
+    else
+        printf '%s\n' '[practice] 后续新开的 Bash 会自动发现补全，无需再次执行 source。'
+    fi
+}
+
 if [[ "${1:-}" = "--completion" ]]; then
     if [[ "${2:-bash}" != "bash" ]]; then
         printf '[practice] 暂不支持该补全类型：%s\n' "${2:-}" >&2
@@ -56,21 +97,7 @@ if [[ "${1:-}" = "--completion" ]]; then
 fi
 
 if [[ "${1:-}" = "--install-completion" ]]; then
-    completion_dir="${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion/completions"
-    completion_source="$practice_dir/scripts/completions/start.bash"
-    completion_target="$completion_dir/start.sh"
-    mkdir -p "$completion_dir"
-    rm -f "$completion_target"
-    if ln -s "$completion_source" "$completion_target" 2>/dev/null; then
-        printf '[practice] Bash 补全已链接到当前工具目录：%s\n' "$completion_target"
-    else
-        printf 'source %q\n' "$completion_source" > "$completion_target"
-        printf '[practice] 当前系统无法创建符号链接，已安装动态加载器：%s\n' "$completion_target"
-    fi
-    printf '[practice] 补全源：%s\n' "$completion_source"
-    printf '%s\n' '[practice] 后续 Git 更新该源文件时，补全规则会同步更新。'
-    printf '%s\n' '[practice] 重新打开 Bash 后生效；当前终端可执行：'
-    printf '  source <(%q --completion bash)\n' "$practice_dir/start.sh"
+    install_bash_completion 1
     exit 0
 fi
 
@@ -88,6 +115,10 @@ for argument in "$@"; do
             ;;
     esac
 done
+
+if [[ "${PRACTICE_AUTO_COMPLETION:-1}" = "1" && -t 0 && -t 1 ]]; then
+    install_bash_completion 0 || true
+fi
 
 node_is_supported() {
     command -v node >/dev/null 2>&1 &&
