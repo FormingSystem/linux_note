@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "linux.rcu.foundation_model",
+  "title": "RCU：从读侧扩展性到宽限期证明",
+  "subtitle": "不从 API 开始背诵，而是沿着共享读状态的成本、旧对象生命期和多 CPU 安全证明，逐步建立可以脱稿调用的 RCU 基础模型。",
+  "status": "draft",
+  "estimated_minutes": 45,
+  "knowledge_refs": [
+    {
+      "id": "knowledge.linux.synchronization.rcu.why_rcu",
+      "path": "knowledge/linux/synchronization/rcu/P01_为什么需要_RCU.md"
+    },
+    {
+      "id": "knowledge.linux.synchronization.rcu.abstract_model",
+      "path": "knowledge/linux/synchronization/rcu/P02_RCU_抽象机制推演.md"
+    },
+    {
+      "id": "knowledge.linux.synchronization.rcu.constraints",
+      "path": "knowledge/linux/synchronization/rcu/P03_RCU_机制完善_硬件与运行约束.md"
+    },
+    {
+      "id": "knowledge.linux.synchronization.rcu.tree_state",
+      "path": "knowledge/linux/synchronization/rcu/P04_Linux_Tree_RCU_状态与通知机制.md"
+    }
+  ],
+  "stages": {
+    "guided": {
+      "title": "轻量场景提示提问",
+      "purpose": "用小问题暴露关键矛盾，帮助形成局部因果链。",
+      "items_file": "guided_questions.json"
+    },
+    "reconstruction": {
+      "title": "小模块脱稿输出",
+      "purpose": "撤掉知识提示，独立重建时序、状态和通信。",
+      "items_file": "model_tasks.json"
+    },
+    "professional": {
+      "title": "工程案例分析",
+      "purpose": "诊断真实约束，给出方案并说明不可规避成本。",
+      "items_file": "professional_cases.json"
+    }
+  }
+}

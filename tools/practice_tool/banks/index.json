@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "units": [
+    {
+      "id": "linux.rcu.foundation_model",
+      "title": "RCU：从读侧扩展性到宽限期证明",
+      "summary": "从读写锁的共享读状态成本出发，推导发布、旧读者边界、宽限期和 Tree RCU 通信主线。",
+      "domain": "linux",
+      "topic": "synchronization",
+      "module": "rcu",
+      "level": "foundation",
+      "estimated_minutes": 45,
+      "status": "available",
+      "unit_file": "linux/synchronization/rcu/foundation_model/unit.json",
+      "tags": ["RCU", "读写锁", "宽限期", "多CPU", "对象生命期"]
+    }
+  ]
+}

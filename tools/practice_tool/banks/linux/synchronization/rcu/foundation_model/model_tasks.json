@@ -1,0 +1,46 @@
+[
+  {
+    "id": "linux.rcu.model.multi_cpu_read_timeline",
+    "title": "多 CPU 读取与更新时序",
+    "output_type": "sequence",
+    "prompt": "不看资料，描述或画出 CPU0、CPU1 两个读者与 CPU2 更新者的一次完整交错：旧读者取得 A，更新者发布 B，新读者取得 B，GP 完成后回收 A。",
+    "constraints": ["必须标出时间顺序", "必须区分旧读者与新读者", "不得使用“等一会儿”代替 GP"],
+    "required_outputs": [
+      "CPU0 在发布前取得 A，并可在发布后继续使用 A。",
+      "CPU2 完整初始化 B 后以发布语义替换入口。",
+      "CPU1 在替换后取得 B，不属于旧读者集合。",
+      "CPU2 等待的是发布前读者越过安全边界。",
+      "A 只能在 GP 完成后回收。"
+    ],
+    "verification_questions": [
+      "如果 CPU1 长时间停留在新读侧，它是否必然阻塞本轮 GP？",
+      "如果 CPU2 在替换指针后立即 kfree(A)，哪一步产生 UAF？"
+    ],
+    "knowledge_refs": [
+      "knowledge.linux.synchronization.rcu.why_rcu",
+      "knowledge.linux.synchronization.rcu.abstract_model"
+    ]
+  },
+  {
+    "id": "linux.rcu.model.tree_rcu_communication",
+    "title": "Tree RCU 状态与通信主线",
+    "output_type": "state_ownership",
+    "prompt": "脱稿重建一次普通 Tree RCU GP：谁请求、GP 状态在哪里、CPU 怎样形成 QS、局部证据怎样汇聚、等待者如何获知完成，并补充被抢占任务和 force-QS 两条分支。",
+    "constraints": ["至少包含 5 个角色", "标出状态存储位置", "区分正常路径与慢路径"],
+    "required_outputs": [
+      "写者提出 GP 请求，GP kthread 初始化并推进本轮状态。",
+      "任务普通读侧主要修改 task_struct 中的本地 nesting。",
+      "CPU 经过 QS 后先记录到 per-CPU rcu_data，再由 rcu_core 报告。",
+      "rcu_node 的 qsmask 将 CPU 或子节点证据分层汇聚到根。",
+      "被抢占旧读者登记到 blkd_tasks/gp_tasks，独立阻止 GP。",
+      "久等时 GP kthread 读取远端 watching 状态，必要时用重调度请求或 IPI 催促。",
+      "根完成条件满足后推进完成序列并唤醒同步等待者或推进回调。"
+    ],
+    "verification_questions": [
+      "普通 rcu_read_lock() 是否每次通知远端写者？",
+      "CPU 自己报告 QS 与 GP kthread 远端探测分别属于哪条路径？",
+      "层次树减少了哪一个共享热点，又引入了什么汇聚成本？"
+    ],
+    "knowledge_refs": ["knowledge.linux.synchronization.rcu.tree_state"]
+  }
+]
