@@ -9,7 +9,13 @@ set "PRACTICE_UPGRADE=0"
 set "PRACTICE_VITE_ARGS="
 
 for %%A in (%*) do (
-    if /I "%%~A"=="--upgrade" (
+    if /I "%%~A"=="--help" (
+        call :show_help
+        exit /b 0
+    ) else if /I "%%~A"=="-h" (
+        call :show_help
+        exit /b 0
+    ) else if /I "%%~A"=="--upgrade" (
         set "PRACTICE_UPGRADE=1"
     ) else (
         set "PRACTICE_VITE_ARGS=!PRACTICE_VITE_ARGS! %%A"
@@ -97,7 +103,7 @@ cd /d "%PRACTICE_DIR%"
 if not exist "%PRACTICE_READY%" (
     echo [practice] First run: checking and installing project dependencies...
     echo [practice] The first download may be slow. The browser will open only after the service is ready.
-    call "%PRACTICE_NPM%" install --no-audit --no-fund --fetch-retries=2 --fetch-timeout=120000
+    call :install_dependencies
     if errorlevel 1 (
         echo [practice] Dependency installation failed.
         exit /b 1
@@ -110,7 +116,7 @@ if not exist "%PRACTICE_READY%" (
 if not exist "node_modules" (
     del /q "%PRACTICE_READY%" >nul 2>nul
     echo [practice] Dependencies were removed. Preparing them again...
-    call "%PRACTICE_NPM%" install --no-audit --no-fund --fetch-retries=2 --fetch-timeout=120000
+    call :install_dependencies
     if errorlevel 1 exit /b 1
     if not exist ".local" mkdir ".local"
     >"%PRACTICE_READY%" echo environment-ready-v3-node-compatible
@@ -123,3 +129,43 @@ if "%PRACTICE_NO_OPEN%"=="1" set "PRACTICE_OPEN_ARG="
 call "%PRACTICE_NPM%" run dev -- --host 127.0.0.1 %PRACTICE_OPEN_ARG% %PRACTICE_VITE_ARGS%
 set "PRACTICE_EXIT=%ERRORLEVEL%"
 endlocal & exit /b %PRACTICE_EXIT%
+
+:show_help
+echo practice - Local knowledge training tool
+echo.
+echo Purpose:
+echo   Train by module, unit, and stage with guided questions,
+echo   independent recall, and professional cases.
+echo.
+echo Usage:
+echo   practice.cmd [options]
+echo   start.cmd [options]
+echo.
+echo Options:
+echo   -h, --help       Show this help without installing or starting
+echo   --upgrade        Refresh compatible Node.js and dependencies
+echo   --host ADDRESS   Forward the host option to Vite
+echo   --port PORT      Select the local service port
+echo.
+echo Environment:
+echo   PRACTICE_SOURCE_CONFIG      Knowledge source configuration
+echo   PRACTICE_NODE_DIST_SOURCES  Ordered Node.js sources, space-separated
+echo   PRACTICE_NPM_REGISTRIES     Ordered npm registries, space-separated
+echo   PRACTICE_NO_OPEN=1          Do not open the browser automatically
+echo.
+echo Documentation: tools\practice_tool\README.md
+exit /b 0
+
+:install_dependencies
+if defined PRACTICE_NPM_REGISTRIES (
+    set "PRACTICE_REGISTRIES=%PRACTICE_NPM_REGISTRIES%"
+) else (
+    set "PRACTICE_REGISTRIES=https://registry.npmmirror.com https://registry.npmjs.org"
+)
+for %%R in (%PRACTICE_REGISTRIES%) do (
+    echo [practice] Trying npm registry: %%R
+    call "%PRACTICE_NPM%" install --registry=%%R --no-audit --no-fund --fetch-retries=2 --fetch-timeout=120000
+    if not errorlevel 1 exit /b 0
+    echo [practice] Registry unavailable; trying the next source: %%R
+)
+exit /b 1

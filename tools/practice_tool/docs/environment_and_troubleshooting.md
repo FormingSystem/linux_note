@@ -17,6 +17,8 @@ domains:
 
 训练工具自身的正式入口是工具目录中的 `start.cmd` 和 `start.sh`。当前知识库根目录的 `practice.cmd`、`practice.sh` 只是快捷转发。不同终端不能混用命令语法。
 
+查看工具介绍和全部启动选项时，可在 Linux 使用 `./practice --help`，在 Windows 使用 `practice.cmd --help`。帮助参数在环境检查之前返回，不触发任何下载、安装或服务启动。
+
 | 终端提示符示例 | 环境 | 启动命令 |
 | --- | --- | --- |
 | `F:\...\practice_tool>` | Windows CMD | `start` |
@@ -70,7 +72,7 @@ http://127.0.0.1:5173/
 
 ### 1.2.3\_主动升级
 
-普通启动只在 Node.js 缺失或低于最低兼容线时下载运行时。需要主动检查官方更新并刷新依赖时：
+普通启动只在 Node.js 缺失或低于最低兼容线时下载运行时。需要主动检查配置源中的更新并刷新依赖时：
 
 ```cmd
 start.cmd --upgrade
@@ -83,6 +85,18 @@ bash ./start.sh --upgrade
 位于 `linux-note` 根目录时也可以使用 `practice.cmd --upgrade` 或 `bash ./practice.sh --upgrade`。根快捷脚本只转发参数，升级逻辑仍由工具正式入口完成。
 
 升级模式会重新选择官方最高可用兼容 Node.js、删除本机环境就绪标记、重新执行 `npm install`，然后启动 Vite。它不执行 `git pull`，也不更新题库、知识源配置、知识正文或用户作答。
+
+联网下载采用“本国或就近镜像优先、境外官方源兜底”的顺序。默认先尝试 `https://npmmirror.com/mirrors/node` 和 `https://registry.npmmirror.com`，不可用时再尝试 `https://nodejs.org/dist` 和 `https://registry.npmjs.org`。镜像提供的 Node.js 包仍必须通过随发行版提供的 `SHASUMS256.txt` 摘要校验；npm 仓库仅通过当前安装命令的 `--registry` 指定，不写入全局配置。
+
+跨国家使用、自建镜像或组织内网环境可以临时覆盖源列表，地址之间使用空格分隔，排列顺序就是尝试顺序：
+
+```bash
+PRACTICE_NODE_DIST_SOURCES="https://内网-node-镜像 https://nodejs.org/dist" \
+PRACTICE_NPM_REGISTRIES="https://内网-npm-镜像 https://registry.npmjs.org" \
+bash ./practice.sh --upgrade
+```
+
+Windows CMD 使用 `set PRACTICE_NODE_DIST_SOURCES=...` 和 `set PRACTICE_NPM_REGISTRIES=...` 后再执行 `practice.cmd --upgrade`。
 
 ### 1.2.4\_离线准备Node.js
 

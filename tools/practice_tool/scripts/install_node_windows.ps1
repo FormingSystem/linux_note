@@ -12,6 +12,11 @@ $preferredMajors = if ($env:PRACTICE_NODE_MAJORS) {
 } else {
     @("24", "22", "20", "18")
 }
+$nodeDistSources = if ($env:PRACTICE_NODE_DIST_SOURCES) {
+    $env:PRACTICE_NODE_DIST_SOURCES -split "\s+"
+} else {
+    @("https://npmmirror.com/mirrors/node", "https://nodejs.org/dist")
+}
 
 $architecture = switch ($env:PROCESSOR_ARCHITECTURE) {
     "AMD64" { "x64" }
@@ -187,12 +192,13 @@ foreach ($majorText in $preferredMajors) {
         }
     }
 
-    $attemptDir = Join-Path $runtimeRoot ("node-v{0}.{1}" -f $major, [guid]::NewGuid().ToString("N"))
-    New-Item -ItemType Directory -Force -Path $attemptDir | Out-Null
-    try {
-        $releaseBase = "https://nodejs.org/dist/latest-v$major.x"
+    foreach ($sourceRoot in $nodeDistSources) {
+        $attemptDir = Join-Path $runtimeRoot ("node-v{0}.{1}" -f $major, [guid]::NewGuid().ToString("N"))
+        New-Item -ItemType Directory -Force -Path $attemptDir | Out-Null
+        try {
+        $releaseBase = "$($sourceRoot.TrimEnd('/'))/latest-v$major.x"
         $checksumsPath = Join-Path $attemptDir "SHASUMS256.txt"
-        Write-Host "[practice] Querying official Node.js latest-v$major.x (win-$architecture)..."
+        Write-Host "[practice] Trying Node.js source: $releaseBase (win-$architecture)..."
         Invoke-WebRequest -UseBasicParsing -TimeoutSec 60 -Uri "$releaseBase/SHASUMS256.txt" -OutFile $checksumsPath
 
         $pattern = "^([0-9a-fA-F]{64})  (node-v[^ ]+-win-$architecture\.zip)$"
@@ -223,11 +229,12 @@ foreach ($majorText in $preferredMajors) {
         if (Test-Path $attemptDir) {
             Remove-Item -LiteralPath $attemptDir -Recurse -Force
         }
+        }
     }
 }
 
 Write-Host "[practice] Offline use: place the official ZIP and matching SHASUMS256.txt under:"
 Write-Host "[practice]   $cacheRoot\v<version>\"
 Write-Host "[practice] Example: $cacheRoot\v24.18.0\node-v24.18.0-win-$architecture.zip"
-Write-Error "[practice] No compatible official or cached Node.js release is available."
+Write-Error "[practice] No compatible Node.js release is available from the configured sources or cache."
 exit 1

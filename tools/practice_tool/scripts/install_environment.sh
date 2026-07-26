@@ -5,6 +5,7 @@ set -euo pipefail
 practice_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 required_node_major=18
 preferred_node_majors="${PRACTICE_NODE_MAJORS:-24 22 20 18}"
+node_dist_sources="${PRACTICE_NODE_DIST_SOURCES:-https://npmmirror.com/mirrors/node https://nodejs.org/dist}"
 
 node_is_supported() {
     command -v node >/dev/null 2>&1 &&
@@ -107,14 +108,15 @@ extract_node_archive() {
 activate_offline_archive() {
     local archive_path="$1"
     local checksums_path="$2"
-    local archive_name extracted_dir checksum_line
+    local archive_name extracted_dir checksum_line official_name_pattern
 
     archive_name="$(basename "$archive_path")"
     if [[ ! -f "$checksums_path" || ! -f "$archive_path" ]]; then
         printf '[practice] 离线包或校验文件不存在：%s | %s\n' "$archive_path" "$checksums_path" >&2
         return 1
     fi
-    if [[ ! "$archive_name" =~ ^node-v([0-9]+)\.[0-9]+\.[0-9]+-linux-$node_arch\.(tar\.gz|tgz|tar\.xz)$ ]]; then
+    official_name_pattern="^node-v([0-9]+)\.[0-9]+\.[0-9]+-linux-${node_arch}\.(tar\.gz|tgz|tar\.xz)$"
+    if [[ ! "$archive_name" =~ $official_name_pattern ]]; then
         printf '[practice] 文件名与当前平台/架构不匹配：%s（期望 linux-%s 官方命名）。\n' "$archive_name" "$node_arch" >&2
         return 1
     fi
@@ -183,7 +185,13 @@ install_from_table() {
 
 offline_choice="${PRACTICE_INSTALL_MODE:-}"
 if [[ -z "$offline_choice" && -t 0 && -t 1 ]]; then
-    printf '[practice] Node.js 安装方式（5 秒后自动联网）：[A]自动 [M]手动指定一个离线包 [T]读取离线包表：'
+    printf '%s\n' \
+        '[practice] 请选择 Node.js 安装方式：' \
+        '  [A] 自动安装（默认，5 秒后自动选择）' \
+        '  [M] 手动指定一个离线安装包' \
+        '  [T] 从离线安装表读取' \
+        '----------------------------------------'
+    printf '%s' '[practice] 请输入 A、M 或 T：'
     if read -r -n 1 -t 5 offline_choice; then
         printf '\n'
     else
@@ -211,8 +219,7 @@ esac
 
 install_official_node() {
     local major="$1"
-    local release_base="https://nodejs.org/dist/latest-v$major.x"
-    local attempt_dir archive_name archive_url version package_dir cached_dir cached_archive
+    local source_root release_base attempt_dir archive_name archive_url version package_dir cached_dir cached_archive
 
     while IFS= read -r cached_dir; do
         cached_archive="$(find "$cached_dir" -maxdepth 1 -type f \( -name "node-v*-linux-$node_arch.tar.gz" -o -name "node-v*-linux-$node_arch.tgz" -o -name "node-v*-linux-$node_arch.tar.xz" \) -print -quit)"
@@ -229,36 +236,41 @@ install_official_node() {
         return 1
     fi
 
-    attempt_dir="$(mktemp -d "$runtime_root/node-v$major.XXXXXX")"
+    for source_root in $node_dist_sources; do
+        release_base="${source_root%/}/latest-v$major.x"
+        attempt_dir="$(mktemp -d "$runtime_root/node-v$major.XXXXXX")"
+        printf '[practice] 尝试 Node.js 下载源：%s（linux-%s）……\n' "$release_base" "$node_arch"
+        if ! download_file "$release_base/SHASUMS256.txt" "$attempt_dir/SHASUMS256.txt"; then
+            rm -rf "$attempt_dir"
+            continue
+        fi
 
-    printf '[practice] 查询 Node.js 官方 latest-v%s.x（linux-%s）……\n' "$major" "$node_arch"
-    if ! download_file "$release_base/SHASUMS256.txt" "$attempt_dir/SHASUMS256.txt"; then
+        archive_name="$(sed -n "s/^[0-9a-fA-F]\\{64\\}  \\(node-v[^ ]*-linux-$node_arch\\.tar\\.gz\\)$/\\1/p" "$attempt_dir/SHASUMS256.txt" | head -n 1)"
+        if [[ -z "$archive_name" ]]; then
+            printf '[practice] 当前源没有 Node.js v%s linux-%s 官方归档，切换下一下载源。\n' "$major" "$node_arch"
+            rm -rf "$attempt_dir"
+            continue
+        fi
+
+        archive_url="$release_base/$archive_name"
+        version="${archive_name#node-v}"
+        version="${version%%-linux-*}"
+        package_dir="$cache_root/v$version"
+        mkdir -p "$package_dir"
+        cp "$attempt_dir/SHASUMS256.txt" "$package_dir/SHASUMS256.txt"
+        printf '[practice] 下载 %s……\n' "$archive_name"
+        if ! download_file "$archive_url" "$package_dir/$archive_name"; then
+            rm -f "$package_dir/$archive_name"
+            rm -rf "$attempt_dir"
+            continue
+        fi
+
         rm -rf "$attempt_dir"
-        return 1
-    fi
-
-    archive_name="$(sed -n "s/^[0-9a-fA-F]\\{64\\}  \\(node-v[^ ]*-linux-$node_arch\\.tar\\.gz\\)$/\\1/p" "$attempt_dir/SHASUMS256.txt" | head -n 1)"
-    if [[ -z "$archive_name" ]]; then
-        printf '[practice] Node.js v%s 没有 linux-%s 官方归档，尝试较低版本。\n' "$major" "$node_arch"
-        rm -rf "$attempt_dir"
-        return 1
-    fi
-
-    archive_url="$release_base/$archive_name"
-    version="${archive_name#node-v}"
-    version="${version%%-linux-*}"
-    package_dir="$cache_root/v$version"
-    mkdir -p "$package_dir"
-    cp "$attempt_dir/SHASUMS256.txt" "$package_dir/SHASUMS256.txt"
-    printf '[practice] 下载 %s……\n' "$archive_name"
-    if ! download_file "$archive_url" "$package_dir/$archive_name"; then
-        rm -f "$package_dir/$archive_name"
-        rm -rf "$attempt_dir"
-        return 1
-    fi
-
-    rm -rf "$attempt_dir"
-    activate_offline_archive "$package_dir/$archive_name" "$package_dir/SHASUMS256.txt"
+        if activate_offline_archive "$package_dir/$archive_name" "$package_dir/SHASUMS256.txt"; then
+            return 0
+        fi
+    done
+    return 1
 }
 
 for major in $preferred_node_majors; do
@@ -270,7 +282,7 @@ for major in $preferred_node_majors; do
     fi
 done
 
-printf '[practice] 无法从 Node.js 官方地址取得任何兼容版本（尝试顺序：%s）。\n' "$preferred_node_majors" >&2
+printf '[practice] 无法从已配置的 Node.js 下载源取得兼容版本（版本顺序：%s）。\n' "$preferred_node_majors" >&2
 printf '[practice] 离线使用：把官方归档和同版本 SHASUMS256.txt 放到：\n' >&2
 printf '[practice]   %s/v<版本>/\n' "$cache_root" >&2
 printf '[practice] 示例：%s/v24.18.0/node-v24.18.0-linux-%s.tar.gz\n' "$cache_root" "$node_arch" >&2

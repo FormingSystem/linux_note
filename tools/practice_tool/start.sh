@@ -10,8 +10,47 @@ practice_url="${PRACTICE_URL:-http://127.0.0.1:5173/}"
 upgrade_requested=0
 forwarded_args=()
 
+show_help() {
+    cat <<'EOF'
+practice - 本地知识训练工具
+
+用途：
+  按模块、训练单元和阶段进行提示提问、脱稿输出与专业案例训练。
+  训练工具独立保存题库和作答状态，通过显式知识源配置读取外部知识库。
+
+用法：
+  ./practice [选项]
+  ./practice.sh [选项]       # linux-note 仓库快捷入口
+  bash ./start.sh [选项]     # practice_tool 自身入口
+
+选项：
+  -h, --help                 显示本帮助，不安装环境或启动服务
+  --upgrade                  更新兼容的 Node.js 运行时并刷新项目依赖
+  --host <地址>              将参数继续传给 Vite
+  --port <端口>              指定本地服务端口
+
+环境变量：
+  PRACTICE_SOURCE_CONFIG     指定知识源配置文件
+  PRACTICE_NODE_DIST_SOURCES 按顺序指定 Node.js 下载源，使用空格分隔
+  PRACTICE_NPM_REGISTRIES    按顺序指定 npm 下载源，使用空格分隔
+  PRACTICE_NO_OPEN=1         启动后不自动打开浏览器
+
+示例：
+  ./practice
+  ./practice --upgrade
+  PRACTICE_NO_OPEN=1 ./practice --port 5174
+
+更多说明：
+  tools/practice_tool/README.md
+EOF
+}
+
 for argument in "$@"; do
     case "$argument" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
         --upgrade)
             upgrade_requested=1
             ;;
@@ -54,7 +93,7 @@ fi
 if ! node_is_supported || ! command -v npm >/dev/null 2>&1; then
     current_version="$(node --version 2>/dev/null || printf '未安装')"
     printf '[practice] 当前 Node.js 为 %s，工具最低要求为 v%d。\n' "$current_version" "$required_node_major"
-    printf '%s\n' '[practice] 正在从 Node.js 官方发行地址准备最新的兼容 LTS；失败时会逐级回退……'
+    printf '%s\n' '[practice] 正在按就近镜像、官方源顺序准备最新兼容 Node.js；失败时会逐级回退……'
     bash "$practice_dir/scripts/install_environment.sh"
     if [[ -x "$local_node_bin/node" && -x "$local_node_bin/npm" ]]; then
         export PATH="$local_node_bin:$PATH"
@@ -88,10 +127,23 @@ fi
 
 cd "$practice_dir"
 
+install_dependencies() {
+    local registry
+    local registries="${PRACTICE_NPM_REGISTRIES:-https://registry.npmmirror.com https://registry.npmjs.org}"
+    for registry in $registries; do
+        printf '[practice] 尝试 npm 下载源：%s\n' "$registry"
+        if "${npm_command[@]}" install --registry="$registry" --no-audit --no-fund --fetch-retries=2 --fetch-timeout=120000; then
+            return 0
+        fi
+        printf '[practice] 当前 npm 下载源不可用，切换下一源：%s\n' "$registry" >&2
+    done
+    return 1
+}
+
 if [[ ! -f "$ready_file" ]]; then
     printf '%s\n' '[practice] 首次运行：正在检查并安装项目依赖……'
     printf '%s\n' '[practice] 首次下载可能受网络速度影响；此阶段完成前不会打开浏览器。'
-    "${npm_command[@]}" install --no-audit --no-fund --fetch-retries=2 --fetch-timeout=120000
+    install_dependencies
     mkdir -p .local
     printf '%s\n' 'environment-ready-v3-node-compatible' > "$ready_file"
     printf '%s\n' '[practice] 环境准备完成，以后启动将跳过此步骤。'
@@ -100,7 +152,7 @@ fi
 if [[ ! -d node_modules ]]; then
     rm -f "$ready_file"
     printf '%s\n' '[practice] 依赖目录已被清理，正在重新准备……'
-    "${npm_command[@]}" install --no-audit --no-fund --fetch-retries=2 --fetch-timeout=120000
+    install_dependencies
     mkdir -p .local
     printf '%s\n' 'environment-ready-v3-node-compatible' > "$ready_file"
 fi

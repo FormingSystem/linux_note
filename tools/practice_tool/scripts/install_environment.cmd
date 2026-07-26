@@ -3,7 +3,12 @@ setlocal
 
 if not defined PRACTICE_INSTALL_MODE set "PRACTICE_INSTALL_MODE=auto"
 if "%PRACTICE_INSTALL_MODE%"=="auto" if not "%PRACTICE_NONINTERACTIVE%"=="1" (
-    choice /C AMT /N /T 5 /D A /M "[practice] Node.js install: [A]uto [M]anual offline package [T]able (auto in 5s): "
+    echo [practice] Select the Node.js installation method:
+    echo   [A] Automatic installation ^(default after 5 seconds^)
+    echo   [M] Manually specify one offline package
+    echo   [T] Read from the offline package table
+    echo ----------------------------------------
+    choice /C AMT /N /T 5 /D A /M "[practice] Enter A, M, or T: "
     if errorlevel 3 (
         set "PRACTICE_INSTALL_MODE=table"
     ) else if errorlevel 2 (
