@@ -198,7 +198,7 @@ structure(kernel): 调整内核章节目录结构
 - 用户作答和环境就绪状态只保存在浏览器或 `tools/practice_tool/.local`，不得进入 Git。
 - `node_modules`、`dist`、`.local` 和日志属于本机构建或运行状态，不得提交。
 
-`tools/practice_tool/start.cmd` 和 `tools/practice_tool/start.sh` 是训练工具自身的正式启动入口。根目录的 `practice.cmd` 和 `practice.sh` 只是当前知识库提供的快捷包装，必须只转发到工具自身入口，不复制环境准备或启动逻辑。第一次运行由工具入口负责发现或安装 Node.js、安装依赖并写入本机环境就绪标记；后续直接启动平台。MSYS2 使用自身的 `pacman` 且不使用 `sudo`，普通 Linux 才按发行版使用 `sudo apt-get`、`sudo dnf` 或 `sudo pacman`。
+`tools/practice_tool/start.cmd` 和 `tools/practice_tool/start.sh` 是训练工具自身的正式启动入口。根目录的 `practice.cmd` 和 `practice.sh` 只是当前知识库提供的快捷包装，必须只转发到工具自身入口，不复制环境准备或启动逻辑。工具最低兼容 Node.js 18：安装时优先取得 Node.js 官方最新 LTS，失败后按 `24 → 22 → 20 → 18` 尝试可用官方归档；不得降到依赖无法运行的版本。Windows 优先使用 `winget` 并以官方 ZIP 兜底，MSYS2 使用自身的 `pacman` 且不使用 `sudo`，普通 Linux 将官方归档安装到工具的 `.local/runtime`。依赖安装完成且 Vite 开始监听后才能打开浏览器。
 
 根目录的 `practice.sources.json` 是 `linux-note` 与训练工具之间的显式集成配置。根快捷脚本可以在用户未指定时设置 `PRACTICE_SOURCE_CONFIG` 指向它，但不得把仓库路径、知识目录规则或题库逻辑复制进工具启动器。题库引用必须使用 `source_id`、稳定文档 ID 和知识源内相对路径；Windows 与 Linux 共用同一配置 Schema，平台差异只能停留在入口脚本和路径解析层。
 

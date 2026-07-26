@@ -103,7 +103,7 @@ start.cmd
 bash ./start.sh
 ```
 
-工具自身的启动脚本会自动安装首次运行所需的依赖、启动训练工具并打开浏览器。
+工具自身的启动脚本会校验 Node.js 版本、安装首次运行所需的依赖并启动训练工具。浏览器由 Vite 在服务开始监听后打开，不使用固定延时猜测服务是否就绪。
 
 当前知识库根目录仍提供 `practice.cmd` 和 `practice.sh` 作为快捷入口，但它们只负责转发到本目录的 `start.cmd` 和 `start.sh`。训练工具的环境准备和启动逻辑不依赖仓库根目录，便于后续整体拆分为独立仓库。
 
@@ -114,23 +114,23 @@ bash ./start.sh
 第一次运行启动入口时会依次执行：
 
 ```text
-定位 Node.js/npm
+定位 Node.js/npm 并检查 Node.js 主版本
     ↓
-缺失时调用系统包管理器安装 Node.js LTS
+低于 v18 时按优先级准备官方兼容版本
     ↓
 安装 practice_tool 项目依赖
     ↓
-写入 .local/environment-ready-v1
+写入 .local/environment-ready-v3-node-compatible
     ↓
 启动平台并打开浏览器
 ```
 
-`.local/environment-ready-v1` 是本机环境就绪标记，不进入 Git。标记存在且 `node_modules` 仍然存在时，后续启动不会再次执行环境安装和依赖检查。
+`.local/environment-ready-v3-node-compatible` 是本机环境就绪标记，不进入 Git。标记存在且 `node_modules` 仍然存在时，后续启动不会再次执行依赖安装。Node.js 版本在每次启动时都会重新检查，不兼容版本不能因为存在就绪标记而绕过门禁。
 
 如果手动删除了 `node_modules`，启动器会清除旧标记并重新安装依赖。如果要主动重建环境，可以删除：
 
 ```text
-.local/environment-ready-v1
+.local/environment-ready-v3-node-compatible
 node_modules/
 ```
 
@@ -138,11 +138,11 @@ node_modules/
 
 自动安装支持：
 
-- Windows：优先使用系统已有 Node.js；缺失时通过 `winget` 安装 Node.js LTS。
-- MSYS2/UCRT64：可以发现现有 Windows Node.js；缺失时直接通过 MSYS2 `pacman` 安装当前环境对应的 Node.js 包，不使用 `sudo`，也不要求启用 Windows 开发者模式。
-- Linux：依次支持 `apt-get`、`dnf` 和 `pacman`。
+- Windows：复用 Node.js 18 以上版本；缺失或过旧时优先通过 `winget` 安装最新 LTS，失败后从 Node.js 官方发行地址逐级选择兼容 ZIP。
+- MSYS2/UCRT64：复用兼容的 Windows/MSYS2 Node.js；缺失或过旧时通过 MSYS2 `pacman` 安装当前环境对应的软件包，不使用 `sudo`。
+- 普通 Linux：依次查询 Node.js 官方 `latest-v24.x`、`latest-v22.x`、`latest-v20.x` 和 `latest-v18.x`，选择当前架构存在且能够成功下载的最高版本，校验 SHA-256 后安装到 `.local/runtime`。该过程不替换系统 Node.js，也不依赖发行版仓库中的版本。
 
-若设备没有受支持的包管理器，启动器会停止并提示手动安装 Node.js LTS，不会继续执行不完整的启动流程。
+普通 Linux 下载需要 `curl` 或 `wget`、`sha256sum`、`tar` 和 `gzip`。某个版本找不到、下载失败或没有当前架构归档时会自动尝试下一个版本。只有所有 **仍满足最低兼容线** 的官方版本都不可用时才停止；不能为了表面启动而退回到 Vite 无法运行的 Node.js 12。
 
 > MSYS2 的标准安装目录通常由当前用户直接维护，安装软件包使用 `pacman -S`，不应在前面添加 `sudo`。脚本会通过 `MSYSTEM` 和 `MINGW_PACKAGE_PREFIX` 识别 UCRT64、MINGW64 或 CLANG64，并选择匹配的软件包。
 

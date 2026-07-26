@@ -191,13 +191,13 @@ Windows 和 Linux 入口文件语法不同，但必须执行相同阶段：
 ```mermaid
 flowchart TD
     E["start.cmd 或 start.sh"] --> N["定位 Node.js 与 npm"]
-    N --> I{"环境是否完整"}
-    I -->|"否"| P["调用对应平台安装脚本"]
+    N --> I{"Node.js 是否至少为 v18"}
+    I -->|"否"| P["从官方最新 LTS 开始逐级选择兼容版本"]
     I -->|"是"| D["检查 node_modules 与本机就绪标记"]
     P --> D
     D --> C["读取 PRACTICE_SOURCE_CONFIG"]
     C --> V["启动 Vite 本地服务"]
-    V --> B["按平台能力打开浏览器"]
+    V --> B["Vite 监听成功后打开浏览器"]
 ```
 
 入口脚本只处理平台外壳差异，训练流程和知识源语义必须共用 TypeScript、JSON Schema 与 Node.js 实现。
@@ -224,8 +224,8 @@ flowchart TD
 
 - CMD 与 Bash 语法。
 - Node.js 的发现和安装方式。
-- Windows `winget`、MSYS2 `pacman` 和 Linux 包管理器。
-- 打开默认浏览器的系统命令。
+- Windows `winget`、MSYS2 `pacman` 和普通 Linux 的隔离运行时。
+- Vite 调用平台默认浏览器的实现。
 - 文件系统路径的系统表示。
 
 不允许的平台差异：
@@ -242,6 +242,8 @@ flowchart TD
 
 - 工具正式启动入口下沉到工具目录。
 - 根启动脚本精简为集成快捷入口。
+- 启动前检查 Node.js 18 最低兼容线；安装时从官方最新 LTS 开始逐级回退，普通 Linux 使用工具内隔离运行时。
+- 浏览器由 Vite 在监听成功后打开，不再依赖固定等待时间。
 - Windows 与 Linux 共享 `PRACTICE_SOURCE_CONFIG` 契约。
 - 支持从本地文件或 HTTP/HTTPS 地址读取知识源注册。
 - 支持 `filesystem` 和 `http` 两类知识源描述。
