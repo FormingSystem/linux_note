@@ -123,7 +123,43 @@ bash ./start.sh --upgrade
 
 `--upgrade` 会强制重新执行版本选择，仍按 `24 → 22 → 20 → 18` 从高到低尝试官方可用版本，清除旧的本机就绪标记并重新运行 `npm install`，随后正常启动平台。它不会修改题库、知识正文、知识源配置或用户训练记录。
 
-### 1.2.2\_第一次启动
+### 1.2.2\_离线运行时缓存
+
+联网下载成功的 Node.js 官方包会保留在：
+
+```text
+.local/downloads/node/v<完整版本>/
+```
+
+后续升级或重建环境会先检查缓存、校验 SHA-256，再决定是否联网。离线设备可以在其他机器访问 `https://nodejs.org/dist/`，下载当前平台归档和同一版本目录中的 `SHASUMS256.txt`，例如：
+
+```text
+.local/downloads/node/v24.18.0/
+├── SHASUMS256.txt
+└── node-v24.18.0-linux-x64.tar.gz
+```
+
+Windows 对应放置 `node-v24.18.0-win-x64.zip`。版本号、平台和 CPU 架构必须与文件名一致，不应自行改名。`.local/` 已整体加入 `.gitignore`，运行时、离线包和校验文件都不会被 Git 识别。
+
+环境安装开始时会等待 5 秒，可选择自动下载、手动指定一个包或读取离线包表。表格模板为：
+
+```text
+config/offline_node_packages.example.tsv
+```
+
+复制为被 Git 忽略的 `config/offline_node_packages.local.tsv` 后填写：
+
+| 列 | 含义 |
+| --- | --- |
+| `enabled` | `1` 表示参与安装，`0` 表示示例或停用 |
+| `platform` | `linux` 或 `windows` |
+| `arch` | `x64`、`arm64` 等官方架构名 |
+| `archive` | 官方归档路径 |
+| `checksums` | 同版本官方 `SHASUMS256.txt` 路径 |
+
+`archive` 和 `checksums` 可以是绝对路径，也可以是相对于 `practice_tool` 根目录的路径。Linux 根据后缀支持 `.tar.gz`、`.tgz` 和 `.tar.xz`；Windows支持 `.zip`，存在 `7z.exe` 或 `7za.exe` 时也支持 `.7z`。安装器先核对官方文件名中的版本、平台和架构，再校验 SHA-256，最后检查解压后的 `node`、`npm` 标准结构。
+
+### 1.2.3\_第一次启动
 
 第一次运行启动入口时会依次执行：
 

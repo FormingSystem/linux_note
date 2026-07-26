@@ -1,0 +1,4 @@
+enabled	platform	arch	archive	checksums
+0	linux	x64	.local/downloads/node/v24.18.0/node-v24.18.0-linux-x64.tar.gz	.local/downloads/node/v24.18.0/SHASUMS256.txt
+0	linux	arm64	/absolute/path/node-v24.18.0-linux-arm64.tar.xz	/absolute/path/SHASUMS256.txt
+0	windows	x64	.local/downloads/node/v24.18.0/node-v24.18.0-win-x64.zip	.local/downloads/node/v24.18.0/SHASUMS256.txt

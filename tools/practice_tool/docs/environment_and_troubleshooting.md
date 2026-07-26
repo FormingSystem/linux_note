@@ -84,6 +84,53 @@ bash ./start.sh --upgrade
 
 升级模式会重新选择官方最高可用兼容 Node.js、删除本机环境就绪标记、重新执行 `npm install`，然后启动 Vite。它不执行 `git pull`，也不更新题库、知识源配置、知识正文或用户作答。
 
+### 1.2.4\_离线准备Node.js
+
+有网机器从 Node.js 官方 `https://nodejs.org/dist/` 下载目标平台归档和相同版本目录中的 `SHASUMS256.txt`。两者放入离线设备的：
+
+```text
+tools/practice_tool/.local/downloads/node/v<完整版本>/
+```
+
+Ubuntu x64 示例：
+
+```text
+tools/practice_tool/.local/downloads/node/v24.18.0/
+├── SHASUMS256.txt
+└── node-v24.18.0-linux-x64.tar.gz
+```
+
+Windows x64 示例：
+
+```text
+tools/practice_tool/.local/downloads/node/v24.18.0/
+├── SHASUMS256.txt
+└── node-v24.18.0-win-x64.zip
+```
+
+然后执行 `bash ./practice.sh --upgrade` 或 `practice.cmd --upgrade`。安装器按主版本优先级搜索缓存并强制校验，不需要访问网络。`.local/` 已被工具 `.gitignore` 排除，可通过 U 盘或共享目录复制这些文件，不应提交到仓库。
+
+安装开始时有 5 秒选择窗口：
+
+```text
+A / 超时：自动选择官方在线版本，并优先复用缓存
+M：手动输入一个归档和 SHASUMS256.txt 路径
+T：读取离线包表
+```
+
+离线包表模板是 `config/offline_node_packages.example.tsv`。首次选择表格但本地表不存在时，程序会生成 `config/offline_node_packages.local.tsv` 并提示修改。将目标行的 `enabled` 改为 `1`；`archive`、`checksums` 均支持相对于 `practice_tool` 根目录的路径和绝对路径。
+
+安装器根据文件后缀选择解压方式：
+
+| 平台 | 后缀 | 要求 |
+| --- | --- | --- |
+| Linux | `.tar.gz`、`.tgz` | `tar` 与 `gzip` |
+| Linux | `.tar.xz` | `tar` 与 `xz` 支持 |
+| Windows | `.zip` | PowerShell `Expand-Archive` |
+| Windows | `.7z` | 系统可找到 `7z.exe` 或 `7za.exe` |
+
+后缀可变不代表可以任意改名。文件仍须遵循 Node.js 官方 `node-v<版本>-<平台>-<架构>.<后缀>` 命名，校验文件必须包含该文件的官方摘要，解压结果必须具有官方便携包的目录结构。
+
 ## 1.3\_第一次启动发生什么
 
 第一次启动执行以下流程：
@@ -293,6 +340,7 @@ git -c http.proxy=socks5h://192.168.31.197:10808 \
 | 大量 `npm WARN EBADENGINE`，显示 Node.js `v12` | 启动器复用了不兼容的系统 Node.js | 更新启动器；它会从官方地址选择最高可用兼容版本 |
 | npm 长时间停在 `reify` 或 `http fetch` | 首次下载较慢，终端仍在安装依赖 | 观察下载耗时；单次请求超过 120 秒会失败并重试 |
 | Firefox 提示无法连接 `127.0.0.1:5173` | 旧启动器在 Vite 尚未监听时提前打开浏览器 | 更新启动器；现在由 Vite 监听成功后执行 `--open` |
+| 官方下载全部失败 | 网络、代理或目标架构归档不可用 | 按终端提示把官方归档与 `SHASUMS256.txt` 放入 `.local/downloads/node/v<版本>/` |
 | CMD 提示 `'.' 不是内部或外部命令` | 在 CMD 中使用了 Bash 的 `./` | 工具目录执行 `start`；知识库根目录也可执行 `practice` |
 | Bash 报 `toolspractice_tool` 不存在 | 使用反斜杠，反斜杠被解释为转义 | 使用 `/` |
 | Bash 报 `npm: command not found` | Node.js 目录不在当前 PATH | 使用工具目录的 `start.sh` 自动处理 |

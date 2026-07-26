@@ -245,6 +245,9 @@ flowchart TD
 - 工具正式启动入口下沉到工具目录。
 - 根启动脚本精简为集成快捷入口。
 - 启动前检查 Node.js 18 最低兼容线；安装时从官方最新 LTS 开始逐级回退，普通 Linux 使用工具内隔离运行时。
+- 官方运行时归档保存在 `.local/downloads/node/v<版本>`，联网和离线安装共用同一份 SHA-256 校验流程，缓存不进入 Git。
+- 离线输入可以来自单次手动路径或 `offline_node_packages.local.tsv`；相对路径统一以 `practice_tool` 根目录解析，绝对路径保持原义。
+- 归档解压由后缀路由，但版本、平台、架构、官方摘要和解压后的标准结构必须同时通过检查，不能只凭扩展名信任文件。
 - 浏览器由 Vite 在监听成功后打开，不再依赖固定等待时间。
 - Windows 与 Linux 共享 `PRACTICE_SOURCE_CONFIG` 契约。
 - 支持从本地文件或 HTTP/HTTPS 地址读取知识源注册。
