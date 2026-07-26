@@ -182,7 +182,7 @@ structure(kernel): 调整内核章节目录结构
 
 ## 1.12\_知识训练工具
 
-`tools/practice_tool` 是仓库内的本地知识训练平台。它通过稳定文档 ID 引用 `knowledge` 等目录中的权威正文，不在题库中复制完整知识教程。
+`tools/practice_tool` 是当前放置在仓库内、但按独立产品边界维护的本地知识训练工具。工具程序、启动器、题库协议、校验脚本和运行文档必须收敛在该目录内；它通过稳定文档 ID 引用当前 `knowledge` 等目录提供的权威正文，不在题库中复制完整知识教程。根目录快捷脚本和 Linux 知识内容属于本仓库集成层，不得成为工具核心运行逻辑的隐式依赖。
 
 训练单元统一分为三个阶段：
 
@@ -198,7 +198,9 @@ structure(kernel): 调整内核章节目录结构
 - 用户作答和环境就绪状态只保存在浏览器或 `tools/practice_tool/.local`，不得进入 Git。
 - `node_modules`、`dist`、`.local` 和日志属于本机构建或运行状态，不得提交。
 
-根目录的 `practice.cmd` 和 `practice.sh` 是唯一推荐启动入口。第一次运行负责发现或安装 Node.js、安装依赖并写入本机环境就绪标记；后续直接启动平台。MSYS2 使用自身的 `pacman` 且不使用 `sudo`，普通 Linux 才按发行版使用 `sudo apt-get`、`sudo dnf` 或 `sudo pacman`。
+`tools/practice_tool/start.cmd` 和 `tools/practice_tool/start.sh` 是训练工具自身的正式启动入口。根目录的 `practice.cmd` 和 `practice.sh` 只是当前知识库提供的快捷包装，必须只转发到工具自身入口，不复制环境准备或启动逻辑。第一次运行由工具入口负责发现或安装 Node.js、安装依赖并写入本机环境就绪标记；后续直接启动平台。MSYS2 使用自身的 `pacman` 且不使用 `sudo`，普通 Linux 才按发行版使用 `sudo apt-get`、`sudo dnf` 或 `sudo pacman`。
+
+根目录的 `practice.sources.json` 是 `linux-note` 与训练工具之间的显式集成配置。根快捷脚本可以在用户未指定时设置 `PRACTICE_SOURCE_CONFIG` 指向它，但不得把仓库路径、知识目录规则或题库逻辑复制进工具启动器。题库引用必须使用 `source_id`、稳定文档 ID 和知识源内相对路径；Windows 与 Linux 共用同一配置 Schema，平台差异只能停留在入口脚本和路径解析层。
 
 修改工具或题库后至少运行：
 
@@ -212,4 +214,5 @@ git diff --check
 完整使用和排障说明见：
 
 - `tools/practice_tool/README.md`
+- `tools/practice_tool/docs/cross_platform_and_repository_independence.md`
 - `tools/practice_tool/docs/environment_and_troubleshooting.md`

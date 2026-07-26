@@ -45,12 +45,25 @@ export type PracticeUnit = {
   subtitle: string;
   status: string;
   estimated_minutes: number;
-  knowledge_refs: { id: string; path: string }[];
+  knowledge_refs: { source_id: string; id: string; path: string }[];
   stages: {
     guided: { title: string; purpose: string; items_file: string };
     reconstruction: { title: string; purpose: string; items_file: string };
     professional: { title: string; purpose: string; items_file: string };
   };
+};
+
+export type KnowledgeSource = {
+  id: string;
+  title: string;
+  kind: "filesystem" | "http";
+  location: string;
+};
+
+export type RuntimeConfig = {
+  schema_version: number;
+  config_source: string | null;
+  sources: KnowledgeSource[];
 };
 
 export type UnitCatalogItem = {

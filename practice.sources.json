@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "linux-note",
+      "title": "Linux Note 知识库",
+      "kind": "filesystem",
+      "location": "."
+    }
+  ]
+}

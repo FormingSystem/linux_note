@@ -9,18 +9,20 @@ domains:
 
 # 第1章\_知识训练工具环境与故障排查
 
-本文统一说明 `practice_tool` 在 Windows CMD、MSYS2/UCRT64 和 Linux 中的启动方式、首次环境准备、虚拟机克隆以及常见故障。
+本文统一说明“回路”知识训练工具在 Windows CMD、MSYS2/UCRT64 和 Linux 中的独立启动方式、首次环境准备、当前 `linux-note` 集成方式、虚拟机验证以及常见故障。
+
+跨平台职责、知识源协议、仓库所有权和独立拆仓验收标准见：[跨平台与仓库独立性设计](cross_platform_and_repository_independence.md)。
 
 ## 1.1\_先识别当前终端
 
-不同终端使用不同入口，不能混用命令语法。
+训练工具自身的正式入口是工具目录中的 `start.cmd` 和 `start.sh`。当前知识库根目录的 `practice.cmd`、`practice.sh` 只是快捷转发。不同终端不能混用命令语法。
 
 | 终端提示符示例 | 环境 | 启动命令 |
 | --- | --- | --- |
-| `F:\git_storage\linux-note>` | Windows CMD | `practice` |
-| `PS F:\git_storage\linux-note>` | PowerShell | `.\practice.cmd` |
-| `Lizha@host UCRT64 /f/git_storage/linux-note $` | MSYS2/UCRT64 | `./practice.sh` |
-| `user@host:~/linux_note$` | Linux Bash | `./practice.sh` |
+| `F:\...\practice_tool>` | Windows CMD | `start` |
+| `PS F:\...\practice_tool>` | PowerShell | `.\start.cmd` |
+| `Lizha@host UCRT64 /f/.../practice_tool $` | MSYS2/UCRT64 | `bash ./start.sh` |
+| `user@host:~/practice_tool$` | Linux Bash | `bash ./start.sh` |
 
 终端提示符、命令输出和错误信息不能作为命令粘贴。例如下面这些内容不应输入：
 
@@ -34,25 +36,29 @@ $
 
 ### 1.2.1\_Windows
 
-在资源管理器中双击仓库根目录的：
+在资源管理器中双击训练工具目录中的：
 
 ```text
-practice.cmd
+start.cmd
 ```
 
 也可以在 CMD 中执行：
 
 ```cmd
-practice
+cd path\to\practice_tool
+start
 ```
 
 ### 1.2.2\_MSYS2与Linux
 
-在仓库根目录执行：
+在训练工具目录执行：
 
 ```bash
-./practice.sh
+cd path/to/practice_tool
+bash ./start.sh
 ```
+
+如果训练工具仍位于当前知识库中，也可以从仓库根目录使用 `practice.cmd` 或 `practice.sh` 快捷启动。两个根目录脚本只转发参数和退出状态，不包含工具启动逻辑。
 
 启动器会显示本地地址，并在存在桌面环境时尝试打开默认浏览器：
 
@@ -108,9 +114,44 @@ MSYS2 与 Arch Linux 虽然都使用 `pacman`，权限模型不同。MSYS2 的�
 
 看到提示后能够理解，不等于脱稿掌握。评分应以打开提示之前的输出为依据。
 
-## 1.5\_Linux虚拟机验证流程
+## 1.5\_独立仓库边界
 
-### 1.5.1\_先确认改动已经推送
+工具运行只要求工具目录自身包含 `package.json`、`src`、`banks`、`schemas`、`scripts` 和 `start.*`。根目录快捷入口不是依赖，复制或迁移工具时也不应把外层 `practice.*` 当成工具文件。
+
+当前 RCU 内容包中的 `knowledge_refs.path` 指向 `linux-note` 的知识正文，用于记录来源和在集成环境中定位文档。程序加载题库依赖稳定 ID 和 `banks` 内文件，不应根据外层仓库目录推导训练单元。未来独立拆仓时需要为外部正文位置提供内容包配置或解析器，但不需要重写训练项目 ID。
+
+知识源通过 `PRACTICE_SOURCE_CONFIG` 指定。Windows 和 Linux 使用同一个变量名，配置文件使用同一个 JSON Schema：
+
+```powershell
+$env:PRACTICE_SOURCE_CONFIG = "D:\knowledge\practice.sources.json"
+.\start.cmd
+```
+
+```bash
+PRACTICE_SOURCE_CONFIG=/opt/knowledge/practice.sources.json bash ./start.sh
+```
+
+配置中的 `filesystem` 相对地址以配置文件所在目录为基准，不以当前终端目录为基准。也可以把配置地址和 `http` 知识源地址写成 HTTP/HTTPS URL；远程配置不能声明启动机器上的 `filesystem` 地址。工具没有配置知识源时仍能运行题库，但会把相关来源标记为未配置。
+
+当前 `linux-note` 根目录的 `practice.sources.json` 只声明本仓库是一个知识源。根快捷脚本仅在 `PRACTICE_SOURCE_CONFIG` 尚未设置时选择它，因此不会覆盖用户传入的其他知识库配置。
+
+独立化检查至少包括：
+
+```text
+从工具目录直接启动
+    ↓
+不经过外层快捷脚本完成环境准备
+    ↓
+执行题库校验与前端构建
+    ↓
+确认程序代码没有访问外层相对路径
+    ↓
+单独处理内容包中的外部知识来源
+```
+
+## 1.6\_Linux虚拟机验证流程
+
+### 1.6.1\_先确认改动已经推送
 
 虚拟机只能克隆远端已经提交并推送的内容。本机未提交文件不会通过 `git clone` 出现在虚拟机中。
 
@@ -121,9 +162,9 @@ git status
 git status -sb
 ```
 
-确认训练工具、启动入口和文档已经进入目标提交并推送到远端后，再在虚拟机测试。
+确认训练工具自身的 `start.sh`、环境脚本和文档已经进入目标提交并推送到远端后，再在虚拟机测试。根目录快捷入口不属于训练工具独立运行的必要文件。
 
-### 1.5.2\_优先使用SSH克隆
+### 1.6.2\_优先使用SSH克隆
 
 已经配置 GitHub SSH 密钥时：
 
@@ -135,16 +176,17 @@ git clone --depth 1 --filter=blob:none \
 
 出现 `remote: Enumerating objects`、`Counting objects` 和 `Compressing objects` 表示远端已经开始传输。`^C` 表示用户按下 `Ctrl+C` 主动中断，不是 GitHub 拒绝连接。
 
-### 1.5.3\_克隆后启动
+### 1.6.3\_克隆后启动
 
 ```bash
 cd ~/linux/linux_note
-./practice.sh
+cd tools/practice_tool
+bash ./start.sh
 ```
 
 有桌面环境时会尝试打开默认浏览器。无桌面的服务器环境只启动本地服务，需要根据虚拟机网络方式决定是否开放监听地址和端口；默认 `127.0.0.1` 只允许虚拟机内部访问。
 
-## 1.6\_HTTPS代理故障
+## 1.7\_HTTPS代理故障
 
 出现下面的错误：
 
@@ -155,7 +197,7 @@ No route to host
 
 表示 Git 正在使用该代理地址，并不表示 GitHub 地址本身错误。
 
-### 1.6.1\_查找代理来源
+### 1.7.1\_查找代理来源
 
 在虚拟机执行：
 
@@ -166,7 +208,7 @@ env | grep -iE '^(http|https|all)_proxy='
 
 代理可能来自 Git 系统配置、用户配置、仓库配置或环境变量。
 
-### 1.6.2\_确认Windows当前地址
+### 1.7.2\_确认Windows当前地址
 
 在 Windows 执行：
 
@@ -182,7 +224,7 @@ ipconfig
 
 该地址可能因 DHCP、网卡或网络切换发生变化，不应写死到仓库脚本。
 
-### 1.6.3\_从虚拟机测试端口
+### 1.7.3\_从虚拟机测试端口
 
 ```bash
 ip route get 192.168.31.197
@@ -196,7 +238,7 @@ nc -vz 192.168.31.197 10808
 - 代理是否只监听 `127.0.0.1`，而没有监听局域网地址。
 - Windows 防火墙是否允许对应端口入站。
 
-### 1.6.4\_识别代理协议
+### 1.7.4\_识别代理协议
 
 测试 HTTP 代理：
 
@@ -230,20 +272,20 @@ git -c http.proxy=socks5h://192.168.31.197:10808 \
     https://github.com/FormingSystem/linux_note.git
 ```
 
-## 1.7\_常见错误速查
+## 1.8\_常见错误速查
 
 | 现象 | 原因 | 处理方式 |
 | --- | --- | --- |
-| CMD 提示 `'.' 不是内部或外部命令` | 在 CMD 中使用了 Bash 的 `./` | CMD 执行 `practice` |
+| CMD 提示 `'.' 不是内部或外部命令` | 在 CMD 中使用了 Bash 的 `./` | 工具目录执行 `start`；知识库根目录也可执行 `practice` |
 | Bash 报 `toolspractice_tool` 不存在 | 使用反斜杠，反斜杠被解释为转义 | 使用 `/` |
-| Bash 报 `npm: command not found` | Node.js 目录不在当前 PATH | 使用根目录启动脚本自动处理 |
+| Bash 报 `npm: command not found` | Node.js 目录不在当前 PATH | 使用工具目录的 `start.sh` 自动处理 |
 | MSYS2 要求启用 Windows Sudo | 脚本错误进入 Linux 权限分支 | 使用已修正脚本；MSYS2 直接调用 `pacman` |
 | 进入 `F:\...\practice_tool>` CMD 提示符 | `cmd.exe /c` 被 MSYS2转换为路径参数 | 使用已修正的 `//d //c` 调用方式 |
 | Vite 报 `"node" 不是内部或外部命令` | 只找到 `npm.cmd`，未把同目录 `node.exe` 加入 PATH | 使用已修正启动器统一加入 Node.js 目录 |
 | npm 显示 `fund` 或 `allow-scripts` | npm 信息或警告 | 只要 Vite 显示 `ready`，不影响启动 |
 | 浏览器没有自动打开 | 无桌面环境或系统缺少打开工具 | 手动访问终端显示的地址 |
 
-## 1.8\_重新准备环境
+## 1.9\_重新准备环境
 
 仅在依赖损坏或环境要求升级时执行。删除：
 
@@ -252,4 +294,4 @@ tools/practice_tool/.local/environment-ready-v1
 tools/practice_tool/node_modules/
 ```
 
-然后重新运行根目录入口。不要把 `.local`、`node_modules` 或 `dist` 提交到 Git。
+然后重新运行工具目录的 `start.cmd` 或 `start.sh`。不要把 `.local`、`node_modules` 或 `dist` 提交到 Git。

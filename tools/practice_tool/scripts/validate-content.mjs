@@ -6,8 +6,10 @@ import process from "node:process";
 const root = process.cwd();
 const bankRoot = path.join(root, "banks");
 const schema = JSON.parse(fs.readFileSync(path.join(root, "schemas", "unit.schema.json"), "utf8"));
+const sourceSchema = JSON.parse(fs.readFileSync(path.join(root, "schemas", "knowledge_sources.schema.json"), "utf8"));
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 const validateUnit = ajv.compile(schema);
+const validateSources = ajv.compile(sourceSchema);
 
 function findFiles(directory, name, result = []) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -23,11 +25,17 @@ const allItemIds = new Set();
 const allUnitIds = new Set();
 const catalogPath = path.join(bankRoot, "index.json");
 const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
+const sourceExamplePath = path.join(root, "config", "knowledge_sources.example.json");
+const sourceExample = JSON.parse(fs.readFileSync(sourceExamplePath, "utf8"));
 const requiredFields = {
   guided: ["id", "title", "scenario", "question", "hints", "answer_framework", "common_mistakes", "knowledge_refs"],
   reconstruction: ["id", "title", "output_type", "prompt", "constraints", "required_outputs", "verification_questions", "knowledge_refs"],
   professional: ["id", "title", "difficulty", "background", "evidence", "questions", "rubric", "knowledge_refs"]
 };
+
+if (!validateSources(sourceExample)) {
+  errors.push(`${sourceExamplePath}: ${ajv.errorsText(validateSources.errors)}`);
+}
 
 for (const unitPath of findFiles(bankRoot, "unit.json")) {
   const directory = path.dirname(unitPath);

@@ -4,7 +4,7 @@ setlocal
 where winget.exe >nul 2>nul
 if errorlevel 1 (
     echo [practice] Automatic Node.js installation requires winget.
-    echo [practice] Install Node.js LTS from https://nodejs.org/ and run practice.cmd again.
+    echo [practice] Install Node.js LTS from https://nodejs.org/ and run start.cmd again.
     exit /b 1
 )
 

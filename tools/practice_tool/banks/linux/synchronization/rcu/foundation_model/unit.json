@@ -7,18 +7,22 @@
   "estimated_minutes": 45,
   "knowledge_refs": [
     {
+      "source_id": "linux-note",
       "id": "knowledge.linux.synchronization.rcu.why_rcu",
       "path": "knowledge/linux/synchronization/rcu/P01_为什么需要_RCU.md"
     },
     {
+      "source_id": "linux-note",
       "id": "knowledge.linux.synchronization.rcu.abstract_model",
       "path": "knowledge/linux/synchronization/rcu/P02_RCU_抽象机制推演.md"
     },
     {
+      "source_id": "linux-note",
       "id": "knowledge.linux.synchronization.rcu.constraints",
       "path": "knowledge/linux/synchronization/rcu/P03_RCU_机制完善_硬件与运行约束.md"
     },
     {
+      "source_id": "linux-note",
       "id": "knowledge.linux.synchronization.rcu.tree_state",
       "path": "knowledge/linux/synchronization/rcu/P04_Linux_Tree_RCU_状态与通知机制.md"
     }

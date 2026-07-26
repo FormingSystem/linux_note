@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "example-notes",
+      "title": "示例知识库",
+      "kind": "filesystem",
+      "location": "../example-notes"
+    }
+  ]
+}

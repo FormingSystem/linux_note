@@ -1,5 +1,6 @@
 import { useState } from "react";
 import catalogData from "../banks/index.json";
+import runtimeConfig from "virtual:practice-runtime-config";
 import type {
   GuidedQuestion,
   ModelTask,
@@ -12,7 +13,8 @@ import type {
 } from "./types";
 
 const catalog = catalogData as UnitCatalog;
-const STORAGE_KEY = "linux-note-practice.reviews.v2";
+const STORAGE_KEY = "loop-knowledge-practice.reviews.v1";
+const LEGACY_STORAGE_KEY = "linux-note-practice.reviews.v2";
 const unitFiles = import.meta.glob<PracticeUnit>("../banks/**/unit.json", { eager: true, import: "default" });
 const guidedFiles = import.meta.glob<GuidedQuestion[]>("../banks/**/guided_questions.json", { eager: true, import: "default" });
 const modelFiles = import.meta.glob<ModelTask[]>("../banks/**/model_tasks.json", { eager: true, import: "default" });
@@ -36,7 +38,12 @@ const labels = ["选择单元", "单元概览", "提示提问", "脱稿输出", 
 
 function loadReviews(): Review[] {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]") as Review[];
+    const current = localStorage.getItem(STORAGE_KEY);
+    if (current) return JSON.parse(current) as Review[];
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!legacy) return [];
+    localStorage.setItem(STORAGE_KEY, legacy);
+    return JSON.parse(legacy) as Review[];
   } catch {
     return [];
   }
@@ -84,9 +91,12 @@ function App() {
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">回</span>
-          <div><strong>回路</strong><span>Linux Note Practice</span></div>
+          <div><strong>回路</strong><span>Knowledge Practice</span></div>
         </div>
-        <div className="session-meta"><span className="status-dot" />本地训练 · 自动保存到浏览器</div>
+          <div className="session-meta">
+            <span className="status-dot" />
+            本地训练 · {runtimeConfig.sources.length ? `${runtimeConfig.sources.length} 个知识源` : "未配置知识源"}
+          </div>
       </header>
 
       <main>
@@ -100,7 +110,7 @@ function App() {
           <div className="rail-card">
             <span>三阶段训练</span>
             <strong>{unit.estimated_minutes} 分钟</strong>
-            <small>{selectedUnit ? `${itemCount} 个训练任务 · 4 篇权威正文` : `${catalog.units.length} 个可用单元`}</small>
+            <small>{selectedUnit ? `${itemCount} 个训练任务 · ${unit.knowledge_refs.length} 篇知识来源` : `${catalog.units.length} 个可用单元`}</small>
           </div>
         </aside>
 
@@ -171,7 +181,7 @@ function App() {
           {stage === "done" && (
             <div className="panel result-panel">
               <div className="result-mark">完成</div>
-              <div className="eyebrow">RCU 基础模型 · 本轮结束</div>
+              <div className="eyebrow">{unit.title} · 本轮结束</div>
               <h2>你已经走完“辅助建立—脱稿重建—工程迁移”</h2>
               <p>评分不是结论，而是下一轮训练的路由。优先重做“需要重建”的小模块，再回到完整模型输出。</p>
               <div className="result-stats">
@@ -207,7 +217,7 @@ function UnitLibrary({ units, onSelect }: { units: UnitCatalogItem[]; onSelect: 
         <div className="catalog-count"><strong>{units.length}</strong><span>可用单元</span></div>
       </div>
       <div className="library-tools">
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索 RCU、宽限期、多 CPU……" aria-label="搜索训练单元" />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索模块、知识点或标签……" aria-label="搜索训练单元" />
         <select value={domain} onChange={(e) => setDomain(e.target.value)} aria-label="选择知识领域">
           <option value="all">全部领域</option>
           {domains.map((item) => <option key={item} value={item}>{item}</option>)}
@@ -230,9 +240,11 @@ function UnitLibrary({ units, onSelect }: { units: UnitCatalogItem[]; onSelect: 
 }
 
 function Home({ unit, onStart, onBack }: { unit: PracticeUnit; onStart: () => void; onBack: () => void }) {
+  const sourceIds = [...new Set(unit.knowledge_refs.map((item) => item.source_id))];
+  const sourceNames = sourceIds.map((id) => runtimeConfig.sources.find((source) => source.id === id)?.title || `${id}（未配置）`);
   return (
     <div className="hero panel">
-      <div className="eyebrow">第一个知识训练单元 · RCU</div>
+      <div className="eyebrow">知识训练单元 · {unit.id}</div>
       <h1>{unit.title}</h1>
       <p className="hero-subtitle">{unit.subtitle}</p>
       <div className="rule" />
@@ -242,6 +254,7 @@ function Home({ unit, onStart, onBack }: { unit: PracticeUnit; onStart: () => vo
         <div><span>03 · 迁移</span><strong>{unit.stages.professional.title}</strong><p>{unit.stages.professional.purpose}</p></div>
       </div>
       <div className="notice"><span>训练原则</span>先尝试回答，再逐级打开提示；看到提示后想起来，不等于脱稿掌握。</div>
+      <div className="notice"><span>知识来源</span>{sourceNames.join("、")}</div>
       <div className="actions home-actions">
         <button className="secondary" onClick={onBack}>重新选择单元</button>
         <button className="primary" onClick={onStart}>从轻量提问开始 <span>→</span></button>
