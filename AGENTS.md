@@ -36,7 +36,7 @@ domains:
 - `research/`：源码阅读、调用链、调查和基准证据。
 - `reference/`：API、命令、术语、标准和外部资料。
 - `publications/`：书籍、文章、编排清单、模板和构建产物。
-- `tools/`：编辑器、Obsidian、AI 和仓库工具说明。
+- `tools/`：编辑器、Obsidian、AI、知识训练平台和仓库工具说明。
 - `governance/`：架构、规范、模板、模式和迁移记录。
 - `assets/`：图片、图表、附件、数据集和归档文件。
 
@@ -179,3 +179,37 @@ structure(kernel): 调整内核章节目录结构
 - 涉及设备树、pinctrl、GPIO、时钟、中断控制器、SoC 外设或 BSP 补丁时，应将其视为 NXP i.MX6ULL/厂商树证据，正文标明平台与版本边界，不将厂商实现写成通用 Linux 契约。
 - 修改知识正文前可只读检索该源码树；不要在知识整理任务中改动、格式化或提交这棵外部源码。需要保存长期证据时，按仓库规范整理到 `research/source_reading/linux/`，并记录 Linux 版本、原始路径及必要的配置边界。
 - 若网络共享不可访问，应明确说明未完成源码核对，不得凭记忆伪造函数位置或版本结论。Git 因 UNC 目录所有权报告 `safe.directory` 时，不要擅自修改用户全局 Git 配置；读取普通源码文件不受此限制。
+
+## 1.12\_知识训练工具
+
+`tools/practice_tool` 是仓库内的本地知识训练平台。它通过稳定文档 ID 引用 `knowledge` 等目录中的权威正文，不在题库中复制完整知识教程。
+
+训练单元统一分为三个阶段：
+
+1. 提示提问：用具体小场景和递进提示辅助建立局部因果模型。
+2. 脱稿输出：撤掉知识提示，要求独立重建边界清晰的时序、状态和通信模块。
+3. 专业案例：根据工程证据完成诊断、方案、不可规避成本和选择边界分析。
+
+平台内容约定：
+
+- 所有可选择单元登记在 `tools/practice_tool/banks/index.json`。
+- 每个单元目录包含 `unit.json`、`guided_questions.json`、`model_tasks.json` 和 `professional_cases.json`。
+- 新增单元时必须使用稳定题目 ID，并通过 `knowledge_refs` 指向单元已经声明的权威正文。
+- 用户作答和环境就绪状态只保存在浏览器或 `tools/practice_tool/.local`，不得进入 Git。
+- `node_modules`、`dist`、`.local` 和日志属于本机构建或运行状态，不得提交。
+
+根目录的 `practice.cmd` 和 `practice.sh` 是唯一推荐启动入口。第一次运行负责发现或安装 Node.js、安装依赖并写入本机环境就绪标记；后续直接启动平台。MSYS2 使用自身的 `pacman` 且不使用 `sudo`，普通 Linux 才按发行版使用 `sudo apt-get`、`sudo dnf` 或 `sudo pacman`。
+
+修改工具或题库后至少运行：
+
+```bash
+cd tools/practice_tool
+npm run check:data
+npm run build
+git diff --check
+```
+
+完整使用和排障说明见：
+
+- `tools/practice_tool/README.md`
+- `tools/practice_tool/docs/environment_and_troubleshooting.md`

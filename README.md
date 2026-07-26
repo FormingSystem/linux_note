@@ -59,6 +59,31 @@ tools/typora配置/
 
 Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，优先使用 Obsidian 内部操作，让链接能够自动跟踪更新。
 
+### 1.3.1\_知识训练工具
+
+仓库提供本地知识训练平台，用于按模块进行提示建模、脱稿输出和专业案例训练。程序、题库、环境脚本及完整说明统一位于：
+
+```text
+tools/practice_tool/
+```
+
+Windows 下最简单的入口是在仓库根目录双击：
+
+```text
+practice.cmd
+```
+
+MSYS2/UCRT64 中从仓库根目录执行：
+
+```bash
+bash ./practice.sh
+```
+
+第一次启动会自动检查 Node.js、尝试安装缺失环境并安装项目依赖；成功后写入本机就绪标记，后续启动直接进入平台。MSYS2/UCRT64 使用自身的 `pacman` 安装匹配环境，不需要 `sudo`。进入平台后先搜索并选择训练单元，再开始该单元的三阶段训练。
+
+- [回路知识训练工具](tools/practice_tool/README.md)
+- [跨平台环境、虚拟机验证与故障排查](tools/practice_tool/docs/environment_and_troubleshooting.md)
+
 ## 1.4\_内容说明
 
 - 任何以 Markdown 存在的文件，都可以视为笔记雏形。
