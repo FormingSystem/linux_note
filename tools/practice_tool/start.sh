@@ -12,7 +12,7 @@ forwarded_args=()
 
 show_help() {
     cat <<'EOF'
-practice - 本地知识训练工具
+回路（Loop）- 本地知识训练工具
 
 用途：
   按模块、训练单元和阶段进行提示提问、脱稿输出与专业案例训练。
@@ -46,6 +46,13 @@ practice - 本地知识训练工具
 
 更多说明：
   README.md
+  COPYRIGHT.md
+
+版权：
+  原创：回路（Loop）
+  Copyright © 2026 FormingSystem · GPL-2.0-only
+  联系方式：lizhaojun97@qq.com
+  二次开发请保留来源、项目地址及修改说明；进入官方版本前请先对齐需求。
 EOF
 }
 

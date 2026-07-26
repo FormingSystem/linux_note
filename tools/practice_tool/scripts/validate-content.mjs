@@ -49,6 +49,12 @@ if (!validateSecurity(security)) {
 if (release.version !== packageManifest.version) {
   errors.push(`${releasePath}: version 必须与 package.json 一致`);
 }
+if (packageManifest.license !== "GPL-2.0-only") {
+  errors.push(`${path.join(root, "package.json")}: 当前公开开发版本必须与仓库 GPL-2.0-only 许可证一致`);
+}
+if (release.product !== packageManifest.name) {
+  errors.push(`${releasePath}: product 必须与 package.json name 一致`);
+}
 
 if (!validateSources(sourceExample)) {
   errors.push(`${sourceExamplePath}: ${ajv.errorsText(validateSources.errors)}`);
