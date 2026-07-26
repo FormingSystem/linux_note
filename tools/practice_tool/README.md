@@ -15,6 +15,8 @@ domains:
 2. **脱稿输出**：撤掉知识提示，独立重建边界清晰的时序、状态或通信模块。
 3. **专业案例**：分析工程证据，给出诊断、方案、不可规避成本和选择边界。
 
+长期验证平台为 Windows 的 MSYS2 UCRT64/UCRT32 Bash，以及 Linux 的 Ubuntu 22.04 Bash。三个环境统一使用 `start.sh` 作为正式交互入口和 Tab 补全目标。PowerShell 只负责在尚未具备 MSYS2 的 Windows 上下载、安装和准备 UCRT 环境，不直接运行训练任务；CMD 不属于正式使用平台。
+
 当前随工具提供的首个示例内容来自 `linux-note`，训练单元位于：
 
 ```text
@@ -32,9 +34,8 @@ practice_tool/
 ├── banks/                   # 可校验的模块化训练内容
 ├── docs/                    # 工具自己的运行与排障文档
 ├── schemas/                 # 内容数据协议
-├── scripts/                 # 环境准备与内容检查
+├── scripts/                 # 环境准备、统一平台层与内容检查
 ├── src/                     # 前端程序
-├── start.cmd                # Windows 正式入口
 ├── start.sh                 # MSYS2/Linux 正式入口
 ├── package.json
 └── README.md
@@ -78,11 +79,6 @@ path            # 相对于知识源根地址的路径
 
 启动前通过同一个环境变量指定配置地址：
 
-```powershell
-$env:PRACTICE_SOURCE_CONFIG = "D:\notes\practice.sources.json"
-.\start.cmd
-```
-
 ```bash
 PRACTICE_SOURCE_CONFIG=/srv/notes/practice.sources.json ./start.sh
 ```
@@ -91,13 +87,7 @@ PRACTICE_SOURCE_CONFIG=/srv/notes/practice.sources.json ./start.sh
 
 ## 1.2\_本地运行
 
-训练工具可以不依赖外层知识库的启动逻辑独立运行。在 Windows 下进入本目录后执行或双击：
-
-```text
-start.cmd
-```
-
-在 MSYS2/UCRT64 或 Linux 中进入本目录后执行：
+训练工具可以不依赖外层知识库的启动逻辑独立运行。在 MSYS2 UCRT64/UCRT32 或 Ubuntu 22.04 中进入本目录后执行：
 
 ```bash
 ./start.sh
@@ -105,7 +95,11 @@ start.cmd
 
 工具自身的启动脚本会校验 Node.js 版本、安装首次运行所需的依赖并启动训练工具。浏览器由 Vite 在服务开始监听后打开，不使用固定延时猜测服务是否就绪。
 
-当前知识库根目录仍提供 `practice.cmd` 和 `practice.sh` 作为快捷入口，但它们只负责转发到本目录的 `start.cmd` 和 `start.sh`。训练工具的环境准备和启动逻辑不依赖仓库根目录，便于后续整体拆分为独立仓库。
+`scripts/lib/platform_environment.sh` 是所有 Bash 脚本共享的平台环境层，集中提供 Ubuntu 22.04、MSYS2 UCRT64/UCRT32 的识别结果，工具根目录、本地运行时、缓存与离线表路径，CPU 架构、包管理器、Node.js 兼容线和下载源，以及下载、摘要校验、归档解压、路径解析与 MSYS2 Node.js 安装能力。
+
+其他脚本不得再次读取 `MSYSTEM`、`/etc/os-release`、`uname` 或猜测 Windows 盘符；需要 `node`、`npm`、`pacman`、`curl`/`wget`、`sha256sum`、`tar` 等工具时也必须从该环境层取得。这样平台差异只留在环境层，启动、升级、离线安装和补全保持一套 Unix/Bash 操作。
+
+当前知识库根目录仍提供 `practice.cmd` 和 `practice.sh` 作为快捷入口，但它们只负责进入相应 Unix/Bash 环境并转发到本目录的 `start.sh`。训练工具的环境准备和启动逻辑不依赖仓库根目录，便于后续整体拆分为独立仓库。
 
 进入工具根目录后，使用正式入口查看工具定位、命令选项、环境变量和常用示例：
 
@@ -113,7 +107,15 @@ start.cmd
 ./start.sh --help
 ```
 
-`--help` 在环境检查之前处理，不会下载 Node.js、安装 npm 依赖、启动 Vite 或打开浏览器。Windows 对应使用 `start.cmd --help`。
+`--help` 在环境检查之前处理，不会下载 Node.js、安装 npm 依赖、启动 Vite 或打开浏览器。
+
+Windows 尚未安装 MSYS2 时，只在 PowerShell 中执行一次引导：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\bootstrap_windows.ps1
+```
+
+引导完成后双击 `start_ucrt64.cmd`，它会进入官方 UCRT64 Bash 并转交 `start.sh`。当前官方 MSYS2 不提供 UCRT32；`start_ucrt32.cmd` 仅用于已经存在的自定义 UCRT32 环境，并会在环境不存在时明确退出。
 
 首次在交互式 Bash 中正常执行 `./start.sh` 时，工具会自动把 Tab 补全安装到当前用户目录。也可以主动重新安装：
 
@@ -127,17 +129,13 @@ start.cmd
 source <(./start.sh --completion bash)
 ```
 
-然后输入 `./start.sh --up` 并按 Tab，即可补全为 `./start.sh --upgrade`。系统安装并启用 `bash-completion` 后，后续新开的 Bash 会从用户 completion 目录自动发现该规则，不需要每个终端重复执行 `source`。Ubuntu 缺少该组件时可执行 `sudo apt-get install bash-completion`。如需禁止正常启动时自动安装补全，可设置 `PRACTICE_AUTO_COMPLETION=0`。
+补全覆盖全部正式选项，并会根据前一个参数补全 `--host`、`--port` 和 `--completion` 的可选值，不只是把某个缩写扩展成 `--upgrade`。安装器会幂等地在 `~/.bashrc` 登记动态加载行，因此后续新开的 Ubuntu 22.04 和 Windows MSYS2 UCRT64/UCRT32 Bash 都会自动加载，不需要每个终端重复执行 `source`。若当前终端尚未加载，只需执行上面的 `source` 一次。如需禁止正常启动时自动安装补全，可设置 `PRACTICE_AUTO_COMPLETION=0`。
 
 打开后先进入 **训练单元选择页**。可以按领域筛选或按题目、标签和模块名称搜索，然后选择单元进入三阶段训练。
 
 ### 1.2.1\_主动升级运行环境
 
 普通启动会复用已经满足最低兼容线的 Node.js。需要主动查询官方更新、重建工具本地运行时并重新校验项目依赖时执行：
-
-```cmd
-start.cmd --upgrade
-```
 
 ```bash
 ./start.sh --upgrade
@@ -208,23 +206,22 @@ config/offline_node_packages.example.tsv
 node_modules/
 ```
 
-然后重新运行本目录的 `start.cmd` 或 `start.sh`。
+然后重新运行本目录的 `start.sh`。
 
 自动安装支持：
 
-- Windows：复用 Node.js 18 以上版本；缺失或过旧时按有序下载源取得并校验兼容 ZIP，全部失败后才使用 `winget` 作为最终后备。
-- MSYS2/UCRT64：复用兼容的 Windows/MSYS2 Node.js；缺失或过旧时通过 MSYS2 `pacman` 安装当前环境对应的软件包，不使用 `sudo`。
-- 普通 Linux：依次查询各下载源的 `latest-v24.x`、`latest-v22.x`、`latest-v20.x` 和 `latest-v18.x`，每个版本先尝试国内镜像、再尝试官方源，选择当前架构存在且能够成功下载的最高版本，校验 SHA-256 后安装到 `.local/runtime`。该过程不替换系统 Node.js，也不依赖发行版仓库中的版本。
+- MSYS2 UCRT64/UCRT32：复用兼容的 MSYS2 Node.js；缺失或过旧时通过 `pacman` 安装当前环境对应的软件包，不使用 `sudo`。
+- Ubuntu 22.04：依次查询各下载源的 `latest-v24.x`、`latest-v22.x`、`latest-v20.x` 和 `latest-v18.x`，每个版本先尝试国内镜像、再尝试官方源，选择当前架构存在且能够成功下载的最高版本，校验 SHA-256 后安装到 `.local/runtime`，不替换系统 Node.js。
 
-普通 Linux 下载需要 `curl` 或 `wget`、`sha256sum`、`tar` 和 `gzip`。某个源不可用时先切换下一源；某个版本找不到、下载失败或没有当前架构归档时再尝试下一个版本。只有所有 **仍满足最低兼容线** 的来源和版本都不可用时才停止；不能为了表面启动而退回到 Vite 无法运行的 Node.js 12。
+Ubuntu 22.04 下载需要 `curl` 或 `wget`、`sha256sum`、`tar` 和 `gzip`。某个源不可用时先切换下一源；某个版本找不到、下载失败或没有当前架构归档时再尝试下一个版本。只有所有 **仍满足最低兼容线** 的来源和版本都不可用时才停止；不能为了表面启动而退回到 Vite 无法运行的 Node.js 12。
 
-> MSYS2 的标准安装目录通常由当前用户直接维护，安装软件包使用 `pacman -S`，不应在前面添加 `sudo`。脚本会通过 `MSYSTEM` 和 `MINGW_PACKAGE_PREFIX` 识别 UCRT64、MINGW64 或 CLANG64，并选择匹配的软件包。
+> MSYS2 的标准安装目录通常由当前用户直接维护，安装软件包使用 `pacman -S`，不应在前面添加 `sudo`。脚本通过 `MSYSTEM` 和 `MINGW_PACKAGE_PREFIX` 识别 UCRT64/UCRT32，并选择匹配的软件包。
 
 设计边界见：[跨平台与仓库独立性设计](docs/cross_platform_and_repository_independence.md)。
 
 跨平台启动、虚拟机克隆、代理排障和常见错误见：[环境与故障排查](docs/environment_and_troubleshooting.md)。
 
-在 MSYS2/UCRT64 中，可以直接从训练工具目录执行：
+在 MSYS2 UCRT64/UCRT32 中，可以直接从训练工具目录执行：
 
 ```bash
 cd path/to/practice_tool
@@ -294,11 +291,13 @@ banks/index.json
 
 | 文件 | 职责 |
 | --- | --- |
-| `start.cmd` | Windows 正式启动入口 |
 | `start.sh` | MSYS2/Linux 正式启动入口 |
-| `scripts/install_environment.cmd` | Windows Node.js 自动安装 |
+| `bootstrap_windows.ps1` | PowerShell 冷启动引导，只安装和准备 MSYS2 |
+| `start_ucrt64.cmd` | 可双击的 UCRT64 Bash 转发入口 |
+| `start_ucrt32.cmd` | 已有自定义 UCRT32 环境的兼容转发入口 |
 | `scripts/install_environment.sh` | MSYS2/Linux Node.js 自动安装 |
-| `../../practice.cmd` | 当前知识库的 Windows 快捷入口，只转发到 `start.cmd` |
+| `scripts/lib/platform_environment.sh` | 平台识别、路径、工具和公共环境函数的唯一来源 |
+| `../../practice.cmd` | 当前知识库的 Windows 快捷入口，只转发到 UCRT64 Bash 中的 `start.sh` |
 | `../../practice.sh` | 当前知识库的 MSYS2/Linux 快捷入口，只转发到 `start.sh` |
 
 程序、题库协议、环境准备和启动逻辑全部留在工具目录。当前知识库根目录的两个文件不保存工具逻辑，移除后不影响从工具目录直接启动；拆分成独立仓库时不应复制这两个快捷入口。

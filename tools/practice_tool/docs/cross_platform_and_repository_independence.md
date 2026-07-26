@@ -13,6 +13,27 @@ domains:
 
 本文是 `practice_tool` 跨平台运行和仓库独立性设计的长期锚点，用于约束后续的题库导入、在线编辑、知识源浏览、答案导出以及独立拆仓工作。
 
+当前长期验证矩阵固定为 Windows MSYS2 UCRT64/UCRT32 Bash 与 Linux Ubuntu 22.04 Bash，统一以 `start.sh` 为正式交互入口。PowerShell 仅属于 Windows 冷启动引导层，负责下载、安装和准备 UCRT 环境，不进入训练任务和 Tab 补全协议；CMD 不作为正式支持平台。
+
+PowerShell 引导完成后必须明确提示用户进入 UCRT64/UCRT32 Bash 执行 `start.sh`，也可以提供只负责打开对应 UCRT Bash 并转发到 `start.sh` 的双击快捷脚本。快捷脚本不得复制 Node.js 检测、依赖安装或训练服务启动逻辑。
+
+### 1.1.1\_统一Unix环境层
+
+正式运行环境统一为 Bash/Unix 语义。`scripts/lib/platform_environment.sh` 是平台信息与工具能力的唯一来源，负责把 Ubuntu 22.04、MSYS2 UCRT64/UCRT32 的差异转换为统一变量和函数。其他脚本不得自行判断 `MSYSTEM`、发行版、CPU 架构、盘符、包管理器或下载工具。
+
+```mermaid
+flowchart LR
+    PS["PowerShell<br/>仅安装 MSYS2"] --> UB["UCRT64/UCRT32 Bash"]
+    UL["Ubuntu 22.04 Bash"] --> PE["platform_environment.sh"]
+    UB --> PE
+    PE --> ST["start.sh"]
+    PE --> IE["install_environment.sh"]
+    ST --> APP["统一训练流程"]
+    IE --> APP
+```
+
+平台环境层统一提供工具根路径、本地运行时和缓存地址、Node.js 兼容线、下载源、架构、包管理器，以及下载、SHA-256 校验、解压和路径解析能力。业务脚本只消费这些能力，从而保持一套启动、升级、离线安装和补全流程。
+
 需要长期保持的核心结论是：
 
 > `linux-note` 是独立知识库，`practice_tool` 是独立训练工具。二者只能通过显式的知识源协议交互，不能通过外层目录位置、根启动脚本或仓库内部约定形成隐式依赖。
@@ -152,14 +173,7 @@ practice.sources.json
 PRACTICE_SOURCE_CONFIG
 ```
 
-Windows PowerShell：
-
-```powershell
-$env:PRACTICE_SOURCE_CONFIG = "D:\knowledge\practice.sources.json"
-.\start.cmd
-```
-
-Linux 或 MSYS2：
+Ubuntu 22.04 或 MSYS2 UCRT64/UCRT32：
 
 ```bash
 PRACTICE_SOURCE_CONFIG=/srv/knowledge/practice.sources.json ./start.sh
@@ -186,11 +200,11 @@ config/knowledge_sources.local.json
 
 ### 1.5.1\_统一阶段
 
-Windows 和 Linux 入口文件语法不同，但必须执行相同阶段：
+MSYS2 UCRT64/UCRT32 与 Ubuntu 22.04 共用同一个入口和阶段：
 
 ```mermaid
 flowchart TD
-    E["start.cmd 或 start.sh"] --> N["定位 Node.js 与 npm"]
+    E["start.sh"] --> N["从统一环境层定位 Node.js 与 npm"]
     N --> I{"Node.js 是否至少为 v18"}
     I -->|"否"| P["按就近镜像、官方源和版本顺序选择兼容版本"]
     I -->|"是"| D["检查 node_modules 与本机就绪标记"]
@@ -200,16 +214,11 @@ flowchart TD
     V --> B["Vite 监听成功后打开浏览器"]
 ```
 
-入口脚本只处理平台外壳差异，训练流程和知识源语义必须共用 TypeScript、JSON Schema 与 Node.js 实现。
+入口脚本不处理平台外壳差异，只消费统一环境层；训练流程和知识源语义共用 TypeScript、JSON Schema 与 Node.js 实现。
 
 ### 1.5.2\_正式入口
 
-工具正式入口为：
-
-| 平台 | 入口 |
-| --- | --- |
-| Windows CMD、PowerShell | `start.cmd` |
-| MSYS2、Linux Bash | `start.sh` |
+MSYS2 UCRT64/UCRT32 与 Ubuntu 22.04 的正式入口都是 `start.sh`。PowerShell 的 `bootstrap_windows.ps1` 只负责在 Windows 尚无 MSYS2 时完成冷启动，不是训练工具入口。
 
 当前知识库根目录的 `practice.cmd` 和 `practice.sh` 只承担：
 
@@ -218,7 +227,7 @@ flowchart TD
 
 除此之外不得加入依赖安装、题库加载或服务启动逻辑。
 
-工具正式入口解释 `--upgrade`。该参数属于本机运行环境维护命令，负责重新选择官方 Node.js 运行时、刷新依赖和就绪标记；根快捷入口只能原样转发，不能实现另一套升级流程。运行环境升级与 Git 更新、题库更新和知识源配置更新相互独立。
+`start.sh` 解释 `--upgrade`。该参数属于本机运行环境维护命令，负责重新选择 Node.js 运行时、刷新依赖和就绪标记；根快捷入口只能原样转发，不能实现另一套升级流程。运行环境升级与 Git 更新、题库更新和知识源配置更新相互独立。
 
 ### 1.5.3\_平台差异边界
 
@@ -226,7 +235,7 @@ flowchart TD
 
 - CMD 与 Bash 语法。
 - Node.js 的发现和安装方式。
-- Windows `winget`、MSYS2 `pacman` 和普通 Linux 的隔离运行时。
+- MSYS2 UCRT64/UCRT32 的 `pacman` 与 Ubuntu 22.04 的隔离运行时。
 - Vite 调用平台默认浏览器的实现。
 - 文件系统路径的系统表示。
 
@@ -243,10 +252,10 @@ flowchart TD
 截至当前版本，已经完成：
 
 - 工具正式启动入口下沉到工具目录。
-- 工具自身的 `start.sh` 和 `start.cmd` 提供帮助入口；外层知识库快捷脚本不进入工具命令模型。
+- 工具自身只由 `start.sh` 提供帮助入口；外层知识库快捷脚本不进入工具命令模型。
 - Bash Tab 补全只面向工具正式入口 `start.sh`，由工具目录内的补全脚本维护。
 - 根启动脚本精简为集成快捷入口。
-- 启动前检查 Node.js 18 最低兼容线；安装时按就近镜像、官方源和版本顺序逐级回退，普通 Linux 使用工具内隔离运行时。
+- 启动前检查 Node.js 18 最低兼容线；安装时按就近镜像、官方源和版本顺序逐级回退，Ubuntu 22.04 使用工具内隔离运行时。
 - 官方运行时归档保存在 `.local/downloads/node/v<版本>`，联网和离线安装共用同一份 SHA-256 校验流程，缓存不进入 Git。
 - 离线输入可以来自单次手动路径或 `offline_node_packages.local.tsv`；相对路径统一以 `practice_tool` 根目录解析，绝对路径保持原义。
 - 在线运行时和依赖下载使用可覆盖的有序源列表：本国或就近镜像优先，境外官方源兜底，不永久修改系统或用户的全局包管理器配置。

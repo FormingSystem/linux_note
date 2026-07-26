@@ -3,89 +3,36 @@
 set -euo pipefail
 
 practice_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-required_node_major=18
-preferred_node_majors="${PRACTICE_NODE_MAJORS:-24 22 20 18}"
-node_dist_sources="${PRACTICE_NODE_DIST_SOURCES:-https://npmmirror.com/mirrors/node https://nodejs.org/dist}"
+source "$practice_dir/scripts/lib/platform_environment.sh"
+practice_environment_init "$practice_dir"
 
-node_is_supported() {
-    command -v node >/dev/null 2>&1 &&
-        [[ "$(node -p 'Number(process.versions.node.split(".")[0])' 2>/dev/null || printf '0')" -ge "$required_node_major" ]] &&
-        command -v npm >/dev/null 2>&1
-}
-
-if [[ "${PRACTICE_FORCE_NODE_UPGRADE:-0}" != "1" ]] && node_is_supported; then
+if [[ "${PRACTICE_FORCE_NODE_UPGRADE:-0}" != "1" ]] && practice_node_is_supported; then
     exit 0
 fi
 
-case "${MSYSTEM:-}" in
-    UCRT64|MINGW64|MINGW32|CLANG64|CLANG32|CLANGARM64)
-        if ! command -v pacman >/dev/null 2>&1; then
-            printf '%s\n' '[practice] 当前是 MSYS2，但未找到 pacman。请修复 MSYS2 安装后重试。' >&2
-            exit 1
-        fi
-        if [[ -z "${MINGW_PACKAGE_PREFIX:-}" ]]; then
-            printf '%s\n' '[practice] 无法确定当前 MSYS2 软件包前缀，请从 UCRT64 终端重新运行。' >&2
-            exit 1
-        fi
-        printf '[practice] 使用 MSYS2 pacman 安装 %s-nodejs（无需 sudo）……\n' "$MINGW_PACKAGE_PREFIX"
-        pacman -S --needed --noconfirm "${MINGW_PACKAGE_PREFIX}-nodejs"
-        hash -r
-        if node_is_supported; then
-            exit 0
-        fi
-        printf '[practice] MSYS2 安装后的 Node.js 仍低于 v%d。\n' "$required_node_major" >&2
+if [[ "$PRACTICE_PLATFORM_FAMILY" = "msys2" ]]; then
+    if practice_install_msys2_node; then
+        exit 0
+    else
+        printf '[practice] MSYS2 安装后的 Node.js 仍低于 v%d。\n' "$PRACTICE_REQUIRED_NODE_MAJOR" >&2
         exit 1
-        ;;
-esac
-
-if command -v winget.exe >/dev/null 2>&1; then
-    printf '%s\n' '[practice] 使用 Windows winget 安装最新 Node.js LTS……'
-    winget.exe install --id OpenJS.NodeJS.LTS --exact --silent \
-        --accept-package-agreements --accept-source-agreements
-    exit 0
+    fi
 fi
 
-case "$(uname -m)" in
-    x86_64|amd64) node_arch="x64" ;;
-    aarch64|arm64) node_arch="arm64" ;;
-    armv7l) node_arch="armv7l" ;;
-    *)
-        printf '[practice] Node.js 官方 Linux 二进制暂不支持当前架构：%s。\n' "$(uname -m)" >&2
-        exit 1
-        ;;
-esac
+node_arch="$PRACTICE_NODE_ARCH"
+required_node_major="$PRACTICE_REQUIRED_NODE_MAJOR"
+preferred_node_majors="$PRACTICE_PREFERRED_NODE_MAJORS"
+node_dist_sources="$PRACTICE_NODE_DIST_SOURCES"
+practice_prepare_download_tools
 
-download_available=1
-if command -v curl >/dev/null 2>&1; then
-    download_file() {
-        curl --fail --location --retry 2 --connect-timeout 15 --progress-bar "$1" -o "$2"
-    }
-elif command -v wget >/dev/null 2>&1; then
-    download_file() {
-        wget --tries=2 --timeout=15 --show-progress "$1" -O "$2"
-    }
-else
-    download_available=0
-fi
-
-if ! command -v sha256sum >/dev/null 2>&1; then
-    printf '%s\n' '[practice] 校验 Node.js 下载需要 sha256sum。' >&2
-    exit 1
-fi
-
-runtime_root="$practice_dir/.local/runtime"
+runtime_root="$PRACTICE_RUNTIME_ROOT"
 target_dir="$runtime_root/node"
-cache_root="$practice_dir/.local/downloads/node"
-offline_table="${PRACTICE_OFFLINE_NODE_TABLE:-$practice_dir/config/offline_node_packages.local.tsv}"
+cache_root="$PRACTICE_NODE_CACHE_ROOT"
+offline_table="$PRACTICE_OFFLINE_NODE_TABLE"
 mkdir -p "$runtime_root" "$cache_root"
 
 resolve_practice_path() {
-    local value="$1"
-    if [[ "$value" = /* ]]; then
-        printf '%s\n' "$value"
-    else
-        printf '%s\n' "$practice_dir/$value"
-    fi
+    practice_resolve_tool_path "$1"
 }
 
 extract_node_archive() {
@@ -93,10 +40,10 @@ extract_node_archive() {
     local destination="$2"
     case "$archive_path" in
         *.tar.gz|*.tgz)
-            tar -xzf "$archive_path" --strip-components=1 -C "$destination"
+            practice_extract_tar gzip "$archive_path" "$destination"
             ;;
         *.tar.xz)
-            tar -xJf "$archive_path" --strip-components=1 -C "$destination"
+            practice_extract_tar xz "$archive_path" "$destination"
             ;;
         *)
             printf '[practice] Linux 不支持该离线包后缀：%s；请使用官方 .tar.gz、.tgz 或 .tar.xz。\n' "$archive_path" >&2
@@ -129,10 +76,7 @@ activate_offline_archive() {
         printf '[practice] SHASUMS256.txt 中没有 %s，忽略该缓存。\n' "$archive_name" >&2
         return 1
     fi
-    if ! (
-        cd "$(dirname "$archive_path")"
-        printf '%s\n' "$checksum_line" | sha256sum --check -
-    ); then
+    if ! practice_verify_sha256_line "$checksum_line" "$(dirname "$archive_path")"; then
         printf '[practice] 离线缓存 %s 校验失败，忽略该文件。\n' "$archive_name" >&2
         return 1
     fi
@@ -232,15 +176,11 @@ install_official_node() {
         fi
     done < <(find "$cache_root" -mindepth 1 -maxdepth 1 -type d -name "v$major.*" -print | sort -Vr)
 
-    if [[ "$download_available" -ne 1 ]]; then
-        return 1
-    fi
-
     for source_root in $node_dist_sources; do
         release_base="${source_root%/}/latest-v$major.x"
         attempt_dir="$(mktemp -d "$runtime_root/node-v$major.XXXXXX")"
         printf '[practice] 尝试 Node.js 下载源：%s（linux-%s）……\n' "$release_base" "$node_arch"
-        if ! download_file "$release_base/SHASUMS256.txt" "$attempt_dir/SHASUMS256.txt"; then
+        if ! practice_download_file "$release_base/SHASUMS256.txt" "$attempt_dir/SHASUMS256.txt"; then
             rm -rf "$attempt_dir"
             continue
         fi
@@ -259,7 +199,7 @@ install_official_node() {
         mkdir -p "$package_dir"
         cp "$attempt_dir/SHASUMS256.txt" "$package_dir/SHASUMS256.txt"
         printf '[practice] 下载 %s……\n' "$archive_name"
-        if ! download_file "$archive_url" "$package_dir/$archive_name"; then
+        if ! practice_download_file "$archive_url" "$package_dir/$archive_name"; then
             rm -f "$package_dir/$archive_name"
             rm -rf "$attempt_dir"
             continue

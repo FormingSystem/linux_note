@@ -9,17 +9,17 @@ domains:
 
 # 第1章\_知识训练工具环境与故障排查
 
-本文统一说明“回路”知识训练工具在 Windows CMD、MSYS2/UCRT64 和 Linux 中的独立启动方式、首次环境准备、当前 `linux-note` 集成方式、虚拟机验证以及常见故障。
+本文统一说明“回路”知识训练工具在 Windows MSYS2 UCRT64/UCRT32 Bash 和 Linux Ubuntu 22.04 Bash 中的独立启动方式、首次环境准备、当前 `linux-note` 集成方式、虚拟机验证以及常见故障。
 
 跨平台职责、知识源协议、仓库所有权和独立拆仓验收标准见：[跨平台与仓库独立性设计](cross_platform_and_repository_independence.md)。
 
 ## 1.1\_先识别当前终端
 
-训练工具自身的正式入口是工具目录中的 `start.cmd` 和 `start.sh`。当前知识库根目录的 `practice.cmd`、`practice.sh` 只是快捷转发。不同终端不能混用命令语法。
+训练工具跨平台正式交互入口是工具目录中的 `start.sh`。当前知识库根目录的 `practice.cmd`、`practice.sh` 只是快捷转发。PowerShell 只用于 Windows 冷启动阶段下载、安装和准备 MSYS2 UCRT64/UCRT32，不直接运行训练任务或维护 Tab 补全；CMD 不作为正式使用终端。
 
-查看工具介绍和全部启动选项时，可在 Linux 使用 `./start.sh --help`，在 Windows 使用 `start.cmd --help`。帮助参数在环境检查之前返回，不触发任何下载、安装或服务启动。
+在 Ubuntu 22.04、MSYS2 UCRT64 和 MSYS2 UCRT32 中都使用 `./start.sh --help` 查看工具介绍和全部启动选项。帮助参数在环境检查之前返回，不触发任何下载、安装或服务启动。
 
-Linux 第一次在交互式 Bash 中正常执行 `./start.sh` 时，会默认安装工具正式入口的 Tab 补全；也可以主动覆盖安装：
+第一次在交互式 Linux/MSYS2 Bash 中正常执行 `./start.sh` 时，会默认安装工具正式入口的 Tab 补全；也可以主动覆盖安装：
 
 ```bash
 ./start.sh --install-completion
@@ -27,16 +27,23 @@ Linux 第一次在交互式 Bash 中正常执行 `./start.sh` 时，会默认安
 
 安装结果保存在当前用户的 Bash completion 目录，不修改系统目录。默认目标是指向当前仓库 `scripts/completions/start.bash` 的符号链接；不支持符号链接时使用动态加载器。两种方式都不复制静态补全快照，因此当前目录完成 Git 更新后会自动使用新版规则。
 
-子脚本不能直接修改已经运行的父 Bash，因此首次安装所在的当前终端执行一次 `source <(./start.sh --completion bash)`。之后输入 `./start.sh --up` 并按 Tab，应补全为 `./start.sh --upgrade`。
+子脚本不能直接修改已经运行的父 Bash，因此首次安装所在的当前终端执行一次 `source <(./start.sh --completion bash)`。补全覆盖全部正式选项，并根据上下文提供 `--host`、`--port` 和 `--completion` 的候选值，不应把“某个前缀能扩展”为完成标准。
 
-系统安装并启用 `bash-completion` 后，后续新开的 Bash 会从用户 completion 目录自动发现该规则，不需要每个终端重复执行 `source`。可用 `type _completion_loader` 检查当前终端是否已加载该框架；Ubuntu 缺少组件时执行 `sudo apt-get install bash-completion`，然后重新打开终端。设置 `PRACTICE_AUTO_COMPLETION=0` 可以关闭正常启动时的自动安装。
+安装器会幂等地向 `~/.bashrc` 写入一条加载用户 completion 文件的命令，因此后续新开的 Ubuntu 22.04 Bash 和 Windows MSYS2 UCRT64/UCRT32 Bash 都会自动加载，不需要每个终端重复执行 `source`，也不依赖 PowerShell 或 CMD 的补全机制。补全文件继续指向当前工具目录，Git 更新后规则同步生效。设置 `PRACTICE_AUTO_COMPLETION=0` 可以关闭正常启动时的自动安装。
 
 | 终端提示符示例 | 环境 | 启动命令 |
 | --- | --- | --- |
-| `F:\...\practice_tool>` | Windows CMD | `start` |
-| `PS F:\...\practice_tool>` | PowerShell | `.\start.cmd` |
-| `Lizha@host UCRT64 /f/.../practice_tool $` | MSYS2/UCRT64 | `./start.sh` |
-| `user@host:~/practice_tool$` | Linux Bash | `./start.sh` |
+| `Lizha@host UCRT64 /f/.../practice_tool $` | Windows MSYS2/UCRT64 | `./start.sh` |
+| `Lizha@host UCRT32 /f/.../practice_tool $` | Windows MSYS2/UCRT32 | `./start.sh` |
+| `user@host:~/practice_tool$` | Ubuntu 22.04 Bash | `./start.sh` |
+
+Windows 尚未安装 MSYS2 时，在 PowerShell 中只执行冷启动引导：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\bootstrap_windows.ps1
+```
+
+脚本优先从国内镜像、失败后从 MSYS2 官方仓库下载并校验官方安装器，默认安装到 `C:\msys64`。完成后会提示双击 `start_ucrt64.cmd`，或进入 UCRT64 后执行 `./start.sh`。当前官方 MSYS2 只提供 UCRT64；`start_ucrt32.cmd` 只兼容用户已经准备好的自定义 UCRT32 环境。
 
 终端提示符、命令输出和错误信息不能作为命令粘贴。例如下面这些内容不应输入：
 
@@ -48,22 +55,23 @@ $
 
 ## 1.2\_最简启动方式
 
-### 1.2.1\_Windows
+### 1.2.1\_Windows冷启动
 
-在资源管理器中双击训练工具目录中的：
+尚未安装 MSYS2 时，在 PowerShell 中执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\bootstrap_windows.ps1
+```
+
+安装完成后在资源管理器中双击：
 
 ```text
-start.cmd
+start_ucrt64.cmd
 ```
 
-也可以在 CMD 中执行：
+快捷脚本只负责进入 UCRT64 Bash 并转发到 `start.sh`。已有自定义 UCRT32 环境时可以使用 `start_ucrt32.cmd`。
 
-```cmd
-cd path\to\practice_tool
-start
-```
-
-### 1.2.2\_MSYS2与Linux
+### 1.2.2\_MSYS2与Ubuntu22.04
 
 在训练工具目录执行：
 
@@ -86,10 +94,6 @@ http://127.0.0.1:5173/
 
 普通启动只在 Node.js 缺失或低于最低兼容线时下载运行时。需要主动检查配置源中的更新并刷新依赖时：
 
-```cmd
-start.cmd --upgrade
-```
-
 ```bash
 ./start.sh --upgrade
 ```
@@ -108,7 +112,7 @@ PRACTICE_NPM_REGISTRIES="https://内网-npm-镜像 https://registry.npmjs.org" \
 ./start.sh --upgrade
 ```
 
-Windows CMD 使用 `set PRACTICE_NODE_DIST_SOURCES=...` 和 `set PRACTICE_NPM_REGISTRIES=...` 后再执行 `start.cmd --upgrade`。
+MSYS2 UCRT64/UCRT32 与 Ubuntu 22.04 都使用前述 Bash 环境变量写法。
 
 ### 1.2.4\_离线准备Node.js
 
@@ -134,7 +138,7 @@ tools/practice_tool/.local/downloads/node/v24.18.0/
 └── node-v24.18.0-win-x64.zip
 ```
 
-然后在工具目录执行 `./start.sh --upgrade` 或 `start.cmd --upgrade`。安装器按主版本优先级搜索缓存并强制校验，不需要访问网络。`.local/` 已被工具 `.gitignore` 排除，可通过 U 盘或共享目录复制这些文件，不应提交到仓库。
+然后在工具目录执行 `./start.sh --upgrade`。安装器按主版本优先级搜索缓存并强制校验，不需要访问网络。`.local/` 已被工具 `.gitignore` 排除，可通过 U 盘或共享目录复制这些文件，不应提交到仓库。
 
 安装开始时有 5 秒选择窗口：
 
@@ -181,11 +185,10 @@ T：读取离线包表
 
 | 环境 | 安装方式 | 是否使用 `sudo` |
 | --- | --- | --- |
-| Windows | 复用 Node.js 18 以上版本；优先 `winget`，官方 ZIP 兜底 | 否 |
-| MSYS2/UCRT64 | 复用兼容版本，或用 MSYS2 `pacman` 安装对应 Node.js 包 | 否 |
-| 普通 Linux | 从官方地址按 `24 → 22 → 20 → 18` 选择最高可用版本并校验，安装到 `.local/runtime` | 否 |
+| MSYS2 UCRT64/UCRT32 | 复用兼容版本，或用 `pacman` 安装当前环境对应的 Node.js 包 | 否 |
+| Ubuntu 22.04 | 按就近镜像、官方源和 `24 → 22 → 20 → 18` 的顺序选择最高可用版本并校验，安装到 `.local/runtime` | 否 |
 
-普通 Linux 不再直接采用发行版仓库中的 Node.js，因为 Ubuntu 等系统可能提供已经不能运行当前 Vite 的旧版本。隔离运行时不改变 `/usr/bin/node`，删除工具 `.local/runtime` 即可移除。
+Ubuntu 22.04 不直接采用发行版仓库中的 Node.js，因为系统仓库可能提供已经不能运行当前 Vite 的旧版本。隔离运行时不改变 `/usr/bin/node`，删除工具 `.local/runtime` 即可移除。
 
 ## 1.4\_平台内的使用顺序
 
@@ -203,16 +206,11 @@ T：读取离线包表
 
 ## 1.5\_独立仓库边界
 
-工具运行只要求工具目录自身包含 `package.json`、`src`、`banks`、`schemas`、`scripts` 和 `start.*`。根目录快捷入口不是依赖，复制或迁移工具时也不应把外层 `practice.*` 当成工具文件。
+工具运行只要求工具目录自身包含 `package.json`、`src`、`banks`、`schemas`、`scripts` 和 `start.sh`。根目录快捷入口不是依赖，复制或迁移工具时也不应把外层 `practice.*` 当成工具文件。
 
 当前 RCU 内容包中的 `knowledge_refs.path` 指向 `linux-note` 的知识正文，用于记录来源和在集成环境中定位文档。程序加载题库依赖稳定 ID 和 `banks` 内文件，不应根据外层仓库目录推导训练单元。未来独立拆仓时需要为外部正文位置提供内容包配置或解析器，但不需要重写训练项目 ID。
 
-知识源通过 `PRACTICE_SOURCE_CONFIG` 指定。Windows 和 Linux 使用同一个变量名，配置文件使用同一个 JSON Schema：
-
-```powershell
-$env:PRACTICE_SOURCE_CONFIG = "D:\knowledge\practice.sources.json"
-.\start.cmd
-```
+知识源通过 `PRACTICE_SOURCE_CONFIG` 指定。MSYS2 和 Ubuntu 22.04 使用同一个变量名与 JSON Schema：
 
 ```bash
 PRACTICE_SOURCE_CONFIG=/opt/knowledge/practice.sources.json ./start.sh
@@ -386,4 +384,4 @@ tools/practice_tool/node_modules/
 tools/practice_tool/.local/runtime/
 ```
 
-然后重新运行工具目录的 `start.cmd` 或 `start.sh`。不要把 `.local`、`node_modules` 或 `dist` 提交到 Git。
+然后重新运行工具目录的 `start.sh`。不要把 `.local`、`node_modules` 或 `dist` 提交到 Git。

@@ -3,8 +3,8 @@
 set -euo pipefail
 
 practice_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-required_node_major=18
-local_node_bin="$practice_dir/.local/runtime/node/bin"
+source "$practice_dir/scripts/lib/platform_environment.sh"
+
 ready_file="$practice_dir/.local/environment-ready-v3-node-compatible"
 practice_url="${PRACTICE_URL:-http://127.0.0.1:5173/}"
 upgrade_requested=0
@@ -50,6 +50,8 @@ EOF
 install_bash_completion() {
     local overwrite="${1:-0}"
     local user_data_home completion_dir completion_source completion_target
+    local bashrc_path bashrc_marker
+    local completion_created=0
 
     if [[ -z "${HOME:-}" ]]; then
         printf '%s\n' '[practice] 未检测到 HOME，跳过 Bash 补全安装。' >&2
@@ -63,27 +65,39 @@ install_bash_completion() {
     mkdir -p "$completion_dir"
 
     if [[ -e "$completion_target" || -L "$completion_target" ]]; then
-        if [[ "$overwrite" != "1" ]]; then
-            return 0
+        if [[ "$overwrite" = "1" ]]; then
+            rm -f "$completion_target"
         fi
-        rm -f "$completion_target"
     fi
 
-    if ln -s "$completion_source" "$completion_target" 2>/dev/null; then
-        printf '[practice] Bash 补全已链接到当前工具目录：%s\n' "$completion_target"
-    else
-        printf 'source %q\n' "$completion_source" > "$completion_target"
-        printf '[practice] 当前系统无法创建符号链接，已安装动态加载器：%s\n' "$completion_target"
+    if [[ ! -e "$completion_target" && ! -L "$completion_target" ]]; then
+        if ln -s "$completion_source" "$completion_target" 2>/dev/null; then
+            printf '[practice] Bash 补全已链接到当前工具目录：%s\n' "$completion_target"
+        else
+            printf 'source %q\n' "$completion_source" > "$completion_target"
+            printf '[practice] 当前系统无法创建符号链接，已安装动态加载器：%s\n' "$completion_target"
+        fi
+        completion_created=1
     fi
-    printf '[practice] 补全源：%s\n' "$completion_source"
-    printf '%s\n' '[practice] 后续 Git 更新该源文件时，补全规则会同步更新。'
-    printf '%s\n' '[practice] 当前 Bash 首次安装后请执行一次：'
-    printf '  source <(%q --completion bash)\n' "$practice_dir/start.sh"
-    if ! type _completion_loader >/dev/null 2>&1 &&
-        [[ ! -r /usr/share/bash-completion/bash_completion ]]; then
-        printf '%s\n' '[practice] 未检测到 bash-completion；请先通过系统包管理器安装，后续新终端才能自动加载补全。'
-    else
-        printf '%s\n' '[practice] 后续新开的 Bash 会自动发现补全，无需再次执行 source。'
+
+    bashrc_path="$HOME/.bashrc"
+    bashrc_marker="# practice-tool start.sh completion"
+    touch "$bashrc_path"
+    if ! grep -Fq "$bashrc_marker" "$bashrc_path"; then
+        {
+            printf '\n%s\n' "$bashrc_marker"
+            printf '[[ -r %q ]] && source %q\n' "$completion_target" "$completion_target"
+        } >> "$bashrc_path"
+        printf '[practice] 已登记 Linux/MSYS2 Bash 自动加载：%s\n' "$bashrc_path"
+        completion_created=1
+    fi
+
+    if [[ "$completion_created" = "1" || "$overwrite" = "1" ]]; then
+        printf '[practice] 补全源：%s\n' "$completion_source"
+        printf '%s\n' '[practice] 后续 Git 更新该源文件时，补全规则会同步更新。'
+        printf '%s\n' '[practice] 当前 Bash 首次安装后请执行一次：'
+        printf '  source <(%q --completion bash)\n' "$practice_dir/start.sh"
+        printf '%s\n' '[practice] 后续新开的 Linux/MSYS2 Bash 会通过 ~/.bashrc 自动加载，无需再次执行 source。'
     fi
 }
 
@@ -120,65 +134,30 @@ if [[ "${PRACTICE_AUTO_COMPLETION:-1}" = "1" && -t 0 && -t 1 ]]; then
     install_bash_completion 0 || true
 fi
 
-node_is_supported() {
-    command -v node >/dev/null 2>&1 &&
-        [[ "$(node -p 'Number(process.versions.node.split(".")[0])' 2>/dev/null || printf '0')" -ge "$required_node_major" ]]
-}
-
-if [[ -x "$local_node_bin/node" && -x "$local_node_bin/npm" ]]; then
-    export PATH="$local_node_bin:$PATH"
-    hash -r
-fi
+practice_environment_init "$practice_dir"
+practice_activate_local_node
 
 if [[ "$upgrade_requested" -eq 1 ]]; then
     printf '%s\n' '[practice] 升级模式：重新选择官方最高可用兼容 Node.js，并刷新项目依赖……'
     rm -f "$ready_file"
     PRACTICE_FORCE_NODE_UPGRADE=1 bash "$practice_dir/scripts/install_environment.sh"
-    if [[ -x "$local_node_bin/node" && -x "$local_node_bin/npm" ]]; then
-        export PATH="$local_node_bin:$PATH"
-        hash -r
-    fi
+    practice_activate_local_node
 fi
 
-if ! node_is_supported || ! command -v npm >/dev/null 2>&1; then
-    if [[ -f /e/node_js/node.exe && -f /e/node_js/npm ]]; then
-        export PATH="/e/node_js:$PATH"
-        hash -r
-    elif [[ -f "/c/Program Files/nodejs/node.exe" && -f "/c/Program Files/nodejs/npm" ]]; then
-        export PATH="/c/Program Files/nodejs:$PATH"
-        hash -r
-    fi
-fi
-
-if ! node_is_supported || ! command -v npm >/dev/null 2>&1; then
+if ! practice_node_is_supported; then
     current_version="$(node --version 2>/dev/null || printf '未安装')"
-    printf '[practice] 当前 Node.js 为 %s，工具最低要求为 v%d。\n' "$current_version" "$required_node_major"
+    printf '[practice] 当前 Node.js 为 %s，工具最低要求为 v%d。\n' "$current_version" "$PRACTICE_REQUIRED_NODE_MAJOR"
     printf '%s\n' '[practice] 正在按就近镜像、官方源顺序准备最新兼容 Node.js；失败时会逐级回退……'
     bash "$practice_dir/scripts/install_environment.sh"
-    if [[ -x "$local_node_bin/node" && -x "$local_node_bin/npm" ]]; then
-        export PATH="$local_node_bin:$PATH"
-    elif [[ -f /e/node_js/node.exe && -f /e/node_js/npm ]]; then
-        export PATH="/e/node_js:$PATH"
-    elif [[ -f "/c/Program Files/nodejs/node.exe" && -f "/c/Program Files/nodejs/npm" ]]; then
-        export PATH="/c/Program Files/nodejs:$PATH"
-    fi
-    hash -r
+    practice_activate_local_node
 fi
 
-if ! node_is_supported || ! command -v npm >/dev/null 2>&1; then
+if ! practice_node_is_supported; then
     printf '[practice] Node.js 环境仍不兼容，当前版本：%s。\n' "$(node --version 2>/dev/null || printf '未安装')" >&2
     exit 1
 fi
 
-if command -v npm >/dev/null 2>&1; then
-    npm_command=(npm)
-elif [[ -f /e/node_js/node.exe && -f /e/node_js/npm ]]; then
-    export PATH="/e/node_js:$PATH"
-    hash -r
-    npm_command=(npm)
-elif [[ -f "/c/Program Files/nodejs/node.exe" && -f "/c/Program Files/nodejs/npm" ]]; then
-    export PATH="/c/Program Files/nodejs:$PATH"
-    hash -r
+if practice_command_exists npm; then
     npm_command=(npm)
 else
     printf '%s\n' '[practice] Node.js 环境准备后仍未找到 npm。' >&2
@@ -189,8 +168,7 @@ cd "$practice_dir"
 
 install_dependencies() {
     local registry
-    local registries="${PRACTICE_NPM_REGISTRIES:-https://registry.npmmirror.com https://registry.npmjs.org}"
-    for registry in $registries; do
+    for registry in $PRACTICE_NPM_REGISTRIES; do
         printf '[practice] 尝试 npm 下载源：%s\n' "$registry"
         if "${npm_command[@]}" install --registry="$registry" --no-audit --no-fund --fetch-retries=2 --fetch-timeout=120000; then
             return 0
