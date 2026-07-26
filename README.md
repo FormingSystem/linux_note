@@ -85,6 +85,14 @@ bash ./tools/practice_tool/start.sh
 
 当前仓库通过根目录的 `practice.sources.json` 声明 `linux-note` 知识源。快捷启动脚本只在用户没有主动指定时传入这份配置；用户设置的 `PRACTICE_SOURCE_CONFIG` 始终优先。训练工具通过 `source_id`、稳定文档 ID 和源内相对路径引用材料，不通过 `../..` 推断知识库位置。
 
+需要主动刷新 Node.js 本地运行时和项目依赖时，可以使用：
+
+```bash
+bash ./practice.sh --upgrade
+```
+
+Windows 对应执行 `practice.cmd --upgrade`。该参数只更新训练工具的本机运行环境，不修改 `linux-note` 正文、题库或知识源配置。
+
 - [回路知识训练工具](tools/practice_tool/README.md)
 - [跨平台与仓库独立性设计](tools/practice_tool/docs/cross_platform_and_repository_independence.md)
 - [跨平台环境、虚拟机验证与故障排查](tools/practice_tool/docs/environment_and_troubleshooting.md)

@@ -12,7 +12,7 @@ node_is_supported() {
         command -v npm >/dev/null 2>&1
 }
 
-if node_is_supported; then
+if [[ "${PRACTICE_FORCE_NODE_UPGRADE:-0}" != "1" ]] && node_is_supported; then
     exit 0
 fi
 
