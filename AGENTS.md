@@ -252,7 +252,17 @@ git diff --check
 完整使用和排障说明见：
 
 - `tools/practice_tool/README.md`
+- `tools/practice_tool/docs/architecture/implementation_status.md`
 - `tools/practice_tool/docs/cross_platform_and_repository_independence.md`
 - `tools/practice_tool/docs/environment_and_troubleshooting.md`
-- `tools/practice_tool/docs/architecture/project_structure_and_module_boundaries.md`
-- `tools/practice_tool/docs/architecture/learning_guide_standard.md`
+- `tools/practice_tool/docs/architecture/README.md`
+- `tools/practice_tool/docs/architecture/engineering/project_structure_and_module_boundaries.md`
+- `tools/practice_tool/docs/architecture/product/learning_guide_standard.md`
+- `tools/practice_tool/docs/architecture/product/content_adaptation_and_ai_governance.md`
+- `tools/practice_tool/docs/architecture/product/navigation_and_interaction.md`
+- `tools/practice_tool/docs/architecture/product/training_session_state_and_persistence.md`
+- `tools/practice_tool/docs/architecture/product/review_scheduling_and_history.md`
+- `tools/practice_tool/docs/architecture/engineering/import_export_and_data_safety.md`
+- `tools/practice_tool/docs/architecture/engineering/local_service_security_and_threat_model.md`
+- `tools/practice_tool/docs/architecture/engineering/accessibility_performance_and_acceptance.md`
+- `tools/practice_tool/docs/architecture/decisions/README.md`
