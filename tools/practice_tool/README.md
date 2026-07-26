@@ -115,17 +115,19 @@ start.cmd
 
 `--help` 在环境检查之前处理，不会下载 Node.js、安装 npm 依赖、启动 Vite 或打开浏览器。Windows 对应使用 `start.cmd --help`。
 
-Bash Tab 补全可以安装到当前用户目录：
+首次在交互式 Bash 中正常执行 `./start.sh` 时，工具会自动把 Tab 补全安装到当前用户目录。也可以主动重新安装：
 
 ```bash
 ./start.sh --install-completion
 ```
 
-安装器默认创建指向 **当前工具目录** 中 `scripts/completions/start.bash` 的符号链接；不支持符号链接时创建动态加载器，而不是复制静态快照。因此后续在当前目录执行 `git pull` 后，补全规则会直接跟随仓库更新。重新打开 Bash 后，输入 `./start.sh --` 再按 Tab 即可补全选项。只想在当前终端加载时执行：
+安装器默认创建指向 **当前工具目录** 中 `scripts/completions/start.bash` 的符号链接；不支持符号链接时创建动态加载器，而不是复制静态快照。因此后续在当前目录执行 `git pull` 后，补全规则会直接跟随仓库更新。脚本子进程无法反向修改已经运行的父 Bash，所以首次安装所在的当前终端需要执行一次：
 
 ```bash
 source <(./start.sh --completion bash)
 ```
+
+然后输入 `./start.sh --up` 并按 Tab，即可补全为 `./start.sh --upgrade`。系统安装并启用 `bash-completion` 后，后续新开的 Bash 会从用户 completion 目录自动发现该规则，不需要每个终端重复执行 `source`。Ubuntu 缺少该组件时可执行 `sudo apt-get install bash-completion`。如需禁止正常启动时自动安装补全，可设置 `PRACTICE_AUTO_COMPLETION=0`。
 
 打开后先进入 **训练单元选择页**。可以按领域筛选或按题目、标签和模块名称搜索，然后选择单元进入三阶段训练。
 

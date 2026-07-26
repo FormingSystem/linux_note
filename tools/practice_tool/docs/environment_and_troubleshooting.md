@@ -19,13 +19,17 @@ domains:
 
 查看工具介绍和全部启动选项时，可在 Linux 使用 `./start.sh --help`，在 Windows 使用 `start.cmd --help`。帮助参数在环境检查之前返回，不触发任何下载、安装或服务启动。
 
-Linux Bash 补全使用工具自己的正式入口：
+Linux 第一次在交互式 Bash 中正常执行 `./start.sh` 时，会默认安装工具正式入口的 Tab 补全；也可以主动覆盖安装：
 
 ```bash
 ./start.sh --install-completion
 ```
 
-安装结果保存在当前用户的 Bash completion 目录，不修改系统目录。默认目标是指向当前仓库 `scripts/completions/start.bash` 的符号链接；不支持符号链接时使用动态加载器。两种方式都不复制静态补全快照，因此当前目录完成 Git 更新后会自动使用新版规则。重新打开 Bash 后，输入 `./start.sh --` 并按 Tab 即可补全；当前终端可执行 `source <(./start.sh --completion bash)` 立即加载。
+安装结果保存在当前用户的 Bash completion 目录，不修改系统目录。默认目标是指向当前仓库 `scripts/completions/start.bash` 的符号链接；不支持符号链接时使用动态加载器。两种方式都不复制静态补全快照，因此当前目录完成 Git 更新后会自动使用新版规则。
+
+子脚本不能直接修改已经运行的父 Bash，因此首次安装所在的当前终端执行一次 `source <(./start.sh --completion bash)`。之后输入 `./start.sh --up` 并按 Tab，应补全为 `./start.sh --upgrade`。
+
+系统安装并启用 `bash-completion` 后，后续新开的 Bash 会从用户 completion 目录自动发现该规则，不需要每个终端重复执行 `source`。可用 `type _completion_loader` 检查当前终端是否已加载该框架；Ubuntu 缺少组件时执行 `sudo apt-get install bash-completion`，然后重新打开终端。设置 `PRACTICE_AUTO_COMPLETION=0` 可以关闭正常启动时的自动安装。
 
 | 终端提示符示例 | 环境 | 启动命令 |
 | --- | --- | --- |
