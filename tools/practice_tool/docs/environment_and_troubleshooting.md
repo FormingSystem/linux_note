@@ -1,0 +1,255 @@
+---
+id: tools.practice_tool.environment_and_troubleshooting
+title: "知识训练工具环境与故障排查"
+kind: reference
+status: evolving
+domains:
+  - tools
+---
+
+# 第1章\_知识训练工具环境与故障排查
+
+本文统一说明 `practice_tool` 在 Windows CMD、MSYS2/UCRT64 和 Linux 中的启动方式、首次环境准备、虚拟机克隆以及常见故障。
+
+## 1.1\_先识别当前终端
+
+不同终端使用不同入口，不能混用命令语法。
+
+| 终端提示符示例 | 环境 | 启动命令 |
+| --- | --- | --- |
+| `F:\git_storage\linux-note>` | Windows CMD | `practice` |
+| `PS F:\git_storage\linux-note>` | PowerShell | `.\practice.cmd` |
+| `Lizha@host UCRT64 /f/git_storage/linux-note $` | MSYS2/UCRT64 | `./practice.sh` |
+| `user@host:~/linux_note$` | Linux Bash | `./practice.sh` |
+
+终端提示符、命令输出和错误信息不能作为命令粘贴。例如下面这些内容不应输入：
+
+```text
+Lizha@host UCRT64 ...
+$
+-bash: ...
+```
+
+## 1.2\_最简启动方式
+
+### 1.2.1\_Windows
+
+在资源管理器中双击仓库根目录的：
+
+```text
+practice.cmd
+```
+
+也可以在 CMD 中执行：
+
+```cmd
+practice
+```
+
+### 1.2.2\_MSYS2与Linux
+
+在仓库根目录执行：
+
+```bash
+./practice.sh
+```
+
+启动器会显示本地地址，并在存在桌面环境时尝试打开默认浏览器：
+
+```text
+http://127.0.0.1:5173/
+```
+
+结束使用时，在运行服务的终端按 `Ctrl+C`。
+
+## 1.3\_第一次启动发生什么
+
+第一次启动执行以下流程：
+
+```text
+寻找可用的 Node.js 和 npm
+    ↓
+缺失时选择当前系统对应的安装方式
+    ↓
+安装 practice_tool 项目依赖
+    ↓
+写入 .local/environment-ready-v1
+    ↓
+启动 Vite 本地服务
+    ↓
+打开默认浏览器
+```
+
+环境就绪标记和 `node_modules` 同时存在时，后续启动跳过安装阶段。如果 `node_modules` 被删除，启动器会自动重新准备依赖。
+
+不同环境的安装策略为：
+
+| 环境 | 安装方式 | 是否使用 `sudo` |
+| --- | --- | --- |
+| Windows | 复用现有 Node.js，缺失时调用 `winget` | 否 |
+| MSYS2/UCRT64 | 复用 Windows Node.js，或用 MSYS2 `pacman` 安装对应 Node.js 包 | 否 |
+| Debian/Ubuntu | `apt-get` | 是 |
+| Fedora/RHEL | `dnf` | 是 |
+| Arch Linux | Linux 原生 `pacman` | 是 |
+
+MSYS2 与 Arch Linux 虽然都使用 `pacman`，权限模型不同。MSYS2 的标准安装通常由当前用户直接维护，不能因为检测到 `pacman` 就机械添加 `sudo`。
+
+## 1.4\_平台内的使用顺序
+
+打开平台后：
+
+1. 在单元选择页按领域筛选，或搜索模块名、知识点和标签。
+2. 选择训练单元，例如“RCU：从读侧扩展性到宽限期证明”。
+3. 阅读单元概览。
+4. 完成轻量场景提示提问。
+5. 在无知识提示条件下完成小模块脱稿输出。
+6. 分析专业工程案例，回答诊断、方案、不可规避成本和选择边界。
+7. 根据首次独立输出选择“需要重建”“部分输出”或“完整输出”。
+
+看到提示后能够理解，不等于脱稿掌握。评分应以打开提示之前的输出为依据。
+
+## 1.5\_Linux虚拟机验证流程
+
+### 1.5.1\_先确认改动已经推送
+
+虚拟机只能克隆远端已经提交并推送的内容。本机未提交文件不会通过 `git clone` 出现在虚拟机中。
+
+在本机检查：
+
+```bash
+git status
+git status -sb
+```
+
+确认训练工具、启动入口和文档已经进入目标提交并推送到远端后，再在虚拟机测试。
+
+### 1.5.2\_优先使用SSH克隆
+
+已经配置 GitHub SSH 密钥时：
+
+```bash
+cd ~/linux
+git clone --depth 1 --filter=blob:none \
+  git@github.com:FormingSystem/linux_note.git
+```
+
+出现 `remote: Enumerating objects`、`Counting objects` 和 `Compressing objects` 表示远端已经开始传输。`^C` 表示用户按下 `Ctrl+C` 主动中断，不是 GitHub 拒绝连接。
+
+### 1.5.3\_克隆后启动
+
+```bash
+cd ~/linux/linux_note
+./practice.sh
+```
+
+有桌面环境时会尝试打开默认浏览器。无桌面的服务器环境只启动本地服务，需要根据虚拟机网络方式决定是否开放监听地址和端口；默认 `127.0.0.1` 只允许虚拟机内部访问。
+
+## 1.6\_HTTPS代理故障
+
+出现下面的错误：
+
+```text
+Failed to connect to 192.168.31.196 port 10808
+No route to host
+```
+
+表示 Git 正在使用该代理地址，并不表示 GitHub 地址本身错误。
+
+### 1.6.1\_查找代理来源
+
+在虚拟机执行：
+
+```bash
+git config --show-origin --get-regexp 'http\..*proxy|https\..*proxy'
+env | grep -iE '^(http|https|all)_proxy='
+```
+
+代理可能来自 Git 系统配置、用户配置、仓库配置或环境变量。
+
+### 1.6.2\_确认Windows当前地址
+
+在 Windows 执行：
+
+```cmd
+ipconfig
+```
+
+例如当前主机地址可能是：
+
+```text
+192.168.31.197
+```
+
+该地址可能因 DHCP、网卡或网络切换发生变化，不应写死到仓库脚本。
+
+### 1.6.3\_从虚拟机测试端口
+
+```bash
+ip route get 192.168.31.197
+nc -vz 192.168.31.197 10808
+```
+
+如果端口不可达，需要检查：
+
+- 虚拟机是 NAT、桥接还是仅主机网络。
+- Windows 代理软件是否启用“允许局域网连接”或 `Allow LAN`。
+- 代理是否只监听 `127.0.0.1`，而没有监听局域网地址。
+- Windows 防火墙是否允许对应端口入站。
+
+### 1.6.4\_识别代理协议
+
+测试 HTTP 代理：
+
+```bash
+curl -I -x http://192.168.31.197:10808 https://github.com
+```
+
+测试 SOCKS5 代理：
+
+```bash
+curl -I --proxy socks5h://192.168.31.197:10808 https://github.com
+```
+
+只有测试成功后，才应把相同协议用于 Git。排障阶段优先使用单次命令参数，不要立即覆盖全局 Git 配置。
+
+HTTP 代理示例：
+
+```bash
+git -c http.proxy=http://192.168.31.197:10808 \
+    -c https.proxy=http://192.168.31.197:10808 \
+    clone --depth 1 --filter=blob:none \
+    https://github.com/FormingSystem/linux_note.git
+```
+
+SOCKS5 代理示例：
+
+```bash
+git -c http.proxy=socks5h://192.168.31.197:10808 \
+    -c https.proxy=socks5h://192.168.31.197:10808 \
+    clone --depth 1 --filter=blob:none \
+    https://github.com/FormingSystem/linux_note.git
+```
+
+## 1.7\_常见错误速查
+
+| 现象 | 原因 | 处理方式 |
+| --- | --- | --- |
+| CMD 提示 `'.' 不是内部或外部命令` | 在 CMD 中使用了 Bash 的 `./` | CMD 执行 `practice` |
+| Bash 报 `toolspractice_tool` 不存在 | 使用反斜杠，反斜杠被解释为转义 | 使用 `/` |
+| Bash 报 `npm: command not found` | Node.js 目录不在当前 PATH | 使用根目录启动脚本自动处理 |
+| MSYS2 要求启用 Windows Sudo | 脚本错误进入 Linux 权限分支 | 使用已修正脚本；MSYS2 直接调用 `pacman` |
+| 进入 `F:\...\practice_tool>` CMD 提示符 | `cmd.exe /c` 被 MSYS2转换为路径参数 | 使用已修正的 `//d //c` 调用方式 |
+| Vite 报 `"node" 不是内部或外部命令` | 只找到 `npm.cmd`，未把同目录 `node.exe` 加入 PATH | 使用已修正启动器统一加入 Node.js 目录 |
+| npm 显示 `fund` 或 `allow-scripts` | npm 信息或警告 | 只要 Vite 显示 `ready`，不影响启动 |
+| 浏览器没有自动打开 | 无桌面环境或系统缺少打开工具 | 手动访问终端显示的地址 |
+
+## 1.8\_重新准备环境
+
+仅在依赖损坏或环境要求升级时执行。删除：
+
+```text
+tools/practice_tool/.local/environment-ready-v1
+tools/practice_tool/node_modules/
+```
+
+然后重新运行根目录入口。不要把 `.local`、`node_modules` 或 `dist` 提交到 Git。
