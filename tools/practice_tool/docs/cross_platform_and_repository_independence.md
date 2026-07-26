@@ -13,7 +13,7 @@ domains:
 
 本文是 `practice_tool` 跨平台运行和仓库独立性设计的长期锚点，用于约束后续的题库导入、在线编辑、知识源浏览、答案导出以及独立拆仓工作。
 
-当前长期验证矩阵固定为 Windows MSYS2 UCRT64/UCRT32 Bash 与 Linux Ubuntu 22.04 Bash，统一以 `start.sh` 为正式交互入口。PowerShell 仅属于 Windows 冷启动引导层，负责下载、安装和准备 UCRT 环境，不进入训练任务和 Tab 补全协议；CMD 不作为正式支持平台。
+当前长期验证矩阵固定为 Windows MSYS2 UCRT64/UCRT32 Bash 与 Linux Ubuntu 22.04 Bash。`start.sh` 是便利编排入口，`install.sh`、`run.sh` 和 `uninstall.sh` 分别是安装、纯运行和卸载模块。PowerShell 仅属于 Windows 冷启动引导层，负责下载、安装和准备 UCRT 环境，不进入训练任务和 Tab 补全协议；CMD 不作为正式支持平台。
 
 PowerShell 引导完成后必须明确提示用户进入 UCRT64/UCRT32 Bash 执行 `start.sh`，也可以提供只负责打开对应 UCRT Bash 并转发到 `start.sh` 的双击快捷脚本。快捷脚本不得复制 Node.js 检测、依赖安装或训练服务启动逻辑。
 
@@ -26,10 +26,14 @@ flowchart LR
     PS["PowerShell<br/>仅安装 MSYS2"] --> UB["UCRT64/UCRT32 Bash"]
     UL["Ubuntu 22.04 Bash"] --> PE["platform_environment.sh"]
     UB --> PE
-    PE --> ST["start.sh"]
-    PE --> IE["install_environment.sh"]
-    ST --> APP["统一训练流程"]
-    IE --> APP
+    PE --> ST["start.sh<br/>编排"]
+    PE --> IN["install.sh<br/>安装"]
+    PE --> RN["run.sh<br/>纯运行"]
+    PE --> UN["uninstall.sh<br/>卸载"]
+    IN --> IE["install_environment.sh<br/>内部运行时安装器"]
+    ST --> IN
+    ST --> RN
+    RN --> APP["统一训练流程"]
 ```
 
 平台环境层统一提供工具根路径、本地运行时和缓存地址、Node.js 兼容线、下载源、架构、包管理器，以及下载、SHA-256 校验、解压和路径解析能力。业务脚本只消费这些能力，从而保持一套启动、升级、离线安装和补全流程。
@@ -200,25 +204,29 @@ config/knowledge_sources.local.json
 
 ### 1.5.1\_统一阶段
 
-MSYS2 UCRT64/UCRT32 与 Ubuntu 22.04 共用同一个入口和阶段：
+MSYS2 UCRT64/UCRT32 与 Ubuntu 22.04 共用同一组生命周期模块：
 
 ```mermaid
 flowchart TD
-    E["start.sh"] --> N["从统一环境层定位 Node.js 与 npm"]
+    E["start.sh"] --> R{"环境和依赖是否就绪"}
+    R -->|"否"| IN["install.sh --if-needed"]
+    IN --> N["从统一环境层定位 Node.js 与 npm"]
     N --> I{"Node.js 是否至少为 v18"}
     I -->|"否"| P["按就近镜像、官方源和版本顺序选择兼容版本"]
     I -->|"是"| D["检查 node_modules 与本机就绪标记"]
     P --> D
-    D --> C["读取 PRACTICE_SOURCE_CONFIG"]
+    D --> RN["run.sh"]
+    R -->|"是"| RN
+    RN --> C["读取 PRACTICE_SOURCE_CONFIG"]
     C --> V["启动 Vite 本地服务"]
     V --> B["Vite 监听成功后打开浏览器"]
 ```
 
-入口脚本不处理平台外壳差异，只消费统一环境层；训练流程和知识源语义共用 TypeScript、JSON Schema 与 Node.js 实现。
+`start.sh` 不实现安装和运行细节，只判断是否需要调用安装模块并转交运行参数。直接调用 `run.sh` 时环境缺失必须失败，不能形成第二条隐式安装路径。
 
 ### 1.5.2\_正式入口
 
-MSYS2 UCRT64/UCRT32 与 Ubuntu 22.04 的正式入口都是 `start.sh`。PowerShell 的 `bootstrap_windows.ps1` 只负责在 Windows 尚无 MSYS2 时完成冷启动，不是训练工具入口。
+MSYS2 UCRT64/UCRT32 与 Ubuntu 22.04 都可以使用 `start.sh` 完成首次安装与运行，也可以直接调用 `install.sh`、`run.sh` 或 `uninstall.sh`。PowerShell 的 `bootstrap_windows.ps1` 只负责在 Windows 尚无 MSYS2 时完成冷启动，不是训练工具运行入口。
 
 当前知识库根目录的 `practice.cmd` 和 `practice.sh` 只承担：
 
@@ -227,7 +235,7 @@ MSYS2 UCRT64/UCRT32 与 Ubuntu 22.04 的正式入口都是 `start.sh`。PowerShe
 
 除此之外不得加入依赖安装、题库加载或服务启动逻辑。
 
-`start.sh` 解释 `--upgrade`。该参数属于本机运行环境维护命令，负责重新选择 Node.js 运行时、刷新依赖和就绪标记；根快捷入口只能原样转发，不能实现另一套升级流程。运行环境升级与 Git 更新、题库更新和知识源配置更新相互独立。
+`start.sh --upgrade` 只把升级动作交给 `install.sh --upgrade`，成功后继续调用 `run.sh`。只希望安装或升级时应直接执行 `install.sh`；根快捷入口只能原样转发，不能实现另一套升级流程。运行环境升级与 Git 更新、题库更新和知识源配置更新相互独立。
 
 ### 1.5.3\_平台差异边界
 
@@ -252,8 +260,9 @@ MSYS2 UCRT64/UCRT32 与 Ubuntu 22.04 的正式入口都是 `start.sh`。PowerShe
 截至当前版本，已经完成：
 
 - 工具正式启动入口下沉到工具目录。
-- 工具自身只由 `start.sh` 提供帮助入口；外层知识库快捷脚本不进入工具命令模型。
-- Bash Tab 补全只面向工具正式入口 `start.sh`，由工具目录内的补全脚本维护。
+- 安装、运行和卸载分别收敛到 `install.sh`、`run.sh` 与 `uninstall.sh`；`start.sh` 只负责首次运行编排和命令路由。
+- `run.sh` 在环境缺失时拒绝隐式安装，避免运行路径改变系统状态。
+- Bash Tab 补全覆盖编排入口和三个生命周期模块，由工具目录内的补全脚本统一维护。
 - 根启动脚本精简为集成快捷入口。
 - 启动前检查 Node.js 18 最低兼容线；安装时按就近镜像、官方源和版本顺序逐级回退，Ubuntu 22.04 使用工具内隔离运行时。
 - 官方运行时归档保存在 `.local/downloads/node/v<版本>`，联网和离线安装共用同一份 SHA-256 校验流程，缓存不进入 Git。

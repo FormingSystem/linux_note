@@ -15,7 +15,7 @@ domains:
 
 ## 1.1\_先识别当前终端
 
-训练工具跨平台正式交互入口是工具目录中的 `start.sh`。当前知识库根目录的 `practice.cmd`、`practice.sh` 只是快捷转发。PowerShell 只用于 Windows 冷启动阶段下载、安装和准备 MSYS2 UCRT64/UCRT32，不直接运行训练任务或维护 Tab 补全；CMD 不作为正式使用终端。
+训练工具的便利编排入口是工具目录中的 `start.sh`，独立生命周期入口是 `install.sh`、`run.sh` 和 `uninstall.sh`。当前知识库根目录的 `practice.cmd`、`practice.sh` 只是快捷转发。PowerShell 只用于 Windows 冷启动阶段下载、安装和准备 MSYS2 UCRT64/UCRT32，不直接运行训练任务或维护 Tab 补全；CMD 不作为正式使用终端。
 
 在 Ubuntu 22.04、MSYS2 UCRT64 和 MSYS2 UCRT32 中都使用 `./start.sh --help` 查看工具介绍和全部启动选项。帮助参数在环境检查之前返回，不触发任何下载、安装或服务启动。
 
@@ -27,7 +27,7 @@ domains:
 
 安装结果保存在当前用户的 Bash completion 目录，不修改系统目录。默认目标是指向当前仓库 `scripts/completions/start.bash` 的符号链接；不支持符号链接时使用动态加载器。两种方式都不复制静态补全快照，因此当前目录完成 Git 更新后会自动使用新版规则。
 
-子脚本不能直接修改已经运行的父 Bash，因此首次安装所在的当前终端执行一次 `source <(./start.sh --completion bash)`。补全覆盖全部正式选项，并根据上下文提供 `--host`、`--port` 和 `--completion` 的候选值，不应把“某个前缀能扩展”为完成标准。
+子脚本不能直接修改已经运行的父 Bash，因此首次安装所在的当前终端执行一次 `source <(./start.sh --completion bash)`。补全覆盖 `start.sh`、`install.sh`、`run.sh` 和 `uninstall.sh`，并根据上下文提供安装模式、卸载范围、`--host`、`--port` 和 `--completion` 的候选值，不应把“某个前缀能扩展”为完成标准。
 
 安装器会幂等地向 `~/.bashrc` 写入一条加载用户 completion 文件的命令，因此后续新开的 Ubuntu 22.04 Bash 和 Windows MSYS2 UCRT64/UCRT32 Bash 都会自动加载，不需要每个终端重复执行 `source`，也不依赖 PowerShell 或 CMD 的补全机制。补全文件继续指向当前工具目录，Git 更新后规则同步生效。设置 `PRACTICE_AUTO_COMPLETION=0` 可以关闭正常启动时的自动安装。
 
@@ -36,6 +36,15 @@ domains:
 | `Lizha@host UCRT64 /f/.../practice_tool $` | Windows MSYS2/UCRT64 | `./start.sh` |
 | `Lizha@host UCRT32 /f/.../practice_tool $` | Windows MSYS2/UCRT32 | `./start.sh` |
 | `user@host:~/practice_tool$` | Ubuntu 22.04 Bash | `./start.sh` |
+
+需要严格区分生命周期动作时使用：
+
+```bash
+./install.sh              # 只安装，不启动
+./install.sh --upgrade    # 只升级，不启动
+./run.sh                  # 只运行，缺少依赖时退出
+./uninstall.sh --minimal  # 只卸载指定范围
+```
 
 Windows 尚未安装 MSYS2 时，在 PowerShell 中只执行冷启动引导：
 

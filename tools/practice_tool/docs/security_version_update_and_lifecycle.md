@@ -51,6 +51,8 @@ domains:
 ## 1.5\_命令入口
 
 ```bash
+./install.sh
+./run.sh
 ./uninstall.sh --minimal
 ./uninstall.sh --clean
 
@@ -58,3 +60,5 @@ domains:
 ./start.sh --uninstall minimal
 ./start.sh --uninstall clean
 ```
+
+安装、运行和卸载是互相独立的生命周期模块。`run.sh` 不得调用安装逻辑；`start.sh` 只在首次运行或环境缺失时使用 `install.sh --if-needed`，然后转交 `run.sh`。

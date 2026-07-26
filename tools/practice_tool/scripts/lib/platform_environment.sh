@@ -20,6 +20,7 @@ practice_environment_init() {
     PRACTICE_NODE_CACHE_ROOT="$PRACTICE_DIR/.local/downloads/node"
     PRACTICE_OFFLINE_NODE_TABLE="${PRACTICE_OFFLINE_NODE_TABLE:-$PRACTICE_DIR/config/offline_node_packages.local.tsv}"
     PRACTICE_SOFTWARE_REGISTRY="$PRACTICE_DIR/.local/software_registry.tsv"
+    PRACTICE_READY_FILE="$PRACTICE_DIR/.local/environment-ready-v3-node-compatible"
 
     case "${MSYSTEM:-}" in
         UCRT64)
@@ -69,8 +70,12 @@ practice_environment_init() {
     export PRACTICE_NODE_DIST_SOURCES PRACTICE_NPM_REGISTRIES
     export PRACTICE_RUNTIME_ROOT PRACTICE_LOCAL_NODE_ROOT PRACTICE_LOCAL_NODE_BIN
     export PRACTICE_NODE_CACHE_ROOT PRACTICE_OFFLINE_NODE_TABLE
-    export PRACTICE_SOFTWARE_REGISTRY
+    export PRACTICE_SOFTWARE_REGISTRY PRACTICE_READY_FILE
     export PRACTICE_PLATFORM_FAMILY PRACTICE_PLATFORM_ID PRACTICE_PACKAGE_MANAGER PRACTICE_NODE_ARCH
+}
+
+practice_dependencies_are_ready() {
+    [[ -f "$PRACTICE_READY_FILE" && -d "$PRACTICE_DIR/node_modules" ]]
 }
 
 practice_registry_init() {
