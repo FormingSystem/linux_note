@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://practice.local/schemas/release.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "product", "version", "channel", "repository_branch", "update_check_interval_minutes", "editable"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "product": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$" },
+    "channel": { "enum": ["development", "stable", "preview"] },
+    "repository_branch": { "type": "string", "minLength": 1 },
+    "update_check_interval_minutes": { "type": "integer", "minimum": 5, "maximum": 1440 },
+    "editable": { "const": false }
+  }
+}

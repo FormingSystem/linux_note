@@ -19,6 +19,7 @@ practice_environment_init() {
     PRACTICE_LOCAL_NODE_BIN="$PRACTICE_LOCAL_NODE_ROOT/bin"
     PRACTICE_NODE_CACHE_ROOT="$PRACTICE_DIR/.local/downloads/node"
     PRACTICE_OFFLINE_NODE_TABLE="${PRACTICE_OFFLINE_NODE_TABLE:-$PRACTICE_DIR/config/offline_node_packages.local.tsv}"
+    PRACTICE_SOFTWARE_REGISTRY="$PRACTICE_DIR/.local/software_registry.tsv"
 
     case "${MSYSTEM:-}" in
         UCRT64)
@@ -68,7 +69,70 @@ practice_environment_init() {
     export PRACTICE_NODE_DIST_SOURCES PRACTICE_NPM_REGISTRIES
     export PRACTICE_RUNTIME_ROOT PRACTICE_LOCAL_NODE_ROOT PRACTICE_LOCAL_NODE_BIN
     export PRACTICE_NODE_CACHE_ROOT PRACTICE_OFFLINE_NODE_TABLE
+    export PRACTICE_SOFTWARE_REGISTRY
     export PRACTICE_PLATFORM_FAMILY PRACTICE_PLATFORM_ID PRACTICE_PACKAGE_MANAGER PRACTICE_NODE_ARCH
+}
+
+practice_registry_init() {
+    mkdir -p "$(dirname "$PRACTICE_SOFTWARE_REGISTRY")"
+    if [[ ! -f "$PRACTICE_SOFTWARE_REGISTRY" ]]; then
+        printf '%s\n' \
+            $'recorded_at\tsoftware_id\tversion_before\tversion_after\tmanaged_path\townership\tcleanup_kind\tsource' \
+            > "$PRACTICE_SOFTWARE_REGISTRY"
+    fi
+}
+
+practice_registry_value() {
+    local value="${1:-}"
+    value="${value//$'\t'/ }"
+    value="${value//$'\r'/ }"
+    value="${value//$'\n'/ }"
+    printf '%s' "$value"
+}
+
+practice_registry_record() {
+    local software_id="$1"
+    local version_before="$2"
+    local version_after="$3"
+    local managed_path="$4"
+    local ownership="$5"
+    local cleanup_kind="$6"
+    local source="$7"
+
+    case "$ownership" in
+        tool-owned|external|external-updated) ;;
+        *) printf '[practice] Invalid registry ownership: %s.\n' "$ownership" >&2; return 2 ;;
+    esac
+    case "$cleanup_kind" in
+        local-runtime|download-cache|msys-package|msys-root|none) ;;
+        *) printf '[practice] Invalid registry cleanup kind: %s.\n' "$cleanup_kind" >&2; return 2 ;;
+    esac
+    if [[ "$ownership" != "tool-owned" && "$cleanup_kind" != "none" ]]; then
+        printf '%s\n' '[practice] External software cannot be registered for cleanup.' >&2
+        return 2
+    fi
+
+    practice_registry_init
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+        "$(practice_registry_value "$software_id")" \
+        "$(practice_registry_value "$version_before")" \
+        "$(practice_registry_value "$version_after")" \
+        "$(practice_registry_value "$managed_path")" \
+        "$ownership" "$cleanup_kind" \
+        "$(practice_registry_value "$source")" >> "$PRACTICE_SOFTWARE_REGISTRY"
+}
+
+practice_registry_latest_ownership() {
+    local software_id="$1"
+    [[ -f "$PRACTICE_SOFTWARE_REGISTRY" ]] || return 1
+    awk -F '\t' -v id="$software_id" '
+        NR > 1 && $2 == id { ownership = $6 }
+        END {
+            if (ownership == "") exit 1
+            print ownership
+        }
+    ' "$PRACTICE_SOFTWARE_REGISTRY"
 }
 
 practice_command_exists() {
@@ -171,8 +235,41 @@ practice_install_msys2_node() {
         printf '[practice] %s does not define MINGW_PACKAGE_PREFIX.\n' "$PRACTICE_PLATFORM_ID" >&2
         return 1
     fi
-    printf '[practice] 使用 MSYS2 pacman 安装 %s-nodejs（无需 sudo）……\n' "$MINGW_PACKAGE_PREFIX"
-    pacman -S --needed --noconfirm "${MINGW_PACKAGE_PREFIX}-nodejs"
+    local package="${MINGW_PACKAGE_PREFIX}-nodejs"
+    local version_before=""
+    local version_after=""
+    local ownership="tool-owned"
+    local cleanup_kind="msys-package"
+    if pacman -Q "$package" >/dev/null 2>&1; then
+        version_before="$(pacman -Q "$package" | awk '{print $2}')"
+        ownership="$(practice_registry_latest_ownership "$package" 2>/dev/null || printf 'external')"
+        if [[ "$ownership" != "tool-owned" ]]; then
+            cleanup_kind="none"
+        fi
+        printf '[practice] 检测到%s已有 %s %s。\n' \
+            "$([[ "$ownership" = "tool-owned" ]] && printf '工具安装的' || printf '外部')" \
+            "$package" "$version_before"
+        if [[ -t 0 && -t 1 ]]; then
+            printf '%s' '[practice] 是否允许更新该软件？外部软件更新后仍不会被干净卸载。[y/N] '
+            read -r answer
+            case "${answer,,}" in
+                y|yes)
+                    [[ "$ownership" = "external" ]] && ownership="external-updated"
+                    ;;
+                *)
+                    printf '%s\n' '[practice] 已保留现有版本。'
+                    return 0
+                    ;;
+            esac
+        else
+            printf '%s\n' '[practice] 非交互模式不会更新已有软件，继续使用现有版本。'
+            return 0
+        fi
+    fi
+    printf '[practice] 使用 MSYS2 pacman 安装或更新 %s（无需 sudo）……\n' "$package"
+    pacman -S --needed --noconfirm "$package"
     hash -r
+    version_after="$(pacman -Q "$package" | awk '{print $2}')"
+    practice_registry_record "$package" "$version_before" "$version_after" "$package" "$ownership" "$cleanup_kind" "msys2-pacman"
     practice_node_is_supported
 }

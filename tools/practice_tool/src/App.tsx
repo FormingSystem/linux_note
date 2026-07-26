@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import catalogData from "../banks/index.json";
 import runtimeConfig from "virtual:practice-runtime-config";
 import type {
@@ -58,8 +58,40 @@ function App() {
   const [ratings, setRatings] = useState<Record<string, Rating>>({});
   const [hintLevel, setHintLevel] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
+  const [updateBusy, setUpdateBusy] = useState(false);
+  const [updateActionError, setUpdateActionError] = useState("");
   const stageIndex = stages.indexOf(stage);
   const { unit, guided, models, cases } = content;
+
+  const refreshSystemInfo = async () => {
+    const response = await fetch("/__practice/system", { cache: "no-store" });
+    if (response.ok) setSystemInfo(await response.json() as SystemInfo);
+  };
+
+  const runUpdateAction = async (action: "check" | "apply") => {
+    setUpdateBusy(true);
+    setUpdateActionError("");
+    try {
+      const response = await fetch(`/__practice/update/${action}`, {
+        method: "POST",
+        headers: { "x-practice-token": runtimeConfig.system_api_token },
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "操作失败");
+      await refreshSystemInfo();
+    } catch (error) {
+      setUpdateActionError(error instanceof Error ? error.message : "操作失败");
+    } finally {
+      setUpdateBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    void refreshSystemInfo();
+    const timer = window.setInterval(() => void refreshSystemInfo(), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const setAnswer = (id: string, value: string) => setAnswers({ ...answers, [id]: value });
   const moveTo = (next: Stage) => {
@@ -98,6 +130,25 @@ function App() {
             本地训练 · {runtimeConfig.sources.length ? `${runtimeConfig.sources.length} 个知识源` : "未配置知识源"}
           </div>
       </header>
+      {systemInfo?.update.status === "available" && (
+        <div className="update-notice" role="status">
+          <span>发现 {systemInfo.update.behind_count} 个更新 · 当前版本 {systemInfo.release.version}</span>
+          <button disabled={updateBusy} onClick={() => void runUpdateAction("apply")}>
+            {updateBusy ? "更新中…" : "安全更新"}
+          </button>
+        </div>
+      )}
+      {systemInfo?.update.status === "updated" && (
+        <div className="update-notice" role="status">
+          <span>{systemInfo.update.message}</span>
+        </div>
+      )}
+      {updateActionError && (
+        <div className="update-notice update-error" role="status">
+          <span>更新操作未完成：{updateActionError}</span>
+          <button disabled={updateBusy} onClick={() => void runUpdateAction("check")}>重试</button>
+        </div>
+      )}
 
       <main>
         <aside className="rail" aria-label="训练阶段">
@@ -352,3 +403,13 @@ function Feedback({ title, good, warning, warningTitle = "常见失真" }: { tit
 }
 
 export default App;
+
+type SystemInfo = {
+  release: { version: string; channel: string; editable: false };
+  security: { profile: string; bind_host: string; editable: false };
+  update: {
+    status: "idle" | "checking" | "current" | "available" | "error" | "updated";
+    behind_count: number;
+    message: string;
+  };
+};

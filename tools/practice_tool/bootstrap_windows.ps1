@@ -5,9 +5,44 @@ param(
 $ErrorActionPreference = "Stop"
 $practiceDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $shellLauncher = Join-Path $InstallRoot "msys2_shell.cmd"
+$registryPath = Join-Path $practiceDir ".local\software_registry.tsv"
+
+function Add-PracticeRegistryRecord {
+    param(
+        [string]$SoftwareId,
+        [string]$VersionBefore,
+        [string]$VersionAfter,
+        [string]$ManagedPath,
+        [ValidateSet("tool-owned", "external", "external-updated")]
+        [string]$Ownership,
+        [ValidateSet("msys-root", "download-cache", "none")]
+        [string]$CleanupKind,
+        [string]$Source
+    )
+    if ($Ownership -ne "tool-owned" -and $CleanupKind -ne "none") {
+        throw "External software cannot be registered for cleanup."
+    }
+    $registryDir = Split-Path -Parent $registryPath
+    New-Item -ItemType Directory -Force -Path $registryDir | Out-Null
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    if (-not (Test-Path -LiteralPath $registryPath)) {
+        [IO.File]::WriteAllText(
+            $registryPath,
+            "recorded_at`tsoftware_id`tversion_before`tversion_after`tmanaged_path`townership`tcleanup_kind`tsource`n",
+            $utf8
+        )
+    }
+    $values = @(
+        [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+        $SoftwareId, $VersionBefore, $VersionAfter, $ManagedPath,
+        $Ownership, $CleanupKind, $Source
+    ) | ForEach-Object { ([string]$_) -replace "[`t`r`n]", " " }
+    [IO.File]::AppendAllText($registryPath, (($values -join "`t") + "`n"), $utf8)
+}
 
 if (Test-Path $shellLauncher) {
     Write-Host "[practice] MSYS2 is already installed: $InstallRoot"
+    Add-PracticeRegistryRecord "msys2-root" "" "" $InstallRoot "external" "none" "pre-existing"
 } else {
     $downloadDir = Join-Path $practiceDir ".local\downloads\msys2"
     New-Item -ItemType Directory -Force -Path $downloadDir | Out-Null
@@ -57,6 +92,8 @@ if (Test-Path $shellLauncher) {
     if ($process.ExitCode -ne 0 -or -not (Test-Path $shellLauncher)) {
         throw "MSYS2 installer failed with exit code $($process.ExitCode)."
     }
+    Add-PracticeRegistryRecord "msys2-installer-cache" "" "latest" $downloadDir "tool-owned" "download-cache" $installerPath
+    Add-PracticeRegistryRecord "msys2-root" "" "latest" $InstallRoot "tool-owned" "msys-root" $installerPath
 }
 
 Write-Host ""

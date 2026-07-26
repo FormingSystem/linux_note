@@ -28,6 +28,7 @@ practice - 本地知识训练工具
   --port <端口>              指定本地服务端口
   --completion bash          输出 Bash Tab 补全脚本
   --install-completion       安装当前用户的 Bash Tab 补全
+  --uninstall <范围>         执行 minimal 或 clean 卸载
 
 环境变量：
   PRACTICE_SOURCE_CONFIG     指定知识源配置文件
@@ -40,6 +41,7 @@ practice - 本地知识训练工具
   ./start.sh
   ./start.sh --upgrade
   ./start.sh --install-completion
+  ./start.sh --uninstall minimal
   PRACTICE_NO_OPEN=1 ./start.sh --port 5174
 
 更多说明：
@@ -113,6 +115,14 @@ fi
 if [[ "${1:-}" = "--install-completion" ]]; then
     install_bash_completion 1
     exit 0
+fi
+
+if [[ "${1:-}" = "--uninstall" ]]; then
+    case "${2:-}" in
+        minimal) exec bash "$practice_dir/uninstall.sh" --minimal ;;
+        clean) exec bash "$practice_dir/uninstall.sh" --clean ;;
+        *) printf '%s\n' '[practice] --uninstall 需要 minimal 或 clean。' >&2; exit 2 ;;
+    esac
 fi
 
 for argument in "$@"; do

@@ -91,11 +91,29 @@ activate_offline_archive() {
         return 1
     fi
 
+    local version_before=""
+    if [[ -x "$target_dir/bin/node" ]]; then
+        version_before="$("$target_dir/bin/node" --version 2>/dev/null || true)"
+    fi
     if [[ -e "$target_dir" ]]; then
         rm -rf "$target_dir"
     fi
     mv "$extracted_dir" "$target_dir"
-    printf '[practice] 已从缓存安装 %s。\n' "$("$target_dir/bin/node" --version)"
+    local version_after
+    version_after="$("$target_dir/bin/node" --version)"
+    practice_registry_record "nodejs-local-runtime" "$version_before" "$version_after" \
+        "$target_dir" "tool-owned" "local-runtime" "$archive_path"
+    case "$archive_path" in
+        "$cache_root"/*)
+            practice_registry_record "nodejs-download-cache" "" "$version_after" \
+                "$(dirname "$archive_path")" "tool-owned" "download-cache" "$archive_path"
+            ;;
+        *)
+            practice_registry_record "nodejs-offline-package" "" "$version_after" \
+                "$archive_path" "external" "none" "user-specified"
+            ;;
+    esac
+    printf '[practice] 已从缓存安装 %s。\n' "$version_after"
     return 0
 }
 
