@@ -21,6 +21,7 @@ practice_environment_init() {
     PRACTICE_OFFLINE_NODE_TABLE="${PRACTICE_OFFLINE_NODE_TABLE:-$PRACTICE_DIR/config/offline_node_packages.local.tsv}"
     PRACTICE_SOFTWARE_REGISTRY="$PRACTICE_DIR/.local/software_registry.tsv"
     PRACTICE_READY_FILE="$PRACTICE_DIR/.local/environment-ready-v3-node-compatible"
+    PRACTICE_DEPENDENCY_STAMP="$PRACTICE_DIR/.local/package-lock.sha256"
 
     case "${MSYSTEM:-}" in
         UCRT64)
@@ -70,12 +71,27 @@ practice_environment_init() {
     export PRACTICE_NODE_DIST_SOURCES PRACTICE_NPM_REGISTRIES
     export PRACTICE_RUNTIME_ROOT PRACTICE_LOCAL_NODE_ROOT PRACTICE_LOCAL_NODE_BIN
     export PRACTICE_NODE_CACHE_ROOT PRACTICE_OFFLINE_NODE_TABLE
-    export PRACTICE_SOFTWARE_REGISTRY PRACTICE_READY_FILE
+    export PRACTICE_SOFTWARE_REGISTRY PRACTICE_READY_FILE PRACTICE_DEPENDENCY_STAMP
     export PRACTICE_PLATFORM_FAMILY PRACTICE_PLATFORM_ID PRACTICE_PACKAGE_MANAGER PRACTICE_NODE_ARCH
 }
 
 practice_dependencies_are_ready() {
-    [[ -f "$PRACTICE_READY_FILE" && -d "$PRACTICE_DIR/node_modules" ]]
+    local expected_digest recorded_digest
+    [[ -f "$PRACTICE_READY_FILE" &&
+        -d "$PRACTICE_DIR/node_modules" &&
+        -f "$PRACTICE_DIR/package-lock.json" &&
+        -f "$PRACTICE_DEPENDENCY_STAMP" ]] || return 1
+    expected_digest="$(practice_package_lock_digest)" || return 1
+    recorded_digest="$(tr -d '\r\n' < "$PRACTICE_DEPENDENCY_STAMP")"
+    [[ -n "$expected_digest" && "$recorded_digest" = "$expected_digest" ]]
+}
+
+practice_package_lock_digest() {
+    node -e '
+        const { createHash } = require("node:crypto");
+        const { readFileSync } = require("node:fs");
+        process.stdout.write(createHash("sha256").update(readFileSync(process.argv[1])).digest("hex"));
+    ' "$PRACTICE_DIR/package-lock.json"
 }
 
 practice_registry_init() {

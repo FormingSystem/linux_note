@@ -57,7 +57,7 @@ all:
 
 比如你现在的环境里，内核源码路径是：
 
-```
+```text
 /home/lizhaojun/linux/nxp/kernel/linux-imx-6.1
 ```
 
@@ -158,7 +158,7 @@ insmod /tmp/mydriver.ko
 
 目录结构：
 
-```
+```text
 mydriver/
 ├── Makefile
 └── mydriver.c
@@ -196,7 +196,7 @@ clean:
 
 目录结构：
 
-```
+```text
 mydriver/
 ├── Makefile
 ├── mydriver_main.c
@@ -234,7 +234,7 @@ clean:
 
 目录结构：
 
-```
+```text
 drivers/
 ├── Makefile
 ├── foo.c
@@ -259,7 +259,7 @@ clean:
 
 这样一次编译，就会在目录下看到：
 
-```
+```text
 foo.ko
 bar.ko
 ```
@@ -299,13 +299,13 @@ bar.ko
 
 假设我们要把驱动放在源码树的：
 
-```
+```text
 drivers/mydevice/
 ```
 
 目录结构大概是这样：
 
-```
+```text
 linux-imx-6.1/
 ├── drivers/
 │   ├── mydevice/
@@ -413,7 +413,7 @@ Kbuild 会根据这个选项，自动控制 Makefile 里的 `obj-$(CONFIG_MYDEVI
 **现象：**
  在目标板上执行 `insmod mydriver.ko` 后，`dmesg` 打印：
 
-```
+```text
 mydriver: Unknown symbol xxx (err 0)
 ```
 
@@ -447,13 +447,13 @@ mydriver: Unknown symbol xxx (err 0)
 **现象：**
  `insmod` 时提示：
 
-```
+```text
 mydriver.ko: invalid module format
 ```
 
 `dmesg` 打印：
 
-```
+```text
 vermagic: 5.10.72 SMP mod_unload ARMv7 p2v8 …
 ```
 
@@ -488,7 +488,7 @@ vermagic: 5.10.72 SMP mod_unload ARMv7 p2v8 …
 **现象：**
  编译时出现：
 
-```
+```text
 fatal error: linux/module.h: No such file or directory
 ```
 
@@ -691,7 +691,7 @@ endif
 
 当驱动越来越多时，通常会写一个“顶层 Makefile”，所有子目录共享：
 
-```
+```text
 drivers/
 ├── Makefile
 ├── mydriver1/
@@ -820,7 +820,7 @@ make
 
 如果一切正常，会生成：
 
-```
+```text
 hello.ko
 ```
 
@@ -852,7 +852,7 @@ dmesg | tail -n 5
 
 你应该能看到：
 
-```
+```text
 [   45.123456] Hello, kernel! This is my first driver.
 ```
 
@@ -865,7 +865,7 @@ dmesg | tail -n 5
 
 你会看到：
 
-```
+```text
 [   60.987654] Goodbye, kernel! Driver removed.
 ```
 
@@ -1051,7 +1051,7 @@ make
 
 生成：
 
-```
+```text
 chardev.ko
 ```
 
@@ -1074,7 +1074,7 @@ scp chardev.ko root@192.168.31.50:/tmp/
 
    你会看到类似：
 
-   ```
+   ```yaml
    chardev: registered with major number 240
    chardev: create device file with: mknod /dev/chardev_example c 240 0
    ```
@@ -1103,7 +1103,7 @@ cat /dev/chardev_example
 
 你会在 `dmesg` 里看到读写日志：
 
-```
+```text
 chardev: written 13 bytes: hello driver
 chardev: read 13 bytes
 ```
@@ -1229,7 +1229,7 @@ modinfo chardev.ko
 
 输出示例：
 
-```
+```text
 filename:       /tmp/chardev.ko
 license:        GPL
 description:    A simple character device driver example
@@ -1313,7 +1313,7 @@ make reload
 
 目录结构：
 
-```
+```text
 drivers/
 ├── Makefile        ← 顶层 Makefile
 ├── led/
@@ -1367,7 +1367,7 @@ obj-m := lcd.o
 
 这样编译后，你会在 `drivers/` 目录下同时得到：
 
-```
+```text
 led.ko
 key.ko
 lcd.ko

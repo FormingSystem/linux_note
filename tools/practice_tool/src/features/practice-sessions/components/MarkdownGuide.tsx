@@ -6,7 +6,7 @@ import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
-import type { Heading } from "mdast";
+import type { Code, Heading, Root } from "mdast";
 import MermaidDiagram from "./MermaidDiagram";
 
 export type MarkdownHeading = {
@@ -47,6 +47,42 @@ export function markdownHeadings(markdown: string): MarkdownHeading[] {
   return headings;
 }
 
+function remarkInferCodeLanguage() {
+  return (tree: Root) => {
+    visit(tree, "code", (node: Code) => {
+      if (node.lang) return;
+      node.lang = inferCodeLanguage(node.value);
+    });
+  };
+}
+
+function inferCodeLanguage(source: string) {
+  const value = source.trim();
+  if (!value) return undefined;
+  if (/^[\[{][\s\S]*[\]}]$/.test(value)) {
+    try {
+      JSON.parse(value);
+      return "json";
+    } catch {
+      // Braces are also common in C/C++; continue with structural checks.
+    }
+  }
+
+  const lines = value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const cStatements = lines.filter((line) =>
+    /^(?:#\s*(?:include|define|if|ifdef|ifndef|endif)\b|(?:static\s+)?(?:const\s+)?(?:unsigned\s+|signed\s+)?(?:struct\s+\w+\s*\{?|void|char|short|int|long|bool|size_t|u(?:8|16|32|64)|s(?:8|16|32|64))\b|(?:return|if|else|for|while|switch|case|break|continue)\b|[A-Za-z_]\w*(?:->\w+|\.\w+|\[[^\]]+\])?\s*(?:=|\+\+|--|\+=|-=)|[A-Za-z_]\w*\s*\([^)]*\)\s*;|[{}];?)/
+      .test(line),
+  ).length;
+  const cPunctuation = /[;{}]|->|(?:^|\s)=(?:\s|$)|==|!=|&&|\|\||\b(?:NULL|GFP_\w+|container_of|sizeof)\b/.test(value);
+  if (cPunctuation && cStatements >= Math.max(1, Math.ceil(lines.length * 0.6))) return "c";
+
+  const shellStatements = lines.filter((line) =>
+    /^(?:#!\/.*\b(?:ba)?sh\b|(?:sudo\s+)?(?:cd|export|source|printf|echo|test|git|npm|node|make|cmake|apt|pacman|curl|wget)\b|[A-Za-z_]\w*=)/.test(line),
+  ).length;
+  if (shellStatements >= Math.max(1, Math.ceil(lines.length * 0.75))) return "bash";
+  return undefined;
+}
+
 export default function MarkdownGuide({ markdown, headings = markdownHeadings(markdown) }: { markdown: string; headings?: MarkdownHeading[] }) {
   const visibleMarkdown = markdown.replace(/^\uFEFF?---\s*\r?\n[\s\S]*?\r?\n---\s*(?:\r?\n|$)/, "");
   const headingIds = new Map(headings.map((entry) => [`${entry.level}:${entry.line}`, entry.id]));
@@ -59,7 +95,7 @@ export default function MarkdownGuide({ markdown, headings = markdownHeadings(ma
   return (
     <article className="learning-document">
       <Markdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkInferCodeLanguage]}
         rehypePlugins={[[rehypeHighlight, { detect: false, ignoreMissing: true, plainText: ["mermaid"] }]]}
         components={{
           h2: heading(2),

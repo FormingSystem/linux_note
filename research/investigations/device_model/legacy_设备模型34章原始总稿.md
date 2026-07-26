@@ -441,7 +441,7 @@ if (!kobj)
 
 sysfs 中出现：
 
-```
+```text
 /sys/kernel/my_kobj/
 ```
 
@@ -471,7 +471,7 @@ struct kobject *kobj = kobject_create_and_add("dev1", &my_kset->kobj);
 
 sysfs 目录结构：
 
-```
+```text
 /sys/kernel/my_devices/dev1/
 ```
 
@@ -735,7 +735,7 @@ bus_register(&platform_bus_type);
 
 生成路径：
 
-```
+```text
 /sys/bus/platform/
     ├── devices/
     ├── drivers/
@@ -840,7 +840,7 @@ static int platform_match(struct device *dev, struct device_driver *drv)
 
 匹配逻辑优先级：
 
-```
+```text
 设备树 → ACPI → 名称匹配
 ```
 
@@ -850,7 +850,7 @@ static int platform_match(struct device *dev, struct device_driver *drv)
 
 从用户空间看，bus_type 的存在使设备层次和驱动绑定可视化：
 
-```
+```text
 /sys/bus/platform/
 ├── devices/
 │   ├── 2000000.gpio/
@@ -1295,13 +1295,13 @@ module_platform_driver(led_driver);
 
 输出日志：
 
-```
+```text
 [   2.104] led_driver: LED device matched and probed!
 ```
 
 sysfs：
 
-```
+```text
 /sys/bus/platform/drivers/led_driver/
 └── 2000000.led
 ```
@@ -1578,7 +1578,7 @@ if (match)
 
 在用户空间，匹配成功的设备节点会反映到 sysfs：
 
-```
+```text
 /sys/bus/platform/drivers/led_driver/
 └── 2000000.led
 ```
@@ -1944,7 +1944,7 @@ static int led_probe(struct platform_device *pdev)
 
 在 sysfs 中，platform 框架对应的层次：
 
-```
+```text
 /sys/devices/platform/
 ├── led_driver.0/
 │   ├── driver -> ../../bus/platform/drivers/led_driver
@@ -2034,7 +2034,7 @@ Linux 内核设备模型中，`class` 是连接**内核设备体系**与**用户
 
 示例：
 
-```
+```text
 /sys/class/leds/
 ├── led0/
 │   ├── brightness
@@ -2043,7 +2043,7 @@ Linux 内核设备模型中，`class` 是连接**内核设备体系**与**用户
 
 对应的设备节点自动生成：
 
-```
+```text
 /dev/led0
 ```
 
@@ -2158,7 +2158,7 @@ struct class *class_create(struct module *owner, const char *name)
 
 执行后，会在 sysfs 中生成：
 
-```
+```text
 /sys/class/leds/
 ```
 
@@ -2194,7 +2194,7 @@ device_create(led_class, NULL, devt, NULL, "demo0");
 
 效果：
 
-```
+```text
 /sys/class/leds/demo0
 /dev/demo0
 ```
@@ -2296,7 +2296,7 @@ MODULE_LICENSE("GPL");
 
 **执行结果：**
 
-```
+```text
 /sys/class/demo/demo0/
 └── dev
 /dev/demo0
@@ -2474,7 +2474,7 @@ device_create_file(&pdev->dev, &dev_attr_status);
 
 文件将出现：
 
-```
+```text
 /sys/devices/platform/led_driver/status
 ```
 
@@ -2532,7 +2532,7 @@ static const struct sysfs_ops dev_sysfs_ops = {
 
 最终执行路径：
 
-```
+```text
 vfs_read() / vfs_write()
    ↓
 sysfs_file_ops
@@ -2622,7 +2622,7 @@ static int led_remove(struct platform_device *pdev)
 
 sysfs:
 
-```
+```text
 /sys/devices/platform/led_driver/status
 ```
 
@@ -3007,7 +3007,7 @@ driver core 的存在，使得：
 
 ### 10.2.2\_核心目录结构(Linux\_6.1+)
 
-```
+```text
 drivers/base/
 ├── core.c              # device/driver 注册核心逻辑
 ├── bus.c               # bus_type 管理
@@ -3114,7 +3114,7 @@ int bus_add_driver(struct device_driver *drv)
 
 会调用 `bus_for_each_dev()` 遍历所有设备，并执行匹配流程：
 
-```
+```text
 bus_for_each_dev()
     → __driver_attach()
         → driver_match_device()
@@ -3163,7 +3163,7 @@ if (ret == -EPROBE_DEFER) {
 
 从用户空间角度看，driver core 的行为体现在 sysfs 层：
 
-```
+```text
 /sys/bus/platform/drivers/
 │
 ├── led_driver/
@@ -3418,7 +3418,7 @@ echo mem > /sys/power/state
 
 内核将触发：
 
-```
+```text
 device_suspend()
    → bus->pm->suspend()
    → driver->pm->suspend()
@@ -3762,7 +3762,7 @@ sysfs_create_file(demo_kobj, &value_attr.attr);
 
 生成：
 
-```
+```text
 /sys/kernel/demo/value
 ```
 
@@ -3785,7 +3785,7 @@ kobject_init_and_add(obj, &demo_ktype, &demo_kset->kobj, "obj0");
 
 结果：
 
-```
+```text
 /sys/kernel/demo_set/
 └── obj0/
 ```
@@ -3901,7 +3901,7 @@ kobject_put(demo_kobj);
 sysfs 是一种专门为内核对象设计的虚拟文件系统，
  其根目录结构如下：
 
-```
+```text
 /sys/
 ├── bus/
 │   ├── platform/
@@ -4087,7 +4087,7 @@ int kobject_uevent(struct kobject *kobj, enum kobject_action action);
 
 其中 `action` 可为：
 
-```
+```text
 KOBJ_ADD, KOBJ_REMOVE, KOBJ_CHANGE, KOBJ_MOVE,
 KOBJ_ONLINE, KOBJ_OFFLINE, KOBJ_BIND, KOBJ_UNBIND
 ```
@@ -4130,7 +4130,7 @@ kobject_uevent(&pdev->dev.kobj, KOBJ_CHANGE);
 
 这将触发：
 
-```
+```bash
 ACTION=change
 DEVPATH=/devices/platform/led_driver.0
 SUBSYSTEM=platform
@@ -4154,7 +4154,7 @@ kobject_uevent(&dev->kobj, KOBJ_ADD);
 
 于是用户空间 `udevd` 收到事件：
 
-```
+```bash
 ACTION=add
 DEVPATH=/devices/platform/led_driver.0
 SUBSYSTEM=platform
@@ -4163,7 +4163,7 @@ MODALIAS=of:NnxpCimx6ull-led
 
 udev 根据 MODALIAS 触发驱动模块加载：
 
-```
+```text
 /sbin/modprobe of:NnxpCimx6ull-led
 ```
 
@@ -4199,7 +4199,7 @@ udevadm monitor --kernel --property
 
 输出：
 
-```
+```bash
 KERNEL[1245.123456] add /devices/platform/led_driver.0 (platform)
 ACTION=add
 DEVPATH=/devices/platform/led_driver.0
@@ -4253,7 +4253,7 @@ MODALIAS=of:NnxpCimx6ull-led
 
 udev 会自动调用：
 
-```
+```text
 /sbin/modprobe of:NnxpCimx6ull-led
 ```
 
@@ -4477,7 +4477,7 @@ device_add(&child_dev);
 
 sysfs 结构：
 
-```
+```text
 /sys/devices/parent_dev/
 └── child_dev/
 ```
@@ -4502,7 +4502,7 @@ kset_create_and_add("platform", NULL, &bus_kset->kobj);
 
 最终 sysfs 中出现：
 
-```
+```text
 /sys/bus/platform/
 ├── devices/
 ├── drivers/
@@ -4524,7 +4524,7 @@ device_create(led_class, NULL, devt, NULL, "led0");
 
 内核自动创建：
 
-```
+```text
 /sys/class/leds/led0 → /sys/devices/platform/led_driver.0
 ```
 
@@ -4547,7 +4547,7 @@ int subsys_system_register(struct subsystem *subsys,
 
 从而在 sysfs 创建顶级目录：
 
-```
+```text
 /sys/class/
 /sys/devices/
 /sys/bus/
@@ -4900,7 +4900,7 @@ module_platform_driver(led_driver);
 
 加载结果：
 
-```
+```text
 [  1.234567] led_driver: probe() for nxp,imx6ull-led
 /sys/devices/platform/led_driver.0
 /sys/class/leds/led0
@@ -5518,7 +5518,7 @@ Linux 启动时，内核会解析设备树（Device Tree Blob, `.dtb`），
 
 这些对象最终出现在：
 
-```
+```text
 /sys/devices/platform/
 ```
 
@@ -5737,7 +5737,7 @@ leds {
 
 内核注册后 sysfs 结构：
 
-```
+```text
 /sys/devices/platform/
 ├── leds/
 │   └── led@0/
@@ -5777,7 +5777,7 @@ struct device {
 
 示例：
 
-```
+```text
 /sys/devices/platform/led@0/of_node
     -> /sys/firmware/devicetree/base/leds/led@0
 ```
@@ -5810,7 +5810,7 @@ int of_alias_get_id(struct device_node *np, const char *stem)
 
 它为节点分配 ID，例如：
 
-```
+```text
 /sys/devices/platform/led_driver.0/
 ```
 
@@ -5860,7 +5860,7 @@ int of_alias_get_id(struct device_node *np, const char *stem)
  如果系统中存在设备（`platform_device`），
  driver core 会自动执行如下匹配与绑定序列：
 
-```
+```text
 driver_attach()
     → __driver_attach()
         → driver_match_device()
@@ -5973,7 +5973,7 @@ int device_attach(struct device *dev)
 
 对于 platform 总线，这会再次进入：
 
-```
+```text
 __device_attach_driver()
     → driver_match_device()
     → driver_probe_device()
@@ -6064,7 +6064,7 @@ int device_bind_driver(struct device *dev)
 
 结果：
 
-```
+```text
 /sys/bus/platform/devices/led_driver.0/driver -> ../../drivers/led_driver
 /sys/bus/platform/drivers/led_driver/led_driver.0 -> ../../devices/platform/led_driver.0
 ```
@@ -6325,7 +6325,7 @@ void put_device(struct device *dev)
 `device_release()` 是驱动层必须定义的回调函数，用于释放 `struct device` 占用的资源。
  如果驱动未定义该函数，内核会在注销时报错：
 
-```
+```text
 Device 'xxx' does not have a release() function, it is broken and must be fixed!
 ```
 
@@ -6412,7 +6412,7 @@ sequenceDiagram
 
 错误日志：
 
-```
+```text
 Device 'led0' does not have a release() function, it is broken and must be fixed!
 ```
 
@@ -6439,7 +6439,7 @@ pdev->dev.release = led_release;
 
 症状：
 
-```
+```text
 kernel BUG at lib/refcount.c:28!
 ```
 
@@ -7054,7 +7054,7 @@ static int usb_probe(struct platform_device *pdev)
 
 挂载关系：
 
-```
+```text
 /sys/devices/platform/pd_usb/
     └── consumers -> /sys/devices/platform/usb@02184000
 ```
@@ -7135,7 +7135,7 @@ static int usb_probe(struct platform_device *pdev)
 
 两者共同决定 `/sys` 的顶层组织结构：
 
-```
+```text
 /sys/bus/platform/
 /sys/bus/i2c/
 /sys/class/net/
@@ -7199,7 +7199,7 @@ int bus_register(struct bus_type *bus)
 
 注册结果：
 
-```
+```text
 /sys/bus/<bus_name>/
 ├── devices/
 ├── drivers/
@@ -7244,13 +7244,13 @@ int class_register(struct class *cls)
 
 注册结果：
 
-```
+```text
 /sys/class/<class_name>/
 ```
 
 当调用 `device_create(cls, ...)` 时，自动生成：
 
-```
+```text
 /sys/class/<class_name>/<device_name>/
 ```
 
@@ -7301,7 +7301,7 @@ struct kset *kset_create_and_add(const char *name,
 
 系统默认注册的顶层 kset 有：
 
-```
+```text
 /sys/bus/
 /sys/class/
 /sys/devices/
@@ -7367,7 +7367,7 @@ struct device *device_create(struct class *cls,
 
 结果：
 
-```
+```text
 /sys/class/leds/led0/
 └── dev -> ../devices/platform/led_driver.0
 ```
@@ -7386,7 +7386,7 @@ subsys_initcall(platform_bus_init);
 
 自动创建：
 
-```
+```text
 /sys/bus/platform/
 ```
 
@@ -7401,7 +7401,7 @@ module_init(class_register(&led_class));
 
 自动创建：
 
-```
+```text
 /sys/class/leds/
 ```
 
@@ -7413,7 +7413,7 @@ device_create(&led_class, NULL, MKDEV(240, 0), NULL, "led0");
 
 生成节点：
 
-```
+```text
 /sys/class/leds/led0/
 → /dev/led0
 ```
@@ -7556,7 +7556,7 @@ platform_driver_register(&led_driver);
 
 内部会设置：
 
-```
+```text
 drv->driver.owner = THIS_MODULE;
 ```
 
@@ -7826,7 +7826,7 @@ int kobject_uevent(struct kobject *kobj, enum kobject_action action)
 
 示例日志：
 
-```
+```text
 udevd[123]: add /devices/platform/led_driver.0 (platform)
 udevd[123]: creating device node '/dev/led0'
 ```
@@ -7876,14 +7876,14 @@ sequenceDiagram
 
 配置项：
 
-```
+```bash
 CONFIG_DEVTMPFS=y
 CONFIG_DEVTMPFS_MOUNT=y
 ```
 
 挂载位置：
 
-```
+```text
 /dev
 ```
 
@@ -8002,7 +8002,7 @@ device_create(&led_class, NULL, devt, NULL, "led0");
 
 即可同时得到：
 
-```
+```text
 /sys/class/leds/led0/
 └── dev -> ../../devices/platform/led_driver.0
 /dev/led0
@@ -8180,7 +8180,7 @@ device_register(&dev);
 
 等价于：
 
-```
+```text
 /sys/class/leds/led0/
 ├── led_state
 ├── brightness
@@ -8214,7 +8214,7 @@ echo 0 > /sys/class/leds/led0/led_state
 
 驱动端日志：
 
-```
+```text
 led_driver: led_state_store() called, new value = 0
 ```
 
@@ -8519,7 +8519,7 @@ int device_create_file(struct device *dev,
 
 → 实际调用链：
 
-```
+```text
 device_create_file()
   ↓
 sysfs_create_file()
@@ -8706,7 +8706,7 @@ int class_create_file(struct class *class, const struct class_attribute *attr)
 
 创建路径：
 
-```
+```text
 /sys/class/<class_name>/<attr_name>
 ```
 
@@ -8721,7 +8721,7 @@ int driver_create_file(struct device_driver *drv, const struct driver_attribute 
 
 创建路径：
 
-```
+```text
 /sys/bus/<bus_name>/drivers/<driver_name>/<attr_name>
 ```
 
@@ -8786,13 +8786,13 @@ static int __init led_class_init(void)
 
 生成路径：
 
-```
+```text
 /sys/class/leds/info
 ```
 
 访问效果：
 
-```
+```text
 # cat /sys/class/leds/info
 LED class: leds
 ```
@@ -8820,7 +8820,7 @@ static int __init led_driver_init(void)
 
 生成路径：
 
-```
+```text
 /sys/bus/platform/drivers/led_driver/debug
 ```
 
@@ -8930,13 +8930,13 @@ flowchart TD
 
 这种属性文件通常出现在路径：
 
-```
+```text
 /sys/bus/<bus_name>/
 ```
 
 例如：
 
-```
+```text
 /sys/bus/platform/
 ├── devices/
 ├── drivers/
@@ -9074,7 +9074,7 @@ MODULE_LICENSE("GPL");
 
 加载模块后，你将看到：
 
-```
+```text
 /sys/bus/platform/version
 ```
 
@@ -9211,7 +9211,7 @@ flowchart TD
 
 以 platform 总线为例，加载系统后：
 
-```
+```text
 /sys/bus/platform/
 ├── devices/
 │   ├── soc
@@ -9372,13 +9372,13 @@ led@3 {
 
 根据设备的 `vendor_id` 与 `product_id`：
 
-```
+```c
 modalias = "usb:v<VID>p<PID>"
 ```
 
 例如：
 
-```
+```text
 usb:v1D6Bp0002
 ```
 
@@ -9388,7 +9388,7 @@ usb:v1D6Bp0002
 
 来自 PCI 设备 ID：
 
-```
+```c
 modalias = "pci:v00008086d000024F3"
 ```
 
@@ -9492,13 +9492,13 @@ MODULE_DEVICE_TABLE(of, led_of_match);
 
 编译后，内核构建工具会生成 `modules.alias` 中的条目：
 
-```
+```text
 alias of:N*T*Cnxp,imx6ull-led* led_driver
 ```
 
 这样，当内核发出：
 
-```
+```bash
 MODALIAS=of:N*T*Cnxp,imx6ull-led*
 ```
 
@@ -9816,7 +9816,7 @@ void put_device(struct device *dev)
 
 若计数归零，则触发：
 
-```
+```text
 kobject_cleanup()
   ↓
 dev->release(dev)
@@ -9830,7 +9830,7 @@ dev->release = led_dev_release;
 
 否则内核会报：
 
-```
+```text
 Device 'led_demo' does not have a release() function, it is broken and must be fixed.
 ```
 
@@ -9923,7 +9923,7 @@ led@0 {
 但在多功能设备（如 PMIC 或摄像头控制器）中，
  一个硬件块包含多个功能子模块：
 
-```
+```text
 PMIC
 ├── Regulator
 ├── GPIO
@@ -9994,7 +9994,7 @@ static int pmic_remove(struct platform_device *pdev)
 
 注册后 `/sys/devices/platform/pmic/` 下会自动生成：
 
-```
+```text
 pmic-gpio/
 pmic-regulator/
 pmic-rtc/

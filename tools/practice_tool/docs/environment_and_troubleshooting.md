@@ -392,8 +392,21 @@ git -c http.proxy=socks5h://192.168.31.197:10808 \
 
 ```text
 tools/practice_tool/.local/environment-ready-v3-node-compatible
+tools/practice_tool/.local/package-lock.sha256
 tools/practice_tool/node_modules/
 tools/practice_tool/.local/runtime/
 ```
 
 然后重新运行工具目录的 `start.sh`。不要把 `.local`、`node_modules` 或 `dist` 提交到 Git。
+## 1.10\_Linux\_启动后提示无法解析前端依赖
+
+若 Vite 能够启动，但连续报告无法解析 `react-router-dom`、`react-markdown`、`mermaid` 等导入，说明 `node_modules` 来自旧版本，不能据此判断为 Firefox 兼容问题。
+
+`start.sh` 会比较 `package-lock.json` 与 `.local/package-lock.sha256`。锁文件变化、指纹缺失或依赖目录不存在时，安装模块会先刷新项目依赖，再启动浏览器。`run.sh` 不隐式安装；直接运行时若依赖指纹不匹配，会提示先执行 `./install.sh`。
+
+已有异常环境可以执行：
+
+```bash
+./start.sh --install
+./start.sh
+```

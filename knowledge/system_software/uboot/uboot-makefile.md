@@ -1355,7 +1355,7 @@ U-Boot 的 SPL 可以有两种构建方式：
 
 - 想验证 SPL 使用哪种方式，可以直接查看 `.config` 文件：
 
-  ```
+  ```text
   grep CONFIG_SPL_OF_CONTROL .config
   ```
 
@@ -1722,7 +1722,7 @@ libs-y := $(patsubst %/, %/built-in.o, $(libs-y))
 
 - 查看 `.config`：
 
-  ```
+  ```text
   grep "CONFIG_SPL_START_S_PATH" .config
   ```
 
@@ -1730,7 +1730,7 @@ libs-y := $(patsubst %/, %/built-in.o, $(libs-y))
 
 - 查看编译命令：
 
-  ```
+  ```bash
   make V=1
   ```
 
@@ -2103,7 +2103,7 @@ u-boot-main := $(libs-y)
 
 嵌入式系统启动的基本流程是这样的：
 
-```text
+```c
 RomBoot --> SPL --> u-boot --> Linux kernel --> file system --> start application
 ```
 
@@ -6084,7 +6084,7 @@ SPL 虽然精简，但必须具备最基本的驱动模型 (Driver Model) 功能
 
 - DDR 初始化完成后，U-Boot/SPL 会报告：
 
-  ```
+  ```text
   DRAM bank 0: start = 0x00000000, size = ...
   ```
 
@@ -6191,7 +6191,7 @@ SPL 虽然精简，但必须具备最基本的驱动模型 (Driver Model) 功能
 
 - SPL 初始化 DDR 之后，打印出来的 DRAM bank 仍是：
 
-  ```
+  ```text
   DRAM bank0: start = 0x00000000
   ```
 
@@ -6382,7 +6382,7 @@ U-Boot 会（可选地）生成 3 类镜像，每一类在**单独的一次编�
 
 - **示例**（概念示例，实际请看你的树）：
 
-  ```
+  ```text
   # common/Makefile
   obj-y                   += board_f.o board_r.o main.o
   obj-$(CONFIG_SPL_BUILD) += spl/        # ← 只在 SPL/TPL pass 编进来
@@ -6392,13 +6392,13 @@ U-Boot 会（可选地）生成 3 类镜像，每一类在**单独的一次编�
 - **驱动精简**：
    驱动目录普遍有：
 
-  ```
+  ```text
   obj-$(CONFIG_SPL_BUILD) += xyz_spl.o   # 仅给SPL的轻量实现
   ```
 
   或在同一个 `.c` 里用：
 
-  ```
+  ```text
   #ifdef CONFIG_SPL_BUILD
   /* 精简版 */
   #else
@@ -6438,7 +6438,7 @@ U-Boot 会（可选地）生成 3 类镜像，每一类在**单独的一次编�
 
 2. **全局搜索**（建议用 ripgrep）：
 
-   ```
+   ```text
    rg -n "^\s*void\s+board_init_f\s*\(" -S
    rg -n "board_init_r\s*\(" -S
    rg -n "CONFIG_SPL_BUILD|CONFIG_TPL_BUILD" -S
@@ -6446,7 +6446,7 @@ U-Boot 会（可选地）生成 3 类镜像，每一类在**单独的一次编�
 
 3. **看 Makefile 分流**：
 
-   ```
+   ```text
    rg -n "obj-.\(CONFIG_SPL_BUILD|CONFIG_TPL_BUILD\)" -- common drivers arch
    ```
 
@@ -7404,7 +7404,7 @@ int cli_simple_run_command(const char *cmd, int flag)
 
 run_command_list，从字面意思就知道，它是用于运行多条命令。多条命令之间用“; ”分割。例如定义命令 ：
 
-```text
+```bash
 bootcmd=cmd1; cmd2; cmd3;
 ```
 
@@ -7427,19 +7427,19 @@ do_run 是 run 命令的实现函数, 当 u-boot 等待用户输入命令时，�
 
 cli_simple_process_macros：替换命令中的宏。这里表明我们可以在命令中使用一些宏。例如用一 个宏。
 
-```text
+```bash
 ALL_CMD=cmd2; cmd3; cmd4;
 ```
 
 代表一个命令集合，然后编写命令
 
-```text
+```bash
 bootcmd=cmd1;ALL_CMD;
 ```
 
 那么宏替换完毕之后，
 
-```text
+```bash
 bootcmd=cmd1;cmd2;cmd3;cmd4
 ```
 

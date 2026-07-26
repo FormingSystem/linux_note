@@ -951,7 +951,7 @@ release 的本质是：
 
 假设对象创建后，初始引用属于创建者：
 
-```text
+```c
 refcount = 1
 owner = creator
 ```
@@ -1128,7 +1128,7 @@ kref_init(&req->ref);
 
 这时引用计数是：
 
-```text
+```c
 ref = 1
 ```
 

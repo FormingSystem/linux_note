@@ -342,7 +342,7 @@ void my_refobj_reset(struct my_refobj *refobj)
 
 如果对象当前有多个持有者：
 
-```text
+```c
 refcount = 3
 ```
 

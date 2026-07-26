@@ -21,7 +21,7 @@ Armv8-A 和 Armv9-A 是 A-profile 体系结构版本，定义指令集、异常�
 
 因此，下面的等式并不成立：
 
-```text
+```c
 Armv8 = MESI
 Armv9 = MOESI
 ```

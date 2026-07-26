@@ -33,7 +33,7 @@ echo 7 7 1 7 | sudo tee /proc/sys/kernel/printk
 
 ## 1.2\_简化的调用链
 
-```
+```text
 你的代码：printk()/pr_info()/dev_err()
         ↓
 vprintk() / log_store()：拼接级别、时间戳、CPU/线程等元信息
@@ -123,7 +123,7 @@ MODULE_LICENSE("GPL");
 
 在 `<linux/printk.h>` 里，`pr_info(x)` 展开为：
 
-```
+```text
 printk(KERN_INFO pr_fmt(x))
 ```
 
@@ -258,7 +258,7 @@ MODULE_LICENSE("GPL");
 
 **你会看到**（示例前缀，依平台而异）：
 
-```
+```text
 loglab: init
 loglab 0:0: device online
 loglab 0:0: temperature high (demo)
@@ -338,7 +338,7 @@ loglab: exit
 
 **基本语法**（一条规则一行）：
 
-```
+```text
 # 语法
 <selector> <flags>
 

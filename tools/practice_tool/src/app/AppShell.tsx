@@ -24,6 +24,9 @@ export default function AppShell() {
   const [systemInfo, setSystemInfo] = useState<SystemInfo>();
   const [updateBusy, setUpdateBusy] = useState(false);
   const [updateError, setUpdateError] = useState("");
+  const [hasThemeOverride, setHasThemeOverride] = useState(
+    () => localStorage.getItem("loop-color-theme") === "light" || localStorage.getItem("loop-color-theme") === "dark",
+  );
   const [theme, setTheme] = useState<ColorTheme>(() => {
     const stored = localStorage.getItem("loop-color-theme");
     if (stored === "light" || stored === "dark") return stored;
@@ -36,9 +39,16 @@ export default function AppShell() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
-    localStorage.setItem("loop-color-theme", theme);
+    if (hasThemeOverride) localStorage.setItem("loop-color-theme", theme);
     window.dispatchEvent(new CustomEvent("loop-theme-change", { detail: theme }));
-  }, [theme]);
+  }, [hasThemeOverride, theme]);
+  useEffect(() => {
+    if (hasThemeOverride) return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const followSystemTheme = (event: MediaQueryListEvent) => setTheme(event.matches ? "dark" : "light");
+    media.addEventListener("change", followSystemTheme);
+    return () => media.removeEventListener("change", followSystemTheme);
+  }, [hasThemeOverride]);
   useEffect(() => {
     void refreshSystemInfo();
     const timer = window.setInterval(() => void refreshSystemInfo(), 60_000);
@@ -78,7 +88,10 @@ export default function AppShell() {
         </nav>
         <div className="topbar-actions">
           <div className="session-meta"><span className="status-dot" />本地训练 · {runtimeConfig.sources.length} 个知识源</div>
-          <button className="theme-toggle" onClick={() => setTheme((value) => value === "light" ? "dark" : "light")} aria-label={`切换到${theme === "light" ? "夜晚" : "白天"}模式`} title={`切换到${theme === "light" ? "夜晚" : "白天"}模式`}>
+          <button className="theme-toggle" onClick={() => {
+            setHasThemeOverride(true);
+            setTheme((value) => value === "light" ? "dark" : "light");
+          }} aria-label={`切换到${theme === "light" ? "夜晚" : "白天"}模式`} title={`切换到${theme === "light" ? "夜晚" : "白天"}模式`}>
             <span aria-hidden="true">{theme === "light" ? "☾" : "☀"}</span>
             {theme === "light" ? "夜晚" : "白天"}
           </button>

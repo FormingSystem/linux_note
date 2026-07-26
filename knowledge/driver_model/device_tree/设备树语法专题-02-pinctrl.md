@@ -674,7 +674,7 @@ MX6UL_PAD_UART1_TX_DATA__UART1_DCE_TX
 
 - 内核打印：
 
-  ```
+  ```yaml
   pinctrl-imx: failed to apply settings: function not specified
   ```
 
@@ -721,7 +721,7 @@ UART1_RX(GPIO1_IO17)
 
 - 出现错误：
 
-  ```
+  ```text
   pinctrl-imx: unknown group "uart1_grp"
   ```
 
@@ -819,7 +819,7 @@ cat /sys/kernel/debug/pinctrl/*/pinmux-pins
 
 输出示例：
 
-```
+```text
 function uart1 group uart1_grp: pins 16 17
 pin 16 (UART1_TX) set to uart1
 pin 17 (UART1_RX) set to uart1
@@ -1293,7 +1293,7 @@ struct pinctrl_state {
 
 - 内核报：
 
-  ```
+  ```text
   pinctrl core: no maps for state "default"
   ```
 
@@ -1627,7 +1627,7 @@ gpioinfo
 
 输出示例：
 
-```
+```text
 gpiochip0 - 32 lines:
         line  0:  "LED0"      "sysfs"  output  active-high
         line  1:  "LED1"      "sysfs"  output  active-high
@@ -2334,7 +2334,7 @@ flowchart TD
 
 3. 报错信息高度抽象，例如：
 
-   ```
+   ```text
    pinctrl-imx: invalid function
    pinctrl core: failed to apply settings
    ```
@@ -2385,7 +2385,7 @@ cat /sys/kernel/debug/pinctrl/*/info
 
 输出：
 
-```
+```text
 driver name: pinctrl-imx
 owner: module
 pin base: 0
@@ -2400,7 +2400,7 @@ cat /sys/kernel/debug/pinctrl/*/pins
 
 输出：
 
-```
+```text
 pin 16 (UART1_TX) 0x020E0068
 pin 17 (UART1_RX) 0x020E006C
 ```
@@ -2413,7 +2413,7 @@ cat /sys/kernel/debug/pinctrl/*/pinmux-pins
 
 输出：
 
-```
+```text
 pin 16 (UART1_TX) function uart1 group uart1_grp
 ```
 
@@ -2425,7 +2425,7 @@ cat /sys/kernel/debug/pinctrl/*/pinconf-pins
 
 输出：
 
-```
+```text
 pin 16 (UART1_TX) bias-pull-up drive-strength=8 slew-rate=1
 ```
 
@@ -2441,7 +2441,7 @@ cat /sys/kernel/debug/pinctrl/*/states
 
 示例输出：
 
-```
+```text
 default
 sleep
 ```
@@ -2502,7 +2502,7 @@ devmem 0x020E02F4
 
 **现象：**
 
-```
+```text
 pinctrl-imx: invalid function uart3
 ```
 
@@ -2523,7 +2523,7 @@ pinctrl-imx: invalid function uart3
 
 **现象：**
 
-```
+```text
 pinctrl core: GPIO ranges missing for gpio@0209c000
 ```
 
@@ -2542,7 +2542,7 @@ gpio-ranges = <&pinctrl 0 0 32>;
 
 **现象：**
 
-```
+```text
 pinctrl core: failed to apply settings for state 'default'
 ```
 
@@ -2582,7 +2582,7 @@ echo "file drivers/pinctrl/* +p" > /sys/kernel/debug/dynamic_debug/control
 
 输出示例：
 
-```
+```text
 pinctrl core: applied pinctrl state default
 pinctrl-imx: set pin 16 mux=UART1_TX conf=0x1b0b1
 ```
@@ -3266,7 +3266,7 @@ cat /sys/kernel/debug/pinctrl/*/pinconf-pins | grep GPIO1_IO03
 4️⃣ **动态触发**
  手动短接引脚，观察 dmesg：
 
-```
+```text
 [  2.101] Button pressed!
 ```
 
@@ -3512,7 +3512,7 @@ gpio_direction_output(3, 1);
 
 内核日志：
 
-```
+```text
 pinctrl-imx: pinmux_set_gpio 3 -> GPIO1_IO03 (mux=GPIO mode)
 ```
 
@@ -3542,7 +3542,7 @@ cat /sys/kernel/debug/pinctrl/*/gpio-ranges
 
 输出示例：
 
-```
+```yaml
 gpio-range: gpio1 -> pinctrl@020e0000 base 0 pin_base 0 npins 32
 ```
 
@@ -3845,7 +3845,7 @@ cat /sys/kernel/debug/gpio
 
 示例输出：
 
-```
+```text
 gpiochip0: GPIOs 0-31, parent: platform/gpio@0209c000
  gpio-3   (led               ) out hi
 ```
@@ -3858,7 +3858,7 @@ cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep 3
 
 输出：
 
-```
+```text
 pin 3 (GPIO1_IO03) function gpio group gpio1_3_grp
 ```
 
@@ -3871,7 +3871,7 @@ cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep 3
 
 输出：
 
-```
+```text
 pin 3 (GPIO1_IO03) function uart1-tx
 ```
 
@@ -3896,7 +3896,7 @@ pin 3 (GPIO1_IO03) function uart1-tx
 
 **日志：**
 
-```
+```text
 pinctrl core: pin 16 already requested
 ```
 
@@ -4146,7 +4146,7 @@ static int led_probe(struct platform_device *pdev)
 
 → 当执行 `gpio_request()` 时，自动触发：
 
-```
+```text
 gpio_request() → pinctrl_gpio_request() → pinmux_request_gpio()
 ```
 

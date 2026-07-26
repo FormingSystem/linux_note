@@ -2663,7 +2663,7 @@ kernel中重要的文件夹或文件的含义如下所示：
 
 在 `arch/arm/tools/syscall.tbl` 里加了一条新 syscall：
 
-```
+```text
 400   common   my_syscall   sys_my_syscall
 ```
 
@@ -2806,7 +2806,7 @@ CONFIG_EXTRA_FIRMWARE="imx/sdma/sdma-imx6q.bin"
 
 Linux-firmware 仓库在 kernel.org，文件路径就是：
 
-```
+```text
 imx/sdma/sdma-imx6q.bin
 ```
 
@@ -2826,19 +2826,19 @@ curl -L https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.
 
 进入内核源码目录：
 
-```
+```bash
 cd linux-6.1.x
 ```
 
 确保存在目录：
 
-```
+```bash
 mkdir -p firmware/imx/sdma
 ```
 
 把 `sdma-imx6q.bin` 文件放到这里：
 
-```
+```text
 linux-6.1.x/firmware/imx/sdma/sdma-imx6q.bin
 ```
 
@@ -3110,7 +3110,7 @@ CONFIG_SMSC_PHY=y
 
 在kernel根目录，进行如下命令进入menuconfig配置cpu power 策略：
 
-```
+```bash
 make distclean
 make imx_v7_test_defconfig
 make menuconfig
@@ -3859,14 +3859,14 @@ make -j$(nproc)
 
 先在宿主机上创建目标目录（若还不存在）：
 
-```
+```text
 sudo install -d -m 0755 /home/lizhaojun/nfs/rootfs/usr/bin
 sudo install -d -m 0755 /home/lizhaojun/nfs/rootfs/usr/lib
 ```
 
 把工具拷过去：
 
-```
+```text
 sudo rsync -a \
   /你的-buildroot/output/target/usr/bin/gpio* \
   /home/lizhaojun/nfs/rootfs/usr/bin/
@@ -3874,7 +3874,7 @@ sudo rsync -a \
 
 把库拷过去（包含所有可能的主版本号与符号链接）：
 
-```
+```text
 sudo rsync -a \
   /你的-buildroot/output/target/usr/lib/libgpiod* \
   /home/lizhaojun/nfs/rootfs/usr/lib/

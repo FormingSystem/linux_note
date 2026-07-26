@@ -1704,13 +1704,13 @@ struct rb_node *tmp = node->rb_left;
 
 如果：
 
-```text
+```c
 tmp == NULL
 ```
 
 说明：
 
-```text
+```bash
 node 没有左孩子。
 ```
 
@@ -1725,7 +1725,7 @@ __rb_change_child(node, child, parent, root);
 
 如果 `child` 存在，源码会：
 
-```text
+```c
 child->__rb_parent_color = node->__rb_parent_color;
 rebalance = NULL;
 ```
@@ -1776,13 +1776,13 @@ rebalance = node 是黑色 ? parent : NULL;
 
 如果第一种情况不成立，但：
 
-```text
+```c
 child == NULL
 ```
 
 说明：
 
-```text
+```bash
 node 有左孩子；
 node 没有右孩子。
 ```
@@ -1791,7 +1791,7 @@ node 没有右孩子。
 
 源码做：
 
-```text
+```c
 tmp->__rb_parent_color = node->__rb_parent_color;
 __rb_change_child(node, tmp, parent, root);
 rebalance = NULL;
@@ -1823,7 +1823,7 @@ rebalance = NULL;
 
 如果：
 
-```text
+```bash
 node->rb_left != NULL
 node->rb_right != NULL
 ```
@@ -1840,7 +1840,7 @@ BST 删除规则要求：
 
 中序后继是：
 
-```text
+```bash
 node 右子树中的最左节点。
 ```
 
@@ -1848,13 +1848,13 @@ Linux 源码把两孩子删除分成两个子情况。
 
 第一种：
 
-```text
+```bash
 node 的右孩子本身就是 successor。
 ```
 
 也就是：
 
-```text
+```bash
 node->rb_right->rb_left == NULL
 ```
 
@@ -1947,7 +1947,7 @@ node 原父节点的孩子指针改成 successor。
 
 源码中关键动作包括：
 
-```text
+```c
 WRITE_ONCE(successor->rb_left, tmp);
 rb_set_parent(tmp, successor);
 
@@ -1994,7 +1994,7 @@ successor 可能有右孩子 child2。
 
 如果 successor 是 node 的右孩子：
 
-```text
+```c
 parent = successor;
 child2 = successor->rb_right;
 ```
@@ -2026,7 +2026,7 @@ parent->rb_left = child2;
 
 源码对应：
 
-```text
+```c
 if (child2) {
 	rb_set_parent_color(child2, parent, RB_BLACK);
 	rebalance = NULL;
@@ -2131,7 +2131,7 @@ struct rb_node *node = NULL, *sibling, *tmp1, *tmp2;
 
 也就是说，第一次循环中：
 
-```text
+```c
 node == NULL
 parent == rebalance
 ```
@@ -2225,7 +2225,7 @@ node 表示当前缺黑方向上的节点位置；
 
 先看左侧分支：
 
-```text
+```c
 node == parent->rb_left
 sibling = parent->rb_right
 ```
@@ -2344,7 +2344,7 @@ Case 1 处理后，或者一开始兄弟就是黑色。
 
 源码先看远侄：
 
-```text
+```c
 tmp1 = sibling->rb_right;
 if (!tmp1 || rb_is_black(tmp1)) {
 	tmp2 = sibling->rb_left;
@@ -2413,7 +2413,7 @@ parent 这棵子树整体对外少了一个黑色；
 
 源码对应：
 
-```text
+```c
 rb_set_parent_color(sibling, parent, RB_RED);
 if (rb_is_red(parent))
 	rb_set_black(parent);
@@ -2467,7 +2467,7 @@ S 下去；
 
 源码：
 
-```text
+```c
 tmp1 = tmp2->rb_right;
 sibling->rb_left = tmp1;
 tmp2->rb_right = sibling;
@@ -2577,7 +2577,7 @@ parent 被设置为黑色。
 
 条件：
 
-```text
+```c
 node == parent->rb_right
 sibling = parent->rb_left
 ```
@@ -2707,7 +2707,7 @@ Case 2 可能向上。
 
 比如先读：
 
-```text
+```bash
 node == parent->rb_left
 ```
 
@@ -2834,7 +2834,7 @@ rb_prev()
 
 逻辑：
 
-```text
+```c
 node = node->rb_right;
 while (node->rb_left)
 	node = node->rb_left;
@@ -2859,7 +2859,7 @@ return node;
 
 源码逻辑：
 
-```text
+```c
 while ((parent = rb_parent(node)) && node == parent->rb_right)
 	node = parent;
 
@@ -2898,14 +2898,14 @@ return parent;
 
 `rb_next()` 和 `rb_prev()` 开头都有：
 
-```text
+```c
 if (RB_EMPTY_NODE(node))
 	return NULL;
 ```
 
 `RB_EMPTY_NODE()` 判断的是：
 
-```text
+```bash
 node->__rb_parent_color == (unsigned long)node
 ```
 
@@ -3233,7 +3233,7 @@ new
 
 逻辑是：
 
-```text
+```c
 if (root->rb_leftmost == victim)
 	root->rb_leftmost = new;
 rb_replace_node(victim, new, &root->rb_root);
