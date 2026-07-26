@@ -138,7 +138,6 @@ echo   Train by module, unit, and stage with guided questions,
 echo   independent recall, and professional cases.
 echo.
 echo Usage:
-echo   practice.cmd [options]
 echo   start.cmd [options]
 echo.
 echo Options:

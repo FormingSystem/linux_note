@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-set -euo pipefail
-
-practice_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec bash "$practice_dir/start.sh" "$@"

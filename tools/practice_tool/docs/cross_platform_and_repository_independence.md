@@ -162,7 +162,7 @@ $env:PRACTICE_SOURCE_CONFIG = "D:\knowledge\practice.sources.json"
 Linux 或 MSYS2：
 
 ```bash
-PRACTICE_SOURCE_CONFIG=/srv/knowledge/practice.sources.json bash ./start.sh
+PRACTICE_SOURCE_CONFIG=/srv/knowledge/practice.sources.json ./start.sh
 ```
 
 未设置环境变量时，工具可以读取自身的本机配置：
@@ -243,7 +243,8 @@ flowchart TD
 截至当前版本，已经完成：
 
 - 工具正式启动入口下沉到工具目录。
-- 工具自身提供 `practice --help` 介绍入口，帮助逻辑由工具维护；知识库根入口只负责转发。
+- 工具自身的 `start.sh` 和 `start.cmd` 提供帮助入口；外层知识库快捷脚本不进入工具命令模型。
+- Bash Tab 补全只面向工具正式入口 `start.sh`，由工具目录内的补全脚本维护。
 - 根启动脚本精简为集成快捷入口。
 - 启动前检查 Node.js 18 最低兼容线；安装时按就近镜像、官方源和版本顺序逐级回退，普通 Linux 使用工具内隔离运行时。
 - 官方运行时归档保存在 `.local/downloads/node/v<版本>`，联网和离线安装共用同一份 SHA-256 校验流程，缓存不进入 Git。

@@ -17,14 +17,22 @@ domains:
 
 训练工具自身的正式入口是工具目录中的 `start.cmd` 和 `start.sh`。当前知识库根目录的 `practice.cmd`、`practice.sh` 只是快捷转发。不同终端不能混用命令语法。
 
-查看工具介绍和全部启动选项时，可在 Linux 使用 `./practice --help`，在 Windows 使用 `practice.cmd --help`。帮助参数在环境检查之前返回，不触发任何下载、安装或服务启动。
+查看工具介绍和全部启动选项时，可在 Linux 使用 `./start.sh --help`，在 Windows 使用 `start.cmd --help`。帮助参数在环境检查之前返回，不触发任何下载、安装或服务启动。
+
+Linux Bash 补全使用工具自己的正式入口：
+
+```bash
+./start.sh --install-completion
+```
+
+安装结果保存在当前用户的 Bash completion 目录，不修改系统目录。默认目标是指向当前仓库 `scripts/completions/start.bash` 的符号链接；不支持符号链接时使用动态加载器。两种方式都不复制静态补全快照，因此当前目录完成 Git 更新后会自动使用新版规则。重新打开 Bash 后，输入 `./start.sh --` 并按 Tab 即可补全；当前终端可执行 `source <(./start.sh --completion bash)` 立即加载。
 
 | 终端提示符示例 | 环境 | 启动命令 |
 | --- | --- | --- |
 | `F:\...\practice_tool>` | Windows CMD | `start` |
 | `PS F:\...\practice_tool>` | PowerShell | `.\start.cmd` |
-| `Lizha@host UCRT64 /f/.../practice_tool $` | MSYS2/UCRT64 | `bash ./start.sh` |
-| `user@host:~/practice_tool$` | Linux Bash | `bash ./start.sh` |
+| `Lizha@host UCRT64 /f/.../practice_tool $` | MSYS2/UCRT64 | `./start.sh` |
+| `user@host:~/practice_tool$` | Linux Bash | `./start.sh` |
 
 终端提示符、命令输出和错误信息不能作为命令粘贴。例如下面这些内容不应输入：
 
@@ -57,7 +65,7 @@ start
 
 ```bash
 cd path/to/practice_tool
-bash ./start.sh
+./start.sh
 ```
 
 如果训练工具仍位于当前知识库中，也可以从仓库根目录使用 `practice.cmd` 或 `practice.sh` 快捷启动。两个根目录脚本只转发参数和退出状态，不包含工具启动逻辑。
@@ -79,10 +87,10 @@ start.cmd --upgrade
 ```
 
 ```bash
-bash ./start.sh --upgrade
+./start.sh --upgrade
 ```
 
-位于 `linux-note` 根目录时也可以使用 `practice.cmd --upgrade` 或 `bash ./practice.sh --upgrade`。根快捷脚本只转发参数，升级逻辑仍由工具正式入口完成。
+若工具仍位于 `linux-note` 中，也应优先进入 `tools/practice_tool` 后使用正式入口；外层快捷脚本不属于工具命令接口。
 
 升级模式会重新选择官方最高可用兼容 Node.js、删除本机环境就绪标记、重新执行 `npm install`，然后启动 Vite。它不执行 `git pull`，也不更新题库、知识源配置、知识正文或用户作答。
 
@@ -93,10 +101,10 @@ bash ./start.sh --upgrade
 ```bash
 PRACTICE_NODE_DIST_SOURCES="https://内网-node-镜像 https://nodejs.org/dist" \
 PRACTICE_NPM_REGISTRIES="https://内网-npm-镜像 https://registry.npmjs.org" \
-bash ./practice.sh --upgrade
+./start.sh --upgrade
 ```
 
-Windows CMD 使用 `set PRACTICE_NODE_DIST_SOURCES=...` 和 `set PRACTICE_NPM_REGISTRIES=...` 后再执行 `practice.cmd --upgrade`。
+Windows CMD 使用 `set PRACTICE_NODE_DIST_SOURCES=...` 和 `set PRACTICE_NPM_REGISTRIES=...` 后再执行 `start.cmd --upgrade`。
 
 ### 1.2.4\_离线准备Node.js
 
@@ -122,7 +130,7 @@ tools/practice_tool/.local/downloads/node/v24.18.0/
 └── node-v24.18.0-win-x64.zip
 ```
 
-然后执行 `bash ./practice.sh --upgrade` 或 `practice.cmd --upgrade`。安装器按主版本优先级搜索缓存并强制校验，不需要访问网络。`.local/` 已被工具 `.gitignore` 排除，可通过 U 盘或共享目录复制这些文件，不应提交到仓库。
+然后在工具目录执行 `./start.sh --upgrade` 或 `start.cmd --upgrade`。安装器按主版本优先级搜索缓存并强制校验，不需要访问网络。`.local/` 已被工具 `.gitignore` 排除，可通过 U 盘或共享目录复制这些文件，不应提交到仓库。
 
 安装开始时有 5 秒选择窗口：
 
@@ -203,7 +211,7 @@ $env:PRACTICE_SOURCE_CONFIG = "D:\knowledge\practice.sources.json"
 ```
 
 ```bash
-PRACTICE_SOURCE_CONFIG=/opt/knowledge/practice.sources.json bash ./start.sh
+PRACTICE_SOURCE_CONFIG=/opt/knowledge/practice.sources.json ./start.sh
 ```
 
 配置中的 `filesystem` 相对地址以配置文件所在目录为基准，不以当前终端目录为基准。也可以把配置地址和 `http` 知识源地址写成 HTTP/HTTPS URL；远程配置不能声明启动机器上的 `filesystem` 地址。工具没有配置知识源时仍能运行题库，但会把相关来源标记为未配置。
@@ -256,7 +264,7 @@ git clone --depth 1 --filter=blob:none \
 ```bash
 cd ~/linux/linux_note
 cd tools/practice_tool
-bash ./start.sh
+./start.sh
 ```
 
 有桌面环境时会尝试打开默认浏览器。无桌面的服务器环境只启动本地服务，需要根据虚拟机网络方式决定是否开放监听地址和端口；默认 `127.0.0.1` 只允许虚拟机内部访问。
@@ -355,7 +363,7 @@ git -c http.proxy=socks5h://192.168.31.197:10808 \
 | npm 长时间停在 `reify` 或 `http fetch` | 首次下载较慢，终端仍在安装依赖 | 观察下载耗时；单次请求超过 120 秒会失败并重试 |
 | Firefox 提示无法连接 `127.0.0.1:5173` | 旧启动器在 Vite 尚未监听时提前打开浏览器 | 更新启动器；现在由 Vite 监听成功后执行 `--open` |
 | 官方下载全部失败 | 网络、代理或目标架构归档不可用 | 按终端提示把官方归档与 `SHASUMS256.txt` 放入 `.local/downloads/node/v<版本>/` |
-| CMD 提示 `'.' 不是内部或外部命令` | 在 CMD 中使用了 Bash 的 `./` | 工具目录执行 `start`；知识库根目录也可执行 `practice` |
+| CMD 提示 `'.' 不是内部或外部命令` | 在 CMD 中使用了 Bash 的 `./` | 在工具目录执行 `start` |
 | Bash 报 `toolspractice_tool` 不存在 | 使用反斜杠，反斜杠被解释为转义 | 使用 `/` |
 | Bash 报 `npm: command not found` | Node.js 目录不在当前 PATH | 使用工具目录的 `start.sh` 自动处理 |
 | MSYS2 要求启用 Windows Sudo | 脚本错误进入 Linux 权限分支 | 使用已修正脚本；MSYS2 直接调用 `pacman` |
