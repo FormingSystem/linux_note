@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import type { TrainingCategory, WorkspaceData } from "../../shared/types";
+import type { ImportedBook, TrainingCategory, WorkspaceData } from "../../shared/types";
 import { loadWorkspace, saveWorkspace } from "../../infrastructure/persistence/workspaceRepository";
+import { listImportedBooks } from "../../infrastructure/persistence/importedBookRepository";
 import { CategoryForm } from "../training-management/WorkspaceManager";
 import { categoryHasDescendant } from "../training-management/workspace";
 import { catalog } from "./content";
@@ -22,9 +23,11 @@ export default function LibraryPage() {
   const [past, setPast] = useState<WorkspaceData[]>([]);
   const [future, setFuture] = useState<WorkspaceData[]>([]);
   const [actionHost, setActionHost] = useState<HTMLElement | null>(null);
+  const [importedBooks, setImportedBooks] = useState<ImportedBook[]>([]);
 
   useEffect(() => {
     setActionHost(document.getElementById("app-context-actions"));
+    void listImportedBooks().then((items) => setImportedBooks(items.filter((item) => item.status === "published")));
   }, []);
 
   useEffect(() => {
@@ -178,7 +181,9 @@ export default function LibraryPage() {
     <section className="panel library-panel">
       <div className="library-heading">
         <div><div className="eyebrow">Training Library</div><h1>训练库</h1><p>按自己的目录组织训练单元，再开始或继续训练。</p></div>
+        <Link className="button-link primary" to="/library/import">导入电子书</Link>
       </div>
+      {importedBooks.length > 0 && <section className="published-book-strip"><div><strong>我的电子书</strong><small>{importedBooks.length} 本已发布</small></div>{importedBooks.map((book) => <Link key={book.id} to={`/library/books/${book.id}/${book.chapters[0]?.id ?? ""}`}><span>{book.mode === "source" ? "原文阅读" : "专题电子书"}</span><strong>{book.title}</strong><small>{book.chapters.length} 章 · v{book.version}</small></Link>)}</section>}
       <div className="library-workspace">
         <aside className="library-directory" aria-label="训练单元目录">
           <div className="library-search">

@@ -46,6 +46,35 @@ export type TopicBook = {
   claims: KnowledgeClaim[];
 };
 
+export type ImportedBookMode = "source" | "topic";
+export type ImportedBookStatus = "draft" | "published";
+
+export type ImportedBookChapter = {
+  id: string;
+  title: string;
+  sourceName: string;
+  markdown: string;
+  objective: string;
+  candidateClaim: string;
+  trainingPrompt: string;
+  confirmed: boolean;
+};
+
+export type ImportedBook = {
+  schemaVersion: 1;
+  id: string;
+  title: string;
+  version: string;
+  mode: ImportedBookMode;
+  status: ImportedBookStatus;
+  sourceId: string;
+  outlineMarkdown: string;
+  chapters: ImportedBookChapter[];
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
+};
+
 export type GuidedQuestion = {
   id: string;
   chapter_ids: string[];

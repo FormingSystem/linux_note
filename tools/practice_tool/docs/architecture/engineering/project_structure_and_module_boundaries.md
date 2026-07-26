@@ -131,6 +131,8 @@ app 负责向 features 注入 infrastructure 实现
 
 训练会话 feature 已进一步使用 `components/`、`model/`、`pages/` 和公开 `index.ts` 分层。Markdown 读取属于 `training-library` 内容加载职责，Markdown 展示属于 `practice-sessions/components`，阶段定义与导航语义属于 `practice-sessions/model`；不得把文件读取、渲染和会话推进重新合并到同一个页面组件。
 
+Mermaid 正文渲染与交互式查看器属于两个独立组件边界：`MermaidDiagram` 生成安全 SVG、根据可见根图层校正正文边界，并在全屏状态切换造成重新渲染后重新应用该边界；`MermaidViewer` 只拥有页面内预览层、适应屏幕、缩放、拖拽和退出状态。两者通过序列化 SVG 交接，不共享 DOM 或变换状态。禁止重新引入原生 Fullscreen API、修改 `body`/根布局实现全屏，或让查看器直接改写正文 SVG；边界校正属于正文渲染职责，不属于查看器退出补丁。
+
 ## 1.8\_相关设计
 
 - [产品导航与交互设计](../product/navigation_and_interaction.md)

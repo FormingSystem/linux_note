@@ -1,9 +1,10 @@
 const DATABASE_NAME = "loop-knowledge-practice";
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 
 export const STORES = {
   workspace: "workspace",
   sessions: "sessions",
+  importedBooks: "importedBooks",
 } as const;
 
 let databasePromise: Promise<IDBDatabase> | null = null;
@@ -21,6 +22,11 @@ export function openDatabase(): Promise<IDBDatabase> {
         const sessions = database.createObjectStore(STORES.sessions, { keyPath: "id" });
         sessions.createIndex("unitId", "unitId");
         sessions.createIndex("updatedAt", "updatedAt");
+      }
+      if (!database.objectStoreNames.contains(STORES.importedBooks)) {
+        const books = database.createObjectStore(STORES.importedBooks, { keyPath: "id" });
+        books.createIndex("status", "status");
+        books.createIndex("updatedAt", "updatedAt");
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -59,5 +65,16 @@ export async function readAllRecords<T>(storeName: string): Promise<T[]> {
     const request = transaction.objectStore(storeName).getAll();
     request.onsuccess = () => resolve(request.result as T[]);
     request.onerror = () => reject(request.error ?? new Error("读取本地数据失败"));
+  });
+}
+
+export async function deleteRecord(storeName: string, key: IDBValidKey): Promise<void> {
+  const database = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(storeName, "readwrite");
+    transaction.objectStore(storeName).delete(key);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error("删除本地数据失败"));
+    transaction.onabort = () => reject(transaction.error ?? new Error("删除本地数据已中止"));
   });
 }

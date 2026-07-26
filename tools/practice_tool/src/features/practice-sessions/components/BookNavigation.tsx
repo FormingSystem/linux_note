@@ -1,5 +1,4 @@
 import type { LearningChapter, TopicBook } from "../../../shared/types";
-import Markdown from "react-markdown";
 
 export default function BookNavigation({ book, activeChapterId, completed, onSelect }: {
   book: TopicBook;
@@ -14,10 +13,6 @@ export default function BookNavigation({ book, activeChapterId, completed, onSel
         <strong>{book.title}</strong>
         <small>版本 {book.version}</small>
       </div>
-      <details>
-        <summary>查看目录大纲</summary>
-        <div className="outline-preview"><Markdown>{book.outline_markdown}</Markdown></div>
-      </details>
       <ol>
         {book.chapters.map((chapter, index) => (
           <li key={chapter.id}>
