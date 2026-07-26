@@ -2265,7 +2265,7 @@ struct rb_root {
 
 空树时：
 
-```text
+```c
 root.rb_node == NULL
 ```
 
@@ -3052,19 +3052,19 @@ struct rb_node **link = &tree->root.rb_node;
 
 初始时，它指向根指针：
 
-```text
+```c
 link = &root->rb_node
 ```
 
 如果往左走：
 
-```text
+```c
 link = &parent->rb_left
 ```
 
 如果往右走：
 
-```text
+```c
 link = &parent->rb_right
 ```
 
@@ -3111,7 +3111,7 @@ graph TD
 
 如果树为空：
 
-```text
+```c
 parent == NULL
 link == &root->rb_node
 ```

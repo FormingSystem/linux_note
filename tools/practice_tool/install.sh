@@ -89,12 +89,13 @@ install_dependencies() {
 }
 
 cd "$practice_dir"
-if [[ "$upgrade_requested" -eq 1 || ! -d node_modules || ! -f "$PRACTICE_READY_FILE" ]]; then
+if [[ "$upgrade_requested" -eq 1 ]] || ! practice_dependencies_are_ready; then
     printf '%s\n' '[practice] 正在由安装模块检查并安装项目依赖……'
     printf '%s\n' '[practice] 首次下载可能受网络速度影响；安装模块不会打开浏览器。'
     install_dependencies
     mkdir -p .local
     printf '%s\n' 'environment-ready-v3-node-compatible' > "$PRACTICE_READY_FILE"
+    practice_package_lock_digest > "$PRACTICE_DEPENDENCY_STAMP"
 fi
 
 printf '%s\n' '[practice] 安装完成；可以执行 ./run.sh 或 ./start.sh。'

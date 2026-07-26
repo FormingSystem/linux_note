@@ -144,8 +144,7 @@ function clamp(value: number, minimum: number, maximum: number) {
 
 function fitSvgViewBoxToContent(svg: SVGSVGElement) {
   try {
-    const visibleRoot = svg.querySelector<SVGGElement>("g.root") ?? svg.querySelector<SVGGElement>("g");
-    const bounds = visibleRoot?.getBBox() ?? svg.getBBox();
+    const bounds = svg.getBBox();
     if (!bounds.width || !bounds.height) return;
     const padding = Math.max(12, Math.min(32, Math.max(bounds.width, bounds.height) * 0.025));
     const width = Math.ceil(bounds.width + padding * 2);

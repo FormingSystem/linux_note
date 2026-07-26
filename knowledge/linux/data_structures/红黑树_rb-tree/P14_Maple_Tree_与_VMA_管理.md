@@ -216,7 +216,7 @@ page fault：
 
 不是简单地查：
 
-```text
+```c
 key == x
 ```
 
@@ -924,7 +924,7 @@ VMA 管理不只是查已有 VMA。
 
 例如要映射：
 
-```text
+```c
 size = 0x20000
 ```
 
@@ -1618,7 +1618,7 @@ VMA 刚好满足这个条件。
 
 #### (1)\_名字拆开看
 
-```
+```text
 EEVDF
 = Earliest Eligible Virtual Deadline First
 = 最早“合格”的虚拟截止时间优先

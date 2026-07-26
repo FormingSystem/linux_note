@@ -112,7 +112,7 @@ alloc_chrdev_region(&base, 0, count, "demo");
 
 ### 2.1.1\_清单与结构
 
-```
+```text
 simple_chardev/
 ├── Makefile
 └── simple_chardev.c
@@ -580,7 +580,7 @@ sudo rmmod simple_chardev
 
 ### 2.2.1\_目录结构
 
-```
+```text
 chardev_template/
 ├── Makefile
 └── chardev_template.c
@@ -1202,7 +1202,7 @@ sudo rm -f /dev/demo0
 
 `/etc/udev/rules.d/90-demo.rules`：
 
-```
+```bash
 KERNEL=="demo[0-9]*", MODE="0666", SYMLINK+="mydemo%n"
 ```
 

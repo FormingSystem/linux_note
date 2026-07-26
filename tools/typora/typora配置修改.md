@@ -90,13 +90,13 @@ Typora 本身就是用 CSS 渲染 Markdown 的，所以改 **主题 CSS** 就能
 
    - Windows:
 
-     ```
+     ```text
      C:\Users\<你的用户名>\AppData\Roaming\Typora\themes
      ```
 
    - Linux / macOS:
 
-     ```
+     ```text
      ~/.config/Typora/themes/
      ```
 

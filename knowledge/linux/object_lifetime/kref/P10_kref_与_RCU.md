@@ -737,13 +737,13 @@ synchronize_rcu() 可能睡眠；
 
 因此工程上更常见的是：
 
-```text
+```c
 kfree_rcu(obj, rcu);
 ```
 
 或者：
 
-```text
+```c
 call_rcu(&obj->rcu, callback);
 ```
 

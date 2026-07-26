@@ -93,7 +93,7 @@ U-Boot 的构建系统里，**SPL 和 main U-Boot 是两个独立目标**，它�
 
 - `common/board_r.c` 的内容里，大部分函数（包括 `board_init_r()`）都有条件编译保护：
 
-```
+```c
 #ifndef CONFIG_SPL_BUILD
 void board_init_r(gd_t *id, ulong dest_addr)
 {
@@ -169,7 +169,7 @@ void board_init_r(gd_t *id, ulong dest_addr)
 
 ## 1.10\_️\_Mermaid\_图示(SPL\_vs\_main\_U-Boot)
 
-```
+```mermaid
 flowchart TD
     subgraph SPL["SPL 构建 (CONFIG_SPL_BUILD=y)"]
         A1[common/spl.c] -->|生成| B1[board_init_r() (SPL版)]
@@ -233,7 +233,7 @@ U-Boot 的顶层构建体系是基于 **Kbuild**（和 Linux 内核类似），�
 
    📍 位置：
 
-   ```
+   ```text
    u-boot/Makefile
    ```
 
@@ -245,7 +245,7 @@ U-Boot 的顶层构建体系是基于 **Kbuild**（和 Linux 内核类似），�
 
    📍 位置：
 
-   ```
+   ```text
    u-boot/spl/Makefile
    ```
 
@@ -329,7 +329,7 @@ Kbuild 的核心逻辑在 `scripts/Makefile.build` 里。大致机制是：
 
 当顶层要构建 SPL 时，会调用：
 
-```
+```text
 $(Q)$(MAKE) obj=spl -f $(srctree)/spl/Makefile
 ```
 
@@ -375,7 +375,7 @@ $(Q)$(MAKE) obj=spl -f $(srctree)/spl/Makefile
 
 - GNU Make 的特性决定了：当顶层 Makefile 里执行
 
-  ```
+  ```text
   $(MAKE) -f spl/Makefile ...
   ```
 
@@ -431,7 +431,7 @@ U-Boot 的做法是：
 
 在你贴的那个 `config.mk` 里有这么一段：
 
-```
+```text
 ARCH := $(CONFIG_SYS_ARCH:"%"=%)
 CPU  := $(CONFIG_SYS_CPU:"%"=%)
 CPUDIR = arch/$(ARCH)/cpu$(if $(CPU),/$(CPU),)
@@ -460,14 +460,14 @@ CPUDIR = arch/$(ARCH)/cpu$(if $(CPU),/$(CPU),)
 
 比如 `configs/qemu_arm_defconfig`（ARMv7）里面会有：
 
-```
+```bash
 CONFIG_SYS_ARCH="arm"
 CONFIG_SYS_CPU="armv7"
 ```
 
 而 `configs/qemu_arm64_defconfig`（ARMv8）则是：
 
-```
+```bash
 CONFIG_SYS_ARCH="arm"
 CONFIG_SYS_CPU="armv8"
 ```
@@ -491,7 +491,7 @@ CONFIG_SYS_CPU="armv8"
 
 在 C 代码里，有时会看到：
 
-```
+```text
 #ifdef CONFIG_ARM64
    // ARMv8 专属代码
 #else
@@ -582,7 +582,7 @@ ARMv8 架构变化比较大：
 
 在 `arch/arm/Makefile` 里：
 
-```
+```text
 obj-$(CONFIG_ARM64) += cpu/armv8/
 obj-$(CONFIG_ARM64) += lib/...
 obj-$(CONFIG_ARM64) += ...
@@ -590,7 +590,7 @@ obj-$(CONFIG_ARM64) += ...
 
 而在非 `CONFIG_ARM64` 的情况（ARMv7 及以下）：
 
-```
+```text
 obj-y += lib/vectors.o
 obj-y += cpu/armv7/start.o
 ```

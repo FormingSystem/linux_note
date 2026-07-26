@@ -59,7 +59,7 @@ struct gpio_desc {
 
 #### (3)\_设备树与数据结构的映射关系
 以i.MX6ULL的LED节点为例，设备树文本与内核数据结构的映射如下：
-```
+```c
 // 设备树节点（imx6ul-14x14-test.dtsi）
 dt_led: led@0 {
     compatible = "nxp,imx6ull-dt-led";  // 匹配驱动的compatible

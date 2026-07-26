@@ -49,8 +49,11 @@ export default function ImportedBookReaderPage() {
     <header><div><span>{book.mode === "source" ? "原文阅读" : "专题电子书"} · {book.status === "published" ? "已发布" : "草稿"}</span><h1>{book.title}</h1><small>版本 {book.version} · 来源 {book.sourceId}</small></div><Link to="/library/import">返回书库</Link></header>
     <div className={`ebook-reader imported-reader-grid ${leftOpen ? "" : "left-collapsed"} ${rightOpen ? "" : "right-collapsed"}`}>
       <aside className={leftOpen ? "book-navigation reader-sidebar left-sidebar" : "reader-sidebar left-sidebar collapsed"}>
-        <button className="reader-sidebar-toggle" aria-label={leftOpen ? "收起章节目录" : "展开章节目录"} title={leftOpen ? "收起章节目录" : "展开章节目录"} onClick={() => setLeftOpen((value) => !value)}>{leftOpen ? "‹" : "›"}</button>
-        {leftOpen && <><div className="book-navigation-heading"><span>章节目录</span><strong>{book.title}</strong></div><ol>{book.chapters.map((item, itemIndex) => <li key={item.id}><button className={item.id === chapter.id ? "active" : ""} onClick={() => selectChapter(item.id)}><span>{String(itemIndex + 1).padStart(2, "0")}</span><span><strong>{item.title}</strong><small>{item.sourceName}</small></span></button></li>)}</ol></>}
+        <div className="reader-sidebar-header">
+          {leftOpen && <div className="book-navigation-heading"><span>章节目录</span><strong>{book.title}</strong></div>}
+          <button className="reader-sidebar-toggle" aria-label={leftOpen ? "收起章节目录" : "展开章节目录"} title={leftOpen ? "收起章节目录" : "展开章节目录"} onClick={() => setLeftOpen((value) => !value)}>{leftOpen ? "‹" : "›"}</button>
+        </div>
+        {leftOpen && <div className="reader-sidebar-scroll"><ol>{book.chapters.map((item) => <li key={item.id}><button className={item.id === chapter.id ? "active" : ""} onClick={() => selectChapter(item.id)}><span><strong>{item.title}</strong><small>{item.sourceName}</small></span></button></li>)}</ol></div>}
       </aside>
       <main className="ebook-content">
         <details className="book-outline"><summary>全书导读</summary><MarkdownGuide markdown={book.outlineMarkdown} /></details>
@@ -60,8 +63,11 @@ export default function ImportedBookReaderPage() {
         <nav className="chapter-pagination">{index > 0 ? <button onClick={() => selectChapter(book.chapters[index - 1].id)}><small>上一章</small><strong>← {book.chapters[index - 1].title}</strong></button> : <span />}{index < book.chapters.length - 1 && <button onClick={() => selectChapter(book.chapters[index + 1].id)}><small>下一章</small><strong>{book.chapters[index + 1].title} →</strong></button>}</nav>
       </main>
       <nav className={rightOpen ? "chapter-toc reader-sidebar right-sidebar" : "reader-sidebar right-sidebar collapsed"}>
-        <button className="reader-sidebar-toggle" aria-label={rightOpen ? "收起本章目录" : "展开本章目录"} title={rightOpen ? "收起本章目录" : "展开本章目录"} onClick={() => setRightOpen((value) => !value)}>{rightOpen ? "›" : "‹"}</button>
-        {rightOpen && <><strong>本章目录</strong>{headings.map((heading) => <a className={`level-${heading.level}`} href={`#${encodeURIComponent(heading.id)}`} key={heading.id} onClick={(event) => { event.preventDefault(); jumpToHeading(heading.id); }}>{heading.title}</a>)}</>}
+        <div className="reader-sidebar-header">
+          <button className="reader-sidebar-toggle" aria-label={rightOpen ? "收起本章目录" : "展开本章目录"} title={rightOpen ? "收起本章目录" : "展开本章目录"} onClick={() => setRightOpen((value) => !value)}>{rightOpen ? "›" : "‹"}</button>
+          {rightOpen && <strong>本章目录</strong>}
+        </div>
+        {rightOpen && <div className="reader-sidebar-scroll">{headings.map((heading) => <a className={`level-${heading.level}`} href={`#${encodeURIComponent(heading.id)}`} key={heading.id} onClick={(event) => { event.preventDefault(); jumpToHeading(heading.id); }}>{heading.title}</a>)}</div>}
       </nav>
     </div>
   </section>;

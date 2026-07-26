@@ -263,7 +263,7 @@ ERROR: exit code 1 from line 715:
 
 创建文件“buildroot/package/squashfs/0001-multiple-definition.patch”，将下面的内容添加到该新建文件：
 
-```text
+```diff
 diff -ruN squashfs-3de1687d7432ea9b302c2db9521996f506c140a3/squashfs-tools/mksquashfs.h squashfs-3de1687d7432ea9b302c2db9521996f506c140a3-patch/squashfs-tools/mksquashfs.h
 --- squashfs-3de1687d7432ea9b302c2db9521996f506c140a3/squashfs-tools/mksquashfs.h       2015-12-07 09:42:03.000000000 +0800
 +++ squashfs-3de1687d7432ea9b302c2db9521996f506c140a3-patch/squashfs-tools/mksquashfs.h 2025-01-02 16:59:52.994326895 +0800

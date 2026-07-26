@@ -1,5 +1,4 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import runtimeConfig from "virtual:practice-runtime-config";
 import type { ImportedBook, ImportedBookChapter, ImportedBookMode } from "../../shared/types";
@@ -7,6 +6,10 @@ import { deleteImportedBook, listImportedBooks, loadImportedBook, saveImportedBo
 import MarkdownGuide, { markdownPlainText } from "../practice-sessions/components/MarkdownGuide";
 
 const makeId = () => crypto.randomUUID();
+const naturalPathCollator = new Intl.Collator("zh-CN", {
+  numeric: true,
+  sensitivity: "base",
+});
 
 export default function BookImporterPage() {
   const navigate = useNavigate();
@@ -23,7 +26,6 @@ export default function BookImporterPage() {
   const [message, setMessage] = useState("");
   const [books, setBooks] = useState<ImportedBook[]>([]);
   const [deleteTarget, setDeleteTarget] = useState("");
-  const [actionHost, setActionHost] = useState<HTMLElement | null>(null);
   const directoryInput = useRef<HTMLInputElement>(null);
   const confirmAllInput = useRef<HTMLInputElement>(null);
 
@@ -46,10 +48,6 @@ export default function BookImporterPage() {
     });
   }, [editingId]);
 
-  useEffect(() => {
-    setActionHost(document.getElementById("app-context-actions"));
-  }, []);
-
   const outline = useMemo(() => [
     `# ${title || "未命名电子书"}`,
     "",
@@ -59,7 +57,13 @@ export default function BookImporterPage() {
   ].join("\n"), [chapters, mode, title]);
 
   const importFiles = async (event: ChangeEvent<HTMLInputElement>) => {
-    const files = [...(event.target.files ?? [])].filter((file) => file.name.toLowerCase().endsWith(".md"));
+    const files = [...(event.target.files ?? [])]
+      .filter((file) => file.name.toLowerCase().endsWith(".md"))
+      .sort((left, right) => {
+        const leftPath = (left.webkitRelativePath || left.name).replaceAll("\\", "/");
+        const rightPath = (right.webkitRelativePath || right.name).replaceAll("\\", "/");
+        return naturalPathCollator.compare(leftPath, rightPath) || (leftPath < rightPath ? -1 : leftPath > rightPath ? 1 : 0);
+      });
     const importedDirectory = files
       .map((file) => file.webkitRelativePath.split("/")[0])
       .find((directory) => directory);
@@ -188,28 +192,39 @@ export default function BookImporterPage() {
         <label className="file-picker">选择整个目录<input ref={directoryInput} type="file" accept=".md,text/markdown" multiple onChange={(event) => void importFiles(event)} /></label>
       </div>
     </header>
-    <div className="mode-picker" role="group" aria-label="导入模式">
-      <button className={mode === "source" ? "selected" : ""} onClick={() => changeMode("source")}><strong>原文阅读</strong><small>原样保存正文，只生成书籍与章节目录</small></button>
-      <button className={mode === "topic" ? "selected" : ""} onClick={() => changeMode("topic")}><strong>专题电子书</strong><small>生成目标、候选声明和训练任务草稿</small></button>
-    </div>
-    <div className="book-settings">
-      <label>书名<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-      <label>版本<input value={version} onChange={(event) => setVersion(event.target.value)} /></label>
-      <label>知识源<select value={sourceId} onChange={(event) => setSourceId(event.target.value)}><option value="local-import">本机临时导入</option>{runtimeConfig.sources.map((source) => <option value={source.id} key={source.id}>{source.title}（{source.id}）</option>)}</select></label>
+    <div className="import-config-bar">
+      <div className="mode-picker" role="group" aria-label="导入模式">
+        <button className={mode === "source" ? "selected" : ""} onClick={() => changeMode("source")}><strong>原文阅读</strong><small>原样保存正文，只生成书籍与章节目录</small></button>
+        <button className={mode === "topic" ? "selected" : ""} onClick={() => changeMode("topic")}><strong>专题电子书</strong><small>生成目标、候选声明和训练任务草稿</small></button>
+      </div>
+      <div className="book-settings">
+        <label>书名<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+        <label>版本<input value={version} onChange={(event) => setVersion(event.target.value)} /></label>
+        <label>知识源<select value={sourceId} onChange={(event) => setSourceId(event.target.value)}><option value="local-import">本机临时导入</option>{runtimeConfig.sources.map((source) => <option value={source.id} key={source.id}>{source.title}（{source.id}）</option>)}</select></label>
+      </div>
     </div>
     <div className="import-workspace">
-      <aside className="import-chapters">
+      <aside className={`import-chapters ${chapters.length > 0 ? "has-action-dock" : ""}`}>
         <div className="chapter-toolbar">
           {chapters.length > 0 ? <label className="confirm-all" title="确认或取消全部章节"><input ref={confirmAllInput} type="checkbox" checked={allConfirmed} onChange={(event) => setAllConfirmed(event.target.checked)} /></label> : <span className="confirm-column-placeholder" />}
           <span className="chapter-toolbar-title"><strong>全书目录</strong><small>已确认 {confirmedCount}/{chapters.length}</small></span>
           <span className="chapter-order-actions"><button onClick={() => move(-1)} disabled={selected === 0}>↑</button><button onClick={() => move(1)} disabled={selected >= chapters.length - 1}>↓</button></span>
         </div>
-        {chapters.map((chapter, index) => <div className={`import-chapter-row ${selected === index ? "active" : ""}`} key={chapter.id}>
-          <label className="chapter-confirm" title={chapter.confirmed ? "本章已确认" : "勾选以确认本章"}><input type="checkbox" checked={chapter.confirmed} onChange={(event) => setChapterConfirmed(index, event.target.checked)} /></label>
-          <button onClick={() => setSelected(index)}><b>{String(index + 1).padStart(2, "0")}</b><span>{chapter.title}<small>{chapter.sourceName}</small></span></button>
-          <span className={chapter.confirmed ? "chapter-confirm-state confirmed" : "chapter-confirm-state"}>{chapter.confirmed ? "已确认" : "待确认"}</span>
-        </div>)}
-        {!chapters.length && <p>请选择一个或多个 Markdown 文件。</p>}
+        <div className="import-chapter-list">
+          {chapters.map((chapter, index) => <div className={`import-chapter-row ${selected === index ? "active" : ""}`} key={chapter.id}>
+            <label className="chapter-confirm" title={chapter.confirmed ? "本章已确认" : "勾选以确认本章"}><input type="checkbox" checked={chapter.confirmed} onChange={(event) => setChapterConfirmed(index, event.target.checked)} /></label>
+            <button onClick={() => setSelected(index)}><b>{String(index + 1).padStart(2, "0")}</b><span>{chapter.title}<small>{chapter.sourceName}</small></span></button>
+            <span className={chapter.confirmed ? "chapter-confirm-state confirmed" : "chapter-confirm-state"}>{chapter.confirmed ? "已确认" : "待确认"}</span>
+          </div>)}
+          {!chapters.length && <p>请选择一个或多个 Markdown 文件。</p>}
+        </div>
+        {chapters.length > 0 && <div className="import-action-bar">
+          <span role="status">{message || `已读取 ${chapters.length} 个章节`}</span>
+          <div>
+            <button className="secondary" onClick={() => void save(false)}>保存草稿</button>
+            <button className="primary" onClick={() => void save(true)}>校验并发布</button>
+          </div>
+        </div>}
       </aside>
       <main className="import-editor">
         {chapters[selected] ? <>
@@ -224,7 +239,6 @@ export default function BookImporterPage() {
         </> : <div className="empty-state">导入 Markdown 后在这里编辑并预览。</div>}
       </main>
     </div>
-    {actionHost && chapters.length > 0 && createPortal(<div className="import-nav-actions"><span role="status">{message || `已读取 ${chapters.length} 个章节`}</span><button className="secondary" onClick={() => void save(false)}>保存草稿</button><button className="primary" onClick={() => void save(true)}>校验并发布</button></div>, actionHost)}
     {books.length > 0 && <section className="local-book-list"><h2>本机电子书</h2>{books.map((book) => <article key={book.id}>
       <Link to={`/library/books/${book.id}/${book.chapters[0]?.id ?? ""}`}><span>{book.status === "published" ? "已发布" : "草稿"} · {book.mode === "source" ? "原文阅读" : "专题电子书"}</span><strong>{book.title}</strong><small>{book.chapters.length} 章 · v{book.version}</small></Link>
       <div className="local-book-actions">

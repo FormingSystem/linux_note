@@ -549,7 +549,7 @@ cat /sys/kernel/debug/pinctrl/*/hog
 
 可输出：
 
-```
+```text
 Hog state: hog-uart-debug (active)
 ```
 
@@ -561,7 +561,7 @@ cat /sys/kernel/debug/gpio
 
 输出示例：
 
-```
+```text
 gpiochip0: GPIOs 0-31, parent: platform/0209c000.gpio, imx-gpio:
  gpio-3 (wifi-reset ) out hi
  gpio-5 (KEY0        ) in  lo  IRQ
@@ -575,7 +575,7 @@ cat /proc/interrupts | grep gpio
 
 输出：
 
-```
+```text
  72:   15    GIC-0   72  gpio-mxc  GPIO Key (KEY0)
 ```
 
@@ -861,7 +861,7 @@ cat /proc/interrupts | grep gpio
 
 输出示例：
 
-```
+```text
  66:   150  GIC-0  66  gpio-mxc  GPIO Key (KEY0)
 ```
 
@@ -889,7 +889,7 @@ evtest /dev/input/event0
 
 当按下按键时输出：
 
-```
+```yaml
 Event: time 12345.678901, type 1 (EV_KEY), code 28 (KEY_ENTER), value 1
 Event: time 12345.789012, type 0 (EV_SYN), code 0 (SYN_REPORT), value 0
 ```
@@ -904,7 +904,7 @@ cat /sys/kernel/debug/irq/irqs/66
 
 输出示例：
 
-```
+```text
 handler: gpio_irq_handler
 chip name: GICv2
 parent irq: 32

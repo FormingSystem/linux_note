@@ -1653,7 +1653,7 @@ module_exit(demo_exit);
 
    你会看到：
 
-   ```
+   ```text
    foo  bar
    ```
 

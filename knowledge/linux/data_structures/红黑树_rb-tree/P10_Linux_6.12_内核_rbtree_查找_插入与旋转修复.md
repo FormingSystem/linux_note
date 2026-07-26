@@ -381,7 +381,7 @@ struct rb_node *rb_find(const void *key,
 
 `rb_find()` 的核心逻辑可以概括成：
 
-```text
+```c
 node = tree->rb_node;
 
 while (node) {
@@ -476,14 +476,14 @@ rb_for_each()
 
 普通查找遇到相等就返回：
 
-```text
+```c
 c == 0:
 	return node;
 ```
 
 `rb_find_first()` 遇到相等时不会马上返回，而是先记录 `match`，然后继续向左找：
 
-```text
+```c
 if (c <= 0) {
 	if (!c)
 		match = node;
@@ -527,7 +527,7 @@ if (c <= 0) {
 
 `rb_for_each()` 它适合这种树：
 
-```
+```bash
 中序顺序：
 
 key=10, id=A
@@ -539,7 +539,7 @@ key=30, id=E
 
 查询 `key=10` 时，`rb_for_each()` 等价于：
 
-```
+```text
 rb_find_first(10)    -> key=10, id=A
 rb_next_match(10,A) -> key=10, id=B
 rb_next_match(10,B) -> key=10, id=C
@@ -548,19 +548,19 @@ rb_next_match(10,C) -> NULL，因为下一个是 key=20
 
 所以它的工程语义是：
 
-```
+```text
 遍历某个 key 对应的一组等价节点
 ```
 
 不是：
 
-```
+```text
 遍历所有节点
 ```
 
 遍历所有节点还是用：
 
-```
+```c
 for (node = rb_first(&root); node; node = rb_next(node)) {
 	...
 }
@@ -756,19 +756,19 @@ struct rb_node **link;
 
 刚开始：
 
-```text
+```c
 link = &root->rb_node
 ```
 
 如果向左走：
 
-```text
+```c
 link = &parent->rb_left
 ```
 
 如果向右走：
 
-```text
+```c
 link = &parent->rb_right
 ```
 
@@ -810,7 +810,7 @@ link 是 parent 的某个孩子指针地址；
 
 空树时：
 
-```text
+```c
 root->rb_node == NULL
 link = &root->rb_node
 parent = NULL
@@ -841,7 +841,7 @@ node->rb_left = node->rb_right = NULL;
 
 所以：
 
-```text
+```bash
 node->__rb_parent_color = parent + 0
 ```
 
@@ -1368,13 +1368,13 @@ EXPORT_SYMBOL(rb_insert_color);
 
 最核心的不变量是：
 
-```
+```bash
 node 一定是红色。
 ```
 
 所以插入修复只围绕一个问题：
 
-```
+```text
 node 是红色；
 parent 如果也是红色，就违反“红节点不能有红孩子”。
 ```
@@ -1444,7 +1444,7 @@ Linux rbtree 把插入修复写成：
 
 普通 rbtree：
 
-```text
+```c
 augment_rotate = dummy_rotate
 ```
 
@@ -1560,7 +1560,7 @@ node red
 
 Linux rbtree 的 `rb_link_node()` 正好利用 `RB_RED == 0`：
 
-```text
+```bash
 node->__rb_parent_color = parent
 ```
 
@@ -1572,7 +1572,7 @@ node->__rb_parent_color = parent
 
 `__rb_insert()` 先处理根节点场景：
 
-```text
+```c
 if (!parent) {
 	rb_set_parent_color(node, NULL, RB_BLACK);
 	break;
@@ -1598,7 +1598,7 @@ if (!parent) {
 
 接着处理父节点为黑：
 
-```text
+```c
 if (rb_is_black(parent))
 	break;
 ```
@@ -1816,7 +1816,7 @@ tmp = node->rb_right;
 
 在旋转前：
 
-```text
+```c
 tmp = node->rb_left
 ```
 
@@ -1826,14 +1826,14 @@ tmp = node->rb_left
 
 所以：
 
-```text
+```c
 parent->rb_right = tmp
 node->rb_left = parent
 ```
 
 然后：
 
-```text
+```c
 parent = node
 tmp = node->rb_right
 ```
@@ -1916,13 +1916,13 @@ Case 3 修复后可以直接结束。
 
 进入条件是：
 
-```text
+```c
 parent == gparent->rb_right
 ```
 
 此时叔叔是：
 
-```text
+```c
 tmp = gparent->rb_left
 ```
 
@@ -1945,7 +1945,7 @@ Case 3：
 
 源码中的镜像旋转写法是：
 
-```text
+```c
 Case 2：
 	parent->rb_left = tmp;
 	node->rb_right = parent;
@@ -1978,7 +1978,7 @@ augment_rotate(old, new);
 
 普通 rbtree 中：
 
-```text
+```c
 augment_rotate = dummy_rotate
 ```
 
@@ -2268,7 +2268,7 @@ __rb_rotate_set_parents(gparent, parent, root, RB_RED);
 
 也就是：
 
-```text
+```c
 old = gparent
 new = parent
 color = RB_RED
@@ -2331,7 +2331,7 @@ old 的颜色设置为调用者指定的 color。
 
 在插入 Case 3 中：
 
-```text
+```c
 color = RB_RED
 ```
 
@@ -2339,7 +2339,7 @@ color = RB_RED
 
 在删除 Case 4 中，调用者可能传：
 
-```text
+```c
 color = RB_BLACK
 ```
 

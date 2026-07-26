@@ -1613,7 +1613,7 @@ kref 保护“对象内存是否仍然存在”。
 
 假设两个线程：
 
-```text
+```c
 CPU0:
     mutex_lock(&my_obj_list_lock);
     mutex_lock(&obj->lock);
@@ -2906,13 +2906,13 @@ kref_put(&obj->ref, my_obj_release);
 
 所以不要把：
 
-```text
+```c
 state == STOPPED
 ```
 
 等同于：
 
-```text
+```c
 refcount == 0
 ```
 

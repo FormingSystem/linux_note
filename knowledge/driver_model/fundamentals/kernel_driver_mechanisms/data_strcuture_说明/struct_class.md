@@ -1410,7 +1410,7 @@ struct device *mon_dev = hwmon_device_register_with_groups(
 
 - sysfs 呈现（示意）：
 
-```
+```text
 /sys/class/demo_class/demo0     ->  .../devices/.../demo0   （符号链接）
 /sys/class/hwmon/hwmon3         ->  .../devices/.../hwmon3  （符号链接）
 ```
@@ -1606,7 +1606,7 @@ sequenceDiagram
 
 ## 9.8\_直观结构图
 
-```
+```text
 /sys/class/demo_class/
  └── demo -> ../../devices/virtual/demo_class/demo/
       ├── uevent
@@ -1656,7 +1656,7 @@ sequenceDiagram
 
 - 注册后 sysfs 生成：
 
-  ```
+  ```text
   /sys/class/demo_class/demo/mode
   ```
 
@@ -1847,7 +1847,7 @@ struct class *__class_create(struct module *owner, const char *name,
 
 最终会把 class 转换成一个 **kset/kobject**，挂到 sysfs：
 
-```
+```text
 /sys/class/<class_name>/
 ```
 
@@ -1882,13 +1882,13 @@ struct device *device_create(struct class *class, struct device *parent,
 
 2. 创建 sysfs 条目：
 
-   ```
+   ```text
    /sys/class/<class>/<device_name>/
    ```
 
 3. 触发 uevent：
 
-   ```
+   ```bash
    MAJOR=240 MINOR=0 DEVNAME=demo
    ```
 
@@ -1996,7 +1996,7 @@ struct class {
 
   - sysfs 中出现：
 
-    ```
+    ```text
     /sys/class/demo_class/
     ```
 
@@ -2046,19 +2046,19 @@ device_create(demo_class, NULL, devt, NULL, "demo");
 
 - sysfs 中出现：
 
-  ```
+  ```text
   /sys/class/demo_class/demo/
   ```
 
 - 同时触发 uevent：
 
-  ```
+  ```bash
   MAJOR=240 MINOR=0 DEVNAME=demo
   ```
 
 - udev/devtmpfs 根据事件创建设备节点：
 
-  ```
+  ```text
   /dev/demo
   ```
 
@@ -2068,7 +2068,7 @@ device_create(demo_class, NULL, devt, NULL, "demo");
 
 以 demo 驱动为例：
 
-```
+```text
 /sys/class/demo_class/demo -> ../../devices/virtual/demo_class/demo
 ```
 
@@ -2174,7 +2174,7 @@ device_create(demo_class, NULL, devt, NULL, "demo");
 
    - 在 sysfs 中创建目录：
 
-     ```
+     ```text
      /sys/devices/virtual/demo_class/demo
      ```
 
@@ -2188,7 +2188,7 @@ device_create(demo_class, NULL, devt, NULL, "demo");
 
    - 构造一组环境变量：
 
-     ```
+     ```bash
      ACTION=add
      DEVPATH=/devices/virtual/demo_class/demo
      SUBSYSTEM=demo_class
@@ -2213,7 +2213,7 @@ udevadm monitor --kernel --property
 
 当驱动加载时输出类似：
 
-```
+```bash
 KERNEL[1234.567]: add /devices/virtual/demo_class/demo (demo_class)
 ACTION=add
 DEVPATH=/devices/virtual/demo_class/demo
@@ -2241,7 +2241,7 @@ SEQNUM=1012
 
   - 内核接收到 uevent 后，devtmpfs 会 **直接创建设备节点**：
 
-    ```
+    ```text
     /dev/demo
     ```
 
@@ -3002,13 +3002,13 @@ demo_device = device_create(demo_class, NULL, devt, NULL, "demo");
 
 - sysfs 中：
 
-  ```
+  ```text
   /sys/class/demo_class/demo/
   ```
 
 - /dev 中：
 
-  ```
+  ```text
   /dev/demo
   ```
 
@@ -3056,7 +3056,7 @@ static void __exit demo_exit(void)
 
    输出：
 
-   ```
+   ```text
    /sys/class/demo_class/demo/
    ├── dev
    ├── subsystem -> ../../class/demo_class
@@ -3398,7 +3398,7 @@ ls -l /dev/demo
 
    输出：
 
-   ```
+   ```bash
    MAJOR=240
    MINOR=0
    DEVNAME=demo
@@ -3518,7 +3518,7 @@ mount -t devtmpfs devtmpfs /dev
 
 udev 规则通常位于：
 
-```
+```text
 /etc/udev/rules.d/
 /lib/udev/rules.d/
 ```
@@ -3740,7 +3740,7 @@ ls -l /sys/class/demo_class/demo/mode
 
 规则示例：
 
-```
+```bash
 KERNEL=="demo", MODE="0666", GROUP="users"
 ```
 
@@ -3861,7 +3861,7 @@ ls -l /sys/class/demo_class/demo/
 
 输出应包含驱动定义的属性，例如：
 
-```
+```text
 -rw-r--r-- 1 root root 4096 Sep 23 08:00 mode
 ```
 
@@ -3958,7 +3958,7 @@ udevadm monitor --kernel --property
 
 当加载驱动时，会输出：
 
-```
+```text
 KERNEL[123.456]: add /devices/virtual/demo_class/demo (demo_class)
 DEVNAME=/dev/demo
 ```
@@ -4102,7 +4102,7 @@ ls /sys/firmware/devicetree/base/
 
 示例输出：
 
-```
+```text
 soc
  └── serial@1000
  └── ethernet@2000
@@ -4187,7 +4187,7 @@ cat /sys/firmware/devicetree/base/demo@0/buffer-size
 
 输出示例：
 
-```
+```text
 1024
 ```
 
@@ -4199,7 +4199,7 @@ cat /sys/class/demo_class/demo/buffer_size
 
 输出示例：
 
-```
+```text
 2048
 ```
 
@@ -5010,14 +5010,14 @@ ssize_t mode_show(struct device *dev, struct device_attribute *attr, char *buf)
 
 错误输出：
 
-```
+```text
 123
 456   # 多行输出违反规范
 ```
 
 正确输出：
 
-```
+```text
 123\n
 ```
 
@@ -5854,7 +5854,7 @@ udevadm monitor --kernel --property
 
 插入 U 盘时输出：
 
-```
+```text
 KERNEL[1234.567] add /devices/pci0000:00/.../usb1/1-1 (usb)
 KERNEL[1234.568] add /devices/.../block/sdb (block)
 ```
@@ -5873,7 +5873,7 @@ ls /sys/class/block/
 
 udev 根据规则：
 
-```
+```bash
 KERNEL=="sd*", SUBSYSTEM=="block", NAME="disk/%k"
 ```
 
@@ -5886,7 +5886,7 @@ KERNEL=="sd*", SUBSYSTEM=="block", NAME="disk/%k"
 1. 插入 USB 网卡
 2. sysfs 中出现：
 
-```
+```text
 /sys/class/net/eth1
 /sys/bus/usb/devices/1-1/
 ```
@@ -5901,7 +5901,7 @@ KERNEL=="sd*", SUBSYSTEM=="block", NAME="disk/%k"
 1. 插入 PCIe SSD
 2. sysfs 中出现：
 
-```
+```text
 /sys/class/block/nvme0n1
 /sys/bus/pci/devices/0000:01:00.0/
 ```
@@ -6156,7 +6156,7 @@ console  null  tty  zero
 
 然而，在 Linux 系统中还有一个特殊的目录：
 
-```
+```text
 /sys/fs/cgroup
 ```
 
@@ -6220,7 +6220,7 @@ kernfs_mount(cgrp_fs_type, ...);
 
 在 v1 中，每个子系统单独挂载：
 
-```
+```text
 /sys/fs/cgroup/cpu/
 /sys/fs/cgroup/memory/
 /sys/fs/cgroup/blkio/
@@ -6228,7 +6228,7 @@ kernfs_mount(cgrp_fs_type, ...);
 
 每个目录下有控制文件：
 
-```
+```text
 /sys/fs/cgroup/memory/memory.limit_in_bytes
 /sys/fs/cgroup/memory/memory.usage_in_bytes
 ```
@@ -6244,13 +6244,13 @@ kernfs_mount(cgrp_fs_type, ...);
 
 在 v2 中，所有子系统统一在：
 
-```
+```text
 /sys/fs/cgroup/
 ```
 
 例子：
 
-```
+```text
 /sys/fs/cgroup/cgroup.procs
 /sys/fs/cgroup/cpu.max
 /sys/fs/cgroup/memory.max
@@ -6429,7 +6429,7 @@ sequenceDiagram
 
 每个支持电源管理的设备都会在 sysfs 下有：
 
-```
+```text
 /sys/devices/.../power/control
 /sys/devices/.../power/runtime_status
 ```
@@ -6469,7 +6469,7 @@ echo on > /sys/class/net/eth0/power/control
 
 目录：
 
-```
+```text
 /sys/class/backlight/intel_backlight/brightness
 /sys/class/backlight/intel_backlight/max_brightness
 ```
@@ -6490,7 +6490,7 @@ echo 200 > /sys/class/backlight/intel_backlight/brightness
 
 目录：
 
-```
+```text
 /sys/devices/system/cpu/cpu0/cpufreq/
 ```
 
@@ -6783,14 +6783,14 @@ sysfs 是挂载在 `/sys` 的文件系统，本质上是 **kernfs 实例**。
 
 - 在宿主机：
 
-  ```
+  ```text
   /sys/fs/cgroup/cpu.max
   /sys/fs/cgroup/memory.max
   ```
 
 - 在容器内：
 
-  ```
+  ```text
   /sys/fs/cgroup/
   └── container-specific/
   ```
@@ -6963,7 +6963,7 @@ udevadm monitor --udev
 
 输出：
 
-```
+```text
 KERNEL[123.456]: add   /devices/.../usb1 (usb)
 UDEV  [123.457]: add   /devices/.../usb1 (usb)
 ```
@@ -7202,7 +7202,7 @@ flowchart TD
 
 路径：
 
-```
+```text
 /sys/class/net/<ifname>/
 ```
 
@@ -7228,7 +7228,7 @@ cat /sys/class/net/eth0/speed
 
 路径：
 
-```
+```text
 /sys/class/input/inputX/
 ```
 
@@ -7253,7 +7253,7 @@ AT Translated Set 2 keyboard
 
 路径：
 
-```
+```text
 /sys/bus/usb/devices/usbX/
 ```
 
@@ -7278,7 +7278,7 @@ cat /sys/bus/usb/devices/1-1/idVendor
 
 路径：
 
-```
+```text
 /sys/class/drm/cardX/
 ```
 
@@ -7303,7 +7303,7 @@ connected
 
 路径：
 
-```
+```text
 /sys/block/sdX/
 ```
 
