@@ -69,28 +69,32 @@ Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，�
 
 ```bash
 git config core.hooksPath .githooks
+git config commit.template governance/templates/git_commit_message.txt
 ```
 
 提交信息格式：
 
 ```text
-<类型>(<范围>): <中文一句话说明>
+<类型>[(<project>/<module>)]!?: <中文结果>
+[可选：标题无法完整表达时才添加]
+- 描述1
+- 描述2
 ```
 
 类型固定为：
 
 ```text
-add update rewrite fix structure format link asset meta archive chore
+feat fix refactor perf security content docs test build ci release revert chore
 ```
 
 示例：
 
 ```text
-add(kernel): 新增 Linux 内核链表基础笔记
-update(driver): 补充字符设备驱动框架说明
-fix(appendix): 修正红黑树章节链接
-structure(obsidian): 调整内核笔记目录层级
-meta(git): 更新个人提交规则
+feat(publication/export): 支持按清单导出专题文档
+refactor(repository/format)!: 统一文档检查入口
+fix(reference/download): 修正外部资料摘要校验
+content(knowledge/rcu): 补充宽限期状态汇聚过程
+docs(repository/git): 更新分支与提交规范
 ```
 
 详细规则见：
