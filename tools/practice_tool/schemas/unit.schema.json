@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://linux-note.local/schemas/practice-unit.schema.json",
+  "title": "Linux Note Practice Unit",
+  "type": "object",
+  "required": ["schema_version", "id", "title", "subtitle", "status", "estimated_minutes", "knowledge_refs", "stages"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9_.-]+$" },
+    "title": { "type": "string", "minLength": 1 },
+    "subtitle": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["draft", "evolving", "maintained", "archived"] },
+    "estimated_minutes": { "type": "integer", "minimum": 1 },
+    "knowledge_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "path"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "stages": {
+      "type": "object",
+      "required": ["guided", "reconstruction", "professional"],
+      "properties": {
+        "guided": { "$ref": "#/$defs/stage" },
+        "reconstruction": { "$ref": "#/$defs/stage" },
+        "professional": { "$ref": "#/$defs/stage" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "stage": {
+      "type": "object",
+      "required": ["title", "purpose", "items_file"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 },
+        "items_file": { "type": "string", "pattern": "^[a-z0-9_]+\\.json$" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

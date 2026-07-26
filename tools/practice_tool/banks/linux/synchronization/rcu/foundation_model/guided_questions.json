@@ -1,0 +1,92 @@
+[
+  {
+    "id": "linux.rcu.guided.rwlock_read_cost",
+    "title": "读写锁为什么仍有读同步成本",
+    "scenario": "一张设备表每秒被多个 CPU 查询数百万次，数分钟才更新一次。当前用同一把读写锁保护查找和删除，并且几乎没有写者等待。",
+    "question": "既然读锁允许多个读者并行，RCU 还能减轻哪一部分读同步？请把成本形成过程说到缓存行所有权。",
+    "hints": [
+      "“逻辑上允许并行”和“硬件上互不通信”是不是一回事？",
+      "read_lock() 与 read_unlock() 是否需要改变一份共享状态？",
+      "多个 CPU 原子修改同一锁字前，谁必须取得该缓存行的可写所有权？"
+    ],
+    "answer_framework": [
+      "读写锁允许读者同时处于临界区，但进入和退出通常仍需原子修改共享锁状态。",
+      "每个 CPU 修改锁字前要取得其缓存行的可写所有权，使其他 CPU 副本失效。",
+      "高频短读临界区下，缓存行跨核转手可能成为共享写热点。",
+      "RCU 将普通读侧成本转为任务或 CPU 本地状态，把汇聚和等待移到较低频的 GP 路径。"
+    ],
+    "common_mistakes": [
+      "只说“RCU 无锁所以更快”。",
+      "把没有写者等待等同于没有硬件同步成本。",
+      "没有交代共享状态存在哪里、由谁修改。"
+    ],
+    "knowledge_refs": ["knowledge.linux.synchronization.rcu.why_rcu"]
+  },
+  {
+    "id": "linux.rcu.guided.cost_transfer",
+    "title": "减轻读同步之后，成本去了哪里",
+    "scenario": "更新者把入口从旧对象 A 替换为新对象 B，后来的读者取得 B，但一个较早的读者仍在使用 A。",
+    "question": "RCU 让读者不再共同修改全局读者计数后，副作用和新增责任是什么？",
+    "hints": [
+      "入口已经不再指向 A，是否能证明所有 CPU 的局部变量中都没有 A？",
+      "更新者能否立即原地覆盖或释放 A？",
+      "新对象与旧对象并存会增加什么资源成本？"
+    ],
+    "answer_framework": [
+      "更新者需要复制或准备新版本，并用正确的发布语义替换入口。",
+      "旧对象取消发布后不能立即释放，必须等待一个宽限期。",
+      "等待期间新旧版本并存，增加内存占用和回调积压风险。",
+      "多个写者的业务一致性仍需单独串行化，RCU 不自动解决字段不变量。"
+    ],
+    "common_mistakes": [
+      "声称 RCU 消除了同步成本。",
+      "认为替换指针后旧对象一定无人使用。",
+      "认为 RCU 自动保证所有业务字段构成一致快照。"
+    ],
+    "knowledge_refs": [
+      "knowledge.linux.synchronization.rcu.why_rcu",
+      "knowledge.linux.synchronization.rcu.abstract_model"
+    ]
+  },
+  {
+    "id": "linux.rcu.guided.gp_boundary",
+    "title": "宽限期到底等待谁",
+    "scenario": "写者在 T1 发布新版本并启动 GP。读者 R0 在 T1 之前进入，读者 R1 在 T1 之后进入。",
+    "question": "GP 是否必须等待 R0 和 R1 都退出？为什么新读者通常不属于本轮必须等待的集合？",
+    "hints": [
+      "谁有可能取得已经被取消发布的旧对象？",
+      "GP 的目标是等到系统中完全没有读者，还是证明旧读者越过安全边界？"
+    ],
+    "answer_framework": [
+      "本轮 GP 只需覆盖发布新版本之前已经可能取得旧对象的读者。",
+      "发布之后的新读者只能通过共享入口取得新版本，不阻碍旧对象回收。",
+      "GP 证明的是旧读者集合已经越过安全边界，而不是系统出现全局无读者瞬间。"
+    ],
+    "common_mistakes": [
+      "把 GP 描述成等待所有当前和未来读者清零。",
+      "把宽限期误认为固定时长的延时。"
+    ],
+    "knowledge_refs": ["knowledge.linux.synchronization.rcu.abstract_model"]
+  },
+  {
+    "id": "linux.rcu.guided.preempted_reader",
+    "title": "被抢占读者为什么改变状态归属",
+    "scenario": "PREEMPT_RCU 中，任务 T 在 CPU0 的读侧临界区内被抢占，CPU0 随后运行其他任务并经过了 QS。",
+    "question": "为什么不能仅凭 CPU0 已经过 QS 就结束等待？任务状态要从哪里转移到哪里？",
+    "hints": [
+      "旧指针跟着 CPU 走，还是跟着任务的寄存器、栈和局部变量走？",
+      "CPU 报告 QS 前，谁要把仍在临界区的任务登记到共享位置？"
+    ],
+    "answer_framework": [
+      "旧指针属于被抢占任务的执行状态，CPU0 运行其他任务不代表原任务结束读侧。",
+      "调度路径读取任务本地 nesting，并将该任务登记到 rcu_node 的阻塞读者列表。",
+      "CPU 本身随后可以报告 QS，但 gp_tasks 仍阻止 GP 完成。",
+      "任务恢复并退出最外层读侧后解除共享登记。"
+    ],
+    "common_mistakes": [
+      "把任务读侧状态误认为永久绑定 CPU。",
+      "只说“RCU 支持抢占”，不说明状态地址和转换事件。"
+    ],
+    "knowledge_refs": ["knowledge.linux.synchronization.rcu.tree_state"]
+  }
+]
