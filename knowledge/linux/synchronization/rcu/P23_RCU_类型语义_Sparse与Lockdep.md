@@ -133,7 +133,7 @@ make C=1
 即启用 Sparse 静态分析。Sparse 会识别 `address_space(4)` 类型的变量，
  当检测到不规范访问时，输出如下警告：
 
-```
+```text
 warning: incorrect type in assignment (different address spaces)
 ```
 

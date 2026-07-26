@@ -220,13 +220,13 @@ leftmost
 
 搜索时初始：
 
-```text
+```c
 leftmost = true
 ```
 
 只要向右走过一次：
 
-```text
+```c
 leftmost = false
 ```
 
@@ -275,7 +275,7 @@ rb_leftmost 不变。
 
 源码逻辑：
 
-```text
+```c
 if (root->rb_leftmost == node)
 	root->rb_leftmost = rb_next(node);
 
@@ -1108,7 +1108,7 @@ static int demo_remove(struct demo_rb_tree *tree, int key,
 
 调用者可以根据生命周期选择：
 
-```text
+```c
 kfree(item);
 demo_item_put(item);
 call_rcu(&item->rcu, demo_item_free_rcu);

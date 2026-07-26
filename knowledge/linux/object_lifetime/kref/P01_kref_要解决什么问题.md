@@ -297,7 +297,7 @@ kref_init(&refobj->ref);
 
 此时：
 
-```text
+```c
 refcount = 1
 ```
 

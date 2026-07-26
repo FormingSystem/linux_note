@@ -57,14 +57,14 @@ flowchart LR
 
 以 **i.MX6ULL** 为例（NXP IOMUXC 控制器）：
 
-```
+```text
 PAD_GPIO1_IO03 → 选择功能 GPIO1_IO03 → 对应 GPIO 控制器 gpio1
 gpio1 具备 interrupt-controller 属性 → 接入 GIC → 触发内核 ISR
 ```
 
 以 **RK3568** 为例（Rockchip GRF/PMU 分域）：
 
-```
+```text
 PAD RK_PC2 → function = "gpio" or "uart2"
 gpio2 控制器属于系统域 → 其 interrupt-controller 对接 GIC
 ```
@@ -422,7 +422,7 @@ cat /sys/kernel/debug/gpio
 
 输出示例：
 
-```
+```text
 gpio-101 (camera-reset) out hi hog
 ```
 
@@ -1718,7 +1718,7 @@ flowchart TB
 
 许多初学者在调试驱动时，只看到了：
 
-```
+```text
 [    1.234567] mydriver: probe success
 ```
 
@@ -1777,7 +1777,7 @@ cat /sys/kernel/debug/pinctrl/*/pinmux-pins
 
 🧭 **输出示例（i.MX6ULL）**
 
-```
+```text
 pin 43 (GPIO1_IO11): mydev function gpio, pull-up, drive-strength 3
 ```
 
@@ -1791,7 +1791,7 @@ cat /sys/kernel/debug/gpio
 
 输出类似：
 
-```
+```text
 gpiochip1: GPIOs 0-31, parent: platform/2020000.gpio, 2020000.gpio:
  gpio-10 (reset               ) out hi
  gpio-12 (wakeup              ) in  lo IRQ
@@ -1813,7 +1813,7 @@ cat /proc/interrupts | grep gpio
 
 输出：
 
-```
+```text
 122:     40    0   GIC  122  Edge  gpio-keys
 ```
 
@@ -1858,7 +1858,7 @@ echo "file drivers/gpio/gpiolib*.c +p" > /sys/kernel/debug/dynamic_debug/control
 
 即可看到：
 
-```
+```text
 gpiolib.c: gpiochip_add_data: registered GPIO chip 2020000.gpio with 32 GPIOs
 ```
 
@@ -1872,7 +1872,7 @@ cat /sys/kernel/debug/tracing/trace_pipe
 
 输出示例：
 
-```
+```yaml
 irq_handler_entry: irq=122 name=gpio-keys
 irq_handler_exit: irq=122 ret=handled
 ```

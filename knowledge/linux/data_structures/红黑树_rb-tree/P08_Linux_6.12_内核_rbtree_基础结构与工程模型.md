@@ -454,7 +454,7 @@ O(log n)
 
 它关注的是：
 
-```text
+```c
 key == target
 ```
 
@@ -1017,14 +1017,14 @@ Linux 借用这些低位保存颜色信息；
 
 教材红黑树写成：
 
-```text
+```bash
 node->parent
 node->color
 ```
 
 Linux 里面变成：
 
-```text
+```bash
 node->__rb_parent_color
 ```
 
@@ -1315,7 +1315,7 @@ struct rb_node *rb_node;
 
 最终效果就是：
 
-```text
+```c
 root.rb_node = NULL
 ```
 
@@ -2774,7 +2774,7 @@ color。
 
 Linux rbtree 把它们合并到：
 
-```text
+```c
 unsigned long __rb_parent_color;
 ```
 
@@ -3161,7 +3161,7 @@ Linux 6.12 的 `rbtree_types.h` 中，`RB_ROOT` 初始化为 `{ NULL, }`，`RB_R
 
 语义是：
 
-```text
+```c
 root->rb_node == NULL
 ```
 
@@ -3206,7 +3206,7 @@ Linux 6.12 的 `rbtree.h` 中，`RB_EMPTY_ROOT(root)` 使用 `READ_ONCE((root)->
 
 Linux rbtree 使用特殊编码表示空节点：
 
-```text
+```bash
 node->__rb_parent_color == (unsigned long)node
 ```
 

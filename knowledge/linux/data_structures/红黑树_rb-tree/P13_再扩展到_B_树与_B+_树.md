@@ -536,7 +536,7 @@ flowchart LR
 
 现在插入：
 
-```text
+```c
 key = 55
 ```
 

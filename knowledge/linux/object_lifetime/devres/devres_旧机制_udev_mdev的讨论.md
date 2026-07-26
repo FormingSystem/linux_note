@@ -192,7 +192,7 @@ static int foo_remove(struct platform_device *pdev)
 
 ##### 4)\_一个迷你时序对照
 
-```
+```text
 probe():
   devm_kzalloc()
   devm_ioremap_resource()
@@ -217,7 +217,7 @@ unbind/remove:
 
 ### 1.6.2\_udev\_规则(示例)
 
-```
+```bash
 # /etc/udev/rules.d/99-foo.rules
 SUBSYSTEM=="gpio", KERNEL=="gpiochip*", MODE="0660", GROUP="gpio"
 SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/foo0"
@@ -225,7 +225,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 
 ### 1.6.3\_mdev\_规则(示例)
 
-```
+```text
 # /etc/mdev.conf
 ^gpiochip[0-9]+$   root:gpio  0660
 ^foo[0-9]+$        root:users 0660   @/usr/bin/foo-post $MDEV
@@ -578,21 +578,21 @@ devres_close_group(dev, g);  /* 固化阶段 A 的资源 */
 
 **串口：统一权限与别名**
 
-```
+```text
 # /etc/udev/rules.d/99-serial.rules
 SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0660", GROUP="dialout", SYMLINK+="serial/%k"
 ```
 
 **按 USB VID:PID + 序列号建立稳定名**
 
-```
+```text
 SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", \
   ATTRS{serial}=="A1B2C3D4", SYMLINK+="serial/ftdi-A1B2C3D4"
 ```
 
 **GPIO chardev：设置组与权限**
 
-```
+```text
 # /dev/gpiochipN 归属 gpio 组
 KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"
 ```
@@ -632,7 +632,7 @@ KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"
 
 **示例：串口与 GPIO 权限**
 
-```
+```text
 ^ttyUSB[0-9]+$    root:dialout  0660
 ^gpiochip[0-9]+$  root:gpio     0660   @/usr/sbin/post-add.sh $MDEV
 ```
@@ -674,7 +674,7 @@ mdev -s   # 冷插拔扫描
 
 ### 3.6.1\_udev\_方案
 
-```
+```text
 # /etc/udev/rules.d/99-serial.rules
 SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0660", GROUP="dialout", SYMLINK+="serial/%k"
 ```
@@ -687,7 +687,7 @@ SUBSYSTEM=="tty", KERNEL=="ttyUSB*", MODE="0660", GROUP="dialout", SYMLINK+="ser
 
 ### 3.6.2\_mdev\_方案
 
-```
+```text
 # /etc/mdev.conf
 ^ttyUSB[0-9]+$    root:dialout  0660
 ```
@@ -865,7 +865,7 @@ return 0;
 
 ### 4.5.2\_udev\_规则(GPIO\_chardev\_+\_自定义字符设备)
 
-```
+```c
 # /etc/udev/rules.d/99-foo.rules
 KERNEL=="gpiochip*", SUBSYSTEM=="gpio", MODE="0660", GROUP="gpio"
 
@@ -893,7 +893,7 @@ mdev -s
 
 ### 4.6.2\_/etc/mdev.conf
 
-```
+```text
 ^gpiochip[0-9]+$  root:gpio   0660
 ^foo[0-9]+$       root:users  0660   @/usr/bin/foo-post.sh $MDEV
 ```

@@ -553,7 +553,7 @@ gpio-keys {
 
 此时用户空间 `gpioinfo` 会自动显示：
 
-```
+```text
 line 2: "KEY_PWR" input active-low
 ```
 
@@ -682,7 +682,7 @@ sequenceDiagram
 
 此宏由厂商在 `imx6ul-pinfunc.h` 定义，展开后为：
 
-```
+```text
 <复用寄存器地址, 配置寄存器地址, 复用模式, 输入配置, 初始值>
 ```
 

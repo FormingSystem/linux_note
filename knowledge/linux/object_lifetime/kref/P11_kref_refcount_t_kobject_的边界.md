@@ -14,7 +14,7 @@ domains:
 
 前面章节一直在讲裸 `kref`：
 
-```text
+```c
 struct my_obj {
 	struct kref ref;
 	...

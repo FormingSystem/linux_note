@@ -361,7 +361,7 @@ dmesg | tail
 
 会看到类似：
 
-```
+```text
 demo: loaded, major=240
 ```
 
@@ -581,7 +581,7 @@ dmesg | tail
 
 如果你在目标板上执行 `modinfo demo.ko`，报错：
 
-```
+```text
 modinfo: can't open '/lib/modules/6.1.xx/modules.dep'
 ```
 
@@ -742,7 +742,7 @@ dmesg | tail
 
 输出示例：
 
-```
+```text
 [ 1234.567890] demo: loaded, major=240
 ```
 
@@ -756,7 +756,7 @@ ls -l /dev/demo
 
 输出示例：
 
-```
+```text
 crw------- 1 root root 240, 0 Jan  1 00:00 /dev/demo
 ```
 
@@ -781,7 +781,7 @@ dmesg | tail
 
 输出示例：
 
-```
+```text
 [ 1235.123456] demo: write(), count=6
 ```
 
@@ -803,7 +803,7 @@ dmesg | tail
 
 输出示例：
 
-```
+```text
 [ 1236.654321] demo: read()
 ```
 
@@ -825,7 +825,7 @@ dmesg | tail
 
 输出示例：
 
-```
+```text
 [ 1237.987654] demo: unloaded
 ```
 
@@ -837,7 +837,7 @@ ls -l /dev/demo
 
 会提示：
 
-```
+```text
 ls: cannot access '/dev/demo': No such file or directory
 ```
 
@@ -962,7 +962,7 @@ dmesg | tail
 
 输出：
 
-```
+```text
 demo: write(), count=13
 ```
 
@@ -976,13 +976,13 @@ cat /dev/demo
 
 屏幕输出：
 
-```
+```text
 Hello Kernel
 ```
 
 日志：
 
-```
+```yaml
 demo: read(), count=65536, ppos=0
 ```
 
@@ -1001,13 +1001,13 @@ cat /dev/demo
 
 输出变为：
 
-```
+```text
 Second Line
 ```
 
 日志显示：
 
-```
+```text
 demo: write(), count=12
 demo: read(), count=65536, ppos=0
 ```
@@ -1024,7 +1024,7 @@ sudo rmmod demo
 
 日志：
 
-```
+```yaml
 demo: unloaded
 ```
 
