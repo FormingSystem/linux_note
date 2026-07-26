@@ -73,32 +73,30 @@ http://127.0.0.1:5173/
 第一次启动执行以下流程：
 
 ```text
-寻找可用的 Node.js 和 npm
+寻找可用的 Node.js 和 npm，并检查主版本
     ↓
-缺失时选择当前系统对应的安装方式
+缺失或低于 v18 时按优先级准备官方兼容版本
     ↓
 安装 practice_tool 项目依赖
     ↓
-写入 .local/environment-ready-v1
+写入 .local/environment-ready-v3-node-compatible
     ↓
 启动 Vite 本地服务
     ↓
 打开默认浏览器
 ```
 
-环境就绪标记和 `node_modules` 同时存在时，后续启动跳过安装阶段。如果 `node_modules` 被删除，启动器会自动重新准备依赖。
+环境就绪标记和 `node_modules` 同时存在时，后续启动跳过依赖安装。如果 `node_modules` 被删除，启动器会自动重新准备依赖。Node.js 版本在每次启动时都会检查，旧版本不能绕过门禁。
 
 不同环境的安装策略为：
 
 | 环境 | 安装方式 | 是否使用 `sudo` |
 | --- | --- | --- |
-| Windows | 复用现有 Node.js，缺失时调用 `winget` | 否 |
-| MSYS2/UCRT64 | 复用 Windows Node.js，或用 MSYS2 `pacman` 安装对应 Node.js 包 | 否 |
-| Debian/Ubuntu | `apt-get` | 是 |
-| Fedora/RHEL | `dnf` | 是 |
-| Arch Linux | Linux 原生 `pacman` | 是 |
+| Windows | 复用 Node.js 18 以上版本；优先 `winget`，官方 ZIP 兜底 | 否 |
+| MSYS2/UCRT64 | 复用兼容版本，或用 MSYS2 `pacman` 安装对应 Node.js 包 | 否 |
+| 普通 Linux | 从官方地址按 `24 → 22 → 20 → 18` 选择最高可用版本并校验，安装到 `.local/runtime` | 否 |
 
-MSYS2 与 Arch Linux 虽然都使用 `pacman`，权限模型不同。MSYS2 的标准安装通常由当前用户直接维护，不能因为检测到 `pacman` 就机械添加 `sudo`。
+普通 Linux 不再直接采用发行版仓库中的 Node.js，因为 Ubuntu 等系统可能提供已经不能运行当前 Vite 的旧版本。隔离运行时不改变 `/usr/bin/node`，删除工具 `.local/runtime` 即可移除。
 
 ## 1.4\_平台内的使用顺序
 
@@ -276,6 +274,9 @@ git -c http.proxy=socks5h://192.168.31.197:10808 \
 
 | 现象 | 原因 | 处理方式 |
 | --- | --- | --- |
+| 大量 `npm WARN EBADENGINE`，显示 Node.js `v12` | 启动器复用了不兼容的系统 Node.js | 更新启动器；它会从官方地址选择最高可用兼容版本 |
+| npm 长时间停在 `reify` 或 `http fetch` | 首次下载较慢，终端仍在安装依赖 | 观察下载耗时；单次请求超过 120 秒会失败并重试 |
+| Firefox 提示无法连接 `127.0.0.1:5173` | 旧启动器在 Vite 尚未监听时提前打开浏览器 | 更新启动器；现在由 Vite 监听成功后执行 `--open` |
 | CMD 提示 `'.' 不是内部或外部命令` | 在 CMD 中使用了 Bash 的 `./` | 工具目录执行 `start`；知识库根目录也可执行 `practice` |
 | Bash 报 `toolspractice_tool` 不存在 | 使用反斜杠，反斜杠被解释为转义 | 使用 `/` |
 | Bash 报 `npm: command not found` | Node.js 目录不在当前 PATH | 使用工具目录的 `start.sh` 自动处理 |
@@ -290,8 +291,9 @@ git -c http.proxy=socks5h://192.168.31.197:10808 \
 仅在依赖损坏或环境要求升级时执行。删除：
 
 ```text
-tools/practice_tool/.local/environment-ready-v1
+tools/practice_tool/.local/environment-ready-v3-node-compatible
 tools/practice_tool/node_modules/
+tools/practice_tool/.local/runtime/
 ```
 
 然后重新运行工具目录的 `start.cmd` 或 `start.sh`。不要把 `.local`、`node_modules` 或 `dist` 提交到 Git。
