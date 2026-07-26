@@ -136,6 +136,8 @@ export type TrainingCategory = {
   name: string;
   parentId: string | null;
   description: string;
+  unitIds: string[];
+  sortOrder: number;
   trashed: boolean;
 };
 
@@ -154,6 +156,9 @@ export type WorkspaceData = {
   schemaVersion: 1;
   categories: TrainingCategory[];
   modules: UserTrainingModule[];
+  categoryTreeInitialized?: boolean;
+  unitAssignmentMode?: "exclusive" | "multiple";
+  historyLimit?: number;
 };
 
 export type TrainingStage = "learning" | "guided" | "reconstruction" | "professional" | "summary";

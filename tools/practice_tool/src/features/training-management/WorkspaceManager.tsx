@@ -13,6 +13,7 @@ type Editor =
   | null;
 
 const EMPTY: WorkspaceData = { schemaVersion: 1, categories: [], modules: [] };
+const toggle = (values: string[], value: string) => values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
 
 export default function WorkspaceManager() {
   const [data, setData] = useState<WorkspaceData>(EMPTY);
@@ -83,25 +84,31 @@ export default function WorkspaceManager() {
   );
 }
 
-function CategoryForm({ data, current, onCancel, onSubmit }: { data: WorkspaceData; current?: TrainingCategory; onCancel: () => void; onSubmit: (data: WorkspaceData) => void }) {
+export function CategoryForm({ data, current, initialParentId = "", onCancel, onSubmit }: { data: WorkspaceData; current?: TrainingCategory; initialParentId?: string; onCancel: () => void; onSubmit: (data: WorkspaceData) => void }) {
   const [name, setName] = useState(current?.name ?? "");
   const [description, setDescription] = useState(current?.description ?? "");
-  const [parentId, setParentId] = useState(current?.parentId ?? "");
+  const [parentId, setParentId] = useState(current?.parentId ?? initialParentId);
+  const [unitIds, setUnitIds] = useState(current?.unitIds ?? []);
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const value: TrainingCategory = current ? { ...current, name: name.trim(), description, parentId: parentId || null } : { id: createId("category"), name: name.trim(), description, parentId: parentId || null, trashed: false };
-    onSubmit({ ...data, categories: current ? data.categories.map((item) => item.id === current.id ? value : item) : [...data.categories, value] });
+    const value: TrainingCategory = current ? { ...current, name: name.trim(), description, parentId: parentId || null, unitIds } : { id: createId("category"), name: name.trim(), description, parentId: parentId || null, unitIds, sortOrder: data.categories.length, trashed: false };
+    const categories = current ? data.categories.map((item) => item.id === current.id ? value : item) : [...data.categories, value];
+    onSubmit({
+      ...data,
+      categories: data.unitAssignmentMode === "multiple"
+        ? categories
+        : categories.map((item) => item.id === value.id ? item : { ...item, unitIds: (item.unitIds ?? []).filter((unitId) => !value.unitIds.includes(unitId)) }),
+    });
   };
   const parentOptions = data.categories.filter((item) => !item.trashed && item.id !== current?.id && (!current || !categoryHasDescendant(data.categories, current.id, item.id)));
-  return <form className="editor-card" onSubmit={submit}><div className="editor-heading"><h2>{current ? "修改分类" : "新增分类"}</h2><button type="button" onClick={onCancel}>关闭</button></div><label>分类名称<input required value={name} onChange={(event) => setName(event.target.value)} /></label><label>上级分类<select value={parentId} onChange={(event) => setParentId(event.target.value)}><option value="">顶级分类</option>{parentOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>说明<textarea value={description} onChange={(event) => setDescription(event.target.value)} /></label><button className="primary" type="submit">保存分类</button></form>;
+  return <form className="editor-card" onSubmit={submit}><div className="editor-heading"><h2>{current ? "修改目录" : "新增目录"}</h2><button type="button" onClick={onCancel}>关闭</button></div><label>目录名称<input required value={name} onChange={(event) => setName(event.target.value)} /></label><label>上级目录<select value={parentId} onChange={(event) => setParentId(event.target.value)}><option value="">顶级目录</option>{parentOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>说明<textarea value={description} onChange={(event) => setDescription(event.target.value)} /></label><fieldset><legend>目录中的训练单元 · {data.unitAssignmentMode === "multiple" ? "允许多目录" : "单一目录"}</legend>{catalog.units.filter((item) => item.status === "available").map((item) => { const owners = data.categories.filter((category) => category.id !== current?.id && !category.trashed && (category.unitIds ?? []).includes(item.id)).map((category) => category.name); return <label className="check-option unit-assignment-option" key={item.id}><input type="checkbox" checked={unitIds.includes(item.id)} onChange={() => setUnitIds(toggle(unitIds, item.id))} /><span>{item.title}{owners.length > 0 && <small>{data.unitAssignmentMode === "multiple" ? `已加入：${owners.join(" / ")}` : `当前位于：${owners[0]}；勾选后将移动到此目录`}</small>}</span></label>; })}</fieldset><button className="primary" type="submit">保存目录</button></form>;
 }
 
-function ModuleForm({ data, current, onCancel, onSubmit }: { data: WorkspaceData; current?: UserTrainingModule; onCancel: () => void; onSubmit: (data: WorkspaceData) => void }) {
+export function ModuleForm({ data, current, initialUnitIds = [], onCancel, onSubmit }: { data: WorkspaceData; current?: UserTrainingModule; initialUnitIds?: string[]; onCancel: () => void; onSubmit: (data: WorkspaceData) => void }) {
   const [name, setName] = useState(current?.name ?? "");
   const [description, setDescription] = useState(current?.description ?? "");
-  const [unitIds, setUnitIds] = useState(current?.unitIds ?? []);
+  const [unitIds, setUnitIds] = useState(current?.unitIds ?? initialUnitIds);
   const [categoryIds, setCategoryIds] = useState(current?.categoryIds ?? []);
-  const toggle = (values: string[], value: string) => values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!unitIds.length) return;
