@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loop-practice.local/schemas/topic-book.schema.json",
+  "title": "Loop Topic Book",
+  "type": "object",
+  "required": ["schema_version", "id", "title", "version", "status", "outline_file", "chapters", "knowledge", "training_plan"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9_.-]+$" },
+    "title": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "status": { "enum": ["draft", "evolving", "maintained", "archived"] },
+    "outline_file": { "const": "outline.md" },
+    "chapters": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "objective", "file", "estimated_minutes", "prerequisites", "claim_ids", "knowledge_refs"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_.-]+$" },
+          "title": { "type": "string", "minLength": 1 },
+          "objective": { "type": "string", "minLength": 1 },
+          "file": { "type": "string", "pattern": "^chapters/P[0-9]{2}_[a-z0-9_]+\\.md$" },
+          "estimated_minutes": { "type": "integer", "minimum": 1 },
+          "prerequisites": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "claim_ids": { "type": "array", "minItems": 1, "items": { "type": "string" }, "uniqueItems": true },
+          "knowledge_refs": { "type": "array", "minItems": 1, "items": { "type": "string" }, "uniqueItems": true }
+        },
+        "additionalProperties": false
+      }
+    },
+    "knowledge": {
+      "type": "object",
+      "required": ["claims_file", "relations_file", "source_map_file"],
+      "properties": {
+        "claims_file": { "const": "knowledge/claims.json" },
+        "relations_file": { "const": "knowledge/relations.json" },
+        "source_map_file": { "const": "knowledge/source_map.json" }
+      },
+      "additionalProperties": false
+    },
+    "training_plan": { "const": "training/plan.json" }
+  },
+  "additionalProperties": false
+}

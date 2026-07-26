@@ -1,18 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import type {
-  GuidedQuestion, KnowledgeRef, LearningGuide, ModelTask, PracticeSession,
+  GuidedQuestion, KnowledgeRef, LearningChapter, ModelTask, PracticeSession,
   ProfessionalCase, Rating, SaveState, TrainingStage,
-} from "../../shared/types";
-import { loadSession, saveSession, stageItems } from "../../infrastructure/persistence/sessionRepository";
-
-const STAGES: Array<{ id: TrainingStage; label: string }> = [
-  { id: "learning", label: "学习导引" },
-  { id: "guided", label: "提示提问" },
-  { id: "reconstruction", label: "脱稿输出" },
-  { id: "professional", label: "专业案例" },
-  { id: "summary", label: "训练总结" },
-];
+} from "../../../shared/types";
+import { loadSession, saveSession, stageItems } from "../../../infrastructure/persistence/sessionRepository";
+import StageRail from "../components/StageRail";
+import MarkdownGuide from "../components/MarkdownGuide";
+import BookNavigation from "../components/BookNavigation";
+import { STAGES } from "../model/stages";
 
 export default function SessionPage() {
   const { sessionId = "", stage = "", itemId = "" } = useParams();
@@ -70,7 +66,7 @@ export default function SessionPage() {
     if (!session || !validStage) return;
     if (validStage === "summary") return;
     if (index < 0) {
-      const fallback = stageItems(session, validStage)[0]?.id;
+      const fallback = session.stagePositions[validStage] ?? stageItems(session, validStage)[0]?.id;
       if (fallback) navigate(`/sessions/${session.id}/${validStage}/${fallback}`, { replace: true });
     }
   }, [index, navigate, session, validStage]);
@@ -80,25 +76,12 @@ export default function SessionPage() {
   if (!validStage) return <RedirectToCurrent session={session} />;
 
   const completed = new Set(session.completedItemIds);
-  const stageUnlocked = (target: TrainingStage) => {
-    const targetIndex = STAGES.findIndex((entry) => entry.id === target);
-    return STAGES.slice(0, targetIndex).every((entry) => stageItems(session, entry.id).every((item) => completed.has(item.id)));
-  };
-  if (!stageUnlocked(validStage)) {
-    return (
-      <>
-        <aside className="rail"><Link className="back-lobby" to="/">← 返回大厅</Link></aside>
-        <section className="workspace"><div className="panel error-state"><h1>这个阶段尚未解锁</h1><p>请先完成前一阶段的全部训练项。</p><Link to={`/sessions/${session.id}/${session.currentStage}/${session.currentItemId}`}>回到当前进度</Link></div></section>
-      </>
-    );
-  }
   const goStage = (target: TrainingStage) => {
-    if (!stageUnlocked(target)) return;
-    const targetId = target === "summary" ? "complete" : stageItems(session, target)[0]?.id;
-    if (targetId) navigate(`/sessions/${session.id}/${target}/${targetId}`);
+    const targetId = target === "summary" ? "complete" : session.stagePositions[target] ?? stageItems(session, target)[0]?.id;
+    if (targetId) routeTo(target, targetId);
   };
   const routeTo = (targetStage: TrainingStage, targetItemId: string) => {
-    update((current) => ({ ...current, currentStage: targetStage, currentItemId: targetItemId }));
+    update((current) => ({ ...current, currentStage: targetStage, currentItemId: targetItemId, stagePositions: { ...current.stagePositions, [targetStage]: targetItemId } }));
     navigate(`/sessions/${session.id}/${targetStage}/${targetItemId}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -107,7 +90,7 @@ export default function SessionPage() {
     const nextCompleted = [...new Set([...session.completedItemIds, itemId])];
     const nextItem = currentItems[index + 1];
     if (nextItem) {
-      update((current) => ({ ...current, completedItemIds: nextCompleted, currentStage: validStage, currentItemId: nextItem.id }));
+      update((current) => ({ ...current, completedItemIds: nextCompleted, currentStage: validStage, currentItemId: nextItem.id, stagePositions: { ...current.stagePositions, [validStage]: nextItem.id } }));
       navigate(`/sessions/${session.id}/${validStage}/${nextItem.id}`);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -119,6 +102,7 @@ export default function SessionPage() {
       completedItemIds: nextCompleted,
       currentStage: nextStage,
       currentItemId: nextId,
+      stagePositions: { ...current.stagePositions, [nextStage]: nextId },
       status: nextStage === "summary" ? "completed" : current.status,
       completedAt: nextStage === "summary" ? new Date().toISOString() : current.completedAt,
     }));
@@ -137,16 +121,7 @@ export default function SessionPage() {
 
   return (
     <>
-      <aside className="rail" aria-label="训练阶段">
-        <Link className="back-lobby" to="/">← 返回大厅</Link>
-        <div className="rail-title">{session.unitTitle}</div>
-        {STAGES.map((entry, stageIndex) => {
-          const unlocked = stageUnlocked(entry.id);
-          const done = stageItems(session, entry.id).every((item) => completed.has(item.id)) && entry.id !== "summary";
-          return <button key={entry.id} className={`rail-step ${entry.id === validStage ? "active" : ""} ${done ? "complete" : ""}`} disabled={!unlocked} onClick={() => goStage(entry.id)}><span>{done ? "✓" : stageIndex}</span>{entry.label}</button>;
-        })}
-        <div className={`save-indicator ${saveState}`} role="status">{saveLabel(saveState)}</div>
-      </aside>
+      <StageRail session={session} activeStage={validStage} completed={completed} saveState={saveState} onSelect={goStage} />
       <section className="workspace">
         {validStage === "summary" ? (
           <Summary session={session} />
@@ -160,6 +135,7 @@ export default function SessionPage() {
             onUpdate={update}
             onPrevious={previous}
             onNext={finishItem}
+            onSelectChapter={(chapterId) => routeTo("learning", chapterId)}
           />
         )}
         {saveState === "failed" && (
@@ -183,10 +159,10 @@ function RedirectToCurrent({ session }: { session: PracticeSession }) {
 type ItemProps = {
   session: PracticeSession; stage: TrainingStage; itemId: string; index: number; total: number;
   onUpdate: (recipe: (current: PracticeSession) => PracticeSession) => void;
-  onPrevious: () => void; onNext: () => void;
+  onPrevious: () => void; onNext: () => void; onSelectChapter: (chapterId: string) => void;
 };
 
-function TrainingItem({ session, stage, itemId, index, total, onUpdate, onPrevious, onNext }: ItemProps) {
+function TrainingItem({ session, stage, itemId, index, total, onUpdate, onPrevious, onNext, onSelectChapter }: ItemProps) {
   const content = session.contentSnapshot;
   const item = stage === "learning" ? content.learning.find((entry) => entry.id === itemId)
     : stage === "guided" ? content.guided.find((entry) => entry.id === itemId)
@@ -203,10 +179,11 @@ function TrainingItem({ session, stage, itemId, index, total, onUpdate, onPrevio
   return (
     <div className="panel">
       <div className="panel-heading"><div><div className="eyebrow">{STAGES.find((entry) => entry.id === stage)?.label}</div><h2>{item.title}</h2></div><div className="point-count">{index + 1} / {total}</div></div>
-      {stage === "learning" && <LearningContent item={item as LearningGuide} refs={content.unit.knowledge_refs} revealed={revealed} />}
+      {stage === "learning" && <LearningContent item={item as LearningChapter} session={session} refs={content.unit.knowledge_refs} revealed={revealed} onSelectChapter={onSelectChapter} />}
       {stage === "guided" && <GuidedContent item={item as GuidedQuestion} hintLevel={session.hintLevels[itemId] ?? 0} revealed={revealed} onHint={() => onUpdate((current) => ({ ...current, hintLevels: { ...current.hintLevels, [itemId]: Math.min((current.hintLevels[itemId] ?? 0) + 1, (item as GuidedQuestion).hints.length) } }))} />}
       {stage === "reconstruction" && <ModelContent item={item as ModelTask} revealed={revealed} />}
       {stage === "professional" && <CaseContent item={item as ProfessionalCase} revealed={revealed} />}
+      {stage !== "learning" && revealed && <RelatedChapters session={session} chapterIds={(item as GuidedQuestion | ModelTask | ProfessionalCase).chapter_ids} onSelect={onSelectChapter} />}
       <textarea className="answer-box" value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="用自己的话完成回答。内容会自动保存在本机……" />
       <RatingBar value={rating} onRate={rate} />
       <div className="actions">
@@ -217,8 +194,14 @@ function TrainingItem({ session, stage, itemId, index, total, onUpdate, onPrevio
   );
 }
 
-function LearningContent({ item, refs, revealed }: { item: LearningGuide; refs: KnowledgeRef[]; revealed: boolean }) {
-  return <><div className="learning-objective"><span>本节目标</span>{item.objective}</div><div className="learning-reading">{item.reading.map((section) => <section key={section.heading}><h3>{section.heading}</h3><p>{section.content}</p></section>)}</div><SourceReferences references={refs} selectedIds={item.knowledge_refs} /><div className="topology-card"><span>拓扑记忆训练</span><p>{item.topology_memory.prompt}</p><div className="topology-nodes">{item.topology_memory.nodes.map((node) => <b key={node}>{node}</b>)}</div>{revealed && <ul>{item.topology_memory.links.map((link) => <li key={link}>{link}</li>)}</ul>}</div><div className="association-card"><span>开放式联想</span>{item.open_associations.map((question) => <p key={question}>↗ {question}</p>)}</div>{revealed && <div className="check-answers">{item.check_questions.map((entry) => <div key={entry.question}><strong>{entry.question}</strong><p>{entry.answer}</p></div>)}</div>}</>;
+function RelatedChapters({ session, chapterIds, onSelect }: { session: PracticeSession; chapterIds: string[]; onSelect: (chapterId: string) => void }) {
+  const chapters = session.contentSnapshot.book.chapters.filter((chapter) => chapterIds.includes(chapter.id));
+  return <section className="related-chapters"><span>建议回看</span>{chapters.map((chapter) => <button key={chapter.id} onClick={() => onSelect(chapter.id)}>{chapter.title} →</button>)}</section>;
+}
+
+function LearningContent({ item, session, refs, revealed, onSelectChapter }: { item: LearningChapter; session: PracticeSession; refs: KnowledgeRef[]; revealed: boolean; onSelectChapter: (chapterId: string) => void }) {
+  const claims = session.contentSnapshot.book.claims.filter((claim) => item.claim_ids.includes(claim.id));
+  return <><BookNavigation book={session.contentSnapshot.book} activeChapterId={item.id} completed={new Set(session.completedItemIds)} onSelect={(chapter) => onSelectChapter(chapter.id)} /><div className="learning-objective"><span>本章目标</span>{item.objective}</div><MarkdownGuide markdown={item.content_markdown} />{claims.length > 0 && <section className="chapter-claims"><span>本章知识声明</span>{claims.map((claim) => <div key={claim.id}><strong>{claim.statement}</strong><small>{claim.status} · {claim.id}</small></div>)}</section>}<SourceReferences references={refs} selectedIds={item.knowledge_refs} /><div className="topology-card"><span>拓扑记忆训练</span><p>{item.topology_memory.prompt}</p><div className="topology-nodes">{item.topology_memory.nodes.map((node) => <b key={node}>{node}</b>)}</div>{revealed && <ul>{item.topology_memory.links.map((link) => <li key={link}>{link}</li>)}</ul>}</div><div className="association-card"><span>开放式联想</span>{item.open_associations.map((question) => <p key={question}>↗ {question}</p>)}</div>{revealed && <div className="check-answers">{item.check_questions.map((entry) => <div key={entry.question}><strong>{entry.question}</strong><p>{entry.answer}</p></div>)}</div>}</>;
 }
 
 function GuidedContent({ item, hintLevel, revealed, onHint }: { item: GuidedQuestion; hintLevel: number; revealed: boolean; onHint: () => void }) {
@@ -249,11 +232,8 @@ function SourceReferences({ references, selectedIds }: { references: KnowledgeRe
 
 function Summary({ session }: { session: PracticeSession }) {
   const ratings = Object.values(session.ratings);
-  return <div className="panel result-panel"><div className="result-mark">完成</div><div className="eyebrow">{session.unitTitle}</div><h2>本轮训练已完成</h2><p>“需要重建”和“部分输出”会成为后续复习计划的依据。</p><div className="result-stats"><div><strong>{ratings.length}</strong><span>已自评</span></div><div><strong>{ratings.filter((entry) => entry === "again").length}</strong><span>需要重建</span></div><div><strong>{ratings.filter((entry) => entry === "good").length}</strong><span>完整输出</span></div></div><Link className="button-link primary" to="/">返回大厅</Link></div>;
-}
-
-function saveLabel(state: SaveState) {
-  return state === "dirty" ? "有改动待保存" : state === "saving" ? "正在保存…" : state === "failed" ? "保存失败" : state === "saved" ? "已自动保存" : "进度已保存";
+  const done = session.status === "completed";
+  return <div className="panel result-panel"><div className="result-mark">{done ? "完成" : "进度"}</div><div className="eyebrow">{session.unitTitle}</div><h2>{done ? "本轮训练已完成" : "当前训练进度"}</h2><p>{done ? "“需要重建”和“部分输出”会成为后续复习计划的依据。" : "总结页可以随时查看，但只有完成全部训练项后才会标记本轮完成。"}</p><div className="result-stats"><div><strong>{ratings.length}</strong><span>已自评</span></div><div><strong>{ratings.filter((entry) => entry === "again").length}</strong><span>需要重建</span></div><div><strong>{ratings.filter((entry) => entry === "good").length}</strong><span>完整输出</span></div></div><Link className="button-link primary" to="/">返回大厅</Link></div>;
 }
 
 function exportDraft(session: PracticeSession) {

@@ -1,6 +1,8 @@
 [
   {
     "id":"linux.hash_table.case.device_registry",
+    "chapter_ids":["linux.hash.chapter.collision","linux.hash.chapter.resize"],
+    "claim_ids":["linux.hash.claim.collisions_are_expected","linux.hash.claim.resize_requires_transition"],
     "title":"读多写少设备注册表的索引设计",
     "difficulty":"advanced",
     "background":"64 核系统按设备 ID 查询注册对象，查询远多于增删。启动时约一千对象，热插拔压力下可能达到十万。读路径要求低延迟，对象删除后允许延迟回收。",

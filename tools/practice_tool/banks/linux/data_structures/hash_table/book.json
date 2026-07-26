@@ -1,0 +1,11 @@
+{
+  "schema_version":1,"id":"linux.data_structures.hash_table.book","title":"哈希表：从候选缩减到内核并发索引","version":"1.0.0","status":"evolving","outline_file":"outline.md",
+  "chapters":[
+    {"id":"linux.hash.chapter.mapping","title":"从全表扫描到候选集合","objective":"理解哈希定位缩小候选集合而不证明对象身份。","file":"chapters/P01_mapping.md","estimated_minutes":12,"prerequisites":[],"claim_ids":["linux.hash.claim.mapping_reduces_candidates"],"knowledge_refs":["knowledge.linux.data_structures.哈希表_hash_table.p01_数据结构理论基础.p01_哈希表核心原理_空间与时间的终极博弈"]},
+    {"id":"linux.hash.chapter.collision","title":"冲突、负载与复杂度边界","objective":"理解平均常数时间依赖分布、桶数和负载。","file":"chapters/P02_collision_and_load.md","estimated_minutes":12,"prerequisites":["linux.hash.chapter.mapping"],"claim_ids":["linux.hash.claim.collisions_are_expected"],"knowledge_refs":["knowledge.linux.data_structures.哈希表_hash_table.p01_数据结构理论基础.p01_哈希表核心原理_空间与时间的终极博弈","knowledge.linux.data_structures.哈希表_hash_table.p02_linux_内核_5.10_核心实现.p03_算法之魂_哈希函数与位运算优化"]},
+    {"id":"linux.hash.chapter.hlist","title":"Linux hlist 的嵌入与删除路径","objective":"理解 hlist 优化的对象布局和已知节点删除。","file":"chapters/P03_hlist.md","estimated_minutes":14,"prerequisites":["linux.hash.chapter.collision"],"claim_ids":["linux.hash.claim.hlist_pprev_enables_delete"],"knowledge_refs":["knowledge.linux.data_structures.哈希表_hash_table.p02_linux_内核_5.10_核心实现.p02_内核基石_hlist非对称链表"]},
+    {"id":"linux.hash.chapter.resize","title":"动态伸缩与并发迁移","objective":"理解扩容引入的新旧表、迁移进度和生命期问题。","file":"chapters/P04_resize_and_concurrency.md","estimated_minutes":17,"prerequisites":["linux.hash.chapter.hlist"],"claim_ids":["linux.hash.claim.resize_requires_transition"],"knowledge_refs":["knowledge.linux.data_structures.哈希表_hash_table.p03_高级进阶与性能调优.p04_并发保护与rcu机制_多核下的读写博弈","knowledge.linux.data_structures.哈希表_hash_table.p03_高级进阶与性能调优.p05_动态伸缩的rhashtable_无感扩容的艺术"]}
+  ],
+  "knowledge":{"claims_file":"knowledge/claims.json","relations_file":"knowledge/relations.json","source_map_file":"knowledge/source_map.json"},
+  "training_plan":"training/plan.json"
+}

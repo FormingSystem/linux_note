@@ -1,0 +1,6 @@
+{"schema_version":1,"evidence":[
+  {"id":"linux.rbtree.evidence.bst","claim_id":"linux.rbtree.claim.bst_can_degenerate","knowledge_ref":"knowledge.linux.data_structures.红黑树_rb-tree.p04_为什么_bst_会退化","locator":"BST 退化过程","evidence_type":"explanation","review_status":"verified"},
+  {"id":"linux.rbtree.evidence.rotation","claim_id":"linux.rbtree.claim.rotation_preserves_order","knowledge_ref":"knowledge.linux.data_structures.红黑树_rb-tree.p05_旋转的作用与局部重排","locator":"旋转与中序顺序","evidence_type":"derivation","review_status":"verified"},
+  {"id":"linux.rbtree.evidence.constraints","claim_id":"linux.rbtree.claim.constraints_bound_height","knowledge_ref":"knowledge.linux.data_structures.红黑树_rb-tree.p07_红黑树_把_2-3-4_树映射成二叉表示","locator":"2-3-4 树映射","evidence_type":"derivation","review_status":"verified"},
+  {"id":"linux.rbtree.evidence.linux","claim_id":"linux.rbtree.claim.linux_caller_owns_policy","knowledge_ref":"knowledge.linux.data_structures.红黑树_rb-tree.p09_linux_6.12_内核_rbtree_嵌入式节点与使用者接口","locator":"使用者接口","evidence_type":"implementation","review_status":"verified"}
+]}

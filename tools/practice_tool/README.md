@@ -9,7 +9,7 @@ domains:
 
 # 第1章\_回路\_Loop\_知识训练工具
 
-**回路（Loop）** 是一个由外部知识源驱动的本地知识训练工具。中文正式名称为“回路”，英文正式名称为“Loop”。当前版本先把所选材料提炼成主题明确的学习导引，再进入提示提问、脱稿输出和专业案例训练；导引不复制完整知识正文，并保留稳定原文引用：
+**回路（Loop）** 是一个由外部知识源驱动的本地知识训练工具。中文正式名称为“回路”，英文正式名称为“Loop”。当前版本先把所选材料提炼成目录清晰的专题电子书，再进入提示提问、脱稿输出和专业案例训练；章节不复制完整知识正文，并保留稳定原文引用：
 
 1. **提示提问**：在具体小场景中逐级给出提示，辅助形成局部因果模型。
 2. **脱稿输出**：撤掉知识提示，独立重建边界清晰的时序、状态或通信模块。
@@ -25,9 +25,9 @@ banks/linux/data_structures/rbtree/
 banks/linux/data_structures/hash_table/
 ```
 
-三个示范训练单元分别引用 `linux-note` 的 RCU、红黑树和哈希表权威正文。学习导引经过筛选、去噪和重新组织，不是原文导入；界面展示知识源、稳定文档 ID 和相对路径，便于追根溯源。用户分类和训练模块属于本地组织行为，不改变外部知识库目录。
+三个示范训练单元分别引用 `linux-note` 的 RCU、红黑树和哈希表权威正文。专题电子书经过筛选、去噪和重新组织，不是原文导入；界面展示知识源、稳定文档 ID 和相对路径，便于追根溯源。用户分类和训练模块属于本地组织行为，不改变外部知识库目录。
 
-当前内容基线为 **3 个训练单元、15 个训练任务**。每个专题均包含一份主题导学、两道提示提问、一项脱稿输出和一个专业案例；主题导学包含有答案的核验问题、开放式联想和拓扑记忆训练。训练分类和用户训练模块支持创建、修改、移动或归类、合并、回收、恢复以及工作区导入导出。
+当前内容基线为 **3 本专题电子书、12 个学习章节和 12 个训练任务**。每本书包含目录大纲、四章 Markdown 正文、知识声明、关系、证据、章节核验和训练计划；每个专题另有两道提示提问、一项脱稿输出和一个专业案例。训练分类和用户训练模块支持创建、修改、移动或归类、合并、回收、恢复以及工作区导入导出。
 
 ## 1.1\_独立化边界
 
@@ -53,7 +53,7 @@ practice_tool/
 - [架构设计索引](docs/architecture/README.md)
 - [当前实现状态与版本边界](docs/architecture/implementation_status.md)
 - [工程结构与模块边界](docs/architecture/engineering/project_structure_and_module_boundaries.md)
-- [学习导引提炼标准](docs/architecture/product/learning_guide_standard.md)
+- [专题电子书编写与提炼标准](docs/architecture/product/topic_ebook_editorial_standard.md)
 - [知识提炼、训练适配与 AI 治理](docs/architecture/product/content_adaptation_and_ai_governance.md)
 - [产品导航与交互设计](docs/architecture/product/navigation_and_interaction.md)
 - [训练会话状态与持久化](docs/architecture/product/training_session_state_and_persistence.md)
@@ -69,7 +69,7 @@ practice_tool/
 - `knowledge` 中被题库引用的 Linux 权威正文。
 - 本仓库的 `AGENTS.md`、治理规范、Atlas 和出版结构。
 
-当前 `0.1.0` 开发版已经提供大厅、训练库、单元详情、可恢复训练会话、四阶段步骤导航、IndexedDB 自动保存，以及分类和训练模块的正式管理表单。复习、历史、知识源和设置目前只有边界说明页，不能视为功能完成。精确完成度、验证证据和已知风险统一见 [当前实现状态与版本边界](docs/architecture/implementation_status.md)。
+当前 `0.1.0` 开发版已经提供大厅、训练库、单元详情、可恢复训练会话、专题学习加三阶段训练及总结导航、IndexedDB 自动保存，以及分类和训练模块的正式管理表单。复习、历史、知识源和设置目前只有边界说明页，不能视为功能完成。精确完成度、验证证据和已知风险统一见 [当前实现状态与版本边界](docs/architecture/implementation_status.md)。
 
 当前已经实现 **启动独立**：环境准备、依赖安装、校验、构建和运行均可在工具目录内完成。当前题库仍携带指向 `linux-note` 正文路径的来源信息；拆分仓库时可以保留稳定文档 ID，并把路径作为内容包集成配置处理，不能把外层相对路径写进工具核心代码。
 
@@ -168,7 +168,7 @@ source <(./start.sh --completion bash)
 
 补全覆盖全部正式选项，并会根据前一个参数补全 `--host`、`--port` 和 `--completion` 的可选值，不只是把某个缩写扩展成 `--upgrade`。安装器会幂等地在 `~/.bashrc` 登记动态加载行，因此后续新开的 Ubuntu 22.04 和 Windows MSYS2 UCRT64/UCRT32 Bash 都会自动加载，不需要每个终端重复执行 `source`。若当前终端尚未加载，只需执行上面的 `source` 一次。如需禁止正常启动时自动安装补全，可设置 `PRACTICE_AUTO_COMPLETION=0`。
 
-打开后先进入 **训练单元选择页**。可以搜索单元、管理用户分类和训练模块，然后依次进入学习导引、提示提问、脱稿输出和专业案例。
+打开后先进入 **大厅**。可以继续已有训练、搜索单元、管理用户分类和训练模块。训练阶段保持推荐顺序，但专题学习、提示提问、脱稿输出、专业案例和总结都可以直接点击进入；每个阶段会恢复上次停留位置。
 
 ### 1.2.1\_主动升级运行环境
 
@@ -292,19 +292,28 @@ npm run check:data
 npm run build
 ```
 
-内容检查验证单元文件、学习导引与三阶段题目结构、稳定 ID、引用关系、必答问题、开放联想、拓扑记忆和重复题目 ID。
+内容检查验证单元、书籍、章节、知识声明、关系、证据、章节核验和三阶段训练结构，并检查稳定 ID、章节依赖、训练绑定、引用闭包及重复 ID。Markdown 章节必须存在并达到能够承载完整主题推导的最低长度。
 同时检查知识源配置 Schema 示例，确保 Windows、Linux 和外部仓库使用同一份配置协议。
 
 ## 1.4\_新增单元
 
-每个单元使用五个文件：
+每个单元使用以下内容包：
 
 ```text
 unit.json
-learning_guides.json
-guided_questions.json
-model_tasks.json
-professional_cases.json
+book.json
+outline.md
+chapters/
+knowledge/
+  claims.json
+  relations.json
+  source_map.json
+training/
+  plan.json
+  chapter_checks.json
+  guided_questions.json
+  model_tasks.json
+  professional_cases.json
 ```
 
 所有可选择单元统一登记在：
@@ -328,11 +337,14 @@ banks/index.json
 
 用户不需要知道示范内容目录结构。平台首页使用这些字段完成搜索和单元卡片展示；用户自己的上下级分类由训练工作区独立管理。
 
-- `unit.json` 只保存单元身份、权威正文引用、学习导引和三个训练阶段的入口。
-- `learning_guides.json` 保存提炼后的主题正文、有答案问题、开放联想、拓扑记忆和原文依据。
-- `guided_questions.json` 保存轻量场景、递进提示和最小模型骨架。
-- `model_tasks.json` 保存无提示输出任务、输出约束和核验问题。
-- `professional_cases.json` 保存工程背景、证据、问题和专业评审维度。
+- `unit.json` 只保存单元身份、权威正文引用、电子书和三个训练阶段入口。
+- `book.json` 保存书籍版本、有序章节和治理文件入口。
+- `outline.md` 保存面向读者的学习地图，`chapters/` 保存重新提炼的章节正文。
+- `knowledge/` 保存声明、关系和原文证据，`training/plan.json` 绑定书籍版本和训练内容。
+- `training/chapter_checks.json` 保存每章核验问题、开放联想和拓扑记忆。
+- `training/guided_questions.json` 保存轻量场景、递进提示和最小模型骨架。
+- `training/model_tasks.json` 保存无提示输出任务、输出约束和核验问题。
+- `training/professional_cases.json` 保存工程背景、证据、问题和专业评审维度。
 
 题目通过稳定文档 ID 引用权威正文。正文路径只用于打开源文档，不作为题目永久身份。
 

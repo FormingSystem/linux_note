@@ -19,7 +19,7 @@ domains:
 flowchart LR
     KS[知识源] --> TM[训练模块]
     TC[用户分类] --> TM
-    TM --> TP[学习导引与三阶段计划]
+    TM --> TP[专题电子书与三阶段计划]
     TP --> PS[训练会话]
     PS --> RH[复习历史]
     IE[导入导出] --> TC
@@ -79,7 +79,7 @@ feature-name/
 | 知识源配置 | `knowledge-sources` |
 | 用户分类及父子关系 | `training-categories` |
 | 训练模块及材料引用 | `training-modules` |
-| 学习导引、三阶段计划及版本 | `training-plans` |
+| 专题电子书、三阶段计划及版本 | `training-plans` |
 | 单次作答和进度 | `practice-sessions` |
 | 复习状态 | `review-history` |
 | 外部数据格式 | `schemas` |
@@ -113,10 +113,10 @@ app 负责向 features 注入 infrastructure 实现
 
 ## 1.7\_当前实现基线
 
-当前版本已经提供 RCU、红黑树和哈希表三个并列训练单元，共 15 个训练任务。训练流程统一为：
+当前版本已经提供 RCU、红黑树和哈希表三本并列专题电子书，共 12 个学习章节和 12 个训练任务。训练流程统一为：
 
 ```text
-提炼后的学习导引
+专题电子书学习
     ↓
 提示提问
     ↓
@@ -125,9 +125,11 @@ app 负责向 features 注入 infrastructure 实现
 专业案例
 ```
 
-训练内容通过 `banks/index.json` 和单元协议自动发现；新增其他专题不得在 React 页面中添加专题判断。用户训练分类和训练模块使用独立工作区数据，不写回知识库目录。学习导引保留知识源 ID、稳定文档 ID 和相对路径，并通过受控只读接口打开注册知识源内的 Markdown 原文。
+训练内容通过 `banks/index.json` 和单元协议自动发现；新增其他专题不得在 React 页面中添加专题判断。用户训练分类和训练模块使用独立工作区数据，不写回知识库目录。专题电子书的证据映射保留知识源 ID、稳定文档 ID 和相对路径，并通过受控只读接口打开注册知识源内的 Markdown 原文。
 
 第一版已经把原 `App.tsx` 单体状态机拆为应用外壳、大厅、训练库、训练会话、训练管理和持久化模块。结构方向已经建立，但还没有完成 `training-categories` 与 `training-modules` 的独立所有权拆分，也没有为每个 feature 建立公开 `index.ts`。这属于后续结构整改，不得把当前过渡目录反向写成长期目标。
+
+训练会话 feature 已进一步使用 `components/`、`model/`、`pages/` 和公开 `index.ts` 分层。Markdown 读取属于 `training-library` 内容加载职责，Markdown 展示属于 `practice-sessions/components`，阶段定义与导航语义属于 `practice-sessions/model`；不得把文件读取、渲染和会话推进重新合并到同一个页面组件。
 
 ## 1.8\_相关设计
 
@@ -137,6 +139,6 @@ app 负责向 features 注入 infrastructure 实现
 - [导入导出与数据安全](import_export_and_data_safety.md)
 - [本地服务安全与威胁模型](local_service_security_and_threat_model.md)
 - [无障碍、性能与产品验收标准](accessibility_performance_and_acceptance.md)
-- [学习导引提炼标准](../product/learning_guide_standard.md)
+- [专题电子书编写与提炼标准](../product/topic_ebook_editorial_standard.md)
 - [知识提炼、训练适配与 AI 治理](../product/content_adaptation_and_ai_governance.md)
 - [架构决策记录](../decisions/README.md)

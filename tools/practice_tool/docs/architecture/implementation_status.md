@@ -22,7 +22,7 @@ flowchart LR
     L[大厅] --> LIB[训练库]
     LIB --> D[单元详情]
     D --> S[创建或恢复会话]
-    S --> LEARN[学习导引]
+    S --> LEARN[专题学习]
     LEARN --> GUIDE[提示提问]
     GUIDE --> MODEL[脱稿输出]
     MODEL --> CASE[专业案例]
@@ -30,7 +30,7 @@ flowchart LR
     S --> L
 ```
 
-当前提供 RCU、红黑树和哈希表三个训练单元，共 15 个训练任务。单元由 `banks/index.json` 和单元协议发现，页面没有按专题硬编码分支。
+当前提供 RCU、红黑树和哈希表三本专题电子书，共 12 个学习章节和 12 个训练任务。单元由 `banks/index.json` 和统一协议发现，页面没有按专题硬编码分支。
 
 ## 1.3\_已经实现
 
@@ -46,8 +46,10 @@ flowchart LR
 
 - 新会话保存完整训练内容快照，不随题库当前内容静默变化。
 - URL 使用会话 ID、阶段和稳定题目 ID，不使用数组序号。
-- 学习导引、提示提问、脱稿输出和专业案例按顺序解锁。
-- 已解锁阶段可以从步骤栏进入；手工修改 URL 不能绕过阶段锁。
+- 专题学习、提示提问、脱稿输出、专业案例和训练总结都可以从步骤栏直接进入。
+- 每个阶段保存上次停留的稳定题目 ID；切换阶段时恢复各自位置，阶段访问不等于完成。
+- 学习阶段由 `book.json`、`outline.md` 和 `chapters/` 驱动，支持书籍大纲、章节目录和连续 Markdown 正文。
+- 每章显示规范化知识声明和原文依据；训练题绑定章节与声明。
 - 支持上一项、完成并继续、自评、逐级提示、答案核验和训练总结。
 - 大厅展示最近三个进行中会话，可以恢复到上次题目。
 
@@ -79,7 +81,7 @@ flowchart LR
 | --- | --- | --- |
 | 返回大厅 | 可以返回，组件卸载时保存最新内存状态 | 导航前等待强制保存结果；失败时提供留在页面、导出后离开和明确放弃 |
 | 会话状态机 | 已实现 `in_progress`、`completed` 数据 | `draft`、`paused`、`abandoned` 的完整事件和审计记录 |
-| 路由守卫 | 已检查会话、单元、题目和阶段解锁 | 已回收会话、知识源离线诊断和统一错误码 |
+| 路由守卫 | 已检查会话、单元、阶段和题目关系 | 已回收会话、知识源离线诊断和统一错误码 |
 | 自动保存 | 防抖、状态提示、重试和草稿导出 | 修订日志、崩溃恢复测试和保存队列合并 |
 | 工作区导入 | 格式和基本结构校验 | 预览、逐项冲突策略、事务回滚、摘要和来源映射 |
 | 无障碍 | 使用语义按钮、标签、状态区域和键盘原生控件 | 焦点管理、跳转链接、对话框焦点陷阱、NVDA 验收 |
@@ -109,6 +111,10 @@ src/
 ├── features/
 │   ├── lobby/
 │   ├── practice-sessions/
+│   │   ├── components/
+│   │   ├── model/
+│   │   ├── pages/
+│   │   └── index.ts
 │   ├── training-library/
 │   └── training-management/
 ├── infrastructure/
@@ -120,7 +126,7 @@ src/
 └── main.tsx
 ```
 
-这是第一版已经落地的 Feature-first 骨架，不是最终拆分完成状态。`practice-sessions/SessionPage.tsx` 和 `training-management/WorkspaceManager.tsx` 仍同时承担较多界面与用例编排职责，后续应按各自模块内部约定继续拆分，不得重新塞回 `App.tsx`。
+这是第一版已经落地的 Feature-first 骨架，不是最终拆分完成状态。训练会话已经开始按 `components / model / pages` 拆分并通过 `index.ts` 暴露；页面编排和训练题组件仍可继续细分。`training-management/WorkspaceManager.tsx` 仍同时承担较多界面与用例编排职责，后续应按模块内部约定拆分，不得重新塞回 `App.tsx`。
 
 ## 1.7\_验证基线
 
@@ -128,9 +134,10 @@ src/
 
 ```text
 npm run check:data
-  3 个训练单元
-  15 个训练任务
-  索引、稳定 ID 和知识引用有效
+  3 本专题电子书
+  12 个电子书章节
+  12 个训练任务
+  声明、关系、证据、章节、训练和知识引用闭包有效
 
 npm run build
   TypeScript 类型检查通过
@@ -162,6 +169,8 @@ git diff --check
 ## 1.10\_相关设计
 
 - [产品导航与交互设计](product/navigation_and_interaction.md)
+- [专题电子书与知识治理](product/topic_ebook_and_knowledge_governance.md)
+- [专题电子书编写与提炼标准](product/topic_ebook_editorial_standard.md)
 - [训练会话状态与持久化](product/training_session_state_and_persistence.md)
 - [工程结构与模块边界](engineering/project_structure_and_module_boundaries.md)
 - [无障碍、性能与产品验收标准](engineering/accessibility_performance_and_acceptance.md)

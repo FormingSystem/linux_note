@@ -1,0 +1,6 @@
+{"schema_version":1,"claims":[
+  {"id":"linux.rcu.claim.entry_update_not_reclaim","statement":"共享入口切换只能约束新读者，不能撤销旧读者已经保存的对象地址。","type":"lifetime","status":"verified","authority_chapter":"linux.rcu.chapter.old_reader","evidence_ids":["linux.rcu.evidence.old_reader"]},
+  {"id":"linux.rcu.claim.grace_period_bounds_old_readers","statement":"宽限期等待入口切换前可能取得旧对象的读者集合，而非持续到来的全部新读者。","type":"causal_conclusion","status":"verified","authority_chapter":"linux.rcu.chapter.grace_period","evidence_ids":["linux.rcu.evidence.grace_period"]},
+  {"id":"linux.rcu.claim.cost_moves_to_update","statement":"RCU 减少普通读侧共享协调，同时把发布、等待和延迟回收责任转移到更新路径。","type":"tradeoff","status":"verified","authority_chapter":"linux.rcu.chapter.cost","evidence_ids":["linux.rcu.evidence.cost"]},
+  {"id":"linux.rcu.claim.tree_aggregates_evidence","statement":"Tree RCU 把分散参与者的静止状态证据沿层次结构汇聚成宽限期完成结论。","type":"implementation","status":"verified","authority_chapter":"linux.rcu.chapter.tree","evidence_ids":["linux.rcu.evidence.tree"]}
+]}

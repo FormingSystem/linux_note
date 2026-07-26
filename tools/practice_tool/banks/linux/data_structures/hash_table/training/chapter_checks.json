@@ -1,0 +1,6 @@
+[
+  {"chapter_id":"linux.hash.chapter.mapping","check_questions":[{"question":"为什么定位到桶后仍要比较完整键？","answer":"不同键可能落入同一桶，桶定位只缩小候选集合。"}],"open_associations":["布隆过滤器能否代替对象索引？"],"topology_memory":{"prompt":"画出从业务键到对象确认的路径。","nodes":["业务键","哈希函数","桶","候选对象"],"links":["业务键 → 哈希函数","哈希函数 → 桶","桶 → 候选对象"]}},
+  {"chapter_id":"linux.hash.chapter.collision","check_questions":[{"question":"平均常数时间依赖什么？","answer":"依赖哈希质量、桶数、分布、负载和桶内链长度。"}],"open_associations":["攻击者控制键时分布假设会怎样？"],"topology_memory":{"prompt":"连接负载和查找成本。","nodes":["对象数","桶数","冲突链"],"links":["对象数增长 → 负载上升","负载上升 → 冲突链增长"]}},
+  {"chapter_id":"linux.hash.chapter.hlist","check_questions":[{"question":"pprev 指向什么？","answer":"它指向当前节点所在的前一个 next 链接位置。"}],"open_associations":["为什么桶头不需要完整 list_head？"],"topology_memory":{"prompt":"画出桶头、节点和业务对象。","nodes":["桶头","hlist_node","业务对象"],"links":["桶头 → hlist_node","hlist_node → 嵌入业务对象"]}},
+  {"chapter_id":"linux.hash.chapter.resize","check_questions":[{"question":"扩容为什么不是简单替换数组？","answer":"对象要迁移，并发读者期间还要管理新旧表可见性和生命期。"}],"open_associations":["持续更新超过迁移速度会怎样？"],"topology_memory":{"prompt":"画出负载、扩容和迁移状态。","nodes":["旧桶","新桶","迁移进度","读者"],"links":["旧桶 → 迁移到新桶","读者 → 观察过渡状态"]}}
+]

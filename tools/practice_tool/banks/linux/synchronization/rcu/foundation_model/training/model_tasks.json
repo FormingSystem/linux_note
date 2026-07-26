@@ -1,6 +1,8 @@
 [
   {
     "id":"linux.rcu.model.publish_wait_reclaim",
+    "chapter_ids":["linux.rcu.chapter.old_reader","linux.rcu.chapter.grace_period","linux.rcu.chapter.cost","linux.rcu.chapter.tree"],
+    "claim_ids":["linux.rcu.claim.entry_update_not_reclaim","linux.rcu.claim.grace_period_bounds_old_readers","linux.rcu.claim.cost_moves_to_update","linux.rcu.claim.tree_aggregates_evidence"],
     "title":"发布、等待与回收完整时序",
     "output_type":"sequence",
     "prompt":"脱稿画出两个读者和一个更新者的交错：旧读者取得 A，更新者发布 B，新读者取得 B，旧读者退出，宽限期完成，A 被回收。",

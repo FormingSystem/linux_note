@@ -1,0 +1,5 @@
+{"schema_version":1,"relations":[
+  {"from":"linux.rcu.claim.entry_update_not_reclaim","type":"requires","to":"linux.rcu.claim.grace_period_bounds_old_readers"},
+  {"from":"linux.rcu.claim.grace_period_bounds_old_readers","type":"trades_for","to":"linux.rcu.claim.cost_moves_to_update"},
+  {"from":"linux.rcu.claim.grace_period_bounds_old_readers","type":"implements","to":"linux.rcu.claim.tree_aggregates_evidence"}
+]}

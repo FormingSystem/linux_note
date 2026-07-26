@@ -214,9 +214,9 @@ docs(repository/git): 更新分支与提交规范
 
 `tools/practice_tool/scripts/lib/platform_environment.sh` 是正式运行脚本的平台信息与工具能力唯一来源。其他 Bash 脚本不得自行读取 `MSYSTEM`、`/etc/os-release`、`uname`，不得猜测 Windows 盘符，也不得各自查找 `node`、`npm`、`pacman`、下载器、校验器或解压工具；应统一消费环境层导出的变量和函数，使启动、升级、离线安装和补全保持一套 Unix 操作。
 
-训练单元先经过学习导引，再进入三个训练阶段：
+训练单元先经过专题学习，再进入三个训练阶段：
 
-1. 学习导引：从用户选择的知识材料中筛选、去噪并重新组织主题主线，不直接导入原文；必须包含明确目标、问题场景、有答案的核验问题、开放联想、拓扑记忆和可追溯的原文引用。
+1. 专题学习：从用户选择的知识材料中筛选、去噪并组织为目录和章节，不直接导入原文；必须包含明确目标、问题场景、有答案的核验问题、开放联想、拓扑记忆和可追溯的原文引用。
 2. 提示提问：用具体小场景和递进提示辅助建立局部因果模型。
 3. 脱稿输出：撤掉知识提示，要求独立重建边界清晰的时序、状态和通信模块。
 4. 专业案例：根据工程证据完成诊断、方案、不可规避成本和选择边界分析。
@@ -224,12 +224,16 @@ docs(repository/git): 更新分支与提交规范
 平台内容约定：
 
 - 所有可选择单元登记在 `tools/practice_tool/banks/index.json`。
-- 每个单元目录包含 `unit.json`、`learning_guides.json`、`guided_questions.json`、`model_tasks.json` 和 `professional_cases.json`。
+- 每个单元使用 `unit.json + book.json + outline.md + chapters/ + knowledge/ + training/` 组织。电子书、知识声明、证据和训练计划分别拥有数据，不得重新合并成单篇导引或一个综合 JSON。
+- `book.json` 保存稳定书籍身份和有序章节清单，`outline.md` 保存读者学习地图，`chapters/` 保存可以独立承担首次学习的 Markdown 章节；章节不得退化成摘要卡片，也不得复制知识源原文。
+- `knowledge/claims.json` 保存规范化结论及唯一权威章节，`relations.json` 保存有方向的知识关系，`source_map.json` 保存声明到原文证据的映射。已验证声明必须有证据，冲突声明不得进入确定性标准答案。
+- `training/plan.json` 绑定电子书版本和训练文件；训练题必须引用真实章节 ID 和知识声明 ID，使答错后能够精确回看。
+- 专题学习、提示提问、脱稿输出、专业案例和训练总结允许用户自由切换。阶段完成状态只表达进度，不作为访问权限；每个阶段应恢复用户上次停留的稳定章节或题目 ID。
 - 新增单元时必须使用稳定题目 ID，并通过 `knowledge_refs` 指向单元已经声明的权威正文。
-- 学习导引是回路根据知识来源提炼的训练材料，不能冒充或复制权威正文；界面必须提供知识源、稳定文档 ID 和相对路径，使读者能够追根溯源。
+- 专题电子书是回路根据知识来源提炼的训练材料，不能冒充或复制权威正文；界面必须提供知识源、稳定文档 ID 和相对路径，使读者能够追根溯源。
 - 训练分类和训练模块的上下级、归类、创建、修改、移动、合并、导入、导出、删除和恢复属于用户行为，不得改写外部知识库目录。
 - 当前随版本提供 RCU、红黑树和哈希表三个并列示范单元，用于验证完整训练流程；它们只是数据驱动内容，不得演变为工具程序的固定领域限制。
-- 当前内容基线为 3 个训练单元、15 个训练任务；数量变化时必须同步更新工具 README、仓库 README、运行文档和本上下文，并重新运行内容校验与构建。
+- 当前内容基线为 3 本专题电子书、12 个学习章节和 12 个训练任务；数量变化时必须同步更新工具 README、仓库 README、运行文档和本上下文，并重新运行内容校验与构建。
 - 用户分类、训练模块、作答和环境就绪状态只保存在浏览器或 `tools/practice_tool/.local`，不得进入 Git。
 - `node_modules`、`dist`、`.local` 和日志属于本机构建或运行状态，不得提交。
 - `config/release.json` 与 `config/security.json` 是随版本发布的只读清单，浏览器只能查询，不能通过内容编辑接口修改。更新检查必须保持非打扰，只能使用固定 Git 参数执行快进更新，并在工作区不干净时拒绝自动更新。
@@ -257,7 +261,7 @@ git diff --check
 - `tools/practice_tool/docs/environment_and_troubleshooting.md`
 - `tools/practice_tool/docs/architecture/README.md`
 - `tools/practice_tool/docs/architecture/engineering/project_structure_and_module_boundaries.md`
-- `tools/practice_tool/docs/architecture/product/learning_guide_standard.md`
+- `tools/practice_tool/docs/architecture/product/topic_ebook_editorial_standard.md`
 - `tools/practice_tool/docs/architecture/product/content_adaptation_and_ai_governance.md`
 - `tools/practice_tool/docs/architecture/product/navigation_and_interaction.md`
 - `tools/practice_tool/docs/architecture/product/training_session_state_and_persistence.md`

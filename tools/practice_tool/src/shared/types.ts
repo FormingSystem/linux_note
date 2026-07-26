@@ -6,11 +6,15 @@ export type KnowledgeRef = {
   path: string;
 };
 
-export type LearningGuide = {
+export type LearningChapter = {
   id: string;
   title: string;
   objective: string;
-  reading: Array<{ heading: string; content: string }>;
+  file: string;
+  content_markdown: string;
+  estimated_minutes: number;
+  prerequisites: string[];
+  claim_ids: string[];
   check_questions: Array<{ question: string; answer: string }>;
   open_associations: string[];
   topology_memory: {
@@ -21,8 +25,31 @@ export type LearningGuide = {
   knowledge_refs: string[];
 };
 
+export type KnowledgeClaim = {
+  id: string;
+  statement: string;
+  type: string;
+  status: "candidate" | "reviewing" | "verified" | "conflicting" | "version_bound" | "superseded" | "rejected";
+  authority_chapter: string;
+  evidence_ids: string[];
+};
+
+export type TopicBook = {
+  schema_version: 1;
+  id: string;
+  title: string;
+  version: string;
+  status: string;
+  outline_file: string;
+  outline_markdown: string;
+  chapters: LearningChapter[];
+  claims: KnowledgeClaim[];
+};
+
 export type GuidedQuestion = {
   id: string;
+  chapter_ids: string[];
+  claim_ids: string[];
   title: string;
   scenario: string;
   question: string;
@@ -34,6 +61,8 @@ export type GuidedQuestion = {
 
 export type ModelTask = {
   id: string;
+  chapter_ids: string[];
+  claim_ids: string[];
   title: string;
   output_type: "sequence" | "causal_model" | "state_ownership";
   prompt: string;
@@ -45,6 +74,8 @@ export type ModelTask = {
 
 export type ProfessionalCase = {
   id: string;
+  chapter_ids: string[];
+  claim_ids: string[];
   title: string;
   difficulty: "intermediate" | "advanced";
   background: string;
@@ -60,7 +91,7 @@ export type ProfessionalCase = {
 };
 
 export type PracticeUnit = {
-  schema_version: number;
+  schema_version: 3;
   id: string;
   title: string;
   subtitle: string;
@@ -68,7 +99,7 @@ export type PracticeUnit = {
   estimated_minutes: number;
   knowledge_refs: KnowledgeRef[];
   stages: {
-    learning: { title: string; purpose: string; items_file: string };
+    learning: { title: string; purpose: string; book_file: string };
     guided: { title: string; purpose: string; items_file: string };
     reconstruction: { title: string; purpose: string; items_file: string };
     professional: { title: string; purpose: string; items_file: string };
@@ -93,7 +124,8 @@ export type UnitCatalog = { schema_version: number; units: UnitCatalogItem[] };
 
 export type LoadedUnit = {
   unit: PracticeUnit;
-  learning: LearningGuide[];
+  book: TopicBook;
+  learning: LearningChapter[];
   guided: GuidedQuestion[];
   models: ModelTask[];
   cases: ProfessionalCase[];
@@ -140,6 +172,7 @@ export type PracticeSession = {
   hintLevels: Record<string, number>;
   revealedItemIds: string[];
   completedItemIds: string[];
+  stagePositions: Partial<Record<TrainingStage, string>>;
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;

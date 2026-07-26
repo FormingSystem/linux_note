@@ -1,0 +1,6 @@
+[
+  {"chapter_id":"linux.rcu.chapter.old_reader","check_questions":[{"question":"入口不再指向 A，为什么仍不能立即释放？","answer":"旧读者可能已把 A 保存到寄存器、栈或局部变量。"}],"open_associations":["对象地址带出读侧临界区需要什么？"],"topology_memory":{"prompt":"画出旧读者、入口和旧对象。","nodes":["旧读者","共享入口","对象 A","对象 B"],"links":["旧读者 → 保存 A","更新者 → 入口切换到 B"]}},
+  {"chapter_id":"linux.rcu.chapter.grace_period","check_questions":[{"question":"宽限期是否等待全部新读者？","answer":"不等待；它覆盖切换前可能取得旧对象的旧读者集合。"}],"open_associations":["固定等待时间为什么不能替代完成证据？"],"topology_memory":{"prompt":"画出旧读者集合边界。","nodes":["入口切换","旧读者","新读者","宽限期"],"links":["入口切换前 → 旧读者集合","旧读者退出 → 宽限期完成"]}},
+  {"chapter_id":"linux.rcu.chapter.cost","check_questions":[{"question":"读侧少了共享计数后成本去了哪里？","answer":"转移到发布、宽限期推进、回调积压和延迟回收路径。"}],"open_associations":["更新速度超过回收速度会怎样？"],"topology_memory":{"prompt":"连接读侧收益和更新侧成本。","nodes":["普通读侧","更新者","回调","旧对象"],"links":["普通读侧 → 少共享修改","更新者 → 延迟回收旧对象"]}},
+  {"chapter_id":"linux.rcu.chapter.tree","check_questions":[{"question":"Tree RCU 如何形成全局完成结论？","answer":"局部静止状态证据沿 rcu_node 层次汇聚。"}],"open_associations":["被抢占读者为什么需要共享登记？"],"topology_memory":{"prompt":"画出局部证据到全局结论。","nodes":["CPU/任务","局部状态","rcu_node","宽限期"],"links":["CPU/任务 → 局部证据","局部证据 → rcu_node 汇聚","汇聚完成 → 宽限期结束"]}}
+]

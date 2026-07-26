@@ -1,0 +1,6 @@
+{"schema_version":1,"claims":[
+  {"id":"linux.hash.claim.mapping_reduces_candidates","statement":"哈希定位缩小待比较候选集合，但不能单独证明对象身份。","type":"causal_conclusion","status":"verified","authority_chapter":"linux.hash.chapter.mapping","evidence_ids":["linux.hash.evidence.mapping"]},
+  {"id":"linux.hash.claim.collisions_are_expected","statement":"有限桶承载更大键空间时冲突是必然事件，平均成本依赖分布和负载。","type":"bound","status":"verified","authority_chapter":"linux.hash.chapter.collision","evidence_ids":["linux.hash.evidence.collision"]},
+  {"id":"linux.hash.claim.hlist_pprev_enables_delete","statement":"hlist_node 的 pprev 允许已知节点删除时直接修改前一个链接位置。","type":"implementation","status":"verified","authority_chapter":"linux.hash.chapter.hlist","evidence_ids":["linux.hash.evidence.hlist"]},
+  {"id":"linux.hash.claim.resize_requires_transition","statement":"并发哈希表扩容需要显式管理新旧桶、迁移进度和对象生命期。","type":"causal_conclusion","status":"verified","authority_chapter":"linux.hash.chapter.resize","evidence_ids":["linux.hash.evidence.resize"]}
+]}

@@ -1,0 +1,5 @@
+{"schema_version":1,"relations":[
+  {"from":"linux.rbtree.claim.bst_can_degenerate","type":"causes","to":"linux.rbtree.claim.rotation_preserves_order"},
+  {"from":"linux.rbtree.claim.rotation_preserves_order","type":"enables","to":"linux.rbtree.claim.constraints_bound_height"},
+  {"from":"linux.rbtree.claim.constraints_bound_height","type":"implements","to":"linux.rbtree.claim.linux_caller_owns_policy"}
+]}

@@ -1,6 +1,8 @@
 [
   {
     "id":"linux.rbtree.guided.degeneration",
+    "chapter_ids":["linux.rbtree.chapter.problem"],
+    "claim_ids":["linux.rbtree.claim.bst_can_degenerate"],
     "title":"正确的 BST 为什么仍可能不可用",
     "scenario":"服务把递增时间戳依次插入普通 BST，数据达到十万条后尾部查询耗时明显上升。",
     "question":"从插入路径、树形变化和查询步骤解释性能怎样逐步恶化。",
@@ -11,6 +13,8 @@
   },
   {
     "id":"linux.rbtree.guided.embedded_node",
+    "chapter_ids":["linux.rbtree.chapter.linux"],
+    "claim_ids":["linux.rbtree.claim.linux_caller_owns_policy"],
     "title":"内核为何把节点嵌入业务对象",
     "scenario":"定时器对象需要按到期时间进入 rbtree，查找返回的是 rb_node 地址。",
     "question":"业务对象、rb_node、关键字和树根分别由谁拥有，怎样从节点回到对象？",

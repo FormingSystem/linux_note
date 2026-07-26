@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "claims": [
+    {"id":"linux.rbtree.claim.bst_can_degenerate","statement":"二叉搜索树保持有序性时仍可能因不利插入顺序退化为线性高度。","type":"causal_conclusion","status":"verified","authority_chapter":"linux.rbtree.chapter.problem","evidence_ids":["linux.rbtree.evidence.bst"]},
+    {"id":"linux.rbtree.claim.rotation_preserves_order","statement":"满足关键字区间约束的局部旋转保持二叉搜索树的中序顺序。","type":"invariant","status":"verified","authority_chapter":"linux.rbtree.chapter.rotation","evidence_ids":["linux.rbtree.evidence.rotation"]},
+    {"id":"linux.rbtree.claim.constraints_bound_height","statement":"红黑约束允许局部不完全平衡，同时为树高建立对数级上界。","type":"bound","status":"verified","authority_chapter":"linux.rbtree.chapter.constraints","evidence_ids":["linux.rbtree.evidence.constraints"]},
+    {"id":"linux.rbtree.claim.linux_caller_owns_policy","statement":"Linux rbtree 维护节点链接和平衡，比较、并发保护和对象生命期由使用者负责。","type":"contract","status":"verified","authority_chapter":"linux.rbtree.chapter.linux","evidence_ids":["linux.rbtree.evidence.linux"]}
+  ]
+}

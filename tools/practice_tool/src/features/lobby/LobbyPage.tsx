@@ -15,7 +15,7 @@ export default function LobbyPage() {
         <div>
           <div className="eyebrow">Knowledge Practice Network</div>
           <h1>今天从哪里继续？</h1>
-          <p>从提炼后的学习导引开始，再经过提示提问、脱稿输出与专业案例，把知识变成可迁移的模型。</p>
+          <p>从提炼后的专题电子书开始，再经过提示提问、脱稿输出与专业案例，把知识变成可迁移的模型。</p>
         </div>
         <Link className="button-link primary" to="/library">浏览训练库 →</Link>
       </section>

@@ -95,6 +95,7 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .rail { padding-top: 8px; }
 .back-lobby { display: inline-block; margin-bottom: 20px; color: var(--green); text-decoration: none; font-size: 13px; font-weight: 700; }
 .rail-title { margin-bottom: 20px; color: #7a817d; font-size: 12px; font-weight: 700; letter-spacing: .18em; }
+.rail-hint { margin: -10px 0 18px; color: var(--muted); font-size: 11px; line-height: 1.6; }
 .rail-step { display: flex; width: 100%; align-items: center; gap: 12px; min-height: 46px; color: #8a928e; background: transparent; font-size: 14px; border: 0; border-left: 1px solid #c9cec6; padding-left: 18px; text-align: left; }
 .rail-step span { display: grid; place-items: center; width: 24px; height: 24px; margin-left: -31px; border-radius: 50%; border: 1px solid #c9cec6; background: #f1f0e8; font-size: 11px; }
 .rail-step.active { color: var(--ink); font-weight: 700; border-left-color: var(--green); }
@@ -220,10 +221,39 @@ blockquote { margin: 24px 0; padding: 22px 28px; color: var(--ink); background: 
   margin: 18px 0; padding: 18px; border: 1px solid var(--line); background: #f7f6ef;
 }
 .learning-objective span, .topology-card > span, .association-card > span { display: block; margin-bottom: 8px; color: var(--green); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-.learning-reading { display: grid; gap: 12px; }
-.learning-reading section { padding: 18px 20px; border-left: 3px solid var(--green); background: #fff; }
-.learning-reading h3, .check-answers h3 { margin: 0 0 8px; }
-.learning-reading p, .topology-card p, .association-card p, .check-answers p { margin: 0; line-height: 1.75; }
+.learning-document { margin: 24px 0 34px; color: #223a37; font-family: "Noto Serif SC", serif; font-size: 16px; line-height: 1.95; }
+.learning-document > h1:first-child { margin-top: 0; font-size: clamp(30px, 4vw, 44px); }
+.learning-document h2 { margin: 2.2em 0 .7em; padding-bottom: .35em; border-bottom: 1px solid var(--line); font-size: 25px; }
+.learning-document h3 { margin-top: 1.8em; font-size: 19px; }
+.learning-document p { margin: 1em 0; }
+.learning-document ul, .learning-document ol { padding-left: 1.6em; }
+.learning-document code { padding: .12em .35em; color: #154940; background: #edf3ef; font-family: ui-monospace, monospace; font-size: .9em; }
+.learning-document pre { overflow-x: auto; padding: 18px; color: #dce8e4; background: #172f2c; }
+.learning-document pre code { padding: 0; color: inherit; background: transparent; }
+.learning-document table { width: 100%; margin: 1.5em 0; border-collapse: collapse; font-family: "Noto Sans SC", sans-serif; font-size: 13px; }
+.learning-document th, .learning-document td { padding: 10px 12px; border: 1px solid var(--line); text-align: left; }
+.learning-document th { background: #edf3ef; }
+.check-answers h3 { margin: 0 0 8px; }
+.topology-card p, .association-card p, .check-answers p { margin: 0; line-height: 1.75; }
+.book-navigation { margin: -18px 0 30px; padding: 18px; background: #f3f4ee; border: 1px solid var(--line); }
+.book-navigation-heading { display: grid; gap: 4px; margin-bottom: 12px; }
+.book-navigation-heading > span, .chapter-claims > span { color: #a16b29; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.book-navigation-heading strong { font-family: "Noto Serif SC", serif; }
+.book-navigation-heading small { color: var(--muted); }
+.book-navigation details { margin: 12px 0; color: var(--green); font-size: 12px; }
+.outline-preview { max-height: 180px; margin-top: 10px; overflow: auto; padding: 12px; color: var(--muted); background: white; white-space: pre-wrap; line-height: 1.7; }
+.book-navigation ol { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin: 0; padding: 0; list-style: none; }
+.book-navigation li button { display: grid; grid-template-columns: 30px 1fr; gap: 8px; width: 100%; min-height: 58px; padding: 10px; color: var(--ink); background: white; border: 1px solid var(--line); text-align: left; }
+.book-navigation li button.active { background: #e4efe9; border-color: #87a99f; }
+.book-navigation li button > span:first-child { color: #a16b29; font: 700 11px Georgia, serif; }
+.book-navigation li button > span:last-child { display: grid; gap: 3px; }
+.book-navigation li small { color: var(--muted); font-size: 10px; }
+.chapter-claims { display: grid; gap: 9px; margin: 24px 0; padding: 18px; background: #edf3ef; border-left: 3px solid var(--green); }
+.chapter-claims div { display: grid; gap: 4px; }
+.chapter-claims small { color: var(--muted); overflow-wrap: anywhere; }
+.related-chapters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 18px 0; padding: 14px; background: #f5eee2; border-left: 3px solid var(--amber); }
+.related-chapters > span { margin-right: 4px; color: #936020; font-size: 11px; font-weight: 800; }
+.related-chapters button { padding: 7px 10px; color: var(--green); background: white; border: 1px solid #d8c6a9; font-size: 12px; }
 .topology-nodes { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .topology-nodes b { padding: 7px 10px; border: 1px solid var(--line); background: #fff; font-size: 12px; }
 .source-references summary { cursor: pointer; font-weight: 750; }
@@ -300,7 +330,7 @@ blockquote { margin: 24px 0; padding: 22px 28px; color: var(--ink); background: 
   .session-meta { display: none; }
   .main-layout, .main-layout.session-layout { display: block; padding: 28px 16px 60px; }
   .rail { display: flex; overflow-x: auto; padding: 0 0 12px; }
-  .rail-title, .rail-card, .back-lobby, .save-indicator { display: none; }
+  .rail-title, .rail-hint, .rail-card, .back-lobby, .save-indicator { display: none; }
   .rail-step { min-width: 110px; min-height: 34px; padding-left: 0; border-left: 0; border-bottom: 1px solid #c9cec6; }
   .rail-step span { margin-left: 0; }
   .panel { min-height: 0; padding: 28px 20px; }
@@ -314,6 +344,7 @@ blockquote { margin: 24px 0; padding: 22px 28px; color: var(--ink); background: 
   .manager-toolbar { grid-column: auto; }
   .dashboard-grid { grid-template-columns: 1fr; }
   .lobby-hero { align-items: flex-start; flex-direction: column; min-height: 0; }
+  .book-navigation ol { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {

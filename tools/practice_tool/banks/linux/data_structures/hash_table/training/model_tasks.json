@@ -1,6 +1,8 @@
 [
   {
     "id":"linux.hash_table.model.lookup_resize",
+    "chapter_ids":["linux.hash.chapter.mapping","linux.hash.chapter.collision","linux.hash.chapter.hlist","linux.hash.chapter.resize"],
+    "claim_ids":["linux.hash.claim.mapping_reduces_candidates","linux.hash.claim.collisions_are_expected","linux.hash.claim.hlist_pprev_enables_delete","linux.hash.claim.resize_requires_transition"],
     "title":"从查找到伸缩的完整结构模型",
     "output_type":"state_ownership",
     "prompt":"脱稿重建一个 Linux 风格哈希索引：业务键怎样到桶，节点怎样嵌入对象，冲突怎样遍历，对象增长后为什么要扩容，并发时还要保护哪些状态。",

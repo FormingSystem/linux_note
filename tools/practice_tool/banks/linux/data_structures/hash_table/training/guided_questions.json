@@ -1,6 +1,8 @@
 [
   {
     "id":"linux.hash_table.guided.collision",
+    "chapter_ids":["linux.hash.chapter.mapping","linux.hash.chapter.collision"],
+    "claim_ids":["linux.hash.claim.mapping_reduces_candidates","linux.hash.claim.collisions_are_expected"],
     "title":"桶定位为什么还不是查找完成",
     "scenario":"键 18 和键 34 在 16 个桶中都映射到桶 2，查找键 34 时首先取得桶 2。",
     "question":"接下来必须读取和比较什么，为什么不能只比较哈希值？",
@@ -11,6 +13,8 @@
   },
   {
     "id":"linux.hash_table.guided.hlist_delete",
+    "chapter_ids":["linux.hash.chapter.hlist"],
+    "claim_ids":["linux.hash.claim.hlist_pprev_enables_delete"],
     "title":"pprev 为什么不是普通 prev",
     "scenario":"调用者已经持有待删除对象及其 hlist_node，但不知道前驱业务对象。",
     "question":"pprev 保存在哪里、指向哪里，删除时怎样更新前后链接？",
