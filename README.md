@@ -99,8 +99,18 @@ Windows MSYS2 与 Ubuntu 22.04 使用相同命令。该参数只更新训练工�
 - [跨平台与仓库独立性设计](tools/practice_tool/docs/cross_platform_and_repository_independence.md)
 - [跨平台环境、虚拟机验证与故障排查](tools/practice_tool/docs/environment_and_troubleshooting.md)
 - [安全、版本更新与软件生命周期设计](tools/practice_tool/docs/security_version_update_and_lifecycle.md)
-- [回路工程结构与模块边界](tools/practice_tool/docs/architecture/project_structure_and_module_boundaries.md)
-- [学习导引提炼标准](tools/practice_tool/docs/architecture/learning_guide_standard.md)
+- [回路架构设计索引](tools/practice_tool/docs/architecture/README.md)
+- [回路工程结构与模块边界](tools/practice_tool/docs/architecture/engineering/project_structure_and_module_boundaries.md)
+- [回路当前实现状态与版本边界](tools/practice_tool/docs/architecture/implementation_status.md)
+- [学习导引提炼标准](tools/practice_tool/docs/architecture/product/learning_guide_standard.md)
+- [知识提炼、训练适配与 AI 治理](tools/practice_tool/docs/architecture/product/content_adaptation_and_ai_governance.md)
+- [回路产品导航与交互设计](tools/practice_tool/docs/architecture/product/navigation_and_interaction.md)
+- [训练会话状态与持久化](tools/practice_tool/docs/architecture/product/training_session_state_and_persistence.md)
+- [复习调度与训练历史](tools/practice_tool/docs/architecture/product/review_scheduling_and_history.md)
+- [导入导出与数据安全](tools/practice_tool/docs/architecture/engineering/import_export_and_data_safety.md)
+- [本地服务安全与威胁模型](tools/practice_tool/docs/architecture/engineering/local_service_security_and_threat_model.md)
+- [无障碍、性能与产品验收标准](tools/practice_tool/docs/architecture/engineering/accessibility_performance_and_acceptance.md)
+- [架构决策记录](tools/practice_tool/docs/architecture/decisions/README.md)
 
 ## 1.4\_内容说明
 

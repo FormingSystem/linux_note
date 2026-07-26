@@ -54,7 +54,7 @@ practice_tool/
 └── config/
 ```
 
-当前代码按增量重构方式向目标结构收敛。新业务代码不得继续堆入单体入口；已有启动、安装、卸载和平台环境职责保持原边界。
+当前代码按干净重构方式向目标结构收敛。新业务代码不得继续堆入单体入口；已有启动、安装、卸载和平台环境职责保持原边界。目标结构与当前落地结构不能混为一谈，当前目录和剩余拆分项见 [实现状态与版本边界](../implementation_status.md)。
 
 ## 1.3\_模块内部约定
 
@@ -126,3 +126,17 @@ app 负责向 features 注入 infrastructure 实现
 ```
 
 训练内容通过 `banks/index.json` 和单元协议自动发现；新增其他专题不得在 React 页面中添加专题判断。用户训练分类和训练模块使用独立工作区数据，不写回知识库目录。学习导引保留知识源 ID、稳定文档 ID 和相对路径，并通过受控只读接口打开注册知识源内的 Markdown 原文。
+
+第一版已经把原 `App.tsx` 单体状态机拆为应用外壳、大厅、训练库、训练会话、训练管理和持久化模块。结构方向已经建立，但还没有完成 `training-categories` 与 `training-modules` 的独立所有权拆分，也没有为每个 feature 建立公开 `index.ts`。这属于后续结构整改，不得把当前过渡目录反向写成长期目标。
+
+## 1.8\_相关设计
+
+- [产品导航与交互设计](../product/navigation_and_interaction.md)
+- [训练会话状态与持久化](../product/training_session_state_and_persistence.md)
+- [复习调度与训练历史](../product/review_scheduling_and_history.md)
+- [导入导出与数据安全](import_export_and_data_safety.md)
+- [本地服务安全与威胁模型](local_service_security_and_threat_model.md)
+- [无障碍、性能与产品验收标准](accessibility_performance_and_acceptance.md)
+- [学习导引提炼标准](../product/learning_guide_standard.md)
+- [知识提炼、训练适配与 AI 治理](../product/content_adaptation_and_ai_governance.md)
+- [架构决策记录](../decisions/README.md)

@@ -50,14 +50,26 @@ practice_tool/
 
 业务前端采用 Feature-first 结构：`src/app` 负责装配，`src/features` 按训练业务组织，`src/infrastructure` 隔离浏览器存储和外部访问，`src/shared` 只保存无业务归属的基础类型。详细规则见：
 
-- [工程结构与模块边界](docs/architecture/project_structure_and_module_boundaries.md)
-- [学习导引提炼标准](docs/architecture/learning_guide_standard.md)
+- [架构设计索引](docs/architecture/README.md)
+- [当前实现状态与版本边界](docs/architecture/implementation_status.md)
+- [工程结构与模块边界](docs/architecture/engineering/project_structure_and_module_boundaries.md)
+- [学习导引提炼标准](docs/architecture/product/learning_guide_standard.md)
+- [知识提炼、训练适配与 AI 治理](docs/architecture/product/content_adaptation_and_ai_governance.md)
+- [产品导航与交互设计](docs/architecture/product/navigation_and_interaction.md)
+- [训练会话状态与持久化](docs/architecture/product/training_session_state_and_persistence.md)
+- [复习调度与训练历史](docs/architecture/product/review_scheduling_and_history.md)
+- [导入导出与数据安全](docs/architecture/engineering/import_export_and_data_safety.md)
+- [本地服务安全与威胁模型](docs/architecture/engineering/local_service_security_and_threat_model.md)
+- [无障碍、性能与产品验收标准](docs/architecture/engineering/accessibility_performance_and_acceptance.md)
+- [架构决策记录](docs/architecture/decisions/README.md)
 
 以下内容属于当前 `linux-note` 的集成层，不属于工具核心：
 
 - 知识库根目录的 `practice.cmd` 和 `practice.sh` 快捷入口。
 - `knowledge` 中被题库引用的 Linux 权威正文。
 - 本仓库的 `AGENTS.md`、治理规范、Atlas 和出版结构。
+
+当前 `0.1.0` 开发版已经提供大厅、训练库、单元详情、可恢复训练会话、四阶段步骤导航、IndexedDB 自动保存，以及分类和训练模块的正式管理表单。复习、历史、知识源和设置目前只有边界说明页，不能视为功能完成。精确完成度、验证证据和已知风险统一见 [当前实现状态与版本边界](docs/architecture/implementation_status.md)。
 
 当前已经实现 **启动独立**：环境准备、依赖安装、校验、构建和运行均可在工具目录内完成。当前题库仍携带指向 `linux-note` 正文路径的来源信息；拆分仓库时可以保留稳定文档 ID，并把路径作为内容包集成配置处理，不能把外层相对路径写进工具核心代码。
 
@@ -271,7 +283,7 @@ npm install
 npm run dev
 ```
 
-训练记录保存在浏览器 `localStorage`，不会在每次作答后污染 Git 工作区。清理浏览器站点数据会删除本地记录。
+训练会话、作答进度以及用户创建的分类和训练模块保存在浏览器 `IndexedDB`，不会在每次作答后污染 Git 工作区。旧版工作区数据会从 `localStorage` 一次性迁移；清理浏览器站点数据仍会删除全部本地记录。
 
 ## 1.3\_内容检查
 
