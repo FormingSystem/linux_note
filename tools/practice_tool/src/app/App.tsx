@@ -1,40 +1,25 @@
 import { useEffect, useState } from "react";
-import catalogData from "../banks/index.json";
 import runtimeConfig from "virtual:practice-runtime-config";
+import WorkspaceManager from "../features/training-management/WorkspaceManager";
+import { catalog, loadUnit } from "../features/training-library/content";
 import type {
   GuidedQuestion,
+  KnowledgeRef,
+  LearningGuide,
   ModelTask,
   PracticeUnit,
   ProfessionalCase,
   Rating,
   Review,
-  UnitCatalog,
   UnitCatalogItem,
-} from "./types";
+} from "../shared/types";
 
-const catalog = catalogData as UnitCatalog;
 const STORAGE_KEY = "loop-knowledge-practice.reviews.v1";
 const LEGACY_STORAGE_KEY = "linux-note-practice.reviews.v2";
-const unitFiles = import.meta.glob<PracticeUnit>("../banks/**/unit.json", { eager: true, import: "default" });
-const guidedFiles = import.meta.glob<GuidedQuestion[]>("../banks/**/guided_questions.json", { eager: true, import: "default" });
-const modelFiles = import.meta.glob<ModelTask[]>("../banks/**/model_tasks.json", { eager: true, import: "default" });
-const caseFiles = import.meta.glob<ProfessionalCase[]>("../banks/**/professional_cases.json", { eager: true, import: "default" });
 
-function loadUnit(item: UnitCatalogItem) {
-  const unitPath = `../banks/${item.unit_file}`;
-  const unit = unitFiles[unitPath];
-  if (!unit) throw new Error(`训练单元不存在：${item.unit_file}`);
-  const directory = unitPath.slice(0, unitPath.lastIndexOf("/") + 1);
-  const guided = guidedFiles[`${directory}${unit.stages.guided.items_file}`];
-  const models = modelFiles[`${directory}${unit.stages.reconstruction.items_file}`];
-  const cases = caseFiles[`${directory}${unit.stages.professional.items_file}`];
-  if (!guided || !models || !cases) throw new Error(`训练单元阶段文件不完整：${item.id}`);
-  return { unit, guided, models, cases };
-}
-
-type Stage = "library" | "home" | "guided" | "model" | "professional" | "done";
-const stages: Stage[] = ["library", "home", "guided", "model", "professional", "done"];
-const labels = ["选择单元", "单元概览", "提示提问", "脱稿输出", "专业案例", "训练总结"];
+type Stage = "library" | "manage" | "home" | "learning" | "guided" | "model" | "professional" | "done";
+const stages: Stage[] = ["library", "home", "learning", "guided", "model", "professional", "done"];
+const labels = ["选择单元", "单元概览", "学习导引", "提示提问", "脱稿输出", "专业案例", "训练总结"];
 
 function loadReviews(): Review[] {
   try {
@@ -62,7 +47,7 @@ function App() {
   const [updateBusy, setUpdateBusy] = useState(false);
   const [updateActionError, setUpdateActionError] = useState("");
   const stageIndex = stages.indexOf(stage);
-  const { unit, guided, models, cases } = content;
+  const { unit, learning, guided, models, cases } = content;
 
   const refreshSystemInfo = async () => {
     const response = await fetch("/__practice/system", { cache: "no-store" });
@@ -106,6 +91,7 @@ function App() {
     const review: Review = {
       unitId: unit.id,
       createdAt: new Date().toISOString(),
+      learningAnswers: Object.fromEntries(learning.map((item) => [item.id, answers[item.id] || ""])),
       guidedAnswers: Object.fromEntries(guided.map((item) => [item.id, answers[item.id] || ""])),
       modelAnswers: Object.fromEntries(models.map((item) => [item.id, answers[item.id] || ""])),
       caseAnswers: Object.fromEntries(cases.map((item) => [item.id, answers[item.id] || ""])),
@@ -115,7 +101,7 @@ function App() {
     moveTo("done");
   };
 
-  const itemCount = guided.length + models.length + cases.length;
+  const itemCount = learning.length + guided.length + models.length + cases.length;
   const ratedCount = Object.keys(ratings).length;
 
   return (
@@ -159,7 +145,7 @@ function App() {
             </div>
           ))}
           <div className="rail-card">
-            <span>三阶段训练</span>
+            <span>学习 + 三阶段训练</span>
             <strong>{unit.estimated_minutes} 分钟</strong>
             <small>{selectedUnit ? `${itemCount} 个训练任务 · ${unit.knowledge_refs.length} 篇知识来源` : `${catalog.units.length} 个可用单元`}</small>
           </div>
@@ -169,6 +155,7 @@ function App() {
           {stage === "library" && (
             <UnitLibrary
               units={catalog.units}
+              onManage={() => setStage("manage")}
               onSelect={(selected) => {
                 setSelectedUnit(selected);
                 setContent(loadUnit(selected));
@@ -176,7 +163,28 @@ function App() {
               }}
             />
           )}
-          {stage === "home" && <Home unit={unit} onStart={() => moveTo("guided")} onBack={() => moveTo("library")} />}
+          {stage === "manage" && (
+            <div className="panel library-panel">
+              <div className="library-heading"><div><div className="eyebrow">Workspace Management</div><h1>训练工作区管理</h1><p>分类和模块都是用户组织行为，不改变知识源目录。</p></div><button className="secondary" onClick={() => moveTo("library")}>返回训练库</button></div>
+              <WorkspaceManager catalogUnits={catalog.units} onTrain={(selected) => { setSelectedUnit(selected); setContent(loadUnit(selected)); moveTo("home"); }} />
+            </div>
+          )}
+          {stage === "home" && <Home unit={unit} onStart={() => moveTo("learning")} onBack={() => moveTo("library")} />}
+          {stage === "learning" && (
+            <LearningStage
+              item={learning[itemIndex]}
+              index={itemIndex}
+              total={learning.length}
+              answer={answers[learning[itemIndex].id] || ""}
+              revealed={revealed}
+              rating={ratings[learning[itemIndex].id]}
+              refs={unit.knowledge_refs}
+              onAnswer={setAnswer}
+              onReveal={() => setRevealed(true)}
+              onRate={(value) => setRatings({ ...ratings, [learning[itemIndex].id]: value })}
+              onNext={() => itemIndex < learning.length - 1 ? (setItemIndex(itemIndex + 1), setRevealed(false)) : moveTo("guided")}
+            />
+          )}
           {stage === "guided" && (
             <GuidedStage
               item={guided[itemIndex]}
@@ -255,7 +263,7 @@ function App() {
   );
 }
 
-function UnitLibrary({ units, onSelect }: { units: UnitCatalogItem[]; onSelect: (unit: UnitCatalogItem) => void }) {
+function UnitLibrary({ units, onSelect, onManage }: { units: UnitCatalogItem[]; onSelect: (unit: UnitCatalogItem) => void; onManage: () => void }) {
   const [query, setQuery] = useState("");
   const [domain, setDomain] = useState("all");
   const domains = [...new Set(units.map((item) => item.domain))];
@@ -270,8 +278,8 @@ function UnitLibrary({ units, onSelect }: { units: UnitCatalogItem[]; onSelect: 
     <div className="panel library-panel">
       <div className="eyebrow">Knowledge Practice Network</div>
       <div className="library-heading">
-        <div><h1>选择训练单元</h1><p>单元负责组织训练，知识结论仍以仓库正文为唯一权威来源。</p></div>
-        <div className="catalog-count"><strong>{units.length}</strong><span>可用单元</span></div>
+        <div><h1>选择训练单元</h1><p>先阅读提炼后的导学稿，再完成提示、脱稿和专业案例训练；每项结论都保留原文依据。</p></div>
+        <div className="catalog-actions"><div className="catalog-count"><strong>{units.length}</strong><span>可用单元</span></div><button className="secondary" onClick={onManage}>管理分类与模块</button></div>
       </div>
       <div className="library-tools">
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索模块、知识点或标签……" aria-label="搜索训练单元" />
@@ -306,6 +314,7 @@ function Home({ unit, onStart, onBack }: { unit: PracticeUnit; onStart: () => vo
       <p className="hero-subtitle">{unit.subtitle}</p>
       <div className="rule" />
       <div className="phase-cards">
+        <div><span>00 · 学习</span><strong>{unit.stages.learning.title}</strong><p>{unit.stages.learning.purpose}</p></div>
         <div><span>01 · 建模</span><strong>{unit.stages.guided.title}</strong><p>{unit.stages.guided.purpose}</p></div>
         <div><span>02 · 提取</span><strong>{unit.stages.reconstruction.title}</strong><p>{unit.stages.reconstruction.purpose}</p></div>
         <div><span>03 · 迁移</span><strong>{unit.stages.professional.title}</strong><p>{unit.stages.professional.purpose}</p></div>
@@ -314,7 +323,7 @@ function Home({ unit, onStart, onBack }: { unit: PracticeUnit; onStart: () => vo
       <div className="notice"><span>知识来源</span>{sourceNames.join("、")}</div>
       <div className="actions home-actions">
         <button className="secondary" onClick={onBack}>重新选择单元</button>
-        <button className="primary" onClick={onStart}>从轻量提问开始 <span>→</span></button>
+        <button className="primary" onClick={onStart}>从主题导学开始 <span>→</span></button>
       </div>
     </div>
   );
@@ -342,6 +351,57 @@ function RatingBar({ value, onRate }: { value?: Rating; onRate: (value: Rating) 
           {rating === "again" ? "需要重建" : rating === "hard" ? "部分输出" : "完整输出"}
         </button>
       ))}
+    </div>
+  );
+}
+
+function SourceReferences({ references, selectedIds }: { references: KnowledgeRef[]; selectedIds: string[] }) {
+  const items = references.filter((item) => selectedIds.includes(item.id));
+  return (
+    <details className="source-references">
+      <summary>原文依据 · {items.length} 篇</summary>
+      {items.map((item) => (
+        <div className="source-reference" key={item.id}>
+          <code>{item.source_id}</code>
+          <a target="_blank" rel="noreferrer" href={`/__practice/source?source_id=${encodeURIComponent(item.source_id)}&path=${encodeURIComponent(item.path)}`}>{item.path}</a>
+          <small>{item.id}</small>
+        </div>
+      ))}
+    </details>
+  );
+}
+
+function LearningStage(props: CommonProps & { item: LearningGuide; refs: KnowledgeRef[] }) {
+  const { item } = props;
+  return (
+    <div className="panel learning-panel">
+      <StageHeader eyebrow="学习阶段 · 提炼导学" title={item.title} index={props.index} total={props.total} />
+      <div className="learning-objective"><span>本节目标</span>{item.objective}</div>
+      <div className="learning-reading">
+        {item.reading.map((section) => <section key={section.heading}><h3>{section.heading}</h3><p>{section.content}</p></section>)}
+      </div>
+      <SourceReferences references={props.refs} selectedIds={item.knowledge_refs} />
+      <div className="topology-card">
+        <span>拓扑记忆训练</span>
+        <p>{item.topology_memory.prompt}</p>
+        <div className="topology-nodes">{item.topology_memory.nodes.map((node) => <b key={node}>{node}</b>)}</div>
+        {props.revealed && <ul>{item.topology_memory.links.map((link) => <li key={link}>{link}</li>)}</ul>}
+      </div>
+      <div className="association-card">
+        <span>开放式联想</span>
+        {item.open_associations.map((question) => <p key={question}>↗ {question}</p>)}
+      </div>
+      <AnswerBox id={item.id} value={props.answer} onAnswer={props.onAnswer} placeholder="合上导学稿，用自己的话写出主题主线，并尝试回答开放联想……" />
+      {props.revealed && (
+        <div className="check-answers">
+          <h3>有据可核验的问题</h3>
+          {item.check_questions.map((entry) => <div key={entry.question}><strong>{entry.question}</strong><p>{entry.answer}</p></div>)}
+        </div>
+      )}
+      <RatingBar value={props.rating} onRate={props.onRate} />
+      <div className="actions">
+        {!props.revealed ? <button className="secondary" onClick={props.onReveal}>查看拓扑与问题答案</button> : <button className="primary" onClick={props.onNext}>进入提示提问 <span>→</span></button>}
+      </div>
     </div>
   );
 }

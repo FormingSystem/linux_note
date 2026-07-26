@@ -1,5 +1,26 @@
 export type Rating = "again" | "hard" | "good";
 
+export type KnowledgeRef = {
+  source_id: string;
+  id: string;
+  path: string;
+};
+
+export type LearningGuide = {
+  id: string;
+  title: string;
+  objective: string;
+  reading: Array<{ heading: string; content: string }>;
+  check_questions: Array<{ question: string; answer: string }>;
+  open_associations: string[];
+  topology_memory: {
+    prompt: string;
+    nodes: string[];
+    links: string[];
+  };
+  knowledge_refs: string[];
+};
+
 export type GuidedQuestion = {
   id: string;
   title: string;
@@ -45,25 +66,13 @@ export type PracticeUnit = {
   subtitle: string;
   status: string;
   estimated_minutes: number;
-  knowledge_refs: { source_id: string; id: string; path: string }[];
+  knowledge_refs: KnowledgeRef[];
   stages: {
+    learning: { title: string; purpose: string; items_file: string };
     guided: { title: string; purpose: string; items_file: string };
     reconstruction: { title: string; purpose: string; items_file: string };
     professional: { title: string; purpose: string; items_file: string };
   };
-};
-
-export type KnowledgeSource = {
-  id: string;
-  title: string;
-  kind: "filesystem" | "http";
-  location: string;
-};
-
-export type RuntimeConfig = {
-  schema_version: number;
-  config_source: string | null;
-  sources: KnowledgeSource[];
 };
 
 export type UnitCatalogItem = {
@@ -80,14 +89,45 @@ export type UnitCatalogItem = {
   tags: string[];
 };
 
-export type UnitCatalog = {
-  schema_version: number;
-  units: UnitCatalogItem[];
+export type UnitCatalog = { schema_version: number; units: UnitCatalogItem[] };
+
+export type LoadedUnit = {
+  unit: PracticeUnit;
+  learning: LearningGuide[];
+  guided: GuidedQuestion[];
+  models: ModelTask[];
+  cases: ProfessionalCase[];
+};
+
+export type TrainingCategory = {
+  id: string;
+  name: string;
+  parentId: string | null;
+  description: string;
+  trashed: boolean;
+};
+
+export type UserTrainingModule = {
+  id: string;
+  name: string;
+  description: string;
+  unitIds: string[];
+  categoryIds: string[];
+  trashed: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WorkspaceData = {
+  schemaVersion: 1;
+  categories: TrainingCategory[];
+  modules: UserTrainingModule[];
 };
 
 export type Review = {
   unitId: string;
   createdAt: string;
+  learningAnswers: Record<string, string>;
   guidedAnswers: Record<string, string>;
   modelAnswers: Record<string, string>;
   caseAnswers: Record<string, string>;

@@ -61,7 +61,7 @@ Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，�
 
 ### 1.3.1\_知识训练工具
 
-仓库当前内置独立运行的“回路”知识训练工具，用于按模块进行提示建模、脱稿输出和专业案例训练。工具程序、题库协议、环境脚本及自身文档统一位于：
+仓库当前内置独立运行的“回路”知识训练工具，用于把用户选择的知识材料提炼成学习导引，再进行提示建模、脱稿输出和专业案例训练。工具程序、训练协议、用户分类与模块管理、环境脚本及自身文档统一位于：
 
 ```text
 tools/practice_tool/
@@ -81,7 +81,9 @@ Linux 下直接使用工具正式入口查看介绍，该命令不会安装环�
 ./tools/practice_tool/start.sh --help
 ```
 
-训练工具按可迁移到独立仓库的边界维护。当前仓库负责提供 Linux 知识正文和首批 RCU 训练内容，工具负责解释题库、运行训练和保存本地记录；根目录脚本、仓库治理文件和其他知识目录都不是工具运行时组件。
+训练工具按可迁移到独立仓库的边界维护。当前仓库负责提供 Linux 知识正文和 RCU、红黑树、哈希表首批示范训练来源；工具负责把所选材料提炼为学习导引与三阶段训练、管理用户训练分类和模块，并保存本地记录。根目录脚本、仓库治理文件和其他知识目录都不是工具运行时组件。
+
+当前示范内容包含 3 个训练单元和 15 个训练任务。三个专题使用统一的数据协议和训练流程，后续新增专题不应修改页面代码或把领域分类写死到工具核心。
 
 当前仓库通过根目录的 `practice.sources.json` 声明 `linux-note` 知识源。快捷启动脚本只在用户没有主动指定时传入这份配置；用户设置的 `PRACTICE_SOURCE_CONFIG` 始终优先。训练工具通过 `source_id`、稳定文档 ID 和源内相对路径引用材料，不通过 `../..` 推断知识库位置。
 
@@ -97,6 +99,8 @@ Windows MSYS2 与 Ubuntu 22.04 使用相同命令。该参数只更新训练工�
 - [跨平台与仓库独立性设计](tools/practice_tool/docs/cross_platform_and_repository_independence.md)
 - [跨平台环境、虚拟机验证与故障排查](tools/practice_tool/docs/environment_and_troubleshooting.md)
 - [安全、版本更新与软件生命周期设计](tools/practice_tool/docs/security_version_update_and_lifecycle.md)
+- [回路工程结构与模块边界](tools/practice_tool/docs/architecture/project_structure_and_module_boundaries.md)
+- [学习导引提炼标准](tools/practice_tool/docs/architecture/learning_guide_standard.md)
 
 ## 1.4\_内容说明
 

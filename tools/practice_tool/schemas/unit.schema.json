@@ -5,7 +5,7 @@
   "type": "object",
   "required": ["schema_version", "id", "title", "subtitle", "status", "estimated_minutes", "knowledge_refs", "stages"],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "id": { "type": "string", "pattern": "^[a-z0-9_.-]+$" },
     "title": { "type": "string", "minLength": 1 },
     "subtitle": { "type": "string", "minLength": 1 },
@@ -27,8 +27,9 @@
     },
     "stages": {
       "type": "object",
-      "required": ["guided", "reconstruction", "professional"],
+      "required": ["learning", "guided", "reconstruction", "professional"],
       "properties": {
+        "learning": { "$ref": "#/$defs/stage" },
         "guided": { "$ref": "#/$defs/stage" },
         "reconstruction": { "$ref": "#/$defs/stage" },
         "professional": { "$ref": "#/$defs/stage" }

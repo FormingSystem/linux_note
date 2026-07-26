@@ -191,6 +191,48 @@ function runtimeConfigPlugin(runtimeConfig: Awaited<ReturnType<typeof loadKnowle
   };
 }
 
+function knowledgeSourceReaderPlugin(sources: KnowledgeSourceRegistry["sources"]): Plugin {
+  return {
+    name: "practice-knowledge-source-reader",
+    configureServer(server) {
+      server.middlewares.use("/__practice/source", async (req, res) => {
+        try {
+          const url = new URL(req.url || "/", "http://127.0.0.1");
+          const sourceId = url.searchParams.get("source_id") || "";
+          const relativePath = url.searchParams.get("path") || "";
+          const source = sources.find((item) => item.id === sourceId);
+          if (!source) throw new Error("知识源未配置");
+          if (!relativePath || path.isAbsolute(relativePath) || relativePath.includes("\0")) throw new Error("文档路径无效");
+
+          if (source.kind === "http") {
+            const target = new URL(relativePath.replaceAll("\\", "/"), source.location.endsWith("/") ? source.location : `${source.location}/`);
+            res.statusCode = 302;
+            res.setHeader("Location", target.toString());
+            return res.end();
+          }
+
+          const root = path.resolve(source.location);
+          const target = path.resolve(root, relativePath);
+          const boundary = `${root}${path.sep}`.toLowerCase();
+          if (target.toLowerCase() !== root.toLowerCase() && !target.toLowerCase().startsWith(boundary)) {
+            throw new Error("文档路径超出已注册知识源");
+          }
+          if (path.extname(target).toLowerCase() !== ".md" || !fs.statSync(target).isFile()) throw new Error("只允许读取已注册知识源中的 Markdown 文档");
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "text/markdown; charset=utf-8");
+          res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(path.basename(target))}`);
+          res.setHeader("Cache-Control", "no-store");
+          res.end(fs.readFileSync(target));
+        } catch (error) {
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "text/plain; charset=utf-8");
+          res.end(error instanceof Error ? error.message : "无法打开知识来源");
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig(async () => {
   const toolRoot = process.cwd();
   const runtimeConfig = await loadKnowledgeSources();
@@ -201,6 +243,7 @@ export default defineConfig(async () => {
     plugins: [
       react(),
       runtimeConfigPlugin({ ...runtimeConfig, system_api_token: systemApiToken }),
+      knowledgeSourceReaderPlugin(runtimeConfig.sources),
       systemServicePlugin(toolRoot, release, security, systemApiToken),
     ],
     base: "./",

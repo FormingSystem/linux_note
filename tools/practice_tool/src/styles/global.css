@@ -111,7 +111,7 @@ h2 { margin: 10px 0; font-size: clamp(25px, 3.4vw, 38px); line-height: 1.35; }
 .brief-grid div { display: flex; flex-direction: column; gap: 8px; }
 .brief-grid span { color: var(--muted); font-size: 11px; letter-spacing: .12em; }
 .brief-grid strong { font-size: 14px; line-height: 1.6; }
-.phase-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 28px 0; }
+.phase-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 28px 0; }
 .phase-cards > div { min-height: 165px; padding: 20px; background: #f7f6ef; border-top: 3px solid var(--green); }
 .phase-cards span { color: #a16b29; font-size: 10px; font-weight: 700; letter-spacing: .12em; }
 .phase-cards strong { display: block; margin: 10px 0; font-family: "Noto Serif SC", serif; font-size: 16px; }
@@ -183,6 +183,7 @@ blockquote { margin: 24px 0; padding: 22px 28px; color: var(--ink); background: 
 .result-stats span { color: var(--muted); font-size: 11px; }
 .library-panel { min-height: 640px; }
 .library-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; margin-bottom: 26px; }
+.catalog-actions { display: flex; align-items: center; gap: 12px; }
 .library-heading h1 { margin-bottom: 8px; font-size: clamp(32px, 4vw, 48px); }
 .library-heading p { margin: 0; color: var(--muted); }
 .catalog-count { display: flex; flex-direction: column; align-items: flex-end; }
@@ -204,6 +205,37 @@ blockquote { margin: 24px 0; padding: 22px 28px; color: var(--ink); background: 
 .unit-card-footer small { color: var(--muted); }
 .empty-state { padding: 60px 20px; color: var(--muted); text-align: center; border: 1px dashed #c9cec6; }
 .home-actions { max-width: 520px; }
+
+.learning-objective, .topology-card, .association-card, .source-references, .check-answers {
+  margin: 18px 0; padding: 18px; border: 1px solid var(--line); background: #f7f6ef;
+}
+.learning-objective span, .topology-card > span, .association-card > span { display: block; margin-bottom: 8px; color: var(--green); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.learning-reading { display: grid; gap: 12px; }
+.learning-reading section { padding: 18px 20px; border-left: 3px solid var(--green); background: #fff; }
+.learning-reading h3, .check-answers h3 { margin: 0 0 8px; }
+.learning-reading p, .topology-card p, .association-card p, .check-answers p { margin: 0; line-height: 1.75; }
+.topology-nodes { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.topology-nodes b { padding: 7px 10px; border: 1px solid var(--line); background: #fff; font-size: 12px; }
+.source-references summary { cursor: pointer; font-weight: 750; }
+.source-reference { display: grid; grid-template-columns: 100px 1fr; gap: 5px 12px; padding-top: 12px; }
+.source-reference small { grid-column: 2; color: var(--muted); overflow-wrap: anywhere; }
+.source-reference span { overflow-wrap: anywhere; }
+.source-reference a { color: var(--green); overflow-wrap: anywhere; }
+.check-answers > div { padding: 12px 0; border-top: 1px solid var(--line); }
+
+.manager-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+.manager-column { min-width: 0; padding: 18px; border: 1px solid var(--line); background: #f7f6ef; }
+.manager-heading { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+.manager-heading h2, .manager-heading p { margin: 0 0 5px; }
+.manager-heading p { color: var(--muted); font-size: 12px; }
+.manager-card { display: flex; justify-content: space-between; gap: 12px; padding: 14px; margin: 10px 0; background: #fff; border: 1px solid var(--line); }
+.manager-card > div:first-child { min-width: 0; display: grid; gap: 4px; }
+.manager-card small { color: var(--muted); }
+.manager-card code { overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: 9px; }
+.mini-actions { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
+.mini-actions button, .text-action { border: 0; background: transparent; color: var(--green); cursor: pointer; font-weight: 700; }
+.manager-toolbar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.manager-message { color: var(--green); font-weight: 650; }
 
 .copyright-footer {
   display: flex;
@@ -237,6 +269,8 @@ blockquote { margin: 24px 0; padding: 22px 28px; color: var(--ink); background: 
   .catalog-count { align-items: flex-start; }
   .library-tools { grid-template-columns: 1fr; }
   .coverage { align-items: flex-start; }
+  .manager-grid { grid-template-columns: 1fr; }
+  .manager-toolbar { grid-column: auto; }
 }
 
 @media (max-width: 480px) {
