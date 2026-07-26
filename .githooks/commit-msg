@@ -2,36 +2,41 @@
 
 msg_file="$1"
 subject="$(sed -n '1p' "$msg_file")"
-
-format_regex='^(add|update|rewrite|fix|structure|format|link|asset|meta|archive|chore)\([^)][^)]*\): .+$'
+type_regex='feat|fix|refactor|perf|security|content|docs|test|build|ci|release|revert|chore'
+scope_regex='[^/()[:space:]:]+(/[^/()[:space:]:]+)?'
+format_regex="^(${type_regex})(\\((${scope_regex})\\))?(!)?: .+$"
 
 if ! printf '%s\n' "$subject" | grep -Eq "$format_regex"; then
   cat >&2 <<'EOF'
-提交信息格式错误。
+提交标题格式错误。
 
 必须使用：
-  <类型>(<范围>): <一句话说明>
+  <类型>[(<project>/<module>)]!?: <中文结果>
+  - 描述1
+  - 描述2
 
-类型只能是：
-  add update rewrite fix structure format link asset meta archive chore
+类型：
+  feat fix refactor perf security content docs test build ci release revert chore
 
 示例：
-  meta(git): 初始化文档提交规则
+  feat(practice/bank): 支持按模块导入题库
+  refactor(practice/runtime)!: 移除旧启动流程
+  docs: 更新仓库说明
+  content(knowledge/rcu): 补充宽限期状态汇聚过程
 EOF
   exit 1
 fi
 
 description="$(printf '%s\n' "$subject" | sed 's/^[^:]*: //')"
-
 if ! printf '%s\n' "$description" | LC_ALL=C grep -q '[^ -~]'; then
-  cat >&2 <<'EOF'
-提交信息格式错误。
+  printf '%s\n' '提交标题中的结果说明必须包含中文。' >&2
+  exit 1
+fi
 
-<一句话说明> 必须采用中文描述，不能只写英文或纯 ASCII 内容。
-
-示例：
-  update(kernel): 补充链表遍历说明
-EOF
+body_lines="$(tail -n +2 "$msg_file" | grep -Ev '^[[:space:]]*(#.*)?$' || true)"
+if [ -n "$body_lines" ] &&
+   printf '%s\n' "$body_lines" | grep -Ev '^- .+' >/dev/null; then
+  printf '%s\n' '提交正文存在时，每一行都必须使用“- 描述”。' >&2
   exit 1
 fi
 
