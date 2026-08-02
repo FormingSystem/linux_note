@@ -16,7 +16,7 @@ domains:
 
 | 领域 | 当前内容 |
 | --- | --- |
-| 计算机体系结构 | [缓存一致性专题](../../knowledge/foundations/computer_architecture/cache_coherence/大纲.md) |
+| 计算机体系结构 | [缓存一致性专题](../../knowledge/foundations/computer_architecture/cache_coherence/大纲.md)、[体系结构内存顺序专题](../../knowledge/foundations/computer_architecture/memory_ordering/大纲.md) |
 | 操作系统概念 | [宏内核和微内核](../../knowledge/foundations/operating_systems/concepts/宏内核和微内核.md) |
 | C 语言扩展 | [GNU C 扩展](../../knowledge/foundations/c_language/gnu_extensions/C_language_extension.md) |
 
@@ -26,7 +26,7 @@ domains:
 | --- | --- |
 | 内核架构 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)、[模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes) |
 | 数据结构 | [单链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)、[哈希表专题](../../knowledge/linux/data_structures/哈希表_Hash_Table)、[红黑树专题](../../knowledge/linux/data_structures/红黑树_rb-tree) |
-| 并发同步 | [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md)、[RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md) |
+| 并发同步 | [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md)、[Linux 内存顺序专题](../../knowledge/linux/memory_ordering/大纲.md)、[RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md) |
 | 对象生命周期 | [kref](../../knowledge/linux/object_lifetime/kref)、[devres](../../knowledge/linux/object_lifetime/devres) |
 | 时间管理 | [定时器专题](../../knowledge/linux/time_management/定时器简介) |
 | I/O 模型 | [阻塞 I/O](../../knowledge/linux/io_model/blocking_io)、[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md) |
@@ -62,9 +62,10 @@ domains:
 | --- | --- |
 | i.MX6ULL 平台 | [U-Boot 与内核移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)、[内核配置编译](../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md) |
 | RK3566 平台 | [Linux SDK 编译](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md) |
+| 内存顺序实验 | [访问宽度与 ARM 反汇编](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md)、[READ_ONCE 编译器访问](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)、[LKMM Litmus](../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md) |
 | i.MX6ULL 实验 | [驱动实验目录](../../labs/platforms/nxp/imx6ull/drivers) |
 | 调查 | [investigations](../../research/investigations/README.md) |
-| 源码阅读 | [Linux 源码阅读目录](../../research/source_reading/linux) |
+| 源码阅读 | [Linux 源码阅读目录](../../research/source_reading/linux)、[Linux 6.12 LKMM 导读](../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md) |
 | 标准 | [GPL 协议说明](../../reference/standards/gpl/GPL协议说明.md) |
 
 ## 1.6\_电子书与出版物
