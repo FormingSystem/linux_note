@@ -37,9 +37,12 @@ flowchart LR
 | 目标 | 正确调用链 |
 | --- | --- |
 | 临界区内读取 | `rcu_read_lock()` → `rcu_dereference()` → 使用 → `rcu_read_unlock()` |
-| 查找后长期持有 | 在上述区间内安全取得 kref/refcount → `rcu_read_unlock()` → 使用 → `put()` |
+| 单个对象查找后长期持有 | 在上述区间内安全取得对象的 kref/refcount → `rcu_read_unlock()` → 使用 → `put()` |
+| 复合快照内短暂读取多个块 | RCU 内取得版本根 → 沿不可变目录读取各块 → 退出；由根的所有权引用托住各块，不逐块 get |
+| 复合快照内带出一个块 | RCU 内取得版本根和 block → 取得 block 的独立引用 → 退出 → 使用 → `put()` |
 | 同步替换并释放 | 更新锁内替换/摘除 → 解锁 → `synchronize_rcu()` → `kfree()` |
 | 异步替换并释放 | 更新锁内替换/摘除 → 解锁 → `call_rcu()` 或 `kfree_rcu()` |
+| 异步退休复合快照 | 替换版本根 → `call_rcu(old_root)` → GP 后归还 old_root 对各 block 的 kref → 分别释放归零块 |
 | 模块卸载等待回调代码退场 | 阻止产生新回调并取消发布 → 按业务停止读写路径 → `rcu_barrier()` 等待先前排队回调执行完 |
 
 `synchronize_rcu()`、`call_rcu()` 和 `kfree_rcu()` 是不同的回收路径选择，不应在同一对象上无依据地叠加。`rcu_barrier()` 也不是普通对象删除时的 GP 替代品。
@@ -82,6 +85,26 @@ SRCU 没有通用的 `srcu_assign_pointer()`。SRCU 指针仍通常用 `rcu_assi
 - 更新路径不应等待，或单个对象可以异步销毁时，使用 `call_rcu()` 或 `kfree_rcu()`。
 - 模块卸载前必须确保回调不会再进入将被卸载的代码，此时检查是否需要 `rcu_barrier()`。
 
+### 20.4.2\_GP\_与引用归零的先后由所有权拓扑决定
+
+接口本身没有规定 kref 必须在 GP 之前还是之后归零。调用者需要先区分：
+
+```text
+单个 RCU 对象本身被长期持有：
+    最后 kref_put
+        -> release
+            -> kfree_rcu/call_rcu
+                -> GP 后释放该对象；
+
+一个 RCU 版本根拥有多个 kref block：
+    替换旧 root
+        -> old root 的 GP
+            -> 归还 old root 对各 block 的 kref
+                -> 每个 block 分别在引用归零时释放。
+```
+
+第一种模型让 kref 归零事件启动 RCU 回收；第二种模型让 RCU 完成事件启动一批 kref 归还。两者都没有让 RCU 子系统读取 kref，连接动作由对象所属模块的 `release()` 或 root 退休回调完成。完整结构与代码见[RCU 数据结构模板与选型](P21_RCU_数据结构模板与选型.md)。
+
 ## 20.5\_RCU\_链表接口
 
 [`rculist.h`](../../../../research/source_reading/linux/include/linux/rculist.h) 封装了链表发布、删除和读侧遍历：
@@ -116,9 +139,11 @@ RCU 链表宏不提供写者互斥。多个更新者并发修改链表时，仍�
 5. 写者之间是否由锁或其他机制串行化？
 6. 取消发布与最终回收是否明确分开？
 7. 读者离开临界区后是否还使用对象？如果是，是否已取得独立引用？
-8. 同步等待接口是否出现在不允许阻塞的上下文？
-9. SRCU lock/unlock 是否使用同一 `srcu_struct` 和正确 index？
-10. 卸载路径是否需要 `rcu_barrier()` 等待已排队回调？
+8. 若旧版本由多个分散块组成，版本根是否持有每个块直到自己的 GP 完成？
+9. 新版本复用旧块时，是否在发布前取得了自己的块引用？
+10. 同步等待接口是否出现在不允许阻塞的上下文？
+11. SRCU lock/unlock 是否使用同一 `srcu_struct` 和正确 index？
+12. 卸载路径是否需要 `rcu_barrier()` 等待已排队回调？
 
 上一篇：[Tasks RCU 与 Tiny RCU 实现边界](P19_Tasks_RCU与Tiny_RCU实现边界.md)。
 
