@@ -1,25 +1,31 @@
 ---
 id: tools.practice_tool.architecture.decision.0005
 title: "ADR-0005：专题电子书取代单篇学习导引"
-kind: decision
-status: accepted
+kind: reference
+status: archived
 domains:
   - tools
 ---
 
 # 第1章\_ADR-0005\_专题电子书取代单篇学习导引
 
-## 1.1\_背景
+## 1.1\_状态
+
+`superseded`
+
+ADR-0009 已明确目标产品直接打开文件与文件夹，并移除专题电子书、内容包和导入副本。本文件只保留为 `0.1.0` 设计历史。
+
+## 1.2\_背景
 
 单个 `learning_guide.md` 无法稳定表达多章节目录、章节依赖、知识结论去重、冲突证据和训练题到具体章节的回溯。继续给单篇导引增加字段会把教材、知识治理和训练计划重新耦合。
 
-## 1.2\_决策
+## 1.3\_决策
 
 使用 `book.json + outline.md + chapters/ + knowledge/ + training/` 作为专题内容包。电子书、知识声明、证据和训练计划分别拥有数据；训练会话冻结它们的发布版本和内容快照。
 
 旧的 `learning_guides.json + learning_guide.md` 不再作为新内容协议，不保留双实现。已有浏览器会话只通过明确快照迁移读取。
 
-## 1.3\_后果
+## 1.4\_后果
 
 - 专题可以按目录和章节阅读。
 - 重复结论通过唯一权威声明和章节治理。

@@ -59,33 +59,33 @@ tools/typora配置/
 
 Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，优先使用 Obsidian 内部操作，让链接能够自动跟踪更新。
 
-### 1.3.1\_知识训练工具
+### 1.3.1\_回路\_Markdown\_工作台
 
-仓库当前内置独立运行的“回路”知识训练工具，用于把用户选择的知识材料提炼成专题电子书，再进行提示建模、脱稿输出和专业案例训练。工具程序、训练协议、用户分类与模块管理、环境脚本及自身文档统一位于：
+仓库当前内置“回路”工具。新的目标产品是独立 Electron Markdown 工作台，直接新建文件、打开单个文件或打开单个文件夹；当前仓库中的浏览器训练与专题电子书代码属于等待替换的 `0.1.0`。工具代码与自身文档位于：
 
 ```text
 tools/practice_tool/
 ```
 
-训练工具自身的统一启动入口位于 `tools/practice_tool`。Windows MSYS2 UCRT64/UCRT32 和 Ubuntu 22.04 都执行：
+当前 `0.1.0` 的统一启动入口位于 `tools/practice_tool`。Windows MSYS2 UCRT64/UCRT32 和 Ubuntu 22.04 都执行：
 
 ```bash
 ./tools/practice_tool/start.sh
 ```
 
-仓库根目录的 `practice.cmd` 和 `practice.sh` 是当前知识库提供的集成快捷入口，只转发到工具的 `start.sh`，不承载环境准备、依赖安装或服务启动逻辑。工具内部将 `install.sh`、`run.sh` 和 `uninstall.sh` 分别作为安装、纯运行和卸载模块；`start.sh` 首次运行时可以调用安装模块，完成后再转入运行模块。Windows 尚未安装 MSYS2 时由 PowerShell 引导脚本准备 UCRT64；正式运行统一通过 Unix 环境层选择 MSYS2 `pacman` 或 Ubuntu 22.04 隔离运行时。依赖安装完成、Vite 开始监听后才打开浏览器。
+仓库根目录的 `practice.cmd` 和 `practice.sh` 是当前知识库为 `0.1.0` 提供的集成快捷入口，只转发到工具的 `start.sh`，不承载环境准备、依赖安装或服务启动逻辑。工具内部将 `install.sh`、`run.sh` 和 `uninstall.sh` 分别作为安装、纯运行和卸载模块；`start.sh` 首次运行时可以调用安装模块，完成后再转入运行模块。Windows 尚未安装 MSYS2 时由 PowerShell 引导脚本准备 UCRT64；该版本通过 Unix 环境层选择 MSYS2 `pacman` 或 Ubuntu 22.04 隔离运行时，依赖安装完成、Vite 开始监听后才打开浏览器。正在评审的新目标是独立 Electron 客户端，不继承这套最终用户运行链。
 
-Linux 下直接使用工具正式入口查看介绍，该命令不会安装环境或启动服务：
+Linux 下使用当前 `0.1.0` 入口查看介绍；该命令不会安装环境或启动服务：
 
 ```bash
 ./tools/practice_tool/start.sh --help
 ```
 
-训练工具按可迁移到独立仓库的边界维护。当前仓库负责提供 Linux 知识正文和 RCU、红黑树、哈希表首批示范训练来源；工具负责把所选材料提炼为专题电子书与三阶段训练、管理用户训练分类和模块，并保存本地记录。根目录脚本、仓库治理文件和其他知识目录都不是工具运行时组件。
+目标桌面工作台按可迁移到独立仓库的边界维护。当前 `0.1.0` 浏览器原型仍由本仓库提供 RCU、红黑树和哈希表训练来源，并保留专题电子书与三阶段训练；这些数据和流程等待桌面闭环完成后删除，不进入目标运行时。
 
-当前示范内容包含 3 本专题电子书、12 个学习章节和 12 个训练任务。三个专题使用统一的电子书、知识声明、证据和训练计划协议；学习、提示、脱稿、案例和总结阶段可以自由切换，并分别恢复上次位置。后续新增专题不应修改页面代码或把领域分类写死到工具核心。
+当前 `0.1.0` 示范内容包含 3 本专题电子书、12 个学习章节和 12 个训练任务，只用于旧代码退役前的数据与构建检查，不再新增专题或扩展训练协议。
 
-当前仓库通过根目录的 `practice.sources.json` 声明 `linux-note` 知识源。快捷启动脚本只在用户没有主动指定时传入这份配置；用户设置的 `PRACTICE_SOURCE_CONFIG` 始终优先。训练工具通过 `source_id`、稳定文档 ID 和源内相对路径引用材料，不通过 `../..` 推断知识库位置。
+当前 `0.1.0` 仍通过根目录 `practice.sources.json` 声明旧知识源。新桌面客户端不读取该配置，只通过系统对话框打开文件或文件夹。
 
 需要主动刷新 Node.js 本地运行时和项目依赖时，可以使用：
 
@@ -93,22 +93,21 @@ Linux 下直接使用工具正式入口查看介绍，该命令不会安装环�
 ./tools/practice_tool/start.sh --upgrade
 ```
 
-Windows MSYS2 与 Ubuntu 22.04 使用相同命令。该参数只更新训练工具的本机运行环境，不修改 `linux-note` 正文、题库或知识源配置。
+Windows MSYS2 与 Ubuntu 22.04 使用相同命令。该参数只更新旧浏览器原型的本机运行环境，不修改 `linux-note` 正文、题库或旧知识源配置。
 
-- [回路知识训练工具](tools/practice_tool/README.md)
+- [回路 Markdown 工作台](tools/practice_tool/README.md)
 - [跨平台与仓库独立性设计](tools/practice_tool/docs/cross_platform_and_repository_independence.md)
 - [跨平台环境、虚拟机验证与故障排查](tools/practice_tool/docs/environment_and_troubleshooting.md)
 - [安全、版本更新与软件生命周期设计](tools/practice_tool/docs/security_version_update_and_lifecycle.md)
 - [回路架构设计索引](tools/practice_tool/docs/architecture/README.md)
+- [Markdown 编辑与实时预览设计](tools/practice_tool/docs/architecture/product/markdown_editing_and_live_preview.md)
+- [桌面运行时与文档服务设计](tools/practice_tool/docs/architecture/engineering/desktop_runtime_and_document_services.md)
 - [回路工程结构与模块边界](tools/practice_tool/docs/architecture/engineering/project_structure_and_module_boundaries.md)
 - [回路当前实现状态与版本边界](tools/practice_tool/docs/architecture/implementation_status.md)
-- [专题电子书编写与提炼标准](tools/practice_tool/docs/architecture/product/topic_ebook_editorial_standard.md)
-- [知识提炼、训练适配与 AI 治理](tools/practice_tool/docs/architecture/product/content_adaptation_and_ai_governance.md)
+- [文件与文件夹工作区设计](tools/practice_tool/docs/architecture/product/file_and_folder_workspace.md)
 - [回路产品导航与交互设计](tools/practice_tool/docs/architecture/product/navigation_and_interaction.md)
-- [训练会话状态与持久化](tools/practice_tool/docs/architecture/product/training_session_state_and_persistence.md)
-- [复习调度与训练历史](tools/practice_tool/docs/architecture/product/review_scheduling_and_history.md)
-- [导入导出与数据安全](tools/practice_tool/docs/architecture/engineering/import_export_and_data_safety.md)
-- [本地服务安全与威胁模型](tools/practice_tool/docs/architecture/engineering/local_service_security_and_threat_model.md)
+- [工作区文件操作与数据安全](tools/practice_tool/docs/architecture/engineering/workspace_file_operations_and_data_safety.md)
+- [桌面运行时安全与威胁模型](tools/practice_tool/docs/architecture/engineering/desktop_runtime_security_and_threat_model.md)
 - [无障碍、性能与产品验收标准](tools/practice_tool/docs/architecture/engineering/accessibility_performance_and_acceptance.md)
 - [架构决策记录](tools/practice_tool/docs/architecture/decisions/README.md)
 
@@ -196,7 +195,7 @@ AI 主要用于主题拆解、章节扩写、概念对比、代码解释和结�
 
 仓库中的原创笔记、图示、分析说明和结构化整理内容，除特别说明外，按照本仓库根目录许可证发布。
 
-`tools/practice_tool` 中的 **回路（Loop）知识训练工具** 属于独立维护的产品。当前公开开发版本同样采用根目录 `GPL-2.0-only`，并通过该目录的 `COPYRIGHT.md` 补充原创来源、非官方分叉标记、官方贡献和未来版本边界；第三方依赖和外部知识材料仍遵循各自原有许可证。
+`tools/practice_tool` 中的 **回路（Loop）Markdown 工作台** 属于独立维护的产品。当前公开开发版本同样采用根目录 `GPL-2.0-only`，并通过该目录的 `COPYRIGHT.md` 补充原创来源、非官方分叉标记、官方贡献和未来版本边界；第三方依赖和用户 Markdown 仍遵循各自原有许可证。
 
 ### 1.8.1\_Linux\_kernel\_源码相关内容说明
 

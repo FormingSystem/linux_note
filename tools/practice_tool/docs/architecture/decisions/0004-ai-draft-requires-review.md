@@ -2,7 +2,7 @@
 id: tools.practice_tool.architecture.decisions.0004_ai_draft_review
 title: "ADR 0004 AI 草稿必须经过人工审核"
 kind: reference
-status: maintained
+status: archived
 domains:
   - tools
 ---
@@ -11,7 +11,9 @@ domains:
 
 ## 1.1\_状态
 
-`accepted`
+`superseded`
+
+该决策只记录 `0.1.0` 训练内容生成的历史背景。ADR-0009 已从目标产品移除 AI 内容生成与发布流程；未来若重新引入 AI 能力，必须按新的文件工作台权限和提示注入边界重新决策。
 
 ## 1.2\_背景
 

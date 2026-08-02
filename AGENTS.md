@@ -204,24 +204,37 @@ docs(repository/git): 更新分支与提交规范
 - 修改知识正文前可只读检索该源码树；不要在知识整理任务中改动、格式化或提交这棵外部源码。需要保存长期证据时，按仓库规范整理到 `research/source_reading/linux/`，并记录 Linux 版本、原始路径及必要的配置边界。
 - 若网络共享不可访问，应明确说明未完成源码核对，不得凭记忆伪造函数位置或版本结论。Git 因 UNC 目录所有权报告 `safe.directory` 时，不要擅自修改用户全局 Git 配置；读取普通源码文件不受此限制。
 
-## 1.12\_知识训练工具
+## 1.12\_回路\_Markdown\_工作台
 
-`tools/practice_tool` 是当前放置在仓库内、但按独立产品边界维护的本地知识训练工具。工具程序、启动器、题库协议、校验脚本和运行文档必须收敛在该目录内；它通过稳定文档 ID 引用当前 `knowledge` 等目录提供的权威正文，不在题库中复制完整知识教程。根目录快捷脚本和 Linux 知识内容属于本仓库集成层，不得成为工具核心运行逻辑的隐式依赖。
+`tools/practice_tool` 是当前放置在仓库内、但按独立产品边界维护的回路（Loop）Markdown 工作台。目标工程、测试与运行文档必须收敛在该目录内；它通过用户动作打开普通文件或文件夹，不依赖 `linux-note` 的目录、元数据、题库或根启动脚本。
 
-工具中文正式名称为 **回路**，英文正式名称为 **Loop**，完整名称为“回路（Loop）知识训练工具”。技术包名和既有浏览器存储键可以继续使用稳定的 `loop-knowledge-practice-tool` 标识，不得把展示名称变更演变为用户数据不兼容。当前公开开发版本采用仓库根目录的 `GPL-2.0-only`，原创维护者为 FormingSystem，联系邮箱为 `lizhaojun97@qq.com`。二次开发应保留产品名称、原创来源、项目地址与修改说明；希望进入官方版本的改动应先对齐需求，独立分叉必须明确为非官方版本。未来新版本可以另选许可证，但不得追溯改变已发布版本的许可，也不得在未取得贡献者权利时单方面重许可其代码。第三方依赖、外部知识源和引用材料不得被工具声明重新授权。
+> 2026-08-02 已确认目标产品采用“新建文件、打开单个文件、打开单个文件夹”的 Electron Markdown 工作台，ADR-0009 已接受。专题电子书、训练内容包、知识源注册、正文导入副本、浏览器正式运行和 IndexedDB 主存储不再属于目标架构。ADR-0006～0008 仍在评审；不得为旧架构增加桌面兼容层、双运行、双写或旧数据转发。
 
-训练工具的长期验证平台固定为：Windows 使用 **MSYS2 UCRT64/UCRT32 Bash**，Linux 使用 **Ubuntu 22.04 Bash**。`start.sh` 是三个环境共同的正式交互入口。PowerShell 只承担 Windows 冷启动引导：下载、安装和准备 MSYS2 UCRT64/UCRT32，不直接运行训练任务，也不维护训练命令或 Tab 补全；CMD 不作为正式支持平台。
+目标架构必须遵守：
 
-`tools/practice_tool/scripts/lib/platform_environment.sh` 是正式运行脚本的平台信息与工具能力唯一来源。其他 Bash 脚本不得自行读取 `MSYSTEM`、`/etc/os-release`、`uname`，不得猜测 Windows 盘符，也不得各自查找 `node`、`npm`、`pacman`、下载器、校验器或解压工具；应统一消费环境层导出的变量和函数，使启动、升级、离线安装和补全保持一套 Unix 操作。
+- 打开文件或文件夹不复制正文、不写隐藏配置、不一次性读取全部正文。
+- 每次编辑只更新 CodeMirror 内存和预览修订；默认 `Ctrl+S` 才写源文件，自动保存默认关闭。
+- 恢复备份按空闲与最大间隔合并写入，不能逐键持久化，也不能把“已备份”显示成“已保存”。
+- Electron Main 持有窗口作用域文件能力；Renderer 保持 sandbox、context isolation、无 Node，并且不接收绝对路径。
+- 单文件和单文件夹分别建立最小路径边界；路径、符号链接、junction、reparse point、UNC、文件身份和写入竞态必须失败关闭。
+- Markdown、HTML、SVG、Mermaid、公式和远程资源都视为不可信；预览默认不发起网络请求，不加载工作区脚本、CSS 或插件。
+- 第一阶段用版本化状态文件、恢复备份、本地历史与可删索引，不因臆测需求引入 SQLite。
+- 新架构纵向闭环通过后删除旧浏览器、Bash 最终用户入口、`banks`、电子书和训练 Schema；不得建立 `legacy` 运行包长期承接旧模型。
 
-训练单元先经过专题学习，再进入三个训练阶段：
+产品中文名称为 **回路**，英文名称为 **Loop**，目标产品描述为“回路（Loop）Markdown 工作台”。“回路（Loop）知识训练工具”和 `loop-knowledge-practice-tool` 只属于当前 `0.1.0` 展示与技术标识；新桌面包名、应用 ID 和数据目录在打包 spike 中一次性确定，不为了兼容旧浏览器存储键保留旧命名。当前公开开发版本采用仓库根目录的 `GPL-2.0-only`，原创维护者为 FormingSystem，联系邮箱为 `lizhaojun97@qq.com`。二次开发应保留产品名称、原创来源、项目地址与修改说明；希望进入官方版本的改动应先对齐需求，独立分叉必须明确为非官方版本。未来新版本可以另选许可证，但不得追溯改变已发布版本的许可，也不得在未取得贡献者权利时单方面重许可其代码。第三方依赖、用户 Markdown 和引用材料不得被工具声明重新授权。
+
+当前 `0.1.0` 浏览器实现的验证环境为：Windows 使用 **MSYS2 UCRT64/UCRT32 Bash**，Linux 使用 **Ubuntu 22.04 Bash**。`start.sh` 是这套旧实现的交互入口。PowerShell 只承担 Windows 冷启动引导：下载、安装和准备 MSYS2 UCRT64/UCRT32，不直接运行训练任务，也不维护训练命令或 Tab 补全；CMD 不属于该版本的支持平台。目标桌面客户端的平台与交付边界以新设计文档和后续接受的 ADR 为准。
+
+`tools/practice_tool/scripts/lib/platform_environment.sh` 是当前 `0.1.0` 运行脚本的平台信息与工具能力唯一来源。维护旧版本期间，其他 Bash 脚本不得自行读取 `MSYSTEM`、`/etc/os-release`、`uname`，不得猜测 Windows 盘符，也不得各自查找 `node`、`npm`、`pacman`、下载器、校验器或解压工具；应统一消费环境层导出的变量和函数。桌面纵向闭环验收后，这套浏览器启动链整体删除，不迁入 Electron Main 或安装包。
+
+以下训练流程与内容包条款只记录待删除的 `0.1.0` 实现，用于退役前的数据校验，不得进入新桌面包：
 
 1. 专题学习：从用户选择的知识材料中筛选、去噪并组织为目录和章节，不直接导入原文；必须包含明确目标、问题场景、有答案的核验问题、开放联想、拓扑记忆和可追溯的原文引用。
 2. 提示提问：用具体小场景和递进提示辅助建立局部因果模型。
 3. 脱稿输出：撤掉知识提示，要求独立重建边界清晰的时序、状态和通信模块。
 4. 专业案例：根据工程证据完成诊断、方案、不可规避成本和选择边界分析。
 
-平台内容约定：
+当前 `0.1.0` 退役前数据约定：
 
 - 所有可选择单元登记在 `tools/practice_tool/banks/index.json`。
 - 每个单元使用 `unit.json + book.json + outline.md + chapters/ + knowledge/ + training/` 组织。电子书、知识声明、证据和训练计划分别拥有数据，不得重新合并成单篇导引或一个综合 JSON。
@@ -233,16 +246,16 @@ docs(repository/git): 更新分支与提交规范
 - 专题电子书是回路根据知识来源提炼的训练材料，不能冒充或复制权威正文；界面必须提供知识源、稳定文档 ID 和相对路径，使读者能够追根溯源。
 - 训练分类和训练模块的上下级、归类、创建、修改、移动、合并、导入、导出、删除和恢复属于用户行为，不得改写外部知识库目录。
 - 当前随版本提供 RCU、红黑树和哈希表三个并列示范单元，用于验证完整训练流程；它们只是数据驱动内容，不得演变为工具程序的固定领域限制。
-- 当前内容基线为 3 本专题电子书、12 个学习章节和 12 个训练任务；数量变化时必须同步更新工具 README、仓库 README、运行文档和本上下文，并重新运行内容校验与构建。
-- 用户分类、训练模块、作答和环境就绪状态只保存在浏览器或 `tools/practice_tool/.local`，不得进入 Git。
+- 当前旧内容基线为 3 本专题电子书、12 个学习章节和 12 个训练任务；退役前若数量意外变化，必须更新实现状态和本上下文，并重新运行内容校验与构建，不再扩展产品说明。
+- 当前 `0.1.0` 的用户分类、训练模块、作答和环境就绪状态只保存在浏览器或 `tools/practice_tool/.local`，不得进入 Git；桌面目标的设置、恢复备份和本地历史由 Main 管理的应用数据目录承担，仍不得进入 Git。
 - `node_modules`、`dist`、`.local` 和日志属于本机构建或运行状态，不得提交。
-- `config/release.json` 与 `config/security.json` 是随版本发布的只读清单，浏览器只能查询，不能通过内容编辑接口修改。更新检查必须保持非打扰，只能使用固定 Git 参数执行快进更新，并在工作区不干净时拒绝自动更新。
+- `config/release.json` 与 `config/security.json` 是当前 `0.1.0` 随版本发布的只读清单，浏览器只能查询，不能通过内容编辑接口修改。旧版本更新检查必须保持非打扰，只能使用固定 Git 参数执行快进更新，并在工作区不干净时拒绝自动更新；桌面安装包的发布与更新机制另行评审，不继承这条 Git 拉取链。
 - 脚本安装或下载的软件必须登记到 `.local/software_registry.tsv`。所有权只能是 `tool-owned`、`external` 或 `external-updated`：干净卸载只能删除 `tool-owned`；外部已有软件即使经用户确认被工具更新，也必须保持外部所有权且永不进入卸载目标。
 - 卸载分为最小卸载与干净卸载。最小卸载清理工具生成的依赖、构建状态、日志和补全登记，保留运行环境与下载缓存；干净卸载额外清理登记为工具所有的运行环境和缓存。卸载器只能执行固定清理类型并核对固定路径或包名，不得从登记表执行任意命令或删除任意路径。
 
-`tools/practice_tool/start.sh` 是训练工具自身的跨平台便利编排入口，但不得承载具体安装或运行实现。`install.sh` 独立负责 Node.js 和项目依赖的安装/升级，`run.sh` 只运行已经就绪的平台且不得隐式安装，`uninstall.sh` 独立负责两级卸载；首次执行 `start.sh` 时可以调用 `install.sh --if-needed`，成功后再转交 `run.sh`。根目录的 `practice.cmd` 和 `practice.sh` 只是当前知识库提供的快捷包装，必须只转发到工具自身入口，不得出现在训练工具的帮助、补全或任务命令中，也不得复制环境准备或启动逻辑。工具最低兼容 Node.js 18：安装时按 `24 → 22 → 20 → 18` 选择可用版本，每个版本优先尝试国内或就近镜像，再回退境外官方源；不得降到依赖无法运行的版本。MSYS2 UCRT64/UCRT32 使用自身的 `pacman` 且不使用 `sudo`；Ubuntu 22.04 将经过校验的归档安装到工具的 `.local/runtime`。依赖安装完成且 Vite 开始监听后才能打开浏览器。`start.sh`、`install.sh`、`run.sh`、`uninstall.sh` 及其他设计为直接运行的 Shell 脚本必须以 Git 模式 `100755` 提交；Tab 补全规则覆盖三个生命周期模块，首次交互式正常启动默认安装指向当前工具目录的动态补全并登记到 `~/.bashrc`，不能复制会随 Git 更新失效的静态快照，也不要引入 PowerShell 专用补全分支。
+当前 `0.1.0` 中，`tools/practice_tool/start.sh` 是训练工具自身的跨平台便利编排入口，但不得承载具体安装或运行实现。`install.sh` 独立负责 Node.js 和项目依赖的安装/升级，`run.sh` 只运行已经就绪的平台且不得隐式安装，`uninstall.sh` 独立负责两级卸载；首次执行 `start.sh` 时可以调用 `install.sh --if-needed`，成功后再转交 `run.sh`。根目录的 `practice.cmd` 和 `practice.sh` 只是当前知识库提供的快捷包装，必须只转发到工具自身入口，不得出现在训练工具的帮助、补全或任务命令中，也不得复制环境准备或启动逻辑。旧工具最低兼容 Node.js 18：安装时按 `24 → 22 → 20 → 18` 选择可用版本，每个版本优先尝试国内或就近镜像，再回退境外官方源；不得降到依赖无法运行的版本。MSYS2 UCRT64/UCRT32 使用自身的 `pacman` 且不使用 `sudo`；Ubuntu 22.04 将经过校验的归档安装到工具的 `.local/runtime`。依赖安装完成且 Vite 开始监听后才能打开浏览器。`start.sh`、`install.sh`、`run.sh`、`uninstall.sh` 及其他设计为直接运行的 Shell 脚本必须以 Git 模式 `100755` 提交；Tab 补全规则覆盖三个生命周期模块，首次交互式正常启动默认安装指向当前工具目录的动态补全并登记到 `~/.bashrc`，不能复制会随 Git 更新失效的静态快照，也不要引入 PowerShell 专用补全分支。该链路只允许缺陷维护；桌面纵向闭环验收后与浏览器正式入口一起删除。
 
-根目录的 `practice.sources.json` 是 `linux-note` 与训练工具之间的显式集成配置。根快捷脚本可以在用户未指定时设置 `PRACTICE_SOURCE_CONFIG` 指向它，但不得把仓库路径、知识目录规则或题库逻辑复制进工具启动器。题库引用必须使用 `source_id`、稳定文档 ID 和知识源内相对路径；Windows 与 Linux 共用同一配置 Schema，平台差异只能停留在入口脚本和路径解析层。
+当前 `0.1.0` 的根目录 `practice.sources.json` 是旧知识源集成配置。根快捷脚本可以在用户未指定时设置 `PRACTICE_SOURCE_CONFIG` 指向它，但不得把仓库路径、知识目录规则或题库逻辑复制进工具启动器。新桌面客户端不读取该配置；它只通过用户打开文件或文件夹建立窗口能力。
 
 修改工具或题库后至少运行：
 
@@ -261,12 +274,11 @@ git diff --check
 - `tools/practice_tool/docs/environment_and_troubleshooting.md`
 - `tools/practice_tool/docs/architecture/README.md`
 - `tools/practice_tool/docs/architecture/engineering/project_structure_and_module_boundaries.md`
-- `tools/practice_tool/docs/architecture/product/topic_ebook_editorial_standard.md`
-- `tools/practice_tool/docs/architecture/product/content_adaptation_and_ai_governance.md`
+- `tools/practice_tool/docs/architecture/engineering/desktop_runtime_and_document_services.md`
+- `tools/practice_tool/docs/architecture/engineering/desktop_runtime_security_and_threat_model.md`
+- `tools/practice_tool/docs/architecture/product/markdown_editing_and_live_preview.md`
+- `tools/practice_tool/docs/architecture/product/file_and_folder_workspace.md`
 - `tools/practice_tool/docs/architecture/product/navigation_and_interaction.md`
-- `tools/practice_tool/docs/architecture/product/training_session_state_and_persistence.md`
-- `tools/practice_tool/docs/architecture/product/review_scheduling_and_history.md`
-- `tools/practice_tool/docs/architecture/engineering/import_export_and_data_safety.md`
-- `tools/practice_tool/docs/architecture/engineering/local_service_security_and_threat_model.md`
+- `tools/practice_tool/docs/architecture/engineering/workspace_file_operations_and_data_safety.md`
 - `tools/practice_tool/docs/architecture/engineering/accessibility_performance_and_acceptance.md`
 - `tools/practice_tool/docs/architecture/decisions/README.md`
