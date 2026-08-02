@@ -11,7 +11,7 @@ domains:
 
 ## 1.1\_文档职责与评审状态
 
-本文定义 Electron 进程边界、工程结构、文件与文件夹能力、IPC、文档保存、恢复备份、Markdown Engine 和资源协议。本文处于 **proposed** 评审状态，不保留浏览器正式运行、本地 HTTP 文件服务、专题电子书、知识源注册或正文数据库副本。
+本文定义 Electron/C++ 进程边界、工程结构、文件与文件夹能力、IPC、文档保存、恢复备份、Markdown Engine 和资源协议。ADR-0006～0010 已接受，本文已经进入实施，不保留浏览器正式运行、本地 HTTP 文件服务、专题电子书、知识源注册或正文数据库副本。
 
 产品语义见 [文件与文件夹工作区设计](../product/file_and_folder_workspace.md) 和 [Markdown 编辑与实时预览设计](../product/markdown_editing_and_live_preview.md)，安全细节见 [桌面运行时安全与威胁模型](desktop_runtime_security_and_threat_model.md)。
 
@@ -19,27 +19,29 @@ domains:
 
 ```mermaid
 flowchart LR
-    OS[操作系统与系统对话框] --> MAIN[Electron Main]
+    OS[操作系统与系统对话框] --> MAIN[Electron Main Broker]
+    MAIN -->|Versioned framed protocol| NATIVE[C++ Native Service]
     MAIN --> PRELOAD[Context-isolated Preload]
     PRELOAD --> RENDERER[Sandboxed React Renderer]
     RENDERER --> EDITOR[CodeMirror]
     RENDERER --> WORKER[Markdown Worker]
     RENDERER -->|Typed MessageChannel| PREVIEW[Isolated Preview Frame]
-    MAIN --> INDEXER[Read-only Index Utility]
-    MAIN --> APPDATA[(AppData State/Backup/History)]
-    MAIN --> FS[Opened File or Folder]
+    NATIVE --> INDEXER[Index/Search]
+    NATIVE --> APPDATA[(AppData State/Backup/History)]
+    NATIVE --> FS[Opened File or Folder]
 ```
 
 | 边界 | 允许职责 | 禁止职责 |
 | --- | --- | --- |
-| Main | 窗口、对话框、能力表、文件服务、监听、备份、历史、协议、更新 | React 状态、Markdown DOM |
+| Main | 窗口、对话框、会话、协议、更新、C++ 服务生命周期与请求代理 | 文件服务第二实现、React 状态、Markdown DOM |
+| C++ Native Service | 能力表、真实路径、文件、监听、备份、历史、索引和搜索 | Electron、React、Markdown DOM、任意命令执行 |
 | Preload | 固定用例 API、数据复制、事件适配 | 通用 IPC、Node/Electron 对象、绝对路径 API |
 | Renderer | UI、CodeMirror 会话、预览协调与交互 | 文件系统、子进程、数据库、环境变量 |
 | Markdown Worker | 解析、清洗、诊断、源码位置 | 文件系统、网络、DOM、Electron |
 | Preview Frame | safe HAST、Mermaid、公式、高亮与预览交互 | Preload、Electron IPC、父页面 DOM、导航与任意网络 |
-| Index Utility | 在一次工作区会话内只读扫描允许根 | 写文件、执行工作区内容、扩大根目录 |
+| Index/Search | 在一次 C++ 工作区能力内只读扫描允许根 | 写文件、执行工作区内容、扩大根目录 |
 
-Main 是应用权限所有者，不等于可以信任 Renderer。每次 IPC、协议请求和文件操作仍按当前窗口的能力表重新鉴权。
+Main 是窗口和系统集成权限所有者，C++ Native Service 是工作区与文件权限所有者；两者都不信任 Renderer。每次 IPC、跨语言协议请求和文件操作仍按 sender、Schema 与当前窗口能力表重新鉴权。
 
 ## 1.3\_目标工程结构
 
@@ -50,9 +52,7 @@ practice_tool/
 │       └── src/
 │           ├── main/
 │           │   ├── windows/
-│           │   ├── workspaces/
-│           │   ├── files/
-│           │   ├── backups/
+│           │   ├── native-service/
 │           │   └── protocols/
 │           ├── preload/
 │           └── renderer/
@@ -65,11 +65,16 @@ practice_tool/
 │                   └── settings/
 ├── packages/
 │   ├── ipc-contracts/
-│   ├── workspace-core/
 │   ├── document-core/
 │   ├── markdown-engine/
 │   ├── markdown-features/
 │   └── ui-foundation/
+├── native/
+│   ├── CMakeLists.txt
+│   ├── CMakePresets.json
+│   ├── src/protocol/
+│   ├── src/service/
+│   └── tests/
 ├── tests/
 │   ├── fixtures/
 │   ├── integration/
@@ -80,28 +85,28 @@ practice_tool/
 
 目录按进程边界优先、Renderer 内业务功能次之组织。目标结构不包含 `training-core`、`banks` 或电子书内容包；当前仓库中的这些目录属于待移除的 `0.1.0` 实现，不得进入新包依赖图。
 
-核心 package 不依赖 Electron、React 或具体存储驱动。Preload、Main 和 Renderer 只共享 IPC Schema 与纯值对象，不共享运行时服务实例。
+核心 TypeScript package 不依赖 Electron、React 或具体存储驱动。Preload、Main 和 Renderer 只共享 IPC Schema 与纯值对象；Main 与 C++ 服务只共享版本化协议语义和 fixture，不共享运行时对象、动态库 ABI 或文件句柄。
 
 ## 1.4\_窗口能力模型
 
-Main 为每个窗口持有 `WorkspaceCapability`：
+C++ Native Service 为每个窗口持有 `WorkspaceCapability`；Main 只保留窗口 ID 与服务会话的对应关系：
 
 ```text
 workspace_id
 window_id
 mode                 # empty | single_file | folder
-opened_locator       # Main only
-canonical_root       # folder only, Main only
-selected_file        # single_file only, Main only
+opened_locator       # Native Service only
+canonical_root       # folder only, Native Service only
+selected_file        # single_file only, Native Service only
 resource_base        # selected file parent, read-only resource boundary
 document_handles
 resource_handles
 watch_subscriptions
 ```
 
-`workspace_id`、`document_id` 和 `resource_id` 都是当前窗口会话内的不透明随机 ID。Renderer 关闭窗口或工作区后，Main 撤销整个能力表。绝对路径只在 Main 与系统对话框中出现；需要向用户解释位置时由 Main 返回经过目的限制的显示标签。
+`workspace_id`、`document_id` 和 `resource_id` 都是当前窗口会话内的不透明随机 ID。Renderer 关闭窗口或工作区后，Main 通知 C++ 服务撤销整个能力表。绝对路径只在系统对话框、Main 到 C++ 服务的一次能力建立请求和 C++ 服务内部出现；需要向用户解释位置时只返回经过目的限制的显示标签。
 
-工作区不是长期注册的“知识源”。“最近打开”只是一条 Main 管理的 locator 记录；重开时必须重新解析真实路径和文件身份，不复用旧能力。
+工作区不是长期注册的“知识源”。“最近打开”只是一条 C++ 服务管理的 locator 记录；重开时必须重新解析真实路径和文件身份，不复用旧能力。
 
 ## 1.5\_IPC\_契约
 
@@ -151,7 +156,7 @@ exec(command)
 openExternal(rawUrl)
 ```
 
-事件按工作区和文档订阅，返回不透明订阅 ID；窗口关闭后 Main 必须统一释放 watcher、资源 URL、未完成保存和索引任务。
+事件按工作区和文档订阅，返回不透明订阅 ID；窗口关闭后 Main 必须撤销 Renderer 订阅与资源 URL，并要求 C++ 服务释放 watcher、未完成保存和索引任务。
 
 ## 1.6\_文件树与索引
 
@@ -180,7 +185,7 @@ size
 capabilities
 ```
 
-Main 使用当前能力解析资源，检查普通文件、大小与类型，并以严格解码读取。无效编码不以替换字符继续；二进制、超大或不支持编码返回可操作错误。读取结果中的绝对路径和 OS 文件句柄不跨 IPC。
+C++ Native Service 使用当前能力解析资源，检查普通文件、大小与类型，并以严格解码读取。无效编码不以替换字符继续；二进制、超大或不支持编码返回可操作错误。读取结果中的绝对路径和 OS 文件句柄不跨越 Native Service 协议或 Renderer IPC。
 
 Markdown Front Matter 中的 `id` 是内容元数据，不是文件系统授权依据，也不是文档会话的唯一身份。没有 Front Matter 的普通 Markdown 必须能够正常打开和保存。
 
@@ -198,24 +203,29 @@ line_ending
 content
 ```
 
-Main 执行：
+C++ Native Service 执行；Main 只完成 sender/Schema 校验、请求关联和结果转发：
 
 ```mermaid
 sequenceDiagram
     participant R as Renderer
-    participant M as Main FileService
+    participant M as Electron Main Broker
+    participant N as C++ FileService
     participant F as File System
     participant H as Local History
 
     R->>M: save(document_id, expected identity/hash, revision, content)
-    M->>M: 校验发送者、Schema、能力和大小
-    M->>F: 重新读取身份并核对摘要
+    M->>M: 校验发送者、IPC Schema 和大小
+    M->>N: versioned save request
+    N->>N: 校验协议、能力和请求限制
+    N->>F: 重新读取身份并核对摘要
     alt 基线变化
+        N-->>M: DOCUMENT_CONFLICT
         M-->>R: DOCUMENT_CONFLICT
     else 基线一致
-        M->>F: 按文件类型选择 safe replace 或 guarded write
-        M->>F: 验证最终内容与身份
-        M->>H: 合并记录成功保存版本
+        N->>F: 按文件类型选择 safe replace 或 guarded write
+        N->>F: 验证最终内容与身份
+        N->>H: 合并记录成功保存版本
+        N-->>M: 新 identity/hash/mtime + revision
         M-->>R: 新 identity/hash/mtime + revision
     end
 ```
@@ -226,7 +236,7 @@ Renderer 只有在返回修订仍等于当前编辑修订时进入 `Clean`。保
 
 ## 1.9\_恢复备份与应用状态
 
-Main 管理三个不同存储区：
+C++ Native Service 管理四个不同存储区；Main 不保存正文副本：
 
 ```text
 state/       # 设置、最近打开、窗口布局；小型版本化记录
@@ -237,11 +247,11 @@ cache/       # 可删除的索引与渲染缓存
 
 小型状态优先使用版本化 JSON 或轻量 key-value 文件，并采用原子写入。第一阶段不引入 SQLite：当前目标没有训练记录、电子书或复杂关系数据，数据库只会增加原生模块打包、迁移、备份和损坏恢复成本。
 
-Renderer 按产品层定义的合并节奏提交最新恢复快照。Main 再次按 `document_id + revision + content_hash` 去重并原子更新单份备份。备份正文、最近打开绝对路径和历史内容不进入日志或遥测。
+Renderer 按产品层定义的合并节奏提交最新恢复快照。Main 校验后转发，C++ 服务按 `document_id + revision + content_hash` 再次去重并原子更新单份备份。备份正文、最近打开绝对路径和历史内容不进入日志或遥测。
 
 ## 1.10\_文件监听与外部修改
 
-Main 将底层重复、乱序和缺失事件归一化为“可能变化”提示：
+C++ Native Service 将底层重复、乱序和缺失事件归一化为“可能变化”提示，再由 Main 转发：
 
 ```text
 document_maybe_changed
@@ -283,7 +293,7 @@ loop-preview://preview/...         # 打包预览 runtime，独立 origin
 loop-resource://resource/<token>   # 当前窗口授权的本地资源
 ```
 
-Renderer 不能自己把路径编码进 URL。它先把文档 ID 与原始 Markdown 链接交给 Main；Main 规范化、验证边界和类型后签发高熵、短生命周期、窗口作用域的资源 token。每个窗口使用独立的非持久 Electron session partition，并在对应 `session.protocol` 上注册资源处理器，使 token 与网络存储边界同时随窗口撤销。工作区关闭、窗口关闭或文件身份变化后 token 失效。
+Renderer 不能自己把路径编码进 URL。它先把文档 ID 与原始 Markdown 链接交给 Main；Main 转交 C++ 服务规范化并验证能力、边界和类型，再为返回的资源句柄签发高熵、短生命周期、窗口作用域 token。每个窗口使用独立的非持久 Electron session partition，并在对应 `session.protocol` 上注册资源处理器，使 token 与网络存储边界同时随窗口撤销。工作区关闭、窗口关闭或文件身份变化后 token 失效。
 
 `loop-preview://` 只提供固定预览 runtime，并使用独立 CSP、无 Preload iframe、`sandbox="allow-scripts"` 且不授予 `allow-same-origin`、表单、弹窗、下载或顶层导航。协议不启用 `bypassCSP`、Service Worker 或不需要的存储权限。HTML、脚本、可执行文件和未清洗 SVG 不以内联资源返回。远程资源不经过该协议代理，也不由预览自动请求。
 
@@ -303,20 +313,20 @@ correlation_id
 
 ## 1.14\_开发、打包与测试
 
-开发模式可由 Vite 为 Renderer 提供热更新，但 Main、Preload 和 Renderer 保持正式边界。正式包只加载 `loop-app://`，不启动 Vite、本地 HTTP 或外部浏览器，也不要求用户预装 Node.js、npm、MSYS2、Bash 或数据库运行时。
+开发模式可由 Vite 为 Renderer 提供热更新，但 Main、Preload、Renderer 与 C++ 服务保持正式边界。正式包只加载 `loop-app://` 并启动随包发布的固定 Native Service，不启动 Vite、本地 HTTP 或外部浏览器，也不要求用户预装 Node.js、npm、CMake、编译器、MSYS2、Bash 或数据库运行时。
 
 | 测试层 | 重点 |
 | --- | --- |
 | 单元 | 会话状态机、路径与链接、保存策略选择、备份合并、Markdown feature |
 | Fixture | 编码、换行、HAST 清洗、Mermaid/公式、恶意输入、源码位置 |
-| 集成 | Main/Preload Schema、文件身份、safe write、watcher、备份与历史 |
+| 集成 | Main/Preload Schema、TypeScript/C++ 协议、文件身份、safe write、watcher、备份与历史 |
 | E2E | 新建、打开文件、打开文件夹、编辑、预览、保存、冲突、恢复、回收站 |
 | 故障注入 | 断电点、磁盘满、权限变化、文件占用、符号链接、硬链接、外部竞态 |
 | 性能 | 大文件输入、目录枚举、增量索引、预览延迟、内存与备份写放大 |
 
 ## 1.15\_实施顺序
 
-1. 固化 Electron 安全默认值、IPC Schema、错误码和窗口能力表。
+1. 固化 Electron 安全默认值、IPC Schema、C++ 帧协议、错误码和窗口能力表。
 2. 建立空窗口、新建文件、打开文件、打开文件夹和最近打开。
 3. 完成文件树、CodeMirror、普通 Markdown 预览和手动保存纵向闭环。
 4. 完成脏状态、合并恢复备份、Hot Exit、本地历史和外部冲突。

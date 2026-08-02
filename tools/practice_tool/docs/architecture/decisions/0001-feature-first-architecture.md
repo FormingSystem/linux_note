@@ -2,7 +2,7 @@
 id: tools.practice_tool.architecture.decisions.0001_feature_first
 title: "ADR 0001 采用 Feature-first 工程组织"
 kind: reference
-status: maintained
+status: archived
 domains:
   - tools
 ---
@@ -11,7 +11,9 @@ domains:
 
 ## 1.1\_状态
 
-`accepted`
+`superseded`
+
+ADR-0006 与 ADR-0010 已用 Electron 多进程、C++20 Native Service 与包级边界取代本决策。Feature-first 只保留为 Renderer 内部的组织原则，不再代表整个产品的工程结构。
 
 ## 1.2\_背景
 

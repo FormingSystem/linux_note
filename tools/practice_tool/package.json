@@ -6,12 +6,20 @@
   "author": "FormingSystem",
   "license": "GPL-2.0-only",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.app.json && vite build",
+    "desktop:dev": "npm run build -w @loop/ipc-contracts && npm run dev -w @loop/desktop",
+    "desktop:typecheck": "npm run build -w @loop/ipc-contracts && npm run typecheck -w @loop/desktop",
+    "desktop:test": "npm test -w @loop/ipc-contracts",
+    "desktop:build": "npm run build -w @loop/ipc-contracts && npm run build -w @loop/desktop",
     "check:data": "node scripts/validate-content.mjs",
     "check:mermaid": "node scripts/validate-mermaid.mjs"
   },
@@ -36,5 +44,9 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "ajv": "^8.17.1"
+  },
+  "allowScripts": {
+    "electron@43.2.0": true,
+    "esbuild@0.25.12": true
   }
 }

@@ -11,7 +11,7 @@ domains:
 
 ## 1.1\_文档职责与评审状态
 
-本文定义 Electron 桌面架构下的窗口、IPC、文件与文件夹能力、路径、Markdown、资源协议、网络、备份、文件写入和更新边界。本文处于 **proposed** 评审状态，用于取代旧本地 HTTP 威胁模型与“注册知识源”权限模型。
+本文定义 Electron + C++ Native Service 架构下的窗口、IPC、跨语言协议、文件与文件夹能力、路径、Markdown、资源协议、网络、备份、文件写入和更新边界。ADR-0006～0010 已接受，本文已经进入实施，用于取代旧本地 HTTP 威胁模型与“注册知识源”权限模型。
 
 ## 1.2\_保护目标
 
@@ -30,16 +30,17 @@ flowchart LR
     DOC[Markdown/HTML/SVG/Mermaid<br/>不可信数据] --> V[Isolated Preview Frame]
     V -->|Typed MessageChannel| R[Sandboxed Workbench Renderer]
     R -->|固定 Preload API| P[Context-isolated Preload]
-    P -->|Schema + sender validation| M[Electron Main]
-    M -->|窗口能力表| FS[用户打开的文件/文件夹]
-    M --> APP[(State/Backup/History)]
+    P -->|Schema + sender validation| M[Electron Main Broker]
+    M -->|Versioned bounded frames| N[C++ Native Service]
+    N -->|窗口能力表| FS[用户打开的文件/文件夹]
+    N --> APP[(State/Backup/History)]
     M --> OS[系统对话框/浏览器/回收站]
     NET[远程网络] -.默认不进入预览.-> R
 ```
 
 默认不信任：Renderer、IPC 参数、Markdown、原始 HTML、SVG、Mermaid、公式、文件名、相对路径、符号链接、junction、reparse point、UNC、watcher 事件、恢复备份、旧状态文件和所有远程 URL。
 
-Main 拥有权限但不信任输入。打开一个目录只允许读取和显式编辑该目录，不表示允许执行目录中的任何内容。
+Main 拥有窗口与系统集成权限，C++ 服务拥有工作区与文件权限，但两者都不信任输入。打开一个目录只允许读取和显式编辑该目录，不表示允许执行目录中的任何内容。C++ 服务只接受固定二进制帧和方法 allowlist；畸形 JSON、未知字段、超长帧、协议不匹配和未知方法必须失败关闭，不得触发未捕获异常或无界分配。
 
 ## 1.4\_Electron\_安全基线
 
@@ -103,11 +104,12 @@ Preload 只暴露固定、窄、可撤销的用例函数。Main 对每个请求�
 
 1. 验证 sender frame 仍是当前打包应用页面且属于能力绑定窗口。
 2. 用运行时 Schema 校验类型、长度、枚举、正文上限和嵌套深度。
-3. 把 workspace/document/resource ID 映射为 Main 能力对象。
-4. 重新验证路径、文件身份、权限、内容摘要和操作状态。
-5. 返回稳定错误与恢复动作，不返回异常堆栈、路径或正文。
+3. 映射为固定 Native Service 方法并设置请求 ID、超时、取消和响应上限。
+4. C++ 服务再次校验协议，再把 workspace/document/resource ID 映射为能力对象。
+5. 重新验证路径、文件身份、权限、内容摘要和操作状态。
+6. 返回稳定错误与恢复动作，不返回异常堆栈、路径或正文。
 
-禁止通用通道、任意 SQL、任意文件路径、任意 URL、命令字符串、Shell 参数和底层 watcher 参数。事件回调只能接收复制后的业务值，不能接收 Electron event。
+禁止通用 IPC、通用 Native 方法、任意 SQL、Renderer 文件路径、任意 URL、命令字符串、Shell 参数和底层 watcher 参数。事件回调只能接收复制后的业务值，不能接收 Electron event、C++ 指针、文件句柄或子进程对象。
 
 ## 1.8\_Markdown\_与预览安全
 
@@ -138,7 +140,7 @@ Preload 只暴露固定、窄、可撤销的用例函数。Main 对每个请求�
 
 ## 1.10\_资源协议
 
-`loop-app://` 只映射打包清单中的固定应用资源。`loop-preview://` 只提供固定预览 runtime，并与工作台使用不同 origin 和 CSP。`loop-resource://` 只接受 Main 签发的高熵、短期、窗口作用域 token，不接受路径、`..`、绝对地址或用户可选 host。
+`loop-app://` 只映射打包清单中的固定应用资源。`loop-preview://` 只提供固定预览 runtime，并与工作台使用不同 origin 和 CSP。`loop-resource://` 只接受 Main 基于 C++ 资源句柄签发的高熵、短期、窗口作用域 token，不接受路径、`..`、绝对地址或用户可选 host。
 
 资源 token 绑定工作区、文件身份、允许 MIME、最大大小与过期时间。每个窗口使用独立的非持久 Electron session partition，资源处理器注册在对应 `session.protocol` 上；协议处理器再检查 token 与当前能力。工作区关闭、目标变化、窗口 session 销毁或 token 使用场景不符时拒绝。
 
@@ -166,7 +168,7 @@ Preload 只暴露固定、窄、可撤销的用例函数。Main 对每个请求�
 
 状态、恢复备份、本地历史和缓存使用不同目录与清理策略。应用数据可以保存最近打开绝对路径，但：
 
-- 仅 Main 读取；Renderer 只获得显示标签和不透明 ID。
+- 仅 C++ Native Service 读取正文相关应用数据；Main 只处理窗口设置与经过目的限制的显示标签，Renderer 只获得显示标签和不透明 ID。
 - 不进入普通日志、遥测、崩溃上报或导出的默认诊断包。
 - 恢复草稿和本地历史不随清缓存删除。
 - 清除应用数据需要单独确认，且永不删除用户打开的文件夹或 Markdown。
@@ -176,6 +178,7 @@ Preload 只暴露固定、窄、可撤销的用例函数。Main 对每个请求�
 ## 1.13\_更新与供应链
 
 - 使用受支持的 Electron 与 Chromium，建立固定升级节奏和紧急安全更新渠道。
+- 固定 C++ 编译器支持范围、CMake 最低版本和第三方依赖摘要；严格告警视为错误，并在 CI 建立 clang-tidy、ASan/UBSan 与协议恶意输入测试。
 - 锁定依赖与完整性，生成 SBOM，审计许可证和已知漏洞。
 - 正式安装包与更新清单签名；更新器只连接固定 HTTPS 发布源。
 - Renderer 不执行 Git、npm、包管理器或更新命令。
@@ -185,6 +188,8 @@ Preload 只暴露固定、窄、可撤销的用例函数。Main 对每个请求�
 ## 1.14\_安全验收
 
 - Renderer 无法访问 Node、Electron、任意 IPC、绝对路径、环境变量或子进程。
+- Renderer 无法连接或替换 C++ Native Service；Main 不接受环境变量、工作区配置或 IPC 指定可执行路径。
+- 超长帧、截断帧、无效 UTF-8/JSON、未知字段、未知方法、版本不匹配和异常数值不会造成越界、无界分配、未捕获异常或能力扩大。
 - Preview Frame 无法访问 Preload、工作台 DOM、任意导航或文件 IPC；预览 XSS 不能调用保存和文件操作。
 - 主窗口导航、弹窗、权限请求与远程加载默认拒绝。
 - 单文件模式不能枚举父目录或越过父目录读取资源；文件夹模式不能越过真实根。

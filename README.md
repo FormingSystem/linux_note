@@ -61,7 +61,7 @@ Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，�
 
 ### 1.3.1\_回路\_Markdown\_工作台
 
-仓库当前内置“回路”工具。新的目标产品是独立 Electron Markdown 工作台，直接新建文件、打开单个文件或打开单个文件夹；当前仓库中的浏览器训练与专题电子书代码属于等待替换的 `0.1.0`。工具代码与自身文档位于：
+仓库当前内置“回路”工具。新的目标产品是独立 Electron Markdown 工作台，直接新建文件、打开单个文件或打开单个文件夹；桌面层采用 TypeScript，文件与工作区服务采用独立 C++20 进程。当前已完成 Electron 安全壳和 C++ 服务握手，浏览器训练与专题电子书代码属于等待替换的 `0.1.0`。工具代码与自身文档位于：
 
 ```text
 tools/practice_tool/
@@ -73,7 +73,7 @@ tools/practice_tool/
 ./tools/practice_tool/start.sh
 ```
 
-仓库根目录的 `practice.cmd` 和 `practice.sh` 是当前知识库为 `0.1.0` 提供的集成快捷入口，只转发到工具的 `start.sh`，不承载环境准备、依赖安装或服务启动逻辑。工具内部将 `install.sh`、`run.sh` 和 `uninstall.sh` 分别作为安装、纯运行和卸载模块；`start.sh` 首次运行时可以调用安装模块，完成后再转入运行模块。Windows 尚未安装 MSYS2 时由 PowerShell 引导脚本准备 UCRT64；该版本通过 Unix 环境层选择 MSYS2 `pacman` 或 Ubuntu 22.04 隔离运行时，依赖安装完成、Vite 开始监听后才打开浏览器。正在评审的新目标是独立 Electron 客户端，不继承这套最终用户运行链。
+仓库根目录的 `practice.cmd` 和 `practice.sh` 是当前知识库为 `0.1.0` 提供的集成快捷入口，只转发到工具的 `start.sh`，不承载环境准备、依赖安装或服务启动逻辑。工具内部将 `install.sh`、`run.sh` 和 `uninstall.sh` 分别作为安装、纯运行和卸载模块；`start.sh` 首次运行时可以调用安装模块，完成后再转入运行模块。Windows 尚未安装 MSYS2 时由 PowerShell 引导脚本准备 UCRT64；该版本通过 Unix 环境层选择 MSYS2 `pacman` 或 Ubuntu 22.04 隔离运行时，依赖安装完成、Vite 开始监听后才打开浏览器。正在实现的新目标是独立 Electron 客户端，不继承这套最终用户运行链。
 
 Linux 下使用当前 `0.1.0` 入口查看介绍；该命令不会安装环境或启动服务：
 
