@@ -129,6 +129,8 @@ srcu_read_unlock(&config_srcu, idx);
 | 只需要一致的小型数值快照，不涉及对象回收？ | seqcount/seqlock |
 | 需要对对象字段做复合原地更新？ | 锁或 seqcount，RCU 不自动提供该不变量 |
 | 需要离开 RCU 后继续使用对象？ | 在 RCU 临界区内安全取得 kref/refcount |
+| 一代旧照由 root 和多个 kref block 组成，reader 只做短读取？ | root 为每个 block 持有版本引用，旧 root 的 GP 后再逐块 put；reader 不逐块 get |
+| reader 要把复合旧照中的某个 block 带出读区？ | 在 root 仍受 RCU 保护时取得该 block 的独立引用 |
 | 模块卸载时还可能有回调指向模块代码？ | 取消发布后使用 `rcu_barrier()` 等待已排队回调 |
 
 上一篇：[RCU 集成模式与常见误用](P24_RCU_调试验证与集成误用.md)。
