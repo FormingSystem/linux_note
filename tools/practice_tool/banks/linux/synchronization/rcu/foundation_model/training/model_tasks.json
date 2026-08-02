@@ -9,6 +9,6 @@
     "constraints":["必须标明时间顺序","区分旧读者和新读者","说明证据保存和汇聚位置","不得把宽限期写成固定延时"],
     "required_outputs":["完整初始化 B 后再发布","旧读者可在发布后继续使用 A","新读者取得 B","旧读者越过安全边界","局部证据汇聚为完成结论","完成后回收 A"],
     "verification_questions":["新读者长时间使用 B 是否必然阻塞本轮旧对象回收？","被抢占旧读者的状态为什么不能只归属于原 CPU？"],
-    "knowledge_refs":["knowledge.linux.synchronization.rcu.abstract_model","knowledge.linux.synchronization.rcu.tree_state"]
+    "knowledge_refs":["knowledge.linux.synchronization.rcu.abstract_derivation","knowledge.linux.synchronization.rcu.tree_state_notification"]
   }
 ]

@@ -9,7 +9,7 @@
     "hints":["入口切换会修改 CPU0 已经保存的局部变量吗？","CPU0 在 T2 解引用的地址属于哪个对象？"],
     "answer_framework":["CPU0 在切换前已取得 A。","入口切换只让后来的读者取得 B。","CPU0 的局部地址仍指向 A。","立即释放使 T2 解引用成为释放后使用。"],
     "common_mistakes":["认为指针替换会同步改写所有 CPU 的局部变量。","用等待固定时间代替安全证明。"],
-    "knowledge_refs":["knowledge.linux.synchronization.rcu.abstract_model"]
+    "knowledge_refs":["knowledge.linux.synchronization.rcu.abstract_derivation"]
   },
   {
     "id":"linux.rcu.guided.cost_transfer",
@@ -21,6 +21,6 @@
     "hints":["旧版本能立即覆盖吗？","谁负责证明旧读者退出？","多个更新者还需要串行化吗？"],
     "answer_framework":["更新者先准备并发布新版本。","旧对象在宽限期内继续占用内存。","系统需要形成和汇聚旧读者退出证据。","回调或等待路径负责延迟回收。","写者业务一致性仍要单独保护。"],
     "common_mistakes":["声称 RCU 消除了同步。","认为 RCU 自动保证多字段事务一致性。"],
-    "knowledge_refs":["knowledge.linux.synchronization.rcu.why_rcu","knowledge.linux.synchronization.rcu.abstract_model"]
+    "knowledge_refs":["knowledge.linux.synchronization.rcu.why_rcu","knowledge.linux.synchronization.rcu.abstract_derivation"]
   }
 ]

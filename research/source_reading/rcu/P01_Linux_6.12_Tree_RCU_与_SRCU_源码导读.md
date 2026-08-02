@@ -1,5 +1,5 @@
 ---
-id: knowledge.linux.synchronization.rcu.linux_6_12_source_guide
+id: research.source_reading.rcu.linux_6_12_source_guide
 title: "Linux 6.12 Tree RCU 与 SRCU 源码导读"
 kind: source
 status: evolving
@@ -45,7 +45,9 @@ source_version: "6.12.20"
 
 - 当前 CPU 观察到的 GP 序列与静止状态。
 - 该 CPU 的回调分段列表 `cblist`。
-- dynticks、nocb、延迟静止状态等与每 CPU 执行相关的信息。
+- `mynode`、`grpmask`、NOCB、延迟 QS 与 watching 快照等每 CPU 执行状态。
+
+**6.12.20 版本边界：** user/idle 的 RCU watching 主状态位于通用 `context_tracking.state`，不再是 Linux 5.10 中 `rcu_data.dynticks_nesting`、`dynticks_nmi_nesting` 和 `atomic_t dynticks` 那组字段。`rcu_data.watching_snap` 等字段保存 GP 扫描使用的观察快照，不等于拥有 watching 状态。
 
 ### 1.3.2\_rcu\_node
 
@@ -110,7 +112,7 @@ flowchart TD
 
 ## 1.6\_synchronize\_rcu()与\_call\_rcu()
 
-`synchronize_rcu()` 是阻塞等待接口，源码会根据当前配置走普通或 expedited 路径。它的 lockdep 检查会报告在 RCU 读侧临界区内调用的非法情况。
+`synchronize_rcu()` 是阻塞等待接口，但“同步”不等于默认选择 expedited GP。Linux 6.12.20 的普通入口进入 `synchronize_rcu_normal()`；默认 `rcu_normal_wake_from_gp=0` 时，通过 `wait_rcu_gp(call_rcu_hurry)` 排入一个 GP 后唤醒 callback 并等待 completion。只有显式调用 `synchronize_rcu_expedited()`，或专门配置/调用路径，才进入 expedited 机制。它的 lockdep 检查会报告在 RCU 读侧临界区内调用的非法情况。
 
 `call_rcu()` 通过 `__call_rcu_common()` 排队回调，调用者不等待 GP。两者都依赖 Tree RCU 的 GP 推进，但交付方式不同。
 
@@ -144,10 +146,10 @@ flowchart TD
 ## 1.9\_建议的源码阅读顺序
 
 1. 先从 `rcupdate.h` 阅读 `rcu_assign_pointer()`、`rcu_dereference()` 和读侧封装。
-2. 阅读 `tree.h` 中的 `rcu_data`、`rcu_node`、`rcu_state`。
-3. 沿 `call_rcu()` 进入回调排队，再阅读 `rcu_segcblist` 的分段模型。
-4. 沿 `rcu_gp_kthread()` 阅读 `rcu_gp_init()`、`rcu_gp_fqs_loop()` 和 GP 结束。
-5. 从 `rcu_core()` 进入每 CPU 静止状态上报与回调执行。
+2. 阅读 `tree.h` 中的 `rcu_data`、`rcu_node`、`rcu_state`，先分清每任务、每 CPU、每节点和全局状态。
+3. 沿[非抢占式 Tree RCU 源码调用链](P02_Linux_6.12_非抢占式_Tree_RCU_源码调用链.md)建立 CPU QS、树形汇聚和同步等待闭环。
+4. 再沿[抢占式 Tree RCU 源码调用链](P03_Linux_6.12_抢占式_Tree_RCU_源码调用链.md)增加 `task_struct`、`blkd_tasks` 和 `gp_tasks` 这一条任务债务轴。
+5. 沿 `call_rcu()` 进入回调排队，再阅读 `rcu_segcblist` 的分段模型与 `rcu_do_batch()`。
 6. 最后对照 `srcu.h`、`srcutree.h` 和 `srcutree.c`，比较 Tree SRCU 的私有域和两 index 模型。
 
 ## 1.10\_源码阅读验收
@@ -159,4 +161,6 @@ flowchart TD
 5. 能说明 Tree SRCU 两 index 读计数与私有域的关系。
 
 专题入口：[RCU 专题大纲](../../../knowledge/linux/synchronization/rcu/大纲.md)。
+
+下一篇：[Linux 6.12 非抢占式 Tree RCU 源码调用链](P02_Linux_6.12_非抢占式_Tree_RCU_源码调用链.md)。
 

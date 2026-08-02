@@ -19,11 +19,11 @@ domains:
 | --- | --- |
 | 版本 | Linux 6.12.20 |
 | 原始位置 | `\\192.168.31.142\work\linux\nxp\kernel\linux-imx-6.12` |
-| Git 提交 | 原始目录未提供可读取的 Git 提交标识 |
+| Git 提交 | `7b60e547d2783f8fee61ff7d7be3e066825b9c3a` |
 | 平台背景 | NXP i.MX 内核源码树；通用机制优先引用架构无关目录 |
 | 许可证 | 以各源码文件 SPDX、版权头及原源码树 `COPYING`/`LICENSES` 为准 |
 
-版本号读取自原源码树根 `Makefile`：`VERSION=6`、`PATCHLEVEL=12`、`SUBLEVEL=20`。
+版本号读取自原源码树根 `Makefile`：`VERSION=6`、`PATCHLEVEL=12`、`SUBLEVEL=20`；提交标识读取自同一源码树的 `HEAD`。
 
 ## 1.2\_保存规则
 
@@ -72,6 +72,32 @@ domains:
 ## 1.5\_已有其他机制证据
 
 本目录还保存 RCU、kobject、引用计数、内存管理和数据结构等已有源码。后续会根据实际来源逐步核对其版本；在完成核对前，不应仅凭目录共存就断言所有旧文件都来自本章记录的 6.12.20 基线。
+
+### 1.5.1\_Tree\_RCU与SRCU证据
+
+下列 RCU 核心文件已在 2026-08-02 与 Git 提交 `7b60e547d2783f8fee61ff7d7be3e066825b9c3a` 对应的原始 Linux 6.12.20 源码逐文件核对，其中 `tree.c`、`tree.h`、`tree_plugin.h`、`update.c` 和 `rcupdate.h` 的仓库副本 SHA-256 与原文件一致：
+
+| 相对路径 | 主要用途 |
+| --- | --- |
+| `kernel/rcu/tree.c` | 普通 GP 请求、初始化、QS 汇聚、FQS、cleanup、同步等待入口 |
+| `kernel/rcu/tree.h` | `rcu_node`、`rcu_data`、`rcu_state` 与 Tree RCU 内部接口 |
+| `kernel/rcu/tree_plugin.h` | PREEMPT_RCU / 非 PREEMPT_RCU 读侧、调度 QS、blocked task 与 boost |
+| `kernel/rcu/update.c` | 通用等待 callback、RCU 初始化和部分公共实现 |
+| `kernel/rcu/tree_exp.h` | expedited GP |
+| `kernel/rcu/tree_nocb.h` | NOCB callback offload |
+| `kernel/rcu/tree_stall.h` | stall 检测与诊断 |
+| `kernel/rcu/rcu_segcblist.c`、`rcu_segcblist.h` | callback 分段列表实现 |
+| `include/linux/rcupdate.h` | 公共读侧接口、发布/取得、`kfree_rcu()` |
+| `include/linux/rculist.h` | list/hlist 的 RCU 访问封装 |
+| `include/linux/rcu_segcblist.h` | callback 分段列表结构和接口 |
+| `include/linux/srcu.h`、`srcutree.h`、`kernel/rcu/srcutree.c` | Tree SRCU 公共接口、状态和实现 |
+
+调度入口 `kernel/sched/core.c`、任务字段 `include/linux/sched.h`、`kernel/rcu/tasks.h`、`kernel/rcu/tiny.c`、BPF/ftrace 调用方以及 6.12 context tracking 文件当前直接从只读原始源码树核对，未为单个调用点复制整个大文件。版本化阅读记录见：
+
+- [`../rcu/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md`](../rcu/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)
+- [`../rcu/P02_Linux_6.12_非抢占式_Tree_RCU_源码调用链.md`](../rcu/P02_Linux_6.12_非抢占式_Tree_RCU_源码调用链.md)
+- [`../rcu/P03_Linux_6.12_抢占式_Tree_RCU_源码调用链.md`](../rcu/P03_Linux_6.12_抢占式_Tree_RCU_源码调用链.md)
+- [`../rcu/P04_Linux_6.12_Tasks_RCU与Tiny_RCU源码调用链.md`](../rcu/P04_Linux_6.12_Tasks_RCU与Tiny_RCU源码调用链.md)
 
 ## 1.6\_Input\_子系统证据
 
