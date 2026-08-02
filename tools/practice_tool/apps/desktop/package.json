@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "npm run typecheck && node --experimental-strip-types --test tests/*.test.mts",
     "build": "npm run typecheck && electron-vite build",
     "preview": "electron-vite preview"
   },

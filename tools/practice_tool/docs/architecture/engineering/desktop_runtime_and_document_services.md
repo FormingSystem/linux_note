@@ -52,7 +52,7 @@ practice_tool/
 │       └── src/
 │           ├── main/
 │           │   ├── windows/
-│           │   ├── native-service/
+│           │   ├── native_service/
 │           │   └── protocols/
 │           ├── preload/
 │           └── renderer/
@@ -113,54 +113,48 @@ watch_subscriptions
 Preload 暴露按用例命名的窄接口：
 
 ```ts
-interface LoopDesktopApi {
+interface loop_desktop_api {
+  system: {
+    get_runtime_info(): Promise<runtime_info>;
+  };
   workbench: {
-    newFile(): Promise<UntitledDocument>;
-    openFile(): Promise<OpenedWorkspace | null>;
-    openFolder(): Promise<OpenedWorkspace | null>;
-    reopenRecent(request: ReopenRecentRequest): Promise<OpenedWorkspace>;
-    closeWorkspace(): Promise<void>;
+    open_file(): Promise<command_result<opened_single_file>>;
+    open_folder(): Promise<command_result<opened_folder>>;
+    close_workspace(): Promise<command_result<void>>;
   };
   explorer: {
-    listChildren(request: ListChildrenRequest): Promise<FileEntry[]>;
-    create(request: CreateEntryRequest): Promise<FileEntry>;
-    rename(request: RenameEntryRequest): Promise<FileOperationResult>;
-    moveToTrash(request: TrashEntryRequest): Promise<FileOperationResult>;
-  };
-  documents: {
-    open(request: OpenDocumentRequest): Promise<DocumentSnapshot>;
-    save(request: SaveDocumentRequest): Promise<SaveDocumentResult>;
-    saveAs(request: SaveAsRequest): Promise<SaveDocumentResult | null>;
-    writeRecovery(request: WriteRecoveryRequest): Promise<BackupResult>;
-    discardRecovery(request: DiscardRecoveryRequest): Promise<void>;
-  };
-  resources: {
-    resolve(request: ResolveResourceRequest): Promise<ResourceUrlResult>;
-    insertImage(request: InsertImageRequest): Promise<InsertedResource | null>;
-  };
-  shell: {
-    reveal(request: RevealEntryRequest): Promise<void>;
-    openExternal(request: OpenExternalRequest): Promise<void>;
+    list_children(request: {
+      workspace_id: string;
+      directory_id: string;
+      cursor?: string;
+    }): Promise<command_result<entry_page>>;
   };
 }
+
+type command_result<value_type> =
+  | { status: "ok"; value: value_type }
+  | { status: "cancelled" }
+  | { status: "error"; error: desktop_error };
 ```
+
+这是 D1A 已实现接口，不提前暴露尚未实现的 `documents`、`resources`、文件操作或任意 shell API。后续切片每增加一个用例，都必须按同样方式增加值对象、运行时校验、能力检查和撤权测试，不能先放一个宽接口等待填充。
 
 每个请求和响应同时具有 TypeScript 类型与运行时 Schema，并限制字符串长度、数组项数、正文大小和嵌套深度。禁止以下接口：
 
 ```text
 invoke(channel, payload)
-readFile(absolutePath)
-writeFile(absolutePath, content)
-watch(absolutePath)
+read_file(absolute_path)
+write_file(absolute_path, content)
+watch(absolute_path)
 exec(command)
-openExternal(rawUrl)
+open_external(raw_url)
 ```
 
 事件按工作区和文档订阅，返回不透明订阅 ID；窗口关闭后 Main 必须撤销 Renderer 订阅与资源 URL，并要求 C++ 服务释放 watcher、未完成保存和索引任务。
 
 ## 1.6\_文件树与索引
 
-`openFolder` 只读取根目录元数据和首层列表。子目录在展开、搜索或链接补全需要时再读取。文件正文不进入 Renderer，直到用户打开文档。
+`open_folder` 建立根能力；D1A 由 Renderer 随后用根 `directory_id` 请求首层列表。子目录只接受 Native Service 已签发的 `directory_id`，在展开、搜索或链接补全需要时再读取，不接受 Renderer 相对路径作为授权依据。文件正文不进入 Renderer，直到后续文档能力明确打开文档。
 
 后台索引只解析 Markdown 所需的轻量信息：相对路径、标题、标题锚点和本地链接。它遵守排除规则、大小限制、取消信号和资源预算；遇到巨型目录时降级为按需搜索并显示状态，不要求用户修改系统限制才能打开目录。
 
@@ -168,7 +162,9 @@ openExternal(rawUrl)
 
 ## 1.7\_文档读取
 
-`openDocument` 返回：
+D1A 的 `workspace.open_file` 只校验所选 Markdown 并返回受控元数据，正文、SHA-256 和平台文件身份保留在 Native Service 内，不通过 1 MiB 控制帧传输。下列 `open_document` 是 D1B 的目标文档能力，不代表当前接口已经存在：
+
+`open_document` 返回：
 
 ```text
 document_id
@@ -176,7 +172,7 @@ workspace_id
 display_path
 content
 content_hash
-file_identity
+file_version_token
 encoding
 bom
 line_ending
@@ -185,7 +181,7 @@ size
 capabilities
 ```
 
-C++ Native Service 使用当前能力解析资源，检查普通文件、大小与类型，并以严格解码读取。无效编码不以替换字符继续；二进制、超大或不支持编码返回可操作错误。读取结果中的绝对路径和 OS 文件句柄不跨越 Native Service 协议或 Renderer IPC。
+C++ Native Service 使用当前能力解析资源，检查普通文件、大小与类型，并以严格解码读取。无效编码不以替换字符继续；二进制、超大或不支持编码返回可操作错误。读取结果中的绝对路径、原始平台文件身份和 OS 文件句柄不跨越 Native Service 协议或 Renderer IPC；需要用于保存冲突检查的版本值必须是目的受限的不透明 token。
 
 Markdown Front Matter 中的 `id` 是内容元数据，不是文件系统授权依据，也不是文档会话的唯一身份。没有 Front Matter 的普通 Markdown 必须能够正常打开和保存。
 
@@ -195,7 +191,7 @@ Markdown Front Matter 中的 `id` 是内容元数据，不是文件系统授权�
 
 ```text
 document_id
-expected_file_identity
+expected_file_version_token
 expected_content_hash
 editor_revision
 encoding
@@ -279,7 +275,7 @@ source
 
 Worker 返回可结构化复制的 `PreviewDocument`，不返回 DOM、React 元素、原始可执行 HTML 或自定义完整 AST。工作台 Renderer 不把文档节点插入自己的 DOM，而是通过专用 `MessageChannel` 把 `PreviewDocument` 发送给无 Preload、无 Node、不同源且带 sandbox 的 Preview Frame。Frame 使用固定组件映射渲染 safe HAST；Mermaid、KaTeX 和代码高亮是内置、可取消、可缓存的独立 renderer。
 
-Preview Frame 只能返回固定的定位、链接点击、复制源码和渲染状态事件。工作台逐项校验文档 ID、修订、源码位置和链接类型；Frame 不能获得 `LoopDesktopApi`、父页面 DOM 或任意字符串命令通道。即使 sanitizer 或复杂 renderer 出现 XSS，影响也被限制在预览 frame 内。
+Preview Frame 只能返回固定的定位、链接点击、复制源码和渲染状态事件。工作台逐项校验文档 ID、修订、源码位置和链接类型；Frame 不能获得 `loop_desktop_api`、父页面 DOM 或任意字符串命令通道。即使 sanitizer 或复杂 renderer 出现 XSS，影响也被限制在预览 frame 内。
 
 CodeMirror 与 Unified 使用不同解析器，因此每个 Markdown feature 必须提供共同 fixture：合法语法、错误语法、源码位置、编辑高亮、预览结果和恶意输入。不能假设编辑器着色成功就代表预览语义一致。
 
