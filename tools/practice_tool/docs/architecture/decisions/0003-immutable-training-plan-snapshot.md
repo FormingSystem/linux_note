@@ -2,7 +2,7 @@
 id: tools.practice_tool.architecture.decisions.0003_immutable_plan_snapshot
 title: "ADR 0003 冻结不可变训练计划快照"
 kind: reference
-status: maintained
+status: archived
 domains:
   - tools
 ---
@@ -11,7 +11,9 @@ domains:
 
 ## 1.1\_状态
 
-`accepted`
+`superseded`
+
+该决策只记录 `0.1.0` 训练实现的历史背景。ADR-0009 已将目标产品收敛为文件与文件夹 Markdown 工作台，不再维护训练计划快照模型。
 
 ## 1.2\_背景
 

@@ -1,146 +1,145 @@
 ---
 id: tools.practice_tool.architecture.project_structure_and_module_boundaries
-title: "回路工程结构与模块边界"
+title: "工程结构与模块边界"
 kind: reference
 status: evolving
 domains:
   - tools
 ---
 
-# 第1章\_回路工程结构与模块边界
+# 第1章\_工程结构与模块边界
 
-## 1.1\_设计目标
+## 1.1\_边界原则
 
-回路采用按业务功能组织的 Feature-first 工程结构。目录必须能够回答“代码属于哪个产品能力、谁拥有数据、通过什么公开接口协作”，而不是只按组件、服务、工具函数等技术名称平铺。
+目标工程按 Electron 进程边界组织，Renderer 内再按业务 feature 组织。文件系统权限、编辑缓冲区、Markdown 语义和 UI 不放进一个所谓 `shared` 层，也不把旧训练页面迁入桌面壳。
 
-工具只管理知识源注册、用户选择的训练范围、训练组织、训练计划和训练记录。知识正文的目录层级属于外部知识库；训练分类属于用户行为，两者不得互相覆盖。
+本文处于 **proposed** 状态，依赖 ADR-0006～0009。当前 `src/`、`banks/`、浏览器存储和启动脚本只属于 `0.1.0`，不得反向约束新结构。
+
+## 1.2\_所有权图
 
 ```mermaid
 flowchart LR
-    KS[知识源] --> TM[训练模块]
-    TC[用户分类] --> TM
-    TM --> TP[专题电子书与三阶段计划]
-    TP --> PS[训练会话]
-    PS --> RH[复习历史]
-    IE[导入导出] --> TC
-    IE --> TM
-    IE --> TP
+    OS[文件/文件夹] --> FS[Main File Service]
+    FS --> SESSION[Renderer DocumentSession]
+    SESSION --> EDITOR[CodeMirror]
+    SESSION --> PREVIEW[Markdown Preview]
+    FS --> BACKUP[Main Backup/History]
+    FS --> INDEX[Index Utility]
 ```
 
-## 1.2\_目标工程结构
+| 状态 | 唯一所有者 | 持久位置 |
+| --- | --- | --- |
+| 已保存 Markdown | 用户文件系统 | 原文件 |
+| 当前草稿与撤销历史 | Renderer DocumentSession | 内存 |
+| 恢复快照 | Main BackupStore | AppData `backups/` |
+| 本地历史 | Main HistoryStore | AppData `history/` |
+| 文件与窗口能力 | Main WorkspaceService | 内存，最近项只存 locator |
+| 设置与窗口布局 | Main StateStore | AppData `state/` |
+| Markdown AST/预览/索引 | Worker/缓存服务 | 内存或 AppData `cache/` |
+
+没有模块拥有 Markdown 正文数据库副本。Front Matter 表单、预览、目录和链接索引都从同一编辑修订派生。
+
+## 1.3\_目录结构
 
 ```text
-practice_tool/
-├── src/
-│   ├── app/                         # 应用入口与装配
-│   ├── features/                    # 按业务功能组织
-│   │   ├── knowledge-sources/
-│   │   ├── training-categories/
-│   │   ├── training-modules/
-│   │   ├── training-plans/
-│   │   ├── practice-sessions/
-│   │   ├── review-history/
-│   │   └── import-export/
-│   ├── components/                  # 无业务含义的通用 UI
-│   ├── infrastructure/              # 存储、知识访问和系统 API
-│   └── shared/                      # ID、错误、时间等基础能力
-├── server/                          # 受控本地服务
-├── schemas/                         # 稳定数据协议
-├── migrations/                      # 用户数据迁移
-├── scripts/                         # 生命周期与校验脚本
-├── tests/                           # 跨模块测试
-├── docs/
-├── examples/
-└── config/
+apps/desktop/src/
+├── main/
+│   ├── windows/       # BrowserWindow 与生命周期
+│   ├── workspaces/    # 文件/文件夹能力与最近打开
+│   ├── files/         # 读取、保存、监听、文件操作
+│   ├── backups/       # 恢复、本地历史、状态存储
+│   ├── protocols/     # loop-app / loop-resource
+│   └── update/        # 签名更新边界
+├── preload/           # 固定 contextBridge
+└── renderer/
+    ├── app/           # 装配、窗口布局、命令与快捷键
+    └── features/
+        ├── explorer/
+        ├── editor/
+        ├── preview/  # 协调器、消息协议与隔离 frame runtime
+        ├── search/
+        ├── history/
+        └── settings/
+
+packages/
+├── ipc-contracts/     # 类型、运行时 Schema、错误码
+├── workspace-core/    # 纯工作区状态与文件操作计划
+├── document-core/     # 修订、Dirty/Save/Backup/Conflict 状态机
+├── markdown-engine/   # Unified、safe HAST、源码位置
+├── markdown-features/ # 内置 GFM/Mermaid/Math/Callout/Wiki
+└── ui-foundation/     # 设计 token 与无业务基础组件
 ```
 
-当前代码按干净重构方式向目标结构收敛。新业务代码不得继续堆入单体入口；已有启动、安装、卸载和平台环境职责保持原边界。目标结构与当前落地结构不能混为一谈，当前目录和剩余拆分项见 [实现状态与版本边界](../implementation_status.md)。
-
-## 1.3\_模块内部约定
-
-业务功能内部统一使用：
+## 1.4\_依赖方向
 
 ```text
-feature-name/
-├── components/     # 业务界面
-├── hooks/          # React 与业务操作连接
-├── model/          # 实体和永真规则
-├── services/       # 创建、修改、合并等用例
-├── tests/
-└── index.ts        # 唯一公开入口
+main ───────┐
+preload ────┼──> ipc-contracts
+renderer ───┘
+
+renderer --> document-core --> markdown-engine
+main -----> workspace-core
+
+core packages -X-> Electron / React / Node filesystem / storage driver
+renderer -X-> main implementation / absolute paths / Node APIs
 ```
 
-其他模块只能从 `index.ts` 使用公开能力，不得跨目录读取内部实现。业务规则不能放进 React 组件、IndexedDB 实现或 Vite 配置。
+跨 package 只从公开入口导入。循环依赖、Renderer 导入 Main、core 依赖 Electron/React 和任意字符串 IPC 在构建中直接失败。
 
-## 1.4\_数据所有权
+## 1.5\_Main\_模块
 
-| 数据 | 所有模块 |
-| --- | --- |
-| 知识源配置 | `knowledge-sources` |
-| 用户分类及父子关系 | `training-categories` |
-| 训练模块及材料引用 | `training-modules` |
-| 专题电子书、三阶段计划及版本 | `training-plans` |
-| 单次作答和进度 | `practice-sessions` |
-| 复习状态 | `review-history` |
-| 外部数据格式 | `schemas` |
-| 浏览器存储实现 | `infrastructure/persistence` |
+- `WorkspaceService`：打开文件/文件夹、窗口能力表、最近项、撤销能力。
+- `FileService`：读取、严格解码、文件身份、保存策略、监听复检。
+- `FileOperationService`：新建、重命名、移动到回收站、链接更新计划。
+- `BackupStore`：合并恢复备份与 Hot Exit。
+- `HistoryStore`：成功保存后的限额历史。
+- `StateStore`：小型版本化状态，不保存正文。
+- `ResourceProtocol`：从 Markdown 原始链接签发窗口作用域 token。
 
-删除分类不得删除训练模块；知识源暂时不可访问不得销毁材料引用；历史训练必须引用确定版本的计划，不能跟随当前计划静默变化。
+这些服务可以依赖 Node/Electron，但不能接受 Renderer 绝对路径或通用命令。
 
-## 1.5\_依赖纪律
+## 1.6\_Renderer\_模块
+
+- `editor` 拥有 CodeMirror 实例与 `DocumentSession`。
+- `preview` 的工作台侧拥有调度、Worker 客户端与消息校验；safe HAST 组件映射和复杂块运行在无 Preload 的隔离 Preview Frame。
+- `explorer` 只消费 Main 返回的相对文件树与操作结果。
+- `search` 消费可取消索引/搜索结果，不把结果路径当权限。
+- `app` 负责命令、快捷键、标签、区域布局和错误边界，不持有文件实现。
+
+Feature 间通过明确命令和只读 selector 协作。禁止 `utils/`、`services/`、`shared/` 接纳无所有权代码。
+
+## 1.7\_Markdown\_feature
+
+每个内置 feature 提供：
 
 ```text
-app/pages
-    ↓
-features
-    ↓
-model/services
-
-app 负责向 features 注入 infrastructure 实现
+parser extension
+sanitizer policy
+preview component
+CodeMirror support
+diagnostics
+fixtures and malicious cases
 ```
 
-- 模型层不依赖 React、文件系统、网络和浏览器存储。
-- 业务操作不直接使用 `localStorage`、IndexedDB 或 `fetch`。
-- 基础设施实现业务模块声明的持久化和访问接口。
-- `shared` 只容纳真正无业务归属的基础代码。
-- `linux-note` 的具体路径只能作为知识源配置或材料引用出现，不得成为工具程序的隐式运行依赖。
+Feature 注册在构建期完成。工作区内容不能增加 JS、CSS、解析插件或系统能力；未来插件系统需要独立进程、签名、权限和工作区信任 ADR。
 
-## 1.6\_训练工作区基本操作
+## 1.8\_测试归属
 
-训练分类支持创建、修改、父子组织、合并、回收和恢复。训练模块支持创建、修改、关联分类、组合训练单元、合并、回收和恢复。工作区支持版本化 JSON 导入导出。
+- 纯状态与解析测试放在所属 package。
+- IPC、文件身份、保存、备份、历史和协议放集成测试。
+- 用户纵向闭环放 Electron E2E。
+- Windows 与 Linux 文件系统差异放平台 fixture 与故障注入。
+- 每个修复必须在最低能复现该错误的层级增加回归测试，不用 E2E 代替全部单元边界。
 
-合并分类只迁移组织关系，不合并题目；合并训练模块对材料和分类关系去重，随后应重新适配训练计划。删除默认进入回收站，永久删除属于后续独立确认动作。
+## 1.9\_清理边界
 
-## 1.7\_当前实现基线
+桌面闭环验收后删除旧 `src` 浏览器应用、IndexedDB 主存储、本地 HTTP、Bash 最终用户启动链、`banks` 与电子书内容 Schema。不得建立转发接口、双写 repository 或把旧数据模型塞入 `legacy` package。
 
-当前版本已经提供 RCU、红黑树和哈希表三本并列专题电子书，共 12 个学习章节和 12 个训练任务。训练流程统一为：
+在实际删除代码前先列出用户数据和发布风险；迁移若被明确要求，必须成为一次性、可回滚的独立工具，而不是长期运行时兼容层。
 
-```text
-专题电子书学习
-    ↓
-提示提问
-    ↓
-脱稿输出
-    ↓
-专业案例
-```
+## 1.10\_相关设计
 
-训练内容通过 `banks/index.json` 和单元协议自动发现；新增其他专题不得在 React 页面中添加专题判断。用户训练分类和训练模块使用独立工作区数据，不写回知识库目录。专题电子书的证据映射保留知识源 ID、稳定文档 ID 和相对路径，并通过受控只读接口打开注册知识源内的 Markdown 原文。
-
-第一版已经把原 `App.tsx` 单体状态机拆为应用外壳、大厅、训练库、训练会话、训练管理和持久化模块。结构方向已经建立，但还没有完成 `training-categories` 与 `training-modules` 的独立所有权拆分，也没有为每个 feature 建立公开 `index.ts`。这属于后续结构整改，不得把当前过渡目录反向写成长期目标。
-
-训练会话 feature 已进一步使用 `components/`、`model/`、`pages/` 和公开 `index.ts` 分层。Markdown 读取属于 `training-library` 内容加载职责，Markdown 展示属于 `practice-sessions/components`，阶段定义与导航语义属于 `practice-sessions/model`；不得把文件读取、渲染和会话推进重新合并到同一个页面组件。
-
-Mermaid 正文渲染与交互式查看器属于两个独立组件边界：`MermaidDiagram` 生成安全 SVG、根据整张 SVG 的可见联合边界校正正文尺寸，并在全屏状态切换造成重新渲染后重新应用该边界；`MermaidViewer` 只拥有页面内预览层、适应屏幕、缩放、拖拽和退出状态。两者通过序列化 SVG 交接，不共享 DOM 或变换状态。禁止重新引入原生 Fullscreen API、修改 `body`/根布局实现全屏，或让查看器直接改写正文 SVG；边界校正不能依赖仅适用于部分 Mermaid 图型的内部图层类名。
-
-## 1.8\_相关设计
-
-- [产品导航与交互设计](../product/navigation_and_interaction.md)
-- [训练会话状态与持久化](../product/training_session_state_and_persistence.md)
-- [复习调度与训练历史](../product/review_scheduling_and_history.md)
-- [导入导出与数据安全](import_export_and_data_safety.md)
-- [本地服务安全与威胁模型](local_service_security_and_threat_model.md)
-- [无障碍、性能与产品验收标准](accessibility_performance_and_acceptance.md)
-- [专题电子书编写与提炼标准](../product/topic_ebook_editorial_standard.md)
-- [知识提炼、训练适配与 AI 治理](../product/content_adaptation_and_ai_governance.md)
-- [架构决策记录](../decisions/README.md)
+- [桌面运行时与文档服务设计](desktop_runtime_and_document_services.md)
+- [桌面运行时安全与威胁模型](desktop_runtime_security_and_threat_model.md)
+- [文件与文件夹工作区设计](../product/file_and_folder_workspace.md)
+- [Markdown 编辑与实时预览设计](../product/markdown_editing_and_live_preview.md)

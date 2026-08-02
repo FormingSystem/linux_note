@@ -1,337 +1,131 @@
 ---
 id: tools.practice_tool.cross_platform_and_repository_independence
-title: "回路训练工具跨平台与仓库独立性设计"
+title: "跨平台与仓库独立性设计"
 kind: reference
 status: evolving
 domains:
   - tools
 ---
 
-# 第1章\_回路训练工具跨平台与仓库独立性设计
+# 第1章\_跨平台与仓库独立性设计
 
-## 1.1\_文档目的
+## 1.1\_目标
 
-本文是 `practice_tool` 跨平台运行和仓库独立性设计的长期锚点，用于约束后续的题库导入、在线编辑、知识源浏览、答案导出以及独立拆仓工作。
+回路是可独立安装、独立发布、独立测试的 Electron Markdown 工作台。用户通过系统对话框打开任意单个 Markdown 或单个文件夹；`linux-note` 只是可能被打开的一个普通目录，不是运行时依赖。
 
-当前长期验证矩阵固定为 Windows MSYS2 UCRT64/UCRT32 Bash 与 Linux Ubuntu 22.04 Bash。`start.sh` 是便利编排入口，`install.sh`、`run.sh` 和 `uninstall.sh` 分别是安装、纯运行和卸载模块。PowerShell 仅属于 Windows 冷启动引导层，负责下载、安装和准备 UCRT 环境，不进入训练任务和 Tab 补全协议；CMD 不作为正式支持平台。
+最终用户不需要浏览器、Vite、本地 HTTP、Node.js、npm、MSYS2、Bash、Rust 或数据库运行时。Vite、Node.js、打包脚本和测试工具只属于源码开发环境。
 
-PowerShell 引导完成后必须明确提示用户进入 UCRT64/UCRT32 Bash 执行 `start.sh`，也可以提供只负责打开对应 UCRT Bash 并转发到 `start.sh` 的双击快捷脚本。快捷脚本不得复制 Node.js 检测、依赖安装或训练服务启动逻辑。
+## 1.2\_首发平台
 
-### 1.1.1\_统一Unix环境层
+第一阶段正式支持：
 
-正式运行环境统一为 Bash/Unix 语义。`scripts/lib/platform_environment.sh` 是平台信息与工具能力的唯一来源，负责把 Ubuntu 22.04、MSYS2 UCRT64/UCRT32 的差异转换为统一变量和函数。其他脚本不得自行判断 `MSYSTEM`、发行版、CPU 架构、盘符、包管理器或下载工具。
+- Windows 10/11 x64。
+- Ubuntu 22.04 x64。
 
-```mermaid
-flowchart LR
-    PS["PowerShell<br/>仅安装 MSYS2"] --> UB["UCRT64/UCRT32 Bash"]
-    UL["Ubuntu 22.04 Bash"] --> PE["platform_environment.sh"]
-    UB --> PE
-    PE --> ST["start.sh<br/>编排"]
-    PE --> IN["install.sh<br/>安装"]
-    PE --> RN["run.sh<br/>纯运行"]
-    PE --> UN["uninstall.sh<br/>卸载"]
-    IN --> IE["install_environment.sh<br/>内部运行时安装器"]
-    ST --> IN
-    ST --> RN
-    RN --> APP["统一训练流程"]
-```
+两个平台使用同一产品语义、IPC Schema、Markdown fixture 和设置 Schema。平台差异只能进入 Main 的文件系统、系统对话框、回收站、窗口、安装包和更新适配器。
 
-平台环境层统一提供工具根路径、本地运行时和缓存地址、Node.js 兼容线、下载源、架构、包管理器，以及下载、SHA-256 校验、解压和路径解析能力。业务脚本只消费这些能力，从而保持一套启动、升级、离线安装和补全流程。
+macOS、ARM64、便携版、多根工作区和商店分发不在第一阶段承诺中；加入前分别评审签名、公证、路径、权限与更新边界。
 
-需要长期保持的核心结论是：
+## 1.3\_最终用户运行时
 
-> `linux-note` 是独立知识库，`practice_tool` 是独立训练工具。二者只能通过显式的知识源协议交互，不能通过外层目录位置、根启动脚本或仓库内部约定形成隐式依赖。
+- Electron 携带匹配版本的 Chromium 与 Node 运行时。
+- 正式窗口加载打包后的 `loop-app://` 资源。
+- 文件访问只经过 Electron Main，不监听本地端口。
+- 安装包不得在首次启动时下载开发运行时或执行 npm/pacman。
+- 应用可以在没有 Git、没有网络、没有仓库配置的普通目录中工作。
 
-当前两个项目暂时位于同一 Git 仓库，只是开发和使用阶段的物理共置，不代表产品所有权或运行边界相同。
+## 1.4\_独立仓库目标
 
-## 1.2\_系统角色与所有权
-
-### 1.2.1\_practice_tool拥有的内容
-
-`practice_tool` 自己拥有：
-
-- 训练流程、界面和浏览器本地状态。
-- 模块、单元、阶段和题目的数据协议。
-- 题库索引与题库内容包。
-- 知识源注册协议和解析逻辑。
-- Windows、MSYS2 和 Linux 的正式启动入口。
-- 环境安装、内容校验、构建和测试脚本。
-- 导入、导出、在线编辑和外部 AI 评审协议。
-- 工具自身的说明、设计和排障文档。
-
-这些内容必须全部收敛在 `tools/practice_tool` 内。将该目录移动为新仓库根目录后，工具应能继续安装、校验、构建和启动。
-
-### 1.2.2\_linux-note拥有的内容
-
-`linux-note` 自己拥有：
-
-- `knowledge` 等目录中的权威知识正文。
-- 文档稳定 ID、知识结构和仓库治理规则。
-- Atlas、实验、项目、源码证据和出版编排。
-- `linux-note` 提供给训练工具的知识源注册信息。
-- 为本仓库用户提供的根目录快捷启动脚本。
-
-`linux-note` 不拥有训练工具的内部流程、数据存储或启动实现。训练工具也不能要求 `linux-note` 为其改变知识库信息架构。
-
-### 1.2.3\_允许的交互面
-
-两个项目之间只允许出现以下交互：
-
-```mermaid
-flowchart LR
-    LN["linux-note<br/>权威知识正文"] -->|"source_id + 文档 ID + 源内相对路径"| KS["知识源协议"]
-    KS -->|"显式配置地址"| PT["practice_tool<br/>训练与记录"]
-    PT -->|"只读引用或打开材料"| LN
-
-    LS["linux-note 根快捷脚本"] -->|"设置默认配置地址后转发"| PS["practice_tool 正式启动器"]
-```
-
-根快捷脚本是使用便利层，不是项目依赖层。删除根目录的 `practice.cmd` 和 `practice.sh` 后，训练工具必须仍可从自身目录启动。
-
-## 1.3\_依赖方向
-
-依赖方向必须保持单向：
+目标仓库只包含：
 
 ```text
-practice_tool 核心
-    ↓ 读取通用知识源协议
-知识源配置
-    ↓ 注册具体来源
-linux-note 或其他知识库
+apps/desktop/
+packages/
+tests/
+docs/
+build and release configuration
+package manifests and lockfile
 ```
 
-禁止出现反向渗透：
+不携带 `linux-note` 的 `knowledge/`、`practice.sources.json`、根快捷脚本、治理规则、训练 `banks/` 或电子书 Schema。打开目录时只消费标准文件系统和 Markdown，不要求目录安装回路专属文件。
 
-- 工具代码写死 `../../knowledge`。
-- 工具根据目录名猜测自己位于 `linux-note`。
-- 工具启动器读取仓库根 `AGENTS.md`、Atlas 或治理文件。
-- `linux-note` 根启动脚本复制 Node.js 检测、依赖安装或 Vite 启动逻辑。
-- 题库只保存文件路径而不保存 `source_id` 和稳定文档 ID。
-- Windows 和 Linux 分别维护不兼容的知识源配置格式。
+## 1.5\_开发模式与正式模式
 
-## 1.4\_知识源协议
+开发模式允许 Vite 热更新 Renderer，但仍要求：
 
-### 1.4.1\_训练材料引用
+- Main、Preload、Renderer 和 Worker 使用正式进程边界。
+- Renderer 保持 sandbox、context isolation 和禁用 Node integration。
+- 文件 API 仍走正式 IPC 与窗口能力表。
+- 不因开发便利开放任意绝对路径、关闭 webSecurity 或加载远程生产 UI。
 
-训练单元中的每一项权威材料引用由三部分组成：
+正式包不包含开发服务器入口。E2E 必须同时覆盖开发构建和安装后生产包，安全与性能结论只以生产包为准。
 
-```json
-{
-  "source_id": "linux-note",
-  "id": "knowledge.linux.data_structures.红黑树_rb-tree.p04_为什么_bst_会退化",
-  "path": "knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md"
-}
-```
+## 1.6\_跨平台文件语义
 
-三者职责不同：
+公共 `FileService` 定义文档读取、保存、监听、移动与删除语义；平台适配器只实现差异：
 
-| 字段 | 职责 |
-| --- | --- |
-| `source_id` | 指向一项知识源注册，不随安装位置变化 |
-| `id` | 标识知识源内部的稳定文档身份，不随文件移动轻易变化 |
-| `path` | 在当前版本知识源中定位材料，必须是源内相对路径 |
+| 能力 | Windows | Ubuntu |
+| --- | --- | --- |
+| 路径 | 盘符、UNC、长路径、大小写 | POSIX、大小写、mount |
+| 链接 | junction、reparse point、symlink | symlink、bind mount |
+| 保存 | 占用、替换 API、ACL | rename、mode、fsync 目录 |
+| 文件身份 | volume/file ID | device/inode |
+| 删除 | 系统回收站 | 桌面 trash/portal |
+| 监听 | 平台 watcher 归一化 | inotify 资源限制与降级 |
 
-`path` 不是跨仓库永久身份。文档移动后可以更新路径，但不应因此重写题目 ID、文档 ID或训练历史。
+公共层不拼接平台路径，不把 `C:\`、`/home`、反斜杠或大小写假设写进 Renderer。保存策略必须保持两平台的用户可观察保证，而不是要求底层系统调用名称相同。
 
-### 1.4.2\_知识源注册
+## 1.7\_应用数据
 
-知识源真实地址通过独立 JSON 文件注册：
+应用数据使用 Electron 提供的用户数据目录，分为 `state/`、`backups/`、`history/`、`cache/` 和 `logs/`。绝对路径由 Main 获取，不由环境变量或工作区内容决定。
 
-```json
-{
-  "schema_version": 1,
-  "sources": [
-    {
-      "id": "linux-note",
-      "title": "Linux Note 知识库",
-      "kind": "filesystem",
-      "location": "."
-    }
-  ]
-}
-```
+- 状态 Schema 版本化并支持失败回退。
+- 备份与历史使用当前用户权限，不能放入临时公共目录。
+- 清缓存只删除 `cache/`。
+- 卸载和清应用数据永不删除用户打开的文件或文件夹。
+- 工作区本身不自动写 `.loop/`、数据库或设置文件。
 
-配置 Schema 位于：
+## 1.8\_打包与更新
 
-```text
-schemas/knowledge_sources.schema.json
-```
+打包方案必须通过最小 spike 验证：
 
-工具内示例位于：
+- Main/Preload/Renderer/Worker 构建与 source map 边界。
+- CodeMirror、Unified、Mermaid、KaTeX 的许可与包体积。
+- Windows 安装/卸载、Ubuntu 包安装/卸载与桌面集成。
+- 代码签名、更新签名、回滚和旧版本仍可读取恢复备份。
+- 原生模块为零或被明确证明必要；第一阶段不因 SQLite 引入原生驱动。
 
-```text
-config/knowledge_sources.example.json
-```
+更新器不能通过 Git 拉取源码或 npm 安装依赖。更新失败不修改用户工作区，数据库或状态迁移失败时旧版本仍可启动或进入明确恢复。
 
-当前 `linux-note` 集成配置位于仓库根目录：
+## 1.9\_迁移与删除边界
 
-```text
-practice.sources.json
-```
+当前 `0.1.0` 仍是 Bash 启动的 Vite 浏览器训练工具。新桌面纵向闭环在独立入口和测试中完成后，删除：
 
-### 1.4.3\_配置地址
+- 浏览器正式入口和本地 HTTP 服务。
+- Bash/MSYS2 最终用户安装、运行与补全链。
+- IndexedDB 业务主存储。
+- 训练 `banks`、专题电子书和对应 Schema/页面。
+- 根仓库到工具的隐式启动与知识源配置依赖。
 
-启动时通过统一环境变量指定知识源注册文件：
+不维护双运行模式、双写存储、旧 URL 转发或旧内容包适配器。若交付前发现真实用户数据迁移需求，先列出数据类型、风险和一次性导出方案，由开发者确认后单独实施。
 
-```text
-PRACTICE_SOURCE_CONFIG
-```
+## 1.10\_平台验收矩阵
 
-Ubuntu 22.04 或 MSYS2 UCRT64/UCRT32：
+两个平台都必须在干净环境验证：
 
-```bash
-PRACTICE_SOURCE_CONFIG=/srv/knowledge/practice.sources.json ./start.sh
-```
+- 安装、启动、更新、回滚与卸载。
+- 新建、打开单文件、打开文件夹、最近打开与 Hot Exit。
+- UTF-8/BOM/换行、只读、磁盘满、占用、权限变化和外部修改。
+- symlink/junction/reparse/mount 越界与文件身份变化。
+- 回收站、资源协议、外部浏览器和网络默认阻止。
+- 大文件、大目录、watcher 资源不足时的可见降级。
+- 清缓存与卸载不删除用户文件、恢复备份或历史的错误范围。
 
-未设置环境变量时，工具可以读取自身的本机配置：
+只有安装后的生产包在 Windows 与 Ubuntu 都完成纵向闭环，才能宣布完成跨平台独立。
 
-```text
-config/knowledge_sources.local.json
-```
+## 1.11\_相关设计
 
-该文件不进入 Git。两处配置都不存在时，工具仍应正常启动，并明确显示知识源未配置，不能隐式回退到外层仓库。
-
-### 1.4.4\_地址解析规则
-
-- `filesystem` 可以使用绝对路径或相对于配置文件的路径。
-- 文件系统相对地址以配置文件所在目录为基准，不以终端当前目录为基准。
-- `http` 使用绝对 URL，或使用相对于远程配置 URL 的地址。
-- 远程配置不得声明启动机器的 `filesystem` 地址。
-- 路径解析统一由 Node.js 完成，业务代码不得自行拼接 `\` 或 `/`。
-- 前端不得把文件系统路径当成 HTTP URL。
-
-## 1.5\_跨平台启动模型
-
-### 1.5.1\_统一阶段
-
-MSYS2 UCRT64/UCRT32 与 Ubuntu 22.04 共用同一组生命周期模块：
-
-```mermaid
-flowchart TD
-    E["start.sh"] --> R{"环境和依赖是否就绪"}
-    R -->|"否"| IN["install.sh --if-needed"]
-    IN --> N["从统一环境层定位 Node.js 与 npm"]
-    N --> I{"Node.js 是否至少为 v18"}
-    I -->|"否"| P["按就近镜像、官方源和版本顺序选择兼容版本"]
-    I -->|"是"| D["检查 node_modules 与本机就绪标记"]
-    P --> D
-    D --> RN["run.sh"]
-    R -->|"是"| RN
-    RN --> C["读取 PRACTICE_SOURCE_CONFIG"]
-    C --> V["启动 Vite 本地服务"]
-    V --> B["Vite 监听成功后打开浏览器"]
-```
-
-`start.sh` 不实现安装和运行细节，只判断是否需要调用安装模块并转交运行参数。直接调用 `run.sh` 时环境缺失必须失败，不能形成第二条隐式安装路径。
-
-### 1.5.2\_正式入口
-
-MSYS2 UCRT64/UCRT32 与 Ubuntu 22.04 都可以使用 `start.sh` 完成首次安装与运行，也可以直接调用 `install.sh`、`run.sh` 或 `uninstall.sh`。PowerShell 的 `bootstrap_windows.ps1` 只负责在 Windows 尚无 MSYS2 时完成冷启动，不是训练工具运行入口。
-
-当前知识库根目录的 `practice.cmd` 和 `practice.sh` 只承担：
-
-1. 在用户没有指定时，把 `PRACTICE_SOURCE_CONFIG` 指向 `linux-note` 的集成配置。
-2. 把参数和退出状态转发给工具正式入口。
-
-除此之外不得加入依赖安装、题库加载或服务启动逻辑。
-
-`start.sh --upgrade` 只把升级动作交给 `install.sh --upgrade`，成功后继续调用 `run.sh`。只希望安装或升级时应直接执行 `install.sh`；根快捷入口只能原样转发，不能实现另一套升级流程。运行环境升级与 Git 更新、题库更新和知识源配置更新相互独立。
-
-### 1.5.3\_平台差异边界
-
-允许的平台差异：
-
-- CMD 与 Bash 语法。
-- Node.js 的发现和安装方式。
-- MSYS2 UCRT64/UCRT32 的 `pacman` 与 Ubuntu 22.04 的隔离运行时。
-- Vite 调用平台默认浏览器的实现。
-- 文件系统路径的系统表示。
-
-不允许的平台差异：
-
-- 不同的题库格式。
-- 不同的知识源 Schema。
-- 不同的训练记录格式。
-- 不同的导入导出包。
-- 分叉的训练业务逻辑。
-
-## 1.6\_当前实现状态
-
-截至当前版本，已经完成：
-
-- 工具正式启动入口下沉到工具目录。
-- 安装、运行和卸载分别收敛到 `install.sh`、`run.sh` 与 `uninstall.sh`；`start.sh` 只负责首次运行编排和命令路由。
-- `run.sh` 在环境缺失时拒绝隐式安装，避免运行路径改变系统状态。
-- Bash Tab 补全覆盖编排入口和三个生命周期模块，由工具目录内的补全脚本统一维护。
-- 根启动脚本精简为集成快捷入口。
-- 启动前检查 Node.js 18 最低兼容线；安装时按就近镜像、官方源和版本顺序逐级回退，Ubuntu 22.04 使用工具内隔离运行时。
-- 官方运行时归档保存在 `.local/downloads/node/v<版本>`，联网和离线安装共用同一份 SHA-256 校验流程，缓存不进入 Git。
-- 离线输入可以来自单次手动路径或 `offline_node_packages.local.tsv`；相对路径统一以 `practice_tool` 根目录解析，绝对路径保持原义。
-- 在线运行时和依赖下载使用可覆盖的有序源列表：本国或就近镜像优先，境外官方源兜底，不永久修改系统或用户的全局包管理器配置。
-- 归档解压由后缀路由，但版本、平台、架构、官方摘要和解压后的标准结构必须同时通过检查，不能只凭扩展名信任文件。
-- 浏览器由 Vite 在监听成功后打开，不再依赖固定等待时间。
-- Windows 与 Linux 共享 `PRACTICE_SOURCE_CONFIG` 契约。
-- 支持从本地文件或 HTTP/HTTPS 地址读取知识源注册。
-- 支持 `filesystem` 和 `http` 两类知识源描述。
-- 题库材料引用包含 `source_id`、稳定文档 ID 和源内相对路径。
-- 知识源配置具有 JSON Schema 和示例。
-- 界面能够显示已配置知识源数量以及单元使用的来源。
-- 浏览器可以通过受控只读端点打开已注册 `filesystem` 知识源内的 Markdown 原文。
-- 没有配置知识源时，工具仍可独立运行。
-
-尚未完成：
-
-- HTTP 知识源正文抓取与跨域处理。
-- 知识源连通性和文档 ID/path 一致性检查。
-- 在浏览器中新增、编辑和保存知识源。
-- 内容包导入时的来源映射和冲突处理。
-- 工具独立仓库的 CI 和跨平台自动化测试矩阵。
-
-训练产品界面的当前完成度不在本节重复维护，统一见 [实现状态与版本边界](architecture/implementation_status.md)。
-
-## 1.7\_后续演进约束
-
-### 1.7.1\_读取本地正文
-
-浏览器不能直接任意读取本机文件。当前由只监听受控地址的本地服务读取已注册的 `filesystem` 知识源；后续扩展 HTTP 来源时仍必须满足：
-
-- 只允许访问注册根目录内部。
-- 解析并校验最终绝对路径，拒绝 `..` 逃逸。
-- 默认只读。
-- 不向远端页面暴露本机文件接口。
-- 错误信息区分知识源缺失、文档移动、权限不足和协议不兼容。
-
-### 1.7.2\_在线编辑与保存
-
-训练工具编辑自己的题库和用户答案，不应默认编辑 `linux-note` 权威正文。若未来允许编辑知识源，必须由知识源单独声明写入能力，并要求用户明确进入内容维护模式。
-
-### 1.7.3\_导入导出
-
-题库包和答案包必须携带：
-
-- 格式与 Schema 版本。
-- 内容包、单元、阶段和题目稳定 ID。
-- 所引用的 `source_id` 和文档 ID。
-- 生成时间与内容版本。
-
-导入到另一台机器时允许重新映射知识源地址，但不得通过改写题目正文掩盖来源缺失。
-
-### 1.7.4\_独立拆仓验收
-
-正式拆分前至少验证：
-
-```text
-复制 tools/practice_tool 为新仓库
-    ↓
-删除 linux-note 根快捷脚本和所有外层目录
-    ↓
-Windows 与 Linux 分别完成首次启动
-    ↓
-无知识源配置时可以训练内置内容
-    ↓
-指定外部知识源配置后可以识别来源
-    ↓
-check:data、build 和跨平台测试全部通过
-```
-
-只有上述流程成立，才能认为工具完成仓库级独立，而不只是把代码放进了一个看似独立的目录。
+- [架构索引](architecture/README.md)
+- [桌面运行时与文档服务设计](architecture/engineering/desktop_runtime_and_document_services.md)
+- [桌面运行时安全与威胁模型](architecture/engineering/desktop_runtime_security_and_threat_model.md)
+- [工作区文件操作与数据安全](architecture/engineering/workspace_file_operations_and_data_safety.md)
