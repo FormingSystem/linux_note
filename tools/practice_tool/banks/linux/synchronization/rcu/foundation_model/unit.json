@@ -7,9 +7,9 @@
   "estimated_minutes": 55,
   "knowledge_refs": [
     {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.why_rcu","path":"knowledge/linux/synchronization/rcu/P01_为什么需要_RCU.md"},
-    {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.abstract_model","path":"knowledge/linux/synchronization/rcu/P02_RCU_抽象机制推演.md"},
-    {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.constraints","path":"knowledge/linux/synchronization/rcu/P03_RCU_机制完善_硬件与运行约束.md"},
-    {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.tree_state","path":"knowledge/linux/synchronization/rcu/P04_Linux_Tree_RCU_状态与通知机制.md"}
+    {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.abstract_derivation","path":"knowledge/linux/synchronization/rcu/P02_RCU_抽象机制推演.md"},
+    {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.hardware_foundation_memory_model","path":"knowledge/linux/synchronization/rcu/P09_RCU_机制完善_硬件与运行约束.md"},
+    {"source_id":"linux-note","id":"knowledge.linux.synchronization.rcu.tree_state_notification","path":"knowledge/linux/synchronization/rcu/P10_Tree_RCU_统一状态与通知总图.md"}
   ],
   "stages": {
     "learning":{"title":"专题电子书","purpose":"沿目录和章节推导旧读者、发布、宽限期、状态汇聚与回收。","book_file":"book.json"},

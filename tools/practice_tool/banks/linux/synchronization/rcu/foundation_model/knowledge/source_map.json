@@ -1,6 +1,6 @@
 {"schema_version":1,"evidence":[
   {"id":"linux.rcu.evidence.old_reader","claim_id":"linux.rcu.claim.entry_update_not_reclaim","knowledge_ref":"knowledge.linux.synchronization.rcu.why_rcu","locator":"旧读者仍持有地址","evidence_type":"explanation","review_status":"verified"},
-  {"id":"linux.rcu.evidence.grace_period","claim_id":"linux.rcu.claim.grace_period_bounds_old_readers","knowledge_ref":"knowledge.linux.synchronization.rcu.abstract_model","locator":"宽限期边界","evidence_type":"derivation","review_status":"verified"},
-  {"id":"linux.rcu.evidence.cost","claim_id":"linux.rcu.claim.cost_moves_to_update","knowledge_ref":"knowledge.linux.synchronization.rcu.constraints","locator":"成本与约束","evidence_type":"tradeoff","review_status":"verified"},
-  {"id":"linux.rcu.evidence.tree","claim_id":"linux.rcu.claim.tree_aggregates_evidence","knowledge_ref":"knowledge.linux.synchronization.rcu.tree_state","locator":"状态汇聚","evidence_type":"implementation","review_status":"verified"}
+  {"id":"linux.rcu.evidence.grace_period","claim_id":"linux.rcu.claim.grace_period_bounds_old_readers","knowledge_ref":"knowledge.linux.synchronization.rcu.abstract_derivation","locator":"宽限期边界","evidence_type":"derivation","review_status":"verified"},
+  {"id":"linux.rcu.evidence.cost","claim_id":"linux.rcu.claim.cost_moves_to_update","knowledge_ref":"knowledge.linux.synchronization.rcu.hardware_foundation_memory_model","locator":"成本与约束","evidence_type":"tradeoff","review_status":"verified"},
+  {"id":"linux.rcu.evidence.tree","claim_id":"linux.rcu.claim.tree_aggregates_evidence","knowledge_ref":"knowledge.linux.synchronization.rcu.tree_state_notification","locator":"状态汇聚","evidence_type":"implementation","review_status":"verified"}
 ]}
