@@ -126,6 +126,6 @@ sequenceDiagram
 
 缓存一致性与 DVM 都借助一致性互连，但职责不同：前者维护数据缓存行副本，后者协调分布式地址转换状态。
 
-上一篇：[Store Buffer、内存序与伪共享](P03_Store_Buffer_内存序与伪共享.md)。
+上一篇：[缓存行所有权竞争与伪共享](P03_缓存行所有权竞争与伪共享.md)。
 
 下一篇：[Snooping 与 Directory 一致性](P05_Snooping_与_Directory_一致性.md)。
