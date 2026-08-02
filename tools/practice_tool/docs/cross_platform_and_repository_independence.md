@@ -13,7 +13,7 @@ domains:
 
 回路是可独立安装、独立发布、独立测试的 Electron Markdown 工作台。用户通过系统对话框打开任意单个 Markdown 或单个文件夹；`linux-note` 只是可能被打开的一个普通目录，不是运行时依赖。
 
-最终用户不需要浏览器、Vite、本地 HTTP、Node.js、npm、MSYS2、Bash、Rust 或数据库运行时。Vite、Node.js、打包脚本和测试工具只属于源码开发环境。
+最终用户不需要浏览器、Vite、本地 HTTP、Node.js、npm、CMake、C++ 编译器、MSYS2、Bash、Rust 或数据库运行时。Vite、Node.js、CMake、C++ 编译器、打包脚本和测试工具只属于源码开发环境。
 
 ## 1.2\_首发平台
 

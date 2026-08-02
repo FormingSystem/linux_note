@@ -2,7 +2,7 @@
 id: tools.practice_tool.architecture.decision.0007
 title: "ADR-0007：采用磁盘正文与分层保存"
 kind: reference
-status: evolving
+status: maintained
 domains:
   - tools
 ---
@@ -11,9 +11,9 @@ domains:
 
 ## 1.1\_状态
 
-`proposed`
+`accepted`
 
-若接受，本决策取代 ADR-0002 的 IndexedDB 主存储结论，同时保留本地优先、默认不上传原则。
+本决策于 2026-08-02 随桌面实现启动而接受，取代 ADR-0002 的 IndexedDB 主存储结论，同时保留本地优先、默认不上传原则。
 
 ## 1.2\_背景
 
@@ -30,7 +30,7 @@ domains:
 - 关闭单个脏标签询问保存，关闭窗口或应用默认 Hot Exit 并在下次启动恢复为 Dirty。
 - 成功保存后才创建限额本地历史；恢复历史先进入内存缓冲区，不直接覆盖磁盘。
 - 保存使用文件身份、期望内容摘要、安全写入策略和显式冲突。普通文件优先 safe replace；符号链接、硬链接或无法保持元数据时选择经过验证的替代策略，不能保证则失败关闭。
-- 第一阶段使用版本化状态文件、恢复备份目录和历史目录，不引入 SQLite。索引数据库必须由性能数据另行证明。
+- 第一阶段由 Native Service 使用版本化状态文件、恢复备份目录和历史目录，不引入 SQLite。索引数据库必须由性能数据另行证明。
 
 ## 1.4\_替代方案
 

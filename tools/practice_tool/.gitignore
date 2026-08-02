@@ -5,3 +5,5 @@ config/knowledge_sources.local.json
 config/offline_node_packages.local.tsv
 *.log
 *.tsbuildinfo
+apps/desktop/out/
+native/build/

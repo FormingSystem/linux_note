@@ -13,27 +13,29 @@ domains:
 
 目标工程按 Electron 进程边界组织，Renderer 内再按业务 feature 组织。文件系统权限、编辑缓冲区、Markdown 语义和 UI 不放进一个所谓 `shared` 层，也不把旧训练页面迁入桌面壳。
 
-本文处于 **proposed** 状态，依赖 ADR-0006～0009。当前 `src/`、`banks/`、浏览器存储和启动脚本只属于 `0.1.0`，不得反向约束新结构。
+本文依赖已接受的 ADR-0006～0010。当前 `src/`、`banks/`、浏览器存储和启动脚本只属于 `0.1.0`，不得反向约束新结构。
 
 ## 1.2\_所有权图
 
 ```mermaid
 flowchart LR
-    OS[文件/文件夹] --> FS[Main File Service]
-    FS --> SESSION[Renderer DocumentSession]
+    OS[文件/文件夹] --> NATIVE[C++ Native Service]
+    NATIVE --> MAIN[Electron Main Broker]
+    MAIN --> SESSION[Renderer DocumentSession]
     SESSION --> EDITOR[CodeMirror]
     SESSION --> PREVIEW[Markdown Preview]
-    FS --> BACKUP[Main Backup/History]
-    FS --> INDEX[Index Utility]
+    NATIVE --> BACKUP[Backup/History]
+    NATIVE --> INDEX[Index/Search]
 ```
 
 | 状态 | 唯一所有者 | 持久位置 |
 | --- | --- | --- |
 | 已保存 Markdown | 用户文件系统 | 原文件 |
 | 当前草稿与撤销历史 | Renderer DocumentSession | 内存 |
-| 恢复快照 | Main BackupStore | AppData `backups/` |
-| 本地历史 | Main HistoryStore | AppData `history/` |
-| 文件与窗口能力 | Main WorkspaceService | 内存，最近项只存 locator |
+| 恢复快照 | C++ BackupStore | AppData `backups/` |
+| 本地历史 | C++ HistoryStore | AppData `history/` |
+| 文件与文件夹能力 | C++ WorkspaceService | 内存，最近项只存 locator |
+| 窗口与系统对话框 | Electron Main | 内存 |
 | 设置与窗口布局 | Main StateStore | AppData `state/` |
 | Markdown AST/预览/索引 | Worker/缓存服务 | 内存或 AppData `cache/` |
 
@@ -45,9 +47,7 @@ flowchart LR
 apps/desktop/src/
 ├── main/
 │   ├── windows/       # BrowserWindow 与生命周期
-│   ├── workspaces/    # 文件/文件夹能力与最近打开
-│   ├── files/         # 读取、保存、监听、文件操作
-│   ├── backups/       # 恢复、本地历史、状态存储
+│   ├── native-service/# C++ 服务生命周期与协议客户端
 │   ├── protocols/     # loop-app / loop-resource
 │   └── update/        # 签名更新边界
 ├── preload/           # 固定 contextBridge
@@ -63,11 +63,17 @@ apps/desktop/src/
 
 packages/
 ├── ipc-contracts/     # 类型、运行时 Schema、错误码
-├── workspace-core/    # 纯工作区状态与文件操作计划
 ├── document-core/     # 修订、Dirty/Save/Backup/Conflict 状态机
 ├── markdown-engine/   # Unified、safe HAST、源码位置
 ├── markdown-features/ # 内置 GFM/Mermaid/Math/Callout/Wiki
 └── ui-foundation/     # 设计 token 与无业务基础组件
+
+native/
+├── CMakeLists.txt
+├── CMakePresets.json
+├── src/protocol/      # 帧、消息与严格校验
+├── src/service/       # C++20 Sidecar 入口
+└── tests/             # 协议、文件语义与故障注入
 ```
 
 ## 1.4\_依赖方向
@@ -78,27 +84,36 @@ preload ────┼──> ipc-contracts
 renderer ───┘
 
 renderer --> document-core --> markdown-engine
-main -----> workspace-core
+main -----> versioned native protocol -----> C++ Native Service
 
 core packages -X-> Electron / React / Node filesystem / storage driver
 renderer -X-> main implementation / absolute paths / Node APIs
+native service -X-> Electron / React / Renderer state
 ```
 
 跨 package 只从公开入口导入。循环依赖、Renderer 导入 Main、core 依赖 Electron/React 和任意字符串 IPC 在构建中直接失败。
 
 ## 1.5\_Main\_模块
 
-- `WorkspaceService`：打开文件/文件夹、窗口能力表、最近项、撤销能力。
-- `FileService`：读取、严格解码、文件身份、保存策略、监听复检。
-- `FileOperationService`：新建、重命名、移动到回收站、链接更新计划。
+- `WindowService`：BrowserWindow、系统对话框、会话分区与窗口生命周期。
+- `NativeServiceSupervisor`：只启动安装包内固定 C++ 二进制，负责握手、超时、取消、背压与单次恢复。
+- `IpcBroker`：校验 Renderer sender 和 Schema，把固定用例映射为 Native Service 方法。
+- `ResourceProtocol`：从 C++ 服务返回的受控资源句柄签发窗口作用域 token。
+
+Electron Main 可以依赖 Node/Electron，但不自行实现第二套文件读取、保存、监听、备份、索引或搜索逻辑。C++ 服务拥有这些实现，并且不能接受 Renderer 绝对路径或通用命令。
+
+## 1.6\_Native\_Service\_模块
+
+- `WorkspaceService`：打开文件/文件夹、窗口能力表和最近项定位。
+- `FileService`：读取、严格解码、文件身份、保存策略和监听复检。
+- `FileOperationService`：新建、重命名、移动到回收站和链接更新计划。
 - `BackupStore`：合并恢复备份与 Hot Exit。
 - `HistoryStore`：成功保存后的限额历史。
-- `StateStore`：小型版本化状态，不保存正文。
-- `ResourceProtocol`：从 Markdown 原始链接签发窗口作用域 token。
+- `IndexService`：按需目录枚举、索引、搜索与取消。
 
-这些服务可以依赖 Node/Electron，但不能接受 Renderer 绝对路径或通用命令。
+C++20 代码使用 RAII、值语义、严格告警和有界输入；不得通过 Node Addon、动态库 ABI 或共享内存把对象所有权泄露进 Electron。
 
-## 1.6\_Renderer\_模块
+## 1.7\_Renderer\_模块
 
 - `editor` 拥有 CodeMirror 实例与 `DocumentSession`。
 - `preview` 的工作台侧拥有调度、Worker 客户端与消息校验；safe HAST 组件映射和复杂块运行在无 Preload 的隔离 Preview Frame。
@@ -108,7 +123,7 @@ renderer -X-> main implementation / absolute paths / Node APIs
 
 Feature 间通过明确命令和只读 selector 协作。禁止 `utils/`、`services/`、`shared/` 接纳无所有权代码。
 
-## 1.7\_Markdown\_feature
+## 1.8\_Markdown\_feature
 
 每个内置 feature 提供：
 
@@ -123,7 +138,7 @@ fixtures and malicious cases
 
 Feature 注册在构建期完成。工作区内容不能增加 JS、CSS、解析插件或系统能力；未来插件系统需要独立进程、签名、权限和工作区信任 ADR。
 
-## 1.8\_测试归属
+## 1.9\_测试归属
 
 - 纯状态与解析测试放在所属 package。
 - IPC、文件身份、保存、备份、历史和协议放集成测试。
@@ -131,13 +146,13 @@ Feature 注册在构建期完成。工作区内容不能增加 JS、CSS、解析
 - Windows 与 Linux 文件系统差异放平台 fixture 与故障注入。
 - 每个修复必须在最低能复现该错误的层级增加回归测试，不用 E2E 代替全部单元边界。
 
-## 1.9\_清理边界
+## 1.10\_清理边界
 
 桌面闭环验收后删除旧 `src` 浏览器应用、IndexedDB 主存储、本地 HTTP、Bash 最终用户启动链、`banks` 与电子书内容 Schema。不得建立转发接口、双写 repository 或把旧数据模型塞入 `legacy` package。
 
 在实际删除代码前先列出用户数据和发布风险；迁移若被明确要求，必须成为一次性、可回滚的独立工具，而不是长期运行时兼容层。
 
-## 1.10\_相关设计
+## 1.11\_相关设计
 
 - [桌面运行时与文档服务设计](desktop_runtime_and_document_services.md)
 - [桌面运行时安全与威胁模型](desktop_runtime_security_and_threat_model.md)

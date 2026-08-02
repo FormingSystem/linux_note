@@ -1,0 +1,54 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 22,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows-mingw",
+      "displayName": "Windows MinGW Debug",
+      "generator": "MinGW Makefiles",
+      "binaryDir": "${sourceDir}/build/windows-mingw",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "linux-gcc",
+      "displayName": "Linux GCC Debug",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/linux-gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-mingw",
+      "configurePreset": "windows-mingw"
+    },
+    {
+      "name": "linux-gcc",
+      "configurePreset": "linux-gcc"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "windows-mingw",
+      "configurePreset": "windows-mingw",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "linux-gcc",
+      "configurePreset": "linux-gcc",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

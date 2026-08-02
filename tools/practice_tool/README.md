@@ -24,7 +24,7 @@ domains:
 
 ## 1.2\_架构方向
 
-- Electron Main 独占文件系统、系统对话框、回收站、应用数据和更新权限。
+- Electron Main 独占窗口、系统对话框、协议、更新和 Native Service 生命周期；C++20 Native Service 独占工作区能力、真实路径、文件、备份、监听、索引和搜索。
 - Preload 只暴露固定类型用例，Renderer 保持 sandbox、context isolation 和无 Node。
 - CodeMirror 负责编辑事务，Unified Worker 负责 safe HAST 与诊断，复杂 renderer 独立调度。
 - 每次编辑只更新内存和预览；源文件默认只在 `Ctrl+S` 时写入，自动保存默认关闭。
@@ -33,7 +33,7 @@ domains:
 
 ## 1.3\_当前实现边界
 
-仓库中的 `0.1.0` 仍是 Vite 浏览器训练原型，包含 Bash/MSYS2 生命周期、IndexedDB、`banks/` 和专题电子书数据。它尚未实现 Electron、文件/文件夹能力、CodeMirror 保存闭环或桌面安装包。
+仓库根 `src/` 中的 `0.1.0` 仍是 Vite 浏览器训练原型，包含 Bash/MSYS2 生命周期、IndexedDB、`banks/` 和专题电子书数据。新的 `apps/desktop + packages/ipc-contracts + native` 已实现 Electron 安全壳与 C++20 Native Service 握手，但尚未实现文件/文件夹能力、CodeMirror 保存闭环或桌面安装包。
 
 这些旧能力只在重构期间保持可构建；桌面纵向闭环通过后会整体删除，不建立浏览器/桌面双运行、IndexedDB/文件双写、电子书适配或 `legacy` 包。准确差距见 [当前实现状态与版本边界](docs/architecture/implementation_status.md)。
 
@@ -58,12 +58,20 @@ domains:
 ## 1.5\_当前验证
 
 ```bash
+npm run desktop:typecheck
+npm run desktop:test
+npm run desktop:build
+
+cmake --preset windows-mingw
+cmake --build --preset windows-mingw
+ctest --preset windows-mingw
+
 npm run check:data
 npm run build
 git diff --check
 ```
 
-`check:data` 只验证等待退役的训练内容闭包。新桌面工程建立后必须增加独立 `lint`、`typecheck`、`unit`、`integration`、Electron `e2e`、安全和故障注入门禁。
+前三条 CMake 命令在 `native/` 执行；Linux 使用 `linux-gcc` preset。`check:data` 只验证等待退役的训练内容闭包。桌面基础已有 typecheck、C++ unit 和 Electron smoke，后续仍需补齐 lint、完整 integration/e2e、安全、Sanitizer 和故障注入门禁。
 
 ## 1.6\_设计文档
 

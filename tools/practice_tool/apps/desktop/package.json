@@ -1,0 +1,34 @@
+{
+  "name": "@loop/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "回路（Loop）Markdown 桌面工作台",
+  "author": "FormingSystem",
+  "license": "GPL-2.0-only",
+  "type": "commonjs",
+  "main": "./out/main/index.js",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "npm run typecheck && electron-vite build",
+    "preview": "electron-vite preview"
+  },
+  "dependencies": {
+    "@loop/ipc-contracts": "0.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "electron": "43.2.0",
+    "electron-vite": "5.0.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5"
+  }
+}

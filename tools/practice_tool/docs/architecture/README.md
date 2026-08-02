@@ -13,7 +13,7 @@ domains:
 
 目标产品是独立 Electron 桌面 Markdown 工作台：新建文件、打开单个文件或打开单个文件夹，直接编辑磁盘 Markdown 并实时预览。它不使用专题电子书、训练内容包、正文导入副本、浏览器正式运行或 IndexedDB 主存储。
 
-本文索引中的目标设计处于评审和实施前状态。当前 `0.1.0` 浏览器训练代码只在 [实现状态与版本边界](implementation_status.md) 中作为旧代码事实记录，不能作为新模块设计依据。
+目标设计已经进入实施。桌面层使用 TypeScript，Native Service 使用 C++20；首个 Electron 安全壳、C++ 协议服务和握手已经建立。当前 `0.1.0` 浏览器训练代码只在 [实现状态与版本边界](implementation_status.md) 中作为旧代码事实记录，不能作为新模块设计依据。
 
 ## 1.2\_建议阅读顺序
 
@@ -48,6 +48,7 @@ domains:
 | 路径、内容、网络、写入与更新安全 | `engineering/desktop_runtime_security_and_threat_model.md` |
 | 新建、移动、删除、历史与清理 | `engineering/workspace_file_operations_and_data_safety.md` |
 | package、依赖与状态所有权 | `engineering/project_structure_and_module_boundaries.md` |
+| TypeScript/C++ 语言边界 | `decisions/0010-native-service-language.md` |
 | 验收目标 | `engineering/accessibility_performance_and_acceptance.md` |
 | 当前完成度 | `implementation_status.md` |
 

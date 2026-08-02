@@ -208,14 +208,14 @@ docs(repository/git): 更新分支与提交规范
 
 `tools/practice_tool` 是当前放置在仓库内、但按独立产品边界维护的回路（Loop）Markdown 工作台。目标工程、测试与运行文档必须收敛在该目录内；它通过用户动作打开普通文件或文件夹，不依赖 `linux-note` 的目录、元数据、题库或根启动脚本。
 
-> 2026-08-02 已确认目标产品采用“新建文件、打开单个文件、打开单个文件夹”的 Electron Markdown 工作台，ADR-0009 已接受。专题电子书、训练内容包、知识源注册、正文导入副本、浏览器正式运行和 IndexedDB 主存储不再属于目标架构。ADR-0006～0008 仍在评审；不得为旧架构增加桌面兼容层、双运行、双写或旧数据转发。
+> 2026-08-02 已确认目标产品采用“新建文件、打开单个文件、打开单个文件夹”的 Electron Markdown 工作台，ADR-0006～0010 已接受。桌面层使用 TypeScript，工作区与文件能力由独立 C++20 Native Service 承担。专题电子书、训练内容包、知识源注册、正文导入副本、浏览器正式运行和 IndexedDB 主存储不再属于目标架构；不得为旧架构增加桌面兼容层、双运行、双写或旧数据转发。
 
 目标架构必须遵守：
 
 - 打开文件或文件夹不复制正文、不写隐藏配置、不一次性读取全部正文。
 - 每次编辑只更新 CodeMirror 内存和预览修订；默认 `Ctrl+S` 才写源文件，自动保存默认关闭。
 - 恢复备份按空闲与最大间隔合并写入，不能逐键持久化，也不能把“已备份”显示成“已保存”。
-- Electron Main 持有窗口作用域文件能力；Renderer 保持 sandbox、context isolation、无 Node，并且不接收绝对路径。
+- Electron Main 持有窗口、对话框、协议和 C++ 服务生命周期；C++ Native Service 持有窗口作用域文件能力与真实路径；Renderer 保持 sandbox、context isolation、无 Node，并且不接收绝对路径。
 - 单文件和单文件夹分别建立最小路径边界；路径、符号链接、junction、reparse point、UNC、文件身份和写入竞态必须失败关闭。
 - Markdown、HTML、SVG、Mermaid、公式和远程资源都视为不可信；预览默认不发起网络请求，不加载工作区脚本、CSS 或插件。
 - 第一阶段用版本化状态文件、恢复备份、本地历史与可删索引，不因臆测需求引入 SQLite。
@@ -247,8 +247,8 @@ docs(repository/git): 更新分支与提交规范
 - 训练分类和训练模块的上下级、归类、创建、修改、移动、合并、导入、导出、删除和恢复属于用户行为，不得改写外部知识库目录。
 - 当前随版本提供 RCU、红黑树和哈希表三个并列示范单元，用于验证完整训练流程；它们只是数据驱动内容，不得演变为工具程序的固定领域限制。
 - 当前旧内容基线为 3 本专题电子书、12 个学习章节和 12 个训练任务；退役前若数量意外变化，必须更新实现状态和本上下文，并重新运行内容校验与构建，不再扩展产品说明。
-- 当前 `0.1.0` 的用户分类、训练模块、作答和环境就绪状态只保存在浏览器或 `tools/practice_tool/.local`，不得进入 Git；桌面目标的设置、恢复备份和本地历史由 Main 管理的应用数据目录承担，仍不得进入 Git。
-- `node_modules`、`dist`、`.local` 和日志属于本机构建或运行状态，不得提交。
+- 当前 `0.1.0` 的用户分类、训练模块、作答和环境就绪状态只保存在浏览器或 `tools/practice_tool/.local`，不得进入 Git；桌面目标的恢复备份和本地历史由 C++ Native Service 管理的应用数据目录承担，窗口设置由 Main 管理，均不得进入 Git。
+- `node_modules`、`dist`、`apps/desktop/out`、`native/build`、`.local` 和日志属于本机构建或运行状态，不得提交。
 - `config/release.json` 与 `config/security.json` 是当前 `0.1.0` 随版本发布的只读清单，浏览器只能查询，不能通过内容编辑接口修改。旧版本更新检查必须保持非打扰，只能使用固定 Git 参数执行快进更新，并在工作区不干净时拒绝自动更新；桌面安装包的发布与更新机制另行评审，不继承这条 Git 拉取链。
 - 脚本安装或下载的软件必须登记到 `.local/software_registry.tsv`。所有权只能是 `tool-owned`、`external` 或 `external-updated`：干净卸载只能删除 `tool-owned`；外部已有软件即使经用户确认被工具更新，也必须保持外部所有权且永不进入卸载目标。
 - 卸载分为最小卸载与干净卸载。最小卸载清理工具生成的依赖、构建状态、日志和补全登记，保留运行环境与下载缓存；干净卸载额外清理登记为工具所有的运行环境和缓存。卸载器只能执行固定清理类型并核对固定路径或包名，不得从登记表执行任意命令或删除任意路径。
@@ -261,9 +261,17 @@ docs(repository/git): 更新分支与提交规范
 
 ```bash
 cd tools/practice_tool
+npm run desktop:typecheck
+npm run desktop:test
+npm run desktop:build
 npm run check:data
 npm run build
 git diff --check
+
+cd native
+cmake --preset windows-mingw  # Ubuntu 22.04 使用 linux-gcc
+cmake --build --preset windows-mingw
+ctest --preset windows-mingw
 ```
 
 完整使用和排障说明见：

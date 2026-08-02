@@ -2,7 +2,7 @@
 id: tools.practice_tool.architecture.decisions.0002_local_first
 title: "ADR 0002 采用本地优先持久化"
 kind: reference
-status: maintained
+status: archived
 domains:
   - tools
 ---
@@ -11,7 +11,9 @@ domains:
 
 ## 1.1\_状态
 
-`accepted`
+`superseded`
+
+ADR-0007 已用“磁盘正文、内存草稿、合并恢复备份与保存后历史”取代 IndexedDB 主存储。本地优先与默认不上传原则继续有效，但不再由本决策规定存储实现。
 
 ## 1.2\_背景
 

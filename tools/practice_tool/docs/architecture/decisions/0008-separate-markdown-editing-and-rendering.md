@@ -2,7 +2,7 @@
 id: tools.practice_tool.architecture.decision.0008
 title: "ADR-0008：分离 Markdown 编辑与实时渲染管线"
 kind: reference
-status: evolving
+status: maintained
 domains:
   - tools
 ---
@@ -11,7 +11,9 @@ domains:
 
 ## 1.1\_状态
 
-`proposed`
+`accepted`
+
+本决策于 2026-08-02 随桌面实现启动而接受。
 
 ## 1.2\_背景
 
