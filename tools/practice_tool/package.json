@@ -1,6 +1,6 @@
 {
   "name": "loop-knowledge-practice-tool",
-  "description": "回路（Loop）本地知识训练工具",
+  "description": "回路（Loop）Markdown 工作台",
   "private": true,
   "version": "0.1.0",
   "author": "FormingSystem",
@@ -18,7 +18,7 @@
     "build": "tsc --noEmit -p tsconfig.app.json && vite build",
     "desktop:dev": "npm run build -w @loop/ipc-contracts && npm run dev -w @loop/desktop",
     "desktop:typecheck": "npm run build -w @loop/ipc-contracts && npm run typecheck -w @loop/desktop",
-    "desktop:test": "npm test -w @loop/ipc-contracts",
+    "desktop:test": "npm test -w @loop/ipc-contracts && npm test -w @loop/desktop",
     "desktop:build": "npm run build -w @loop/ipc-contracts && npm run build -w @loop/desktop",
     "check:data": "node scripts/validate-content.mjs",
     "check:mermaid": "node scripts/validate-mermaid.mjs"

@@ -24,11 +24,11 @@ const MIME_TYPES: Readonly<Record<string, string>> = Object.freeze({
   ".woff2": "font/woff2",
 });
 
-function response(status: number, body: BodyInit | null, contentType = "text/plain; charset=utf-8"): Response {
+function response(status: number, body: BodyInit | null, content_type = "text/plain; charset=utf-8"): Response {
   return new Response(body, {
     status,
     headers: {
-      "Content-Type": contentType,
+      "Content-Type": content_type,
       "Content-Security-Policy": CONTENT_SECURITY_POLICY,
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
@@ -36,8 +36,8 @@ function response(status: number, body: BodyInit | null, contentType = "text/pla
   });
 }
 
-function resolveAsset(rendererRoot: string, requestUrl: string): string | null {
-  const url = new URL(requestUrl);
+function resolve_asset(renderer_root: string, request_url: string): string | null {
+  const url = new URL(request_url);
   if (url.protocol !== "loop-app:" || url.hostname !== "app" || url.username || url.password || url.port
       || url.search || url.hash) return null;
 
@@ -50,16 +50,16 @@ function resolveAsset(rendererRoot: string, requestUrl: string): string | null {
   if (pathname.includes("\0") || pathname.includes("\\")) return null;
 
   const asset = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
-  const target = resolve(rendererRoot, asset);
-  const relation = relative(rendererRoot, target);
+  const target = resolve(renderer_root, asset);
+  const relation = relative(renderer_root, target);
   if (!relation || relation.startsWith("..") || isAbsolute(relation)) return relation ? null : target;
   return target;
 }
 
-export function registerAppProtocol(session: Session, rendererRoot: string): void {
+export function register_app_protocol(session: Session, renderer_root: string): void {
   session.protocol.handle("loop-app", async (request) => {
     if (request.method !== "GET") return response(405, "Method Not Allowed");
-    const target = resolveAsset(rendererRoot, request.url);
+    const target = resolve_asset(renderer_root, request.url);
     if (!target) return response(404, "Not Found");
 
     try {

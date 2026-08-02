@@ -13,7 +13,7 @@ domains:
 
 Electron 文件/文件夹 Markdown 工作台已于 2026-08-02 开始实现。ADR-0006～0010 均已接受：桌面层使用严格模式 TypeScript，工作区与文件能力由独立 C++20 Native Service 承担。
 
-当前已经完成 **D0 桌面基础切片**：生产构建从 `loop-app://` 加载 sandboxed Renderer，通过 context-isolated Preload 的窄接口取得运行状态，Electron Main 启动固定位置的 C++ 服务，并通过有界版本化帧完成握手。尚未实现打开文件、打开文件夹、编辑、预览或保存，不能把基础壳描述为可用编辑器。
+当前已经完成 **D0 桌面基础切片** 与 **D1A 文件能力安全切片**：生产构建从 `loop-app://` 加载 sandboxed Renderer，Electron Main 独占系统选择器，C++ 服务建立窗口作用域能力并验证单个 Markdown 或目录根，Renderer 只获得显示标签、相对路径和不透明 ID。当前可以只读展示单文件元数据和目录首层分页结果；尚未实现正文编辑、Markdown 预览、保存或文件操作，不能把 D1A 描述为可用编辑器。
 
 仓库根 `src/`、`banks/`、IndexedDB 与 Bash/MSYS2 链仍是等待退役的 `0.1.0` 浏览器训练实现。它只用于旧内容闭包和构建回归，不进入新桌面依赖图。
 
@@ -36,7 +36,7 @@ Electron 文件/文件夹 Markdown 工作台已于 2026-08-02 开始实现。ADR
 | `D0-WORKSPACE` | `apps/desktop + packages/* + native` 工程边界 | `COMPLETE` | npm workspaces、`@loop/ipc-contracts`、CMake 工程均可独立构建 | 加入依赖方向静态门禁 |
 | `D0-ELECTRON` | Electron Main/Preload/Renderer 安全壳 | `COMPLETE` | 显式关闭 Node integration，开启 context isolation、sandbox、webSecurity；权限、导航和新窗口默认拒绝 | 打包阶段补 Electron fuses 断言 |
 | `D0-PROTOCOL` | `loop-app://` 打包资源协议 | `COMPLETE` | 独立非持久 session 注册协议；CSP、`nosniff`、路径边界和固定 MIME 已建立 | 增加协议恶意路径自动化用例 |
-| `D0-NATIVE` | C++20 Native Service 与协议帧 | `COMPLETE` | 1 MiB 控制帧上限、严格 JSON 字段、固定方法、稳定错误和 CTest 均通过 | 增加取消、背压和异常退出测试 |
+| `D0-NATIVE` | C++20 Native Service 与协议帧 | `COMPLETE` | 协议 v2、1 MiB 单行 UTF-8 JSON 控制帧、自有标识符与协议字段统一 `snake_case`、严格字段、固定方法、稳定错误和 CTest 均通过 | 增加背压和异常退出测试 |
 | `D0-HANDSHAKE` | Electron 到 C++ 服务握手 | `COMPLETE` | 烟雾测试穿过 Renderer → Preload → Main → C++ → Main → Renderer 并以状态 `ready` 退出 | 加入协议版本不匹配 E2E |
 | `D0-WINDOWS` | Windows 开发构建 | `COMPLETE` | CMake 4.3.3 + MinGW GCC 14.2、Electron 43.2.0 本机验证通过 | 固定正式 Windows 发布编译器 |
 | `D0-LINUX` | Ubuntu 22.04 开发构建 | `NOT_STARTED` | 尚无当前环境验证 | 在 Ubuntu 22.04 运行 CMake、CTest、TypeScript build 与 Electron smoke |
@@ -46,10 +46,10 @@ Electron 文件/文件夹 Markdown 工作台已于 2026-08-02 开始实现。ADR
 
 | ID | 交付项 | 状态 | 当前证据 | 下一门禁 |
 | --- | --- | --- | --- | --- |
-| `D1-CAPABILITY` | C++ 窗口作用域能力表 | `NOT_STARTED` | 只有握手方法 | 系统对话框路径只在 Main → C++ 建权请求中出现 |
-| `D1-OPEN-FILE` | 打开单个 Markdown | `NOT_STARTED` | 无 | 严格 UTF-8/大小/普通文件检查并返回不透明文档 ID |
-| `D1-OPEN-FOLDER` | 打开单个文件夹 | `NOT_STARTED` | 无 | 首层按需枚举、真实根约束、不可越界 |
-| `D1-EXPLORER` | 文件树与标签 | `NOT_STARTED` | 无 | Renderer 不接收绝对路径，目录按需展开 |
+| `D1-CAPABILITY` | C++ 窗口作用域能力表 | `COMPLETE` | 每窗口独立随机 session；工作区、目录、条目和游标均为 CSPRNG ID；关闭、换窗、伪造和游标重放测试通过 | D1B 为文档正文和资源签发子能力补齐同等撤权测试 |
+| `D1-OPEN-FILE` | 打开单个 Markdown | `COMPLETE` | 系统对话框只在 Main；普通文件、`.md/.markdown`、5 MiB、严格 UTF-8/BOM/NUL/换行和 SHA-256 基线测试通过 | D1B 增加受控正文读取，不复用控制帧传输大正文 |
+| `D1-OPEN-FOLDER` | 打开单个文件夹 | `COMPLETE` | libuv 真实路径、文件身份和链接状态配合标准库枚举；UNC、盘符大小写、junction、rename、跨窗与分页测试通过；固定 50000 项/32 MiB 元数据上限 | Ubuntu 22.04 实机复跑 symlink、权限和 rename；`D0-LINUX` 仍未完成 |
+| `D1-EXPLORER` | 文件树与标签 | `IN_PROGRESS` | Renderer 不接收绝对路径，已显示首层只读条目并支持继续分页；C++ 已可按 `directory_id` 枚举子目录 | 接通目录展开、折叠、刷新与分页状态；文件点击仍不得越过文档能力接口 |
 | `D1-EDITOR` | CodeMirror 文档会话与 Dirty 状态 | `NOT_STARTED` | 无 | 输入只修改内存；撤销、修订和 Dirty 可测 |
 | `D1-PREVIEW` | 普通 Markdown 实时预览 | `NOT_STARTED` | 无 | Worker 与隔离 Preview Frame 完成普通块闭环 |
 | `D1-SAVE` | `Ctrl+S` 与安全保存 | `NOT_STARTED` | 无 | 期望身份/摘要、冲突和 safe write 故障测试通过 |
@@ -86,12 +86,14 @@ D1 的打开文件夹、编辑、普通预览和手动保存闭环通过后，�
 cmake --preset windows-mingw
 cmake --build --preset windows-mingw
 ctest --preset windows-mingw
-  通过：C++20 严格告警构建，1/1 协议测试通过
+  通过：C++20 严格告警构建，2/2 协议与工作区测试通过
+  通过：UNC 与 junction 走 libuv 跨平台接口；关闭撤权、rename、伪造 ID、5 MiB 和严格 UTF-8 边界通过
+  性能：10000 项目录首轮元数据枚举约 1164 ms，低于 2 秒目标
 
 npm run desktop:typecheck
 npm run desktop:test
 npm run desktop:build
-  通过：IPC contracts 严格字段测试、Main、Preload、Renderer 类型检查与生产构建
+  通过：7 个 IPC contracts 测试、10 个 Main/分帧/sender/能力协调测试、类型检查与生产构建
 
 $env:LOOP_DESKTOP_SMOKE_TEST='1'; npm run preview -w @loop/desktop
   通过：loop-app、sandboxed Renderer、Preload、Main 与 C++ 握手端到端可用
@@ -104,11 +106,11 @@ npm run build
   通过：旧 0.1.0 内容闭包与生产构建
 ```
 
-完整仓库 npm audit 仍报告旧浏览器 `react-router-dom 7.18.1` 链上的 2 个 high。该依赖不进入 `@loop/desktop`，但旧浏览器实现不得作为正式发布物；D7 删除旧代码后全仓审计必须归零。桌面 Renderer 当前基础 JavaScript bundle 为 195.27 kB，gzip 后为 61.40 kB，尚未包含编辑器和预览；D1 引入功能后必须重新记录分块、启动时间和内存数据，不能把基础壳数值冒充最终性能基线。
+完整仓库 npm audit 仍报告旧浏览器 `react-router-dom 7.18.1` 链上的 2 个 high。该依赖不进入 `@loop/desktop`，但旧浏览器实现不得作为正式发布物；D7 删除旧代码后全仓审计必须归零。桌面 Renderer 当前 D1A JavaScript bundle 为 200.07 kB，gzip 后为 63.02 kB，CSS 为 3.72 kB、gzip 后 1.50 kB；尚未包含编辑器和预览。D1B 引入功能后必须重新记录分块、启动时间和内存数据，不能把只读工作台数值冒充最终性能基线。
 
 ## 1.8\_下一步
 
-下一切片只实现 `D1-CAPABILITY + D1-OPEN-FILE + D1-OPEN-FOLDER`：系统对话框在 Main 获取路径，C++ 服务建立能力并返回相对条目与不透明 ID。暂不加入 CodeMirror、Markdown Renderer 或保存，先把最危险的路径和权限边界测透。
+下一切片完成 `D1-EXPLORER` 的交互式按需目录树，并开始 `D1-EDITOR`：通过新的文档能力通道读取正文、建立 CodeMirror 内存会话、修订与 Dirty 状态。仍不把每次输入写入磁盘；`Ctrl+S`、safe write、备份和预览分别按后续门禁实现。
 
 ## 1.9\_相关设计
 

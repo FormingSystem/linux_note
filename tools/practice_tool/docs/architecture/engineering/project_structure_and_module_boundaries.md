@@ -47,7 +47,7 @@ flowchart LR
 apps/desktop/src/
 ├── main/
 │   ├── windows/       # BrowserWindow 与生命周期
-│   ├── native-service/# C++ 服务生命周期与协议客户端
+│   ├── native_service/# C++ 服务生命周期与协议客户端
 │   ├── protocols/     # loop-app / loop-resource
 │   └── update/        # 签名更新边界
 ├── preload/           # 固定 contextBridge
@@ -96,7 +96,7 @@ native service -X-> Electron / React / Renderer state
 ## 1.5\_Main\_模块
 
 - `WindowService`：BrowserWindow、系统对话框、会话分区与窗口生命周期。
-- `NativeServiceSupervisor`：只启动安装包内固定 C++ 二进制，负责握手、超时、取消、背压与单次恢复。
+- `native_service_supervisor`：只启动安装包内固定 C++ 二进制，负责握手、超时、取消、背压与单次恢复。
 - `IpcBroker`：校验 Renderer sender 和 Schema，把固定用例映射为 Native Service 方法。
 - `ResourceProtocol`：从 C++ 服务返回的受控资源句柄签发窗口作用域 token。
 

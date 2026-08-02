@@ -61,39 +61,26 @@ Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，�
 
 ### 1.3.1\_回路\_Markdown\_工作台
 
-仓库当前内置“回路”工具。新的目标产品是独立 Electron Markdown 工作台，直接新建文件、打开单个文件或打开单个文件夹；桌面层采用 TypeScript，文件与工作区服务采用独立 C++20 进程。当前已完成 Electron 安全壳和 C++ 服务握手，浏览器训练与专题电子书代码属于等待替换的 `0.1.0`。工具代码与自身文档位于：
+仓库当前内置“回路”工具。新的目标产品是独立 Electron Markdown 工作台，直接新建文件、打开单个文件或打开单个文件夹；桌面层采用 TypeScript，文件与工作区服务采用独立 C++20 进程。当前 D1A 已完成窗口作用域能力、打开单个 Markdown、打开单个文件夹和首层只读分页列表；尚不包含正文编辑、预览、保存或文件操作。浏览器训练与专题电子书代码属于等待删除的 `0.1.0`。工具代码与自身文档位于：
 
 ```text
 tools/practice_tool/
 ```
 
-当前 `0.1.0` 的统一启动入口位于 `tools/practice_tool`。Windows MSYS2 UCRT64/UCRT32 和 Ubuntu 22.04 都执行：
+新桌面工作台当前是开发切片。在 `tools/practice_tool/native` 中按平台 preset 构建 Native Service 后，回到 `tools/practice_tool` 启动 Electron：
 
 ```bash
-./tools/practice_tool/start.sh
+cd tools/practice_tool/native
+cmake --preset windows-mingw
+cmake --build --preset windows-mingw
+
+cd ..
+npm run desktop:dev
 ```
 
-仓库根目录的 `practice.cmd` 和 `practice.sh` 是当前知识库为 `0.1.0` 提供的集成快捷入口，只转发到工具的 `start.sh`，不承载环境准备、依赖安装或服务启动逻辑。工具内部将 `install.sh`、`run.sh` 和 `uninstall.sh` 分别作为安装、纯运行和卸载模块；`start.sh` 首次运行时可以调用安装模块，完成后再转入运行模块。Windows 尚未安装 MSYS2 时由 PowerShell 引导脚本准备 UCRT64；该版本通过 Unix 环境层选择 MSYS2 `pacman` 或 Ubuntu 22.04 隔离运行时，依赖安装完成、Vite 开始监听后才打开浏览器。正在实现的新目标是独立 Electron 客户端，不继承这套最终用户运行链。
+Ubuntu 22.04 将 CMake preset 换为 `linux-gcc`。Linux 实机能力验证尚未完成，不宣称已达到与 Windows 相同的验收状态。
 
-Linux 下使用当前 `0.1.0` 入口查看介绍；该命令不会安装环境或启动服务：
-
-```bash
-./tools/practice_tool/start.sh --help
-```
-
-目标桌面工作台按可迁移到独立仓库的边界维护。当前 `0.1.0` 浏览器原型仍由本仓库提供 RCU、红黑树和哈希表训练来源，并保留专题电子书与三阶段训练；这些数据和流程等待桌面闭环完成后删除，不进入目标运行时。
-
-当前 `0.1.0` 示范内容包含 3 本专题电子书、12 个学习章节和 12 个训练任务，只用于旧代码退役前的数据与构建检查，不再新增专题或扩展训练协议。
-
-当前 `0.1.0` 仍通过根目录 `practice.sources.json` 声明旧知识源。新桌面客户端不读取该配置，只通过系统对话框打开文件或文件夹。
-
-需要主动刷新 Node.js 本地运行时和项目依赖时，可以使用：
-
-```bash
-./tools/practice_tool/start.sh --upgrade
-```
-
-Windows MSYS2 与 Ubuntu 22.04 使用相同命令。该参数只更新旧浏览器原型的本机运行环境，不修改 `linux-note` 正文、题库或旧知识源配置。
+仓库根目录的 `practice.cmd` 和 `practice.sh`、工具中的 Bash 生命周期脚本、根 `src/`、`banks/` 与 `practice.sources.json` 都只属于待删除的浏览器原型，不进入 Electron 客户端运行时。退役前仅保留数据与构建回归，不再扩展其产品能力、协议或运行环境。
 
 - [回路 Markdown 工作台](tools/practice_tool/README.md)
 - [跨平台与仓库独立性设计](tools/practice_tool/docs/cross_platform_and_repository_independence.md)

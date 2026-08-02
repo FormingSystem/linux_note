@@ -33,7 +33,9 @@ domains:
 
 ## 1.3\_当前实现边界
 
-仓库根 `src/` 中的 `0.1.0` 仍是 Vite 浏览器训练原型，包含 Bash/MSYS2 生命周期、IndexedDB、`banks/` 和专题电子书数据。新的 `apps/desktop + packages/ipc-contracts + native` 已实现 Electron 安全壳与 C++20 Native Service 握手，但尚未实现文件/文件夹能力、CodeMirror 保存闭环或桌面安装包。
+仓库根 `src/` 中的 `0.1.0` 仍是 Vite 浏览器训练原型，包含 Bash/MSYS2 生命周期、IndexedDB、`banks/` 和专题电子书数据。新的 `apps/desktop + packages/ipc-contracts + native` 已实现 Electron 安全壳、C++20 Native Service，以及 D1A 窗口能力、打开单个 Markdown、打开单个文件夹和首层只读分页列表。系统路径只在 Main 到 Native Service 的建权请求中出现，Renderer 只收到显示标签、相对路径与不透明 ID。
+
+D1A 不传输正文，也不包含 CodeMirror、Markdown 预览、保存、备份或文件操作。当前界面是只读文件工作台骨架，不是已经可编辑的 Markdown 客户端。
 
 这些旧能力只在重构期间保持可构建；桌面纵向闭环通过后会整体删除，不建立浏览器/桌面双运行、IndexedDB/文件双写、电子书适配或 `legacy` 包。准确差距见 [当前实现状态与版本边界](docs/architecture/implementation_status.md)。
 
@@ -71,7 +73,7 @@ npm run build
 git diff --check
 ```
 
-前三条 CMake 命令在 `native/` 执行；Linux 使用 `linux-gcc` preset。`check:data` 只验证等待退役的训练内容闭包。桌面基础已有 typecheck、C++ unit 和 Electron smoke，后续仍需补齐 lint、完整 integration/e2e、安全、Sanitizer 和故障注入门禁。
+前三条 CMake 命令在 `native/` 执行；Linux 使用 `linux-gcc` preset。CMake 首次配置会按固定摘要获取 `nlohmann/json`、Mbed TLS 和 libuv；项目代码通过标准库与这些跨平台接口实现，不直接维护 Win32/Linux 私有文件或加密分支。`check:data` 只验证等待退役的训练内容闭包。桌面已有 typecheck、C++ unit、能力协调测试和 Electron smoke，后续仍需补齐 lint、完整 integration/e2e、安全、Sanitizer 和故障注入门禁。
 
 ## 1.6\_设计文档
 
