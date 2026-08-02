@@ -86,3 +86,28 @@ domains:
 | `Documentation/input/multi-touch-protocol.rst` | 多点触控 Protocol A/B 契约 |
 
 专题导读见 [`drivers/input/README.md`](drivers/input/README.md)。
+
+## 1.7\_内存顺序证据
+
+下列文件已在 2026-08-02 与 Git 提交 `7b60e547d2783f8fee61ff7d7be3e066825b9c3a` 对应的原始 Linux 6.12.20 源码逐文件核对，仓库副本 SHA-256 与原文件一致：
+
+| 相对路径 | 主要用途 |
+| --- | --- |
+| `include/asm-generic/rwonce.h` | `READ_ONCE()` / `WRITE_ONCE()` 的访问大小约束与公共实现 |
+| `include/linux/compiler.h` | `barrier()` 等编译器约束 |
+| `include/linux/compiler_types.h` | 编译器属性、类型与编译期检查基础 |
+| `include/asm-generic/barrier.h` | SMP 屏障、release/acquire 公共封装与通用回退 |
+| `include/linux/rcupdate.h` | RCU 指针发布、取得及读侧公开契约 |
+| `arch/arm/include/asm/barrier.h` | ARMv7 屏障、shareability 域与 DMA/普通内存具体映射 |
+| `Documentation/memory-barriers.txt` | Linux 屏障、依赖、锁、等待和 I/O 边界说明 |
+| `Documentation/atomic_t.txt` | atomic RMW、顺序后缀与条件失败语义 |
+| `tools/memory-model/README` | LKMM 工具需求、herd7/klitmus7 使用入口 |
+| `tools/memory-model/linux-kernel.def` | C-like 原语到 herd 事件的语法映射 |
+| `tools/memory-model/linux-kernel.bell` | 访问、屏障、锁和 RCU 事件分类 |
+| `tools/memory-model/linux-kernel.cat` | LKMM 关系、公理和一致性判定 |
+| `tools/memory-model/linux-kernel.cfg` | herd7 公共配置与模型文件装配 |
+| `tools/memory-model/lock.cat` | 锁 acquisition/release 前端关系 |
+| `tools/memory-model/Documentation/simple.txt` | 优先使用封装同步原语的工程路线 |
+| `tools/memory-model/Documentation/litmus-tests.txt` | Litmus 语法、运行方法和模型限制 |
+
+版本化导读见 [`../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md`](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md)。
