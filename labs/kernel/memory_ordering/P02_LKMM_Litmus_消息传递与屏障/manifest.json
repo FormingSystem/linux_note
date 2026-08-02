@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "linux_model": "6.12.20",
+  "tests": [
+    {"file": "MP+poonceonces.litmus", "expected": "Sometimes"},
+    {"file": "MP+pooncerelease+poacquireonce.litmus", "expected": "Never"},
+    {"file": "MP+fencewmbonceonce+fencermbonceonce.litmus", "expected": "Never"},
+    {"file": "SB+poonceonces.litmus", "expected": "Sometimes"},
+    {"file": "SB+fencembonceonces.litmus", "expected": "Never"},
+    {"file": "IRIW+poonceonces+OnceOnce.litmus", "expected": "Sometimes"},
+    {"file": "IRIW+fencembonceonces+OnceOnce.litmus", "expected": "Never"},
+    {"file": "MP+onceassign+derefonce.litmus", "expected": "Never"}
+  ]
+}

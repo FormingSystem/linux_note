@@ -1,0 +1,27 @@
+C SB+poonceonces
+
+(*
+ * Result: Sometimes
+ *
+ * 没有 Store-to-Load 顺序时，两边同时读到零是否允许？
+ *)
+
+{}
+
+P0(int *x, int *y)
+{
+	int r0;
+
+	WRITE_ONCE(*x, 1);
+	r0 = READ_ONCE(*y);
+}
+
+P1(int *x, int *y)
+{
+	int r0;
+
+	WRITE_ONCE(*y, 1);
+	r0 = READ_ONCE(*x);
+}
+
+exists (0:r0=0 /\ 1:r0=0)

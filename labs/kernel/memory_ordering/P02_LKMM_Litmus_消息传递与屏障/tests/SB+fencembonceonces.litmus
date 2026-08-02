@@ -1,0 +1,29 @@
+C SB+fencembonceonces
+
+(*
+ * Result: Never
+ *
+ * 两边 full barrier 是否禁止 Store Buffering 的 0/0 结果？
+ *)
+
+{}
+
+P0(int *x, int *y)
+{
+	int r0;
+
+	WRITE_ONCE(*x, 1);
+	smp_mb();
+	r0 = READ_ONCE(*y);
+}
+
+P1(int *x, int *y)
+{
+	int r0;
+
+	WRITE_ONCE(*y, 1);
+	smp_mb();
+	r0 = READ_ONCE(*x);
+}
+
+exists (0:r0=0 /\ 1:r0=0)

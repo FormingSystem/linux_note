@@ -1,0 +1,28 @@
+C MP+fencewmbonceonce+fencermbonceonce
+
+(*
+ * Result: Never
+ *
+ * 写屏障与读屏障配对是否足以禁止消息传递坏结果？
+ *)
+
+{}
+
+P0(int *buf, int *flag)
+{
+	WRITE_ONCE(*buf, 1);
+	smp_wmb();
+	WRITE_ONCE(*flag, 1);
+}
+
+P1(int *buf, int *flag)
+{
+	int r0;
+	int r1;
+
+	r0 = READ_ONCE(*flag);
+	smp_rmb();
+	r1 = READ_ONCE(*buf);
+}
+
+exists (1:r0=1 /\ 1:r1=0)
