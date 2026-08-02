@@ -11,13 +11,13 @@ topics:
   - rcu
 ---
 
-# 第22章\_RCU\_驱动与子系统应用模式
+# 第25章\_RCU\_驱动与子系统应用模式
 
 掌握最小模板后，再把同一套生命期规则放进真实驱动场景。本章关注设备链表、状态表和异步销毁中的结构差异，同时观察 RCU 何时必须与更新锁、kref 或卸载同步协作。
 
-## 22.1\_RCU\_在驱动场景中的典型应用模式
+## 25.1\_RCU\_在驱动场景中的典型应用模式
 
-#### (1)\_章节内容说明
+### 25.1.1\_本章固定的四类场景
 
 本节从 **开发者视角** 出发，展示 RCU 在 Linux 驱动中四类典型场景的应用模式：
 
@@ -30,9 +30,9 @@ topics:
 
 ------
 
-#### (2)\_场景一\_设备链表与热插拔
+### 25.1.2\_场景一\_设备链表与热插拔
 
-##### 1)\_问题背景
+#### (1)\_问题背景
 
 驱动层往往维护一个设备节点链表：
 
@@ -50,11 +50,11 @@ struct dev_entry {
 - **读者**：频繁遍历链表（如 sysfs、监控任务）；
 - **写者**：插入或删除节点。
 
-传统锁方案 (`spin_lock`) 在高并发读下竞争严重，而 RCU 提供了**读无锁 + 延迟释放** 的解决方案。
+若读者也取得同一把 `spin_lock`，每个 CPU 的遍历都会写锁缓存行；CPU 越多、遍历越频繁，这条缓存行越频繁在 CPU 间转移。RCU 的改变是让普通遍历不写这把共享更新锁，把跨 CPU 通信推迟到删除后的 GP。代价是节点不能立即释放，写者仍须串行化链表修改。
 
 ------
 
-##### 2)\_RCU\_化实现
+#### (2)\_RCU\_化实现
 
 ```c
 LIST_HEAD(dev_list);
@@ -109,7 +109,7 @@ void dev_show_all(void)
 
 ------
 
-##### 3)\_机制分析
+#### (3)\_机制分析
 
 | 操作     | 安全点                 | 机制                     |
 | -------- | ---------------------- | ------------------------ |
@@ -121,9 +121,9 @@ void dev_show_all(void)
 
 ------
 
-#### (3)\_场景二\_设备状态表(open/close/poll)
+### 25.1.3\_场景二\_设备状态表(open/close/poll)
 
-##### 1)\_问题背景
+#### (1)\_问题背景
 
 设备驱动常维护运行状态，例如：
 
@@ -143,7 +143,7 @@ struct drv_status {
 
 ------
 
-##### 2)\_RCU\_状态表实现
+#### (2)\_RCU\_状态表实现
 
 ```c
 struct drv_status __rcu *gstat;
@@ -187,7 +187,7 @@ ssize_t drv_read(struct file *f, char __user *buf, size_t len, loff_t *off)
 
 ------
 
-##### 3)\_性能与一致性比较
+#### (3)\_性能与一致性比较
 
 | 项         | RCU 方案           | 锁方案         |
 | ---------- | ------------------ | -------------- |
@@ -200,7 +200,7 @@ ssize_t drv_read(struct file *f, char __user *buf, size_t len, loff_t *off)
 
 ------
 
-#### (4)\_场景三\_单个设备上下文被带出\_RCU\_读区
+### 25.1.4\_场景三\_单个设备上下文被带出\_RCU\_读区
 
 设备上下文可能先从全局入口查到，再交给工作队列或文件实例长期使用。此时共享入口直接指向同一个 `dev_ctx` 分配，kref 统计的也是对这个对象本身的长期持有。
 
@@ -263,7 +263,7 @@ static void ctx_replace(struct dev_ctx *new)
             -> GP 后释放 dev_ctx
 ```
 
-#### (5)\_场景四\_一代设备配置由多个分散块组成
+### 25.1.5\_场景四\_一代设备配置由多个分散块组成
 
 设备配置可能不是一个连续结构，而是一个根节点组合队列限制、DMA 策略和过滤表等独立分配。不同代配置还可能共享未变化的 block：
 
@@ -286,6 +286,33 @@ static DEFINE_MUTEX(config_lock);
 示例假设 block 发布后不再原地修改；若 `value` 仍会变化，需要另外使用锁、原子操作或替换整个 block。
 
 每个 `dev_config` 为自己的两个 block 各持有一份 kref。新版本复用旧 block 时，在发布前为新根增加一份引用；旧根只在 GP 后归还自己的引用：
+
+```c
+static struct dev_config *config_clone(struct dev_config *old)
+{
+	struct dev_config *new;
+
+	lockdep_assert_held(&config_lock);
+	new = kzalloc(sizeof(*new), GFP_KERNEL);
+	if (!new)
+		return NULL;
+	if (!old)
+		return new;
+
+	/* 新root在发布以前就取得自己对两个block的版本引用。 */
+	if (old->queue_limits) {
+		kref_get(&old->queue_limits->ref);
+		new->queue_limits = old->queue_limits;
+	}
+	if (old->dma_policy) {
+		kref_get(&old->dma_policy->ref);
+		new->dma_policy = old->dma_policy;
+	}
+	return new;
+}
+```
+
+`config_clone()` 返回的新 root 尚不可见，所以失败清理可以直接逐块 put；一旦发布，root 对 block 的引用就必须一直保留到该 root 自己的 GP 回调。
 
 ```c
 static void config_block_release(struct kref *ref)
@@ -342,6 +369,17 @@ static void read_current_config(void)
 `use_queue_limits()` 和 `use_dma_policy()` 在这个模板中必须只做不阻塞、且不保存裸指针的短访问。reader 不需要每次读取都对两个 block 执行 get／put；只有某个 block 要交给异步任务并逃出 RCU 读区时，reader 才在临界区内为该 block 增加自己的长期引用。
 
 ```mermaid
+flowchart LR
+    E["RCU共享入口<br/>current_config"] -->|"更新前可达"| R0["旧root<br/>GP前仍可被reader访问"]
+    E -->|"更新后可达"| R1["新root"]
+    R0 -->|"一份kref"| B0["queue_limits block"]
+    R0 -->|"一份kref"| B1["dma_policy block"]
+    R1 -->|"复用时另取一份kref"| B0
+    R1 -->|"复用时另取一份kref"| B1
+    R0 -->|"GP回调后逐块put"| X["旧root退休"]
+```
+
+```mermaid
 sequenceDiagram
     participant R as "旧 reader"
     participant W as "配置更新者"
@@ -360,24 +398,22 @@ sequenceDiagram
     Old->>Old: 释放旧 root
 ```
 
-这类复合快照的顺序是“GP 后逐块 put”，与上一场景的“最后 put 后 `kfree_rcu()`”不同。详细所有权不变量和逃逸 block 模板统一见[RCU 数据结构模板与选型](P21_RCU_数据结构模板与选型.md)。
+这类复合快照的顺序是“GP 后逐块 put”，与上一场景的“最后 put 后 `kfree_rcu()`”不同。详细所有权不变量和逃逸 block 模板统一见 [RCU、kref 与复合对象生命周期](P04_RCU_kref与复合对象生命周期.md)。
 
-#### (6)\_混搭矩阵(驱动常见模块)
+### 25.1.6\_按问题特征选择组合
 
-| 组件               | 是否可与 RCU 混用 | 混用模式                    |
-| ------------------ | ----------------- | --------------------------- |
-| GPIO / LED 驱动    | ✅                 | 状态表保护                  |
-| 网络驱动           | ✅                 | 邻居表 / 路由表             |
-| 字符设备           | ✅                 | `file_operations` 状态表    |
-| I2C / SPI 子设备表 | ✅                 | 子节点链表                  |
-| DMA 缓冲池         | ⚠️                 | 仅控制结构 RCU 化           |
-| 中断处理           | ✅                 | `call_rcu()` 安全释放       |
-| Block 层           | ⚠️                 | 局部结构可用                |
-| Platform Device    | ✅                 | `device_link` 使用 RCU 管理 |
+| 问题特征 | RCU负责 | 还需要的机制 |
+| --- | --- | --- |
+| 高频查找、低频插拔的节点表 | 查找期间节点生命期、删除后延迟回收 | 更新锁串行化结构修改 |
+| 整体替换且发布后不变的状态 | 允许读者看到任一完整版本 | 更新锁；发布前完整初始化 |
+| 对象要交给文件或工作队列长期使用 | 只保护 lookup 到安全 get 的窗口 | kref/refcount 保护逃逸生命期 |
+| root 组合多个可共享 block | 保护旧 root 到 GP | root 对每块持 kref；GP 后逐块 put |
+| 读侧必须等待 I/O 或 mutex | 普通 RCU 不适用该跨度 | SRCU，或先取得引用再退出普通 RCU |
+| DMA 描述符/设备资源还受硬件访问 | 只能保护 CPU 软件入口的一部分 | DMA 停止、IRQ 同步、设备核心引用等硬件/框架协议 |
 
 ------
 
-#### (7)\_核对表(交付前自检)
+### 25.1.7\_交付前核对表
 
 | 检查项                | 说明                                  | 状态 |
 | --------------------- | ------------------------------------- | ---- |
@@ -391,7 +427,7 @@ sequenceDiagram
 
 ------
 
-#### (8)\_小结
+### 25.1.8\_小结
 
 | 要点                                                   | 说明 |
 | ------------------------------------------------------ | ---- |
@@ -406,14 +442,14 @@ sequenceDiagram
 
 ------
 
-## 22.2\_本章边界
+## 25.2\_本章边界
 
-本章只保留驱动场景中的组合方式，不重复维护通用接口说明。接口契约统一查阅[RCU API 速查](P20_RCU_通用API与调用契约.md)，可直接复用的最小调用链统一查阅[RCU 模板、选型与核对](P21_RCU_数据结构模板与选型.md)。
+本章只保留驱动场景中的组合方式，不重复维护通用接口说明。接口契约统一查阅[RCU API 速查](P03_RCU_通用API与最小使用闭环.md)，可直接复用的最小调用链统一查阅[RCU 模板、选型与核对](P04_RCU_kref与复合对象生命周期.md)。
 
 审查驱动代码时，应把注意力放在场景新增的责任上：写者由谁串行化、对象能否逃出读侧区间、版本根与分散 block 之间各由谁持有引用、GP 前后在哪一层归还引用、回调是否引用模块代码，以及卸载路径是否阻止了新回调产生。
 
-上一篇：[RCU 模板、选型与核对](P21_RCU_数据结构模板与选型.md)。
+上一篇：[Tasks RCU 与 Tiny RCU 实现边界](P24_Tasks_RCU与Tiny_RCU实现边界.md)。
 
-下一篇：[RCU 类型语义与 Sparse 检查](P23_RCU_类型语义_Sparse与Lockdep.md)。
+下一篇：[RCU 类型语义与 Sparse 检查](P26_RCU_类型语义_Sparse与Lockdep.md)。
 
 
