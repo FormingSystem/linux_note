@@ -9,6 +9,7 @@ const CONTENT_SECURITY_POLICY = [
   "img-src 'self' data:",
   "font-src 'self'",
   "connect-src 'self'",
+  "frame-src loop-preview:",
   "base-uri 'none'",
   "form-action 'none'",
   "frame-ancestors 'none'",
@@ -56,8 +57,8 @@ function resolve_asset(renderer_root: string, request_url: string): string | nul
   return target;
 }
 
-export function register_app_protocol(session: Session, renderer_root: string): void {
-  session.protocol.handle("loop-app", async (request) => {
+export function register_app_protocol(workbench_session: Session, renderer_root: string): void {
+  workbench_session.protocol.handle("loop-app", async (request) => {
     if (request.method !== "GET") return response(405, "Method Not Allowed");
     const target = resolve_asset(renderer_root, request.url);
     if (!target) return response(404, "Not Found");

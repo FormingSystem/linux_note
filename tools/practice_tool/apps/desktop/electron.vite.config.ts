@@ -17,6 +17,13 @@ export default defineConfig({
   },
   renderer: {
     root: resolve("src/renderer"),
+    publicDir: resolve("src/renderer/generated"),
+    resolve: {
+      alias: {
+        // Unified 的浏览器条件实现依赖 DOM；Worker 必须固定到无 DOM 的纯数据实现。
+        "decode-named-character-reference": resolve("../../node_modules/decode-named-character-reference/index.js"),
+      },
+    },
     plugins: [react()],
     build: {
       minify: "esbuild",

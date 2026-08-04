@@ -13,7 +13,7 @@ domains:
 
 目标工程按 Electron 进程边界组织，Renderer 内再按业务 feature 组织。文件系统权限、编辑缓冲区、Markdown 语义和 UI 不放进一个所谓 `shared` 层，也不把旧训练页面迁入桌面壳。
 
-本文依赖已接受的 ADR-0006～0010。当前 `src/`、`banks/`、浏览器存储和启动脚本只属于 `0.1.0`，不得反向约束新结构。
+本文依赖已接受的 ADR-0006～0015。当前 `src/`、`banks/`、浏览器存储和启动脚本只属于 `0.1.0`，不得反向约束新结构。
 
 ## 1.2\_所有权图
 
@@ -76,6 +76,8 @@ native/
 └── tests/             # 协议、文件语义与故障注入
 ```
 
+D1C 已建立 `packages/markdown-engine`，其中 `contracts` 只含可结构化复制的块、safe HAST 值对象、跨度、预算和双端运行时校验，`parser` 才依赖 Unified。Workbench Renderer 只导入轻量 contracts，Markdown Worker 才打包解析器，避免把解析管线带回拥有 Preload 的工作台页面。
+
 ## 1.4\_依赖方向
 
 ```text
@@ -105,6 +107,7 @@ Electron Main 可以依赖 Node/Electron，但不自行实现第二套文件读�
 ## 1.6\_Native\_Service\_模块
 
 - `WorkspaceService`：打开文件/文件夹、窗口能力表和最近项定位。
+- `filesystem_capability_port`：只封装根句柄相对对象解析、严格单组件校验和平台身份；Linux/Windows 安全原语只能位于该端口，缺失时失败关闭。
 - `FileService`：读取、严格解码、文件身份、保存策略和监听复检。
 - `FileOperationService`：新建、重命名、移动到回收站和链接更新计划。
 - `BackupStore`：合并恢复备份与 Hot Exit。
@@ -116,7 +119,7 @@ C++20 代码使用 RAII、值语义、严格告警和有界输入；不得通过
 ## 1.7\_Renderer\_模块
 
 - `editor` 拥有 CodeMirror 实例与 `DocumentSession`。
-- `preview` 的工作台侧拥有调度、Worker 客户端与消息校验；safe HAST 组件映射和复杂块运行在无 Preload 的隔离 Preview Frame。
+- `preview` 的工作台侧拥有调度、Worker 客户端、CodeMirror 普通块固定映射与消息校验；Mermaid 等复杂块运行在无 Preload 的隔离 Frame。
 - `explorer` 只消费 Main 返回的相对文件树与操作结果。
 - `search` 消费可取消索引/搜索结果，不把结果路径当权限。
 - `app` 负责命令、快捷键、标签、区域布局和错误边界，不持有文件实现。

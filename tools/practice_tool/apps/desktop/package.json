@@ -11,14 +11,26 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "dev": "electron-vite dev",
+    "build:preview-assets": "node scripts/build_preview_assets.mjs",
+    "dev": "npm run build:preview-assets && electron-vite dev",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "npm run typecheck && node --experimental-strip-types --test tests/*.test.mts",
-    "build": "npm run typecheck && electron-vite build",
-    "preview": "electron-vite preview"
+    "benchmark:editor": "node scripts/benchmark_editor.mjs",
+    "benchmark:preview": "node scripts/benchmark_preview.mjs",
+    "smoke:native-transport": "node --experimental-strip-types scripts/smoke_native_transport.mjs",
+    "build": "npm run typecheck && npm run build:preview-assets && electron-vite build",
+    "preview": "npm run build:preview-assets && electron-vite preview"
   },
   "dependencies": {
+    "@codemirror/commands": "6.10.4",
+    "@codemirror/lang-markdown": "6.5.1",
+    "@codemirror/state": "6.7.1",
+    "@codemirror/view": "6.43.7",
+    "@loop/document-core": "0.1.0",
     "@loop/ipc-contracts": "0.1.0",
+    "@loop/markdown-engine": "0.1.0",
+    "codemirror": "6.0.2",
+    "mermaid": "11.16.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -29,6 +41,7 @@
     "@vitejs/plugin-react": "^4.4.1",
     "electron": "43.2.0",
     "electron-vite": "5.0.0",
+    "esbuild": "0.25.12",
     "typescript": "~5.8.3",
     "vite": "^6.3.5"
   }

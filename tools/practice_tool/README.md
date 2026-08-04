@@ -16,7 +16,7 @@ domains:
 - 新建 Markdown。
 - 打开单个 Markdown。
 - 打开单个文件夹并按需浏览其中的文件。
-- 使用 CodeMirror 编辑原始 Markdown。
+- 在同一 CodeMirror 编辑面中原位编辑并及时渲染；`Ctrl+/` 往返完整源码模式。
 - 实时预览 CommonMark/GFM、Mermaid、公式、Callout、Wiki 链接等内置能力。
 - 默认手动保存，提供合并恢复备份、Hot Exit、本地历史和外部冲突处理。
 
@@ -33,13 +33,33 @@ domains:
 
 ## 1.3\_当前实现边界
 
-仓库根 `src/` 中的 `0.1.0` 仍是 Vite 浏览器训练原型，包含 Bash/MSYS2 生命周期、IndexedDB、`banks/` 和专题电子书数据。新的 `apps/desktop + packages/ipc-contracts + native` 已实现 Electron 安全壳、C++20 Native Service，以及 D1A 窗口能力、打开单个 Markdown、打开单个文件夹和首层只读分页列表。系统路径只在 Main 到 Native Service 的建权请求中出现，Renderer 只收到显示标签、相对路径与不透明 ID。
+仓库根 `src/` 中的 `0.1.0` 仍是 Vite 浏览器训练原型，包含 Bash/MSYS2 生命周期、IndexedDB、`banks/` 和专题电子书数据。新的 `apps/desktop + packages/ipc-contracts + packages/document-core + packages/markdown-engine + native` 已接通 Windows 纵向闭环：Electron 安全壳、C++20 Native Service、根句柄相对文件能力、交互式按需目录树、协议 v4 双向有界正文附件、CodeMirror 多文档会话、冲突检查安全保存，以及 Typora 式 CommonMark/GFM + Mermaid 混合编辑面均可运行。系统路径只在 Main 到 Native Service 的建权请求中出现，Renderer 只收到显示路径、不透明 ID 和经验证的正文。Linux `openat2` 与 `renameat/fsync` 实现已经落地，但当前机器没有受支持的 Ubuntu/WSL 环境，跨平台状态仍保持 `IN_PROGRESS`；预览的 1 MiB 性能门禁也尚未达标。
 
-D1A 不传输正文，也不包含 CodeMirror、Markdown 预览、保存、备份或文件操作。当前界面是只读文件工作台骨架，不是已经可编辑的 Markdown 客户端。
+D1C 的预览由 Worker 生成有界顶层块、源码跨度和 safe HAST；当前块在原位显示源码，其他普通块由固定 DOM 映射及时渲染，Mermaid 则通过专用 MessageChannel 进入 `loop-preview://` 的无 Preload sandbox Frame。工作台内置 VS Code Dark+ 与 Light+ 两套主题，首次随系统明暗偏好选择，可由顶栏按钮切换当前会话；Mermaid 工具栏支持 50%～300% 放大、缩小、复位和适合宽度，溢出只在图表内部滚动。`Ctrl+/` 只切换同一 EditorState 的装饰，不创建另一份正文；原始 HTML 不执行，图片保持阻止占位，链接保持不可导航。`Ctrl+S` 已按 ADR-0014 执行 token、身份和摘要冲突检查后安全替换，BOM 与统一换行策略受控，混合换行必须显式选择；外部修改绝不静默覆盖。文件夹标签可关闭并撤销 Native 文档能力，Dirty 标签只允许“保存并关闭 / 放弃修改 / 取消”。恢复备份与 Hot Exit 仍未实现，硬崩溃仍可能丢失尚未保存的草稿，因此当前实现还不是具备数据恢复保证的正式编辑器。
 
 这些旧能力只在重构期间保持可构建；桌面纵向闭环通过后会整体删除，不建立浏览器/桌面双运行、IndexedDB/文件双写、电子书适配或 `legacy` 包。准确差距见 [当前实现状态与版本边界](docs/architecture/implementation_status.md)。
 
-## 1.4\_当前0.1.0运行
+## 1.4\_Windows一键启动桌面工作台
+
+在资源管理器中进入本目录，双击：
+
+```text
+start_desktop.cmd
+```
+
+入口会检查 Node.js `22.12.0` 以上版本和 npm；依赖缺失或锁文件更新时执行 `npm install`；Native Service 缺失或源码较新时使用 `windows-mingw` preset 重新构建；全部就绪后通过 `loop-app://` 生产资源协议启动未打包 Electron 工作台。Windows Native Service 静态链接 MinGW C++ 运行时，双击入口不依赖开发终端临时注入的 MinGW `PATH`。它不占用 Vite 开发端口，因此不会因 `5173` 被其他进程使用而漂移到未经信任的 origin。失败时窗口会保留并显示缺少的工具，不会转入旧浏览器或 Bash 实现。
+
+只检查环境与构建状态、不启动窗口时执行：
+
+```powershell
+.\start_desktop.cmd -check_only
+```
+
+该文件是未打包阶段的 Windows 开发便利入口，不是最终安装包启动器。当前已经支持手动安全保存，但仍无恢复备份或 Hot Exit；保存前的内存草稿在崩溃后不能恢复。
+
+打开 Markdown 后可直接在混合编辑面中修改；`Ctrl+/` 切换完整源码，`Ctrl+S` 保存。顶栏“浅色主题 / 深色主题”按钮切换当前会话主题。Mermaid 图表上方提供缩小、百分比复位、放大、适合宽度和编辑源码；焦点位于图表内时也可使用 `Ctrl+-`、`Ctrl++`、`Ctrl+0`。
+
+## 1.5\_当前0.1.0运行
 
 以下命令只用于退役前验证现有浏览器代码，不是新桌面客户端的交付方式。
 
@@ -57,7 +77,7 @@ D1A 不传输正文，也不包含 CodeMirror、Markdown 预览、保存、备�
 
 安装、纯运行和卸载也可以分别调用 `install.sh`、`run.sh` 和 `uninstall.sh`。环境细节见 [当前跨平台环境与排障](docs/environment_and_troubleshooting.md)。
 
-## 1.5\_当前验证
+## 1.6\_当前验证
 
 ```bash
 npm run desktop:typecheck
@@ -73,9 +93,9 @@ npm run build
 git diff --check
 ```
 
-前三条 CMake 命令在 `native/` 执行；Linux 使用 `linux-gcc` preset。CMake 首次配置会按固定摘要获取 `nlohmann/json`、Mbed TLS 和 libuv；项目代码通过标准库与这些跨平台接口实现，不直接维护 Win32/Linux 私有文件或加密分支。`check:data` 只验证等待退役的训练内容闭包。桌面已有 typecheck、C++ unit、能力协调测试和 Electron smoke，后续仍需补齐 lint、完整 integration/e2e、安全、Sanitizer 和故障注入门禁。
+前三条 CMake 命令在 `native/` 执行；Linux 使用 `linux-gcc` preset。CMake 首次配置会按固定摘要获取 `nlohmann/json`、Mbed TLS 和 libuv；业务层保持跨平台，只有根句柄相对授权与安全替换集中在 `filesystem_capability_port` 的 Windows/Linux 平台分支。`check:data` 只验证等待退役的训练内容闭包。桌面已有 typecheck、C++ unit、能力协调、Native 进程传输和 Electron smoke，后续仍需补齐 Linux 实机、Sanitizer、更多写入故障注入及正式打包门禁。
 
-## 1.6\_设计文档
+## 1.7\_设计文档
 
 - [架构索引](docs/architecture/README.md)
 - [架构决策记录](docs/architecture/decisions/README.md)
@@ -90,7 +110,7 @@ git diff --check
 - [跨平台与仓库独立性设计](docs/cross_platform_and_repository_independence.md)
 - [当前实现状态与版本边界](docs/architecture/implementation_status.md)
 
-## 1.7\_许可与项目边界
+## 1.8\_许可与项目边界
 
 当前公开开发版本使用仓库根目录 `GPL-2.0-only`，原创维护者为 FormingSystem，联系邮箱为 `lizhaojun97@qq.com`。二次开发应保留产品名称、原创来源、项目地址与修改说明；第三方依赖、用户 Markdown 和外部资料不因被回路打开而改变许可。
 

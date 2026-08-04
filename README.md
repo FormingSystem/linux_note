@@ -61,7 +61,9 @@ Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，�
 
 ### 1.3.1\_回路\_Markdown\_工作台
 
-仓库当前内置“回路”工具。新的目标产品是独立 Electron Markdown 工作台，直接新建文件、打开单个文件或打开单个文件夹；桌面层采用 TypeScript，文件与工作区服务采用独立 C++20 进程。当前 D1A 已完成窗口作用域能力、打开单个 Markdown、打开单个文件夹和首层只读分页列表；尚不包含正文编辑、预览、保存或文件操作。浏览器训练与专题电子书代码属于等待删除的 `0.1.0`。工具代码与自身文档位于：
+仓库当前内置“回路”工具。新的目标产品是独立 Electron Markdown 工作台，直接新建文件、打开单个文件或打开单个文件夹；桌面层采用 TypeScript，文件与工作区服务采用独立 C++20 进程。Windows 已接通 ADR-0013 根句柄相对能力、协议 v4 正文通道、ADR-0015 Typora 式 CommonMark/GFM + Mermaid 混合编辑面以及 ADR-0014 冲突检查安全保存；默认原位编辑并及时渲染，`Ctrl+/` 往返完整源码。Linux 平台实现尚待受支持环境验证，因此跨平台 D1B/D1-SAVE 保持 `IN_PROGRESS`。D1C 的 1 MiB 性能门禁也仍为 `IN_PROGRESS`。恢复备份、Hot Exit 和通用文件操作尚未实现。浏览器训练与专题电子书代码属于等待删除的 `0.1.0`。工具代码与自身文档位于：
+
+Windows 开发环境可在 `tools/practice_tool` 中双击 `start_desktop.cmd`，按需准备依赖和 Native Service 后启动 Electron；它不进入旧浏览器的 Bash 生命周期。
 
 ```text
 tools/practice_tool/

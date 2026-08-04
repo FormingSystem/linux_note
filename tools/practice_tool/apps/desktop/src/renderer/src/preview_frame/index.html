@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src loop-preview:; style-src loop-preview: 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>回路 Mermaid 隔离渲染</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main id="mermaid_root" class="mermaid_root">
+      <div class="mermaid_toolbar" role="toolbar" aria-label="Mermaid 图表工具">
+        <button type="button" data-mermaid-action="zoom_out" aria-label="缩小 Mermaid 图表" title="缩小（Ctrl+-）">−</button>
+        <button id="mermaid_zoom_value" type="button" data-mermaid-action="reset" aria-label="当前缩放 100%；复位 Mermaid 图表" title="复位（Ctrl+0）">100%</button>
+        <button type="button" data-mermaid-action="zoom_in" aria-label="放大 Mermaid 图表" title="放大（Ctrl++）">＋</button>
+        <button type="button" data-mermaid-action="fit" title="适合宽度">适合宽度</button>
+        <span class="mermaid_toolbar_spacer" aria-hidden="true"></span>
+        <button type="button" data-mermaid-action="source" title="编辑 Mermaid 源码">编辑源码</button>
+      </div>
+      <div id="mermaid_viewport" class="mermaid_viewport" tabindex="0" aria-label="Mermaid 图表视口；可使用方向键滚动">
+        <div id="mermaid_canvas" class="mermaid_canvas">
+          <p class="mermaid_waiting">正在准备 Mermaid 渲染</p>
+        </div>
+      </div>
+    </main>
+    <script type="module" src="./runtime.js"></script>
+  </body>
+</html>

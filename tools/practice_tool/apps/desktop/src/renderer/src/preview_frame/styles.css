@@ -1,0 +1,138 @@
+:root {
+  color: #cccccc;
+  background: #1e1e1e;
+  color-scheme: dark;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  --frame-background: #1e1e1e;
+  --frame-toolbar: #252526;
+  --frame-foreground: #cccccc;
+  --frame-muted: #969696;
+  --frame-border: #3c3c3c;
+  --frame-hover: #2a2d2e;
+  --frame-focus: #007fd4;
+  --frame-error: #f48771;
+  --frame-error-background: #3b1f23;
+}
+
+:root[data-theme="light"] {
+  color: #333333;
+  background: #ffffff;
+  color-scheme: light;
+  --frame-background: #ffffff;
+  --frame-toolbar: #f3f3f3;
+  --frame-foreground: #333333;
+  --frame-muted: #616161;
+  --frame-border: #d4d4d4;
+  --frame-hover: #e8e8e8;
+  --frame-focus: #007fd4;
+  --frame-error: #a1260d;
+  --frame-error-background: #fff0f0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--frame-background);
+}
+
+.mermaid_root {
+  width: 100%;
+  min-height: 96px;
+  color: var(--frame-foreground);
+  background: var(--frame-background);
+}
+
+.mermaid_toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--frame-border);
+  background: var(--frame-toolbar);
+}
+
+.mermaid_toolbar button {
+  min-width: 28px;
+  min-height: 26px;
+  padding: 2px 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--frame-foreground);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mermaid_toolbar button:hover:not(:disabled) {
+  border-color: var(--frame-border);
+  background: var(--frame-hover);
+}
+
+.mermaid_toolbar button:focus-visible,
+.mermaid_viewport:focus-visible {
+  outline: 2px solid var(--frame-focus);
+  outline-offset: -2px;
+}
+
+.mermaid_toolbar button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+#mermaid_zoom_value {
+  min-width: 54px;
+}
+
+.mermaid_toolbar_spacer {
+  flex: 1;
+}
+
+.mermaid_viewport {
+  width: 100%;
+  min-height: 96px;
+  max-height: 520px;
+  overflow: auto;
+  padding: 16px 18px;
+  outline: none;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.mermaid_canvas {
+  width: 100%;
+  min-width: 0;
+}
+
+.mermaid_canvas svg {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  margin: 0 auto;
+  transform-origin: top left;
+}
+
+.mermaid_waiting {
+  margin: 0;
+  color: var(--frame-muted);
+  font-size: 12px;
+}
+
+.mermaid_error {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--frame-error);
+  border-radius: 7px;
+  color: var(--frame-error);
+  background: var(--frame-error-background);
+  font-size: 13px;
+}

@@ -11,7 +11,7 @@ domains:
 
 ## 1.1\_文档职责与评审状态
 
-本文定义 Electron + C++ Native Service 架构下的窗口、IPC、跨语言协议、文件与文件夹能力、路径、Markdown、资源协议、网络、备份、文件写入和更新边界。ADR-0006～0010 已接受，本文已经进入实施，用于取代旧本地 HTTP 威胁模型与“注册知识源”权限模型。
+本文定义 Electron + C++ Native Service 架构下的窗口、IPC、跨语言协议、文件与文件夹能力、路径、Markdown、资源协议、网络、备份、文件写入和更新边界。ADR-0006～0015 已接受，本文已经进入实施，用于取代旧本地 HTTP 威胁模型与“注册知识源”权限模型。
 
 ## 1.2\_保护目标
 
@@ -27,8 +27,10 @@ domains:
 
 ```mermaid
 flowchart LR
-    DOC[Markdown/HTML/SVG/Mermaid<br/>不可信数据] --> V[Isolated Preview Frame]
-    V -->|Typed MessageChannel| R[Sandboxed Workbench Renderer]
+    DOC[Markdown/HTML<br/>不可信数据] --> W[Markdown Worker]
+    W -->|safe HAST blocks| R[Sandboxed Workbench Renderer]
+    DOC -->|Mermaid descriptor| V[Isolated Mermaid Frame]
+    V -->|Typed MessageChannel| R
     R -->|固定 Preload API| P[Context-isolated Preload]
     P -->|Schema + sender validation| M[Electron Main Broker]
     M -->|Versioned bounded frames| N[C++ Native Service]
@@ -40,7 +42,7 @@ flowchart LR
 
 默认不信任：Renderer、IPC 参数、Markdown、原始 HTML、SVG、Mermaid、公式、文件名、相对路径、符号链接、junction、reparse point、UNC、watcher 事件、恢复备份、旧状态文件和所有远程 URL。
 
-Main 拥有窗口与系统集成权限，C++ 服务拥有工作区与文件权限，但两者都不信任输入。打开一个目录只允许读取和显式编辑该目录，不表示允许执行目录中的任何内容。C++ 服务只接受上限 1 MiB 的单行 UTF-8 JSON 帧和方法 allowlist；畸形 JSON、未知字段、空帧、超长帧、协议不匹配和未知方法必须失败关闭，不得触发未捕获异常或无界分配。
+Main 拥有窗口与系统集成权限，C++ 服务拥有工作区与文件权限，但两者都不信任输入。打开一个目录只允许读取和显式编辑该目录，不表示允许执行目录中的任何内容。C++ 服务只接受 ADR-0011 复合帧经 ADR-0014 升级后的版本 `4` 和方法 allowlist：16 字节头先限制 1 MiB 控制区和 5 MiB 正文附件，再严格校验 UTF-8 JSON、附件描述、SHA-256 与方法用途。错误魔数、未知标志、非零保留位、畸形 JSON、未知字段、截断、超长、协议不匹配和未知方法必须失败关闭，不得触发未捕获异常或无界分配。
 
 ## 1.4\_Electron\_安全基线
 
@@ -57,7 +59,7 @@ allowRunningInsecureContent = false
 同时要求：
 
 - 页面只从 `loop-app://app/` 加载，不使用 `file://`。
-- 不可信预览只进入 `loop-preview://preview/` 的无 Preload、不同源 sandbox frame，不插入工作台 DOM。
+- 普通 Markdown 只以版本化 safe HAST 块进入 CodeMirror 固定装饰映射；Mermaid、SVG 等复杂渲染只进入 `loop-preview://preview/` 的无 Preload、不同源 sandbox frame。
 - CSP 至少以 `default-src 'none'` 为基础逐项放行，禁止 `unsafe-eval`、远程脚本和任意 frame。
 - 禁止主窗口离开应用协议，拒绝未经处理的新窗口和弹窗。
 - 不使用 `<webview>` 展示文档、附件或远程页面。
@@ -98,9 +100,9 @@ allowRunningInsecureContent = false
 
 Windows 测试覆盖盘符、UNC、junction、reparse point、大小写和文件占用；Linux 覆盖 symlink、bind mount、权限、rename 与 fsync。特殊文件、设备、socket、FIFO 和目录不能走普通文档读写。
 
-D1A 的项目代码不直接调用 Win32 或 Linux syscall：路径和文件元数据由 libuv 的跨平台接口取得，目录枚举与只读文件流优先使用 C++ 标准库，SHA-256 与 CSPRNG 通过 Mbed TLS 的跨平台接口取得。当前切片对单文件执行“读前身份与大小 → 严格读取和 SHA-256 → 读后身份、大小与修改时间”核验；目录只读取当前层元数据，链接项显示但不签发可展开能力。
+D1B 已把文件能力解析收敛到狭窄的 `filesystem_capability_port`：Windows 从持有的根/父句柄用 `NtCreateFile + OBJ_DONT_REPARSE` 一次解析完整相对名称，Linux 使用根 fd 与 `openat2(RESOLVE_BENEATH | RESOLVE_NO_MAGICLINKS | RESOLVE_NO_SYMLINKS | RESOLVE_NO_XDEV)`；目录枚举与正文读取都消费授权句柄，不再由业务层按绝对路径重开。SHA-256 与 CSPRNG 仍通过 Mbed TLS 取得。缺少安全原语、UNC/网络根、reparse、bind mount、跨设备或身份替换均失败关闭，不回退到旧 `realpath + st_dev` 路径复检。Windows 实现与竞态测试已通过；Linux 代码仍待受支持 Ubuntu 22.04 环境实机验证。
 
-这套实现没有宣称标准库文件流具备目录句柄相对打开或原子 compare-and-open 保证，检查与读取之间仍存在极窄 TOCTOU 窗口。D1A 不允许从目录条目读取正文或写盘，所以该窗口目前只影响用户明确选择的单文件只读基线；进入 D1B 正文读取和 D1-SAVE 前，必须用经过评审的跨平台句柄抽象补齐原子身份绑定，不得在业务代码重新引入 Windows/Linux 双实现。
+D1B 正文读取在能力端口签发的同一句柄上完成前后身份检查、有界读取与摘要，并从根重新验证组件链仍指向同一对象。D1-SAVE 再以 ADR-0014 的 token、已读摘要和当前句柄内容做 compare-before-replace；临时文件、刷新和最终 rename 都相对已验证父句柄执行。Windows 使用 `NtSetInformationFile(FileRenameInformationEx)`，Linux 使用 `renameat + fsync(parent)`；只读、链接、多硬链接、命名流或无法保真的复杂元数据拒绝保存，不降级为原地覆盖或路径 API。
 
 ## 1.7\_Preload\_与IPC
 
@@ -118,14 +120,16 @@ Preload 只暴露固定、窄、可撤销的用例函数。Main 对每个请求�
 ## 1.8\_Markdown\_与预览安全
 
 - 原始 HTML 默认按文本或固定 allowlist 处理，不执行 script、style、iframe、object、embed、表单或事件属性。
-- Worker 输出经过 allowlist sanitizer 的 safe HAST；Renderer 不使用未经清洗的 `dangerouslySetInnerHTML`。
-- 工作台通过专用 `MessageChannel` 把 safe HAST 发送给 Preview Frame；Frame 使用 `sandbox="allow-scripts"`，不授予 `allow-same-origin`、表单、弹窗、下载或顶层导航。
-- Preview Frame 没有 Preload、Electron IPC 或父页面 DOM，只能返回固定定位、链接点击、复制源码和状态事件；工作台重新校验每个事件。
+- Worker 输出经过 allowlist sanitizer 的带源码跨度 safe HAST 块；CodeMirror 装饰只用固定 `createElement` / `createTextNode` 映射，不使用 `innerHTML`、未经清洗的 DOM 或 React HTML 注入。
+- Mermaid 描述符通过专用 `MessageChannel` 发送给复杂块 Frame；Frame 使用 `sandbox="allow-scripts"`，不授予 `allow-same-origin`、表单、弹窗、下载或顶层导航。
+- Mermaid Frame 没有 Preload、Electron IPC 或父页面 DOM，只能返回 ready、渲染状态、局部激活、保存和源码模式命令；工作台重新校验每个事件。
 - 禁止 `javascript:`、`vbscript:`、`data:text/html`、`file:` 和未登记 scheme。
 - 代码高亮只生成 token，不执行示例代码；语言映射不能动态 require 工作区模块。
 - Mermaid 使用严格模式，关闭点击回调、HTML label、外部脚本和可执行链接；输出再次清洗，不直接信任 SVG。
 - KaTeX、Callout 和未来 feature 分别登记允许元素、属性、URL 与资源预算。
 - 第一阶段不加载工作区 CSS、JavaScript、插件、主题或可执行配置。
+
+D1C 的 Mermaid Frame 每次加载后只接受一次由父工作台转移的 `MessagePort`，连接消息绑定协议版本和高熵 nonce；图表描述符不走窗口广播。双方校验文档 ID、块 ID、修订、消息枚举和资源预算。Mermaid 采用 strict 模式并关闭 HTML label，SVG 经 DOMParser 和固定 SVG/CSS allowlist 重建；脚本、`foreignObject`、事件属性、动画、外部引用和网络 CSS 被拒绝。普通链接保持 inert，图片只显示文字占位。
 
 本地 SVG 默认不以内联 DOM 显示。只有经过专用 SVG sanitizer 且禁止脚本、事件、foreignObject、外部引用和动画危险能力后才能预览；在此之前显示占位并允许在系统中查看。
 
@@ -144,7 +148,7 @@ Preload 只暴露固定、窄、可撤销的用例函数。Main 对每个请求�
 
 ## 1.10\_资源协议
 
-`loop-app://` 只映射打包清单中的固定应用资源。`loop-preview://` 只提供固定预览 runtime，并与工作台使用不同 origin 和 CSP。`loop-resource://` 只接受 Main 基于 C++ 资源句柄签发的高熵、短期、窗口作用域 token，不接受路径、`..`、绝对地址或用户可选 host。
+`loop-app://` 只映射打包清单中的固定应用资源。`loop-preview://` 只提供三个固定预览 runtime 资源，并与工作台使用不同 origin 和 CSP。sandbox opaque origin 读取这些固定子资源所需的 scheme CORS 不等于网络能力：协议不启用 `supportFetch`，Frame 的 `connect-src` 为 `none`，处理器不提供任意路径。`loop-resource://` 只接受 Main 基于 C++ 资源句柄签发的高熵、短期、窗口作用域 token，不接受路径、`..`、绝对地址或用户可选 host。
 
 资源 token 绑定工作区、文件身份、允许 MIME、最大大小与过期时间。每个窗口使用独立的非持久 Electron session partition，资源处理器注册在对应 `session.protocol` 上；协议处理器再检查 token 与当前能力。工作区关闭、目标变化、窗口 session 销毁或 token 使用场景不符时拒绝。
 

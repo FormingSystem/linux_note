@@ -13,7 +13,9 @@ domains:
 
 本文定义 Markdown 缓冲区、脏状态、源文件保存、恢复备份、外部修改和实时预览。文件与文件夹入口见 [文件与文件夹工作区设计](file_and_folder_workspace.md)。
 
-本文依赖已接受的 ADR-0006～0010 并进入实施。设计已经接受不代表对应代码已经完成；完成度只以 [实现状态与版本边界](../implementation_status.md) 为准。
+本文依赖已接受的 ADR-0006～0015 并进入实施。设计已经接受不代表对应代码已经完成；完成度只以 [实现状态与版本边界](../implementation_status.md) 为准。
+
+D1C 已在 D1B 的 CodeMirror 内存缓冲区、撤销历史、单调修订和 Dirty 派生之上接通预览管线。ADR-0015 把它收敛为 Typora 式单一混合编辑面：停止输入约 150 ms 后，Worker 解析最新完整内存快照并返回带源码跨度的版本 `3` 顶层块；当前块显示源码，其他普通块由固定 safe HAST 映射渲染，Mermaid 在不同源、无 Preload 的 sandbox Frame 中渲染。`Ctrl+/` 只切换完整源码装饰，`Ctrl+S` 保存发起时的不可变 CodeMirror `Text`。Native 按 token、文件身份和原始摘要拒绝外部冲突，并以根句柄相对安全替换提交。恢复备份与 Hot Exit 尚未实现，因此窗口关闭 Dirty 草稿时仍需“放弃修改 / 取消”确认。1 MiB 预览性能尚未达到 300 ms 门禁，因此实现状态保持 `IN_PROGRESS`。
 
 ## 1.2\_核心原则
 
@@ -102,11 +104,11 @@ stateDiagram-v2
 
 普通单链接文件优先采用同目录临时文件、刷新、再次校验基线、替换和目录刷新构成的 safe-write。实现必须保持权限并明确处理 Windows 占用与 Linux rename/fsync 语义。
 
-原子替换会改变文件身份，因此不能无条件用于符号链接、硬链接、多链接文件、特殊文件或无法保持元数据的文件：
+原子替换会改变文件身份，因此不能无条件用于符号链接、硬链接、多链接文件、特殊文件或无法保持元数据的文件。当前 D1-SAVE 只开放可验证的普通单链接文件安全替换：
 
-- 符号链接先解析并显示真实目标；目标越过当前打开边界时要求用户显式打开目标。
-- 多链接文件或平台不支持安全替换时，使用经过故障注入验证的 guarded in-place 策略；若不能保证可恢复性则拒绝保存并提供“另存为”。
-- 任一策略都先保留恢复备份和最近一次成功保存的本地历史，失败后不得把半写入结果宣称为成功。
+- 符号链接、硬链接、多链接文件、特殊文件和无法完整保持已登记元数据的文件拒绝保存，后续由“另存为”能力处理。
+- 平台不能完成根句柄相对安全替换时失败关闭，不回退到路径 API 或 guarded in-place。
+- 只有 D2 恢复备份与本地历史落地并通过故障注入后，才能另行评审是否扩大原地写入范围；失败后始终不得把半写入结果宣称为成功。
 
 普通文件系统无法提供跨进程的完美 compare-and-swap。实现通过写前摘要、替换前复检、文件身份、watcher 提示和本地历史缩小竞态窗口，并在检测到竞态时进入冲突；文档不得声称已经消除所有外部编辑器竞争。
 
@@ -166,7 +168,7 @@ sequenceDiagram
     participant E as CodeMirror
     participant C as 预览协调器
     participant W as Markdown Worker
-    participant P as 预览
+    participant P as 混合块装饰
 
     U->>E: 编辑事务
     E->>E: editor_revision + 1
@@ -175,8 +177,9 @@ sequenceDiagram
     C->>W: 解析最新修订
     W-->>C: PreviewDocument + 诊断 + 源码位置
     C->>C: 丢弃过期结果
-    C->>P: 更新未变化最少的块
-    P->>P: 按需更新 Mermaid/公式/高亮
+    C->>P: 更新带源码跨度的块
+    P->>P: 当前块源码，其余块渲染
+    P->>P: Mermaid 交给隔离 Frame
 ```
 
 预览永远消费内存缓冲区，不重新读取磁盘，也不触发源文件或恢复备份写入。输入线程不等待 Markdown、Mermaid、公式或代码高亮完成。
@@ -192,15 +195,17 @@ outline
 links
 ```
 
-`safe_hast` 已经过固定 allowlist 清洗；工作台把它发送给无 Preload、不同源的 sandboxed Preview Frame，由固定组件映射渲染。Mermaid、数学公式和代码高亮以描述符进入 Frame 内的独立 renderer；文档节点不进入拥有桌面 IPC 的工作台 DOM。
+`safe_hast` 已经过固定 allowlist 清洗；普通块在 CodeMirror 装饰中用固定 DOM API 映射，禁止 `innerHTML`、原始 HTML、style、事件属性和导航。Mermaid、数学公式和其他可执行面较大的复杂 renderer 以描述符进入无 Preload、不同源的 sandboxed Frame。工作台内置 VS Code Dark+ 与 Light+ 两套令牌；当前会话主题作为严格枚举进入 Mermaid Frame。Mermaid 配置指令与 Mermaid 代码块内的任何 Front Matter 被拒绝，避免配置别名或后续新增配置项覆盖边界；runtime 再以 `secure` 键锁定主题、CSS、HTML label 与各图形配置，Markdown 不能提交主题或覆盖 Frame UI。普通 Markdown 文档的 Front Matter 不受这条 Mermaid 专用边界影响。
+
+ADR-0015 使用版本 `3` 的 `blocks + source_span + content_hash` 模型，并在 Mermaid Frame 消息中加入严格的 `dark | light` 主题枚举；v1/v2 均不解析。协议保持 5 MiB UTF-8 源码、100000 个节点、64 层深度和 12 MiB 结构化树预算，单 Worker 只允许一个在途任务和一个最新待处理快照；超时 5 秒后终止并重建。不维护 whole-document、旧块协议或旧 Frame 消息双轨。更细粒度增量解析和缓存仍由后续性能切片落实。
 
 ### 1.8.3\_复杂块与错误
 
-复杂块按内容、主题和渲染器版本缓存，并在接近视口时优先执行。当前源码出错时保留上一次有效图形，但必须标注“预览来自旧修订”；原始围栏始终可见。一个块失败不能阻止其他正文更新。
+复杂块按内容、主题和渲染器版本缓存，并在接近视口时优先执行。当前源码出错时保留上一次有效图形，但必须标注“预览来自旧修订”；原始围栏始终可见。一个块失败不能阻止其他正文更新。非活动标签销毁全部复杂块 Frame 与 MessagePort，但保留 CodeMirror 文档会话和已验证块模型，重新激活时再重建派生渲染。Mermaid 的 50%～300% 缩放是 Frame 内视图状态，只改变 SVG 显示宽度和局部滚动位置，不触发重新解析、正文修订或保存。
 
 ## 1.9\_源码与预览同步
 
-每个顶层块保存源码偏移、行列与修订号。系统支持光标定位预览、双击预览返回源码、标题目录和诊断跳转。滚动同步使用可见块锚点，不按两个滚动容器的百分比硬映射；同步可以关闭，预览可以锁定到当前文档。
+每个顶层块保存源码偏移与修订号。当前选择相交的块直接显示源码；点击其他渲染块把光标移动到该块源码起点。源码与渲染共享同一个 CodeMirror 滚动容器，不再维护双面板滚动同步。`Ctrl+/` 切换完整源码模式，切换不改变 EditorState、撤销历史或 Dirty。
 
 ## 1.10\_Markdown\_能力
 

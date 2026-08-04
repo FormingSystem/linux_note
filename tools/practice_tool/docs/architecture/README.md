@@ -13,7 +13,7 @@ domains:
 
 目标产品是独立 Electron 桌面 Markdown 工作台：新建文件、打开单个文件或打开单个文件夹，直接编辑磁盘 Markdown 并实时预览。它不使用专题电子书、训练内容包、正文导入副本、浏览器正式运行或 IndexedDB 主存储。
 
-目标设计已经进入实施。桌面层使用 TypeScript，Native Service 使用 C++20；首个 Electron 安全壳、C++ 协议服务和握手已经建立。当前 `0.1.0` 浏览器训练代码只在 [实现状态与版本边界](implementation_status.md) 中作为旧代码事实记录，不能作为新模块设计依据。
+目标设计已经进入实施。桌面层使用 TypeScript，Native Service 使用 C++20；D1B 的交互式文件树、CodeMirror 内存编辑会话和 ADR-0013 根句柄相对能力已经在 Windows 接通，ADR-0014 又以协议 v4 接通冲突检查安全保存与文档级撤权。ADR-0015 已接受 Typora 式单一混合编辑面、`Ctrl+/` 源码模式和隔离 Mermaid 块；Linux 平台实现尚待受支持环境实机验证，D1C 仍等待 1 MiB 性能门禁。当前 `0.1.0` 浏览器训练代码只在 [实现状态与版本边界](implementation_status.md) 中作为旧代码事实记录，不能作为新模块设计依据。
 
 ## 1.2\_建议阅读顺序
 
@@ -49,6 +49,8 @@ domains:
 | 新建、移动、删除、历史与清理 | `engineering/workspace_file_operations_and_data_safety.md` |
 | package、依赖与状态所有权 | `engineering/project_structure_and_module_boundaries.md` |
 | TypeScript/C++ 语言边界 | `decisions/0010-native-service-language.md` |
+| Native 控制区与正文分帧 | `decisions/0011-bounded-control-and-body-frames.md` |
+| 混合编辑、块协议与 Mermaid 隔离 | `decisions/0015-typora-style-hybrid-markdown-surface.md` |
 | 验收目标 | `engineering/accessibility_performance_and_acceptance.md` |
 | 当前完成度 | `implementation_status.md` |
 

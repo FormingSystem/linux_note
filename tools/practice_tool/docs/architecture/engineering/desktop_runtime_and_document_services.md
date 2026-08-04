@@ -11,7 +11,7 @@ domains:
 
 ## 1.1\_文档职责与评审状态
 
-本文定义 Electron/C++ 进程边界、工程结构、文件与文件夹能力、IPC、文档保存、恢复备份、Markdown Engine 和资源协议。ADR-0006～0010 已接受，本文已经进入实施，不保留浏览器正式运行、本地 HTTP 文件服务、专题电子书、知识源注册或正文数据库副本。
+本文定义 Electron/C++ 进程边界、工程结构、文件与文件夹能力、IPC、文档保存、恢复备份、Markdown Engine 和资源协议。ADR-0006～0015 已接受，本文已经进入实施，不保留浏览器正式运行、本地 HTTP 文件服务、专题电子书、知识源注册或正文数据库副本。
 
 产品语义见 [文件与文件夹工作区设计](../product/file_and_folder_workspace.md) 和 [Markdown 编辑与实时预览设计](../product/markdown_editing_and_live_preview.md)，安全细节见 [桌面运行时安全与威胁模型](desktop_runtime_security_and_threat_model.md)。
 
@@ -25,7 +25,8 @@ flowchart LR
     PRELOAD --> RENDERER[Sandboxed React Renderer]
     RENDERER --> EDITOR[CodeMirror]
     RENDERER --> WORKER[Markdown Worker]
-    RENDERER -->|Typed MessageChannel| PREVIEW[Isolated Preview Frame]
+    RENDERER -->|safe HAST blocks| EDITOR
+    RENDERER -->|Typed MessageChannel| PREVIEW[Isolated Mermaid Frame]
     NATIVE --> INDEXER[Index/Search]
     NATIVE --> APPDATA[(AppData State/Backup/History)]
     NATIVE --> FS[Opened File or Folder]
@@ -38,7 +39,7 @@ flowchart LR
 | Preload | 固定用例 API、数据复制、事件适配 | 通用 IPC、Node/Electron 对象、绝对路径 API |
 | Renderer | UI、CodeMirror 会话、预览协调与交互 | 文件系统、子进程、数据库、环境变量 |
 | Markdown Worker | 解析、清洗、诊断、源码位置 | 文件系统、网络、DOM、Electron |
-| Preview Frame | safe HAST、Mermaid、公式、高亮与预览交互 | Preload、Electron IPC、父页面 DOM、导航与任意网络 |
+| Complex Block Frame | Mermaid、公式等复杂 renderer 与块交互 | Preload、Electron IPC、父页面 DOM、导航与任意网络 |
 | Index/Search | 在一次 C++ 工作区能力内只读扫描允许根 | 写文件、执行工作区内容、扩大根目录 |
 
 Main 是窗口和系统集成权限所有者，C++ Native Service 是工作区与文件权限所有者；两者都不信任 Renderer。每次 IPC、跨语言协议请求和文件操作仍按 sender、Schema 与当前窗口能力表重新鉴权。
@@ -121,6 +122,10 @@ interface loop_desktop_api {
     open_file(): Promise<command_result<opened_single_file>>;
     open_folder(): Promise<command_result<opened_folder>>;
     close_workspace(): Promise<command_result<void>>;
+    report_dirty_state(request: {
+      workspace_id: string;
+      dirty_count: number;
+    }): Promise<command_result<void>>;
   };
   explorer: {
     list_children(request: {
@@ -128,6 +133,13 @@ interface loop_desktop_api {
       directory_id: string;
       cursor?: string;
     }): Promise<command_result<entry_page>>;
+  };
+  documents: {
+    open(request: {
+      workspace_id: string;
+      target_kind: "document" | "entry";
+      target_id: string;
+    }): Promise<command_result<document_snapshot>>;
   };
 }
 
@@ -137,7 +149,7 @@ type command_result<value_type> =
   | { status: "error"; error: desktop_error };
 ```
 
-这是 D1A 已实现接口，不提前暴露尚未实现的 `documents`、`resources`、文件操作或任意 shell API。后续切片每增加一个用例，都必须按同样方式增加值对象、运行时校验、能力检查和撤权测试，不能先放一个宽接口等待填充。
+这是 D1 已实现接口。`report_dirty_state` 只服务于 Main 的关闭保护，不参与文件授权；`documents.open/save/close` 都只接受不透明能力，保存正文作为独立附件由 Main 构造摘要，Renderer 不提交路径或 Native body 描述符。尚未暴露 `resources`、通用文件操作或任意 shell API。后续切片每增加一个用例，都必须按同样方式增加值对象、运行时校验、能力检查和撤权测试，不能先放一个宽接口等待填充。
 
 每个请求和响应同时具有 TypeScript 类型与运行时 Schema，并限制字符串长度、数组项数、正文大小和嵌套深度。禁止以下接口：
 
@@ -150,11 +162,13 @@ exec(command)
 open_external(raw_url)
 ```
 
+Native 协议版本 `4` 使用 ADR-0011 的 16 字节复合帧：最多 1 MiB 的控制 JSON 与最多 5 MiB 的可选正文附件分别计量。控制 envelope 的 `body` 只能为 `null` 或 `{ kind, byte_length, sha256 }`；成功的 `workspace.open_document` 响应只允许 `markdown_utf8`，`workspace.save_document` 请求只允许 `markdown_source_utf8`，其他方向或方法一律拒绝正文。Main 与 Native 都在分配和业务解析前验证头部，并在解析后验证描述符和摘要；Main 还按 BOM 元数据重建打开时原始字节摘要。Main 的接收缓冲区按倍增容量摊销扩展，不随每个 stdout 分块复制全部历史字节。两端最多保留 64 个待处理项，Main 与 Native 的写队列均为 8 MiB，保证一个最大合法复合帧能够进入有界队列；超过预算失败关闭。协议不支持版本 `3` 降级、Base64 正文或通用流 ID。
+
 事件按工作区和文档订阅，返回不透明订阅 ID；窗口关闭后 Main 必须撤销 Renderer 订阅与资源 URL，并要求 C++ 服务释放 watcher、未完成保存和索引任务。
 
 ## 1.6\_文件树与索引
 
-`open_folder` 建立根能力；D1A 由 Renderer 随后用根 `directory_id` 请求首层列表。子目录只接受 Native Service 已签发的 `directory_id`，在展开、搜索或链接补全需要时再读取，不接受 Renderer 相对路径作为授权依据。文件正文不进入 Renderer，直到后续文档能力明确打开文档。
+`open_folder` 建立根能力；Renderer 随后用根 `directory_id` 请求首层列表。子目录只接受 Native Service 已签发的 `directory_id`，在展开时再读取，不接受 Renderer 相对路径作为授权依据。每个目录独立维护展开、缓存、分页、错误与刷新代次；刷新撤销旧条目能力，过期响应不得覆盖新代次。只有用户打开 Markdown 后，正文才经文档能力进入 Renderer。
 
 后台索引只解析 Markdown 所需的轻量信息：相对路径、标题、标题锚点和本地链接。它遵守排除规则、大小限制、取消信号和资源预算；遇到巨型目录时降级为按需搜索并显示状态，不要求用户修改系统限制才能打开目录。
 
@@ -162,7 +176,7 @@ open_external(raw_url)
 
 ## 1.7\_文档读取
 
-D1A 的 `workspace.open_file` 只校验所选 Markdown 并返回受控元数据，正文、SHA-256 和平台文件身份保留在 Native Service 内，不通过 1 MiB 控制帧传输。下列 `open_document` 是 D1B 的目标文档能力，不代表当前接口已经存在：
+D1A 的 `workspace.open_file` 只校验所选 Markdown 并返回受控元数据。D1B 的 `workspace.open_document` 接受当前窗口的 `workspace_id + target_kind + target_id`；`target_kind` 只能是已有 `document` 或当前枚举签发的 Markdown `entry`，不接受路径。
 
 `open_document` 返回：
 
@@ -181,7 +195,11 @@ size
 capabilities
 ```
 
-C++ Native Service 使用当前能力解析资源，检查普通文件、大小与类型，并以严格解码读取。无效编码不以替换字符继续；二进制、超大或不支持编码返回可操作错误。读取结果中的绝对路径、原始平台文件身份和 OS 文件句柄不跨越 Native Service 协议或 Renderer IPC；需要用于保存冲突检查的版本值必须是目的受限的不透明 token。
+除元数据外，正文以同一复合帧的 `markdown_utf8` 附件返回，BOM 从编辑正文中剥离但通过 `bom` 保留；磁盘原始字节摘要与附件摘要分别验证。Main 将附件严格解码成 Preload 返回的 `document_snapshot.content`，不会把正文写入状态、日志或第二个文件服务。
+
+C++ Native Service 使用 `filesystem_capability_port` 从根句柄一次解析完整组件链，检查普通文件、大小与类型，并把授权句柄交给 `FileService` 执行读前身份检查、有界读取、严格 UTF-8/NUL 检查、SHA-256 和读后身份检查；业务层不再按绝对路径重开。无效编码不以替换字符继续；二进制、超大或不支持编码返回可操作错误。读取结果中的绝对路径、原始平台文件身份和 OS 文件句柄不跨越 Native Service 协议或 Renderer IPC；保存只使用 Native 保存的随机 token、原始摘要和文档能力。
+
+保存时 Main 把某一 CodeMirror 修订的规范 LF UTF-8 快照作为 `markdown_source_utf8` 附件发送。Native 按 BOM 与换行策略序列化后，再在安全父句柄内创建独占临时文件、写入并刷新、复制允许的元数据、复核目标身份与摘要、原子替换并刷新父目录。成功响应返回新 token、摘要、文件元数据与 `saved_revision`；若保存期间又发生编辑，Renderer 只移动到该旧修订的保存基线并继续显示 Dirty。任何冲突、格式选择、复杂元数据、磁盘满、文件占用或不确定结果都保持 Dirty。
 
 Markdown Front Matter 中的 `id` 是内容元数据，不是文件系统授权依据，也不是文档会话的唯一身份。没有 Front Matter 的普通 Markdown 必须能够正常打开和保存。
 
@@ -194,9 +212,8 @@ document_id
 expected_file_version_token
 expected_content_hash
 editor_revision
-encoding
-line_ending
-content
+line_ending_policy
+body_attachment = markdown_source_utf8
 ```
 
 C++ Native Service 执行；Main 只完成 sender/Schema 校验、请求关联和结果转发：
@@ -207,7 +224,6 @@ sequenceDiagram
     participant M as Electron Main Broker
     participant N as C++ FileService
     participant F as File System
-    participant H as Local History
 
     R->>M: save(document_id, expected identity/hash, revision, content)
     M->>M: 校验发送者、IPC Schema 和大小
@@ -218,15 +234,14 @@ sequenceDiagram
         N-->>M: DOCUMENT_CONFLICT
         M-->>R: DOCUMENT_CONFLICT
     else 基线一致
-        N->>F: 按文件类型选择 safe replace 或 guarded write
+        N->>F: 在安全父句柄内执行 safe replace
         N->>F: 验证最终内容与身份
-        N->>H: 合并记录成功保存版本
         N-->>M: 新 identity/hash/mtime + revision
         M-->>R: 新 identity/hash/mtime + revision
     end
 ```
 
-safe replace 使用同目录临时文件、最小必要权限、刷新、替换和目录刷新；guarded write 用于替换会破坏符号链接/硬链接语义或平台不支持的情况。具体策略由平台适配器决定并必须通过断电、空间不足、占用、权限、竞态和元数据保持测试。无法安全保存时失败关闭并提供“另存为”。
+D1-SAVE 只对非链接、单硬链接、可完整保持已登记元数据的普通本地文件执行 safe replace：使用同目录临时文件、最小必要权限、刷新、替换和目录刷新。符号链接、硬链接、特殊文件或平台无法安全替换的对象失败关闭；另存为、恢复备份与本地历史仍由后续切片实现，不回退到 guarded in-place。
 
 Renderer 只有在返回修订仍等于当前编辑修订时进入 `Clean`。保存过程中继续输入时，只推进 `saved_revision`，当前文档仍为 `Dirty`。
 
@@ -273,9 +288,11 @@ source
   → PreviewDocument
 ```
 
-Worker 返回可结构化复制的 `PreviewDocument`，不返回 DOM、React 元素、原始可执行 HTML 或自定义完整 AST。工作台 Renderer 不把文档节点插入自己的 DOM，而是通过专用 `MessageChannel` 把 `PreviewDocument` 发送给无 Preload、无 Node、不同源且带 sandbox 的 Preview Frame。Frame 使用固定组件映射渲染 safe HAST；Mermaid、KaTeX 和代码高亮是内置、可取消、可缓存的独立 renderer。
+Worker 返回可结构化复制的版本 `3` `PreviewDocument`，不返回 DOM、React 元素、原始可执行 HTML 或自定义完整 AST。每个顶层块携带源码跨度、摘要和 safe HAST 或复杂块描述符。普通 safe HAST 由 CodeMirror 装饰使用固定 DOM API 映射；当前选择相交的块直接显示原始 Markdown。Mermaid、KaTeX 等复杂块才通过专用 `MessageChannel` 进入无 Preload、无 Node、不同源且带 sandbox 的 Frame。
 
-Preview Frame 只能返回固定的定位、链接点击、复制源码和渲染状态事件。工作台逐项校验文档 ID、修订、源码位置和链接类型；Frame 不能获得 `loop_desktop_api`、父页面 DOM 或任意字符串命令通道。即使 sanitizer 或复杂 renderer 出现 XSS，影响也被限制在预览 frame 内。
+D1C 使用完整源码快照产生带源码跨度的块。React 不逐键保存正文；CodeMirror 在 150 ms 合并窗口到期后才生成字符串快照。协调器全局只保留一个在途任务和一个最新待处理任务，Worker 与工作台都严格校验 5 MiB 源码、100000 节点、64 层和 12 MiB safe HAST 预算，过期修订不生成装饰。与编辑变化相交或跨度无法证明有效的块立即退回源码。
+
+复杂块 Frame 只能返回固定的 ready、渲染状态、局部激活、保存和源码模式事件。工作台逐项校验文档 ID、块 ID、修订和 nonce；Frame 不能获得 `loop_desktop_api`、父页面 DOM 或任意字符串命令通道。Mermaid SVG 还要经过固定 allowlist 重建，即使复杂 renderer 出现 XSS，影响也被限制在 Frame 内。
 
 CodeMirror 与 Unified 使用不同解析器，因此每个 Markdown feature 必须提供共同 fixture：合法语法、错误语法、源码位置、编辑高亮、预览结果和恶意输入。不能假设编辑器着色成功就代表预览语义一致。
 
@@ -291,7 +308,7 @@ loop-resource://resource/<token>   # 当前窗口授权的本地资源
 
 Renderer 不能自己把路径编码进 URL。它先把文档 ID 与原始 Markdown 链接交给 Main；Main 转交 C++ 服务规范化并验证能力、边界和类型，再为返回的资源句柄签发高熵、短生命周期、窗口作用域 token。每个窗口使用独立的非持久 Electron session partition，并在对应 `session.protocol` 上注册资源处理器，使 token 与网络存储边界同时随窗口撤销。工作区关闭、窗口关闭或文件身份变化后 token 失效。
 
-`loop-preview://` 只提供固定预览 runtime，并使用独立 CSP、无 Preload iframe、`sandbox="allow-scripts"` 且不授予 `allow-same-origin`、表单、弹窗、下载或顶层导航。协议不启用 `bypassCSP`、Service Worker 或不需要的存储权限。HTML、脚本、可执行文件和未清洗 SVG 不以内联资源返回。远程资源不经过该协议代理，也不由预览自动请求。
+`loop-preview://` 只提供固定的 `index.html / runtime.js / styles.css`，并使用独立 CSP、无 Preload iframe、`sandbox="allow-scripts"` 且不授予 `allow-same-origin`、表单、弹窗、下载或顶层导航。由于 sandbox Frame 的文档 origin 为 opaque，scheme 只为这三个固定子资源启用 CORS，并返回 `Access-Control-Allow-Origin: *`；没有启用 `supportFetch`，Frame 的 `connect-src` 仍为 `none`，协议处理器也不接受其他路径。协议不启用 `bypassCSP`、Service Worker 或不需要的存储权限。HTML、脚本、可执行文件和未清洗 SVG 不以内联资源返回。远程资源不经过该协议代理，也不由预览自动请求。
 
 ## 1.13\_错误模型
 
@@ -324,10 +341,10 @@ correlation_id
 
 1. 固化 Electron 安全默认值、IPC Schema、C++ 帧协议、错误码和窗口能力表。
 2. 建立空窗口、新建文件、打开文件、打开文件夹和最近打开。
-3. 完成文件树、CodeMirror、普通 Markdown 预览和手动保存纵向闭环。
+3. 完成文件树、CodeMirror Typora 式混合编辑与普通 Markdown 安全块渲染。
 4. 完成脏状态、合并恢复备份、Hot Exit、本地历史和外部冲突。
-5. 引入 Markdown Worker、safe HAST、源码定位和复杂块隔离。
-6. 实现链接、图片、Mermaid、公式、Callout、Wiki 链接和移动时链接更新。
+5. 在现有 Markdown Worker 与 safe HAST 上优化细粒度增量解析、缓存和复杂块调度。
+6. 在已接通 Mermaid 的基础上实现链接、图片、公式、Callout、Wiki 链接和移动时链接更新。
 7. 实现工作区搜索、按需索引、文件操作和跨平台故障注入。
 8. 完成签名安装包、安全、性能、键盘与无障碍验收，再删除旧浏览器和电子书实现。
 

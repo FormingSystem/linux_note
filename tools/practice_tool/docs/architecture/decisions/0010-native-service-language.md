@@ -41,13 +41,15 @@ Native Service 采用 C++20、CMake 和独立进程边界。依赖必须锁定�
 
 C++ 服务只负责工作区能力、文件语义、备份、监听、索引与搜索，不实现 Markdown DOM、Mermaid 或 Renderer 状态。D1A 将协议提升为版本 `2`：使用单行 UTF-8 JSON，每个控制帧以换行结束且上限为 1 MiB；JSON 字符串中的换行必须转义。这样标准 C++ iostream 在 Windows 与 Linux 使用同一实现，不需要为标准输入输出切换平台私有二进制模式。协议拒绝未知字段、未知方法、空帧、超长帧、无效 UTF-8 和版本不匹配。
 
+以上版本 `2` 帧格式是 D1A 的历史基线。D1B 正文传输由 [ADR-0011](0011-bounded-control-and-body-frames.md) 取代为版本 `3` 的有界控制区与正文附件；C++20 语言和独立进程结论保持有效。
+
 不为将来可能改用 Rust 预留双后端接口、备用实现或运行时选择。若以后确有数据证明需要替换语言，新增取代 ADR，保持协议语义后整体替换并删除 C++ 服务。
 
 ## 1.5\_实施基线
 
 - Windows 开发基线：CMake 3.22 以上与支持 C++20 的 MSVC、Clang 或 MinGW GCC；发布编译器在打包 ADR 中固定。
 - Ubuntu 22.04 开发基线：CMake 3.22 以上与 GCC/Clang C++20。
-- `nlohmann/json 3.12.0` 负责 JSON 值与解析；Mbed TLS `3.6.4` 负责 SHA-256 和 CSPRNG；libuv `1.51.0` 负责跨平台真实路径、文件身份和链接状态。三个依赖都通过官方发行归档和固定 SHA-256 获取。
-- 业务代码优先使用 C++ 标准库；标准库缺失或当前实现不一致的安全能力只允许通过单一跨平台依赖接口补齐，不在服务中散落 Win32、Linux syscall 或双分支实现。
+- `nlohmann/json 3.12.0` 负责 JSON 值与解析；Mbed TLS `3.6.4` 负责 SHA-256 和 CSPRNG；libuv `1.51.0` 负责复合帧管道以及可安全表达的普通文件 I/O、真实路径、文件身份和链接状态。三个依赖都通过官方发行归档和固定 SHA-256 获取。
+- 业务代码优先使用 C++ 标准库和跨平台依赖。ADR-0013 已证明 libuv 无法表达同设备 bind mount 与根句柄相对解析，因此该项安全能力由单一 `filesystem_capability_port` 封装 Linux `openat2` 和 Windows 根句柄相对 `NtCreateFile`；平台分支不得扩散到工作区状态机，也不得保留路径复检回退。
 - C++、TypeScript、IPC 和 JSON 中的项目自有标识符与字段使用 `snake_case`；只有语言、框架或第三方 API 强制的名称保留上游形式。
 - 最终用户只获得随安装包发布的服务二进制，不需要 CMake、编译器或依赖管理器。

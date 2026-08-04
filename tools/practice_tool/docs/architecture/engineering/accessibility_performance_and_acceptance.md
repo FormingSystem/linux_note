@@ -20,7 +20,7 @@ domains:
 - 对话框初始焦点、取消、确认和关闭后焦点恢复可预测。
 - 资源树、标签、命令面板、诊断和大纲使用正确复合控件语义。
 - 不仅靠颜色表达 Dirty、失败、冲突、链接错误和当前选择。
-- 源码—预览同步、动画和 Mermaid 平移可关闭或遵循减少运动偏好。
+- 混合块切换不强制动画；Mermaid 后续平移遵循减少运动偏好。
 
 ## 1.3\_屏幕阅读器与视觉
 
@@ -86,7 +86,7 @@ domains:
 - CommonMark/GFM、Front Matter、代码、Mermaid、KaTeX、Callout、Wiki 链接和脚注具有固定 fixture。
 - CodeMirror 与 Unified 对语法范围和源码位置的一致性有回归测试。
 - 原始 HTML、URL、SVG、Mermaid 和公式恶意输入经过 sanitizer 与 CSP 测试。
-- Preview Frame 没有 Preload/IPC，消息协议拒绝未知事件、过期修订、越界源码位置和未分类 URL。
+- Mermaid Frame 没有 Preload/IPC，消息协议拒绝未知事件、过期修订、错误块身份和越界资源；普通块 DOM 映射拒绝未知 safe HAST。
 - 远程图片在默认设置下不发出网络请求。
 - 一个复杂块失败不阻止正文；旧修订预览有明确标识。
 - 本地资源 token 越界、过期、跨窗口复用和文件身份变化全部拒绝。
@@ -113,7 +113,7 @@ Windows 10/11 x64 与 Ubuntu 22.04 x64 都在干净环境执行：
 
 ## 1.10\_发布门槛
 
-- ADR-0006～0010 保持 `accepted`，语言与进程边界没有静默偏离。
+- ADR-0006～0015 的当前有效结论没有静默偏离；0008 和 0012 被 0015 明确取代的交互与协议不得作为兼容路径保留。
 - Electron 安全 spike、打包 spike、文件保存 spike 和 1 MB/5 MB 预览 spike 通过。
 - 单文件和单文件夹纵向 E2E 在两个平台通过。
 - 无 P0/P1 数据损坏、安全或键盘阻塞问题。
