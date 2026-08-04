@@ -11,9 +11,11 @@ domains:
 
 ## 1.1\_状态
 
-`accepted`
+`partially_superseded`
 
 本决策于 2026-08-02 随桌面实现启动而接受。
+
+2026-08-03，ADR-0015 取代“工作台不渲染任何普通文档节点”和“首阶段不实现隐藏源码的混合编辑”两项结论。CodeMirror 草稿所有权、Worker 解析、safe HAST、修订门禁和复杂 renderer 隔离继续有效。
 
 ## 1.2\_背景
 

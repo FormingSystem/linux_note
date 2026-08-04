@@ -17,9 +17,13 @@ ADR 一旦接受后保留历史正文。目标改变时更新状态并新增取�
 
 1. [0006：采用桌面优先的多进程与包级架构](0006-desktop-first-multiprocess-architecture.md)，`accepted`。
 2. [0007：采用磁盘正文与分层保存](0007-disk-markdown-and-desktop-persistence.md)，`accepted`。
-3. [0008：分离 Markdown 编辑与实时渲染管线](0008-separate-markdown-editing-and-rendering.md)，`accepted`。
+3. [0008：分离 Markdown 编辑与实时渲染管线](0008-separate-markdown-editing-and-rendering.md)，草稿、Worker 与复杂 renderer 所有权继续有效，交互与普通块放置由 0015 取代。
 4. [0009：采用文件与文件夹工作区](0009-file-and-folder-workspace.md)，`accepted`。
 5. [0010：选择 Native Service 实现语言](0010-native-service-language.md)，`accepted`，采用 C++20。
+6. [0011：分离有界控制区与正文附件](0011-bounded-control-and-body-frames.md)，`accepted`，建立版本 `3` 复合帧，当前协议由 0014 升级为版本 `4`。
+7. [0013：用平台安全原语实现句柄相对文件能力解析](0013-handle-relative-filesystem-capability-resolution.md)，`accepted`，安全路径能力必须以根句柄一次解析完整相对名称。
+8. [0014：采用冲突检查与句柄相对安全替换](0014-conflict-checked-handle-relative-safe-save.md)，`accepted`，D1-SAVE 只开放可验证的原子替换并升级协议版本 `4`。
+9. [0015：采用 Typora 式混合 Markdown 编辑面](0015-typora-style-hybrid-markdown-surface.md)，`accepted`，使用版本 `3` 块协议、CodeMirror 局部源码编辑与隔离 Mermaid Frame。
 
 ## 1.3\_待评审决策
 
@@ -32,3 +36,4 @@ ADR 一旦接受后保留历史正文。目标改变时更新状态并新增取�
 3. [0003：冻结不可变训练计划快照](0003-immutable-training-plan-snapshot.md)，由 0009 取代。
 4. [0004：AI 草稿必须经过人工审核](0004-ai-draft-requires-review.md)，由 0009 从当前产品范围移除。
 5. [0005：专题电子书取代单篇学习导引](0005-topic-ebook-content-model.md)，由 0009 取代。
+6. [0012：采用有界隔离预览协议](0012-bounded-isolated-preview-protocol.md)，其版本 `1` whole-document Frame 数据和完整预览面板由 0015 取代；资源预算被继承。

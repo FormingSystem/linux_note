@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(loop_native_service VERSION 0.2.0 LANGUAGES C CXX)
+project(loop_native_service VERSION 0.4.0 LANGUAGES C CXX)
 
 include(FetchContent)
 
@@ -70,14 +70,32 @@ function(loop_enable_sanitizers target)
   endif()
 endfunction()
 
+function(loop_link_self_contained_mingw_runtime target)
+  if(MINGW)
+    # 从资源管理器双击启动时不能依赖开发终端临时暴露 MinGW 运行库。
+    target_link_options(${target} PRIVATE -static -static-libgcc -static-libstdc++)
+  endif()
+endfunction()
+
 add_library(loop_native_protocol STATIC
   src/protocol/framing.cpp
   src/protocol/messages.cpp
+  src/service/file_service.cpp
+  src/service/filesystem_capability_port.cpp
   src/service/workspace_service.cpp
   src/support/portable_crypto.cpp
 )
 target_include_directories(loop_native_protocol PUBLIC src)
 target_link_libraries(loop_native_protocol PUBLIC nlohmann_json::nlohmann_json MbedTLS::mbedcrypto uv_a)
+if(WIN32)
+  target_compile_definitions(
+    loop_native_protocol PRIVATE
+    _WIN32_WINNT=0x0A00
+    WINVER=0x0A00
+    NTDDI_VERSION=0x0A000002
+  )
+  target_link_libraries(loop_native_protocol PUBLIC ntdll advapi32)
+endif()
 loop_enable_strict_warnings(loop_native_protocol)
 loop_enable_sanitizers(loop_native_protocol)
 
@@ -85,16 +103,19 @@ add_executable(loop_native_service src/service/main.cpp)
 target_link_libraries(loop_native_service PRIVATE loop_native_protocol)
 loop_enable_strict_warnings(loop_native_service)
 loop_enable_sanitizers(loop_native_service)
+loop_link_self_contained_mingw_runtime(loop_native_service)
 
 enable_testing()
 add_executable(loop_native_protocol_tests tests/protocol_tests.cpp)
 target_link_libraries(loop_native_protocol_tests PRIVATE loop_native_protocol)
 loop_enable_strict_warnings(loop_native_protocol_tests)
 loop_enable_sanitizers(loop_native_protocol_tests)
+loop_link_self_contained_mingw_runtime(loop_native_protocol_tests)
 add_test(NAME loop_native_protocol_tests COMMAND loop_native_protocol_tests)
 
 add_executable(loop_native_workspace_tests tests/workspace_tests.cpp)
 target_link_libraries(loop_native_workspace_tests PRIVATE loop_native_protocol)
 loop_enable_strict_warnings(loop_native_workspace_tests)
 loop_enable_sanitizers(loop_native_workspace_tests)
+loop_link_self_contained_mingw_runtime(loop_native_workspace_tests)
 add_test(NAME loop_native_workspace_tests COMMAND loop_native_workspace_tests)

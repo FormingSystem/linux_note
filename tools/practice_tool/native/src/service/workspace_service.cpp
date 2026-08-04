@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "support/portable_crypto.h"
+#include "service/filesystem_capability_port.h"
 
 #include <uv.h>
 
@@ -32,6 +33,7 @@ constexpr std::size_t k_maximum_page_payload_bytes = 512U * 1024U;
 struct path_info {
   fs::path canonical_path;
   std::string identity;
+  std::uint64_t device = 0U;
   std::uint64_t size = 0U;
   std::int64_t write_seconds = 0;
   std::int64_t write_nanoseconds = 0;
@@ -240,6 +242,7 @@ std::optional<path_info> query_path(const fs::path& path, std::string& failure_c
 
   path_info result;
   result.canonical_path = canonical_path;
+  result.device = stat.st_dev;
   result.identity = std::to_string(stat.st_dev) + ':' + std::to_string(stat.st_ino);
   result.directory = file_type == static_cast<std::uint64_t>(S_IFDIR);
   result.regular_file = file_type == static_cast<std::uint64_t>(S_IFREG);
@@ -282,22 +285,172 @@ service_result failure_for_path(const std::string& code, const std::string& targ
       "INTERNAL_ERROR", "无法安全检查所选" + target_kind, false, {"CHOOSE_ANOTHER"}));
 }
 
-bool same_file(const path_info& first, const path_info& second) {
-  return same_path_entry(first.canonical_path, second.canonical_path)
-      && first.size == second.size
-      && first.write_seconds == second.write_seconds
-      && first.write_nanoseconds == second.write_nanoseconds
-      && first.regular_file == second.regular_file && first.directory == second.directory;
+service_result failure_for_document_read(const std::string& code) {
+  if (code == "NOT_FOUND" || code == "PERMISSION_DENIED") return failure_for_path(code, "文件");
+  if (code == "NOT_REGULAR_FILE") {
+    return service_result::failure(make_error(
+        "NOT_REGULAR_FILE", "文档能力不再指向普通文件", false, {"REOPEN_WORKSPACE"}));
+  }
+  if (code == "CONTENT_TOO_LARGE") {
+    return service_result::failure(make_error(
+        "CONTENT_TOO_LARGE", "Markdown 文件超过 5 MiB 首版限制", false, {"CHOOSE_ANOTHER"}));
+  }
+  if (code == "INVALID_ENCODING") {
+    return service_result::failure(make_error(
+        "INVALID_ENCODING", "文件不是有效的 UTF-8 Markdown，已拒绝替换字符解码", false,
+        {"CHOOSE_ANOTHER"}));
+  }
+  if (code == "WORKSPACE_INVALID") {
+    return service_result::failure(make_error(
+        "WORKSPACE_INVALID", "文件身份或内容在读取期间发生变化，请重新打开", true,
+        {"REOPEN_WORKSPACE"}));
+  }
+  return service_result::failure(make_error(
+      "INTERNAL_ERROR", "无法安全读取 Markdown 正文", false, {"REOPEN_WORKSPACE"}));
+}
+
+service_result failure_for_capability(const std::string& code, const std::string& target_kind) {
+  if (code == "NOT_FOUND" || code == "PERMISSION_DENIED") {
+    return failure_for_path(code, target_kind);
+  }
+  if (code == "NOT_DIRECTORY") {
+    return service_result::failure(make_error(
+        "NOT_DIRECTORY", "所选目标不是文件夹", false, {"CHOOSE_ANOTHER"}));
+  }
+  if (code == "DIRECTORY_RESOURCE_LIMIT") {
+    return service_result::failure(make_error(
+        "DIRECTORY_RESOURCE_LIMIT", "单个目录超过 50000 项或 32 MiB 元数据限制", false,
+        {"REFINE_SCOPE"}));
+  }
+  if (code == "LINK_OR_MOUNT_BLOCKED") {
+    return service_result::failure(make_error(
+        "PATH_OUTSIDE_WORKSPACE", "目录解析遇到链接、挂载或工作区边界", false,
+        {"REOPEN_WORKSPACE", "CHOOSE_ANOTHER"}));
+  }
+  if (code == "PLATFORM_UNSUPPORTED" || code == "NETWORK_FILESYSTEM_UNSUPPORTED") {
+    return service_result::failure(make_error(
+        "INTERNAL_ERROR", "当前平台或文件系统不能提供安全目录能力", false,
+        {"CHOOSE_ANOTHER"}));
+  }
+  return service_result::failure(make_error(
+      "WORKSPACE_INVALID", target_kind + "能力已经失效，请重新打开工作区", true,
+      {"REOPEN_WORKSPACE"}));
+}
+
+service_result failure_for_save(const std::string& code) {
+  if (code == "DOCUMENT_CONFLICT" || code == "WORKSPACE_INVALID" || code == "NOT_FOUND") {
+    return service_result::failure(make_error(
+        "DOCUMENT_CONFLICT", "磁盘文件已经变化，未覆盖外部内容", false,
+        {"REOPEN_WORKSPACE"}));
+  }
+  if (code == "PERMISSION_DENIED") {
+    return service_result::failure(make_error(
+        "PERMISSION_DENIED", "没有权限安全替换此文件", false, {"CHOOSE_ANOTHER"}));
+  }
+  if (code == "FILE_BUSY") {
+    return service_result::failure(make_error(
+        "FILE_BUSY", "文件正被其他程序占用，未执行替换", true, {"RETRY"}));
+  }
+  if (code == "DISK_FULL") {
+    return service_result::failure(make_error(
+        "DISK_FULL", "磁盘空间不足，原文件未被替换", true, {"RETRY"}));
+  }
+  if (code == "UNSAFE_FILE_METADATA") {
+    return service_result::failure(make_error(
+        "UNSAFE_FILE_METADATA", "此文件的链接或元数据不能由当前安全保存策略保持", false,
+        {"CHOOSE_ANOTHER"}));
+  }
+  if (code == "SAVE_OUTCOME_UNKNOWN") {
+    return service_result::failure(make_error(
+        "SAVE_OUTCOME_UNKNOWN", "替换结果无法确认，请重新打开并比较磁盘内容", false,
+        {"REOPEN_WORKSPACE"}));
+  }
+  return service_result::failure(make_error(
+      "INTERNAL_ERROR", "无法安全保存 Markdown", false, {"REOPEN_WORKSPACE"}));
+}
+
+struct markdown_serialization_result {
+  bool ok = false;
+  std::string error_code;
+  std::string line_ending;
+  std::vector<unsigned char> bytes;
+};
+
+markdown_serialization_result serialize_markdown_for_save(
+    const std::span<const unsigned char> content,
+    const bool bom,
+    const std::string_view baseline_line_ending,
+    const std::string_view line_ending_policy) {
+  markdown_serialization_result result;
+  markdown_inspection inspection;
+  if (!inspect_markdown_bytes(content, inspection)
+      || std::ranges::find(content, static_cast<unsigned char>('\r')) != content.end()) {
+    result.error_code = "INVALID_ENCODING";
+    return result;
+  }
+  if (baseline_line_ending == "mixed" && line_ending_policy == "preserve") {
+    result.error_code = "FORMAT_DECISION_REQUIRED";
+    return result;
+  }
+  if (line_ending_policy == "normalize_crlf"
+      || (line_ending_policy == "preserve" && baseline_line_ending == "crlf")) {
+    result.line_ending = "crlf";
+  } else if (line_ending_policy == "normalize_lf"
+      || line_ending_policy == "preserve") {
+    result.line_ending = "lf";
+  } else {
+    result.error_code = "INVALID_REQUEST";
+    return result;
+  }
+
+  const auto line_feed_count = static_cast<std::size_t>(
+      std::ranges::count(content, static_cast<unsigned char>('\n')));
+  const auto bom_bytes = bom ? 3U : 0U;
+  const auto crlf_expansion = result.line_ending == "crlf" ? line_feed_count : 0U;
+  if (content.size() > k_maximum_markdown_bytes - bom_bytes
+      || crlf_expansion > k_maximum_markdown_bytes - bom_bytes - content.size()) {
+    result.error_code = "CONTENT_TOO_LARGE";
+    return result;
+  }
+  result.bytes.reserve(bom_bytes + content.size() + crlf_expansion);
+  if (bom) {
+    result.bytes.insert(result.bytes.end(), {0xEFU, 0xBBU, 0xBFU});
+  }
+  for (const auto byte : content) {
+    if (byte == static_cast<unsigned char>('\n') && result.line_ending == "crlf") {
+      result.bytes.push_back(static_cast<unsigned char>('\r'));
+    }
+    result.bytes.push_back(byte);
+  }
+  result.ok = true;
+  return result;
 }
 
 struct entry_record {
   std::string id;
   std::string parent_id;
-  fs::path path;
+  std::string name;
+  filesystem_component_chain components;
   std::string identity;
   std::string relative_display;
   bool directory = false;
+  bool markdown = false;
   bool accessible = false;
+};
+
+struct document_record {
+  std::string id;
+  std::string name;
+  std::string display_path;
+  filesystem_component_chain components;
+  std::string identity;
+  std::string content_hash;
+  std::string file_version_token;
+  std::string line_ending = "none";
+  std::uint64_t link_count = 0U;
+  bool bom = false;
+  bool read_only = false;
+  bool resolved_from_link = false;
 };
 
 struct cursor_state {
@@ -310,12 +463,11 @@ struct workspace_capability {
   std::string id;
   std::string window_session_id;
   std::string mode;
-  fs::path canonical_root;
+  filesystem_workspace_root root;
   std::unordered_map<std::string, entry_record> entries;
   std::unordered_map<std::string, cursor_state> cursors;
-  std::string selected_document_id;
-  std::string selected_file_identity;
-  std::string selected_file_hash;
+  std::unordered_map<std::string, document_record> documents;
+  std::unordered_map<std::string, std::string> document_ids_by_identity;
 };
 
 }  // namespace
@@ -327,45 +479,19 @@ service_result service_result::success(json value) {
   return result;
 }
 
+service_result service_result::success_with_body(json value, std::vector<unsigned char> body) {
+  service_result result;
+  result.ok = true;
+  result.value = std::move(value);
+  result.body = std::move(body);
+  result.body_present = true;
+  return result;
+}
+
 service_result service_result::failure(service_error error) {
   service_result result;
   result.error = std::move(error);
   return result;
-}
-
-bool inspect_markdown_bytes(
-    const std::span<const unsigned char> bytes,
-    markdown_inspection& inspection) {
-  inspection = {};
-  std::size_t offset = 0U;
-  if (bytes.size() >= 3U && bytes[0] == 0xEFU && bytes[1] == 0xBBU && bytes[2] == 0xBFU) {
-    inspection.bom = true;
-    offset = 3U;
-  }
-  const auto content = bytes.subspan(offset);
-  if (!valid_utf8(content)) return false;
-  if (std::ranges::find(content, static_cast<unsigned char>(0U)) != content.end()) return false;
-
-  std::size_t crlf = 0U;
-  std::size_t lf = 0U;
-  std::size_t bare_cr = 0U;
-  for (std::size_t index = 0U; index < content.size(); ++index) {
-    if (content[index] == static_cast<unsigned char>('\r')) {
-      if (index + 1U < content.size() && content[index + 1U] == static_cast<unsigned char>('\n')) {
-        ++crlf;
-        ++index;
-      } else {
-        ++bare_cr;
-      }
-    } else if (content[index] == static_cast<unsigned char>('\n')) {
-      ++lf;
-    }
-  }
-  if (crlf == 0U && lf == 0U && bare_cr == 0U) inspection.line_ending = "none";
-  else if (crlf > 0U && lf == 0U && bare_cr == 0U) inspection.line_ending = "crlf";
-  else if (lf > 0U && crlf == 0U && bare_cr == 0U) inspection.line_ending = "lf";
-  else inspection.line_ending = "mixed";
-  return true;
 }
 
 class workspace_service::impl {
@@ -390,46 +516,63 @@ class workspace_service::impl {
       return service_result::failure(make_error(
           "NOT_REGULAR_FILE", "当前只支持 .md 和 .markdown 文件", false, {"CHOOSE_ANOTHER"}));
     }
-    if (initial->size > k_maximum_markdown_bytes) {
+    const auto read = files_.read_markdown(initial->canonical_path, initial->identity);
+    if (!read.ok) return failure_for_document_read(read.error_code);
+    if (!path_is_within(initial->canonical_path.parent_path(), read.canonical_path)) {
       return service_result::failure(make_error(
-          "CONTENT_TOO_LARGE", "Markdown 文件超过 5 MiB 首版限制", false, {"CHOOSE_ANOTHER"}));
+          "PATH_OUTSIDE_WORKSPACE", "文件解析结果越过已选择边界", false, {"CHOOSE_ANOTHER"}));
     }
 
-    std::ifstream input(initial->canonical_path, std::ios::binary);
-    if (!input) return failure_for_path("PERMISSION_DENIED", "文件");
-    std::vector<unsigned char> bytes(static_cast<std::size_t>(initial->size));
-    if (!bytes.empty()) {
-      input.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
-      if (input.gcount() != static_cast<std::streamsize>(bytes.size())) {
-        return service_result::failure(make_error(
-            "WORKSPACE_INVALID", "文件在打开期间发生变化，请重试", true, {"RETRY", "CHOOSE_ANOTHER"}));
-      }
-    }
-    markdown_inspection inspection;
-    if (!inspect_markdown_bytes(bytes, inspection)) {
+    auto root_open = capabilities_.open_root(read.canonical_path.parent_path());
+    if (!root_open.ok) return failure_for_capability(root_open.error_code, "文件父目录");
+    std::string selected_component;
+    try {
+      selected_component = path_bytes(read.canonical_path.filename());
+    } catch (...) {
       return service_result::failure(make_error(
-          "INVALID_ENCODING", "文件不是有效的 UTF-8 Markdown，已拒绝替换字符解码", false, {"CHOOSE_ANOTHER"}));
+          "INVALID_REQUEST", "所选文件名无法安全表示", false, {"CHOOSE_ANOTHER"}));
     }
-
-    const auto content_hash = loop::support::sha256_hex(bytes);
-    const auto final = query_path(initial->canonical_path, failure_code);
-    if (!final || !same_file(*initial, *final)) {
+    if (!is_safe_native_capability_child_name(selected_component)) {
       return service_result::failure(make_error(
-          "WORKSPACE_INVALID", "文件在打开期间发生变化，请重试", true, {"RETRY", "CHOOSE_ANOTHER"}));
+          "INVALID_REQUEST", "所选文件名不是安全的单个路径组件", false, {"CHOOSE_ANOTHER"}));
+    }
+    filesystem_component_chain components{selected_component};
+    auto authorized = capabilities_.authorize_regular_file(root_open.root, components);
+    if (!authorized.ok) return failure_for_capability(authorized.error_code, "文件");
+    const auto capability_identity = authorized.identity;
+    const auto capability_read = files_.read_markdown(std::move(authorized.file));
+    if (!capability_read.ok) return failure_for_document_read(capability_read.error_code);
+    if (capability_read.content_hash != read.content_hash
+        || !capabilities_.verify_regular_file(root_open.root, components, capability_identity)) {
+      return service_result::failure(make_error(
+          "WORKSPACE_INVALID", "所选文件在能力建立期间发生变化，请重新打开", true,
+          {"REOPEN_WORKSPACE"}));
     }
 
     workspace_capability workspace;
     workspace.id = new_id("workspace");
     workspace.window_session_id = std::string(window_session_id);
     workspace.mode = "single_file";
-    workspace.canonical_root = final->canonical_path.parent_path();
-    workspace.selected_file_identity = final->identity;
-    workspace.selected_file_hash = content_hash;
+    workspace.root = std::move(root_open.root);
 
-    workspace.selected_document_id = new_id("document");
-    const auto document_id = workspace.selected_document_id;
-    const auto display_name = safe_name(final->canonical_path);
+    document_record document;
+    document.id = new_id("document");
+    document.components = std::move(components);
+    document.identity = capability_identity;
+    document.content_hash = capability_read.content_hash;
+    document.file_version_token = new_id("version");
+    document.name = safe_name(read.canonical_path);
+    document.display_path = document.name;
+    document.bom = capability_read.inspection.bom;
+    document.line_ending = capability_read.inspection.line_ending;
+    document.link_count = capability_read.link_count;
+    document.read_only = capability_read.read_only;
     const auto resolved_from_link = path_was_link(requested);
+    document.resolved_from_link = resolved_from_link;
+    const auto document_id = document.id;
+    const auto display_name = document.name;
+    workspace.document_ids_by_identity.emplace(document.identity, document.id);
+    workspace.documents.emplace(document.id, std::move(document));
     const auto result = json{
         {"workspace_id", workspace.id},
         {"mode", "single_file"},
@@ -438,11 +581,11 @@ class workspace_service::impl {
             {"document_id", document_id},
             {"name", display_name},
             {"display_path", display_name},
-            {"byte_size", final->size},
+            {"byte_size", capability_read.byte_size},
             {"encoding", "utf-8"},
-            {"bom", inspection.bom},
-            {"line_ending", inspection.line_ending},
-            {"read_only", final->read_only},
+            {"bom", capability_read.inspection.bom},
+            {"line_ending", capability_read.inspection.line_ending},
+            {"read_only", capability_read.read_only},
             {"resolved_from_link", resolved_from_link},
         }},
     };
@@ -459,30 +602,24 @@ class workspace_service::impl {
           "INVALID_REQUEST", "所选文件夹路径不是有效的 UTF-8", false, {"CHOOSE_ANOTHER"}));
     }
 
-    std::string failure_code;
-    const auto info = query_path(requested, failure_code);
-    if (!info) return failure_for_path(failure_code, "文件夹");
-    if (!info->directory) {
-      return service_result::failure(make_error(
-          "NOT_DIRECTORY", "所选目标不是文件夹", false, {"CHOOSE_ANOTHER"}));
-    }
+    auto root_open = capabilities_.open_root(requested);
+    if (!root_open.ok) return failure_for_capability(root_open.error_code, "文件夹");
 
     workspace_capability workspace;
     workspace.id = new_id("workspace");
     workspace.window_session_id = std::string(window_session_id);
     workspace.mode = "folder";
-    workspace.canonical_root = info->canonical_path;
+    workspace.root = std::move(root_open.root);
 
     entry_record root;
     root.id = new_id("directory");
-    root.path = info->canonical_path;
-    root.identity = info->identity;
+    root.identity = root_open.identity;
     root.directory = true;
     root.accessible = true;
     const auto root_id = root.id;
     workspace.entries.emplace(root.id, std::move(root));
 
-    const auto display_name = safe_name(info->canonical_path);
+    const auto display_name = safe_name(requested);
     const auto result = json{
         {"workspace_id", workspace.id},
         {"mode", "folder"},
@@ -496,6 +633,27 @@ class workspace_service::impl {
 
   service_result close(const std::string_view window_session_id) {
     workspaces_.erase(std::string(window_session_id));
+    return service_result::success(json{{"closed", true}});
+  }
+
+  service_result close_document(
+      const std::string_view window_session_id,
+      const std::string_view workspace_id,
+      const std::string_view document_id) {
+    const auto workspace_iterator = workspaces_.find(std::string(window_session_id));
+    if (workspace_iterator == workspaces_.end() || workspace_iterator->second.id != workspace_id) {
+      return invalid_workspace();
+    }
+    auto& workspace = workspace_iterator->second;
+    const auto document_iterator = workspace.documents.find(std::string(document_id));
+    if (document_iterator == workspace.documents.end()) return invalid_workspace();
+    const auto identity = document_iterator->second.identity;
+    if (const auto identity_iterator = workspace.document_ids_by_identity.find(identity);
+        identity_iterator != workspace.document_ids_by_identity.end()
+            && identity_iterator->second == document_id) {
+      workspace.document_ids_by_identity.erase(identity_iterator);
+    }
+    workspace.documents.erase(document_iterator);
     return service_result::success(json{{"closed", true}});
   }
 
@@ -527,78 +685,58 @@ class workspace_service::impl {
       return invalid_workspace();
     }
     const auto& directory = directory_iterator->second;
-    std::string failure_code;
-    const auto current = query_path(directory.path, failure_code);
-    if (!current || !current->directory || current->identity != directory.identity
-        || !path_is_within(workspace.canonical_root, current->canonical_path)) {
-      return service_result::failure(make_error(
-          "WORKSPACE_INVALID", "文件夹身份已经变化，请重新打开工作区", true, {"REOPEN_WORKSPACE"}));
-    }
-
-    std::error_code enumeration_error;
-    fs::directory_iterator iterator(current->canonical_path, enumeration_error);
-    if (enumeration_error) return failure_for_path("PERMISSION_DENIED", "文件夹");
+    const auto enumeration = capabilities_.list_directory(
+        workspace.root,
+        directory.components,
+        directory.identity,
+        k_maximum_directory_entries,
+        k_maximum_directory_metadata_bytes);
+    if (!enumeration.ok) return failure_for_capability(enumeration.error_code, "文件夹");
 
     std::vector<json> items;
     std::vector<entry_record> records;
-    std::size_t metadata_bytes = 0U;
-    const fs::directory_iterator end;
-    for (; iterator != end; iterator.increment(enumeration_error)) {
-      if (enumeration_error) return failure_for_path("PERMISSION_DENIED", "文件夹");
-      const auto& item = *iterator;
-      if (items.size() >= k_maximum_directory_entries) return directory_limit();
-      std::string raw_name;
-      bool name_valid = false;
-      try {
-        raw_name = path_bytes(item.path().filename());
-        name_valid = valid_utf8(std::span(
-            reinterpret_cast<const unsigned char*>(raw_name.data()), raw_name.size()));
-      } catch (...) {
-        raw_name = "<无法显示的名称>";
-      }
-      const auto name = escaped_display_name(raw_name);
+    items.reserve(enumeration.entries.size());
+    records.reserve(enumeration.entries.size());
+    for (const auto& item : enumeration.entries) {
+      const auto& name = item.display_name;
       const auto relative_display = join_display_path(directory.relative_display, name);
-      metadata_bytes += name.size() + relative_display.size() + 256U;
-      if (metadata_bytes > k_maximum_directory_metadata_bytes) return directory_limit();
 
       entry_record record;
       record.id = new_id("entry");
       record.parent_id = directory.id;
-      record.path = item.path();
+      record.name = name;
       record.relative_display = relative_display;
 
       std::string kind = "other";
       bool expandable = false;
       bool accessible = false;
       json byte_size = nullptr;
-      std::error_code status_error;
-      const auto status = item.symlink_status(status_error);
-      const auto link = !status_error && path_was_link(item.path());
-      if (!status_error && link) {
+      if (item.kind == filesystem_capability_entry_kind::symbolic_link) {
         kind = "symbolic_link";
-      } else if (!status_error && fs::is_directory(status)) {
-        const auto child = query_path(item.path(), failure_code);
-        if (child && child->directory
-            && path_is_within(workspace.canonical_root, child->canonical_path) && name_valid) {
-          kind = "directory";
+      } else if (item.kind == filesystem_capability_entry_kind::directory) {
+        kind = "directory";
+        if (item.accessible && !item.name.empty() && !item.identity.empty()) {
           expandable = true;
           accessible = true;
-          record.path = child->canonical_path;
-          record.identity = child->identity;
+          record.components = directory.components;
+          record.components.push_back(item.name);
+          record.identity = item.identity;
           record.directory = true;
           record.accessible = true;
         }
-      } else if (!status_error && fs::is_regular_file(status)) {
-        std::error_code size_error;
-        const auto file_size = item.file_size(size_error);
-        const auto child = !size_error ? query_path(item.path(), failure_code) : std::nullopt;
-        if (child && child->regular_file && path_is_within(workspace.canonical_root, child->canonical_path)
-            && name_valid) {
-          kind = is_markdown_path(item.path()) ? "markdown" : "file";
+      } else if (item.kind == filesystem_capability_entry_kind::regular_file) {
+        const auto markdown = !item.name.empty() && is_markdown_path(path_from_utf8(item.name));
+        kind = markdown ? "markdown" : "file";
+        if (item.accessible && !item.name.empty() && !item.identity.empty()) {
           accessible = true;
+          record.components = directory.components;
+          record.components.push_back(item.name);
+          record.identity = item.identity;
           record.accessible = true;
-          if (file_size <= static_cast<std::uintmax_t>(std::numeric_limits<std::int64_t>::max())) {
-            byte_size = file_size;
+          record.markdown = markdown;
+          if (item.byte_size
+              && *item.byte_size <= static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max())) {
+            byte_size = *item.byte_size;
           }
         }
       }
@@ -615,7 +753,6 @@ class workspace_service::impl {
       });
       records.push_back(std::move(record));
     }
-    if (enumeration_error) return failure_for_path("PERMISSION_DENIED", "文件夹");
 
     const auto removed = descendant_ids(workspace, directory.id);
     if (workspace.entries.size() - removed.size() + records.size() > k_maximum_workspace_entries) {
@@ -632,6 +769,218 @@ class workspace_service::impl {
     erase_descendants(workspace, directory.id, removed);
     for (auto& record : records) workspace.entries.emplace(record.id, std::move(record));
     return make_page(workspace, std::move(items), 0U, directory.id);
+  }
+
+  service_result open_document(
+      const std::string_view window_session_id,
+      const std::string_view workspace_id,
+      const std::string_view target_kind,
+      const std::string_view target_id) {
+    auto workspace_iterator = workspaces_.find(std::string(window_session_id));
+    if (workspace_iterator == workspaces_.end() || workspace_iterator->second.id != workspace_id) {
+      return invalid_workspace();
+    }
+    auto& workspace = workspace_iterator->second;
+
+    std::string document_id;
+    filesystem_capability_file authorized_file;
+    std::optional<document_record> pending_document;
+    if (target_kind == "document") {
+      const auto document_iterator = workspace.documents.find(std::string(target_id));
+      if (document_iterator == workspace.documents.end()) return invalid_workspace();
+      document_id = document_iterator->first;
+    } else if (target_kind == "entry" && workspace.mode == "folder") {
+      const auto entry_iterator = workspace.entries.find(std::string(target_id));
+      if (entry_iterator == workspace.entries.end() || !entry_iterator->second.accessible
+          || !entry_iterator->second.markdown || entry_iterator->second.identity.empty()) {
+        return invalid_workspace();
+      }
+      const auto& entry = entry_iterator->second;
+      auto opened = capabilities_.open_regular_file(
+          workspace.root, entry.components, entry.identity);
+      if (!opened.ok) return failure_for_capability(opened.error_code, "文件条目");
+      authorized_file = std::move(opened.file);
+
+      const auto existing = workspace.document_ids_by_identity.find(entry.identity);
+      if (existing != workspace.document_ids_by_identity.end()) {
+        document_id = existing->second;
+      } else {
+        if (workspace.documents.size() >= k_maximum_open_documents) {
+          return service_result::failure(make_error(
+              "DIRECTORY_RESOURCE_LIMIT", "当前窗口打开的文档能力已达到 64 个上限", false,
+              {"REFINE_SCOPE"}));
+        }
+        document_record document;
+        document.id = new_id("document");
+        document.name = entry.name;
+        document.display_path = entry.relative_display;
+        document.components = entry.components;
+        document.identity = entry.identity;
+        document.file_version_token = new_id("version");
+        document_id = document.id;
+        pending_document = std::move(document);
+      }
+    } else {
+      return invalid_workspace();
+    }
+
+    document_record* document = nullptr;
+    if (pending_document) {
+      document = &*pending_document;
+    } else {
+      auto document_iterator = workspace.documents.find(document_id);
+      if (document_iterator == workspace.documents.end()) return invalid_workspace();
+      document = &document_iterator->second;
+    }
+    file_read_result read;
+    if (!authorized_file.valid()) {
+      auto opened = capabilities_.open_regular_file(
+          workspace.root, document->components, document->identity);
+      if (!opened.ok) return failure_for_capability(opened.error_code, "文档");
+      authorized_file = std::move(opened.file);
+    }
+    read = files_.read_markdown(std::move(authorized_file));
+    if (!read.ok) return failure_for_document_read(read.error_code);
+    if (!capabilities_.verify_regular_file(
+            workspace.root, document->components, document->identity)) {
+      return service_result::failure(make_error(
+          "WORKSPACE_INVALID", "文档路径在读取期间发生变化，请刷新资源管理器", true,
+          {"REOPEN_WORKSPACE"}));
+    }
+
+    document->content_hash = read.content_hash;
+    document->bom = read.inspection.bom;
+    document->line_ending = read.inspection.line_ending;
+    document->link_count = read.link_count;
+    document->read_only = read.read_only;
+    document->file_version_token = new_id("version");
+    if (pending_document) {
+      const auto identity = document->identity;
+      const auto id = document->id;
+      const auto [inserted_document, inserted] = workspace.documents.emplace(id, std::move(*pending_document));
+      if (!inserted) return invalid_workspace();
+      const auto [identity_entry, identity_inserted] =
+          workspace.document_ids_by_identity.emplace(identity, id);
+      static_cast<void>(identity_entry);
+      if (!identity_inserted) {
+        workspace.documents.erase(inserted_document);
+        return invalid_workspace();
+      }
+      document = &inserted_document->second;
+    }
+    return service_result::success_with_body(json{
+        {"workspace_id", workspace.id},
+        {"document_id", document->id},
+        {"name", document->name},
+        {"display_path", document->display_path},
+        {"content_hash", document->content_hash},
+        {"file_version_token", document->file_version_token},
+        {"byte_size", read.byte_size},
+        {"modified_time_ms", read.modified_time_ms},
+        {"encoding", "utf-8"},
+        {"bom", read.inspection.bom},
+        {"line_ending", read.inspection.line_ending},
+        {"read_only", read.read_only},
+        {"resolved_from_link", document->resolved_from_link},
+    }, read.content_bytes);
+  }
+
+  service_result save_document(
+      const std::string_view window_session_id,
+      const std::string_view workspace_id,
+      const std::string_view document_id,
+      const std::string_view expected_file_version_token,
+      const std::string_view expected_content_hash,
+      const std::uint64_t editor_revision,
+      const std::string_view line_ending_policy,
+      const std::span<const unsigned char> content) {
+    auto workspace_iterator = workspaces_.find(std::string(window_session_id));
+    if (workspace_iterator == workspaces_.end() || workspace_iterator->second.id != workspace_id) {
+      return invalid_workspace();
+    }
+    auto& workspace = workspace_iterator->second;
+    auto document_iterator = workspace.documents.find(std::string(document_id));
+    if (document_iterator == workspace.documents.end()) return invalid_workspace();
+    auto& document = document_iterator->second;
+    if (document.file_version_token != expected_file_version_token
+        || document.content_hash != expected_content_hash) {
+      return failure_for_save("DOCUMENT_CONFLICT");
+    }
+    if (document.read_only) {
+      return service_result::failure(make_error(
+          "READ_ONLY", "文件是只读的，未执行保存", false, {"CHOOSE_ANOTHER"}));
+    }
+    if (document.resolved_from_link || document.link_count != 1U) {
+      return failure_for_save("UNSAFE_FILE_METADATA");
+    }
+
+    auto serialization = serialize_markdown_for_save(
+        content, document.bom, document.line_ending, line_ending_policy);
+    if (!serialization.ok) {
+      if (serialization.error_code == "FORMAT_DECISION_REQUIRED") {
+        return service_result::failure(make_error(
+            "FORMAT_DECISION_REQUIRED", "混合换行必须先明确统一为 LF 或 CRLF", false,
+            {"CHOOSE_LINE_ENDING"}));
+      }
+      if (serialization.error_code == "CONTENT_TOO_LARGE") {
+        return service_result::failure(make_error(
+            "CONTENT_TOO_LARGE", "序列化后的 Markdown 超过 5 MiB", false, {"REFINE_SCOPE"}));
+      }
+      return service_result::failure(make_error(
+          "INVALID_ENCODING", "保存正文不是规范的 UTF-8/LF 编辑器内容", false, {}));
+    }
+    const auto replacement_hash = loop::support::sha256_hex(serialization.bytes);
+    const auto replaced = capabilities_.replace_regular_file(
+        workspace.root,
+        document.components,
+        document.identity,
+        document.content_hash,
+        serialization.bytes);
+    if (!replaced.ok) return failure_for_save(replaced.error_code);
+
+    auto final_open = capabilities_.open_regular_file(
+        workspace.root, document.components, replaced.identity);
+    if (!final_open.ok) return failure_for_save("SAVE_OUTCOME_UNKNOWN");
+    const auto final_read = files_.read_markdown(std::move(final_open.file));
+    if (!final_read.ok || final_read.content_hash != replacement_hash
+        || !capabilities_.verify_regular_file(
+            workspace.root, document.components, replaced.identity)) {
+      return failure_for_save("SAVE_OUTCOME_UNKNOWN");
+    }
+
+    const auto old_identity = document.identity;
+    if (const auto new_mapping = workspace.document_ids_by_identity.find(replaced.identity);
+        new_mapping != workspace.document_ids_by_identity.end()
+            && new_mapping->second != document.id) {
+      return failure_for_save("SAVE_OUTCOME_UNKNOWN");
+    }
+    if (const auto old_mapping = workspace.document_ids_by_identity.find(old_identity);
+        old_mapping != workspace.document_ids_by_identity.end()
+            && old_mapping->second == document.id) {
+      workspace.document_ids_by_identity.erase(old_mapping);
+    }
+    workspace.document_ids_by_identity[replaced.identity] = document.id;
+    document.identity = replaced.identity;
+    document.content_hash = final_read.content_hash;
+    document.file_version_token = new_id("version");
+    document.bom = final_read.inspection.bom;
+    document.line_ending = final_read.inspection.line_ending;
+    document.link_count = final_read.link_count;
+    document.read_only = final_read.read_only;
+    return service_result::success(json{
+        {"workspace_id", workspace.id},
+        {"document_id", document.id},
+        {"content_hash", document.content_hash},
+        {"file_version_token", document.file_version_token},
+        {"saved_revision", editor_revision},
+        {"byte_size", final_read.byte_size},
+        {"modified_time_ms", final_read.modified_time_ms},
+        {"encoding", "utf-8"},
+        {"bom", document.bom},
+        {"line_ending", document.line_ending},
+        {"read_only", document.read_only},
+        {"resolved_from_link", document.resolved_from_link},
+    });
   }
 
  private:
@@ -710,6 +1059,8 @@ class workspace_service::impl {
     });
   }
 
+  file_service files_;
+  filesystem_capability_port capabilities_;
   std::unordered_map<std::string, workspace_capability> workspaces_;
 };
 
@@ -734,12 +1085,47 @@ service_result workspace_service::close(const std::string_view window_session_id
   return impl_->close(window_session_id);
 }
 
+service_result workspace_service::close_document(
+    const std::string_view window_session_id,
+    const std::string_view workspace_id,
+    const std::string_view document_id) {
+  return impl_->close_document(window_session_id, workspace_id, document_id);
+}
+
 service_result workspace_service::list_children(
     const std::string_view window_session_id,
     const std::string_view workspace_id,
     const std::string_view directory_id,
     const std::string_view cursor) {
   return impl_->list_children(window_session_id, workspace_id, directory_id, cursor);
+}
+
+service_result workspace_service::open_document(
+    const std::string_view window_session_id,
+    const std::string_view workspace_id,
+    const std::string_view target_kind,
+    const std::string_view target_id) {
+  return impl_->open_document(window_session_id, workspace_id, target_kind, target_id);
+}
+
+service_result workspace_service::save_document(
+    const std::string_view window_session_id,
+    const std::string_view workspace_id,
+    const std::string_view document_id,
+    const std::string_view expected_file_version_token,
+    const std::string_view expected_content_hash,
+    const std::uint64_t editor_revision,
+    const std::string_view line_ending_policy,
+    const std::span<const unsigned char> content) {
+  return impl_->save_document(
+      window_session_id,
+      workspace_id,
+      document_id,
+      expected_file_version_token,
+      expected_content_hash,
+      editor_revision,
+      line_ending_policy,
+      content);
 }
 
 }  // namespace loop::service

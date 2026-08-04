@@ -4,6 +4,8 @@ dist/
 config/knowledge_sources.local.json
 config/offline_node_packages.local.tsv
 *.log
+*.lnk
 *.tsbuildinfo
 apps/desktop/out/
+apps/desktop/src/renderer/generated/
 native/build/

@@ -8,6 +8,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include "support/portable_crypto.h"
+
 namespace loop::protocol {
 namespace {
 
@@ -55,17 +57,34 @@ bool is_bounded_text(const json& value, const std::size_t maximum_length) {
   return !text.empty() && text.size() <= maximum_length && text.find('\0') == std::string::npos;
 }
 
+bool is_sha256_hex(const json& value) {
+  if (!value.is_string()) return false;
+  const auto& hash = value.get_ref<const std::string&>();
+  return hash.size() == 64U
+      && std::ranges::all_of(hash, [](const unsigned char character) {
+        return (character >= static_cast<unsigned char>('0')
+                && character <= static_cast<unsigned char>('9'))
+            || (character >= static_cast<unsigned char>('a')
+                && character <= static_cast<unsigned char>('f'));
+      });
+}
+
 service_error protocol_error(std::string code, std::string message) {
   return {std::move(code), std::move(message), false, {}};
 }
 
-std::string error_response(
-    const std::string& request_id,
-    const service_error& error) {
-  return json{
+transport_frame make_control_frame(json control) {
+  transport_frame frame;
+  frame.control = control.dump();
+  return frame;
+}
+
+transport_frame error_response(const std::string& request_id, const service_error& error) {
+  return make_control_frame(json{
       {"protocol_version", k_protocol_version},
       {"request_id", request_id},
       {"ok", false},
+      {"body", nullptr},
       {"error", {
           {"code", error.code},
           {"user_message", error.user_message},
@@ -73,31 +92,73 @@ std::string error_response(
           {"recovery_actions", error.recovery_actions},
           {"correlation_id", request_id},
       }},
-  }.dump();
+  });
 }
 
-std::string success_response(const std::string& request_id, json result) {
-  return json{
+transport_frame success_response(
+    const std::string& request_id,
+    json result,
+    std::vector<unsigned char> body = {},
+    const bool body_present = false) {
+  json descriptor = nullptr;
+  if (body_present) {
+    descriptor = json{
+        {"kind", "markdown_utf8"},
+        {"byte_length", body.size()},
+        {"sha256", loop::support::sha256_hex(body)},
+    };
+  }
+  transport_frame frame;
+  frame.control = json{
       {"protocol_version", k_protocol_version},
       {"request_id", request_id},
       {"ok", true},
+      {"body", std::move(descriptor)},
       {"result", std::move(result)},
   }.dump();
+  frame.body = std::move(body);
+  frame.body_present = body_present;
+  return frame;
 }
 
-std::string service_response(const std::string& request_id, service_result result) {
+transport_frame service_response(const std::string& request_id, service_result result) {
   return result.ok
-      ? success_response(request_id, std::move(result.value))
+      ? success_response(
+          request_id,
+          std::move(result.value),
+          std::move(result.body),
+          result.body_present)
       : error_response(request_id, result.error);
+}
+
+bool valid_body_descriptor(
+    const json& descriptor,
+    const transport_frame& frame,
+    const std::string_view expected_kind,
+    const bool body_required) {
+  if (descriptor.is_null()) {
+    return !body_required && !frame.body_present && frame.body.empty();
+  }
+  if (!frame.body_present || !has_exact_keys(descriptor, {"kind", "byte_length", "sha256"})
+      || !body_required
+      || descriptor.at("kind") != expected_kind
+      || !descriptor.at("byte_length").is_number_unsigned()
+      || descriptor.at("byte_length").get<std::uint64_t>() != frame.body.size()
+      || !descriptor.at("sha256").is_string()) {
+    return false;
+  }
+  return is_sha256_hex(descriptor.at("sha256"))
+      && descriptor.at("sha256").get_ref<const std::string&>()
+          == loop::support::sha256_hex(frame.body);
 }
 
 }  // namespace
 
-std::string request_handler::handle_request(const std::string_view payload) {
+transport_frame request_handler::handle_request(const transport_frame& frame) {
   std::string request_id = "invalid";
   bool request_id_valid = false;
   try {
-    const json request = json::parse(payload, nullptr, false, true);
+    const json request = json::parse(frame.control, nullptr, false, false);
     if (request.is_discarded() || !request.is_object()) {
       return error_response(request_id, protocol_error("INVALID_JSON", "请求不是有效 JSON 对象"));
     }
@@ -111,7 +172,7 @@ std::string request_handler::handle_request(const std::string_view payload) {
       }
     }
 
-    if (!has_exact_keys(request, {"protocol_version", "request_id", "method", "params"})) {
+    if (!has_exact_keys(request, {"protocol_version", "request_id", "method", "params", "body"})) {
       return error_response(request_id, protocol_error("INVALID_ENVELOPE", "请求字段不完整或包含未知字段"));
     }
     if (!request.at("protocol_version").is_number_integer()
@@ -127,6 +188,14 @@ std::string request_handler::handle_request(const std::string_view payload) {
 
     const auto method = request.at("method").get<std::string>();
     const auto& params = request.at("params");
+    const auto save_request = method == "workspace.save_document";
+    if (!valid_body_descriptor(
+            request.at("body"),
+            frame,
+            save_request ? "markdown_source_utf8" : "",
+            save_request)) {
+      return error_response(request_id, protocol_error("INVALID_BODY", "请求正文附件无效或方法不接受附件"));
+    }
     if (method == "system.handshake") {
       if (!has_exact_keys(params, {"client_name", "client_version"})
           || !params.at("client_name").is_string()
@@ -137,8 +206,10 @@ std::string request_handler::handle_request(const std::string_view payload) {
       }
       return success_response(request_id, json{
           {"service_name", "loop_native_service"},
-          {"service_version", "0.2.0"},
+          {"service_version", "0.4.0"},
           {"language", "C++"},
+          {"max_control_frame_bytes", k_max_control_frame_bytes},
+          {"max_body_frame_bytes", k_max_body_frame_bytes},
       });
     }
 
@@ -195,6 +266,84 @@ std::string request_handler::handle_request(const std::string_view payload) {
               params.at("workspace_id").get_ref<const std::string&>(),
               params.at("directory_id").get_ref<const std::string&>(),
               cursor));
+    }
+
+    if (method == "workspace.open_document") {
+      if (!has_exact_keys(
+              params,
+              {"window_session_id", "workspace_id", "target_kind", "target_id"})
+          || !params.at("window_session_id").is_string()
+          || !params.at("workspace_id").is_string()
+          || !params.at("target_kind").is_string()
+          || !params.at("target_id").is_string()
+          || !is_bounded_ascii(params.at("window_session_id").get<std::string>(), 128U)
+          || !is_bounded_ascii(params.at("workspace_id").get<std::string>(), 128U)
+          || !is_bounded_ascii(params.at("target_id").get<std::string>(), 128U)
+          || (params.at("target_kind") != "document" && params.at("target_kind") != "entry")) {
+        return error_response(request_id, protocol_error("INVALID_PARAMS", "文档打开参数无效"));
+      }
+      return service_response(
+          request_id,
+          workspace_service_.open_document(
+              params.at("window_session_id").get_ref<const std::string&>(),
+              params.at("workspace_id").get_ref<const std::string&>(),
+              params.at("target_kind").get_ref<const std::string&>(),
+              params.at("target_id").get_ref<const std::string&>()));
+    }
+
+    if (method == "workspace.close_document") {
+      if (!has_exact_keys(params, {"window_session_id", "workspace_id", "document_id"})
+          || !params.at("window_session_id").is_string()
+          || !params.at("workspace_id").is_string()
+          || !params.at("document_id").is_string()
+          || !is_bounded_ascii(params.at("window_session_id").get<std::string>(), 128U)
+          || !is_bounded_ascii(params.at("workspace_id").get<std::string>(), 128U)
+          || !is_bounded_ascii(params.at("document_id").get<std::string>(), 128U)) {
+        return error_response(request_id, protocol_error("INVALID_PARAMS", "文档关闭参数无效"));
+      }
+      return service_response(
+          request_id,
+          workspace_service_.close_document(
+              params.at("window_session_id").get_ref<const std::string&>(),
+              params.at("workspace_id").get_ref<const std::string&>(),
+              params.at("document_id").get_ref<const std::string&>()));
+    }
+
+    if (method == "workspace.save_document") {
+      if (!has_exact_keys(
+              params,
+              {"window_session_id", "workspace_id", "document_id",
+               "expected_file_version_token", "expected_content_hash", "editor_revision",
+               "line_ending_policy"})
+          || !params.at("window_session_id").is_string()
+          || !params.at("workspace_id").is_string()
+          || !params.at("document_id").is_string()
+          || !params.at("expected_file_version_token").is_string()
+          || !params.at("expected_content_hash").is_string()
+          || !params.at("editor_revision").is_number_unsigned()
+          || !params.at("line_ending_policy").is_string()
+          || !is_bounded_ascii(params.at("window_session_id").get<std::string>(), 128U)
+          || !is_bounded_ascii(params.at("workspace_id").get<std::string>(), 128U)
+          || !is_bounded_ascii(params.at("document_id").get<std::string>(), 128U)
+          || !is_bounded_ascii(params.at("expected_file_version_token").get<std::string>(), 128U)
+          || !is_sha256_hex(params.at("expected_content_hash"))
+          || params.at("editor_revision").get<std::uint64_t>() > 9'007'199'254'740'991ULL
+          || (params.at("line_ending_policy") != "preserve"
+              && params.at("line_ending_policy") != "normalize_lf"
+              && params.at("line_ending_policy") != "normalize_crlf")) {
+        return error_response(request_id, protocol_error("INVALID_PARAMS", "文档保存参数无效"));
+      }
+      return service_response(
+          request_id,
+          workspace_service_.save_document(
+              params.at("window_session_id").get_ref<const std::string&>(),
+              params.at("workspace_id").get_ref<const std::string&>(),
+              params.at("document_id").get_ref<const std::string&>(),
+              params.at("expected_file_version_token").get_ref<const std::string&>(),
+              params.at("expected_content_hash").get_ref<const std::string&>(),
+              params.at("editor_revision").get<std::uint64_t>(),
+              params.at("line_ending_policy").get_ref<const std::string&>(),
+              frame.body));
     }
 
     return error_response(request_id, protocol_error("UNKNOWN_METHOD", "方法不在允许列表中"));

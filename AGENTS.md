@@ -210,7 +210,7 @@ docs(repository/git): 更新分支与提交规范
 
 `tools/practice_tool` 是当前放置在仓库内、但按独立产品边界维护的回路（Loop）Markdown 工作台。目标工程、测试与运行文档必须收敛在该目录内；它通过用户动作打开普通文件或文件夹，不依赖 `linux-note` 的目录、元数据、题库或根启动脚本。
 
-> 2026-08-02 已确认目标产品采用“新建文件、打开单个文件、打开单个文件夹”的 Electron Markdown 工作台，ADR-0006～0010 已接受。桌面层使用 TypeScript，工作区与文件能力由独立 C++20 Native Service 承担。D1A 已完成窗口作用域能力、打开单个 Markdown、打开单个文件夹和首层只读分页列表；尚未实现正文读取、编辑、预览、保存或文件操作。专题电子书、训练内容包、知识源注册、正文导入副本、浏览器正式运行和 IndexedDB 主存储不再属于目标架构；不得为旧架构增加桌面兼容层、双运行、双写或旧数据转发。
+> 2026-08-03 已确认目标产品采用“新建文件、打开单个文件、打开单个文件夹”的 Electron Markdown 工作台，ADR-0006～0015 已接受。桌面层使用 TypeScript，工作区与文件能力由独立 C++20 Native Service 承担。Windows 纵向闭环已接通根句柄相对能力、打开单个 Markdown/文件夹、按需目录树、协议 v4 双向正文通道、ADR-0015 Typora 式 CommonMark/GFM + Mermaid 混合编辑面、冲突检查安全保存和文档级撤权；默认原位编辑并及时渲染，`Ctrl+/` 往返完整源码。Linux `openat2/renameat/fsync` 已实现但尚无受支持环境验证，因此跨平台 D1B/D1-SAVE 保持 `IN_PROGRESS`。D1C 的 1 MiB 性能门禁也仍为 `IN_PROGRESS`。恢复备份和 Hot Exit 尚未实现，当前 Dirty 草稿在硬崩溃时仍可能丢失。专题电子书、训练内容包、知识源注册、正文导入副本、浏览器正式运行和 IndexedDB 主存储不再属于目标架构；不得为旧架构增加桌面兼容层、双运行、双写或旧数据转发。
 
 目标架构必须遵守：
 
@@ -218,7 +218,7 @@ docs(repository/git): 更新分支与提交规范
 - 每次编辑只更新 CodeMirror 内存和预览修订；默认 `Ctrl+S` 才写源文件，自动保存默认关闭。
 - 恢复备份按空闲与最大间隔合并写入，不能逐键持久化，也不能把“已备份”显示成“已保存”。
 - Electron Main 持有窗口、对话框、协议和 C++ 服务生命周期；C++ Native Service 持有窗口作用域文件能力与真实路径；Renderer 保持 sandbox、context isolation、无 Node，并且不接收绝对路径。
-- C++ 业务代码优先使用标准库和跨平台依赖；当前文件身份与路径语义统一经 libuv 处理，SHA-256 与 CSPRNG 统一经 Mbed TLS 处理，项目代码不维护 Win32/Linux 私有 API 分支。
+- C++ 业务代码优先使用标准库和跨平台依赖；复合帧管道与可安全表达的普通文件 I/O 经 libuv 处理，SHA-256 与 CSPRNG 经 Mbed TLS 处理。ADR-0013 已确认安全文件能力解析不能只靠 libuv：Linux `openat2` 与 Windows 根句柄相对 `NtCreateFile` 必须封装在单一平台端口内，业务状态机不得散落 Win32/Linux 分支，也不得回退到 `realpath` 复检。
 - 单文件和单文件夹分别建立最小路径边界；路径、符号链接、junction、reparse point、UNC、文件身份和写入竞态必须失败关闭。
 - Markdown、HTML、SVG、Mermaid、公式和远程资源都视为不可信；预览默认不发起网络请求，不加载工作区脚本、CSS 或插件。
 - 第一阶段用版本化状态文件、恢复备份、本地历史与可删索引，不因臆测需求引入 SQLite。

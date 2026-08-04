@@ -73,7 +73,7 @@ package manifests and lockfile
 | 删除 | 系统回收站 | 桌面 trash/portal |
 | 监听 | 平台 watcher 归一化 | inotify 资源限制与降级 |
 
-公共层不拼接平台路径，不把 `C:\`、`/home`、反斜杠或大小写假设写进 Renderer。当前 D1A 使用 `std::filesystem`、标准文件流、libuv 和 Mbed TLS 的统一接口，项目代码不直接调用 Win32、`openat` 或 Linux syscall。保存策略必须保持两平台的用户可观察保证，而不是要求底层系统调用名称相同。
+公共层不拼接平台路径，不把 `C:\`、`/home`、反斜杠或大小写假设写进 Renderer。业务层使用标准 C++、libuv 和 Mbed TLS；只有无法由这些接口表达的根句柄相对授权与安全替换集中在 `filesystem_capability_port`，Windows 使用 NT 句柄 API，Linux 使用 `openat2/renameat/fsync`。平台分支必须提供同一组用户可观察保证并失败关闭，不得扩散到工作区状态机或回退为路径复检。
 
 如果后续安全保存、监听或回收站能力确实无法由标准库和现有跨平台依赖表达，应先用测试证明缺口并评审新的跨平台抽象。未经新的 ADR，不得在业务模块中新增 Windows/Linux 双分支、平台句柄类型或散落的条件编译。
 

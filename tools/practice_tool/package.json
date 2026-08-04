@@ -16,10 +16,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.app.json && vite build",
-    "desktop:dev": "npm run build -w @loop/ipc-contracts && npm run dev -w @loop/desktop",
-    "desktop:typecheck": "npm run build -w @loop/ipc-contracts && npm run typecheck -w @loop/desktop",
-    "desktop:test": "npm test -w @loop/ipc-contracts && npm test -w @loop/desktop",
-    "desktop:build": "npm run build -w @loop/ipc-contracts && npm run build -w @loop/desktop",
+    "desktop:dev": "npm run build -w @loop/ipc-contracts && npm run build -w @loop/document-core && npm run build -w @loop/markdown-engine && npm run dev -w @loop/desktop",
+    "desktop:start": "npm run build -w @loop/ipc-contracts && npm run build -w @loop/document-core && npm run build -w @loop/markdown-engine && npm run typecheck -w @loop/desktop && npm run preview -w @loop/desktop",
+    "desktop:typecheck": "npm run build -w @loop/ipc-contracts && npm run build -w @loop/document-core && npm run build -w @loop/markdown-engine && npm run typecheck -w @loop/desktop",
+    "desktop:test": "npm test -w @loop/ipc-contracts && npm test -w @loop/document-core && npm test -w @loop/markdown-engine && npm test -w @loop/desktop",
+    "desktop:build": "npm run build -w @loop/ipc-contracts && npm run build -w @loop/document-core && npm run build -w @loop/markdown-engine && npm run build -w @loop/desktop",
     "check:data": "node scripts/validate-content.mjs",
     "check:mermaid": "node scripts/validate-mermaid.mjs"
   },

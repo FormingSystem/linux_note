@@ -1,31 +1,31 @@
 #pragma once
 
 #include <cstddef>
-#include <iosfwd>
+#include <span>
 #include <string>
+#include <vector>
 
 namespace loop::protocol {
 
+inline constexpr std::size_t k_frame_header_bytes = 16U;
 inline constexpr std::size_t k_max_control_frame_bytes = 1024U * 1024U;
+inline constexpr std::size_t k_max_body_frame_bytes = 5U * 1024U * 1024U;
 
-enum class read_status {
-  frame,
-  end_of_stream,
-  error,
+struct transport_frame {
+  std::string control;
+  std::vector<unsigned char> body;
+  bool body_present = false;
 };
 
-struct read_result {
-  read_status status;
-  std::string payload;
+[[nodiscard]] std::vector<unsigned char> encode_frame(const transport_frame& frame);
+
+class frame_decoder {
+ public:
+  [[nodiscard]] std::vector<transport_frame> push(std::span<const unsigned char> bytes);
+  [[nodiscard]] bool finish() const;
+
+ private:
+  std::vector<unsigned char> buffer_;
 };
-
-[[nodiscard]] read_result read_frame(
-    std::istream& input,
-    std::size_t maximum_payload_bytes = k_max_control_frame_bytes);
-
-[[nodiscard]] bool write_frame(
-    std::ostream& output,
-    const std::string& payload,
-    std::size_t maximum_payload_bytes = k_max_control_frame_bytes);
 
 }  // namespace loop::protocol
