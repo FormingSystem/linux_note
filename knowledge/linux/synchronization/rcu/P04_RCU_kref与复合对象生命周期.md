@@ -151,7 +151,7 @@ static void replace_lookup_obj(struct lookup_obj *new)
             -> 若仍有长期引用，最后一个用户 put 时释放
 ```
 
-此模型中，发布引用保证 GP 结束前 `old->ref` 必然大于零，因此 reader 在正确 RCU 临界区内取得长期引用时不会碰到零值对象。`object_release()` 可以直接释放，是因为发布引用直到 GP 后才放掉，所有临时 RCU lookup 已经结束。它与模型 A 的 `release() -> kfree_rcu()` 二选一；不要让同一个对象有时在 GP 前归还发布引用，有时又假定发布引用跨越 GP。
+此模型中，发布引用保证 GP 结束前 `old->ref` 必然大于零，因此 reader 在正确 RCU 临界区内取得长期引用时不会碰到零值对象。`object_release()` 可以直接释放，是因为发布引用直到 GP 后才放掉，所有临时 RCU lookup 已经结束。**它与模型 A 的 `release() -> kfree_rcu()` 二选一**；不要让同一个对象有时在 GP 前归还发布引用，有时又假定发布引用跨越 GP。
 
 对应的完整退休链如下。对象定义、`lookup_obj_get()` 和更新锁沿用模型 A；下面三个函数替换模型 A 的 release 与替换函数：
 
@@ -345,7 +345,7 @@ sequenceDiagram
     W->>Shared: 新 root_B 复用它，kref +1
     W->>W: 发布 root_B，取消发布 root_A
     W->>GP: call_rcu(root_A)
-    Note over A,Shared: A 在等待期间继续持有全部 block 引用
+    Note over A,Shared: A 在等待期间继续持<br/>有全部 block 引用
     R->>R: rcu_read_unlock()
     GP-->>A: GP 后执行 snapshot_retire_rcu
     A->>Shared: 归还 A 的版本引用
@@ -383,7 +383,7 @@ static void data_block_put(struct data_block *block)
 
 这里的 `kref_get()` 不是无保护地从零复活：root 对 block 的版本引用保证，在当前 RCU 临界区结束以及 root 对应 GP 完成之前，block 计数不会降到零。reader get 成功后，root 的退休回调可以归还版本引用，但 reader 自己的引用仍继续托住 block。
 
-如果 block 同时还出现在一个可独立删除的 RCU 索引中，就不能只依赖 root 的不变量；应为那个入口单独设计 `kref_get_unless_zero()`、取消发布和回收链，避免一个分配块被两套入口各自直接释放。
+如果 block 同时还出现在一个可独立删除的 RCU 索引中，**就不能只依赖 root 的不变量**；应为那个入口单独设计 `kref_get_unless_zero()`、取消发布和回收链，避免一个分配块被两套入口各自直接释放。
 
 ## 4.6\_回调工作量与内存峰值
 
