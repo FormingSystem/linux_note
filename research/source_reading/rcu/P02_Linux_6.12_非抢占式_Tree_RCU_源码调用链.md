@@ -21,9 +21,9 @@ source_version: "6.12.20"
 
 本章不是另一篇 RCU 教程，而是[非抢占式 Tree RCU 源码同步机制](../../../knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md)的版本化取证记录。目标是让每个抽象箭头都能落到 Linux 6.12.20 的文件、字段和函数。
 
-本地源码树顶层 `Makefile` 给出 `6.12.20`。当前 `.config` 启用了 `CONFIG_PREEMPT_RCU=y`，所以非抢占实现不能直接拿当前镜像运行验证；本章读取同一源码中 `tree_plugin.h` 的 `#else /* CONFIG_PREEMPT_RCU */` 和 `rcupdate.h` 的非抢占配置分支。
+已核对源码快照的顶层 `Makefile` 给出 `6.12.20`，对应 `.config` 启用了 `CONFIG_PREEMPT_RCU=y`。因此非抢占实现不能直接拿该配置生成的镜像运行验证；本章读取同一源码中 `tree_plugin.h` 的 `#else /* CONFIG_PREEMPT_RCU */` 和 `rcupdate.h` 的非抢占配置分支。
 
-仓库保存的以下原始源码与 `\\192.168.31.142\work\linux\nxp\kernel\linux-imx-6.12` 对应文件 SHA-256 一致：
+仓库保存的以下原始源码已与 NXP 官方 `linux-imx` 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应文件逐一核对，SHA-256 一致；本地工作树位置不作为证据身份，统一记录见 [Linux 源码阅读基线](../linux/SOURCE_BASELINE.md)：
 
 - [`kernel/rcu/tree.c`](../linux/kernel/rcu/tree.c)
 - [`kernel/rcu/tree.h`](../linux/kernel/rcu/tree.h)

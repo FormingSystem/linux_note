@@ -12,12 +12,12 @@ topics:
   - gpiolib
 source_project: linux
 source_version: "6.12.20"
-source_tree: "NXP linux-imx-6.12"
+source_tree: "NXP linux-imx lf-6.12.20-2.0.0 @ dfaf2136deb2af2e60b994421281ba42f1c087e0"
 ---
 
 # 第1章\_Linux\_6.12\_GPIO\_核心路径源码证据
 
-本文记录 [GPIO 专题](../../../../knowledge/driver_model/gpio/大纲.md) 所用的版本化事实。源码树顶层 `Makefile` 标识 Linux `6.12.20`，默认 `ARCH ?= arm`。这里只记录公共 gpiolib；NXP BSP 和 ARM 专属行为需另行核对。
+本文记录 [GPIO 专题](../../../../knowledge/driver_model/gpio/大纲.md) 所用的版本化事实。证据来自 NXP 官方 `linux-imx` 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应的源码快照，顶层 `Makefile` 标识 Linux `6.12.20`，默认 `ARCH ?= arm`；统一身份见 [Linux 源码阅读基线](../SOURCE_BASELINE.md)。这里只记录公共 gpiolib；NXP BSP 和 ARM 专属行为需另行核对。
 
 ## 1.1\_核心对象
 
