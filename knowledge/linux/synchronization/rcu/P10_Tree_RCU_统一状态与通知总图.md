@@ -18,7 +18,7 @@ topics:
 
 硬件不知道哪一段 C 代码是 RCU 临界区，也不知道对象何时可以释放。因此， **“旧读者已经离场”必须由内核软件通过具体内存状态和跨 CPU 通信证明。** 本章固定采用“多个读者 CPU 与单个写者 CPU”的视角，沿正常上报、被抢占登记与写侧强制探测三条通信路径追踪一轮 GP。
 
-> **源码边界：** 本章结论以 `\\192.168.31.142\work\linux\nxp\kernel\linux-imx-6.12` 的 Linux 6.12.20 为证据，优先引用 `kernel/rcu/`、`include/linux/rcupdate.h` 和相关公共调度/context-tracking 路径。
+> **源码边界：** 本章结论以 NXP 官方 [`linux-imx`](https://github.com/nxp-imx/linux-imx) 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应的 Linux 6.12.20 为证据，优先引用 `kernel/rcu/`、`include/linux/rcupdate.h` 和相关公共调度/context-tracking 路径。本地工作树位置不属于证据身份，统一基线见 [Linux 源码阅读基线](../../../../research/source_reading/linux/SOURCE_BASELINE.md)。
 
 ```mermaid
 sequenceDiagram

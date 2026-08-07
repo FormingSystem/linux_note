@@ -17,7 +17,7 @@ topics:
 
 ## 8.1\_版本\_配置与源码边界
 
-本章以本地 i.MX6ULL 厂商源码树 Linux 6.12.20 为证据基线。该树 `.config` 实际启用了：
+本章以 NXP 官方 [`linux-imx`](https://github.com/nxp-imx/linux-imx) 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应的 Linux 6.12.20 源码快照为证据基线；本地工作树位置不属于证据身份，统一记录见 [Linux 源码阅读基线](../../../../research/source_reading/linux/SOURCE_BASELINE.md)。该快照核对时的 `.config` 实际启用了：
 
 ```text
 CONFIG_TREE_RCU=y

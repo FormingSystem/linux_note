@@ -22,7 +22,7 @@ source_version: "6.12.20"
 
 ### 4.1.1\_取证边界
 
-本章核对本地只读源码树 `linux-imx-6.12`，顶层版本为 Linux 6.12.20。它服务于 [Tasks RCU 与 Tiny RCU 实现边界](../../../knowledge/linux/synchronization/rcu/P24_Tasks_RCU与Tiny_RCU实现边界.md)，不把 Tasks、Tasks Rude、Tasks Trace 与 Tiny 合并成一个抽象 GP。
+本章核对 NXP 官方 `linux-imx` 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应的 Linux 6.12.20 源码快照；本地工作树位置不作为证据身份，统一记录见 [Linux 源码阅读基线](../linux/SOURCE_BASELINE.md)。它服务于 [Tasks RCU 与 Tiny RCU 实现边界](../../../knowledge/linux/synchronization/rcu/P24_Tasks_RCU与Tiny_RCU实现边界.md)，不把 Tasks、Tasks Rude、Tasks Trace 与 Tiny 合并成一个抽象 GP。
 
 ### 4.1.2\_Tasks家族的共享骨架
 

@@ -189,22 +189,47 @@ docs(repository/git): 更新分支与提交规范
 - 移动、拆分、合并或删除专题文件后，必须同步更新专题大纲、上一篇/下一篇导航、Atlas、出版清单、Markdown/Obsidian 链接和其他入口；提交前检查旧路径残留、缺失链接、重复 ID、元数据和 `git diff --check`。
 - 同一次专题整改包含不同性质的修改时，尽量按 `structure`、`rewrite`、`link` 等类型拆分 Git 提交，便于审查结构变化、正文变化和导航变化。
 
-## 1.11\_本地\_Linux\_源码位置与使用边界
+## 1.11\_Linux\_源码身份、会话发现与使用边界
 
-可用于机制核对和源码阅读的 i.MX6ULL Linux 源码树为：
+本仓库用于源码核对的基线来自 NXP 官方发布的 i.MX 厂商内核仓库，而不是某个本地目录本身：
 
-```text
-\\192.168.31.142\work\linux\nxp\kernel\linux-imx-6.12
-```
+| 项目 | 已确认基线 |
+| --- | --- |
+| 官方仓库 | `https://github.com/nxp-imx/linux-imx.git` |
+| 来源分支 | `lf-6.12.y` |
+| 发布标签 | `lf-6.12.20-2.0.0` |
+| Git 提交 | `dfaf2136deb2af2e60b994421281ba42f1c087e0` |
+| 内核版本 | Linux `6.12.20` |
+| 默认架构 | 顶层 `Makefile` 为 `ARCH ?= arm` |
+| 当前配置边界 | 已核对工作树的 `.config` 启用 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y` |
 
-当前已确认该源码树的顶层 `Makefile` 标识为 Linux `6.12.20`，默认 `ARCH ?= arm`，并包含 `arch/arm`、`kernel/rcu` 等目录。使用约定如下：
+`linux-imx` 是面向多个 NXP i.MX SoC 的厂商内核仓库；i.MX6ULL 是本仓库当前使用它研究和验证的目标平台之一，不能把源码仓库身份写成“i.MX6ULL 专属仓库”。`lf-6.12.y` 是可能继续前进的分支，长期证据以不可变 Git 提交、版本、配置和源码相对路径共同定位。详细基线见 `research/source_reading/linux/SOURCE_BASELINE.md`。
 
-- 解释调度、锁、RCU、等待队列、VFS、内存管理和通用驱动模型等跨架构 Linux 机制时，可以使用该源码树核对公共实现、数据结构和调用链；ARM 足以作为具体运行载体，不必为了通用机制强行补齐所有架构的同类实现。
-- 源码证据优先引用上游公共目录位置，例如 `kernel/`、`mm/`、`fs/`、`drivers/base/` 和 `include/linux/`，使通用机制结论与 i.MX6ULL 板级代码解耦。
+本地工作树路径属于机器和会话环境，不属于仓库事实。**禁止在 `AGENTS.md`、知识正文、研究记录或其他已跟踪文件中写入 UNC 路径、本机盘符、用户名目录、IP 地址或挂载点来充当源码身份。** 任何看似包含版本号的本地目录名也必须经过远端、分支、提交和 `Makefile` 验证后才能使用。
+
+每次新会话中，只要任务需要核对外部 Linux 源码，AI 协作者必须重新执行以下流程，不得沿用上一会话记住的绝对路径：
+
+1. 先读本节和 `research/source_reading/linux/SOURCE_BASELINE.md`，取得预期的官方远端、分支、提交和版本。
+2. 从当前会话中开发者明确提供的位置或当前环境可访问的位置取得候选工作树；若没有可靠候选，不进行大范围盲搜，应向开发者确认本次工作树位置。
+3. 对候选工作树只读核对 `remote`、当前分支、`HEAD`、顶层 `Makefile` 和任务相关 `.config`。可用命令为：
+
+   ```bash
+   git -C <linux_imx_worktree> remote get-url origin
+   git -C <linux_imx_worktree> branch --show-current
+   git -C <linux_imx_worktree> rev-parse HEAD
+   ```
+
+4. 预期官方远端为 `https://github.com/nxp-imx/linux-imx.git`，当前记录的来源分支为 `lf-6.12.y`，不可变证据为发布标签 `lf-6.12.20-2.0.0` 解引用到的提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。若 `HEAD`、版本或配置与基线不同，必须明确报告差异，再决定是继续核对新工作树、比较版本，还是只使用仓库已保存的旧提交证据；不得静默混用。
+5. Git 若因 UNC 所有权或 `safe.directory` 拒绝访问，不得擅自修改用户全局 Git 配置；可只读检查候选工作树的 `.git/config`、`.git/HEAD`、对应 ref 与顶层 `Makefile`，或请开发者在源码环境中执行验证命令。
+6. 若工作树不可访问、远端身份不匹配或版本无法确认，应明确标记“本次源码核对未完成”，不得凭目录名或记忆伪造函数位置、配置和版本结论。
+
+完成身份核对后的使用约定如下：
+
+- 解释调度、锁、RCU、等待队列、VFS、内存管理和通用驱动模型等跨架构 Linux 机制时，可以使用该 NXP 工作树核对公共实现、数据结构和调用链；ARM 足以作为具体运行载体，不必为了通用机制强行补齐所有架构的同类实现。
+- 源码证据写入仓库时记录官方远端、Git 提交、Linux 版本、相关 Kconfig 和上游相对路径，例如 `kernel/`、`mm/`、`fs/`、`drivers/base/`、`include/linux/`；不记录本地绝对路径。
 - 涉及原子指令、内存屏障、异常入口、上下文切换底层、缓存维护、页表格式、DMA 一致性或其他体系结构相关行为时，必须继续核对 `arch/arm/`，并明确结论只对 ARM、具体内核配置或该版本成立，不能直接外推到 ARM64、RISC-V、x86 等架构。
 - 涉及设备树、pinctrl、GPIO、时钟、中断控制器、SoC 外设或 BSP 补丁时，应将其视为 NXP i.MX6ULL/厂商树证据，正文标明平台与版本边界，不将厂商实现写成通用 Linux 契约。
-- 修改知识正文前可只读检索该源码树；不要在知识整理任务中改动、格式化或提交这棵外部源码。需要保存长期证据时，按仓库规范整理到 `research/source_reading/linux/`，并记录 Linux 版本、原始路径及必要的配置边界。
-- 若网络共享不可访问，应明确说明未完成源码核对，不得凭记忆伪造函数位置或版本结论。Git 因 UNC 目录所有权报告 `safe.directory` 时，不要擅自修改用户全局 Git 配置；读取普通源码文件不受此限制。
+- 修改知识正文前只读检索外部源码；不要在知识整理任务中改动、格式化、切换、拉取或提交这棵外部工作树。需要保存长期证据时，按仓库规范整理到 `research/source_reading/linux/`。
 
 ## 1.12\_回路\_Markdown\_工作台
 

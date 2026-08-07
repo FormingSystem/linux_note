@@ -17,11 +17,7 @@ topics:
 
 ## 1.1\_版本和研究边界
 
-本章证据来自仓库源码基线记录的 NXP Linux 6.12.20：
-
-```text
-\\192.168.31.142\work\linux\nxp\kernel\linux-imx-6.12
-```
+本章证据来自 NXP 官方 [`linux-imx`](https://github.com/nxp-imx/linux-imx) 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应的 Linux 6.12.20。本地工作树位置不属于证据身份，统一来源和配置边界见 [Linux 源码阅读基线](../linux/SOURCE_BASELINE.md)。
 
 保存文件保持原 Linux 相对路径，公共模型位于 `tools/memory-model/`。本章回答：Linux API 怎样进入 LKMM 事件，模型文件怎样组织关系和公理，herd7 怎样消费配置。跨版本稳定的机制结论仍由[Linux 内存顺序专题](../../../knowledge/linux/memory_ordering/大纲.md)维护。
 

@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
+                "file": "knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "P02_内核基石_hlist非对称链表"
+              "title": "P06_非抢占式_Tree_RCU_源码同步机制"
             }
           }
         ]
@@ -78,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 278.5
+    "width": 278.5,
+    "collapsed": true
   },
   "right": {
     "id": "4d8e55985b4496b6",
@@ -156,13 +157,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
+                "file": "knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "P02_内核基石_hlist非对称链表 的大纲"
+              "title": "大纲"
             }
           }
         ],
@@ -188,6 +189,7 @@
   },
   "active": "c3bf3980e4dacba7",
   "lastOpenFiles": [
+    "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
     "tools/practice_tool/dist/assets/mindmap-definition-LN4V7U3C-Ck7HasSh.js",
     "tools/practice_tool/dist/assets/chunk-RYQCIY6F-C0x0Bkcp.js",
     "tools/practice_tool/dist/assets/vennDiagram-L72KCM5P-TuVGKMyQ.js",
@@ -198,7 +200,6 @@
     "tools/practice_tool/dist/assets/ordinal-Cboi1Yqb.js",
     "tools/practice_tool/dist/assets/sizeCapture-X5ZJPWSS-DA5h4zWg.js",
     "tools/practice_tool/dist/assets/swimlanes-5IMT3BWC-BEIA7-93.js",
-    "tools/practice_tool/dist/assets/ebnfDiagram-CCIWWBDH-BNCxWTQC.js",
     "knowledge/driver_model/character_device/P12_常见故障与排查.md",
     "knowledge/driver_model/character_device/P11_构建运行与验证.md",
     "knowledge/driver_model/character_device/P10_字符设备驱动模板.md",
