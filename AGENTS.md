@@ -175,6 +175,7 @@ docs(repository/git): 更新分支与提交规范
 - “抽象机制推演”与“具体系统实现”必须分层。抽象推演回答“如果从这些问题和约束自行设计，为什么会得到这些角色、状态和步骤”；具体实现回答“目标系统把这些抽象角色和状态放在哪些地址，由哪些执行路径读写，怎样完成通信和状态推进”。不得一开始用 Linux 字段代替机制推理，也不得只讲抽象名词而跳过源码兑现。
 - 抽象机制初步成立后，必须增加“机制完善”阶段，用抢占、迁移、中断、并发更新、CPU 空闲或离线、超时参与者、内存乱序、对象逃逸等真实条件检验朴素模型。每发现一个缺口，应说明新增了什么状态、通信路径或约束，再进入具体实现；不能把成熟机制的全部组件当成凭空给出的定义。
 - 专题大纲必须把上述因果链画成阅读地图，并标明每篇文档解决的问题、依赖的前置结论以及为下一篇留下的未解决问题。读者沿默认顺序阅读时，应经历“看见问题—参与推演—发现朴素方案漏洞—理解系统实现—能够正确应用”的过程。
+- 章节之间应保持认知悬念链：开头先回收上一章已经成立的结论，再指出它仍无法解释的具体问题，并限定本章只解决什么；正文按“一问一增量”推进，每个反例只引入解决当前缺口所需的状态、通信路径或约束；结尾说明现在能够证明什么、仍不能解释什么以及下一章继续追踪什么。不得在问题尚未出现时一次性倾倒成熟机制的全部字段和术语，也不得把这些桥接句机械复制成装饰标题。
 - 问题必须充分展开。应先说明现有方案解决了什么、代价在哪里、为什么仍有缺口，再引出新机制，避免先宣布 API 或优点后补背景。
 - “充分展开”至少包括：具体应用场景与负载特征、原方案的正确性价值、问题发生的逐步因果链、问题在什么规模或边界下显现、新方案改变的机制环节、换来的代价及不适用场景。若后文的 API 选择依赖某个性能或正确性判断，该判断不得只用一句话带过。
 - 方案比较应尽量使用同一场景、同一组参与对象和并列时间线，避免分别罗列优点造成不可比较。比较结束后必须给出可操作的选择条件或核对表。
@@ -288,3 +289,31 @@ ctest --preset windows-mingw
 - `tools/practice_tool/docs/architecture/engineering/workspace_file_operations_and_data_safety.md`
 - `tools/practice_tool/docs/architecture/engineering/accessibility_performance_and_acceptance.md`
 - `tools/practice_tool/docs/architecture/decisions/README.md`
+
+## 1.13\_Codex\_skill\_仓库备份
+
+仓库维护的 Codex skill 统一保存在 `tools/ai/codex/skills/`。这里的版本是可评审、可追溯的 **权威副本**；`$CODEX_HOME/skills/` 下的同名目录只是当前 Codex 运行环境的安装镜像，不得反过来成为唯一来源，也不得把任一本机绝对路径写入已跟踪文件。
+
+当前只维护 `build-linux-note-kernel-topic`：它统一负责 Linux 内核机制专题的创建、排版、重组、源码证据、内容守恒和验证流程，包括 `knowledge/linux/object_lifetime/kref`。涉及内核专题时统一使用该 skill，并先按用户动词确定编辑权限：
+
+skill 的机器标识采用英文 kebab-case：目录名、`SKILL.md` 的 `name` 和 `$skill-name` 调用名必须一致，不得使用中文。面向维护者和使用者的内容以中文为主，包括 `description`、`SKILL.md` 正文、`references/` 规则文档，以及 `agents/openai.yaml` 的 `display_name`、`short_description` 和 `default_prompt`；代码标识、文件名、命令参数和上游专有名词保持其规范形式。
+
+仓库对 AI 编写专题的统一要求提炼在 `tools/ai/codex/skills/build-linux-note-kernel-topic/references/repository-topic-requirements.md`。它以 `tools/ai/topic_summary_requirements/P01_主题章节的要求.md` ～ `P05_主题章节的要求.md`、`tools/ai/application/mermaid_require.md` 和本文件为来源；历史文件保留为来源材料，应按题型选用其中的结构，不得机械叠加成通用硬模板。历史要求与当前规则冲突时，以本文件和本次用户明确要求为准。
+
+通用专题生成方法以 `knowledge/linux/synchronization/rcu/大纲.md` 及其已落地正文作为主要正例，抽取问题压力、抽象推演、最小闭环、证明与源码配对、现实条件加固、统一状态与通信全景、实现纵深、变体以及应用选择等章节角色。RCU 的篇数、字段和实现变体不是固定模板；开发者提供的网页草案或外部方法只能作为候选输入，必须经过本地 RCU、当前信息架构和本文件校正后写入 skill，不得直接照抄。
+
+1. 用户说明材料已经审稿，且本次只要求排版、格式、导航或“按 RCU 风格整理”时，采用 layout-only：保留技术语义和全部信息单元，允许标题编号、空白、列表、表格、导航、锚点等排版所需的机械调整。
+2. 用户明确要求拆分、合并、移动或重排时，采用 structure-preserving，完整搬运已盘点内容，不得借结构调整精简正文。
+3. 用户明确要求补充、纠错、扩写、优化、重写、压缩、去重、替换或删除时，采用 rewrite，并且只修改获授权范围；材料曾经审稿不构成永久禁止修改。
+
+单独出现“重构”既不能视为重写授权，也不能自动视为 layout-only。应结合用户对审稿状态、排版或内容修改的限定判断；如果不同选择会实质改变结果且上下文无法确定，先确认再改动技术语义。文件较长、规则重复、通用审计给出建议或新结构看起来更整洁，都不是删除内容的依据。
+
+skill 更新流程如下：
+
+1. 先修改 `tools/ai/codex/skills/<skill-name>/`，保持目录名与 `SKILL.md` 的 `name` 完全一致。
+2. `SKILL.md` 使用 Codex skill 规范，只保留 `name` 与 `description` 两个 Front Matter 字段；`agents/openai.yaml`、`references/` 和 `scripts/` 只保存运行所需内容。
+3. 执行 skill 校验和其自带脚本测试，再将仓库目录逐文件同步到 `$CODEX_HOME/skills/<skill-name>/`。
+4. 同步后逐文件比较规范化为 UTF-8/LF 后的内容哈希；仓库副本与安装镜像不一致时，不得声称更新已经完成。
+5. 不提交 `__pycache__`、字节码、日志、构建产物或机器专属配置。
+
+Codex skill 的 Markdown 是运行时指令，不是知识库章节：`scripts/format_metadata.sh` 和 `scripts/format_markdown.sh` 必须跳过 `tools/ai/codex/skills/`，避免补入仓库正文元数据或重写 skill 标题。链接与路径检查仍应覆盖 skill 内的相对引用。layout-only 工作必须优先运行 `scripts/audit_content_conservation.py`；它是严格行级对比工具，失败表示需要逐项核对差异，不自动等同于技术内容丢失。修改 skill 后至少运行对应审计脚本、skill 结构校验、仓库链接检查和 `git diff --check`。某个校验因环境缺少依赖无法运行时，必须准确报告缺失项。
