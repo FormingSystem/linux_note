@@ -1110,3 +1110,11 @@ kref_get_unless_zero 不能单独证明 refobj 指针有效。
 ```
 
 这三条规则就是后面所有 API、handoff、lookup、锁、RCU 章节的基础。
+
+------
+
+专题导航：[kref 引用计数机制章节大纲](大纲.md)。
+
+上一篇：[kref 生命周期状态机](P03_kref_生命周期状态机.md)。
+
+下一篇：[基础 API 源码逐行讲解](P05_基础_API_源码逐行讲解.md)。

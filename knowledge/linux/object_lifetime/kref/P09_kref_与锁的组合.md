@@ -3535,3 +3535,11 @@ kref 解决“拿到引用后对象能不能活着”。
 ```
 
 这就是 kref 与锁组合的核心工程模型。
+
+------
+
+专题导航：[kref 引用计数机制章节大纲](大纲.md)。
+
+上一篇：[lookup 场景与 kref_get_unless_zero()](P08_lookup_场景与_kref_get_unless_zero%28%29.md)。
+
+下一篇：[kref 与 RCU](P10_kref_与_RCU.md)。
