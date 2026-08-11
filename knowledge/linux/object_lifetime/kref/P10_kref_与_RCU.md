@@ -1763,3 +1763,11 @@ kfree_rcu/call_rcu/synchronize_rcu 保护最终内存回收。
 RCU 让你安全地看到对象；
 kref 让你安全地带走对象。
 ```
+
+------
+
+专题导航：[kref 引用计数机制章节大纲](大纲.md)。
+
+上一篇：[kref 与锁的组合](P09_kref_与锁的组合.md)。
+
+下一篇：[kref、refcount_t 与 kobject 的边界](P11_kref_refcount_t_kobject_的边界.md)。

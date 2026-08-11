@@ -1642,3 +1642,11 @@ release 是否能睡眠；
 release 和 work/timer/callback 如何收尾；
 release 和 RCU 延迟释放如何配合。
 ```
+
+------
+
+专题导航：[kref 引用计数机制章节大纲](大纲.md)。
+
+上一篇：[kref 三条核心规则](P04_kref_三条核心规则.md)。
+
+下一篇：[release 回调与复杂销毁模式](P06_release_回调与复杂销毁模式.md)。
