@@ -160,9 +160,12 @@ raw = subprocess.run(
     stdout=subprocess.PIPE,
 ).stdout
 tracked = [item.decode("utf-8") for item in raw.split(b"\0") if item]
+CODEX_SKILL_PREFIX = "tools/ai/codex/skills/"
 markdown_files = [
     path for path in tracked
-    if Path(path).exists() and Path(path).suffix.casefold() in {".md", ".markdown"}
+    if Path(path).exists()
+    and Path(path).suffix.casefold() in {".md", ".markdown"}
+    and not path.startswith(CODEX_SKILL_PREFIX)
 ]
 selected = markdown_files
 if SELECTIONS:

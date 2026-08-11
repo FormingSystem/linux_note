@@ -1,0 +1,4 @@
+interface:
+  display_name: "构建 Linux 内核机制专题"
+  short_description: "以本地 RCU 方法生成有因果链、状态闭环和源码证据的内核专题"
+  default_prompt: "使用 $build-linux-note-kernel-topic 依据本地 RCU 提炼的章节角色和机制推理闭环生成或整理内核专题，并先确定本次编辑权限。"
