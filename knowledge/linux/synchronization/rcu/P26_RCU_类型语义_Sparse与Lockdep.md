@@ -192,6 +192,14 @@ warning: incorrect type in initializer (different address spaces)
 
 ### 26.1.5\_Lockdep检查的是哪一个运行时条件
 
+Lockdep 是 Linux 通用的运行时锁正确性验证框架，RCU 没有另造一套独立检查器。RCU 把读侧临界区映射为 `rcu_lock_map`、`rcu_bh_lock_map`、`rcu_sched_lock_map` 等 lockdep maps，再用 `RCU_LOCKDEP_WARN()` 把自身 API 的调用约束接入同一套状态记录和诊断设施。
+
+Lockdep 自身的锁实例、锁类、current 持锁账本、全局依赖图和 IRQ 规则由独立的 [Linux Lockdep 专题](../lockdep/大纲.md#1.1_专题定位)统一解释；本节只保留 RCU 怎样接入这套检查器。Linux 6.12.20 的 Lockdep 源码入口见 [Linux 6.12 Lockdep 源码导读](../../../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)，`lockdep_is_held()` 的查询实现可直接跳到 [`lock_is_held_type()` 当前持锁查询](../../../../research/source_reading/lockdep/source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.2_lock_is_held_type当前持锁查询)。
+
+#### (1)\_Lockdep如何表示RCU读侧范围
+
+公共 `rcu_read_lock()` 同时做两类动作：底层 `__rcu_read_lock()` 建立当前配置所需的功能约束，`rcu_lock_acquire(&rcu_lock_map)` 则只向 Lockdep 记录“当前执行上下文进入普通 RCU 读侧”。`rcu_read_unlock()` 对应调用 `rcu_lock_release()`。所以功能路径和检查路径虽然嵌在同一接口中，职责并不相同：前者参与 RCU 正确性，后者帮助开发者发现误用。
+
 `rcu_dereference(p)` 展开到：
 
 ```text
@@ -200,6 +208,8 @@ rcu_dereference_check(p, 0)
     → READ_ONCE(p)
     → Sparse类型检查
 ```
+
+#### (2)\_条件表达式怎样把应用锁关联到RCU访问
 
 `rcu_dereference_check(p, c)` 则接受两条合法路径的析取：
 
@@ -211,7 +221,17 @@ static struct dev_state *lookup_under_either_lock(void)
 }
 ```
 
-它表达：调用者要么在普通 RCU 读侧，要么持有 `state_lock`。Linux 6.12 的底层 `__rcu_dereference_check()` 在 `CONFIG_PROVE_RCU` 生效时用 `RCU_LOCKDEP_WARN(!(c), ...)` 报告可疑调用。
+它表达：调用者要么在普通 RCU 读侧，要么持有 `state_lock`。`lockdep_is_held(&state_lock)` 不是 RCU 同步动作，而是把业务代码的保护理由变成可动态核对的布尔条件。
+
+`rcu_dereference_protected(p, c)` 更严格：它只接受调用者传入的 `c`，不会隐式追加 `rcu_read_lock_held()`。因此常见更新侧写法应传入 `lockdep_is_held(&state_lock)`；写成常量 `1` 仍要求调用者自己证明更新已被阻止，只是放弃了对这个理由的 Lockdep 核对。
+
+#### (3)\_RCU\_LOCKDEP\_WARN()为什么不是RCU算法
+
+Linux 6.12 的底层 `__rcu_dereference_check()` 和 `__rcu_dereference_protected()` 都用 `RCU_LOCKDEP_WARN(!(c), ...)` 报告可疑调用。`CONFIG_PROVE_RCU=y` 时，它先确认 Lockdep 已处于可用状态，再检查条件，并用该宏展开点的静态 `__warned` 对这个调用点只报告一次，报告内容由 `lockdep_rcu_suspicious()` 输出；`CONFIG_PROVE_RCU=n` 时，同名宏为空操作。
+
+关闭检查只移除了诊断路径，不会让调用约束消失，也不会改变后续 `READ_ONCE()`、指针返回、GP 或 callback 功能路径。反过来，告警宏本身也不提供锁、发布顺序、宽限期或对象生命期保证。它最准确的定位是：**RCU 对通用 Lockdep 框架的检查适配层**。
+
+Lockdep 是动态检查，只能观察实际执行到的路径。一次测试没有告警，不能证明未覆盖分支、未来交错或临界区外裸指针一定安全。RCU 源码材料的分类和建议顺序见[Linux 6.12 Tree RCU 与 SRCU 源码导读](../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)；Linux 6.12.20 的宏实现、启用/关闭分支和中文源码注释见 [`RCU_LOCKDEP_WARN` 检查适配层](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.7_RCU_LOCKDEP_WARN检查适配层)。
 
 RCU 链表宏也使用同一思路。例如带额外条件的 `list_for_each_entry_rcu()` 能表达遍历由指定 SRCU 域或更新锁保护；条件为假且没有任何认可的 RCU 读锁时，`CONFIG_PROVE_RCU_LIST` 路径会报告。
 

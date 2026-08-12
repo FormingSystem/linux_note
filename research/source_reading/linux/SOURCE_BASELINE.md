@@ -28,7 +28,7 @@ domains:
 | 本地工作树 | 由每次会话在当前环境中发现并验证，不在仓库记录绝对路径 |
 | 许可证 | 以各源码文件 SPDX、版权头及原源码树 `COPYING`/`LICENSES` 为准 |
 
-发布标签已通过官方远端核对，其解引用提交的顶层 `Makefile` 为 `VERSION=6`、`PATCHLEVEL=12`、`SUBLEVEL=20`；仓库保存的 RCU 与内存序源码副本也与该提交逐文件 SHA-256 一致。配置边界来自此前核对的本地工作树，只说明阅读时采用的 Kconfig 分支，不代表发布标签自带 `.config`。`lf-6.12.y` 是可能继续前进的来源分支，不能替代发布标签及其不可变提交作为长期证据定位。
+发布标签已通过官方远端核对，其解引用提交的顶层 `Makefile` 为 `VERSION=6`、`PATCHLEVEL=12`、`SUBLEVEL=20`；仓库保存的 RCU、Lockdep 与内存序源码副本也与该提交逐文件核对一致。配置边界来自此前核对的本地工作树，只说明阅读时采用的 Kconfig 分支，不代表发布标签自带 `.config`。`lf-6.12.y` 是可能继续前进的来源分支，不能替代发布标签及其不可变提交作为长期证据定位。
 
 本基线标识的是 NXP `linux-imx` 仓库中的一份确定源码快照，不是某个用户名、目录名、共享地址或挂载点。以后补充或复核源码时，应先验证候选工作树的官方远端、分支、`HEAD`、`Makefile` 和相关 Kconfig，再引用上游相对路径；本地绝对路径不得写入已跟踪文档。
 
@@ -89,22 +89,53 @@ domains:
 | `kernel/rcu/tree.c` | 普通 GP 请求、初始化、QS 汇聚、FQS、cleanup、同步等待入口 |
 | `kernel/rcu/tree.h` | `rcu_node`、`rcu_data`、`rcu_state` 与 Tree RCU 内部接口 |
 | `kernel/rcu/tree_plugin.h` | PREEMPT_RCU / 非 PREEMPT_RCU 读侧、调度 QS、blocked task 与 boost |
-| `kernel/rcu/update.c` | 通用等待 callback、RCU 初始化和部分公共实现 |
+| `kernel/rcu/update.c` | 通用等待 callback、RCU 初始化、RCU lockdep maps 与读侧状态查询 |
 | `kernel/rcu/tree_exp.h` | expedited GP |
 | `kernel/rcu/tree_nocb.h` | NOCB callback offload |
 | `kernel/rcu/tree_stall.h` | stall 检测与诊断 |
 | `kernel/rcu/rcu_segcblist.c`、`rcu_segcblist.h` | callback 分段列表实现 |
-| `include/linux/rcupdate.h` | 公共读侧接口、发布/取得、`kfree_rcu()` |
+| `include/linux/rcupdate.h` | 公共读侧接口、发布/取得、`RCU_LOCKDEP_WARN()`、`kfree_rcu()` |
+| `kernel/rcu/Kconfig.debug` | `PROVE_RCU`、RCU 列表 Lockdep 和其他 RCU 调试配置 |
 | `include/linux/rculist.h` | list/hlist 的 RCU 访问封装 |
 | `include/linux/rcu_segcblist.h` | callback 分段列表结构和接口 |
 | `include/linux/srcu.h`、`srcutree.h`、`kernel/rcu/srcutree.c` | Tree SRCU 公共接口、状态和实现 |
 
 调度入口 `kernel/sched/core.c`、任务字段 `include/linux/sched.h`、`kernel/rcu/tasks.h`、`kernel/rcu/tiny.c`、BPF/ftrace 调用方以及 6.12 context tracking 文件当前直接从只读原始源码树核对，未为单个调用点复制整个大文件。版本化阅读记录见：
 
-- [`../rcu/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md`](../rcu/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)
-- [`../rcu/P02_Linux_6.12_非抢占式_Tree_RCU_源码调用链.md`](../rcu/P02_Linux_6.12_非抢占式_Tree_RCU_源码调用链.md)
-- [`../rcu/P03_Linux_6.12_抢占式_Tree_RCU_源码调用链.md`](../rcu/P03_Linux_6.12_抢占式_Tree_RCU_源码调用链.md)
-- [`../rcu/P04_Linux_6.12_Tasks_RCU与Tiny_RCU源码调用链.md`](../rcu/P04_Linux_6.12_Tasks_RCU与Tiny_RCU源码调用链.md)
+- [RCU 总阅读索引](../rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)
+- [非抢占式 Tree RCU 模块源码概念导读](../rcu/navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.1_证据目标和配置边界)
+- [抢占式 Tree RCU 模块源码概念导读](../rcu/navigation/P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md#3.1_取证问题)
+- [Tasks RCU 与 Tiny RCU 模块源码概念导读](../rcu/navigation/P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md#4.1_Linux_6.12_Tasks_RCU与_Tiny_RCU模块源码概念导读)
+- [RCU 公共接口与检查机制源码详解](../rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.1_源码详解边界与引用入口)
+- [非抢占式 Tree RCU 关键函数源码实现](../rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.1_实现讲解边界与入口)
+- [抢占式 Tree RCU 关键函数源码实现](../rcu/source_explanations/P07_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#7.1_实现讲解边界与入口)
+
+### 1.5.2\_Lockdep证据
+
+下列 Lockdep 核心文件已在 2026-08-12 与发布标签 `lf-6.12.20-2.0.0` 解引用到的 Git 提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 逐文件核对，仓库副本 Git blob hash 与原文件一致：
+
+| 相对路径 | 主要用途 |
+| --- | --- |
+| `include/linux/lockdep_types.h` | `lock_class_key`、`lock_class`、`lockdep_map` 与 `held_lock` |
+| `include/linux/lockdep.h` | map 初始化、acquire/release、查询、断言、pin 与关闭配置分支 |
+| `include/linux/sched.h` | current 的链键、持锁深度、递归状态和 `held_locks[]` |
+| `kernel/locking/lockdep.c` | 锁类登记、取得释放状态机、链缓存、依赖图、IRQ 规则与查询 |
+| `kernel/locking/lockdep_internals.h` | 图、链、容量和内部辅助定义 |
+| `kernel/locking/lockdep_proc.c` | `/proc/lockdep`、`/proc/lockdep_chains`、`/proc/lockdep_stats` 与 lockstat |
+| `lib/Kconfig.debug` | `PROVE_LOCKING`、`DEBUG_LOCK_ALLOC`、`LOCKDEP` 与容量配置 |
+| `kernel/rcu/Kconfig.debug` | `PROVE_RCU` 与 `PROVE_LOCKING` 的选择关系 |
+| `Documentation/locking/lockdep-design.rst` | 锁类、IRQ 状态、依赖规则、注解、闭包、成本与故障排查设计 |
+
+当前基线没有记录目标板 `.config` 启用 `CONFIG_PROVE_LOCKING` 或 `CONFIG_LOCKDEP` 的证据，因此 Lockdep 专题只核对源码可选分支，不宣称当前板级内核已经运行该检查器。版本化阅读记录见：
+
+- [Lockdep 总阅读索引](../lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)
+- [Lockdep 身份与事件接入模块导读](../lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题)
+- [Lockdep 依赖图与规则引擎模块导读](../lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.1_模块问题)
+- [Lockdep 查询适配与诊断模块导读](../lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.1_模块问题)
+- [Lockdep 身份与锁类源码实现](../lockdep/source_explanations/P05_Linux_6.12_Lockdep身份与锁类源码实现.md#5.1_关联入口)
+- [Lockdep 取得释放与持锁账本源码实现](../lockdep/source_explanations/P06_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#6.1_关联入口)
+- [Lockdep 依赖图与规则引擎源码实现](../lockdep/source_explanations/P07_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#7.1_关联入口)
+- [Lockdep 查询注解与配置源码实现](../lockdep/source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.1_关联入口)
 
 ## 1.6\_Input\_子系统证据
 
