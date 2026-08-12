@@ -303,13 +303,13 @@ ctest --preset windows-mingw
 
 仓库维护的 Codex skill 统一保存在 `tools/ai/codex/skills/`。这里的版本是可评审、可追溯的 **权威副本**；`$CODEX_HOME/skills/` 下的同名目录只是当前 Codex 运行环境的安装镜像，不得反过来成为唯一来源，也不得把任一本机绝对路径写入已跟踪文件。
 
-当前只维护 `build-linux-note-kernel-topic`：它统一负责 Linux 内核机制专题的创建、排版、重组、源码证据、内容守恒和验证流程，包括 `knowledge/linux/object_lifetime/kref`。涉及内核专题时统一使用该 skill，并先按用户动词确定编辑权限：
+当前只维护一个通用专题生成 skill：`build-linux-note-topic`。它统一负责技术书籍与知识专题的创建、排版、重组、认知大纲、问题链、错误模型、动态过程、多视角观察、源码或规范证据、工程约束、内容守恒和验证流程，覆盖 Linux 内核机制、数据结构与 API、驱动和子系统、硬件芯片、协议、嵌入式工程与系统软件，包括 `knowledge/linux/object_lifetime/kref`。不得再按领域拆出并列专题生成 skill；涉及这类长篇专题时统一使用该 skill，并先按用户动词确定编辑权限：
 
 skill 的机器标识采用英文 kebab-case：目录名、`SKILL.md` 的 `name` 和 `$skill-name` 调用名必须一致，不得使用中文。面向维护者和使用者的内容以中文为主，包括 `description`、`SKILL.md` 正文、`references/` 规则文档，以及 `agents/openai.yaml` 的 `display_name`、`short_description` 和 `default_prompt`；代码标识、文件名、命令参数和上游专有名词保持其规范形式。
 
-仓库对 AI 编写专题的统一要求提炼在 `tools/ai/codex/skills/build-linux-note-kernel-topic/references/repository-topic-requirements.md`。它以 `tools/ai/topic_summary_requirements/P01_主题章节的要求.md` ～ `P05_主题章节的要求.md`、`tools/ai/application/mermaid_require.md` 和本文件为来源；历史文件保留为来源材料，应按题型选用其中的结构，不得机械叠加成通用硬模板。历史要求与当前规则冲突时，以本文件和本次用户明确要求为准。
+通用技术书籍认知设计保存在 `tools/ai/codex/skills/build-linux-note-topic/references/topic-design.md`；仓库题型、目录和格式要求提炼在同目录的 `repository-topic-requirements.md`。两者以当前确认的“技术书籍 / 专题生成”需求、`tools/ai/topic_summary_requirements/P01_主题章节的要求.md` ～ `P05_主题章节的要求.md`、`tools/ai/application/mermaid_require.md` 和本文件为来源；历史文件保留为来源材料，应按题型选用其中的结构，不得机械叠加成通用硬模板。历史要求与当前规则冲突时，以本文件和本次用户明确要求为准。
 
-通用专题生成方法以 `knowledge/linux/synchronization/rcu/大纲.md` 及其已落地正文作为主要正例，抽取问题压力、抽象推演、最小闭环、证明与源码配对、现实条件加固、统一状态与通信全景、实现纵深、变体以及应用选择等章节角色。`knowledge/linux/synchronization/lockdep/大纲.md` 是动态验证器题型的次要正例，用于校正功能状态、影子状态、历史知识、检查器生命状态和事件时序的分层方法。两个正例的篇数、字段和实现变体都不是固定模板；开发者提供的网页草案或外部方法只能作为候选输入，必须经过本地正例、当前信息架构和本文件校正后写入 skill，不得直接照抄。
+通用专题先按 `topic-design.md` 建立全景、完整工作型大纲、问题链、错误模型、动态过程、层次映射、证据和工程边界；再以 `knowledge/linux/synchronization/rcu/大纲.md` 及其已落地正文作为内核机制主要正例，抽取问题压力、抽象推演、最小闭环、证明与源码配对、现实条件加固、统一状态与通信全景、实现纵深、变体以及应用选择等章节角色。`knowledge/linux/synchronization/lockdep/大纲.md` 是动态验证器题型的次要正例，用于校正功能状态、影子状态、历史知识、检查器生命状态和事件时序的分层方法。两个正例的篇数、字段和实现变体都不是固定模板；开发者提供的网页草案或外部方法只能作为候选输入，必须经过本地正例、当前信息架构和本文件校正后写入 skill，不得直接照抄。
 
 1. 用户说明材料已经审稿，且本次只要求排版、格式、导航或“按 RCU 风格整理”时，采用 layout-only：保留技术语义和全部信息单元，允许标题编号、空白、列表、表格、导航、锚点等排版所需的机械调整。
 2. 用户明确要求拆分、合并、移动或重排时，采用 structure-preserving，完整搬运已盘点内容，不得借结构调整精简正文。
