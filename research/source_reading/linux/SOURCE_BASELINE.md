@@ -106,9 +106,9 @@ domains:
 - [非抢占式 Tree RCU 模块源码概念导读](../rcu/navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.1_证据目标和配置边界)
 - [抢占式 Tree RCU 模块源码概念导读](../rcu/navigation/P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md#3.1_取证问题)
 - [Tasks RCU 与 Tiny RCU 模块源码概念导读](../rcu/navigation/P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md#4.1_Linux_6.12_Tasks_RCU与_Tiny_RCU模块源码概念导读)
-- [RCU 公共接口与检查机制源码详解](../rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.1_源码详解边界与引用入口)
-- [非抢占式 Tree RCU 关键函数源码实现](../rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.1_实现讲解边界与入口)
-- [抢占式 Tree RCU 关键函数源码实现](../rcu/source_explanations/P07_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#7.1_实现讲解边界与入口)
+- [RCU 公共接口与检查机制源码详解](../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.1_源码详解边界与引用入口)
+- [非抢占式 Tree RCU 关键函数源码实现](../rcu/source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.1_实现讲解边界与入口)
+- [抢占式 Tree RCU 关键函数源码实现](../rcu/source_explanations/P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#3.1_实现讲解边界与入口)
 
 ### 1.5.2\_Lockdep证据
 

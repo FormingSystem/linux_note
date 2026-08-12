@@ -128,7 +128,7 @@ synchronize_rcu等待者
     → rcu_gp_cleanup()
 ```
 
-`tree.c:1796::rcu_gp_init()` 首先用 `rcu_seq_start(&rcu_state.gp_seq)` 开始新代际。完成 CPU hotplug 协调后，它广度优先遍历 `rcu_node` 树，在各节点锁下从 `qsmaskinit` 生成本轮 `qsmask`，并公布节点代际。对应实现和逐句中文注释见 [`rcu_gp_init()` 建立本轮等待集合](../source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.4_rcu_gp_init建立本轮等待集合)。
+`tree.c:1796::rcu_gp_init()` 首先用 `rcu_seq_start(&rcu_state.gp_seq)` 开始新代际。完成 CPU hotplug 协调后，它广度优先遍历 `rcu_node` 树，在各节点锁下从 `qsmaskinit` 生成本轮 `qsmask`，并公布节点代际。对应实现和逐句中文注释见 [`rcu_gp_init()` 建立本轮等待集合](../source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.4_rcu_gp_init建立本轮等待集合)。
 
 叶节点 `qsmaskinit` 的每一位对应相关 CPU；上层节点位对应子节点。这里没有先查询哪个任务读了 `old_obj`。所有相关 CPU 被保守纳入，之后谁能立即证明自己已经在 EQS，谁就能很快清位。
 
@@ -148,9 +148,9 @@ rdp->core_needs_qs = 同一债务的core处理标记
 
 ## 2.7\_调用链D\_上下文切换怎样产生普通QS
 
-`kernel/sched/core.c:6615::__schedule()` 在关本地中断后调用 `rcu_note_context_switch(preempt)`。在 `!CONFIG_PREEMPT_RCU` 分支中，该调度钩子通过 `rcu_qs()` 清除本 CPU 的普通 QS 债务。两个函数的实现见 [`rcu_note_context_switch()` 与 `rcu_qs()` 记录静止态](../source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.6_rcu_note_context_switch与rcu_qs记录静止态)。
+`kernel/sched/core.c:6615::__schedule()` 在关本地中断后调用 `rcu_note_context_switch(preempt)`。在 `!CONFIG_PREEMPT_RCU` 分支中，该调度钩子通过 `rcu_qs()` 清除本 CPU 的普通 QS 债务。两个函数的实现见 [`rcu_note_context_switch()` 与 `rcu_qs()` 记录静止态](../source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.6_rcu_note_context_switch与rcu_qs记录静止态)。
 
-其安全依据来自 `include/linux/rcupdate.h:91-101` 的非抢占读侧封装：读侧进入禁止抢占，最外层退出恢复抢占。带 Doxygen 阅读说明和中文注释的源码见 [`__rcu_read_lock()` 与 `__rcu_read_unlock()` 实现](../source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.6_rcu_note_context_switch与rcu_qs记录静止态)。
+其安全依据来自 `include/linux/rcupdate.h:91-101` 的非抢占读侧封装：读侧进入禁止抢占，最外层退出恢复抢占。带 Doxygen 阅读说明和中文注释的源码见 [`__rcu_read_lock()` 与 `__rcu_read_unlock()` 实现](../source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.6_rcu_note_context_switch与rcu_qs记录静止态)。
 
 一个合法普通 reader 不能在禁抢占读侧内被普通调度切走。因此 GP 开始以后的真实 context switch 足以证明该 CPU 上 GP 开始前的普通旧读侧已经结束。
 
@@ -255,12 +255,12 @@ Linux 5.10 的 GP 树与普通同步主线已经具备相同骨架，但阅读�
 
 ## 2.13\_公共接口源码讲解入口
 
-本章只保留非抢占式 Tree RCU 特有的 GP、QS、树形汇聚与等待者唤醒调用链。演示代码涉及的公共接口只在[公共接口与检查机制源码详解](../source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.1_源码详解边界与引用入口)展开一次：
+本章只保留非抢占式 Tree RCU 特有的 GP、QS、树形汇聚与等待者唤醒调用链。演示代码涉及的公共接口只在[公共接口与检查机制源码详解](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.1_源码详解边界与引用入口)展开一次：
 
-- [`rcu_replace_pointer()`](../source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.3_rcu_replace_pointer接口实现)
-- [`rcu_dereference_protected()`](../source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.5_rcu_dereference_protected功能与检查路径)
-- [`synchronize_rcu()`](../source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.4_synchronize_rcu接口实现)
-- [`RCU_LOCKDEP_WARN()`](../source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.7_RCU_LOCKDEP_WARN检查适配层)
+- [`rcu_replace_pointer()`](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3_rcu_replace_pointer接口实现)
+- [`rcu_dereference_protected()`](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.5_rcu_dereference_protected功能与检查路径)
+- [`synchronize_rcu()`](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.4_synchronize_rcu接口实现)
+- [`RCU_LOCKDEP_WARN()`](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.7_RCU_LOCKDEP_WARN检查适配层)
 
 ## 2.14\_复核清单
 
