@@ -1,6 +1,6 @@
 ---
 id: research.source_reading.rcu.linux_6_12_tasks_tiny
-title: "Linux 6.12 Tasks RCU 与 Tiny RCU 源码调用链"
+title: "Linux 6.12 Tasks RCU 与 Tiny RCU 模块源码概念导读"
 kind: source
 status: evolving
 domains:
@@ -15,14 +15,14 @@ topics:
 source_project: linux
 source_version: "6.12.20"
 ---
-# 第4章\_Linux\_6.12\_Tasks\_RCU与Tiny\_RCU源码调用链
+# 第4章\_Linux\_6.12\_Tasks\_RCU与Tiny\_RCU模块源码概念导读
 
 
-## 4.1\_Linux\_6.12\_Tasks\_RCU与\_Tiny\_RCU源码调用链
+## 4.1\_Linux\_6.12\_Tasks\_RCU与\_Tiny\_RCU模块源码概念导读
 
 ### 4.1.1\_取证边界
 
-本章核对 NXP 官方 `linux-imx` 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应的 Linux 6.12.20 源码快照；本地工作树位置不作为证据身份，统一记录见 [Linux 源码阅读基线](../linux/SOURCE_BASELINE.md)。它服务于 [Tasks RCU 与 Tiny RCU 实现边界](../../../knowledge/linux/synchronization/rcu/P24_Tasks_RCU与Tiny_RCU实现边界.md)，不把 Tasks、Tasks Rude、Tasks Trace 与 Tiny 合并成一个抽象 GP。
+本章核对 NXP 官方 `linux-imx` 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应的 Linux 6.12.20 源码快照；本地工作树位置不作为证据身份，统一记录见 [Linux 源码阅读基线](../../linux/SOURCE_BASELINE.md)。它服务于 [Tasks RCU 与 Tiny RCU 实现边界](../../../../knowledge/linux/synchronization/rcu/P24_Tasks_RCU与Tiny_RCU实现边界.md)，不把 Tasks、Tasks Rude、Tasks Trace 与 Tiny 合并成一个抽象 GP。
 
 ### 4.1.2\_Tasks家族的共享骨架
 
@@ -154,4 +154,6 @@ Tasks 家族的任务字段、IPI 策略和 BPF/ftrace 组合属于版本敏感�
 7. Tiny RCU 的 `donetail` 与 `curtail` 分别划定什么集合？
 8. 为什么 Tiny 的同步 API 可简化，而异步回调仍须等待 `rcu_qs()`？
 
-上一篇：[Linux 6.12 抢占式 Tree RCU 源码调用链](P03_Linux_6.12_抢占式_Tree_RCU_源码调用链.md)。
+上一篇：[Linux 6.12 抢占式 Tree RCU 模块源码概念导读](P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md)。
+
+阅读索引：[Linux 6.12 Tree RCU 与 SRCU 源码导读](P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)。

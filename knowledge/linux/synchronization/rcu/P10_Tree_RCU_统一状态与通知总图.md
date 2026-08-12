@@ -20,6 +20,14 @@ topics:
 
 > **源码边界：** 本章结论以 NXP 官方 [`linux-imx`](https://github.com/nxp-imx/linux-imx) 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应的 Linux 6.12.20 为证据，优先引用 `kernel/rcu/`、`include/linux/rcupdate.h` 和相关公共调度/context-tracking 路径。本地工作树位置不属于证据身份，统一基线见 [Linux 源码阅读基线](../../../../research/source_reading/linux/SOURCE_BASELINE.md)。
 
+**本章阅读路线：**
+
+- **首次建立总图：** 先读 10.1、10.2、10.5 和 10.6，抓住参与角色、完整 GP 周期、状态地址和通知路径；
+- **补齐特殊上下文：** 再读 10.3、10.4、10.7～10.10，理解读侧本地状态、QS/EQS、抢占登记、时钟和阻塞边界；
+- **按源码复查：** 使用 10.11 的入口回到前述阶段，只核对本次问题需要的字段和调用链，不把本章当成字段词典。
+
+三条路线复用同一组状态与时序；跳读只改变阅读顺序，不改变前文已经建立的证明关系。
+
 ```mermaid
 sequenceDiagram
     participant R as 读者任务
