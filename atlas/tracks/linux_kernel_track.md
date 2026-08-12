@@ -39,8 +39,8 @@ domains:
 ## 1.4\_第三阶段\_并发与事件
 
 1. 从[同步机制总纲](../../knowledge/linux/synchronization/大纲.md)建立“竞争、顺序、互斥、等待和生命周期”问题地图。
-2. 阅读[内存顺序](../../knowledge/linux/memory_ordering/大纲.md)，再进入[锁机制](../../knowledge/linux/synchronization/locks/大纲.md)，先区分可睡与不可睡上下文。
-3. 对照学习[seqcount/seqlock](../../knowledge/linux/synchronization/sequence_counters/大纲.md)与[RCU](../../knowledge/linux/synchronization/rcu/大纲.md)，理解读重试和延迟回收解决的是不同问题。
+2. 阅读[内存顺序](../../knowledge/linux/memory_ordering/大纲.md)，再进入[锁机制](../../knowledge/linux/synchronization/locks/大纲.md)，先区分可睡与不可睡上下文；随后用 [Lockdep 专题](../../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)学会把锁序、IRQ 上下文和持锁前置条件转成动态验证证据。需要落到 Linux 6.12.20 实现时，从 [Lockdep 源码总阅读索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)进入。
+3. 对照学习[seqcount/seqlock](../../knowledge/linux/synchronization/sequence_counters/大纲.md)与[RCU](../../knowledge/linux/synchronization/rcu/大纲.md)，理解读重试和延迟回收解决的是不同问题；版本化实现从 [RCU 源码总阅读索引](../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)进入。
 4. 阅读[等待队列与完成量](../../knowledge/linux/waiting_notification/大纲.md)，掌握条件等待、事件完成和唤醒规则。
 5. 按序阅读[中断机制](../../knowledge/kernel_subsystems/irq/中断机制简介)，再阅读[工作队列](../../knowledge/kernel_subsystems/workqueue/大纲.md)，理解执行上下文如何约束同步选择。
 6. 阅读[时间管理](../../knowledge/linux/time_management/定时器简介)，区分忙等待、睡眠、timer、hrtimer 与 delayed work。

@@ -59,6 +59,8 @@ tools/typora配置/
 
 Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，优先使用 Obsidian 内部操作，让链接能够自动跟踪更新。
 
+专题阅读从 [知识库导航](atlas/home.md#1.1_按目标进入)或[仓库内容索引](atlas/indexes/content_index.md#1.2_Linux通用机制)进入。以并发机制为例，[Lockdep 专题](knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)和 [RCU 专题](knowledge/linux/synchronization/rcu/大纲.md#1.1_专题定位)保存跨版本正文；需要核对 Linux 6.12.20 实现时，分别进入 [Lockdep 源码总阅读索引](research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)和 [RCU 源码总阅读索引](research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)，再从模块导读跳到具体函数标题。
+
 ### 1.3.1\_回路\_Markdown\_工作台
 
 仓库当前内置“回路”工具。新的目标产品是独立 Electron Markdown 工作台，直接新建文件、打开单个文件或打开单个文件夹；桌面层采用 TypeScript，文件与工作区服务采用独立 C++20 进程。Windows 已接通 ADR-0013 根句柄相对能力、协议 v4 正文通道、ADR-0015 Typora 式 CommonMark/GFM + Mermaid 混合编辑面以及 ADR-0014 冲突检查安全保存；默认原位编辑并及时渲染，`Ctrl+/` 往返完整源码。Linux 平台实现尚待受支持环境验证，因此跨平台 D1B/D1-SAVE 保持 `IN_PROGRESS`。D1C 的 1 MiB 性能门禁也仍为 `IN_PROGRESS`。恢复备份、Hot Exit 和通用文件操作尚未实现。浏览器训练与专题电子书代码属于等待删除的 `0.1.0`。工具代码与自身文档位于：
