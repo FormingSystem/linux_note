@@ -148,11 +148,11 @@ flowchart TD
 
 ## 1.9\_建议的源码阅读顺序
 
-1. 先从 `rcupdate.h` 阅读 `rcu_assign_pointer()`、`rcu_dereference()` 和读侧封装，并标出功能语句与 Sparse/Lockdep 检查语句；要查看宏体、中文 Doxygen 说明和实现原理时，进入[RCU 公共接口与检查机制源码详解](../source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.2_接口与源码索引)。
-2. 再读 `update.c` 的 RCU lockdep maps、`debug_lockdep_rcu_enabled()` 和 `rcu_read_lock_held()`，理解检查状态从哪里来、关闭配置后哪些分支为空操作；具体宏实现见[RCU Lockdep 状态来源](../source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.6_RCU_Lockdep状态来源)和[`RCU_LOCKDEP_WARN()` 检查适配层](../source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.7_RCU_LOCKDEP_WARN检查适配层)。
+1. 先从 `rcupdate.h` 阅读 `rcu_assign_pointer()`、`rcu_dereference()` 和读侧封装，并标出功能语句与 Sparse/Lockdep 检查语句；要查看宏体、中文 Doxygen 说明和实现原理时，进入[RCU 公共接口与检查机制源码详解](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.2_接口与源码索引)。
+2. 再读 `update.c` 的 RCU lockdep maps、`debug_lockdep_rcu_enabled()` 和 `rcu_read_lock_held()`，理解检查状态从哪里来、关闭配置后哪些分支为空操作；具体宏实现见[RCU Lockdep 状态来源](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_Lockdep状态来源)和[`RCU_LOCKDEP_WARN()` 检查适配层](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.7_RCU_LOCKDEP_WARN检查适配层)。
 3. 阅读 `tree.h` 中的 `rcu_data`、`rcu_node`、`rcu_state`，先分清每任务、每 CPU、每节点和全局状态。
-4. 沿[非抢占式 Tree RCU 模块源码概念导读](P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md)建立 CPU QS、树形汇聚和同步等待闭环；遇到具体函数再进入[非抢占式 Tree RCU 关键函数源码实现](../source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.2_函数实现索引)。
-5. 再沿[抢占式 Tree RCU 模块源码概念导读](P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md)增加 `task_struct`、`blkd_tasks` 和 `gp_tasks` 这条任务债务轴；具体字段、链表入队和退出实现见[抢占式 Tree RCU 关键函数源码实现](../source_explanations/P07_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#7.2_任务与节点的共享状态实现)。
+4. 沿[非抢占式 Tree RCU 模块源码概念导读](P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md)建立 CPU QS、树形汇聚和同步等待闭环；遇到具体函数再进入[非抢占式 Tree RCU 关键函数源码实现](../source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.2_函数实现索引)。
+5. 再沿[抢占式 Tree RCU 模块源码概念导读](P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md)增加 `task_struct`、`blkd_tasks` 和 `gp_tasks` 这条任务债务轴；具体字段、链表入队和退出实现见[抢占式 Tree RCU 关键函数源码实现](../source_explanations/P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#3.2_任务与节点的共享状态实现)。
 6. 沿[Tasks RCU 与 Tiny RCU 模块源码概念导读](P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md)区分任务扫描、Trace reader 与单 CPU 回调边界。当前仓库未保存 `tasks.h` 和 `tiny.c` 快照，因此本轮不伪造对应的函数实现文档。
 7. 沿 `call_rcu()` 进入回调排队，再阅读 `rcu_segcblist` 的分段模型与 `rcu_do_batch()`。
 8. 最后对照 `srcu.h`、`srcutree.h` 和 `srcutree.c`，比较 Tree SRCU 的私有域和两 index 模型。
