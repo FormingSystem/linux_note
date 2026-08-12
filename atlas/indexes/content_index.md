@@ -26,7 +26,7 @@ domains:
 | --- | --- |
 | 内核架构 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)、[模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes) |
 | 数据结构 | [单链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)、[哈希表专题](../../knowledge/linux/data_structures/哈希表_Hash_Table)、[红黑树专题](../../knowledge/linux/data_structures/红黑树_rb-tree) |
-| 并发同步 | [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md)、[Linux 内存顺序专题](../../knowledge/linux/memory_ordering/大纲.md)、[RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md) |
+| 并发同步 | [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md)、[Linux 内存顺序专题](../../knowledge/linux/memory_ordering/大纲.md)、[RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md)、[Lockdep 专题](../../knowledge/linux/synchronization/lockdep/大纲.md) |
 | 对象生命周期 | [kref](../../knowledge/linux/object_lifetime/kref)、[devres](../../knowledge/linux/object_lifetime/devres) |
 | 时间管理 | [定时器专题](../../knowledge/linux/time_management/定时器简介) |
 | I/O 模型 | [阻塞 I/O](../../knowledge/linux/io_model/blocking_io)、[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md) |
@@ -65,7 +65,7 @@ domains:
 | 内存顺序实验 | [访问宽度与 ARM 反汇编](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md)、[READ_ONCE 编译器访问](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)、[LKMM Litmus](../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md) |
 | i.MX6ULL 实验 | [驱动实验目录](../../labs/platforms/nxp/imx6ull/drivers) |
 | 调查 | [investigations](../../research/investigations/README.md) |
-| 源码阅读 | [Linux 源码阅读目录](../../research/source_reading/linux)、[Linux 6.12 LKMM 导读](../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md) |
+| 源码阅读 | [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md#1.1_当前来源)、[Linux 6.12 LKMM 导读](../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md)、[Linux 6.12 RCU 总阅读索引](../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)、[Linux 6.12 Lockdep 总阅读索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标) |
 | 标准 | [GPL 协议说明](../../reference/standards/gpl/GPL协议说明.md) |
 
 ## 1.6\_电子书与出版物
