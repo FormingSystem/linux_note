@@ -20,8 +20,21 @@
               "icon": "lucide-file",
               "title": "P06_非抢占式_Tree_RCU_源码同步机制"
             }
+          },
+          {
+            "id": "13a01d84fc0b1a8d",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.13.7"
+              },
+              "icon": "lucide-book-up",
+              "title": "版本说明 1.13.7"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -41,7 +54,9 @@
               "type": "file-explorer",
               "state": {
                 "sortOrder": "alphabetical",
-                "autoReveal": false
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
               },
               "icon": "lucide-folder-closed",
               "title": "文件列表"
@@ -78,8 +93,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 278.5,
-    "collapsed": true
+    "width": 278.5
   },
   "right": {
     "id": "4d8e55985b4496b6",
@@ -157,7 +171,6 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -187,8 +200,12 @@
       "pdf-plus:PDF++: Toggle auto-paste": false
     }
   },
-  "active": "c3bf3980e4dacba7",
+  "active": "13a01d84fc0b1a8d",
   "lastOpenFiles": [
+    "tools/ai/codex/skills/build-linux-note-topic/scripts/__pycache__/audit_topic.cpython-313.pyc",
+    "tools/ai/codex/skills/build-linux-note-topic/scripts/__pycache__/audit_content_conservation.cpython-313.pyc",
+    "tools/ai/codex/skills/build-linux-note-topic/scripts/__pycache__",
+    "atlas/maps/knowledge_review_map.md",
     "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
     "tools/practice_tool/dist/assets/mindmap-definition-LN4V7U3C-Ck7HasSh.js",
     "tools/practice_tool/dist/assets/chunk-RYQCIY6F-C0x0Bkcp.js",
@@ -198,8 +215,6 @@
     "tools/practice_tool/dist/assets/xychartDiagram-FW5EYKEG-DVk7OQpE.js",
     "tools/practice_tool/dist/assets/katex-C5jXJg4s.js",
     "tools/practice_tool/dist/assets/ordinal-Cboi1Yqb.js",
-    "tools/practice_tool/dist/assets/sizeCapture-X5ZJPWSS-DA5h4zWg.js",
-    "tools/practice_tool/dist/assets/swimlanes-5IMT3BWC-BEIA7-93.js",
     "knowledge/driver_model/character_device/P12_常见故障与排查.md",
     "knowledge/driver_model/character_device/P11_构建运行与验证.md",
     "knowledge/driver_model/character_device/P10_字符设备驱动模板.md",
@@ -223,8 +238,6 @@
     "knowledge/linux/device_model/P05_kobject_kset与sysfs对象树.md",
     "knowledge/linux/device_model/P04_Driver_Core状态拓扑.md",
     "knowledge/linux/device_model/P03_机制完善_生命周期并发与失败.md",
-    "knowledge/linux/device_model/P02_设备模型抽象机制推演.md",
-    "knowledge/linux/device_model/P01_为什么需要设备模型.md",
     "assets/images/kernel/linux内核深度解析/boot_jump_linux函数.png",
     "assets/images/kernel/running_linux_kernel_P01/linux_kernel_component_archtecture.png",
     "assets/images/kernel/nxp/kernel_config_cross_compiler_for_makefile.png"

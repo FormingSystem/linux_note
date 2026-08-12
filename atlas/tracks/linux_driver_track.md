@@ -15,6 +15,8 @@ domains:
 
 本路线以“能写、能解释、能排错”为目标，从最小模块和字符设备逐步进入设备模型、设备树、GPIO、中断与 Input 子系统。默认具备 C 语言、基本 Linux 命令和交叉编译经验。
 
+开始前建议先在[知识库专题阅读与评审地图](../maps/knowledge_review_map.md)查看各专题和章节的人工确认程度；路线中的阶段验收是学习目标，不等同于内容评审状态。
+
 ## 1.2\_第一阶段\_模块与字符设备
 
 1. [Linux 内核模块与设备节点操作入门](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)。
