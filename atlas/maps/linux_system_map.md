@@ -44,7 +44,7 @@ Linux 内核结构、模块与数据结构
 | 机制 | 解决的问题 | 当前入口 |
 | --- | --- | --- |
 | 数据结构 | 如何组织和检索内核对象 | [单链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)、[哈希表](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)、[红黑树](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md) |
-| 并发与同步 | 如何处理竞争、可见性和执行上下文约束 | [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md) |
+| 并发与同步 | 如何处理竞争、可见性和执行上下文约束 | [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md)、[Lockdep 专题](../../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)、[RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md#1.1_专题定位) |
 | 生命周期 | 如何确保对象被安全持有和释放 | [kref](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)、[devres](../../knowledge/linux/object_lifetime/devres/devres_API说明.md) |
 | 时间管理 | 如何完成延时、超时和定时回调 | [驱动中的时间问题](../../knowledge/linux/time_management/定时器简介/P01_驱动中的_时间问题_概述.md) |
 | I/O 模型 | 用户进程如何等待或接收设备事件 | [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)、[异步通知](../../knowledge/linux/io_model/async_notification/P01_异步通知全景与知识地图.md) |
@@ -75,5 +75,6 @@ Linux 内核结构、模块与数据结构
 - 平台实现记录：[i.MX6ULL 移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)、[RK3566 Linux SDK 编译](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)。
 - 最小验证实验：[i.MX6ULL 驱动实验](../../labs/platforms/nxp/imx6ull/drivers)。
 - 调查材料入口：[调查目录说明](../../research/investigations/README.md)。
+- 版本化并发源码入口：[Linux 6.12 Lockdep 总阅读索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)、[Linux 6.12 RCU 总阅读索引](../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)。
 
 学习时应先从通用文档形成模型，再用平台记录确认差异，用实验确认行为，最后以特定版本源码材料解释实现细节。
