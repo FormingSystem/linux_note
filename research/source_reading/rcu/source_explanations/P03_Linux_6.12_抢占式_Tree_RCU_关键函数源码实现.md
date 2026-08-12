@@ -16,9 +16,9 @@ source_project: linux
 source_version: "6.12.20"
 ---
 
-# 第7章\_Linux\_6.12\_抢占式\_Tree\_RCU\_关键函数源码实现
+# 第3章\_Linux\_6.12\_抢占式\_Tree\_RCU\_关键函数源码实现
 
-## 7.1\_实现讲解边界与入口
+## 3.1\_实现讲解边界与入口
 
 本章只讲解抢占式 Tree RCU 中的具体状态定义和函数实现：读侧快路怎样写 `task_struct`，调度钩子怎样把债务转移到 `rcu_node`，任务退出时怎样删链、推进游标并恢复树形上报。整体交错、状态轴和模块结论位于 navigation 文档。
 
@@ -30,7 +30,7 @@ source_version: "6.12.20"
 
 下列 `/** ... */` 是本仓库补充的中文 Doxygen 阅读说明，不是上游原注释。裁剪代码保留影响状态所有权、等待边界和上报顺序的语句；完整函数以链接的 Linux 6.12.20 版本化源文件为准。
 
-## 7.2\_任务与节点的共享状态实现
+## 3.2\_任务与节点的共享状态实现
 
 `task_struct` 中的 `rcu_read_lock_nesting`、`rcu_read_unlock_special`、`rcu_node_entry` 和 `rcu_blocked_node` 声明位于上游 `include/linux/sched.h`。当前仓库尚未保存该文件快照，因此本章不伪造结构体摘录；后续只使用已保存 [`tree_plugin.h`](../../linux/kernel/rcu/tree_plugin.h) 中对这些字段的真实读写作为实现证据。节点侧声明已经保存在 [`tree.h`](../../linux/kernel/rcu/tree.h)，可以直接摘录：
 
@@ -50,7 +50,7 @@ struct rcu_node {
 
 **实现原理：** `task_struct` 保存“这个 reader 是谁、欠的债务属于哪个叶节点”，`rcu_node` 保存“节点共享地等待哪些任务以及每类 GP 的起始游标”。任务迁移只改变运行 CPU，不改变 `rcu_blocked_node` 指向的债务所有者。
 
-## 7.3\_\_\_rcu\_read\_lock与\_\_rcu\_read\_unlock实现
+## 3.3\_\_\_rcu\_read\_lock与\_\_rcu\_read\_unlock实现
 
 ```c
 /**
@@ -91,7 +91,7 @@ void __rcu_read_unlock(void)
 
 **实现原理：** 没有被抢占的 reader 始终只写当前任务。只有真正发生状态归属变化时，`blocked` 或 `need_qs` 才把最外层 unlock 导向共享清理路径。
 
-## 7.4\_rcu\_note\_context\_switch转移读侧债务
+## 3.4\_rcu\_note\_context\_switch转移读侧债务
 
 ```c
 /**
@@ -146,7 +146,7 @@ void rcu_note_context_switch(bool preempt)
 
 **实现原理：** 顺序是正确性的核心。如果先清 CPU QS，再挂 `blkd_tasks`，GP 可能在两步之间看到“CPU 已报告且没有任务债务”的伪窗口。当前实现先使共享债务可见，再清本地位，因而债务始终至少有一个载体。
 
-## 7.5\_rcu\_preempt\_ctxt\_queue建立任务等待边界
+## 3.5\_rcu\_preempt\_ctxt\_queue建立任务等待边界
 
 ```c
 /**
@@ -230,7 +230,7 @@ static void rcu_preempt_ctxt_queue(struct rcu_node *rnp,
 
 **实现原理：** `switch (blkd_state)` 明确区分链表头、链表尾、`gp_tasks` 之后和 `exp_tasks` 之后四类插入位置。游标只指向真正阻塞相应 GP 的第一项；更晚开始、与当前 GP 无关的 reader 可以排在游标之前。该算法允许普通 GP 多等一些 reader，但不允许漏掉应等 reader。
 
-## 7.6\_rcu\_preempt\_check\_blocked\_tasks接管旧任务
+## 3.6\_rcu\_preempt\_check\_blocked\_tasks接管旧任务
 
 ```c
 /**
@@ -263,7 +263,7 @@ static void rcu_preempt_check_blocked_tasks(struct rcu_node *rnp)
 
 **实现原理：** `rcu_preempt_ctxt_queue()` 解决“GP 先开始、任务后被抢占”，本函数解决“任务先被抢占、GP 后开始”。两条路径共同覆盖负债转移与 GP 边界的两种时间顺序。
 
-## 7.7\_节点汇聚同时等待CPU与任务
+## 3.7\_节点汇聚同时等待CPU与任务
 
 ```c
 /**
@@ -277,11 +277,11 @@ static int rcu_preempt_blocked_readers_cgp(struct rcu_node *rnp)
 }
 ```
 
-共享的 `rcu_report_qs_rnp()` 已在[非抢占式 Tree RCU 关键函数实现](P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.7_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据)逐行展开，本章不复制同一函数。该实现清除当前 `qsmask` 位以后，只有 `rnp->qsmask == 0` 且这里的 `rcu_preempt_blocked_readers_cgp(rnp)` 也为假，才继续清父节点位。
+共享的 `rcu_report_qs_rnp()` 已在[非抢占式 Tree RCU 关键函数实现](P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.7_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据)逐行展开，本章不复制同一函数。该实现清除当前 `qsmask` 位以后，只有 `rnp->qsmask == 0` 且这里的 `rcu_preempt_blocked_readers_cgp(rnp)` 也为假，才继续清父节点位。
 
 **实现原理：** `qsmask` 表示 CPU/子树债务，`gp_tasks` 表示任务 reader 债务。抢占式 RCU 不把两者强行编码进同一掩码；它们通过 `rcu_report_qs_rnp()` 的同一个退出条件汇合，同时保持具体函数只在一个文档中展开。
 
-## 7.8\_最外层退出删除任务并恢复传播
+## 3.8\_最外层退出删除任务并恢复传播
 
 ```c
 /**
@@ -375,7 +375,7 @@ rcu_report_unblock_qs_rnp(struct rcu_node *rnp, unsigned long flags)
 
 **实现原理：** 退出任务必须在原债务节点锁下同时完成“删链、游标推进、所有权指针清空”。如果这是最后一个任务债务，`rcu_report_unblock_qs_rnp()` 才把先前被任务截断的节点传播接回树形汇聚主线。
 
-## 7.9\_实现复核问题
+## 3.9\_实现复核问题
 
 1. 为什么未被抢占的 reader 不需要修改 `rcu_node`？
 2. `rcu_note_context_switch()` 为什么必须先挂任务，再调用 `rcu_qs()`？
