@@ -10,7 +10,7 @@ domains:
 
 # 第1章\_仓库内容索引
 
-本索引按内容本质提供稳定入口。专题内部的章节顺序以目录中的 `PXX` 文件和大纲为准。
+本索引按内容本质提供稳定入口。专题内部的章节顺序以目录中的 `PXX` 文件和大纲为准；人工确认程度统一查看[知识库专题阅读与评审地图](../maps/knowledge_review_map.md)，本索引不复制评审状态。
 
 ## 1.1\_基础知识
 
@@ -77,6 +77,7 @@ domains:
 ## 1.7\_维护入口
 
 - [知识库导航](../home.md)
+- [知识库专题阅读与评审地图](../maps/knowledge_review_map.md)
 - [知识库建设路线图](../roadmaps/content_roadmap.md)
 - [Linux I/O 与驱动子系统建设路线](../roadmaps/linux_io_driver_subsystems.md)
 - [仓库信息架构设计](../../governance/architecture/repository_information_architecture.md)
