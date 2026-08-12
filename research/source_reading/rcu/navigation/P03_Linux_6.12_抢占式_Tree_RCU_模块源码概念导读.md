@@ -1,6 +1,6 @@
 ---
 id: research.source_reading.rcu.linux_6_12_preempt_tree
-title: "Linux 6.12 抢占式 Tree RCU 源码调用链"
+title: "Linux 6.12 抢占式 Tree RCU 模块源码概念导读"
 kind: source
 status: evolving
 domains:
@@ -15,7 +15,7 @@ source_project: linux
 source_version: "6.12.20"
 ---
 
-# 第3章\_Linux\_6.12\_抢占式\_Tree\_RCU\_源码调用链
+# 第3章\_Linux\_6.12\_抢占式\_Tree\_RCU\_模块源码概念导读
 
 ## 3.1\_取证问题
 
@@ -31,35 +31,21 @@ R-old在CPU1取得old_obj
     → GP=N才允许完成
 ```
 
-抽象证明见[抢占式 Tree RCU 的问题与任务跟踪模型](../../../knowledge/linux/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md)，稳定机制正文见[抢占式 Tree RCU 源码同步机制](../../../knowledge/linux/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md)。本章只保存 Linux 6.12.20 的函数、字段、锁和分支证据。
+抽象证明见[抢占式 Tree RCU 的问题与任务跟踪模型](../../../../knowledge/linux/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md)，稳定机制正文见[抢占式 Tree RCU 源码同步机制](../../../../knowledge/linux/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md)。本章只保存 Linux 6.12.20 的函数、字段、锁和分支证据。
 
 ## 3.2\_任务状态的准确位置
 
-`include/linux/sched.h:894-899` 在 `CONFIG_PREEMPT_RCU` 下把四个字段放入每个 `task_struct`：
-
-```c
-int                 rcu_read_lock_nesting;
-union rcu_special   rcu_read_unlock_special;
-struct list_head    rcu_node_entry;
-struct rcu_node    *rcu_blocked_node;
-```
+`include/linux/sched.h:894-899` 在 `CONFIG_PREEMPT_RCU` 下把 `rcu_read_lock_nesting`、`rcu_read_unlock_special`、`rcu_node_entry` 和 `rcu_blocked_node` 放入每个 `task_struct`。字段定义、读写者和中文注释见 [任务与节点的共享状态实现](../source_explanations/P07_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#7.2_任务与节点的共享状态实现)。
 
 这是任务可以跨 CPU 保存旧读侧状态的物理载体。它们不是 `rcu_data` 字段，因为 `rcu_data` 随 CPU 固定，任务可能迁移。
 
-叶节点共享记录位于 [`kernel/rcu/tree.h`](../linux/kernel/rcu/tree.h) 的 `struct rcu_node`：
-
-```c
-struct list_head  blkd_tasks;
-struct list_head *gp_tasks;
-struct list_head *exp_tasks;
-struct list_head *boost_tasks;
-```
+叶节点共享记录位于 [`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h) 的 `struct rcu_node`，由 `blkd_tasks`、`gp_tasks`、`exp_tasks` 和 `boost_tasks` 表达任务集合及不同等待边界；具体字段摘录同样集中在 [任务与节点的共享状态实现](../source_explanations/P07_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#7.2_任务与节点的共享状态实现)。
 
 访问这些链表和游标的关键路径持有 `rnp->lock`，并在需要时关闭本地中断，防止同 CPU 调度/RCU 路径重入破坏状态。
 
 ## 3.3\_读侧进入\_没有节点登记
 
-[`kernel/rcu/tree_plugin.h:411-445`](../linux/kernel/rcu/tree_plugin.h) 实现抢占分支：
+[`kernel/rcu/tree_plugin.h:411-445`](../../linux/kernel/rcu/tree_plugin.h) 实现抢占分支：
 
 ```text
 __rcu_read_lock()
@@ -77,21 +63,7 @@ __rcu_read_unlock()
 
 ## 3.4\_调度钩子\_先转移债务再报告CPU\_QS
 
-`kernel/sched/core.c:6615::__schedule()` 调用 `rcu_note_context_switch(preempt)`。抢占实现在 [`tree_plugin.h:323-373`](../linux/kernel/rcu/tree_plugin.h)：
-
-```c
-if (rcu_preempt_depth() > 0 &&
-    !t->rcu_read_unlock_special.b.blocked) {
-	rnp = rdp->mynode;
-	raw_spin_lock_rcu_node(rnp);
-	t->rcu_read_unlock_special.b.blocked = true;
-	t->rcu_blocked_node = rnp;
-	rcu_preempt_ctxt_queue(rnp, rdp);
-} else {
-	rcu_preempt_deferred_qs(t);
-}
-rcu_qs();
-```
+`kernel/sched/core.c:6615::__schedule()` 调用 `rcu_note_context_switch(preempt)`。抢占实现先把读侧债务从当前 CPU 转移到任务和原叶节点，然后才允许 `rcu_qs()` 清本 CPU 位；逐句实现见 [`rcu_note_context_switch()` 转移读侧债务](../source_explanations/P07_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#7.4_rcu_note_context_switch转移读侧债务)。
 
 顺序提供的证明是：
 
@@ -106,14 +78,7 @@ rcu_qs();
 
 ## 3.5\_入队决策\_一个链表怎样保存多条GP边界
 
-[`tree_plugin.h:128-278`](../linux/kernel/rcu/tree_plugin.h) 的 `rcu_preempt_ctxt_queue()` 先组合四个状态：
-
-```c
-int blkd_state = (rnp->gp_tasks ? RCU_GP_TASKS : 0) +
-		 (rnp->exp_tasks ? RCU_EXP_TASKS : 0) +
-		 (rnp->qsmask & rdp->grpmask ? RCU_GP_BLKD : 0) +
-		 (rnp->expmask & rdp->grpmask ? RCU_EXP_BLKD : 0);
-```
+[`tree_plugin.h:128-278`](../../linux/kernel/rcu/tree_plugin.h) 的 `rcu_preempt_ctxt_queue()` 先组合 `gp_tasks`、`exp_tasks`、`qsmask` 和 `expmask` 四类状态。决策表、链表插入位置与游标更新的实现见 [`rcu_preempt_ctxt_queue()` 建立任务等待边界](../source_explanations/P07_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#7.5_rcu_preempt_ctxt_queue建立任务等待边界)。
 
 它回答四个不同问题：
 
@@ -122,23 +87,15 @@ int blkd_state = (rnp->gp_tasks ? RCU_GP_TASKS : 0) +
 3. 当前 CPU 是否仍欠普通 GP 的位；
 4. 当前 CPU 是否仍欠加速 GP 的位。
 
-根据组合结果，任务被插到链表头、尾、`gp_tasks` 后或 `exp_tasks` 后。若它是第一项阻塞当前普通 GP 的任务：
-
-```c
-WRITE_ONCE(rnp->gp_tasks, &t->rcu_node_entry);
-```
+根据组合结果，任务被插到链表头、尾、`gp_tasks` 后或 `exp_tasks` 后。若它是第一项阻塞当前普通 GP 的任务，实现会让 `gp_tasks` 指向该任务的 `rcu_node_entry`。
 
 源码注释明确说这是一种保守近似，可能让普通 GP 多等，但必须避免漏等。也正因为存在游标，不能把 `blkd_tasks` 的每个成员都无条件解释成当前普通 GP 的旧 reader。
 
 ## 3.6\_GP开始以前已被抢占的任务怎样纳入
 
-任务可能在没有普通 GP 时就进入 `blkd_tasks`。`kernel/rcu/tree.c:1920-1928::rcu_gp_init()` 遍历节点时，在设置新 `qsmask` 和节点 `gp_seq` 前调用：
+任务可能在没有普通 GP 时就进入 `blkd_tasks`。`kernel/rcu/tree.c:1920-1928::rcu_gp_init()` 遍历节点时，在设置新 `qsmask` 和节点 `gp_seq` 前调用 `rcu_preempt_check_blocked_tasks()`。它如何把旧链表成员纳入新 GP 见 [`rcu_preempt_check_blocked_tasks()` 接管旧任务](../source_explanations/P07_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#7.6_rcu_preempt_check_blocked_tasks接管旧任务)。
 
-```c
-rcu_preempt_check_blocked_tasks(rnp);
-```
-
-[`tree_plugin.h:704-721`](../linux/kernel/rcu/tree_plugin.h) 的抢占分支若发现已有 blocked tasks，并且节点属于本轮需要跟踪的在线/离线边界，就让 `gp_tasks` 指向旧任务边界。
+[`tree_plugin.h:704-721`](../../linux/kernel/rcu/tree_plugin.h) 的抢占分支若发现已有 blocked tasks，并且节点属于本轮需要跟踪的在线/离线边界，就让 `gp_tasks` 指向旧任务边界。
 
 因此两种到达顺序都有闭环：
 
@@ -154,30 +111,13 @@ GP先开始、任务后被抢占
 
 任务入队以后，`rcu_note_context_switch()` 调用 `rcu_qs()`，清 `rdp->cpu_no_qs.b.norm`。每 CPU `rcu_core()` 以后通过 `rcu_report_qs_rdp()` 报告到叶节点。
 
-[`kernel/rcu/tree.c:2289-2344`](../linux/kernel/rcu/tree.c) 的 `rcu_report_qs_rnp()` 清当前位后检查：
-
-```c
-if (rnp->qsmask != 0 || rcu_preempt_blocked_readers_cgp(rnp)) {
-	raw_spin_unlock_irqrestore_rcu_node(rnp, flags);
-	return;
-}
-```
-
-抢占分支 [`tree_plugin.h:380-383`](../linux/kernel/rcu/tree_plugin.h) 定义：
-
-```c
-return READ_ONCE(rnp->gp_tasks) != NULL;
-```
+[`kernel/rcu/tree.c:2289-2344`](../../linux/kernel/rcu/tree.c) 的 `rcu_report_qs_rnp()` 清当前位后，同时检查 `qsmask` 和 `rcu_preempt_blocked_readers_cgp()`。只要 CPU 债务或当前 GP 的任务债务仍有一项存在，本节点就停止向父节点传播。实现见 [节点汇聚同时等待 CPU 与任务](../source_explanations/P07_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#7.7_节点汇聚同时等待CPU与任务)。
 
 于是 CPU1 的位可以清零，但叶节点代表自身的父级位仍保持一。任务债务没有伪装成 CPU1 位，而是截断该叶节点继续向上汇聚的动作。
 
 ## 3.8\_任务迁移为何不会丢记录
 
-调度入队时保存：
-
-```c
-t->rcu_blocked_node = rnp;
-```
+调度入队时把原叶节点保存到 `t->rcu_blocked_node`，这个写入点位于 [`rcu_note_context_switch()` 转移读侧债务](../source_explanations/P07_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#7.4_rcu_note_context_switch转移读侧债务)。
 
 任务后来即使在 CPU2 恢复，特殊退出仍读取 `t->rcu_blocked_node` 并锁住原节点。若错误地使用 `this_cpu_ptr(&rcu_data)->mynode`，就会去 CPU2 的叶节点寻找一条实际挂在 CPU1 叶节点的链表项。
 
@@ -192,13 +132,13 @@ t->rcu_blocked_node = rnp;
 
 `__rcu_read_unlock()` 只有在 nesting 变为零且 `rcu_read_unlock_special.s != 0` 时调用 `rcu_read_unlock_special()`。
 
-[`tree_plugin.h:637-692`](../linux/kernel/rcu/tree_plugin.h) 先判断当前是否仍处在不适合完整清理的 NMI、关中断、禁 BH 或禁抢占上下文。需要延迟时，它可能：
+[`tree_plugin.h:637-692`](../../linux/kernel/rcu/tree_plugin.h) 先判断当前是否仍处在不适合完整清理的 NMI、关中断、禁 BH 或禁抢占上下文。需要延迟时，它可能：
 
 - raise `RCU_SOFTIRQ`；
 - 设置 `TIF_NEED_RESCHED` / preempt need-resched；
 - 必要时向本 CPU 排 `irq_work`，让调度器重新评价。
 
-安全后进入 [`tree_plugin.h:477-586`](../linux/kernel/rcu/tree_plugin.h) 的 `rcu_preempt_deferred_qs_irqrestore()`。这说明最外层 unlock 的“通知”不是固定的一次函数直达树根，而是依赖当前执行上下文选择立即共享清理或延迟交付。
+安全后进入 [`tree_plugin.h:477-586`](../../linux/kernel/rcu/tree_plugin.h) 的 `rcu_preempt_deferred_qs_irqrestore()`。这说明最外层 unlock 的“通知”不是固定的一次函数直达树根，而是依赖当前执行上下文选择立即共享清理或延迟交付。
 
 ## 3.10\_删除任务并推进gp\_tasks
 
@@ -215,15 +155,11 @@ rnp = t->rcu_blocked_node
 
 删除前的 `smp_mb()` 用于使 expedited fast path 观察读侧结束。它是这条特殊算法中的顺序约束，不应被扩写成“`rcu_read_unlock()` 总会执行一个全局硬件屏障”。
 
-若删除前节点有普通 GP 阻塞者，删除后 `gp_tasks` 变空，并且 `qsmask==0`，路径调用：
-
-```c
-rcu_report_unblock_qs_rnp(rnp, flags);
-```
+若删除前节点有普通 GP 阻塞者，删除后 `gp_tasks` 变空，并且 `qsmask==0`，路径调用 `rcu_report_unblock_qs_rnp()` 恢复向父节点传播。链表删除、游标推进和恢复上报的实现见 [最外层退出删除任务并恢复传播](../source_explanations/P07_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#7.8_最外层退出删除任务并恢复传播)。
 
 ## 3.11\_任务清债怎样恢复树形传播
 
-[`kernel/rcu/tree.c:2354`](../linux/kernel/rcu/tree.c) 的 `rcu_report_unblock_qs_rnp()` 首先确认：
+[`kernel/rcu/tree.c:2354`](../../linux/kernel/rcu/tree.c) 的 `rcu_report_unblock_qs_rnp()` 首先确认：
 
 ```text
 启用了PREEMPT_RCU
@@ -279,7 +215,7 @@ qsmask必须为零
 | `rcu_quiescent_state_report` | CPU或任务债务向节点报告 | mask 清除前后与 `gp_tasks` 是否存在 |
 | `rcu_grace_period` | GP 生命周期各阶段 | GP 开始、等待、FQS、结束 |
 
-可复现模块、CPU 绑定与 trace 命令见[晚到读者与抢占读者的对象回收实验](../../../labs/kernel/rcu/P01_晚到读者与抢占读者/README.md)。实验必须在启用 PREEMPT_RCU 的多 CPU 内核上运行，不能用当前源码树中的非抢占分支静态结论替代运行配置检查。
+可复现模块、CPU 绑定与 trace 命令见[晚到读者与抢占读者的对象回收实验](../../../../labs/kernel/rcu/P01_晚到读者与抢占读者/README.md)。实验必须在启用 PREEMPT_RCU 的多 CPU 内核上运行，不能用当前源码树中的非抢占分支静态结论替代运行配置检查。
 
 ## 3.15\_Linux\_5.10对照边界
 
@@ -306,6 +242,8 @@ Linux 5.10 已有相同的核心字段与债务转移设计，所以下列结论
 8. CPU 最后清债和任务最后清债分别通过哪个上报函数恢复传播？
 9. FQS、stall 和 boost 为什么不能成为“超时后忽略旧读者”的出口？
 
-上一篇：[Linux 6.12 非抢占式 Tree RCU 源码调用链](P02_Linux_6.12_非抢占式_Tree_RCU_源码调用链.md)。
+上一篇：[Linux 6.12 非抢占式 Tree RCU 模块源码概念导读](P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md)。
 
-下一篇：[Linux 6.12 Tasks RCU 与 Tiny RCU 源码调用链](P04_Linux_6.12_Tasks_RCU与Tiny_RCU源码调用链.md)。
+下一篇：[Linux 6.12 Tasks RCU 与 Tiny RCU 模块源码概念导读](P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md)。
+
+阅读索引：[Linux 6.12 Tree RCU 与 SRCU 源码导读](P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)。
