@@ -1,4 +1,0 @@
-interface:
-  display_name: "构建 Linux 内核机制专题"
-  short_description: "以因果链、源码分层和精确锚点构建并同步内核专题"
-  default_prompt: "使用 $build-linux-note-kernel-topic 构建、整理或全量同步内核专题，分层维护源码导读与实现讲解，并让全部入口精确链接对应标题。"
