@@ -33,12 +33,24 @@ source_version: "6.12.20"
 继续沿用以下应用代码：
 
 ```c
-old_obj = rcu_replace_pointer(global_ptr, new_obj, true);
+mutex_lock(&update_lock);
+old_obj = rcu_replace_pointer(global_ptr, new_obj,
+			      lockdep_is_held(&update_lock));
+mutex_unlock(&update_lock);
 synchronize_rcu();
 kfree(old_obj);
 ```
 
 要解释的不是三个函数各自“有什么作用”，而是 `synchronize_rcu()` 怎样把一个栈上等待者连接到 GP，GP 怎样把 CPU 债务写进树，CPU 怎样形成并上报 QS，完成又怎样回到这个等待者。
+
+RCU 源码材料的分类和建议顺序统一从[Linux 6.12 Tree RCU 与 SRCU 源码导读](../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)进入；本章对应的状态、调用链和模块闭环由[非抢占式 Tree RCU 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.3_源码文件与状态所有权)集中归纳。本章只保留与当前场景直接相连的接口索引；Linux 6.12.20 的裁剪源码、中文注释、配置分支和检查路径集中在[公共接口与检查机制源码详解](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.1_源码详解边界与引用入口)，避免同一源码在多个机制正文中反复展开。
+
+| 接口或检查点 | 本场景中的职责 | 调用约束与误用后果 |
+| --- | --- | --- |
+| [`rcu_replace_pointer()`](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.3_rcu_replace_pointer接口实现) | 在更新锁内取得旧入口并发布 `new_obj` | 第三个参数应表达可验证的保护条件；它不等待 GP，也不释放旧对象 |
+| [`rcu_dereference_protected()`](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.5_rcu_dereference_protected功能与检查路径) | 供 `rcu_replace_pointer()` 在更新侧读取旧入口 | 只适用于更新被阻止的路径；没有适当保护时省略 `READ_ONCE()` 会使错误更隐蔽 |
+| [`synchronize_rcu()`](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.4_synchronize_rcu接口实现) | 等待边界前的普通 RCU reader 结束 | 只能在可阻塞上下文调用；从受等待的 RCU 读侧内调用会形成非法自等待 |
+| [`RCU_LOCKDEP_WARN()`](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.7_RCU_LOCKDEP_WARN检查适配层) | 在调试配置中检查上面声明的保护条件和调用上下文 | 它只负责动态诊断，不提供锁、GP、发布顺序或对象生命期保证 |
 
 ## 6.2\_四层状态放在哪里
 
@@ -78,7 +90,10 @@ CPU0 上的写者确认 CPU1 已取得 `old_obj` 后替换入口并等待：
 ```c
 /* CPU0：写者。 */
 wait_for_completion(&cpu1_has_old_pointer);
-old_obj = rcu_replace_pointer(global_ptr, new_obj, true);
+mutex_lock(&update_lock);
+old_obj = rcu_replace_pointer(global_ptr, new_obj,
+			      lockdep_is_held(&update_lock));
+mutex_unlock(&update_lock);
 synchronize_rcu();
 kfree(old_obj);
 ```
@@ -256,31 +271,13 @@ rcu_sr_normal_add_req(&rs)
 
 ## 6.6\_每CPU怎样感知新GP
 
-本 CPU 的 `rcu_core()` 会执行 `rcu_check_quiescent_state(rdp)`，其第一步 `note_gp_changes()` 在叶 `rcu_node` 锁下进入 `__note_gp_changes()`：
-
-```c
-need_qs = !!(rnp->qsmask & rdp->grpmask);
-rdp->cpu_no_qs.b.norm = need_qs;
-rdp->core_needs_qs = need_qs;
-rdp->gp_seq = rnp->gp_seq;
-```
+本 CPU 的 `rcu_core()` 会执行 `rcu_check_quiescent_state(rdp)`，其第一步 `note_gp_changes()` 在叶 `rcu_node` 锁下进入 [`__note_gp_changes()` 实现](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.5___note_gp_changes让CPU识别新GP)。该函数根据 `rnp->qsmask & rdp->grpmask` 计算 `need_qs`，写入本地 QS 债务，再记录节点代际。
 
 这些字段仍然不表示“本 CPU 当前有 reader”。它们表示：本 CPU 已看到该叶节点的新代际，而且节点的等待位说明它还欠一个本轮 QS。
 
 ## 6.7\_调度路径怎样形成本地QS
 
-调度器 `kernel/sched/core.c::__schedule()` 在持有当前任务、尚未切换 `prev/next` 的位置关闭本地中断并调用：
-
-```c
-rcu_note_context_switch(preempt);
-```
-
-非 PREEMPT_RCU 分支的 `tree_plugin.h::rcu_note_context_switch()` 直接调用 `rcu_qs()`。`rcu_qs()` 只修改当前 CPU 的本地字段：
-
-```c
-if (this_cpu_read(rcu_data.cpu_no_qs.b.norm))
-	this_cpu_write(rcu_data.cpu_no_qs.b.norm, false);
-```
+调度器 `kernel/sched/core.c::__schedule()` 在持有当前任务、尚未切换 `prev/next` 的位置关闭本地中断并调用 `rcu_note_context_switch(preempt)`。非 PREEMPT_RCU 分支的 [`rcu_note_context_switch()` 与 `rcu_qs()` 实现](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.6_rcu_note_context_switch与rcu_qs记录静止态)会直接把本 CPU 的 `cpu_no_qs.b.norm` 清零。
 
 它不取得 `rcu_node` 锁，也不在调度器关键路径上逐层清树。这里完成的是 **本地锁存**：“这个 CPU 已经看见当前 GP 所需的 QS”。
 
@@ -406,35 +403,17 @@ sequenceDiagram
 
 ## 6.13\_读侧接口在非抢占配置中的实际展开
 
-`include/linux/rcupdate.h` 的配置分支是：
-
-```c
-static inline void __rcu_read_lock(void)
-{
-	preempt_disable();
-}
-
-static inline void __rcu_read_unlock(void)
-{
-	preempt_enable();
-	if (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD))
-		rcu_read_unlock_strict();
-}
-```
+[`include/linux/rcupdate.h` 的非抢占读侧实现](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.6_rcu_note_context_switch与rcu_qs记录静止态)让 `__rcu_read_lock()` 禁止抢占，让 `__rcu_read_unlock()` 恢复抢占；`CONFIG_RCU_STRICT_GRACE_PERIOD` 还会从退出端进入额外的严格测试慢路径。
 
 外层 `rcu_read_lock()` / `rcu_read_unlock()` 还包含 Sparse/lockdep 标记和 watching 合法性检查。核心结论是：普通分支提供执行约束，而不是向树登记 `task_struct` 或设置 `qsmask`。
 
 ## 6.14\_发布与取得原语的实际约束
 
-`rcu_assign_pointer(p, v)` 在 `v` 不是编译期常量 `NULL` 时展开到：
+[`rcu_assign_pointer()` 的发布实现](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.3.1_rcu_assign_pointer发布实现)在 `v` 不是编译期常量 `NULL` 时使用 `smp_store_release()`；常量 `NULL` 分支使用 `WRITE_ONCE()`。
 
-```c
-smp_store_release(&p, RCU_INITIALIZER(v));
-```
+它保证发布指针以前的对象初始化不会被移到发布之后。
 
-它保证发布指针以前的对象初始化不会被移到发布之后；常量 `NULL` 分支使用 `WRITE_ONCE()`。
-
-`rcu_dereference(p)` 进入 `rcu_dereference_check(p, 0)`，底层通过 `READ_ONCE(p)` 取得一次指针值，保留地址依赖顺序，并执行 Sparse/lockdep 检查。它既不复制对象，也不增加引用计数。发布/取得只保证新对象初始化的观察顺序；GP 才负责旧对象回收边界，两条轴不能互相替代。
+[`rcu_dereference()` 的取得实现](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.3.2_rcu_dereference取得实现)进入 `rcu_dereference_check(p, 0)`，底层通过 `READ_ONCE(p)` 取得一次指针值，保留地址依赖顺序，并执行 Sparse/lockdep 检查。它既不复制对象，也不增加引用计数。发布/取得只保证新对象初始化的观察顺序；GP 才负责旧对象回收边界，两条轴不能互相替代。
 
 ## 6.15\_Linux\_5.10明显差异
 
@@ -449,26 +428,27 @@ smp_store_release(&p, RCU_INITIALIZER(v));
 
 另一个可见差异是 6.12.20 增加了 `rcu_state.srs_next` 等普通同步等待者批处理状态以及 `rcu_normal_wake_from_gp` 直接唤醒优化；阅读 5.10 时不要查找这些 6.12 字段，应从该版本自己的同步等待实现追踪。
 
-## 6.16\_十四项源码证据核对
+## 6.16\_十五项源码证据核对
 
 | 要求 | Linux 6.12.20 证据 |
 | --- | --- |
-| 1. 同步提交和等待 | `tree.c::synchronize_rcu_normal()`；`rcupdate_wait.h::wait_rcu_gp`；`update.c::__wait_rcu_gp()/wakeme_after_rcu()` |
-| 2. GP 开始 | `tree.c::rcu_gp_kthread()` → `rcu_gp_init()` |
-| 3. 全局代际 | `tree.h::rcu_state.gp_seq`；`rcu_seq_start/end()` |
-| 4. 节点等待集 | `tree.h::rcu_node.gp_seq/qsmask/qsmaskinit/qsmaskinitnext`；`rcu_gp_init()` |
-| 5. CPU 感知 | `tree.c::__note_gp_changes()` 更新 `rdp->gp_seq` |
-| 6. 本地 QS 债务 | `rcu_data.cpu_no_qs.b.norm/core_needs_qs` |
-| 7. 上下文切换 | `sched/core.c::__schedule()` → `rcu_note_context_switch()` → 非抢占 `rcu_qs()` |
-| 8. user/idle | `context_tracking.c::ct_idle_enter/__ct_user_enter/ct_kernel_exit()`；`tree.c::rcu_watching_snap_*()` |
-| 9. 本地 QS | `tree_plugin.h` 非抢占分支 `rcu_qs()` 清 `cpu_no_qs.b.norm` |
-| 10. CPU 报告 | `tree.c::rcu_check_quiescent_state()` → `rcu_report_qs_rdp()` |
-| 11. 树形清位 | `tree.c::rcu_report_qs_rnp()` → `rcu_report_qs_rsp()` |
-| 12. 唤醒同步者 | GP cleanup 推进 callback → `wakeme_after_rcu()` → `complete()` |
-| 13. lock/unlock 展开 | `rcupdate.h` 的 `!CONFIG_PREEMPT_RCU` 分支；严格 GP 例外在 `rcu_read_unlock_strict()` |
-| 14. 发布/取得 | `rcupdate.h::rcu_assign_pointer()` 与 `__rcu_dereference_check()` |
+| 1. 同步提交和等待 | [`synchronize_rcu()` 入口](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.4_synchronize_rcu接口实现)；[`__wait_rcu_gp()` / `wakeme_after_rcu()`](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.3___wait_rcu_gp与wakeme_after_rcu连接等待者) |
+| 2. GP 开始 | [`rcu_gp_init()` 建立等待集合](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.4_rcu_gp_init建立本轮等待集合) |
+| 3. 全局代际 | [`rcu_gp_init()` 的 `rcu_seq_start()`](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.4_rcu_gp_init建立本轮等待集合)；[`rcu_gp_cleanup()` 的 `rcu_seq_end()`](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.8_rcu_gp_cleanup公布完成代际) |
+| 4. 节点等待集 | [`rcu_gp_init()` 从 `qsmaskinit` 建立 `qsmask`](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.4_rcu_gp_init建立本轮等待集合) |
+| 5. CPU 感知 | [`__note_gp_changes()` 更新 `rdp->gp_seq`](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.5___note_gp_changes让CPU识别新GP) |
+| 6. 本地 QS 债务 | [`__note_gp_changes()` 建债](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.5___note_gp_changes让CPU识别新GP)；[`rcu_qs()` 清债](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.6_rcu_note_context_switch与rcu_qs记录静止态) |
+| 7. 上下文切换 | [`rcu_note_context_switch()` → 非抢占 `rcu_qs()`](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.6_rcu_note_context_switch与rcu_qs记录静止态) |
+| 8. user/idle | [`ct_*` 与 `rcu_watching_snap_*()` 的模块调用链](../../../../research/source_reading/rcu/navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.8_调用链E_user和idle怎样提供EQS证据)；当前未保存 context-tracking 实现快照，不伪造函数体讲解 |
+| 9. 本地 QS | [`tree_plugin.h` 非抢占分支 `rcu_qs()`](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.6_rcu_note_context_switch与rcu_qs记录静止态) |
+| 10. CPU 报告 | [`rcu_report_qs_rdp()`](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.7_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据) |
+| 11. 树形清位 | [`rcu_report_qs_rnp()` → `rcu_report_qs_rsp()`](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.7_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据) |
+| 12. 唤醒同步者 | [`rcu_gp_cleanup()` 推进完成代际](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.8_rcu_gp_cleanup公布完成代际)；[`wakeme_after_rcu()` 调用 `complete()`](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.3___wait_rcu_gp与wakeme_after_rcu连接等待者) |
+| 13. lock/unlock 展开 | [`rcupdate.h` 的 `!CONFIG_PREEMPT_RCU` 分支](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.6_rcu_note_context_switch与rcu_qs记录静止态) |
+| 14. 发布/取得 | [`rcu_assign_pointer()`](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.3.1_rcu_assign_pointer发布实现)；[`rcu_dereference()`](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.3.2_rcu_dereference取得实现) |
+| 15. 并发使用检查 | [`rcupdate.h::RCU_LOCKDEP_WARN()` 与 `update.c` 的状态来源](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.7_RCU_LOCKDEP_WARN检查适配层) |
 
-更长的逐函数源码摘录和 5.10 对照见[Linux 6.12 非抢占式 Tree RCU 源码调用链](../../../../research/source_reading/rcu/P02_Linux_6.12_非抢占式_Tree_RCU_源码调用链.md)。
+GP、QS、树形汇聚和 5.10 对照先沿[Linux 6.12 非抢占式 Tree RCU 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.1_证据目标和配置边界)建立功能闭环；需要逐函数实现时进入[非抢占式 Tree RCU 函数实现索引](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#6.2_函数实现索引)，演示代码使用的公共接口统一进入[接口与源码索引](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.2_接口与源码索引)。
 
 上一篇：[非抢占式 Tree RCU 的问题与证明模型](P05_非抢占式_Tree_RCU_问题与证明模型.md)。
 

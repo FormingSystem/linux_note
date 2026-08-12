@@ -326,7 +326,7 @@ Tiny 只是第一行协议在单 CPU 构建中的底层实现，不新增一套�
 | 真实 BPF 使用 | `kernel/bpf/trampoline.c`：trace 读侧与 `call_rcu_tasks_trace()` |
 | Tiny 普通 RCU | `kernel/rcu/tiny.c`：`rcu_ctrlblk`、`rcu_qs()`、`call_rcu()`、`rcu_process_callbacks()` |
 
-逐函数路径和字段位置见 [Linux 6.12 Tasks RCU 与 Tiny RCU 源码调用链](../../../../research/source_reading/rcu/P04_Linux_6.12_Tasks_RCU与Tiny_RCU源码调用链.md)。
+RCU 源码材料的分类和建议顺序见 [Linux 6.12 Tree RCU 与 SRCU 源码导读](../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)；本章对应的子功能、模块边界、调用链和字段归纳见 [Linux 6.12 Tasks RCU 与 Tiny RCU 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md#4.1_Linux_6.12_Tasks_RCU与_Tiny_RCU模块源码概念导读)。
 
 最终选择时只问三组问题：
 
