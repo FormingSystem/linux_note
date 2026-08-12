@@ -140,6 +140,8 @@ linux-note/
 
 无法立即形成稳定结论的内容进入 `research/investigations`，查询型材料进入 `reference`。仓库不设置通用杂物目录。
 
+`atlas/maps/knowledge_review_map.md` 同时承担全仓阅读跳转和人工评审状态台账。它使用 🔴 **AI 创建**、🟡 **人工评审中**、🟢 **评审完成** 表示读者可见的人工确认程度；新内容默认 🔴。这套状态不属于 Front Matter 维护阶段，不得在根 README、专题元数据、路线或索引中复制维护。
+
 ## 1.5\_知识分层
 
 ### 1.5.1\_基础知识
