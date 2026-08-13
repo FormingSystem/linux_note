@@ -19,14 +19,14 @@ topics:
 
 本模块回答：当前任务持有 `[A]` 并取得 B 时，`A → B` 怎样被验证和保存；为什么同类递归单独检查；锁类的 IRQ 使用事实怎样沿全局依赖图形成反转证明。
 
-前置阅读：[身份与事件接入模块导读](P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题)。稳定规则模型见[递归、依赖环、IRQ 与读写规则](../../../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.1_先检查同类递归)。
+前置阅读：[身份与事件接入模块导读](P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题)。稳定规则模型见[递归、依赖环、IRQ 与读写规则](../../../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.1_先明确闭环搜索要回答什么)。
 
 ## 3.2\_规则链而不是一个环检测函数
 
 ```text
 __lock_acquire()
   → mark_usage()                     记录当前上下文使用事实
-  → validate_chain()                 先查已验证链缓存
+  → validate_chain()                 先查链缓存；未命中时登记后继续验证
       → check_deadlock()             当前账本中的同类递归
       → check_prevs_add()            选择相关前驱
           → check_prev_add()
@@ -63,11 +63,11 @@ flowchart LR
 
 ## 3.5\_具体实现入口
 
-- [`check_deadlock()` 同类递归检查](../source_explanations/P07_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#7.2_check_deadlock同类递归检查)
-- [`mark_usage()` 锁类上下文状态](../source_explanations/P07_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#7.3_mark_usage锁类上下文状态)
-- [`check_prev_add()` 新依赖验证](../source_explanations/P07_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#7.4_check_prev_add新依赖验证)
-- [`check_irq_usage()` IRQ依赖传播检查](../source_explanations/P07_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#7.5_check_irq_usageIRQ依赖传播检查)
-- [`validate_chain()` 链缓存门控](../source_explanations/P07_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#7.6_validate_chain链缓存门控)
+- [`check_deadlock()` 同类递归检查](../source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.2_check_deadlock同类递归检查)
+- [`mark_usage()` 锁类上下文状态](../source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.3_mark_usage锁类上下文状态)
+- [`check_prev_add()` 新依赖验证](../source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.4_check_prev_add新依赖验证)
+- [`check_irq_usage()` IRQ依赖传播检查](../source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.5_check_irq_usageIRQ依赖传播检查)
+- [`validate_chain()` 链缓存门控](../source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.6_validate_chain链缓存门控)
 
 ## 3.6\_阅读边界
 

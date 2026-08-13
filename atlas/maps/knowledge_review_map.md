@@ -338,25 +338,31 @@ mindmap-plugin: basic
       - 🟢 [P15 最终验收标准](../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md)
   - 🔴 [Linux 同步机制](../../knowledge/linux/synchronization/大纲.md)
     - 🔴 [并发与竞争专题迁移地图](../../knowledge/linux/synchronization/concurrency_and_competition/大纲.md)
-    - 🟡 [Linux Lockdep 专题](../../knowledge/linux/synchronization/lockdep/大纲.md)
-      - 章节评审：3 章评审中，6 章未评审
+    - 🟡 [Linux Lockdep 专题](../../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)
+      - 章节评审：9 章已完成人工通读和批注，重构后待复核
       - 🟡 [P01 为什么需要 Lockdep](../../knowledge/linux/synchronization/lockdep/P01_为什么需要_Lockdep.md)
         - 🟡 当前评审点
           - [1.1 单把锁正确不等于锁协议正确](../../knowledge/linux/synchronization/lockdep/P01_为什么需要_Lockdep.md#1.1_单把锁正确不等于锁协议正确)
-          - [1.3 为什么锁对象的 owner 字段不够](../../knowledge/linux/synchronization/lockdep/P01_为什么需要_Lockdep.md#1.3_为什么锁对象的owner字段不够)
+          - [1.4 中断里的锁究竟是什么意思](../../knowledge/linux/synchronization/lockdep/P01_为什么需要_Lockdep.md#1.4_中断里的锁究竟是什么意思)
       - 🟡 [P02 Lockdep 抽象模型与证明边界](../../knowledge/linux/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md)
         - 🟡 当前评审点
-          - [2.1 从事件流而不是字段名开始](../../knowledge/linux/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md#2.1_从事件流而不是字段名开始)
-          - [2.3 一个完整的 S0 到 S6 周期](../../knowledge/linux/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md#2.3_一个完整的S0到S6周期)
+          - [2.1 先从要证明的问题反推状态](../../knowledge/linux/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md#2.1_先从要证明的问题反推状态)
+          - [2.4 S0 到 S6 的端到端周期](../../knowledge/linux/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md#2.4_S0到S6的端到端周期)
       - 🟡 [P03 锁实例、锁类、key 与 subclass](../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md)
         - 🟡 当前评审点
-          - [3.4 初始化调用点怎样形成锁类](../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.4_初始化调用点怎样形成锁类)
-      - 🔴 [P04 持锁账本、依赖图与状态闭环](../../knowledge/linux/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md)
-      - 🔴 [P05 递归、依赖环、IRQ 与读写规则](../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md)
-      - 🔴 [P06 查询、断言、pin 与自定义原语接入](../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md)
-      - 🔴 [P07 RCU 与子系统检查适配](../../knowledge/linux/synchronization/lockdep/P07_RCU与子系统检查适配.md)
-      - 🔴 [P08 配置、报告解读与验证方法](../../knowledge/linux/synchronization/lockdep/P08_配置_报告解读与验证方法.md)
-      - 🔴 [P09 成本、覆盖边界与工程选择](../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md)
+          - [3.3 dep_map 由什么配置提供](../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.3_dep_map由什么配置提供)
+          - [3.7 完整层级示例为何需要 subclass](../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.7_完整层级示例为何需要subclass)
+      - 🟡 [P04 持锁账本、依赖图与状态闭环](../../knowledge/linux/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md)
+      - 🟡 [P05 递归、依赖环、IRQ 与读写规则](../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md)
+        - 🟡 重构后复核点
+          - [5.1 先明确闭环搜索要回答什么](../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.1_先明确闭环搜索要回答什么)
+          - [5.4 hardirq 场景不是在中断里等 mutex](../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.4_hardirq场景不是在中断里等mutex)
+      - 🟡 [P06 查询、断言、pin 与自定义原语接入](../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md)
+        - 🟡 重构后复核点
+          - [6.4 断言把隐含前置条件放到被调函数](../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.4_断言把隐含前置条件放到被调函数)
+      - 🟡 [P07 RCU 与子系统检查适配](../../knowledge/linux/synchronization/lockdep/P07_RCU与子系统检查适配.md)
+      - 🟡 [P08 配置、报告解读与验证方法](../../knowledge/linux/synchronization/lockdep/P08_配置_报告解读与验证方法.md)
+      - 🟡 [P09 成本、覆盖边界与工程选择](../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md)
     - 🔴 [Linux 锁机制专题](../../knowledge/linux/synchronization/locks/大纲.md)
       - 章节评审：2 章未评审
       - 🔴 [P01 自旋锁](../../knowledge/linux/synchronization/locks/P01_自旋锁.md)
@@ -506,15 +512,15 @@ mindmap-plugin: basic
       - 🔴 [Linux 6.12 GPIO 核心路径源码证据](../../research/source_reading/linux/gpio/linux_6.12_gpio_核心路径.md)
   - Lockdep
     - 模块概念导读
-      - 🔴 [P01 Linux 6.12 Lockdep 源码导读](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md)
-      - 🔴 [P02 Linux 6.12 Lockdep 身份与事件接入模块导读](../../research/source_reading/lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md)
-      - 🔴 [P03 Linux 6.12 Lockdep 依赖图与规则引擎模块导读](../../research/source_reading/lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md)
-      - 🔴 [P04 Linux 6.12 Lockdep 查询适配与诊断模块导读](../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md)
+      - 🔴 [P01 Linux 6.12 Lockdep 源码导读](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)
+      - 🔴 [P02 Linux 6.12 Lockdep 身份与事件接入模块导读](../../research/source_reading/lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题)
+      - 🔴 [P03 Linux 6.12 Lockdep 依赖图与规则引擎模块导读](../../research/source_reading/lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.1_模块问题)
+      - 🔴 [P04 Linux 6.12 Lockdep 查询适配与诊断模块导读](../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.1_模块问题)
     - 具体实现讲解
-      - 🔴 [P05 Linux 6.12 Lockdep 身份与锁类源码实现](../../research/source_reading/lockdep/source_explanations/P05_Linux_6.12_Lockdep身份与锁类源码实现.md)
-      - 🔴 [P06 Linux 6.12 Lockdep 取得释放与持锁账本源码实现](../../research/source_reading/lockdep/source_explanations/P06_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md)
-      - 🔴 [P07 Linux 6.12 Lockdep 依赖图与规则引擎源码实现](../../research/source_reading/lockdep/source_explanations/P07_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md)
-      - 🔴 [P08 Linux 6.12 Lockdep 查询注解与配置源码实现](../../research/source_reading/lockdep/source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md)
+      - 🔴 [P01 Linux 6.12 Lockdep 身份与锁类源码实现](../../research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.1_关联入口)
+      - 🔴 [P02 Linux 6.12 Lockdep 取得释放与持锁账本源码实现](../../research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)
+      - 🔴 [P03 Linux 6.12 Lockdep 依赖图与规则引擎源码实现](../../research/source_reading/lockdep/source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.1_关联入口)
+      - 🔴 [P04 Linux 6.12 Lockdep 查询注解与配置源码实现](../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.1_关联入口)
   - 内存顺序
     - 🔴 [P01 Linux 6.12 LKMM 源码与模型导读](../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md)
   - RCU

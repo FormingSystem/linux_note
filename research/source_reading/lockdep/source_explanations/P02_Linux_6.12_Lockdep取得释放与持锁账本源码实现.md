@@ -12,19 +12,19 @@ topics:
   - lockdep
 ---
 
-# 第6章\_Linux\_6.12\_Lockdep取得释放与持锁账本源码实现
+# 第2章\_Linux\_6.12\_Lockdep取得释放与持锁账本源码实现
 
-## 6.1\_关联入口
+## 2.1\_关联入口
 
 | 入口 | 本文提供的实现证据 |
 | --- | --- |
 | [Lockdep 总阅读索引](../navigation/P01_Linux_6.12_Lockdep源码导读.md#1.4_一次acquire的主调用链) | acquire/release 主链 |
 | [身份与事件接入模块导读](../navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.4_取得与释放调用链) | 状态写入者与失败回退 |
-| [稳定机制：持锁账本、依赖图与状态闭环](../../../../knowledge/linux/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md#4.1_一次取得事件为什么要写两处状态) | 当前事实与全局历史分工 |
+| [稳定机制：持锁账本、依赖图与状态闭环](../../../../knowledge/linux/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md#4.1_本章只追踪一个问题) | 当前事实与全局历史分工 |
 
 基线为 Linux 6.12.20，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。所有 Doxygen 和中文行内注释均为仓库补充，非上游原文。
 
-## 6.2\_task\_struct持锁账本与held\_lock
+## 2.2\_task\_struct持锁账本与held\_lock
 
 **上游相对位置：** [`include/linux/sched.h`](../../linux/include/linux/sched.h)、[`include/linux/lockdep_types.h`](../../linux/include/linux/lockdep_types.h)
 
@@ -59,7 +59,7 @@ struct held_lock {
 
 **实现原理：** `instance` 服务“current 是否持指定对象”的查询，`class_idx` 服务锁类图推理，二者同时保存。`prev_chain_key` 让栈顶释放常数时间回退；非栈顶释放则用其余字段重新取得后半段记录。`read`、IRQ、trylock 等位决定依赖是否具有相同阻塞语义。
 
-## 6.3\_lock\_acquire事件入口
+## 2.3\_lock\_acquire事件入口
 
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -96,7 +96,7 @@ void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 
 **调用上下文：** 公共入口自己保存本地 IRQ 并增加 per-CPU 递归保护，再调用要求 IRQ 已关闭的内部状态机。阻塞 mutex 路径在等待前上报，以便记录潜在等待依赖；取得失败会用 `mutex_release()` 回退影子记录。
 
-## 6.4\_\_\_lock\_acquire取得状态提交
+## 2.4\_\_\_lock\_acquire取得状态提交
 
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -177,11 +177,11 @@ static int __lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 }
 ```
 
-**状态副作用：** class 可能被首次登记，类使用状态可能增加，新链可能进入依赖图和链缓存；只有这些检查通过以后，`lockdep_depth` 才增加。候选区位于数组尾部但未计入有效深度，避免失败路径把半成品暴露给查询。
+**状态副作用：** class 可能被首次登记，类使用状态可能增加；新 chain cache 项在未命中时先登记，详细规则通过后才把新依赖边写入图。只有 `validate_chain()` 整体返回成功以后，`lockdep_depth` 才增加。候选区位于数组尾部但未计入有效深度，避免失败路径把半成品暴露给查询。
 
 **配置分支：** `prove_locking=0` 或 novalidate 类把 `check` 清零，保留基础跟踪而跳过完整图验证； notrack 类连 held record 都不建立。二者都不应作为普通告警修复手段。
 
-## 6.5\_\_\_lock\_release释放与链回退
+## 2.5\_\_\_lock\_release释放与链回退
 
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -225,9 +225,9 @@ static int __lock_release(struct lockdep_map *lock, unsigned long ip)
 }
 ```
 
-**实现原理：** `find_held_lock()` 从当前上下文的尾部向前按实例匹配，不能跨 IRQ context。栈顶释放直接恢复 `prev_chain_key`；非栈顶释放先截断，再用原记录属性调用 `__lock_acquire()` 重建后半段。全局锁类图和已验证链历史不随这次 release 删除。
+**实现原理：** `find_held_lock()` 从当前上下文的尾部向前按实例匹配，不能跨 IRQ context。栈顶释放直接恢复 `prev_chain_key`；非栈顶释放先截断，再用原记录属性调用 `__lock_acquire()` 重建后半段。全局锁类图和链缓存不随这次 release 删除。
 
-## 6.6\_功能路径与检查路径
+## 2.6\_功能路径与检查路径
 
 | 动作 | mutex 功能状态 | Lockdep 影子状态 |
 | --- | --- | --- |
@@ -236,4 +236,4 @@ static int __lock_release(struct lockdep_map *lock, unsigned long ip)
 | 可中断取得失败 | 从等待队列退出，未成为 owner | release 注解撤销候选记录 |
 | unlock | 清除 owner并唤醒等待者 | release 删除 current 实例记录 |
 
-下一篇：[Lockdep 依赖图与规则引擎源码实现](P07_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#7.1_关联入口)。
+下一篇：[Lockdep 依赖图与规则引擎源码实现](P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.1_关联入口)。

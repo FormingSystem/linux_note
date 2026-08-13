@@ -17,119 +17,189 @@ topics:
 
 ## 1.1\_单把锁正确不等于锁协议正确
 
-mutex 能保证同一时刻只有一个持有者，spinlock 能让短临界区在不可睡眠路径中互斥。这些保证很重要，但它们只回答 **一次锁操作怎样运行**，并不自动回答整个模块是否始终遵守同一锁顺序。
-
-假设设备同时有配置和状态两类共享数据：
+先只讨论进程上下文中的两个 mutex。设备有两类必须分别保护的状态：配置由 `config_lock` 保护，运行状态由 `state_lock` 保护。两条业务路径分别从自己的主状态出发，再读取另一类状态：
 
 ```c
-static DEFINE_MUTEX(config_lock);
-static DEFINE_MUTEX(state_lock);
+struct demo_device {
+	struct mutex config_lock;
+	struct mutex state_lock;
+	int requested_mode;
+	int active_mode;
+};
 
-static void apply_config(void)
+static void demo_apply_config(struct demo_device *dev)
 {
-	mutex_lock(&config_lock);
-	/* 根据配置更新状态。 */
-	mutex_lock(&state_lock);
-	mutex_unlock(&state_lock);
-	mutex_unlock(&config_lock);
+	mutex_lock(&dev->config_lock);
+	/* 根据新配置更新运行状态。 */
+	mutex_lock(&dev->state_lock);
+	dev->active_mode = dev->requested_mode;
+	mutex_unlock(&dev->state_lock);
+	mutex_unlock(&dev->config_lock);
 }
 
-static void restore_state(void)
+static void demo_restore_state(struct demo_device *dev)
 {
-	mutex_lock(&state_lock);
-	/* 根据当前状态恢复配置。 */
-	mutex_lock(&config_lock);
-	mutex_unlock(&config_lock);
-	mutex_unlock(&state_lock);
+	mutex_lock(&dev->state_lock);
+	/* 根据硬件当前状态回填配置。 */
+	mutex_lock(&dev->config_lock);
+	dev->requested_mode = dev->active_mode;
+	mutex_unlock(&dev->config_lock);
+	mutex_unlock(&dev->state_lock);
 }
 ```
 
-每个 `mutex_lock()` 都可能完全正确地取得锁，每个 `mutex_unlock()` 也都与之配对，但两个任务交错时仍会停住：
+这里没有“一个任务拿到单把锁以后又无缘无故申请同一把锁”。每条路径独立运行时都能完成；矛盾只在两个任务交错以后出现：
 
 ```mermaid
 sequenceDiagram
-    participant A as "任务A：apply_config"
-    participant CL as "config_lock"
-    participant SL as "state_lock"
-    participant B as "任务B：restore_state"
-    A->>CL: "取得 config_lock"
-    B->>SL: "取得 state_lock"
-    A->>SL: "等待 state_lock"
-    B->>CL: "等待 config_lock"
-    Note over A,B: "双方都等待对方释放，形成等待环"
+    participant A as "任务A：应用配置"
+    participant C as "config_lock"
+    participant S as "state_lock"
+    participant B as "任务B：恢复状态"
+    A->>C: "成功取得"
+    B->>S: "成功取得"
+    A->>S: "尝试取得，被B阻塞"
+    B->>C: "尝试取得，被A阻塞"
+    Note over A,B: "A只有取得S后才会释放C；B只有取得C后才会释放S"
 ```
 
-错误不在某一把锁内部，而在两条调用路径共同形成的顺序协议：
+mutex 没有失效：它们正是因为忠实地阻止第二个持有者进入，才让两个任务都等下去。真正错误的是模块在两条路径中定义了互相矛盾的顺序：
 
 ```text
-路径A观察到 config_lock → state_lock
-路径B观察到 state_lock  → config_lock
-两条顺序闭合成环
+demo_apply_config()  建立 config_lock → state_lock
+demo_restore_state() 建立 state_lock  → config_lock
+两个局部顺序组合成全局等待环
 ```
+
+### 1.1.1\_错误模型为何会推导出矛盾
+
+常见错误模型是：“每个 `mutex_lock()` 都有对应 `mutex_unlock()`，所以没有锁问题。”它只检查了 **资源是否最终释放**，没有检查 **在等待下一把锁时仍占着什么资源**。
+
+沿时间线推进一次就会得到矛盾：A 不能释放 `config_lock`，因为它还没取得 `state_lock`；B 不能释放 `state_lock`，因为它还没取得 `config_lock`。两边的 unlock 都写在源码里，却都没有机会执行。由此得到第一个可迁移结论：
+
+> 锁正确性不仅是单次取得/释放配对，还包括所有可并发路径共同遵守的等待顺序协议。
 
 ## 1.2\_为什么等待真实死锁再抓现场不够
 
-真实死锁需要特定时间窗口：任务 A 必须在取得第一把锁以后停住，任务 B 又恰好取得另一把锁，二者再分别尝试第二把锁。测试可能运行数小时也没有命中这个交错，但代码中的两个顺序已经客观存在。
+真实 ABBA 需要很窄的时序窗口。若 A 在 B 取得 `state_lock` 前已经完成，或者 B 在 A 取得 `config_lock` 前已经完成，两条错误路径都会在测试中“正常通过”。增加 CPU 和循环次数只能提高撞上窗口的概率，不能把概率测试变成结构证明。
 
-更有效的目标不是“等两个 CPU 真正卡住”，而是：
+但这个死锁由两个简单组件链组成：
 
-1. 观察每条简单路径发生过的锁取得顺序；
-2. 把这些顺序跨任务、跨时间累积成图；
-3. 每次加入新顺序时检查它是否闭合既有路径。
+```text
+组件链1：在持有 config_lock 时尝试 state_lock
+组件链2：在持有 state_lock 时尝试 config_lock
+```
 
-因此同一个任务依次执行 `apply_config()` 和 `restore_state()`，也足以给检查器提供两条组件链。图闭合以后，检查器可以报告 **潜在死锁**，不要求两个任务已经同时互等。
+测试不必让它们同时发生。即使同一个测试线程先完整执行组件链 1，释放所有锁，再完整执行组件链 2，只要有地方跨时间保存第一条顺序，第二条出现时就能推出：
+
+```text
+历史已经知道 config_lock → state_lock
+本次准备加入 state_lock → config_lock
+加入后会闭合成环
+```
+
+这正是 Lockdep 比“卡住以后看任务栈”更早的一步：它把 **已经执行过的简单锁链** 组合起来，搜索尚未真实发生但由这些组件链允许的复杂交错。
 
 ## 1.3\_为什么锁对象的owner字段不够
 
-以 mutex 为例，功能实现可以在锁对象中保存当前 owner，以便判断锁是否空闲、处理等待或核对解锁者。但只看 owner 仍不能回答：
+mutex 的功能状态关心当前 owner 和等待者，自旋锁的功能状态关心锁字是否可取得。这些状态足以执行单把锁，却不能回答全局协议问题：
 
-- 当前任务在取得 `state_lock` 以前还持有哪些锁；
-- 几分钟前另一个任务曾经观察到什么锁顺序；
-- 两把同类型对象锁是否应被视为同一锁类；
-- 某锁类是否既在硬中断使用，又曾在硬中断开启时取得；
-- 这次取得是独占、非递归读还是递归读。
+| 要回答的问题 | 只看当前锁对象为何不够 |
+| --- | --- |
+| current 在尝试 B 时还持有哪些锁 | 信息散落在其他锁对象中，锁对象本身没有 current 的完整等待前缀 |
+| 几分钟前另一条路径建立过什么顺序 | owner 和等待者会随 unlock 消失，历史顺序不会保留 |
+| 两个不同地址是否遵循同一协议 | 地址只能区分实例，不能说明它们是否属于同一类对象 |
+| 同一锁类是否跨进程与 IRQ 使用 | 需要同时记录取得上下文与当时的 IRQ 开关状态 |
+| 这次共享取得能否递归 | 需要知道独占、非递归读、递归读等阻塞类型 |
 
-若为回答“current 当前持有哪些锁”而扫描全内核锁对象，不仅没有一个完整、稳定的锁对象集合，访问方向也与主要问题相反。因此检查器需要按执行上下文保存当前账本，并另建跨时间的全局历史。
+若反过来扫描全内核所有锁对象来寻找 current，也没有一个可安全枚举且覆盖所有原语的锁对象集合。更自然的方向是：每次锁事件都向 current 的检查账本写记录，同时把能够跨执行流复用的顺序写入全局历史。
 
-## 1.4\_Lockdep增加了什么
+## 1.4\_中断里的锁究竟是什么意思
 
-Lockdep 让标准锁原语在功能动作旁边上报检查事件：
+“中断里不能等待”是对的，但这里的 **等待** 必须拆成两种：
+
+- mutex、semaphore 的取得或 `wait_for_completion()` 可能让任务睡眠，hardirq 没有可调度的任务上下文，不能调用这些等待接口；
+- 自旋锁竞争时不会睡眠，而是在 CPU 上忙等。在普通非 PREEMPT_RT 内核中，硬中断顶半部常用自旋锁保护极短的共享状态；要求在真正 hardirq 或特殊 RT 路径保持原始自旋语义时，还要按目标配置选择 `raw_spinlock_t`。
+
+因此“IRQ 中取得锁”通常指 **取得适合该上下文的自旋锁**，绝不是说 IRQ 可以睡眠等 mutex。completion 也只解决事件通知：中断侧可以在适用场景调用 `complete()` 发出完成事件，但等待它的 `wait_for_completion()` 必须发生在可睡眠上下文；它不能替代对共享队列的一次原子更新。
+
+考虑 `queue_lock` 同时保护进程提交路径和硬中断完成路径。下面的进程侧写法有问题：
+
+```c
+static void demo_submit(struct demo_device *dev)
+{
+	spin_lock(&dev->queue_lock); /* 本地硬中断仍可能进入。 */
+	/* 更新与中断共享的短队列。 */
+	spin_unlock(&dev->queue_lock);
+}
+
+static irqreturn_t demo_irq_handler(int irq, void *data)
+{
+	struct demo_device *dev = data;
+
+	spin_lock(&dev->queue_lock);
+	/* 取出硬件完成项并更新同一队列。 */
+	spin_unlock(&dev->queue_lock);
+	return IRQ_HANDLED;
+}
+```
+
+若本 CPU 在 `demo_submit()` 持锁期间进入该硬中断，中断处理程序会忙等 `queue_lock`；被中断的进程只有恢复执行以后才能解锁，而 CPU 此刻又困在中断处理程序里。这里没有 IRQ 睡眠，也不需要第二个 CPU：**同一 CPU 的不可恢复抢占关系已经形成递归死锁。**
+
+进程侧通常应屏蔽本地硬中断并恢复原状态：
+
+```c
+static void demo_submit(struct demo_device *dev)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&dev->queue_lock, flags);
+	/* 更新与中断共享的短队列。 */
+	spin_unlock_irqrestore(&dev->queue_lock, flags);
+}
+```
+
+Lockdep 后续使用 hardirq-safe/unsafe 这组术语记录的正是这种 **实际使用历史**：曾在 hardirq 上下文取得，还是曾在 hardirq 开启时取得。它不是给锁贴一张“中断里可以随便用”的许可证。
+
+## 1.5\_Lockdep增加了哪条检查链
+
+Lockdep 让标准锁原语在功能动作旁边上报事件：
 
 ```mermaid
 flowchart LR
-    API["mutex_lock(state_lock)"] --> F["功能路径<br/>真正竞争并取得mutex"]
-    API --> E["检查事件<br/>上报dep_map与取得类型"]
-    E --> H["current持锁账本<br/>现在持有哪些实例"]
-    E --> G["全局锁类图<br/>历史上出现哪些顺序"]
-    G --> C["递归／环／IRQ规则检查"]
-    U["mutex_unlock(state_lock)"] --> R["功能路径释放mutex"]
-    U --> X["检查事件移除当前记录"]
+    CALL["调用锁API"] --> FUNC["功能链<br/>竞争、等待、取得、释放"]
+    CALL --> EVENT["检查事件<br/>身份、取得类型、IRQ状态"]
+    EVENT --> LOCAL["当前执行流账本<br/>本次前驱与未释放记录"]
+    EVENT --> GLOBAL["全局历史<br/>锁类、依赖边、使用状态"]
+    LOCAL --> RULE["规则引擎"]
+    GLOBAL --> RULE
+    RULE --> REPORT["递归、环、IRQ与契约报告"]
 ```
 
-这里有两条不能混写的因果链：
+两条链的职责必须保持分离：
 
-| 链 | 真正作用 | 检查关闭后的结果 |
+| 链 | 负责什么 | 检查关闭后怎样 |
 | --- | --- | --- |
-| 锁功能链 | 建立互斥、等待与内存顺序 | 仍由锁原语继续执行 |
-| Lockdep 检查链 | 记录影子状态并验证锁协议 | 诊断能力消失，调用者义务不消失 |
+| 功能锁链 | 真正建立互斥、等待和相应内存顺序 | 继续运行 |
+| Lockdep 检查链 | 记录影子事件并验证锁协议 | 诊断消失，业务义务仍存在 |
 
-因此 Lockdep 不是死锁恢复器。它不会替任务打破等待环，也不会替调用者选择正确锁序；它在已经执行到的简单路径基础上，尽早指出某种组合可能形成死锁。
+Lockdep 不会替任务打破已经发生的等待环，也不会自动选择正确锁序。它做的是在组件链进入历史时尽早给出反例。
 
-## 1.5\_它首先要证明什么
+## 1.6\_它首先要证明什么
 
-贯穿场景给出四项基本证明义务：
+由前面的两个场景可以自然推出四项基础义务：
 
-1. **取得/释放配对：** 当前路径不能释放从未取得的锁，也不能在任务退出时遗留持锁记录；
-2. **同类递归合法性：** 再次取得同一锁类时，取得类型和显式嵌套关系必须允许；
-3. **顺序无环：** 新增 `A → B` 前，全局图中不能已经存在 `B → ... → A`；
-4. **上下文一致：** 可能在 IRQ 中取得的锁，不能与 IRQ 开启区间中使用的锁形成可被中断重入的危险关系。
+1. **取得和释放要配对：** 当前执行流不能释放没有上报取得的实例，也不能遗留错误影子记录；
+2. **同类递归必须有合法语义：** 普通 mutex 或独占锁不能被 current 再次取得，自然层级和递归读需要显式且真实的模型；
+3. **新增等待顺序不能闭环：** 准备加入 `A → B` 时，历史中不能已经存在能够阻塞的 `B → ... → A`；
+4. **执行上下文必须相容：** IRQ 中使用的自旋锁，不能与 IRQ 开启路径中的同类或依赖链形成不可恢复的中断反转。
 
-后续还会加入读写取得、trylock、自然层级、wait type 和虚拟锁域，但这些都是在上述问题已经出现以后增加的模型维度。
+后续的 key、subclass、读写类型、trylock、wait type 和虚拟锁域，都不是凭空罗列的特性；它们分别用于修正这四项朴素规则在真实内核条件下暴露出的缺口。
 
-## 1.6\_本章结论
+## 1.7\_本章结论
 
-锁原语保证单次操作语义，Lockdep 验证跨调用路径的锁协议。它之所以必须维护影子状态，是因为“current 现在持有什么”和“历史上锁类怎样排序”分属不同时间尺度，单个锁对象的当前 owner 无法同时回答。
+本章从两个完整场景得到三条结论：mutex ABBA 是跨路径锁序错误，不是“单锁自己锁自己”；中断不能睡眠等待，但可以在适用内核配置下用自旋锁保护短共享状态；只看功能锁当前状态既看不到 current 的完整等待前缀，也保留不了跨时间历史。
 
-下一章将从锁事件流推导 Lockdep 的四类角色、三组状态轴和一个完整检查周期。
+现在真正的问题变成：若从零设计一个验证器，哪些状态必须属于当前执行流，哪些状态必须全局保存，一次取得失败又该回滚哪一层？下一章从这些问题推导 Lockdep 的抽象模型。
 
 下一篇：[Lockdep 抽象模型与证明边界](P02_Lockdep_抽象模型与证明边界.md)。

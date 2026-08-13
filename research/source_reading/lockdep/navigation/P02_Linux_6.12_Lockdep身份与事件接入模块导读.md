@@ -18,7 +18,7 @@ topics:
 
 本模块回答：标准锁对象怎样成为 Lockdep 能识别的实例，同一初始化调用点的动态对象怎样共享锁类，以及一次 acquire/release 怎样把功能路径事实同步到 current 影子账本。
 
-总入口见 [Linux 6.12 Lockdep 源码导读](P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)，稳定机制见[锁实例、锁类、key 与 subclass](../../../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.1_为什么不能给每个地址建一个永久图节点)。
+总入口见 [Linux 6.12 Lockdep 源码导读](P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)，稳定机制见[锁实例、锁类、key 与 subclass](../../../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.1_从动态对象规模推导锁类)。
 
 ## 2.2\_参与者与状态
 
@@ -35,9 +35,9 @@ topics:
 
 具体结构和初始化代码见：
 
-- [`lock_class_key` 与 `lockdep_map` 身份结构](../source_explanations/P05_Linux_6.12_Lockdep身份与锁类源码实现.md#5.2_lock_class_key与lockdep_map身份结构)
-- [`lockdep_init_map_type()` 与关闭配置分支](../source_explanations/P05_Linux_6.12_Lockdep身份与锁类源码实现.md#5.3_lockdep_init_map_type与关闭配置分支)
-- [`register_lock_class()` 锁类注册](../source_explanations/P05_Linux_6.12_Lockdep身份与锁类源码实现.md#5.4_register_lock_class锁类注册)
+- [`lock_class_key` 与 `lockdep_map` 身份结构](../source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.2_lock_class_key与lockdep_map身份结构)
+- [`lockdep_init_map_type()` 与关闭配置分支](../source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.3_lockdep_init_map_type与关闭配置分支)
+- [`register_lock_class()` 锁类注册](../source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.4_register_lock_class锁类注册)
 
 模块层结论是：key 需要表达 **逻辑同类** 并具有足够生命期，不能用修改 key 当作压制依赖告警的快捷方式。
 
@@ -63,10 +63,10 @@ sequenceDiagram
 
 具体状态写入只在下列唯一实现标题展开：
 
-- [`task_struct` 持锁账本与 `held_lock`](../source_explanations/P06_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#6.2_task_struct持锁账本与held_lock)
-- [`lock_acquire()` 事件入口](../source_explanations/P06_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#6.3_lock_acquire事件入口)
-- [`__lock_acquire()` 取得状态提交](../source_explanations/P06_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#6.4___lock_acquire取得状态提交)
-- [`__lock_release()` 释放与链回退](../source_explanations/P06_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#6.5___lock_release释放与链回退)
+- [`task_struct` 持锁账本与 `held_lock`](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.2_task_struct持锁账本与held_lock)
+- [`lock_acquire()` 事件入口](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.3_lock_acquire事件入口)
+- [`__lock_acquire()` 取得状态提交](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4___lock_acquire取得状态提交)
+- [`__lock_release()` 释放与链回退](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.5___lock_release释放与链回退)
 
 ## 2.5\_阅读时必须区分的边界
 

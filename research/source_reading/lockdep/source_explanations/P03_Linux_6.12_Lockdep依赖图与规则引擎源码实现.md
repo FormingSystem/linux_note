@@ -13,19 +13,19 @@ topics:
   - interrupt
 ---
 
-# 第7章\_Linux\_6.12\_Lockdep依赖图与规则引擎源码实现
+# 第3章\_Linux\_6.12\_Lockdep依赖图与规则引擎源码实现
 
-## 7.1\_关联入口
+## 3.1\_关联入口
 
 | 入口 | 本文提供的实现证据 |
 | --- | --- |
 | [Lockdep 总阅读索引](../navigation/P01_Linux_6.12_Lockdep源码导读.md#1.4_一次acquire的主调用链) | 完整规则链位置 |
 | [依赖图与规则引擎模块导读](../navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.2_规则链而不是一个环检测函数) | 模块职责和状态传播 |
-| [稳定机制：递归、依赖环、IRQ 与读写规则](../../../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.1_先检查同类递归) | 抽象阻塞规则与误修边界 |
+| [稳定机制：递归、依赖环、IRQ 与读写规则](../../../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.1_先明确闭环搜索要回答什么) | 抽象阻塞规则与误修边界 |
 
 基线为 Linux 6.12.20，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。所有 Doxygen 和中文行内注释均为仓库补充，非上游原文。
 
-## 7.2\_check\_deadlock同类递归检查
+## 3.2\_check\_deadlock同类递归检查
 
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -66,7 +66,7 @@ static int check_deadlock(struct task_struct *curr, struct held_lock *next)
 
 **实现原理：** 同类递归不依赖一条已经写入图的 `class → class` 边，必须扫描 current held records 单独判断。读类型值 2 表示允许同实例递归的共享读；`nest_lock` 或 class comparator 是显式协议，不是自动推导。
 
-## 7.3\_mark\_usage锁类上下文状态
+## 3.3\_mark\_usage锁类上下文状态
 
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -113,7 +113,7 @@ lock_used:
 
 **语义边界：** safe 表示曾在 IRQ 上下文取得，unsafe 表示曾在相应 IRQ 开启时取得；它们是观察到的类使用事实，不是锁类型声明。trylock 和 `lock_sync()` 有不同标记规则，因为其等待/临界区语义不同。
 
-## 7.4\_check\_prev\_add新依赖验证
+## 3.4\_check\_prev\_add新依赖验证
 
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -168,7 +168,7 @@ static int check_prev_add(struct task_struct *curr,
 
 **搜索边界：** `check_noncircular()` 使用受固定 circular queue 容量限制的图搜索；BFS 内部错误同样使本次验证失败，不能把“搜索队列满”解释成无环。
 
-## 7.5\_check\_irq\_usageIRQ依赖传播检查
+## 3.5\_check\_irq\_usageIRQ依赖传播检查
 
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -233,7 +233,7 @@ static int check_irq_usage(struct task_struct *curr,
 
 **实现原理：** 先向后汇聚所有可能位于 prev 以前的 IRQ-safe 使用，再向前寻找 next 以后与之排斥的 IRQ-enabled 使用；命中后反查一对具体状态以生成可解释报告。它检查的是整条图连接，不限于候选边两个端点。
 
-## 7.6\_validate\_chain链缓存门控
+## 3.6\_validate\_chain链缓存门控
 
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -265,11 +265,11 @@ static int validate_chain(struct task_struct *curr,
 }
 ```
 
-**状态副作用：** `lookup_chain_cache_add()` 未命中时在 `graph_lock` 下添加链缓存并让调用者继续验证；命中时返回 0，跳过重复图搜索。trylock 和 `check=0` 也跳过完整依赖增加，但外层 `__lock_acquire()` 仍可提交 held record。
+**状态副作用：** `lookup_chain_cache_add()` 未命中时在 `graph_lock` 下先添加链缓存，再让调用者继续做 `check_deadlock()` 和依赖图验证；命中时返回 0，跳过重复图搜索。新 cache 项的写入早于详细规则完成，若随后发现违规，报告路径会关闭 `debug_locks`，不能把 cache 项单独当作成功证明。trylock 和 `check=0` 也跳过完整依赖增加，但外层 `__lock_acquire()` 仍可提交 held record。
 
 **故障边界：** 函数最后再次检查 `debug_locks`，因为链缓存或验证途中可能发现内部错误并关闭检查器。不能把任何早退都解释为“链已经安全”。
 
-## 7.7\_证据闭环
+## 3.7\_证据闭环
 
 | 稳定结论 | 6.12.20 源码落点 | 可观察证据 |
 | --- | --- | --- |
@@ -279,4 +279,4 @@ static int validate_chain(struct task_struct *curr,
 | 重复链不重复图搜索 | `lookup_chain_cache_add()` | `CONFIG_DEBUG_LOCKDEP` 统计 hit/miss |
 | 验证通过才写双向边 | 两次 `add_lock_to_list()` | `/proc/lockdep` 与 stats 依赖计数 |
 
-下一篇：[Lockdep 查询注解与配置源码实现](P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.1_关联入口)。
+下一篇：[Lockdep 查询注解与配置源码实现](P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.1_关联入口)。

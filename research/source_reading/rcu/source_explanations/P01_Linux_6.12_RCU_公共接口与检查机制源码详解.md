@@ -223,7 +223,7 @@ flowchart LR
 
 这里的 `update_lock` 由普通 Lockdep 锁状态跟踪；RCU 自己的读侧范围则通过另一组虚拟 lockdep maps 接入同一框架。`kernel/rcu/update.c` 定义 `rcu_lock_map`、`rcu_bh_lock_map` 和 `rcu_sched_lock_map`，公共读侧封装在进入/退出时分别调用 `rcu_lock_acquire()` 与 `rcu_lock_release()`。因此 `rcu_read_lock_held()` 等查询能够读取 Lockdep 已记录的 RCU 读侧状态。
 
-普通锁实例怎样经 `dep_map` 进入 current 的 `held_locks[]`，以及 `lockdep_is_held()` 怎样按指定实例查询，不在本篇重复展开；先读 [Lockdep 查询适配与诊断模块导读](../../lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.2_查询链)，具体实现见 [`lock_is_held_type()` 当前持锁查询](../../lockdep/source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.2_lock_is_held_type当前持锁查询)。本篇继续只负责 RCU 虚拟 maps 和 RCU 检查适配。
+普通锁实例怎样经 `dep_map` 进入 current 的 `held_locks[]`，以及 `lockdep_is_held()` 怎样按指定实例查询，不在本篇重复展开；先读 [Lockdep 查询适配与诊断模块导读](../../lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.2_查询链)，具体实现见 [`lock_is_held_type()` 当前持锁查询](../../lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.2_lock_is_held_type当前持锁查询)。本篇继续只负责 RCU 虚拟 maps 和 RCU 检查适配。
 
 ## 1.7\_RCU\_LOCKDEP\_WARN检查适配层
 
