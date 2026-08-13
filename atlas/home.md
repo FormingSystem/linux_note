@@ -18,6 +18,7 @@ domains:
 | 选择可读内容并查看人工确认程度 | [知识库专题阅读与评审地图](maps/knowledge_review_map.md) | 使用 MarkMind 按领域、专题和章节跳转，并识别未校正、人工评审中、评审完成三种状态 |
 | 建立全局认识 | [Linux系统与驱动知识地图](maps/linux_system_map.md) | 了解各领域边界及依赖关系 |
 | 系统学习内核机制 | [Linux内核机制学习路线](tracks/linux_kernel_track.md) | 从内核结构学到并发、中断和设备模型 |
+| 理解并验证锁协议 | [Lockdep 专题](../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)、[Linux 6.12 源码总阅读索引](../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序) | 从锁序与 IRQ 反例建立模型，再核对版本化状态和调用链 |
 | 学习驱动开发 | [Linux驱动开发学习路线](tracks/linux_driver_track.md) | 从模块、字符设备走到平台驱动和 Input 子系统 |
 | 查找现有内容 | [仓库内容索引](indexes/content_index.md) | 按领域定位文档、实验和研究材料 |
 | 规划后续建设 | [知识库建设路线图](roadmaps/content_roadmap.md) | 查看内容覆盖、缺口和维护优先级 |
