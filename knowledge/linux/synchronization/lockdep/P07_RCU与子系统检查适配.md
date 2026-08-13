@@ -15,106 +15,122 @@ topics:
 
 # 第7章\_RCU与子系统检查适配
 
-## 7.1\_为什么无互斥读锁也需要检查身份
+## 7.1\_没有实体mutex为何仍需要动态契约
 
-上一章说明，自定义同步域可以通过 `lockdep_map` 和 acquire/release 注解进入通用检查器。RCU 正是一个典型案例：`rcu_read_lock()` 不表示“独占拥有一把物理锁”，但很多 RCU 接口仍有动态上下文契约，例如 `rcu_dereference()` 应在认可的读侧范围或调用者声明的其他保护条件下使用。
+上一章的自定义原语接入容易让人形成另一个错误模型：只有真正会互斥等待的锁，才需要 `lockdep_map`。RCU 说明动态检查还有第二种用途——表达 **逻辑保护域和调用条件**。
 
-RCU 因此建立虚拟 lockdep maps，把“current 进入/退出某种 RCU 读侧范围”上报成检查状态。这个映射只服务诊断，不把 RCU 读侧变成 mutex，也不改变宽限期如何等待旧读者。
+`rcu_read_lock()` 不表示读者独占一把实体 mutex，也不让其他读者等待。但很多 RCU 访问器仍要求 current 位于认可的读侧临界区，或者调用者能提供另一项明确保护条件。如果这些条件只写成注释，错误路径即使在测试中执行，也缺少统一的动态检查入口。
 
-## 7.2\_两条并行因果链
+RCU 因此为受支持读侧风味建立虚拟 lockdep maps，把进入和退出读侧范围映射为检查事件。这个映射服务于诊断，不把 RCU 改造成 mutex，也不参与宽限期怎样等待旧读者。
 
-以普通读侧为例：
+## 7.2\_同一次API调用的两条因果链
 
 ```mermaid
 flowchart TB
-    API["rcu_read_lock()"] --> F["RCU功能链<br/>建立当前配置的读侧约束"]
-    API --> C["Lockdep检查链<br/>rcu_lock_acquire虚拟map"]
-    F --> D["rcu_dereference()<br/>按RCU访问规则取得指针"]
-    C --> Q["rcu_read_lock_held()<br/>查询current检查状态"]
-    D --> U["读者在临界区使用对象"]
-    Q --> W["RCU_LOCKDEP_WARN<br/>核对调用上下文"]
-    U --> X["rcu_read_unlock()<br/>结束功能读侧"]
-    W --> Y["rcu_lock_release<br/>结束虚拟持有记录"]
+    ENTER["rcu_read_lock()"] --> FUNC["RCU功能链<br/>建立本配置下的读侧约束"]
+    ENTER --> CHECK["Lockdep检查链<br/>取得虚拟RCU map"]
+    FUNC --> DEREF["rcu_dereference()<br/>按RCU规则取得指针"]
+    CHECK --> QUERY["rcu_read_lock_held()<br/>查询current检查状态"]
+    DEREF --> USE["临界区内使用对象"]
+    QUERY --> WARN["RCU_LOCKDEP_WARN<br/>核对动态条件"]
+    USE --> EXIT["rcu_read_unlock()<br/>结束功能读侧"]
+    WARN --> RELEASE["释放虚拟RCU map"]
 ```
 
-功能链承担读者定义、内存顺序和 GP 证明；检查链维护动态影子状态。关闭 `CONFIG_PROVE_RCU` 或 Lockdep 只移除相应诊断，不能让读者省略 `rcu_read_lock()`，也不能让更新者提前释放旧对象。
+必须分清箭头承担的责任：
 
-## 7.3\_保护条件c怎样连接业务锁
+- 功能链决定读者语义、内存顺序，以及更新者何时可以结束对象生命周期；
+- 检查链让 current 的逻辑读侧范围能够被查询和断言；
+- 关闭 `CONFIG_PROVE_RCU` 或 Lockdep 只移除相应诊断，不能取消 RCU 功能义务。
 
-更新侧常见写法：
+## 7.3\_业务锁怎样成为RCU保护条件
+
+贯穿设备的更新者用 `state_lock` 串行替换 RCU 指针：
 
 ```c
-mutex_lock(&state_lock);
-old = rcu_replace_pointer(global_state, new,
-			  lockdep_is_held(&state_lock));
-mutex_unlock(&state_lock);
-```
-
-数据流是：
-
-```text
-mutex_lock(state_lock)
-  → mutex功能路径真正建立更新者互斥
-  → Lockdep把state_lock实例记入current持锁账本
-
-lockdep_is_held(state_lock)
-  → 查询current账本
-  → 形成保护条件c
-
-rcu_dereference_protected(..., c)
-  → RCU_LOCKDEP_WARN检查c
-  → protected取得和后续发布仍由RCU功能宏执行
-```
-
-`c` 是布尔保护理由，不是同步原语。写成常量 `1` 等于调用者无条件声明前置条件成立，只是放弃动态核对；它不会生成 mutex、屏障、GP 或引用计数。
-
-## 7.4\_接口与检查点清单
-
-这里横跨两个版本化源码专题：先用 [Lockdep 查询适配与诊断模块导读](../../../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.4_RCU适配链) 定位通用查询，再用 [Linux 6.12 Tree RCU 与 SRCU 源码导读](../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.2_源码文件地图) 定位 RCU 虚拟 map 和检查封装。
-
-| 接口或检查点 | 本场景作用 | 调用上下文 | 省略或误用后果 | 权威源码讲解 |
-| --- | --- | --- | --- | --- |
-| `lockdep_is_held(&state_lock)` | 把 current 的指定实例持锁状态转成条件 | 已经由功能锁建立保护以后 | 传常量会失去动态核对；查询不能建立互斥 | [`lock_is_held_type()` 当前持锁查询](../../../../research/source_reading/lockdep/source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.2_lock_is_held_type当前持锁查询) |
-| `rcu_lock_acquire()` / `rcu_lock_release()` | 把 RCU 读侧范围映射到虚拟 map | RCU 公共读侧封装内部 | 自定义业务代码不应重复伪造 RCU 读侧 | [RCU Lockdep 状态来源](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.6_RCU_Lockdep状态来源) |
-| `RCU_LOCKDEP_WARN()` | 在动态检查可用时报告条件违例 | RCU 访问器或等待接口内部 | 关闭告警不改变功能契约；告警也不提供功能保证 | [`RCU_LOCKDEP_WARN()` 检查适配层](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_RCU_公共接口与检查机制源码详解.md#5.7_RCU_LOCKDEP_WARN检查适配层) |
-
-Lockdep 核心实现属于本专题；RCU 虚拟 map 与 `RCU_LOCKDEP_WARN()` 的具体宏体仍在 RCU 源码专题唯一展开，避免为同一版本源码建立两个权威副本。
-
-## 7.5\_为什么检查通过仍不能证明RCU生命周期
-
-下面的函数可能通过类型和动态读侧检查，却仍然错误：
-
-```c
-static struct dev_state *bad_escape(void)
+static void demo_replace_state(struct demo_device *dev,
+			       struct demo_state *new_state)
 {
-	struct dev_state *state;
+	struct demo_state *old_state;
 
-	rcu_read_lock();
-	state = rcu_dereference(global_state);
-	rcu_read_unlock();
-	return state; /* 裸指针逃离保护区，Lockdep不提供长期所有权。 */
+	mutex_lock(&dev->state_lock);
+	old_state = rcu_replace_pointer(dev->state, new_state,
+					lockdep_is_held(&dev->state_lock));
+	mutex_unlock(&dev->state_lock);
+
+	/* 旧对象的等待与回收仍按RCU生命周期协议处理。 */
+	demo_retire_state(old_state);
 }
 ```
 
-Lockdep 只知道 RCU 虚拟 map 在取得时是否处于 current 的影子账本；它不知道返回值随后保存到哪里，也不知道对象何时取消发布和释放。完整生命周期仍要由 RCU GP、kref/refcount 或其他所有权协议证明。
+这里的数据流不是“Lockdep 让替换变安全”，而是：
 
-RCU 场景中的类型、运行时条件和生命周期分工见 [RCU 类型语义、Sparse 与 Lockdep](../rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.6_三类检查不能互相替代)。
+```text
+mutex_lock(state_lock)
+  → 功能mutex真正建立更新者互斥
+  → 标准hook把state_lock实例写入current held账本
 
-## 7.6\_虚拟锁域接入的通用模式
+lockdep_is_held(state_lock)
+  → 只查询current账本
+  → 形成保护条件c
 
-其他子系统若也想检查“进入某种逻辑保护域”，可以借鉴相同结构，但必须满足：
+rcu_replace_pointer(..., c)
+  → RCU检查层核对c
+  → 指针访问和发布仍由RCU功能宏完成
+```
 
-1. 逻辑域具有清楚的进入、退出和嵌套语义；
-2. map 的取得类型忠实反映实际阻塞关系，虚拟递归读不能随意标成独占锁；
-3. 所有入口和异常退出都成对上报；
-4. 查询只用于诊断或条件声明，不参与功能分支正确性；
-5. 文档明确区分虚拟检查身份和真实功能状态地址。
+`c` 是调用者给出的保护理由，不是同步原语。传常量 `1` 表示无条件声明理由成立，放弃了动态核对；它不会创建 mutex、内存屏障、宽限期或引用计数。
 
-否则伪造的 map 会把错误输入送入全局图，既可能误报，也可能掩盖真实依赖。
+## 7.4\_检查通过为何仍可能UAF
+
+下面的读者可以通过“当前位于 RCU 读侧”的动态检查，却仍把裸指针带出保护区：
+
+```c
+static struct demo_state *demo_bad_escape(struct demo_device *dev)
+{
+	struct demo_state *state;
+
+	rcu_read_lock();
+	state = rcu_dereference(dev->state);
+	rcu_read_unlock();
+	return state; /* 裸指针逃离；后续使用没有长期所有权。 */
+}
+```
+
+Lockdep 只知道虚拟 RCU map 在查询时是否存在于 current 账本；它不知道返回值保存到了哪里，也不知道更新者何时取消发布并释放对象。要让指针跨越读侧临界区，仍需引用计数、延长读侧范围或其他经过证明的所有权协议。
+
+所以“调用条件通过”不能推出“对象生命周期正确”。RCU 场景中的类型、动态上下文和生命期分工见 [RCU 类型语义、Sparse 与 Lockdep](../rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.6_三类检查不能互相替代)。
+
+## 7.5\_从通用Lockdep到RCU实现的证据边界
+
+本专题只展开 Lockdep 产生和查询影子状态的通用机制；RCU 虚拟 maps 与告警宏继续在 RCU 源码专题唯一展开：
+
+| 检查点 | 本章关心的问题 | 权威实现入口 |
+| --- | --- | --- |
+| `lockdep_is_held(&state_lock)` | current 的业务锁实例如何变成条件 | [`lock_is_held_type()` 当前持锁查询](../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.2_lock_is_held_type当前持锁查询) |
+| `rcu_lock_acquire()` / `rcu_lock_release()` | RCU 读侧怎样映射到虚拟 map | [RCU Lockdep 状态来源](../../../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_Lockdep状态来源) |
+| `RCU_LOCKDEP_WARN()` | RCU 访问器怎样消费动态条件 | [`RCU_LOCKDEP_WARN()` 检查适配层](../../../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.7_RCU_LOCKDEP_WARN检查适配层) |
+
+先用 [Lockdep 查询适配与诊断模块导读](../../../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.4_RCU适配链)理解通用查询到 RCU 的连接，再进入 [Linux 6.12 Tree RCU 与 SRCU 源码导读](../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.2_源码文件地图)阅读 RCU 自己的功能和适配路径。
+
+## 7.6\_其他逻辑保护域怎样判断能否适配
+
+不是任何 `enter()/exit()` 都适合伪装成锁。一个子系统要建立虚拟 lockdep map，至少要先回答：
+
+1. 逻辑域的进入、退出、嵌套和迁移语义是否明确；
+2. 它表达的是实际阻塞依赖，还是仅供条件查询的同步域，取得类型是否忠实；
+3. 正常、失败、超时和异常退出是否都能成对上报；
+4. map/key 的生命周期和归类是否稳定；
+5. 查询结果是否只用于诊断，关闭检查后功能正确性是否仍成立；
+6. 文档能否指出真实功能状态存在哪里，避免把虚拟 map 当成功能实现。
+
+如果这些问题没有答案，虚拟 map 只会向全局图注入错误事实，可能同时制造误报和漏报。
 
 ## 7.7\_本章结论
 
-RCU 没有另造一套完全独立的持锁检查器，而是把读侧域和业务保护条件接入 Lockdep。`lockdep_is_held()` 把指定业务锁的 current 状态变成布尔条件，`RCU_LOCKDEP_WARN()` 消费该条件；真正互斥、发布、GP 和回收仍由功能机制完成。下一章将把这套模型落到 Kconfig、告警文本和可执行覆盖策略。
+RCU 使用虚拟 lockdep map 表达动态读侧域，业务 mutex 又可以通过 current 查询形成访问条件。两者只提供检查证据：真正的互斥、发布、读侧约束、宽限期和回收仍由各自功能机制承担；条件通过也不能证明裸指针没有逃逸。
+
+有了机制与 API，下一步必须让它们在调试内核中真正运行。下一章从配置矩阵开始，构造不会真实卡死的最小顺序反转实验，并把一份报告还原成“本次新边＋历史路径＋当前账本”。
 
 上一篇：[查询、断言、pin 与自定义原语接入](P06_查询_断言_pin与自定义原语接入.md)。
 

@@ -194,7 +194,7 @@ warning: incorrect type in initializer (different address spaces)
 
 Lockdep 是 Linux 通用的运行时锁正确性验证框架，RCU 没有另造一套独立检查器。RCU 把读侧临界区映射为 `rcu_lock_map`、`rcu_bh_lock_map`、`rcu_sched_lock_map` 等 lockdep maps，再用 `RCU_LOCKDEP_WARN()` 把自身 API 的调用约束接入同一套状态记录和诊断设施。
 
-Lockdep 自身的锁实例、锁类、current 持锁账本、全局依赖图和 IRQ 规则由独立的 [Linux Lockdep 专题](../lockdep/大纲.md#1.1_专题定位)统一解释；本节只保留 RCU 怎样接入这套检查器。Linux 6.12.20 的 Lockdep 源码入口见 [Linux 6.12 Lockdep 源码导读](../../../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)，`lockdep_is_held()` 的查询实现可直接跳到 [`lock_is_held_type()` 当前持锁查询](../../../../research/source_reading/lockdep/source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.2_lock_is_held_type当前持锁查询)。
+Lockdep 自身的锁实例、锁类、current 持锁账本、全局依赖图和 IRQ 规则由独立的 [Linux Lockdep 专题](../lockdep/大纲.md#1.1_专题定位)统一解释；本节只保留 RCU 怎样接入这套检查器。Linux 6.12.20 的 Lockdep 源码入口见 [Linux 6.12 Lockdep 源码导读](../../../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)，`lockdep_is_held()` 的查询实现可直接跳到 [`lock_is_held_type()` 当前持锁查询](../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.2_lock_is_held_type当前持锁查询)。
 
 #### (1)\_Lockdep如何表示RCU读侧范围
 
