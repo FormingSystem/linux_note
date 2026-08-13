@@ -15,7 +15,7 @@ domains:
 
 | 目标 | 入口 | 适合场景 |
 | --- | --- | --- |
-| 选择可读内容并查看人工确认程度 | [知识库专题阅读与评审地图](maps/knowledge_review_map.md) | 使用 MarkMind 按领域、专题和章节跳转，并识别 AI 创建、人工评审中、评审完成三种状态 |
+| 选择可读内容并查看人工确认程度 | [知识库专题阅读与评审地图](maps/knowledge_review_map.md) | 使用 MarkMind 按领域、专题和章节跳转，并识别未校正、人工评审中、评审完成三种状态 |
 | 建立全局认识 | [Linux系统与驱动知识地图](maps/linux_system_map.md) | 了解各领域边界及依赖关系 |
 | 系统学习内核机制 | [Linux内核机制学习路线](tracks/linux_kernel_track.md) | 从内核结构学到并发、中断和设备模型 |
 | 学习驱动开发 | [Linux驱动开发学习路线](tracks/linux_driver_track.md) | 从模块、字符设备走到平台驱动和 Input 子系统 |
