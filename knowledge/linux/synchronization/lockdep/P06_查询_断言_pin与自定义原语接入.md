@@ -14,159 +14,167 @@ topics:
 
 # 第6章\_查询\_断言\_pin与自定义原语接入
 
-## 6.1\_三类接口不能互相替代
+## 6.1\_先从调用者的四个问题选接口
 
-前五章建立了可信的当前持锁账本和全局依赖图。业务代码接下来有三种不同需求：
+前五章站在验证器内部观察事件和图。本章换到业务代码视角。调用者通常不是“想使用 Lockdep”，而是遇到四个不同问题：
 
-| 需求 | 接口类型 | 是否改变 Lockdep 状态 |
+| 调用者问题 | 应用的接口 | 是否改变影子状态 |
 | --- | --- | --- |
-| 查询 current 是否持有指定锁 | `lockdep_is_held()` / `lockdep_is_held_type()` | 否，只读当前账本 |
-| 声明函数必须在某种持锁条件下调用 | `lockdep_assert_*()` / pin | 断言本身不取得功能锁；pin 会给既有 held record 增加检查状态 |
-| 让自定义同步域进入依赖分析 | `lock_acquire()` / `lock_release()` 或封装宏 | 是，必须与真实协议严格配对 |
+| current 此刻是否持有指定实例 | `lockdep_is_held()` / `lockdep_is_held_type()` | 否，只查询 current 账本 |
+| 这个函数的正确调用是否要求持锁或不持锁 | `lockdep_assert_*()` | 否，条件明确违反时告警 |
+| 上层持锁穿过回调时，能否发现下层偷偷释放又重取 | `lockdep_pin_lock()` / `lockdep_unpin_lock()` | 修改已有 held record 的 pin 状态，不取得功能锁 |
+| 自定义同步原语怎样进入依赖图 | `lock_acquire*()` / `lock_release()` 的正确封装 | 是，按真实协议产生事件 |
 
-查询不是断言，断言不是取得，事件上报更不是同步功能。
+`might_lock()` 处在断言与事件之间：它表达“这个调用可能取得某锁”的潜在关系，但不建立真实持锁区间。选择接口以前先说清要验证哪项契约，不能看见 lockdep 前缀就互换。
 
-## 6.2\_lockdep\_is\_held查询的精确问题
+## 6.2\_查询current而不是查询锁是否忙
 
 ```c
-if (lockdep_is_held(&state_lock))
-	do_locked_only_check();
+int held = lockdep_is_held(&dev->state_lock);
 ```
 
-它回答：
+返回值可能是 HELD、NOT_HELD 或 UNKNOWN，下一节再解释三态。`lockdep_is_held()` 查询的是：current 的有效 held records 中，是否存在这个锁实例的 `dep_map`。它不读取 mutex owner，也不扫描其他任务。因此它不回答：
 
-> 执行到当前代码位置时，current 的未释放持锁记录中是否存在 `state_lock.dep_map` 对应的实例？
+- 锁是否被其他任务占用；
+- 当前 CPU 上某个别的任务是否持锁；
+- current 是否持有同类的另一个设备实例；
+- 被保护对象是否仍存活，或访问是否没有数据竞争。
 
-它不回答：
+`mutex_is_locked(&dev->state_lock)` 关注功能锁是否处于占用状态；`lockdep_is_held(&dev->state_lock)` 关注 current 的检查账本。前者不能证明 current 是 owner，后者在检查关闭或停检时也不能提供功能同步。
 
-- `state_lock` 是否被其他任务占用；
-- 当前 CPU 上是否有任意任务持有它；
-- 当前任务是否持有同一锁类的另一个实例；
-- 共享数据是否没有竞争或对象是否仍存活。
+版本化阅读先从 [Lockdep 总阅读索引](../../../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)进入，再读[查询适配与诊断模块导读](../../../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.2_查询链)。Linux 6.12.20 的实例匹配见 [`lock_is_held_type()` 当前持锁查询](../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.2_lock_is_held_type当前持锁查询)。
 
-因此 `mutex_is_locked(&state_lock)` 与 `lockdep_is_held(&state_lock)` 不可替换：前者关注功能锁是否处于被占用状态，后者关注 current 的影子持锁区间。
+## 6.3\_为什么查询不是简单布尔值
 
-查询、注解与诊断的版本化入口见 [Lockdep 查询适配与诊断模块导读](../../../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.1_模块问题)。Linux 6.12.20 的实例匹配、读写类型和 UNKNOWN 返回见 [`lock_is_held_type()` 当前持锁查询](../../../../research/source_reading/lockdep/source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.2_lock_is_held_type当前持锁查询)。
-
-## 6.3\_为什么查询存在UNKNOWN
-
-当 Lockdep 已编译但此刻不可用或已经停检时，查询若直接返回“未持有”，会让 `lockdep_assert_held()` 产生假阳性告警。实现因此可以返回三态：
+检查器可能明确找到、明确未找到，也可能已经无法可靠回答：
 
 ```text
-HELD       当前账本明确找到
-NOT_HELD   检查器可用且明确未找到
-UNKNOWN    检查器无法可靠回答
+LOCK_STATE_HELD      current账本明确找到匹配实例
+LOCK_STATE_NOT_HELD  检查器有效且明确未找到
+LOCK_STATE_UNKNOWN   检查器未构建、停检或当前不可可靠查询
 ```
 
-持锁断言通常只在结果明确为 `NOT_HELD` 时报警；不持锁断言则只在明确为 `HELD` 时报警。UNKNOWN 保护的是诊断可信度，不表示业务前置条件自动成立。
+普通持锁断言只在明确 `NOT_HELD` 时报告，不持锁断言只在明确 `HELD` 时报告，避免检查器失效后制造假阳性。UNKNOWN 只是“诊断者不知道”，不表示业务前置条件自动成立。
 
-`CONFIG_LOCKDEP=n` 时，大多数断言和事件宏为空操作或由编译器消除。业务代码不能把查询结果用于改变功能正确性，例如不能写成“只有 Lockdep 认为持锁才真正修改数据”。
-
-## 6.4\_把注释升级为可执行断言
-
-与其只写：
+因此查询结果不能控制功能正确性。下面的写法是错误模型：
 
 ```c
-/* 调用者必须持有 state->lock。 */
-static void update_payload(struct device_state *state)
+/* 错误：非调试构建或停检会改变业务行为。 */
+if (lockdep_is_held(&dev->state_lock))
+	dev->active_mode++;
+```
+
+业务锁是否已经取得必须由程序控制流和功能 API 保证；Lockdep 查询只用于检查条件、诊断和专门设计的保护谓词。
+
+## 6.4\_断言把隐含前置条件放到被调函数
+
+假设 `demo_update_payload()` 由多个入口复用，真正契约是“调用者必须持有 `state_lock`”。只在两个现有调用点旁写注释，第三个调用点很容易漏掉。把断言放进被调函数后，所有实际覆盖到的调用都核对同一前置条件：
+
+```c
+static void demo_update_payload(struct demo_device *dev, int mode)
 {
-	state->value++;
+	lockdep_assert_held(&dev->state_lock);
+	dev->active_mode = mode;
+}
+
+static void demo_set_mode(struct demo_device *dev, int mode)
+{
+	mutex_lock(&dev->state_lock);
+	demo_update_payload(dev, mode); /* 正确调用。 */
+	mutex_unlock(&dev->state_lock);
+}
+
+static void demo_reset_mode_bad(struct demo_device *dev)
+{
+	demo_update_payload(dev, 0); /* 测试覆盖到这里时断言报告。 */
 }
 ```
 
-更可验证的写法是：
+断言没有替函数取得 mutex。修复 `demo_reset_mode_bad()` 仍要建立真正同步，而不是删除断言或把条件写成常量。
 
-```c
-static void update_payload(struct device_state *state)
-{
-	lockdep_assert_held(&state->lock);
-	state->value++;
-}
-```
+| 接口 | 精确契约 | 典型位置 | Linux 6.12.20 实现 |
+| --- | --- | --- | --- |
+| `lockdep_assert_held()` | current 必须持有指定实例，不限定读写类型 | 被保护状态修改前 | [`lockdep_assert系列断言展开`](../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.3_lockdep_assert系列断言展开) |
+| `lockdep_assert_not_held()` | current 必须没有持有指定实例 | 外部调用、可能重入回调前 | [`lockdep_assert系列断言展开`](../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.3_lockdep_assert系列断言展开) |
+| `lockdep_assert_held_read()` | current 必须以共享读方式持有 | 只读访问路径 | [`lockdep_assert系列断言展开`](../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.3_lockdep_assert系列断言展开) |
+| `lockdep_assert_held_write()` | current 必须以独占方式持有 | 会修改读写锁保护的数据 | [`lockdep_assert系列断言展开`](../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.3_lockdep_assert系列断言展开) |
 
-断言把接口契约放在被保护操作附近。测试实际覆盖到错误调用路径时，它能打印当前持锁状态和调用栈；关闭检查时，调用者义务仍然存在。
+表中的链接都指向包含四个宏实际展开的同一权威标题，不再用“held 讲解”标题冒充其他断言。
 
-接口速览：
+## 6.5\_pin解决的是前后断言看不见的空洞
 
-| 接口或检查点 | 本场景作用 | 调用上下文 | 省略或误用后果 | 版本化源码讲解 |
-| --- | --- | --- | --- | --- |
-| `lockdep_assert_held()` | 声明 current 必须持指定锁 | 被调函数入口或关键状态修改前 | 错误调用只剩注释，动态测试无法直接定位 | [`lockdep_assert_held` 断言展开](../../../../research/source_reading/lockdep/source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.3_lockdep_assert_held断言展开) |
-| `lockdep_assert_not_held()` | 声明当前路径不得持该锁 | 可能递归回调或外部调用前 | 容易隐藏反向调用和重入 | [`lockdep_assert_held` 断言展开](../../../../research/source_reading/lockdep/source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.3_lockdep_assert_held断言展开) |
-| `lockdep_assert_held_read/write()` | 区分共享读与独占写要求 | 读写锁保护的数据路径 | 把只读保护误当成可写保护 | [`lockdep_assert_held` 断言展开](../../../../research/source_reading/lockdep/source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.3_lockdep_assert_held断言展开) |
-
-## 6.5\_pin检查的是锁没有被中途偷换
-
-有时上层不仅要求“此刻持锁”，还要求一个回调期间没有人把锁释放再重新取得。仅在回调前后各做一次 `lockdep_assert_held()` 无法区分：
+上层持锁调用一个可扩展回调，并要求回调期间始终保持锁。只在回调前后各断言一次有漏洞：
 
 ```text
 进入回调前持锁
-  → 下层偷偷unlock
-  → 运行一段无保护代码
+  → 下层unlock
+  → 一段代码失去保护
   → 下层重新lock
-  → 返回时再次看起来持锁
+  → 返回时仍显示持锁
 ```
 
-`lockdep_pin_lock()` 在现有 held record 上增加 pin 状态，`lockdep_unpin_lock()` 用 cookie 核对。被 pin 期间 release 会报警。pin 仍不让锁变得“不可解锁”，也不提供额外硬件互斥；它只检查约定。
-
-具体 `pin_count` 和 cookie 更新见 [`lockdep_pin_lock()` 锁保持注解](../../../../research/source_reading/lockdep/source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.4_lockdep_pin_lock锁保持注解)。
-
-## 6.6\_might\_lock表达潜在取得关系
-
-某个函数并非每次都取得内部锁，但调用者若已经持有与之反向的锁，仍可能在特定分支死锁。`might_lock()` 一类注解通过一次配对的模拟 acquire/release 让 Lockdep 检查潜在顺序，同时不建立真实临界区。
-
-它适合表达“这个接口可能取得 L”的调用契约，不适合：
-
-- 代替真正的 `mutex_lock()`；
-- 给所有函数无差别添加，制造不存在的依赖；
-- 隐藏本应由被调函数真实锁路径上报的事件。
-
-## 6.7\_自定义同步原语怎样接入
-
-一个自定义原语至少需要：
+pin 在已有 held record 上增加连续性检查：
 
 ```c
-struct my_gate {
-	/* 真正决定进入／退出的功能状态。 */
-	atomic_t state;
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	/* 只用于调试验证的检查身份。 */
-	struct lockdep_map dep_map;
-#endif
-};
+static void demo_run_callback_locked(struct demo_device *dev,
+				     void (*callback)(struct demo_device *))
+{
+	struct pin_cookie cookie;
+
+	mutex_lock(&dev->state_lock);
+	cookie = lockdep_pin_lock(&dev->state_lock);
+	callback(dev);
+	lockdep_unpin_lock(&dev->state_lock, cookie);
+	mutex_unlock(&dev->state_lock);
+}
 ```
 
-完整接入顺序是：
+被 pin 期间若回调释放该 held record，Lockdep 会报告；cookie 又使 unpin 对应具体 pin 操作。pin 不阻止功能 unlock，也不让锁获得额外硬件属性。若回调协议本来允许临时放锁，就不应使用 pin 假装禁止，而应重新定义并记录清楚调用契约。
 
-```text
-初始化功能状态
-  + 初始化dep_map与持久key
+具体 `pin_count` 和 cookie 更新见 [`lockdep_pin_lock()` 锁保持注解](../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.4_lockdep_pin_lock锁保持注解)。
 
-真实进入路径
-  + 按真实阻塞/读写/nested语义上报acquire
-  + 失败取得必须撤销或不能提交持锁记录
+## 6.6\_might\_lock检查潜在调用关系
 
-真实退出路径
-  + 上报release
-  + 再按原语要求释放功能状态
+某函数只在特定分支取得 `state_lock`，但调用者必须把这个可能性纳入锁序设计：
 
-销毁
-  + 先确保无人持有、无人等待
-  + 再处理动态key生命周期
+```c
+static void demo_maybe_refresh(struct demo_device *dev, bool refresh)
+{
+	might_lock(&dev->state_lock);
+	if (!refresh)
+		return;
+
+	mutex_lock(&dev->state_lock);
+	/* 刷新状态。 */
+	mutex_unlock(&dev->state_lock);
+}
 ```
 
-最重要的核对项不是“是否调用了 `lock_acquire()`”，而是上报模型是否忠实：
+`might_lock()` 通过成对的模拟检查表达“这个接口可能取得 state”，不建立覆盖整个函数的真实功能临界区。它用于让上层已持锁环境提前接受协议核对，不应给所有函数无差别添加，也不能代替被调函数真实锁路径的标准上报。
 
-- 会等待的路径不能标成 trylock；
-- 递归读不能标成普通读，反之亦然；
-- 失败路径不能遗留 held record；
-- 真实允许同类嵌套时需要可证明的层级，而不是随意 subclass；
-- `dep_map` 和 key 的生命期不能短于检查器可能引用它们的时间。
+## 6.7\_自定义原语接入先画事件契约
 
-标准原语已经正确接入时，业务模块不应在外面重复上报一遍，否则 current 账本会出现伪造的双重取得。
+标准 mutex、spinlock、rwsem 已经接入 Lockdep，业务代码不能在外面重复上报，否则 current 会出现两次虚假取得。只有实现新的同步原语或逻辑保护域时，才需要直接管理 `lockdep_map`。
+
+此时不要先抄一个 `lock_acquire()` 调用，而应把原语的真实状态机与检查事件逐行对齐：
+
+| 真实路径 | 功能结果 | Lockdep 事件要求 |
+| --- | --- | --- |
+| 初始化 | 原语可用，功能状态建立 | 用持久 key 初始化 map，选择真实 wait type |
+| 阻塞进入 | 可能等待其他持有者 | 在等待关系形成前上报非 trylock acquire |
+| try 进入成功 | 立即成为持有者 | 按 trylock 类型上报并建立当前记录 |
+| try 进入失败 | 未持有且不等待 | 不得遗留 held record |
+| 可中断进入失败 | 等待退出，从未取得功能所有权 | 用 release 回滚提前建立的影子记录 |
+| 正常退出 | 功能保护区结束 | 与实例和取得类型匹配的 release |
+| 销毁 | 无持有者、无等待者、身份不再使用 | 动态 key 在无全局引用的受支持边界注销 |
+
+接入审查必须继续追问：真实路径会不会睡眠；共享读是否允许递归；是否有稳定 natural nesting；失败、超时、取消和异常跳转是否都配对；map/key 生命周期是否比所有可能引用更长。只要其中一项说不清，写出“能编译”的注解代码也不等于模型正确。
 
 ## 6.8\_本章结论
 
-`lockdep_is_held()` 只读 current 的实例持锁记录；`lockdep_assert_*()` 把前置条件变成动态断言；pin 检查持锁连续性；acquire/release 注解才会改变影子状态。所有这些接口都只验证声明，不提供真正同步。下一章将用 RCU 展示一个子系统怎样建立虚拟 lockdep map，并把自己的保护条件接到通用查询和告警路径。
+查询只读 current 的实例记录；断言把调用前置条件变成可执行诊断；pin 检查持锁连续性；`might_lock()` 表达潜在调用关系；只有 acquire/release 事件会让自定义同步域进入影子状态和依赖图。它们都不提供功能互斥。
+
+下一章用 RCU 观察一种更容易混淆的适配：读侧域没有一把供读者独占的实体 mutex，却仍能建立虚拟 lockdep map；业务锁查询又可以作为 RCU 访问条件。重点仍是功能状态与检查状态的分离。
 
 上一篇：[递归、依赖环、IRQ 与读写规则](P05_递归_依赖环_IRQ与读写规则.md)。
 

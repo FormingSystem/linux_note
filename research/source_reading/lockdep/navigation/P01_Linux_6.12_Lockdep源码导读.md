@@ -45,9 +45,9 @@ topics:
 
 | 阅读入口 | 解决的问题 | 对应实现讲解 |
 | --- | --- | --- |
-| [身份与事件接入模块导读](P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题) | 标准锁怎样取得检查身份，事件怎样进入 current 账本 | [身份与锁类](../source_explanations/P05_Linux_6.12_Lockdep身份与锁类源码实现.md#5.1_关联入口)、[取得释放与持锁账本](../source_explanations/P06_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#6.1_关联入口) |
-| [依赖图与规则引擎模块导读](P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.1_模块问题) | 局部持锁链怎样变成全局边，环与 IRQ 冲突怎样检查 | [依赖图与规则引擎](../source_explanations/P07_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#7.1_关联入口) |
-| [查询适配与诊断模块导读](P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.1_模块问题) | current 查询怎样服务断言和 RCU，告警后怎样判断检查器状态 | [查询、注解与配置](../source_explanations/P08_Linux_6.12_Lockdep查询注解与配置源码实现.md#8.1_关联入口) |
+| [身份与事件接入模块导读](P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题) | 标准锁怎样取得检查身份，事件怎样进入 current 账本 | [身份与锁类](../source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.1_关联入口)、[取得释放与持锁账本](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口) |
+| [依赖图与规则引擎模块导读](P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.1_模块问题) | 局部持锁链怎样变成全局边，环与 IRQ 冲突怎样检查 | [依赖图与规则引擎](../source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.1_关联入口) |
+| [查询适配与诊断模块导读](P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.1_模块问题) | current 查询怎样服务断言和 RCU，告警后怎样判断检查器状态 | [查询、注解与配置](../source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.1_关联入口) |
 
 模块导读借源码讲清职责、调用链和阅读顺序，不逐函数复制实现；具体宏、结构和函数只在 `source_explanations/` 的唯一标题展开。
 
@@ -102,9 +102,9 @@ flowchart LR
 
 ## 1.6\_建议阅读顺序
 
-1. 先读 `lockdep_types.h` 的四个核心结构，建立实例、类和 held record 区别；对应[锁类身份结构讲解](../source_explanations/P05_Linux_6.12_Lockdep身份与锁类源码实现.md#5.2_lock_class_key与lockdep_map身份结构)。
+1. 先读 `lockdep_types.h` 的四个核心结构，建立实例、类和 held record 区别；对应[锁类身份结构讲解](../source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.2_lock_class_key与lockdep_map身份结构)。
 2. 再读 `mutex_init()` 一类标准原语怎样提供静态 key，随后跟到 `lockdep_init_map_type()` 与 `register_lock_class()`；不要从地址猜类身份。
-3. 读 `sched.h` 的任务字段，然后沿 `lock_acquire()` 进入 `__lock_acquire()`，把 S0～S5 的每次写入标在纸上；对应[取得状态提交](../source_explanations/P06_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#6.4___lock_acquire取得状态提交)。
+3. 读 `sched.h` 的任务字段，然后沿 `lock_acquire()` 进入 `__lock_acquire()`，把 S0～S5 的每次写入标在纸上；对应[取得状态提交](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4___lock_acquire取得状态提交)。
 4. 只在当前状态闭环清楚以后阅读 `validate_chain()`、`check_prev_add()` 与 IRQ 搜索，否则容易把链缓存、图边和当前栈混在一起。
 5. 最后读 `lock_is_held_type()`、断言和 proc 输出，观察同一 held record 怎样被业务检查和诊断消费。
 

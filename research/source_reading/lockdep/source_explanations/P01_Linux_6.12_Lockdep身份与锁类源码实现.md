@@ -12,19 +12,19 @@ topics:
   - lockdep
 ---
 
-# 第5章\_Linux\_6.12\_Lockdep身份与锁类源码实现
+# 第1章\_Linux\_6.12\_Lockdep身份与锁类源码实现
 
-## 5.1\_关联入口
+## 1.1\_关联入口
 
 | 入口 | 本文提供的实现证据 |
 | --- | --- |
 | [Lockdep 总阅读索引](../navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标) | Linux 6.12.20 源码地图和建议顺序 |
 | [身份与事件接入模块导读](../navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题) | 实例、key、锁类和初始化调用链 |
-| [稳定机制：锁实例、锁类、key 与 subclass](../../../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.1_为什么不能给每个地址建一个永久图节点) | 为什么必须分类以及错误分类后果 |
+| [稳定机制：锁实例、锁类、key 与 subclass](../../../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.1_从动态对象规模推导锁类) | 为什么必须分类以及错误分类后果 |
 
 源码基线：NXP `linux-imx`，标签 `lf-6.12.20-2.0.0`，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，Linux 6.12.20。下列 Doxygen 和中文行内注释均为 **仓库补充，非上游原文**；代码省略不影响本文所述控制流。
 
-## 5.2\_lock\_class\_key与lockdep\_map身份结构
+## 1.2\_lock\_class\_key与lockdep\_map身份结构
 
 **上游相对位置：** [`include/linux/lockdep_types.h`](../../linux/include/linux/lockdep_types.h)
 
@@ -65,7 +65,7 @@ struct lockdep_map {
 
 关闭 `CONFIG_LOCKDEP` 时，上游把 `lock_class_key` 和 `lockdep_map` 定义为空结构，说明检查身份能够从非调试构建中消失；功能锁本身的 owner、wait list 或架构锁字仍保留。
 
-## 5.3\_lockdep\_init\_map\_type与关闭配置分支
+## 1.3\_lockdep\_init\_map\_type与关闭配置分支
 
 **上游相对位置：** [`include/linux/lockdep.h`](../../linux/include/linux/lockdep.h)、[`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -126,7 +126,7 @@ void lockdep_init_map_type(struct lockdep_map *lock, const char *name,
 
 `CONFIG_LOCKDEP=n` 时，同名宏只保留对 `name`/`key` 的无害引用以避免编译告警，不创建任何锁类。关闭分支见 [`include/linux/lockdep.h`](../../linux/include/linux/lockdep.h) 的 `!CONFIG_LOCKDEP` 区域。
 
-## 5.4\_register\_lock\_class锁类注册
+## 1.4\_register\_lock\_class锁类注册
 
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -193,9 +193,9 @@ register_lock_class(struct lockdep_map *lock, unsigned int subclass, int force)
 
 **实现原理：** 首次无锁快速查找减少重复登记；未命中后在 `graph_lock` 下双检，避免两个 CPU 为同一 key 创建两个类。`assign_lock_key()` 只接受内核/模块 per-CPU 的规范地址或其他静态对象；无法确认持久性的临时对象会关闭检查器并要求调用者补正确初始化/注解。
 
-**配置与容量边界：** `MAX_LOCKDEP_KEYS` 是固定 class 槽位数。耗尽时不是静默忽略一个类，而是报告并使 `debug_locks` 失效。诊断见[成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.2_固定容量也是证明前提)。
+**配置与容量边界：** `MAX_LOCKDEP_KEYS` 是固定 class 槽位数。耗尽时不是静默忽略一个类，而是报告并使 `debug_locks` 失效。诊断见[成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.3_固定容量为何是证明前提)。
 
-## 5.5\_实现核对表
+## 1.5\_实现核对表
 
 | 核对点 | 应见到的证据 |
 | --- | --- |
@@ -205,4 +205,4 @@ register_lock_class(struct lockdep_map *lock, unsigned int subclass, int force)
 | 实例查询仍可精确匹配 | held record 另存具体 `lockdep_map *instance` |
 | 容量失败可观察 | `MAX_LOCKDEP_KEYS` 告警与 `debug_locks` 停检 |
 
-下一篇：[Lockdep 取得释放与持锁账本源码实现](P06_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#6.1_关联入口)。
+下一篇：[Lockdep 取得释放与持锁账本源码实现](P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)。
