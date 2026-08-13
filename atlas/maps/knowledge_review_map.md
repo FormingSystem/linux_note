@@ -17,19 +17,18 @@ mindmap-plugin: basic
 - 在 Obsidian 中使用 MarkMind 打开本文件，可以折叠、缩放和沿分支跳转；在普通 Markdown 阅读器中仍显示为层级大纲。
 - 评审状态提示内容经过了什么程度的人工确认，不等同于 Front Matter 的 `draft`、`evolving`、`maintained`、`archived`。
 - 状态图例
-  - 🔴 **AI 创建**（默认）
-    - 博主尚未完成阅读和校正，无法确认内容正确性与组织合理性。
-    - 关键结论必须继续核对官方文档、源码或实验。
+  - 🔴 **未校正**（默认）
+    - 内容可能来自个人笔记、资料摘录和实验记录，也可能包含部分 AI 生成或辅助整理；红色不表示整篇内容都是 AI 生成。
+    - 内容入库前至少经过一次基础人工筛选，但尚未完成系统性的阅读、核对和校正，准确性、观察视角、组织方式及已有批注都可能存在偏差。
+    - 这些材料仍可用于了解专题范围、建立初步观察视角和发现后续线索；关键结论应结合官方文档、源码或实验继续复核。
   - 🟡 **人工评审中**
-    - 博主正在阅读、批注或修改，但尚未完成闭环评审。
-    - 尚未关闭的结论不能作为最终结论。
+    - 当前正在阅读和更新的章节。由于我很多时候会遇到一些新信息而为了了解这些信息做跳跃阅读，保证做到系统化阅读和理解，而非跳过这些旁支理解问题。所以可能会有各种评审记录。
   - 🟢 **评审完成**
-    - 博主已经完整阅读并整理，错误率相对较低，可以作为正式阅读入口。
-    - 评审完成不表示绝对无误，版本性结论仍受源码与平台边界约束。
+    - 这是我阅读完，完整体系之后觉得问题不大的专题，可放心阅读。在标记该专题的时候，我会需要做到2-3次人工阅读专题，确定阅读方式，源码追踪，知识点标记等完善之后才会标记。如你所见，哪怕我已经看过很多专题，但是都还在处于 🔴 阶段。
 
 ## 1.2\_状态管理规则
 
-- 新专题、新章节和新支撑材料默认使用 🔴 **AI 创建**，不得根据篇幅、目录完整度或 AI 自检自动升级。
+- 新专题、新章节和新支撑材料默认使用 🔴 **未校正**，不得根据篇幅、目录完整度或 AI 自检自动升级。
 - 博主明确开始评审某章时，把该章改为 🟡；完成阅读、修正和整理后，才改为 🟢。
 - 专题状态由其真实章节人工汇总
   - 全部真实章节都是 🔴：专题为 🔴。
@@ -59,9 +58,17 @@ mindmap-plugin: basic
 - 本次盘点覆盖 301 篇 `knowledge/` Markdown：27 个正式专题入口、234 个正式 `PXX` 章节及 40 篇尚未统一成正式大纲的知识材料。
 - 另纳入 47 篇支撑材料：工程方法 1 篇、平台实现 3 篇、实验 14 篇、研究 22 篇、参考 1 篇、出版物 6 篇。
 - 正式章节人工进度
-  - 🟢 15 章：Kref P01～P15。
-  - 🟡 3 章：Lockdep P01～P03。
-  - 🔴 216 章：其余正式 `PXX` 章节。
+  - 🟢 30 章：Kref P01～P15、红黑树 P01～P15。
+  - 🟡 9 章：Lockdep P01～P09，已完成人工通读和批注，重构后待复核。
+  - 🔴 195 章：其余正式 `PXX` 章节。
+- 其他已确认材料
+  - 🟢 1 篇：GNU C 扩展材料。
+  - 🟢 2 篇：U-Boot 个人实验材料。
+  - 🟢 1 篇：`engineering/` 下的工程方法材料。
+  - 🟢 3 篇：`platforms/` 下的平台实现材料。
+  - 🟢 14 篇：`labs/` 下的个人实验及其观测结果。
+  - 🟢 1 篇：`reference/` 下的参考资料。
+  - 🟢 6 篇：`publications/` 下的出版物材料。
 - `projects/` 当前没有正式内容，因此不创建占位节点。
 
 ## 1.5\_知识正文
@@ -126,8 +133,8 @@ mindmap-plugin: basic
   - 🔴 [Platform Bus](../../knowledge/driver_model/platform_bus/readme.md)
 - 基础理论
   - C 语言
-    - GNU C 扩展
-      - 🔴 [Linux 内核开发中的 GNU C 扩展与内核特有语法](../../knowledge/foundations/c_language/gnu_extensions/C_language_extension.md)
+    - 🟢 GNU C 扩展
+      - 🟢 [Linux 内核开发中的 GNU C 扩展与内核特有语法](../../knowledge/foundations/c_language/gnu_extensions/C_language_extension.md)
   - 计算机体系结构
     - 🔴 [缓存一致性专题](../../knowledge/foundations/computer_architecture/cache_coherence/大纲.md)
       - 章节评审：10 章未评审
@@ -238,23 +245,23 @@ mindmap-plugin: basic
       - P04 内核实战与应用
         - 🔴 [P06 哈希表在内核子系统中的影子(深度拆解篇)](../../knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P06_哈希表在内核子系统中的影子%28深度拆解篇%29.md)
         - 🔴 [P07 内核模块实战指南](../../knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P07_内核模块实战指南.md)
-    - 🔴 [红黑树学习路线](../../knowledge/linux/data_structures/红黑树_rb-tree/大纲.md)
-      - 章节评审：15 章未评审
-      - 🔴 [P01 树的基本概念](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md)
-      - 🔴 [P02 二叉树](../../knowledge/linux/data_structures/红黑树_rb-tree/P02_二叉树.md)
-      - 🔴 [P03 二叉搜索树 BST](../../knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md)
-      - 🔴 [P04 为什么 BST 会退化](../../knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md)
-      - 🔴 [P05 旋转的作用与局部重排](../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md)
-      - 🔴 [P06 2-3-4 树 从多路平衡到红黑树的结构桥梁](../../knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md)
-      - 🔴 [P07 红黑树 把 2-3-4 树映射成二叉表示](../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md)
-      - 🔴 [P08 Linux 6.12 内核 rbtree 基础结构与工程模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md)
-      - 🔴 [P09 Linux 6.12 内核 rbtree 嵌入式节点与使用者接口](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md)
-      - 🔴 [P10 Linux 6.12 内核 rbtree 查找 插入与旋转修复](../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md)
-      - 🔴 [P11 Linux 6.12 内核 rbtree 删除 遍历与替换](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md)
-      - 🔴 [P12 Linux 6.12 内核 rbtree 工程扩展 并发与验证](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md)
-      - 🔴 [P13 再扩展到 B 树与 B+ 树](../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md)
-      - 🔴 [P14 Maple Tree 与 VMA 管理](../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md)
-      - 🔴 [P15 Linux 6.12 Maple Tree 源码结构与 API 分层](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md)
+    - 🟢 [红黑树学习路线](../../knowledge/linux/data_structures/红黑树_rb-tree/大纲.md)
+      - 章节评审：15 章完成
+      - 🟢 [P01 树的基本概念](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md)
+      - 🟢 [P02 二叉树](../../knowledge/linux/data_structures/红黑树_rb-tree/P02_二叉树.md)
+      - 🟢 [P03 二叉搜索树 BST](../../knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md)
+      - 🟢 [P04 为什么 BST 会退化](../../knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md)
+      - 🟢 [P05 旋转的作用与局部重排](../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md)
+      - 🟢 [P06 2-3-4 树 从多路平衡到红黑树的结构桥梁](../../knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md)
+      - 🟢 [P07 红黑树 把 2-3-4 树映射成二叉表示](../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md)
+      - 🟢 [P08 Linux 6.12 内核 rbtree 基础结构与工程模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md)
+      - 🟢 [P09 Linux 6.12 内核 rbtree 嵌入式节点与使用者接口](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md)
+      - 🟢 [P10 Linux 6.12 内核 rbtree 查找 插入与旋转修复](../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md)
+      - 🟢 [P11 Linux 6.12 内核 rbtree 删除 遍历与替换](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md)
+      - 🟢 [P12 Linux 6.12 内核 rbtree 工程扩展 并发与验证](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md)
+      - 🟢 [P13 再扩展到 B 树与 B+ 树](../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md)
+      - 🟢 [P14 Maple Tree 与 VMA 管理](../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md)
+      - 🟢 [P15 Linux 6.12 Maple Tree 源码结构与 API 分层](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md)
   - 🔴 [Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)
     - 章节评审：16 章未评审
     - 🔴 [P01 为什么需要 Linux 设备模型](../../knowledge/linux/device_model/P01_为什么需要设备模型.md)
@@ -274,7 +281,7 @@ mindmap-plugin: basic
     - 🔴 [P15 复合设备、MFD 与 Component](../../knowledge/linux/device_model/P15_复合设备_MFD与Component.md)
     - 🔴 [P16 设备模型 API、调试与选择边界](../../knowledge/linux/device_model/P16_API调试与选择边界.md)
   - 错误处理
-    - 🔴 [模块 Linux 内核错误指针机制(Error Pointer System)](../../knowledge/linux/error_handling/error_pointer/README.md)
+    - 🔴 [模块 Linux 内核错误指针机制(Error Pointer System)](../../knowledge/linux/error_handling/error_pointer/readme.md)
       - 🔴 [错误指针机制概述与设计哲学](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)
   - I/O 模型
     - 🔴 [异步通知全景与知识地图](../../knowledge/linux/io_model/async_notification/大纲.md)
@@ -440,60 +447,62 @@ mindmap-plugin: basic
     - 🔴 [基本结构与类型定义](../../knowledge/system_software/kconfig/基础语法.md)
   - 链接脚本
     - 🔴 [链接脚本基础结构与核心语法](../../knowledge/system_software/linker/lds_基础语法.md)
-  - U-Boot
-    - 🔴 [阅读说明](../../knowledge/system_software/uboot/uboot-makefile.md)
-    - 🔴 [SPL和main构建的时候 是如何区分对应的函数不会冲突的](../../knowledge/system_software/uboot/uboot提问.md)
+  - 🟢 U-Boot
+    - 材料评审：2 篇完成
+    - 🟢 [阅读说明](../../knowledge/system_software/uboot/uboot-makefile.md)
+    - 🟢 [SPL和main构建的时候 是如何区分对应的函数不会冲突的](../../knowledge/system_software/uboot/uboot提问.md)
 
-## 1.6\_工程方法与平台实现
+## 1.6\_🟢 工程方法与平台实现
 
 - 工程方法
   - 驱动开发方法
     - GPIO
-      - 🔴 [GPIO 调试、迁移与工程模板](../../engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md)
+      - 🟢 [GPIO 调试、迁移与工程模板](../../engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md)
 - 平台实现
   - Arm 平台
     - NXP
       - i.MX6ULL
         - 移植与构建
-          - 🔴 [阅读人群](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)
-          - 🔴 [下载编译器](../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md)
+          - 🟢 [阅读人群](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)
+          - 🟢 [下载编译器](../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md)
     - Rockchip
       - RK3566
         - 构建环境
-          - 🔴 [资料下载](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)
+          - 🟢 [资料下载](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)
 
-## 1.7\_最小验证实验
+## 1.7\_🟢 最小验证实验
 
+- 🟢 全部 14 篇个人实验材料已完成评审
 - 基础理论
   - 计算机体系结构
     - 内存顺序
-      - 🔴 [访问宽度、对齐与 ARM 反汇编实验](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md)
+      - 🟢 [访问宽度、对齐与 ARM 反汇编实验](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md)
         - 观测结果
-          - 🔴 [2026-08-02 访问宽度与 ARM 编译器观察](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/expected/2026-08-02_compiler_observation.md)
+          - 🟢 [2026-08-02 访问宽度与 ARM 编译器观察](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/expected/2026-08-02_compiler_observation.md)
 - Linux 内核实验
   - 内存顺序
-    - 🔴 [READ ONCE 编译器访问实验](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)
+    - 🟢 [READ ONCE 编译器访问实验](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)
       - 观测结果
-        - 🔴 [2026-08-02 Windows x86-64 READ ONCE 编译器实验结果](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-08-02_windows_x86_64.md)
-    - 🔴 [LKMM Litmus 消息传递与屏障实验](../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md)
+        - 🟢 [2026-08-02 Windows x86-64 READ ONCE 编译器实验结果](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-08-02_windows_x86_64.md)
+    - 🟢 [LKMM Litmus 消息传递与屏障实验](../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md)
   - RCU
-    - 🔴 [晚到读者与抢占读者的对象回收实验](../../labs/kernel/rcu/P01_晚到读者与抢占读者/README.md)
+    - 🟢 [晚到读者与抢占读者的对象回收实验](../../labs/kernel/rcu/P01_晚到读者与抢占读者/README.md)
 - platforms
   - NXP
     - i.MX6ULL
       - 驱动实验
         - P01 LED点灯
-          - 🔴 [P01 LED点灯+ioremap](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P01_LED点灯+ioremap.md)
-          - 🔴 [P02 LED点灯+dts](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md)
-          - 🔴 [P03 i.MX6ULL字符设备LED与设备树完整实验](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P03_字符设备_LED与设备树完整实验.md)
+          - 🟢 [P01 LED点灯+ioremap](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P01_LED点灯+ioremap.md)
+          - 🟢 [P02 LED点灯+dts](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md)
+          - 🟢 [P03 i.MX6ULL字符设备LED与设备树完整实验](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P03_字符设备_LED与设备树完整实验.md)
         - P02 BEEP
-          - 🔴 [P01 beep+dts](../../labs/platforms/nxp/imx6ull/drivers/P02_BEEP/P01_beep+dts.md)
+          - 🟢 [P01 beep+dts](../../labs/platforms/nxp/imx6ull/drivers/P02_BEEP/P01_beep+dts.md)
         - P03 KEY LED interrupt
-          - 🔴 [P01 key led interrupt](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_key_led_interrupt.md)
-          - 🔴 [P02 key led interrupt move shake 01](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_key_led_interrupt_move_shake_01.md)
-          - 🔴 [P03 key interrupt wakeup kernel](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md)
+          - 🟢 [P01 key led interrupt](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_key_led_interrupt.md)
+          - 🟢 [P02 key led interrupt move shake 01](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_key_led_interrupt_move_shake_01.md)
+          - 🟢 [P03 key interrupt wakeup kernel](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md)
         - P04 Input子系统
-          - 🔴 [功能说明](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md)
+          - 🟢 [功能说明](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md)
 
 ## 1.8\_源码研究与问题调查
 
@@ -534,16 +543,16 @@ mindmap-plugin: basic
       - 🔴 [P02 Linux 6.12 非抢占式 Tree RCU 关键函数源码实现](../../research/source_reading/rcu/source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md)
       - 🔴 [P03 Linux 6.12 抢占式 Tree RCU 关键函数源码实现](../../research/source_reading/rcu/source_explanations/P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md)
 
-## 1.9\_参考与出版物
+## 1.9\_🟢 参考与出版物
 
-- 参考资料
+- 🟢 参考资料
   - 标准
     - GPL
-      - 🔴 [GPL 协议说明(总论)](../../reference/standards/gpl/GPL协议说明.md)
-- 出版物
-  - 🔴 [奔跑吧 Linux 内核](../../publications/books/running_linux_kernel/README.md)
-    - 🔴 [P01 linux系统基础知识](../../publications/books/running_linux_kernel/P01_linux系统基础知识.md)
-    - 🔴 [P02 Linux内核中常用的数据结构和算法](../../publications/books/running_linux_kernel/P02_Linux内核中常用的数据结构和算法.md)
-    - 🔴 [P03 内核引导和初始化](../../publications/books/running_linux_kernel/P03_内核引导和初始化.md)
-    - 🔴 [P04 uboot启动流程说明](../../publications/books/running_linux_kernel/P04_uboot启动流程说明.md)
-    - 🔴 [版权与免责声明](../../publications/books/running_linux_kernel/copyright_and_disclaimer.md)
+      - 🟢 [GPL 协议说明(总论)](../../reference/standards/gpl/GPL协议说明.md)
+- 🟢 出版物
+  - 🟢 [奔跑吧 Linux 内核](../../publications/books/running_linux_kernel/README.md)
+    - 🟢 [P01 linux系统基础知识](../../publications/books/running_linux_kernel/P01_linux系统基础知识.md)
+    - 🟢 [P02 Linux内核中常用的数据结构和算法](../../publications/books/running_linux_kernel/P02_Linux内核中常用的数据结构和算法.md)
+    - 🟢 [P03 内核引导和初始化](../../publications/books/running_linux_kernel/P03_内核引导和初始化.md)
+    - 🟢 [P04 uboot启动流程说明](../../publications/books/running_linux_kernel/P04_uboot启动流程说明.md)
+    - 🟢 [版权与免责声明](../../publications/books/running_linux_kernel/copyright_and_disclaimer.md)
