@@ -21,8 +21,8 @@ topics:
 | --- | --- |
 | [Lockdep 总阅读索引](../navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序) | 查询、配置和 proc 的阅读位置 |
 | [查询适配与诊断模块导读](../navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.2_查询链) | current 查询到 RCU/诊断的数据流 |
-| [稳定机制：查询、断言、pin 与自定义原语接入](../../../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.1_先从调用者的四个问题选接口) | API 语义与误用边界 |
-| [稳定机制：配置、报告解读与验证方法](../../../../knowledge/linux/synchronization/lockdep/P08_配置_报告解读与验证方法.md#8.1_实验前先建立证据门槛) | 配置和运行态核对 |
+| [稳定机制：查询、断言、pin 与自定义原语接入](../../../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.1_先确认自己在哪一层使用Lockdep) | API 语义与误用边界 |
+| [稳定机制：配置、亲手实验与报告解读](../../../../knowledge/linux/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.1_先把使用资格变成环境检查) | 配置和运行态核对 |
 | [稳定机制：成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.1_先把无告警写成条件命题) | 容量、停检和无告警结论的边界 |
 
 基线为 Linux 6.12.20，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。所有 Doxygen 和中文行内注释均为仓库补充，非上游原文。
@@ -244,6 +244,6 @@ struct held_lock held_locks[MAX_LOCK_DEPTH];
 
 ## 4.8\_与RCU实现的唯一分工
 
-本篇只展开通用 `lock_is_held_type()`。RCU 自己的虚拟 maps、`rcu_read_lock_held()` 和 `RCU_LOCKDEP_WARN()` 继续由 [Linux 6.12 RCU 公共接口与检查机制源码详解](../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_Lockdep状态来源)唯一维护。本专题解释 Lockdep 状态怎样产生，RCU 专题解释 RCU 怎样接入和消费，双方不复制同一源码实现。
+本篇只展开通用 `lock_is_held_type()`。RCU 自己的四个虚拟 maps、wait type、事件配对、`rcu_read_lock_held()` 和 callback 消费由 [Linux 6.12 RCU Lockdep适配层源码实现](../../rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.1_实现所有权与读者目标)唯一维护；`RCU_LOCKDEP_WARN()` 宏体仍由 [RCU 公共接口与检查机制源码详解](../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_LOCKDEP_WARN检查适配层)维护。本专题解释 Lockdep 状态怎样产生，RCU 专题解释 RCU 怎样接入和消费，双方不复制同一源码实现。
 
 返回：[Linux 6.12 Lockdep 源码导读](../navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)。

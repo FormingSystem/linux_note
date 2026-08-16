@@ -39,10 +39,11 @@ source_version: "6.12.20"
 | [`rcu_replace_pointer()`](#1.3_rcu_replace_pointer接口实现) | [`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) | 取得旧入口并发布新入口 | 更新侧受保护读取、release 发布、GNU statement expression |
 | [`rcu_assign_pointer()`](#1.3.1_rcu_assign_pointer发布实现) | [`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) | 发布新入口 | 常量 `NULL` 的 `WRITE_ONCE()` 快路、其他值的 release store |
 | [`rcu_dereference()`](#1.3.2_rcu_dereference取得实现) | [`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) | 在读侧取得被 RCU 保护的入口 | `READ_ONCE()`、依赖顺序、Sparse 与 Lockdep 检查 |
+| [`rcu_check_sparse()`](#1.3.3_rcu_check_sparse静态类型桥接) | [`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) | 把 RCU 宏参数送入 Sparse address-space 类型检查 | `__CHECKER__` 配置分支、`typeof()`、`__rcu`；普通编译器分支为空 |
 | [`rcu_dereference_protected()`](#1.5_rcu_dereference_protected功能与检查路径) | [`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) | 在更新锁已阻止并发修改时读取旧值 | Lockdep 条件、Sparse address-space 检查；刻意省略 `READ_ONCE()` |
 | [`synchronize_rcu()`](#1.4_synchronize_rcu接口实现) | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | 等待边界前的普通 RCU reader 结束 | 阻塞式 GP、普通/加速分支、读侧自等待检查 |
-| [`RCU_LOCKDEP_WARN()`](#1.7_RCU_LOCKDEP_WARN检查适配层) | [`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) | 把 RCU 调用约束接入 Lockdep 诊断 | `CONFIG_PROVE_RCU`、一次性告警、动态路径覆盖 |
-| [RCU Lockdep maps 与查询](#1.6_RCU_Lockdep状态来源) | [`kernel/rcu/update.c`](../../linux/kernel/rcu/update.c) | 记录普通/BH/sched 读侧范围，并供 `*_held()` 查询 | `lockdep_map`、acquire/release annotation、运行时状态查询 |
+| [`RCU_LOCKDEP_WARN()`](#1.6_RCU_LOCKDEP_WARN检查适配层) | [`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) | 把 RCU 调用约束接入 Lockdep 诊断 | `CONFIG_PROVE_RCU`、一次性告警、动态路径覆盖 |
+| [RCU Lockdep适配层](P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.2_源码符号覆盖账本) | [`rcupdate.h`](../../linux/include/linux/rcupdate.h)、[`update.c`](../../linux/kernel/rcu/update.c) 与 [`tree.c`](../../linux/kernel/rcu/tree.c) | 分别解释普通/BH/sched/callback四个逻辑身份 | 声明、定义、key、wait type、事件配对、查询、配置退化与修改边界 |
 
 若省略这张索引，读者容易把 `rcu_replace_pointer()`、GP 等待和 Lockdep 告警误认为一个不可分割的动作。实际上它们分别承担入口更新、旧读者边界和调试诊断。
 
@@ -135,6 +136,39 @@ do {                                                                  \
 
 **实现原理：** `rcu_dereference()` 把显式附加条件固定为 0，因而动态检查依赖 `rcu_read_lock_held()`；真正取得指针的是一次 `READ_ONCE()`。它既不复制对象也不增加引用计数，返回后的对象生命期仍由调用者所在的 RCU 读侧临界区约束。
 
+### 1.3.3\_rcu\_check\_sparse静态类型桥接
+
+[`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) 用预处理分支把同一个 RCU 公共宏交给两种完全不同的构建环境：
+
+```c
+#ifdef __CHECKER__
+/**
+ * @brief 把参数的实际指针类型与调用者要求的 address space 放进同一表达式。
+ * @param p RCU 公共宏正在检查的指针入口。
+ * @param space 期望的 Sparse address space，例如 __rcu。
+ * @note 本 Doxygen 说明由仓库补充；宏体裁剪自 include/linux/rcupdate.h。
+ */
+#define rcu_check_sparse(p, space) \
+	((void)(((typeof(*p) space *)p) == p))
+#else
+/**
+ * @brief 普通编译器构建中的空分支，不生成运行时代码。
+ */
+#define rcu_check_sparse(p, space)
+#endif
+```
+
+**实现原理：** 调用 Sparse 分析器时，它会定义 `__CHECKER__` 并解析预处理后的 C 翻译单元。调用 `rcu_check_sparse(p, __rcu)` 后，`typeof(*p) __rcu *` 构造期望类型，比较表达式迫使 Sparse 核对它与 `p` 的实际 address space 是否兼容，最外层 `(void)` 再丢弃没有业务意义的比较结果。工具识别的是 `__rcu` 展开的 `noderef`、`address_space` 和表达式类型，不是 `rcu_check_sparse` 这个名字。
+
+| 构建环境 | 宏展开 | 状态变化 | 能形成的证据 |
+| --- | --- | --- | --- |
+| Sparse 定义 `__CHECKER__` | address-space 类型比较表达式 | 只产生分析器内部类型约束，不修改目标程序状态 | 已分析调用点的 RCU 指针类型是否兼容 |
+| 普通 GCC/Clang 构建 | 空宏 | 无运行时状态、无指令、无链接对象 | 不能声称已经运行 Sparse |
+
+`__CHECKER__` 不是 Kconfig，`rcu_check_sparse()` 也不是静态断言的运行时版本。它不能确认 current 是否处于 RCU 读侧、对象是否仍存活或 GP 是否完成；这些问题分别交给 Lockdep 运行时条件、对象所有权和 RCU 功能协议。
+
+**可修改性说明：** 这段桥接被 `rcu_assign_pointer()`、`RCU_INIT_POINTER()`、`rcu_dereference*()` 和 `unrcu_pointer()` 等公共入口复用。修改 `space` 的施加位置、删除比较表达式或在普通编译器分支求值参数，都会同时改变大量调用方的诊断或生成代码边界。复核时至少准备一个正确的 `__rcu` 入口和一个故意缺少 `__rcu` 的入口，运行 `make C=2 M=<目标目录>`，确认前者通过、后者出现 different address spaces 诊断；普通 `make` 或运行时无告警不能替代这项验证。稳定语义与实验命令见 [RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.4_Sparse具体检查什么)。
+
 ## 1.4\_synchronize\_rcu接口实现
 
 [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) 的入口先运行检查路径，再进入真正的 GP 等待路径：
@@ -219,13 +253,7 @@ flowchart LR
     E -->|"关闭"| G["检查宏为空操作<br/>功能路径仍执行"]
 ```
 
-## 1.6\_RCU\_Lockdep状态来源
-
-这里的 `update_lock` 由普通 Lockdep 锁状态跟踪；RCU 自己的读侧范围则通过另一组虚拟 lockdep maps 接入同一框架。`kernel/rcu/update.c` 定义 `rcu_lock_map`、`rcu_bh_lock_map` 和 `rcu_sched_lock_map`，公共读侧封装在进入/退出时分别调用 `rcu_lock_acquire()` 与 `rcu_lock_release()`。因此 `rcu_read_lock_held()` 等查询能够读取 Lockdep 已记录的 RCU 读侧状态。
-
-普通锁实例怎样经 `dep_map` 进入 current 的 `held_locks[]`，以及 `lockdep_is_held()` 怎样按指定实例查询，不在本篇重复展开；先读 [Lockdep 查询适配与诊断模块导读](../../lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.2_查询链)，具体实现见 [`lock_is_held_type()` 当前持锁查询](../../lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.2_lock_is_held_type当前持锁查询)。本篇继续只负责 RCU 虚拟 maps 和 RCU 检查适配。
-
-## 1.7\_RCU\_LOCKDEP\_WARN检查适配层
+## 1.6\_RCU\_LOCKDEP\_WARN检查适配层
 
 `CONFIG_PROVE_RCU` 与 Lockdep 证明配置的选择关系见 [`kernel/rcu/Kconfig.debug`](../../linux/kernel/rcu/Kconfig.debug)。`CONFIG_PROVE_RCU=y` 时，[`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) 中的实现会在检查框架可用、条件为真且本调用点尚未告警时报告：
 
@@ -270,11 +298,12 @@ flowchart LR
 Lockdep 是动态检查：未执行到的错误路径不会被观察；`rcu_replace_pointer(..., 1)` 也不会凭空得到保护证明。类型、运行时上下文和对象生命周期仍分别需要 Sparse、Lockdep/`CONFIG_PROVE_RCU`、KASAN/KCSAN、压力测试以及人工所有权与 GP 证明共同覆盖。稳定的能力边界见 [RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.5_Lockdep检查的是哪一个运行时条件)，故障诊断组合见 [RCU 调试、验证与集成误用](../../../../knowledge/linux/synchronization/rcu/P27_RCU_调试验证与集成误用.md#27.5.5_D4_根据状态链选择动态检查器)。
 
 
-## 1.8\_复核问题
+## 1.7\_复核问题
 
-1. `rcu_replace_pointer()` 的第三个参数表达什么，为什么优先使用可检查条件而不是常量 `1`？
-2. `RCU_LOCKDEP_WARN()` 关闭后，哪些功能路径仍然执行，哪些诊断能力消失？
-3. Lockdep 通过为什么仍不能证明旧对象已经安全回收？
+1. `rcu_check_sparse()` 为什么不是 Sparse 关键字，普通编译器分支又为什么不能形成静态检查证据？
+2. `rcu_replace_pointer()` 的第三个参数表达什么，为什么优先使用可检查条件而不是常量 `1`？
+3. `RCU_LOCKDEP_WARN()` 关闭后，哪些功能路径仍然执行，哪些诊断能力消失？
+4. Lockdep 通过为什么仍不能证明旧对象已经安全回收？
 
 阅读索引：[Linux 6.12 Tree RCU 与 SRCU 源码导读](../navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)。
 
