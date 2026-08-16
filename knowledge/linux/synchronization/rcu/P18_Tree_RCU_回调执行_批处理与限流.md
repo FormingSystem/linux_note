@@ -199,6 +199,7 @@ echo 1 | sudo tee tracing_on
 - `kernel/rcu/rcu_segcblist.c::rcu_segcblist_extract_done_cbs()/rcu_segcblist_insert_done_cbs()`。
 - `kernel/rcu/tree_nocb.h::rcu_nocb_cb_kthread()`：offload执行者。
 - `kernel/rcu/tree.c` 中 kfree/kvfree RCU 批处理路径。
+- `rcu_do_batch()` 与批量释放路径在真正执行延迟动作前后登记 `rcu_callback_map`；先从 [RCU Lockdep适配模块源码概念导读](../../../../research/source_reading/rcu/navigation/P05_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#5.4.3_callback上下文链)建立调用链，再进入 [`rcu_callback_map` 上下文标记](../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.7_rcu_callback_map怎样标记延迟动作上下文)核对定义、影子状态、消费者和修改边界。
 
 上一篇：[Tree RCU rcu_segcblist 回调状态机](P17_Tree_RCU_rcu_segcblist回调状态机.md)。
 

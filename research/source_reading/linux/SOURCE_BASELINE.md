@@ -94,7 +94,7 @@ domains:
 | `kernel/rcu/tree_nocb.h` | NOCB callback offload |
 | `kernel/rcu/tree_stall.h` | stall 检测与诊断 |
 | `kernel/rcu/rcu_segcblist.c`、`rcu_segcblist.h` | callback 分段列表实现 |
-| `include/linux/rcupdate.h` | 公共读侧接口、发布/取得、`RCU_LOCKDEP_WARN()`、`kfree_rcu()` |
+| `include/linux/rcupdate.h` | 公共读侧接口、发布/取得、`rcu_check_sparse()`、`RCU_LOCKDEP_WARN()`、`kfree_rcu()` |
 | `kernel/rcu/Kconfig.debug` | `PROVE_RCU`、RCU 列表 Lockdep 和其他 RCU 调试配置 |
 | `include/linux/rculist.h` | list/hlist 的 RCU 访问封装 |
 | `include/linux/rcu_segcblist.h` | callback 分段列表结构和接口 |
@@ -106,9 +106,11 @@ domains:
 - [非抢占式 Tree RCU 模块源码概念导读](../rcu/navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.1_证据目标和配置边界)
 - [抢占式 Tree RCU 模块源码概念导读](../rcu/navigation/P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md#3.1_取证问题)
 - [Tasks RCU 与 Tiny RCU 模块源码概念导读](../rcu/navigation/P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md#4.1_Linux_6.12_Tasks_RCU与_Tiny_RCU模块源码概念导读)
+- [RCU Lockdep适配模块源码概念导读](../rcu/navigation/P05_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#5.1_模块问题与实现所有权)
 - [RCU 公共接口与检查机制源码详解](../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.1_源码详解边界与引用入口)
 - [非抢占式 Tree RCU 关键函数源码实现](../rcu/source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.1_实现讲解边界与入口)
 - [抢占式 Tree RCU 关键函数源码实现](../rcu/source_explanations/P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#3.1_实现讲解边界与入口)
+- [RCU Lockdep适配层源码实现](../rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.1_实现所有权与读者目标)
 
 ### 1.5.2\_Lockdep证据
 

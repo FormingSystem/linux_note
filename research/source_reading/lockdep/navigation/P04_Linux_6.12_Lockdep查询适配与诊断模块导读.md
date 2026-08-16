@@ -19,7 +19,7 @@ topics:
 
 本模块回答：`lockdep_is_held()` 怎样从 current 账本查询指定实例，断言为何接受 UNKNOWN，RCU 怎样把条件接入 Lockdep，以及 `/proc/lockdep_stats` 怎样表明检查器仍在工作。
 
-总入口见 [Linux 6.12 Lockdep 源码导读](P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)。稳定用法见[查询、断言、pin 与自定义原语接入](../../../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.1_先从调用者的四个问题选接口)，配置、报告和覆盖边界见[配置、报告解读与验证方法](../../../../knowledge/linux/synchronization/lockdep/P08_配置_报告解读与验证方法.md#8.1_实验前先建立证据门槛)与[成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.1_先把无告警写成条件命题)。
+总入口见 [Linux 6.12 Lockdep 源码导读](P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)。稳定用法见[查询、断言、pin 与自定义原语接入](../../../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.1_先确认自己在哪一层使用Lockdep)，配置、报告和覆盖边界见[配置、亲手实验与报告解读](../../../../knowledge/linux/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.1_先把使用资格变成环境检查)与[成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.1_先把无告警写成条件命题)。
 
 ## 4.2\_查询链
 
@@ -51,8 +51,8 @@ RCU 的 `rcu_lock_map` 等虚拟 map 使用同一 held record 设施；`rcu_read
 
 Lockdep 核心查询在本专题展开；RCU map 与宏体的权威实现仍链接：
 
-- [RCU Lockdep 状态来源](../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_Lockdep状态来源)
-- [`RCU_LOCKDEP_WARN()` 检查适配层](../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.7_RCU_LOCKDEP_WARN检查适配层)
+- [RCU Lockdep适配层源码实现](../../rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.1_实现所有权与读者目标)
+- [`RCU_LOCKDEP_WARN()` 检查适配层](../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_LOCKDEP_WARN检查适配层)
 
 ## 4.5\_配置与生命状态
 
