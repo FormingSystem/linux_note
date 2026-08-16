@@ -51,12 +51,12 @@ mindmap-plugin: basic
     - [知识库建设路线图](../roadmaps/content_roadmap.md)
 
 ## 1.4\_全量覆盖基线
-- 本次盘点覆盖 301 篇 `knowledge/` Markdown：27 个正式专题入口、234 个正式 `PXX` 章节及 40 篇尚未统一成正式大纲的知识材料。
-- 另纳入 48 篇支撑材料：工程方法 1 篇、平台实现 3 篇、实验 15 篇、研究 22 篇、参考 1 篇、出版物 6 篇。
+- 本次盘点覆盖 308 篇 `knowledge/` Markdown：28 个正式专题入口、240 个正式 `PXX` 章节及 40 篇尚未统一成正式大纲的知识材料。
+- 另纳入 52 篇支撑材料：工程方法 1 篇、平台实现 3 篇、实验 16 篇、研究 25 篇、参考 1 篇、出版物 6 篇。
 - 正式章节人工进度
     - 🟢 30 章：Kref P01～P15、红黑树 P01～P15。
     - 🟡 9 章：Lockdep P01～P09，已完成人工通读和批注，重构后待复核。
-    - 🔴 195 章：其余正式 `PXX` 章节。
+    - 🔴 201 章：其余正式 `PXX` 章节。
 - 其他已确认材料
     - 🟢 1 篇：GNU C 扩展材料。
     - 🟢 2 篇：U-Boot 个人实验材料。
@@ -64,6 +64,7 @@ mindmap-plugin: basic
     - 🟢 3 篇：`platforms/` 下的平台实现材料。
     - 🟢 14 篇：`labs/` 下的个人实验及其观测结果。
     - 🔴 1 篇：Lockdep 锁顺序反转与报告解读实验。
+    - 🔴 1 篇：Sparse 地址空间与上下文记账实验。
     - 🟢 1 篇：`reference/` 下的参考资料。
     - 🟢 6 篇：`publications/` 下的出版物材料。
 - `projects/` 当前没有正式内容，因此不创建占位节点。
@@ -131,6 +132,14 @@ mindmap-plugin: basic
     - C 语言
         - 🟢 GNU C 扩展
             - 🟢 [Linux 内核开发中的 GNU C 扩展与内核特有语法](../../knowledge/foundations/c_language/gnu_extensions/C_language_extension.md)
+        - 🔴 [Linux 内核编译器与静态分析注解专题](../../knowledge/foundations/c_language/kernel_static_annotations/大纲.md#1.1_专题定位)
+            - 章节评审：6 章未评审
+            - 🔴 [P01 同一份源码怎样面对多个消费者](../../knowledge/foundations/c_language/kernel_static_annotations/P01_同一份源码怎样面对多个消费者.md)
+            - 🔴 [P02 预处理器、GNU 属性与表达式扩展](../../knowledge/foundations/c_language/kernel_static_annotations/P02_预处理器_GNU属性与表达式扩展.md)
+            - 🔴 [P03 Sparse 地址空间与指针类型契约](../../knowledge/foundations/c_language/kernel_static_annotations/P03_Sparse地址空间与指针类型契约.md)
+            - 🔴 [P04 Sparse 上下文与控制流记账](../../knowledge/foundations/c_language/kernel_static_annotations/P04_Sparse上下文与控制流记账.md)
+            - 🔴 [P05 普通编译、BTF 与运行时边界](../../knowledge/foundations/c_language/kernel_static_annotations/P05_普通编译_BTF与运行时边界.md)
+            - 🔴 [P06 在 Linux 内核中使用 Sparse 与设计注解](../../knowledge/foundations/c_language/kernel_static_annotations/P06_在Linux内核中使用Sparse与设计注解.md)
     - 计算机体系结构
         - 🔴 [缓存一致性专题](../../knowledge/foundations/computer_architecture/cache_coherence/大纲.md)
             - 章节评审：10 章未评审
@@ -465,9 +474,11 @@ mindmap-plugin: basic
                 - 构建环境
                     - 🟢 [资料下载](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)
 
-## 1.7\_🟢 最小验证实验
+## 1.7\_最小验证实验
 - 🟢 全部 14 篇个人实验材料已完成评审
 - 基础理论
+    - C 语言
+        - 🔴 [Sparse 地址空间与上下文记账实验](../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标)
     - 计算机体系结构
         - 内存顺序
             - 🟢 [访问宽度、对齐与 ARM 反汇编实验](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md)
@@ -514,6 +525,12 @@ mindmap-plugin: basic
             - 🔴 [Linux 6.12.20 Input 子系统源码导读](../../research/source_reading/linux/drivers/input/README.md)
         - GPIO
             - 🔴 [Linux 6.12 GPIO 核心路径源码证据](../../research/source_reading/linux/gpio/linux_6.12_gpio_核心路径.md)
+    - 编译器与静态分析注解
+        - 模块概念导读
+            - 🔴 [P01 Linux 6.12 编译器与 Sparse 注解源码导读](../../research/source_reading/compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务)
+            - 🔴 [P02 Linux 6.12 compiler types 注解模块概念导读](../../research/source_reading/compiler_annotations/navigation/P02_Linux_6.12_compiler_types注解模块概念导读.md#2.1_模块问题与实现所有权)
+        - 具体实现讲解
+            - 🔴 [P01 Linux 6.12 compiler types 注解宏源码实现](../../research/source_reading/compiler_annotations/source_explanations/P01_Linux_6.12_compiler_types注解宏源码实现.md#1.1_关联入口与实现边界)
     - Lockdep
         - 模块概念导读
             - 🔴 [P01 Linux 6.12 Lockdep 源码导读](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)
