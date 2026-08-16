@@ -108,10 +108,10 @@ Lockdep 只知道虚拟 RCU map 在查询时是否存在于 current 账本；它
 | 检查点 | 本章关心的问题 | 权威实现入口 |
 | --- | --- | --- |
 | `lockdep_is_held(&state_lock)` | current 的业务锁实例如何变成条件 | [`lock_is_held_type()` 当前持锁查询](../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.2_lock_is_held_type当前持锁查询) |
-| `rcu_lock_acquire()` / `rcu_lock_release()` | RCU 读侧怎样映射到虚拟 map | [RCU Lockdep 状态来源](../../../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_Lockdep状态来源) |
-| `RCU_LOCKDEP_WARN()` | RCU 访问器怎样消费动态条件 | [`RCU_LOCKDEP_WARN()` 检查适配层](../../../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.7_RCU_LOCKDEP_WARN检查适配层) |
+| `rcu_lock_acquire()` / `rcu_lock_release()` | RCU 读侧与 callback 怎样映射到四个虚拟 map | [RCU Lockdep适配层源码实现](../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.1_实现所有权与读者目标) |
+| `RCU_LOCKDEP_WARN()` | RCU 访问器怎样消费动态条件 | [`RCU_LOCKDEP_WARN()` 检查适配层](../../../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_LOCKDEP_WARN检查适配层) |
 
-先用 [Lockdep 查询适配与诊断模块导读](../../../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.4_RCU适配链)理解通用查询到 RCU 的连接，再进入 [Linux 6.12 Tree RCU 与 SRCU 源码导读](../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.2_源码文件地图)阅读 RCU 自己的功能和适配路径。
+先用 [Lockdep 查询适配与诊断模块导读](../../../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.4_RCU适配链)理解通用查询到 RCU 的连接，再进入 [RCU Lockdep适配模块源码概念导读](../../../../research/source_reading/rcu/navigation/P05_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#5.1_模块问题与实现所有权)阅读 RCU 自己的四个实例和接入路径。
 
 ## 7.6\_其他逻辑保护域怎样判断能否适配
 
@@ -134,4 +134,4 @@ RCU 使用虚拟 lockdep map 表达动态读侧域，业务 mutex 又可以通�
 
 上一篇：[查询、断言、pin 与自定义原语接入](P06_查询_断言_pin与自定义原语接入.md)。
 
-下一篇：[配置、报告解读与验证方法](P08_配置_报告解读与验证方法.md)。
+下一篇：[配置、亲手实验与报告解读](P08_配置_亲手实验与报告解读.md)。

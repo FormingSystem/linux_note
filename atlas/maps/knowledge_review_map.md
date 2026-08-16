@@ -12,547 +12,543 @@ mindmap-plugin: basic
 # 第1章\_知识库专题阅读与评审地图
 
 ## 1.1\_先看这里
-
 - 这是一份可直接点击跳转的 **阅读地图**，也是专题、章节及支撑材料人工评审状态的 **唯一管理台账**。
 - 在 Obsidian 中使用 MarkMind 打开本文件，可以折叠、缩放和沿分支跳转；在普通 Markdown 阅读器中仍显示为层级大纲。
 - 评审状态提示内容经过了什么程度的人工确认，不等同于 Front Matter 的 `draft`、`evolving`、`maintained`、`archived`。
 - 状态图例
-  - 🔴 **未校正**（默认）
-    - 内容可能来自个人笔记、资料摘录和实验记录，也可能包含部分 AI 生成或辅助整理；红色不表示整篇内容都是 AI 生成。
-    - 内容入库前至少经过一次基础人工筛选，但尚未完成系统性的阅读、核对和校正，准确性、观察视角、组织方式及已有批注都可能存在偏差。
-    - 这些材料仍可用于了解专题范围、建立初步观察视角和发现后续线索；关键结论应结合官方文档、源码或实验继续复核。
-  - 🟡 **人工评审中**
-    - 当前正在阅读和更新的章节。由于我很多时候会遇到一些新信息而为了了解这些信息做跳跃阅读，保证做到系统化阅读和理解，而非跳过这些旁支理解问题。所以可能会有各种评审记录。
-  - 🟢 **评审完成**
-    - 这是我阅读完，完整体系之后觉得问题不大的专题，可放心阅读。在标记该专题的时候，我会需要做到2-3次人工阅读专题，确定阅读方式，源码追踪，知识点标记等完善之后才会标记。如你所见，哪怕我已经看过很多专题，但是都还在处于 🔴 阶段。
+    - 🔴 **未校正**（默认）
+        - 内容可能来自个人笔记、资料摘录和实验记录，也可能包含部分 AI 生成或辅助整理；红色不表示整篇内容都是 AI 生成。
+        - 内容入库前至少经过一次基础人工筛选，但尚未完成系统性的阅读、核对和校正，准确性、观察视角、组织方式及已有批注都可能存在偏差。
+        - 这些材料仍可用于了解专题范围、建立初步观察视角和发现后续线索；关键结论应结合官方文档、源码或实验继续复核。
+    - 🟡 **人工评审中**
+        - 当前正在阅读和更新的章节。由于我很多时候会遇到一些新信息而为了了解这些信息做跳跃阅读，保证做到系统化阅读和理解，而非跳过这些旁支理解问题。所以可能会有各种评审记录。
+    - 🟢 **评审完成**
+        - 这是我阅读完，完整体系之后觉得问题不大的专题，可放心阅读。在标记该专题的时候，我会需要做到2-3次人工阅读专题，确定阅读方式，源码追踪，知识点标记等完善之后才会标记。如你所见，哪怕我已经看过很多专题，但是都还在处于 🔴 阶段。
 
 ## 1.2\_状态管理规则
-
 - 新专题、新章节和新支撑材料默认使用 🔴 **未校正**，不得根据篇幅、目录完整度或 AI 自检自动升级。
 - 博主明确开始评审某章时，把该章改为 🟡；完成阅读、修正和整理后，才改为 🟢。
 - 专题状态由其真实章节人工汇总
-  - 全部真实章节都是 🔴：专题为 🔴。
-  - 存在 🟡，或章节处于 🟢 与 🔴 混合状态：专题为 🟡。
-  - 全部真实章节都是 🟢：专题为 🟢。
+    - 全部真实章节都是 🔴：专题为 🔴。
+    - 存在 🟡，或章节处于 🟢 与 🔴 混合状态：专题为 🟡。
+    - 全部真实章节都是 🟢：专题为 🟢。
 - 尚未形成 `PXX` 章节的专题，直接维护专题节点状态；非专题材料按文件节点独立维护。
 - 章节内部正在评审时，可以在章节节点下增加 🟡 **当前评审点**，并链接到具体小节；问题关闭后删除评审点，再按整章结果更新章节状态。
 - 正文专题与源码研究分别维护状态；正文进入评审中，不会自动把关联的源码导读或实现讲解升级为 🟡。
 - 变更状态时只修改本文件；根 `README.md`、专题 Front Matter 和维护状态不复制这套评审台账。
 
 ## 1.3\_按阅读目标进入
-
 - 系统学习 Linux 内核
-  - [Linux 内核机制学习路线](../tracks/linux_kernel_track.md)
-  - [Linux 系统与驱动知识地图](linux_system_map.md)
+    - [Linux 内核机制学习路线](../tracks/linux_kernel_track.md)
+    - [Linux 系统与驱动知识地图](linux_system_map.md)
 - 开发 Linux 驱动
-  - [Linux 驱动开发学习路线](../tracks/linux_driver_track.md)
-  - [Linux I/O 与驱动子系统建设路线](../roadmaps/linux_io_driver_subsystems.md)
+    - [Linux 驱动开发学习路线](../tracks/linux_driver_track.md)
+    - [Linux I/O 与驱动子系统建设路线](../roadmaps/linux_io_driver_subsystems.md)
 - 核对源码与实践证据
-  - [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md#1.1_当前来源)
-  - [仓库内容索引](../indexes/content_index.md#1.5_平台_实验_研究与参考)
+    - [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md#1.1_当前来源)
+    - [仓库内容索引](../indexes/content_index.md#1.5_平台_实验_研究与参考)
 - 了解知识库建设范围
-  - [知识库建设路线图](../roadmaps/content_roadmap.md)
+    - [知识库建设路线图](../roadmaps/content_roadmap.md)
 
 ## 1.4\_全量覆盖基线
-
 - 本次盘点覆盖 301 篇 `knowledge/` Markdown：27 个正式专题入口、234 个正式 `PXX` 章节及 40 篇尚未统一成正式大纲的知识材料。
-- 另纳入 47 篇支撑材料：工程方法 1 篇、平台实现 3 篇、实验 14 篇、研究 22 篇、参考 1 篇、出版物 6 篇。
+- 另纳入 48 篇支撑材料：工程方法 1 篇、平台实现 3 篇、实验 15 篇、研究 22 篇、参考 1 篇、出版物 6 篇。
 - 正式章节人工进度
-  - 🟢 30 章：Kref P01～P15、红黑树 P01～P15。
-  - 🟡 9 章：Lockdep P01～P09，已完成人工通读和批注，重构后待复核。
-  - 🔴 195 章：其余正式 `PXX` 章节。
+    - 🟢 30 章：Kref P01～P15、红黑树 P01～P15。
+    - 🟡 9 章：Lockdep P01～P09，已完成人工通读和批注，重构后待复核。
+    - 🔴 195 章：其余正式 `PXX` 章节。
 - 其他已确认材料
-  - 🟢 1 篇：GNU C 扩展材料。
-  - 🟢 2 篇：U-Boot 个人实验材料。
-  - 🟢 1 篇：`engineering/` 下的工程方法材料。
-  - 🟢 3 篇：`platforms/` 下的平台实现材料。
-  - 🟢 14 篇：`labs/` 下的个人实验及其观测结果。
-  - 🟢 1 篇：`reference/` 下的参考资料。
-  - 🟢 6 篇：`publications/` 下的出版物材料。
+    - 🟢 1 篇：GNU C 扩展材料。
+    - 🟢 2 篇：U-Boot 个人实验材料。
+    - 🟢 1 篇：`engineering/` 下的工程方法材料。
+    - 🟢 3 篇：`platforms/` 下的平台实现材料。
+    - 🟢 14 篇：`labs/` 下的个人实验及其观测结果。
+    - 🔴 1 篇：Lockdep 锁顺序反转与报告解读实验。
+    - 🟢 1 篇：`reference/` 下的参考资料。
+    - 🟢 6 篇：`publications/` 下的出版物材料。
 - `projects/` 当前没有正式内容，因此不创建占位节点。
 
 ## 1.5\_知识正文
-
 - 驱动模型
-  - 🔴 [字符设备专题](../../knowledge/driver_model/character_device/大纲.md)
-    - 章节评审：12 章未评审
-    - 🔴 [P01 字符设备最小模型](../../knowledge/driver_model/character_device/P01_字符设备最小模型.md)
-    - 🔴 [P02 设备号登记、cdev 映射与设备节点](../../knowledge/driver_model/character_device/P02_设备号_注册与设备节点.md)
-    - 🔴 [P03 VFS 打开路径与字符设备分派](../../knowledge/driver_model/character_device/P03_打开路径与文件操作.md)
-    - 🔴 [P04 字符设备文件操作并发与生命周期](../../knowledge/driver_model/character_device/P04_文件操作并发与生命周期.md)
-    - 🔴 [P05 文件操作契约与数据路径](../../knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md)
-    - 🔴 [P06 阻塞、poll 与异步通知](../../knowledge/driver_model/character_device/P06_阻塞_poll与异步通知.md)
-    - 🔴 [P07 mmap 与跨文件生命周期](../../knowledge/driver_model/character_device/P07_mmap与跨文件生命周期.md)
-    - 🔴 [P08 设备模型与硬件子系统交接](../../knowledge/driver_model/character_device/P08_设备模型与硬件子系统交接.md)
-    - 🔴 [P09 安全移除、旧 fd 与模块卸载](../../knowledge/driver_model/character_device/P09_安全移除_旧fd与模块卸载.md)
-    - 🔴 [P10 字符设备驱动模板](../../knowledge/driver_model/character_device/P10_字符设备驱动模板.md)
-    - 🔴 [P11 字符设备构建运行与验证](../../knowledge/driver_model/character_device/P11_构建运行与验证.md)
-    - 🔴 [P12 字符设备常见故障与排查](../../knowledge/driver_model/character_device/P12_常见故障与排查.md)
-  - 🔴 [设备树与 Platform](../../knowledge/driver_model/device_tree/readme.md)
-    - 🔴 [设备树中的 GPIO 语法(Kernel 6.1+)](../../knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md)
-    - 🔴 [pinctrl 总体概念与语法框架(Linux Kernel ≥ 6.1)](../../knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md)
-    - 🔴 [GPIO + pinctrl + interrupt 的设备树语法与应用](../../knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md)
-    - 🔴 [系统结构总览与工程语义基础](../../knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt示例.md)
-    - 🔴 [设备树到设备节点的绑定流程(从 DTB 到 driver probe)](../../knowledge/driver_model/device_tree/设备树语法专题-05-设备节点和驱动的绑定操作说明.md)
-    - 设备树与 Platform 开发
-      - 🔴 [P01 旧式平台设备与资源机制](../../knowledge/driver_model/device_tree/设备树+platform开发/P01_旧式平台设备与资源机制.md)
-      - 🔴 [P02 设备树驱动开发方式](../../knowledge/driver_model/device_tree/设备树+platform开发/P02_设备树驱动开发方式.md)
-      - 🔴 [P03 设备树语法与标准示例](../../knowledge/driver_model/device_tree/设备树+platform开发/P03_设备树语法与标准示例.md)
-  - 驱动基础
-    - 驱动框架模型
-      - 🔴 [P01 驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md)
-      - 🔴 [kobject讲解](../../knowledge/driver_model/fundamentals/framework_model/kobject讲解.md)
-      - 🔴 [前言](../../knowledge/driver_model/fundamentals/framework_model/前言.md)
-    - 内核驱动机制
-      - 基础数据结构说明
-        - 🔴 [引言](../../knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_class.md)
-        - 🔴 [成员介绍](../../knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_file_operations.md)
-  - 🔴 [GPIO 专题](../../knowledge/driver_model/gpio/大纲.md)
-    - 章节评审：8 章未评审
-    - 🔴 [P01 从寄存器位到 GPIO 连接抽象](../../knowledge/driver_model/gpio/P01_从寄存器位到_GPIO_连接抽象.md)
-    - 🔴 [P02 GPIO 角色、状态与完整操作周期](../../knowledge/driver_model/gpio/P02_GPIO_角色_状态与完整操作周期.md)
-    - 🔴 [P03 从朴素模型到可用 GPIO 机制](../../knowledge/driver_model/gpio/P03_从朴素模型到可用_GPIO_机制.md)
-    - 🔴 [P04 Linux gpiolib 核心实现](../../knowledge/driver_model/gpio/P04_Linux_gpiolib_核心实现.md)
-    - 🔴 [P05 GPIO Consumer 请求与使用](../../knowledge/driver_model/gpio/P05_GPIO_Consumer_请求与使用.md)
-    - 🔴 [P06 GPIO Provider 控制器实现](../../knowledge/driver_model/gpio/P06_GPIO_Provider_控制器实现.md)
-    - 🔴 [P07 GPIO 中断桥接与事件传播](../../knowledge/driver_model/gpio/P07_GPIO_中断桥接与事件传播.md)
-    - 🔴 [P08 用户空间 ABI、迁移与方案选择](../../knowledge/driver_model/gpio/P08_用户空间_ABI_迁移与方案选择.md)
-  - 🔴 [标准 GPIO Consumer 专题](../../knowledge/driver_model/gpio_consumers/大纲.md)
-    - 章节评审：2 章未评审
-    - 🔴 [P01 为什么优先使用标准 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/P01_为什么优先使用标准_GPIO_Consumer.md)
-    - 🔴 [P02 输入、指示、电源与控制类 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/P02_输入_指示_电源与控制类_GPIO_Consumer.md)
-  - 🔴 [Linux Input 子系统专题](../../knowledge/driver_model/input/大纲.md)
-    - 章节评审：6 章未评审
-    - 🔴 [P01 从硬件样本到统一输入事件](../../knowledge/driver_model/input/P01_从硬件样本到统一输入事件.md)
-    - 🔴 [P02 Input 体系结构与事件传递](../../knowledge/driver_model/input/P02_体系结构与事件传递.md)
-    - 🔴 [P03 Input 设备注册、能力与生命周期](../../knowledge/driver_model/input/P03_设备注册能力与生命周期.md)
-    - 🔴 [P04 Input 事件帧与多点触控](../../knowledge/driver_model/input/P04_事件帧与多点触控.md)
-    - 🔴 [P05 Input 并发、丢帧与电源管理](../../knowledge/driver_model/input/P05_并发丢帧与电源管理.md)
-    - 🔴 [P06 Input 触摸驱动设计与验证](../../knowledge/driver_model/input/P06_触摸驱动设计与验证.md)
-  - 🔴 [misc 设备](../../knowledge/driver_model/misc/readme.md)
-  - 🔴 [Platform Bus](../../knowledge/driver_model/platform_bus/readme.md)
+    - 🔴 [字符设备专题](../../knowledge/driver_model/character_device/大纲.md)
+        - 章节评审：12 章未评审
+        - 🔴 [P01 字符设备最小模型](../../knowledge/driver_model/character_device/P01_字符设备最小模型.md)
+        - 🔴 [P02 设备号登记、cdev 映射与设备节点](../../knowledge/driver_model/character_device/P02_设备号_注册与设备节点.md)
+        - 🔴 [P03 VFS 打开路径与字符设备分派](../../knowledge/driver_model/character_device/P03_打开路径与文件操作.md)
+        - 🔴 [P04 字符设备文件操作并发与生命周期](../../knowledge/driver_model/character_device/P04_文件操作并发与生命周期.md)
+        - 🔴 [P05 文件操作契约与数据路径](../../knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md)
+        - 🔴 [P06 阻塞、poll 与异步通知](../../knowledge/driver_model/character_device/P06_阻塞_poll与异步通知.md)
+        - 🔴 [P07 mmap 与跨文件生命周期](../../knowledge/driver_model/character_device/P07_mmap与跨文件生命周期.md)
+        - 🔴 [P08 设备模型与硬件子系统交接](../../knowledge/driver_model/character_device/P08_设备模型与硬件子系统交接.md)
+        - 🔴 [P09 安全移除、旧 fd 与模块卸载](../../knowledge/driver_model/character_device/P09_安全移除_旧fd与模块卸载.md)
+        - 🔴 [P10 字符设备驱动模板](../../knowledge/driver_model/character_device/P10_字符设备驱动模板.md)
+        - 🔴 [P11 字符设备构建运行与验证](../../knowledge/driver_model/character_device/P11_构建运行与验证.md)
+        - 🔴 [P12 字符设备常见故障与排查](../../knowledge/driver_model/character_device/P12_常见故障与排查.md)
+    - 🔴 [设备树与 Platform](../../knowledge/driver_model/device_tree/readme.md)
+        - 🔴 [设备树中的 GPIO 语法(Kernel 6.1+)](../../knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md)
+        - 🔴 [pinctrl 总体概念与语法框架(Linux Kernel ≥ 6.1)](../../knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md)
+        - 🔴 [GPIO + pinctrl + interrupt 的设备树语法与应用](../../knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md)
+        - 🔴 [系统结构总览与工程语义基础](../../knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt示例.md)
+        - 🔴 [设备树到设备节点的绑定流程(从 DTB 到 driver probe)](../../knowledge/driver_model/device_tree/设备树语法专题-05-设备节点和驱动的绑定操作说明.md)
+        - 设备树与 Platform 开发
+            - 🔴 [P01 旧式平台设备与资源机制](../../knowledge/driver_model/device_tree/设备树+platform开发/P01_旧式平台设备与资源机制.md)
+            - 🔴 [P02 设备树驱动开发方式](../../knowledge/driver_model/device_tree/设备树+platform开发/P02_设备树驱动开发方式.md)
+            - 🔴 [P03 设备树语法与标准示例](../../knowledge/driver_model/device_tree/设备树+platform开发/P03_设备树语法与标准示例.md)
+    - 驱动基础
+        - 驱动框架模型
+            - 🔴 [P01 驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md)
+            - 🔴 [kobject讲解](../../knowledge/driver_model/fundamentals/framework_model/kobject讲解.md)
+            - 🔴 [前言](../../knowledge/driver_model/fundamentals/framework_model/前言.md)
+        - 内核驱动机制
+            - 基础数据结构说明
+                - 🔴 [引言](../../knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_class.md)
+                - 🔴 [成员介绍](../../knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_file_operations.md)
+    - 🔴 [GPIO 专题](../../knowledge/driver_model/gpio/大纲.md)
+        - 章节评审：8 章未评审
+        - 🔴 [P01 从寄存器位到 GPIO 连接抽象](../../knowledge/driver_model/gpio/P01_从寄存器位到_GPIO_连接抽象.md)
+        - 🔴 [P02 GPIO 角色、状态与完整操作周期](../../knowledge/driver_model/gpio/P02_GPIO_角色_状态与完整操作周期.md)
+        - 🔴 [P03 从朴素模型到可用 GPIO 机制](../../knowledge/driver_model/gpio/P03_从朴素模型到可用_GPIO_机制.md)
+        - 🔴 [P04 Linux gpiolib 核心实现](../../knowledge/driver_model/gpio/P04_Linux_gpiolib_核心实现.md)
+        - 🔴 [P05 GPIO Consumer 请求与使用](../../knowledge/driver_model/gpio/P05_GPIO_Consumer_请求与使用.md)
+        - 🔴 [P06 GPIO Provider 控制器实现](../../knowledge/driver_model/gpio/P06_GPIO_Provider_控制器实现.md)
+        - 🔴 [P07 GPIO 中断桥接与事件传播](../../knowledge/driver_model/gpio/P07_GPIO_中断桥接与事件传播.md)
+        - 🔴 [P08 用户空间 ABI、迁移与方案选择](../../knowledge/driver_model/gpio/P08_用户空间_ABI_迁移与方案选择.md)
+    - 🔴 [标准 GPIO Consumer 专题](../../knowledge/driver_model/gpio_consumers/大纲.md)
+        - 章节评审：2 章未评审
+        - 🔴 [P01 为什么优先使用标准 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/P01_为什么优先使用标准_GPIO_Consumer.md)
+        - 🔴 [P02 输入、指示、电源与控制类 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/P02_输入_指示_电源与控制类_GPIO_Consumer.md)
+    - 🔴 [Linux Input 子系统专题](../../knowledge/driver_model/input/大纲.md)
+        - 章节评审：6 章未评审
+        - 🔴 [P01 从硬件样本到统一输入事件](../../knowledge/driver_model/input/P01_从硬件样本到统一输入事件.md)
+        - 🔴 [P02 Input 体系结构与事件传递](../../knowledge/driver_model/input/P02_体系结构与事件传递.md)
+        - 🔴 [P03 Input 设备注册、能力与生命周期](../../knowledge/driver_model/input/P03_设备注册能力与生命周期.md)
+        - 🔴 [P04 Input 事件帧与多点触控](../../knowledge/driver_model/input/P04_事件帧与多点触控.md)
+        - 🔴 [P05 Input 并发、丢帧与电源管理](../../knowledge/driver_model/input/P05_并发丢帧与电源管理.md)
+        - 🔴 [P06 Input 触摸驱动设计与验证](../../knowledge/driver_model/input/P06_触摸驱动设计与验证.md)
+    - 🔴 [misc 设备](../../knowledge/driver_model/misc/readme.md)
+    - 🔴 [Platform Bus](../../knowledge/driver_model/platform_bus/readme.md)
 - 基础理论
-  - C 语言
-    - 🟢 GNU C 扩展
-      - 🟢 [Linux 内核开发中的 GNU C 扩展与内核特有语法](../../knowledge/foundations/c_language/gnu_extensions/C_language_extension.md)
-  - 计算机体系结构
-    - 🔴 [缓存一致性专题](../../knowledge/foundations/computer_architecture/cache_coherence/大纲.md)
-      - 章节评审：10 章未评审
-      - 🔴 [P01 缓存一致性问题与缓存行](../../knowledge/foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md)
-      - 🔴 [P02 MESI 状态机与一致性事务](../../knowledge/foundations/computer_architecture/cache_coherence/P02_MESI_状态机与一致性事务.md)
-      - 🔴 [P03 缓存行所有权竞争与伪共享](../../knowledge/foundations/computer_architecture/cache_coherence/P03_缓存行所有权竞争与伪共享.md)
-      - 🔴 [P04 Arm ACE CHI 与一致性域](../../knowledge/foundations/computer_architecture/cache_coherence/P04_ARM_ACE_CHI_与一致性域.md)
-      - 🔴 [P05 Snooping 与 Directory 一致性](../../knowledge/foundations/computer_architecture/cache_coherence/P05_Snooping_与_Directory_一致性.md)
-      - 🔴 [P06 MESIF MOESI 与协议扩展](../../knowledge/foundations/computer_architecture/cache_coherence/P06_MESIF_MOESI_与协议扩展.md)
-      - 🔴 [P07 LLC 包含策略与缓存写策略](../../knowledge/foundations/computer_architecture/cache_coherence/P07_LLC_包含策略与缓存写策略.md)
-      - 🔴 [P08 ccNUMA 与多 Socket 一致性](../../knowledge/foundations/computer_architecture/cache_coherence/P08_ccNUMA_与多_Socket_一致性.md)
-      - 🔴 [P09 CXL.cache 与设备一致性](../../knowledge/foundations/computer_architecture/cache_coherence/P09_CXL.cache_与设备一致性.md)
-      - 🔴 [P10 缓存一致性协议边界与学习核对](../../knowledge/foundations/computer_architecture/cache_coherence/P10_缓存一致性协议边界与学习核对.md)
-    - 🔴 [体系结构内存顺序专题](../../knowledge/foundations/computer_architecture/memory_ordering/大纲.md)
-      - 章节评审：7 章未评审
-      - 🔴 [P01 为什么需要体系结构内存模型](../../knowledge/foundations/computer_architecture/memory_ordering/P01_为什么需要体系结构内存模型.md)
-      - 🔴 [P02 访问粒度、对齐与撕裂](../../knowledge/foundations/computer_architecture/memory_ordering/P02_访问粒度_对齐与撕裂.md)
-      - 🔴 [P03 乱序执行、Store Buffer 与观察时机](../../knowledge/foundations/computer_architecture/memory_ordering/P03_乱序执行_Store_Buffer与观察时机.md)
-      - 🔴 [P04 一致性序、传播与多副本原子性](../../knowledge/foundations/computer_architecture/memory_ordering/P04_一致性序_传播与多副本原子性.md)
-      - 🔴 [P05 屏障、Acquire Release 与依赖顺序](../../knowledge/foundations/computer_architecture/memory_ordering/P05_屏障_Acquire_Release与依赖顺序.md)
-      - 🔴 [P06 Litmus Test 并发交错推演](../../knowledge/foundations/computer_architecture/memory_ordering/P06_Litmus_Test_并发交错推演.md)
-      - 🔴 [P07 反汇编、压力测试与形式化验证边界](../../knowledge/foundations/computer_architecture/memory_ordering/P07_反汇编_压力测试与形式化验证边界.md)
-  - 操作系统
-    - 基本概念
-      - 🔴 [详细介绍下宏内核和微内核](../../knowledge/foundations/operating_systems/concepts/宏内核和微内核.md)
+    - C 语言
+        - 🟢 GNU C 扩展
+            - 🟢 [Linux 内核开发中的 GNU C 扩展与内核特有语法](../../knowledge/foundations/c_language/gnu_extensions/C_language_extension.md)
+    - 计算机体系结构
+        - 🔴 [缓存一致性专题](../../knowledge/foundations/computer_architecture/cache_coherence/大纲.md)
+            - 章节评审：10 章未评审
+            - 🔴 [P01 缓存一致性问题与缓存行](../../knowledge/foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md)
+            - 🔴 [P02 MESI 状态机与一致性事务](../../knowledge/foundations/computer_architecture/cache_coherence/P02_MESI_状态机与一致性事务.md)
+            - 🔴 [P03 缓存行所有权竞争与伪共享](../../knowledge/foundations/computer_architecture/cache_coherence/P03_缓存行所有权竞争与伪共享.md)
+            - 🔴 [P04 Arm ACE CHI 与一致性域](../../knowledge/foundations/computer_architecture/cache_coherence/P04_ARM_ACE_CHI_与一致性域.md)
+            - 🔴 [P05 Snooping 与 Directory 一致性](../../knowledge/foundations/computer_architecture/cache_coherence/P05_Snooping_与_Directory_一致性.md)
+            - 🔴 [P06 MESIF MOESI 与协议扩展](../../knowledge/foundations/computer_architecture/cache_coherence/P06_MESIF_MOESI_与协议扩展.md)
+            - 🔴 [P07 LLC 包含策略与缓存写策略](../../knowledge/foundations/computer_architecture/cache_coherence/P07_LLC_包含策略与缓存写策略.md)
+            - 🔴 [P08 ccNUMA 与多 Socket 一致性](../../knowledge/foundations/computer_architecture/cache_coherence/P08_ccNUMA_与多_Socket_一致性.md)
+            - 🔴 [P09 CXL.cache 与设备一致性](../../knowledge/foundations/computer_architecture/cache_coherence/P09_CXL.cache_与设备一致性.md)
+            - 🔴 [P10 缓存一致性协议边界与学习核对](../../knowledge/foundations/computer_architecture/cache_coherence/P10_缓存一致性协议边界与学习核对.md)
+        - 🔴 [体系结构内存顺序专题](../../knowledge/foundations/computer_architecture/memory_ordering/大纲.md)
+            - 章节评审：7 章未评审
+            - 🔴 [P01 为什么需要体系结构内存模型](../../knowledge/foundations/computer_architecture/memory_ordering/P01_为什么需要体系结构内存模型.md)
+            - 🔴 [P02 访问粒度、对齐与撕裂](../../knowledge/foundations/computer_architecture/memory_ordering/P02_访问粒度_对齐与撕裂.md)
+            - 🔴 [P03 乱序执行、Store Buffer 与观察时机](../../knowledge/foundations/computer_architecture/memory_ordering/P03_乱序执行_Store_Buffer与观察时机.md)
+            - 🔴 [P04 一致性序、传播与多副本原子性](../../knowledge/foundations/computer_architecture/memory_ordering/P04_一致性序_传播与多副本原子性.md)
+            - 🔴 [P05 屏障、Acquire Release 与依赖顺序](../../knowledge/foundations/computer_architecture/memory_ordering/P05_屏障_Acquire_Release与依赖顺序.md)
+            - 🔴 [P06 Litmus Test 并发交错推演](../../knowledge/foundations/computer_architecture/memory_ordering/P06_Litmus_Test_并发交错推演.md)
+            - 🔴 [P07 反汇编、压力测试与形式化验证边界](../../knowledge/foundations/computer_architecture/memory_ordering/P07_反汇编_压力测试与形式化验证边界.md)
+    - 操作系统
+        - 基本概念
+            - 🔴 [详细介绍下宏内核和微内核](../../knowledge/foundations/operating_systems/concepts/宏内核和微内核.md)
 - 内核子系统
-  - 中断
-    - 🔴 [](../../knowledge/kernel_subsystems/irq/中断机制简介/大纲.md)
-      - 章节评审：14 章未评审
-      - 🔴 [P01 中断的定位与演化](../../knowledge/kernel_subsystems/irq/中断机制简介/P01_中断的定位与演化.md)
-      - 🔴 [P02 SoC 视角下的中断体系](../../knowledge/kernel_subsystems/irq/中断机制简介/P02_SoC_视角下的中断体系.md)
-      - 🔴 [P03 Linux 的中断抽象 irq chip irq domain 与 irq desc](../../knowledge/kernel_subsystems/irq/中断机制简介/P03_Linux_的中断抽象_irq_chip_irq_domain_与_irq_desc.md)
-      - 🔴 [P04 Linux 驱动中的中断注册与接口](../../knowledge/kernel_subsystems/irq/中断机制简介/P04_Linux_驱动中的中断注册与接口.md)
-      - 🔴 [P05 GPIO 与触发语义 电平 边沿 DTS 与 只来一次一直来 为何出现](../../knowledge/kernel_subsystems/irq/中断机制简介/P05_GPIO_与触发语义_电平_边沿_DTS_与_只来一次一直来_为何出现.md)
-      - 🔴 [P06 Linux 中断的调试与诊断](../../knowledge/kernel_subsystems/irq/中断机制简介/P06_Linux_中断的调试与诊断.md)
-      - 🔴 [P07 中断下半部机制与驱动中的选择](../../knowledge/kernel_subsystems/irq/中断机制简介/P07_中断下半部机制与驱动中的选择.md)
-      - 🔴 [P08 中断 x 高精度定时器(hrtimer) 去抖 延时确认与一次性中断再使能](../../knowledge/kernel_subsystems/irq/中断机制简介/P08_中断_x_高精度定时器%28hrtimer%29_去抖_延时确认与一次性中断再使能.md)
-      - 🔴 [P09 层级中断控制器与 ARM GIC 在 Linux 中的实现](../../knowledge/kernel_subsystems/irq/中断机制简介/P09_层级中断控制器与_ARM_GIC_在_Linux_中的实现.md)
-      - 🔴 [P10 SMP 与中断亲和性 IPI 机制](../../knowledge/kernel_subsystems/irq/中断机制简介/P10_SMP_与中断亲和性_IPI_机制.md)
-      - 🔴 [P11 电源管理中的中断 suspendresume 与唤醒源](../../knowledge/kernel_subsystems/irq/中断机制简介/P11_电源管理中的中断_suspendresume_与唤醒源.md)
-      - 🔴 [P12 MSI MSI-X 与 PCIe 设备的中断框架](../../knowledge/kernel_subsystems/irq/中断机制简介/P12_MSI_MSI-X_与_PCIe_设备的中断框架.md)
-      - 🔴 [P13 特殊与高优先级中断 NMI 定时器 性能中断](../../knowledge/kernel_subsystems/irq/中断机制简介/P13_特殊与高优先级中断_NMI_定时器_性能中断.md)
-      - 🔴 [P14 中断风暴 抖动与防御机制](../../knowledge/kernel_subsystems/irq/中断机制简介/P14_中断风暴_抖动与防御机制.md)
-  - 跟踪与观测
-    - Linux 内核日志
-      - 🔴 [一条日志是怎样 出现 的](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md)
-  - 🔴 [VFS 子系统](../../knowledge/kernel_subsystems/vfs/大纲.md)
-    - 章节评审：25 章未评审
-    - 🔴 [P01 为什么需要 VFS](../../knowledge/kernel_subsystems/vfs/P01_为什么需要_VFS.md)
-    - 🔴 [P02 VFS 抽象机制推演](../../knowledge/kernel_subsystems/vfs/P02_VFS抽象机制推演.md)
-    - 🔴 [P03 VFS 状态与对象拓扑](../../knowledge/kernel_subsystems/vfs/P03_VFS_状态与对象拓扑.md)
-    - 🔴 [P04 文件系统类型注册](../../knowledge/kernel_subsystems/vfs/P04_文件系统类型注册.md)
-    - 🔴 [P05 fs_context 挂载事务](../../knowledge/kernel_subsystems/vfs/P05_fs_context挂载事务.md)
-    - 🔴 [P06 superblock 实例状态与生命周期](../../knowledge/kernel_subsystems/vfs/P06_superblock实例状态与生命周期.md)
-    - 🔴 [P07 mount 与 mount namespace](../../knowledge/kernel_subsystems/vfs/P07_mount与mount_namespace.md)
-    - 🔴 [P08 dcache 与名称状态](../../knowledge/kernel_subsystems/vfs/P08_dcache与名称状态.md)
-    - 🔴 [P09 路径查找状态机](../../knowledge/kernel_subsystems/vfs/P09_路径查找状态机.md)
-    - 🔴 [P10 RCU-walk 与 ref-walk](../../knowledge/kernel_subsystems/vfs/P10_RCU-walk与ref-walk.md)
-    - 🔴 [P11 创建、删除、链接与重命名](../../knowledge/kernel_subsystems/vfs/P11_创建删除链接与重命名.md)
-    - 🔴 [P12 open 状态机](../../knowledge/kernel_subsystems/vfs/P12_open状态机.md)
-    - 🔴 [P13 fd table 与 open file description](../../knowledge/kernel_subsystems/vfs/P13_fd_table与file生命周期.md)
-    - 🔴 [P14 VFS read/write 分派](../../knowledge/kernel_subsystems/vfs/P14_VFS_read_write分派.md)
-    - 🔴 [P15 address_space、folio 与页缓存](../../knowledge/kernel_subsystems/vfs/P15_address_space_folio与页缓存.md)
-    - 🔴 [P16 writeback、fsync 与错误传播](../../knowledge/kernel_subsystems/vfs/P16_writeback_fsync与错误传播.md)
-    - 🔴 [P17 Direct I/O 与异步完成](../../knowledge/kernel_subsystems/vfs/P17_Direct_IO与异步完成.md)
-    - 🔴 [P18 文件 mmap 与 page fault](../../knowledge/kernel_subsystems/vfs/P18_文件mmap与page_fault.md)
-    - 🔴 [P19 权限、凭据与安全钩子](../../knowledge/kernel_subsystems/vfs/P19_权限凭据与安全钩子.md)
-    - 🔴 [P20 fsnotify、inotify 与 fanotify](../../knowledge/kernel_subsystems/vfs/P20_fsnotify_inotify与fanotify.md)
-    - 🔴 [P21 file、dentry、inode 与 superblock 回收](../../knowledge/kernel_subsystems/vfs/P21_file_dentry_inode与superblock回收.md)
-    - 🔴 [P22 freeze、unmount 与故障退出](../../knowledge/kernel_subsystems/vfs/P22_freeze_unmount与故障退出.md)
-    - 🔴 [P23 具体文件系统接入 VFS](../../knowledge/kernel_subsystems/vfs/P23_具体文件系统接入VFS.md)
-    - 🔴 [P24 特殊文件与伪文件系统接入](../../knowledge/kernel_subsystems/vfs/P24_特殊文件与伪文件系统接入.md)
-    - 🔴 [P25 VFS 调试与源码追踪](../../knowledge/kernel_subsystems/vfs/P25_VFS调试与源码追踪.md)
-  - 🔴 [Linux 工作队列专题](../../knowledge/kernel_subsystems/workqueue/大纲.md)
-    - 章节评审：1 章未评审
-    - 🔴 [P01 工作队列](../../knowledge/kernel_subsystems/workqueue/P01_工作队列.md)
+    - 中断
+        - 🔴 [](../../knowledge/kernel_subsystems/irq/中断机制简介/大纲.md)
+            - 章节评审：14 章未评审
+            - 🔴 [P01 中断的定位与演化](../../knowledge/kernel_subsystems/irq/中断机制简介/P01_中断的定位与演化.md)
+            - 🔴 [P02 SoC 视角下的中断体系](../../knowledge/kernel_subsystems/irq/中断机制简介/P02_SoC_视角下的中断体系.md)
+            - 🔴 [P03 Linux 的中断抽象 irq chip irq domain 与 irq desc](../../knowledge/kernel_subsystems/irq/中断机制简介/P03_Linux_的中断抽象_irq_chip_irq_domain_与_irq_desc.md)
+            - 🔴 [P04 Linux 驱动中的中断注册与接口](../../knowledge/kernel_subsystems/irq/中断机制简介/P04_Linux_驱动中的中断注册与接口.md)
+            - 🔴 [P05 GPIO 与触发语义 电平 边沿 DTS 与 只来一次一直来 为何出现](../../knowledge/kernel_subsystems/irq/中断机制简介/P05_GPIO_与触发语义_电平_边沿_DTS_与_只来一次一直来_为何出现.md)
+            - 🔴 [P06 Linux 中断的调试与诊断](../../knowledge/kernel_subsystems/irq/中断机制简介/P06_Linux_中断的调试与诊断.md)
+            - 🔴 [P07 中断下半部机制与驱动中的选择](../../knowledge/kernel_subsystems/irq/中断机制简介/P07_中断下半部机制与驱动中的选择.md)
+            - 🔴 [P08 中断 x 高精度定时器(hrtimer) 去抖 延时确认与一次性中断再使能](../../knowledge/kernel_subsystems/irq/中断机制简介/P08_中断_x_高精度定时器%28hrtimer%29_去抖_延时确认与一次性中断再使能.md)
+            - 🔴 [P09 层级中断控制器与 ARM GIC 在 Linux 中的实现](../../knowledge/kernel_subsystems/irq/中断机制简介/P09_层级中断控制器与_ARM_GIC_在_Linux_中的实现.md)
+            - 🔴 [P10 SMP 与中断亲和性 IPI 机制](../../knowledge/kernel_subsystems/irq/中断机制简介/P10_SMP_与中断亲和性_IPI_机制.md)
+            - 🔴 [P11 电源管理中的中断 suspendresume 与唤醒源](../../knowledge/kernel_subsystems/irq/中断机制简介/P11_电源管理中的中断_suspendresume_与唤醒源.md)
+            - 🔴 [P12 MSI MSI-X 与 PCIe 设备的中断框架](../../knowledge/kernel_subsystems/irq/中断机制简介/P12_MSI_MSI-X_与_PCIe_设备的中断框架.md)
+            - 🔴 [P13 特殊与高优先级中断 NMI 定时器 性能中断](../../knowledge/kernel_subsystems/irq/中断机制简介/P13_特殊与高优先级中断_NMI_定时器_性能中断.md)
+            - 🔴 [P14 中断风暴 抖动与防御机制](../../knowledge/kernel_subsystems/irq/中断机制简介/P14_中断风暴_抖动与防御机制.md)
+    - 跟踪与观测
+        - Linux 内核日志
+            - 🔴 [一条日志是怎样 出现 的](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md)
+    - 🔴 [VFS 子系统](../../knowledge/kernel_subsystems/vfs/大纲.md)
+        - 章节评审：25 章未评审
+        - 🔴 [P01 为什么需要 VFS](../../knowledge/kernel_subsystems/vfs/P01_为什么需要_VFS.md)
+        - 🔴 [P02 VFS 抽象机制推演](../../knowledge/kernel_subsystems/vfs/P02_VFS抽象机制推演.md)
+        - 🔴 [P03 VFS 状态与对象拓扑](../../knowledge/kernel_subsystems/vfs/P03_VFS_状态与对象拓扑.md)
+        - 🔴 [P04 文件系统类型注册](../../knowledge/kernel_subsystems/vfs/P04_文件系统类型注册.md)
+        - 🔴 [P05 fs_context 挂载事务](../../knowledge/kernel_subsystems/vfs/P05_fs_context挂载事务.md)
+        - 🔴 [P06 superblock 实例状态与生命周期](../../knowledge/kernel_subsystems/vfs/P06_superblock实例状态与生命周期.md)
+        - 🔴 [P07 mount 与 mount namespace](../../knowledge/kernel_subsystems/vfs/P07_mount与mount_namespace.md)
+        - 🔴 [P08 dcache 与名称状态](../../knowledge/kernel_subsystems/vfs/P08_dcache与名称状态.md)
+        - 🔴 [P09 路径查找状态机](../../knowledge/kernel_subsystems/vfs/P09_路径查找状态机.md)
+        - 🔴 [P10 RCU-walk 与 ref-walk](../../knowledge/kernel_subsystems/vfs/P10_RCU-walk与ref-walk.md)
+        - 🔴 [P11 创建、删除、链接与重命名](../../knowledge/kernel_subsystems/vfs/P11_创建删除链接与重命名.md)
+        - 🔴 [P12 open 状态机](../../knowledge/kernel_subsystems/vfs/P12_open状态机.md)
+        - 🔴 [P13 fd table 与 open file description](../../knowledge/kernel_subsystems/vfs/P13_fd_table与file生命周期.md)
+        - 🔴 [P14 VFS read/write 分派](../../knowledge/kernel_subsystems/vfs/P14_VFS_read_write分派.md)
+        - 🔴 [P15 address_space、folio 与页缓存](../../knowledge/kernel_subsystems/vfs/P15_address_space_folio与页缓存.md)
+        - 🔴 [P16 writeback、fsync 与错误传播](../../knowledge/kernel_subsystems/vfs/P16_writeback_fsync与错误传播.md)
+        - 🔴 [P17 Direct I/O 与异步完成](../../knowledge/kernel_subsystems/vfs/P17_Direct_IO与异步完成.md)
+        - 🔴 [P18 文件 mmap 与 page fault](../../knowledge/kernel_subsystems/vfs/P18_文件mmap与page_fault.md)
+        - 🔴 [P19 权限、凭据与安全钩子](../../knowledge/kernel_subsystems/vfs/P19_权限凭据与安全钩子.md)
+        - 🔴 [P20 fsnotify、inotify 与 fanotify](../../knowledge/kernel_subsystems/vfs/P20_fsnotify_inotify与fanotify.md)
+        - 🔴 [P21 file、dentry、inode 与 superblock 回收](../../knowledge/kernel_subsystems/vfs/P21_file_dentry_inode与superblock回收.md)
+        - 🔴 [P22 freeze、unmount 与故障退出](../../knowledge/kernel_subsystems/vfs/P22_freeze_unmount与故障退出.md)
+        - 🔴 [P23 具体文件系统接入 VFS](../../knowledge/kernel_subsystems/vfs/P23_具体文件系统接入VFS.md)
+        - 🔴 [P24 特殊文件与伪文件系统接入](../../knowledge/kernel_subsystems/vfs/P24_特殊文件与伪文件系统接入.md)
+        - 🔴 [P25 VFS 调试与源码追踪](../../knowledge/kernel_subsystems/vfs/P25_VFS调试与源码追踪.md)
+    - 🔴 [Linux 工作队列专题](../../knowledge/kernel_subsystems/workqueue/大纲.md)
+        - 章节评审：1 章未评审
+        - 🔴 [P01 工作队列](../../knowledge/kernel_subsystems/workqueue/P01_工作队列.md)
 - Linux 通用机制
-  - 内核架构
-    - 内核组成
-      - 🔴 [linux内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)
-    - 模块与设备节点
-      - 🔴 [模块与设备节点基础](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)
-      - 🔴 [设备号与设备节点 从 0 到多实例](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作基础.md)
-      - 🔴 [走进驱动的 Makefile](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_驱动开发_Makefile_指南.md)
-    - 源码树
-      - 🔴 [/arch](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)
-  - 数据结构
-    - 🔴 [Linux内核链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)
-      - 章节评审：9 章未评审
-      - 🔴 [P01 概念、定位与底层实现](../../knowledge/linux/data_structures/单链表_linked_list/P01_概念_定位与底层实现.md)
-      - 🔴 [P02 初始化与基本操作](../../knowledge/linux/data_structures/单链表_linked_list/P02_初始化与基本操作.md)
-      - 🔴 [P03 并发原语与原子性](../../knowledge/linux/data_structures/单链表_linked_list/P03_并发原语与原子性.md)
-      - 🔴 [P04 一次性初始化](../../knowledge/linux/data_structures/单链表_linked_list/P04_一次性初始化.md)
-      - 🔴 [P05 接口、示例与注意事项](../../knowledge/linux/data_structures/单链表_linked_list/P05_接口_示例与注意事项.md)
-      - 🔴 [P06 调试与验证](../../knowledge/linux/data_structures/单链表_linked_list/P06_调试与验证.md)
-      - 🔴 [P07 总结与学习资源](../../knowledge/linux/data_structures/单链表_linked_list/P07_总结与学习资源.md)
-      - 🔴 [P08 高级应用](../../knowledge/linux/data_structures/单链表_linked_list/P08_高级应用.md)
-      - 🔴 [P09 优化与总结](../../knowledge/linux/data_structures/单链表_linked_list/P09_优化与总结.md)
-    - 哈希表
-      - P01 数据结构理论基础
-        - 🔴 [P01 哈希表核心原理 空间与时间的终极博弈](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)
-      - P02 Linux 内核 5.10 核心实现
-        - 🔴 [P02 内核基石 hlist非对称链表](../../knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md)
-        - 🔴 [P03 算法之魂 哈希函数与位运算优化](../../knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P03_算法之魂_哈希函数与位运算优化.md)
-      - P03 高级进阶与性能调优
-        - 🔴 [P04 并发保护与RCU机制 多核下的读写博弈](../../knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P04_并发保护与RCU机制_多核下的读写博弈.md)
-        - 🔴 [P05 动态伸缩的rhashtable 无感扩容的艺术](../../knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P05_动态伸缩的rhashtable_无感扩容的艺术.md)
-      - P04 内核实战与应用
-        - 🔴 [P06 哈希表在内核子系统中的影子(深度拆解篇)](../../knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P06_哈希表在内核子系统中的影子%28深度拆解篇%29.md)
-        - 🔴 [P07 内核模块实战指南](../../knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P07_内核模块实战指南.md)
-    - 🟢 [红黑树学习路线](../../knowledge/linux/data_structures/红黑树_rb-tree/大纲.md)
-      - 章节评审：15 章完成
-      - 🟢 [P01 树的基本概念](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md)
-      - 🟢 [P02 二叉树](../../knowledge/linux/data_structures/红黑树_rb-tree/P02_二叉树.md)
-      - 🟢 [P03 二叉搜索树 BST](../../knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md)
-      - 🟢 [P04 为什么 BST 会退化](../../knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md)
-      - 🟢 [P05 旋转的作用与局部重排](../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md)
-      - 🟢 [P06 2-3-4 树 从多路平衡到红黑树的结构桥梁](../../knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md)
-      - 🟢 [P07 红黑树 把 2-3-4 树映射成二叉表示](../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md)
-      - 🟢 [P08 Linux 6.12 内核 rbtree 基础结构与工程模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md)
-      - 🟢 [P09 Linux 6.12 内核 rbtree 嵌入式节点与使用者接口](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md)
-      - 🟢 [P10 Linux 6.12 内核 rbtree 查找 插入与旋转修复](../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md)
-      - 🟢 [P11 Linux 6.12 内核 rbtree 删除 遍历与替换](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md)
-      - 🟢 [P12 Linux 6.12 内核 rbtree 工程扩展 并发与验证](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md)
-      - 🟢 [P13 再扩展到 B 树与 B+ 树](../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md)
-      - 🟢 [P14 Maple Tree 与 VMA 管理](../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md)
-      - 🟢 [P15 Linux 6.12 Maple Tree 源码结构与 API 分层](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md)
-  - 🔴 [Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)
-    - 章节评审：16 章未评审
-    - 🔴 [P01 为什么需要 Linux 设备模型](../../knowledge/linux/device_model/P01_为什么需要设备模型.md)
-    - 🔴 [P02 设备模型抽象机制推演](../../knowledge/linux/device_model/P02_设备模型抽象机制推演.md)
-    - 🔴 [P03 设备模型机制完善：生命周期、并发与失败](../../knowledge/linux/device_model/P03_机制完善_生命周期并发与失败.md)
-    - 🔴 [P04 Driver Core 状态拓扑](../../knowledge/linux/device_model/P04_Driver_Core状态拓扑.md)
-    - 🔴 [P05 kobject、kset 与 sysfs 对象树](../../knowledge/linux/device_model/P05_kobject_kset与sysfs对象树.md)
-    - 🔴 [P06 device 注册与生命周期](../../knowledge/linux/device_model/P06_device注册与生命周期.md)
-    - 🔴 [P07 bus 与 driver 注册](../../knowledge/linux/device_model/P07_bus与driver注册.md)
-    - 🔴 [P08 匹配、绑定与 probe 状态机](../../knowledge/linux/device_model/P08_匹配绑定与probe状态机.md)
-    - 🔴 [P09 Deferred Probe、解绑与 remove](../../knowledge/linux/device_model/P09_deferred_probe解绑与remove.md)
-    - 🔴 [P10 fwnode、OF 与 Platform 适配](../../knowledge/linux/device_model/P10_fwnode_OF与Platform适配.md)
-    - 🔴 [P11 class、sysfs、uevent 与 modalias](../../knowledge/linux/device_model/P11_class_sysfs_uevent与modalias.md)
-    - 🔴 [P12 devres 资源事务](../../knowledge/linux/device_model/P12_devres资源事务.md)
-    - 🔴 [P13 device link 与电源管理](../../knowledge/linux/device_model/P13_device_link与电源管理.md)
-    - 🔴 [P14 热插拔与模块生命周期](../../knowledge/linux/device_model/P14_热插拔与模块生命周期.md)
-    - 🔴 [P15 复合设备、MFD 与 Component](../../knowledge/linux/device_model/P15_复合设备_MFD与Component.md)
-    - 🔴 [P16 设备模型 API、调试与选择边界](../../knowledge/linux/device_model/P16_API调试与选择边界.md)
-  - 错误处理
-    - 🔴 [模块 Linux 内核错误指针机制(Error Pointer System)](../../knowledge/linux/error_handling/error_pointer/readme.md)
-      - 🔴 [错误指针机制概述与设计哲学](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)
-  - I/O 模型
-    - 🔴 [异步通知全景与知识地图](../../knowledge/linux/io_model/async_notification/大纲.md)
-      - 章节评审：13 章未评审
-      - 🔴 [P01 异步通知全景与知识地图](../../knowledge/linux/io_model/async_notification/P01_异步通知全景与知识地图.md)
-      - 🔴 [P02 Linux IO 与信号机制基础](../../knowledge/linux/io_model/async_notification/P02_Linux_IO_与信号机制基础.md)
-      - 🔴 [P03 fasync 机制的历史与设计动机](../../knowledge/linux/io_model/async_notification/P03_fasync_机制的历史与设计动机.md)
-      - 🔴 [P04 内核视角 核心数据结构与控制路径](../../knowledge/linux/io_model/async_notification/P04_内核视角_核心数据结构与控制路径.md)
-      - 🔴 [P05 VFS 与文件系统中的异步通知支持](../../knowledge/linux/io_model/async_notification/P05_VFS_与文件系统中的异步通知支持.md)
-      - 🔴 [P06 字符设备中实现异步通知的基础模式](../../knowledge/linux/io_model/async_notification/P06_字符设备中实现异步通知的基础模式.md)
-      - 🔴 [P07 中断驱动设备的异步通知实践](../../knowledge/linux/io_model/async_notification/P07_中断驱动设备的异步通知实践.md)
-      - 🔴 [P08 流式设备与高级场景中的异步通知](../../knowledge/linux/io_model/async_notification/P08_流式设备与高级场景中的异步通知.md)
-      - 🔴 [P09 用户态编程 从 SIGIO 到 signalfdepoll](../../knowledge/linux/io_model/async_notification/P09_用户态编程_从_SIGIO_到_signalfdepoll.md)
-      - 🔴 [P10 并发 竞态与内存可见性问题](../../knowledge/linux/io_model/async_notification/P10_并发_竞态与内存可见性问题.md)
-      - 🔴 [P11 调试 排错与性能分析](../../knowledge/linux/io_model/async_notification/P11_调试_排错与性能分析.md)
-      - 🔴 [P12 fasync 与其他通知机制的对比与整合](../../knowledge/linux/io_model/async_notification/P12_fasync_与其他通知机制的对比与整合.md)
-      - 🔴 [P13 工程实践案例与编码核对表](../../knowledge/linux/io_model/async_notification/P13_工程实践案例与编码核对表.md)
-    - 阻塞 I/O
-      - 🔴 [poll 机制 从用户等待到驱动唤醒的完整链路](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)
-    - 🔴 [Linux DMA 一致性专题](../../knowledge/linux/io_model/dma/大纲.md)
-      - 章节评审：1 章未评审
-      - 🔴 [P01 DMA 映射同步与门铃顺序](../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md)
-    - 🔴 [Linux MMIO 顺序专题](../../knowledge/linux/io_model/mmio/大纲.md)
-      - 章节评审：1 章未评审
-      - 🔴 [P01 MMIO 访问顺序与屏障](../../knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md)
-  - 🔴 [Linux 内存顺序专题](../../knowledge/linux/memory_ordering/大纲.md)
-    - 章节评审：10 章未评审
-    - 🔴 [P01 READ WRITE ONCE 与 SMP 内存顺序原语](../../knowledge/linux/memory_ordering/P01_READ_WRITE_ONCE_与_SMP_内存顺序原语.md)
-    - 🔴 [P02 编译器共享访问与 READ WRITE ONCE](../../knowledge/linux/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md)
-    - 🔴 [P03 Linux SMP 屏障与顺序域](../../knowledge/linux/memory_ordering/P03_Linux_SMP屏障与顺序域.md)
-    - 🔴 [P04 release acquire 发布协议](../../knowledge/linux/memory_ordering/P04_release_acquire_发布协议.md)
-    - 🔴 [P05 数据依赖、控制依赖与 RCU 取得](../../knowledge/linux/memory_ordering/P05_数据依赖_控制依赖与RCU取得.md)
-    - 🔴 [P06 原子 RMW、顺序后缀与条件成功](../../knowledge/linux/memory_ordering/P06_原子RMW_顺序后缀与条件成功.md)
-    - 🔴 [P07 锁、调度、中断与隐式顺序](../../knowledge/linux/memory_ordering/P07_锁_调度_中断与隐式顺序.md)
-    - 🔴 [P08 LKMM 事件、关系与一致性判定](../../knowledge/linux/memory_ordering/P08_LKMM事件_关系与一致性判定.md)
-    - 🔴 [P09 Litmus、形式验证与硬件实验](../../knowledge/linux/memory_ordering/P09_Litmus_形式验证与硬件实验.md)
-    - 🔴 [P10 子系统边界、误用诊断与选型](../../knowledge/linux/memory_ordering/P10_子系统边界_误用诊断与选型.md)
-  - 对象生命周期
-    - devres
-      - 🔴 [devm API接口文档说明](../../knowledge/linux/object_lifetime/devres/devres_API说明.md)
-      - 🔴 [内核资源管理与用户态设备管理的全景与对比](../../knowledge/linux/object_lifetime/devres/devres_旧机制_udev_mdev的讨论.md)
-    - 🔴 [Linux 对象生命周期集成专题](../../knowledge/linux/object_lifetime/integration/大纲.md)
-      - 章节评审：1 章未评审
-      - 🔴 [P01 kobject device devres kref 生命周期集成](../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md)
-    - 🟢 [kref 引用计数机制](../../knowledge/linux/object_lifetime/kref/大纲.md)
-      - 章节评审：15 章完成
-      - 🟢 [P01 kref 要解决什么问题](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)
-      - 🟢 [P02 源码入口与结构定义](../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md)
-      - 🟢 [P03 kref 生命周期状态机](../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md)
-      - 🟢 [P04 kref 三条核心规则](../../knowledge/linux/object_lifetime/kref/P04_kref_三条核心规则.md)
-      - 🟢 [P05 基础 API 源码逐行讲解](../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md)
-      - 🟢 [P06 release 回调与复杂销毁模式](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md)
-      - 🟢 [P07 handoff 所有权转移模型](../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md)
-      - 🟢 [P08 lookup 场景与 kref get unless zero()](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md)
-      - 🟢 [P09 kref 与锁的组合](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md)
-      - 🟢 [P10 kref 与 RCU](../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md)
-      - 🟢 [P11 kref refcount t kobject 的边界](../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md)
-      - 🟢 [P12 典型错误模式与调试线索](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md)
-      - 🟢 [P13 工程模板](../../knowledge/linux/object_lifetime/kref/P13_工程模板.md)
-      - 🟢 [P14 源码阅读实验](../../knowledge/linux/object_lifetime/kref/P14_源码阅读实验.md)
-      - 🟢 [P15 最终验收标准](../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md)
-  - 🔴 [Linux 同步机制](../../knowledge/linux/synchronization/大纲.md)
-    - 🔴 [并发与竞争专题迁移地图](../../knowledge/linux/synchronization/concurrency_and_competition/大纲.md)
-    - 🟡 [Linux Lockdep 专题](../../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)
-      - 章节评审：9 章已完成人工通读和批注，重构后待复核
-      - 🟡 [P01 为什么需要 Lockdep](../../knowledge/linux/synchronization/lockdep/P01_为什么需要_Lockdep.md)
-        - 🟡 当前评审点
-          - [1.1 单把锁正确不等于锁协议正确](../../knowledge/linux/synchronization/lockdep/P01_为什么需要_Lockdep.md#1.1_单把锁正确不等于锁协议正确)
-          - [1.4 中断里的锁究竟是什么意思](../../knowledge/linux/synchronization/lockdep/P01_为什么需要_Lockdep.md#1.4_中断里的锁究竟是什么意思)
-      - 🟡 [P02 Lockdep 抽象模型与证明边界](../../knowledge/linux/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md)
-        - 🟡 当前评审点
-          - [2.1 先从要证明的问题反推状态](../../knowledge/linux/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md#2.1_先从要证明的问题反推状态)
-          - [2.4 S0 到 S6 的端到端周期](../../knowledge/linux/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md#2.4_S0到S6的端到端周期)
-      - 🟡 [P03 锁实例、锁类、key 与 subclass](../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md)
-        - 🟡 当前评审点
-          - [3.3 dep_map 由什么配置提供](../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.3_dep_map由什么配置提供)
-          - [3.7 完整层级示例为何需要 subclass](../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.7_完整层级示例为何需要subclass)
-      - 🟡 [P04 持锁账本、依赖图与状态闭环](../../knowledge/linux/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md)
-      - 🟡 [P05 递归、依赖环、IRQ 与读写规则](../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md)
-        - 🟡 重构后复核点
-          - [5.1 先明确闭环搜索要回答什么](../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.1_先明确闭环搜索要回答什么)
-          - [5.4 hardirq 场景不是在中断里等 mutex](../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.4_hardirq场景不是在中断里等mutex)
-      - 🟡 [P06 查询、断言、pin 与自定义原语接入](../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md)
-        - 🟡 重构后复核点
-          - [6.4 断言把隐含前置条件放到被调函数](../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.4_断言把隐含前置条件放到被调函数)
-      - 🟡 [P07 RCU 与子系统检查适配](../../knowledge/linux/synchronization/lockdep/P07_RCU与子系统检查适配.md)
-      - 🟡 [P08 配置、报告解读与验证方法](../../knowledge/linux/synchronization/lockdep/P08_配置_报告解读与验证方法.md)
-      - 🟡 [P09 成本、覆盖边界与工程选择](../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md)
-    - 🔴 [Linux 锁机制专题](../../knowledge/linux/synchronization/locks/大纲.md)
-      - 章节评审：2 章未评审
-      - 🔴 [P01 自旋锁](../../knowledge/linux/synchronization/locks/P01_自旋锁.md)
-      - 🔴 [P02 互斥锁与读写信号量](../../knowledge/linux/synchronization/locks/P02_互斥锁与读写信号量.md)
-    - 🔴 [RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md)
-      - 章节评审：28 章未评审
-      - 🔴 [P01 为什么需要 RCU](../../knowledge/linux/synchronization/rcu/P01_为什么需要_RCU.md)
-      - 🔴 [P02 RCU 抽象机制推演](../../knowledge/linux/synchronization/rcu/P02_RCU_抽象机制推演.md)
-      - 🔴 [P03 RCU 通用 API 与最小使用闭环](../../knowledge/linux/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md)
-      - 🔴 [P04 RCU、kref 与复合对象生命周期](../../knowledge/linux/synchronization/rcu/P04_RCU_kref与复合对象生命周期.md)
-      - 🔴 [P05 非抢占式 Tree RCU 的问题与证明模型](../../knowledge/linux/synchronization/rcu/P05_非抢占式_Tree_RCU_问题与证明模型.md)
-      - 🔴 [P06 非抢占式 Tree RCU 源码同步机制](../../knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md)
-      - 🔴 [P07 抢占式 Tree RCU 的问题与任务跟踪模型](../../knowledge/linux/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md)
-      - 🔴 [P08 抢占式 Tree RCU 源码同步机制](../../knowledge/linux/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md)
-      - 🔴 [P09 RCU 机制完善：硬件与运行约束](../../knowledge/linux/synchronization/rcu/P09_RCU_机制完善_硬件与运行约束.md)
-      - 🔴 [P10 Tree RCU 统一状态与通知总图](../../knowledge/linux/synchronization/rcu/P10_Tree_RCU_统一状态与通知总图.md)
-      - 🔴 [P11 Tree RCU 初始化、拓扑与执行上下文](../../knowledge/linux/synchronization/rcu/P11_Tree_RCU_初始化_拓扑与执行上下文.md)
-      - 🔴 [P12 Tree RCU GP 请求与全局生命周期](../../knowledge/linux/synchronization/rcu/P12_Tree_RCU_GP请求与全局生命周期.md)
-      - 🔴 [P13 Tree RCU QS、EQS 与 Context Tracking](../../knowledge/linux/synchronization/rcu/P13_Tree_RCU_QS_EQS与Context_Tracking.md)
-      - 🔴 [P14 Tree RCU rcu_node 树与分层汇聚](../../knowledge/linux/synchronization/rcu/P14_Tree_RCU_rcu_node树与分层汇聚.md)
-      - 🔴 [P15 Tree RCU force-QS、迟延与 Stall](../../knowledge/linux/synchronization/rcu/P15_Tree_RCU_force_QS迟延与Stall.md)
-      - 🔴 [P16 Tree RCU Expedited GP](../../knowledge/linux/synchronization/rcu/P16_Tree_RCU_Expedited_GP.md)
-      - 🔴 [P17 Tree RCU rcu_segcblist 回调状态机](../../knowledge/linux/synchronization/rcu/P17_Tree_RCU_rcu_segcblist回调状态机.md)
-      - 🔴 [P18 Tree RCU 回调执行、批处理与限流](../../knowledge/linux/synchronization/rcu/P18_Tree_RCU_回调执行_批处理与限流.md)
-      - 🔴 [P19 Tree RCU NOCB 回调卸载](../../knowledge/linux/synchronization/rcu/P19_Tree_RCU_NOCB回调卸载.md)
-      - 🔴 [P20 Tree RCU 同步等待与 rcu_barrier](../../knowledge/linux/synchronization/rcu/P20_Tree_RCU_同步等待与rcu_barrier.md)
-      - 🔴 [P21 Tree RCU CPU 热插拔与回调迁移](../../knowledge/linux/synchronization/rcu/P21_Tree_RCU_CPU热插拔与回调迁移.md)
-      - 🔴 [P22 RCU 实现家族与内核配置](../../knowledge/linux/synchronization/rcu/P22_RCU_实现家族与内核配置.md)
-      - 🔴 [P23 SRCU 私有域与双 index 状态机](../../knowledge/linux/synchronization/rcu/P23_SRCU_私有域与双_index_状态机.md)
-      - 🔴 [P24 Tasks RCU 与 Tiny RCU 实现边界](../../knowledge/linux/synchronization/rcu/P24_Tasks_RCU与Tiny_RCU实现边界.md)
-      - 🔴 [P25 RCU 驱动与子系统应用模式](../../knowledge/linux/synchronization/rcu/P25_RCU_驱动与子系统应用模式.md)
-      - 🔴 [P26 RCU 类型语义、Sparse 与 Lockdep](../../knowledge/linux/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md)
-      - 🔴 [P27 RCU 调试、验证与集成误用](../../knowledge/linux/synchronization/rcu/P27_RCU_调试验证与集成误用.md)
-      - 🔴 [P28 RCU 内存序、误用与选择边界](../../knowledge/linux/synchronization/rcu/P28_RCU_内存序_误用与选择边界.md)
-    - 🔴 [序列计数器专题](../../knowledge/linux/synchronization/sequence_counters/大纲.md)
-      - 章节评审：1 章未评审
-      - 🔴 [P01 seqcount seqlock 读重试快照机制](../../knowledge/linux/synchronization/sequence_counters/P01_seqcount_seqlock_读重试快照机制.md)
-  - 时间管理
-    - 🔴 [驱动中的 时间问题 概述](../../knowledge/linux/time_management/定时器简介/大纲.md)
-      - 章节评审：13 章未评审
-      - 🔴 [P01 驱动中的 时间问题 概述](../../knowledge/linux/time_management/定时器简介/P01_驱动中的_时间问题_概述.md)
-      - 🔴 [P02 Linux 时间基础与 timekeeping 框架速览](../../knowledge/linux/time_management/定时器简介/P02_Linux_时间基础与_timekeeping_框架速览.md)
-      - 🔴 [P03 时间表示与转换接口详解](../../knowledge/linux/time_management/定时器简介/P03_时间表示与转换接口详解.md)
-      - 🔴 [P04 基础定时器机制 struct timer list](../../knowledge/linux/time_management/定时器简介/P04_基础定时器机制_struct_timer_list.md)
-      - 🔴 [P05 高精度定时器 hrtimer 的驱动用法](../../knowledge/linux/time_management/定时器简介/P05_高精度定时器_hrtimer_的驱动用法.md)
-      - 🔴 [P06 基于工作队列的延迟执行 delayed work](../../knowledge/linux/time_management/定时器简介/P06_基于工作队列的延迟执行_delayed_work.md)
-      - 🔴 [P07 睡眠与超时调度接口](../../knowledge/linux/time_management/定时器简介/P07_睡眠与超时调度接口.md)
-      - 🔴 [P08 忙等待与短延时 udelay() ndelay() 的边界](../../knowledge/linux/time_management/定时器简介/P08_忙等待与短延时_udelay%28%29_ndelay%28%29_的边界.md)
-      - 🔴 [P09 时间与设备树平台数据的对接](../../knowledge/linux/time_management/定时器简介/P09_时间与设备树平台数据的对接.md)
-      - 🔴 [P10 与 devres 驱动生命周期和 PM 的关系](../../knowledge/linux/time_management/定时器简介/P10_与_devres_驱动生命周期和_PM_的关系.md)
-      - 🔴 [P11 电源管理 系统挂起与定时唤醒](../../knowledge/linux/time_management/定时器简介/P11_电源管理_系统挂起与定时唤醒.md)
-      - 🔴 [P12 常用模式与代码模板](../../knowledge/linux/time_management/定时器简介/P12_常用模式与代码模板.md)
-      - 🔴 [P13 调试 验证与常见陷阱](../../knowledge/linux/time_management/定时器简介/P13_调试_验证与常见陷阱.md)
-  - 🔴 [等待队列与完成量专题](../../knowledge/linux/waiting_notification/大纲.md)
-    - 章节评审：2 章未评审
-    - 🔴 [P01 等待队列](../../knowledge/linux/waiting_notification/P01_等待队列.md)
-    - 🔴 [P02 完成量 completion](../../knowledge/linux/waiting_notification/P02_completion_完成量.md)
+    - 内核架构
+        - 内核组成
+            - 🔴 [linux内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)
+        - 模块与设备节点
+            - 🔴 [模块与设备节点基础](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)
+            - 🔴 [设备号与设备节点 从 0 到多实例](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作基础.md)
+            - 🔴 [走进驱动的 Makefile](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_驱动开发_Makefile_指南.md)
+        - 源码树
+            - 🔴 [/arch](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)
+    - 数据结构
+        - 🔴 [Linux内核链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)
+            - 章节评审：9 章未评审
+            - 🔴 [P01 概念、定位与底层实现](../../knowledge/linux/data_structures/单链表_linked_list/P01_概念_定位与底层实现.md)
+            - 🔴 [P02 初始化与基本操作](../../knowledge/linux/data_structures/单链表_linked_list/P02_初始化与基本操作.md)
+            - 🔴 [P03 并发原语与原子性](../../knowledge/linux/data_structures/单链表_linked_list/P03_并发原语与原子性.md)
+            - 🔴 [P04 一次性初始化](../../knowledge/linux/data_structures/单链表_linked_list/P04_一次性初始化.md)
+            - 🔴 [P05 接口、示例与注意事项](../../knowledge/linux/data_structures/单链表_linked_list/P05_接口_示例与注意事项.md)
+            - 🔴 [P06 调试与验证](../../knowledge/linux/data_structures/单链表_linked_list/P06_调试与验证.md)
+            - 🔴 [P07 总结与学习资源](../../knowledge/linux/data_structures/单链表_linked_list/P07_总结与学习资源.md)
+            - 🔴 [P08 高级应用](../../knowledge/linux/data_structures/单链表_linked_list/P08_高级应用.md)
+            - 🔴 [P09 优化与总结](../../knowledge/linux/data_structures/单链表_linked_list/P09_优化与总结.md)
+        - 哈希表
+            - P01 数据结构理论基础
+                - 🔴 [P01 哈希表核心原理 空间与时间的终极博弈](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)
+            - P02 Linux 内核 5.10 核心实现
+                - 🔴 [P02 内核基石 hlist非对称链表](../../knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md)
+                - 🔴 [P03 算法之魂 哈希函数与位运算优化](../../knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P03_算法之魂_哈希函数与位运算优化.md)
+            - P03 高级进阶与性能调优
+                - 🔴 [P04 并发保护与RCU机制 多核下的读写博弈](../../knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P04_并发保护与RCU机制_多核下的读写博弈.md)
+                - 🔴 [P05 动态伸缩的rhashtable 无感扩容的艺术](../../knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P05_动态伸缩的rhashtable_无感扩容的艺术.md)
+            - P04 内核实战与应用
+                - 🔴 [P06 哈希表在内核子系统中的影子(深度拆解篇)](../../knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P06_哈希表在内核子系统中的影子%28深度拆解篇%29.md)
+                - 🔴 [P07 内核模块实战指南](../../knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P07_内核模块实战指南.md)
+        - 🟢 [红黑树学习路线](../../knowledge/linux/data_structures/红黑树_rb-tree/大纲.md)
+            - 章节评审：15 章完成
+            - 🟢 [P01 树的基本概念](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md)
+            - 🟢 [P02 二叉树](../../knowledge/linux/data_structures/红黑树_rb-tree/P02_二叉树.md)
+            - 🟢 [P03 二叉搜索树 BST](../../knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md)
+            - 🟢 [P04 为什么 BST 会退化](../../knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md)
+            - 🟢 [P05 旋转的作用与局部重排](../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md)
+            - 🟢 [P06 2-3-4 树 从多路平衡到红黑树的结构桥梁](../../knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md)
+            - 🟢 [P07 红黑树 把 2-3-4 树映射成二叉表示](../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md)
+            - 🟢 [P08 Linux 6.12 内核 rbtree 基础结构与工程模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md)
+            - 🟢 [P09 Linux 6.12 内核 rbtree 嵌入式节点与使用者接口](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md)
+            - 🟢 [P10 Linux 6.12 内核 rbtree 查找 插入与旋转修复](../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md)
+            - 🟢 [P11 Linux 6.12 内核 rbtree 删除 遍历与替换](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md)
+            - 🟢 [P12 Linux 6.12 内核 rbtree 工程扩展 并发与验证](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md)
+            - 🟢 [P13 再扩展到 B 树与 B+ 树](../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md)
+            - 🟢 [P14 Maple Tree 与 VMA 管理](../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md)
+            - 🟢 [P15 Linux 6.12 Maple Tree 源码结构与 API 分层](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md)
+    - 🔴 [Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)
+        - 章节评审：16 章未评审
+        - 🔴 [P01 为什么需要 Linux 设备模型](../../knowledge/linux/device_model/P01_为什么需要设备模型.md)
+        - 🔴 [P02 设备模型抽象机制推演](../../knowledge/linux/device_model/P02_设备模型抽象机制推演.md)
+        - 🔴 [P03 设备模型机制完善：生命周期、并发与失败](../../knowledge/linux/device_model/P03_机制完善_生命周期并发与失败.md)
+        - 🔴 [P04 Driver Core 状态拓扑](../../knowledge/linux/device_model/P04_Driver_Core状态拓扑.md)
+        - 🔴 [P05 kobject、kset 与 sysfs 对象树](../../knowledge/linux/device_model/P05_kobject_kset与sysfs对象树.md)
+        - 🔴 [P06 device 注册与生命周期](../../knowledge/linux/device_model/P06_device注册与生命周期.md)
+        - 🔴 [P07 bus 与 driver 注册](../../knowledge/linux/device_model/P07_bus与driver注册.md)
+        - 🔴 [P08 匹配、绑定与 probe 状态机](../../knowledge/linux/device_model/P08_匹配绑定与probe状态机.md)
+        - 🔴 [P09 Deferred Probe、解绑与 remove](../../knowledge/linux/device_model/P09_deferred_probe解绑与remove.md)
+        - 🔴 [P10 fwnode、OF 与 Platform 适配](../../knowledge/linux/device_model/P10_fwnode_OF与Platform适配.md)
+        - 🔴 [P11 class、sysfs、uevent 与 modalias](../../knowledge/linux/device_model/P11_class_sysfs_uevent与modalias.md)
+        - 🔴 [P12 devres 资源事务](../../knowledge/linux/device_model/P12_devres资源事务.md)
+        - 🔴 [P13 device link 与电源管理](../../knowledge/linux/device_model/P13_device_link与电源管理.md)
+        - 🔴 [P14 热插拔与模块生命周期](../../knowledge/linux/device_model/P14_热插拔与模块生命周期.md)
+        - 🔴 [P15 复合设备、MFD 与 Component](../../knowledge/linux/device_model/P15_复合设备_MFD与Component.md)
+        - 🔴 [P16 设备模型 API、调试与选择边界](../../knowledge/linux/device_model/P16_API调试与选择边界.md)
+    - 错误处理
+        - 🔴 [模块 Linux 内核错误指针机制(Error Pointer System)](../../knowledge/linux/error_handling/error_pointer/readme.md)
+            - 🔴 [错误指针机制概述与设计哲学](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)
+    - I/O 模型
+        - 🔴 [异步通知全景与知识地图](../../knowledge/linux/io_model/async_notification/大纲.md)
+            - 章节评审：13 章未评审
+            - 🔴 [P01 异步通知全景与知识地图](../../knowledge/linux/io_model/async_notification/P01_异步通知全景与知识地图.md)
+            - 🔴 [P02 Linux IO 与信号机制基础](../../knowledge/linux/io_model/async_notification/P02_Linux_IO_与信号机制基础.md)
+            - 🔴 [P03 fasync 机制的历史与设计动机](../../knowledge/linux/io_model/async_notification/P03_fasync_机制的历史与设计动机.md)
+            - 🔴 [P04 内核视角 核心数据结构与控制路径](../../knowledge/linux/io_model/async_notification/P04_内核视角_核心数据结构与控制路径.md)
+            - 🔴 [P05 VFS 与文件系统中的异步通知支持](../../knowledge/linux/io_model/async_notification/P05_VFS_与文件系统中的异步通知支持.md)
+            - 🔴 [P06 字符设备中实现异步通知的基础模式](../../knowledge/linux/io_model/async_notification/P06_字符设备中实现异步通知的基础模式.md)
+            - 🔴 [P07 中断驱动设备的异步通知实践](../../knowledge/linux/io_model/async_notification/P07_中断驱动设备的异步通知实践.md)
+            - 🔴 [P08 流式设备与高级场景中的异步通知](../../knowledge/linux/io_model/async_notification/P08_流式设备与高级场景中的异步通知.md)
+            - 🔴 [P09 用户态编程 从 SIGIO 到 signalfdepoll](../../knowledge/linux/io_model/async_notification/P09_用户态编程_从_SIGIO_到_signalfdepoll.md)
+            - 🔴 [P10 并发 竞态与内存可见性问题](../../knowledge/linux/io_model/async_notification/P10_并发_竞态与内存可见性问题.md)
+            - 🔴 [P11 调试 排错与性能分析](../../knowledge/linux/io_model/async_notification/P11_调试_排错与性能分析.md)
+            - 🔴 [P12 fasync 与其他通知机制的对比与整合](../../knowledge/linux/io_model/async_notification/P12_fasync_与其他通知机制的对比与整合.md)
+            - 🔴 [P13 工程实践案例与编码核对表](../../knowledge/linux/io_model/async_notification/P13_工程实践案例与编码核对表.md)
+        - 阻塞 I/O
+            - 🔴 [poll 机制 从用户等待到驱动唤醒的完整链路](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)
+        - 🔴 [Linux DMA 一致性专题](../../knowledge/linux/io_model/dma/大纲.md)
+            - 章节评审：1 章未评审
+            - 🔴 [P01 DMA 映射同步与门铃顺序](../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md)
+        - 🔴 [Linux MMIO 顺序专题](../../knowledge/linux/io_model/mmio/大纲.md)
+            - 章节评审：1 章未评审
+            - 🔴 [P01 MMIO 访问顺序与屏障](../../knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md)
+    - 🔴 [Linux 内存顺序专题](../../knowledge/linux/memory_ordering/大纲.md)
+        - 章节评审：10 章未评审
+        - 🔴 [P01 READ WRITE ONCE 与 SMP 内存顺序原语](../../knowledge/linux/memory_ordering/P01_READ_WRITE_ONCE_与_SMP_内存顺序原语.md)
+        - 🔴 [P02 编译器共享访问与 READ WRITE ONCE](../../knowledge/linux/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md)
+        - 🔴 [P03 Linux SMP 屏障与顺序域](../../knowledge/linux/memory_ordering/P03_Linux_SMP屏障与顺序域.md)
+        - 🔴 [P04 release acquire 发布协议](../../knowledge/linux/memory_ordering/P04_release_acquire_发布协议.md)
+        - 🔴 [P05 数据依赖、控制依赖与 RCU 取得](../../knowledge/linux/memory_ordering/P05_数据依赖_控制依赖与RCU取得.md)
+        - 🔴 [P06 原子 RMW、顺序后缀与条件成功](../../knowledge/linux/memory_ordering/P06_原子RMW_顺序后缀与条件成功.md)
+        - 🔴 [P07 锁、调度、中断与隐式顺序](../../knowledge/linux/memory_ordering/P07_锁_调度_中断与隐式顺序.md)
+        - 🔴 [P08 LKMM 事件、关系与一致性判定](../../knowledge/linux/memory_ordering/P08_LKMM事件_关系与一致性判定.md)
+        - 🔴 [P09 Litmus、形式验证与硬件实验](../../knowledge/linux/memory_ordering/P09_Litmus_形式验证与硬件实验.md)
+        - 🔴 [P10 子系统边界、误用诊断与选型](../../knowledge/linux/memory_ordering/P10_子系统边界_误用诊断与选型.md)
+    - 对象生命周期
+        - devres
+            - 🔴 [devm API接口文档说明](../../knowledge/linux/object_lifetime/devres/devres_API说明.md)
+            - 🔴 [内核资源管理与用户态设备管理的全景与对比](../../knowledge/linux/object_lifetime/devres/devres_旧机制_udev_mdev的讨论.md)
+        - 🔴 [Linux 对象生命周期集成专题](../../knowledge/linux/object_lifetime/integration/大纲.md)
+            - 章节评审：1 章未评审
+            - 🔴 [P01 kobject device devres kref 生命周期集成](../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md)
+        - 🟢 [kref 引用计数机制](../../knowledge/linux/object_lifetime/kref/大纲.md)
+            - 章节评审：15 章完成
+            - 🟢 [P01 kref 要解决什么问题](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)
+            - 🟢 [P02 源码入口与结构定义](../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md)
+            - 🟢 [P03 kref 生命周期状态机](../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md)
+            - 🟢 [P04 kref 三条核心规则](../../knowledge/linux/object_lifetime/kref/P04_kref_三条核心规则.md)
+            - 🟢 [P05 基础 API 源码逐行讲解](../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md)
+            - 🟢 [P06 release 回调与复杂销毁模式](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md)
+            - 🟢 [P07 handoff 所有权转移模型](../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md)
+            - 🟢 [P08 lookup 场景与 kref get unless zero()](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md)
+            - 🟢 [P09 kref 与锁的组合](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md)
+            - 🟢 [P10 kref 与 RCU](../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md)
+            - 🟢 [P11 kref refcount t kobject 的边界](../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md)
+            - 🟢 [P12 典型错误模式与调试线索](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md)
+            - 🟢 [P13 工程模板](../../knowledge/linux/object_lifetime/kref/P13_工程模板.md)
+            - 🟢 [P14 源码阅读实验](../../knowledge/linux/object_lifetime/kref/P14_源码阅读实验.md)
+            - 🟢 [P15 最终验收标准](../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md)
+    - 🔴 [Linux 同步机制](../../knowledge/linux/synchronization/大纲.md)
+        - 🔴 [并发与竞争专题迁移地图](../../knowledge/linux/synchronization/concurrency_and_competition/大纲.md)
+        - 🟡 [Linux Lockdep 专题](../../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)
+            - 章节评审：9 章已完成人工通读和批注，重构后待复核
+            - 🟡 [P01 为什么需要 Lockdep](../../knowledge/linux/synchronization/lockdep/P01_为什么需要_Lockdep.md)
+                - 🟡 当前评审点
+                    - [1.1 从两条局部正确路径得到全局矛盾](../../knowledge/linux/synchronization/lockdep/P01_为什么需要_Lockdep.md#1.1_从两条局部正确路径得到全局矛盾)
+                    - [1.4 IRQ 抢占把执行上下文加入同一条证明链](../../knowledge/linux/synchronization/lockdep/P01_为什么需要_Lockdep.md#1.4_IRQ抢占把执行上下文加入同一条证明链)
+            - 🟡 [P02 Lockdep 抽象模型与证明边界](../../knowledge/linux/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md)
+                - 🟡 当前评审点
+                    - [2.1 先从要证明的问题反推状态](../../knowledge/linux/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md#2.1_先从要证明的问题反推状态)
+                    - [2.4 S0 到 S6 的端到端周期](../../knowledge/linux/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md#2.4_S0到S6的端到端周期)
+            - 🟡 [P03 锁实例、锁类、key 与 subclass](../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md)
+                - 🟡 当前评审点
+                    - [3.3 dep_map 由什么配置提供](../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.3_dep_map由什么配置提供)
+                    - [3.7 完整层级示例为何需要 subclass](../../knowledge/linux/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.7_完整层级示例为何需要subclass)
+            - 🟡 [P04 持锁账本、依赖图与状态闭环](../../knowledge/linux/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md)
+            - 🟡 [P05 递归、依赖环、IRQ 与读写规则](../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md)
+                - 🟡 重构后复核点
+                    - [5.1 先明确闭环搜索要回答什么](../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.1_先明确闭环搜索要回答什么)
+                    - [5.4 hardirq 场景不是在中断里等 mutex](../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.4_hardirq场景不是在中断里等mutex)
+            - 🟡 [P06 查询、断言、pin 与自定义原语接入](../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md)
+                - 🟡 重构后复核点
+                    - [6.4 断言把隐含前置条件放到被调函数](../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.4_断言把隐含前置条件放到被调函数)
+            - 🟡 [P07 RCU 与子系统检查适配](../../knowledge/linux/synchronization/lockdep/P07_RCU与子系统检查适配.md)
+            - 🟡 [P08 配置、亲手实验与报告解读](../../knowledge/linux/synchronization/lockdep/P08_配置_亲手实验与报告解读.md)
+            - 🟡 [P09 成本、覆盖边界与工程选择](../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md)
+        - 🔴 [Linux 锁机制专题](../../knowledge/linux/synchronization/locks/大纲.md)
+            - 章节评审：2 章未评审
+            - 🔴 [P01 自旋锁](../../knowledge/linux/synchronization/locks/P01_自旋锁.md)
+            - 🔴 [P02 互斥锁与读写信号量](../../knowledge/linux/synchronization/locks/P02_互斥锁与读写信号量.md)
+        - 🔴 [RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md)
+            - 章节评审：28 章未评审
+            - 🔴 [P01 为什么需要 RCU](../../knowledge/linux/synchronization/rcu/P01_为什么需要_RCU.md)
+            - 🔴 [P02 RCU 抽象机制推演](../../knowledge/linux/synchronization/rcu/P02_RCU_抽象机制推演.md)
+            - 🔴 [P03 RCU 通用 API 与最小使用闭环](../../knowledge/linux/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md)
+            - 🔴 [P04 RCU、kref 与复合对象生命周期](../../knowledge/linux/synchronization/rcu/P04_RCU_kref与复合对象生命周期.md)
+            - 🔴 [P05 非抢占式 Tree RCU 的问题与证明模型](../../knowledge/linux/synchronization/rcu/P05_非抢占式_Tree_RCU_问题与证明模型.md)
+            - 🔴 [P06 非抢占式 Tree RCU 源码同步机制](../../knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md)
+            - 🔴 [P07 抢占式 Tree RCU 的问题与任务跟踪模型](../../knowledge/linux/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md)
+            - 🔴 [P08 抢占式 Tree RCU 源码同步机制](../../knowledge/linux/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md)
+            - 🔴 [P09 RCU 机制完善：硬件与运行约束](../../knowledge/linux/synchronization/rcu/P09_RCU_机制完善_硬件与运行约束.md)
+            - 🔴 [P10 Tree RCU 统一状态与通知总图](../../knowledge/linux/synchronization/rcu/P10_Tree_RCU_统一状态与通知总图.md)
+            - 🔴 [P11 Tree RCU 初始化、拓扑与执行上下文](../../knowledge/linux/synchronization/rcu/P11_Tree_RCU_初始化_拓扑与执行上下文.md)
+            - 🔴 [P12 Tree RCU GP 请求与全局生命周期](../../knowledge/linux/synchronization/rcu/P12_Tree_RCU_GP请求与全局生命周期.md)
+            - 🔴 [P13 Tree RCU QS、EQS 与 Context Tracking](../../knowledge/linux/synchronization/rcu/P13_Tree_RCU_QS_EQS与Context_Tracking.md)
+            - 🔴 [P14 Tree RCU rcu_node 树与分层汇聚](../../knowledge/linux/synchronization/rcu/P14_Tree_RCU_rcu_node树与分层汇聚.md)
+            - 🔴 [P15 Tree RCU force-QS、迟延与 Stall](../../knowledge/linux/synchronization/rcu/P15_Tree_RCU_force_QS迟延与Stall.md)
+            - 🔴 [P16 Tree RCU Expedited GP](../../knowledge/linux/synchronization/rcu/P16_Tree_RCU_Expedited_GP.md)
+            - 🔴 [P17 Tree RCU rcu_segcblist 回调状态机](../../knowledge/linux/synchronization/rcu/P17_Tree_RCU_rcu_segcblist回调状态机.md)
+            - 🔴 [P18 Tree RCU 回调执行、批处理与限流](../../knowledge/linux/synchronization/rcu/P18_Tree_RCU_回调执行_批处理与限流.md)
+            - 🔴 [P19 Tree RCU NOCB 回调卸载](../../knowledge/linux/synchronization/rcu/P19_Tree_RCU_NOCB回调卸载.md)
+            - 🔴 [P20 Tree RCU 同步等待与 rcu_barrier](../../knowledge/linux/synchronization/rcu/P20_Tree_RCU_同步等待与rcu_barrier.md)
+            - 🔴 [P21 Tree RCU CPU 热插拔与回调迁移](../../knowledge/linux/synchronization/rcu/P21_Tree_RCU_CPU热插拔与回调迁移.md)
+            - 🔴 [P22 RCU 实现家族与内核配置](../../knowledge/linux/synchronization/rcu/P22_RCU_实现家族与内核配置.md)
+            - 🔴 [P23 SRCU 私有域与双 index 状态机](../../knowledge/linux/synchronization/rcu/P23_SRCU_私有域与双_index_状态机.md)
+            - 🔴 [P24 Tasks RCU 与 Tiny RCU 实现边界](../../knowledge/linux/synchronization/rcu/P24_Tasks_RCU与Tiny_RCU实现边界.md)
+            - 🔴 [P25 RCU 驱动与子系统应用模式](../../knowledge/linux/synchronization/rcu/P25_RCU_驱动与子系统应用模式.md)
+            - 🔴 [P26 RCU 类型语义、Sparse 与 Lockdep](../../knowledge/linux/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md)
+            - 🔴 [P27 RCU 调试、验证与集成误用](../../knowledge/linux/synchronization/rcu/P27_RCU_调试验证与集成误用.md)
+            - 🔴 [P28 RCU 内存序、误用与选择边界](../../knowledge/linux/synchronization/rcu/P28_RCU_内存序_误用与选择边界.md)
+        - 🔴 [序列计数器专题](../../knowledge/linux/synchronization/sequence_counters/大纲.md)
+            - 章节评审：1 章未评审
+            - 🔴 [P01 seqcount seqlock 读重试快照机制](../../knowledge/linux/synchronization/sequence_counters/P01_seqcount_seqlock_读重试快照机制.md)
+    - 时间管理
+        - 🔴 [驱动中的 时间问题 概述](../../knowledge/linux/time_management/定时器简介/大纲.md)
+            - 章节评审：13 章未评审
+            - 🔴 [P01 驱动中的 时间问题 概述](../../knowledge/linux/time_management/定时器简介/P01_驱动中的_时间问题_概述.md)
+            - 🔴 [P02 Linux 时间基础与 timekeeping 框架速览](../../knowledge/linux/time_management/定时器简介/P02_Linux_时间基础与_timekeeping_框架速览.md)
+            - 🔴 [P03 时间表示与转换接口详解](../../knowledge/linux/time_management/定时器简介/P03_时间表示与转换接口详解.md)
+            - 🔴 [P04 基础定时器机制 struct timer list](../../knowledge/linux/time_management/定时器简介/P04_基础定时器机制_struct_timer_list.md)
+            - 🔴 [P05 高精度定时器 hrtimer 的驱动用法](../../knowledge/linux/time_management/定时器简介/P05_高精度定时器_hrtimer_的驱动用法.md)
+            - 🔴 [P06 基于工作队列的延迟执行 delayed work](../../knowledge/linux/time_management/定时器简介/P06_基于工作队列的延迟执行_delayed_work.md)
+            - 🔴 [P07 睡眠与超时调度接口](../../knowledge/linux/time_management/定时器简介/P07_睡眠与超时调度接口.md)
+            - 🔴 [P08 忙等待与短延时 udelay() ndelay() 的边界](../../knowledge/linux/time_management/定时器简介/P08_忙等待与短延时_udelay%28%29_ndelay%28%29_的边界.md)
+            - 🔴 [P09 时间与设备树平台数据的对接](../../knowledge/linux/time_management/定时器简介/P09_时间与设备树平台数据的对接.md)
+            - 🔴 [P10 与 devres 驱动生命周期和 PM 的关系](../../knowledge/linux/time_management/定时器简介/P10_与_devres_驱动生命周期和_PM_的关系.md)
+            - 🔴 [P11 电源管理 系统挂起与定时唤醒](../../knowledge/linux/time_management/定时器简介/P11_电源管理_系统挂起与定时唤醒.md)
+            - 🔴 [P12 常用模式与代码模板](../../knowledge/linux/time_management/定时器简介/P12_常用模式与代码模板.md)
+            - 🔴 [P13 调试 验证与常见陷阱](../../knowledge/linux/time_management/定时器简介/P13_调试_验证与常见陷阱.md)
+    - 🔴 [等待队列与完成量专题](../../knowledge/linux/waiting_notification/大纲.md)
+        - 章节评审：2 章未评审
+        - 🔴 [P01 等待队列](../../knowledge/linux/waiting_notification/P01_等待队列.md)
+        - 🔴 [P02 完成量 completion](../../knowledge/linux/waiting_notification/P02_completion_完成量.md)
 - 系统软件
-  - 🔴 [Buildroot](../../knowledge/system_software/buildroot/P00_全书学习地图.md)
-    - 章节评审：13 章未评审
-    - 🔴 [P01 引言与基础](../../knowledge/system_software/buildroot/P01_引言与基础.md)
-    - 🔴 [P02 工具链的构建流程概览](../../knowledge/system_software/buildroot/P02_工具链的构建流程概览.md)
-    - 🔴 [P03 外部工具链的使用](../../knowledge/system_software/buildroot/P03_外部工具链的使用.md)
-    - 🔴 [P04 工具链的调试与问题排查](../../knowledge/system_software/buildroot/P04_工具链的调试与问题排查.md)
-    - 🔴 [P05 文件系统构建与定制](../../knowledge/system_software/buildroot/P05_文件系统构建与定制.md)
-    - 🔴 [P06 包集成与系统服务](../../knowledge/system_software/buildroot/P06_包集成与系统服务.md)
-    - 🔴 [P07 镜像生成与部署](../../knowledge/system_software/buildroot/P07_镜像生成与部署.md)
-    - 🔴 [P08 高级定制与集成](../../knowledge/system_software/buildroot/P08_高级定制与集成.md)
-    - 🔴 [P09 包开发与维护](../../knowledge/system_software/buildroot/P09_包开发与维护.md)
-    - 🔴 [P10 镜像生成与部署](../../knowledge/system_software/buildroot/P10_镜像生成与部署.md)
-    - 🔴 [P11 调试与问题排查](../../knowledge/system_software/buildroot/P11_调试与问题排查.md)
-    - 🔴 [P12 高级主题](../../knowledge/system_software/buildroot/P12_高级主题.md)
-    - 🔴 [P13 附录](../../knowledge/system_software/buildroot/P13_附录.md)
-  - Kconfig
-    - 🔴 [基本结构与类型定义](../../knowledge/system_software/kconfig/基础语法.md)
-  - 链接脚本
-    - 🔴 [链接脚本基础结构与核心语法](../../knowledge/system_software/linker/lds_基础语法.md)
-  - 🟢 U-Boot
-    - 材料评审：2 篇完成
-    - 🟢 [阅读说明](../../knowledge/system_software/uboot/uboot-makefile.md)
-    - 🟢 [SPL和main构建的时候 是如何区分对应的函数不会冲突的](../../knowledge/system_software/uboot/uboot提问.md)
+    - 🔴 [Buildroot](../../knowledge/system_software/buildroot/P00_全书学习地图.md)
+        - 章节评审：13 章未评审
+        - 🔴 [P01 引言与基础](../../knowledge/system_software/buildroot/P01_引言与基础.md)
+        - 🔴 [P02 工具链的构建流程概览](../../knowledge/system_software/buildroot/P02_工具链的构建流程概览.md)
+        - 🔴 [P03 外部工具链的使用](../../knowledge/system_software/buildroot/P03_外部工具链的使用.md)
+        - 🔴 [P04 工具链的调试与问题排查](../../knowledge/system_software/buildroot/P04_工具链的调试与问题排查.md)
+        - 🔴 [P05 文件系统构建与定制](../../knowledge/system_software/buildroot/P05_文件系统构建与定制.md)
+        - 🔴 [P06 包集成与系统服务](../../knowledge/system_software/buildroot/P06_包集成与系统服务.md)
+        - 🔴 [P07 镜像生成与部署](../../knowledge/system_software/buildroot/P07_镜像生成与部署.md)
+        - 🔴 [P08 高级定制与集成](../../knowledge/system_software/buildroot/P08_高级定制与集成.md)
+        - 🔴 [P09 包开发与维护](../../knowledge/system_software/buildroot/P09_包开发与维护.md)
+        - 🔴 [P10 镜像生成与部署](../../knowledge/system_software/buildroot/P10_镜像生成与部署.md)
+        - 🔴 [P11 调试与问题排查](../../knowledge/system_software/buildroot/P11_调试与问题排查.md)
+        - 🔴 [P12 高级主题](../../knowledge/system_software/buildroot/P12_高级主题.md)
+        - 🔴 [P13 附录](../../knowledge/system_software/buildroot/P13_附录.md)
+    - Kconfig
+        - 🔴 [基本结构与类型定义](../../knowledge/system_software/kconfig/基础语法.md)
+    - 链接脚本
+        - 🔴 [链接脚本基础结构与核心语法](../../knowledge/system_software/linker/lds_基础语法.md)
+    - 🟢 U-Boot
+        - 材料评审：2 篇完成
+        - 🟢 [阅读说明](../../knowledge/system_software/uboot/uboot-makefile.md)
+        - 🟢 [SPL和main构建的时候 是如何区分对应的函数不会冲突的](../../knowledge/system_software/uboot/uboot提问.md)
 
 ## 1.6\_🟢 工程方法与平台实现
-
 - 工程方法
-  - 驱动开发方法
-    - GPIO
-      - 🟢 [GPIO 调试、迁移与工程模板](../../engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md)
+    - 驱动开发方法
+        - GPIO
+            - 🟢 [GPIO 调试、迁移与工程模板](../../engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md)
 - 平台实现
-  - Arm 平台
-    - NXP
-      - i.MX6ULL
-        - 移植与构建
-          - 🟢 [阅读人群](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)
-          - 🟢 [下载编译器](../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md)
-    - Rockchip
-      - RK3566
-        - 构建环境
-          - 🟢 [资料下载](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)
+    - Arm 平台
+        - NXP
+            - i.MX6ULL
+                - 移植与构建
+                    - 🟢 [阅读人群](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)
+                    - 🟢 [下载编译器](../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md)
+        - Rockchip
+            - RK3566
+                - 构建环境
+                    - 🟢 [资料下载](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)
 
 ## 1.7\_🟢 最小验证实验
-
 - 🟢 全部 14 篇个人实验材料已完成评审
 - 基础理论
-  - 计算机体系结构
-    - 内存顺序
-      - 🟢 [访问宽度、对齐与 ARM 反汇编实验](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md)
-        - 观测结果
-          - 🟢 [2026-08-02 访问宽度与 ARM 编译器观察](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/expected/2026-08-02_compiler_observation.md)
+    - 计算机体系结构
+        - 内存顺序
+            - 🟢 [访问宽度、对齐与 ARM 反汇编实验](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md)
+                - 观测结果
+                    - 🟢 [2026-08-02 访问宽度与 ARM 编译器观察](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/expected/2026-08-02_compiler_observation.md)
 - Linux 内核实验
-  - 内存顺序
-    - 🟢 [READ ONCE 编译器访问实验](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)
-      - 观测结果
-        - 🟢 [2026-08-02 Windows x86-64 READ ONCE 编译器实验结果](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-08-02_windows_x86_64.md)
-    - 🟢 [LKMM Litmus 消息传递与屏障实验](../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md)
-  - RCU
-    - 🟢 [晚到读者与抢占读者的对象回收实验](../../labs/kernel/rcu/P01_晚到读者与抢占读者/README.md)
+    - 内存顺序
+        - 🟢 [READ ONCE 编译器访问实验](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)
+            - 观测结果
+                - 🟢 [2026-08-02 Windows x86-64 READ ONCE 编译器实验结果](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-08-02_windows_x86_64.md)
+        - 🟢 [LKMM Litmus 消息传递与屏障实验](../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md)
+    - RCU
+        - 🟢 [晚到读者与抢占读者的对象回收实验](../../labs/kernel/rcu/P01_晚到读者与抢占读者/README.md)
+    - Lockdep
+        - 🔴 [锁顺序反转与 Lockdep 报告解读实验](../../labs/kernel/lockdep/P01_锁顺序反转与报告解读/README.md)
 - platforms
-  - NXP
-    - i.MX6ULL
-      - 驱动实验
-        - P01 LED点灯
-          - 🟢 [P01 LED点灯+ioremap](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P01_LED点灯+ioremap.md)
-          - 🟢 [P02 LED点灯+dts](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md)
-          - 🟢 [P03 i.MX6ULL字符设备LED与设备树完整实验](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P03_字符设备_LED与设备树完整实验.md)
-        - P02 BEEP
-          - 🟢 [P01 beep+dts](../../labs/platforms/nxp/imx6ull/drivers/P02_BEEP/P01_beep+dts.md)
-        - P03 KEY LED interrupt
-          - 🟢 [P01 key led interrupt](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_key_led_interrupt.md)
-          - 🟢 [P02 key led interrupt move shake 01](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_key_led_interrupt_move_shake_01.md)
-          - 🟢 [P03 key interrupt wakeup kernel](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md)
-        - P04 Input子系统
-          - 🟢 [功能说明](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md)
+    - NXP
+        - i.MX6ULL
+            - 驱动实验
+                - P01 LED点灯
+                    - 🟢 [P01 LED点灯+ioremap](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P01_LED点灯+ioremap.md)
+                    - 🟢 [P02 LED点灯+dts](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md)
+                    - 🟢 [P03 i.MX6ULL字符设备LED与设备树完整实验](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P03_字符设备_LED与设备树完整实验.md)
+                - P02 BEEP
+                    - 🟢 [P01 beep+dts](../../labs/platforms/nxp/imx6ull/drivers/P02_BEEP/P01_beep+dts.md)
+                - P03 KEY LED interrupt
+                    - 🟢 [P01 key led interrupt](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_key_led_interrupt.md)
+                    - 🟢 [P02 key led interrupt move shake 01](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_key_led_interrupt_move_shake_01.md)
+                    - 🟢 [P03 key interrupt wakeup kernel](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md)
+                - P04 Input子系统
+                    - 🟢 [功能说明](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md)
 
 ## 1.8\_源码研究与问题调查
-
 - 研究材料的状态独立于知识正文；特定版本源码结论还必须受其源码基线约束。
 - 🔴 [问题调查入口](../../research/investigations/README.md)
-  - 字符设备
-    - 🔴 [字符设备扩展接口历史草稿](../../research/investigations/character_device/字符设备扩展接口历史草稿.md)
-  - Linux 设备模型
-    - 🔴 [设备模型 34 章原始总稿迁移核对源](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
+    - 字符设备
+        - 🔴 [字符设备扩展接口历史草稿](../../research/investigations/character_device/字符设备扩展接口历史草稿.md)
+    - Linux 设备模型
+        - 🔴 [设备模型 34 章原始总稿迁移核对源](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
 - 源码阅读
-  - Linux 通用机制
-    - 🔴 [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md)
-    - 驱动实验
-      - 🔴 [Linux 6.12.20 Input 子系统源码导读](../../research/source_reading/linux/drivers/input/README.md)
-    - GPIO
-      - 🔴 [Linux 6.12 GPIO 核心路径源码证据](../../research/source_reading/linux/gpio/linux_6.12_gpio_核心路径.md)
-  - Lockdep
-    - 模块概念导读
-      - 🔴 [P01 Linux 6.12 Lockdep 源码导读](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)
-      - 🔴 [P02 Linux 6.12 Lockdep 身份与事件接入模块导读](../../research/source_reading/lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题)
-      - 🔴 [P03 Linux 6.12 Lockdep 依赖图与规则引擎模块导读](../../research/source_reading/lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.1_模块问题)
-      - 🔴 [P04 Linux 6.12 Lockdep 查询适配与诊断模块导读](../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.1_模块问题)
-    - 具体实现讲解
-      - 🔴 [P01 Linux 6.12 Lockdep 身份与锁类源码实现](../../research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.1_关联入口)
-      - 🔴 [P02 Linux 6.12 Lockdep 取得释放与持锁账本源码实现](../../research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)
-      - 🔴 [P03 Linux 6.12 Lockdep 依赖图与规则引擎源码实现](../../research/source_reading/lockdep/source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.1_关联入口)
-      - 🔴 [P04 Linux 6.12 Lockdep 查询注解与配置源码实现](../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.1_关联入口)
-  - 内存顺序
-    - 🔴 [P01 Linux 6.12 LKMM 源码与模型导读](../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md)
-  - RCU
-    - 模块概念导读
-      - 🔴 [P01 Linux 6.12 Tree RCU 与 SRCU 源码导读](../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)
-      - 🔴 [P02 Linux 6.12 非抢占式 Tree RCU 模块源码概念导读](../../research/source_reading/rcu/navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md)
-      - 🔴 [P03 Linux 6.12 抢占式 Tree RCU 模块源码概念导读](../../research/source_reading/rcu/navigation/P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md)
-      - 🔴 [P04 Linux 6.12 Tasks RCU 与 Tiny RCU 模块源码概念导读](../../research/source_reading/rcu/navigation/P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md)
-    - 具体实现讲解
-      - 🔴 [P01 Linux 6.12 RCU 公共接口与检查机制源码详解](../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md)
-      - 🔴 [P02 Linux 6.12 非抢占式 Tree RCU 关键函数源码实现](../../research/source_reading/rcu/source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md)
-      - 🔴 [P03 Linux 6.12 抢占式 Tree RCU 关键函数源码实现](../../research/source_reading/rcu/source_explanations/P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md)
+    - Linux 通用机制
+        - 🔴 [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md)
+        - 驱动实验
+            - 🔴 [Linux 6.12.20 Input 子系统源码导读](../../research/source_reading/linux/drivers/input/README.md)
+        - GPIO
+            - 🔴 [Linux 6.12 GPIO 核心路径源码证据](../../research/source_reading/linux/gpio/linux_6.12_gpio_核心路径.md)
+    - Lockdep
+        - 模块概念导读
+            - 🔴 [P01 Linux 6.12 Lockdep 源码导读](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)
+            - 🔴 [P02 Linux 6.12 Lockdep 身份与事件接入模块导读](../../research/source_reading/lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题)
+            - 🔴 [P03 Linux 6.12 Lockdep 依赖图与规则引擎模块导读](../../research/source_reading/lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.1_模块问题)
+            - 🔴 [P04 Linux 6.12 Lockdep 查询适配与诊断模块导读](../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.1_模块问题)
+        - 具体实现讲解
+            - 🔴 [P01 Linux 6.12 Lockdep 身份与锁类源码实现](../../research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.1_关联入口)
+            - 🔴 [P02 Linux 6.12 Lockdep 取得释放与持锁账本源码实现](../../research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)
+            - 🔴 [P03 Linux 6.12 Lockdep 依赖图与规则引擎源码实现](../../research/source_reading/lockdep/source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.1_关联入口)
+            - 🔴 [P04 Linux 6.12 Lockdep 查询注解与配置源码实现](../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.1_关联入口)
+    - 内存顺序
+        - 🔴 [P01 Linux 6.12 LKMM 源码与模型导读](../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md)
+    - RCU
+        - 模块概念导读
+            - 🔴 [P01 Linux 6.12 Tree RCU 与 SRCU 源码导读](../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)
+            - 🔴 [P02 Linux 6.12 非抢占式 Tree RCU 模块源码概念导读](../../research/source_reading/rcu/navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md)
+            - 🔴 [P03 Linux 6.12 抢占式 Tree RCU 模块源码概念导读](../../research/source_reading/rcu/navigation/P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md)
+            - 🔴 [P04 Linux 6.12 Tasks RCU 与 Tiny RCU 模块源码概念导读](../../research/source_reading/rcu/navigation/P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md)
+            - 🔴 [P05 Linux 6.12 RCU Lockdep适配模块源码概念导读](../../research/source_reading/rcu/navigation/P05_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#5.1_模块问题与实现所有权)
+        - 具体实现讲解
+            - 🔴 [P01 Linux 6.12 RCU 公共接口与检查机制源码详解](../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md)
+            - 🔴 [P02 Linux 6.12 非抢占式 Tree RCU 关键函数源码实现](../../research/source_reading/rcu/source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md)
+            - 🔴 [P03 Linux 6.12 抢占式 Tree RCU 关键函数源码实现](../../research/source_reading/rcu/source_explanations/P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md)
+            - 🔴 [P04 Linux 6.12 RCU Lockdep适配层源码实现](../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.1_实现所有权与读者目标)
 
 ## 1.9\_🟢 参考与出版物
-
 - 🟢 参考资料
-  - 标准
-    - GPL
-      - 🟢 [GPL 协议说明(总论)](../../reference/standards/gpl/GPL协议说明.md)
+    - 标准
+        - GPL
+            - 🟢 [GPL 协议说明(总论)](../../reference/standards/gpl/GPL协议说明.md)
 - 🟢 出版物
-  - 🟢 [奔跑吧 Linux 内核](../../publications/books/running_linux_kernel/README.md)
-    - 🟢 [P01 linux系统基础知识](../../publications/books/running_linux_kernel/P01_linux系统基础知识.md)
-    - 🟢 [P02 Linux内核中常用的数据结构和算法](../../publications/books/running_linux_kernel/P02_Linux内核中常用的数据结构和算法.md)
-    - 🟢 [P03 内核引导和初始化](../../publications/books/running_linux_kernel/P03_内核引导和初始化.md)
-    - 🟢 [P04 uboot启动流程说明](../../publications/books/running_linux_kernel/P04_uboot启动流程说明.md)
-    - 🟢 [版权与免责声明](../../publications/books/running_linux_kernel/copyright_and_disclaimer.md)
+    - 🟢 [奔跑吧 Linux 内核](../../publications/books/running_linux_kernel/README.md)
+        - 🟢 [P01 linux系统基础知识](../../publications/books/running_linux_kernel/P01_linux系统基础知识.md)
+        - 🟢 [P02 Linux内核中常用的数据结构和算法](../../publications/books/running_linux_kernel/P02_Linux内核中常用的数据结构和算法.md)
+        - 🟢 [P03 内核引导和初始化](../../publications/books/running_linux_kernel/P03_内核引导和初始化.md)
+        - 🟢 [P04 uboot启动流程说明](../../publications/books/running_linux_kernel/P04_uboot启动流程说明.md)
+        - 🟢 [版权与免责声明](../../publications/books/running_linux_kernel/copyright_and_disclaimer.md)

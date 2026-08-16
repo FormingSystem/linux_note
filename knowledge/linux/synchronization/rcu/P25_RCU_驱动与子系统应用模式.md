@@ -450,6 +450,6 @@ sequenceDiagram
 
 上一篇：[Tasks RCU 与 Tiny RCU 实现边界](P24_Tasks_RCU与Tiny_RCU实现边界.md)。
 
-下一篇：[RCU 类型语义与 Sparse 检查](P26_RCU_类型语义_Sparse与Lockdep.md)。
+下一篇：[RCU 类型语义、Sparse 与 Lockdep](P26_RCU_类型语义_Sparse与Lockdep.md)。
 
 

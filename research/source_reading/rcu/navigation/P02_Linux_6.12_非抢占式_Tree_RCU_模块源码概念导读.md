@@ -260,7 +260,8 @@ Linux 5.10 的 GP 树与普通同步主线已经具备相同骨架，但阅读�
 - [`rcu_replace_pointer()`](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3_rcu_replace_pointer接口实现)
 - [`rcu_dereference_protected()`](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.5_rcu_dereference_protected功能与检查路径)
 - [`synchronize_rcu()`](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.4_synchronize_rcu接口实现)
-- [`RCU_LOCKDEP_WARN()`](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.7_RCU_LOCKDEP_WARN检查适配层)
+- [RCU Lockdep适配层](../source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.2_源码符号覆盖账本)
+- [`RCU_LOCKDEP_WARN()`](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_LOCKDEP_WARN检查适配层)
 
 ## 2.14\_复核清单
 
