@@ -160,6 +160,8 @@ static int read_status_while_updating(void)
 
 前面的正确代码已经把共享入口声明为 `struct dev_state __rcu *`，并要求发布、取得都经过 RCU 宏。接下来需要回答的不是“源码里有没有一个名叫检查的宏”，而是这套类型信息怎样真正到达检查工具：**Sparse 先进入构建并定义分析环境，`__rcu` 再建立 address-space 类型，RCU 辅助宏最后构造必须通过类型系统的表达式。**
 
+如果还不熟悉 `#ifdef __CHECKER__`、GNU 属性、`typeof()`、语句表达式、`context()` 与 BTF 标签怎样分属不同消费者，先进入 [Linux 内核编译器与静态分析注解专题](../../../foundations/c_language/kernel_static_annotations/大纲.md#1.3_阅读依赖图)。该专题维护通用语法和工具模型；本节只保留 RCU 怎样消费 `__rcu` 的场景特有结论。
+
 #### (1)\_Sparse解析的是预处理后的C而不是搜索宏名
 
 Sparse 是一个面向 C 语义的静态分析器。它会参与内核构建，对目标 `.c` 文件经过预处理后的翻译单元进行解析，理解类型、表达式、控制流和上下文注解；它不是用文本搜索去寻找 `rcu_check_sparse`、`rcu_dereference` 等字符串。
