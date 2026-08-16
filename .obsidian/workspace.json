@@ -107,7 +107,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 278.5
+    "width": 200
   },
   "right": {
     "id": "4d8e55985b4496b6",
@@ -217,6 +217,10 @@
   },
   "active": "9d9e278db59e8146",
   "lastOpenFiles": [
+    "research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md",
+    "research/source_reading/lockdep/source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md",
+    "research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md",
+    "research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md",
     "README.md",
     "atlas/maps/knowledge_review_map.md",
     "knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
@@ -246,13 +250,6 @@
     "knowledge/linux/device_model/P14_热插拔与模块生命周期.md",
     "knowledge/linux/device_model/P13_device_link与电源管理.md",
     "knowledge/linux/device_model/P12_devres资源事务.md",
-    "knowledge/linux/device_model/P11_class_sysfs_uevent与modalias.md",
-    "knowledge/linux/device_model/P10_fwnode_OF与Platform适配.md",
-    "knowledge/linux/device_model/P09_deferred_probe解绑与remove.md",
-    "knowledge/linux/device_model/P08_匹配绑定与probe状态机.md",
-    "knowledge/linux/device_model/P07_bus与driver注册.md",
-    "knowledge/linux/device_model/P06_device注册与生命周期.md",
-    "knowledge/linux/device_model/P05_kobject_kset与sysfs对象树.md",
     "assets/images/kernel/linux内核深度解析/boot_jump_linux函数.png",
     "assets/images/kernel/running_linux_kernel_P01/linux_kernel_component_archtecture.png",
     "assets/images/kernel/nxp/kernel_config_cross_compiler_for_makefile.png"
