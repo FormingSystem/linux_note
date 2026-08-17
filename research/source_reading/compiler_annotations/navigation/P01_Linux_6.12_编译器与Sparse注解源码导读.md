@@ -10,7 +10,7 @@ domains:
   - c_language
 ---
 
-# 第1章\_Linux\_6.12\_编译器与\_Sparse\_注解源码导读
+# 第1章\_Linux\_6.12\_编译器与Sparse注解源码导读
 
 ## 1.1\_基线与阅读任务
 
@@ -170,12 +170,12 @@ sequenceDiagram
 
 ## 1.6\_建议阅读顺序
 
-1. 先读稳定专题的[同一份源码怎样面对多个消费者](../../../../knowledge/foundations/c_language/kernel_static_annotations/P01_同一份源码怎样面对多个消费者.md#1.2_处理链不是一条只有编译器的直线)，建立分层坐标；
+1. 先读稳定专题的[同一份源码怎样面对多个消费者](../../../../knowledge/foundations/c_language/kernel_static_annotations/P01_同一份源码怎样面对多个消费者.md#1.3_处理链不是一条只有编译器的直线)，建立分层坐标；
 2. 打开仓库保存的 [`include/linux/compiler_types.h`](../../linux/include/linux/compiler_types.h)，只读文件开头到 `__CHECKER__` 分支结束；
 3. 进入唯一实现讲解的[源码符号覆盖账本](../source_explanations/P01_Linux_6.12_compiler_types注解宏源码实现.md#1.2_源码符号覆盖账本)，确认每个符号的消费者；
 4. 分别阅读[address-space类型](../source_explanations/P01_Linux_6.12_compiler_types注解宏源码实现.md#1.5_地址空间注解与类型桥接函数)与[context路径](../source_explanations/P01_Linux_6.12_compiler_types注解宏源码实现.md#1.6_上下文注解与条件取得)，不要交叉混用两本账；
 5. 阅读[普通编译退化](../source_explanations/P01_Linux_6.12_compiler_types注解宏源码实现.md#1.8_普通编译分支怎样退化)，逐项核对 ABI、参数求值和控制流；
-6. 完成 [Sparse 地址空间与上下文记账实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.4_先观察两个预处理分支)；
+6. 按实验目标进入 [Sparse 地址空间与上下文记账研究型实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标)，完成预处理、单变量诊断、消费者对照和 Kbuild 接入闭环；
 7. 最后回到 RCU、锁或驱动调用方，确认基础注解怎样与真实功能状态配对。
 
 ## 1.7\_当前证据边界
