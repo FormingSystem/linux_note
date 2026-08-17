@@ -17,9 +17,10 @@ domains:
 | 阅读任务 | 权威入口 |
 | --- | --- |
 | 建立跨版本稳定的多消费者模型 | [Linux 内核编译器与静态分析注解专题](../../../../knowledge/foundations/c_language/kernel_static_annotations/大纲.md#1.1_专题定位) |
+| 理解type tag、DWARF/BTF生成链与证明边界 | [普通编译、BTF 与运行时边界](../../../../knowledge/foundations/c_language/kernel_static_annotations/P05_普通编译_BTF与运行时边界.md#5.2_先把type_tag理解为类型上的语义元数据) |
 | 按模块职责和调用点阅读源码 | [Linux 6.12 编译器与 Sparse 注解源码导读](../navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务) |
 | 理解模块协作与两组正交状态 | [Linux 6.12 compiler types 注解模块概念导读](../navigation/P02_Linux_6.12_compiler_types注解模块概念导读.md#2.1_模块问题与实现所有权) |
-| 验证最小地址域和context诊断 | [Sparse 地址空间与上下文记账实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标) |
+| 验证地址域、context与Kbuild接入 | [Sparse 地址空间与上下文记账研究型实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标) |
 | 理解RCU怎样消费`__rcu` | [`rcu_check_sparse()` 静态类型桥接](../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.3_rcu_check_sparse静态类型桥接) |
 | 理解运行时锁依赖 | [Lockdep 专题](../../../../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位) |
 
@@ -361,6 +362,6 @@ sequenceDiagram
 - GNU 属性外形参考 [GCC 属性语法](https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html)。
 - BTF 属性能力参考 [Clang btf type tag](https://clang.llvm.org/docs/AttributeReference.html#btf-type-tag)。
 - 本篇宏体来自仓库保存的 [`include/linux/compiler_types.h`](../../linux/include/linux/compiler_types.h)，版本身份见 [Linux 源码阅读基线](../../linux/SOURCE_BASELINE.md#1.1_当前来源)。
-- 可执行最小反例见 [Sparse 地址空间与上下文记账实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.5_建立无告警基线)。
+- 可执行的单变量反例、消费者对照、自动断言和 Kbuild 接入见 [Sparse 地址空间与上下文记账研究型实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标)。
 
 当前 Windows 会话没有 Sparse 可执行环境，因此源码位置、宏展开关系、链接和实验源文件可以静态核对，但不能把预期警告描述为本次已运行结果。

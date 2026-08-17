@@ -16,6 +16,8 @@ domains:
 
 总阅读入口见 [Linux 6.12 编译器与 Sparse 注解源码导读](P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务)。本篇不逐段复制宏体，只借 `include/linux/compiler_types.h` 回答一个模块问题：同一组内核友好注解怎样在 Sparse 分析、普通编译、插件和 BTF 元数据之间切换，同时保证真实功能表达式不被检查分支改变？
 
+DWARF、BTF 与 type tag 的跨版本稳定模型见[普通编译、BTF 与运行时边界](../../../../knowledge/foundations/c_language/kernel_static_annotations/P05_普通编译_BTF与运行时边界.md#5.2_先把type_tag理解为类型上的语义元数据)；本篇只负责把该模型落到 Linux 6.12 `compiler_types.h` 的模块分支与阅读顺序。
+
 实现所有权如下：
 
 | 组件 | 负责什么 | 不负责什么 |
@@ -116,7 +118,7 @@ trylock 的关键分支是：真实尝试先产生结果，`__cond_lock()` 再�
 2. 先读[地址空间模块链](#2.4_地址空间模块链)，再读[上下文模块链](#2.5_上下文模块链)，不要混合两组状态；
 3. 使用[普通编译模块链](#2.6_普通编译模块链)核对空宏、参数求值和BTF边界；
 4. 进入[源码符号覆盖账本](../source_explanations/P01_Linux_6.12_compiler_types注解宏源码实现.md#1.2_源码符号覆盖账本)逐项查看具体宏体；
-5. 完成 [Sparse 最小实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.5_建立无告警基线)；
+5. 完成 [Sparse 地址空间与上下文记账研究型实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标)，用正反例、自动断言和 Kbuild 日志复验模块结论；
 6. 修改任何基础宏后，同时检查 Sparse、普通编译、调用方正确/错误样例以及可选BTF产物。
 
 模块级结论是：`compiler_types.h` 负责把设计意图路由给正确消费者，并保持其他消费者安全退化；它本身不替代任何子系统功能协议。
