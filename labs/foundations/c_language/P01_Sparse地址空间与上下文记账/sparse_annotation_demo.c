@@ -26,13 +26,35 @@
 #define __cond_lock(x, condition) (condition)
 #endif
 
+#ifdef ERASE_BOUNDARY_CONTRACT
+#define __boundary_user
+#else
+#define __boundary_user __user
+#endif
+
+#ifdef ERASE_LOCK_WRAPPER_CONTRACT
+#define __fake_lock_acquires(x)
+#else
+#define __fake_lock_acquires(x) __acquires(x)
+#endif
+
 struct record {
 	int value;
 };
 
+void run_sparse_annotation_demo(struct record __user *source,
+				int *lock, int try_succeeds);
+
 static inline void
 check_user_pointer(const volatile void __user *pointer)
 {
+	(void)pointer;
+}
+
+static inline void
+check_boundary_pointer(const volatile void __boundary_user *pointer)
+{
+	/* 形参可以为空函数，但类型仍会在调用点触发实参与形参检查。 */
 	(void)pointer;
 }
 
@@ -42,17 +64,35 @@ static void address_space_good(struct record __user *source)
 	check_user_pointer(source);
 }
 
-#ifdef BAD_ADDRESS_SPACE
-static int address_space_bad(struct record __user *source)
+#ifdef BAD_ADDRESS_BOUNDARY
+static void address_space_bad_boundary(void)
 {
-	/* 预期：不同地址域赋值和受限指针裸解引用诊断。 */
-	struct record *plain = source;
+	static struct record kernel_record;
 
-	return source->value + plain->value;
+	/* 预期：普通内核指针不能冒充用户地址空间指针。 */
+	check_boundary_pointer(&kernel_record);
 }
 #endif
 
-static void fake_lock(int *lock) __acquires(lock)
+#ifdef BAD_ADDRESS_ASSIGNMENT
+static void address_space_bad_assignment(struct record __user *source)
+{
+	/* 预期：不同地址域赋值诊断；这里不再混入裸解引用。 */
+	struct record *plain = source;
+
+	(void)plain;
+}
+#endif
+
+#ifdef BAD_NODEREF
+static int address_space_bad_dereference(struct record __user *source)
+{
+	/* 预期：noderef指针不能被普通C解引用表达式直接访问。 */
+	return source->value;
+}
+#endif
+
+static void fake_lock(int *lock) __fake_lock_acquires(lock)
 {
 	/* 只修改 Sparse 账本，不取得真实锁。 */
 	(void)lock;
@@ -86,23 +126,39 @@ static void conditional_context_good(int *lock, int succeeds)
 	}
 }
 
-#ifdef BAD_CONTEXT
+#ifdef BAD_CONTEXT_CALL
 static void context_bad_call(int *lock)
 {
 	/* 预期：未建立 context 就调用要求持有的函数。 */
 	requires_lock(lock);
 }
+#endif
 
+#ifdef BAD_CONTEXT_EXIT
 static void context_bad_exit(int *lock)
 {
 	/* 预期：函数返回时仍留下未清偿的 context。 */
 	fake_lock(lock);
 }
+#endif
 
+#ifdef BAD_CONTEXT_RELEASE
 static void context_bad_release(int *lock)
 {
 	/* 预期：没有取得就执行释放。 */
 	fake_unlock(lock);
+}
+#endif
+
+#ifdef BAD_CONDITIONAL_CONTEXT
+static void conditional_context_bad(int *lock, int succeeds)
+{
+	/* 错误：在知道trylock结果以前就无条件登记“已经取得”。 */
+	__acquire(lock);
+	if (succeeds) {
+		requires_lock(lock);
+		fake_unlock(lock);
+	}
 }
 #endif
 
@@ -112,12 +168,25 @@ void run_sparse_annotation_demo(struct record __user *source,
 	address_space_good(source);
 	context_good(lock);
 	conditional_context_good(lock, try_succeeds);
-#ifdef BAD_ADDRESS_SPACE
-	(void)address_space_bad(source);
+#ifdef BAD_ADDRESS_BOUNDARY
+	address_space_bad_boundary();
 #endif
-#ifdef BAD_CONTEXT
+#ifdef BAD_ADDRESS_ASSIGNMENT
+	address_space_bad_assignment(source);
+#endif
+#ifdef BAD_NODEREF
+	(void)address_space_bad_dereference(source);
+#endif
+#ifdef BAD_CONTEXT_CALL
 	context_bad_call(lock);
+#endif
+#ifdef BAD_CONTEXT_EXIT
 	context_bad_exit(lock);
+#endif
+#ifdef BAD_CONTEXT_RELEASE
 	context_bad_release(lock);
+#endif
+#ifdef BAD_CONDITIONAL_CONTEXT
+	conditional_context_bad(lock, try_succeeds);
 #endif
 }
