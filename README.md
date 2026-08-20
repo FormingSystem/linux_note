@@ -89,7 +89,7 @@ tools/typora配置/
 
 Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，优先使用 Obsidian 内部操作，让链接能够自动跟踪更新。
 
-专题阅读从 [知识库导航](atlas/home.md#1.1_按目标进入)或 [仓库内容索引](atlas/indexes/content_index.md#1.2_Linux通用机制)进入。以并发机制为例，[Lockdep 专题](knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)和 [RCU 专题](knowledge/linux/synchronization/rcu/大纲.md#1.1_专题定位)保存跨版本正文；需要核对 Linux 6.12.20 实现时，分别进入 [Lockdep 源码总阅读索引](research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)和 [RCU 源码总阅读索引](research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)，再从模块导读跳到具体函数标题。
+专题阅读从 [知识库导航](atlas/home.md#1.1_按目标进入)或 [仓库内容索引](atlas/indexes/content_index.md#1.2_Linux通用机制)进入。以并发机制为例，[Lockdep 专题](knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)和 [RCU 专题](knowledge/linux/synchronization/rcu/大纲.md#1.1_专题定位)保存跨版本正文；需要核对 Linux 6.12.20 实现时，分别进入 [Lockdep 源码总阅读索引](research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)和 [RCU 源码总阅读索引](research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)，再从模块导读跳到具体函数标题。
 
 ### 1.4.1\_回路\_Markdown\_工作台
 

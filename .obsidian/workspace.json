@@ -39,12 +39,14 @@
             "id": "9d9e278db59e8146",
             "type": "leaf",
             "state": {
-              "type": "mindmapview",
+              "type": "markdown",
               "state": {
-                "file": "atlas/maps/knowledge_review_map.md"
+                "file": "knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "blocks",
-              "title": "knowledge_review_map"
+              "icon": "lucide-file",
+              "title": "P06_非抢占式_Tree_RCU_源码同步机制"
             }
           }
         ],
@@ -107,7 +109,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 200,
+    "collapsed": true
   },
   "right": {
     "id": "4d8e55985b4496b6",
@@ -185,7 +188,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "atlas/maps/knowledge_review_map.md",
+                "file": "knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -217,12 +220,12 @@
   },
   "active": "9d9e278db59e8146",
   "lastOpenFiles": [
+    "atlas/maps/knowledge_review_map.md",
     "research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md",
     "research/source_reading/lockdep/source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md",
     "research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md",
     "research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md",
     "README.md",
-    "atlas/maps/knowledge_review_map.md",
     "knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
     "engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md",
     "tools/ai/codex/skills/build-linux-note-topic/scripts/__pycache__/audit_topic.cpython-313.pyc",

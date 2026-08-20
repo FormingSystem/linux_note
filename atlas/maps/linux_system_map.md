@@ -77,6 +77,6 @@ Linux 内核结构、模块与数据结构
 - 平台实现记录：[i.MX6ULL 移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)、[RK3566 Linux SDK 编译](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)。
 - 最小验证实验：[i.MX6ULL 驱动实验](../../labs/platforms/nxp/imx6ull/drivers)。
 - 调查材料入口：[调查目录说明](../../research/investigations/README.md)。
-- 版本化并发源码入口：[Linux 6.12 Lockdep 总阅读索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)、[Linux 6.12 RCU 总阅读索引](../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)。
+- 版本化并发源码入口：[Linux 6.12 Lockdep 总阅读索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)、[Linux 6.12 RCU 总阅读索引](../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
 
 学习时应先从通用文档形成模型，再用平台记录确认差异，用实验确认行为，最后以特定版本源码材料解释实现细节。
