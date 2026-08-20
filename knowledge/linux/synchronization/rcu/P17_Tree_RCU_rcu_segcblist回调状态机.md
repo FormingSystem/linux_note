@@ -185,10 +185,12 @@ CPU offline 时不能把源链表所有节点粗暴追加到目标 NEXT：其中
 
 ## 17.12\_源码与trace入口
 
-- `include/linux/rcu_segcblist.h::struct rcu_segcblist`：布局、段定义和不变量注释。
-- `kernel/rcu/rcu_segcblist.c`：enqueue、accelerate、advance、extract/insert、entrain、merge。
-- `kernel/rcu/tree.c::__call_rcu_common()` 与 callback acceleration：Tree RCU 接入点。
-- `kernel/rcu/tree.h::struct rcu_data.cblist`：每 CPU 实例。
+版本化模块先进入 [回调与 NOCB 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#11.1_GP完成为什么还不等于callback执行)。实现直达入口为：
+
+- [`call_rcu()` 与每 CPU queue 所有权交接](../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.4_call_rcu怎样把所有权交给每CPU队列)；
+- [`rcu_segcblist_accelerate/advance()` 与 Tree RCU GP 连接](../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.5_accelerate与advance怎样连接callback和GP)；
+- DONE 抽取、回插与执行见 [`rcu_do_batch()`](../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.6_rcu_do_batch为何先抽取再锁外执行)；
+- `entrain()` 的 barrier 语义见 [P10 哨兵证明](../../../../research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.6_barrier_callback与entrain如何证明队列前序已执行)，`merge()` 的 CPU hotplug 调用点见 [P06 callback 迁移](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.7_rcutree_migrate_callbacks保留callback代际与barrier证明)。
 
 ```bash
 cd /sys/kernel/tracing

@@ -114,6 +114,8 @@ Tiny 只有一个 CPU，不必构造 `rcu_node` 汇聚树；但它仍须区分�
 
 不要因为回调函数可能睡眠就机械使用 SRCU；若读侧实际短小且不阻塞，普通 RCU 的读路径通常更合适。完整代码与双扫描证据见下一章。
 
+进入版本源码时也必须沿两条独立分支阅读：普通 Tree RCU 的全局请求和长期线程进入 [Tree RCU GP 全局生命周期模块源码概念导读](../../../../research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.1_模块问题与版本边界)；SRCU 私有域和双 index 进入 [Tree SRCU 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_SRCU模块源码概念导读.md#7.1_先分清Tree_RCU与Tree_SRCU)。两篇导读共享总索引，不共享 GP 状态机。
+
 ## 22.6\_Tasks\_RCU家族等待的是任务执行轨迹
 
 Linux 6.12.20 的 Tasks 家族共享 `struct rcu_tasks`、每 CPU 回调队列和 GP kthread，但每个 flavor 注入不同的扫描、holdout 检查和 GP 完成函数。

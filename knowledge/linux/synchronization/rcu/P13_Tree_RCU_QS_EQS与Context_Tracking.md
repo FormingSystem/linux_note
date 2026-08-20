@@ -119,6 +119,8 @@ stateDiagram-v2
 
 若只保存“CPU 执行过 idle”这一位，远端可能在 IRQ handler 正运行 RCU reader 时误判安全。context tracking 的状态/嵌套变化让快照能区分：
 
+Linux 6.12.20 中，FQS 第一次用 `ct_rcu_watching_cpu_acquire()` 保存 `rdp->watching_snap`，后续用 `rcu_watching_snap_stopped_since()` 比较；完整模块通信先读 [force-QS 与 Stall 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P09_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#9.4_FQS是两阶段远端观察而不是无条件IPI)，函数实现见 [`rcu_watching_snap_save/recheck()`](../../../../research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.4_watching快照怎样把EQS变成隐式QS证据)。这两个函数读取 context tracking 已维护的状态，不替代 context tracking 入口本身。
+
 ```text
 CPU当前就在稳定EQS
 CPU自上次快照以来完整穿过EQS

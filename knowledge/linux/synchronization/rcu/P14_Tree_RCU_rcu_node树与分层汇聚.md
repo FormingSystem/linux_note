@@ -195,10 +195,11 @@ RCU trace 中 `rcu_quiescent_state_report` 可观察节点层级、清除 mask�
 
 ## 14.11\_源码入口
 
+- 先从 [拓扑与 CPU 热插拔模块源码概念导读](../../../../research/source_reading/rcu/navigation/P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#8.3_参与者状态地址与所有权)建立 `rcu_state`、`rcu_node` 与 `rcu_data` 的地址映射，再进入具体函数。
 - `kernel/rcu/tree.h::struct rcu_node`、`struct rcu_data`。
-- `kernel/rcu/tree.c::rcu_init_one()`：parent、范围和 `grpmask` 拓扑。
-- `kernel/rcu/tree.c::rcu_gp_init()`：本轮 `qsmask` 和代际。
-- `kernel/rcu/tree.c::rcu_report_qs_rdp()`、`rcu_report_qs_rnp()`、`rcu_report_unblock_qs_rnp()`。
+- [`rcu_init_one()` 建立 parent、范围和 `grpmask` 拓扑](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点)。
+- [`rcu_gp_init()` 建立本轮 `qsmask` 和代际](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.9_rcu_gp_init开始代际并建立证明债务)。
+- [`rcu_report_qs_rdp()`、`rcu_report_qs_rnp()` 的逐层汇聚](../../../../research/source_reading/rcu/source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.6_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据)。
 - `kernel/rcu/tree_plugin.h::rcu_preempt_blocked_readers_cgp()`：任务债务门控。
 
 上一篇：[Tree RCU QS、EQS 与 Context Tracking](P13_Tree_RCU_QS_EQS与Context_Tracking.md)。
