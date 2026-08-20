@@ -20,6 +20,8 @@ topics:
 
 > **源码边界：** 本章结论以 NXP 官方 [`linux-imx`](https://github.com/nxp-imx/linux-imx) 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应的 Linux 6.12.20 为证据，优先引用 `kernel/rcu/`、`include/linux/rcupdate.h` 和相关公共调度/context-tracking 路径。本地工作树位置不属于证据身份，统一基线见 [Linux 源码阅读基线](../../../../research/source_reading/linux/SOURCE_BASELINE.md)。
 
+> **GP 专有名词入口：** 本章中的 GP 是 Grace Period 这一逻辑证明区间；GP 请求、实际执行的一轮物理 GP、长期存在的 GP kthread 与 callback 完成交付不是同一对象。若这些词尚未建立，请先读 [GP 的六个基本名词](P12_Tree_RCU_GP请求与全局生命周期.md#12.2_六个必须分开的专有名词)，再回到总图；Linux 6.12.20 的任务指针、等待队列、请求漏斗和主循环见 [GP 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.2_先把四个对象摆到源码现场)。这里允许前向跳读，是为了避免用尚未定义的专有名词要求读者自行拼接。
+
 **本章阅读路线：**
 
 - **首次建立总图：** 先读 10.1、10.2、10.5 和 10.6，抓住参与角色、完整 GP 周期、状态地址和通知路径；

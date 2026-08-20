@@ -167,6 +167,13 @@ barrier是否正在给队列entrain哨兵callback
 
 它不是改一个 cpumask 后立即完成的无状态操作。用户通常应优先用启动参数建立稳定隔离配置，只有明确的运行时管理场景才动态切换。
 
+`rcu_state` 中只有两项 NOCB 全局配置协调字段，但它们不能代表 per-CPU callback 状态：
+
+- `nocb_mutex` 串行化 offload/deoffload、启动组织以及需要避免锁状态失衡的管理路径；真正的 callback、bypass、等待队列和线程指针仍在各 `rcu_data`/NOCB 分组对象中。
+- `nocb_is_setup` 表示 NOCB 启动组织是否已经建立。路径会结合 `rcu_scheduler_fully_active`、启动 cpumask 和对应 kthread 状态判断是否可继续；它不是“所有 callback 已经卸载”或“当前没有回调”的证明。
+
+这两个字段只在 `CONFIG_RCU_NOCB_CPU` 下编译进 `rcu_state`。配置关闭时，整组全局管理状态消失，但普通 Tree RCU 的 reader、GP 与 callback 语义仍然存在。
+
 ## 19.10\_性能取舍
 
 | 收益 | 代价 |
@@ -180,11 +187,10 @@ barrier是否正在给队列entrain哨兵callback
 
 ## 19.11\_源码和trace入口
 
-- `kernel/rcu/tree_nocb.h::call_rcu_nocb()`：生产者入口。
-- `rcu_nocb_bypass_*()` / `rcu_nocb_flush_bypass()`：旁路与合并。
-- `nocb_gp_wait()` / `rcu_nocb_gp_kthread()`：GP管理。
-- `nocb_cb_wait()` / `rcu_nocb_cb_kthread()`：callback执行。
-- `rcu_nocb_cpu_offload()` / `rcu_nocb_cpu_deoffload()`：动态切换。
+- [回调与 NOCB 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#11.6_NOCB为何拆成GP线程与CB线程)：先分清 producer、GP 观察者与 callback 执行者。
+- [`call_rcu_nocb()`、bypass、flush 与防搁浅唤醒](../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.8_nocb_bypass怎样降低生产者锁竞争又避免搁浅)。
+- [`nocb_gp_wait()` / `nocb_cb_wait()` 的双线程交接](../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.9_nocb_gp与cb线程如何交接成熟callback)。
+- [`rcu_nocb_cpu_offload()` / `deoffload()` 的动态切换](../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.10_动态offload为何只允许offline_CPU并等待状态交接)。
 
 上一篇：[Tree RCU 回调执行、批处理与限流](P18_Tree_RCU_回调执行_批处理与限流.md)。
 

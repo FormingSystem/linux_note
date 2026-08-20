@@ -200,6 +200,6 @@ RCU + kref 也不是让每个普通 reader 都记账。两种场景必须分开�
 
 上一篇：[RCU 集成模式与常见误用](P27_RCU_调试验证与集成误用.md)。
 
-下一步：[Linux 6.12 Tree RCU 与 SRCU 源码导读](../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)。
+下一步：[Linux 6.12 RCU 源码总阅读索引](../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
 
 

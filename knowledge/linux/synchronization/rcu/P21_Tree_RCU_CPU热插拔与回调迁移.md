@@ -56,18 +56,26 @@ WRITE_ONCE(rnp->qsmaskinitnext, rnp->qsmaskinitnext & ~mask);
 
 并要求从这一点直到 CPU 真正死亡保持 IRQ disabled，避免 CPU 已从未来参与集合删除后又由中断引入新的普通 RCU 读侧。
 
+全局 `rcu_state.ofl_lock` 专门把 CPU starting/dying 对 `qsmaskinitnext` 的修改，与普通 GP pre-init 把 `qsmaskinitnext` 收进稳定 `qsmaskinit` 的动作串行化。它解决的是“这一位属于当前轮还是下一轮”的边界竞态，不是保护整棵 `rcu_node` 树；具体节点位仍要在对应 `rnp->lock` 下修改。
+
+版本化模块入口见 [Tree RCU GP 全局生命周期模块源码概念导读](../../../../research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.7_一次唤醒怎样进入主循环和初始化)；普通 GP 一侧取得 `ofl_lock` 并吸收下一轮集合的阶段落点，见 [`rcu_gp_init()` 开始代际并建立证明债务](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.9_rcu_gp_init开始代际并建立证明债务)。
+
 ## 21.3\_上线也不能中途加入当前GP
 
 `rcutree_report_cpu_starting(cpu)` 在 incoming CPU 自己、尚未开中断的精确位置执行：
 
 ```c
 rnp->qsmaskinitnext |= rdp->grpmask;
+newcpu = !(rnp->expmaskinitnext & rdp->grpmask);
 rnp->expmaskinitnext |= rdp->grpmask;
+smp_store_release(&rcu_state.ncpus, rcu_state.ncpus + newcpu);
 smp_store_release(&rdp->beenonline, true);
 smp_mb(); /* 以后才能使用普通RCU读侧。 */
 ```
 
-新 CPU 加入 **下一轮** 初始化集合，而不是凭上线事件强行扩展已经开始的 GP=N。源码若发现当前 `qsmask` 错误地仍在等 incoming CPU，会警告并报告该位，表明正常协议不允许当前 GP 依赖一个尚未被授权使用 RCU 的 CPU。
+这里同时写两类不同集合：`qsmaskinitnext` 让 CPU 加入 **未来普通 GP**，但不会强行扩展已经开始的 GP=N；`expmaskinitnext` 则是 expedited 初始化树的 **ever-online 并集**，CPU 离线时不清除。只有该位从未出现过时 `newcpu=1`，`ncpus` 才以 release 语义增长，通知下一次 expedited reset 向上补传播；当前是否在线仍由每轮 CPU selection 另行判断。源码若发现当前普通 `qsmask` 错误地仍在等 incoming CPU，会警告并报告该位，表明正常协议不允许当前 GP 依赖一个尚未被授权使用 RCU 的 CPU。
+
+此路径先取得 `ofl_lock`，再按固定顺序取得 `barrier_lock` 和叶 `rnp->lock`：前者封闭普通 GP 参与集合，后两者协调 callback barrier/expedited 初始化位与叶节点位图。不能把附件中的一句“CPU offline 与 GP 初始化同步锁”理解成它只在 offline 方向使用；CPU starting 同样参与这条互斥协议。
 
 ## 21.4\_被抢占任务为何不能随CPU位一起删除
 
@@ -182,11 +190,12 @@ dmesg | tail -n 100
 
 ## 21.11\_源码入口
 
-- `tree.c::rcutree_prepare_cpu()`、`rcutree_report_cpu_starting()`、`rcutree_online_cpu()`。
-- `tree.c::rcutree_offline_cpu()`、`rcutree_dying_cpu()`、`rcutree_report_cpu_dead()`、`rcutree_dead_cpu()`。
-- `tree.c::rcutree_migrate_callbacks()`。
-- `rcu_segcblist.c::rcu_segcblist_merge()`。
-- `tree.c::rcu_cleanup_dead_rnp()` 与 `rcu_node.wait_blkd_tasks`。
+- [拓扑与 CPU 热插拔模块源码概念导读](../../../../research/source_reading/rcu/navigation/P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#8.4_它是三组相互交接的状态机)：先区分静态树、CPU参与集合和 callback 所有权。
+- [`rcutree_prepare_cpu()` 与 boot 初始化](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.5_boot初始化与prepare为何仍未让CPU加入当前GP)。
+- [`rcutree_report_cpu_starting()` / `report_cpu_dead()` 的 current/next 交接](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮)。
+- [`rcutree_migrate_callbacks()` 的 barrier 哨兵、advance 与 merge](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.7_rcutree_migrate_callbacks保留callback代际与barrier证明)。
+- [`rcutree_offline/dying/dead_cpu()` 的 CPUHP 分工](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.8_CPUHP其余回调分别更新什么)。
+- `rcu_cleanup_dead_rnp()` 与 `rcu_node.wait_blkd_tasks` 继续由抢占式 reader 模块解释，CPU 位清除不能删除任务债务。
 
 上一篇：[Tree RCU 同步等待与 rcu_barrier](P20_Tree_RCU_同步等待与rcu_barrier.md)。
 
