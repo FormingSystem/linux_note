@@ -546,16 +546,30 @@ mindmap-plugin: basic
         - 🔴 [P01 Linux 6.12 LKMM 源码与模型导读](../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md)
     - RCU
         - 模块概念导读
-            - 🔴 [P01 Linux 6.12 Tree RCU 与 SRCU 源码导读](../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)
+            - 🔴 [P01 Linux 6.12 RCU 源码总阅读索引](../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md)
             - 🔴 [P02 Linux 6.12 非抢占式 Tree RCU 模块源码概念导读](../../research/source_reading/rcu/navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md)
             - 🔴 [P03 Linux 6.12 抢占式 Tree RCU 模块源码概念导读](../../research/source_reading/rcu/navigation/P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md)
             - 🔴 [P04 Linux 6.12 Tasks RCU 与 Tiny RCU 模块源码概念导读](../../research/source_reading/rcu/navigation/P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md)
             - 🔴 [P05 Linux 6.12 RCU Lockdep适配模块源码概念导读](../../research/source_reading/rcu/navigation/P05_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#5.1_模块问题与实现所有权)
+            - 🔴 [P06 Linux 6.12 Tree RCU GP 全局生命周期模块源码概念导读](../../research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md)
+            - 🔴 [P07 Linux 6.12 Tree SRCU 模块源码概念导读](../../research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_SRCU模块源码概念导读.md)
+            - 🔴 [P08 Linux 6.12 Tree RCU 拓扑与 CPU 热插拔模块源码概念导读](../../research/source_reading/rcu/navigation/P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md)
+            - 🔴 [P09 Linux 6.12 Tree RCU force-QS 与 Stall 模块源码概念导读](../../research/source_reading/rcu/navigation/P09_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md)
+            - 🔴 [P10 Linux 6.12 Tree RCU Expedited GP 模块源码概念导读](../../research/source_reading/rcu/navigation/P10_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md)
+            - 🔴 [P11 Linux 6.12 Tree RCU 回调与 NOCB 模块源码概念导读](../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md)
+            - 🔴 [P12 Linux 6.12 Tree RCU 同步等待与 rcu_barrier 模块源码概念导读](../../research/source_reading/rcu/navigation/P12_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md)
         - 具体实现讲解
             - 🔴 [P01 Linux 6.12 RCU 公共接口与检查机制源码详解](../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md)
             - 🔴 [P02 Linux 6.12 非抢占式 Tree RCU 关键函数源码实现](../../research/source_reading/rcu/source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md)
             - 🔴 [P03 Linux 6.12 抢占式 Tree RCU 关键函数源码实现](../../research/source_reading/rcu/source_explanations/P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md)
             - 🔴 [P04 Linux 6.12 RCU Lockdep适配层源码实现](../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.1_实现所有权与读者目标)
+            - 🔴 [P05 Linux 6.12 Tree RCU GP 全局生命周期源码实现](../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md)
+            - 🔴 [P06 Linux 6.12 Tree RCU 拓扑与 CPU 热插拔源码实现](../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md)
+            - 🔴 [P07 Linux 6.12 Tree RCU force-QS 与 Stall 源码实现](../../research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md)
+            - 🔴 [P08 Linux 6.12 Tree RCU Expedited GP 源码实现](../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md)
+            - 🔴 [P09 Linux 6.12 Tree RCU 回调与 NOCB 源码实现](../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md)
+            - 🔴 [P10 Linux 6.12 Tree RCU 同步等待与 rcu_barrier 源码实现](../../research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md)
+            - 🔴 [P11 Linux 6.12 Tree SRCU 源码实现](../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md)
 
 ## 1.9\_🟢 参考与出版物
 - 🟢 参考资料
