@@ -366,7 +366,7 @@ Linux 6.12 的底层 `__rcu_dereference_check()` 和 `__rcu_dereference_protecte
 
 关闭检查只移除了诊断路径，不会让调用约束消失，也不会改变后续 `READ_ONCE()`、指针返回、GP 或 callback 功能路径。反过来，告警宏本身也不提供锁、发布顺序、宽限期或对象生命期保证。它最准确的定位是：**RCU 对通用 Lockdep 框架的检查适配层**。
 
-Lockdep 是动态检查，只能观察实际执行到的路径。一次测试没有告警，不能证明未覆盖分支、未来交错或临界区外裸指针一定安全。RCU 源码材料的分类和建议顺序见[Linux 6.12 Tree RCU 与 SRCU 源码导读](../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)；四个 map 的声明、定义、key、wait type、事件配对、held 查询、callback 消费和关闭配置见[RCU Lockdep适配层源码实现](../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.2_源码符号覆盖账本)，公共告警宏体见 [`RCU_LOCKDEP_WARN` 检查适配层](../../../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_LOCKDEP_WARN检查适配层)。
+Lockdep 是动态检查，只能观察实际执行到的路径。一次测试没有告警，不能证明未覆盖分支、未来交错或临界区外裸指针一定安全。RCU 源码材料的家族分流和建议顺序见 [Linux 6.12 RCU 源码总阅读索引](../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)；四个 map 的声明、定义、key、wait type、事件配对、held 查询、callback 消费和关闭配置见[RCU Lockdep适配层源码实现](../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.2_源码符号覆盖账本)，公共告警宏体见 [`RCU_LOCKDEP_WARN` 检查适配层](../../../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_LOCKDEP_WARN检查适配层)。
 
 RCU 链表宏也使用同一思路。例如带额外条件的 `list_for_each_entry_rcu()` 能表达遍历由指定 SRCU 域或更新锁保护；条件为假且没有任何认可的 RCU 读锁时，`CONFIG_PROVE_RCU_LIST` 路径会报告。
 

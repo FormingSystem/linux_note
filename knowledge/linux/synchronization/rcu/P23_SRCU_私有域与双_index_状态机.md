@@ -274,6 +274,8 @@ srcu_read_unlock(&bus_b.srcu, idx); /* 错误：bus_a 的债务永不归还。 *
 - [`include/linux/srcu.h`](../../../../research/source_reading/linux/include/linux/srcu.h)：读侧接口、同域等待禁令和上下文配对契约。
 - [`include/linux/srcutree.h`](../../../../research/source_reading/linux/include/linux/srcutree.h)：`srcu_struct`、`srcu_data`、`srcu_node`、`srcu_usage` 和 `SRCU_STATE_*`。
 - [`kernel/rcu/srcutree.c`](../../../../research/source_reading/linux/kernel/rcu/srcutree.c)：`__srcu_read_lock()`、`__srcu_read_unlock()`、`srcu_flip()`、`srcu_advance_state()`、`srcu_gp_start()`、`srcu_gp_end()`、`call_srcu()` 与 `synchronize_srcu()`。
+- 版本模块入口：[Linux 6.12 Tree SRCU 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_SRCU模块源码概念导读.md#7.1_先分清Tree_RCU与Tree_SRCU)。
+- 唯一函数实现：[Linux 6.12 Tree SRCU 源码实现](../../../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.2_源码符号覆盖账本)。其中 [reader 累计账本与扫描](../../../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.4_reader进入退出写的是累计账本)、[双扫描 GP](../../../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.6_双扫描GP状态机怎样推进)和 [同步/barrier 交付](../../../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.9_synchronize_srcu怎样把异步callback变成同步等待)分别展开这里使用的实现结论。
 
 上一篇：[RCU 实现家族与内核配置](P22_RCU_实现家族与内核配置.md)。
 

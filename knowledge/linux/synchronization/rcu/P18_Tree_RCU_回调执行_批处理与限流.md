@@ -195,9 +195,10 @@ echo 1 | sudo tee tracing_on
 
 ## 18.12\_源码入口
 
-- `kernel/rcu/tree.c::invoke_rcu_core()`、`rcu_core()`、`rcu_do_batch()`。
-- `kernel/rcu/rcu_segcblist.c::rcu_segcblist_extract_done_cbs()/rcu_segcblist_insert_done_cbs()`。
-- `kernel/rcu/tree_nocb.h::rcu_nocb_cb_kthread()`：offload执行者。
+- [回调与 NOCB 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#11.5_普通callback状态机)先建立完整执行链。
+- [`invoke_rcu_core()` 与 softirq/rcuc 选择](../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.7_普通CPU怎样选择softirq或rcuc执行者)。
+- [`rcu_do_batch()` 的 DONE 抽取、锁外调用、预算与回插](../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.6_rcu_do_batch为何先抽取再锁外执行)。
+- [NOCB callback kthread 执行者](../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.9_nocb_gp与cb线程如何交接成熟callback)。
 - `kernel/rcu/tree.c` 中 kfree/kvfree RCU 批处理路径。
 - `rcu_do_batch()` 与批量释放路径在真正执行延迟动作前后登记 `rcu_callback_map`；先从 [RCU Lockdep适配模块源码概念导读](../../../../research/source_reading/rcu/navigation/P05_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#5.4.3_callback上下文链)建立调用链，再进入 [`rcu_callback_map` 上下文标记](../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.7_rcu_callback_map怎样标记延迟动作上下文)核对定义、影子状态、消费者和修改边界。
 

@@ -45,6 +45,8 @@ sync_wq = alloc_workqueue("sync_wq", WQ_MEM_RECLAIM, 0);
 
 这段顺序有启动约束：`rcu_init()` 很早执行，此时源码断言在线 CPU 数不超过一个；其他 CPU 以后通过 CPU hotplug/bring-up 钩子逐个准备。GP kthread、boost/nocb/expedited 工作线程还受 `kthreadd` 和对应初始化阶段是否就绪的限制，不能把“`rcu_init()` 一次创建全部执行者”当作事实。
 
+这里第一次出现的 **GP kthread** 是一个长期存在的内核调度任务：`rcu_spawn_gp_kthread()` 创建 `task_struct`，入口为 `rcu_gp_kthread()`，任务指针保存在 `rcu_state.gp_kthread`，无请求时睡在 `rcu_state.gp_wq`。它不是每轮 GP 新建的线程，不是第五颗 CPU，也不负责执行所有 callback。完整术语和生命周期见 [Tree RCU GP 请求与全局生命周期](P12_Tree_RCU_GP请求与全局生命周期.md#12.3_为什么需要一个长期存在的GP内核线程)，版本化模块协作见 [GP 全局生命周期模块源码概念导读](../../../../research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.5_线程怎样创建并安全发布)，具体实现见 [`rcu_spawn_gp_kthread()`](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5_rcu_spawn_gp_kthread创建并发布长期任务)。
+
 ## 11.3\_S0到S6\_拓扑建立的统一阶段
 
 | 阶段 | 触发 | 写入状态 | 写入者 | 后续读取者 | 完成条件 |
@@ -62,6 +64,28 @@ sync_wq = alloc_workqueue("sync_wq", WQ_MEM_RECLAIM, 0);
 ## 11.4\_rcu\_node怎样由叶到根建立
 
 `rcu_init_one()` 按层从叶向根初始化每个 `rcu_node`。关键关系是：
+
+源码中的 `rcu_state.node[]` 与 `rcu_state.level[]` 先解决“树放在哪里”这个问题：
+
+```text
+逻辑树：Root → 中间rcu_node → 叶rcu_node
+
+物理布局：rcu_state.node[0], node[1], node[2], ...
+层入口：  rcu_state.level[i] → 第i层在node[]中的第一个元素
+```
+
+上游注释称这种布局为 tree in `"heap" form`，意思是类似堆数据结构那样按层紧密存入数组，**不是** `kmalloc()` 所说的动态内存堆。`node[0]` 是根；初始化根据 `num_rcu_lvl[]` 计算后续 `level[i]`，再为每个元素写 `parent/grpmask/grplo/grphi`。因此数组解决存储和遍历，节点字段解决逻辑父子关系，二者不是两棵树。
+
+同一全局对象中的两个 CPU 计数也不能混用：
+
+| 字段 | 含义 | 主要消费路径 |
+| --- | --- | --- |
+| `rcu_state.ncpus` | 到目前为止被 RCU 看见、加入过 expedited 初始化集合的 CPU 数；新 CPU 首次 online 时单调增加 | expedited GP 用它判断是否需要把新 CPU 传播进 `expmaskinit` 树 |
+| `rcu_state.n_online_cpus` | 当前对 RCU online 的 CPU 数；prepare/online 增加，dead 路径减少 | 运行期在线数量，并用于判断早期 `rcu_init()` 是否已经发生 |
+
+`ncpus` 不是当前在线数，CPU offline 不会让它回退；`n_online_cpus` 也不是本轮普通 GP 的等待集合，本轮集合仍由 `qsmaskinit/qsmask` 在 GP 边界建立。
+
+Linux 6.12.20 全部 `rcu_state` 字段域及其初始化见 [`rcu_state` 把多个子状态机放在同一全局对象](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.3_rcu_state把线程命令代际和等待队列放在一起)；本章只继续展开拓扑与 CPU 集合。
 
 ```c
 rnp->grplo = j * cpustride;
@@ -134,7 +158,7 @@ rdp->rcu_iw = IRQ_WORK_INIT_HARD(rcu_iw_handler);
 | reader任务 | 任意允许的内核任务/中断上下文 | RCU发布指针 | 每任务或执行约束状态 | 否 |
 | scheduler/context tracking | context switch、user/idle、IRQ边界 | 当前任务、watching、本CPU债务 | 本地QS或blocked任务登记 | 否 |
 | `rcu_core()` | `RCU_SOFTIRQ` 或 per-CPU `rcuc` kthread | `rcu_data`、叶节点、callback分段 | QS上报、callback推进/执行请求 | 否 |
-| `rcu_gp_kthread` | 全局GP内核线程 | 根完成条件、GP请求 | 初始化各节点、FQS、cleanup | 汇聚多个请求，不代表单个writer |
+| `rcu_gp_kthread` | 普通 Tree RCU 的长期全局 GP 内核任务 | 根完成条件、GP请求 | 初始化各节点、FQS、cleanup；[完整职责](P12_Tree_RCU_GP请求与全局生命周期.md#12.3_为什么需要一个长期存在的GP内核线程) | 汇聚多个请求，不代表单个writer，也不直接执行全部callback |
 | callback/nocb/boost/exp执行者 | softirq、per-CPU/nocb/节点kthread或workqueue | READY callback、blocked task、exp状态 | 调用callback、boost、加速GP | 代表已登记动作，不拥有业务入口 |
 
 ## 11.8\_rcu\_core为何既可能是softirq也可能是kthread
@@ -197,6 +221,8 @@ ps -eLo pid,psr,cls,rtprio,comm | grep -E 'rcu|rcuc|rcuo|rcub|rcuog|rcuop'
 ```
 
 不要预期所有配置都出现同一组线程：`use_softirq`、NOCB、boost、PREEMPT_RT 和 CPU 数量会改变执行者。观察目标是把实际线程/softirq与本章状态职责对应，而不是靠线程名反推全部语义。
+
+Linux 6.12.20 的版本化阅读先进入 [拓扑与 CPU 热插拔模块源码概念导读](../../../../research/source_reading/rcu/navigation/P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#8.1_本模块究竟解决什么问题)，再分别直达 [`rcu_init_one()` 建立固定汇聚树](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点) 与 [boot/prepare 两阶段初始化](../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.5_boot初始化与prepare为何仍未让CPU加入当前GP)。普通 GP kthread 和每 CPU core 执行者分别继续进入 P05 与 P09，不能由启动函数名把它们视为同一线程。
 
 ## 11.11\_成本与边界
 

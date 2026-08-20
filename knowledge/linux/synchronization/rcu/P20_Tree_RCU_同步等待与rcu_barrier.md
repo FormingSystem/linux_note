@@ -106,6 +106,21 @@ GP 后 callback 执行 `wakeme_after_rcu()`，`complete()` 原调用者。这是
 
 6.12 可选 `rcu_normal_wake_from_gp` 直接等待者批处理分支改变交付路径，不改变同步接口只等 reader 的契约。
 
+该可选分支在 `rcu_state` 中使用六组 `srs_*` 状态：
+
+| 字段 | 精确职责 |
+| --- | --- |
+| `srs_next` | 新调用者把自己的栈上 `rcu_synchronize.head` 无锁加入的请求入口 |
+| `srs_wait_tail` | GP init 插入 dummy wait-head 后，锁存“由当前物理 GP 覆盖到哪里” |
+| `srs_done_tail` | cleanup 已经交给直接完成/workqueue 的批次边界，使用 release/acquire 交接 |
+| `srs_wait_nodes[]` | 预分配的 dummy wait-head 分隔节点；不是每个调用者的等待对象池 |
+| `srs_cleanup_work` | GP kthread不宜一次唤醒过多调用者时，继续完成剩余批次 |
+| `srs_cleanups_pending` | 正在飞行的 cleanup work 数，用于安全回收 dummy 节点和协调新批次 |
+
+默认值 `rcu_normal_wake_from_gp=0` 时，同步调用者仍走 callback+completion；不能因为这些字段存在，就把可选优化写成所有 `synchronize_rcu()` 的固定实现。
+
+Linux 6.12.20 的模块阅读入口是 [同步等待与 rcu_barrier 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P12_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md#12.1_等RCU至少有三种不同对象)；具体请求加入、GP init 划界、cleanup 与 workqueue 交付见 [SRS 怎样批量交付同步等待者](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11.2_SRS怎样批量交付同步等待者)。
+
 ### 20.1.5\_barrier怎样在分散队列后放哨兵
 
 callback 分布在所有 possible CPU 的 `rcu_data.cblist`，NOCB CPU 还可能有 `nocb_bypass`。`rcu_barrier()` 不能只在当前 CPU 排一个 callback。
@@ -120,6 +135,8 @@ callback 分布在所有 possible CPU 的 `rcu_data.cblist`，NOCB CPU 还可能
 6. entrain 前 flush NOCB bypass，再把 `rdp->barrier_head` 放在该队列所有既有 callback 后面；
 7. 每个 barrier callback 被调用时计数减一，最后一个 `complete()`；
 8. 调用者醒来并结束 `barrier_sequence`。
+
+这里还有一个容易被结构体短注释误导的字段：`barrier_lock` 注释说保护 `barrier_seq_snap`，而 `barrier_seq_snap` 实际位于每 CPU `rcu_data`，并不在 `rcu_state` 中。该 raw spinlock把每 CPU 快照、哨兵 callback 登记以及 hotplug/callback 迁移放进同一可序列化边界；`barrier_mutex` 则负责串行化可睡眠的整个 `rcu_barrier()` 调用。两把锁的保护范围和可睡眠属性不同。
 
 ### 20.1.6\_为什么初始计数不是零
 
@@ -214,11 +231,10 @@ free_detached_list_directly(list);
 
 ### 20.1.11\_源码和trace入口
 
-- `tree.c::synchronize_rcu_normal()`。
-- `include/linux/rcupdate_wait.h::wait_rcu_gp`。
-- `kernel/rcu/update.c::__wait_rcu_gp()`、`wakeme_after_rcu()`。
-- `tree.c::rcu_barrier()`、`rcu_barrier_entrain()`、`rcu_barrier_callback()`。
-- `rcu_segcblist.c::rcu_segcblist_entrain()`。
+- [`synchronize_rcu()` 的普通/expedited/早期退化分流](../../../../research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.4_synchronize_rcu怎样选择普通expedited或早期空GP)。
+- [默认 `wait_rcu_gp()` 与可选 SRS 等待对象](../../../../research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.5_默认分支为何等待调用者自己的completion)；`__wait_rcu_gp()/wakeme_after_rcu()` 函数体见 [P02 等待桥](../../../../research/source_reading/rcu/source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.3___wait_rcu_gp与wakeme_after_rcu连接等待者)。
+- [`rcu_barrier_callback()` 与 `rcu_barrier_entrain()` 的队尾哨兵证明](../../../../research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.6_barrier_callback与entrain如何证明队列前序已执行)。
+- [`rcu_barrier()` 的全 CPU 扫描、count=2 与完成发布](../../../../research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.8_rcu_barrier怎样扫描所有队列并等待真实执行)。
 
 `rcu_barrier` trace 事件可观察 Begin、EarlyExit、每 CPU 排队和 LastCB；事件存在性依内核配置，先检查 `/sys/kernel/tracing/events/rcu/`。
 

@@ -46,6 +46,19 @@ kfree(old);
 
 显式调用 expedited 不表示“让当前普通 GP 加快一点”；它走一套独立但共享 Tree RCU reader 定义的证明通道。
 
+Linux 6.12.20 的全局 expedited 字段还要再分三类：
+
+| 字段 | 当前实现职责 | 关键边界 |
+| --- | --- | --- |
+| `exp_mutex` | 漏斗最终串行化物理 expedited GP leader；持有者开始序列并在调用完成后释放 | 它不保护普通 `gp_seq` |
+| `exp_wake_mutex` | 串行化“结束 expedited 序列并唤醒各节点 follower”的阶段，防止下一轮与上一轮 wake 交叠 | 不是 CPU check-in 计数锁 |
+| `expedited_sequence` | expedited GP 自己的代际/ticket 序列 | 与普通 `gp_seq` 独立 |
+| `expedited_wq` | leader 等根 `expmask/exp_tasks` 完成条件时使用的全局 simple waitqueue | 节点 follower 主要睡在各 `rnp->exp_wq[]` |
+| `ncpus_snap` | 上一次重置 expedited hotplug 树时观察到的 `ncpus` | 只用于发现新 online CPU，不是当前在线数快照 |
+| `expedited_need_qs` | 在该固定提交中只有字段声明，没有活动写入者或读取者 | 不能凭字段注释虚构“所有 CPU 原子递减到零”的当前算法 |
+
+当前完成证明落在节点 `expmask`、被抢占任务 `exp_tasks` 以及根完成检查上。结构体保留一个名字像计数器的字段，不等于该版本的活跃路径真的使用计数器。
+
 ## 16.3\_S0到S8\_一次expedited\_GP
 
 | 阶段 | 入口 | 状态变化 | 参与者 | 退出条件 |
@@ -173,12 +186,14 @@ expedited 会更积极，但仍可能受以下因素拖延：
 
 ## 16.10\_源码和trace入口
 
-- `kernel/rcu/tree_exp.h::synchronize_rcu_expedited()`：公共入口、非法上下文检查和 fallback。
-- `exp_funnel_lock()`：并发请求合并。
-- `sync_exp_reset_tree()`：`expmask` 初始化。
-- `sync_rcu_exp_select_cpus()` / `__sync_rcu_exp_select_node_cpus()`：叶并行选择、EQS检查、IPI。
-- `rcu_exp_handler()`：远端立即或延迟报告。
-- `rcu_exp_wait_wake()`：结束序列并唤醒 follower。
+版本化模块先从 [Expedited GP 模块源码概念导读](../../../../research/source_reading/rcu/navigation/P10_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md#10.1_Expedited不是普通GP的加速档)进入，再按问题直达唯一实现：
+
+- [`expedited_sequence` 与 poll 交接](../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.4_expedited_sequence怎样独立计代并共同推进poll观察)；
+- [`exp_funnel_lock()` 合并并发请求](../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.5_exp_funnel_lock怎样合并并发调用者)；
+- [`sync_exp_reset_tree()` 建立 `expmask`](../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.6_sync_exp_reset_tree怎样建立本轮债务)；
+- [叶并行 CPU selection、EQS 与 IPI](../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.7_sync_rcu_exp_select_cpus为什么不是无条件广播)；
+- [`rcu_exp_handler()` 立即或延期报告](../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.8_rcu_exp_handler把IPI转换为立即或延期证明)；
+- [`rcu_exp_wait_wake()` 与公开 API](../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.9_wait_wake与公开API怎样关闭一轮)。
 
 ```bash
 cd /sys/kernel/tracing
