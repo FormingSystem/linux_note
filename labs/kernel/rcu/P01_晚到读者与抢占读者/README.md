@@ -34,7 +34,7 @@ topics:
 ## 1.2\_场景和参与者
 
 ```mermaid
-flowchart LR
+flowchart TD
     M["insmod执行线程<br/>串行发布gen1、gen2、gen3"]
     L["late_reader<br/>先等在RCU读区外"]
     R["old_reader<br/>绑定target_cpu<br/>取得gen2后忙等"]
