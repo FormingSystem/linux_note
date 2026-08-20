@@ -383,15 +383,36 @@ sparse_install_smoke.c:...: warning: incorrect type in argument 1 (different add
 
 这个诊断类别也可以在 Sparse `v0.6.4` 自带的[地址空间验证用例](https://git.kernel.org/pub/scm/devel/sparse/sparse.git/tree/validation/address_space.c?h=v0.6.4)中核对；示例没有要求逐字匹配行号、列号和类型打印格式。
 
+实验打印：
+```shell
+$ sparse -Waddress-space -DBUILD_BAD_PATH sparse_install_smoke.c
+sparse_install_smoke.c:22:27: warning: incorrect type in argument 1 (different address spaces)
+sparse_install_smoke.c:22:27:    expected int const *value
+sparse_install_smoke.c:22:27:    got int const <asn:1> *source
+```
+
 最后验证 CI 失败语义：
 
 ```bash
-sparse -Wsparse-error -Waddress-space \
-    -DBUILD_BAD_PATH sparse_install_smoke.c
+$ sparse -Wsparse-error -Waddress-space -DBUILD_BAD_PATH sparse_install_smoke.c
 echo $?
 ```
 
-故意错误存在时，`-Wsparse-error` 会使命令以非零状态退出；shell 中的 `$?` 因而不应为 `0`。若要清理实验文件，可以执行：
+故意错误存在时，`-Wsparse-error` 会使命令以非零状态退出；shell 中的 `$?` 因而不应为 `0`。
+
+```shell
+$ sparse -Wsparse-error -Waddress-space \
+    -DBUILD_BAD_PATH sparse_install_smoke.c
+echo $?
+sparse_install_smoke.c:22:27: error: incorrect type in argument 1 (different address spaces)
+sparse_install_smoke.c:22:27:    expected int const *value
+sparse_install_smoke.c:22:27:    got int const <asn:1> *source
+1
+```
+
+
+
+若要清理实验文件，可以执行：
 
 ```bash
 rm -f sparse_install_smoke.c
@@ -416,7 +437,52 @@ rm -f sparse_install_smoke.c
 
 前面的安装说明只回答“怎样取得工具”，还没有回答“怎样用实验把前五章的概念逐项变成证据”。如果直接运行一次 `make check-all`，终端也许会出现许多警告，但读者无法判断哪条警告由地址域、`noderef`、调用前置条件、返回债务还是分支合流产生。真正能够研究机制的实验必须先建立干净对照，再一次只改变一个变量。
 
-本章使用仓库中的 [Sparse 地址空间与上下文记账实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标) 作为贯穿场景。独立实验不依赖内核启动，最后再通过一个不加载的外部模块接入真实 Kbuild。完整路线如下：
+本章使用仓库中的 Sparse 地址空间与上下文记账材料包作为贯穿场景。独立实验不依赖内核启动，最后再通过一个只构建、不加载的外部模块接入真实 Kbuild。后续操作、预期现象和解释都在本章闭合；实验目录中的 README 只作为命令速查与文件入口，不再承担理解本章所必需的说明。
+
+### 6.3.1\_先把实验材料包摆完整
+
+先进入材料包根目录：
+
+```bash
+cd labs/foundations/c_language/P01_Sparse地址空间与上下文记账
+find . -maxdepth 2 -type f -print | sort
+```
+
+预期至少看到下面六个文件；如果文件不全，应先恢复仓库内容，不要用自己临时拼出的代码继续实验：
+
+| 材料 | 本章在哪个阶段使用 | 它提供什么 | 它不提供什么 |
+| --- | --- | --- | --- |
+| [`sparse_annotation_demo.c`](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/sparse_annotation_demo.c) | E1～E6 | 正确基线、地址域反例、`noderef` 反例和 context 反例 | 不执行真实用户访问，也不取得真实锁 |
+| [`Makefile`](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/Makefile) | E0～E6 | 固定预处理、GCC、Sparse 和自动复验命令 | 不替开发者安装 Sparse |
+| [`verify.sh`](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/verify.sh) | E6 | 逐项断言正确样例静默、错误样例出现指定诊断类别 | 不把不同版本的整句警告和行号写死 |
+| [`kernel_module/sparse_kbuild_probe.c`](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/kernel_module/sparse_kbuild_probe.c) | E7 | 提供能进入真实 Kbuild 的最小外部模块翻译单元 | 不加载模块，也不触发真实设备行为 |
+| [`kernel_module/Makefile`](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/kernel_module/Makefile) | E7 | 固定 `M=`、`C=1/C=2`、`CF` 和清理命令 | 不提供内核 `.config` 与生成头文件 |
+| [`README.md`](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标) | 需要快速查命令时 | 提供材料目录内的操作速查 | 不是理解预期现象的前置读物 |
+
+材料分成两层。前三个文件验证 **独立分析器**：同一份 C 文件通过 `-D...` 一次只打开一个反例。`kernel_module/` 验证 **真实构建接入**：Kbuild 负责补齐 `.config`、生成头文件、体系结构参数和 include 路径。两层不能颠倒；独立实验未闭合时，直接进入 Kbuild 只会把构建噪声与注解诊断混在一起。
+
+### 6.3.2\_先认清目标开关与唯一改变量
+
+`sparse_annotation_demo.c` 中的 `BAD_*`、`ERASE_*` 都是本仓库教学开关，不是 Linux 或 Sparse 的公共 API。Makefile 通过 `-D` 定义它们，使每个目标只改变一项契约：
+
+| Make目标 | 打开的教学开关 | 唯一改变量 | 本章预期观察 |
+| --- | --- | --- | --- |
+| `check-good` | 无 | 正确基线 | 没有本实验的地址域、`noderef` 或 context 诊断 |
+| `check-address-boundary` | `BAD_ADDRESS_BOUNDARY` | 普通对象传给 `__user` 形参 | `different address spaces` |
+| `check-address-boundary-erased` | 上一开关再加 `ERASE_BOUNDARY_CONTRACT` | 只删除空函数形参的地址域 | 上一条地址域诊断消失 |
+| `check-address-assignment` | `BAD_ADDRESS_ASSIGNMENT` | `__user` 指针赋给普通指针 | `different address spaces` |
+| `check-noderef` | `BAD_NODEREF` | 直接解引用 `noderef` 指针 | `dereference of noderef expression` |
+| `check-context-call` | `BAD_CONTEXT_CALL` | 未建立账本就调用要求持有的函数 | `context check failure` 或版本等价诊断 |
+| `check-context-exit` | `BAD_CONTEXT_EXIT` | 取得后不释放就返回 | `wrong count at exit` 或版本等价诊断 |
+| `check-context-release` | `BAD_CONTEXT_RELEASE` | 没有取得就释放 | `unexpected unlock` 或版本等价诊断 |
+| `check-conditional-context` | `BAD_CONDITIONAL_CONTEXT` | 在知道条件结果以前无条件登记 | 分支 context 不一致或退出计数错误 |
+| `check-wrapper-contract` | `ERASE_LOCK_WRAPPER_CONTRACT` | 保留函数体事件，只删除函数声明契约 | 包装函数退出变化与调用者传播不再闭合 |
+
+所有独立 Sparse 目标共同使用 `-Wall -Wcontext`；普通编译对照使用 `-std=gnu11 -Wall -Wextra -Werror -fsyntax-only`。如果临时通过 `SPARSE_FLAGS=...` 改了选项，必须把完整值记入实验记录，否则不同轮次不再可比较。
+
+### 6.3.3\_再沿E0至E8逐轮验收
+
+有了同一材料包和开关矩阵以后，完整路线如下：
 
 ```mermaid
 flowchart TD
@@ -463,6 +529,25 @@ make doctor
 
 预期依次看到 Sparse 的实际路径和版本、GCC 的实际路径和版本、GNU make 版本。把这些内容复制进实验记录。若 `make doctor` 在 `command -v sparse` 处失败，回到 6.2 完成安装；此时“没有诊断”没有任何证明力，因为分析器根本没有运行。
 
+输出的具体版本会随主机变化，但形状应类似：
+
+```text
+/usr/bin/sparse
+v0.6.4
+/usr/bin/gcc
+gcc (...) 版本信息
+GNU Make 版本信息
+```
+
+这五类信息必须连起来读：第一行是本轮真正执行的 Sparse 路径，第二行是该路径对应的版本，后面三项确认预处理器、普通编译器和 Makefile 解释器。只保存 `v0.6.4` 而不保存路径，无法发现 `/usr/bin/sparse` 与 `$HOME/.local/bin/sparse` 的遮蔽问题。
+
+| E0现象 | 本轮结论 | 下一步 |
+| --- | --- | --- |
+| 路径、版本和三个工具均能打印 | 实验入口具备可复核身份 | 进入 E1 |
+| `command -v sparse` 失败 | Sparse 没有进入本轮环境 | 回到 6.2 安装或修复 `PATH` |
+| `type -a sparse` 与记录路径不一致 | 多版本发生遮蔽 | 选择准确路径，并让开发机与 CI 使用同一入口 |
+| GCC 或 GNU make 缺失 | 配套材料无法按预定命令运行 | 安装构建工具后重新执行 E0 |
+
 ### 6.4.2\_先准备证据表而不是只保存截图
 
 每一轮至少记录：
@@ -497,9 +582,32 @@ grep -nE 'address_space\(|noderef|__context__|__attribute__.*context' /tmp/compi
 
 第一条 `make` 命令定义 `__CHECKER__`，预期在输出中保留 `address_space`、`noderef`、`context` 或 `__context__`；第二条不定义 `__CHECKER__`，这些实验宏应退化为空属性或普通表达式。此阶段只证明两个消费者收到不同输入，还没有证明 Sparse 会怎样解释这些记号。
 
+Sparse 分支的搜索结果应出现下面几类片段；空白和声明顺序可能不同：
+
+```text
+__attribute__((noderef, address_space(1)))
+__attribute__((context(...)))
+__context__(..., 1)
+__context__(..., -1)
+```
+
+普通编译分支的第二条 `grep` 应当 **没有匹配输出**，而且 `grep` 会以状态 `1` 表示“没有匹配”；这在本轮是预期现象，不是预处理失败。可显式观察两个状态：
+
+```bash
+grep -nE 'address_space\(|noderef|__context__|__attribute__.*context' \
+    /tmp/sparse-branch.i
+echo "sparse分支grep状态=$?"
+
+grep -nE 'address_space\(|noderef|__context__|__attribute__.*context' \
+    /tmp/compiler-branch.i
+echo "普通分支grep状态=$?"
+```
+
+验收关系是“Sparse 分支有匹配、普通分支无匹配”，不是比较两个 `.i` 文件总行数。总行数还会受到编译器版本和内建声明影响，不能作为当前语义是否存在的稳定证据。
+
 若两份输出相同，先检查 `make` 打印的命令、当前目录和搜索范围。真实内核文件还依赖生成配置与大量 include 参数，不能脱离 Kbuild 只执行一条简化的 `gcc -E file.c` 后就断言内核分支是什么。
 
-完整的预处理观察步骤见实验的[1.4 先观察两个预处理分支](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.4_先观察两个预处理分支)。
+如果 Sparse 分支也没有匹配，先看 `make preprocess-sparse` 打印的命令是否含 `-D__CHECKER__`；如果普通分支仍有匹配，检查是否从环境变量额外注入了 `__CHECKER__`，或者搜索到了手工写在业务代码中的同名文本。只有恢复这组一有一无的输入差异，才能进入 E2。
 
 ### 6.5.2\_E2建立后续所有反例的共同基线
 
@@ -527,15 +635,28 @@ static void conditional_context_good(int *lock, int succeeds)
 }
 ```
 
-运行：
+运行并保存完整输出：
 
 ```bash
-make check-good
+make check-good > /tmp/sparse-good.log 2>&1
+status=$?
+cat /tmp/sparse-good.log
+echo "check-good状态=$status"
+grep -nE 'warning:|error:' /tmp/sparse-good.log
 ```
 
-预期没有地址空间、`noderef` 或 context 诊断。三条路径分别说明：同域指针进入同域形参；无条件取得路径的账本是 `0 → 1 → 1 → 0`；条件取得的成功和失败分支最终都回到 `0`。
+Make 通常会先回显实际执行的 `sparse -Wall -Wcontext sparse_annotation_demo.c` 命令，因此“干净基线”不是终端绝对空白，而是：`check-good状态=0`，回显命令以后没有 `文件:行号: warning:` 或 `error:` 诊断，最后一条 `grep` 没有匹配。三条路径分别说明：同域指针进入同域形参；无条件取得路径的账本是 `0 → 1 → 1 → 0`；条件取得的成功和失败分支最终都回到 `0`。
+
+| 正确路径 | 入口状态 | 关键动作 | 退出状态 | 本轮现象 |
+| --- | ---: | --- | ---: | --- |
+| `address_space_good()` | `source` 为 `__user` | 传给同域空检查函数 | 类型未降格 | 无地址域诊断 |
+| `context_good()` | 0 | `fake_lock()` 加一，要求持有时为1，`fake_unlock()` 减一 | 0 | 无 context 诊断 |
+| `conditional_context_good()` 失败分支 | 0 | 条件为假，不登记 | 0 | 无合流或退出诊断 |
+| `conditional_context_good()` 成功分支 | 0 | 条件为真时加一，使用后释放 | 0 | 无合流或退出诊断 |
 
 如果正确基线已经报警，必须停止。先确认是不是工具版本、附加 `SPARSE_FLAGS`、实验源码或宏环境发生变化，再决定修实验还是调整版本边界。一个不干净的基线无法支持后续“唯一变量导致诊断”的因果结论。
+
+若命令状态非零但日志没有预期的类型或 context 信息，先排查语法错误、找不到文件和不支持的命令行选项；若状态为零但出现诊断，仍然判定基线失败，因为 Sparse 的普通警告未必默认转换成非零退出状态。
 
 ## 6.6\_E3用A/B实验拆开地址域与noderef
 
@@ -572,6 +693,18 @@ make check-address-boundary-erased
 
 因此，检查由 **函数声明形成的类型边界** 完成，与函数名是否像检查器、函数体是否读内存无关。B 中诊断消失也不表示调用安全，只表示类型证据被删除。
 
+将两轮输出并排保存，现象应满足：
+
+```text
+check-address-boundary：
+... warning: incorrect type in argument ... (different address spaces)
+
+check-address-boundary-erased：
+没有 different address spaces
+```
+
+如果 A、B 两轮都报警，检查第二条 Make 命令是否同时含 `-DBAD_ADDRESS_BOUNDARY` 与 `-DERASE_BOUNDARY_CONTRACT`；如果两轮都不报警，检查 E1 的 Sparse 分支是否保留 `address_space(1)`，以及当前执行的是否真是 Sparse。这里不能用“空函数没有代码，所以不报警”解释结果，因为 A/B 唯一变化就在形参类型。
+
 ### 6.6.2\_地址域赋值和受限指针解引用不是同一错误
 
 先只启用地址域赋值：
@@ -603,7 +736,18 @@ return source->value;
 
 它没有先转换为普通指针，预期核心诊断是 `dereference of noderef expression`。前者检查指针能否在逻辑域之间流动，后者检查受限指针能否绕过专用访问协议；把两段代码放在同一反例里会让次生诊断污染因果关系。
 
-本阶段只能证明 Sparse 区分了这些静态误用，不能证明真实 `copy_from_user()` 完成了页故障处理、范围检查和错误返回。完整命令、预期和故障定位见实验的[类型边界](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.6_类型边界实验_空函数怎样把实参送进检查)与[地址空间和 noderef](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.7_地址空间与noderef实验_把两种错误拆开)两节。
+四个目标的最终验收矩阵如下：
+
+| 命令 | 必须出现 | 不应混入的首要类别 | 结果说明 |
+| --- | --- | --- | --- |
+| `make check-address-boundary` | `different address spaces` | `noderef` 裸解引用 | 空函数形参建立了类型边界 |
+| `make check-address-boundary-erased` | 无上述地址域诊断 | 任意新增类型诊断 | 删除形参契约会删除这项证据 |
+| `make check-address-assignment` | `different address spaces` | `dereference of noderef expression` | 错误发生在指针域流动阶段 |
+| `make check-noderef` | `dereference of noderef expression` | 额外的普通指针赋值首因 | 错误发生在受限指针访问阶段 |
+
+如果 `check-address-assignment` 同时出现裸解引用诊断，说明反例中混入了成员访问；如果 `check-noderef` 先出现地址域转换诊断，说明代码已经不是本材料包的单变量版本。应恢复源码，而不是把所有警告统称为“地址空间问题”。
+
+本阶段只能证明 Sparse 区分了这些静态误用，不能证明真实 `copy_from_user()` 完成了页故障处理、范围检查和错误返回。运行时用户访问仍必须通过 uaccess 接口，并单独验证失败返回和输出提交顺序。
 
 ## 6.7\_E4把三种context错误还原成三条时间线
 
@@ -647,7 +791,30 @@ static void context_bad_release(int *lock)
 | 取得后返回 | `入口0 → fake_lock +1 → 退出1` | `wrong count at exit` | 函数返回时 |
 | 没有取得就释放 | `入口0 → fake_unlock -1` | `unexpected unlock` | 释放事件发生时 |
 
-第一种违反被调用者的入口要求；第二种在返回路径留下债务；第三种试图从不存在的状态中扣减。它们可能都提到 lock，但修复位置并不相同。详细的预期结果与比较表见实验的[1.8 context 基本实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.8_context基本实验_前置状态退出债务与错误释放)。
+第一种违反被调用者的入口要求；第二种在返回路径留下债务；第三种试图从不存在的状态中扣减。它们可能都提到 lock，但修复位置并不相同。不同 Sparse 版本的整句文本可能变化，验收时按下面的类别集合判断：
+
+```text
+check-context-call：
+  context check failure
+  或 context imbalance
+
+check-context-exit：
+  wrong count at exit
+  或 context imbalance
+
+check-context-release：
+  unexpected unlock
+  或 context imbalance
+```
+
+每个反例以后立即执行 `make check-good`，目的不是“顺手再跑一次”，而是证明上轮 `-D...` 只存在于那条命令，没有污染共同基线。三轮都应满足“反例出现对应类别、紧随其后的基线不出现诊断”。
+
+| 异常现象 | 优先检查 |
+| --- | --- |
+| 三个反例全部静默 | E1 是否保留 `context` 与 `__context__`；当前 Sparse 是否支持并启用了对应检查 |
+| 三轮都只报告同一源码位置 | 是否误用了 `make check-all`，或环境变量把多个 `BAD_CONTEXT_*` 同时注入 |
+| `check-good` 也报告账本错误 | 包装函数契约、事件宏或共同 `SPARSE_FLAGS` 已被改变，不能继续比较 |
+| 诊断类别正确但行号不同 | 记录当前版本与实际行号即可，不把历史行号写进断言 |
 
 在真实补丁中也应使用相同方法：把每个 `return`、`goto` 和错误分支列出来，从函数入口沿路径累计事件，而不是根据 `lock`、`unlock` 的函数名猜测检查器“应该知道”。
 
@@ -689,6 +856,15 @@ if (succeeds) {
 
 成功路径仍能回到 `0`，失败路径却以 `1` 退出。预期出现 `different lock contexts for basic block`、`wrong count at exit` 或版本等价诊断。这个实验把 `__cond_lock()` 的作用限定得很清楚：它不执行 trylock，而是让 **功能结果为真** 与 **静态账本增加** 共享同一个控制流边界。若 `succeeds` 本身谎报真实锁状态，静态账本仍会跟着谎言走。
 
+这一轮应保存的不只是警告文本，还包括两条账本：
+
+| 分支 | 错误实现的账本 | 预期现象 |
+| --- | --- | --- |
+| `succeeds != 0` | `0 → 1 → 1 → 0` | 单看该分支可能闭合 |
+| `succeeds == 0` | `0 → 1 → 退出1` | 合流或退出位置报告 context 不一致 |
+
+若错误目标保持静默，检查 Makefile 是否真的传入 `-DBAD_CONDITIONAL_CONTEXT`；若只看到“未使用函数”一类普通告警，说明当前选项或源码没有进入预定反例。恢复 `make check-good` 后，两条正确分支都应以 `0` 退出。
+
 ### 6.8.2\_包装函数体内有事件为什么还需要函数属性
 
 `fake_lock()` 同时具有：
@@ -713,7 +889,16 @@ make check-wrapper-contract
 make check-good
 ```
 
-由此可以得到三个不能混写的事实：真实包装函数做了什么、Sparse 怎样核对包装函数体、调用者怎样得到入口/出口契约。实验详情见[条件取得](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.9_条件取得实验_为什么记账必须跟随成功分支)和[包装层契约](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.10_包装层契约实验_函数体正确不等于调用者看得见)。
+红灯与绿灯应形成下面的完整对照：
+
+| 轮次 | 函数体中的 `__acquire()` | 声明上的 `__acquires()` | 调用者可见变化 | 预期现象 |
+| --- | --- | --- | --- | --- |
+| 红灯 `check-wrapper-contract` | 保留 | 擦除 | 不传播 `0 → 1` | `wrong count at exit`、`context imbalance` 或版本等价诊断 |
+| 绿灯 `check-good` | 保留 | 保留 | 传播 `0 → 1` | 包装函数和调用者均无本实验 context 诊断 |
+
+如果红灯也安静，不能直接宣称“函数属性没有用途”；应先确认擦除开关进入预处理结果，并核对当前 Sparse 版本怎样诊断包装函数退出变化。如果绿灯仍报警，则函数体事件、声明契约或调用者释放路径至少有一项没有配对。
+
+由此可以得到三个不能混写的事实：真实包装函数做了什么、Sparse 怎样核对包装函数体、调用者怎样得到入口/出口契约。到这里，条件分支与跨函数传播的材料、操作、现象和解释已经在本节闭合。
 
 ## 6.9\_E6用消费者对照和自动断言封闭独立实验
 
@@ -733,13 +918,25 @@ make compile-compiler
 make verify
 ```
 
-`make verify` 先重复普通 GCC 对照，再由 `verify.sh` 断言：正确基线静默；删除空函数形参契约以后诊断消失；地址域、`noderef` 和各类 context 反例分别出现预期类别。脚本不固定行号和整句输出。一个完整成功结果会以多行 `PASS ...` 结束，并包含：
+`make verify` 先重复普通 GCC 对照，再由 `verify.sh` 断言：正确基线静默；删除空函数形参契约以后诊断消失；地址域、`noderef` 和各类 context 反例分别出现预期类别。脚本不固定行号和整句输出。忽略 Make 回显的 GCC 命令后，一个完整成功结果应包含下面全部项目，而不只是最后一行：
 
 ```text
+PASS good: 未产生诊断
+PASS address_boundary: 观察到预期诊断类别
+PASS address_boundary_erased: 未产生诊断
+PASS address_assignment: 观察到预期诊断类别
+PASS noderef: 观察到预期诊断类别
+PASS context_call: 观察到预期诊断类别
+PASS context_exit: 观察到预期诊断类别
+PASS context_release: 观察到预期诊断类别
+PASS conditional_context: 观察到预期诊断类别
+PASS wrapper_contract: 观察到预期诊断类别
 PASS verify: 所有正反例都满足当前实验的类别断言
 ```
 
-若脚本失败，必须检查它保留的实际输出。可能原因包括：基线出现新诊断、Sparse 版本改变措辞、某个开关没有进入源码，或者实验假设被新版本推翻。不能为了让脚本变绿而把正则扩成任意 `warning`，否则类别断言会失去意义。
+`address_boundary_erased` 必须像 `good` 一样静默，这是“删除契约会删除诊断”的负向断言；其他八个错误项必须各自命中限定类别。少一项就表示某轮实验没有闭合，不能用最后一行手工补成通过。
+
+若脚本失败，必须检查它在 `FAIL ...` 后保留的实际输出。可能原因包括：基线出现新诊断、Sparse 版本改变措辞、某个开关没有进入源码，或者实验假设被新版本推翻。不能为了让脚本变绿而把正则扩成任意 `warning`，否则类别断言会失去意义。
 
 ### 6.9.3\_最后才练习混合报告分类
 
@@ -767,6 +964,58 @@ flowchart LR
 
 这一步需要一棵已经配置、能够构建外部模块的 Linux 内核构建目录。若源目录与输出目录分离，应传入包含 `.config` 和生成头文件的构建目录。
 
+E7 使用的完整模块源码很小，唯一业务函数只是比较指针是否为空：
+
+```c
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/types.h>
+
+static bool probe_user_pointer(const int __user *source)
+{
+#ifdef BUILD_BAD_ADDRESS
+    /* 故意错误：把用户地址空间指针降格为普通内核指针。 */
+    const int *plain = source;
+
+    return plain != NULL;
+#else
+    /* 正确基线只比较指针，不执行真实用户内存访问。 */
+    return source != NULL;
+#endif
+}
+
+static int __init sparse_kbuild_probe_init(void)
+{
+    /* 模块不会在实验中加载；调用只保证函数进入翻译单元。 */
+    (void)probe_user_pointer(NULL);
+    return 0;
+}
+
+static void __exit sparse_kbuild_probe_exit(void)
+{
+}
+
+module_init(sparse_kbuild_probe_init);
+module_exit(sparse_kbuild_probe_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("Sparse Kbuild integration probe");
+```
+
+正常分支和错误分支具有相同的模块入口、退出和清理边界，唯一差异是 `BUILD_BAD_ADDRESS` 是否让 `const int __user *` 降格为普通 `const int *`。`kernel_module/Makefile` 再把操作固定为：
+
+| 目标 | 传给Kbuild的关键变量 | 应观察什么 |
+| --- | --- | --- |
+| `doctor` | `KERNEL_BUILD=...` | 构建目录、Sparse 路径和版本 |
+| `build` | `M=<模块目录>` | 普通外部模块能否生成 `.ko` |
+| `check-c1` | `C=1 V=1` | 只检查本轮重编译文件 |
+| `check-c2` | `C=2 V=1` | 即使对象最新也检查选中翻译单元 |
+| `check-good` | `C=2 CF="-Wcontext"` | 正确地址域分支无本实验诊断 |
+| `check-bad` | 再加 `-DBUILD_BAD_ADDRESS` | 出现 `different address spaces` |
+| `clean` | Kbuild `clean` | 删除模块目录内生成物 |
+
 ### 6.10.2\_建立普通模块构建基线
 
 ```bash
@@ -778,6 +1027,15 @@ make KERNEL_BUILD="$kernel_build" build
 ```
 
 预期生成 `sparse_kbuild_probe.ko`，但本实验不执行 `insmod`。如果 `build` 失败，应先解决内核配置、生成头文件、编译器或模块构建问题；在普通翻译单元尚未成立时，Sparse 输出不具备可比基线。
+
+普通构建日志通常包含 `CC [M]`、`MODPOST`、`LD [M]` 等阶段；具体格式随内核版本和 `V=` 选项变化。用文件而不是肉眼滚动日志完成验收：
+
+```bash
+test -f sparse_kbuild_probe.ko
+echo "模块产物状态=$?"
+```
+
+状态为 `0` 才说明普通模块基线成立。若看到缺少生成头文件、`Module.symvers` 或模块支持的错误，先修内核构建目录；这类失败发生在 Sparse 以前，不能解释为地址域实验结果。
 
 ### 6.10.3\_用已是最新状态的目标验证C=1与C=2
 
@@ -796,6 +1054,15 @@ grep -E 'CHECK|sparse' /tmp/sparse-kbuild-c2.log
 
 `C=1` 只对本轮因依赖变化而重新编译的 C 文件运行 Sparse；目标已经是最新状态时，日志可能没有检查动作。`C=2` 对选中范围内的 C 文件运行 Sparse，即使相应对象不需要重新编译。二者改变的是 **覆盖范围**，不是 `-Wcontext` 等诊断严格程度。
 
+在“刚完成 `build` 且源码时间戳未变化”的前提下，预期关系是：
+
+| 日志 | `CHECK`或Sparse命令 | 解释 |
+| --- | --- | --- |
+| `sparse-kbuild-c1.log` | 通常没有目标 C 文件的检查动作 | 没有文件需要重新编译，所以 `C=1` 没有新的检查对象 |
+| `sparse-kbuild-c2.log` | 应出现 `sparse_kbuild_probe.c` 对应检查动作 | `C=2` 检查选中范围，不要求对象先失效 |
+
+不同版本可能打印 `CHECK`，也可能在 `V=1` 下直接打印完整 Sparse 命令；验收点是日志中能否找到目标源文件和 Sparse 入口，而不是固定某个大写单词。
+
 若两份日志都包含编译动作，先查模块是否真的已经完成基线构建、时间戳是否变化、前一轮是否失败；不能脱离目标状态机械比较行数。
 
 ### 6.10.4\_用CF制造Kbuild内的正反例
@@ -813,6 +1080,20 @@ const int *plain = source;
 
 预期正确分支没有本实验地址域诊断，错误分支出现 `different address spaces`。这组命令证明了 `M=` 选择外部模块、`C=2` 触发检查、`CF` 传递分析选项以及目标文件实际进入 Sparse。
 
+两轮输出应形成下面的关系：
+
+```text
+check-good：
+  日志证明Sparse检查sparse_kbuild_probe.c
+  没有 different address spaces
+
+check-bad：
+  日志仍证明Sparse检查同一个sparse_kbuild_probe.c
+  ... warning: incorrect type in initializer (different address spaces)
+```
+
+诊断可能写成 `initializer`、`assignment` 或版本等价措辞，但必须包含“普通指针与用户地址域指针不同”这一核心类别。如果两轮都安静，优先检查 `CF` 是否进入 `V=1` 命令；如果两轮都报警，检查正确分支是否被环境变量或旧命令残留的 `BUILD_BAD_ADDRESS` 污染。
+
 ### 6.10.5\_迁移到正在修改的树内目录
 
 外部模块实验通过以后，再把同一方法应用到真实补丁。第一次不必扫描整棵树，可选择受影响目录：
@@ -828,6 +1109,27 @@ grep -E 'CHECK|sparse' /tmp/sparse-target.log
 ```
 
 树内目录作为构建目标限制检查范围；树外模块使用 `M=`；`CF` 只附加 Sparse 选项。记录 `.config`、内核提交、目标目录、Sparse 版本和完整日志，才能把“终端没警告”升级为“指定翻译单元在这些条件下没有产生相应诊断”。
+
+验收时必须在 `sparse-target.log` 中找到正在修改的 `.c` 文件和实际 Sparse 命令。只有普通编译命令、没有 Sparse 入口，表示目标虽然进入 Kbuild，却没有形成静态分析证据；没有目标文件，则通常是 `.config` 未选中、目标目录错误或依赖没有进入本轮构建范围。
+
+### 6.10.6\_保存证据并清理生成物
+
+先把需要复核的证据复制到实验记录目录，再清理模块生成物和临时预处理文件：
+
+```bash
+# 当前位于kernel_module目录。
+make KERNEL_BUILD="$kernel_build" clean
+
+rm -f /tmp/sparse-branch.i \
+      /tmp/compiler-branch.i \
+      /tmp/sparse-good.log \
+      /tmp/sparse-check-all.log \
+      /tmp/sparse-kbuild-c1.log \
+      /tmp/sparse-kbuild-c2.log \
+      /tmp/sparse-target.log
+```
+
+`clean` 只删除外部模块目录中的构建生成物，不卸载模块，因为本实验从未执行 `insmod`。如果需要长期保存日志，应在 `rm` 前复制，并同时保存内核提交、`.config` 摘要、Sparse 路径与版本；脱离这些身份信息的单独警告文本不能复现实验条件。
 
 ## 6.11\_E8从一条诊断定位到正确修复层
 
@@ -870,7 +1172,38 @@ return ret;
 3. 用 Lockdep 和能覆盖 `-ESHUTDOWN` 分支的测试观察真实运行事件；
 4. 把结论限定在实际配置、目标和执行路径。
 
-### 6.11.3\_怎样决定修业务代码还是修注解
+### 6.11.3\_把修复前后保存成可比较证据
+
+仅仅看到修复后警告消失还不够，因为目标文件也可能没有再次进入 Sparse。假设问题位于 `drivers/example/`，在修改前后分别保存一次带完整命令的日志：
+
+```bash
+kernel_tree=/absolute/path/to/linux/build
+target_dir=drivers/example
+
+# 修改前：保留能够触发错误返回的版本。
+make -C "$kernel_tree" C=2 V=1 CF="-Wcontext" "$target_dir/" \
+    2>&1 | tee /tmp/sparse-before-fix.log
+
+# 在源码中补上真实raw_spin_unlock()以后重新检查同一目标。
+make -C "$kernel_tree" C=2 V=1 CF="-Wcontext" "$target_dir/" \
+    2>&1 | tee /tmp/sparse-after-fix.log
+
+grep -nE 'sparse|CHECK|wrong count at exit|context imbalance' \
+    /tmp/sparse-before-fix.log /tmp/sparse-after-fix.log
+```
+
+`kernel_tree` 必须是含 `.config` 与生成头文件的构建目录，`target_dir` 必须替换为问题翻译单元所在的真实 Kbuild 目标。两轮都要在日志中找到同一个目标 `.c` 文件和 Sparse 命令，然后再比较诊断：
+
+| 验收轮次 | 静态现象 | 运行时现象 | 可以得到的结论 |
+| --- | --- | --- | --- |
+| 修改前 | 错误返回附近出现 `wrong count at exit`、`context imbalance` 或版本等价诊断 | 覆盖 `-ESHUTDOWN` 的测试可能观察到锁未释放、后续阻塞或 Lockdep 证据 | 真实清理路径和静态账本都没有回到入口状态 |
+| 补真实解锁后 | 同一翻译单元仍进入 Sparse，对应退出诊断消失 | 失败注入能够返回，Lockdep 与专项断言不再观察到该锁泄漏 | 功能路径与静态契约重新一致；结论仍限于已执行配置和路径 |
+| 只在返回前写 `__release()` | Sparse 诊断可能消失 | 真实锁仍保持；动态测试仍可能阻塞或报告锁问题 | 这是假绿灯，只修改了分析器影子状态 |
+| 独立敏感性反例 | `make check-context-exit` 仍出现退出债务类别 | 不执行真实锁操作 | 本轮 Sparse 仍有能力发现同类静态错误 |
+
+如果修改前后都没有目标文件或 Sparse 命令，应回到 E7 修复构建覆盖范围；如果目标进入分析器但两轮始终报警，应重新逐路径检查是否还有另一个 `return`、`goto` 或回滚分支绕过解锁；如果静态绿灯而动态测试仍失败，优先检查真实锁所有权和注解是否谎报事实，不能继续堆叠 `__release()`。
+
+### 6.11.4\_怎样决定修业务代码还是修注解
 
 ```mermaid
 flowchart TD
@@ -890,6 +1223,8 @@ flowchart TD
 
 ## 6.12\_用红灯绿灯流程设计新的注解
 
+### 6.12.1\_先固定待设计接口与可运行对照材料
+
 假设项目引入一个包装接口，成功返回时保持对象锁，并提供成对释放：
 
 ```c
@@ -903,6 +1238,10 @@ void object_unlock(struct object *object)
     __releases(&object->lock);
 ```
 
+这三条声明是待设计的生产接口，不是可以脱离实现直接运行的实验材料。可运行对照使用 6.3 已列出的 `sparse_annotation_demo.c`：其中 `fake_lock()` 对应 `object_lock()`，`require_context()` 对应 `update_object_locked()`，`fake_unlock()` 对应 `object_unlock()`；`ERASE_LOCK_WRAPPER_CONTRACT` 只删除包装函数声明上的 `__acquires()`，保留函数体中的 `__acquire()`，所以红灯与绿灯之间只有一个变量。
+
+### 6.12.2\_按八步把功能事实翻译成最小契约
+
 不要先写属性再寻找理由，按下面顺序推进：
 
 1. **固定功能事实：** 列出无条件成功、失败回滚、trylock 成功/失败和所有返回；确认哪个分支真实取得，返回时是否继续持有。
@@ -914,7 +1253,28 @@ void object_unlock(struct object *object)
 7. **复验普通分支：** 确认注解不会重复求值实参，不改变 ABI，不制造真实锁动作或新控制流。
 8. **补运行时证据：** 用 Lockdep、专项测试和失败注入覆盖真实取得、失败回滚与释放。
 
-仓库实验中的 `make check-wrapper-contract` 与 `make check-good` 正好模拟第 5～6 步：只删除 `__acquires()` 就使函数体事件和调用者传播失配，恢复后重新闭合。完整迁移任务见实验的[1.14 从实验结论迁移到新注解](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.14_从实验结论迁移到新注解)。
+### 6.12.3\_实际运行红灯绿灯与敏感性复验
+
+在材料包根目录执行：
+
+```bash
+make check-wrapper-contract 2>&1 | tee /tmp/sparse-wrapper-red.log
+make check-good 2>&1 | tee /tmp/sparse-wrapper-green.log
+make verify 2>&1 | tee /tmp/sparse-wrapper-verify.log
+
+grep -nE 'warning:|error:|context|PASS|FAIL' \
+    /tmp/sparse-wrapper-red.log \
+    /tmp/sparse-wrapper-green.log \
+    /tmp/sparse-wrapper-verify.log
+```
+
+| 日志 | 材料状态 | 应出现的现象 | 说明 |
+| --- | --- | --- | --- |
+| `sparse-wrapper-red.log` | 函数体事件保留，调用者可见的 `__acquires()` 被删除 | `wrong count at exit`、`context imbalance` 或版本等价诊断 | 实现事件不能代替跨函数契约 |
+| `sparse-wrapper-green.log` | 函数体事件和函数属性同时存在 | 没有本实验 context 诊断 | 包装函数自检与调用者传播重新闭合 |
+| `sparse-wrapper-verify.log` | 全部独立正反例重新运行 | 十项分类断言及最终 `PASS verify` | 不是通过放宽全局检查换来的假绿灯 |
+
+如果红灯静默，先用 E1 的预处理方法确认 `ERASE_LOCK_WRAPPER_CONTRACT` 确实删除了属性；如果绿灯仍报警，逐项核对函数声明、函数体事件和调用者释放路径；如果 `verify` 中其他红灯也消失，则本次修改削弱了分析器敏感性，不能迁移到生产接口。只有这三轮关系成立，才把同一方法应用到 `object_*()`，随后再补普通构建、Kbuild 目标日志和运行时锁证据。
 
 不应为每个业务布尔值滥用 context。只有状态确实具有跨函数的入口/出口要求、能够由稳定表达式标识，而且正反例能证明分析器消费了契约时，才适合接入。
 
@@ -950,7 +1310,9 @@ Lockdep 是锁依赖关系验证器；KUnit 是 Kernel Unit Testing，即“内�
 
 ## 6.14\_迁移练习\_为新地址域设计整套研究方案
 
-看到下面的新宏时，不先查现成答案：
+### 6.14.1\_把练习材料完整写成一个翻译单元
+
+假设项目想引入下面的新宏，为只能经专用接口使用的设备句柄建立独立地址域：
 
 ```c
 #ifdef __CHECKER__
@@ -961,20 +1323,139 @@ Lockdep 是锁依赖关系验证器；KUnit 是 Kernel Unit Testing，即“内�
 #endif
 ```
 
-使用 E0～E8 方法完成一份实验设计：
+不要只观察这段定义。新建临时文件 `device_handle_experiment.c`，写入下面的完整材料；它同时包含正确基线、三种单变量错误和一个擦除形参契约的 A/B 开关：
 
-1. 写出它修饰的准确类型位置，以及普通编译和 Sparse 分支的预处理结果；
-2. 准备正确基线：受限句柄只传给同域空检查函数，不裸解引用；
-3. 准备三个单变量反例：普通指针冒充句柄、句柄降格为普通指针、句柄被直接解引用；
-4. 擦掉空检查函数形参上的地址域，验证调用点诊断是否随契约消失；
-5. 比较普通 GCC 与 Sparse 输出，说明消费者边界；
-6. 用脚本断言正确样例静默、三个反例分别出现预期类别；
-7. 通过外部模块或受影响目录的 `C=2 V=1` 日志证明 Kbuild 真正检查目标文件；
-8. 指出哪个 API 承担真实设备操作、对象生命期和并发协议；
-9. 比较新地址域与已有 `__iomem`、不透明结构体或句柄 API，说明为什么值得新增；
-10. 列出运行时或硬件侧还需要什么证据。
+```c
+#ifdef __CHECKER__
+#define __device_handle \
+    __attribute__((noderef, address_space(__device_handle)))
+#else
+#define __device_handle
+#endif
 
-如果读者能让正确样例与每个错误样例形成单变量对照，并能解释诊断消失是“契约被删除”而不是“行为安全”，就已经能够研究新的内核注解，而不只是记住 `__user` 和 `__rcu` 的定义。
+#ifdef ERASE_EXPECT_CONTRACT
+#define __expected_device_handle
+#else
+#define __expected_device_handle __device_handle
+#endif
+
+struct device_slot {
+    int value;
+};
+
+struct device_slot __device_handle *device_handle_source;
+struct device_slot *plain_source;
+
+static void expect_device_handle(
+    struct device_slot __expected_device_handle *source)
+{
+    /* 空函数不访问设备，只让形参类型建立调用边界。 */
+    (void)source;
+}
+
+int main(void)
+{
+    int result = 0;
+
+    /* 正确基线：同域指针只进入同域形参。 */
+    expect_device_handle(device_handle_source);
+
+#ifdef BAD_PLAIN_TO_HANDLE
+    /* 反例一：普通指针冒充设备句柄。 */
+    expect_device_handle(plain_source);
+#endif
+
+#ifdef BAD_HANDLE_TO_PLAIN
+    /* 反例二：设备句柄降格为普通指针。 */
+    struct device_slot *plain = device_handle_source;
+
+    (void)plain;
+#endif
+
+#ifdef BAD_HANDLE_DEREF
+    /* 反例三：绕过专用访问器直接解引用受限句柄。 */
+    result += device_handle_source->value;
+#endif
+
+    return result;
+}
+```
+
+这里的空函数不模拟真实设备访问；它只形成可控的类型边界。真实项目仍需另行定义哪个 API 完成设备操作、句柄生命期和并发同步。
+
+### 6.14.2\_逐轮运行并保存五份Sparse输出
+
+先记录入口，再分别运行正确基线、三个反例和擦除契约的 A/B 对照：
+
+```bash
+command -v sparse
+sparse --version
+
+sparse -Wall -Waddress-space device_handle_experiment.c \
+    2>&1 | tee /tmp/device-handle-good.log
+
+sparse -Wall -Waddress-space -DBAD_PLAIN_TO_HANDLE \
+    device_handle_experiment.c \
+    2>&1 | tee /tmp/device-handle-plain-to-handle.log
+
+sparse -Wall -Waddress-space -DBAD_HANDLE_TO_PLAIN \
+    device_handle_experiment.c \
+    2>&1 | tee /tmp/device-handle-handle-to-plain.log
+
+sparse -Wall -Waddress-space -DBAD_HANDLE_DEREF \
+    device_handle_experiment.c \
+    2>&1 | tee /tmp/device-handle-deref.log
+
+sparse -Wall -Waddress-space \
+    -DBAD_PLAIN_TO_HANDLE -DERASE_EXPECT_CONTRACT \
+    device_handle_experiment.c \
+    2>&1 | tee /tmp/device-handle-erased.log
+```
+
+不要用 Sparse 默认退出状态代替日志判断：普通警告可能仍返回 `0`。五轮应满足下面的关系，诊断行号和完整措辞可以随版本变化：
+
+| 日志 | 唯一改变量 | 预期核心现象 | 本轮解释 |
+| --- | --- | --- | --- |
+| `device-handle-good.log` | 无 | 没有地址域或 `noderef` 诊断 | 同域指针进入同域边界 |
+| `device-handle-plain-to-handle.log` | 普通指针传给设备句柄形参 | `different address spaces` | 调用边界拒绝普通指针冒充句柄 |
+| `device-handle-handle-to-plain.log` | 设备句柄赋给普通指针 | `different address spaces` | 类型系统阻止句柄静默降格 |
+| `device-handle-deref.log` | 直接读取句柄成员 | `dereference of noderef expression` | `noderef` 要求通过专用访问协议 |
+| `device-handle-erased.log` | 在第一个反例上只删除形参契约 | 原调用点地址域诊断消失 | 证据来自函数形参类型；消失不等于行为安全 |
+
+可用类别搜索快速比对，但最终仍应保留完整日志：
+
+```bash
+grep -nE 'different address spaces|noderef|warning:|error:' \
+    /tmp/device-handle-*.log
+```
+
+如果五轮全部静默，先用 `sparse -E -dD -DBAD_PLAIN_TO_HANDLE device_handle_experiment.c` 确认 `address_space` 与 `noderef` 是否保留；如果正确基线也报警，检查命名地址域语法是否被当前 Sparse 版本支持，以及是否从环境注入了其他开关；如果擦除轮仍报警，确认命令同时定义了 `BAD_PLAIN_TO_HANDLE` 和 `ERASE_EXPECT_CONTRACT`，并定位警告是否来自另一个反例。
+
+### 6.14.3\_再证明普通编译分支没有改变程序形状
+
+让普通 GCC 同时看到三种故意错误：
+
+```bash
+gcc -std=gnu11 -Wall -Wextra -Werror -fsyntax-only \
+    -DBAD_PLAIN_TO_HANDLE \
+    -DBAD_HANDLE_TO_PLAIN \
+    -DBAD_HANDLE_DEREF \
+    device_handle_experiment.c
+echo "GCC状态=$?"
+```
+
+预期 `GCC状态=0`，且没有本实验地址域或 `noderef` 诊断，因为普通分支把两个注解宏都展开为空。这个现象只能证明注解没有改变普通 C 翻译形状，不能证明三种用法在真实设备协议中安全。
+
+### 6.14.4\_从静态实验决定是否值得迁移到内核接口
+
+只有前述五轮 Sparse 对照和普通 GCC 对照都成立，才继续执行本章 E7：把正确基线放进目标 Kbuild 翻译单元，用 `C=2 V=1` 证明目标文件实际进入 Sparse，再保留一个 `CF` 打开的故意错误作为敏感性对照。设计评审还必须回答：
+
+1. 哪个真实 API 承担设备操作、句柄生命期和并发协议；
+2. 新地址域相比已有 `__iomem`、不透明结构体或句柄 API 增加了什么可验证保证；
+3. 哪些合法转换需要受控逃生口，怎样把它限制在单一审计点；
+4. 哪些运行时、设备仿真或硬件侧测试负责补足 Sparse 无法观察的事实。
+
+最终合格结论不是“新宏可用”，而是：在记录的 Sparse 版本下，正确样例静默，三种误用分别触发地址域或 `noderef` 类别，擦除形参契约会使对应调用诊断消失，普通编译分支不消费这些语义。是否进入生产代码，还取决于 Kbuild 覆盖、真实访问器、对象协议、受控转换需求和运行时证据。
 
 上一篇：[普通编译、BTF 与运行时边界](P05_普通编译_BTF与运行时边界.md)。
 
