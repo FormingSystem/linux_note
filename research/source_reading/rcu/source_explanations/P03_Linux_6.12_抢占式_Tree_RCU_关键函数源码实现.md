@@ -24,7 +24,7 @@ source_version: "6.12.20"
 
 | 阅读入口 | 职责 |
 | --- | --- |
-| [RCU 源码总导航](../navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序) | 选择功能模块和阅读顺序 |
+| [RCU 源码总导航](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序) | 先区分 RCU 家族，再选择功能模块和阅读顺序 |
 | [抢占式 Tree RCU 模块源码概念导读](../navigation/P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md#3.1_取证问题) | 说明这些实现如何组成“CPU 债务转任务债务”的端到端闭环 |
 | [抢占式 Tree RCU 稳定机制正文](../../../../knowledge/linux/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md) | 解释跨版本稳定的任务跟踪模型 |
 
@@ -277,7 +277,7 @@ static int rcu_preempt_blocked_readers_cgp(struct rcu_node *rnp)
 }
 ```
 
-共享的 `rcu_report_qs_rnp()` 已在[非抢占式 Tree RCU 关键函数实现](P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.7_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据)逐行展开，本章不复制同一函数。该实现清除当前 `qsmask` 位以后，只有 `rnp->qsmask == 0` 且这里的 `rcu_preempt_blocked_readers_cgp(rnp)` 也为假，才继续清父节点位。
+共享的 `rcu_report_qs_rnp()` 已在[非抢占式 Tree RCU 关键函数实现](P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.6_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据)逐行展开，本章不复制同一函数。该实现清除当前 `qsmask` 位以后，只有 `rnp->qsmask == 0` 且这里的 `rcu_preempt_blocked_readers_cgp(rnp)` 也为假，才继续清父节点位。
 
 **实现原理：** `qsmask` 表示 CPU/子树债务，`gp_tasks` 表示任务 reader 债务。抢占式 RCU 不把两者强行编码进同一掩码；它们通过 `rcu_report_qs_rnp()` 的同一个退出条件汇合，同时保持具体函数只在一个文档中展开。
 

@@ -156,4 +156,4 @@ Tasks 家族的任务字段、IPI 策略和 BPF/ftrace 组合属于版本敏感�
 
 上一篇：[Linux 6.12 抢占式 Tree RCU 模块源码概念导读](P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md)。
 
-阅读索引：[Linux 6.12 Tree RCU 与 SRCU 源码导读](P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)。
+阅读索引：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
