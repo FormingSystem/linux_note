@@ -21,6 +21,8 @@ source_version: "6.12.20"
 
 本章不是另一篇 RCU 教程，而是[非抢占式 Tree RCU 源码同步机制](../../../../knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md)的版本化取证记录。目标是让每个抽象箭头都能落到 Linux 6.12.20 的文件、字段和函数。
 
+普通 Tree RCU 的 GP 请求、长期 GP kthread、init/FQS/cleanup 是抢占与非抢占配置共享的全局控制模块，已经独立到 [GP 全局生命周期模块源码概念导读](P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.1_模块问题与版本边界)。本章只在 CPU QS 闭环需要时引用它，不再把公共 GP 控制当作非抢占配置私有状态机。
+
 已核对源码快照的顶层 `Makefile` 给出 `6.12.20`，对应 `.config` 启用了 `CONFIG_PREEMPT_RCU=y`。因此非抢占实现不能直接拿该配置生成的镜像运行验证；本章读取同一源码中 `tree_plugin.h` 的 `#else /* CONFIG_PREEMPT_RCU */` 和 `rcupdate.h` 的非抢占配置分支。
 
 仓库保存的以下原始源码已与 NXP 官方 `linux-imx` 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应文件逐一核对，SHA-256 一致；本地工作树位置不作为证据身份，统一记录见 [Linux 源码阅读基线](../../linux/SOURCE_BASELINE.md)：
@@ -122,13 +124,15 @@ synchronize_rcu等待者
 `kernel/rcu/tree.c:2221::rcu_gp_kthread()` 的循环按以下顺序推进：
 
 ```text
-等待GP请求
-    → rcu_gp_init()
+反复等待GP请求
+    → rcu_gp_init()成功开始一轮
     → rcu_gp_fqs_loop()
     → rcu_gp_cleanup()
 ```
 
-`tree.c:1796::rcu_gp_init()` 首先用 `rcu_seq_start(&rcu_state.gp_seq)` 开始新代际。完成 CPU hotplug 协调后，它广度优先遍历 `rcu_node` 树，在各节点锁下从 `qsmaskinit` 生成本轮 `qsmask`，并公布节点代际。对应实现和逐句中文注释见 [`rcu_gp_init()` 建立本轮等待集合](../source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.4_rcu_gp_init建立本轮等待集合)。
+若 `rcu_gp_init()` 因伪唤醒等原因返回 false，线程回到内层请求等待；只有返回 true 才进入本轮 FQS 和 cleanup。完整主循环见 [`rcu_gp_kthread()` 串联一轮物理 GP](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.8_rcu_gp_kthread串联一轮物理GP)。
+
+`tree.c:1796::rcu_gp_init()` 首先用 `rcu_seq_start(&rcu_state.gp_seq)` 开始新代际。完成 CPU hotplug 协调后，它广度优先遍历 `rcu_node` 树，在各节点锁下从 `qsmaskinit` 生成本轮 `qsmask`，并公布节点代际。该函数属于普通 Tree RCU 的公共 GP 控制，而非非抢占配置私有实现；对应实现和逐句中文注释见 [`rcu_gp_init()` 开始代际并建立证明债务](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.9_rcu_gp_init开始代际并建立证明债务)。
 
 叶节点 `qsmaskinit` 的每一位对应相关 CPU；上层节点位对应子节点。这里没有先查询哪个任务读了 `old_obj`。所有相关 CPU 被保守纳入，之后谁能立即证明自己已经在 EQS，谁就能很快清位。
 
@@ -148,9 +152,9 @@ rdp->core_needs_qs = 同一债务的core处理标记
 
 ## 2.7\_调用链D\_上下文切换怎样产生普通QS
 
-`kernel/sched/core.c:6615::__schedule()` 在关本地中断后调用 `rcu_note_context_switch(preempt)`。在 `!CONFIG_PREEMPT_RCU` 分支中，该调度钩子通过 `rcu_qs()` 清除本 CPU 的普通 QS 债务。两个函数的实现见 [`rcu_note_context_switch()` 与 `rcu_qs()` 记录静止态](../source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.6_rcu_note_context_switch与rcu_qs记录静止态)。
+`kernel/sched/core.c:6615::__schedule()` 在关本地中断后调用 `rcu_note_context_switch(preempt)`。在 `!CONFIG_PREEMPT_RCU` 分支中，该调度钩子通过 `rcu_qs()` 清除本 CPU 的普通 QS 债务。两个函数的实现见 [`rcu_note_context_switch()` 与 `rcu_qs()` 记录静止态](../source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.5_rcu_note_context_switch与rcu_qs记录静止态)。
 
-其安全依据来自 `include/linux/rcupdate.h:91-101` 的非抢占读侧封装：读侧进入禁止抢占，最外层退出恢复抢占。带 Doxygen 阅读说明和中文注释的源码见 [`__rcu_read_lock()` 与 `__rcu_read_unlock()` 实现](../source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.6_rcu_note_context_switch与rcu_qs记录静止态)。
+其安全依据来自 `include/linux/rcupdate.h:91-101` 的非抢占读侧封装：读侧进入禁止抢占，最外层退出恢复抢占。带 Doxygen 阅读说明和中文注释的源码见 [`__rcu_read_lock()` 与 `__rcu_read_unlock()` 实现](../source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.5_rcu_note_context_switch与rcu_qs记录静止态)。
 
 一个合法普通 reader 不能在禁抢占读侧内被普通调度切走。因此 GP 开始以后的真实 context switch 足以证明该 CPU 上 GP 开始前的普通旧读侧已经结束。
 
@@ -214,6 +218,8 @@ GP kthread 的 FQS 循环看到根完成条件成立后，进入 `tree.c:2100::r
 4. 让每 CPU callback 分段状态看到 GP 完成；
 5. 唤醒需要执行 callback 的 RCU core/nocb 上下文。
 
+这些步骤的唯一函数体讲解见 [`rcu_gp_cleanup()` 发布完成并承接下一代](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11_rcu_gp_cleanup发布完成并承接下一代)。
+
 默认 `synchronize_rcu()` 等待 callback 在可执行阶段调用 `wakeme_after_rcu()`，后者 `complete()` 栈上等待对象，原写者才返回并执行 `kfree(old_obj)`。
 
 完整通信方向如下：
@@ -276,6 +282,6 @@ Linux 5.10 的 GP 树与普通同步主线已经具备相同骨架，但阅读�
 7. user/idle 的证明是主动逐 GP 上报，还是 watching 状态的快照观察？
 8. 根完成以后，同步写者为什么不是由 `rcu_report_qs_rnp()` 直接唤醒？
 
-阅读索引：[Linux 6.12 Tree RCU 与 SRCU 源码导读](P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)。
+阅读索引：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
 
 下一篇：[Linux 6.12 抢占式 Tree RCU 模块源码概念导读](P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md)。

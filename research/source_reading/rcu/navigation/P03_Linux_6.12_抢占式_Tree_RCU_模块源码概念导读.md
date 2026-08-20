@@ -93,7 +93,7 @@ __rcu_read_unlock()
 
 ## 3.6\_GP开始以前已被抢占的任务怎样纳入
 
-任务可能在没有普通 GP 时就进入 `blkd_tasks`。`kernel/rcu/tree.c:1920-1928::rcu_gp_init()` 遍历节点时，在设置新 `qsmask` 和节点 `gp_seq` 前调用 `rcu_preempt_check_blocked_tasks()`。它如何把旧链表成员纳入新 GP 见 [`rcu_preempt_check_blocked_tasks()` 接管旧任务](../source_explanations/P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#3.6_rcu_preempt_check_blocked_tasks接管旧任务)。
+任务可能在没有普通 GP 时就进入 `blkd_tasks`。`kernel/rcu/tree.c:1920-1928::rcu_gp_init()` 遍历节点时，在设置新 `qsmask` 和节点 `gp_seq` 前调用 `rcu_preempt_check_blocked_tasks()`。公共 [`rcu_gp_init()` 控制实现](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.9_rcu_gp_init开始代际并建立证明债务)与抢占配置的 [`rcu_preempt_check_blocked_tasks()` 任务接管实现](../source_explanations/P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#3.6_rcu_preempt_check_blocked_tasks接管旧任务)分别由两个唯一标题负责。
 
 [`tree_plugin.h:704-721`](../../linux/kernel/rcu/tree_plugin.h) 的抢占分支若发现已有 blocked tasks，并且节点属于本轮需要跟踪的在线/离线边界，就让 `gp_tasks` 指向旧任务边界。
 
@@ -183,7 +183,7 @@ CPU最后清债
 
 `tree.c:1969` 的 FQS 唤醒检查要求根 `qsmask` 为空且没有当前 GP blocked reader。`tree.c:2052-2060` 的循环退出也检查同一逻辑；源码注释说明多层树可依靠根 `qsmask` 汇聚叶任务债务，而单节点树需要显式检查根/叶的 `gp_tasks`。
 
-`tree.c:2142-2144::rcu_gp_cleanup()` 在推进每个节点的完成代际前还用警告验证：
+`tree.c:2142-2144::rcu_gp_cleanup()` 在推进每个节点的完成代际前还用警告验证；完整公共 cleanup 实现见 [`rcu_gp_cleanup()` 发布完成并承接下一代](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11_rcu_gp_cleanup发布完成并承接下一代)：
 
 ```text
 当前GP blocked reader必须为空
@@ -246,4 +246,4 @@ Linux 5.10 已有相同的核心字段与债务转移设计，所以下列结论
 
 下一篇：[Linux 6.12 Tasks RCU 与 Tiny RCU 模块源码概念导读](P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md)。
 
-阅读索引：[Linux 6.12 Tree RCU 与 SRCU 源码导读](P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md)。
+阅读索引：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。

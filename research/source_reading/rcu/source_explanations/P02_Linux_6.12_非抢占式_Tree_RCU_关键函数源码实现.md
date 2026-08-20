@@ -20,12 +20,13 @@ source_version: "6.12.20"
 
 ## 2.1\_实现讲解边界与入口
 
-本章不再解释“非抢占式 Tree RCU 整体怎样完成 GP”，而是专门回答“关键函数在 Linux 6.12.20 中怎样写、每个关键语句改了什么状态、为什么按这个顺序写”。模块概念、调用链和端到端时序继续放在 navigation 文档。
+本章不再解释“非抢占式 Tree RCU 整体怎样完成 GP”，而是专门回答“非抢占配置怎样把同步等待接入 callback、CPU 怎样感知代际、产生 QS 并把证据逐层上报”。普通 GP kthread、`rcu_gp_init()`、FQS 与 `rcu_gp_cleanup()` 已收敛到独立的 GP 实现文档，避免把全局公共控制误写成非抢占配置私有实现。
 
 | 阅读入口 | 职责 |
 | --- | --- |
-| [RCU 源码总导航](../navigation/P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序) | 选择功能模块和阅读顺序 |
-| [非抢占式 Tree RCU 模块源码概念导读](../navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.3_源码文件与状态所有权) | 说明这些函数如何组成同步等待、GP、QS 和树形汇聚 |
+| [RCU 源码总导航](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序) | 先区分普通 Tree RCU、SRCU、Tasks 与 Tiny，再选择模块 |
+| [Tree RCU GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.2_源码符号覆盖账本) | 唯一展开 GP 请求、长期线程、init、FQS 与 cleanup |
+| [非抢占式 Tree RCU 模块源码概念导读](../navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.3_源码文件与状态所有权) | 说明这些函数如何组成同步等待桥、CPU QS 和树形汇聚 |
 | [非抢占式 Tree RCU 稳定机制正文](../../../../knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md#6.1_源码边界与贯穿场景) | 解释跨版本稳定的状态与通信模型 |
 
 下列 `/** ... */` 块是本仓库为阅读补充的中文 Doxygen 说明，不是上游文件原注释。代码只裁剪支撑本章结论的语句，省略处明确标记；完整实现以链接的版本化源文件为准。
@@ -35,12 +36,10 @@ source_version: "6.12.20"
 | 实现点 | 上游相对位置 | 本章解释的原理 |
 | --- | --- | --- |
 | [`wakeme_after_rcu()` / `__wait_rcu_gp()`](#2.3___wait_rcu_gp与wakeme_after_rcu连接等待者) | [`kernel/rcu/update.c`](../../linux/kernel/rcu/update.c) | 用栈上 `completion` 和 callback 把阻塞任务接到 GP 完成边界 |
-| [`rcu_gp_init()`](#2.4_rcu_gp_init建立本轮等待集合) | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | 开始新代际并从初始掩码构造保守等待集合 |
-| [`__note_gp_changes()`](#2.5___note_gp_changes让CPU识别新GP) | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | 把节点代际和 CPU 本地债务对齐 |
-| [`__rcu_read_lock()` / `__rcu_read_unlock()`](#2.6_rcu_note_context_switch与rcu_qs记录静止态) | [`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) | 非抢占读侧为什么能使用调度边界作为 QS |
-| [`rcu_note_context_switch()` / `rcu_qs()`](#2.6_rcu_note_context_switch与rcu_qs记录静止态) | [`kernel/rcu/tree_plugin.h`](../../linux/kernel/rcu/tree_plugin.h) | 调度钩子如何只锁存本 CPU 的 QS 证据 |
-| [`rcu_report_qs_rdp()` / `rcu_report_qs_rnp()`](#2.7_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据) | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | 本地证据如何校验代际并逐层清位 |
-| [`rcu_gp_cleanup()`](#2.8_rcu_gp_cleanup公布完成代际) | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | 完成代际为什么要先写全树再允许下一轮开始 |
+| [`__note_gp_changes()`](#2.4___note_gp_changes让CPU识别新GP) | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | 把节点代际和 CPU 本地债务对齐 |
+| [`__rcu_read_lock()` / `__rcu_read_unlock()`](#2.5_rcu_note_context_switch与rcu_qs记录静止态) | [`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) | 非抢占读侧为什么能使用调度边界作为 QS |
+| [`rcu_note_context_switch()` / `rcu_qs()`](#2.5_rcu_note_context_switch与rcu_qs记录静止态) | [`kernel/rcu/tree_plugin.h`](../../linux/kernel/rcu/tree_plugin.h) | 调度钩子如何只锁存本 CPU 的 QS 证据 |
+| [`rcu_report_qs_rdp()` / `rcu_report_qs_rnp()`](#2.6_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据) | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | 本地证据如何校验代际并逐层清位 |
 
 ## 2.3\_\_\_wait\_rcu\_gp与wakeme\_after\_rcu连接等待者
 
@@ -112,56 +111,7 @@ void __wait_rcu_gp(bool checktiny, unsigned int state, int n,
 
 **实现原理：** 同步调用者不需要被 GP kthread 单独记录。它只需要提交一个带 `completion` 的 callback；回调可执行性代表相关宽限期已结束，因此 callback 执行器调用 `complete()` 就能把结论返回原任务。完整实现还会去重相同的 `call_rcu` 函数，并处理 Tiny RCU 分支。
 
-## 2.4\_rcu\_gp\_init建立本轮等待集合
-
-```c
-/**
- * @brief 启动一轮新 GP，并为每个 rcu_node 建立本轮 QS 债务。
- * @return 成功开始新 GP 返回 true；伪唤醒等无需开始时返回 false。
- * @pre 由 GP kthread 在串行的 GP 推进路径调用。
- */
-static noinline_for_stack bool rcu_gp_init(void)
-{
-	unsigned long flags;
-	unsigned long mask;
-	struct rcu_data *rdp;
-	struct rcu_node *rnp = rcu_get_root();
-
-	/* 省略：检查 gp_flags 和已有 GP，记录 GP 启动时间。 */
-	rcu_seq_start(&rcu_state.gp_seq);
-
-	/* 省略：同步 CPU hotplug，更新每个叶节点的 qsmaskinit。 */
-
-	rcu_for_each_node_breadth_first(rnp) {
-		rcu_gp_slow(gp_init_delay);
-		raw_spin_lock_irqsave_rcu_node(rnp, flags);
-		rdp = this_cpu_ptr(&rcu_data);
-		/* 抢占分支在这里把 GP 前已有的 blocked task 接入新 GP。 */
-		rcu_preempt_check_blocked_tasks(rnp);
-		/* 从稳定在线集合生成本轮待清位集合。 */
-		rnp->qsmask = rnp->qsmaskinit;
-		WRITE_ONCE(rnp->gp_seq, rcu_state.gp_seq);
-		if (rnp == rdp->mynode)
-			(void)__note_gp_changes(rnp, rdp);
-		/* 省略：boost 和 trace；下面保留离线 CPU 清位与真实解锁路径。 */
-		mask = rnp->qsmask & ~rnp->qsmaskinitnext;
-		rnp->rcu_gp_init_mask = mask;
-		if ((mask || rnp->wait_blkd_tasks) && rcu_is_leaf_node(rnp))
-			rcu_report_qs_rnp(mask, rnp, rnp->gp_seq, flags);
-		else
-			raw_spin_unlock_irq_rcu_node(rnp);
-		cond_resched_tasks_rcu_qs();
-		WRITE_ONCE(rcu_state.gp_activity, jiffies);
-	}
-
-	/* 省略：严格 GP 配置下通知所有 CPU。 */
-	return true;
-}
-```
-
-**实现原理：** `qsmaskinit` 表示当前参与的稳定集合，`qsmask` 是绑定本轮 GP 的待偿债务。广度优先初始化保证根到叶的代际和等待状态在同一 GP 中建立。初始化完成前 GP 不能完成，因为同一 GP kthread 负责这两个阶段。
-
-## 2.5\_\_\_note\_gp\_changes让CPU识别新GP
+## 2.4\_\_\_note\_gp\_changes让CPU识别新GP
 
 ```c
 /**
@@ -214,7 +164,7 @@ static bool __note_gp_changes(struct rcu_node *rnp, struct rcu_data *rdp)
 
 **实现原理：** CPU 不是在 GP 开始时被单独发消息，而是在 RCU core 路径中比较本地 `gp_seq` 与叶节点 `gp_seq`。只有叶掩码仍包含本 CPU 的位时，才把 `cpu_no_qs.b.norm` 和 `core_needs_qs` 设为待偿。
 
-## 2.6\_rcu\_note\_context\_switch与rcu\_qs记录静止态
+## 2.5\_rcu\_note\_context\_switch与rcu\_qs记录静止态
 
 ```c
 /**
@@ -268,7 +218,7 @@ void rcu_note_context_switch(bool preempt)
 
 **实现原理：** 读侧用“禁止抢占”维持本地不变量，因而调度边界可以证明 GP 开始前的普通 reader 不再存在。`rcu_qs()` 只锁存 per-CPU 证据，共享树清位由后续 `rcu_core()` 路径完成，把高频本地操作与较重的节点锁操作分开。
 
-## 2.7\_rcu\_report\_qs\_rdp与rcu\_report\_qs\_rnp汇聚证据
+## 2.6\_rcu\_report\_qs\_rdp与rcu\_report\_qs\_rnp汇聚证据
 
 ```c
 /**
@@ -349,56 +299,12 @@ static void rcu_report_qs_rnp(unsigned long mask, struct rcu_node *rnp,
 
 **实现原理：** `rcu_report_qs_rdp()` 先在叶节点锁下复核“本地证据仍属于当前 GP”；`rcu_report_qs_rnp()` 再把一个局部结论变成父节点的一个子树结论。这两层校验防止延迟上报把旧 GP 的 QS 错认为新 GP 证据。
 
-## 2.8\_rcu\_gp\_cleanup公布完成代际
-
-```c
-/**
- * @brief 在根节点等待条件归零后，把完成代际公布到整棵 rcu_node 树。
- * @return 无返回值。
- * @pre GP kthread 已经证明本轮所有 CPU 和抢占 reader 债务清零。
- */
-static noinline void rcu_gp_cleanup(void)
-{
-	bool needgp = false;
-	unsigned long new_gp_seq;
-	struct rcu_data *rdp;
-	struct rcu_node *rnp = rcu_get_root();
-
-	/* 省略：统计 GP 时长，并在根节点锁下记录 gp_end。 */
-	new_gp_seq = rcu_state.gp_seq;
-	/* 先在局部副本上生成“已完成”代际。 */
-	rcu_seq_end(&new_gp_seq);
-	rcu_for_each_node_breadth_first(rnp) {
-		raw_spin_lock_irq_rcu_node(rnp);
-		if (WARN_ON_ONCE(rcu_preempt_blocked_readers_cgp(rnp)))
-			dump_blkd_tasks(rnp, 10);
-		WARN_ON_ONCE(rnp->qsmask);
-		WRITE_ONCE(rnp->gp_seq, new_gp_seq);
-		/* 根节点的屏障约束轮询接口观察到的完成顺序。 */
-		if (!rnp->parent)
-			smp_mb();
-		rdp = this_cpu_ptr(&rcu_data);
-		if (rnp == rdp->mynode)
-			needgp = __note_gp_changes(rnp, rdp) || needgp;
-		needgp = rcu_future_gp_cleanup(rnp) || needgp;
-		/* 省略：过载检查与 NOCB 清理。 */
-		raw_spin_unlock_irq_rcu_node(rnp);
-		cond_resched_tasks_rcu_qs();
-		WRITE_ONCE(rcu_state.gp_activity, jiffies);
-	}
-	/* 省略：在根节点正式结束全局 gp_seq，并处理后继 GP 请求。 */
-}
-```
-
-**实现原理：** 完成代际必须先传到所有节点，下一轮 GP 才能在任意节点可见。否则不同 CPU 可能一边看到新 GP 开始，一边仍把旧 GP 视为进行中，破坏 callback 和 QS 的代际归属。
-
-## 2.9\_实现复核问题
+## 2.7\_实现复核问题
 
 1. `__wait_rcu_gp()` 为什么可以只排队 callback，而不需要让 GP kthread 记录等待任务？
-2. `rcu_gp_init()` 为什么从 `qsmaskinit` 复制本轮 `qsmask`，而不是动态搜索当前 reader？
-3. `__note_gp_changes()` 怎样防止没有参与本轮 GP 的 CPU 被错设为欠 QS？
-4. 为什么 `rcu_qs()` 只写 per-CPU 状态，而不立即锁叶节点？
-5. `rcu_report_qs_rdp()` 为什么必须在上报前重新检查 GP 代际？
-6. `rcu_gp_cleanup()` 为什么要广度优先写全树节点的完成代际？
+2. `__note_gp_changes()` 怎样防止没有参与本轮 GP 的 CPU 被错设为欠 QS？
+3. 为什么 `rcu_qs()` 只写 per-CPU 状态，而不立即锁叶节点？
+4. `rcu_report_qs_rdp()` 为什么必须在上报前重新检查 GP 代际？
+5. `rcu_report_qs_rnp()` 为什么只有本层 CPU/子树位和任务债务都清除以后才继续上报父节点？
 
 模块概念导读：[Linux 6.12 非抢占式 Tree RCU 模块源码概念导读](../navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md)。

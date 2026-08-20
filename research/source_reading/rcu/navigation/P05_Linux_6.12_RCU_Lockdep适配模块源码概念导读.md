@@ -155,7 +155,7 @@ PROVE_LOCKING
 - Sparse `__rcu` address space；它属于编译期类型检查，不是运行时 map，`__CHECKER__` 与 `rcu_check_sparse()` 的唯一实现讲解见[静态类型桥接实现](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.3_rcu_check_sparse静态类型桥接)；
 - Maple Tree dead node 的完整生命周期；这里只展示它怎样消费 callback 身份。
 
-总阅读索引：[Linux 6.12 Tree RCU 与 SRCU 源码导读](P01_Linux_6.12_Tree_RCU_与_SRCU_源码导读.md#1.9_建议的源码阅读顺序)。
+总阅读索引：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
 
 具体实现：[Linux 6.12 RCU Lockdep适配层源码实现](../source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.1_实现所有权与读者目标)。
 
