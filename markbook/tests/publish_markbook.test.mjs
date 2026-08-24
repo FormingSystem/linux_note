@@ -8,6 +8,7 @@ import {
   heading_slug,
   normalize_generated_text,
   normalize_release_month,
+  render_code_block,
   shanghai_date_parts,
   validate_release_policy
 } from "../scripts/publish_markbook.mjs";
@@ -116,6 +117,37 @@ test("标题锚点保留章节数字、下划线与中文", () => {
 
 test("生成文本只清除空白行缩进", () => {
   assert.equal(normalize_generated_text("<p>正文  </p>\n    \n<pre>保留  </pre>"), "<p>正文  </p>\n\n<pre>保留  </pre>");
+});
+
+test("代码块在构建期生成 VS Code Light 可着色语法标记", () => {
+  const html = render_code_block({
+    text: "static int answer = 42;\nreturn answer;",
+    lang: "c"
+  });
+  assert.match(html, /<pre class="code_block" data-language="c">/u);
+  assert.match(html, /<code class="hljs language-c">/u);
+  assert.match(html, /hljs-keyword/u);
+  assert.match(html, /hljs-type/u);
+  assert.match(html, /hljs-number/u);
+});
+
+test("未知代码语言可靠退化为纯文本且 Mermaid 保持独立渲染路径", () => {
+  const unknown_html = render_code_block({
+    text: "<unsafe>&value",
+    lang: "kernel-log"
+  });
+  assert.match(unknown_html, /class="hljs language-kernel-log"/u);
+  assert.match(unknown_html, /&lt;unsafe&gt;&amp;value/u);
+  assert.doesNotMatch(unknown_html, /hljs-keyword/u);
+
+  const mermaid_html = render_code_block({
+    text: "flowchart LR\n  A --> B",
+    lang: "mermaid"
+  });
+  assert.equal(
+    mermaid_html,
+    '<pre><code class="language-mermaid">flowchart LR\n  A --&gt; B\n</code></pre>\n'
+  );
 });
 
 test("月度工作流 YAML 可解析并固定在每月一号", async () => {
