@@ -59,10 +59,9 @@ linux-note/
 │   ├── linux/                     # Linux 通用机制
 │   │   ├── architecture/          # Linux 架构与源码组织
 │   │   ├── execution_context/     # 执行上下文
-│   │   ├── synchronization/       # 同步与并发控制
-│   │   ├── memory_ordering/       # 内存顺序与屏障
-│   │   ├── waiting_notification/  # 等待与通知
-│   │   ├── time_management/       # 时间管理
+│   │   ├── synchronization_and_asynchrony/ # 同步和异步机制
+│   │   │   ├── synchronization/   # 同步机制
+│   │   │   └── asynchrony/        # 异步机制
 │   │   ├── memory_management/     # 内存管理
 │   │   ├── object_lifetime/       # 对象生命周期
 │   │   ├── error_handling/        # 错误处理
@@ -150,7 +149,7 @@ linux-note/
 
 ### 1.5.2\_Linux通用机制
 
-`knowledge/linux` 保存被多个内核子系统、驱动类型或系统工程主题复用的机制，例如锁、RCU、等待队列、工作队列、定时器、引用计数、设备模型、错误指针和 Linux 数据结构。
+`knowledge/linux` 保存被多个内核子系统、驱动类型或系统工程主题复用的机制。同步和异步机制统一进入 `synchronization_and_asynchrony`：`synchronization` 保存 Linux 内存顺序、锁、序列计数器、等待/完成、RCU 与同步协议验证，`asynchrony` 保存中断、工作队列、定时/延迟执行和异步通知。引用计数、设备模型、错误指针和 Linux 数据结构仍按各自知识本质独立保存；子系统中的异步完成或驱动中的机制组合不从领域正文拆走，只链接通用入口。
 
 ### 1.5.3\_完整领域模型
 
