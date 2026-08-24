@@ -41,6 +41,8 @@ source_version: "6.12.20"
 
 | 上游相对位置 | 关键对象或函数 | 本模块职责 |
 | --- | --- | --- |
+| [`init/main.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c) | `start_kernel()`、`rest_init()`、`kernel_init()`、`do_pre_smp_initcalls()` | 区分早期 `rcu_init()`、`kthreadd` 就绪、early initcall 分派和 SMP bring-up |
+| [`include/linux/init.h`](../../linux/include/linux/init.h) | `early_initcall()`、`__define_initcall()` | 把创建函数登记到链接期 initcall 段，而不是立即调用 |
 | [`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h) | `struct rcu_state`、`RCU_GP_FLAG_*`、`RCU_GP_*` | 全局线程指针、等待队列、命令和观察阶段 |
 | [`kernel/rcu/rcu.h`](../../linux/kernel/rcu/rcu.h) | `rcu_seq_start/end/snap/done()` | 代际开始、完成和目标判断 |
 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | `rcu_state`、spawn、request、wake、init、FQS、cleanup、主循环 | 普通 Tree RCU GP 控制主线 |
@@ -95,7 +97,7 @@ flowchart TB
 
 | 阶段 | 主要函数 | 状态流 | 阅读问题 |
 | --- | --- | --- | --- |
-| S0 创建 | `rcu_spawn_gp_kthread()` | 新 `task_struct` → `rcu_state.gp_kthread` | 为什么线程只创建一次 |
+| S0 启动与创建 | `do_pre_smp_initcalls()` → `rcu_spawn_gp_kthread()` | early initcall 登记 → 新 `task_struct` → `rcu_state.gp_kthread` | 为什么它晚于 `kthreadd`、早于 SMP 且只创建一次 |
 | S1 提交 | callback acceleration → `rcu_start_this_gp()` | `gp_seq_req` → 各层 `gp_seq_needed` | 请求怎样合并 |
 | S2 唤醒 | `rcu_gp_kthread_wake()` | `gp_flags` 已有命令 → `swake_up_one(gp_wq)` | 共享状态与唤醒怎样配对 |
 | S3 接受 | `rcu_gp_kthread()` 内层等待 | `WAIT_GPS→DONE_GPS` | 为什么伪唤醒要重试 |
@@ -110,22 +112,33 @@ flowchart TB
 
 ## 6.5\_线程怎样创建并安全发布
 
-初始化阶段的主线是：
+先区分两个启动事件。`start_kernel()` 中较早的 `rcu_init()` 建立 Tree RCU 拓扑、boot CPU 状态和执行基础设施，但不创建普通 GP kthread。`tree.c` 末尾的 `early_initcall(rcu_spawn_gp_kthread)` 只是把创建函数登记到 early initcall 段；真正调用发生在 `rest_init()` 已建立 `kthreadd` 以后：
 
 ```text
-early_initcall(rcu_spawn_gp_kthread)
-    → kthread_create(rcu_gp_kthread, ...)
-    → 可选设置SCHED_FIFO优先级
-    → 根节点锁下更新活动时间
-    → smp_store_release(&rcu_state.gp_kthread, task)
-    → wake_up_process(task)
+start_kernel()
+    → rcu_init()                         先建立RCU基础设施，不创建GP任务
+    → rest_init()
+        → 创建kernel_init与kthreadd
+        → complete(kthreadd_done)
+    → kernel_init等待kthreadd_done
+        → kernel_init_freeable()
+            → do_pre_smp_initcalls()    遍历early initcall段
+                → rcu_spawn_gp_kthread()
+                    → kthread_create(rcu_gp_kthread, ...)
+                    → 可选设置SCHED_FIFO优先级
+                    → 根节点锁下更新活动时间
+                    → smp_store_release(&rcu_state.gp_kthread, task)
+                    → wake_up_process(task)
+            → smp_init()
 ```
+
+所以这里的次序保证不是“宏名字看起来很早”推测出来的：`kernel_init()` 先等待 `kthreadd_done`，`kernel_init_freeable()` 再调用 `do_pre_smp_initcalls()`，随后才进入 `smp_init()`。`tree.c` 因而可以在该 initcall 中预期只有一个 online CPU，`kthread_create()` 也已经具备创建基础设施。
 
 源码在发布指针前先重置 `gp_activity/gp_req_activity`，再用 release store 写 `gp_kthread`，明确约束这些写入不能跑到任务指针发布之后。请求路径读取指针主要用于判断任务是否已经存在并可唤醒；不能只凭一个 `READ_ONCE(gp_kthread)` 擅自扩张成对任意初始化字段的 acquire 契约。线程创建后会一直存在，后续每轮 GP 只改变它处理的状态，不重新分配任务对象。
 
 这段初始化还会创建 NOCB、boost/core 与 expedited 执行者。它们的名字都与 RCU 有关，但职责不同；不能把 `rcu_spawn_gp_kthread()` 理解为“创建一个线程执行全部 RCU 工作”。
 
-具体源码见 [`rcu_spawn_gp_kthread()` 创建并发布长期任务](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5_rcu_spawn_gp_kthread创建并发布长期任务)。
+创建函数标记为 `__init`，以后会随 init memory 释放；被创建的 `task_struct`、`rcu_state.gp_kthread` 指针和 `rcu_gp_kthread()` 主循环不随它消失。具体启动分派见 [从内核启动链定位 `early_initcall`](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall)，创建与发布语句见 [`rcu_spawn_gp_kthread()` 怎样创建并发布任务](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务)。
 
 ## 6.6\_请求漏斗为什么不是全局热锁
 
@@ -199,27 +212,30 @@ cleanup 随后检查 `gp_seq_needed`。若还有需求，保留或重建 INIT；
 
 ## 6.11\_建议阅读顺序
 
-1. 在 `tree.h` 区分 `gp_kthread` 任务指针、`gp_wq`、`gp_flags`、`gp_state` 和 `gp_seq`。
-2. 在 `rcu.h` 阅读 `rcu_seq_start/end/snap/done()`，先理解序列契约，再看具体低位布局。
-3. 阅读 `rcu_spawn_gp_kthread()`，确认线程只创建一次并 release 发布。
-4. 阅读 `rcu_start_this_gp()` 与 `rcu_gp_kthread_wake()`，画出请求 CPU 到全局线程的通信方向。
-5. 阅读 `rcu_gp_kthread()`，确认 `rcu_gp_init()` 返回 true 的分支才进入 FQS/cleanup。
-6. 阅读 `rcu_gp_init()`，把 hotplug 集合、CPU `qsmask` 与抢占任务边界放在同一阶段。
-7. 阅读 `rcu_gp_fqs_loop()` 和 `rcu_report_qs_rsp()`，区分催促、根通知与安全证明。
-8. 阅读 `rcu_gp_cleanup()`，确认节点完成发布、全局结束和下一代请求的顺序。
-9. 若调用路径使用 poll 或 `rcu_normal_wake_from_gp`，继续阅读 [poll 公共序列](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11.1_poll公共序列怎样由普通与expedited_GP共同推进)和 [SRS 等待者批处理](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11.2_SRS怎样批量交付同步等待者)，不要从字段名字猜交付模型。
-10. 最后回到 P17/P18，观察完成代际怎样变成 callback 实际执行，而不是把两者合并。
+1. 在 `init/main.c` 与 `include/linux/init.h` 追踪 `rcu_init()`、`kthreadd_done`、`do_pre_smp_initcalls()` 和 `early_initcall()`，先证明创建发生在哪个启动窗口。
+2. 在 `tree.h` 区分 `gp_kthread` 任务指针、`gp_wq`、`gp_flags`、`gp_state` 和 `gp_seq`。
+3. 在 `rcu.h` 阅读 `rcu_seq_start/end/snap/done()`，先理解序列契约，再看具体低位布局。
+4. 阅读 `rcu_spawn_gp_kthread()`，确认线程只创建一次并 release 发布。
+5. 阅读 `rcu_start_this_gp()` 与 `rcu_gp_kthread_wake()`，画出请求 CPU 到全局线程的通信方向。
+6. 阅读 `rcu_gp_kthread()`，确认 `rcu_gp_init()` 返回 true 的分支才进入 FQS/cleanup。
+7. 阅读 `rcu_gp_init()`，把 hotplug 集合、CPU `qsmask` 与抢占任务边界放在同一阶段。
+8. 阅读 `rcu_gp_fqs_loop()` 和 `rcu_report_qs_rsp()`，区分催促、根通知与安全证明。
+9. 阅读 `rcu_gp_cleanup()`，确认节点完成发布、全局结束和下一代请求的顺序。
+10. 若调用路径使用 poll 或 `rcu_normal_wake_from_gp`，继续阅读 [poll 公共序列](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11.1_poll公共序列怎样由普通与expedited_GP共同推进)和 [SRS 等待者批处理](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11.2_SRS怎样批量交付同步等待者)，不要从字段名字猜交付模型。
+11. 最后回到 P17/P18，观察完成代际怎样变成 callback 实际执行，而不是把两者合并。
 
 ## 6.12\_源码阅读验收
 
-1. 能说明 GP、GP 请求、物理 GP 和 GP kthread 是四个什么对象。
-2. 能指出 GP kthread 的 `task_struct` 指针、等待队列、命令和阶段分别保存在哪里。
-3. 能解释为什么多个 callback 请求可以在叶/中间节点提前合并。
-4. 能说明 `gp_flags` 为什么不是完成证明，`gp_state` 为什么不是安全债务。
-5. 能画出请求唤醒、根完成唤醒和 callback 唤醒三条不同通信路径。
-6. 能解释 cleanup 为什么先发布节点完成值，再结束全局 `gp_seq`。
-7. 能说明普通与 expedited GP 怎样共同推进 `gp_seq_polled`，又不会互相错误结束观察区间。
-8. 能说明 `srs_wait_nodes[]` 为什么是批次分隔节点，而不是同步调用者对象池。
-9. 能明确普通 Tree RCU GP kthread不拥有 SRCU、Tasks、NOCB callback 执行状态机。
+1. 能区分 `start_kernel()` 中的 `rcu_init()` 与后来 early initcall 创建 GP kthread 的两个启动事件。
+2. 能证明 `rcu_spawn_gp_kthread()` 为什么晚于 `kthreadd` 就绪、早于 `smp_init()`，而不是只背 `early_initcall` 名字。
+3. 能说明 GP、GP 请求、物理 GP 和 GP kthread 是四个什么对象。
+4. 能指出 GP kthread 的 `task_struct` 指针、等待队列、命令和阶段分别保存在哪里。
+5. 能解释为什么多个 callback 请求可以在叶/中间节点提前合并。
+6. 能说明 `gp_flags` 为什么不是完成证明，`gp_state` 为什么不是安全债务。
+7. 能画出请求唤醒、根完成唤醒和 callback 唤醒三条不同通信路径。
+8. 能解释 cleanup 为什么先发布节点完成值，再结束全局 `gp_seq`。
+9. 能说明普通与 expedited GP 怎样共同推进 `gp_seq_polled`，又不会互相错误结束观察区间。
+10. 能说明 `srs_wait_nodes[]` 为什么是批次分隔节点，而不是同步调用者对象池。
+11. 能明确普通 Tree RCU GP kthread不拥有 SRCU、Tasks、NOCB callback 执行状态机。
 
 总阅读索引：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
