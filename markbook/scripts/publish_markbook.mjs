@@ -792,6 +792,10 @@ function render_attachments(publication_plan) {
     <li><a href="${escape_attribute(attachment.output_path)}" download>${escape_html(path.basename(attachment.repository_path))}</a> <small>— ${escape_html(attachment.repository_path)}</small></li>`).join("")}</ul>`;
 }
 
+function normalize_generated_text(value) {
+  return value.replace(/^[ \t]+$/gm, "");
+}
+
 function render_html(publication_plan, git_snapshot) {
   const manifest = publication_plan.manifest;
   const document_by_path = new Map(publication_plan.documents.map((document_entry) => [document_entry.repository_path, document_entry]));
@@ -1044,7 +1048,7 @@ async function write_publication(publication_plan, git_snapshot) {
       await copyFile(attachment.absolute_path, output_path);
     }
 
-    const html = render_html(publication_plan, git_snapshot);
+    const html = normalize_generated_text(render_html(publication_plan, git_snapshot));
     await writeFile(path.join(staging_directory, "index.html"), html, "utf8");
 
     const artifact_paths = [
@@ -1356,6 +1360,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === script_path) {
 
 export {
   heading_slug,
+  normalize_generated_text,
   normalize_release_month,
   parse_front_matter,
   resolve_repository_path,
