@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/FormingSystem/linux_note/blob/master/markbook/schemas/manifest.schema.json",
+  "title": "linux-note MarkBook manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "topic_id",
+    "enabled",
+    "title",
+    "subtitle",
+    "description",
+    "publisher",
+    "language",
+    "source_baseline",
+    "volumes",
+    "references"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "topic_id": { "type": "string", "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$" },
+    "enabled": { "type": "boolean" },
+    "title": { "type": "string", "minLength": 1 },
+    "subtitle": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "publisher": { "type": "string", "minLength": 1 },
+    "language": { "type": "string", "minLength": 2 },
+    "source_baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "branch", "tag", "commit", "kernel_version", "config"],
+      "properties": {
+        "repository": { "type": "string" },
+        "branch": { "type": "string" },
+        "tag": { "type": "string" },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "kernel_version": { "type": "string" },
+        "config": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "reference": { "$ref": "#/$defs/repository_path" }
+      }
+    },
+    "volumes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "description", "sources"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$" },
+          "title": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "sources": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/source_selector" }
+          },
+          "attachments": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/repository_path" },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "path", "reason"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "path": { "$ref": "#/$defs/repository_path" },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "repository_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z]:|/|\\\\|.*\\.\\.).+$"
+    },
+    "source_selector": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "role"],
+          "properties": {
+            "path": { "$ref": "#/$defs/repository_path" },
+            "role": { "enum": ["guide", "chapter", "appendix"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["directory", "include", "role"],
+          "properties": {
+            "directory": { "$ref": "#/$defs/repository_path" },
+            "include": { "type": "string", "pattern": "^P\\*\\.md$" },
+            "role": { "enum": ["guide", "chapter", "appendix"] }
+          }
+        }
+      ]
+    }
+  }
+}
