@@ -19,7 +19,7 @@ topics:
 
 本章证据来自 NXP 官方 [`linux-imx`](https://github.com/nxp-imx/linux-imx) 仓库发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 对应的 Linux 6.12.20。本地工作树位置不属于证据身份，统一来源和配置边界见 [Linux 源码阅读基线](../linux/SOURCE_BASELINE.md)。
 
-保存文件保持原 Linux 相对路径，公共模型位于 `tools/memory-model/`。本章回答：Linux API 怎样进入 LKMM 事件，模型文件怎样组织关系和公理，herd7 怎样消费配置。跨版本稳定的机制结论仍由[Linux 内存顺序专题](../../../knowledge/linux/memory_ordering/大纲.md)维护。
+保存文件保持原 Linux 相对路径，公共模型位于 `tools/memory-model/`。本章回答：Linux API 怎样进入 LKMM 事件，模型文件怎样组织关系和公理，herd7 怎样消费配置。跨版本稳定的机制结论仍由[Linux 内存顺序专题](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/大纲.md)维护。
 
 ## 1.2\_从源码接口到模型判定的完整链
 
@@ -163,7 +163,7 @@ LKMM 能把 RCU 读侧区间、`synchronize_rcu()`、指针发布/取得等纳�
 - 内存分配复用和所有错误路径；
 - 当前 Tree RCU 实现的性能与进展性。
 
-这些属于 [RCU 专题](../../../knowledge/linux/synchronization/rcu/大纲.md)和具体源码导读。
+这些属于 [RCU 专题](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md)和具体源码导读。
 
 ## 1.11\_官方文档证据
 

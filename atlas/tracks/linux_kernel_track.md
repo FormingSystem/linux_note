@@ -40,12 +40,12 @@ domains:
 
 ## 1.4\_第三阶段\_并发与事件
 
-1. 从[同步机制总纲](../../knowledge/linux/synchronization/大纲.md)建立“竞争、顺序、互斥、等待和生命周期”问题地图。
-2. 阅读[内存顺序](../../knowledge/linux/memory_ordering/大纲.md)，再进入[锁机制](../../knowledge/linux/synchronization/locks/大纲.md)，先区分可睡与不可睡上下文；随后用 [Lockdep 专题](../../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)学会把锁序、IRQ 上下文和持锁前置条件转成动态验证证据。需要落到 Linux 6.12.20 实现时，从 [Lockdep 源码总阅读索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)进入。
-3. 对照学习[seqcount/seqlock](../../knowledge/linux/synchronization/sequence_counters/大纲.md)与[RCU](../../knowledge/linux/synchronization/rcu/大纲.md)，理解读重试和延迟回收解决的是不同问题；版本化实现从 [RCU 源码总阅读索引](../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)进入。
-4. 阅读[等待队列与完成量](../../knowledge/linux/waiting_notification/大纲.md)，掌握条件等待、事件完成和唤醒规则。
-5. 按序阅读[中断机制](../../knowledge/kernel_subsystems/irq/中断机制简介)，再阅读[工作队列](../../knowledge/kernel_subsystems/workqueue/大纲.md)，理解执行上下文如何约束同步选择。
-6. 阅读[时间管理](../../knowledge/linux/time_management/定时器简介)，区分忙等待、睡眠、timer、hrtimer 与 delayed work。
+1. 从[同步和异步机制总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)先区分“约束并发状态”和“让事件继续推进”两类问题。
+2. 阅读[内存顺序](../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/大纲.md)，再进入[锁机制](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/大纲.md)，先区分可睡与不可睡上下文，再沿[锁源码总阅读索引](../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)核对 spinlock、mutex 与 rwsem；随后用 [Lockdep 专题](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md#1.1_专题定位)和[源码索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)把锁序、IRQ 上下文和持锁前置条件转成动态验证证据。
+3. 对照学习[seqcount/seqlock](../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/大纲.md)与[RCU](../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md)，理解读重试和延迟回收解决的是不同问题；版本化实现分别从[序列计数器源码总阅读索引](../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.5_建议阅读顺序)和 [RCU 源码总阅读索引](../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)进入。
+4. 阅读[等待队列与完成量](../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/大纲.md)，掌握条件等待、事件完成和唤醒规则，再从[等待与完成量源码总阅读索引](../../research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)还原入队、wake 与 done 令牌。
+5. 从[异步机制大纲](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/大纲.md)进入，按序阅读[中断机制](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/大纲.md)与[工作队列](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/大纲.md)，并用[工作队列源码总阅读索引](../../research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.6_建议阅读顺序)核对执行上下文、pool、worker 和 flush。
+6. 阅读[定时与延迟执行](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/大纲.md)，区分忙等待、睡眠、timer、hrtimer 与 delayed work。
 
 阶段验收：面对一段内核代码，能判断其执行上下文、能否睡眠、需要哪类同步以及退出时如何取消异步工作。
 
@@ -55,7 +55,7 @@ domains:
 2. 按序阅读[Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)。
 3. 阅读[错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)。
 4. 阅读[poll 与 epoll 的区别](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)。
-5. 按序阅读[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md)。
+5. 按序阅读[异步通知](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md)。
 6. 阅读[Linux 内核日志](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md)，建立最基本的观测手段。
 
 阶段验收：能描述路径和打开文件怎样进入 I/O，设备怎样注册、匹配和暴露节点，以及阻塞唤醒和异步通知怎样接回用户接口。

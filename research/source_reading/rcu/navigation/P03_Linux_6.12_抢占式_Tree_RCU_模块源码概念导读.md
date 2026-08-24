@@ -31,7 +31,7 @@ R-old在CPU1取得old_obj
     → GP=N才允许完成
 ```
 
-抽象证明见[抢占式 Tree RCU 的问题与任务跟踪模型](../../../../knowledge/linux/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md)，稳定机制正文见[抢占式 Tree RCU 源码同步机制](../../../../knowledge/linux/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md)。本章只保存 Linux 6.12.20 的函数、字段、锁和分支证据。
+从配置或实现名称进入时，先用 [RCU 实现家族与内核配置](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_实现家族与内核配置.md#22.2_三个正交维度)确认这里仍是普通 Tree RCU。抽象证明见[抢占式 Tree RCU 的问题与任务跟踪模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md#7.1_先制造非抢占模型无法解释的现场)，稳定机制正文见[抢占式 Tree RCU 源码同步机制](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md#8.1_版本_配置与源码边界)。本章只保存 Linux 6.12.20 的函数、字段、锁和分支证据。
 
 ## 3.2\_任务状态的准确位置
 

@@ -22,7 +22,7 @@ domains:
 | 理解模块协作与两组正交状态 | [Linux 6.12 compiler types 注解模块概念导读](../navigation/P02_Linux_6.12_compiler_types注解模块概念导读.md#2.1_模块问题与实现所有权) |
 | 验证地址域、context与Kbuild接入 | [Sparse 地址空间与上下文记账研究型实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标) |
 | 理解RCU怎样消费`__rcu` | [`rcu_check_sparse()` 静态类型桥接](../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.3_rcu_check_sparse静态类型桥接) |
-| 理解运行时锁依赖 | [Lockdep 专题](../../../../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位) |
+| 理解运行时锁依赖 | [Lockdep 专题](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md#1.1_专题定位) |
 
 本篇唯一展开仓库保存的 Linux 6.12.20 [`include/linux/compiler_types.h`](../../linux/include/linux/compiler_types.h) 文件开头注解实现簇。Sparse 分析器内部算法归 Sparse 项目维护；uaccess、MMIO、per-CPU、RCU 和真实锁功能归各自子系统维护。
 

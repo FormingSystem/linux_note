@@ -1,6 +1,6 @@
 # Lockdep 案例：动态验证机制的状态分层
 
-本案例来自仓库的独立 Lockdep 专题：稳定入口为 `knowledge/linux/synchronization/lockdep/大纲.md`，版本源码入口为 `research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md`。它补充 RCU 案例中较少展开的 **动态检查器** 写作方法，不是要求所有专题复刻 Lockdep 的文件数量或字段。
+本案例来自仓库的独立 Lockdep 专题：稳定入口为 `knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md`，版本源码入口为 `research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md`。它补充 RCU 案例中较少展开的 **动态检查器** 写作方法，不是要求所有专题复刻 Lockdep 的文件数量或字段。
 
 ## 1. 先分开功能状态与影子状态
 

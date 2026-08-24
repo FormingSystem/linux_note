@@ -20,13 +20,13 @@ source_version: "6.12.20"
 
 ## 9.1\_实现所有权与版本边界
 
-本章唯一展开 Linux 6.12.20 普通 Tree RCU callback 从 enqueue、分段、绑定 GP、成熟、批处理执行，到 NOCB bypass/GP thread/CB thread 和动态 offload 的源码实现。`rcu_barrier_entrain()` 也操作 callback 分段，但其哨兵证明由 P10唯一展开；CPU offline 队列 merge 由 P06唯一展开。
+本章唯一展开 Linux 6.12.20 普通 Tree RCU callback 从 enqueue、分段、绑定 GP、成熟、批处理执行，到 NOCB bypass/GP thread/CB thread 和动态 offload 的源码实现。普通 GP 的长期任务、请求、init/FQS/cleanup 由 [P05 GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_端到端源码时序)唯一展开；本章只解释 callback 怎样提出需求和消费完成代际。`rcu_barrier_entrain()` 也操作 callback 分段，但其哨兵证明由 P10唯一展开；CPU offline 队列 merge 由 P06唯一展开。
 
 源码基线：NXP `linux-imx` 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，配置包含 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`；NOCB 分支仅在 `CONFIG_RCU_NOCB_CPU` 下存在，lazy callback 还受 `CONFIG_RCU_LAZY` 控制。
 
 上游相对位置：[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`kernel/rcu/tree_nocb.h`](../../linux/kernel/rcu/tree_nocb.h)、[`kernel/rcu/rcu_segcblist.c`](../../linux/kernel/rcu/rcu_segcblist.c)、[`include/linux/rcu_segcblist.h`](../../linux/include/linux/rcu_segcblist.h)。
 
-概念入口：[回调与 NOCB 模块源码概念导读](../navigation/P11_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#11.1_GP完成为什么还不等于callback执行)。稳定正文：[P17 callback 分段](../../../../knowledge/linux/synchronization/rcu/P17_Tree_RCU_rcu_segcblist回调状态机.md#17.2_四段不是四条链表)、[P18 批处理](../../../../knowledge/linux/synchronization/rcu/P18_Tree_RCU_回调执行_批处理与限流.md#18.2_先区分四个时刻)、[P19 NOCB](../../../../knowledge/linux/synchronization/rcu/P19_Tree_RCU_NOCB回调卸载.md#19.2_卸载前后责任对比)。
+概念入口：[回调与 NOCB 模块源码概念导读](../navigation/P11_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#11.1_GP完成为什么还不等于callback执行)。稳定正文：[P17 callback 分段](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_rcu_segcblist回调状态机.md#17.2_四段不是四条链表)、[P18 批处理](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_Tree_RCU_回调执行_批处理与限流.md#18.2_先区分四个时刻)、[P19 NOCB](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P19_Tree_RCU_NOCB回调卸载.md#19.2_卸载前后责任对比)。
 
 ## 9.2\_源码符号覆盖账本
 
@@ -242,7 +242,7 @@ static bool rcu_advance_cbs(struct rcu_node *rnp,
 }
 ```
 
-调用者必须持叶节点锁并满足 callback list 的普通/NOCB 保护。`rcu_start_this_gp()` 返回是否需要唤醒全局 GP kthread；因此 accelerate 的返回值不是“callback 已加速成功”，而是控制执行者通信请求。
+调用者必须持叶节点锁并满足 callback list 的普通/NOCB 保护。`rcu_start_this_gp()` 返回是否需要唤醒全局 GP kthread；因此 accelerate 的返回值不是“callback 已加速成功”，而是控制执行者通信请求。请求怎样从叶节点漏斗汇聚、怎样唤醒长期任务并在 cleanup 发布 `rnp->gp_seq`，转入 [P05 的请求至完成实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.6_rcu_start_this_gp漏斗记录未来需求)，不在这里复制其函数体。
 
 ## 9.6\_rcu\_do\_batch为何先抽取再锁外执行
 

@@ -25,9 +25,11 @@ source_version: "6.12.20"
 | 阅读入口 | 职责 |
 | --- | --- |
 | [RCU 源码总导航](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序) | 先区分普通 Tree RCU、SRCU、Tasks 与 Tiny，再选择模块 |
+| [RCU 实现家族与内核配置](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_实现家族与内核配置.md#22.2_三个正交维度) | 解释“非抢占式”与“Tree RCU”分别限定哪一个维度 |
+| [非抢占式 Tree RCU 问题与证明模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_非抢占式_Tree_RCU_问题与证明模型.md#5.1.1_标题里的两个限定不是同义关系) | 在进入函数前建立 CPU QS 的抽象证明边界 |
 | [Tree RCU GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.2_源码符号覆盖账本) | 唯一展开 GP 请求、长期线程、init、FQS 与 cleanup |
 | [非抢占式 Tree RCU 模块源码概念导读](../navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.3_源码文件与状态所有权) | 说明这些函数如何组成同步等待桥、CPU QS 和树形汇聚 |
-| [非抢占式 Tree RCU 稳定机制正文](../../../../knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md#6.1_源码边界与贯穿场景) | 解释跨版本稳定的状态与通信模型 |
+| [非抢占式 Tree RCU 稳定机制正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md#6.1_源码边界与贯穿场景) | 解释跨版本稳定的状态与通信模型 |
 
 下列 `/** ... */` 块是本仓库为阅读补充的中文 Doxygen 说明，不是上游文件原注释。代码只裁剪支撑本章结论的语句，省略处明确标记；完整实现以链接的版本化源文件为准。
 

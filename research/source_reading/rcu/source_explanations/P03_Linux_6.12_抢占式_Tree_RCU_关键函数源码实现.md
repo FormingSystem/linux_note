@@ -25,8 +25,11 @@ source_version: "6.12.20"
 | 阅读入口 | 职责 |
 | --- | --- |
 | [RCU 源码总导航](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序) | 先区分 RCU 家族，再选择功能模块和阅读顺序 |
+| [RCU 实现家族与内核配置](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_实现家族与内核配置.md#22.2_三个正交维度) | 先确认 `CONFIG_PREEMPT_RCU` 改变的是普通 Tree RCU 的读侧方式 |
+| [抢占式 Tree RCU 问题与任务跟踪模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md#7.1_先制造非抢占模型无法解释的现场) | 在进入函数前建立 CPU 债务转为任务债务的抽象证明 |
 | [抢占式 Tree RCU 模块源码概念导读](../navigation/P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md#3.1_取证问题) | 说明这些实现如何组成“CPU 债务转任务债务”的端到端闭环 |
-| [抢占式 Tree RCU 稳定机制正文](../../../../knowledge/linux/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md) | 解释跨版本稳定的任务跟踪模型 |
+| [抢占式 Tree RCU 稳定机制正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md#8.1_版本_配置与源码边界) | 解释跨版本稳定的任务跟踪模型 |
+| [普通 GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.9_rcu_gp_init开始代际并建立证明债务) | 说明 GP init 怎样接管已有 blocked task，以及根债务清零后怎样进入 cleanup；本章只展开任务侧债务 |
 
 下列 `/** ... */` 是本仓库补充的中文 Doxygen 阅读说明，不是上游原注释。裁剪代码保留影响状态所有权、等待边界和上报顺序的语句；完整函数以链接的 Linux 6.12.20 版本化源文件为准。
 

@@ -21,9 +21,9 @@ topics:
 | --- | --- |
 | [Lockdep 总阅读索引](../navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序) | 查询、配置和 proc 的阅读位置 |
 | [查询适配与诊断模块导读](../navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.2_查询链) | current 查询到 RCU/诊断的数据流 |
-| [稳定机制：查询、断言、pin 与自定义原语接入](../../../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.1_先确认自己在哪一层使用Lockdep) | API 语义与误用边界 |
-| [稳定机制：配置、亲手实验与报告解读](../../../../knowledge/linux/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.1_先把使用资格变成环境检查) | 配置和运行态核对 |
-| [稳定机制：成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.1_先把无告警写成条件命题) | 容量、停检和无告警结论的边界 |
+| [稳定机制：查询、断言、pin 与自定义原语接入](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.1_先确认自己在哪一层使用Lockdep) | API 语义与误用边界 |
+| [稳定机制：配置、亲手实验与报告解读](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.1_先把使用资格变成环境检查) | 配置和运行态核对 |
+| [稳定机制：成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.1_先把无告警写成条件命题) | 容量、停检和无告警结论的边界 |
 
 基线为 Linux 6.12.20，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。所有 Doxygen 和中文行内注释均为仓库补充，非上游原文。
 
