@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { parse as parse_yaml } from "yaml";
 import {
   heading_slug,
+  normalize_generated_text,
   normalize_release_month,
   shanghai_date_parts,
   validate_release_policy
@@ -111,6 +112,10 @@ test("覆盖必须显式且只能针对现有版本", () => {
 
 test("标题锚点保留章节数字、下划线与中文", () => {
   assert.equal(heading_slug("1.9\\_建议的源码阅读顺序"), "1.9_建议的源码阅读顺序");
+});
+
+test("生成文本只清除空白行缩进", () => {
+  assert.equal(normalize_generated_text("<p>正文  </p>\n    \n<pre>保留  </pre>"), "<p>正文  </p>\n\n<pre>保留  </pre>");
 });
 
 test("月度工作流 YAML 可解析并固定在每月一号", async () => {
