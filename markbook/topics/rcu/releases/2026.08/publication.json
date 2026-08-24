@@ -2,14 +2,15 @@
   "schema_version": 1,
   "generator": {
     "name": "linux-note-markbook",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "path": "markbook/scripts/publish_markbook.mjs",
-    "sha256": "e925ef236bab9d00ee96f3a69d66122d8e2ddbd54f6fa032ec5d45ca665b3455",
+    "sha256": "40bda35c820eaa9ce9f0da22ffabfc7d9829c87ea97e472c2f6557b4232bdacd",
     "dependency_lock": {
       "path": "markbook/package-lock.json",
-      "sha256": "9925fdad7631abb362ee2592f1446b0495ac61d8a1808a87ecbfc8f90bfe9db4"
+      "sha256": "15359cf2e35c9b13348a551cb561933578e2e14b023204ae36da8f977c182a2f"
     },
     "publication_dependencies": {
+      "highlight_js": "11.11.1",
       "marked": "16.4.2",
       "mermaid": "11.17.0"
     }
@@ -18,14 +19,14 @@
   "title": "深入理解 Linux RCU",
   "version": "2026.08",
   "release_date": "2026-08-01",
-  "generated_at": "2026-08-24T04:31:46.362Z",
+  "generated_at": "2026-08-24T05:14:33.026Z",
   "timezone": "Asia/Shanghai",
   "manifest": {
     "path": "markbook/manifests/rcu.json",
     "sha256": "29d73486b3aeab399049d0be212fdfc2d2502e4bc9f5856b95c49d1bcdb987d2"
   },
   "knowledge_repository": {
-    "head": "41f5d2c5e9cc5c8dd6de9aa28c81585241a5c0e8",
+    "head": "36627b4a9279a7a5f66ba12c72d9367dd3d4c66c",
     "source_state": "clean",
     "dirty_source_count": 0
   },
@@ -703,18 +704,18 @@
   "artifacts": [
     {
       "path": "index.html",
-      "bytes": 1492155,
-      "sha256": "89a5968e360730b4882cd05134cf6b4db3a7d00e4765330fcccb785a76d2b119"
+      "bytes": 1656150,
+      "sha256": "6315226acc87290f48fb8cb57fa9a8605efb74406549bed3a90fddc35cfb4bf6"
     },
     {
       "path": "assets/markbook.css",
-      "bytes": 14960,
-      "sha256": "57964b2324d3f810dfb57122bda27ad83f62e29d674a5b7e59c9b457853f2602"
+      "bytes": 23169,
+      "sha256": "bd2fdf2710c298068d1f86be80834cbf77e100589f11c85e8be7329f279cd729"
     },
     {
       "path": "assets/markbook.js",
-      "bytes": 6353,
-      "sha256": "136b6fb9e247676732d56b912ee40457250284865988529ac4b43316103796e7"
+      "bytes": 17161,
+      "sha256": "ea213d0cff0b1a10bb07ade50233dab1e59d309153be82939fe6dddc8b35cb57"
     },
     {
       "path": "attachments/experiment/Makefile",

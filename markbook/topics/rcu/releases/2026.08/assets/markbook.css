@@ -9,8 +9,13 @@
   --cyan: #3aa7a3;
   --gold: #c69b46;
   --rule: #d8cfbd;
-  --code: #10212a;
-  --code_ink: #e8f2ef;
+  --vscode_editor_background: #ffffff;
+  --vscode_editor_foreground: #000000;
+  --vscode_editor_border: #d4d4d4;
+  --vscode_editor_selection: #add6ff;
+  --vscode_editor_gutter: #f3f3f3;
+  --vscode_editor_scrollbar: rgb(121 121 121 / 40%);
+  --vscode_editor_scrollbar_hover: rgb(100 100 100 / 60%);
   --shadow: 0 18px 60px rgb(18 35 43 / 14%);
   --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
   --sans: "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif;
@@ -607,16 +612,63 @@ input {
   background: rgb(255 255 255 / 32%);
 }
 
-.chapter_body pre {
+.chapter_body pre.code_block {
+  position: relative;
   max-width: 100%;
   margin: 1.6rem 0;
-  padding: 1rem 1.15rem;
+  padding: 1.15rem 1.25rem;
   overflow: auto;
-  color: var(--code_ink);
-  background: var(--code);
-  border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: 0.55rem;
-  box-shadow: 0 8px 30px rgb(10 25 33 / 12%);
+  color: var(--vscode_editor_foreground);
+  background: var(--vscode_editor_background);
+  border: 1px solid var(--vscode_editor_border);
+  border-radius: 0.45rem;
+  box-shadow: 0 5px 18px rgb(35 52 48 / 6%);
+  line-height: 1.65;
+  scrollbar-color: var(--vscode_editor_scrollbar) var(--vscode_editor_gutter);
+  scrollbar-gutter: stable;
+  tab-size: 4;
+}
+
+.chapter_body pre.code_block[data-language] {
+  padding-top: 2rem;
+}
+
+.chapter_body pre.code_block[data-language]::before {
+  position: absolute;
+  inset: 0 0 auto auto;
+  padding: 0.28rem 0.62rem;
+  color: #616161;
+  background: var(--vscode_editor_gutter);
+  border-bottom: 1px solid var(--vscode_editor_border);
+  border-left: 1px solid var(--vscode_editor_border);
+  border-radius: 0 0.4rem 0 0.3rem;
+  content: attr(data-language);
+  font-family: var(--sans);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.chapter_body pre.code_block::-webkit-scrollbar {
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--vscode_editor_gutter);
+}
+
+.chapter_body pre.code_block::-webkit-scrollbar-thumb {
+  background: var(--vscode_editor_scrollbar);
+  border: 0.18rem solid var(--vscode_editor_gutter);
+}
+
+.chapter_body pre.code_block::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode_editor_scrollbar_hover);
+}
+
+.chapter_body pre.code_block::selection,
+.chapter_body pre.code_block *::selection {
+  background: var(--vscode_editor_selection);
 }
 
 .chapter_body code {
@@ -624,19 +676,318 @@ input {
   font-size: 0.88em;
 }
 
+.chapter_body pre.code_block code {
+  display: block;
+  padding: 0;
+  color: var(--vscode_editor_foreground);
+  background: transparent;
+  font-size: 0.86rem;
+}
+
+.chapter_body .hljs-comment,
+.chapter_body .hljs-quote {
+  color: #008000;
+  font-style: italic;
+}
+
+.chapter_body .hljs-keyword,
+.chapter_body .hljs-selector-tag,
+.chapter_body .hljs-literal,
+.chapter_body .hljs-section,
+.chapter_body .hljs-link {
+  color: #0000ff;
+}
+
+.chapter_body .hljs-type,
+.chapter_body .hljs-class .hljs-title,
+.chapter_body .hljs-built_in {
+  color: #267f99;
+}
+
+.chapter_body .hljs-string,
+.chapter_body .hljs-attr,
+.chapter_body .hljs-template-tag,
+.chapter_body .hljs-template-variable {
+  color: #a31515;
+}
+
+.chapter_body .hljs-number,
+.chapter_body .hljs-symbol,
+.chapter_body .hljs-bullet {
+  color: #098658;
+}
+
+.chapter_body .hljs-title,
+.chapter_body .hljs-title.function_,
+.chapter_body .hljs-function .hljs-title {
+  color: #795e26;
+}
+
+.chapter_body .hljs-variable,
+.chapter_body .hljs-params,
+.chapter_body .hljs-property {
+  color: #001080;
+}
+
+.chapter_body .hljs-meta,
+.chapter_body .hljs-meta .hljs-keyword {
+  color: #af00db;
+}
+
+.chapter_body .hljs-regexp {
+  color: #811f3f;
+}
+
+.chapter_body .hljs-deletion {
+  color: #a31515;
+  background: #ffecec;
+}
+
+.chapter_body .hljs-addition {
+  color: #008000;
+  background: #eaffea;
+}
+
+.chapter_body .hljs-emphasis {
+  font-style: italic;
+}
+
+.chapter_body .hljs-strong {
+  font-weight: 700;
+}
+
 .chapter_body :not(pre) > code {
   padding: 0.12em 0.34em;
-  color: #7a3d20;
-  background: #eee3d0;
-  border: 1px solid #dfd0b5;
+  color: #001080;
+  background: var(--vscode_editor_gutter);
+  border: 1px solid var(--vscode_editor_border);
   border-radius: 0.25rem;
 }
 
-.chapter_body .mermaid {
+.chapter_body pre.mermaid {
   color: var(--ink);
   background: white;
   border-color: var(--rule);
   box-shadow: none;
+}
+
+.mermaid_diagram {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  margin: 2rem 0;
+  padding: 3.8rem 1.35rem 1.35rem;
+  overflow: hidden;
+  background: rgb(255 255 255 / 42%);
+  border: 1px solid var(--rule);
+  border-radius: 0.7rem;
+}
+
+.mermaid_canvas {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-gutter: stable;
+}
+
+.mermaid_content {
+  display: grid;
+  place-items: start center;
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+}
+
+.chapter_body .mermaid_diagram pre.mermaid {
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.mermaid_content svg {
+  display: block;
+  width: auto;
+  max-width: none;
+  height: auto;
+  margin: 0 auto;
+}
+
+.mermaid_fullscreen_button {
+  position: absolute;
+  z-index: 2;
+  top: 0.9rem;
+  right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.15rem;
+  padding: 0.42rem 0.72rem;
+  color: var(--cyan);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 0.42rem;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.mermaid_fullscreen_button:hover,
+.mermaid_fullscreen_button:focus-visible {
+  border-color: var(--cyan);
+  outline: 2px solid rgb(23 110 105 / 20%);
+  outline-offset: 2px;
+}
+
+.mermaid_fullscreen_button span {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+body[data_mermaid_viewer_open="true"] {
+  overflow: hidden;
+}
+
+.mermaid_viewer {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.mermaid_viewer[hidden] {
+  display: none;
+}
+
+.mermaid_viewer_title {
+  position: absolute;
+  z-index: 3;
+  top: 1rem;
+  left: 1.5rem;
+  margin: 0;
+  color: var(--navy);
+  font-family: var(--serif);
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+}
+
+.mermaid_view_controls {
+  position: absolute;
+  z-index: 3;
+  top: 0.8rem;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transform: translateX(-50%);
+}
+
+.mermaid_view_controls button,
+.mermaid_viewer_close {
+  min-width: 2.2rem;
+  min-height: 2.2rem;
+  padding: 0.4rem 0.68rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 0.45rem;
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mermaid_view_controls button:hover,
+.mermaid_view_controls button:focus-visible,
+.mermaid_viewer_close:hover,
+.mermaid_viewer_close:focus-visible {
+  border-color: var(--cyan);
+  outline: 2px solid rgb(23 110 105 / 20%);
+  outline-offset: 2px;
+}
+
+.mermaid_view_controls output {
+  min-width: 3.5rem;
+  color: var(--ink_soft);
+  font: 0.74rem var(--mono);
+  text-align: center;
+}
+
+.mermaid_viewer_close {
+  position: absolute;
+  z-index: 3;
+  top: 0.8rem;
+  right: 1.5rem;
+  color: var(--cyan);
+}
+
+.mermaid_viewer_canvas {
+  --mermaid_scale: 1;
+  --mermaid_pan_x: 0px;
+  --mermaid_pan_y: 0px;
+  position: absolute;
+  inset: 4.5rem 1.5rem 2.2rem;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  outline: none;
+}
+
+.mermaid_viewer_canvas:focus-visible {
+  box-shadow: inset 0 0 0 2px rgb(23 110 105 / 35%);
+}
+
+.mermaid_viewer.is_dragging .mermaid_viewer_canvas {
+  cursor: grabbing;
+}
+
+.mermaid_viewer_positioner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max-content;
+  height: max-content;
+  transform: translate(-50%, -50%) translate3d(var(--mermaid_pan_x), var(--mermaid_pan_y), 0);
+  will-change: transform;
+}
+
+.mermaid_viewer_content {
+  width: max-content;
+  height: max-content;
+  line-height: 0;
+  transform: scale(var(--mermaid_scale));
+  transform-origin: center;
+  will-change: transform;
+}
+
+.mermaid_viewer_content svg {
+  display: block;
+  width: auto;
+  max-width: none;
+  height: auto;
+  max-height: none;
+}
+
+.mermaid_viewer_hint {
+  position: absolute;
+  z-index: 2;
+  bottom: 0.55rem;
+  left: 50%;
+  margin: 0;
+  color: var(--ink_soft);
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  white-space: nowrap;
+  transform: translateX(-50%);
 }
 
 .chapter_body img,
@@ -766,6 +1117,36 @@ input {
     padding: 1.5rem;
     border-radius: 0;
   }
+
+  .mermaid_diagram {
+    padding-inline: 0.75rem;
+  }
+
+  .mermaid_viewer_title {
+    display: none;
+  }
+
+  .mermaid_view_controls {
+    top: 0.65rem;
+    left: 0.65rem;
+    transform: none;
+  }
+
+  .mermaid_viewer_close {
+    top: 3.45rem;
+    right: 0.65rem;
+  }
+
+  .mermaid_viewer_canvas {
+    inset: 6.4rem 0.65rem 2rem;
+  }
+
+  .mermaid_viewer_hint {
+    max-width: calc(100% - 1rem);
+    overflow: hidden;
+    font-size: 0.63rem;
+    text-overflow: ellipsis;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -800,6 +1181,8 @@ input {
   .book_toolbar,
   .reading_progress,
   .sidebar_backdrop,
+  .mermaid_fullscreen_button,
+  .mermaid_viewer,
   .chapter_navigation {
     display: none !important;
   }
@@ -854,7 +1237,7 @@ input {
     text-decoration: none;
   }
 
-  .chapter_body pre {
+  .chapter_body pre.code_block {
     color: black;
     background: #f3f3f3;
     border: 1px solid #bbb;
@@ -862,6 +1245,35 @@ input {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     print-color-adjust: exact;
+  }
+
+  .chapter_body pre.code_block[data-language]::before {
+    color: #444;
+    background: #eee;
+    border-color: #bbb;
+  }
+
+  .mermaid_diagram {
+    padding: 0;
+    overflow: visible;
+    background: transparent;
+    border: 0;
+  }
+
+  .mermaid_canvas {
+    overflow: visible;
+  }
+
+  .mermaid_content,
+  .chapter_body .mermaid_diagram pre.mermaid {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mermaid_content svg {
+    width: auto;
+    max-width: 100%;
+    height: auto;
   }
 
   .book_colophon {
