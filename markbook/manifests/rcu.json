@@ -1,0 +1,107 @@
+{
+  "$schema": "../schemas/manifest.schema.json",
+  "schema_version": 1,
+  "topic_id": "rcu",
+  "enabled": true,
+  "title": "深入理解 Linux RCU",
+  "subtitle": "从对象回收的因果模型，到 Tree RCU 状态机、Linux 6.12 源码与实验",
+  "description": "面向希望系统掌握 RCU 的读者，按问题压力、抽象推演、实现加固、源码证据和实验验证重新编排仓库中的权威材料。",
+  "publisher": "FormingSystem",
+  "language": "zh-CN",
+  "source_baseline": {
+    "repository": "https://github.com/nxp-imx/linux-imx.git",
+    "branch": "lf-6.12.y",
+    "tag": "lf-6.12.20-2.0.0",
+    "commit": "dfaf2136deb2af2e60b994421281ba42f1c087e0",
+    "kernel_version": "Linux 6.12.20",
+    "config": [
+      "CONFIG_TREE_RCU=y",
+      "CONFIG_PREEMPT_RCU=y"
+    ],
+    "reference": "research/source_reading/linux/SOURCE_BASELINE.md"
+  },
+  "volumes": [
+    {
+      "id": "mechanism_and_application",
+      "title": "卷一　机制、实现与应用",
+      "description": "从对象回收问题出发，推演 RCU 抽象角色与正确性边界，再逐步进入 Tree RCU 的状态、通信、变体、调试和应用选择。",
+      "sources": [
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md",
+          "role": "guide"
+        },
+        {
+          "directory": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu",
+          "include": "P*.md",
+          "role": "chapter"
+        }
+      ]
+    },
+    {
+      "id": "source_navigation",
+      "title": "卷二　Linux 6.12 源码导航",
+      "description": "按读者目标组织源码入口、参与者、状态落点、函数协作和阅读顺序，不在本卷重复展开上游函数体。",
+      "sources": [
+        {
+          "directory": "research/source_reading/rcu/navigation",
+          "include": "P*.md",
+          "role": "chapter"
+        }
+      ]
+    },
+    {
+      "id": "source_explanations",
+      "title": "卷三　Linux 6.12 唯一实现讲解",
+      "description": "集中收录同一版本边界内宏、字段、函数体和配置分支的唯一实现讲解，并回接卷二的模块导读。",
+      "sources": [
+        {
+          "directory": "research/source_reading/rcu/source_explanations",
+          "include": "P*.md",
+          "role": "chapter"
+        }
+      ]
+    },
+    {
+      "id": "experiment",
+      "title": "卷四　实验与证据闭环",
+      "description": "用晚到读者与被抢占读者的可观测实验检验宽限期边界，并保留可独立复现的模块源码和构建入口。",
+      "sources": [
+        {
+          "path": "labs/kernel/rcu/P01_晚到读者与抢占读者/README.md",
+          "role": "chapter"
+        }
+      ],
+      "attachments": [
+        "labs/kernel/rcu/P01_晚到读者与抢占读者/Makefile",
+        "labs/kernel/rcu/P01_晚到读者与抢占读者/late_and_preempted_reader.c"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "title": "Linux 源码阅读基线",
+      "path": "research/source_reading/linux/SOURCE_BASELINE.md",
+      "reason": "核对厂商源码身份、不可变提交、架构和配置边界。"
+    },
+    {
+      "title": "kref 与 RCU",
+      "path": "knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md",
+      "reason": "继续追踪 lookup 保护与取得对象强引用之后的生命周期交接。"
+    },
+    {
+      "title": "哈希表并发保护与 RCU",
+      "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P04_并发保护与RCU机制_多核下的读写博弈.md",
+      "reason": "观察 RCU 在具体容器读写路径中的组合方式。"
+    },
+    {
+      "title": "RCU 与子系统检查适配",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md",
+      "reason": "区分 RCU 功能状态、Lockdep 影子状态和动态验证器的证明边界。"
+    },
+    {
+      "title": "知识库专题阅读与评审地图",
+      "path": "atlas/maps/knowledge_review_map.md",
+      "reason": "查看权威正文、源码研究和实验材料当前的人工评审状态。"
+    }
+  ]
+}

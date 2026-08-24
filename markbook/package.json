@@ -1,0 +1,24 @@
+{
+  "name": "linux-note-markbook",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "linux-note 专题 MarkBook 月度出版工具",
+  "scripts": {
+    "publish": "node scripts/publish_markbook.mjs publish",
+    "publish:all": "node scripts/publish_markbook.mjs publish --all",
+    "verify": "node scripts/publish_markbook.mjs verify",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "marked": "16.4.2",
+    "mermaid": "11.17.0"
+  },
+  "devDependencies": {
+    "jsdom": "30.0.1",
+    "yaml": "2.9.0"
+  }
+}
