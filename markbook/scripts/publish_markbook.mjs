@@ -13,6 +13,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import hljs from "highlight.js";
 import { marked } from "marked";
 
 const script_path = fileURLToPath(import.meta.url);
@@ -23,7 +24,8 @@ const manifest_directory = path.join(markbook_root, "manifests");
 const topic_directory = path.join(markbook_root, "topics");
 const template_directory = path.join(markbook_root, "templates");
 const runtime_directory = path.join(markbook_root, "runtime");
-const generator_version = "1.0.0";
+const generator_version = "1.1.0";
+const highlight_js_version = "11.11.1";
 const marked_version = "16.4.2";
 const mermaid_version = "11.17.0";
 const mermaid_filename = `mermaid-${mermaid_version}.min.js`;
@@ -31,6 +33,12 @@ const mermaid_filename = `mermaid-${mermaid_version}.min.js`;
 marked.setOptions({
   gfm: true,
   breaks: false
+});
+
+marked.use({
+  renderer: {
+    code: render_code_block
+  }
 });
 
 function fail(message, code = "MARKBOOK_ERROR") {
@@ -67,6 +75,35 @@ function escape_html(value) {
 
 function escape_attribute(value) {
   return escape_html(value);
+}
+
+function normalize_code_language(value) {
+  const language = String(value || "")
+    .trim()
+    .split(/\s+/, 1)[0]
+    .toLocaleLowerCase("en-US");
+  return /^[a-z0-9][a-z0-9_+-]{0,63}$/u.test(language) ? language : "";
+}
+
+function render_code_block({ text, lang }) {
+  const code_language = normalize_code_language(lang);
+  const source_text = String(text).replace(/\n$/u, "");
+  if (code_language === "mermaid") {
+    return `<pre><code class="language-mermaid">${escape_html(source_text)}\n</code></pre>\n`;
+  }
+
+  const highlight_language = code_language && hljs.getLanguage(code_language)
+    ? code_language
+    : "plaintext";
+  const highlighted_code = hljs.highlight(source_text, {
+    language: highlight_language,
+    ignoreIllegals: true
+  }).value;
+  const language_class = code_language || "plaintext";
+  const language_label = code_language
+    ? ` data-language="${escape_attribute(code_language)}"`
+    : "";
+  return `<pre class="code_block"${language_label}><code class="hljs language-${escape_attribute(language_class)}">${highlighted_code}\n</code></pre>\n`;
 }
 
 function strip_markdown_inline(value) {
@@ -1110,6 +1147,7 @@ async function write_publication(publication_plan, git_snapshot) {
           sha256: await hash_file(package_lock_path)
         },
         publication_dependencies: {
+          highlight_js: highlight_js_version,
           marked: marked_version,
           mermaid: mermaid_version
         }
@@ -1363,6 +1401,7 @@ export {
   normalize_generated_text,
   normalize_release_month,
   parse_front_matter,
+  render_code_block,
   resolve_repository_path,
   shanghai_date_parts,
   validate_release_policy
