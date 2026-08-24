@@ -13,7 +13,7 @@ domains:
 
 仓库里的 Markdown 文件是当前笔记形态，也是后续重新排版成 Word/PDF 的素材。这里更重视学习过程中的结构沉淀、问题记录和可持续整理，不追求每一篇一开始就是最终出版形态。
 
-仓库采用知识本体、工程应用、实践验证、研究证据、导航编排和仓库治理分层的信息架构。知识正文只保存一次，专题和学习路线负责组织链接，实验负责验证，源码阅读负责提供版本证据。正文保留统一阅读序号，出版清单负责多文档顺序和跨文档连续性。
+仓库采用知识本体、工程应用、实践验证、研究证据、导航编排和仓库治理分层的信息架构。知识正文只保存一次，专题和学习路线负责组织链接，实验负责验证，源码阅读负责提供版本证据。正文保留统一阅读序号，出版清单负责多文档顺序和跨文档连续性；`markbook/` 再把同一专题散落在这些职责层中的材料编排成按月冻结、可全文检索的聚焦电子书。
 
 完整设计见：[仓库信息架构设计](governance/architecture/repository_information_architecture.md)。
 
@@ -42,6 +42,7 @@ https://github.com/FormingSystem/linux_note.git
 | `research/` | 源码阅读、调用链、调查和基准证据 |
 | `reference/` | API、命令、术语、标准和外部资料 |
 | `publications/` | 书籍、文章、编排清单、模板和构建产物 |
+| `markbook/` | 按月冻结的专题电子书、编排清单与生成工具 |
 | `tools/` | 编辑器、Obsidian、AI 和仓库工具说明 |
 | `governance/` | 架构、规范、模板、模式和迁移记录 |
 | `assets/` | 图片、图表、附件、数据集和归档文件 |
@@ -86,6 +87,8 @@ Typora 适合单篇 Markdown 阅读和排版预览；部分 Markdown 语法和�
 Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，优先使用 Obsidian 内部操作，让链接能够自动跟踪更新。
 
 专题阅读从 [知识库导航](atlas/home.md#1.1_按目标进入)或 [仓库内容索引](atlas/indexes/content_index.md#1.2_Linux通用机制)进入。内核并发与事件先从[同步和异步机制总纲](knowledge/linux/synchronization_and_asynchrony/大纲.md)分流；锁、序列计数器、等待/完成量、RCU、Lockdep 与工作队列都在各自权威专题保存跨版本正文。需要核对 Linux 6.12.20 实现时，从[锁](research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)、[序列计数器](research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.5_建议阅读顺序)、[等待与完成量](research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)、[工作队列](research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.6_建议阅读顺序)、[Lockdep](research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)或 [RCU](research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)的总阅读索引进入，再从模块导读跳到唯一函数实现标题。
+
+需要连续阅读一个完整专题时，从 [MarkBook 专题电子书](markbook/README.md#1.2_当前刊物)进入。MarkBook 只做月度快照和出版编排，不替代上述权威正文；书中显示的版本、来源哈希和工作树状态用于还原当期内容。
 
 ## 1.5\_内容说明
 

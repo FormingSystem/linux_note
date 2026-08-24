@@ -52,7 +52,7 @@ mindmap-plugin: basic
 
 ## 1.4\_全量覆盖基线
 - 本次盘点覆盖 308 篇 `knowledge/` Markdown：28 个正式专题入口、240 个正式 `PXX` 章节及 40 篇尚未统一成正式大纲的知识材料。
-- 另纳入 52 篇支撑材料：工程方法 1 篇、平台实现 3 篇、实验 16 篇、研究 25 篇、参考 1 篇、出版物 6 篇。
+- 另纳入 53 篇支撑材料：工程方法 1 篇、平台实现 3 篇、实验 16 篇、研究 25 篇、参考 1 篇、出版物 7 篇。
 - 正式章节人工进度
     - 🟢 30 章：Kref P01～P15、红黑树 P01～P15。
     - 🟡 9 章：Lockdep P01～P09，已完成人工通读和批注，重构后待复核。
@@ -67,6 +67,7 @@ mindmap-plugin: basic
     - 🔴 1 篇：Sparse 地址空间与上下文记账实验。
     - 🟢 1 篇：`reference/` 下的参考资料。
     - 🟢 6 篇：`publications/` 下的出版物材料。
+    - 🔴 1 篇：`markbook/` 下的 RCU 专题月刊入口。
 - `projects/` 当前没有正式内容，因此不创建占位节点。
 
 ## 1.5\_知识正文
@@ -625,15 +626,17 @@ mindmap-plugin: basic
             - 🔴 [P10 Linux 6.12 Tree RCU 同步等待与 rcu_barrier 源码实现](../../research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md)
             - 🔴 [P11 Linux 6.12 Tree SRCU 源码实现](../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md)
 
-## 1.9\_🟢 参考与出版物
+## 1.9\_🟡 参考与出版物
 - 🟢 参考资料
     - 标准
         - GPL
             - 🟢 [GPL 协议说明(总论)](../../reference/standards/gpl/GPL协议说明.md)
-- 🟢 出版物
+- 🟡 出版物
     - 🟢 [奔跑吧 Linux 内核](../../publications/books/running_linux_kernel/README.md)
         - 🟢 [P01 linux系统基础知识](../../publications/books/running_linux_kernel/P01_linux系统基础知识.md)
         - 🟢 [P02 Linux内核中常用的数据结构和算法](../../publications/books/running_linux_kernel/P02_Linux内核中常用的数据结构和算法.md)
         - 🟢 [P03 内核引导和初始化](../../publications/books/running_linux_kernel/P03_内核引导和初始化.md)
         - 🟢 [P04 uboot启动流程说明](../../publications/books/running_linux_kernel/P04_uboot启动流程说明.md)
         - 🟢 [版权与免责声明](../../publications/books/running_linux_kernel/copyright_and_disclaimer.md)
+    - 🔴 专题月刊
+        - 🔴 [RCU MarkBook](../../markbook/topics/rcu/README.md)
