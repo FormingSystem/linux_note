@@ -106,6 +106,12 @@ linux-note/
 │   ├── manifests/                  # 内容编排清单
 │   ├── templates/                  # 出版模板
 │   └── output/                     # 构建产物
+├── markbook/                       # 月度专题电子书与可复现快照
+│   ├── manifests/                  # 专题跨层编排清单
+│   ├── templates/                  # 专题阅读与打印模板
+│   ├── runtime/                    # 版本化离线运行时
+│   ├── scripts/                    # 生成、验证与防重复工具
+│   └── topics/                     # 按专题和月份冻结的版本
 ├── tools/                          # 工具使用说明
 ├── governance/                     # 仓库治理规范
 │   ├── architecture/               # 信息架构
@@ -133,6 +139,7 @@ linux-note/
 | `research` | 源码阅读、调用链、调查和基准证据 | 未注明版本的稳定结论 |
 | `reference` | API、命令、术语、标准和外部资料 | 连续学习教程 |
 | `publications` | 出版物编排、模板和构建产物 | 知识正文副本 |
+| `markbook` | 按月生成的专题聚焦电子书、来源台账与生成工具 | 可独立修改的第二份知识正文 |
 | `tools` | 编辑器、AI 和仓库工具用法 | 技术知识正文 |
 | `governance` | 架构、规范、模板、模式和迁移记录 | 学习笔记 |
 | `assets` | 图片、图表、附件、数据集和归档文件 | Markdown 正文 |
@@ -265,7 +272,9 @@ Markdown 标题采用统一阅读序号：
 
 ## 1.11\_学习路线与出版
 
-`atlas/tracks` 通过稳定 ID 或链接编排学习顺序。`publications/manifests` 描述书籍章节清单。出版构建负责解析 ID、合并正文、生成连续序号、重写锚点并输出 HTML、Word 或 PDF。
+`atlas/tracks` 通过稳定 ID 或链接编排学习顺序。`publications/manifests` 描述长期书籍和文章工程的章节清单，出版构建负责解析 ID、合并正文、生成连续序号、重写锚点并输出 HTML、Word 或 PDF。
+
+`markbook/manifests` 面向单一专题跨 `knowledge`、`research`、`labs` 等职责层收集真实材料，并在每月 1 日生成一个不可变的 `YYYY.MM` 聚焦阅读快照。MarkBook 与普通出版物共享“权威正文只保存一次”的原则，但额外要求同月防重复、显式覆盖授权、逐源文件哈希、工作树状态、全文检索和离线阅读运行时。生成后的书只用于阅读和追溯，不作为正文回写入口。
 
 ## 1.12\_质量门禁
 
