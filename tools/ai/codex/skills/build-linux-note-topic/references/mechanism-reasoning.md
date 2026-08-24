@@ -19,7 +19,7 @@
 
 本参考吸收开发者提供的《Technical Mechanism Deep-Dive Skill》草案中关于参与者、状态归属、当前状态与历史事件、安全性与活性、极端反例和间接证明的方法。草案是方法来源，不是可直接复制的仓库模板。
 
-最终规则以当前仓库 `AGENTS.md`、信息架构和 `knowledge/linux/synchronization/rcu/大纲.md` 校正：
+最终规则以当前仓库 `AGENTS.md`、信息架构和 `knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md` 校正：
 
 - 使用仓库的因果学习链、章节编号、元数据和权威正文位置；
 - 将稳定机制、版本源码、实验和导航分别放入 `knowledge/`、`research/`、`labs/` 和 `atlas/` 或专题大纲；

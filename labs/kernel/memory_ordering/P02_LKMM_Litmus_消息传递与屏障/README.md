@@ -24,7 +24,7 @@ topics:
 3. IRIW：reader 无屏障时相反观察允许，两次读取间 full barrier 后禁止；
 4. RCU 指针：`rcu_assign_pointer()` / `rcu_dereference()` 禁止取得新指针却看到预初始化旧值。
 
-理论前置：[LKMM 事件、关系与一致性判定](../../../../knowledge/linux/memory_ordering/P08_LKMM事件_关系与一致性判定.md)和 [Litmus 验证方法](../../../../knowledge/linux/memory_ordering/P09_Litmus_形式验证与硬件实验.md)。
+理论前置：[LKMM 事件、关系与一致性判定](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P08_LKMM事件_关系与一致性判定.md)和 [Litmus 验证方法](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P09_Litmus_形式验证与硬件实验.md)。
 
 ## 1.2\_证据来源
 

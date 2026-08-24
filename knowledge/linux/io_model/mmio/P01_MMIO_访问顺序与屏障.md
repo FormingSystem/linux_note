@@ -127,4 +127,4 @@ DMA 映射或同步负责缓冲区所有权与缓存维护，屏障负责先后�
 - 使用 `*_relaxed()` 时，缺少的顺序由哪里补足？
 - 跨 CPU 持锁访问同一设备时，是否需要核对 `mmiowb()`？
 
-MMIO 顺序不提供临界区互斥；共享软件状态的保护应转入[锁机制专题](../../synchronization/locks/大纲.md)。
+MMIO 顺序不提供临界区互斥；共享软件状态的保护应转入[锁机制专题](../../synchronization_and_asynchrony/synchronization/locks/大纲.md)。

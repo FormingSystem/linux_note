@@ -19,7 +19,7 @@ topics:
 
 本模块回答：`lockdep_is_held()` 怎样从 current 账本查询指定实例，断言为何接受 UNKNOWN，RCU 怎样把条件接入 Lockdep，以及 `/proc/lockdep_stats` 怎样表明检查器仍在工作。
 
-总入口见 [Linux 6.12 Lockdep 源码导读](P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)。稳定用法见[查询、断言、pin 与自定义原语接入](../../../../knowledge/linux/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.1_先确认自己在哪一层使用Lockdep)，配置、报告和覆盖边界见[配置、亲手实验与报告解读](../../../../knowledge/linux/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.1_先把使用资格变成环境检查)与[成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.1_先把无告警写成条件命题)。
+总入口见 [Linux 6.12 Lockdep 源码导读](P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)。稳定用法见[查询、断言、pin 与自定义原语接入](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.1_先确认自己在哪一层使用Lockdep)，配置、报告和覆盖边界见[配置、亲手实验与报告解读](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.1_先把使用资格变成环境检查)与[成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.1_先把无告警写成条件命题)。
 
 ## 4.2\_查询链
 

@@ -22,7 +22,7 @@ topics:
 2. ONCE 形式要求保留两个访问实例；
 3. 普通轮询可能把共享值只读一次，ONCE 轮询会在循环中重新读取。
 
-它不验证 CPU 间可见性、硬件不撕裂或 acquire/release。对应理论见[编译器共享访问与 READ/WRITE_ONCE](../../../../knowledge/linux/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md)。
+它不验证 CPU 间可见性、硬件不撕裂或 acquire/release。对应理论见[编译器共享访问与 READ/WRITE_ONCE](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md)。
 
 ## 1.2\_为什么使用实验版宏
 

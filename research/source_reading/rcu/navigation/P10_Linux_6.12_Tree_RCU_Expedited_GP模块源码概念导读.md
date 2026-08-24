@@ -27,7 +27,7 @@ source_version: "6.12.20"
 - 主动选择 CPU，并在需要时发送 IPI 或迫使 tick/reschedule；
 - 不等待普通 GP kthread 把 `gp_seq` 推进一轮。
 
-它改变的是取得 QS 证据的控制路径与等待延迟，不改变“所有调用前旧 reader 必须结束”的语义。稳定模型先读 [Tree RCU Expedited GP](../../../../knowledge/linux/synchronization/rcu/P16_Tree_RCU_Expedited_GP.md#16.1_场景_控制路径愿意用系统扰动换更短等待)。
+它改变的是取得 QS 证据的控制路径与等待延迟，不改变“所有调用前旧 reader 必须结束”的语义。稳定模型先读 [Tree RCU Expedited GP](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_Expedited_GP.md#16.1_场景_控制路径愿意用系统扰动换更短等待)；若普通 GP 控制主线还不清楚，先用 [普通 GP 端到端源码时序](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_端到端源码时序)建立比较基线，再读本章的独立 sequence、worker 和 IPI 路径。
 
 ## 10.2\_八个必须先知道的词
 

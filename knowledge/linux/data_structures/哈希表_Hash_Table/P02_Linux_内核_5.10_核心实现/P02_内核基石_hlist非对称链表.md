@@ -625,10 +625,10 @@ rcu_read_unlock(); // 退出 RCU 临界区
 
 本节只说明 `hlist_for_each_entry_rcu()` 怎样用于哈希桶遍历。RCU 的问题背景、硬件基础、通知机制和通用 API 不在本章重复维护，统一参考如下入口：
 
-1. [RCU 专题大纲](../../../synchronization/rcu/大纲.md)。
-2. [为什么需要 RCU](../../../synchronization/rcu/P01_为什么需要_RCU.md)。
-3. [RCU 抽象机制推演](../../../synchronization/rcu/P02_RCU_抽象机制推演.md)。
-4. [Tree RCU 统一状态与通知总图](../../../synchronization/rcu/P10_Tree_RCU_统一状态与通知总图.md)。
+1. [RCU 专题大纲](../../../synchronization_and_asynchrony/synchronization/rcu/大纲.md)。
+2. [为什么需要 RCU](../../../synchronization_and_asynchrony/synchronization/rcu/P01_为什么需要_RCU.md)。
+3. [RCU 抽象机制推演](../../../synchronization_and_asynchrony/synchronization/rcu/P02_RCU_抽象机制推演.md)。
+4. [Tree RCU 统一状态与通知总图](../../../synchronization_and_asynchrony/synchronization/rcu/P10_Tree_RCU_统一状态与通知总图.md)。
 
 
 

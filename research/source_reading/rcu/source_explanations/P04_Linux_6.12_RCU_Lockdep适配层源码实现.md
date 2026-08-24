@@ -30,7 +30,7 @@ source_version: "6.12.20"
 | RCU Lockdep适配模块的参与者、状态和三条调用链 | [Linux 6.12 RCU Lockdep适配模块源码概念导读](../navigation/P05_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#5.1_模块问题与实现所有权) |
 | RCU 为什么需要四个虚拟 map、怎样登记和消费它们 | **本章** |
 
-RCU 稳定机制入口见 [RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.5_Lockdep检查的是哪一个运行时条件)，版本化源码总入口见 [Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。Lockdep 侧怎样看待 RCU 这种逻辑保护域，见 [RCU 与子系统检查适配](../../../../knowledge/linux/synchronization/lockdep/P07_RCU与子系统检查适配.md#7.5_从通用Lockdep到RCU实现的证据边界)。
+RCU 稳定机制入口见 [RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.5_Lockdep检查的是哪一个运行时条件)，版本化源码总入口见 [Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。Lockdep 侧怎样看待 RCU 这种逻辑保护域，见 [RCU 与子系统检查适配](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md#7.5_从通用Lockdep到RCU实现的证据边界)。
 
 本章使用 NXP Linux 6.12.20、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的已核对源码副本。基线只确认 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y`，没有确认目标板启用 `CONFIG_PROVE_LOCKING`、`CONFIG_DEBUG_LOCK_ALLOC` 或 `CONFIG_PROVE_RCU`；因此下面解释的是该版本的 **可选检查分支**，不宣称目标板正在运行它。
 
@@ -559,6 +559,6 @@ static inline int debug_lockdep_rcu_enabled(void) { return 0; }
 
 源码总入口：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
 
-RCU 稳定知识入口：[RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.5_Lockdep检查的是哪一个运行时条件)。
+RCU 稳定知识入口：[RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.5_Lockdep检查的是哪一个运行时条件)。
 
 Lockdep 通用实现入口：[Linux 6.12 Lockdep 源码导读](../../lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)。

@@ -22,9 +22,9 @@ domains:
 后续使用对象依赖 kref，而不是继续依赖 RCU。
 ```
 
-本章不展开 RCU 全体系，只讲 kref 需要理解的交界面。RCU 的问题推导、硬件基础、CPU／任务通知机制、宽限期实现和通用 API 统一以[RCU 专题](../../synchronization/rcu/大纲.md)为准；这里保留的是“如何在 RCU lookup 窗口内安全取得第一份长期引用”这一对象生命期专题独有的问题。
+本章不展开 RCU 全体系，只讲 kref 需要理解的交界面。RCU 的问题推导、硬件基础、CPU／任务通知机制、宽限期实现和通用 API 统一以[RCU 专题](../../synchronization_and_asynchrony/synchronization/rcu/大纲.md)为准；这里保留的是“如何在 RCU lookup 窗口内安全取得第一份长期引用”这一对象生命期专题独有的问题。
 
-本章固定讨论 **RCU 查找入口直接指向同一个 kref 对象** 的模型。若一代旧照由版本根和多个独立 kref 数据块组成，版本根通常要保持全部块引用直到自己的 GP 完成，再逐块 put；该所有权拓扑与代码模板统一见[RCU、kref 与复合对象生命周期](../../synchronization/rcu/P04_RCU_kref与复合对象生命周期.md)，不能把本章的单对象顺序直接套到复合快照。
+本章固定讨论 **RCU 查找入口直接指向同一个 kref 对象** 的模型。若一代旧照由版本根和多个独立 kref 数据块组成，版本根通常要保持全部块引用直到自己的 GP 完成，再逐块 put；该所有权拓扑与代码模板统一见[RCU、kref 与复合对象生命周期](../../synchronization_and_asynchrony/synchronization/rcu/P04_RCU_kref与复合对象生命周期.md)，不能把本章的单对象顺序直接套到复合快照。
 
 本章主线是：
 
