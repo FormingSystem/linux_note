@@ -23,12 +23,21 @@ domains:
 | 发布标签 | `lf-6.12.20-2.0.0` |
 | 版本 | Linux 6.12.20 |
 | Git 提交 | `dfaf2136deb2af2e60b994421281ba42f1c087e0` |
-| 配置边界 | 核对时 `.config` 启用 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y` |
+| 配置边界 | 发布标签不携带 `.config`；已核对的不同工作树配置快照在下表分别记录 |
 | 平台背景 | NXP i.MX 厂商内核树，以 i.MX6ULL/ARM 为当前平台背景；通用机制优先引用架构无关目录 |
 | 本地工作树 | 由每次会话在当前环境中发现并验证，不在仓库记录绝对路径 |
 | 许可证 | 以各源码文件 SPDX、版权头及原源码树 `COPYING`/`LICENSES` 为准 |
 
-发布标签已通过官方远端核对，其解引用提交的顶层 `Makefile` 为 `VERSION=6`、`PATCHLEVEL=12`、`SUBLEVEL=20`；仓库保存的 RCU、Lockdep 与内存序源码副本也与该提交逐文件核对一致。配置边界来自此前核对的本地工作树，只说明阅读时采用的 Kconfig 分支，不代表发布标签自带 `.config`。`lf-6.12.y` 是可能继续前进的来源分支，不能替代发布标签及其不可变提交作为长期证据定位。
+发布标签已通过官方远端核对，其解引用提交的顶层 `Makefile` 为 `VERSION=6`、`PATCHLEVEL=12`、`SUBLEVEL=20`；仓库保存的 RCU、Lockdep 与内存序源码副本也与该提交逐文件核对一致。`lf-6.12.y` 是可能继续前进的来源分支，不能替代发布标签及其不可变提交作为长期证据定位。
+
+同一源码提交可以配合不同 `.config`，因此配置证据按核对任务分别保存，不再压成一个“当前配置”：
+
+| 配置快照 | 已核对状态 | 使用边界 |
+| --- | --- | --- |
+| 既有 RCU 研究快照 | `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y` | 支撑现有抢占式 Tree RCU 主分支导读；不外推到本次工作树 |
+| 2026-08-24 开发工作树 | `CONFIG_TREE_RCU=y`、`CONFIG_SMP=y`、`CONFIG_MUTEX_SPIN_ON_OWNER=y`、`CONFIG_RWSEM_SPIN_ON_OWNER=y`；未启用普通 `CONFIG_PREEMPT`，未启用 `CONFIG_WQ_WATCHDOG` | 支撑本次锁、等待、序列计数器和工作队列的可运行分支判断 |
+
+2026-08-24 重新发现的候选工作树已核对官方远端与 `lf-6.12.y` 分支；其 `HEAD=7b60e547d2783f8fee61ff7d7be3e066825b9c3a`，以固定发布提交为 merge-base 并前进 3 个提交。工作树 `Makefile` 仍为 Linux 6.12.20。本文新增源码导读全部通过该工作树中的标签对象读取固定提交内容，不把分支头的后续变化混入实现讲解。
 
 本基线标识的是 NXP `linux-imx` 仓库中的一份确定源码快照，不是某个用户名、目录名、共享地址或挂载点。以后补充或复核源码时，应先验证候选工作树的官方远端、分支、`HEAD`、`Makefile` 和相关 Kconfig，再引用上游相对路径；本地绝对路径不得写入已跟踪文档。
 
@@ -153,6 +162,27 @@ domains:
 - [Lockdep 取得释放与持锁账本源码实现](../lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)
 - [Lockdep 依赖图与规则引擎源码实现](../lockdep/source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.1_关联入口)
 - [Lockdep 查询注解与配置源码实现](../lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.1_关联入口)
+
+### 1.5.3\_锁\_序列计数器\_等待与工作队列证据
+
+2026-08-24 使用同一官方工作树中的发布标签对象，直接读取固定提交并核对下列架构无关文件。它们没有为了单个调用点全部复制进本目录；版本身份由不可变提交和上游相对路径共同定位，具体裁剪实现保存在各专题的 `source_explanations/`：
+
+| 机制 | 已核对上游相对路径 | 主要证据 |
+| --- | --- | --- |
+| spinlock | `include/linux/spinlock_types.h`、`include/linux/spinlock.h`、`kernel/locking/spinlock.c`、`kernel/locking/spinlock_rt.c` | 普通/RT 类型映射、raw 包装、IRQ/抢占与架构边界 |
+| mutex/rwsem | `include/linux/mutex.h`、`include/linux/mutex_types.h`、`include/linux/rwsem.h`、`kernel/locking/mutex.c`、`kernel/locking/rwsem.c` | owner/count、waiter、乐观自旋、handoff 与读者批量唤醒 |
+| seqcount/seqlock | `include/linux/seqlock.h`、`Documentation/locking/seqlock.rst` | 普通读写、关联锁、PREEMPT_RT 补偿、latch 与 seqlock 包装 |
+| waitqueue/completion | `include/linux/wait.h`、`include/linux/swait.h`、`include/linux/completion.h`、`kernel/sched/wait.c`、`kernel/sched/swait.c`、`kernel/sched/completion.c` | 入队/设态、wake 扫描、exclusive waiter、done 令牌与 swait |
+| workqueue | `include/linux/workqueue.h`、`kernel/workqueue.c`、`kernel/workqueue_internal.h`、`Documentation/core-api/workqueue.rst` | work/pwq/pool/wq/worker、queue、active、worker、flush、cancel、rescuer 与 hotplug |
+
+版本化阅读记录见：
+
+- [Linux 6.12 锁源码总阅读索引](../locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.1_版本边界与阅读任务)
+- [Linux 6.12 序列计数器源码总阅读索引](../sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.1_版本边界与阅读任务)
+- [Linux 6.12 等待与完成量源码总阅读索引](../waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.1_版本边界与阅读任务)
+- [Linux 6.12 工作队列源码总阅读索引](../workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.1_版本边界与阅读任务)
+
+这些专题的 PREEMPT_RT、KCSAN、Lockdep、watchdog 与 WQ 属性分支不都由当前配置启用。源码存在只证明该固定提交提供相应实现；部署结论仍需匹配目标配置和实际路径执行。
 
 ## 1.6\_Input\_子系统证据
 
