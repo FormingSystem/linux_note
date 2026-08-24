@@ -20,11 +20,11 @@ source_version: "6.12.20"
 
 ## 5.1\_实现所有权与关联入口
 
-本章是 Linux 6.12.20 普通 Tree RCU GP 全局控制实现的唯一函数体讲解，负责 `rcu_state` 的 GP 控制字段、`rcu_seq_*`、GP kthread 创建、需求漏斗、唤醒、主循环、init、FQS **调度循环** 和 cleanup。CPU 怎样产生并逐层报告 QS，仍由 [非抢占式 Tree RCU 关键函数源码实现](P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.2_函数实现索引)负责；被抢占 reader 怎样进入任务债务，仍由 [抢占式 Tree RCU 关键函数源码实现](P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#3.2_任务与节点的共享状态实现)负责；watching snapshot、叶扫描、urgent/resched 和 stall 分类由 [force-QS 与 Stall 源码实现](P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)唯一展开。
+本章是 Linux 6.12.20 普通 Tree RCU GP 全局控制实现的唯一函数体讲解，负责从内核启动期注册并创建 GP kthread，到 `rcu_state` 的 GP 控制字段、`rcu_seq_*`、需求漏斗、唤醒、主循环、init、FQS **调度循环** 和 cleanup。CPU 怎样产生并逐层报告 QS，仍由 [非抢占式 Tree RCU 关键函数源码实现](P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.2_函数实现索引)负责；被抢占 reader 怎样进入任务债务，仍由 [抢占式 Tree RCU 关键函数源码实现](P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#3.2_任务与节点的共享状态实现)负责；watching snapshot、叶扫描、urgent/resched 和 stall 分类由 [force-QS 与 Stall 源码实现](P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)唯一展开。
 
 模块协作、参与者与阅读顺序见 [GP 全局生命周期模块源码概念导读](../navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.3_源码文件与状态所有权)，跨版本概念见 [Tree RCU GP 请求与全局生命周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_GP请求与全局生命周期.md#12.2_六个必须分开的专有名词)。
 
-下列 `/** ... */` 块都是本仓库为阅读补充的中文 Doxygen 说明，不是上游源码原注释。代码裁剪自仓库保存并经固定提交核对的文件；只删除不改变主状态机的 trace、torture、重复诊断，以及已明确转入独立章节的 NOCB/boost/strict 测试细节，所有影响请求、CPU 集合、证明债务、完成发布和等待者交付的动作都保留或在紧邻小节展开。完整实现仍以链接的固定源码文件为准。
+下列 `/** ... */` 块都是本仓库为阅读补充的中文 Doxygen 说明，不是上游源码原注释。RCU 函数体裁剪自仓库保存并经固定提交核对的文件；启动调度顺序另外对照同一不可变提交的官方 [`init/main.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c)。只删除不改变主状态机的 trace、torture、重复诊断，以及已明确转入独立章节的 NOCB/boost/strict 测试细节，所有影响启动次序、请求、CPU 集合、证明债务、完成发布和等待者交付的动作都保留或在紧邻小节展开。完整实现仍以链接的固定源码文件为准。
 
 每个源码标题都按同一组 **实现原理** 复核：进入前持有什么锁或代际，语句写入哪个具体地址，谁在后续路径读取，以及该顺序防止哪一种请求丢失、跨代报告或完成发布竞态。
 
@@ -34,7 +34,8 @@ source_version: "6.12.20"
 | --- | --- | --- | --- |
 | `struct rcu_state` 全字段域、全局 `rcu_state` 实例、`RCU_GP_*` | [`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h)、[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.3](#5.3_rcu_state把线程命令代际和等待队列放在一起) | 分流九个子机制，定义普通 GP 的任务、命令、阶段与序列地址，并建立各域初值 |
 | `rcu_seq_start/end/snap/done()` | [`kernel/rcu/rcu.h`](../../linux/kernel/rcu/rcu.h) | [5.4](#5.4_rcu_seq辅助函数怎样维护开始目标与完成) | 推进代际并约束发布顺序 |
-| `rcu_spawn_gp_kthread()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.5](#5.5_rcu_spawn_gp_kthread创建并发布长期任务) | 创建并 release 发布 GP 任务 |
+| `early_initcall()`、`do_pre_smp_initcalls()`、`kernel_init_freeable()` | [`include/linux/init.h`](../../linux/include/linux/init.h)、[`init/main.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L1369-L1573) | [5.5.1](#5.5.1_先从内核启动链定位early_initcall) | 把链接期登记的 early initcall 放到 `kthreadd` 就绪后、SMP 启动前分派 |
+| `rcu_spawn_gp_kthread()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.5.2](#5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务) | 创建并 release 发布 GP 任务 |
 | `rcu_start_this_gp()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.6](#5.6_rcu_start_this_gp漏斗记录未来需求) | 前推 `gp_seq_needed`、设置 INIT |
 | `rcu_gp_kthread_wake()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.7](#5.7_rcu_gp_kthread_wake把共享命令变成调度唤醒) | 唤醒 `gp_wq` 并记录诊断值 |
 | `rcu_gp_kthread()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.8](#5.8_rcu_gp_kthread串联一轮物理GP) | 串联等待、init、FQS、cleanup |
@@ -260,6 +261,78 @@ static inline bool rcu_seq_done(unsigned long *sp, unsigned long s)
 
 ## 5.5\_rcu\_spawn\_gp\_kthread创建并发布长期任务
 
+### 5.5.1\_先从内核启动链定位early\_initcall
+
+若还没有建立源码目录位置感，可先用 [Linux kernel 目录结构说明](../../../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)定位 `/init` 与 `init/main.c`；本节只放大其中与 GP kthread 创建直接相关的启动链，不重复通用启动教程。
+
+`early_initcall(rcu_spawn_gp_kthread)` **不是在这一行立即调用函数**。它先借助 [`include/linux/init.h`](../../linux/include/linux/init.h) 的宏，把函数入口登记到 early initcall 链接段；启动代码以后遍历这个段，才真正调用 `rcu_spawn_gp_kthread()`：
+
+```c
+/* 上游宏的结构化裁剪；中文注释由本仓库补充。 */
+#define __define_initcall(fn, id) \
+	___define_initcall(fn, id, .initcall##id) /* 把函数入口放入对应initcall段。 */
+
+/* early initcall只用于内建代码，并在SMP初始化前运行。 */
+#define early_initcall(fn) __define_initcall(fn, early)
+```
+
+Linux 6.12.20 的真实启动顺序必须分成两个 RCU 事件看。第一个事件是 [`start_kernel()` 里的 `rcu_init()`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L985-L1013)：它先建立 Tree RCU 几何、节点、boot CPU 状态、softirq/workqueue 等基础设施，**此时还没有创建普通 GP kthread**。第二个事件发生在 `rest_init()` 以后：启动路径先把 `kthreadd` 建好，再由 PID 1 的 `kernel_init` 线程分派 early initcalls。
+
+[`init/main.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L699-L739) 与 [`kernel_init_freeable()`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L1460-L1573) 给出的关键先后关系是：
+
+```c
+/* 官方固定提交的结构化调用顺序裁剪；省略号与中文注释由本仓库补充。 */
+rest_init()
+{
+	user_mode_thread(kernel_init, ...); /* 创建PID 1。 */
+	kernel_thread(kthreadd, ...);       /* 建立内核线程创建基础设施。 */
+	complete(&kthreadd_done);
+}
+
+kernel_init()
+{
+	wait_for_completion(&kthreadd_done); /* 不让initcall早于kthreadd。 */
+	kernel_init_freeable();
+}
+
+kernel_init_freeable()
+{
+	workqueue_init();
+	rcu_init_tasks_generic();
+	do_pre_smp_initcalls();             /* 分派early initcall段。 */
+	smp_init();
+}
+```
+
+`do_pre_smp_initcalls()` 从 `__initcall_start` 遍历到 `__initcall0_start`，逐项调用 `do_one_initcall()`。`rcu_spawn_gp_kthread()` 正是因为登记在这段里，才在 **`kthreadd` 已就绪、SMP bring-up 尚未开始** 的窗口执行；这也解释了 `tree.c` 中“pre-SMP initcall，预期只有一个 online CPU”的检查。完整因果链如下：
+
+```mermaid
+flowchart TD
+    SK["start_kernel()"] -->|"先建立RCU基础设施"| RI["rcu_init()<br/>拓扑、boot CPU、执行入口"]
+    RI --> RST["rest_init()"]
+    RST -->|"创建PID 1"| KI["kernel_init线程"]
+    RST -->|"kernel_thread并发布kthreadd_task"| KD["kthreadd"]
+    RST -->|"随后complete(kthreadd_done)"| KI
+    KI -->|"wait完成后"| KIF["kernel_init_freeable()"]
+    KIF -->|"遍历early initcall段"| PRE["do_pre_smp_initcalls()"]
+    PRE -->|"真正调用"| SPAWN["rcu_spawn_gp_kthread()"]
+    SPAWN -->|"kthread_create"| TASK["长期GP task_struct"]
+    SPAWN -->|"release发布并wake"| LOOP["rcu_gp_kthread()长期主循环"]
+    PRE -->|"返回后才继续"| SMP["smp_init()"]
+```
+
+因此不能把 `rcu_init()`、`early_initcall(...)` 和 `rcu_spawn_gp_kthread()` 压成一句“RCU 初始化时创建线程”：
+
+- `rcu_init()` 是 `start_kernel()` 中的早期基础设施初始化；
+- `early_initcall(...)` 是链接期登记规则；
+- `do_pre_smp_initcalls()` 是运行期分派者；
+- `rcu_spawn_gp_kthread()` 才是一次性的创建函数；
+- `rcu_gp_kthread()` 是创建后跨越许多 GP 长期运行的入口。
+
+`rcu_spawn_gp_kthread()` 自身标为 `__init`，启动完成后它的代码可以随 init memory 一起释放；它创建的 `task_struct`、`rcu_state.gp_kthread` 指针和未标 `__init` 的 `rcu_gp_kthread()` 主循环却继续存在。**创建函数的代码生命周期短，不等于被创建任务的生命周期短。**
+
+### 5.5.2\_rcu\_spawn\_gp\_kthread怎样创建并发布任务
+
 ```c
 /**
  * @brief 创建普通 Tree RCU GP kthread，并发布其 task_struct 指针。
@@ -297,7 +370,7 @@ early_initcall(rcu_spawn_gp_kthread);
 
 `kthread_create()` 返回一个尚未运行入口主体的任务，`wake_up_process()` 使其可运行。发布到 `rcu_state.gp_kthread` 发生在二者之间，并使用 release 语义，使此前 `gp_activity/gp_req_activity` 的重置不能排到指针发布之后。请求路径用 `READ_ONCE()` 检查任务是否存在；这里不要把 release store 单独解释成“任意读者都获得了所有初始化字段的 acquire 快照”。请求若在线程创建前到达，会保留请求状态但不能唤醒空指针；线程发布和启动以后再消费。
 
-任务对象的生命周期跨越许多 GP。主循环结束条件是系统生命周期，而不是某个请求完成，因此入口标为 `__noreturn`。
+任务对象的生命周期跨越许多 GP。主循环结束条件是系统生命周期，而不是某个请求完成，因此入口标为 `__noreturn`。到这里，启动期一次性创建已经结束；从下一节开始，所有请求都复用同一个长期任务。
 
 ## 5.6\_rcu\_start\_this\_gp漏斗记录未来需求
 
@@ -939,6 +1012,8 @@ flowchart LR
 
 ## 5.13\_端到端源码时序
 
+下图从 **任务已经按 [5.5.1](#5.5.1_先从内核启动链定位early_initcall) 完成启动和发布** 的时刻开始，描述任意一轮普通物理 GP。它不是另一条线程创建时序。
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -975,17 +1050,19 @@ sequenceDiagram
 
 修改这一组实现时必须同时检查：
 
-1. 请求是否在 wake 之前写入受保护共享状态，多个 wake 竞争时是否仍不会丢需求；
-2. `rcu_gp_init()` 的成功/失败语义是否与主循环分支一致；
-3. hotplug 参与集合是否在本轮边界封闭，不能把中途上线 CPU 无协议加入历史集合；
-4. CPU `qsmask` 与抢占任务债务是否都参与根完成条件；
-5. FQS 是否只改善观察和活性，没有用超时替代安全证明；
-6. cleanup 是否先发布所有节点完成值，再结束全局序列；
-7. cleanup 遍历期间到达的下一代需求是否仍能留下 INIT；
-8. `gp_seq_polled` 是否只由匹配的普通/expedited 快照结束，交叠 GP 是否会重复或漏发完成；
-9. SRS 栈上等待对象、dummy 分隔节点、done-tail 交接与 cleanup work 的生命期是否仍闭合；
-10. callback 获得执行资格与 callback 已实际执行是否继续分开；
-11. 普通、expedited、SRCU、Tasks 与 NOCB GP 相关执行者是否没有被误合并。
+1. `rcu_init()` 与 GP kthread 创建是否仍被当成两个启动事件，early initcall 是否保持在 `kthreadd` 就绪后、SMP bring-up 前运行；
+2. `__init` 创建函数被释放以后，长期 `task_struct`、发布指针与 `rcu_gp_kthread()` 主循环是否仍有完整生命周期；
+3. 请求是否在 wake 之前写入受保护共享状态，多个 wake 竞争时是否仍不会丢需求；
+4. `rcu_gp_init()` 的成功/失败语义是否与主循环分支一致；
+5. hotplug 参与集合是否在本轮边界封闭，不能把中途上线 CPU 无协议加入历史集合；
+6. CPU `qsmask` 与抢占任务债务是否都参与根完成条件；
+7. FQS 是否只改善观察和活性，没有用超时替代安全证明；
+8. cleanup 是否先发布所有节点完成值，再结束全局序列；
+9. cleanup 遍历期间到达的下一代需求是否仍能留下 INIT；
+10. `gp_seq_polled` 是否只由匹配的普通/expedited 快照结束，交叠 GP 是否会重复或漏发完成；
+11. SRS 栈上等待对象、dummy 分隔节点、done-tail 交接与 cleanup work 的生命期是否仍闭合；
+12. callback 获得执行资格与 callback 已实际执行是否继续分开；
+13. 普通、expedited、SRCU、Tasks 与 NOCB GP 相关执行者是否没有被误合并。
 
 读者若能从 `call_rcu()` 的目标序列出发，依次指出叶/根请求字段、唤醒队列、长期任务、证明债务、完成序列和 callback 消费地址，就已经能够按状态所有权阅读这一模块，而不是只背函数调用链。
 
