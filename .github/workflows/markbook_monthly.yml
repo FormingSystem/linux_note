@@ -1,0 +1,107 @@
+name: MarkBook monthly publication
+
+on:
+  schedule:
+    # UTC 00:00 对应 Asia/Shanghai 每月 1 日 08:00。
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "专题 id；all 表示全部启用专题"
+        required: true
+        default: "all"
+        type: string
+      release_month:
+        description: "可选版本月份 YYYY.MM；留空使用中国时区当前月"
+        required: false
+        type: string
+      initial:
+        description: "仅用于尚无历史版本的首次建刊"
+        required: true
+        default: false
+        type: boolean
+      overwrite:
+        description: "明确覆盖已经存在的同月版本"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: markbook-monthly-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: markbook/package-lock.json
+
+      - name: Install MarkBook dependencies
+        run: npm ci --prefix markbook --ignore-scripts
+
+      - name: Test MarkBook publisher
+        run: npm test --prefix markbook
+
+      - name: Build monthly publication
+        id: build
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TOPIC: ${{ inputs.topic }}
+          INPUT_RELEASE_MONTH: ${{ inputs.release_month }}
+          INPUT_INITIAL: ${{ inputs.initial }}
+          INPUT_OVERWRITE: ${{ inputs.overwrite }}
+        run: |
+          set -euo pipefail
+          release_month="${INPUT_RELEASE_MONTH:-$(TZ=Asia/Shanghai date +%Y.%m)}"
+          topic="${INPUT_TOPIC:-all}"
+          publish_arguments=(publish --release-month "$release_month")
+          verify_arguments=(verify --release-month "$release_month" --require-current-sources)
+
+          if [[ "$topic" == "all" ]]; then
+            publish_arguments+=(--all)
+            verify_arguments+=(--all)
+          else
+            publish_arguments+=(--topic "$topic")
+            verify_arguments+=(--topic "$topic")
+          fi
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$INPUT_INITIAL" == "true" ]]; then
+            publish_arguments+=(--initial)
+          fi
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$INPUT_OVERWRITE" == "true" ]]; then
+            publish_arguments+=(--overwrite)
+          fi
+
+          node markbook/scripts/publish_markbook.mjs "${publish_arguments[@]}"
+          node markbook/scripts/publish_markbook.mjs "${verify_arguments[@]}"
+          echo "release_month=$release_month" >> "$GITHUB_OUTPUT"
+
+      - name: Commit one monthly version
+        shell: bash
+        env:
+          RELEASE_MONTH: ${{ steps.build.outputs.release_month }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- markbook/runtime markbook/topics
+          git diff --cached --check
+          git commit -m "release(markbook): 发布 ${RELEASE_MONTH} 专题月刊"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
