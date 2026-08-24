@@ -13,7 +13,7 @@ domains:
 
 仓库里的 Markdown 文件是当前笔记形态，也是后续重新排版成 Word/PDF 的素材。这里更重视学习过程中的结构沉淀、问题记录和可持续整理，不追求每一篇一开始就是最终出版形态。
 
-仓库采用知识本体、工程应用、实践验证、研究证据、导航编排和仓库治理分层的信息架构。知识正文只保存一次，专题和学习路线负责组织链接，实验负责验证，源码阅读负责提供版本证据。正文保留统一阅读序号，出版清单负责多文档顺序和跨文档连续性。
+仓库采用知识本体、工程应用、实践验证、研究证据、导航编排和仓库治理分层的信息架构。知识正文只保存一次，专题和学习路线负责组织链接，实验负责验证，源码阅读负责提供版本证据。正文保留统一阅读序号，出版清单负责多文档顺序和跨文档连续性；`markbook/` 再把同一专题散落在这些职责层中的材料编排成按月冻结、可全文检索的聚焦电子书。
 
 完整设计见：[仓库信息架构设计](governance/architecture/repository_information_architecture.md)。
 
@@ -42,6 +42,7 @@ https://github.com/FormingSystem/linux_note.git
 | `research/` | 源码阅读、调用链、调查和基准证据 |
 | `reference/` | API、命令、术语、标准和外部资料 |
 | `publications/` | 书籍、文章、编排清单、模板和构建产物 |
+| `markbook/` | 按月冻结的专题电子书、编排清单与生成工具 |
 | `tools/` | 编辑器、Obsidian、AI 和仓库工具说明 |
 | `governance/` | 架构、规范、模板、模式和迁移记录 |
 | `assets/` | 图片、图表、附件、数据集和归档文件 |
@@ -91,9 +92,11 @@ Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，�
 
 专题阅读从 [知识库导航](atlas/home.md#1.1_按目标进入)或 [仓库内容索引](atlas/indexes/content_index.md#1.2_Linux通用机制)进入。内核并发与事件先从[同步和异步机制总纲](knowledge/linux/synchronization_and_asynchrony/大纲.md)分流；锁、序列计数器、等待/完成量、RCU、Lockdep 与工作队列都在各自权威专题保存跨版本正文。需要核对 Linux 6.12.20 实现时，从[锁](research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)、[序列计数器](research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.5_建议阅读顺序)、[等待与完成量](research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)、[工作队列](research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.6_建议阅读顺序)、[Lockdep](research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)或 [RCU](research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)的总阅读索引进入，再从模块导读跳到唯一函数实现标题。
 
+需要连续阅读一个完整专题时，从 [MarkBook 专题电子书](markbook/README.md#1.2_当前刊物)进入。MarkBook 只做月度快照和出版编排，不替代上述权威正文；书中显示的版本、来源哈希和工作树状态用于还原当期内容。
+
 ### 1.4.1\_回路\_Markdown\_工作台
 
-仓库当前内置“回路”工具。新的目标产品是独立 Electron Markdown 工作台，直接新建文件、打开单个文件或打开单个文件夹；桌面层采用 TypeScript，文件与工作区服务采用独立 C++20 进程。Windows 已接通 ADR-0013 根句柄相对能力、协议 v4 正文通道、ADR-0015 Typora 式 CommonMark/GFM + Mermaid 混合编辑面以及 ADR-0014 冲突检查安全保存；默认原位编辑并及时渲染，`Ctrl+/` 往返完整源码。Linux 平台实现尚待受支持环境验证，因此跨平台 D1B/D1-SAVE 保持 `IN_PROGRESS`。D1C 的 1 MiB 性能门禁也仍为 `IN_PROGRESS`。恢复备份、Hot Exit 和通用文件操作尚未实现。浏览器训练与专题电子书代码属于等待删除的 `0.1.0`。工具代码与自身文档位于：
+仓库当前内置“回路”工具。新的目标产品是独立 Electron Markdown 工作台，直接新建文件、打开单个文件或打开单个文件夹；桌面层采用 TypeScript，文件与工作区服务采用独立 C++20 进程。Windows 已接通 ADR-0013 根句柄相对能力、协议 v4 正文通道、ADR-0015 Typora 式 CommonMark/GFM + Mermaid 混合编辑面以及 ADR-0014 冲突检查安全保存；默认原位编辑并及时渲染，`Ctrl+/` 往返完整源码。Linux 平台实现尚待受支持环境验证，因此跨平台 D1B/D1-SAVE 保持 `IN_PROGRESS`。D1C 的 1 MiB 性能门禁也仍为 `IN_PROGRESS`。恢复备份、Hot Exit 和通用文件操作尚未实现。`tools/practice_tool` 中的浏览器训练与旧专题电子书代码属于等待删除的 `0.1.0`，与仓库级 `markbook/` 月刊无运行时关系。工具代码与自身文档位于：
 
 Windows 开发环境可在 `tools/practice_tool` 中双击 `start_desktop.cmd`，按需准备依赖和 Native Service 后启动 Electron；它不进入旧浏览器的 Bash 生命周期。
 
