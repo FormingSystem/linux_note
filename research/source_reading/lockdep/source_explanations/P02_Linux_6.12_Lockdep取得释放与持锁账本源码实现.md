@@ -20,7 +20,7 @@ topics:
 | --- | --- |
 | [Lockdep 总阅读索引](../navigation/P01_Linux_6.12_Lockdep源码导读.md#1.4_一次acquire的主调用链) | acquire/release 主链 |
 | [身份与事件接入模块导读](../navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.4_取得与释放调用链) | 状态写入者与失败回退 |
-| [稳定机制：持锁账本、依赖图与状态闭环](../../../../knowledge/linux/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md#4.1_本章只追踪一个问题) | 当前事实与全局历史分工 |
+| [稳定机制：持锁账本、依赖图与状态闭环](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md#4.1_本章只追踪一个问题) | 当前事实与全局历史分工 |
 
 基线为 Linux 6.12.20，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。所有 Doxygen 和中文行内注释均为仓库补充，非上游原文。
 

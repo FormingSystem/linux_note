@@ -20,7 +20,7 @@ domains:
         ↓
 Linux 内核结构、模块与数据结构
         ↓
-并发同步、对象生命周期、时间与 I/O
+同步和异步机制、对象生命周期与 I/O
         ↓
 中断、设备模型和驱动框架
         ↓
@@ -46,15 +46,14 @@ Linux 内核结构、模块与数据结构
 | 机制 | 解决的问题 | 当前入口 |
 | --- | --- | --- |
 | 数据结构 | 如何组织和检索内核对象 | [单链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)、[哈希表](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)、[红黑树](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md) |
-| 并发与同步 | 如何处理竞争、可见性和执行上下文约束 | [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md)、[Lockdep 专题](../../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)、[RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md#1.1_专题定位) |
+| 同步和异步机制 | 如何约束并发状态，并让事件跨上下文或时间继续推进 | [总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)、[同步机制](../../knowledge/linux/synchronization_and_asynchrony/synchronization/大纲.md)、[异步机制](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/大纲.md) |
 | 生命周期 | 如何确保对象被安全持有和释放 | [kref](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)、[devres](../../knowledge/linux/object_lifetime/devres/devres_API说明.md) |
-| 时间管理 | 如何完成延时、超时和定时回调 | [驱动中的时间问题](../../knowledge/linux/time_management/定时器简介/P01_驱动中的_时间问题_概述.md) |
-| I/O 模型 | 用户进程如何等待或接收设备事件 | [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)、[异步通知](../../knowledge/linux/io_model/async_notification/P01_异步通知全景与知识地图.md) |
+| I/O 模型 | 用户进程如何等待设备事件并完成数据传输 | [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)、[VFS I/O 数据路径](../../knowledge/kernel_subsystems/vfs/P14_VFS_read_write分派.md) |
 | 错误处理 | 如何在指针返回值中表达错误 | [错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md) |
 
 ## 1.4\_子系统与驱动模型
 
-- [中断的定位与演化](../../knowledge/kernel_subsystems/irq/中断机制简介/P01_中断的定位与演化.md)解释硬件事件进入 Linux 后的处理链。
+- [中断的定位与演化](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P01_中断的定位与演化.md)解释硬件事件进入 Linux 后的处理链。
 - [VFS 子系统](../../knowledge/kernel_subsystems/vfs/大纲.md)完整解释文件系统注册、挂载、路径、打开文件、I/O、缓存和对象回收；字符设备只是其特殊文件交叉分支之一。
 - [设备模型抽象机制与 Driver Core 状态拓扑](../../knowledge/linux/device_model/大纲.md)解释 kobject、device、driver、bus 与 class 的关系，以及注册、匹配和生命周期状态机。
 - [驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md)把公共机制映射到驱动结构。
@@ -77,6 +76,6 @@ Linux 内核结构、模块与数据结构
 - 平台实现记录：[i.MX6ULL 移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)、[RK3566 Linux SDK 编译](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)。
 - 最小验证实验：[i.MX6ULL 驱动实验](../../labs/platforms/nxp/imx6ull/drivers)。
 - 调查材料入口：[调查目录说明](../../research/investigations/README.md)。
-- 版本化并发源码入口：[Linux 6.12 Lockdep 总阅读索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)、[Linux 6.12 RCU 总阅读索引](../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
+- 版本化并发源码入口：[锁](../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)、[序列计数器](../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.5_建议阅读顺序)、[等待与完成量](../../research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)、[工作队列](../../research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.6_建议阅读顺序)、[Lockdep](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)、[RCU](../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
 
 学习时应先从通用文档形成模型，再用平台记录确认差异，用实验确认行为，最后以特定版本源码材料解释实现细节。

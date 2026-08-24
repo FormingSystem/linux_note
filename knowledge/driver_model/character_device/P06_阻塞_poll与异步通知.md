@@ -62,6 +62,6 @@ flowchart LR
 
 remove 应在停止新请求后写入 `disconnected` 或错误状态，并唤醒 read、write、poll 等所有等待者。等待条件必须包含该终止状态，否则硬件已经消失，任务仍可能永久睡眠。
 
-等待队列的通用实现和信号返回语义见[等待队列](../../linux/waiting_notification/P01_等待队列.md)；本章保留字符设备交叉所需的状态和通知闭环。
+等待队列的通用实现和信号返回语义见[等待队列](../../linux/synchronization_and_asynchrony/synchronization/waiting_notification/P01_等待队列.md)；本章保留字符设备交叉所需的状态和通知闭环。
 
 下一章处理会越过 fd 生命周期的设备映射：[mmap 与跨文件生命周期](P07_mmap与跨文件生命周期.md)。

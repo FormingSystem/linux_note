@@ -29,9 +29,9 @@ source_version: "6.12.20"
 3. ready：该 GP 已完成，callback 移到 DONE 段；
 4. invoked：执行者已经实际调用 `func()`。
 
-普通 GP 只负责第 2 到第 3 步的安全证明，不负责保证第 4 步立即发生。NOCB 改变 callback 的推进和执行者，不改变 callback 必须等目标 GP 的条件。
+普通 GP 只负责第 2 到第 3 步的安全证明，不负责保证第 4 步立即发生。NOCB 改变 callback 的推进和执行者，不改变 callback 必须等目标 GP 的条件。普通 GP 怎样从长期控制任务的一轮请求推进到 cleanup 发布，统一见 [GP 全局生命周期端到端源码时序](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_端到端源码时序)；本章只从其完成序列继续追 callback。
 
-稳定机制分别见 [rcu_segcblist 回调状态机](../../../../knowledge/linux/synchronization/rcu/P17_Tree_RCU_rcu_segcblist回调状态机.md#17.1_场景_三个callback对应哪一轮GP)、[回调执行、批处理与限流](../../../../knowledge/linux/synchronization/rcu/P18_Tree_RCU_回调执行_批处理与限流.md#18.1_场景_一次GP后突然成熟五万个callback) 和 [NOCB 回调卸载](../../../../knowledge/linux/synchronization/rcu/P19_Tree_RCU_NOCB回调卸载.md#19.1_场景_隔离CPU不希望执行回调批次)。
+稳定机制分别见 [rcu_segcblist 回调状态机](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_rcu_segcblist回调状态机.md#17.1_场景_三个callback对应哪一轮GP)、[回调执行、批处理与限流](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_Tree_RCU_回调执行_批处理与限流.md#18.1_场景_一次GP后突然成熟五万个callback) 和 [NOCB 回调卸载](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P19_Tree_RCU_NOCB回调卸载.md#19.1_场景_隔离CPU不希望执行回调批次)。
 
 ## 11.2\_十个术语先建立地址感
 
@@ -179,6 +179,7 @@ CPU hotplug 的普通 callback 迁移见 [拓扑与 CPU 热插拔模块导读](P
 | --- | --- | --- |
 | `call_rcu()` 分流与普通 enqueue | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P09：enqueue](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.4_call_rcu怎样把所有权交给每CPU队列) |
 | callback accelerate/advance | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`rcu_segcblist.c`](../../linux/kernel/rcu/rcu_segcblist.c) | [P09：代际推进](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.5_accelerate与advance怎样连接callback和GP) |
+| 普通 GP cleanup 怎样发布可供 callback 消费的完成代际 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P05：cleanup 与下一代](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11_rcu_gp_cleanup发布完成并承接下一代) |
 | DONE 抽取、锁外执行与限流 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P09：`rcu_do_batch()`](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.6_rcu_do_batch为何先抽取再锁外执行) |
 | normal core 选择 softirq/rcuc | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P09：core 执行者](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.7_普通CPU怎样选择softirq或rcuc执行者) |
 | bypass/flush/wake | [`kernel/rcu/tree_nocb.h`](../../linux/kernel/rcu/tree_nocb.h) | [P09：NOCB producer](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.8_nocb_bypass怎样降低生产者锁竞争又避免搁浅) |

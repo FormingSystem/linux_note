@@ -21,7 +21,7 @@ topics:
 | --- | --- |
 | [Lockdep 总阅读索引](../navigation/P01_Linux_6.12_Lockdep源码导读.md#1.4_一次acquire的主调用链) | 完整规则链位置 |
 | [依赖图与规则引擎模块导读](../navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.2_规则链而不是一个环检测函数) | 模块职责和状态传播 |
-| [稳定机制：递归、依赖环、IRQ 与读写规则](../../../../knowledge/linux/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.1_先明确闭环搜索要回答什么) | 抽象阻塞规则与误修边界 |
+| [稳定机制：递归、依赖环、IRQ 与读写规则](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.1_先明确闭环搜索要回答什么) | 抽象阻塞规则与误修边界 |
 
 基线为 Linux 6.12.20，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。所有 Doxygen 和中文行内注释均为仓库补充，非上游原文。
 

@@ -29,11 +29,11 @@ domains:
 
 ## 1.3\_第二阶段\_驱动所需通用机制
 
-1. [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md)。
+1. [Linux 同步和异步机制总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)。
 2. [错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)。
 3. [devres API](../../knowledge/linux/object_lifetime/devres/devres_API说明.md)。
-4. [驱动中的时间问题](../../knowledge/linux/time_management/定时器简介/P01_驱动中的_时间问题_概述.md)，再按需要学习睡眠、timer、hrtimer 和 delayed work。
-5. [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)及[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md)。
+4. [驱动中的时间问题](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P01_驱动中的_时间问题_概述.md)，再按需要学习睡眠、timer、hrtimer 和 delayed work。
+5. [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)及[异步通知](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md)。
 
 阶段验收：能为共享状态选择同步方法，正确管理失败路径和卸载路径，并为设备事件选择用户态通知方式。
 
@@ -50,8 +50,8 @@ domains:
 
 1. 按序完成 [GPIO 专题](../../knowledge/driver_model/gpio/大纲.md)。
 2. 阅读 [标准 GPIO Consumer 专题](../../knowledge/driver_model/gpio_consumers/大纲.md)，理解何时复用 `gpio-keys`、`gpio-leds`、regulator 等领域驱动。
-3. 阅读[Linux 驱动中的中断注册与接口](../../knowledge/kernel_subsystems/irq/中断机制简介/P04_Linux_驱动中的中断注册与接口.md)。
-4. 阅读[GPIO 与触发语义](../../knowledge/kernel_subsystems/irq/中断机制简介/P05_GPIO_与触发语义_电平_边沿_DTS_与_只来一次一直来_为何出现.md)。
+3. 阅读[Linux 驱动中的中断注册与接口](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P04_Linux_驱动中的中断注册与接口.md)。
+4. 阅读[GPIO 与触发语义](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P05_GPIO_与触发语义_电平_边沿_DTS_与_只来一次一直来_为何出现.md)。
 5. 按序完成 [Input 子系统](../../knowledge/driver_model/input/大纲.md)。
 
 阶段验收：能实现 GPIO 输入输出、中断与去抖，并能说明 Input 事件从驱动上报到用户态读取的路径。

@@ -28,7 +28,7 @@ source_version: "6.12.20"
 
 `force-QS` 的职责是 **重新检查、催促并汇聚已有的合法 QS 证据**。它不能宣布一个仍在旧 reader 中的 CPU 已安全。Stall 子系统则在等待超过阈值后对“谁还欠债、哪一个执行者不动、timer 是否失效”做诊断和有限催促；它也不能绕过 GP 正确性条件。
 
-稳定机制见 [Tree RCU force-QS、迟延与 Stall](../../../../knowledge/linux/synchronization/rcu/P15_Tree_RCU_force_QS迟延与Stall.md#15.1_Tree_RCU_force_QS迟延与_Stall)。普通 GP 主循环本体仍由 [GP 全局生命周期模块导读](P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.1_模块问题与版本边界)负责，本章不复制 `rcu_gp_fqs_loop()`。
+稳定机制见 [Tree RCU force-QS、迟延与 Stall](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_force_QS迟延与Stall.md#15.1_Tree_RCU_force_QS迟延与_Stall)。普通 GP 主循环本体仍由 [GP 全局生命周期模块导读](P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.1_模块问题与版本边界)负责，本章不复制 `rcu_gp_fqs_loop()`。
 
 ## 9.2\_六个专有名词先消歧
 

@@ -22,7 +22,7 @@ source_version: "6.12.20"
 
 当前保存配置启用 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y`，因此普通 Tree RCU 的具体运行分支以抢占式 reader 跟踪为主。Tree SRCU 是另一套私有域实现，不因同处 `kernel/rcu/` 或名字里都有 `Tree` 就共享普通 `rcu_state`。
 
-跨版本概念先从 [RCU 专题大纲](../../../../knowledge/linux/synchronization/rcu/大纲.md#1.1_专题定位)进入。实现家族的稳定选择模型见 [RCU 实现家族与内核配置](../../../../knowledge/linux/synchronization/rcu/P22_RCU_实现家族与内核配置.md#22.2_三个正交维度)。
+跨版本概念先从 [RCU 专题大纲](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md#1.1_专题定位)进入。实现家族的稳定选择模型见 [RCU 实现家族与内核配置](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_实现家族与内核配置.md#22.2_三个正交维度)。
 
 ## 1.2\_第一步必须先判断正在读哪一种RCU
 
@@ -107,7 +107,7 @@ flowchart TD
 
 | 阅读任务 | 模块导读 | 函数实现 |
 | --- | --- | --- |
-| GP 请求、长期 GP kthread、init/FQS/cleanup | [P06 GP 全局生命周期](P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.1_模块问题与版本边界) | [P05 GP 全局生命周期源码实现](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.2_源码符号覆盖账本) |
+| 启动期创建、GP 请求、长期 GP kthread、init/FQS/cleanup | [P06 GP 全局生命周期](P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.1_模块问题与版本边界) | [P05 启动到运行期的 GP 全局生命周期源码实现](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall) |
 | 非抢占 CPU QS 与树形报告 | [P02 非抢占式 Tree RCU](P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.1_证据目标和配置边界) | [P02 非抢占关键函数](../source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.2_函数实现索引) |
 | 抢占任务债务与 CPU 债务合流 | [P03 抢占式 Tree RCU](P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md#3.1_取证问题) | [P03 抢占关键函数](../source_explanations/P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#3.2_任务与节点的共享状态实现) |
 | 静态树、CPU参与集合与 hotplug callback 迁移 | [P08 拓扑与 CPU 热插拔](P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#8.1_本模块究竟解决什么问题) | [P06 拓扑与 CPU 热插拔源码实现](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.2_源码符号覆盖账本) |
@@ -132,7 +132,7 @@ Tree SRCU 的“Tree”主要服务于每域 callback 需求和规模扩展。�
 
 ### 1.6.2\_独立入口
 
-- 稳定机制：[SRCU 私有域与双 index 状态机](../../../../knowledge/linux/synchronization/rcu/P23_SRCU_私有域与双_index_状态机.md#23.1_问题场景_注销监听器时不能释放正在睡眠的回调对象)；
+- 稳定机制：[SRCU 私有域与双 index 状态机](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_SRCU_私有域与双_index_状态机.md#23.1_问题场景_注销监听器时不能释放正在睡眠的回调对象)；
 - 版本模块导读：[Linux 6.12 Tree SRCU 模块源码概念导读](P07_Linux_6.12_Tree_SRCU模块源码概念导读.md#7.1_先分清Tree_RCU与Tree_SRCU)；
 - 唯一实现讲解：[Linux 6.12 Tree SRCU 源码实现](../source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.2_源码符号覆盖账本)。
 
@@ -146,7 +146,7 @@ Tasks RCU 等待的是任务执行轨迹，Tiny RCU 是单 CPU 构建对普通 R
 - Tiny RCU 的调用点仍使用普通 RCU API，只是不需要多 CPU `rcu_node` 汇聚树；
 - 一种 flavor 的 GP 完成，不能据名字推导另一种 flavor 也已完成。
 
-稳定边界见 [RCU 实现家族与内核配置](../../../../knowledge/linux/synchronization/rcu/P22_RCU_实现家族与内核配置.md#22.6_Tasks_RCU家族等待的是任务执行轨迹)和 [Tasks RCU 与 Tiny RCU 实现边界](../../../../knowledge/linux/synchronization/rcu/P24_Tasks_RCU与Tiny_RCU实现边界.md#24.1_Tasks_RCU与_Tiny_RCU实现边界)。当前版本化入口见 [Tasks RCU 与 Tiny RCU 模块源码概念导读](P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md#4.1_Linux_6.12_Tasks_RCU与_Tiny_RCU模块源码概念导读)，后续应按两种读者任务继续拆分。
+稳定边界见 [RCU 实现家族与内核配置](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_实现家族与内核配置.md#22.6_Tasks_RCU家族等待的是任务执行轨迹)和 [Tasks RCU 与 Tiny RCU 实现边界](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P24_Tasks_RCU与Tiny_RCU实现边界.md#24.1_Tasks_RCU与_Tiny_RCU实现边界)。当前版本化入口见 [Tasks RCU 与 Tiny RCU 模块源码概念导读](P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md#4.1_Linux_6.12_Tasks_RCU与_Tiny_RCU模块源码概念导读)，后续应按两种读者任务继续拆分。
 
 ## 1.8\_检查机制不能替代功能状态机
 
@@ -164,7 +164,7 @@ Tasks RCU 等待的是任务执行轨迹，Tiny RCU 是单 CPU 构建对普通 R
 
 1. 先读本章 1.2，写下当前问题的 reader、保护域、主动阻塞和部署条件；没有这一步，不进入函数名搜索。
 2. 普通 Tree RCU：先读 [P08 拓扑与 CPU 热插拔](P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#8.2_先定义六个容易被默认理解的名词)，弄清 CPU 位落在哪个叶、current/next 集合如何交接。
-3. 再沿 [P06 GP 模块导读](P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.2_先把四个对象摆到源码现场)掌握需求、长期 GP kthread、init/FQS/cleanup 和物理 GP 序列。
+3. 再沿 [P06 GP 模块导读](P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.2_先把四个对象摆到源码现场)掌握需求、长期 GP kthread、init/FQS/cleanup 和物理 GP 序列；若问题是“这个长期任务从启动代码哪里出现”，直接进入 [P05 启动链定位](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall)。
 4. 根据配置选择 [非抢占式导读](P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.1_证据目标和配置边界)或 [抢占式导读](P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md#3.1_取证问题)，追 CPU/任务证据怎样进入根完成条件。
 5. 沿 [P09 force-QS 与 Stall](P09_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#9.3_状态地址和通信关系)补齐正常等待、远端被动观察、resched 催促和诊断慢路径。
 6. 单独进入 [P10 Expedited GP](P10_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md#10.3_角色状态与通信)，不要把其 sequence、mask、IPI 和 leader 混进普通 GP kthread。
@@ -183,4 +183,4 @@ Tasks RCU 等待的是任务执行轨迹，Tiny RCU 是单 CPU 构建对普通 R
 6. 能从拓扑、普通 GP、QS、FQS、expedited、callback/NOCB、同步/barrier 任一专有名词进入独立模块导读和唯一函数实现标题。
 7. 能说明 GP 完成、同步等待者返回、callback 成熟和 callback 实际执行是四个不同状态点。
 
-专题入口：[RCU 专题大纲](../../../../knowledge/linux/synchronization/rcu/大纲.md#1.1_专题定位)。
+专题入口：[RCU 专题大纲](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md#1.1_专题定位)。

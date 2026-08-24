@@ -26,10 +26,9 @@ domains:
 | --- | --- |
 | 内核架构 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)、[模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes) |
 | 数据结构 | [单链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)、[哈希表专题](../../knowledge/linux/data_structures/哈希表_Hash_Table)、[红黑树专题](../../knowledge/linux/data_structures/红黑树_rb-tree) |
-| 并发同步 | [Linux 同步机制总纲](../../knowledge/linux/synchronization/大纲.md)、[Linux 内存顺序专题](../../knowledge/linux/memory_ordering/大纲.md)、[RCU 专题](../../knowledge/linux/synchronization/rcu/大纲.md)、[Lockdep 专题](../../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位) |
+| 同步和异步机制 | [总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)、[同步机制](../../knowledge/linux/synchronization_and_asynchrony/synchronization/大纲.md)、[异步机制](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/大纲.md)、[锁](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/大纲.md)、[序列计数器](../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/大纲.md)、[等待与完成量](../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/大纲.md)、[RCU](../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md)、[Lockdep](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md)、[工作队列](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/大纲.md) |
 | 对象生命周期 | [kref](../../knowledge/linux/object_lifetime/kref)、[devres](../../knowledge/linux/object_lifetime/devres) |
-| 时间管理 | [定时器专题](../../knowledge/linux/time_management/定时器简介) |
-| I/O 模型 | [阻塞 I/O](../../knowledge/linux/io_model/blocking_io)、[异步通知](../../knowledge/linux/io_model/async_notification/大纲.md) |
+| I/O 模型 | [阻塞 I/O](../../knowledge/linux/io_model/blocking_io)、[MMIO](../../knowledge/linux/io_model/mmio/大纲.md)、[DMA](../../knowledge/linux/io_model/dma/大纲.md) |
 | 设备模型 | [设备模型专题](../../knowledge/linux/device_model/大纲.md) |
 | 错误处理 | [错误指针](../../knowledge/linux/error_handling/error_pointer) |
 
@@ -37,7 +36,6 @@ domains:
 
 | 领域 | 当前内容入口 |
 | --- | --- |
-| 中断 | [中断机制专题](../../knowledge/kernel_subsystems/irq/中断机制简介) |
 | VFS | [VFS 子系统专题](../../knowledge/kernel_subsystems/vfs/大纲.md) |
 | 日志与跟踪 | [Linux 内核日志](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md) |
 | 驱动基础 | [驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model) |
@@ -85,3 +83,4 @@ domains:
 - [仓库信息架构设计](../../governance/architecture/repository_information_architecture.md)
 - [Git 协作与提交规范](../../governance/conventions/git_guide.md)
 - [全量目录重构记录](../../governance/migration/P01_全量目录重构记录.md)
+- [并发与竞争专题迁移记录](../../governance/migration/P02_并发与竞争专题迁移地图.md)

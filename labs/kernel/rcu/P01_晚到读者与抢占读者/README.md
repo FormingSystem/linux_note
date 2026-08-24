@@ -27,9 +27,9 @@ topics:
 
 对应理论和源码解释见：
 
-- [非抢占式 Tree RCU 的问题与证明模型](../../../../knowledge/linux/synchronization/rcu/P05_非抢占式_Tree_RCU_问题与证明模型.md)
-- [抢占式 Tree RCU 的问题与任务跟踪模型](../../../../knowledge/linux/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md)
-- [抢占式 Tree RCU 源码同步机制](../../../../knowledge/linux/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md)
+- [非抢占式 Tree RCU 的问题与证明模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_非抢占式_Tree_RCU_问题与证明模型.md)
+- [抢占式 Tree RCU 的问题与任务跟踪模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md)
+- [抢占式 Tree RCU 源码同步机制](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md)
 
 ## 1.2\_场景和参与者
 

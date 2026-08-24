@@ -29,7 +29,7 @@ source_version: "6.12.20"
 
 模块卸载最容易暴露这个差异：如果 callback 函数位于即将卸载的模块代码中，只等一个新 GP 不够，因为旧 callback 可能已经安全成熟却仍排在执行队列中。此时必须用 `rcu_barrier()` 等它们实际经过执行点。
 
-稳定机制见 [Tree RCU 同步等待与 rcu_barrier](../../../../knowledge/linux/synchronization/rcu/P20_Tree_RCU_同步等待与rcu_barrier.md#20.1.1_模块卸载场景暴露三种不同等待)。
+稳定机制见 [Tree RCU 同步等待与 rcu_barrier](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P20_Tree_RCU_同步等待与rcu_barrier.md#20.1.1_模块卸载场景暴露三种不同等待)。
 
 ## 12.2\_同步等待的两个实现分支
 

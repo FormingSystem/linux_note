@@ -23,7 +23,7 @@ source_version: "6.12.20"
 
 源码基线：NXP `linux-imx`，标签 `lf-6.12.20-2.0.0`，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，配置包含 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`。上游相对位置为 [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h) 和 [`include/linux/rcutree.h`](../../linux/include/linux/rcutree.h)。
 
-先读模块模型：[拓扑与 CPU 热插拔模块源码概念导读](../navigation/P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#8.1_本模块究竟解决什么问题)。稳定知识正文：[P11 初始化与拓扑](../../../../knowledge/linux/synchronization/rcu/P11_Tree_RCU_初始化_拓扑与执行上下文.md#11.3_S0到S6_拓扑建立的统一阶段)、[P21 CPU 热插拔](../../../../knowledge/linux/synchronization/rcu/P21_Tree_RCU_CPU热插拔与回调迁移.md#21.6_S0到S9_CPU4离线周期)。
+先读模块模型：[拓扑与 CPU 热插拔模块源码概念导读](../navigation/P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#8.1_本模块究竟解决什么问题)。稳定知识正文：[P11 初始化与拓扑](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_初始化_拓扑与执行上下文.md#11.3_S0到S6_拓扑建立的统一阶段)、[P21 CPU 热插拔](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P21_Tree_RCU_CPU热插拔与回调迁移.md#21.6_S0到S9_CPU4离线周期)。
 
 ## 6.2\_源码符号覆盖账本
 

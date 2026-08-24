@@ -24,7 +24,7 @@ topics:
 2. acquire/release 怎样维护 current 持锁账本、链缓存与全局依赖图；
 3. 查询、断言、IRQ 使用状态和 proc 输出怎样消费这些记录。
 
-稳定机制先读 [Linux Lockdep 专题大纲](../../../../knowledge/linux/synchronization/lockdep/大纲.md#1.1_专题定位)。
+稳定机制先读 [Linux Lockdep 专题大纲](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md#1.1_专题定位)。
 
 ## 1.2\_源码地图
 

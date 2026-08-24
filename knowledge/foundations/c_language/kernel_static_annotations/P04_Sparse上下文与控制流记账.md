@@ -470,7 +470,7 @@ static int commit_with_explicit_branch(const struct record *record,
 5. 条件取得路径确实用 `__cond_lock()` 或等价分支标记登记成功，没有把 `__cond_acquires()` 的负退出值误当成已实现的返回值传播；
 6. 没有通过错误的 `__force`、内联汇编或不可见实现绕开契约。
 
-即便全部满足，它仍然不证明真实锁实现无缺陷、不证明运行时不存在未建模锁类别依赖，也不证明对象生命期正确。由于本章核对的 Sparse 实现跟踪的是聚合计数，而不是以 `x` 为键的每锁账本，“某次取得与某次释放数量平衡”也不足以证明它们必然对应同一把锁。运行时锁依赖由 [Lockdep 专题](../../../linux/synchronization/lockdep/大纲.md#1.1_专题定位) 继续检查；类型、动态上下文和对象生命期的分工见 [RCU 类型语义](../../../linux/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.6_三类检查不能互相替代)。
+即便全部满足，它仍然不证明真实锁实现无缺陷、不证明运行时不存在未建模锁类别依赖，也不证明对象生命期正确。由于本章核对的 Sparse 实现跟踪的是聚合计数，而不是以 `x` 为键的每锁账本，“某次取得与某次释放数量平衡”也不足以证明它们必然对应同一把锁。运行时锁依赖由 [Lockdep 专题](../../../linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md#1.1_专题定位) 继续检查；类型、动态上下文和对象生命期的分工见 [RCU 类型语义](../../../linux/synchronization_and_asynchrony/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.6_三类检查不能互相替代)。
 
 下一章回到普通 GCC/Clang 分支：Sparse 属性消失以后，`__user`、`__percpu` 和 `__rcu` 为什么有时仍会留下 BTF 标签，又为什么这些标签不能承担静态或运行时检查。
 

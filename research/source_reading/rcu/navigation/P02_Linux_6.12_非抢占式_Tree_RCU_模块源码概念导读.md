@@ -19,7 +19,7 @@ source_version: "6.12.20"
 
 ## 2.1\_证据目标和配置边界
 
-本章不是另一篇 RCU 教程，而是[非抢占式 Tree RCU 源码同步机制](../../../../knowledge/linux/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md)的版本化取证记录。目标是让每个抽象箭头都能落到 Linux 6.12.20 的文件、字段和函数。
+标题中“非抢占式”与“Tree RCU”的关系先按 [RCU 实现家族与内核配置](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_实现家族与内核配置.md#22.2_三个正交维度)定位，CPU QS 抽象证明回到[非抢占式 Tree RCU 的问题与证明模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_非抢占式_Tree_RCU_问题与证明模型.md#5.1.1_标题里的两个限定不是同义关系)。本章不是另一篇 RCU 教程，而是[非抢占式 Tree RCU 源码同步机制](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md#6.1_源码边界与贯穿场景)的版本化取证记录，目标是让每个抽象箭头都能落到 Linux 6.12.20 的文件、字段和函数。
 
 普通 Tree RCU 的 GP 请求、长期 GP kthread、init/FQS/cleanup 是抢占与非抢占配置共享的全局控制模块，已经独立到 [GP 全局生命周期模块源码概念导读](P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.1_模块问题与版本边界)。本章只在 CPU QS 闭环需要时引用它，不再把公共 GP 控制当作非抢占配置私有状态机。
 

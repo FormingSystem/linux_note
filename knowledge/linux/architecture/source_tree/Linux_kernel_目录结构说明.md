@@ -104,6 +104,8 @@ domains:
   - `main.c`：内核启动入口函数。
   - `init_task.c`：内核的第一个线程。
 
+若要从一个具体子系统观察 `init/main.c` 怎样连接链接期 initcall 与长期内核任务，可继续阅读 [Linux 6.12 Tree RCU GP kthread 的启动链源码实现](../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall)：其中区分了 `start_kernel()` 中的早期 `rcu_init()`、`rest_init()` 创建 `kthreadd`、`kernel_init` 分派 early initcalls，以及 `rcu_spawn_gp_kthread()` 创建长期任务四个阶段。
+
 # 第13章\_/io\_uring
 
 - **英文全称**：I/O uring

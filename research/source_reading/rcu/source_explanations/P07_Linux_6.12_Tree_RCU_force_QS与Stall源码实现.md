@@ -23,7 +23,7 @@ source_version: "6.12.20"
 
 源码基线为 NXP Linux 6.12.20 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。上游相对位置：[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`kernel/rcu/tree_stall.h`](../../linux/kernel/rcu/tree_stall.h)、[`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h)。配置边界包含 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`；stall 的部分检查还受 `CONFIG_PROVE_RCU`、`CONFIG_IRQ_WORK`、`CONFIG_RCU_CPU_STALL_CPUTIME` 等控制。
 
-概念入口：[force-QS 与 Stall 模块源码概念导读](../navigation/P09_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#9.1_为什么GP已经在等还要有force_QS)。稳定正文：[Tree RCU force-QS、迟延与 Stall](../../../../knowledge/linux/synchronization/rcu/P15_Tree_RCU_force_QS迟延与Stall.md#15.1_Tree_RCU_force_QS迟延与_Stall)。
+概念入口：[force-QS 与 Stall 模块源码概念导读](../navigation/P09_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#9.1_为什么GP已经在等还要有force_QS)。稳定正文：[Tree RCU force-QS、迟延与 Stall](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_force_QS迟延与Stall.md#15.1_Tree_RCU_force_QS迟延与_Stall)。
 
 ## 7.2\_源码符号覆盖账本
 

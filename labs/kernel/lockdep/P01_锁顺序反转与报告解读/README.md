@@ -31,7 +31,7 @@ S2：功能mutex仍能完成取得与释放；检查器已经给出潜在循环�
 2. 第二条组件链不需要并发任务，仍能让 Lockdep 用“本次候选边＋历史反向边”推出潜在 ABBA；
 3. 报告证明的是已执行组件链的动态闭包，不是所有锁路径、数据竞争和对象生命周期都已正确。
 
-机制解释见[为什么需要 Lockdep](../../../../knowledge/linux/synchronization/lockdep/P01_为什么需要_Lockdep.md#1.2_从复现真实死锁转向积累可组合证据)，实验方法见[配置、亲手实验与报告解读](../../../../knowledge/linux/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.1_先把使用资格变成环境检查)。
+机制解释见[为什么需要 Lockdep](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P01_为什么需要_Lockdep.md#1.2_从复现真实死锁转向积累可组合证据)，实验方法见[配置、亲手实验与报告解读](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.1_先把使用资格变成环境检查)。
 
 ## 1.2\_谁可以做这个实验
 
@@ -210,4 +210,4 @@ make clean
 
 本实验能够证明：Lockdep 可以把同一线程先后执行的两条简单组件链组合成潜在 ABBA 报告，因而不必制造真实卡死。它不能证明所有未执行分支安全，也不能替代 KCSAN 的数据竞争检测、KASAN/KFENCE 的内存错误检测、Sparse 的类型检查、lockstat 或 `perf lock` 的竞争分析，以及对象生命周期证明。
 
-回到专题时，继续阅读[报告解读与覆盖计划](../../../../knowledge/linux/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.5_再把循环报告还原成同一条因果链)和[成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.7_把Lockdep放进完整验证流水线)。
+回到专题时，继续阅读[报告解读与覆盖计划](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.5_再把循环报告还原成同一条因果链)和[成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.7_把Lockdep放进完整验证流水线)。
