@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
+                "file": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "P06_非抢占式_Tree_RCU_源码同步机制"
+              "title": "P06_Tree_RCU_读侧执行模型与配置差异"
             }
           },
           {
@@ -41,12 +41,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
+                "file": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "P06_非抢占式_Tree_RCU_源码同步机制"
+              "title": "P06_Tree_RCU_读侧执行模型与配置差异"
             }
           }
         ],
@@ -188,7 +188,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
+                "file": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -226,7 +226,7 @@
     "research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md",
     "research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md",
     "README.md",
-    "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
+    "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md",
     "engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md",
     "tools/ai/codex/skills/build-linux-note-topic/scripts/__pycache__/audit_topic.cpython-313.pyc",
     "tools/ai/codex/skills/build-linux-note-topic/scripts/__pycache__/audit_content_conservation.cpython-313.pyc",

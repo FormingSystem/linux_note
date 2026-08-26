@@ -18,7 +18,7 @@ MarkBook 把同一专题分布在知识正文、版本化源码阅读、唯一�
 
 ## 1.2\_当前刊物
 
-- [RCU MarkBook](topics/rcu/README.md)：从 RCU 的问题与抽象模型，一直读到 Linux 6.12.20 的模块导航、唯一实现讲解和晚到/抢占读者实验。
+- [RCU MarkBook](topics/rcu/README.md)：从 RCU 的问题、通用契约和分类坐标，一直读到 Tree RCU 公共骨架、模块差异、Linux 6.12.20 的模块导航、唯一实现讲解和晚到/抢占读者实验。
 
 ## 1.3\_月度发布契约
 
