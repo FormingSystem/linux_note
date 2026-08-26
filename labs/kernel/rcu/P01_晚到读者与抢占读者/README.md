@@ -25,11 +25,11 @@ topics:
 
 第一阶段不是复现“runqueue 前面恰有 999 个任务”的字面调度队列，而是用门闩构造同一个关键前提：任务在旧对象释放前没有进入读侧、没有读取共享入口、没有持有旧地址。真正仍在 runqueue 且尚未获得 CPU 的任务更不可能已经执行 `rcu_dereference()`，证明关系相同。
 
-对应理论和源码解释见：
+对应理论和源码解释分三层进入：
 
-- [非抢占式 Tree RCU 的问题与证明模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_非抢占式_Tree_RCU_问题与证明模型.md)
-- [抢占式 Tree RCU 的问题与任务跟踪模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md)
-- [抢占式 Tree RCU 源码同步机制](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md)
+- [RCU 抽象机制推演](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P02_RCU_抽象机制推演.md#2.6_第四步_定义宽限期要等待的集合)：解释晚到 reader 为什么不属于旧集合；
+- [Tree RCU 读侧执行模型与配置差异](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md#6.11_实验与结论一一配对)：在同一模块内比较 CPU QS 与被抢占任务债务；
+- [Linux 6.12 公共接口与读侧模型模块源码概念导读](../../../../research/source_reading/rcu/navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md#2.8_端到端状态与通信)：把实验事件映射到任务、CPU 和叶节点状态。
 
 ## 1.2\_场景和参与者
 

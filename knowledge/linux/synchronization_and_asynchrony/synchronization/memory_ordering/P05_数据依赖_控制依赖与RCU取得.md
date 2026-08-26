@@ -122,7 +122,7 @@ rcu_read_unlock();
 
 Linux 6.12.20 的 `rcu_assign_pointer()` 对一般非 NULL 路径使用 release 发布；`rcu_dereference()` 保持指针取得到对象访问的依赖，并加入 RCU/Sparse/lockdep 语义。两者保证新 reader 取得新指针时看见初始化。
 
-RCU GP 是另一条轴：它等待取消发布前可能存在的旧 reader，决定旧对象何时可回收。依赖顺序不登记 reader，GP 也不代替新对象发布；完整组合见 [RCU P25](../rcu/P28_RCU_内存序_误用与选择边界.md)。
+RCU GP 是另一条轴：它等待取消发布前可能存在的旧 reader，决定旧对象何时可回收。依赖顺序不登记 reader，GP 也不代替新对象发布；完整组合见 [RCU P25](../rcu/P25_RCU_内存序_误用与选择边界.md)。
 
 ## 5.8\_rcu\_dereference\_系列怎样表达不同上下文
 

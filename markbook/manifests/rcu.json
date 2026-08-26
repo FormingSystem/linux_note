@@ -4,8 +4,8 @@
   "topic_id": "rcu",
   "enabled": true,
   "title": "深入理解 Linux RCU",
-  "subtitle": "从对象回收的因果模型，到 Tree RCU 状态机、Linux 6.12 源码与实验",
-  "description": "面向希望系统掌握 RCU 的读者，按问题压力、抽象推演、实现加固、源码证据和实验验证重新编排仓库中的权威材料。",
+  "subtitle": "从通用契约与分类坐标，到 Tree RCU 公共骨架、模块差异、Linux 6.12 源码与实验",
+  "description": "面向希望系统掌握 RCU 的读者，先建立通用概念、公共 API 与分类坐标，再按功能模块解释公共骨架和抢占/非抢占差异，最后用实现家族、源码证据和实验完成验证。",
   "publisher": "FormingSystem",
   "language": "zh-CN",
   "source_baseline": {
@@ -24,7 +24,7 @@
     {
       "id": "mechanism_and_application",
       "title": "卷一　机制、实现与应用",
-      "description": "从对象回收问题出发，推演 RCU 抽象角色与正确性边界，再逐步进入 Tree RCU 的状态、通信、变体、调试和应用选择。",
+      "description": "从对象回收问题出发，推演 RCU 抽象角色与正确性边界；随后建立公共 API 和分类坐标，按 Tree RCU 功能模块解释公共路径、抢占/非抢占差异、实现家族、调试与应用选择。",
       "sources": [
         {
           "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md",

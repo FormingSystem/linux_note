@@ -99,7 +99,7 @@ static struct demo_state *demo_bad_escape(struct demo_device *dev)
 
 Lockdep 只知道虚拟 RCU map 在查询时是否存在于 current 账本；它不知道返回值保存到了哪里，也不知道更新者何时取消发布并释放对象。要让指针跨越读侧临界区，仍需引用计数、延长读侧范围或其他经过证明的所有权协议。
 
-所以“调用条件通过”不能推出“对象生命周期正确”。RCU 场景中的类型、动态上下文和生命期分工见 [RCU 类型语义、Sparse 与 Lockdep](../rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.6_三类检查不能互相替代)。
+所以“调用条件通过”不能推出“对象生命周期正确”。RCU 场景中的类型、动态上下文和生命期分工见 [RCU 类型语义、Sparse 与 Lockdep](../rcu/P23_RCU_类型语义_Sparse与Lockdep.md#23.7_三类检查不能互相替代)。
 
 ## 7.5\_从通用Lockdep到RCU实现的证据边界
 
@@ -111,7 +111,7 @@ Lockdep 只知道虚拟 RCU map 在查询时是否存在于 current 账本；它
 | `rcu_lock_acquire()` / `rcu_lock_release()` | RCU 读侧与 callback 怎样映射到四个虚拟 map | [RCU Lockdep适配层源码实现](../../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.1_实现所有权与读者目标) |
 | `RCU_LOCKDEP_WARN()` | RCU 访问器怎样消费动态条件 | [`RCU_LOCKDEP_WARN()` 检查适配层](../../../../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_LOCKDEP_WARN检查适配层) |
 
-先用 [Lockdep 查询适配与诊断模块导读](../../../../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.4_RCU适配链)理解通用查询到 RCU 的连接，再进入 [RCU Lockdep适配模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P05_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#5.1_模块问题与实现所有权)阅读 RCU 自己的四个实例和接入路径。
+先用 [Lockdep 查询适配与诊断模块导读](../../../../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.4_RCU适配链)理解通用查询到 RCU 的连接，再进入 [RCU Lockdep适配模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#12.1_模块问题与实现所有权)阅读 RCU 自己的四个实例和接入路径。
 
 ## 7.6\_其他逻辑保护域怎样判断能否适配
 
