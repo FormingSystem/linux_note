@@ -14,6 +14,6 @@
       "unavoidable_costs":["新旧版本暂存、宽限期推进和回调处理。","引用取得与释放本身增加原子操作和错误路径。"],
       "boundaries":["必须立即回收或需要强一致原地更新时应重新比较锁。","持续高更新且内存紧张时延迟回收可能不可接受。"]
     },
-    "knowledge_refs":["knowledge.linux.synchronization.rcu.why_rcu","knowledge.linux.synchronization.rcu.abstract_derivation","knowledge.linux.synchronization.rcu.hardware_foundation_memory_model"]
+    "knowledge_refs":["knowledge.linux.synchronization.rcu.why_rcu","knowledge.linux.synchronization.rcu.abstract_derivation"]
   }
 ]
