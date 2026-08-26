@@ -1,6 +1,6 @@
 ---
-id: research.source_reading.rcu.linux_6_12_nonpreempt_tree_implementation
-title: "Linux 6.12 非抢占式 Tree RCU 关键函数源码实现"
+id: research.source_reading.rcu.linux_6_12_tree_wait_qs_aggregation_implementation
+title: "Linux 6.12 Tree RCU 等待桥、QS 与节点汇聚关键函数源码实现"
 kind: source
 status: evolving
 domains:
@@ -10,26 +10,27 @@ domains:
 topics:
   - synchronization
   - rcu
-  - nonpreempt
+  - quiescent_state
+  - aggregation
   - implementation
 source_project: linux
 source_version: "6.12.20"
 ---
 
-# 第2章\_Linux\_6.12\_非抢占式\_Tree\_RCU\_关键函数源码实现
+# 第2章\_Linux\_6.12\_Tree\_RCU\_等待桥\_QS与节点汇聚关键函数源码实现
 
 ## 2.1\_实现讲解边界与入口
 
-本章不再解释“非抢占式 Tree RCU 整体怎样完成 GP”，而是专门回答“非抢占配置怎样把同步等待接入 callback、CPU 怎样感知代际、产生 QS 并把证据逐层上报”。普通 GP kthread、`rcu_gp_init()`、FQS 与 `rcu_gp_cleanup()` 已收敛到独立的 GP 实现文档，避免把全局公共控制误写成非抢占配置私有实现。
+本章不再解释“某一种配置怎样完成整套 RCU”，而是唯一展开三个具体实现点：同步等待桥怎样接入 callback、CPU 怎样感知代际并记录 QS、节点怎样逐层上报证据。非抢占分支提供最直接的 CPU QS 证明；抢占分支在报告 CPU 位之前增加任务债务，并复用这里的公共节点出口。普通 GP kthread、`rcu_gp_init()`、FQS 与 `rcu_gp_cleanup()` 已收敛到独立的 GP 实现文档。
 
 | 阅读入口 | 职责 |
 | --- | --- |
-| [RCU 源码总导航](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序) | 先区分普通 Tree RCU、SRCU、Tasks 与 Tiny，再选择模块 |
-| [RCU 实现家族与内核配置](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_实现家族与内核配置.md#22.2_三个正交维度) | 解释“非抢占式”与“Tree RCU”分别限定哪一个维度 |
-| [非抢占式 Tree RCU 问题与证明模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_非抢占式_Tree_RCU_问题与证明模型.md#5.1.1_标题里的两个限定不是同义关系) | 在进入函数前建立 CPU QS 的抽象证明边界 |
+| [RCU 源码总导航](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序) | 先区分保护域和功能模块，再选择实现标题 |
+| [RCU 分类坐标与内核配置](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P04_RCU_分类坐标与内核配置.md#4.2_七条正交坐标轴) | 解释 Tree、PREEMPT_RCU 和等待策略分别属于哪条轴 |
+| [Tree RCU 读侧执行模型与配置差异](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md#6.2_非抢占模型为什么可以把任务问题压缩成CPU问题) | 在进入函数前建立 CPU QS 与任务债务的比较模型 |
 | [Tree RCU GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.2_源码符号覆盖账本) | 唯一展开 GP 请求、长期线程、init、FQS 与 cleanup |
-| [非抢占式 Tree RCU 模块源码概念导读](../navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md#2.3_源码文件与状态所有权) | 说明这些函数如何组成同步等待桥、CPU QS 和树形汇聚 |
-| [非抢占式 Tree RCU 稳定机制正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md#6.1_源码边界与贯穿场景) | 解释跨版本稳定的状态与通信模型 |
+| [公共接口与读侧模型模块导读](../navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md#2.3_源码文件与实现所有权) | 说明 CPU QS 路径与 PREEMPT_RCU 增量怎样重新合流 |
+| [Tree RCU 公共骨架与完整周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md#5.5_S0到S9的一次完整周期) | 解释等待桥、证明和 callback 交付在完整周期中的位置 |
 
 下列 `/** ... */` 块是本仓库为阅读补充的中文 Doxygen 说明，不是上游文件原注释。代码只裁剪支撑本章结论的语句，省略处明确标记；完整实现以链接的版本化源文件为准。
 
@@ -309,4 +310,4 @@ static void rcu_report_qs_rnp(unsigned long mask, struct rcu_node *rnp,
 4. `rcu_report_qs_rdp()` 为什么必须在上报前重新检查 GP 代际？
 5. `rcu_report_qs_rnp()` 为什么只有本层 CPU/子树位和任务债务都清除以后才继续上报父节点？
 
-模块概念导读：[Linux 6.12 非抢占式 Tree RCU 模块源码概念导读](../navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md)。
+模块概念导读：[Linux 6.12 RCU 公共接口与读侧模型模块源码概念导读](../navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md)。

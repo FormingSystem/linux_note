@@ -27,10 +27,10 @@ source_version: "6.12.20"
 | `lockdep_map`、key、lock class 和 class cache 的通用含义 | [`lock_class_key` 与 `lockdep_map` 身份结构](../../lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.2_lock_class_key与lockdep_map身份结构) |
 | acquire 怎样写入 `current->held_locks[]`，release 怎样撤销当前记录 | [`lock_acquire()` 事件入口](../../lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.3_lock_acquire事件入口)与 [`__lock_acquire()` 取得状态提交](../../lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4___lock_acquire取得状态提交) |
 | `lock_is_held()` 怎样查询当前任务的影子持有记录 | [`lock_is_held_type()` 当前持锁查询](../../lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.2_lock_is_held_type当前持锁查询) |
-| RCU Lockdep适配模块的参与者、状态和三条调用链 | [Linux 6.12 RCU Lockdep适配模块源码概念导读](../navigation/P05_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#5.1_模块问题与实现所有权) |
+| RCU Lockdep适配模块的参与者、状态和三条调用链 | [Linux 6.12 RCU Lockdep适配模块源码概念导读](../navigation/P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#12.1_模块问题与实现所有权) |
 | RCU 为什么需要四个虚拟 map、怎样登记和消费它们 | **本章** |
 
-RCU 稳定机制入口见 [RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.5_Lockdep检查的是哪一个运行时条件)，版本化源码总入口见 [Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。Lockdep 侧怎样看待 RCU 这种逻辑保护域，见 [RCU 与子系统检查适配](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md#7.5_从通用Lockdep到RCU实现的证据边界)。
+RCU 稳定机制入口见 [RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md#23.6_Lockdep检查的是哪一个运行时条件)，版本化源码总入口见 [Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)。Lockdep 侧怎样看待 RCU 这种逻辑保护域，见 [RCU 与子系统检查适配](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md#7.5_从通用Lockdep到RCU实现的证据边界)。
 
 本章使用 NXP Linux 6.12.20、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的已核对源码副本。基线只确认 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y`，没有确认目标板启用 `CONFIG_PROVE_LOCKING`、`CONFIG_DEBUG_LOCK_ALLOC` 或 `CONFIG_PROVE_RCU`；因此下面解释的是该版本的 **可选检查分支**，不宣称目标板正在运行它。
 
@@ -57,6 +57,8 @@ RCU 稳定机制入口见 [RCU 类型语义、Sparse 与 Lockdep](../../../../kn
 它们只给通用 Lockdep 一个稳定地址，用这个地址把“当前任务进入了哪一种 RCU 逻辑范围”投影到检查器的 held-lock 账本。
 
 ## 4.3\_声明定义key与静态生命期
+
+Lockdep 用地址区分逻辑锁身份，因此 RCU 适配层必须让公共头文件只看见 `extern lockdep_map`，再在唯一翻译单元中定义长期存在的 key 与 map。下面先核对声明和定义的分工，再看四个对象为什么不能临时构造或互相复用。
 
 ### 4.3.1\_四个extern声明为什么放在公共头文件
 
@@ -126,7 +128,7 @@ EXPORT_SYMBOL_GPL(rcu_callback_map);
 
 `EXPORT_SYMBOL_GPL()` 与 `extern` 的职责不同：前者把已定义对象加入 GPL-only 内核符号导出表，允许符合条件的模块引用；后者只完成 C 语言编译期声明。删除导出不会改变内核内建调用点，却可能破坏外部 GPL 模块的链接。
 
-### 4.3.3\_wait_type_outer和wait_type_inner为何不同
+### 4.3.3\_wait\_type\_outer和wait\_type\_inner为何不同
 
 Lockdep 的 `wait_type_outer` 表示“这个 map 可以在哪种等待上下文中取得”，`wait_type_inner` 表示“持有它以后向内层代码呈现什么等待上下文”。通用枚举和检查算法归 [`lockdep_map` 身份结构](../../lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.2_lock_class_key与lockdep_map身份结构) 与 Lockdep 核心所有；RCU 在这里负责选择符合自身执行约束的参数。
 
@@ -141,7 +143,9 @@ Lockdep 的 `wait_type_outer` 表示“这个 map 可以在哪种等待上下文
 
 ## 4.4\_进入与退出怎样写入检查器影子状态
 
-### 4.4.1\_rcu_lock_acquire和rcu_lock_release包装参数
+读侧 API 的功能约束与 Lockdep 事件是两条并行状态链。包装函数把 map、调用点 IP 和 wait type 交给通用 Lockdep；具体 API 还必须保持功能进入先于 acquire、release 先于功能退出的配对顺序。
+
+### 4.4.1\_rcu\_lock\_acquire和rcu\_lock\_release包装参数
 
 [`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h) 将通用 Lockdep 事件包装成 RCU 专用入口：
 
@@ -253,6 +257,8 @@ sequenceDiagram
 
 ## 4.5\_四个map怎样落到Lockdep当前账本
 
+四个 map 都不保存计数；`lock_acquire()` 根据 map 地址和 key 找到锁类，再把一次嵌套取得写入当前任务的 `held_locks[]`。所以“全局只有四个 map”与“每个任务可以多层嵌套”并不矛盾。
+
 ### 4.5.1\_对象关系与状态地址
 
 ```mermaid
@@ -292,7 +298,9 @@ rcu_read_unlock()
 
 ## 4.6\_held查询怎样消费三种读侧map
 
-### 4.6.1\_rcu_read_lock_held_common先决定能否相信Lockdep
+查询路径不能无条件相信 held 账本：Lockdep 关闭、递归抑制或检查器失效时，负结果不等于调用者一定不受保护。下面先核对查询是否可用，再比较普通、sched、BH 和 any-held 怎样组合不同 map。
+
+### 4.6.1\_rcu\_read\_lock\_held\_common先决定能否相信Lockdep
 
 [`kernel/rcu/update.c`](../../linux/kernel/rcu/update.c) 先用公共前置函数处理检查器不可用、EQS 和 CPU offline：
 
@@ -387,9 +395,11 @@ synchronize_rcu()
 
 精确断言故意要求调用者实际经过相应 RCU API。例如仅执行 `local_bh_disable()` 不等于调用了 `rcu_read_lock_bh()`，因此 `lockdep_assert_in_rcu_read_lock_bh()` 仍要求 `rcu_bh_lock_map` 记录。相反，`rcu_read_lock_bh_held()` 作为较宽的调试谓词接受功能上下文。两组接口的证明目标不同，不能因为返回条件相似就合并。
 
-`synchronize_rcu()` 的三-map 检查只负责报告已经执行到的非法自等待调用。真正阻塞、推进 GP 和唤醒等待者的功能链仍由 [`synchronize_rcu()` 接口实现](P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.4_synchronize_rcu接口实现)和[非抢占式 Tree RCU 关键函数](P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.3___wait_rcu_gp与wakeme_after_rcu连接等待者)承担。
+`synchronize_rcu()` 的三-map 检查只负责报告已经执行到的非法自等待调用。真正阻塞、推进 GP 和唤醒等待者的功能链仍由 [`synchronize_rcu()` 接口实现](P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.4_synchronize_rcu接口实现)和[非抢占式 Tree RCU 关键函数](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.3___wait_rcu_gp与wakeme_after_rcu连接等待者)承担。
 
-## 4.7\_rcu_callback_map怎样标记延迟动作上下文
+## 4.7\_rcu\_callback\_map怎样标记延迟动作上下文
+
+callback 执行不是普通读侧临界区，却可能合法访问“由当前 callback 生命周期保护”的内部对象。独立 `rcu_callback_map` 让消费者精确声明这一条件，避免把 callback 身份伪装成普通、BH 或 sched reader。
 
 ### 4.7.1\_为什么callback需要第四个逻辑身份
 
@@ -456,6 +466,8 @@ sequenceDiagram
 
 ## 4.8\_配置关闭时对象和查询怎样退化
 
+适配代码同时受 `CONFIG_DEBUG_LOCK_ALLOC`、`CONFIG_PROVE_LOCKING` 和 `CONFIG_PROVE_RCU` 等配置影响。编译期对象消失、运行期检查停用和查询返回保守值是不同退化方式，必须分别追踪，不能用“宏为空”概括。
+
 ### 4.8.1\_Kconfig依赖链
 
 Linux 6.12 的关系为：
@@ -475,7 +487,7 @@ CONFIG_PROVE_LOCKING=y
 | `DEBUG_LOCK_ALLOC=y`、`PROVE_RCU=n` | 存在 | 仍可维护当前账本 | 空操作 | out-of-line 查询仍按其实现给出调试答案 |
 | `DEBUG_LOCK_ALLOC=n` | 不定义 | 三个 wrapper 均为空操作 | 不可能形成完整 PROVE_RCU 路径 | 使用头文件中的保守 inline 回退 |
 
-### 4.8.2\_无DEBUG_LOCK_ALLOC时为何返回保守值
+### 4.8.2\_无DEBUG\_LOCK\_ALLOC时为何返回保守值
 
 头文件中的退化分支为：
 
@@ -494,6 +506,8 @@ static inline int debug_lockdep_rcu_enabled(void) { return 0; }
 普通与 BH 查询返回 1 是为了让依赖这些谓词的调试条件在没有检查器时不产生虚假违规；这不是宣称当前真的处于读侧。sched/any 仍可从 `preemptible()` 得到一个功能上下文近似。关闭配置后失去的是动态证明能力，不是 RCU API 契约。
 
 ## 4.9\_修改RCU适配层时必须保持什么
+
+修改适配层时既要保持功能动作与检查事件的先后，又要保持 map 身份、嵌套配对和配置关闭语义。下面把这些约束收敛成可审查的不变量与最小验证路径。
 
 ### 4.9.1\_修改影响矩阵
 
@@ -557,8 +571,8 @@ static inline int debug_lockdep_rcu_enabled(void) { return 0; }
 6. 若把 `rcu_lock_release()` 移到功能退出之后，哪些检查窗口会失真？
 7. `CONFIG_DEBUG_LOCK_ALLOC=n` 时为什么不会产生四个 extern 的链接错误？
 
-源码总入口：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
+源码总入口：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)。
 
-RCU 稳定知识入口：[RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.5_Lockdep检查的是哪一个运行时条件)。
+RCU 稳定知识入口：[RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md#23.6_Lockdep检查的是哪一个运行时条件)。
 
 Lockdep 通用实现入口：[Linux 6.12 Lockdep 源码导读](../../lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)。

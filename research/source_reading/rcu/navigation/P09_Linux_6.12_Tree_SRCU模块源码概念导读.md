@@ -15,9 +15,9 @@ source_project: linux
 source_version: "6.12.20"
 ---
 
-# 第7章\_Linux\_6.12\_Tree\_SRCU模块源码概念导读
+# 第9章\_Linux\_6.12\_Tree\_SRCU模块源码概念导读
 
-## 7.1\_先分清Tree\_RCU与Tree\_SRCU
+## 9.1\_先分清Tree\_RCU与Tree\_SRCU
 
 名字里都有 `Tree`，不表示它们共享同一套 reader 或 GP 状态机：
 
@@ -30,11 +30,11 @@ source_version: "6.12.20"
 | GP 控制 | 全局 `rcu_state` 与长期 `rcu_gp_kthread()` | 每个域的 `srcu_usage`、延迟 work 与双扫描状态 |
 | 等待范围 | 普通 RCU 域中的旧 reader | 只等待指定 `srcu_struct` 中的旧 reader |
 
-`CONFIG_PREEMPT_RCU` 只表示普通 Tree RCU reader 可以被调度器抢占，并由任务债务继续跟踪；它不允许 reader 主动等待 mutex、I/O 或 completion。源码注释中的 Sleepable RCU 指的是 SRCU 的调用契约。表中普通 Tree RCU 一列的长期控制任务和每轮 GP 状态机统一见 [普通 GP 全局生命周期源码实现](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_端到端源码时序)，本章不借用该实现充当 SRCU 证据。
+`CONFIG_PREEMPT_RCU` 只表示普通 Tree RCU reader 可以被调度器抢占，并由任务债务继续跟踪；它不允许 reader 主动等待 mutex、I/O 或 completion。源码注释中的 Sleepable RCU 指的是 SRCU 的调用契约。表中普通 Tree RCU 一列的长期控制任务和每轮 GP 状态机统一见 [普通 GP 全局生命周期源码实现](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)，本章不借用该实现充当 SRCU 证据。
 
-稳定机制、应用代码和双 index 推导见 [SRCU 私有域与双 index 状态机](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_SRCU_私有域与双_index_状态机.md#23.1_问题场景_注销监听器时不能释放正在睡眠的回调对象)。本章只组织 Linux 6.12.20 的源码对象和阅读顺序，不展开完整函数体。
+稳定机制、应用代码和双 index 推导见 [SRCU 私有域与双 index 状态机](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_SRCU_私有域与双_index_状态机.md#18.1_问题场景_注销监听器时不能释放正在睡眠的回调对象)。本章只组织 Linux 6.12.20 的源码对象和阅读顺序，不展开完整函数体。
 
-## 7.2\_为什么SRCU不能复用普通GP证明
+## 9.2\_为什么SRCU不能复用普通GP证明
 
 假设任务在 CPU1 调用 `srcu_read_lock()`，在临界区内等待 I/O，随后被唤醒并迁移到 CPU3 退出。普通 Tree RCU 的 CPU QS 只能说明 CPU1 或 CPU3 经过了某个执行边界，不能凭该边界判断这个可睡眠逻辑 reader 已退出。
 
@@ -50,7 +50,7 @@ GP扫描：Σlock_count[idx] == Σunlock_count[idx]
 
 所以 SRCU 每次读侧进入/退出都写指定域的 per-CPU 累计计数。它用读侧记账换取睡眠、迁移和私有域能力；不能把普通 Tree RCU“reader 正常不写全局共享状态”的性能结论直接套给 SRCU。
 
-## 7.3\_源码文件和对象层次
+## 9.3\_源码文件和对象层次
 
 | 上游相对位置 | 主要对象 | 阅读任务 |
 | --- | --- | --- |
@@ -78,7 +78,7 @@ flowchart LR
     N -->|"srcu_gp_seq_needed"| U
 ```
 
-## 7.4\_SRCU也是多组正交状态
+## 9.4\_SRCU也是多组正交状态
 
 | 状态轴 | 地址 | 写入者 | 读取者 | 含义 |
 | --- | --- | --- | --- | --- |
@@ -90,7 +90,7 @@ flowchart LR
 
 `srcu_idx` 不是 reader 数量；某一 CPU 的 lock/unlock 差也不一定单独归零，因为 reader 可以迁移。必须在同一 index 上跨所有 CPU 求和。
 
-## 7.5\_读侧调用链怎样支持睡眠和迁移
+## 9.5\_读侧调用链怎样支持睡眠和迁移
 
 阅读 `srcu_read_lock()` 时按下列顺序追踪：
 
@@ -112,7 +112,7 @@ srcu_read_unlock(ssp, idx)
 
 普通 `srcu_read_lock()` 还有执行上下文配对约束：不能由一个任务进入、让另一个任务或 IRQ handler 代为退出。NMI-safe 变体另有明确接口，不能仅凭计数实现猜测普通接口也跨上下文安全。
 
-## 7.6\_双index为什么要扫描两次
+## 9.6\_双index为什么要扫描两次
 
 一组计数无法把删除前 reader 与删除后不断到来的 reader 分开。SRCU 用两组累计计数，并把一轮 GP 分成：
 
@@ -136,7 +136,7 @@ stateDiagram-v2
 
 这里的 `SCAN1/SCAN2` 属于 SRCU 域级 GP 状态。不能映射成普通 Tree RCU 的 `WAIT_FQS/DOING_FQS`，也没有普通 `rcu_node.qsmask` 清位过程。
 
-## 7.7\_callback需求树不等于reader证明树
+## 9.7\_callback需求树不等于reader证明树
 
 `call_srcu()` 把 callback 放入本 CPU `srcu_data.srcu_cblist`，`srcu_gp_start_if_needed()` 和 `srcu_funnel_gp_start()` 把目标代际沿 `srcu_node` 汇聚到域级状态。
 
@@ -144,7 +144,7 @@ stateDiagram-v2
 
 `synchronize_srcu()` 与 `call_srcu()` 的交付方式也不同：前者等待同域 GP 结论，后者立即返回并让 callback 以后执行。GP 完成同样不表示所有旧 callback 已经执行；域销毁还要满足 `srcu_barrier()` 和无使用者等生命周期条件。
 
-## 7.8\_端到端时序\_睡眠reader怎样阻止注销
+## 9.8\_端到端时序\_睡眠reader怎样阻止注销
 
 ```mermaid
 sequenceDiagram
@@ -170,7 +170,7 @@ sequenceDiagram
     W->>W: 才能释放listener
 ```
 
-## 7.9\_源码阅读顺序与证据边界
+## 9.9\_源码阅读顺序与证据边界
 
 1. 先读 `srcu.h` 的接口注释，确认可睡眠、`ssp/idx` 配对和等待调用上下文。
 2. 再读 `srcutree.h`，画出 `srcu_struct→srcu_usage/srcu_data/srcu_node` 所有权。
@@ -189,7 +189,7 @@ sequenceDiagram
 
 这些链接的职责是让模块问题直达唯一实现标题；遇到裁剪掉的尺寸转换、调试或自适应延时分支，再从实现讲解回到固定版本源文件核对。不能临时借用普通 Tree RCU GP 实现充当 SRCU 证据。
 
-## 7.10\_源码阅读验收
+## 9.10\_源码阅读验收
 
 1. 能解释普通 Tree RCU 可抢占 reader 与 SRCU 可睡眠 reader 的区别。
 2. 能指出 SRCU 私有域、域级 GP、每 CPU 计数和 callback 需求树分别保存在哪里。
@@ -199,6 +199,6 @@ sequenceDiagram
 6. 能说明 `synchronize_rcu()` 为什么不能替代 `synchronize_srcu(ssp)`。
 7. 能从 `__call_srcu()` 一直追到 `srcu_gp_end()`、`srcu_invoke_callbacks()` 和同步等待者被唤醒。
 
-总阅读索引：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
+总阅读索引：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)。
 
 唯一实现讲解：[Linux 6.12 Tree SRCU 源码实现](../source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.1_实现所有权与版本边界)。

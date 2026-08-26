@@ -23,7 +23,7 @@ source_version: "6.12.20"
 
 源码基线为 NXP Linux 6.12.20 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。上游相对位置：[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`kernel/rcu/tree_stall.h`](../../linux/kernel/rcu/tree_stall.h)、[`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h)。配置边界包含 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`；stall 的部分检查还受 `CONFIG_PROVE_RCU`、`CONFIG_IRQ_WORK`、`CONFIG_RCU_CPU_STALL_CPUTIME` 等控制。
 
-概念入口：[force-QS 与 Stall 模块源码概念导读](../navigation/P09_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#9.1_为什么GP已经在等还要有force_QS)。稳定正文：[Tree RCU force-QS、迟延与 Stall](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_force_QS迟延与Stall.md#15.1_Tree_RCU_force_QS迟延与_Stall)。
+概念入口：[force-QS 与 Stall 模块源码概念导读](../navigation/P05_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#5.1_为什么GP已经在等还要有force_QS)。稳定正文：[Tree RCU force-QS、迟延与 Stall](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P14_Tree_RCU_force_QS迟延与Stall.md#14.1_安全证明成立以后为什么还需要活性慢路径)。
 
 ## 7.2\_源码符号覆盖账本
 
@@ -53,6 +53,8 @@ source_version: "6.12.20"
 把 `<0` 误当“失败即清位”会破坏 GP 安全，把 `>0` 误当“远端 CPU 主动回复”则会掩盖共享 context-tracking 状态的被动证明方式。
 
 ## 7.4\_watching快照怎样把EQS变成隐式QS证据
+
+第一次扫描保存远端 watching counter 并识别已经处于 EQS 的 CPU；后续扫描比较 counter 是否跨过完整 EQS，并只对仍无证据但可运行的 CPU 设置催促状态。save 与 recheck 不能合并成一次无历史的读取。
 
 ### 7.4.1\_第一次保存
 
@@ -231,6 +233,8 @@ static void rcu_gp_fqs(bool first_time)
 
 ## 7.7\_三类stall为什么必须读取不同状态
 
+源码把“GP 未开始”“GP kthread 饥饿”和“FQS timer 到期未处理”分成独立检查点，因为它们的执行者、时间戳和恢复动作不同。下面逐条核对每种诊断消费的状态，避免从同一条 stall 文案反推同一根因。
+
 ### 7.7.1\_需求存在但GP未开始
 
 ```c
@@ -263,11 +267,11 @@ static void rcu_check_gp_start_stall(struct rcu_node *rnp,
 
 这是 request/control-path stall：根需求超前且两种 activity 都过旧。它不检查 `qsmask`，因为 GP 尚未开始，当前根本没有新一轮 QS 债务。
 
-### 7.7.2\_GP kthread长期未运行
+### 7.7.2\_GP\_kthread长期未运行
 
 `rcu_check_gp_kthread_starvation()` 调用 `rcu_is_gp_kthread_starving()`，打印当前代际、`gp_flags`、诊断 `gp_state`、任务 `__state` 与所在 CPU，并尝试 `wake_up_process(gpk)`。如果线程最后位于 offline CPU 或其 CPU 位已经不欠 QS，还会提供不同栈线索。
 
-### 7.7.3\_FQS timer已经过期但线程仍睡
+### 7.7.3\_FQS\_timer已经过期但线程仍睡
 
 ```c
 static void rcu_check_gp_kthread_expired_fqs_timer(void)
@@ -386,4 +390,4 @@ sequenceDiagram
 9. `gp_state` 只作为诊断相位，没有替代 `gp_seq/qsmask` 权威状态；
 10. force/stall 恢复动作最终仍等待合法 QS/任务退出。
 
-总索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.5.3_模块入口)。
+总索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.4_模块概念导读入口)。

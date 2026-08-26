@@ -29,7 +29,7 @@ source_version: "6.12.20"
 5. GP 完成怎样使 callback 可执行，并怎样唤醒 `synchronize_srcu()`；
 6. `srcu_barrier()` 为什么还要在每条 callback 队列尾部追加哨兵。
 
-模块角色、普通 Tree RCU 与 Tree SRCU 的边界、建议阅读顺序见 [Tree SRCU 模块源码概念导读](../navigation/P07_Linux_6.12_Tree_SRCU模块源码概念导读.md#7.1_先分清Tree_RCU与Tree_SRCU)，跨版本稳定机制和应用选择见 [SRCU 私有域与双 index 状态机](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_SRCU_私有域与双_index_状态机.md#23.1_问题场景_注销监听器时不能释放正在睡眠的回调对象)。对照表中的普通 Tree RCU 长期任务与普通 GP 生命周期由 [P05 GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_端到端源码时序)唯一维护，本章不重复其函数体。
+模块角色、普通 Tree RCU 与 Tree SRCU 的边界、建议阅读顺序见 [Tree SRCU 模块源码概念导读](../navigation/P09_Linux_6.12_Tree_SRCU模块源码概念导读.md#9.1_先分清Tree_RCU与Tree_SRCU)，跨版本稳定机制和应用选择见 [SRCU 私有域与双 index 状态机](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_SRCU_私有域与双_index_状态机.md#18.1_问题场景_注销监听器时不能释放正在睡眠的回调对象)。对照表中的普通 Tree RCU 长期任务与普通 GP 生命周期由 [P05 GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)唯一维护，本章不重复其函数体。
 
 源码基线为 NXP Linux 6.12.20 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；实现选择为 `CONFIG_TREE_SRCU`。上游相对位置为 [`include/linux/srcu.h`](../../linux/include/linux/srcu.h)、[`include/linux/srcutree.h`](../../linux/include/linux/srcutree.h) 和 [`kernel/rcu/srcutree.c`](../../linux/kernel/rcu/srcutree.c)。本章中的 `/** ... */` 中文 Doxygen 和中文行内注释均由仓库补充，不是上游原注释；代码只裁剪与当前证明无关的 trace、调试、尺寸转换和自适应延时细节。
 
@@ -51,6 +51,8 @@ source_version: "6.12.20"
 本章复核每个函数的 **实现原理** 时统一追问四件事：进入前由哪把锁、哪次 index 选择或哪一代序列限定上下文；函数修改哪个具体地址；后续由哪个 reader、GP work、callback work 或等待者读取；这段顺序封住的是漏记 reader、丢失 GP 请求、跨代 callback，还是过早完成 barrier。后续各节都按这四项解释，不能用函数名直译代替状态与通信过程。
 
 ## 11.3\_四层对象不是一棵reader证明树
+
+Tree SRCU 把 reader 累计值、callback 队列、需求汇聚和域级 GP 控制放在 per-CPU、节点、usage 与公开域四层对象中。先核对所有权，再解释 `srcu_gp_seq` 低位状态，避免把它们误画成普通 Tree RCU 的 `qsmask` 证明树。
 
 ### 11.3.1\_结构体之间的所有权
 
@@ -199,6 +201,8 @@ CPU3：unlock_count[0] += 1
 
 ## 11.5\_GP怎样从分散累计值构造零reader证据
 
+更新者按 index 汇总所有 possible CPU 的进入与退出累计值；相等只证明该次采样没有未归还 reader，还要经过内存序与双扫描状态机封住并发进入窗口。下面先看求和，再看采样成立后的边界。
+
 ### 11.5.1\_求和路径
 
 ```c
@@ -257,6 +261,8 @@ reader 可能已经读取旧 `srcu_idx`，却在增加 `lock_count[old]` 前被�
 第一阶段封住从更早一次 flip 延迟而来的 index 使用者，第二阶段才等待本轮调用边界以前的主要 reader 集合。
 
 ## 11.6\_双扫描GP状态机怎样推进
+
+一轮 GP 先排空当前非活动 index，再翻转新 reader 的 index，最后排空旧活动 index。`srcu_advance_state()` 用 delayed work 串联这些阶段，并在每次采样不成立时重新调度，而不是固定睡眠后猜测完成。
 
 ### 11.6.1\_开始与翻转
 
@@ -365,6 +371,8 @@ static void srcu_advance_state(struct srcu_struct *ssp)
 | S5 完成 | `srcu_usage.srcu_gp_seq`、callback 调度状态 | `srcu_gp_end()` | 完成发布且对应 callback work 已安排 | callback work/等待者/下一代请求 |
 
 ## 11.7\_callback怎样登记并提出GP需求
+
+`call_srcu()` 先把 callback 交给调用 CPU 的分段队列，再把所需代际沿 SRCU 节点树汇聚到域级状态，必要时启动 GP work。局部 enqueue、目标绑定和全局唤醒是三个不同通信步骤。
 
 ### 11.7.1\_从公开call\_srcu进入本CPU队列
 
@@ -555,6 +563,8 @@ call_srcu调用者
 
 ## 11.8\_GP完成怎样交付callback并承接下一代
 
+域级 GP 完成只发布代际并选择有工作的 CPU；每 CPU work 才推进并执行 ready callback，域级 work 随后根据剩余需求继续下一轮或休眠。三类执行上下文通过状态和 workqueue 交接，不能把 cleanup 当作 callback 已执行。
+
 ### 11.8.1\_srcu\_gp\_end先发布完成再选择有callback的CPU
 
 `srcu_gp_end()` 在 SCAN2 已配平后执行，关键顺序是：
@@ -639,7 +649,7 @@ static void srcu_gp_end(struct srcu_struct *ssp)
 
 `srcu_cb_mutex` 不是 reader 安全锁。它限制 callback 调度准备期间最多再启动一轮 GP，使四槽 `srcu_have_cbs[]` 能安全复用。真正的 GP 完成发布是 `rcu_seq_end(&sup->srcu_gp_seq)`。
 
-### 11.8.2\_每CPUwork怎样执行ready callback
+### 11.8.2\_每CPUwork怎样执行ready\_callback
 
 ```c
 /**
@@ -792,6 +802,8 @@ static void __synchronize_srcu(struct srcu_struct *ssp, bool do_norm)
 
 ## 11.10\_srcu\_barrier为什么要在每条非空队列后追加哨兵
 
+`srcu_barrier()` 等的是调用前 callback 的实际执行，不是再完成一轮 SRCU GP。它对每条非空 per-CPU 队列追加哨兵，再用共享计数等待所有哨兵被各自 callback work 调用。
+
 ### 11.10.1\_哨兵证明的是callback执行顺序
 
 ```c
@@ -909,6 +921,8 @@ sequenceDiagram
 
 ## 11.12\_实现不变量与常见误读
 
+把 reader 计数、GP work 和 callback work 串起来以后，最终需要核对每层所有权、代际单调性和完成条件。下面先列必须同时成立的不变量，再与普通 Tree RCU 逐项对照，防止按相似函数名套模型。
+
 ### 11.12.1\_必须同时成立的实现不变量
 
 1. 每次 unlock 必须归还同一 `ssp`、同一 lock 返回的 `idx`；全 CPU 总数相等才有意义。
@@ -933,6 +947,6 @@ sequenceDiagram
 
 源码阅读到这里，才能把“可睡眠 RCU”展开为可检查的实现结论：它不是给普通 Tree RCU reader 放宽一个调度限制，而是换成了私有域、读侧显式记账、双 index 扫描和每域 GP work 的另一套证明系统。
 
-模块概念入口：[Tree SRCU 模块源码概念导读](../navigation/P07_Linux_6.12_Tree_SRCU模块源码概念导读.md#7.3_源码文件和对象层次)。
+模块概念入口：[Tree SRCU 模块源码概念导读](../navigation/P09_Linux_6.12_Tree_SRCU模块源码概念导读.md#9.3_源码文件和对象层次)。
 
-总阅读索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
+总阅读索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)。

@@ -15,9 +15,9 @@ source_project: linux
 source_version: "6.12.20"
 ---
 
-# 第10章\_Linux\_6.12\_Tree\_RCU\_Expedited\_GP模块源码概念导读
+# 第6章\_Linux\_6.12\_Tree\_RCU\_Expedited\_GP模块源码概念导读
 
-## 10.1\_Expedited不是普通GP的加速档
+## 6.1\_Expedited不是普通GP的加速档
 
 `synchronize_rcu_expedited()` 与 `synchronize_rcu()` 提供相同类型的普通 RCU reader 覆盖保证，但 Linux 6.12.20 使用一条 **独立的控制与证明通道**：
 
@@ -27,9 +27,9 @@ source_version: "6.12.20"
 - 主动选择 CPU，并在需要时发送 IPI 或迫使 tick/reschedule；
 - 不等待普通 GP kthread 把 `gp_seq` 推进一轮。
 
-它改变的是取得 QS 证据的控制路径与等待延迟，不改变“所有调用前旧 reader 必须结束”的语义。稳定模型先读 [Tree RCU Expedited GP](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_Expedited_GP.md#16.1_场景_控制路径愿意用系统扰动换更短等待)；若普通 GP 控制主线还不清楚，先用 [普通 GP 端到端源码时序](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_端到端源码时序)建立比较基线，再读本章的独立 sequence、worker 和 IPI 路径。
+它改变的是取得 QS 证据的控制路径与等待延迟，不改变“所有调用前旧 reader 必须结束”的语义。稳定模型先读 [Tree RCU Expedited GP](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_Expedited_GP.md#15.1_场景_控制路径愿意用系统扰动换更短等待)；若普通 GP 控制主线还不清楚，先用 [普通 GP 端到端源码时序](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)建立比较基线，再读本章的独立 sequence、worker 和 IPI 路径。
 
-## 10.2\_八个必须先知道的词
+## 6.2\_八个必须先知道的词
 
 | 名词 | 精确定义 | 不能理解成 |
 | --- | --- | --- |
@@ -44,7 +44,7 @@ source_version: "6.12.20"
 
 固定提交里的 `rcu_state.expedited_need_qs` 只有字段声明，没有活动读写路径。当前完成条件不能从这个字段注释推导；权威证据是节点 `expmask/exp_tasks` 与根等待条件。
 
-## 10.3\_角色状态与通信
+## 6.3\_角色状态与通信
 
 ```mermaid
 flowchart LR
@@ -73,7 +73,7 @@ flowchart LR
 | `rdp->cpu_no_qs.b.exp` | handler/报告路径 | unlock、context switch | per-CPU 状态与节点锁交接 |
 | `task->rcu_read_unlock_special.b.exp_hint` | PREEMPT handler | reader unlock 特殊路径 | 任务迁移后仍能兑现债务 |
 
-## 10.4\_为什么需要漏斗而不是只有exp\_mutex
+## 6.4\_为什么需要漏斗而不是只有exp\_mutex
 
 如果所有并发调用者都直接争用一把全局 mutex，高并发控制路径会让同一缓存行在全系统迁移。漏斗先在调用者所在叶节点登记目标序列：
 
@@ -85,7 +85,7 @@ flowchart LR
 
 这减少了全局 mutex 竞争，但增加了节点状态、四槽等待队列、序列回绕处理和完成唤醒复杂度。Follower 复用的前提不是“同时调用”，而是已完成的那一轮确实覆盖它取得 snapshot 时点。
 
-## 10.5\_CPU选择不是无条件广播IPI
+## 6.5\_CPU选择不是无条件广播IPI
 
 每轮先把 `expmaskinit` 复制到 `expmask`，再按叶节点检查目标 CPU：
 
@@ -98,7 +98,7 @@ flowchart LR
 
 所以 IPI 是 **促使目标 CPU 建立可验证状态转换** 的消息，不是“收到 IPI 就代表旧 reader 已结束”的确认包。
 
-## 10.6\_S0到S10\_一次expedited生命周期
+## 6.6\_S0到S10\_一次expedited生命周期
 
 | 阶段 | 触发与执行者 | 写入状态 | 通信/等待 | 退出条件 |
 | --- | --- | --- | --- | --- |
@@ -114,7 +114,7 @@ flowchart LR
 | S9 followers wake | leader | 推进节点 request counter | `wake_up_all()` | 所有覆盖调用者可返回 |
 | S10 next leader | 上一 leader | 释放 `exp_mutex` | mutex | 下一轮才可开始 |
 
-## 10.7\_端到端时序\_IPI遇到被抢占reader
+## 6.7\_端到端时序\_IPI遇到被抢占reader
 
 ```mermaid
 sequenceDiagram
@@ -142,7 +142,7 @@ sequenceDiagram
 
 任务可能在 handler 以后迁移，所以只在 `rdp` 上留一个 CPU 本地位不够；task 上的 `exp_hint` 把“未来 unlock 必须检查 expedited 债务”带到新 CPU。
 
-## 10.8\_与普通GP共享什么不共享什么
+## 6.8\_与普通GP共享什么不共享什么
 
 | 维度 | 普通 GP | Expedited GP | 是否共享 |
 | --- | --- | --- | --- |
@@ -154,7 +154,7 @@ sequenceDiagram
 | poll API | `gp_seq_polled_snap` | `gp_seq_polled_exp_snap` | 共同推进公共 poll 观察序列 |
 | 内存安全结果 | 覆盖调用前旧 reader | 覆盖调用前旧 reader | 同语义，不同证明通道 |
 
-## 10.9\_源码入口与唯一实现标题
+## 6.9\_源码入口与唯一实现标题
 
 | 阅读目标 | 源文件 | 唯一实现讲解 |
 | --- | --- | --- |
@@ -165,10 +165,10 @@ sequenceDiagram
 | PREEMPT_RCU 远端 handler | [`kernel/rcu/tree_exp.h`](../../linux/kernel/rcu/tree_exp.h) | [P08：`rcu_exp_handler()`](../source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.8_rcu_exp_handler把IPI转换为立即或延期证明) |
 | 完成、wake follower 与公开 API | [`kernel/rcu/tree_exp.h`](../../linux/kernel/rcu/tree_exp.h) | [P08：wait/wake/API](../source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.9_wait_wake与公开API怎样关闭一轮) |
 
-## 10.10\_代价边界与验收
+## 6.10\_代价边界与验收
 
 Expedited 用 IPI、强制 tick/reschedule、额外节点锁、work/kworker 和系统范围扫描换取更短的典型等待；它不提供固定 deadline，也不适合普通热路径循环调用。`rcu_gp_is_normal()` 还可能把公开 expedited API 回退到普通等待，因此 API 名字不能代替运行策略检查。
 
 读完应能回答：为什么 follower 可以复用 leader；`exp_wake_mutex` 为什么在 sequence end 周围；CPU 收到 IPI 后为何可能仍欠债；`expmask` 与 `qsmask` 为什么不能相互清位；`ncpus_snap` 为什么只用于新增 CPU 的 expedited 初始化传播。
 
-总入口：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.5_普通Tree_RCU分支)。
+总入口：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.4_模块概念导读入口)。
