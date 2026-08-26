@@ -20,13 +20,13 @@ source_version: "6.12.20"
 
 ## 9.1\_实现所有权与版本边界
 
-本章唯一展开 Linux 6.12.20 普通 Tree RCU callback 从 enqueue、分段、绑定 GP、成熟、批处理执行，到 NOCB bypass/GP thread/CB thread 和动态 offload 的源码实现。普通 GP 的长期任务、请求、init/FQS/cleanup 由 [P05 GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_端到端源码时序)唯一展开；本章只解释 callback 怎样提出需求和消费完成代际。`rcu_barrier_entrain()` 也操作 callback 分段，但其哨兵证明由 P10唯一展开；CPU offline 队列 merge 由 P06唯一展开。
+本章唯一展开 Linux 6.12.20 普通 Tree RCU callback 从 enqueue、分段、绑定 GP、成熟、批处理执行，到 NOCB bypass/GP thread/CB thread 和动态 offload 的源码实现。普通 GP 的长期任务、请求、init/FQS/cleanup 由 [P05 GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)唯一展开；本章只解释 callback 怎样提出需求和消费完成代际。`rcu_barrier_entrain()` 也操作 callback 分段，但其哨兵证明由 P10唯一展开；CPU offline 队列 merge 由 P06唯一展开。
 
 源码基线：NXP `linux-imx` 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，配置包含 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`；NOCB 分支仅在 `CONFIG_RCU_NOCB_CPU` 下存在，lazy callback 还受 `CONFIG_RCU_LAZY` 控制。
 
 上游相对位置：[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`kernel/rcu/tree_nocb.h`](../../linux/kernel/rcu/tree_nocb.h)、[`kernel/rcu/rcu_segcblist.c`](../../linux/kernel/rcu/rcu_segcblist.c)、[`include/linux/rcu_segcblist.h`](../../linux/include/linux/rcu_segcblist.h)。
 
-概念入口：[回调与 NOCB 模块源码概念导读](../navigation/P11_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#11.1_GP完成为什么还不等于callback执行)。稳定正文：[P17 callback 分段](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_rcu_segcblist回调状态机.md#17.2_四段不是四条链表)、[P18 批处理](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_Tree_RCU_回调执行_批处理与限流.md#18.2_先区分四个时刻)、[P19 NOCB](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P19_Tree_RCU_NOCB回调卸载.md#19.2_卸载前后责任对比)。
+概念入口：[回调与 NOCB 模块源码概念导读](../navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#7.1_GP完成为什么还不等于callback执行)。稳定正文：[P11 callback 分段](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_rcu_segcblist回调状态机.md#11.2_四段不是四条链表)、[P12 批处理](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_回调执行_批处理与限流.md#12.2_先区分四个时刻)、[P16 NOCB](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_NOCB回调卸载.md#16.2_卸载前后责任对比)。
 
 ## 9.2\_源码符号覆盖账本
 
@@ -39,9 +39,9 @@ source_version: "6.12.20"
 | `rcu_do_batch()` | `tree.c` | [9.6](#9.6_rcu_do_batch为何先抽取再锁外执行) | 抽取 DONE、锁外调用、预算与 requeue |
 | `invoke_rcu_core()`、`rcu_cpu_kthread()` | `tree.c` | [9.7](#9.7_普通CPU怎样选择softirq或rcuc执行者) | softirq/rcuc 执行者选择 |
 | `rcu_nocb_try_bypass()`、`call_rcu_nocb()` | `tree_nocb.h` | [9.8](#9.8_nocb_bypass怎样降低生产者锁竞争又避免搁浅) | producer 速率分流、flush 和 wake |
-| `nocb_gp_wait()`、`rcu_nocb_gp_kthread()` | `tree_nocb.h` | [9.9](#9.9_nocb_gp与cb线程如何交接成熟callback) | 组级 callback GP 观察与成熟推进 |
-| `nocb_cb_wait()`、`rcu_nocb_cb_kthread()` | `tree_nocb.h` | [9.9](#9.9_nocb_gp与cb线程如何交接成熟callback) | 每 CPU callback 执行 |
-| `rcu_nocb_cpu_offload/deoffload()` | `tree_nocb.h` | [9.10](#9.10_动态offload为何只允许offline_CPU并等待状态交接) | 动态执行所有权转换 |
+| `nocb_gp_wait()`、`rcu_nocb_gp_kthread()` | `tree_nocb.h` | [9.9](#9.9_NOCB_GP线程怎样推进队列并等待最早目标代际) | 组级 callback GP 观察与成熟推进 |
+| `nocb_cb_wait()`、`rcu_nocb_cb_kthread()` | `tree_nocb.h` | [9.10](#9.10_NOCB_CB线程只执行成熟批次) | 每 CPU callback 执行 |
+| `rcu_nocb_cpu_offload/deoffload()` | `tree_nocb.h` | [9.10](#9.11_动态offload为何只允许offline_CPU并等待状态交接) | 动态执行所有权转换 |
 
 `call_rcu()` 的公共 API 契约在 P01有索引，但函数体主线只在本章展开；P10只链接本章，不复制。
 
@@ -65,6 +65,8 @@ flowchart LR
 **实现原理总纲：** 高频 producer 只把节点交给每 CPU 队列；`accelerate` 才把局部 callback 需求发布到 GP 树；`advance` 把已完成代际转成 DONE 资格；core 或 NOCB callback kthread 最后在共享锁外执行函数。NOCB 只替换后两步的执行者和唤醒路径，不替换普通 GP 的安全证明。
 
 ## 9.4\_call\_rcu怎样把所有权交给每CPU队列
+
+公共入口先校验 `rcu_head`、保存函数并选择普通或 NOCB 路径；普通路径随后把节点挂入本 CPU 分段链表并触发 core。两步合起来才完成从调用者到 RCU callback 子系统的所有权转移。
 
 ### 9.4.1\_公共分流
 
@@ -117,7 +119,7 @@ void call_rcu(struct rcu_head *head, rcu_callback_t func)
 
 本地 IRQ 保存有两个作用：固定 `this_cpu_ptr()` 对应 CPU，并防止本 CPU 中断同时修改普通 callback 队列。它不是 GP 锁。调用返回后，调用者不能再次 queue、释放或修改 `head`，直到 callback 被执行并把所有权按业务协议归还。
 
-### 9.4.2\_普通CPU enqueue和core触发
+### 9.4.2\_普通CPU\_enqueue和core触发
 
 ```c
 static void rcutree_enqueue(struct rcu_data *rdp,
@@ -152,6 +154,8 @@ static void call_rcu_core(struct rcu_data *rdp,
 enqueue 不必立刻拿节点锁给 callback 分配目标 GP；callback 洪峰时 core 路径才主动 accelerate/FQS，其他情况下后续 `rcu_core()` 或 NOCB GP 线程会分类。这把高频 producer 成本限制在 per-CPU 队列，代价是 callback 在 NEXT 段暂时只有保守信息。
 
 ## 9.5\_accelerate与advance怎样连接callback和GP
+
+底层 `rcu_segcblist` 只维护段尾和目标序列，Tree RCU 包装层再把目标序列传播成全局 GP 需求。分开阅读这两层，才能区分局部队列重分类与跨 CPU 的 GP 请求通信。
 
 ### 9.5.1\_底层分段算法
 
@@ -478,9 +482,9 @@ static bool rcu_nocb_try_bypass(struct rcu_data *rdp,
 
 `call_rcu_nocb()` 在 try-bypass 返回 false 时调用 `rcutree_enqueue()`，然后 `__call_rcu_nocb_wake()` 同时完成解锁和必要唤醒；这个 unusual ownership contract 是修改时常见漏锁点。
 
-## 9.9\_nocb\_gp与cb线程如何交接成熟callback
+## 9.9\_NOCB\_GP线程怎样推进队列并等待最早目标代际
 
-### 9.9.1\_GP线程找最早目标代际
+NOCB GP 线程负责刷新 bypass、推进各成员队列，并从仍未成熟的 callback 中汇总最早目标 GP。它只发布成熟资格和唤醒对应 CB 线程，不执行业务函数；下一节再沿 CB 线程消费 DONE 段。
 
 ```c
 /**
@@ -640,7 +644,7 @@ NOCB group 以 `my_rdp` 为组头，`nocb_head_rdp` 挂接该组负责的所有 
 
 上面的裁剪只删除了 trace、告警与不改变状态的诊断语句，所有会改变 callback 归属、等待目标、group membership 和线程睡眠状态的动作都保留。`nocb_gp_sleep` 必须在 `nocb_gp_lock` 下重新置位；动态 offload/deoffload 则通过 `nocb_toggling_rdp` 把成员表修改交给 GP thread，并以 `nocb_state_wq` 回执完成，不能由控制路径直接并发改链表。
 
-### 9.9.2\_CB线程只执行成熟批次
+## 9.10\_NOCB\_CB线程只执行成熟批次
 
 ```c
 static void nocb_cb_wait(struct rcu_data *rdp)
@@ -699,7 +703,7 @@ static int rcu_nocb_cb_kthread(void *arg)
 
 BH 禁用为 callback 提供与普通 softirq 路径一致的环境，并防止 offload 转换期间自重排 callback 在 softirq 和 kthread 两处并发执行。GP thread 不调用业务函数；CB thread 不负责全局 GP 证明，这个职责分离正是 NOCB 的核心。
 
-## 9.10\_动态offload为何只允许offline\_CPU并等待状态交接
+## 9.11\_动态offload为何只允许offline\_CPU并等待状态交接
 
 ```c
 int rcu_nocb_cpu_deoffload(int cpu)
@@ -749,7 +753,7 @@ int rcu_nocb_cpu_offload(int cpu)
 
 `nocb_mutex` 也保护 `rcu_nocb_mask` 与 lazy shrinker 并发观察；`nocb_is_setup` 表示启动期 NOCB 全局设置状态，不是每 CPU offload flag。每 CPU权威模式仍在 segcblist flags 和 kthread/group 指针中。
 
-## 9.11\_端到端源码时序
+## 9.12\_端到端源码时序
 
 ```mermaid
 sequenceDiagram
@@ -775,7 +779,7 @@ sequenceDiagram
     C->>Q: 未执行项插回DONE，更新长度
 ```
 
-## 9.12\_修改与验证边界
+## 9.13\_修改与验证边界
 
 1. Queue 后 `rcu_head` 所有权已经转移，debug double-queue 防线不能省略；
 2. per-CPU producer 高频路径不应无故引入根锁；
@@ -790,4 +794,4 @@ sequenceDiagram
 11. callback migration、barrier entrain、NOCB bypass flush 的锁顺序需跨 P06/P10共同复核；
 12. 批处理数量/时间调优只影响延迟和占用，不能改变 DONE 安全资格。
 
-总索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.5.3_模块入口)。
+总索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.4_模块概念导读入口)。

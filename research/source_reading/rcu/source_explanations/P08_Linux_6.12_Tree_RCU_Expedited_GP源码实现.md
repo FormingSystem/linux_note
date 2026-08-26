@@ -19,11 +19,11 @@ source_version: "6.12.20"
 
 ## 8.1\_实现所有权与版本边界
 
-本章是 Linux 6.12.20 普通 Tree RCU expedited GP 的 sequence、漏斗合并、树重置、CPU selection、远端 handler 和完成唤醒的唯一函数体讲解。普通 GP 的长期 `gp_kthread`、`gp_seq` 和控制主线由 [P05 GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_端到端源码时序)负责，普通 CPU `qsmask` 汇聚由 P02负责；被抢占 reader 通用入链与解阻由 P03负责。本章只解释这些状态怎样被 expedited 的 `expmask/exp_tasks` 观察，不重复通用函数体。
+本章是 Linux 6.12.20 普通 Tree RCU expedited GP 的 sequence、漏斗合并、树重置、CPU selection、远端 handler 和完成唤醒的唯一函数体讲解。普通 GP 的长期 `gp_kthread`、`gp_seq` 和控制主线由 [P05 GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)负责，普通 CPU `qsmask` 汇聚由 P02负责；被抢占 reader 通用入链与解阻由 P03负责。本章只解释这些状态怎样被 expedited 的 `expmask/exp_tasks` 观察，不重复通用函数体。
 
 源码基线：NXP `linux-imx` 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，Linux 6.12.20，配置包含 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`。上游相对位置主要是 [`kernel/rcu/tree_exp.h`](../../linux/kernel/rcu/tree_exp.h)，状态声明在 [`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h)，PREEMPT reader 特殊路径还与 [`kernel/rcu/tree_plugin.h`](../../linux/kernel/rcu/tree_plugin.h) 协作。
 
-概念入口：[Expedited GP 模块源码概念导读](../navigation/P10_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md#10.1_Expedited不是普通GP的加速档)。稳定正文：[Tree RCU Expedited GP](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_Expedited_GP.md#16.2_它不是普通GP的超时开关)。
+概念入口：[Expedited GP 模块源码概念导读](../navigation/P06_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md#6.1_Expedited不是普通GP的加速档)。稳定正文：[Tree RCU Expedited GP](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_Expedited_GP.md#15.2_它不是普通GP的超时开关)。
 
 ## 8.2\_源码符号覆盖账本
 
@@ -152,6 +152,8 @@ Fastpath 的 `mutex_trylock()` 只是低竞争优化，仍在开始前二次检�
 
 ## 8.6\_sync\_exp\_reset\_tree怎样建立本轮债务
 
+reset 分两层：hotplug 路径先把首次出现的 CPU 位传播到 ever-online 基础集合，每轮 leader 再把基础位复制成当前 `expmask` 债务。这样上线历史与本轮完成条件不会被混成一个可变位图。
+
 ### 8.6.1\_只在出现新CPU时传播ever-online基础位
 
 ```c
@@ -231,6 +233,8 @@ static void sync_exp_reset_tree(void)
 `WARN_ON_ONCE(rnp->expmask)` 检查上一轮是否真的清空；新轮不能覆盖未完成债务。Breadth-first 重置后，CPU selection 会马上消除当前 offline/idle 位。
 
 ## 8.7\_sync\_rcu\_exp\_select\_cpus为什么不是无条件广播
+
+CPU selection 先在叶节点下分类 offline、EQS、当前 CPU 和必须远端探测的 CPU，再只给最后一类发送 IPI。并行 leaf work 优化扫描延迟，但不改变每个 CPU 位或 `exp_tasks` 债务的安全条件。
 
 ### 8.7.1\_每叶节点分类
 
@@ -388,6 +392,8 @@ static void rcu_exp_handler(void *unused)
 
 ## 8.9\_wait\_wake与公开API怎样关闭一轮
 
+leader 先等待根节点债务清零，必要时执行 tick/stall 慢路径；随后结束 expedited sequence、推进节点请求并唤醒 followers。公开 API 只在最外层选择普通或 expedited 分支，不能绕过这组完成交接。
+
 ### 8.9.1\_等待根条件与慢路径
 
 ```c
@@ -534,4 +540,4 @@ sequenceDiagram
 9. NO_HZ_FULL 强制 tick与stall打印属于活性慢路径，不改变正确性；
 10. 固定提交未使用 `expedited_need_qs`，不得凭注释补写不存在的递减算法。
 
-总索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.5.3_模块入口)。
+总索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.4_模块概念导读入口)。

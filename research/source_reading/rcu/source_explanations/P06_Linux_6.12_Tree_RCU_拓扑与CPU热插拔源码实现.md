@@ -23,7 +23,7 @@ source_version: "6.12.20"
 
 源码基线：NXP `linux-imx`，标签 `lf-6.12.20-2.0.0`，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，配置包含 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`。上游相对位置为 [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h) 和 [`include/linux/rcutree.h`](../../linux/include/linux/rcutree.h)。
 
-先读模块模型：[拓扑与 CPU 热插拔模块源码概念导读](../navigation/P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#8.1_本模块究竟解决什么问题)。稳定知识正文：[P11 初始化与拓扑](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_初始化_拓扑与执行上下文.md#11.3_S0到S6_拓扑建立的统一阶段)、[P21 CPU 热插拔](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P21_Tree_RCU_CPU热插拔与回调迁移.md#21.6_S0到S9_CPU4离线周期)。
+先读模块模型：[拓扑与 CPU 热插拔模块源码概念导读](../navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.1_本模块究竟解决什么问题)。稳定知识正文：[P07 初始化与拓扑](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md#7.3_S0到S6_拓扑建立的统一阶段)、[P17 CPU 热插拔](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_CPU热插拔与回调迁移.md#17.6_S0到S9_CPU4离线周期)。
 
 ## 6.2\_源码符号覆盖账本
 
@@ -173,6 +173,8 @@ int rcutree_prepare_cpu(unsigned int cpu)
 实现原理：prepare 解决“该 CPU 的本地对象现在可以被后续路径使用”，starting 才解决“该 CPU 何时进入未来 RCU 参与集合”。二者分开是因为 prepare 在控制 CPU 上、incoming CPU 尚未出现；starting 在 incoming CPU 自己、精确的 IRQ-disabled 位置执行。把两者合并会让参与位发布早于 CPU 上下文和内存顺序准备完成。
 
 ## 6.6\_report\_cpu\_starting与report\_cpu\_dead怎样隔离当前轮和下一轮
+
+上线 CPU 只能加入下一轮参与集合；下线 CPU 若仍欠当前轮债务，则要先完成当前轮交接，再退出未来集合。两个方向看似都在改 online 位，实际写入顺序相反，下面分别核对。
 
 ### 6.6.1\_starting只写下一轮集合
 
@@ -382,4 +384,4 @@ sequenceDiagram
 8. 新 CPU 对 expedited 初始化的发布由 `ncpus` release/acquire 观察，而不是从 `n_online_cpus` 猜测；
 9. 文档未把本机路径写成源码身份，也未重复 P02/P05/P09/P10 的函数体。
 
-总索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.5.3_模块入口)。
+总索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.4_模块概念导读入口)。

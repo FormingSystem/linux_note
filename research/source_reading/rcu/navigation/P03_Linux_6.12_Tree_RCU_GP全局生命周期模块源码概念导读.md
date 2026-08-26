@@ -16,17 +16,17 @@ source_project: linux
 source_version: "6.12.20"
 ---
 
-# 第6章\_Linux\_6.12\_Tree\_RCU\_GP全局生命周期模块源码概念导读
+# 第3章\_Linux\_6.12\_Tree\_RCU\_GP全局生命周期模块源码概念导读
 
-## 6.1\_模块问题与版本边界
+## 3.1\_模块问题与版本边界
 
 本章回答“普通 Tree RCU 怎样把许多 GP 需求合并成串行的物理 GP，并由一个长期 GP kthread 完成开始、等待和 cleanup”。对应源码基线为 NXP Linux 6.12.20、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，配置边界为 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y`。
 
-先读稳定机制正文的 [GP 究竟是什么](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_GP请求与全局生命周期.md#12.1_本章先回答GP究竟是什么)，再用本章定位文件、对象、状态和阅读顺序。具体宏体与函数体只在 [GP 全局生命周期源码实现](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.2_源码符号覆盖账本)唯一展开。
+先读稳定机制正文的 [GP 究竟是什么](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.1_本章先回答GP究竟是什么)，再用本章定位文件、对象、状态和阅读顺序。具体宏体与函数体只在 [GP 全局生命周期源码实现](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.2_源码符号覆盖账本)唯一展开。
 
-本章不讲 SRCU GP。SRCU 的 reader 是指定 `srcu_struct` 私有域中的双 index 计数，不读写普通 `rcu_state.gp_kthread`；应转入 [Tree SRCU 模块源码概念导读](P07_Linux_6.12_Tree_SRCU模块源码概念导读.md#7.1_先分清Tree_RCU与Tree_SRCU)。
+本章不讲 SRCU GP。SRCU 的 reader 是指定 `srcu_struct` 私有域中的双 index 计数，不读写普通 `rcu_state.gp_kthread`；应转入 [Tree SRCU 模块源码概念导读](P09_Linux_6.12_Tree_SRCU模块源码概念导读.md#9.1_先分清Tree_RCU与Tree_SRCU)。
 
-## 6.2\_先把四个对象摆到源码现场
+## 3.2\_先把四个对象摆到源码现场
 
 | 对象 | 源码身份 | 生命周期 | 作用 |
 | --- | --- | --- | --- |
@@ -37,7 +37,7 @@ source_version: "6.12.20"
 
 所以 `gp_kthread` 既可能指一个字段中的任务指针，也可能出现在入口函数名中。阅读时必须写清“任务对象”还是“执行函数”。源码没有每个 GP 一个 `gp_thread` 的对象模型。
 
-## 6.3\_源码文件与状态所有权
+## 3.3\_源码文件与状态所有权
 
 | 上游相对位置 | 关键对象或函数 | 本模块职责 |
 | --- | --- | --- |
@@ -51,7 +51,7 @@ source_version: "6.12.20"
 
 全局 `gp_seq/gp_kthread/gp_wq/gp_flags/gp_state` 位于 `rcu_state`。源码注释把这组字段放在根 `rcu_node` 锁保护区内；请求漏斗中的每层 `gp_seq_needed` 则由对应节点锁保护。GP kthread 不是唯一写者：请求 CPU 会写需求和 INIT 命令，最后一条根报告会写 FQS 命令，GP kthread消费命令并写物理代际与观察阶段。
 
-### 6.3.1\_先通过rcu\_state阅读门再追字段
+### 3.3.1\_先通过rcu\_state阅读门再追字段
 
 `struct rcu_state` 还包含 `rcu_barrier()`、expedited GP、FQS/stall、CPU hotplug、同步等待者批处理和 NOCB 配置字段。它是多个子机制的全局汇合地址，不是一轮普通 GP 的单一状态机。阅读本模块时按下面的门分流：
 
@@ -93,7 +93,7 @@ flowchart TB
     K -->|"cleanup发布完成"| D
 ```
 
-## 6.4\_S0到S9\_源码调用阶段
+## 3.4\_S0到S9\_源码调用阶段
 
 | 阶段 | 主要函数 | 状态流 | 阅读问题 |
 | --- | --- | --- | --- |
@@ -110,7 +110,7 @@ flowchart TB
 
 这些阶段只有一条物理 GP 控制主线，但它们依赖请求、证明和交付三组外围状态。不要把函数调用顺序误读成所有状态都由 GP kthread 私有保存。
 
-## 6.5\_线程怎样创建并安全发布
+## 3.5\_线程怎样创建并安全发布
 
 先区分两个启动事件。`start_kernel()` 中较早的 `rcu_init()` 建立 Tree RCU 拓扑、boot CPU 状态和执行基础设施，但不创建普通 GP kthread。`tree.c` 末尾的 `early_initcall(rcu_spawn_gp_kthread)` 只是把创建函数登记到 early initcall 段；真正调用发生在 `rest_init()` 已建立 `kthreadd` 以后：
 
@@ -140,7 +140,7 @@ start_kernel()
 
 创建函数标记为 `__init`，以后会随 init memory 释放；被创建的 `task_struct`、`rcu_state.gp_kthread` 指针和 `rcu_gp_kthread()` 主循环不随它消失。具体启动分派见 [从内核启动链定位 `early_initcall`](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall)，创建与发布语句见 [`rcu_spawn_gp_kthread()` 怎样创建并发布任务](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务)。
 
-## 6.6\_请求漏斗为什么不是全局热锁
+## 3.6\_请求漏斗为什么不是全局热锁
 
 `rcu_start_this_gp()` 从请求 CPU 的叶节点开始。每到一层，它都先判断：
 
@@ -152,7 +152,7 @@ start_kernel()
 
 请求路径返回 true 只表示“调用者有理由唤醒 GP kthread”，不表示 GP 已经开始。具体实现见 [`rcu_start_this_gp()` 漏斗记录未来需求](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.6_rcu_start_this_gp漏斗记录未来需求)。
 
-## 6.7\_一次唤醒怎样进入主循环和初始化
+## 3.7\_一次唤醒怎样进入主循环和初始化
 
 `rcu_gp_kthread_wake()` 先检查任务指针、命令状态和是否需要避免普通进程上下文中的自唤醒，再写调试时间并唤醒 `gp_wq`。等待队列只负责把线程从睡眠改成可运行；何时真正运行由调度器决定，所以“wake”与“立即开始 GP”不是同一事件。
 
@@ -171,7 +171,7 @@ start_kernel()
 
 具体实现见 [`rcu_gp_kthread()` 串联一轮物理 GP](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.8_rcu_gp_kthread串联一轮物理GP)和 [`rcu_gp_init()` 开始代际并建立证明债务](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.9_rcu_gp_init开始代际并建立证明债务)。
 
-## 6.8\_FQS循环和根完成通知怎样协作
+## 3.8\_FQS循环和根完成通知怎样协作
 
 `rcu_gp_fqs_loop()` 在 `gp_wq` 上进行带超时等待，唤醒原因可能是：
 
@@ -187,7 +187,7 @@ start_kernel()
 
 具体实现见 [FQS 循环与根完成通知](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.10_FQS循环与根完成通知)。
 
-## 6.9\_cleanup为什么先写节点再结束全局序列
+## 3.9\_cleanup为什么先写节点再结束全局序列
 
 根债务清零以后，外部 CPU 仍暂时看到全局 GP 处于进行中。`rcu_gp_cleanup()` 先计算完成后的 `new_gp_seq`，再广度优先写入各 `rcu_node.gp_seq`，使各 CPU 有机会推进 callback，并检查每个节点是否还记录更远需求。
 
@@ -197,7 +197,7 @@ cleanup 随后检查 `gp_seq_needed`。若还有需求，保留或重建 INIT；
 
 具体实现见 [`rcu_gp_cleanup()` 发布完成并承接下一代](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11_rcu_gp_cleanup发布完成并承接下一代)。
 
-## 6.10\_明确不属于普通GP\_kthread的工作
+## 3.10\_明确不属于普通GP\_kthread的工作
 
 | 工作 | 实际执行者 | GP kthread提供的只是什么 |
 | --- | --- | --- |
@@ -210,7 +210,7 @@ cleanup 随后检查 `gp_seq_needed`。若还有需求，保留或重建 INIT；
 
 这张边界表可以防止“看到 RCU 线程就把所有异步动作归给它”的阅读错误。
 
-## 6.11\_建议阅读顺序
+## 3.11\_建议阅读顺序
 
 1. 在 `init/main.c` 与 `include/linux/init.h` 追踪 `rcu_init()`、`kthreadd_done`、`do_pre_smp_initcalls()` 和 `early_initcall()`，先证明创建发生在哪个启动窗口。
 2. 在 `tree.h` 区分 `gp_kthread` 任务指针、`gp_wq`、`gp_flags`、`gp_state` 和 `gp_seq`。
@@ -221,10 +221,10 @@ cleanup 随后检查 `gp_seq_needed`。若还有需求，保留或重建 INIT；
 7. 阅读 `rcu_gp_init()`，把 hotplug 集合、CPU `qsmask` 与抢占任务边界放在同一阶段。
 8. 阅读 `rcu_gp_fqs_loop()` 和 `rcu_report_qs_rsp()`，区分催促、根通知与安全证明。
 9. 阅读 `rcu_gp_cleanup()`，确认节点完成发布、全局结束和下一代请求的顺序。
-10. 若调用路径使用 poll 或 `rcu_normal_wake_from_gp`，继续阅读 [poll 公共序列](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11.1_poll公共序列怎样由普通与expedited_GP共同推进)和 [SRS 等待者批处理](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11.2_SRS怎样批量交付同步等待者)，不要从字段名字猜交付模型。
+10. 若调用路径使用 poll 或 `rcu_normal_wake_from_gp`，继续阅读 [poll 公共序列](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.12_poll公共序列怎样由普通与expedited_GP共同推进)、[SRS 请求划批](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_SRS怎样登记请求并冻结本轮批次)和 [SRS 完成交付](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_SRS怎样在cleanup与workqueue之间交付等待者)，不要从字段名字猜交付模型。
 11. 最后回到 P17/P18，观察完成代际怎样变成 callback 实际执行，而不是把两者合并。
 
-## 6.12\_源码阅读验收
+## 3.12\_源码阅读验收
 
 1. 能区分 `start_kernel()` 中的 `rcu_init()` 与后来 early initcall 创建 GP kthread 的两个启动事件。
 2. 能证明 `rcu_spawn_gp_kthread()` 为什么晚于 `kthreadd` 就绪、早于 `smp_init()`，而不是只背 `early_initcall` 名字。
@@ -238,4 +238,4 @@ cleanup 随后检查 `gp_seq_needed`。若还有需求，保留或重建 INIT；
 10. 能说明 `srs_wait_nodes[]` 为什么是批次分隔节点，而不是同步调用者对象池。
 11. 能明确普通 Tree RCU GP kthread不拥有 SRCU、Tasks、NOCB callback 执行状态机。
 
-总阅读索引：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
+总阅读索引：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)。
