@@ -628,7 +628,7 @@ rcu_read_unlock(); // 退出 RCU 临界区
 1. [RCU 专题大纲](../../../synchronization_and_asynchrony/synchronization/rcu/大纲.md)。
 2. [为什么需要 RCU](../../../synchronization_and_asynchrony/synchronization/rcu/P01_为什么需要_RCU.md)。
 3. [RCU 抽象机制推演](../../../synchronization_and_asynchrony/synchronization/rcu/P02_RCU_抽象机制推演.md)。
-4. [Tree RCU 统一状态与通知总图](../../../synchronization_and_asynchrony/synchronization/rcu/P10_Tree_RCU_统一状态与通知总图.md)。
+4. [Tree RCU 统一状态与通知总图](../../../synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md)。
 
 
 

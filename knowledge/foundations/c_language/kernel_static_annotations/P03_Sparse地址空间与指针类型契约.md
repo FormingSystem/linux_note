@@ -316,7 +316,7 @@ static void record_slot_destroy(struct record_slot *slot)
 
 这段代码把四项职责分开了：`__rcu` 提供 Sparse 指针域，`rcu_assign_pointer()` 与 `rcu_dereference()` 提供发布—取得入口，`rcu_read_lock()`/`rcu_read_unlock()` 限定读者借用期，`synchronize_rcu()` 延迟旧对象释放。任何一项都不能从另一个接口的名字里自动推出。尤其是 `struct record *current = slot->current`：机器仍然能装下这个地址，普通编译器也可能生成加载，但 Sparse 类型检查和运行时生命期协议同时被绕过。
 
-本例选择同步等待，因此 `record_slot_replace()` 与 `record_slot_destroy()` 必须运行在允许睡眠的上下文。完整的读者、同步/异步更新者和模块退出模式见 [RCU 通用 API 与最小使用闭环](../../../linux/synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md#3.1.2_完整同步实现)；`__rcu`、Sparse 与动态保护条件怎样分工，继续看 [RCU 类型语义、Sparse 与 Lockdep](../../../linux/synchronization_and_asynchrony/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.3_正确的完整代码闭环)。
+本例选择同步等待，因此 `record_slot_replace()` 与 `record_slot_destroy()` 必须运行在允许睡眠的上下文。完整的读者、同步/异步更新者和模块退出模式见 [RCU 通用 API 与最小使用闭环](../../../linux/synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md#3.3_完整同步实现)；`__rcu`、Sparse 与动态保护条件怎样分工，继续看 [RCU 类型语义、Sparse 与 Lockdep](../../../linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md#23.4_正确的完整代码闭环)。
 
 四个例子现在可以按同一条主线比较：
 
