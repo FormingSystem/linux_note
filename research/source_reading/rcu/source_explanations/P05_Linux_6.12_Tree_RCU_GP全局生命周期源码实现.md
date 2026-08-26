@@ -20,9 +20,9 @@ source_version: "6.12.20"
 
 ## 5.1\_实现所有权与关联入口
 
-本章是 Linux 6.12.20 普通 Tree RCU GP 全局控制实现的唯一函数体讲解，负责从内核启动期注册并创建 GP kthread，到 `rcu_state` 的 GP 控制字段、`rcu_seq_*`、需求漏斗、唤醒、主循环、init、FQS **调度循环** 和 cleanup。CPU 怎样产生并逐层报告 QS，仍由 [非抢占式 Tree RCU 关键函数源码实现](P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.2_函数实现索引)负责；被抢占 reader 怎样进入任务债务，仍由 [抢占式 Tree RCU 关键函数源码实现](P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md#3.2_任务与节点的共享状态实现)负责；watching snapshot、叶扫描、urgent/resched 和 stall 分类由 [force-QS 与 Stall 源码实现](P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)唯一展开。
+本章是 Linux 6.12.20 普通 Tree RCU GP 全局控制实现的唯一函数体讲解，负责从内核启动期注册并创建 GP kthread，到 `rcu_state` 的 GP 控制字段、`rcu_seq_*`、需求漏斗、唤醒、主循环、init、FQS **调度循环** 和 cleanup。CPU 怎样产生并逐层报告 QS，仍由 [非抢占式 Tree RCU 关键函数源码实现](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.2_函数实现索引)负责；被抢占 reader 怎样进入任务债务，仍由 [抢占式 Tree RCU 关键函数源码实现](P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md#3.2_任务与节点的共享状态实现)负责；watching snapshot、叶扫描、urgent/resched 和 stall 分类由 [force-QS 与 Stall 源码实现](P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)唯一展开。
 
-模块协作、参与者与阅读顺序见 [GP 全局生命周期模块源码概念导读](../navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.3_源码文件与状态所有权)，跨版本概念见 [Tree RCU GP 请求与全局生命周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_GP请求与全局生命周期.md#12.2_六个必须分开的专有名词)。
+模块协作、参与者与阅读顺序见 [GP 全局生命周期模块源码概念导读](../navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.3_源码文件与状态所有权)，跨版本概念见 [Tree RCU GP 请求与全局生命周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.2_六个必须分开的专有名词)。
 
 下列 `/** ... */` 块都是本仓库为阅读补充的中文 Doxygen 说明，不是上游源码原注释。RCU 函数体裁剪自仓库保存并经固定提交核对的文件；启动调度顺序另外对照同一不可变提交的官方 [`init/main.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c)。只删除不改变主状态机的 trace、torture、重复诊断，以及已明确转入独立章节的 NOCB/boost/strict 测试细节，所有影响启动次序、请求、CPU 集合、证明债务、完成发布和等待者交付的动作都保留或在紧邻小节展开。完整实现仍以链接的固定源码文件为准。
 
@@ -42,8 +42,9 @@ source_version: "6.12.20"
 | `rcu_gp_init()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.9](#5.9_rcu_gp_init开始代际并建立证明债务) | 开始全局/节点代际并建立等待集合 |
 | `rcu_gp_fqs_loop()`、`rcu_report_qs_rsp()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.10](#5.10_FQS循环与根完成通知) | 等待/催促证据并在根完成时唤醒 |
 | `rcu_gp_cleanup()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.11](#5.11_rcu_gp_cleanup发布完成并承接下一代) | 发布节点/全局完成并保留后继请求 |
-| `rcu_poll_gp_seq_start/end()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.11.1](#5.11.1_poll公共序列怎样由普通与expedited_GP共同推进) | 把两类真实 GP 映射为 poll API 的公共完成证据 |
-| `synchronize_rcu_normal()`、`rcu_sr_is/get/put_wait_head()`、`rcu_sr_normal_add_req/gp_init/complete/gp_cleanup/cleanup_work()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.11.2](#5.11.2_SRS怎样批量交付同步等待者) | 可选地用 dummy 节点把栈上等待者按物理 GP 划批、限额完成并异步清尾 |
+| `rcu_poll_gp_seq_start/end()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.12](#5.12_poll公共序列怎样由普通与expedited_GP共同推进) | 把两类真实 GP 映射为 poll API 的公共完成证据 |
+| `synchronize_rcu_normal()`、`rcu_sr_is/get/put_wait_head()`、`rcu_sr_normal_add_req/gp_init()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.13](#5.13_SRS怎样登记请求并冻结本轮批次) | 用 dummy 节点把栈上等待者按物理 GP 划定批次 |
+| `rcu_sr_normal_complete/gp_cleanup/cleanup_work()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.14](#5.14_SRS怎样在cleanup与workqueue之间交付等待者) | 限额完成本轮等待者，并把剩余节点交给 workqueue 清尾 |
 
 以后修改 GP 相关文档时，先查本表。其他正文或模块导读只解释调用上下文与结论，不再复制这些函数体。
 
@@ -81,17 +82,17 @@ flowchart TB
 
 | 功能域 | 字段 | 谁写、谁读或由什么同步 | 本专题中的权威去向 |
 | --- | --- | --- | --- |
-| 树形拓扑 | `node[]`、`level[]` | 启动阶段建立；各 `rcu_node` 后续由自己的锁保护 | [P06 拓扑与 CPU 热插拔源码实现](P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点)、[P14 分层汇聚正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P14_Tree_RCU_rcu_node树与分层汇聚.md#14.2_一棵八CPU教学树) |
-| CPU 集合摘要 | `ncpus`、`n_online_cpus` | CPU bring-up/hotplug 写；前者只在 CPU 首次加入 expedited ever-online 集合时增长，后者记录当前 RCU online CPU 数并兼作早期初始化判断 | [P06 starting/dead 实现](P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮)、[P08 模块导读](../navigation/P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#8.4_它是三组相互交接的状态机) |
+| 树形拓扑 | `node[]`、`level[]` | 启动阶段建立；各 `rcu_node` 后续由自己的锁保护 | [P06 拓扑与 CPU 热插拔源码实现](P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点)、[P10 分层汇聚正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P10_Tree_RCU_rcu_node树与分层汇聚.md#10.2_一棵八CPU教学树) |
+| CPU 集合摘要 | `ncpus`、`n_online_cpus` | CPU bring-up/hotplug 写；前者只在 CPU 首次加入 expedited ever-online 集合时增长，后者记录当前 RCU online CPU 数并兼作早期初始化判断 | [P06 starting/dead 实现](P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮)、[P04 模块导读](../navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.4_它是三组相互交接的状态机) |
 | 普通 GP 权威代际与执行者 | `gp_seq`、`gp_max`、`gp_kthread`、`gp_wq`、`gp_flags`、`gp_state`、`gp_wake_time`、`gp_wake_seq` | GP kthread、请求者和根完成路径协作；根锁保护控制决策，诊断字段还使用 `READ_ONCE/WRITE_ONCE` 跨上下文观察 | 本节以及 [5.5～5.11](#5.5_rcu_spawn_gp_kthread创建并发布长期任务) |
-| poll API 的公共 GP 观察序列 | `gp_seq_polled`、`gp_seq_polled_snap`、`gp_seq_polled_exp_snap` | 普通 GP 与 expedited GP 开始/结束路径在根锁下更新；poll 调用者只取目标并检查完成 | [P12 轮询接口](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_GP请求与全局生命周期.md#12.6.3_轮询接口保存的是目标序列)、本节下表 |
+| poll API 的公共 GP 观察序列 | `gp_seq_polled`、`gp_seq_polled_snap`、`gp_seq_polled_exp_snap` | 普通 GP 与 expedited GP 开始/结束路径在根锁下更新；poll 调用者只取目标并检查完成 | [P08 轮询接口](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.6.3_轮询接口保存的是目标序列)、本节下表 |
 | `rcu_barrier()` | `barrier_mutex`、`barrier_cpu_count`、`barrier_completion`、`barrier_sequence`、`barrier_lock` | barrier 调用者、每 CPU 哨兵 callback、hotplug/迁移路径协作；它等待 callback 实际执行，不是普通 GP 的完成状态 | [P10 同步等待与 barrier 源码实现](P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.6_barrier_callback与entrain如何证明队列前序已执行) |
 | Expedited GP | `exp_mutex`、`exp_wake_mutex`、`expedited_sequence`、`expedited_need_qs`、`expedited_wq`、`ncpus_snap` | expedited leader、叶选择 work、CPU/任务报告路径与 follower 协作；不由普通 GP kthread推进；固定提交的 `expedited_need_qs` 无活动访问 | [P08 Expedited GP 源码实现](P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.3_权威完成条件) |
-| callback 过载、FQS 与 stall 观测 | `cbovld`、`cbovldnext`、`jiffies_force_qs`、`jiffies_kick_kthreads`、`n_force_qs`、`gp_start`、`gp_end`、`gp_activity`、`gp_req_activity`、`jiffies_stall`、`nr_fqs_jiffies_stall`、`jiffies_resched`、`n_force_qs_gpstart` | GP/FQS 路径写节奏与活动时间，stall 检测读取；只能改善活性或诊断，不能替代 QS 证据 | [P07 force-QS 与 Stall 源码实现](P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)、[P18 callback 积压正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_Tree_RCU_回调执行_批处理与限流.md#18.10_回调积压的因果链) |
+| callback 过载、FQS 与 stall 观测 | `cbovld`、`cbovldnext`、`jiffies_force_qs`、`jiffies_kick_kthreads`、`n_force_qs`、`gp_start`、`gp_end`、`gp_activity`、`gp_req_activity`、`jiffies_stall`、`nr_fqs_jiffies_stall`、`jiffies_resched`、`n_force_qs_gpstart` | GP/FQS 路径写节奏与活动时间，stall 检测读取；只能改善活性或诊断，不能替代 QS 证据 | [P07 force-QS 与 Stall 源码实现](P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)、[P12 callback 积压正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_回调执行_批处理与限流.md#12.10_回调积压的因果链) |
 | 名称与 trace 身份 | `name`、`abbr` | 静态初始化，日志与 trace 消费 | 只承担诊断标识，不参与安全证明 |
 | CPU offline/GP 初始化互斥 | `ofl_lock` | GP pre-init、CPU starting/dying 路径共同获取 | [P06 hotplug 实现](P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮)、[5.9 GP init](#5.9_rcu_gp_init开始代际并建立证明债务) |
-| `synchronize_rcu()` 可选直接等待批次 | `srs_next`、`srs_wait_tail`、`srs_done_tail`、`srs_wait_nodes[]`、`srs_cleanup_work`、`srs_cleanups_pending` | 调用者无锁加入，GP init 划定批次，cleanup/workqueue 完成等待者 | [P12 同步请求分支](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_GP请求与全局生命周期.md#12.6.1_默认同步等待也先登记callback)、[P20 等待对象](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P20_Tree_RCU_同步等待与rcu_barrier.md#20.1.4_默认synchronize_rcu的等待对象) |
-| NOCB 配置协调 | `nocb_mutex`、`nocb_is_setup` | offload/deoffload、启动和 shrinker 相关路径读取或串行修改；只在 `CONFIG_RCU_NOCB_CPU` 下存在 | [P09 callback 与 NOCB 源码实现](P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.10_动态offload为何只允许offline_CPU并等待状态交接) |
+| `synchronize_rcu()` 可选直接等待批次 | `srs_next`、`srs_wait_tail`、`srs_done_tail`、`srs_wait_nodes[]`、`srs_cleanup_work`、`srs_cleanups_pending` | 调用者无锁加入，GP init 划定批次，cleanup/workqueue 完成等待者 | [P08 同步请求分支](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.6.1_默认同步等待也先登记callback)、[P13 等待对象](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P13_Tree_RCU_同步等待与rcu_barrier.md#13.5_默认synchronize_rcu的等待对象) |
+| NOCB 配置协调 | `nocb_mutex`、`nocb_is_setup` | offload/deoffload、启动和 shrinker 相关路径读取或串行修改；只在 `CONFIG_RCU_NOCB_CPU` 下存在 | [P09 callback 与 NOCB 源码实现](P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.11_动态offload为何只允许offline_CPU并等待状态交接) |
 
 这张表的阅读规则是：**第一次只沿当前问题所在的行继续读。** 研究普通 GP kthread 时需要普通 GP、poll、部分 FQS/hotplug/SRS 字段；`barrier`、expedited 和 NOCB 字段虽然物理上相邻，却属于别的子状态机，不应插入普通 GP 主循环硬背。
 
@@ -260,6 +261,8 @@ static inline bool rcu_seq_done(unsigned long *sp, unsigned long s)
 源码还提供回绕安全比较、`rcu_seq_started()`、`rcu_seq_completed_gp()` 等辅助函数。模块代码应调用辅助函数，不能在外部复制低位算法。
 
 ## 5.5\_rcu\_spawn\_gp\_kthread创建并发布长期任务
+
+GP kthread 不能只在源码中“有一个函数”便视为可用：启动链必须在调度器和 RCU 基础状态就绪后创建任务，再把任务指针发布给请求唤醒路径。下面先定位 initcall 时序，再进入创建、错误处理和发布步骤。
 
 ### 5.5.1\_先从内核启动链定位early\_initcall
 
@@ -773,7 +776,7 @@ static noinline void rcu_gp_cleanup(void)
 
 先节点后全局的发布顺序解决一个具体竞态：若全局先显示 N 完成并允许 N+1 开始，而某叶仍显示 N 进行中，该叶 CPU 的 callback 加速和 QS 代际判断会面对相互矛盾的状态。广度优先完成传播和锁/屏障把这个窗口封闭。
 
-### 5.11.1\_poll公共序列怎样由普通与expedited\_GP共同推进
+## 5.12\_poll公共序列怎样由普通与expedited\_GP共同推进
 
 ```c
 /**
@@ -810,7 +813,7 @@ static void rcu_poll_gp_seq_end(unsigned long *snap)
 
 因此 `gp_seq_polled` 不是正在运行的某个 GP 对象，而是 **poll API 对“至少一轮合格 GP 已过去”的公共观察通道**。调用者取得 cookie 后仍要使用 `rcu_seq_done()` 一类辅助判断，不能比较三个 snap 字段猜测完成。
 
-### 5.11.2\_SRS怎样批量交付同步等待者
+## 5.13\_SRS怎样登记请求并冻结本轮批次
 
 `SRS` 是这组源码字段采用的内部前缀；源码没有为它声明可供 API 依赖的正式全称。本章把它称为 **同步等待者直接批处理分支**，避免杜撰缩写展开。该分支默认由模块参数 `rcu_normal_wake_from_gp=0` 关闭。
 
@@ -906,6 +909,8 @@ static bool rcu_sr_normal_gp_init(void)
 
 `CONFIG_PROVE_RCU` 开启时，这条直接分支不会把 `head.func` 当 callback 函数调用，而是临时保存 `get_state_synchronize_rcu()` 的旧状态；`rcu_sr_normal_complete()` 在真正 `complete()` 前用它检查完整 GP 是否已经过去。该字段复用属于诊断证明，关闭 `CONFIG_PROVE_RCU` 不会移除 SRS 的功能等待协议。
 
+## 5.14\_SRS怎样在cleanup与workqueue之间交付等待者
+
 cleanup 取得 `srs_wait_tail` 后完成有限数量调用者，把尚未完成的批次通过 release store 交给 `srs_done_tail`，再由 `srs_cleanup_work` 继续处理：
 
 ```c
@@ -981,7 +986,7 @@ static void rcu_sr_normal_gp_cleanup_work(struct work_struct *work)
 
 预分配的 `srs_wait_nodes[]` 只提供 dummy 分隔节点，并用 `inuse` 原子状态借出/归还。它解决“并发调用者不断无锁加入时，GP init 怎样冻结本轮截止位置”的问题。修改这条路径必须同时保持：栈上请求在 completion 前仍存活、dummy 节点不会过早复用、`srs_done_tail` 的 release/acquire 交接以及 workqueue 单实例执行语义。
 
-## 5.12\_对象关系图\_哪些地址承载通信
+## 5.15\_对象关系图\_哪些地址承载通信
 
 ```mermaid
 flowchart LR
@@ -1010,7 +1015,7 @@ flowchart LR
 
 图中没有 reader 直接向 `task_struct` 发消息的边。高频 reader 路径的低开销正来自通信改写：正常 reader 不逐次登记到 GP kthread；scheduler、context tracking 和任务退出路径在必要事件上形成证据，节点树再把局部证据压成根结论。
 
-## 5.13\_端到端源码时序
+## 5.16\_端到端源码时序
 
 下图从 **任务已经按 [5.5.1](#5.5.1_先从内核启动链定位early_initcall) 完成启动和发布** 的时刻开始，描述任意一轮普通物理 GP。它不是另一条线程创建时序。
 
@@ -1046,7 +1051,7 @@ sequenceDiagram
     end
 ```
 
-## 5.14\_修改边界与实现复核
+## 5.17\_修改边界与实现复核
 
 修改这一组实现时必须同时检查：
 
@@ -1066,4 +1071,4 @@ sequenceDiagram
 
 读者若能从 `call_rcu()` 的目标序列出发，依次指出叶/根请求字段、唤醒队列、长期任务、证明债务、完成序列和 callback 消费地址，就已经能够按状态所有权阅读这一模块，而不是只背函数调用链。
 
-总阅读索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
+总阅读索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)。

@@ -23,14 +23,14 @@ source_version: "6.12.20"
 
 为了保持一个函数体一个权威位置：
 
-- `wakeme_after_rcu()` 与通用 `__wait_rcu_gp()` 函数体仍由 [P02 等待桥](P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.3___wait_rcu_gp与wakeme_after_rcu连接等待者)展开；
-- SRS 直接 GP wake 的 `rcu_sr_normal_*()` 函数体仍由 [P05 SRS](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11.2_SRS怎样批量交付同步等待者)展开；
+- `wakeme_after_rcu()` 与通用 `__wait_rcu_gp()` 函数体仍由 [P02 等待桥](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.3___wait_rcu_gp与wakeme_after_rcu连接等待者)展开；
+- SRS 直接 GP wake 的请求划批由 [P05 SRS 请求入口](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_SRS怎样登记请求并冻结本轮批次)展开，cleanup 与 workqueue 交付由 [P05 SRS 完成路径](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_SRS怎样在cleanup与workqueue之间交付等待者)展开；
 - callback 分段、NOCB bypass 与执行由 [P09 callback/NOCB](P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.3_一条链表怎样表达四段)展开；
 - 本章只在调用点解释它们如何组成同步/barrier 协议。
 
 源码基线：NXP Linux 6.12.20 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，配置包含 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`。上游相对位置：[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`kernel/rcu/update.c`](../../linux/kernel/rcu/update.c)、[`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h)。
 
-概念入口：[同步等待与 rcu_barrier 模块源码概念导读](../navigation/P12_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md#12.1_等RCU至少有三种不同对象)。稳定正文：[Tree RCU 同步等待与 rcu_barrier](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P20_Tree_RCU_同步等待与rcu_barrier.md#20.1.2_四个相近接口等待什么)。
+概念入口：[同步等待与 rcu_barrier 模块源码概念导读](../navigation/P08_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md#8.1_等RCU至少有三种不同对象)。稳定正文：[Tree RCU 同步等待与 rcu_barrier](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P13_Tree_RCU_同步等待与rcu_barrier.md#13.3_四个相近接口等待什么)。
 
 ## 10.2\_源码符号覆盖账本
 
@@ -119,7 +119,7 @@ void synchronize_rcu(void)
 
 ## 10.5\_默认分支为何等待调用者自己的completion
 
-下面是调用关系示意，不是第二份裁剪源码；`synchronize_rcu_normal()` 的唯一函数体在 [P05 SRS 实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11.2_SRS怎样批量交付同步等待者)：
+下面是调用关系示意，不是第二份裁剪源码；`synchronize_rcu_normal()` 的唯一函数体在 [P05 SRS 实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_SRS怎样登记请求并冻结本轮批次)：
 
 ```text
 synchronize_rcu_normal()
@@ -141,6 +141,8 @@ synchronize_rcu_normal()
 可选 `rcu_normal_wake_from_gp=1` 分支不排 callback，而把 `rs` 加入 SRS 请求链；GP init 划定批次，cleanup/work 直接 complete。`start_poll_synchronize_rcu()` 负责确保有一轮 GP需求，SRS 请求链负责谁在完成点被唤醒。两个职责不能压成一个 sequence 比较。
 
 ## 10.6\_barrier\_callback与entrain如何证明队列前序已执行
+
+barrier 给每条已有队列追加一个哨兵 callback。普通 enqueue 和 entrain 都要保证哨兵位于业务 callback 之后；哨兵真正执行时再递减全局计数，最后一个哨兵负责唤醒等待者。
 
 ### 10.6.1\_哨兵执行
 
@@ -310,7 +312,7 @@ retry:
 
 扫描尚未结束时，刚 entrain 的哨兵可能立即执行。如果计数从 0 起步，第一个 callback 会减到错误值或过早 complete。两个临时引用表示“登记阶段仍在进行”；每个真正哨兵再加一。扫描完统一减 2，剩余值恰是未执行哨兵数；没有任何 callback 时减 2 直接归零完成。
 
-### 10.8.3\_为什么遍历possible CPU
+### 10.8.3\_为什么遍历possible\_CPU
 
 Offline CPU 的非 NOCB callback 在某些 hotplug 窗口仍可能留在 per-CPU `cblist`，只遍历 online CPU会漏队列。对在线 CPU用 IPI在本地 IRQ 上下文登记，对离线 CPU在当前 CPU持锁直接登记；NOCB offloaded 队列虽对应 CPU offline/isolated，也由同一 per-CPU 项覆盖。
 
@@ -360,4 +362,4 @@ sequenceDiagram
 11. 结束 sequence 前必须已看到所有哨兵实际调用，不可用一轮额外 GP 代替；
 12. 并发/错误验证至少覆盖空队列、普通队列、NOCB bypass、CPU offline 迁移、两个并发 barrier 和立即执行哨兵。
 
-总索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.5.3_模块入口)。
+总索引：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.4_模块概念导读入口)。

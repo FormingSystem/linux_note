@@ -1,6 +1,6 @@
 ---
-id: research.source_reading.rcu.linux_6_12_preempt_tree_implementation
-title: "Linux 6.12 抢占式 Tree RCU 关键函数源码实现"
+id: research.source_reading.rcu.linux_6_12_tree_preempted_reader_debt_implementation
+title: "Linux 6.12 Tree RCU 抢占读者债务关键函数源码实现"
 kind: source
 status: evolving
 domains:
@@ -16,7 +16,7 @@ source_project: linux
 source_version: "6.12.20"
 ---
 
-# 第3章\_Linux\_6.12\_抢占式\_Tree\_RCU\_关键函数源码实现
+# 第3章\_Linux\_6.12\_Tree\_RCU\_抢占读者债务关键函数源码实现
 
 ## 3.1\_实现讲解边界与入口
 
@@ -24,11 +24,10 @@ source_version: "6.12.20"
 
 | 阅读入口 | 职责 |
 | --- | --- |
-| [RCU 源码总导航](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序) | 先区分 RCU 家族，再选择功能模块和阅读顺序 |
-| [RCU 实现家族与内核配置](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_实现家族与内核配置.md#22.2_三个正交维度) | 先确认 `CONFIG_PREEMPT_RCU` 改变的是普通 Tree RCU 的读侧方式 |
-| [抢占式 Tree RCU 问题与任务跟踪模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md#7.1_先制造非抢占模型无法解释的现场) | 在进入函数前建立 CPU 债务转为任务债务的抽象证明 |
-| [抢占式 Tree RCU 模块源码概念导读](../navigation/P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md#3.1_取证问题) | 说明这些实现如何组成“CPU 债务转任务债务”的端到端闭环 |
-| [抢占式 Tree RCU 稳定机制正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md#8.1_版本_配置与源码边界) | 解释跨版本稳定的任务跟踪模型 |
+| [RCU 源码总导航](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序) | 先区分保护域，再选择功能模块和实现标题 |
+| [RCU 分类坐标与内核配置](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P04_RCU_分类坐标与内核配置.md#4.4_普通RCU的公共骨架与Tree内部差异) | 先确认 `CONFIG_PREEMPT_RCU` 只改变普通 Tree RCU 的读侧证明模块 |
+| [Tree RCU 读侧执行模型与配置差异](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md#6.3_一次context_switch不是永远等价于QS) | 在进入函数前建立 CPU 债务转为任务债务的抽象证明 |
+| [公共接口与读侧模型模块导读](../navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md#2.6_抢占分支为什么必须增加任务债务) | 说明本篇增量怎样重新接回 CPU QS 与节点公共出口 |
 | [普通 GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.9_rcu_gp_init开始代际并建立证明债务) | 说明 GP init 怎样接管已有 blocked task，以及根债务清零后怎样进入 cleanup；本章只展开任务侧债务 |
 
 下列 `/** ... */` 是本仓库补充的中文 Doxygen 阅读说明，不是上游原注释。裁剪代码保留影响状态所有权、等待边界和上报顺序的语句；完整函数以链接的 Linux 6.12.20 版本化源文件为准。
@@ -280,7 +279,7 @@ static int rcu_preempt_blocked_readers_cgp(struct rcu_node *rnp)
 }
 ```
 
-共享的 `rcu_report_qs_rnp()` 已在[非抢占式 Tree RCU 关键函数实现](P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.6_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据)逐行展开，本章不复制同一函数。该实现清除当前 `qsmask` 位以后，只有 `rnp->qsmask == 0` 且这里的 `rcu_preempt_blocked_readers_cgp(rnp)` 也为假，才继续清父节点位。
+共享的 `rcu_report_qs_rnp()` 已在[非抢占式 Tree RCU 关键函数实现](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.6_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据)逐行展开，本章不复制同一函数。该实现清除当前 `qsmask` 位以后，只有 `rnp->qsmask == 0` 且这里的 `rcu_preempt_blocked_readers_cgp(rnp)` 也为假，才继续清父节点位。
 
 **实现原理：** `qsmask` 表示 CPU/子树债务，`gp_tasks` 表示任务 reader 债务。抢占式 RCU 不把两者强行编码进同一掩码；它们通过 `rcu_report_qs_rnp()` 的同一个退出条件汇合，同时保持具体函数只在一个文档中展开。
 
@@ -388,4 +387,4 @@ rcu_report_unblock_qs_rnp(struct rcu_node *rnp, unsigned long flags)
 6. 为什么 `qsmask==0` 仍不足以让抢占式 RCU 节点向上清位？
 7. 最后一个 blocked reader 退出时，哪个函数把任务债务重新接回树形汇聚？
 
-模块概念导读：[Linux 6.12 抢占式 Tree RCU 模块源码概念导读](../navigation/P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md)。
+模块概念导读：[Linux 6.12 RCU 公共接口与读侧模型模块源码概念导读](../navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md)。

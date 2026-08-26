@@ -16,9 +16,9 @@ source_project: linux
 source_version: "6.12.20"
 ---
 
-# 第5章\_Linux\_6.12\_RCU\_Lockdep适配模块源码概念导读
+# 第12章\_Linux\_6.12\_RCU\_Lockdep适配模块源码概念导读
 
-## 5.1\_模块问题与实现所有权
+## 12.1\_模块问题与实现所有权
 
 本模块回答一个交叉问题：RCU 没有实体 mutex，却为什么会出现 `rcu_lock_map`、`rcu_bh_lock_map`、`rcu_sched_lock_map` 和 `rcu_callback_map`，这些对象怎样把 RCU 调用条件交给 Lockdep 检查？
 
@@ -31,7 +31,7 @@ source_version: "6.12.20"
 
 前缀 `lockdep` 表明使用的框架，不等于全部内容都归 Lockdep 专题。通用算法只在 Lockdep 展开一次，RCU 实例和接入时序只在 RCU 展开一次。
 
-## 5.2\_先区分功能状态与检查影子状态
+## 12.2\_先区分功能状态与检查影子状态
 
 同一次 `rcu_read_lock()` 同时推进两条不同因果链：
 
@@ -50,7 +50,7 @@ source_version: "6.12.20"
 
 callback 形成第三个阶段：它既不是 reader 进入，也不是 GP 协调。GP 已完成并且 callback 真正开始执行时，`rcu_callback_map` 才把“当前正处于 RCU 延迟动作范围”登记给 Lockdep。
 
-## 5.3\_参与者、状态地址与通信方向
+## 12.3\_参与者\_状态地址与通信方向
 
 | 参与者 | 状态位置 | 写入或登记动作 | 读取或消费动作 |
 | --- | --- | --- | --- |
@@ -63,9 +63,11 @@ callback 形成第三个阶段：它既不是 reader 进入，也不是 GP 协�
 
 map 的全局地址提供身份，真正随进入/退出变化的当前影子状态位于任务的 held stack。多个任务可以同时记录指向同一个 RCU map 的 held record，不发生互斥。
 
-## 5.4\_三条调用链怎样闭环
+## 12.4\_三条调用链怎样闭环
 
-### 5.4.1\_读侧登记链
+适配层并不只在 `rcu_read_lock()` 处记一个标志。它要完成读侧 acquire/release 登记、访问器或断言查询告警，以及同步等待入口的自等待检查；三条链共享 lockdep 基础设施，但各自观察不同事件。
+
+### 12.4.1\_读侧登记链
 
 ```mermaid
 flowchart LR
@@ -81,7 +83,7 @@ flowchart LR
 
 具体参数和源代码顺序见 [`rcu_lock_acquire()` 与 `rcu_lock_release()`](../source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.4.1_rcu_lock_acquire和rcu_lock_release包装参数)。
 
-### 5.4.2\_查询与告警链
+### 12.4.2\_查询与告警链
 
 ```text
 RCU访问器、断言或同步等待入口
@@ -94,7 +96,7 @@ RCU访问器、断言或同步等待入口
 
 具体分支见 [held查询怎样消费三种读侧map](../source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.6_held查询怎样消费三种读侧map)，公共告警宏见 [`RCU_LOCKDEP_WARN()` 检查适配层](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_LOCKDEP_WARN检查适配层)。
 
-### 5.4.3\_callback上下文链
+### 12.4.3\_callback上下文链
 
 ```mermaid
 sequenceDiagram
@@ -117,7 +119,7 @@ callback map 只证明当前路径经过了 RCU 的延迟动作执行包装。�
 
 具体源码、Maple Tree 消费点和修改风险见 [`rcu_callback_map` 怎样标记延迟动作上下文](../source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.7_rcu_callback_map怎样标记延迟动作上下文)。
 
-## 5.5\_配置怎样改变检查能力
+## 12.5\_配置怎样改变检查能力
 
 ```text
 PROVE_LOCKING
@@ -135,7 +137,7 @@ PROVE_LOCKING
 
 完整配置矩阵见 [配置关闭时对象和查询怎样退化](../source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.8_配置关闭时对象和查询怎样退化)。
 
-## 5.6\_建议阅读顺序与修改目标
+## 12.6\_建议阅读顺序与修改目标
 
 1. 先读本章 5.1～5.3，分清实现所有权、功能状态和检查影子状态；
 2. 进入[声明、定义、key与静态生命期](../source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.3_声明定义key与静态生命期)，理解四个全局身份为什么分开；
@@ -146,7 +148,7 @@ PROVE_LOCKING
 
 读完后不应只会说“RCU 接入 Lockdep”，而应能从一个 map 的 `extern` 追到定义、key、事件登记、current 影子记录、查询消费者和关闭配置，并能预测局部修改的影响范围。
 
-## 5.7\_边界与后续阅读
+## 12.7\_边界与后续阅读
 
 本章没有展开：
 
@@ -155,8 +157,8 @@ PROVE_LOCKING
 - Sparse `__rcu` address space；它属于编译期类型检查，不是运行时 map，`__CHECKER__` 与 `rcu_check_sparse()` 的唯一实现讲解见[静态类型桥接实现](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.3_rcu_check_sparse静态类型桥接)；
 - Maple Tree dead node 的完整生命周期；这里只展示它怎样消费 callback 身份。
 
-总阅读索引：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.9_建议的源码阅读顺序)。
+总阅读索引：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)。
 
 具体实现：[Linux 6.12 RCU Lockdep适配层源码实现](../source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.1_实现所有权与读者目标)。
 
-稳定知识：[RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md#26.1.5_Lockdep检查的是哪一个运行时条件)。
+稳定知识：[RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md#23.6_Lockdep检查的是哪一个运行时条件)。
