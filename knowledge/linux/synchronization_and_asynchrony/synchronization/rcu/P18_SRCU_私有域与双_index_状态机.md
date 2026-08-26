@@ -11,11 +11,11 @@ topics:
   - srcu
 ---
 
-# 第23章\_SRCU\_私有域与双\_index\_状态机
+# 第18章\_SRCU\_私有域与双\_index\_状态机
 
 本章从一个可睡眠通知链开始：读者遍历监听器时会调用驱动回调，而回调可能取得 mutex、等待固件或访问可睡眠总线。普通 RCU 的读侧执行约束不能满足这个场景；SRCU 用“私有域 + 双 index 进入/退出计数”重新定义读者和 GP。
 
-## 23.1\_问题场景\_注销监听器时不能释放正在睡眠的回调对象
+## 18.1\_问题场景\_注销监听器时不能释放正在睡眠的回调对象
 
 先定义一个由多个设备共享的通知总线：
 
@@ -94,7 +94,7 @@ static void event_bus_destroy(struct event_bus *bus)
 
 不能把 `synchronize_srcu()` 换成 `synchronize_rcu()`：后者等待普通 RCU 域，完全不知道这个 `srcu_struct` 中的进入/退出计数。
 
-## 23.2\_参与者和状态所有权
+## 18.2\_参与者和状态所有权
 
 Tree SRCU 不是一个原子计数器，而是一组正交状态：
 
@@ -123,7 +123,7 @@ flowchart LR
     G -->|"GP 完成后推进回调"| C1
 ```
 
-## 23.3\_读者为什么能睡眠和迁移
+## 18.3\_读者为什么能睡眠和迁移
 
 Linux 6.12.20 的核心读侧实现是：
 
@@ -161,7 +161,7 @@ GP 扫描的是全 CPU 求和：
 - unlock 使用 lock 返回的原 `idx`；
 - 普通 `srcu_read_lock()` 与 unlock 在同一执行上下文配对，不能让 IRQ 或另一个任务代为 unlock。
 
-## 23.4\_为什么一组计数不够
+## 18.4\_为什么一组计数不够
 
 若只有一组计数，旧读者和更新后不断到来的新读者会混在一起。在高频通知负载下，计数可能长期不归零；更新者无法只等待“删除之前已经进入”的读者。
 
@@ -184,7 +184,7 @@ SRCU_STATE_IDLE → SRCU_STATE_SCAN1 → SRCU_STATE_SCAN2 → IDLE
 
 第一遍扫描不能省略。源码注释明确指出：读者可能读到 `srcu_idx` 后被长时间延迟，尚未来得及增加对应计数，因此任意时刻两组都可能残留读者。SCAN1 先清空非当前组，配合内存屏障后才能安全翻转；SCAN2 再排空原当前组。
 
-## 23.5\_完整时序\_睡眠读者怎样阻止释放
+## 18.5\_完整时序\_睡眠读者怎样阻止释放
 
 ```mermaid
 sequenceDiagram
@@ -214,7 +214,7 @@ sequenceDiagram
 
 这里没有“读者主动通知注销者”这条直接通道。unlock 写本 CPU 累计计数，GP work 重试扫描所有 CPU 的总数；回调需求和 GP 目标则经 `srcu_node`/域级状态传播。这就是 SRCU 的通信成本落点。
 
-## 23.6\_同步等待和异步回调
+## 18.6\_同步等待和异步回调
 
 `call_srcu()` 调用 `__call_srcu()` 把回调加入 `srcu_data.srcu_cblist`，再由 `srcu_gp_start_if_needed()` 提交 GP 需求。`srcu_funnel_gp_start()` 将分散需求沿 `srcu_node` 向根部汇聚。
 
@@ -230,9 +230,11 @@ synchronize_srcu()
 
 共同语义不变：调用返回前，同一域中在调用前开始的 SRCU 读侧已经结束。
 
-## 23.7\_死锁与生命周期错误
+## 18.7\_死锁与生命周期错误
 
-### 23.7.1\_在同一域读侧等待自己
+SRCU 允许 reader 睡眠，不等于允许等待方在同一保护域内等待自己，也不等于 index 可以脱离取得它的域传播。下面三类错误分别破坏等待图、计数归还和域本身的生命期。
+
+### 18.7.1\_在同一域读侧等待自己
 
 ```c
 idx = srcu_read_lock(&bus->srcu);
@@ -242,7 +244,7 @@ srcu_read_unlock(&bus->srcu, idx);
 
 间接等待同样错误：读者等待 mutex，而 mutex 持有者正在执行 `synchronize_srcu()`。
 
-### 23.7.2\_用错域或用错index
+### 18.7.2\_用错域或用错index
 
 ```c
 idx = srcu_read_lock(&bus_a.srcu);
@@ -252,11 +254,11 @@ srcu_read_unlock(&bus_b.srcu, idx); /* 错误：bus_a 的债务永不归还。 *
 
 传错 index 会让一组出现多余 lock、另一组出现多余 unlock，GP 可能永久等待或破坏计数假设。
 
-### 23.7.3\_只等GP却遗漏已排队回调
+### 18.7.3\_只等GP却遗漏已排队回调
 
 与普通 RCU 相同，`synchronize_srcu()` 等待旧读者，不等价于“此前所有 `call_srcu()` 回调已经执行”。销毁域之前还要按 API 契约处理 `srcu_barrier()`、工作项和所有使用者，再调用 `cleanup_srcu_struct()`。
 
-## 23.8\_成本与选择边界
+## 18.8\_成本与选择边界
 
 | 维度 | 普通 Tree RCU | Tree SRCU |
 | --- | --- | --- |
@@ -269,14 +271,14 @@ srcu_read_unlock(&bus_b.srcu, idx); /* 错误：bus_a 的债务永不归还。 *
 
 选择结论不是“SRCU 更高级”，而是：只有读者确实要睡眠，或必须隔离成私有域时，额外的进入/退出记账和 GP 扫描才值得。对只读几项字段就退出的高频路径，普通 RCU 通常更合适。
 
-## 23.9\_Linux\_6.12.20源码证据
+## 18.9\_Linux\_6.12.20源码证据
 
 - [`include/linux/srcu.h`](../../../../../research/source_reading/linux/include/linux/srcu.h)：读侧接口、同域等待禁令和上下文配对契约。
 - [`include/linux/srcutree.h`](../../../../../research/source_reading/linux/include/linux/srcutree.h)：`srcu_struct`、`srcu_data`、`srcu_node`、`srcu_usage` 和 `SRCU_STATE_*`。
 - [`kernel/rcu/srcutree.c`](../../../../../research/source_reading/linux/kernel/rcu/srcutree.c)：`__srcu_read_lock()`、`__srcu_read_unlock()`、`srcu_flip()`、`srcu_advance_state()`、`srcu_gp_start()`、`srcu_gp_end()`、`call_srcu()` 与 `synchronize_srcu()`。
-- 版本模块入口：[Linux 6.12 Tree SRCU 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_SRCU模块源码概念导读.md#7.1_先分清Tree_RCU与Tree_SRCU)。
+- 版本模块入口：[Linux 6.12 Tree SRCU 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P09_Linux_6.12_Tree_SRCU模块源码概念导读.md#9.1_先分清Tree_RCU与Tree_SRCU)。
 - 唯一函数实现：[Linux 6.12 Tree SRCU 源码实现](../../../../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.2_源码符号覆盖账本)。其中 [reader 累计账本与扫描](../../../../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.4_reader进入退出写的是累计账本)、[双扫描 GP](../../../../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.6_双扫描GP状态机怎样推进)和 [同步/barrier 交付](../../../../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.9_synchronize_srcu怎样把异步callback变成同步等待)分别展开这里使用的实现结论。
 
-上一篇：[RCU 实现家族与内核配置](P22_RCU_实现家族与内核配置.md)。
+上一篇：[Tree RCU CPU 热插拔与回调迁移](P17_Tree_RCU_CPU热插拔与回调迁移.md)。
 
-下一篇：[Tasks RCU 与 Tiny RCU 实现边界](P24_Tasks_RCU与Tiny_RCU实现边界.md)。
+下一篇：[Tasks RCU 任务轨迹宽限期](P19_Tasks_RCU_任务轨迹宽限期.md)。

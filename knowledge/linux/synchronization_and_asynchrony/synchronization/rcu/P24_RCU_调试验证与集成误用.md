@@ -11,11 +11,11 @@ topics:
   - rcu
 ---
 
-# 第27章\_RCU\_调试验证与集成误用
+# 第24章\_RCU\_调试验证与集成误用
 
 “RCU 出问题”至少可能指四件不同的事：对象入口和生命周期协议错误、GP 没完成、回调已成熟但没执行，或者回调已排队但模块先卸载。它们的日志和修复方向完全不同。本章固定三个可重建的故障，再给出从对象到 GP、回调和卸载的诊断顺序。
 
-## 27.1\_先建立四条互不等价的状态链
+## 24.1\_先建立四条互不等价的状态链
 
 | 状态链 | 关键问题 | 典型现象 | 优先证据 |
 | --- | --- | --- | --- |
@@ -37,9 +37,11 @@ flowchart LR
 
 `synchronize_rcu()` 只跨过图中的 GP 边，不能自动替代回调执行、kref 归零或模块生产者停机。
 
-## 27.2\_故障一\_工作队列保存了读区外裸指针
+## 24.2\_故障一\_工作队列保存了读区外裸指针
 
-### 27.2.1\_能编译的错误代码
+这类故障的关键不是 reader 当场越界，而是它把只在读区内有效的借用指针交给了异步执行者。需要同时观察取得时刻、排队时刻、GP 完成和工作真正运行的顺序。
+
+### 24.2.1\_能编译的错误代码
 
 ```c
 struct service {
@@ -88,7 +90,7 @@ sequenceDiagram
 
 GP 没有出错：`service_work` 在 GP 开始前已经退出读侧，RCU 有权不再把它当读者。工作队列也没有出错：它只承诺调度 `work_struct`，不理解 `service` 的所有权。
 
-### 27.2.2\_正确的引用交接
+### 24.2.2\_正确的引用交接
 
 ```c
 static void service_release(struct kref *ref)
@@ -131,9 +133,11 @@ static void service_workfn(struct work_struct *work)
 
 发布入口持有初始引用；更新者摘除旧入口后归还该引用。lookup reader 只在 RCU 防止对象物理释放的窗口内执行 `kref_get_unless_zero()`。最后 put 的 release 是唯一释放入口，但它调用 `kfree_rcu()`，继续等待仍可能只拿到裸地址、尚未来得及 get 的并发 lookup reader。
 
-## 27.3\_故障二\_模块只等GP\_却没有等自己的回调执行
+## 24.3\_故障二\_模块只等GP\_却没有等自己的回调执行
 
-### 27.3.1\_为什么synchronize\_rcu()不够
+这里对象内存可能已经满足 GP 条件，真正危险的是 callback 函数体仍位于即将卸载的模块文本段。诊断必须把“callback 已成熟”和“callback 已实际调用完”分开。
+
+### 24.3.1\_为什么synchronize\_rcu()不够
 
 模块删除对象时排队：
 
@@ -155,7 +159,7 @@ static void module_obj_remove(struct module_obj *obj)
 
 `module_obj_free_rcu()` 的函数地址位于模块 text。即使卸载路径调用 `synchronize_rcu()`，它只能保证一次相关 GP 已过去；已经排队的回调可能成熟后仍留在 per-CPU/NOCB 回调队列，尚未真正执行。此时卸载模块会留下指向已释放 text 的函数指针。
 
-### 27.3.2\_完整卸载顺序
+### 24.3.2\_完整卸载顺序
 
 ```c
 static void module_stop(void)
@@ -179,7 +183,7 @@ static void module_stop(void)
 
 顺序不能交换：若 `rcu_barrier()` 后仍有 producer 能排队新回调，barrier 返回只覆盖调用前已有回调，新回调仍会指向即将卸载的模块代码。若使用 `call_srcu()` 或 Tasks Trace 回调，则必须使用对应域的 barrier，不能用普通 `rcu_barrier()` 跨域代替。
 
-## 27.4\_故障三\_永不退出的旧读者只会卡住\_不会被超时释放
+## 24.4\_故障三\_永不退出的旧读者只会卡住\_不会被超时释放
 
 ```c
 static void broken_reader(void)
@@ -203,9 +207,11 @@ static void broken_reader(void)
 
 force-QS、IPI、boost 和 stall 检测只能催促或诊断。它们不会在超时后伪造证明并提前释放对象。可复现实验见 [晚到读者与抢占读者的对象回收实验](../../../../../labs/kernel/rcu/P01_晚到读者与抢占读者/README.md)。
 
-## 27.5\_端到端诊断流程
+## 24.5\_端到端诊断流程
 
-### 27.5.1\_D0\_先确认运行配置和flavor
+前面的故障分别来自使用期逃逸、完成条件选错和活性停滞。统一诊断时应先确认运行配置，再重建同一对象或同一 GP 的时间线，最后才用 trace、lockdep、stall 日志或内存错误报告验证假设。
+
+### 24.5.1\_D0\_先确认运行配置和flavor
 
 ```bash
 zgrep -E 'CONFIG_(TREE|TINY|PREEMPT)_RCU|CONFIG_TASKS(_TRACE|_RUDE)?_RCU|CONFIG_RCU_NOCB_CPU' /proc/config.gz
@@ -213,7 +219,7 @@ zgrep -E 'CONFIG_(TREE|TINY|PREEMPT)_RCU|CONFIG_TASKS(_TRACE|_RUDE)?_RCU|CONFIG_
 
 若目标系统没有 `/proc/config.gz`，改查发布的内核配置或构建树 `.config`。不能用源码中存在 `PREEMPT_RCU` 分支推导运行内核已经启用它。
 
-### 27.5.2\_D1\_先画对象时间线
+### 24.5.2\_D1\_先画对象时间线
 
 记录同一个对象地址的五个事件：
 
@@ -227,7 +233,7 @@ zgrep -E 'CONFIG_(TREE|TINY|PREEMPT)_RCU|CONFIG_TASKS(_TRACE|_RUDE)?_RCU|CONFIG_
 
 若对象带 kref，再记录初始发布引用、每次逃逸 get/put 和 release。若是 root + 多 block，分别画 root GP 与 block kref；不要拿一个“引用数”概括所有权图。
 
-### 27.5.3\_D2\_用stall输出定位欠债者
+### 24.5.3\_D2\_用stall输出定位欠债者
 
 Linux 6.12 的 stall 信息来自 `kernel/rcu/tree_stall.h` 等路径。阅读时先找：
 
@@ -237,9 +243,9 @@ Linux 6.12 的 stall 信息来自 `kernel/rcu/tree_stall.h` 等路径。阅读�
 - PREEMPT_RCU 是否报告 blocked task；
 - GP kthread 自身是否长期得不到运行机会。
 
-诊断最后一项时，先用 [GP 全局生命周期模块导读](../../../../../research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.7_一次唤醒怎样进入主循环和初始化)和 [force-QS 与 Stall 模块导读](../../../../../research/source_reading/rcu/navigation/P09_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#9.1_为什么GP已经在等还要有force_QS)区分模块职责，再分别进入 [普通 GP 长期任务的主循环](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.8_rcu_gp_kthread串联一轮物理GP)和 [force-QS 与 Stall 源码实现](../../../../../research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)，区分“线程没有请求而正常休眠”“已被唤醒但尚未获调度”“运行在 FQS 等待阶段”三种状态，并定位活动时间、欠债 CPU/任务和 stall 分类。不要看到 stall 就直接增大超时参数；延长阈值只能减少告警频率，不能修复永不退出的读侧、关中断循环或 GP kthread 饥饿。
+诊断最后一项时，先用 [GP 全局生命周期模块导读](../../../../../research/source_reading/rcu/navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.7_一次唤醒怎样进入主循环和初始化)和 [force-QS 与 Stall 模块导读](../../../../../research/source_reading/rcu/navigation/P05_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#5.1_为什么GP已经在等还要有force_QS)区分模块职责，再分别进入 [普通 GP 长期任务的主循环](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.8_rcu_gp_kthread串联一轮物理GP)和 [force-QS 与 Stall 源码实现](../../../../../research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)，区分“线程没有请求而正常休眠”“已被唤醒但尚未获调度”“运行在 FQS 等待阶段”三种状态，并定位活动时间、欠债 CPU/任务和 stall 分类。不要看到 stall 就直接增大超时参数；延长阈值只能减少告警频率，不能修复永不退出的读侧、关中断循环或 GP kthread 饥饿。
 
-### 27.5.4\_D3\_按本机available\_events选择tracepoint
+### 24.5.4\_D3\_按本机available\_events选择tracepoint
 
 ```bash
 mount -t tracefs nodev /sys/kernel/tracing
@@ -253,7 +259,7 @@ echo 1 > /sys/kernel/tracing/tracing_on
 
 具体事件取决于内核配置，必须先查 `available_events`。PREEMPT_RCU 实验还可检查 `rcu_preempt_task` 和 `rcu_unlock_preempted_task`；回调执行可检查目标内核实际提供的 invoke/batch 事件。采集完成后关闭事件，避免长期 tracing 影响时序。
 
-### 27.5.5\_D4\_根据状态链选择动态检查器
+### 24.5.5\_D4\_根据状态链选择动态检查器
 
 | 工具或配置 | 能帮助发现 |
 | --- | --- |
@@ -266,7 +272,7 @@ echo 1 > /sys/kernel/tracing/tracing_on
 
 rcutorture 的实现位于 `kernel/rcu/rcutorture.c`，自动化脚本位于 `tools/testing/selftests/rcutorture/`。它适合验证内核 RCU 子系统和配置组合，不替代驱动专用的删除、卸载和引用逃逸测试。
 
-## 27.6\_组合机制的职责矩阵
+## 24.6\_组合机制的职责矩阵
 
 | 机制 | 它解决什么 | 它不解决什么 |
 | --- | --- | --- |
@@ -277,7 +283,7 @@ rcutorture 的实现位于 `kernel/rcu/rcutorture.c`，自动化脚本位于 `to
 | devres | 设备解绑时的资源托管 | RCU GP、回调执行、硬件停止顺序 |
 | `rcu_barrier()` | 等调用前已经排队的对应普通 RCU 回调执行 | 新回调、其他 flavor、没有排队成回调的旧读者用途 |
 
-## 27.7\_交付前故障注入核对表
+## 24.7\_交付前故障注入核对表
 
 | 操作 | 期望观察 |
 | --- | --- |
@@ -288,6 +294,6 @@ rcutorture 的实现位于 `kernel/rcu/rcutorture.c`，自动化脚本位于 `to
 | 在模块退出边界并发排队回调 | producer 先停止，barrier 后不再出现新模块回调 |
 | 对复合 root 复用/替换部分 block | 旧 root 的 GP 前，各 block 的版本引用不被提前归还 |
 
-上一篇：[RCU 类型语义、Sparse 与 Lockdep](P26_RCU_类型语义_Sparse与Lockdep.md)。
+上一篇：[RCU 类型语义、Sparse 与 Lockdep](P23_RCU_类型语义_Sparse与Lockdep.md)。
 
-下一篇：[RCU 内存序、误用与选择边界](P28_RCU_内存序_误用与选择边界.md)。
+下一篇：[RCU 内存序、误用与选择边界](P25_RCU_内存序_误用与选择边界.md)。

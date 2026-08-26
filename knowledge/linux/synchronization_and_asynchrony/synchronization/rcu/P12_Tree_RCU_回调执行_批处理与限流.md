@@ -12,9 +12,9 @@ topics:
   - softirq
 ---
 
-# 第18章\_Tree\_RCU\_回调执行\_批处理与限流
+# 第12章\_Tree\_RCU\_回调执行\_批处理与限流
 
-## 18.1\_场景\_一次GP后突然成熟五万个callback
+## 12.1\_场景\_一次GP后突然成熟五万个callback
 
 网络模块批量替换五万个短对象，并为每个旧对象调用：
 
@@ -33,7 +33,7 @@ for_each_old_flow(flow)
 
 回调执行层必须在两种成本之间折中：**批量执行以摊薄调度开销，同时限流以交还 CPU。**
 
-## 18.2\_先区分四个时刻
+## 12.2\_先区分四个时刻
 
 ```text
 T0 call_rcu()返回
@@ -51,7 +51,7 @@ T3 rcu_core/nocb执行func
 
 `synchronize_rcu()` 主要得到 T2 类读者完成结论；`rcu_barrier()` 等待调用前 callback 的 T3。把 T2 与 T3 合并，是模块卸载 UAF 的常见来源。
 
-## 18.3\_谁调用rcu\_do\_batch
+## 12.3\_谁调用rcu\_do\_batch
 
 非 offload CPU 上：
 
@@ -65,7 +65,7 @@ invoke_rcu_core()
 
 NOCB CPU 则由 `rcuo` callback kthread 调用同一 `rcu_do_batch()`。所以回调函数必须按实际配置理解上下文，不能假设“`call_rcu()` 的调用者稍后同步执行它”。
 
-## 18.4\_S0到S6\_一次批处理周期
+## 12.4\_S0到S6\_一次批处理周期
 
 | 阶段 | 动作 | 共享状态 | 上下文 | 退出条件 |
 | --- | --- | --- | --- | --- |
@@ -77,7 +77,7 @@ NOCB CPU 则由 `rcuo` callback kthread 调用同一 `rcu_do_batch()`。所以�
 | S5 回插剩余 | `rcu_segcblist_insert_done_cbs()` | 未执行项回到DONE头 | 锁保护路径 | 队列重新一致 |
 | S6 再触发 | 若仍ready则 `invoke_rcu_core()` | 工作标志/softirq | `rcu_core()` | 下批以后执行 |
 
-## 18.5\_提取后为什么在锁外调用func
+## 12.5\_提取后为什么在锁外调用func
 
 `rcu_do_batch()` 先在关中断和 NOCB 锁保护下把 DONE 段提到临时普通 `rcu_cblist`，随后释放锁才调用 callback：
 
@@ -92,7 +92,7 @@ while ((rhp = rcu_cblist_dequeue(&rcl)) != NULL)
 
 否则任意 callback 的释放、锁和后续 `call_rcu()` 都会发生在 cblist 内部锁下，既可能死锁，也会让入队路径承受不可预测锁持有时间。
 
-## 18.6\_数量预算和时间预算
+## 12.6\_数量预算和时间预算
 
 6.12.20 的本批数量近似为：
 
@@ -107,7 +107,7 @@ bl = max(rdp->blimit, pending >> rcu_divisor);
 
 若 callback 过载，`rdp->blimit` 可被提高以加速排空；降到 `qlowmark` 后恢复普通限额。吞吐和公平不是固定常量，而是根据积压、上下文和调度压力共同决定。
 
-## 18.7\_回调函数允许做什么
+## 12.7\_回调函数允许做什么
 
 安全模板：
 
@@ -135,13 +135,13 @@ static void bad_free_rcu(struct rcu_head *head)
 
 即使 NOCB callback 在 kthread 中执行，也不应由同一个 callback 阻塞整条回调管线。需要可睡眠的复杂销毁时，callback 应只完成 RCU 生命周期交接并把工作转交到明确的 workqueue，同时重新审查模块卸载时需等待哪条工作链。
 
-## 18.8\_kfree\_rcu与kvfree\_rcu
+## 12.8\_kfree\_rcu与kvfree\_rcu
 
 `kfree_rcu(ptr, rcu_member)` 把“从 `rcu_head` 找回对象并释放”编码进 RCU 延迟回收。调用时仍只是登记，实际释放发生在 GP 和 callback 管线之后。
 
 `kvfree_rcu()` 支持更复杂/批量的延迟释放，6.12 有 `kfree_rcu` 批处理、内存压力和 monitor/workqueue 路径。不能从 API 名字推导它等价于每对象 `call_rcu(head, kfree)`：批量化会改变执行上下文、内存峰值和释放时延，但不改变必须先过 GP 的安全条件。
 
-## 18.9\_完整批处理时序
+## 12.9\_完整批处理时序
 
 ```mermaid
 sequenceDiagram
@@ -168,7 +168,7 @@ sequenceDiagram
     end
 ```
 
-## 18.10\_回调积压的因果链
+## 12.10\_回调积压的因果链
 
 ```text
 更新速率持续高于callback处理速率
@@ -181,7 +181,7 @@ sequenceDiagram
 
 “RCU 内存瓶颈”通常不是 reader 数量本身生成引用计数，而是更新产生旧对象的速度、GP完成速度与 callback执行速度三者失衡。诊断必须分别测这三个阶段。
 
-## 18.11\_trace和指标
+## 12.11\_trace和指标
 
 ```bash
 cd /sys/kernel/tracing
@@ -193,16 +193,16 @@ echo 1 | sudo tee tracing_on
 
 观察每批预算、实际执行数、是否仍有 callback、need-resched 和执行上下文。一次批次小不一定是吞吐问题，可能是主动公平限流；DONE 长期增长才说明处理速度不足。
 
-## 18.12\_源码入口
+## 12.12\_源码入口
 
 - [普通 GP cleanup 的完成发布](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11_rcu_gp_cleanup发布完成并承接下一代)只提供 callback 变成可执行的代际前提；以下入口才解释何时由哪个执行者真正调用函数。
-- [回调与 NOCB 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#11.5_普通callback状态机)先建立完整执行链。
+- [回调与 NOCB 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#7.5_普通callback状态机)先建立完整执行链。
 - [`invoke_rcu_core()` 与 softirq/rcuc 选择](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.7_普通CPU怎样选择softirq或rcuc执行者)。
 - [`rcu_do_batch()` 的 DONE 抽取、锁外调用、预算与回插](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.6_rcu_do_batch为何先抽取再锁外执行)。
-- [NOCB callback kthread 执行者](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.9_nocb_gp与cb线程如何交接成熟callback)。
+- [NOCB callback kthread 执行者](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.10_NOCB_CB线程只执行成熟批次)。
 - `kernel/rcu/tree.c` 中 kfree/kvfree RCU 批处理路径。
-- `rcu_do_batch()` 与批量释放路径在真正执行延迟动作前后登记 `rcu_callback_map`；先从 [RCU Lockdep适配模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P05_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#5.4.3_callback上下文链)建立调用链，再进入 [`rcu_callback_map` 上下文标记](../../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.7_rcu_callback_map怎样标记延迟动作上下文)核对定义、影子状态、消费者和修改边界。
+- `rcu_do_batch()` 与批量释放路径在真正执行延迟动作前后登记 `rcu_callback_map`；先从 [RCU Lockdep适配模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#12.4.3_callback上下文链)建立调用链，再进入 [`rcu_callback_map` 上下文标记](../../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.7_rcu_callback_map怎样标记延迟动作上下文)核对定义、影子状态、消费者和修改边界。
 
-上一篇：[Tree RCU rcu_segcblist 回调状态机](P17_Tree_RCU_rcu_segcblist回调状态机.md)。
+上一篇：[Tree RCU rcu_segcblist 回调状态机](P11_Tree_RCU_rcu_segcblist回调状态机.md)。
 
-下一篇：[Tree RCU NOCB 回调卸载](P19_Tree_RCU_NOCB回调卸载.md)。
+下一篇：[Tree RCU 同步等待与 rcu_barrier](P13_Tree_RCU_同步等待与rcu_barrier.md)。
