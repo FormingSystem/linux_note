@@ -11,7 +11,7 @@ topics:
   - rcu
 ---
 
-# 第4章\_RCU\_kref与复合对象生命周期
+# 第21章\_RCU\_kref与复合对象生命周期
 
 第三章的单块配置只在 RCU 读区内借用对象，因此 GP 后可以直接释放。但真实系统还会把查找结果交给工作队列，或者让一个版本根复用多个独立分配的数据块。此时 API 表不能自动组成正确程序：必须先画分配与所有权拓扑，再选择取消发布、宽限期、kref 归零和最终释放的顺序。
 
@@ -41,7 +41,7 @@ flowchart LR
 
 以下模板以仓库保存的 Linux 6.12.20 [`kref.h`](../../../../../research/source_reading/linux/include/linux/kref.h)、[`refcount.h`](../../../../../research/source_reading/linux/include/linux/refcount.h) 和 [`kref.rst`](../../../../../research/source_reading/linux/Documentation/core-api/kref.rst) 为接口边界：`struct kref` 本身只内嵌 `refcount_t`，release 由每次 `kref_put()` 的调用者传入；`kref_get_unless_zero()` 只解决“非零才增加”，其计数器所在内存仍必须先由 RCU 或其他协议保持有效。
 
-## 4.1\_先按分配与所有权拓扑选模板
+## 21.1\_先按分配与所有权拓扑选模板
 
 先纠正一个会直接影响回收设计的认识：`struct kref` **不保存 release 函数，也不存在内核提供的默认空 release**。Linux 6.12.20 的 `include/linux/kref.h::kref_put()` 接收本次调用者传入的函数指针，计数减到零时就在当前执行路径调用它：
 
@@ -69,7 +69,7 @@ static inline int kref_put(struct kref *kref,
 
 模型 A 与 B 是同一分配块的两种合法串联顺序；模型 C 则包含一个根分配和多个叶子分配。选择之后，所有入口必须遵守同一协议，不能让同一块内存同时拥有直接 `kfree()` 和独立 RCU 回调两个出口。
 
-## 4.2\_模型\_A\_单个\_RCU\_对象被长期持有
+## 21.2\_模型\_A\_单个\_RCU\_对象被长期持有
 
 对象本身同时内嵌 kref 和 RCU 回调头：
 
@@ -139,7 +139,7 @@ static void replace_lookup_obj(struct lookup_obj *new)
 
 若旧 reader 的 `kref_get_unless_zero()` 先成功，入口 put 不会使计数归零；若入口 put 先归零，reader 的 get 失败，而 `kfree_rcu()` 又保证计数器内存在 reader 退出 RCU 前仍有效。完整的单对象竞态与 `dying` 状态见[kref 与 RCU](../../../object_lifetime/kref/P10_kref_与_RCU.md)。
 
-## 4.3\_模型\_B\_先过\_GP\_再归还单对象的发布引用
+## 21.3\_模型\_B\_先过\_GP\_再归还单对象的发布引用
 
 同一个对象也可以让初始引用一直代表“仍可能被旧 RCU reader 查找”，直到 GP 后才归还：
 
@@ -189,9 +189,11 @@ static void replace_lookup_obj_after_gp(struct lookup_obj *new)
 
 这里也只有一个最终释放出口：所有长期用户和 GP 回调都调用 `kref_put(..., lookup_obj_release_after_gp)`，只有最后一次 put 能进入 release。RCU callback 并不询问 kref；它只是按照模块协议归还“共享入口原来持有的那一份引用”。
 
-## 4.4\_模型\_C\_一个\_RCU\_版本根拥有多个\_kref\_数据块
+## 21.4\_模型\_C\_一个\_RCU\_版本根拥有多个\_kref\_数据块
 
-### 4.4.1\_对象定义与所有权不变量
+前两个模型处理单个对象；复合快照还要区分 **版本根的入口生命期** 与 **各数据块的共享生命期**。RCU 负责让旧根退出正式查找路径并跨过旧 reader，`kref` 负责记录跨版本或读区外仍持有的数据块，二者必须按层退休。
+
+## 21.5\_对象定义与所有权不变量
 
 复合快照用一个小根节点表达版本身份和块目录，每个 block 是独立分配：
 
@@ -239,7 +241,7 @@ static void data_block_release(struct kref *ref)
 }
 ```
 
-### 4.4.2\_构造新版本时取得块所有权
+## 21.6\_构造新版本时取得块所有权
 
 新建 block 的初始引用直接归新版本所有：
 
@@ -274,7 +276,7 @@ static void snapshot_share_block(struct data_snapshot *new,
 
 构造失败时必须逐个 put 已经为新 root 取得的共享引用，并释放尚未发布的根；不能把失败清理拖到 RCU，因为该根从未对 reader 可见。
 
-### 4.4.3\_短\_reader\_只借用版本已有的块引用
+## 21.7\_短\_reader\_只借用版本已有的块引用
 
 ```c
 static unsigned long read_block_value(unsigned int index)
@@ -298,7 +300,7 @@ static unsigned long read_block_value(unsigned int index)
 
 这条高频路径没有逐块 get／put。reader 的安全性来自：旧 snapshot 只会在自己的 GP 后归还 block 引用，因此 reader 仍在临界区时，根节点替它托住了 block。
 
-### 4.4.4\_旧版本在\_GP\_后逐块归还所有权
+## 21.8\_旧版本在\_GP\_后逐块归还所有权
 
 ```c
 static void snapshot_retire_rcu(struct rcu_head *rcu)
@@ -353,7 +355,7 @@ sequenceDiagram
     A->>A: 归还其他块引用并释放 root_A
 ```
 
-## 4.5\_复合模型中把某个块带出\_RCU
+## 21.9\_复合模型中把某个块带出\_RCU
 
 若调用者要把一个 block 交给工作队列或跨越睡眠，必须在 root 仍受 RCU 保护时取得独立引用：
 
@@ -385,7 +387,7 @@ static void data_block_put(struct data_block *block)
 
 如果 block 同时还出现在一个可独立删除的 RCU 索引中，**就不能只依赖 root 的不变量**；应为那个入口单独设计 `kref_get_unless_zero()`、取消发布和回收链，避免一个分配块被两套入口各自直接释放。
 
-## 4.6\_回调工作量与内存峰值
+## 21.10\_回调工作量与内存峰值
 
 复合快照消除了短 reader 的逐块原子操作，却把工作转移到构造和退休路径：
 
@@ -398,7 +400,7 @@ static void data_block_put(struct data_block *block)
 
 RCU 回调必须保持短小且不能主动阻塞。若一个 root 包含数量很大的 block，或者 block 的最后 `release()` 可能睡眠，不应在 RCU 回调中执行无界清理。可以在允许睡眠的更新上下文中用 `synchronize_rcu()` 后批量归还，或让短小的 RCU 回调把退休工作转交给工作队列；无论采用哪种方式，都必须保证 root 和块目录在工作真正接管之前保持有效。
 
-## 4.7\_RCU\_与\_seqcount/seqlock\_对比矩阵
+## 21.11\_RCU\_与\_seqcount/seqlock\_对比矩阵
 
 | 特征 | RCU | seqcount_t | seqlock_t |
 | --- | --- | --- | --- |
@@ -409,7 +411,7 @@ RCU 回调必须保持短小且不能主动阻塞。若一个 root 包含数量�
 | 更新成本 | 构造新根／新块、引用共享块、退休旧版本 | 原地写并更新序号 | 持锁原地写并更新序号 |
 | 适合场景 | 读多写少、允许旧版本、内存可延迟回收 | 写入较短、reader 可重试 | 需要内置写锁的短更新 |
 
-## 4.8\_所有权与回收核对表
+## 21.12\_所有权与回收核对表
 
 | 检查项 | 目标 | 状态 |
 | --- | --- | --- |
@@ -424,7 +426,7 @@ RCU 回调必须保持短小且不能主动阻塞。若一个 root 包含数量�
 | 连续更新和长期引用的内存峰值是否可接受 | 防止旧代积压 | □ |
 | 多个写者是否由更新锁或其他协议串行化 | 防止所有权重复转移 | □ |
 
-## 4.9\_小结
+## 21.13\_小结
 
 - 单个 RCU 对象被带出读区时，kref 统计的是对这个对象本身的长期持有。
 - 复合旧照中，版本根持有每个分散 block 的 kref；短 reader 借用根已有的引用，不必逐块计数。
@@ -434,9 +436,9 @@ RCU 回调必须保持短小且不能主动阻塞。若一个 root 包含数量�
 - 回收顺序由所有权拓扑决定，不存在对所有 RCU + kref 场景都成立的固定先后顺序。
 
 
-上一篇：[RCU 通用 API 与最小使用闭环](P03_RCU_通用API与最小使用闭环.md)。
+上一篇：[Tiny RCU 单 CPU 实现](P20_Tiny_RCU_单CPU实现.md)。
 
-下一篇：[非抢占式 Tree RCU 的问题与证明模型](P05_非抢占式_Tree_RCU_问题与证明模型.md)。
+下一篇：[RCU 驱动与子系统应用模式](P22_RCU_驱动与子系统应用模式.md)。
 
 
 

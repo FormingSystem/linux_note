@@ -12,9 +12,9 @@ topics:
   - scalability
 ---
 
-# 第14章\_Tree\_RCU\_rcu\_node树与分层汇聚
+# 第10章\_Tree\_RCU\_rcu\_node树与分层汇聚
 
-## 14.1\_问题\_为什么不让所有CPU清一个全局位图
+## 10.1\_问题\_为什么不让所有CPU清一个全局位图
 
 设 256 个 CPU 都在 GP 后很快经过 QS。最直接的设计是让它们锁同一个全局对象并清自己的位：
 
@@ -28,7 +28,7 @@ spin_unlock(&global_gp_lock);
 
 Tree RCU 用叶节点接收局部 CPU 位；一个叶节点只有从非零变为零时才向父节点写一次。高层看到的是“子树已经完整”，不是子树内每个 CPU 的每次动作。
 
-## 14.2\_一棵八CPU教学树
+## 10.2\_一棵八CPU教学树
 
 ```mermaid
 flowchart BT
@@ -60,7 +60,7 @@ Root: 11 → 10
 
 Leaf1 完成后 Root `10 → 00`，全局结论才成立。
 
-## 14.3\_位图字段各自表示什么
+## 10.3\_位图字段各自表示什么
 
 | 字段 | 所属 | 生命周期 | 含义 |
 | --- | --- | --- | --- |
@@ -73,7 +73,7 @@ Leaf1 完成后 Root `10 → 00`，全局结论才成立。
 
 `qsmask` 的位为一不表示对应 CPU 正在读，只表示本轮还没有取得足够证据。`qsmaskinitnext` 也不是当前 GP 等待集；它解决 CPU online/offline 与下一轮边界的协调。
 
-## 14.4\_GP初始化怎样建立每层等待集
+## 10.4\_GP初始化怎样建立每层等待集
 
 `kernel/rcu/tree.c::rcu_gp_init()` 广度优先遍历节点，在 `rnp->lock` 下执行：
 
@@ -87,7 +87,7 @@ WRITE_ONCE(rnp->gp_seq, rcu_state.gp_seq);
 
 CPU hotplug 的 `qsmaskinitnext → qsmaskinit` 转换在专门锁和 GP 初始化边界中完成，避免当前 GP 中途出现无法解释的新参与者。
 
-## 14.5\_CPU报告到叶节点
+## 10.5\_CPU报告到叶节点
 
 本 CPU `rcu_core()` 调用 `rcu_check_quiescent_state(rdp)`。确认本地已观察 QS 后进入 `rcu_report_qs_rdp()`：
 
@@ -107,7 +107,7 @@ CPU很晚才提交GP=N的QS
     → 旧报告不能清N+1的位
 ```
 
-## 14.6\_节点怎样逐层向根清位
+## 10.6\_节点怎样逐层向根清位
 
 `rcu_report_qs_rnp()` 在每一层重复：
 
@@ -125,7 +125,7 @@ rnp = rnp->parent;        /* 本节点完整，向上一层 */
 
 到根后 `rcu_report_qs_rsp()` 唤醒 GP kthread。传播不是 CPU 主动给每一级发送消息；同一个报告函数只在某层刚好完成时继续锁父节点。
 
-## 14.7\_抢占式任务债务怎样进入同一棵树
+## 10.7\_抢占式任务债务怎样进入同一棵树
 
 PREEMPT_RCU 的 blocked reader 只挂在叶 `rcu_node.blkd_tasks`，当前 GP 边界由 `gp_tasks` 表示。叶节点即使 `qsmask==0`，只要 `gp_tasks!=NULL` 就不能向父节点清位。
 
@@ -139,7 +139,7 @@ R-old 最外层 unlock 后，`rcu_report_unblock_qs_rnp()` 在确认任务债务
 
 所以高层 `qsmask` 不只是低层 CPU 位的算术 OR；叶节点把 CPU 和任务两类证明先做合取，再用自己的一位向上表示“整个子树完整”。
 
-## 14.8\_锁与缓存通信发生在哪里
+## 10.8\_锁与缓存通信发生在哪里
 
 | 事件 | 触及共享位置 | 频率 |
 | --- | --- | --- |
@@ -151,7 +151,7 @@ R-old 最外层 unlock 后，`rcu_report_unblock_qs_rnp()` 在确认任务债务
 
 树没有消除缓存一致性通信，而是把高频 reader 从共享树移开，并把 GP 报告成本分区、分层、批量化。CPU 很少或 GP 非常频繁时，树的管理成本也可能显著；RCU 的优势取决于 reader/update 比例和平台规模。
 
-## 14.9\_完整四CPU报告时序
+## 10.9\_完整四CPU报告时序
 
 ```mermaid
 sequenceDiagram
@@ -178,7 +178,7 @@ sequenceDiagram
     end
 ```
 
-## 14.10\_trace和故障定位
+## 10.10\_trace和故障定位
 
 RCU trace 中 `rcu_quiescent_state_report` 可观察节点层级、清除 mask、剩余 `qsmask` 和 blocked task 指示。stall 日志中的 `q=`/CPU mask 等字段随版本不同，应回到 `tree_stall.h` 对照格式。
 
@@ -193,15 +193,15 @@ RCU trace 中 `rcu_quiescent_state_report` 可观察节点层级、清除 mask�
 
 不要从根非零直接推断当前 CPU 的 reader 没退出；根保存的是整棵子树的汇总结论。
 
-## 14.11\_源码入口
+## 10.11\_源码入口
 
-- 先从 [拓扑与 CPU 热插拔模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#8.3_参与者状态地址与所有权)建立 `rcu_state`、`rcu_node` 与 `rcu_data` 的地址映射，再进入具体函数。
+- 先从 [拓扑与 CPU 热插拔模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.3_参与者状态地址与所有权)建立 `rcu_state`、`rcu_node` 与 `rcu_data` 的地址映射，再进入具体函数。
 - `kernel/rcu/tree.h::struct rcu_node`、`struct rcu_data`。
 - [`rcu_init_one()` 建立 parent、范围和 `grpmask` 拓扑](../../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点)。
 - [`rcu_gp_init()` 建立本轮 `qsmask` 和代际](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.9_rcu_gp_init开始代际并建立证明债务)。
-- [`rcu_report_qs_rdp()`、`rcu_report_qs_rnp()` 的逐层汇聚](../../../../../research/source_reading/rcu/source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md#2.6_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据)。
+- [`rcu_report_qs_rdp()`、`rcu_report_qs_rnp()` 的逐层汇聚](../../../../../research/source_reading/rcu/source_explanations/P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.6_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据)。
 - `kernel/rcu/tree_plugin.h::rcu_preempt_blocked_readers_cgp()`：任务债务门控。
 
-上一篇：[Tree RCU QS、EQS 与 Context Tracking](P13_Tree_RCU_QS_EQS与Context_Tracking.md)。
+上一篇：[Tree RCU QS、EQS 与 Context Tracking](P09_Tree_RCU_QS_EQS与Context_Tracking.md)。
 
-下一篇：[Tree RCU force-QS、迟延与 Stall](P15_Tree_RCU_force_QS迟延与Stall.md)。
+下一篇：[Tree RCU rcu_segcblist 回调状态机](P11_Tree_RCU_rcu_segcblist回调状态机.md)。

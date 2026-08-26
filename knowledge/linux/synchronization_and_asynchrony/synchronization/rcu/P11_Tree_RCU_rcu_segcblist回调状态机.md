@@ -12,9 +12,9 @@ topics:
   - rcu_segcblist
 ---
 
-# 第17章\_Tree\_RCU\_rcu\_segcblist回调状态机
+# 第11章\_Tree\_RCU\_rcu\_segcblist回调状态机
 
-## 17.1\_场景\_三个callback对应哪一轮GP
+## 11.1\_场景\_三个callback对应哪一轮GP
 
 CPU0 在不同时间登记三个旧对象：
 
@@ -35,7 +35,7 @@ C是否还没分配代际
 
 `rcu_segcblist` 用 **一条链表 + 四个边界 + 少量目标序列** 表达这些关系。
 
-## 17.2\_四段不是四条链表
+## 11.2\_四段不是四条链表
 
 `include/linux/rcu_segcblist.h` 定义：
 
@@ -62,7 +62,7 @@ flowchart LR
 
 `gp_seq[]` 对 WAIT/NEXT_READY 等非空段记录目标 GP。DONE 已经安全，NEXT 尚未分配，所以不需要有效目标序列。
 
-## 17.3\_对象和状态所有权
+## 11.3\_对象和状态所有权
 
 ```c
 struct demo_obj {
@@ -87,7 +87,7 @@ static void free_obj_rcu(struct rcu_head *head)
 
 同一个 `rcu_head` 在 callback 完成前不得再次 `call_rcu()`；开启 `CONFIG_DEBUG_OBJECTS_RCU_HEAD` 可帮助发现重复入队。
 
-## 17.4\_S0到S5\_回调状态推进
+## 11.4\_S0到S5\_回调状态推进
 
 | 阶段 | 函数 | 回调所在段 | 已知事实 | 下一步 |
 | --- | --- | --- | --- | --- |
@@ -100,7 +100,7 @@ static void free_obj_rcu(struct rcu_head *head)
 
 这不是每个 callback 自己更新状态字段。移动 `tails[]` 边界就能让一整段 callback 同时换阶段。
 
-## 17.5\_enqueue为什么总进NEXT
+## 11.5\_enqueue为什么总进NEXT
 
 `rcu_segcblist_enqueue(rsclp, rhp)` 的核心动作是：
 
@@ -115,7 +115,7 @@ WRITE_ONCE(rsclp->tails[RCU_NEXT_TAIL], &rhp->next);
 
 这也说明 `call_rcu()` 返回时的精确结论只有：callback 已被 RCU 管线接管。它未必已经请求完 GP，更没有执行。
 
-## 17.6\_accelerate怎样绑定目标GP
+## 11.6\_accelerate怎样绑定目标GP
 
 `rcu_segcblist_accelerate(rsclp, seq)` 把尚未分配的尾部 callback 绑定到 `seq` 或更合适的后续 GP，并整理 WAIT/NEXT_READY 段边界。
 
@@ -123,7 +123,7 @@ WRITE_ONCE(rsclp->tails[RCU_NEXT_TAIL], &rhp->next);
 
 若已有段等待更早 GP，新 callback 不能插到它前面破坏 FIFO；若目标序列可合并，tail 边界可以合并而不遍历每个 `rcu_head`。
 
-## 17.7\_advance为何可能一次推进多段
+## 11.7\_advance为何可能一次推进多段
 
 本 CPU 感知全局完成序列后调用 `rcu_segcblist_advance(rsclp, seq)`。它从 WAIT 开始检查：凡目标 `gp_seq` 已被 `seq` 覆盖的连续段，都把其尾边界并入 DONE；随后填补可能出现的空 WAIT 段。
 
@@ -137,7 +137,7 @@ WRITE_ONCE(rsclp->tails[RCU_NEXT_TAIL], &rhp->next);
 
 `D` 仍在 NEXT，因为“全局某轮已完成”不能反向覆盖一个在其边界以后才登记且尚未分配的 callback。
 
-## 17.8\_完整回调代际时序
+## 11.8\_完整回调代际时序
 
 ```mermaid
 sequenceDiagram
@@ -164,17 +164,17 @@ sequenceDiagram
     Note over Q: C仍等待N+1<br/>不能随A、B执行
 ```
 
-## 17.9\_entrain为何服务rcu\_barrier
+## 11.9\_entrain为何服务rcu\_barrier
 
 `rcu_segcblist_entrain()` 把一个 barrier callback 放到当前 cblist **所有既有 callback 之后的最后非空等待位置**。当这个 barrier callback 被调用，同一 CPU 队列中在它以前的 callback 必然已经调用。
 
 它不是普通 enqueue 的别名：barrier 需要保持“尾随既有队列”的逻辑，即使当前 callback 分散在 DONE、WAIT、NEXT_READY 或 NEXT。P20 会把每 CPU entrain 汇聚为全局 barrier 完成。
 
-## 17.10\_迁移与合并为什么必须保留段语义
+## 11.10\_迁移与合并为什么必须保留段语义
 
 CPU offline 时不能把源链表所有节点粗暴追加到目标 NEXT：其中一些 callback 可能已经 DONE，另一些在等不同 GP。`rcu_segcblist_merge(dst, src)` 分别提取 DONE 与 pending 部分，再插入目标相应位置，保留“已安全”和“仍等待”的边界。
 
-## 17.11\_不变量与常见误读
+## 11.11\_不变量与常见误读
 
 1. DONE 表示可执行，不表示已经执行。
 2. WAIT 的 callback 已绑定目标 GP；NEXT 尚未绑定。
@@ -183,9 +183,9 @@ CPU offline 时不能把源链表所有节点粗暴追加到目标 NEXT：其中
 5. 长度计数服务过载、barrier 与诊断，不能凭一个总数判断全部 callback 都在同阶段。
 6. `call_rcu()` 只登记动作，不保证当前或下一固定物理 GP。
 
-## 17.12\_源码与trace入口
+## 11.12\_源码与trace入口
 
-版本化模块先进入 [回调与 NOCB 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#11.1_GP完成为什么还不等于callback执行)。实现直达入口为：
+版本化模块先进入 [回调与 NOCB 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#7.1_GP完成为什么还不等于callback执行)。实现直达入口为：
 
 - [`call_rcu()` 与每 CPU queue 所有权交接](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.4_call_rcu怎样把所有权交给每CPU队列)；
 - [`rcu_segcblist_accelerate/advance()` 与 Tree RCU GP 连接](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.5_accelerate与advance怎样连接callback和GP)；
@@ -200,6 +200,6 @@ echo 1 | sudo tee events/rcu/rcu_callback/enable
 echo 1 | sudo tee tracing_on
 ```
 
-上一篇：[Tree RCU Expedited GP](P16_Tree_RCU_Expedited_GP.md)。
+上一篇：[Tree RCU rcu_node 树与分层汇聚](P10_Tree_RCU_rcu_node树与分层汇聚.md)。
 
-下一篇：[Tree RCU 回调执行、批处理与限流](P18_Tree_RCU_回调执行_批处理与限流.md)。
+下一篇：[Tree RCU 回调执行、批处理与限流](P12_Tree_RCU_回调执行_批处理与限流.md)。

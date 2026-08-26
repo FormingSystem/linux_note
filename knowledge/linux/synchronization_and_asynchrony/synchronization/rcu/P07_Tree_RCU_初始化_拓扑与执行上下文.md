@@ -12,9 +12,9 @@ topics:
   - execution_context
 ---
 
-# 第11章\_Tree\_RCU\_初始化\_拓扑与执行上下文
+# 第7章\_Tree\_RCU\_初始化\_拓扑与执行上下文
 
-## 11.1\_具体问题\_CPU的QS究竟要写进哪一个节点
+## 7.1\_具体问题\_CPU的QS究竟要写进哪一个节点
 
 假设一台 64 CPU 机器刚启动。CPU37 后来观察到一个 QS，源码只有 `this_cpu_ptr(&rcu_data)`；它必须立即知道：
 
@@ -28,7 +28,7 @@ topics:
 
 若这些关系要到每次 QS 才搜索整棵树，报告路径会变得昂贵；若映射错误，CPU37 可能清掉 CPU38 的债务。初始化的任务就是把拓扑、位图和执行上下文预先建立为可直接寻址的状态。
 
-## 11.2\_启动代码不是一条单函数调用
+## 7.2\_启动代码不是一条单函数调用
 
 Linux 6.12.20 的主要入口 `kernel/rcu/tree.c::rcu_init()` 依次完成：
 
@@ -45,9 +45,9 @@ sync_wq = alloc_workqueue("sync_wq", WQ_MEM_RECLAIM, 0);
 
 这段顺序有启动约束：`rcu_init()` 很早执行，此时源码断言在线 CPU 数不超过一个；其他 CPU 以后通过 CPU hotplug/bring-up 钩子逐个准备。GP kthread、boost/nocb/expedited 工作线程还受 `kthreadd` 和对应初始化阶段是否就绪的限制，不能把“`rcu_init()` 一次创建全部执行者”当作事实。
 
-这里第一次出现的 **GP kthread** 是一个长期存在的内核调度任务：`rcu_spawn_gp_kthread()` 创建 `task_struct`，入口为 `rcu_gp_kthread()`，任务指针保存在 `rcu_state.gp_kthread`，无请求时睡在 `rcu_state.gp_wq`。它不是每轮 GP 新建的线程，不是第五颗 CPU，也不负责执行所有 callback。完整术语和生命周期见 [Tree RCU GP 请求与全局生命周期](P12_Tree_RCU_GP请求与全局生命周期.md#12.3_为什么需要一个长期存在的GP内核线程)，版本化模块协作见 [GP 全局生命周期模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.5_线程怎样创建并安全发布)；`rcu_init()` 与稍后线程创建的启动分界见 [从内核启动链定位 `early_initcall`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall)，创建与发布语句见 [`rcu_spawn_gp_kthread()`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务)。
+这里第一次出现的 **GP kthread** 是一个长期存在的内核调度任务：`rcu_spawn_gp_kthread()` 创建 `task_struct`，入口为 `rcu_gp_kthread()`，任务指针保存在 `rcu_state.gp_kthread`，无请求时睡在 `rcu_state.gp_wq`。它不是每轮 GP 新建的线程，不是第五颗 CPU，也不负责执行所有 callback。完整术语和生命周期见 [Tree RCU GP 请求与全局生命周期](P08_Tree_RCU_GP请求与全局生命周期.md#8.3_为什么需要一个长期存在的GP内核线程)，版本化模块协作见 [GP 全局生命周期模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.5_线程怎样创建并安全发布)；`rcu_init()` 与稍后线程创建的启动分界见 [从内核启动链定位 `early_initcall`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall)，创建与发布语句见 [`rcu_spawn_gp_kthread()`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务)。
 
-## 11.3\_S0到S6\_拓扑建立的统一阶段
+## 7.3\_S0到S6\_拓扑建立的统一阶段
 
 | 阶段 | 触发 | 写入状态 | 写入者 | 后续读取者 | 完成条件 |
 | --- | --- | --- | --- | --- | --- |
@@ -61,7 +61,7 @@ sync_wq = alloc_workqueue("sync_wq", WQ_MEM_RECLAIM, 0);
 
 初始化不是单一状态机，而是拓扑、每 CPU、本地执行器和全局线程四组状态在启动阶段汇合。
 
-## 11.4\_rcu\_node怎样由叶到根建立
+## 7.4\_rcu\_node怎样由叶到根建立
 
 `rcu_init_one()` 按层从叶向根初始化每个 `rcu_node`。关键关系是：
 
@@ -116,7 +116,7 @@ flowchart BT
 
 图中的位宽只是教学示例；实际 fanout 和层数由内核配置、`nr_cpu_ids` 与 geometry 计算决定。
 
-## 11.5\_每CPU怎样绑定叶节点
+## 7.5\_每CPU怎样绑定叶节点
 
 节点建立后，`rcu_init_one()` 遍历 possible CPU。它顺着叶节点的 `grphi` 找到覆盖该 CPU 的叶节点并写：
 
@@ -135,7 +135,7 @@ mask = rdp->grpmask
 
 CPU 与叶节点是静态几何映射；CPU online/offline 改变的是该节点哪些位参加下一轮 GP，而不是每次热插拔都重新发明整棵树。
 
-## 11.6\_CPU准备与加入参与集合是两步
+## 7.6\_CPU准备与加入参与集合是两步
 
 `rcutree_prepare_cpu(cpu)` 在根锁和叶锁保护下初始化本地运行状态：
 
@@ -151,17 +151,17 @@ rdp->rcu_iw = IRQ_WORK_INIT_HARD(rcu_iw_handler);
 
 这与对象入口的时间边界相同：参与集合也必须按代际封闭，不能在 GP 中途随意增删而没有协议。
 
-## 11.7\_五类执行者和状态通信
+## 7.7\_五类执行者和状态通信
 
 | 执行者 | 常见上下文 | 读取 | 写入/通知 | 是否代表业务writer |
 | --- | --- | --- | --- | --- |
 | reader任务 | 任意允许的内核任务/中断上下文 | RCU发布指针 | 每任务或执行约束状态 | 否 |
 | scheduler/context tracking | context switch、user/idle、IRQ边界 | 当前任务、watching、本CPU债务 | 本地QS或blocked任务登记 | 否 |
 | `rcu_core()` | `RCU_SOFTIRQ` 或 per-CPU `rcuc` kthread | `rcu_data`、叶节点、callback分段 | QS上报、callback推进/执行请求 | 否 |
-| `rcu_gp_kthread` | 普通 Tree RCU 的长期全局 GP 内核任务 | 根完成条件、GP请求 | 初始化各节点、FQS、cleanup；[完整职责](P12_Tree_RCU_GP请求与全局生命周期.md#12.3_为什么需要一个长期存在的GP内核线程) | 汇聚多个请求，不代表单个writer，也不直接执行全部callback |
+| `rcu_gp_kthread` | 普通 Tree RCU 的长期全局 GP 内核任务 | 根完成条件、GP请求 | 初始化各节点、FQS、cleanup；[完整职责](P08_Tree_RCU_GP请求与全局生命周期.md#8.3_为什么需要一个长期存在的GP内核线程) | 汇聚多个请求，不代表单个writer，也不直接执行全部callback |
 | callback/nocb/boost/exp执行者 | softirq、per-CPU/nocb/节点kthread或workqueue | READY callback、blocked task、exp状态 | 调用callback、boost、加速GP | 代表已登记动作，不拥有业务入口 |
 
-## 11.8\_rcu\_core为何既可能是softirq也可能是kthread
+## 7.8\_rcu\_core为何既可能是softirq也可能是kthread
 
 `invoke_rcu_core()` 的 6.12.20 分支是：
 
@@ -183,7 +183,7 @@ softirq handler `rcu_core_si()` 只调用 `rcu_core()`；kthread 分支写本 CP
 
 所以 scheduler tick 只可能 **请求** core 工作，它不是 callback 和 QS 的唯一执行上下文。`NO_HZ_FULL` 场景尤其不能依赖周期 tick 永远存在。
 
-## 11.9\_一次本地工作触发时序
+## 7.9\_一次本地工作触发时序
 
 ```mermaid
 sequenceDiagram
@@ -209,7 +209,7 @@ sequenceDiagram
     X->>C: 加速、推进或批量执行callback
 ```
 
-## 11.10\_代码和运行观察
+## 7.10\_代码和运行观察
 
 启动日志可先确认实现和几何：
 
@@ -222,9 +222,9 @@ ps -eLo pid,psr,cls,rtprio,comm | grep -E 'rcu|rcuc|rcuo|rcub|rcuog|rcuop'
 
 不要预期所有配置都出现同一组线程：`use_softirq`、NOCB、boost、PREEMPT_RT 和 CPU 数量会改变执行者。观察目标是把实际线程/softirq与本章状态职责对应，而不是靠线程名反推全部语义。
 
-Linux 6.12.20 的版本化阅读先进入 [拓扑与 CPU 热插拔模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#8.1_本模块究竟解决什么问题)，再分别直达 [`rcu_init_one()` 建立固定汇聚树](../../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点) 与 [boot/prepare 两阶段初始化](../../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.5_boot初始化与prepare为何仍未让CPU加入当前GP)。普通 GP kthread 继续进入 [启动、创建到运行期的唯一实现](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall)，每 CPU core 执行者进入 [回调与 NOCB 源码实现](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.7_普通CPU怎样选择softirq或rcuc执行者)；不能由启动函数名把它们视为同一线程。
+Linux 6.12.20 的版本化阅读先进入 [拓扑与 CPU 热插拔模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.1_本模块究竟解决什么问题)，再分别直达 [`rcu_init_one()` 建立固定汇聚树](../../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点) 与 [boot/prepare 两阶段初始化](../../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.5_boot初始化与prepare为何仍未让CPU加入当前GP)。普通 GP kthread 继续进入 [启动、创建到运行期的唯一实现](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall)，每 CPU core 执行者进入 [回调与 NOCB 源码实现](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.7_普通CPU怎样选择softirq或rcuc执行者)；不能由启动函数名把它们视为同一线程。
 
-## 11.11\_成本与边界
+## 7.11\_成本与边界
 
 - 初始化用固定拓扑换取运行时 `rdp->mynode/grpmask` 直接寻址。
 - 树减少全局争用，但每个叶节点仍有锁和共享缓存行。
@@ -233,6 +233,6 @@ Linux 6.12.20 的版本化阅读先进入 [拓扑与 CPU 热插拔模块源码�
 
 下一章从已经建立的全局线程和状态出发，追踪一个真实 GP 请求怎样被合并、开始并完成。
 
-上一篇：[Tree RCU 统一状态与通知总图](P10_Tree_RCU_统一状态与通知总图.md)。
+上一篇：[Tree RCU 读侧执行模型与配置差异](P06_Tree_RCU_读侧执行模型与配置差异.md)。
 
-下一篇：[Tree RCU GP 请求与全局生命周期](P12_Tree_RCU_GP请求与全局生命周期.md)。
+下一篇：[Tree RCU GP 请求与全局生命周期](P08_Tree_RCU_GP请求与全局生命周期.md)。
