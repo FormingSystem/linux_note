@@ -12,9 +12,9 @@ topics:
   - no_hz_full
 ---
 
-# 第19章\_Tree\_RCU\_NOCB回调卸载
+# 第16章\_Tree\_RCU\_NOCB回调卸载
 
-## 19.1\_场景\_隔离CPU不希望执行回调批次
+## 16.1\_场景\_隔离CPU不希望执行回调批次
 
 CPU3 被用于低延迟数据面，应用希望尽量减少 scheduler tick、softirq 和内核回调在该 CPU 上产生的尾延迟。数据面仍会删除对象：
 
@@ -27,7 +27,7 @@ call_rcu(&old->rcu, flow_free_rcu);
 
 NOCB 把指定 CPU 的 **callback GP 管理与执行** 交给 kthread；它没有取消 CPU3 对普通 RCU reader/QS 的责任，也没有让 `call_rcu()` 变成零开销远端发送。
 
-## 19.2\_卸载前后责任对比
+## 16.2\_卸载前后责任对比
 
 | 责任 | 普通CPU | NOCB CPU |
 | --- | --- | --- |
@@ -40,7 +40,7 @@ NOCB 把指定 CPU 的 **callback GP 管理与执行** 交给 kthread；它没�
 
 NOCB 的名字是 no-callbacks-on-this-CPU 的工程目标，不是 no-RCU-accounting-on-this-CPU。
 
-## 19.3\_两个线程与一个生产者路径
+## 16.3\_两个线程与一个生产者路径
 
 ```mermaid
 flowchart LR
@@ -62,7 +62,7 @@ flowchart LR
 
 实际线程可按组共享：`rcu_nocb_gp_kthread()` 可代表一组 offload CPU 管理 GP；每个 offload `rcu_data` 有对应 callback kthread/关联。线程布局取决于 grouping、CPU 数与配置，不能从一个线程名推导固定一对一关系。
 
-## 19.4\_为什么需要bypass
+## 16.4\_为什么需要bypass
 
 若大量 CPU/中断同时向一个 offload CPU 的 `cblist` 入队，每次都取得 `nocb_lock`，生产者会在共享锁上排队。`nocb_bypass` 是一个由 `nocb_bypass_lock` 保护的普通 `rcu_cblist`，允许高频入队先聚集，再批量 flush 到权威 `rcu_segcblist`。
 
@@ -81,7 +81,7 @@ bypass太旧、太满、出现非lazy callback或需推进
 
 旁路移除的是每次高频入队争用主锁的成本，换来额外链表、长度记账、flush时机和一致性协议。
 
-## 19.5\_bypass不是第二个权威GP队列
+## 16.5\_bypass不是第二个权威GP队列
 
 callback 只有并入 `cblist` 后，才能由 `rcu_segcblist` 的 accelerate/advance 状态机绑定 GP 并进入 DONE。因此任何需要得出“当前所有 callback 到哪里了”的路径，必须先考虑 bypass：
 
@@ -93,7 +93,7 @@ callback 只有并入 `cblist` 后，才能由 `rcu_segcblist` 的 accelerate/ad
 
 若只读 `cblist` 长度而忽略 bypass，会漏掉已经由 `call_rcu()` 交付、但尚未进入分段队列的 callback。
 
-## 19.6\_S0到S7\_一次offload\_callback生命周期
+## 16.6\_S0到S7\_一次offload\_callback生命周期
 
 | 阶段 | 触发 | 主要状态 | 执行者 | 退出条件 |
 | --- | --- | --- | --- | --- |
@@ -106,7 +106,7 @@ callback 只有并入 `cblist` 后，才能由 `rcu_segcblist` 的 accelerate/ad
 | S6 唤醒CB | DONE出现 | callback kthread等待条件成立 | NOCB GP kthread | CB线程运行 |
 | S7 执行 | `nocb_cb_wait()` → `rcu_do_batch()` | callback func被调用、长度下降 | NOCB CB kthread | 批次完成/限流 |
 
-## 19.7\_端到端时序
+## 16.7\_端到端时序
 
 ```mermaid
 sequenceDiagram
@@ -133,7 +133,7 @@ sequenceDiagram
     Note over P,X: CPU3仍负责reader与QS<br/>但不执行这个callback批次
 ```
 
-## 19.8\_配置与观察
+## 16.8\_配置与观察
 
 启动参数示例：
 
@@ -152,7 +152,7 @@ grep -E 'CONFIG_RCU_NOCB_CPU=' /boot/config-"$(uname -r)"
 
 线程名和 affinity 随版本/配置变化，源码中的 `rcu_nocb_gp_kthread()`、`rcu_nocb_cb_kthread()` 才是职责锚点。
 
-## 19.9\_动态offload/deoffload为何复杂
+## 16.9\_动态offload/deoffload为何复杂
 
 Linux 6.12.20 提供 `rcu_nocb_cpu_offload(cpu)` 和 `rcu_nocb_cpu_deoffload(cpu)`。切换至少要同步：
 
@@ -174,7 +174,7 @@ barrier是否正在给队列entrain哨兵callback
 
 这两个字段只在 `CONFIG_RCU_NOCB_CPU` 下编译进 `rcu_state`。配置关闭时，整组全局管理状态消失，但普通 Tree RCU 的 reader、GP 与 callback 语义仍然存在。
 
-## 19.10\_性能取舍
+## 16.10\_性能取舍
 
 | 收益 | 代价 |
 | --- | --- |
@@ -185,14 +185,14 @@ barrier是否正在给队列entrain哨兵callback
 
 若 housekeeping CPU 资源不足，offload callback 会积压；被隔离 CPU 很干净，不等于系统整体回收吞吐足够。
 
-## 19.11\_源码和trace入口
+## 16.11\_源码和trace入口
 
-- [普通 GP 长期线程的端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_端到端源码时序)：它创建并发布普通 Tree RCU 的权威完成代际；NOCB GP kthread只是等待、观察并推进 offloaded callback，不创建另一套普通 GP。
-- [回调与 NOCB 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#11.6_NOCB为何拆成GP线程与CB线程)：先分清 producer、GP 观察者与 callback 执行者。
+- [普通 GP 长期线程的端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)：它创建并发布普通 Tree RCU 的权威完成代际；NOCB GP kthread只是等待、观察并推进 offloaded callback，不创建另一套普通 GP。
+- [回调与 NOCB 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#7.6_NOCB为何拆成GP线程与CB线程)：先分清 producer、GP 观察者与 callback 执行者。
 - [`call_rcu_nocb()`、bypass、flush 与防搁浅唤醒](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.8_nocb_bypass怎样降低生产者锁竞争又避免搁浅)。
-- [`nocb_gp_wait()` / `nocb_cb_wait()` 的双线程交接](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.9_nocb_gp与cb线程如何交接成熟callback)。
-- [`rcu_nocb_cpu_offload()` / `deoffload()` 的动态切换](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.10_动态offload为何只允许offline_CPU并等待状态交接)。
+- [`nocb_gp_wait()` 的目标代际推进](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.9_NOCB_GP线程怎样推进队列并等待最早目标代际)与 [`nocb_cb_wait()` 的成熟批次执行](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.10_NOCB_CB线程只执行成熟批次)。
+- [`rcu_nocb_cpu_offload()` / `deoffload()` 的动态切换](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.11_动态offload为何只允许offline_CPU并等待状态交接)。
 
-上一篇：[Tree RCU 回调执行、批处理与限流](P18_Tree_RCU_回调执行_批处理与限流.md)。
+上一篇：[Tree RCU Expedited GP](P15_Tree_RCU_Expedited_GP.md)。
 
-下一篇：[Tree RCU 同步等待与 rcu_barrier](P20_Tree_RCU_同步等待与rcu_barrier.md)。
+下一篇：[Tree RCU CPU 热插拔与回调迁移](P17_Tree_RCU_CPU热插拔与回调迁移.md)。

@@ -11,12 +11,14 @@ topics:
   - force_qs
   - stall
 ---
-# 第15章\_Tree\_RCU\_force\_QS迟延与Stall
+# 第14章\_Tree\_RCU\_force\_QS迟延与Stall
 
 
-## 15.1\_Tree\_RCU\_force\_QS迟延与\_Stall
+## 14.1\_安全证明成立以后为什么还需要活性慢路径
 
-### 15.1.1\_场景\_qsmask剩一位究竟意味着什么
+P08～P10 已经建立“真实 QS 或任务清债 → 节点逐层清位 → 根节点完成”的安全链，但它没有保证证据会及时上报。force-QS 只能观察已有状态、催促有能力前进的 CPU，并在长期无进展时留下 stall 诊断；它不能凭超时制造安全证据。本章据此把正常等待、特殊事件和诊断慢路径放回同一条时间线。
+
+## 14.2\_场景\_qsmask剩一位究竟意味着什么
 
 GP=N 已经等待一段时间，根最终只剩 CPU6 所在叶分支。可能存在三种完全不同的事实：
 
@@ -26,7 +28,7 @@ GP=N 已经等待一段时间，根最终只剩 CPU6 所在叶分支。可能存
 
 如果 GP kthread 一律继续睡，前两种会造成无谓延迟；如果一律超时清位，第三种会释放仍在使用的对象。force-QS 的职责是 **区分已有证据、可以催促、仍必须等待**，不是强行宣布 reader 已结束。
 
-### 15.1.2\_一个故意制造stall的错误代码
+## 14.3\_一个故意制造stall的错误代码
 
 下面的诊断模块片段在 CPU 上长期关闭中断并停留在 RCU 读侧，会阻断 scheduler tick、softirq 和正常 QS 进展：
 
@@ -52,7 +54,7 @@ static void bad_path(struct demo_obj __rcu **slot)
 
 它同时破坏调度与 RCU 活性，stall 日志可能把 CPU、当前任务、GP 号、tick/softirq 状态暴露出来。正确做法是缩短不可抢占/关中断区间，把长工作拆到可调度上下文；若对象必须跨越区间，使用独立引用或所有权转移，而不是延长 RCU 读侧。
 
-### 15.1.3\_普通GP的等待与扫描节奏
+## 14.4\_普通GP的等待与扫描节奏
 
 `kernel/rcu/tree.c::rcu_gp_fqs_loop()` 先设置下一次扫描时刻并睡在 `rcu_state.gp_wq`：
 
@@ -87,9 +89,9 @@ gp_state=RCU_GP_WAIT_FQS
 
 callback 过载还有一对正交字段：`cbovldnext` 在本轮叶节点扫描时汇总“下一轮是否过载”，下一次 `force_qs_rnp()` 开头才转交给 `cbovld`；`cbovld` 会缩短 FQS 等待并影响 boost 积极性。这个一拍延迟避免在尚未扫描完整棵叶层时，把局部观察立即冒充全局过载结论。
 
-版本化阅读先进入 [force-QS 与 Stall 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P09_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#9.1_为什么GP已经在等还要有force_QS)。FQS sleep/timer 主循环见 [`rcu_gp_fqs_loop()`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.10_FQS循环与根完成通知)；watching snapshot、叶扫描、urgent/resched 与 stall 分类见 [force-QS 与 Stall 源码实现](../../../../../research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)。
+版本化阅读先进入 [force-QS 与 Stall 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P05_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#5.1_为什么GP已经在等还要有force_QS)。FQS sleep/timer 主循环见 [`rcu_gp_fqs_loop()`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.10_FQS循环与根完成通知)；watching snapshot、叶扫描、urgent/resched 与 stall 分类见 [force-QS 与 Stall 源码实现](../../../../../research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)。
 
-### 15.1.4\_force\_qs\_rnp如何按叶节点处理
+## 14.5\_force\_qs\_rnp如何按叶节点处理
 
 `force_qs_rnp(check_fn)` 遍历叶节点，只检查当前 `qsmask` 仍为一的 CPU。对每个 CPU 调用 watching 快照函数，并把结果分成：
 
@@ -112,7 +114,7 @@ flowchart TD
     D --> H["下轮FQS继续检查"]
 ```
 
-### 15.1.5\_urgent\_resched\_IPI和boost各做什么
+## 14.6\_urgent\_resched\_IPI和boost各做什么
 
 这些词经常被压成“RCU 发 IPI 通知 CPU”，实际有不同成本层级：
 
@@ -127,7 +129,7 @@ flowchart TD
 
 被移除的“每 reader 主动通知全局协调者”成本，被每 CPU 状态、GP 周期扫描和异常慢路径通信替代。正常读侧不付 IPI；只有 GP 失去自然进展时才逐渐升级干预。
 
-### 15.1.6\_完整迟延CPU时序
+## 14.7\_完整迟延CPU时序
 
 ```mermaid
 sequenceDiagram
@@ -161,7 +163,7 @@ sequenceDiagram
     end
 ```
 
-### 15.1.7\_Stall是证明链停滞的诊断\_不是根因名称
+## 14.8\_Stall是证明链停滞的诊断\_不是根因名称
 
 常见原因按状态层分类：
 
@@ -176,7 +178,7 @@ sequenceDiagram
 
 一条 stall 日志只能证明 RCU 在预期时间内没有完成证据链。它不能单独证明是 `rcu_read_lock()` 太长，也不能证明旧对象已经 UAF。
 
-### 15.1.8\_安全性与活性必须分开
+## 14.9\_安全性与活性必须分开
 
 ```text
 安全性：没有CPU/任务证据
@@ -190,7 +192,7 @@ sequenceDiagram
 
 stall 检测、强制扫描和 boost 都试图恢复活性，但不能降低安全标准。内核不会因为已经打印 N 次告警就把 `qsmask` 或 `gp_tasks` 无证据清零。
 
-### 15.1.9\_诊断步骤
+## 14.10\_诊断步骤
 
 1. 从日志记录 GP 序列、stall CPU/任务和持续时间。
 2. 判断欠的是 CPU 位还是 PREEMPT_RCU blocked task。
@@ -208,7 +210,7 @@ cd /sys/kernel/tracing/events/rcu
 find . -maxdepth 2 -name enable -print
 ```
 
-### 15.1.10\_源码入口
+## 14.11\_源码入口
 
 - [`kernel/rcu/tree.c::rcu_gp_fqs_loop()`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.10_FQS循环与根完成通知)：等待、扫描节奏与根完成检查。
 - [`rcu_watching_snap_save/recheck()`](../../../../../research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.4_watching快照怎样把EQS变成隐式QS证据)：首轮保存与后续 EQS/urgent 检查。
@@ -218,6 +220,6 @@ find . -maxdepth 2 -name enable -print
 - `kernel/rcu/tree_plugin.h::rcu_initiate_boost()`：可选被抢占 reader boost。
 - [`tree_stall.h` 三类控制故障与 `check_cpu_stall()`](../../../../../research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.7_三类stall为什么必须读取不同状态)：stall 阈值、检测、打印和抑制逻辑。
 
-上一篇：[Tree RCU rcu_node 树与分层汇聚](P14_Tree_RCU_rcu_node树与分层汇聚.md)。
+上一篇：[Tree RCU 同步等待与 rcu_barrier](P13_Tree_RCU_同步等待与rcu_barrier.md)。
 
-下一篇：[Tree RCU Expedited GP](P16_Tree_RCU_Expedited_GP.md)。
+下一篇：[Tree RCU Expedited GP](P15_Tree_RCU_Expedited_GP.md)。

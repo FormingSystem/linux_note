@@ -12,13 +12,13 @@ topics:
   - gp_kthread
 ---
 
-# 第12章\_Tree\_RCU\_GP请求与全局生命周期
+# 第8章\_Tree\_RCU\_GP请求与全局生命周期
 
-## 12.1\_本章先回答GP究竟是什么
+## 8.1\_本章先回答GP究竟是什么
 
 `GP` 是 **Grace Period（宽限期）** 的缩写。它首先是一个正确性概念，而不是某个线程、计时器或函数：更新者先在时刻 T 切断旧对象的未来可达入口，随后等待所有 **可能在 T 之前取得旧对象地址** 的 reader 离开受保护访问窗口；从 T 到这项证明成立之间的逻辑区间，就是该 RCU 域的一轮 GP。
 
-抽象 GP 为什么只等待旧 reader、为什么晚到 reader 不属于本轮集合，见 [RCU 抽象机制推演](P02_RCU_抽象机制推演.md#2.6_第四步_定义宽限期要等待的集合)。本章只把这个结论映射到 **普通 Tree RCU** 的全局请求和执行实现。SRCU、Tasks RCU 和 expedited GP 各有不同的 reader 定义或控制路径，不能把本章字段直接套过去；家族边界见 [RCU 实现家族与内核配置](P22_RCU_实现家族与内核配置.md#22.2_三个正交维度)。
+抽象 GP 为什么只等待旧 reader、为什么晚到 reader 不属于本轮集合，见 [RCU 抽象机制推演](P02_RCU_抽象机制推演.md#2.6_第四步_定义宽限期要等待的集合)。本章只把这个结论映射到 **普通 Tree RCU** 的全局请求和执行实现。SRCU、Tasks RCU 和 expedited GP 各有不同的 reader 定义或控制路径，不能把本章字段直接套过去；分类边界见 [RCU 的七条正交坐标轴](P04_RCU_分类坐标与内核配置.md#4.2_七条正交坐标轴)。
 
 先排除四个常见误解：
 
@@ -27,7 +27,7 @@ topics:
 - GP 不是 GP kthread；前者是一次逻辑证明周期，后者是反复执行许多物理 GP 的长期内核任务。
 - GP 完成不等于所有 callback 已执行；它只让绑定该代际的 callback 获得向可执行状态推进的资格。
 
-## 12.2\_六个必须分开的专有名词
+## 8.2\_六个必须分开的专有名词
 
 | 名词 | 本章中的精确定义 | 它不是什么 |
 | --- | --- | --- |
@@ -58,7 +58,7 @@ do_other_work();
 cond_synchronize_rcu(cookie);
 ```
 
-## 12.3\_为什么需要一个长期存在的GP内核线程
+## 8.3\_为什么需要一个长期存在的GP内核线程
 
 普通 GP 要完成三类可能睡眠或持续很久的工作：建立本轮参与集合、等待分散 CPU/任务证据、把完成代际按顺序发布到整棵树。若让每个请求者自己执行，就会出现多个 CPU 同时初始化同一全局代际、请求者长时间占据业务调用栈、不同 cleanup 互相越过等问题。
 
@@ -72,7 +72,7 @@ Tree RCU 因而把这部分 **控制面** 串行交给一个长期内核任务�
 
 这里的 kthread 是内核调度实体：它和其他可运行任务一样占用某个 CPU 的执行时间，但 **不是系统多出一颗专用 CPU**，也不固定代表提出请求的 writer。线程只创建一次，不是一轮 GP 创建一次。
 
-“初始化阶段”还要再拆开：`start_kernel()` 较早调用的 `rcu_init()` 先建立拓扑、boot CPU 状态和执行基础设施，并不创建这个长期任务；`rcu_spawn_gp_kthread()` 通过 `early_initcall` 登记，等 `rest_init()` 已建立 `kthreadd` 后，才由 `kernel_init` 的 pre-SMP initcall 分派路径真正调用。稳定正文只保留这条启动边界；Linux 6.12.20 的完整启动调用链见 [GP 模块导读的线程创建阶段](../../../../../research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.5_线程怎样创建并安全发布)，逐行源码证据见 [从内核启动链定位 `early_initcall`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall) 与 [`rcu_spawn_gp_kthread()` 创建/发布实现](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务)。
+“初始化阶段”还要再拆开：`start_kernel()` 较早调用的 `rcu_init()` 先建立拓扑、boot CPU 状态和执行基础设施，并不创建这个长期任务；`rcu_spawn_gp_kthread()` 通过 `early_initcall` 登记，等 `rest_init()` 已建立 `kthreadd` 后，才由 `kernel_init` 的 pre-SMP initcall 分派路径真正调用。稳定正文只保留这条启动边界；Linux 6.12.20 的完整启动调用链见 [GP 模块导读的线程创建阶段](../../../../../research/source_reading/rcu/navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.5_线程怎样创建并安全发布)，逐行源码证据见 [从内核启动链定位 `early_initcall`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall) 与 [`rcu_spawn_gp_kthread()` 创建/发布实现](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务)。
 
 ```mermaid
 flowchart LR
@@ -96,7 +96,7 @@ flowchart LR
     D -->|"完成状态可见"| P
 ```
 
-## 12.4\_请求执行与交付是三层而不是一条函数链
+## 8.4\_请求执行与交付是三层而不是一条函数链
 
 | 层 | 解决的问题 | 主要状态 | 典型执行者 |
 | --- | --- | --- | --- |
@@ -106,7 +106,7 @@ flowchart LR
 
 请求层只保证“系统知道存在一个足够新的 GP 需求”。它不能直接宣布安全。执行层得到根完成条件以后，cleanup 才发布代际；交付层还要把这个代际转换成 callback 可执行、任务唤醒或轮询成功。
 
-## 12.5\_它不是一个状态机而是五组正交状态
+## 8.5\_它不是一个状态机而是五组正交状态
 
 只盯着 `gp_state` 会误以为 GP 由一个枚举驱动。实际有五条正交状态轴：
 
@@ -128,7 +128,7 @@ flowchart LR
 
 全局权威代际和 GP 请求决策主要在根 `rcu_node` 锁下串行化；每个节点的需求和证明债务由对应 `rnp->lock` 保护。`gp_state`、`gp_wake_time/gp_wake_seq` 等观察字段还会通过 `READ_ONCE/WRITE_ONCE` 在锁外写读，因此不能把 `struct rcu_state` 的分组注释扩大成“所有字段每次访问都持根锁”。请求漏斗也不会让所有 CPU 每次都直接争用根锁：若某层已记录相同或更远需求，后来的请求可提前停止向上。
 
-### 12.5.1\_看到rcu\_state时不要把字段顺序当成学习顺序
+### 8.5.1\_看到rcu\_state时不要把字段顺序当成学习顺序
 
 Linux 6.12 的 `struct rcu_state` 还同时容纳拓扑、`rcu_barrier()`、expedited GP、stall、hotplug、同步等待者批处理和 NOCB 配置状态。它们与普通 GP 控制字段 **共址**，不等于由同一状态机推进：
 
@@ -144,9 +144,11 @@ callback屏障、expedited、NOCB
 
 完整的字段域、读写者和权威章节去向见 [Linux 6.12 `rcu_state` 完整字段域与权威去向](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.3.1_完整字段域与权威去向)。这个入口用于保证源码里没有“只出现、不解释”的沉默字段；当前章节仍只证明普通 GP 的稳定机制。
 
-## 12.6\_三种接口怎样变成GP需求
+## 8.6\_三种接口怎样变成GP需求
 
-### 12.6.1\_默认同步等待也先登记callback
+应用接口不会各自启动一套 GP。它们先把“至少等到哪个代际”的需求编码进 callback、目标序列或直接等待批次，再由公共 GP 状态合并请求。下面分别追踪三种入口怎样完成这次翻译。
+
+### 8.6.1\_默认同步等待也先登记callback
 
 Linux 6.12.20 中，`synchronize_rcu()` 进入 `synchronize_rcu_normal()`。默认 `rcu_normal_wake_from_gp=0` 时：
 
@@ -162,21 +164,21 @@ synchronize_rcu()
 
 原任务睡在自己的 `completion` 上，不是睡在 `rcu_state.gp_wq`。相关 GP 完成后，callback 进入可执行阶段；callback 执行器调用 `wakeme_after_rcu()`，其中的 `complete()` 才唤醒原任务。
 
-6.12 还提供 `rcu_normal_wake_from_gp` 非零时的直接等待者批处理优化，请求进入 `rcu_state.srs_next` 等状态，由 GP init/cleanup 批量推进。它是可选分支，不能覆盖默认 callback 模型；Linux 5.10 也没有这组 6.12 状态。字段分工与裁剪源码见 [SRS 怎样批量交付同步等待者](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11.2_SRS怎样批量交付同步等待者)。
+6.12 还提供 `rcu_normal_wake_from_gp` 非零时的直接等待者批处理优化，请求进入 `rcu_state.srs_next` 等状态，由 GP init/cleanup 批量推进。它是可选分支，不能覆盖默认 callback 模型；Linux 5.10 也没有这组 6.12 状态。字段分工与裁剪源码分别见 [SRS 请求登记与批次冻结](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_SRS怎样登记请求并冻结本轮批次)和 [cleanup/workqueue 完成交付](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_SRS怎样在cleanup与workqueue之间交付等待者)。
 
-### 12.6.2\_异步callback只登记动作不阻塞调用者
+### 8.6.2\_异步callback只登记动作不阻塞调用者
 
 `call_rcu()` 把 callback 放入当前 CPU 的 `rcu_data.cblist`。加速路径给 callback 分配目标 `gp_seq`，并在必要时提出新 GP 请求。调用者随后返回；callback 真正执行由 P17/P18 的分段和批处理状态机决定。
 
-### 12.6.3\_轮询接口保存的是目标序列
+### 8.6.3\_轮询接口保存的是目标序列
 
 `get_state_synchronize_rcu()` 一类接口取得一个 cookie，表示“从当前边界算起，哪个最早完成值足以证明一轮 GP 已过去”。后续条件等待或轮询比较序列是否到达目标。cookie 不是 GP 对象的地址，也不占有 GP kthread。
 
-在 Linux 6.12.20 的实现中，poll API 并不是只盯普通 `rcu_state.gp_seq`。它使用一条公共观察序列 `gp_seq_polled`，并分别由 `gp_seq_polled_snap` 与 `gp_seq_polled_exp_snap` 记录普通 GP、expedited GP 是否打开了当前观察区间。任一足够新的真实 GP 都可以满足 poll 目标，但结束路径只有在自己的快照仍匹配时才关闭这条公共序列，避免普通与 expedited 路径互相错误发布完成。对应源码见 [poll 公共序列怎样由普通与 expedited GP 共同推进](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11.1_poll公共序列怎样由普通与expedited_GP共同推进)。
+在 Linux 6.12.20 的实现中，poll API 并不是只盯普通 `rcu_state.gp_seq`。它使用一条公共观察序列 `gp_seq_polled`，并分别由 `gp_seq_polled_snap` 与 `gp_seq_polled_exp_snap` 记录普通 GP、expedited GP 是否打开了当前观察区间。任一足够新的真实 GP 都可以满足 poll 目标，但结束路径只有在自己的快照仍匹配时才关闭这条公共序列，避免普通与 expedited 路径互相错误发布完成。对应源码见 [poll 公共序列怎样由普通与 expedited GP 共同推进](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.12_poll公共序列怎样由普通与expedited_GP共同推进)。
 
 需要进一步区分：`get_state_synchronize_rcu()` 只取快照，**不保证所需 GP 会启动**；`start_poll_synchronize_rcu()` 才在取快照后通过普通请求漏斗确保需要的 GP 已被安排；`cond_synchronize_rcu(cookie)` 若发现目标尚未完成，会退回 `synchronize_rcu()` 等待。把三者都简称“poll 请求”会掩盖它们是否主动推进的差别。
 
-## 12.7\_分散请求怎样漏斗汇聚并合并
+## 8.7\_分散请求怎样漏斗汇聚并合并
 
 callback 加速路径计算目标 `gp_seq_req`，随后 `rcu_start_this_gp()` 从本 CPU 的叶 `rcu_node` 向根推进：
 
@@ -189,7 +191,7 @@ callback 加速路径计算目标 `gp_seq_req`，随后 `rcu_start_this_gp()` �
 
 这是一条 **需求通信链**，不是安全证明链。`gp_seq_needed` 从叶向根表达未来需求；`qsmask` 清位则从叶向根汇聚本轮已经得到的证据。两条链方向相似，但字段、时机和含义完全不同。
 
-## 12.8\_gp\_seq怎样表示开始与完成
+## 8.8\_gp\_seq怎样表示开始与完成
 
 `rcu_state.gp_seq`、各 `rcu_node.gp_seq` 与各 `rcu_data.gp_seq` 构成全局、节点、本地三份代际观察：
 
@@ -209,7 +211,7 @@ Linux 6.12.20 用 `rcu_seq_*` 辅助函数维护序列：
 
 低位具体编码属于内部实现。正文不能用“奇数就是进行中、偶数就是完成”代替辅助函数契约，更不能把某个低位布局传播成 RCU API 保证。
 
-## 12.9\_S0到S10\_一轮物理GP的统一生命周期
+## 8.9\_S0到S10\_一轮物理GP的统一生命周期
 
 | 阶段 | 进入触发 | 修改前后状态 | 写入者与地址 | 后续读取者 | 退出条件 |
 | --- | --- | --- | --- | --- | --- |
@@ -247,7 +249,7 @@ stateDiagram-v2
     S10_DELIVER --> S0_WAIT_GPS: 无后续需求
 ```
 
-## 12.10\_GP\_kthread的创建睡眠与主循环
+## 8.10\_GP\_kthread的创建睡眠与主循环
 
 GP kthread 的生命周期比任意一轮 GP 更长：
 
@@ -285,23 +287,25 @@ for (;;) {
 
 请求者与 GP kthread 通过共享状态和等待队列通信：请求者先在相应锁保护下写 `gp_seq_needed/gp_flags`，再 `swake_up_one()`；GP kthread 醒来重新读取状态。根完成报告也走同一 `gp_wq`，但设置的是 FQS 唤醒原因。正常路径没有“每个 CPU 都向 GP kthread 发送一个消息”；CPU 证据先写本地状态并沿 `rcu_node` 汇聚，只有根条件改变才需要唤醒全局线程。
 
-## 12.11\_请求合并的三个时间场景
+## 8.11\_请求合并的三个时间场景
 
-### 12.11.1\_请求到达时没有物理GP
+是否复用当前 GP 不能只看“请求发生时 GP 正在运行”。关键是当前 GP 封闭的旧 reader 集合能否覆盖新请求的时间边界；按这一条件，请求落入下面三类情况。
+
+### 8.11.1\_请求到达时没有物理GP
 
 请求目标尚未满足，路径把 `gp_seq_needed` 推到根，设置 INIT 并唤醒线程。GP kthread 启动 N，该请求等待 N 完成。
 
-### 12.11.2\_请求到达时N正在进行且N足以覆盖它
+### 8.11.2\_请求到达时N正在进行且N足以覆盖它
 
 若调用者的时间边界落在 N 已经封闭的旧 reader 集合之内，callback 可绑定 N。调用者不拥有 N，也不要求再启动一个线程。
 
-### 12.11.3\_请求太晚或明确需要N之后的代际
+### 8.11.3\_请求太晚或明确需要N之后的代际
 
 请求把 `gp_seq_needed` 前推到 N 之后的目标。当前 N 不能中途重写已经封闭的历史集合；cleanup 发现未来需求后保留 INIT，主循环继续 N+1。
 
 这正是请求合并仍能保持安全的原因：**共享的是足以覆盖多个需求的完成证明，不是把迟到事件硬塞进已经开始的历史边界。**
 
-## 12.12\_端到端时序\_两个writer怎样共享一轮GP
+## 8.12\_端到端时序\_两个writer怎样共享一轮GP
 
 ```mermaid
 sequenceDiagram
@@ -333,7 +337,7 @@ sequenceDiagram
     S->>S: synchronize_rcu()返回
 ```
 
-## 12.13\_不要把其他RCU家族的GP线程套进来
+## 8.13\_不要把其他RCU家族的GP线程套进来
 
 | 名称 | reader定义与域 | 推进对象 | 与本章关系 |
 | --- | --- | --- | --- |
@@ -343,9 +347,9 @@ sequenceDiagram
 | expedited GP worker | 普通 RCU 安全条件，但使用更主动的探测与通知路径 | expedited 序列、选择掩码和 worker | 是另一条低延迟控制路径 |
 | NOCB GP kthread | 管理 offload callback 等待哪个普通 GP | NOCB callback 队列 | 名字含 GP，但不创建第二套普通 Tree RCU 宽限期 |
 
-尤其要区分“可抢占”和“可睡眠”：`CONFIG_PREEMPT_RCU` 允许调度器抢占普通 RCU reader，并把被抢占任务登记为共享债务；它不因此允许 reader 主动等待 mutex、I/O 或 completion。需要主动阻塞且保持保护时，应使用 SRCU 等符合调用场景的机制，见 [SRCU 私有域与双 index 状态机](P23_SRCU_私有域与双_index_状态机.md#23.3_读者为什么能睡眠和迁移)。
+尤其要区分“可抢占”和“可睡眠”：`CONFIG_PREEMPT_RCU` 允许调度器抢占普通 RCU reader，并把被抢占任务登记为共享债务；它不因此允许 reader 主动等待 mutex、I/O 或 completion。需要主动阻塞且保持保护时，应使用 SRCU 等符合调用场景的机制，见 [SRCU 私有域与双 index 状态机](P18_SRCU_私有域与双_index_状态机.md#18.3_读者为什么能睡眠和迁移)。
 
-## 12.14\_安全性活性成本与选择边界
+## 8.14\_安全性活性成本与选择边界
 
 - **安全性：** 根债务未清，cleanup 不能发布完成；没有固定超时替代证明。
 - **活性：** 某 CPU 或任务迟迟不提供证据，GP 可长期停在等待/FQS 阶段，callback 也会积压。
@@ -354,21 +358,21 @@ sequenceDiagram
 - **调度代价：** GP kthread 的睡眠/唤醒和 FQS 会消耗调度与缓存一致性成本，但这些成本从高频 reader 快路径移到了按 GP 或慢路径发生的位置。
 - **交付边界：** 若真正需要等待此前 callback 都执行完，使用的是 `rcu_barrier()` 一类 callback 屏障，而不是仅凭 GP 完成推断执行完成。
 
-## 12.15\_源码阅读和观察入口
+## 8.15\_源码阅读和观察入口
 
 稳定概念与版本实现分开阅读：
 
 | 阅读目标 | 权威入口 |
 | --- | --- |
-| GP、请求、物理 GP 与 GP kthread 的模块协作 | [Linux 6.12 Tree RCU GP 全局生命周期模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#6.1_模块问题与版本边界) |
+| GP、请求、物理 GP 与 GP kthread 的模块协作 | [Linux 6.12 Tree RCU GP 全局生命周期模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.1_模块问题与版本边界) |
 | 内核启动、early initcall 分派、创建与任务发布 | [启动链定位](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall) → [`rcu_spawn_gp_kthread()`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务) |
-| 请求、唤醒、init、FQS、cleanup 与再次休眠 | [普通物理 GP 端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_端到端源码时序) |
-| CPU QS/EQS 怎样产生 | [Tree RCU QS、EQS 与 Context Tracking](P13_Tree_RCU_QS_EQS与Context_Tracking.md#13.1_Tree_RCU_QS_EQS与_Context_Tracking) |
-| 节点债务怎样逐层汇聚 | [Tree RCU rcu_node 树与分层汇聚](P14_Tree_RCU_rcu_node树与分层汇聚.md#14.1_问题_为什么不让所有CPU清一个全局位图) |
-| callback 怎样绑定和消费 GP 代际 | [Tree RCU rcu_segcblist 回调状态机](P17_Tree_RCU_rcu_segcblist回调状态机.md#17.1_场景_三个callback对应哪一轮GP) |
+| 请求、唤醒、init、FQS、cleanup 与再次休眠 | [普通物理 GP 端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序) |
+| CPU QS/EQS 怎样产生 | [Tree RCU QS、EQS 与 Context Tracking](P09_Tree_RCU_QS_EQS与Context_Tracking.md#9.1_上一章建立了债务却还没有解释证据从哪里来) |
+| 节点债务怎样逐层汇聚 | [Tree RCU rcu_node 树与分层汇聚](P10_Tree_RCU_rcu_node树与分层汇聚.md#10.1_问题_为什么不让所有CPU清一个全局位图) |
+| callback 怎样绑定和消费 GP 代际 | [Tree RCU rcu_segcblist 回调状态机](P11_Tree_RCU_rcu_segcblist回调状态机.md#11.1_场景_三个callback对应哪一轮GP) |
 
 运行时可以从 `rcu_grace_period` 和 `rcu_callback` trace event 观察请求、开始、FQS、结束与 callback 推进。事件是否存在取决于目标内核 tracing 配置；未开启事件或路径未执行时，“没有 trace”不能证明 GP 没有发生。
 
-上一篇：[Tree RCU 初始化、拓扑与执行上下文](P11_Tree_RCU_初始化_拓扑与执行上下文.md)。
+上一篇：[Tree RCU 初始化、拓扑与执行上下文](P07_Tree_RCU_初始化_拓扑与执行上下文.md)。
 
-下一篇：[Tree RCU QS、EQS 与 Context Tracking](P13_Tree_RCU_QS_EQS与Context_Tracking.md)。
+下一篇：[Tree RCU QS、EQS 与 Context Tracking](P09_Tree_RCU_QS_EQS与Context_Tracking.md)。

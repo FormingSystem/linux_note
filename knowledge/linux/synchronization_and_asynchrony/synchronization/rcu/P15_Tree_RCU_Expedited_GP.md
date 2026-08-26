@@ -11,9 +11,9 @@ topics:
   - expedited_grace_period
 ---
 
-# 第16章\_Tree\_RCU\_Expedited\_GP
+# 第15章\_Tree\_RCU\_Expedited\_GP
 
-## 16.1\_场景\_控制路径愿意用系统扰动换更短等待
+## 15.1\_场景\_控制路径愿意用系统扰动换更短等待
 
 设备驱动撤销一个 MMIO 映射。新的 reader 已被入口切断；在真正关闭硬件窗口前，控制线程必须确认旧 reader 已经离场。普通 GP 可能等待 CPU 自然到 QS，而平台希望缩短这条低频控制路径的尾延迟：
 
@@ -31,7 +31,7 @@ kfree(old);
 
 `synchronize_rcu_expedited()` 与普通 `synchronize_rcu()` 的安全语义相同：都覆盖调用前的既有 reader。区别是 expedited 主动选择 CPU、检查 EQS、发送 IPI 并处理被抢占任务，用更高系统成本争取更短 GP 等待。
 
-## 16.2\_它不是普通GP的超时开关
+## 15.2\_它不是普通GP的超时开关
 
 普通 GP 和 expedited GP 有不同的序列、等待位和推进路径：
 
@@ -59,7 +59,7 @@ Linux 6.12.20 的全局 expedited 字段还要再分三类：
 
 当前完成证明落在节点 `expmask`、被抢占任务 `exp_tasks` 以及根完成检查上。结构体保留一个名字像计数器的字段，不等于该版本的活跃路径真的使用计数器。
 
-## 16.3\_S0到S8\_一次expedited\_GP
+## 15.3\_S0到S8\_一次expedited\_GP
 
 | 阶段 | 入口 | 状态变化 | 参与者 | 退出条件 |
 | --- | --- | --- | --- | --- |
@@ -73,7 +73,7 @@ Linux 6.12.20 的全局 expedited 字段还要再分三类：
 | S7 根完成 | exp CPU/任务债务清零 | `expedited_wq` 条件成立 | 报告路径 | leader结束序列 |
 | S8 唤醒 | `rcu_exp_wait_wake()` | `rcu_exp_gp_seq_end()`、节点等待队列唤醒 | leader | followers与调用者返回 |
 
-## 16.4\_漏斗锁怎样合并并发调用者
+## 15.4\_漏斗锁怎样合并并发调用者
 
 若 100 个 CPU 同时调用 expedited，不能让 100 个线程各自广播一轮 IPI。`exp_funnel_lock(s)` 从调用 CPU 的叶节点沿父节点向根推进：
 
@@ -92,7 +92,7 @@ Linux 6.12.20 的全局 expedited 字段还要再分三类：
 
 这既降低全局 mutex 争用，也让位于同一子树的 follower 就近等待。若其他任务在竞争期间已经完成足够新的一轮，调用者可直接返回。
 
-## 16.5\_CPU选择和IPI不是无条件广播
+## 15.5\_CPU选择和IPI不是无条件广播
 
 `sync_rcu_exp_select_cpus()` 先重置 exp 树，再为每个叶节点安排工作；6.12 可用多个 work item 并行处理叶节点，最后一个叶或早期启动场景可直接调用。
 
@@ -115,7 +115,7 @@ Linux 6.12.20 的全局 expedited 字段还要再分三类：
     = 需要远端exp handler的CPU
 ```
 
-## 16.6\_IPI\_handler在远端做什么
+## 15.6\_IPI\_handler在远端做什么
 
 PREEMPT_RCU 下，`rcu_exp_handler()` 查看当前任务读侧深度：
 
@@ -125,7 +125,7 @@ PREEMPT_RCU 下，`rcu_exp_handler()` 查看当前任务读侧深度：
 
 非抢占式分支也必须尊重读侧执行约束；IPI 到达只增加取得证据的积极性，不会让 handler 在旧 reader 中间直接宣布安全。
 
-## 16.7\_端到端时序
+## 15.7\_端到端时序
 
 ```mermaid
 sequenceDiagram
@@ -159,7 +159,7 @@ sequenceDiagram
     A->>A: synchronize_rcu_expedited返回
 ```
 
-## 16.8\_为什么\_更快\_不等于固定deadline
+## 15.8\_为什么\_更快\_不等于固定deadline
 
 expedited 会更积极，但仍可能受以下因素拖延：
 
@@ -172,7 +172,7 @@ expedited 会更积极，但仍可能受以下因素拖延：
 
 源码具有 expedited stall 等待和诊断。它同样不会在证据不足时超时返回成功，因此 API 不提供硬实时上界。
 
-## 16.9\_选择与替代
+## 15.9\_选择与替代
 
 | 需求 | 建议 | 原因 |
 | --- | --- | --- |
@@ -184,11 +184,11 @@ expedited 会更积极，但仍可能受以下因素拖延：
 
 内核还可通过 `rcu_normal_after_boot` 等策略在启动阶段改变普通/expedited 选择；调用者不能仅看函数名就忽略实际配置和启动阶段。
 
-## 16.10\_源码和trace入口
+## 15.10\_源码和trace入口
 
-版本化模块先从 [Expedited GP 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P10_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md#10.1_Expedited不是普通GP的加速档)进入，再按问题直达唯一实现：
+版本化模块先从 [Expedited GP 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md#6.1_Expedited不是普通GP的加速档)进入，再按问题直达唯一实现：
 
-- 与之比较的普通 GP 控制线程、等待/FQS/cleanup 主线见 [普通 GP 端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_端到端源码时序)，不要把 expedited worker 当成普通 GP kthread 的“加速模式”；
+- 与之比较的普通 GP 控制线程、等待/FQS/cleanup 主线见 [普通 GP 端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)，不要把 expedited worker 当成普通 GP kthread 的“加速模式”；
 - [`expedited_sequence` 与 poll 交接](../../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.4_expedited_sequence怎样独立计代并共同推进poll观察)；
 - [`exp_funnel_lock()` 合并并发请求](../../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.5_exp_funnel_lock怎样合并并发调用者)；
 - [`sync_exp_reset_tree()` 建立 `expmask`](../../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.6_sync_exp_reset_tree怎样建立本轮债务)；
@@ -205,6 +205,6 @@ echo 1 | sudo tee tracing_on
 
 运行一次低频测试，观察 leader/follower、select、start/end，而不是用 tight loop 制造无意义 IPI 压力。
 
-上一篇：[Tree RCU force-QS、迟延与 Stall](P15_Tree_RCU_force_QS迟延与Stall.md)。
+上一篇：[Tree RCU force-QS、迟延与 Stall](P14_Tree_RCU_force_QS迟延与Stall.md)。
 
-下一篇：[Tree RCU rcu_segcblist 回调状态机](P17_Tree_RCU_rcu_segcblist回调状态机.md)。
+下一篇：[Tree RCU NOCB 回调卸载](P16_Tree_RCU_NOCB回调卸载.md)。

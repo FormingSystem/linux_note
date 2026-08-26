@@ -130,7 +130,7 @@ CPU2新reader：                    [--使用B--]
 
 从 T 附近开始到该条件成立的逻辑区间称为宽限期。它不是固定毫秒数，也不是固定 N 次调度。
 
-本节只定义跨实现稳定的抽象 GP。普通 Tree RCU 怎样把 GP 请求、物理 GP、GP 代际、长期 GP kthread 和完成发布落到具体状态，统一转入 [Tree RCU GP 请求与全局生命周期](P12_Tree_RCU_GP请求与全局生命周期.md#12.2_六个必须分开的专有名词)；SRCU 与 Tasks RCU 会改变 reader 定义或保护域，不能沿用普通 Tree RCU 的字段解释。
+本节只定义跨实现稳定的抽象 GP。普通 Tree RCU 怎样把 GP 请求、物理 GP、GP 代际、长期 GP kthread 和完成发布落到具体状态，统一转入 [Tree RCU GP 请求与全局生命周期](P08_Tree_RCU_GP请求与全局生命周期.md#8.2_六个必须分开的专有名词)；SRCU 与 Tasks RCU 会改变 reader 定义或保护域，不能沿用普通 Tree RCU 的字段解释。
 
 ```text
 旧reader R0： [-----------A-----------]
