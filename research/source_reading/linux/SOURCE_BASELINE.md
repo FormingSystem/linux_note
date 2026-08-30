@@ -46,6 +46,7 @@ domains:
 - 保持 Linux 上游相对路径，例如 `fs/char_dev.c` 保存为本目录的 `fs/char_dev.c`。
 - C/H/RST 文件保持原文，不在源码文件内混入笔记；解释写入 Markdown 正文或独立源码导读。
 - 只复制当前专题用于验证数据结构、调用链和状态机的文件，不无选择复制整棵源码树。
+- 知识正文和源码导读中的文件级阅读入口优先链接本目录保存的相对路径；官方远端只承担来源身份和版本追溯，不再作为已保存文件的唯一阅读入口。
 - 新增源码时同步更新本清单；若工作树的分支、提交或版本变化，必须记录新基线，不能让不同时期文件无标记混合。
 - 稳定知识正文说明机制，版本源码负责提供具体函数、字段和目录位置证据。
 
@@ -88,6 +89,15 @@ domains:
 ## 1.5\_已有其他机制证据
 
 本目录还保存 RCU、kobject、引用计数、内存管理和数据结构等已有源码。后续会根据实际来源逐步核对其版本；在完成核对前，不应仅凭目录共存就断言所有旧文件都来自本章记录的 6.12.20 基线。
+
+2026-08-30 对全仓 Linux 源码 URL 做离线入口审计后，已确认下列原有或新增副本的 Git blob 与固定提交一致。rbtree 与 `security/Kconfig.hardening` 的这些 blob 还与上游 Linux 6.12 发布提交 `adc218676eef25575469234709c2d87185ca223a` 逐文件一致。它们可以直接承担本仓库中的源码阅读链接，不再依赖 GitHub `blob` 或 raw 页面：
+
+| 相对路径 | 主要用途 |
+| --- | --- |
+| `Documentation/core-api/rbtree.rst` | Linux rbtree 使用契约、复杂度和 cached/augmented 接口说明 |
+| `include/linux/rbtree_types.h`、`include/linux/rbtree.h`、`include/linux/rbtree_augmented.h`、`lib/rbtree.c` | rbtree 结构、公共接口、增强回调和核心实现 |
+| `include/linux/kref.h` | `kref` 公共接口与引用计数对象释放契约 |
+| `security/Kconfig.hardening` | `STRUCTLEAK` 等编译期安全加固配置及其选择边界 |
 
 ### 1.5.1\_RCU家族证据
 
@@ -187,6 +197,8 @@ domains:
 
 这些专题的 PREEMPT_RT、KCSAN、Lockdep、watchdog 与 WQ 属性分支不都由当前配置启用。源码存在只证明该固定提交提供相应实现；部署结论仍需匹配目标配置和实际路径执行。
 
+2026-08-30 又将上述索引里原先直接指向 GitHub 的文件级入口保存到本目录，并逐文件核对 Git blob。新增副本包括 `include/linux/spinlock_types.h`、`include/linux/mutex_types.h`、`kernel/locking/mutex.c`、`include/linux/rwsem.h`、`kernel/locking/rwsem.c`、`include/linux/seqlock.h`、`include/linux/wait.h`、`kernel/sched/wait.c`、`include/linux/swait.h`、`include/linux/completion.h`、`kernel/sched/completion.c`、`include/linux/workqueue.h`、`kernel/workqueue_internal.h`、`kernel/workqueue.c` 与 `Documentation/core-api/workqueue.rst`；原有 `include/linux/spinlock.h` 也重新核对一致。没有保存到本目录的其他路径仍只是版本定位，不得伪装成离线链接。
+
 ## 1.6\_Input\_子系统证据
 
 | 相对路径 | 主要用途 |
@@ -228,7 +240,7 @@ domains:
 
 ## 1.8\_编译器与\_Sparse\_注解证据
 
-本专题复用 1.7 节已经完成哈希核对的 `include/linux/compiler_types.h`、`include/linux/compiler.h` 与 `include/linux/rcupdate.h`，不复制第二份源码。职责入口为：
+本专题复用 1.7 节已经完成哈希核对的 `include/linux/compiler_types.h`、`include/linux/compiler.h` 与 `include/linux/rcupdate.h`，并使用已经与固定提交核对一致的 `security/Kconfig.hardening` 说明 `STRUCTLEAK` 配置边界，不复制第二份源码。职责入口为：
 
 - [Linux 6.12 编译器与 Sparse 注解源码导读](../compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务)：组织 `BTF_TYPE_TAG()`、`__CHECKER__`、地址空间、context、逃生口和普通编译退化的阅读顺序；
 - [Linux 6.12 compiler types 注解模块概念导读](../compiler_annotations/navigation/P02_Linux_6.12_compiler_types注解模块概念导读.md#2.1_模块问题与实现所有权)：解释参与者、两组正交状态、处理周期和代表性调用链；
@@ -236,3 +248,18 @@ domains:
 - [Sparse 地址空间与上下文记账研究型实验](../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标)：先在独立文件中完成单变量地址域与 context 诊断，再用只构建不加载的外部模块核对 `C=1/C=2`、`M=` 和 `CF` 接入。
 
 本源码基线确认的是 Linux 6.12.20 宏组织和仓库保存文件身份，不确认当前构建主机已经安装 Sparse，也不确认目标内核生成了带 type tag 的 BTF。后两项必须用实际工具版本、构建配置与产物转储单独验证。
+
+## 1.9\_上游旧版本对照证据
+
+当前目录根部仍只表示 NXP Linux 6.12.20 固定提交。确实需要比较旧实现时，旧版文件进入 `upstream_versions/<version>/`，版本目录之后继续保持 Linux 上游相对路径，不能拿根部 6.12.20 文件冒充旧版源码。
+
+2026-08-30 从同一只读网盘 Git 对象库提取上游 Linux 6.1 发布提交 `830b3c68c1fb1e9176028d02ef86f3cf76aa2476` 的 rbtree 对照文件，并逐文件核对 Git blob：
+
+| 保存路径 | 主要用途 |
+| --- | --- |
+| `upstream_versions/v6.1/Documentation/core-api/rbtree.rst` | Linux 6.1 rbtree 使用文档 |
+| `upstream_versions/v6.1/include/linux/rbtree.h` | Linux 6.1 公共接口与内联辅助 |
+| `upstream_versions/v6.1/include/linux/rbtree_augmented.h` | Linux 6.1 增强树接口与内部修复逻辑 |
+| `upstream_versions/v6.1/lib/rbtree.c` | Linux 6.1 rbtree 核心实现 |
+
+这些文件只服务于明确标注为 Linux 6.1 的历史比较。稳定正文讨论当前仓库基线时仍链接本目录根部的 6.12.20 文件；其他旧版本若没有保存精确副本，就不得把网络地址机械替换为当前版本。
