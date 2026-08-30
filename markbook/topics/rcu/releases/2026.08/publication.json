@@ -19,16 +19,16 @@
   "title": "深入理解 Linux RCU",
   "version": "2026.08",
   "release_date": "2026-08-01",
-  "generated_at": "2026-08-30T09:33:50.910Z",
+  "generated_at": "2026-08-30T15:20:05.138Z",
   "timezone": "Asia/Shanghai",
   "manifest": {
     "path": "markbook/manifests/rcu.json",
     "sha256": "ee72c3cc938d42e60468016e421fc9ed96bc5db791c85b6419345f25a6d20590"
   },
   "knowledge_repository": {
-    "head": "9fc197bb653f90e47d3807221fab06e71e145ef2",
+    "head": "474013faaf7ec781caddd3ff34924fa462119bcd",
     "source_state": "contains_uncommitted_sources",
-    "dirty_source_count": 3
+    "dirty_source_count": 10
   },
   "linux_source_baseline": {
     "repository": "https://github.com/nxp-imx/linux-imx.git",
@@ -44,7 +44,7 @@
   },
   "counts": {
     "volumes": 4,
-    "documents": 50,
+    "documents": 51,
     "attachments": 2
   },
   "source_documents": [
@@ -140,9 +140,9 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 14042,
-      "sha256": "548e54a33e514d64365e0efe3a9ae958531a46fe1dc2a449c55319c493920b6f",
-      "worktree_state": "clean"
+      "bytes": 15344,
+      "sha256": "5a45751494b2f6e52dc9a1326811955eb53e5c5aeb43a2be4a00e43616aa6111",
+      "worktree_state": "modified:M"
     },
     {
       "id": "knowledge.linux.synchronization.rcu.tree_gp_lifecycle",
@@ -368,8 +368,8 @@
       "path": "research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 10355,
-      "sha256": "c8276fddbc4169824c0a9d8287c4c33b49b7bb136a9bfeba85dcce20e34d8dc0",
+      "bytes": 10663,
+      "sha256": "aa73be5aca95da3a720f166e5040d4eabdd2763266c7d11909c6c546fe72f227",
       "worktree_state": "modified:M"
     },
     {
@@ -380,9 +380,9 @@
       "path": "research/source_reading/rcu/navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 13176,
-      "sha256": "d4436c363aa08f36245ba275c320deab16b31a676441814f25d24ce71dcc7ca3",
-      "worktree_state": "clean"
+      "bytes": 13180,
+      "sha256": "05cf2e464e941e6651203d769bec3d034dbb78a1d1dca6efe3f3b3f2e33f6de3",
+      "worktree_state": "modified:M"
     },
     {
       "id": "research.source_reading.rcu.linux_6_12_tree_gp_lifecycle_navigation",
@@ -392,9 +392,9 @@
       "path": "research/source_reading/rcu/navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 18931,
-      "sha256": "a7bd2a8bb66b437aee8468ff18d830605aa6464987e98bf36509171723455abc",
-      "worktree_state": "clean"
+      "bytes": 18861,
+      "sha256": "74ce20fc414c8b7f9d0239094d3e52be53deb95872043a0d1b185ec64294f3fc",
+      "worktree_state": "modified:M"
     },
     {
       "id": "research.source_reading.rcu.linux_6_12_tree_topology_hotplug_guide",
@@ -404,9 +404,9 @@
       "path": "research/source_reading/rcu/navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 13359,
-      "sha256": "b971a15f2873450f6d2af7fa210573a276e30c5868d7d2005f9e9e84ce81c67c",
-      "worktree_state": "clean"
+      "bytes": 14135,
+      "sha256": "c9972e9d21d4740db256d463de2056d5218347bd705c9c79aa63ca991af33a7e",
+      "worktree_state": "modified:MM"
     },
     {
       "id": "research.source_reading.rcu.linux_6_12_tree_force_qs_stall_guide",
@@ -560,9 +560,9 @@
       "path": "research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 56279,
-      "sha256": "7454c7844a63b87ab70ff08998beef23ec8c86ce99b62566a32ee3d10995b0ab",
-      "worktree_state": "clean"
+      "bytes": 55904,
+      "sha256": "d77f931b8fe58186623c93631d5363d4648779ec26635a0953ab9d5d5f234bec",
+      "worktree_state": "modified:M"
     },
     {
       "id": "research.source_reading.rcu.linux_6_12_tree_topology_hotplug_implementation",
@@ -572,9 +572,9 @@
       "path": "research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 18495,
-      "sha256": "6da14cdf5e28b24b9750aab6b23133e19a3c43ee4fd6168bb2e1935e28fb79d7",
-      "worktree_state": "clean"
+      "bytes": 21594,
+      "sha256": "0fa90ba83abcdc9e914a1a2fe741aa7e122677b196d90a5866723d8bdcdaa8e7",
+      "worktree_state": "modified:MM"
     },
     {
       "id": "research.source_reading.rcu.linux_6_12_tree_force_qs_stall_implementation",
@@ -637,6 +637,18 @@
       "worktree_state": "clean"
     },
     {
+      "id": "research.source_reading.rcu.linux_6_12_tree_rcu_init_boot_initialization",
+      "title": "Linux 6.12 Tree RCU rcu_init 启动初始化源码实现",
+      "kind": "source",
+      "maintenance_status": "evolving",
+      "path": "research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md",
+      "volume_id": "source_explanations",
+      "role": "chapter",
+      "bytes": 67639,
+      "sha256": "6a231ad436b12465484839dbc9d3c0f16d5be7ff6b006414578ca908c2370319",
+      "worktree_state": "modified:AM"
+    },
+    {
       "id": "labs.kernel.rcu.late_and_preempted_reader",
       "title": "晚到读者与抢占读者的对象回收实验",
       "kind": "lab",
@@ -668,8 +680,8 @@
   "artifacts": [
     {
       "path": "index.html",
-      "bytes": 1457880,
-      "sha256": "a3509885c88ed9d06f7332698c32c80966ab82f7f16626b05d694769b8c53c64"
+      "bytes": 1579128,
+      "sha256": "cded0e4becde94036b9d2f06a9e9e459ae1d427895ec9c84f018053b55d7a52e"
     },
     {
       "path": "assets/markbook.css",
