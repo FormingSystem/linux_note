@@ -79,6 +79,11 @@
   ],
   "references": [
     {
+      "title": "SMP、逻辑 CPU 与 CONFIG_SMP",
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md",
+      "reason": "建立 RCU 分类坐标使用的对称多处理、逻辑 CPU、UP/AMP/NUMA 与 Linux SMP 构建边界。"
+    },
+    {
       "title": "Linux 源码阅读基线",
       "path": "research/source_reading/linux/SOURCE_BASELINE.md",
       "reason": "核对厂商源码身份、不可变提交、架构和配置边界。"
