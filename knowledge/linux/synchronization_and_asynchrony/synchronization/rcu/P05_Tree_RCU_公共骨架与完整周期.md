@@ -38,7 +38,7 @@ static struct demo_cfg __rcu *current_cfg;
 - CPU0 上的 writer 构造 `new_cfg`，发布新入口，并要求旧对象最终可回收；
 - CPU2 上的 reader 在发布以后才进入，只会沿正式入口取得 `new_cfg`。
 
-Tree RCU 不需要证明“系统里没有任何 reader”。它只需要证明：**在本轮 GP 边界之前可能取得 `old_cfg` 的 reader 都已经跨过安全边界。** CPU2 的晚到 reader 不在旧集合中，因此可以与本轮 GP 并行。
+Tree RCU 不需要证明“系统里没有任何 reader”。它只需要证明：<span style="color:red;">**在本轮 GP 边界之前可能取得 `old_cfg` 的 reader 都已经跨过安全边界。**</span> CPU2 的晚到 reader 不在旧集合中，因此可以与本轮 GP 并行。
 
 ```mermaid
 sequenceDiagram
@@ -74,7 +74,11 @@ sequenceDiagram
 这里最容易出现三种类型错误：
 
 1. 把 `struct rcu_state` 误认为“一个 GP 对象”。它是长期全局控制状态，一轮物理 GP 只是其中一次状态变化。
+
+   > 不要以为 `struct rcu_state` 是GP针对每次回收旧照时才发起，实际上 GP thread 是一个后台常驻线程，它只是做GP操作感知和信息收集，因此 `rcu_state` 是一个针对CPU的全局状态。
+
 2. 把 `struct rcu_head` 误认为受保护对象本身。它是嵌入对象中的 callback 节点，负责延后执行，不提供 reader 引用计数。
+
 3. 把 `struct rcu_node` 误认为 reader 计数树。普通 Tree RCU 主要汇聚的是 **保守证明债务和被抢占任务边界**，不是每个 reader 的逐次进入退出计数。
 
 ## 5.3\_四层状态地址和一个对象队列

@@ -131,9 +131,13 @@ static int service_cfg_replace(u32 timeout_ms, bool enabled)
 
 把 `synchronize_rcu()` 放在更新锁外不是 RCU 的硬性语法要求，而是常见的锁设计：等待 GP 可能很久，持锁等待会无谓阻塞其他更新者；同时还必须检查锁顺序，避免 GP 所等待的 reader 又需要这把锁才能退出。
 
-### 3.3.4\_异步更新者\_把回收交给回调
+### 3.3.4\_异步更新者\_区分私有析构与固定释放
 
-不允许阻塞的更新路径可以改用 `call_rcu()`：
+不允许阻塞的更新路径可以把回收责任交给普通 RCU 的异步管线，但必须先区分两种不同需求：`call_rcu()` 接收调用者提供的 callback，可以在 GP 后执行对象私有析构；`kfree_rcu(ptr, rcu_member)` 不接收私有函数，只能在 GP 后通过内核通用释放管线销毁整个对象。二者共享“先取消发布，再等待边界前 reader”的生命期契约，回收动作和实现管线却不相同。
+
+#### (1)\_需要私有析构时使用call\_rcu
+
+本例先使用通用的 `call_rcu()`：
 
 ```c
 static void service_cfg_free_rcu(struct rcu_head *head)
@@ -160,9 +164,36 @@ static int service_cfg_replace_async(struct service_cfg *new_cfg)
 }
 ```
 
+`call_rcu()` 只取得内嵌 `rcu_head` 的地址和 callback 函数地址。callback 以后收到的也是 `struct rcu_head *`，所以 `service_cfg_free_rcu()` 必须用 `container_of()` 找回 `service_cfg` 基地址，再执行私有清理。若对象还要归还引用、释放嵌套资源或调用专用 allocator，这些动作都应由该 callback 明确完成，并遵守普通 RCU callback 的执行上下文约束。
+
 这里的唯一回收出口是 `service_cfg_free_rcu()`。同一对象不能有时直接 `kfree()`，有时又登记 RCU 回调，否则调用者无法证明哪条路径拥有最终销毁权。
 
-## 3.4\_用一条时序解释每个接口
+#### (2)\_只需释放整个对象时使用kfree\_rcu
+
+如果 `service_cfg_free_rcu()` 唯一要做的事就是 `kfree(cfg)`，可以删除这个私有 callback，改用 Linux 普通 RCU 的公共便利宏：
+
+```c
+mutex_lock(&cfg_update_lock);
+old_cfg = rcu_replace_pointer(
+	active_cfg, new_cfg,
+	lockdep_is_held(&cfg_update_lock));
+mutex_unlock(&cfg_update_lock);
+
+if (old_cfg)
+	kfree_rcu(old_cfg, rcu);
+```
+
+这不是驱动私有接口，也不是适用于所有 RCU flavor 的抽象标准。它是声明在 Linux 公共内核头文件中的普通 RCU 固定动作回收接口，但仍属于内核内部源码 API，不是用户态稳定 ABI 或跨操作系统标准。真实签名是 `kfree_rcu(ptr, rcu_member)`：
+
+- `ptr` 是待释放对象的基地址，本例为 `old_cfg`；
+- `rcu_member` 是该对象内嵌 `struct rcu_head` 的 **成员名**，本例为 `rcu`，不是函数指针；
+- `ptr` 必须是能够由通用 `kfree()` / `kvfree()` 语义释放的完整分配对象，不能是某个更大分配中的子对象，也不能依赖私有析构协议；
+- 调用者仍须先从 `active_cfg` 等全部正式入口摘除对象；该宏不会寻找或取消发布入口；
+- 该宏不会调用 `service_cfg_free_rcu()` 或其他私有 release，最终动作固定为内核通用内存释放。需要私有析构时必须回到 `call_rcu()`。
+
+`kfree_rcu(old_cfg, rcu)` 不需要业务侧 `container_of()`：调用宏时已经同时具有对象基地址和成员名，可以直接得到 `old_cfg` 与 `&old_cfg->rcu`。这两个参数怎样进入 Linux 6.12 的通用释放管线，见 3.5.1 节。
+
+## 3.4\_用同步路径时序固定GP边界
 
 ```mermaid
 sequenceDiagram
@@ -204,15 +235,33 @@ sequenceDiagram
 | 发布 | `rcu_assign_pointer()` | release 发布已初始化对象 | 不串行化多个写者 |
 | 更新侧替换 | `rcu_replace_pointer()` | 在指定更新保护条件下取旧值并发布新值 | 不等待 GP |
 | 同步等待 | `synchronize_rcu()` | 返回时已跨过一个满足调用边界的 GP | 不保证所有已排队回调已经执行 |
-| 异步等待 | `call_rcu()` | 目标 GP 后调用回调 | 调用者不能立即释放承载 `rcu_head` 的内存 |
-| 延迟释放 | `kfree_rcu()` | 目标 GP 后释放对象 | 不替调用者取消发布入口 |
+| 异步等待 | `call_rcu(head, callback)` | 普通 RCU 的目标 GP 后调用私有 callback | 调用者不能立即释放承载 `rcu_head` 的内存 |
+| 固定动作延迟释放 | `kfree_rcu(ptr, rcu_member)` | 通过普通 RCU 的通用管线在目标 GP 后释放整个对象 | 不调用私有 release，不替调用者取消发布入口 |
 | 等待回调 | `rcu_barrier()` | 等待调用前排队的普通 RCU 回调执行完成 | 不是普通对象删除的 GP 替代品 |
+
+### 3.5.1\_kfree\_rcu参数怎样进入通用释放管线
+
+在本专题的 Linux 6.12.20 源码基线中，代入本例参数后的关键宏展开等价于：
+
+```c
+typeof(old_cfg) ___p = old_cfg;
+if (___p) {
+	BUILD_BUG_ON(offsetof(typeof(*old_cfg), rcu) >= 4096);
+	kvfree_call_rcu(&___p->rcu, (void *)___p);
+}
+```
+
+`BUILD_BUG_ON()` 要求 `rcu_head` 成员位于对象起始地址后的前 4096 字节内；`kvfree_call_rcu()` 同时取得成员地址和对象基地址，所以不需要从成员反推业务对象，也没有私有 release 可以调用。
+
+Linux 6.12 的常见路径把对象基地址直接记录进 per-CPU 批次，取得 GP 快照，随后由 `rcu_work` 在 GP 后进入 workqueue，并使用 `kfree_bulk()` 或 `vfree()` 批量释放。批量记录不可用时，回退路径把基地址暂存在 `rcu_head.func`，GP 后再取出并调用 `kvfree()`。源码中的另一个 `container_of()` 只用于从内部 `rcu_work` 找回 `kfree_rcu_cpu_work`，与业务对象无关。
+
+这段版本化实现可以从 [Linux 6.12 RCU 源码总阅读索引](../../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.1_版本边界与总索引职责)进入核对；公共宏定义位于 [`include/linux/rcupdate.h`](../../../../../research/source_reading/linux/include/linux/rcupdate.h)，底层 `kvfree_call_rcu()` 在 [`kernel/rcu/tree.c`](../../../../../research/source_reading/linux/kernel/rcu/tree.c) 中通过 `EXPORT_SYMBOL_GPL` 导出，批处理、GP 快照和最终释放也位于该文件。这个声明与导出边界证明它不是某个驱动的私有封装；应用代码可以依赖“普通 RCU GP 后释放”的契约，不应依赖当前批次数量、延迟定时器或 workqueue 布局。
 
 发布/取得的通用内存顺序见[Linux 内存顺序专题](../memory_ordering/大纲.md)。本专题后文只解释这些原语怎样与 GP 和对象生命期组合，不重复维护体系结构屏障教程。
 
 ## 3.6\_同步与异步回收怎样选择
 
-两条路径共享发布、旧 reader 边界和对象摘除契约，差别只在 **由当前调用者等待并回收，还是把回收责任交给 callback 子系统**。选择前同时核对调用上下文、可接受延迟、积压预算和模块退出方式。
+同步与异步两类路径共享发布、旧 reader 边界和对象摘除契约，差别只在 **由当前调用者等待并回收，还是把回收责任交给普通 RCU 的异步 callback 或批量释放管线**。选择前同时核对调用上下文、可接受延迟、积压预算和模块退出方式。
 
 ### 3.6.1\_使用\_synchronize\_rcu()
 
@@ -226,11 +275,16 @@ sequenceDiagram
 
 ### 3.6.2\_使用\_call\_rcu()或\_kfree\_rcu()
 
-适合更新路径不能等待，或者大量对象可以共享 GP 并批量推进的情况。代价是旧对象和回调会在一段时间内积压，模块退出还要确认回调代码不会在卸载后执行。
+两者都适合更新路径不能等待的场景，但不能只因为“都是异步回收”就互换：
 
-### 3.6.3\_模块卸载为什么还需要\_rcu\_barrier()
+- GP 后需要对象私有析构时，使用 `call_rcu(head, callback)`；callback 用 `container_of()` 找回对象并完成唯一销毁协议。
+- GP 后只需通用释放整个对象时，使用 `kfree_rcu(ptr, rcu_member)`；它不登记模块私有函数地址，Linux 6.12 还会把多个请求放进独立批处理管线。
 
-`synchronize_rcu()` 只保证一个 GP 完成，不保证此前排队的每个 callback 函数体都已经运行。若 callback 位于即将卸载的模块文本中，退出路径通常要先停止新回调来源，再用 `rcu_barrier()` 等待已有回调执行完毕。
+共同代价是旧对象会在一段时间内积压。`kfree_rcu()` 的批处理还可能让实际释放晚于“刚好跨过一个 GP”的最早时刻，因此内存峰值和释放时延必须按更新速率与回收积压共同评估。
+
+### 3.6.3\_模块卸载时到底等待哪条异步管线
+
+`synchronize_rcu()` 只保证一个 GP 完成，不保证此前排队的每个 callback 函数体都已经运行。若使用 `call_rcu()`，而 callback 位于即将卸载的模块文本中，退出路径通常要先停止新回调来源，再用 `rcu_barrier()` 等待已有普通 RCU callback 执行完毕。
 
 沿用本章配置对象，模块退出的最小闭环可以写成：
 
@@ -256,6 +310,8 @@ static void service_cfg_shutdown(void)
 ```
 
 这里有两个不同等待条件：`synchronize_rcu()` 让最后一个 `old_cfg` 跨过读者边界；`rcu_barrier()` 防止更早登记的 `service_cfg_free_rcu()` 在模块文本卸载后才执行。前提“已经停止所有新更新来源”不可省略，否则 `rcu_barrier()` 返回后仍可能有人登记新回调。
+
+若异步更新全部使用 `kfree_rcu()`，请求中没有模块私有 callback 函数地址，因此“防止模块文本被卸载”这一理由不再要求 `rcu_barrier()`。但如果模块退出时还要销毁对象来源的私有 slab cache，或者必须确认通用批处理释放已经完成，Linux 6.12 Tree RCU 应等待 `kvfree_rcu_barrier()` 所覆盖的释放管线；不能假定 `rcu_barrier()` 会替它排空 `kfree_rcu()` 的独立批次。
 
 ## 3.7\_两个必须在基础章就识别的错误
 

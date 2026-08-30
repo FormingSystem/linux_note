@@ -26,7 +26,7 @@ topics:
 | 轴 | 先问什么 | Linux 6.12 主要位置 |
 | --- | --- | --- |
 | 保护域 | 普通对象 reader、SRCU 私有域还是任务 / trace 轨迹 | `tree*`、`srcutree.c`、`tasks.h` |
-| 底层实现 | 普通 RCU 在 SMP 上走 Tree，还是单 CPU 走 Tiny | `tree.c` / `tiny.c` 与 Kconfig |
+| 底层实现 | 普通 RCU 在 [SMP 构建](../../../../knowledge/foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md#1.1.3_Linux中的CONFIG_SMP表示构建能力)上走 Tree，还是在 `CONFIG_SMP=n`、`!PREEMPT_RCU` 构建中走 Tiny | `tree.c` / `tiny.c` 与 Kconfig |
 | Tree 读侧模型 | reader 被抢占时只欠 CPU 证据，还是增加任务债务 | `tree_plugin.h`、`sched.h` |
 | GP 策略 | normal 还是 expedited | `tree.c` / `tree_exp.h` |
 | callback 策略 | 普通 per-CPU 还是 NOCB | `tree.c`、`tree_nocb.h`、`rcu_segcblist.c` |
