@@ -17,16 +17,22 @@ topics:
 
 本目录以 NXP `linux-imx` 官方发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`、Linux 6.12.20 为固定源码身份。既有 RCU 配置快照确认 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`；其他配置分支属于同一固定源码的条件阅读，不伪装成该快照的运行结果。
 
-总索引承担三项职责：先建立分类坐标；按功能模块选择概念导读；再从模块导读进入具体宏、字段和函数体的唯一实现标题。它不复制知识正文，也不把文件列表冒充机制解释。
+总索引承担三项职责：
 
-完整源码身份、保存规则和哈希证据见 [Linux 源码阅读基线](../../linux/SOURCE_BASELINE.md#1.5.1_RCU家族证据)。跨版本机制和应用主线从 [RCU 专题大纲](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md#1.1_专题定位)进入。
+1. 先建立分类坐标；
+2. 按功能模块选择概念导读；
+3. 再从模块导读进入具体宏、字段和函数体的唯一实现标题。
+
+它不复制知识正文，也不把文件列表冒充机制解释。
+
+完整源码身份、保存规则和哈希证据见 [Linux 源码阅读基线](../../linux/SOURCE_BASELINE.md#1.5.1_RCU家族证据)。跨版本机制和应用主线从 [RCU 专题大纲](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md#1.1_专题定位) 进入。
 
 ## 1.2\_先建立源码分类坐标
 
 | 轴 | 先问什么 | Linux 6.12 主要位置 |
 | --- | --- | --- |
 | 保护域 | 普通对象 reader、SRCU 私有域还是任务 / trace 轨迹 | `tree*`、`srcutree.c`、`tasks.h` |
-| 底层实现 | 普通 RCU 在 [SMP 构建](../../../../knowledge/foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md#1.1.3_Linux中的CONFIG_SMP表示构建能力)上走 Tree，还是在 `CONFIG_SMP=n`、`!PREEMPT_RCU` 构建中走 Tiny | `tree.c` / `tiny.c` 与 Kconfig |
+| 底层实现 | 普通 RCU 在 [SMP 构建](../../../../knowledge/foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md#1.1.3_Linux中的CONFIG_SMP表示构建能力) 上走 Tree，还是在 `CONFIG_SMP=n`、`!PREEMPT_RCU` 构建中走 Tiny | `tree.c` / `tiny.c` 与 Kconfig |
 | Tree 读侧模型 | reader 被抢占时只欠 CPU 证据，还是增加任务债务 | `tree_plugin.h`、`sched.h` |
 | GP 策略 | normal 还是 expedited | `tree.c` / `tree_exp.h` |
 | callback 策略 | 普通 per-CPU 还是 NOCB | `tree.c`、`tree_nocb.h`、`rcu_segcblist.c` |
@@ -85,6 +91,7 @@ flowchart LR
 | [P09 Callback 与 NOCB](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.2_源码符号覆盖账本) | 分段队列、batch、bypass 和双线程 |
 | [P10 同步等待与 barrier](../source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.2_源码符号覆盖账本) | `synchronize_rcu()`、哨兵、entrain 与全队列扫描 |
 | [P11 Tree SRCU](../source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.2_源码符号覆盖账本) | reader 累计账本、双扫描、callback 与 barrier |
+| [P12 `rcu_init()` 启动初始化](../source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.19_直接符号覆盖账本) | `start_kernel()` 调用现场、Tree/Tiny 分派、I0～I13、boot CPU 发布、workqueue 与后继 initcall 边界 |
 
 P02 与 P03 是同一读侧模块中的公共 CPU 路径和 PREEMPT_RCU 增量，不是非抢占 / 抢占两套完整系统。
 
@@ -96,6 +103,7 @@ P02 与 P03 是同一读侧模块中的公共 CPU 路径和 PREEMPT_RCU 增量�
 知识正文P01-P06
     → 本索引P01
     → P02公共接口与读侧模型
+    → P12 rcu_init启动事务
     → P03 GP生命周期
     → P04拓扑与hotplug
     → P07 callback/NOCB

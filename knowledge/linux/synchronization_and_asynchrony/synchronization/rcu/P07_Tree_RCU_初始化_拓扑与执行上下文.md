@@ -33,17 +33,31 @@ topics:
 Linux 6.12.20 的主要入口 `kernel/rcu/tree.c::rcu_init()` 依次完成：
 
 ```c
+rcu_early_boot_tests();
+kfree_rcu_batch_init();
+rcu_bootup_announce();
+sanitize_kthread_prio();
 rcu_init_geometry();
 rcu_init_one();
-open_softirq(RCU_SOFTIRQ, rcu_core_si); /* use_softirq时 */
+if (dump_tree)
+	rcu_dump_rcu_node_tree();
+if (use_softirq)
+	open_softirq(RCU_SOFTIRQ, rcu_core_si);
+pm_notifier(rcu_pm_notify, 0);          /* PM_SLEEP关闭时为空操作 */
 rcutree_prepare_cpu(boot_cpu);
 rcutree_report_cpu_starting(boot_cpu);
 rcutree_online_cpu(boot_cpu);
 rcu_gp_wq = alloc_workqueue("rcu_gp", WQ_MEM_RECLAIM, 0);
 sync_wq = alloc_workqueue("sync_wq", WQ_MEM_RECLAIM, 0);
+qovld_calc = qovld < 0 ? DEFAULT_RCU_QOVLD_MULT * qhimark : qovld;
+start_poll_synchronize_rcu_expedited();
+rcu_test_sync_prims();
+tasks_cblist_init_generic();
 ```
 
-这段顺序有启动约束：`rcu_init()` 很早执行，此时源码断言在线 CPU 数不超过一个；其他 CPU 以后通过 CPU hotplug/bring-up 钩子逐个准备。GP kthread、boost/nocb/expedited 工作线程还受 `kthreadd` 和对应初始化阶段是否就绪的限制，不能把“`rcu_init()` 一次创建全部执行者”当作事实。
+这段顺序同时建立早期契约测试、`kfree_rcu` 批处理、参数派生、固定拓扑、boot CPU 身份、softirq/PM 入口、三个工作队列、callback 过载门闩、过早 poll 修复和 Tasks RCU callback 分片。完整版本化调用账本、配置分支、失败语义和后半程接力见 [Linux 6.12 Tree RCU `rcu_init()` 启动初始化源码实现](../../../../../research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.6_I0到I13的初始化阶段账本)。
+
+这段顺序有启动约束：`rcu_init()` 很早执行，此时源码断言在线 CPU 数不超过一个；其他 CPU 以后通过 CPU hotplug/bring-up 钩子逐个准备。GP kthread、boost/nocb/expedited 工作线程还受 `kthreadd` 和对应初始化阶段是否就绪的限制，不能把“`rcu_init()` 一次创建全部执行者”当作事实。早期 `synchronize_rcu()` 采用单启动任务语义，workqueue 对象虽可创建/排队，完整 worker 执行仍要等待 `workqueue_init()`。
 
 这里第一次出现的 **GP kthread** 是一个长期存在的内核调度任务：`rcu_spawn_gp_kthread()` 创建 `task_struct`，入口为 `rcu_gp_kthread()`，任务指针保存在 `rcu_state.gp_kthread`，无请求时睡在 `rcu_state.gp_wq`。它不是每轮 GP 新建的线程，不是第五颗 CPU，也不负责执行所有 callback。完整术语和生命周期见 [Tree RCU GP 请求与全局生命周期](P08_Tree_RCU_GP请求与全局生命周期.md#8.3_为什么需要一个长期存在的GP内核线程)，版本化模块协作见 [GP 全局生命周期模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.5_线程怎样创建并安全发布)；`rcu_init()` 与稍后线程创建的启动分界见 [从内核启动链定位 `early_initcall`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall)，创建与发布语句见 [`rcu_spawn_gp_kthread()`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务)。
 
@@ -222,7 +236,7 @@ ps -eLo pid,psr,cls,rtprio,comm | grep -E 'rcu|rcuc|rcuo|rcub|rcuog|rcuop'
 
 不要预期所有配置都出现同一组线程：`use_softirq`、NOCB、boost、PREEMPT_RT 和 CPU 数量会改变执行者。观察目标是把实际线程/softirq与本章状态职责对应，而不是靠线程名反推全部语义。
 
-Linux 6.12.20 的版本化阅读先进入 [拓扑与 CPU 热插拔模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.1_本模块究竟解决什么问题)，再分别直达 [`rcu_init_one()` 建立固定汇聚树](../../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点) 与 [boot/prepare 两阶段初始化](../../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.5_boot初始化与prepare为何仍未让CPU加入当前GP)。普通 GP kthread 继续进入 [启动、创建到运行期的唯一实现](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall)，每 CPU core 执行者进入 [回调与 NOCB 源码实现](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.7_普通CPU怎样选择softirq或rcuc执行者)；不能由启动函数名把它们视为同一线程。
+Linux 6.12.20 的版本化阅读先进入 [`rcu_init()` 启动初始化源码实现](../../../../../research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.1_从start_kernel里的一个调用固定本章任务)，再由 [拓扑与 CPU 热插拔模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.1_本模块究竟解决什么问题) 分流，分别直达 [`rcu_init_one()` 建立固定汇聚树](../../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点) 与 [boot/prepare 两阶段初始化](../../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.5_boot初始化与prepare为何仍未让CPU加入当前GP)。普通 GP kthread 继续进入 [启动、创建到运行期的唯一实现](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall)，每 CPU core 执行者进入 [回调与 NOCB 源码实现](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.7_普通CPU怎样选择softirq或rcuc执行者)；不能由启动函数名把它们视为同一线程。
 
 ## 7.11\_成本与边界
 

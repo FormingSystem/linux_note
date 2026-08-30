@@ -63,10 +63,18 @@ flowchart TD
  */
 static void __init rcu_init_one(void)
 {
+	static const char * const buf[] = RCU_NODE_NAME_INIT;
+	static const char * const fqs[] = RCU_FQS_NAME_INIT;
+	static struct lock_class_key rcu_node_class[RCU_NUM_LVLS];
+	static struct lock_class_key rcu_fqs_class[RCU_NUM_LVLS];
 	int levelspread[RCU_NUM_LVLS];
 	int cpustride = 1;
 	int i, j;
 	struct rcu_node *rnp;
+
+	BUILD_BUG_ON(RCU_NUM_LVLS > ARRAY_SIZE(buf));
+	if (rcu_num_lvls <= 0 || rcu_num_lvls > RCU_NUM_LVLS)
+		panic("rcu_init_one: rcu_num_lvls out of range");
 
 	/* level[i] 不是独立分配，而是指向 node[] 内第 i 层首元素。 */
 	for (i = 1; i < rcu_num_lvls; i++)
@@ -80,7 +88,11 @@ static void __init rcu_init_one(void)
 		rnp = rcu_state.level[i];
 		for (j = 0; j < num_rcu_lvl[i]; j++, rnp++) {
 			raw_spin_lock_init(&ACCESS_PRIVATE(rnp, lock));
+			lockdep_set_class_and_name(&ACCESS_PRIVATE(rnp, lock),
+						   &rcu_node_class[i], buf[i]);
 			raw_spin_lock_init(&rnp->fqslock);
+			lockdep_set_class_and_name(&rnp->fqslock,
+						   &rcu_fqs_class[i], fqs[i]);
 			rnp->gp_seq = rcu_state.gp_seq;
 			rnp->gp_seq_needed = rcu_state.gp_seq;
 			rnp->completedqs = rcu_state.gp_seq;
@@ -99,16 +111,33 @@ static void __init rcu_init_one(void)
 				rnp->parent = rcu_state.level[i - 1] +
 					      j / levelspread[i - 1];
 			}
+			rnp->level = i;
 			INIT_LIST_HEAD(&rnp->blkd_tasks);
-			/* 省略：NOCB、expedited waitqueue/work 与 boost 初始化。 */
+			/* 为可选NOCB GP协调建立节点等待队列。 */
+			rcu_init_one_nocb(rnp);
+			/* expedited序列低两位选择四个等待槽。 */
+			init_waitqueue_head(&rnp->exp_wq[0]);
+			init_waitqueue_head(&rnp->exp_wq[1]);
+			init_waitqueue_head(&rnp->exp_wq[2]);
+			init_waitqueue_head(&rnp->exp_wq[3]);
+			spin_lock_init(&rnp->exp_lock);
+			/* 后续boost/expedited线程创建和亲和性修改共用。 */
+			mutex_init(&rnp->kthread_mutex);
+			raw_spin_lock_init(&rnp->exp_poll_lock);
+			rnp->exp_seq_poll_rq = RCU_GET_STATE_COMPLETED;
+			INIT_WORK(&rnp->exp_poll_wq, sync_rcu_do_polled_gp);
 		}
 	}
 
+	init_swait_queue_head(&rcu_state.gp_wq);
+	init_swait_queue_head(&rcu_state.expedited_wq);
 	rnp = rcu_first_leaf_node();
 	for_each_possible_cpu(i) {
 		while (i > rnp->grphi)
 			rnp++;
 		per_cpu_ptr(&rcu_data, i)->mynode = rnp;
+		per_cpu_ptr(&rcu_data, i)->barrier_head.next =
+			&per_cpu_ptr(&rcu_data, i)->barrier_head;
 		rcu_boot_init_percpu_data(i);
 	}
 }
@@ -116,7 +145,7 @@ static void __init rcu_init_one(void)
 
 实现原理：`node[]` 的数组位置保存树形层次，`parent/grpmask` 保存向上一层报告所需的地址和位。CPU 本地 QS 不需要搜索整棵树：`rdp->mynode` 直接定位叶，`rdp->grpmask` 直接给出本节点位；叶节点完成以后再用 `rnp->parent/rnp->grpmask` 逐层传播。
 
-`for_each_possible_cpu()` 在启动时为尚未 online 的 CPU也建立映射，因此 hotplug 不需要运行期分配节点或改父子拓扑。代价是 `node[]` 与全部 `rcu_data` 按 possible CPU 规模预留。
+`for_each_possible_cpu()` 在启动时为尚未 online 的 CPU也建立映射，因此 hotplug 不需要运行期分配节点或改父子拓扑。代价是 `node[]` 与全部 `rcu_data` 按 possible CPU 规模预留。`exp_wq[4]`、poll work、NOCB 等状态也在此时预埋，但相应 kthread/worker 仍要等 `kthreadd` 与 workqueue 进入后续阶段；初始化承载地址不等于启动执行者。
 
 ## 6.5\_boot初始化与prepare为何仍未让CPU加入当前GP
 
@@ -128,9 +157,13 @@ static void __init rcu_init_one(void)
  */
 static void __init rcu_boot_init_percpu_data(int cpu)
 {
+	struct context_tracking *ct = this_cpu_ptr(&context_tracking);
 	struct rcu_data *rdp = per_cpu_ptr(&rcu_data, cpu);
 
 	rdp->grpmask = leaf_node_cpu_bit(rdp->mynode, cpu);
+	INIT_WORK(&rdp->strict_work, strict_work_handler);
+	WARN_ON_ONCE(ct->nesting != 1);
+	WARN_ON_ONCE(rcu_watching_snap_in_eqs(ct_rcu_watching_cpu(cpu)));
 	rdp->barrier_seq_snap = rcu_state.barrier_sequence;
 	rdp->rcu_ofl_gp_seq = rcu_state.gp_seq;
 	rdp->rcu_ofl_gp_state = RCU_GP_CLEANED;
@@ -148,13 +181,24 @@ static void __init rcu_boot_init_percpu_data(int cpu)
  */
 int rcutree_prepare_cpu(unsigned int cpu)
 {
+	unsigned long flags;
+	struct context_tracking *ct = per_cpu_ptr(&context_tracking, cpu);
 	struct rcu_data *rdp = per_cpu_ptr(&rcu_data, cpu);
-	struct rcu_node *rnp = rdp->mynode;
+	struct rcu_node *rnp = rcu_get_root();
 
-	/* 省略：根锁下重置 FQS 计数、context tracking 和 batch limit。 */
+	/* 先借根锁取得一致的全局FQS快照并恢复CPU初始watching状态。 */
+	raw_spin_lock_irqsave_rcu_node(rnp, flags);
+	rdp->qlen_last_fqs_check = 0;
+	rdp->n_force_qs_snap = READ_ONCE(rcu_state.n_force_qs);
+	rdp->blimit = blimit;
+	ct->nesting = 1;
+	raw_spin_unlock_rcu_node(rnp); /* IRQ仍保持关闭。 */
+
+	/* 保留NOCB或早期call_rcu()已经启用并装入的回调链。 */
 	if (!rcu_segcblist_is_enabled(&rdp->cblist))
 		rcu_segcblist_init(&rdp->cblist);
 
+	rnp = rdp->mynode;
 	raw_spin_lock_rcu_node(rnp);
 	rdp->gp_seq = READ_ONCE(rnp->gp_seq);
 	rdp->gp_seq_needed = rdp->gp_seq;
@@ -162,15 +206,21 @@ int rcutree_prepare_cpu(unsigned int cpu)
 	rdp->core_needs_qs = false;
 	rdp->rcu_iw_pending = false;
 	rdp->rcu_iw = IRQ_WORK_INIT_HARD(rcu_iw_handler);
-	raw_spin_unlock_rcu_node(rnp);
+	rdp->rcu_iw_gp_seq = rdp->gp_seq - 1;
+	trace_rcu_grace_period(rcu_state.name, rdp->gp_seq, TPS("cpuonl"));
+	raw_spin_unlock_irqrestore_rcu_node(rnp, flags);
 
 	rcu_spawn_rnp_kthreads(rnp);
 	rcu_spawn_cpu_nocb_kthread(cpu);
+	ASSERT_EXCLUSIVE_WRITER(rcu_state.n_online_cpus);
+	WRITE_ONCE(rcu_state.n_online_cpus, rcu_state.n_online_cpus + 1);
 	return 0;
 }
 ```
 
 实现原理：prepare 解决“该 CPU 的本地对象现在可以被后续路径使用”，starting 才解决“该 CPU 何时进入未来 RCU 参与集合”。二者分开是因为 prepare 在控制 CPU 上、incoming CPU 尚未出现；starting 在 incoming CPU 自己、精确的 IRQ-disabled 位置执行。把两者合并会让参与位发布早于 CPU 上下文和内存顺序准备完成。
+
+启动 CPU 调用 prepare 时，`rcu_scheduler_fully_active` 仍为假，两个 spawn 辅助函数不会实际创建 boost/expedited/NOCB 线程；它们要在 pre-SMP early initcall 建立 GP kthread 后补建。末尾递增的 `rcu_state.n_online_cpus` 是 RCU 私有初始化门闩，令 `rcu_init_invoked()` 开始为真，不是通用 CPU hotplug 的 `num_online_cpus()`。
 
 ## 6.6\_report\_cpu\_starting与report\_cpu\_dead怎样隔离当前轮和下一轮
 
@@ -353,6 +403,7 @@ void rcutree_migrate_callbacks(int cpu)
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant I as rcu_init_one
     participant R as rcu_state/rcu_node
     participant P as rcutree_prepare_cpu
@@ -371,6 +422,8 @@ sequenceDiagram
     M->>R: advance并merge到存活CPU
     M-->>G: 必要时唤醒新GP
 ```
+
+第 1～3 步只建立固定地址和 CPU 私有初值，第 4～5 步才把未来参与集合冻结为一轮 GP 的当前债务。CPU 下线时，第 6～7 步先清偿并撤销证明债务，第 8～10 步再迁移 callback 所有权；因此清 CPU 位不能代替迁移队列，迁移队列也不能替代当前 GP 的 QS 报告。
 
 ## 6.11\_验证清单
 
