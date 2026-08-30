@@ -13,7 +13,7 @@ source_version: "6.12.20"
 
 ## 1.1\_版本边界与阅读任务
 
-实现证据固定到 NXP `linux-imx` 标签 `lf-6.12.20-2.0.0` 的提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。序列计数器的大部分核心实现在单个 [`include/linux/seqlock.h`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/seqlock.h) 中，但应按普通 seqcount、关联锁、latch 与 seqlock 四种职责阅读，不能从文件共址推断为一个状态机。
+实现证据固定到 NXP `linux-imx` 标签 `lf-6.12.20-2.0.0` 的提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。序列计数器的大部分核心实现在单个 [`include/linux/seqlock.h`](../../linux/include/linux/seqlock.h) 中，但应按普通 seqcount、关联锁、latch 与 seqlock 四种职责阅读，不能从文件共址推断为一个状态机。
 
 跨版本模型先读[序列计数器专题](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/大纲.md#1.1_专题定位)。
 

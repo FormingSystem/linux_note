@@ -21,11 +21,11 @@ source_version: "6.12.20"
 
 | 分支 | 文件 | 职责 |
 | --- | --- | --- |
-| 普通等待队列 | [`include/linux/wait.h`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/wait.h) | waitqueue/entry、wait_event 宏、wake API |
-| 普通等待队列 | [`kernel/sched/wait.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/kernel/sched/wait.c) | 入队、信号竞态、wake 扫描、finish |
-| simple waitqueue | [`include/linux/swait.h`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/swait.h)、`kernel/sched/swait.c` | 简化任务 waiter 与唤醒 |
-| completion | [`include/linux/completion.h`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/completion.h) | `done + swait` 结构与接口 |
-| completion | [`kernel/sched/completion.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/kernel/sched/completion.c) | 令牌增加/消费、等待、广播完成 |
+| 普通等待队列 | [`include/linux/wait.h`](../../linux/include/linux/wait.h) | waitqueue/entry、wait_event 宏、wake API |
+| 普通等待队列 | [`kernel/sched/wait.c`](../../linux/kernel/sched/wait.c) | 入队、信号竞态、wake 扫描、finish |
+| simple waitqueue | [`include/linux/swait.h`](../../linux/include/linux/swait.h)、`kernel/sched/swait.c` | 简化任务 waiter 与唤醒 |
+| completion | [`include/linux/completion.h`](../../linux/include/linux/completion.h) | `done + swait` 结构与接口 |
+| completion | [`kernel/sched/completion.c`](../../linux/kernel/sched/completion.c) | 令牌增加/消费、等待、广播完成 |
 
 ## 1.3\_两条状态机不能合并
 

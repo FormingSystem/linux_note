@@ -21,10 +21,10 @@ source_version: "6.12.20"
 
 | 文件 | 职责 |
 | --- | --- |
-| [`include/linux/workqueue.h`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/workqueue.h) | `work_struct` API、flags、delayed/rcu work、attributes 与公共接口 |
-| [`kernel/workqueue_internal.h`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/kernel/workqueue_internal.h) | `struct worker` 与调度器交互内部接口 |
-| [`kernel/workqueue.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/kernel/workqueue.c) | pool/pwq/wq、投递、worker、flush、cancel、attrs、rescuer、hotplug |
-| [`Documentation/core-api/workqueue.rst`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/core-api/workqueue.rst) | 接口契约、cmwq 设计与亲和范围说明 |
+| [`include/linux/workqueue.h`](../../linux/include/linux/workqueue.h) | `work_struct` API、flags、delayed/rcu work、attributes 与公共接口 |
+| [`kernel/workqueue_internal.h`](../../linux/kernel/workqueue_internal.h) | `struct worker` 与调度器交互内部接口 |
+| [`kernel/workqueue.c`](../../linux/kernel/workqueue.c) | pool/pwq/wq、投递、worker、flush、cancel、attrs、rescuer、hotplug |
+| [`Documentation/core-api/workqueue.rst`](../../linux/Documentation/core-api/workqueue.rst) | 接口契约、cmwq 设计与亲和范围说明 |
 
 ## 1.3\_三条模块分支
 
