@@ -129,6 +129,16 @@ def c_block_headings(text: str) -> list[str]:
     return headings
 
 
+def mermaid_sequence_blocks(text: str) -> list[str]:
+    """Return Mermaid fences that contain a sequence diagram."""
+    blocks: list[str] = []
+    for match in re.finditer(r"```mermaid(?:[ \t]+[^\n]*)?\n(.*?)```", text, re.S):
+        body = match.group(1)
+        if re.search(r"(?m)^\s*sequenceDiagram\s*$", body):
+            blocks.append(body)
+    return blocks
+
+
 def title_text(text: str, headings: list[tuple[int, int, str]]) -> str:
     h1 = next((title for _, level, title in headings if level == 1), "")
     meta_title = ""
@@ -178,6 +188,7 @@ def audit(path: Path) -> tuple[dict[str, int | str], list[Issue]]:
     h2_count = sum(1 for _, level, _ in headings if level == 2)
     largest_span, largest_title = largest_h2_span(text, headings)
     source_headings = c_block_headings(text)
+    sequence_blocks = mermaid_sequence_blocks(text)
     is_source_explanation = "source_explanations" in path.parts
     source_evidence_blocks = (
         len(source_headings)
@@ -210,6 +221,16 @@ def audit(path: Path) -> tuple[dict[str, int | str], list[Issue]]:
                 "explain the section transition or remove the decorative heading",
             )
         )
+
+    for index, block in enumerate(sequence_blocks, 1):
+        if not re.search(r"(?m)^\s*autonumber\s*$", block):
+            issues.append(
+                Issue(
+                    "SEQUENCE_WITHOUT_NUMBERING",
+                    f"Mermaid sequence diagram {index} has no autonumber directive; "
+                    "readers need stable step numbers for the explanation below the diagram",
+                )
+            )
 
     if len(opening_internal_links) >= 6 and opening_narrative_chars < 160:
         issues.append(
@@ -259,6 +280,7 @@ def audit(path: Path) -> tuple[dict[str, int | str], list[Issue]]:
         "opening_narrative_chars": opening_narrative_chars,
         "largest_h2_lines": largest_span,
         "source_evidence_c_blocks": source_evidence_blocks,
+        "sequence_diagrams": len(sequence_blocks),
         "empty_h2": len(empty_h2),
     }
     return metrics, issues
