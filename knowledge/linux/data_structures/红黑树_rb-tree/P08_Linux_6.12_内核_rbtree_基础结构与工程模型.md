@@ -84,7 +84,7 @@ Linux 6.12 内核如何扩展 augmented rbtree？
 Linux 6.12 内核如何划分 rbtree 与调用者之间的职责边界？
 ```
 
-Linux 6.12 的 rbtree 文档把红黑树定义为用于保存可排序 key/value 数据的自平衡二叉搜索树；文档也明确区分了 rbtree、radix tree 和 hash table：radix tree 面向稀疏整数索引，hash table 不保持排序，而 rbtree 保持排序并可按顺序遍历。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/Documentation/core-api/rbtree.rst))
+Linux 6.12 的 rbtree 文档把红黑树定义为用于保存可排序 key/value 数据的自平衡二叉搜索树；文档也明确区分了 rbtree、radix tree 和 hash table：radix tree 面向稀疏整数索引，hash table 不保持排序，而 rbtree 保持排序并可按顺序遍历。([本地源码](../../../../research/source_reading/linux/Documentation/core-api/rbtree.rst))
 
 ------
 
@@ -124,7 +124,7 @@ Documentation/core-api/rbtree.rst
 	说明 rbtree 的设计背景、使用方式和调用者责任。
 ```
 
-Linux 6.12 的 `include/linux/rbtree_types.h` 中，`struct rb_node` 由 `__rb_parent_color`、`rb_right`、`rb_left` 三个字段组成；`struct rb_root` 只保存根节点指针；`struct rb_root_cached` 在普通根之外增加 `rb_leftmost`，用于缓存最左节点。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/include/linux/rbtree_types.h))
+Linux 6.12 的 `include/linux/rbtree_types.h` 中，`struct rb_node` 由 `__rb_parent_color`、`rb_right`、`rb_left` 三个字段组成；`struct rb_root` 只保存根节点指针；`struct rb_root_cached` 在普通根之外增加 `rb_leftmost`，用于缓存最左节点。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree_types.h))
 
 本章源码阅读顺序如下：
 
@@ -369,7 +369,7 @@ rbtree 的基本定位是：
 避免普通 BST 因输入顺序退化成链表。
 ```
 
-Linux 6.12 的 rbtree 文档列举了多个内核历史使用场景，包括 I/O 调度器、高精度定时器、文件系统目录项、VMA、epoll 文件描述符、加密 key 和网络调度等。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/Documentation/core-api/rbtree.rst))
+Linux 6.12 的 rbtree 文档列举了多个内核历史使用场景，包括 I/O 调度器、高精度定时器、文件系统目录项、VMA、epoll 文件描述符、加密 key 和网络调度等。([本地源码](../../../../research/source_reading/linux/Documentation/core-api/rbtree.rst))
 
 ------
 
@@ -518,7 +518,7 @@ rbtree 的价值在于同时提供：
 | XArray / radix 类结构 | 整数索引映射                 | 不等价于任意比较排序 | index 到对象   |
 | Maple Tree            | 范围映射                     | 不是通用比较树       | VMA 等范围管理 |
 
-Linux 6.12 的 rbtree 文档也明确区分了 rbtree、radix tree 和 hash table：radix tree 使用 long integer index 做稀疏数组式访问，hash table 不保持排序，而 rbtree 保存可排序数据并可按顺序遍历。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/Documentation/core-api/rbtree.rst))
+Linux 6.12 的 rbtree 文档也明确区分了 rbtree、radix tree 和 hash table：radix tree 使用 long integer index 做稀疏数组式访问，hash table 不保持排序，而 rbtree 保存可排序数据并可按顺序遍历。([本地源码](../../../../research/source_reading/linux/Documentation/core-api/rbtree.rst))
 
 ------
 
@@ -540,7 +540,7 @@ AVL 树也是自平衡二叉搜索树。它比红黑树更严格地控制左右�
 保持查找、插入、删除的 O(log n) 上界。
 ```
 
-Linux 6.12 的 rbtree 文档说明，红黑树类似 AVL 树，但插入和删除具有更快的实时有界最坏情况表现：插入最多两次旋转，删除最多三次旋转；代价是查找略慢，但仍保持 O(log n)。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/Documentation/core-api/rbtree.rst))
+Linux 6.12 的 rbtree 文档说明，红黑树类似 AVL 树，但插入和删除具有更快的实时有界最坏情况表现：插入最多两次旋转，删除最多三次旋转；代价是查找略慢，但仍保持 O(log n)。([本地源码](../../../../research/source_reading/linux/Documentation/core-api/rbtree.rst))
 
 这说明红黑树不是为了取得“最短查找路径”，而是为了在以下目标之间折中：
 
@@ -644,7 +644,7 @@ rb_replace_node：
 Linux 6.12 的 `rbtree.h` 注释明确说明，
 
 * <span style="color:red;">使用 rbtree 时需要实现自己的 insert 和 search core，以避免回调带来的性能损失</span>；
-* `rbtree.h` 该头文件还提供 `rb_link_node()`、`rb_insert_color()`、`rb_erase()`、遍历、替换、cached rbtree、RCU 相关和辅助查找插入接口。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/include/linux/rbtree.h))
+* `rbtree.h` 该头文件还提供 `rb_link_node()`、`rb_insert_color()`、`rb_erase()`、遍历、替换、cached rbtree、RCU 相关和辅助查找插入接口。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree.h))
 
 这就是 Linux rbtree 与教材实现的最大差异之一。
 
@@ -2415,7 +2415,7 @@ cached rbtree：
 调用 rb_insert_color() 完成红黑修复。
 ```
 
-Linux 6.12 的 `rbtree.h` 中，`rb_link_node()` 会设置 `node->__rb_parent_color` 为 parent，清空左右孩子，然后把 `node` 挂到 `*rb_link`；`rb_link_node_rcu()` 则用 `rcu_assign_pointer()` 完成链接发布。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/include/linux/rbtree.h))
+Linux 6.12 的 `rbtree.h` 中，`rb_link_node()` 会设置 `node->__rb_parent_color` 为 parent，清空左右孩子，然后把 `node` 挂到 `*rb_link`；`rb_link_node_rcu()` 则用 `rcu_assign_pointer()` 完成链接发布。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree.h))
 
 这说明 `rbtree.h` 不是提供完整 map 容器，而是提供底层构件。
 
@@ -2469,7 +2469,7 @@ augmented rbtree 的核心是：
 额外信息由调用者提供回调维护。
 ```
 
-Linux 6.12 的 `rbtree_augmented.h` 定义了 `struct rb_augment_callbacks`，包含 `propagate`、`copy`、`rotate` 三个回调；文件注释也说明，只有该回调结构以及 `rb_insert_augmented()`、`rb_erase_augmented()` 原型是预期公开的，其余内容属于实现细节。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/include/linux/rbtree_augmented.h))
+Linux 6.12 的 `rbtree_augmented.h` 定义了 `struct rb_augment_callbacks`，包含 `propagate`、`copy`、`rotate` 三个回调；文件注释也说明，只有该回调结构以及 `rb_insert_augmented()`、`rb_erase_augmented()` 原型是预期公开的，其余内容属于实现细节。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree_augmented.h))
 
 增强回调通常可以这样理解：
 
@@ -2526,9 +2526,9 @@ rotate：
 	rb_erase_augmented()
 ```
 
-Linux 6.12 的 `lib/rbtree.c` 是普通 rbtree 的核心实现文件，源码中包含插入、删除、旋转、遍历、替换和 augmented rbtree 相关实现。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/lib/rbtree.c))
+Linux 6.12 的 `lib/rbtree.c` 是普通 rbtree 的核心实现文件，源码中包含插入、删除、旋转、遍历、替换和 augmented rbtree 相关实现。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
 
-`lib/rbtree.c` 还包含 lockless lookup 相关说明：更新树结构中 `rb_left`、`rb_right` 指针时需要使用 `WRITE_ONCE()`，并且程序顺序上不能临时制造树结构环；这样不能保证无锁遍历一定看到完整树，但能保证遍历只看到有效元素并且不会陷入循环。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/lib/rbtree.c))
+`lib/rbtree.c` 还包含 lockless lookup 相关说明：更新树结构中 `rb_left`、`rb_right` 指针时需要使用 `WRITE_ONCE()`，并且程序顺序上不能临时制造树结构环；这样不能保证无锁遍历一定看到完整树，但能保证遍历只看到有效元素并且不会陷入循环。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
 
 这说明 Linux rbtree 源码不仅实现红黑树算法，还考虑了工程可见性问题：
 
@@ -2582,7 +2582,7 @@ rb_root_cached 用于缓存最左节点；
 augmented rbtree 用于维护子树增强信息。
 ```
 
-这些内容构成 Linux 6.12 rbtree 的使用契约。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/Documentation/core-api/rbtree.rst))
+这些内容构成 Linux 6.12 rbtree 的使用契约。([本地源码](../../../../research/source_reading/linux/Documentation/core-api/rbtree.rst))
 
 阅读源码时，应当把官方文档作为接口语义参考，把 `lib/rbtree.c` 作为实现参考。
 
@@ -2815,7 +2815,7 @@ rb_parent(node)
 	= 去掉低位标志后的 parent 指针。
 ```
 
-Linux 6.12 的 `rbtree.h` 中，`rb_parent(r)` 通过对 `__rb_parent_color` 执行 `& ~3` 获取父节点；`RB_EMPTY_NODE()` 和 `RB_CLEAR_NODE()` 也都基于 `__rb_parent_color` 编码节点状态。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/include/linux/rbtree.h))
+Linux 6.12 的 `rbtree.h` 中，`rb_parent(r)` 通过对 `__rb_parent_color` 执行 `& ~3` 获取父节点；`RB_EMPTY_NODE()` 和 `RB_CLEAR_NODE()` 也都基于 `__rb_parent_color` 编码节点状态。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree.h))
 
 设置父节点和颜色时，也不能分开随意写，而要使用内核提供的辅助逻辑：
 
@@ -2824,7 +2824,7 @@ rb_set_parent_color(node, parent, color)
 	= parent 地址 | color 标志。
 ```
 
-Linux 6.12 的 `rbtree_augmented.h` 中定义了 `RB_RED`、`RB_BLACK`、`rb_color()`、`rb_is_red()`、`rb_is_black()`、`rb_set_parent()`、`rb_set_parent_color()` 等底层颜色与父指针辅助逻辑。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/include/linux/rbtree_augmented.h))
+Linux 6.12 的 `rbtree_augmented.h` 中定义了 `RB_RED`、`RB_BLACK`、`rb_color()`、`rb_is_red()`、`rb_is_black()`、`rb_set_parent()`、`rb_set_parent_color()` 等底层颜色与父指针辅助逻辑。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree_augmented.h))
 
 这种设计的工程收益是：
 
@@ -2864,7 +2864,7 @@ Linux 6.12 的 `rbtree_augmented.h` 中定义了 `RB_RED`、`RB_BLACK`、`rb_col
 
 颜色可以放入指针低位，前提是 `struct rb_node` 的地址满足对齐要求。
 
-Linux 6.12 的 `struct rb_node` 带有 `aligned(sizeof(long))` 对齐属性；源码注释还提到该对齐与特定架构需求有关。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/include/linux/rbtree_types.h))
+Linux 6.12 的 `struct rb_node` 带有 `aligned(sizeof(long))` 对齐属性；源码注释还提到该对齐与特定架构需求有关。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree_types.h))
 
 当对象按机器字对齐时，有效地址的低若干位固定为 0。红黑树颜色只需要极少标志位，因此可以把这些低位用于颜色编码。
 
@@ -3109,7 +3109,7 @@ rb_leftmost：
 rb_first_cached(&root_cached);
 ```
 
-Linux 6.12 文档说明，cached rbtree 把获取最左节点从普通 `rb_first()` 的 O(logN) 优化为简单指针访问，代价是增加一个指针并在插入删除时维护该缓存。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/Documentation/core-api/rbtree.rst))
+Linux 6.12 文档说明，cached rbtree 把获取最左节点从普通 `rb_first()` 的 O(logN) 优化为简单指针访问，代价是增加一个指针并在插入删除时维护该缓存。([本地源码](../../../../research/source_reading/linux/Documentation/core-api/rbtree.rst))
 
 注意：
 
@@ -3147,7 +3147,7 @@ RB_ROOT_CACHED：
 	root.rb_leftmost == NULL。
 ```
 
-Linux 6.12 的 `rbtree_types.h` 中，`RB_ROOT` 初始化为 `{ NULL, }`，`RB_ROOT_CACHED` 初始化为 `{ {NULL, }, NULL }`。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/include/linux/rbtree_types.h))
+Linux 6.12 的 `rbtree_types.h` 中，`RB_ROOT` 初始化为 `{ NULL, }`，`RB_ROOT_CACHED` 初始化为 `{ {NULL, }, NULL }`。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree_types.h))
 
 这两个宏只初始化树根，不初始化业务节点。
 
@@ -3196,7 +3196,7 @@ kernel源码：
 
 这两个接口语义不同，不能混用。
 
-Linux 6.12 的 `rbtree.h` 中，`RB_EMPTY_ROOT(root)` 使用 `READ_ONCE((root)->rb_node) == NULL` 判断空树。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/include/linux/rbtree.h))
+Linux 6.12 的 `rbtree.h` 中，`RB_EMPTY_ROOT(root)` 使用 `READ_ONCE((root)->rb_node) == NULL` 判断空树。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree.h))
 
 ------
 
@@ -3226,7 +3226,7 @@ RB_CLEAR_NODE(node);
 把 node 标记为未链接状态。
 ```
 
-Linux 6.12 的 `rbtree.h` 中，`RB_EMPTY_NODE(node)` 和 `RB_CLEAR_NODE(node)` 都基于 `node->__rb_parent_color == (unsigned long)(node)` 这类自指编码。([GitHub](https://raw.githubusercontent.com/torvalds/linux/v6.12/include/linux/rbtree.h))
+Linux 6.12 的 `rbtree.h` 中，`RB_EMPTY_NODE(node)` 和 `RB_CLEAR_NODE(node)` 都基于 `node->__rb_parent_color == (unsigned long)(node)` 这类自指编码。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree.h))
 
 典型使用顺序是：
 
@@ -3353,4 +3353,3 @@ RB_EMPTY_NODE / RB_CLEAR_NODE：
 ```
 
 ---
-
