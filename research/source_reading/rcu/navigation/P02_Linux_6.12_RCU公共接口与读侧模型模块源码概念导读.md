@@ -31,6 +31,10 @@ topics:
 
 非抢占分支用于比较 `!CONFIG_PREEMPT_RCU` 源码条件，不表示该已核对运行配置实际走该分支。完整身份和文件哈希边界见 [Linux 源码阅读基线](../../linux/SOURCE_BASELINE.md#1.5.1_RCU家族证据)。
 
+`CONFIG_PREEMPT_RCU` 是 Kconfig 中控制 **Preemptible Read-Copy Update（可抢占式读—复制—更新）** 读侧模型的布尔配置项；下文表格中的 `PREEMPT_RCU` 只是省略 `CONFIG_` 前缀后的源码分支简称，不是另一种 RCU 类型或第二套 GP 系统。
+
+进入版本化函数以前，先固定两条稳定机制回链：[P05 的 S3～S7](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md#5.5.2_S3到S7_GP请求证明与根完成)说明读侧证据怎样接入公共 GP 证明链；[P06 的 R0～R7](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md#6.6_一组统一阶段怎样覆盖两种配置)说明本模块的局部阶段怎样映射回公共周期。本篇只把这两条稳定结论落到 Linux 6.12.20 的字段和函数。
+
 ## 2.2\_先固定公共调用场景
 
 ```c
@@ -82,6 +86,8 @@ kfree(old);
 
 非抢占普通读侧把“任务是否仍持有旧指针”压缩成 CPU 不变量：任务若还在读侧，普通抢占不能把它换出，因此一个发生在 GP 边界之后的合法 CPU QS 足以排除该 CPU 上的既有旧 reader。
 
+下面的 `EQS` 是 **Extended Quiescent State（扩展静止状态）** 的缩写，表示 CPU 已进入一段可由 RCU 持续视为不承载本类旧 reader 的状态；这里它是一类形成或预先声明静止证据的 CPU 路径名称，不是新的 GP 阶段。
+
 阅读顺序：
 
 ```text
@@ -118,7 +124,7 @@ __rcu_read_lock()维护任务嵌套
     → 从原登记节点删除并恢复传播
 ```
 
-任务迁移不改变债务归属：任务字段保存原登记节点，unlock 不根据当前 CPU 猜测应该修改哪片 `blkd_tasks`。
+任务迁移不改变债务归属：`rcu_blocked_node` 是 `task_struct` 中保存原登记叶节点的字段，因此完整字段路径写作 `task_struct.rcu_blocked_node`。最外层 unlock 从这个任务字段取回节点，而不是根据恢复运行时当前 CPU 的 `rcu_data.mynode` 猜测应该修改哪片 `blkd_tasks`。具体写入与读取位置见 [`rcu_note_context_switch()` 转移读侧债务](../source_explanations/P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md#3.4_rcu_note_context_switch转移读侧债务) 和 [最外层退出删除任务并恢复传播](../source_explanations/P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md#3.8_最外层退出删除任务并恢复传播)。
 
 ## 2.7\_GP开始前后被抢占的任务怎样分界
 
@@ -135,30 +141,57 @@ __rcu_read_lock()维护任务嵌套
 
 ## 2.8\_端到端状态与通信
 
+非抢占分支中，调度压力出现不等于 context switch 已经完成：
+
 ```mermaid
 sequenceDiagram
+    autonumber
     participant T as 旧reader任务
     participant S as 调度器
     participant D as 本CPU rcu_data
     participant N as 叶rcu_node
     participant G as GP主线
 
-    T->>T: 进入并取得old
-    G->>N: GP开始，建立CPU位与旧任务边界
-    S->>T: 准备在读侧内换出
-    alt 非抢占分支
-        Note over S,T: 普通抢占切出不能越过读侧边界
-        T->>T: 先退出读侧
-    else 抢占分支
-        S->>N: 登记T为blocked-task债务
-        S->>D: context switch后可记录CPU QS
-        D->>N: 清CPU位，但任务仍阻塞节点
-        T->>N: 任意CPU恢复并在最外层unlock清债
+    T->>T: rcu_read_lock并取得old
+    G->>N: GP开始，设置本CPU的qsmask位
+    rect rgb(235, 244, 255)
+        S-->>T: 高优先级任务到来，尝试普通抢占
+        Note over S,T: 非抢占读侧内不会完成context switch
+        T->>T: rcu_read_unlock先结束读侧
+        S->>D: 后续context switch调用rcu_qs记录CPU证据
+        D->>N: rcu_report_qs_rdp清本CPU位
     end
-    N->>G: CPU位和旧任务条件都满足，接回公共汇聚
+    N->>G: 节点条件成立，接回公共汇聚
 ```
 
-正常路径主要通过每任务、每 CPU 和节点共享状态通信；没有为每个 reader 广播 IPI。FQS、resched、IPI 和 boost 属于长时间无进展时的慢路径，由 P05/P06 对应模块解释。
+第 3 步只是调度尝试；第 4 步先结束读侧，第 5～6 步才把真实 context switch 变成 CPU QS 并清除节点位。源码调用顺序不能画成“先把旧 reader 换出，再补做证明”。
+
+抢占分支允许 context switch 真正发生，因此切换前必须先改变债务载体：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant T as 旧reader任务
+    participant S as 调度器
+    participant D as 本CPU rcu_data
+    participant N as 叶rcu_node
+    participant G as GP主线
+
+    T->>T: __rcu_read_lock维护嵌套并取得old
+    G->>N: GP开始，设置qsmask与gp_tasks边界
+    rect rgb(255, 242, 226)
+        S->>N: rcu_note_context_switch登记任务并保存rcu_blocked_node
+        S->>D: context switch后记录本CPU QS
+        D->>N: 清CPU位，但gp_tasks仍阻塞节点
+        T->>T: 任务可迁移并在其他CPU恢复
+        T->>N: 最外层unlock按rcu_blocked_node删除任务债务
+    end
+    N->>G: CPU位和旧任务边界都清空，接回公共汇聚
+```
+
+第 3 步先把债务从 CPU 执行现场转入任务字段和原叶节点，第 4～5 步才允许 CPU 单独清位；第 6 步迁移不改变登记归属，第 7 步按保存的原节点清债。两条路径最终都在节点完成条件处回到同一 GP 主线。
+
+正常路径主要通过每任务、每 CPU 和节点共享状态通信；没有为每个 reader 广播 IPI。FQS、resched、IPI 和 boost 属于长时间无进展时的慢路径，版本化入口见 [force-QS 与 Stall 模块导读](P05_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#5.4_FQS是两阶段远端观察而不是无条件IPI)。
 
 ## 2.9\_唯一实现讲解入口
 
