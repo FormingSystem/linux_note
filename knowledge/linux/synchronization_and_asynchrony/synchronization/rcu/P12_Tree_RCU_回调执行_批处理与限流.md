@@ -33,6 +33,8 @@ for_each_old_flow(flow)
 
 回调执行层必须在两种成本之间折中：**批量执行以摊薄调度开销，同时限流以交还 CPU。**
 
+本章回答“单个执行者如何处理成熟 callback 批次”；如果问题进一步变成“为什么这个批次不应在实时/隔离 CPU 上执行，以及怎样把 callback 侧工作迁给 kthread”，继续见 [Tree RCU NOCB 回调卸载](P16_Tree_RCU_NOCB回调卸载.md#16.1_场景_隔离CPU不希望执行回调批次)。
+
 ## 12.2\_先区分四个时刻
 
 ```text
