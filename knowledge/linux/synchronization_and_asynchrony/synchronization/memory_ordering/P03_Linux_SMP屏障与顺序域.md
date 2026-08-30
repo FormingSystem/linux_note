@@ -14,6 +14,8 @@ topics:
 
 # 第3章\_Linux\_SMP屏障与顺序域
 
+本章中的 SMP 沿用 [Symmetric Multiprocessing（对称多处理）的系统模型](../../../../foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md#1.1.1_SMP的中英文全称与系统模型)：多个逻辑 CPU 由同一个 Linux 内核管理并通过共享内存协作。本章只解释 `smp_*()` 怎样为 CPU—CPU 普通内存协议建立顺序，以及 `CONFIG_SMP=n` 时哪些约束可以退化。
+
 ## 3.1\_先按同步域分类
 
 Linux 中都带“barrier”意味的原语，可能约束不同参与者：

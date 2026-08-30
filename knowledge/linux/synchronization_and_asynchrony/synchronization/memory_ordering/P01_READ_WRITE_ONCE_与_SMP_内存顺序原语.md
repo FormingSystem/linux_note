@@ -15,6 +15,8 @@ topics:
 
 ## 1.1\_Linux\_面对的不是一个乱序问题
 
+本章沿用 [SMP（Symmetric Multiprocessing，对称多处理）](../../../../foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md#1.1.1_SMP的中英文全称与系统模型)的多个逻辑 CPU 与共享内存模型，只讨论 Linux 怎样约束这些 CPU 对普通内存的访问；CPU 拓扑、缓存一致性和 `CONFIG_SMP` 的构建含义不在这里重复定义。
+
 一段内核并发代码至少同时面对五层问题：
 
 ```mermaid
