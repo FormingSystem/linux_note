@@ -56,8 +56,8 @@ flowchart LR
 
 | 顺序 | 模块导读 | 读者任务 | 对应知识正文 |
 | --- | --- | --- | --- |
-| P02 | [公共接口与读侧模型](P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md#2.1_模块问题与配置边界) | 公共 API 在哪里分流；CPU 债务与任务债务怎样比较并合流 | P03、P06 |
-| P03 | [Tree RCU GP 全局生命周期](P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.1_模块问题与版本边界) | 请求漏斗、长期 GP kthread、S0～S9 和完成发布 | P05、P08 |
+| P02 | [公共接口与读侧模型](P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md#2.1_模块问题与配置边界) | 公共 API 在哪里分流；CPU 债务与任务债务怎样比较并合流 | [P03 公共接口闭环](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md#3.3_完整同步实现)、[P06 R0～R7 读侧阶段](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md#6.6_一组统一阶段怎样覆盖两种配置) |
+| P03 | [Tree RCU GP 全局生命周期](P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.1_模块问题与版本边界) | 请求漏斗、长期 GP kthread、S0～S9 和完成发布 | [P05 公共 S0～S9](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md#5.5_S0到S9的一次完整周期)、[P08 物理 GP 生命周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.9_S0到S10_一轮物理GP的统一生命周期) |
 | P04 | [拓扑与 CPU 热插拔](P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.1_本模块究竟解决什么问题) | 静态树、CPU 参与集合和 callback 所有权怎样交接 | P07、P10、P17 |
 | P05 | [force-QS 与 Stall](P05_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#5.1_为什么GP已经在等还要有force_QS) | 被动观察、催促和三类 stall 时间线 | P14 |
 | P06 | [Expedited GP](P06_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md#6.1_Expedited不是普通GP的加速档) | 独立序列、漏斗、CPU 选择、IPI 与共享安全条件 | P15 |
