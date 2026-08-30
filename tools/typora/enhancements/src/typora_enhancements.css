@@ -1,0 +1,293 @@
+:root {
+  --linux-note-code-foreground: #000000;
+  --linux-note-code-comment: #008000;
+  --linux-note-code-string: #a31515;
+  --linux-note-code-number: #098658;
+  --linux-note-code-keyword: #0000ff;
+  --linux-note-code-control: #af00db;
+  --linux-note-code-function: #795e26;
+  --linux-note-code-type: #267f99;
+  --linux-note-code-variable: #001080;
+  --linux-note-code-constant: #0070c1;
+  --linux-note-code-preprocessor: #0000ff;
+  --linux-note-code-invalid: #cd3131;
+}
+
+.cm-s-inner .cm-tm-comment {
+  color: var(--linux-note-code-comment);
+  font-style: normal;
+}
+
+.cm-s-inner .cm-tm-string {
+  color: var(--linux-note-code-string);
+}
+
+.cm-s-inner .cm-tm-number {
+  color: var(--linux-note-code-number);
+}
+
+.cm-s-inner .cm-tm-keyword {
+  color: var(--linux-note-code-keyword);
+}
+
+.cm-s-inner .cm-tm-control {
+  color: var(--linux-note-code-control);
+}
+
+.cm-s-inner .cm-tm-function {
+  color: var(--linux-note-code-function);
+}
+
+.cm-s-inner .cm-tm-type,
+.cm-s-inner .cm-tm-namespace,
+.cm-s-inner .cm-tm-attribute {
+  color: var(--linux-note-code-type);
+}
+
+.cm-s-inner .cm-tm-variable,
+.cm-s-inner .cm-tm-parameter,
+.cm-s-inner .cm-tm-property {
+  color: var(--linux-note-code-variable);
+}
+
+.cm-s-inner .cm-tm-constant {
+  color: var(--linux-note-code-constant);
+}
+
+.cm-s-inner .cm-tm-preprocessor {
+  color: var(--linux-note-code-preprocessor);
+}
+
+.cm-s-inner .cm-tm-invalid {
+  color: var(--linux-note-code-invalid);
+  text-decoration: wavy underline;
+  text-decoration-color: var(--linux-note-code-invalid);
+}
+
+.cm-s-inner .cm-tm-operator,
+.cm-s-inner .cm-tm-punctuation,
+.cm-s-inner .cm-tm-plain {
+  color: var(--linux-note-code-foreground);
+}
+
+.md-fences.linux-note-code-collapsible.is-code-collapsed .CodeMirror-scroll {
+  max-height: var(--linux-note-code-collapsed-height) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.linux-note-code-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 34px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #d8dee4;
+  pointer-events: auto;
+}
+
+.linux-note-code-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 10px;
+  color: #0969da;
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgb(31 35 40 / 8%);
+  font: 600 12px/1.2 "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  cursor: pointer;
+}
+
+.linux-note-code-toggle:hover,
+.linux-note-code-toggle:focus-visible {
+  color: #ffffff;
+  background: #0969da;
+  border-color: #0969da;
+  outline: none;
+}
+
+.linux-note-mermaid-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 10px;
+  color: #0969da;
+  background: rgb(255 255 255 / 94%);
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgb(31 35 40 / 8%);
+  font: 600 12px/1.2 "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  cursor: pointer;
+}
+
+.linux-note-mermaid-inline-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  width: calc(100% - 16px);
+  min-height: 32px;
+  margin: 0 8px 8px;
+  pointer-events: auto;
+}
+
+.linux-note-mermaid-open:hover,
+.linux-note-mermaid-open:focus-visible {
+  color: #ffffff;
+  background: #0969da;
+  border-color: #0969da;
+  outline: none;
+}
+
+.linux-note-mermaid-viewer {
+  position: fixed;
+  z-index: 2147483646;
+  inset: 0;
+  color: #24292f;
+  background: #ffffff;
+  font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+}
+
+.linux-note-mermaid-toolbar {
+  position: absolute;
+  z-index: 3;
+  top: 16px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transform: translateX(-50%);
+}
+
+.linux-note-mermaid-toolbar button,
+.linux-note-mermaid-close {
+  min-height: 34px;
+  padding: 6px 10px;
+  color: #24292f;
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font: 600 12px/1.2 "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  cursor: pointer;
+}
+
+.linux-note-mermaid-toolbar button:hover,
+.linux-note-mermaid-toolbar button:focus-visible,
+.linux-note-mermaid-close:hover,
+.linux-note-mermaid-close:focus-visible {
+  color: #ffffff;
+  background: #0969da;
+  border-color: #0969da;
+  outline: none;
+}
+
+.linux-note-mermaid-toolbar output {
+  min-width: 58px;
+  color: #57606a;
+  font: 12px/1.2 Consolas, monospace;
+  text-align: center;
+}
+
+.linux-note-mermaid-close {
+  position: absolute;
+  z-index: 3;
+  top: 16px;
+  right: 20px;
+}
+
+.linux-note-mermaid-canvas {
+  position: absolute;
+  inset: 66px 20px 34px;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.linux-note-mermaid-viewer.is-dragging .linux-note-mermaid-canvas {
+  cursor: grabbing;
+}
+
+.linux-note-mermaid-positioner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max-content;
+  height: max-content;
+  transform: translate(-50%, -50%) translate3d(var(--linux-note-mermaid-pan-x), var(--linux-note-mermaid-pan-y), 0);
+  will-change: transform;
+}
+
+.linux-note-mermaid-content {
+  width: max-content;
+  height: max-content;
+  line-height: 0;
+  transform: scale(var(--linux-note-mermaid-scale));
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.linux-note-mermaid-content svg {
+  display: block;
+  width: auto;
+  max-width: none;
+  height: auto;
+  max-height: none;
+}
+
+.linux-note-mermaid-hint {
+  position: absolute;
+  z-index: 2;
+  bottom: 9px;
+  left: 50%;
+  color: #57606a;
+  transform: translateX(-50%);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+body.linux-note-mermaid-viewer-open {
+  overflow: hidden !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .linux-note-mermaid-open,
+  .linux-note-code-toggle,
+  .linux-note-mermaid-viewer,
+  .linux-note-mermaid-toolbar button,
+  .linux-note-mermaid-close {
+    color: #c9d1d9;
+    background: #0d1117;
+    border-color: #30363d;
+  }
+
+  .linux-note-code-toolbar {
+    border-top-color: #30363d;
+  }
+
+  .linux-note-mermaid-toolbar output,
+  .linux-note-mermaid-hint {
+    color: #8b949e;
+  }
+}
+
+@media print {
+  .md-fences.linux-note-code-collapsible.is-code-collapsed .CodeMirror-scroll {
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+
+  .linux-note-code-toolbar,
+  .linux-note-mermaid-open,
+  .linux-note-mermaid-viewer {
+    display: none !important;
+  }
+}

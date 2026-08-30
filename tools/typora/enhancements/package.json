@@ -1,0 +1,17 @@
+{
+  "name": "linux-note-typora-enhancements",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VS Code TextMate C/C++ highlighting and Mermaid viewer enhancements for Typora.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs && node scripts/check_deployment.mjs && node scripts/test_textmate.mjs"
+  },
+  "dependencies": {
+    "vscode-oniguruma": "1.7.0",
+    "vscode-textmate": "9.3.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.9"
+  }
+}

@@ -417,3 +417,113 @@ a:visited {
     color: #336699;
     text-decoration: none;
 }
+
+/*
+ * 代码块语法高亮后备映射：为 Typora 原生 CodeMirror 模式提供基础配色。
+ *
+ * C/C++ 的主要识别不由这里按关键字猜测，而由 enhancements 扩展加载 VS Code
+ * TextMate grammar 后生成 cm-tm-* 语法作用域；扩展自带的作用域配色会覆盖本后备层。
+ * 这里仍保留 cm-* 映射，供 Typora 的其他内置语言模式使用。代码围栏需要写明语言。
+ */
+:root {
+    --code-keyword-color: #0000ff;
+    --code-comment-color: #008000;
+    --code-string-color: #a31515;
+    --code-number-color: #008000;
+    --code-definition-color: #808080;
+    --code-type-color: #a31515;
+    --code-variable-color: #333333;
+    --code-builtin-color: #007acc;
+    --code-literal-color: #a31515;
+    --code-meta-color: #2b91af;
+    --code-tag-color: #0000ff;
+    --code-attribute-color: #ff0000;
+    --code-symbol-color: #00b0e8;
+}
+
+/* 控制流、存储类、类型限定符和其他语言关键字。 */
+.cm-s-inner .cm-keyword {
+    color: var(--code-keyword-color);
+}
+
+/* VS Code 的 VS Light 预览样式使用绿色斜体注释。 */
+.cm-s-inner .cm-comment {
+    color: var(--code-comment-color);
+    font-style: italic;
+}
+
+/* 字符串、字符常量与正则表达式。 */
+.cm-s-inner .cm-string,
+.cm-s-inner .cm-string-2,
+.cm-s-inner .cm-regexp {
+    color: var(--code-string-color);
+}
+
+/* 十进制、十六进制、浮点数和其他数字字面量。 */
+.cm-s-inner .cm-number {
+    color: var(--code-number-color);
+}
+
+/* 函数、宏或其他定义位置；具体分类取决于 CodeMirror 的语言模式。 */
+.cm-s-inner .cm-def {
+    color: var(--code-definition-color);
+}
+
+/* 普通变量、参数与成员属性。 */
+.cm-s-inner .cm-variable,
+.cm-s-inner .cm-variable-2,
+.cm-s-inner .cm-property {
+    color: var(--code-variable-color);
+}
+
+/* 类型令牌对应 VS Code 预览中的 hljs-type。 */
+.cm-s-inner .cm-variable-3,
+.cm-s-inner .cm-type {
+    color: var(--code-type-color);
+}
+
+.cm-s-inner .cm-builtin {
+    color: var(--code-builtin-color);
+}
+
+.cm-s-inner .cm-qualifier {
+    color: var(--code-meta-color);
+}
+
+/* 布尔值、null、枚举值等常量令牌。 */
+.cm-s-inner .cm-atom,
+.cm-s-inner .cm-constant {
+    color: var(--code-literal-color);
+}
+
+/* C/C++ 预处理指令、注解以及语言模式给出的元信息。 */
+.cm-s-inner .cm-meta,
+.cm-s-inner .cm-meta-keyword {
+    color: var(--code-meta-color);
+}
+
+/* HTML/XML 等语言也共用同一套清晰的标记色。 */
+.cm-s-inner .cm-tag {
+    color: var(--code-tag-color);
+}
+
+.cm-s-inner .cm-attribute {
+    color: var(--code-attribute-color);
+}
+
+.cm-s-inner .cm-link,
+.cm-s-inner .cm-symbol {
+    color: var(--code-symbol-color);
+}
+
+.cm-s-inner .cm-operator,
+.cm-s-inner .cm-bracket,
+.cm-s-inner .cm-punctuation {
+    color: #24292f;
+}
+
+.cm-s-inner .cm-error,
+.cm-s-inner .cm-invalidchar {
+    color: #ffffff;
+    background-color: #cf222e;
+}

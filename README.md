@@ -82,11 +82,7 @@ https://github.com/FormingSystem/linux_note.git
 
 推荐使用 Typora 或 Obsidian 阅读。
 
-Typora 适合单篇 Markdown 阅读和排版预览；部分 Markdown 语法和样式效果需要 Typora 支持。相关配置见：
-
-```text
-tools/typora配置/
-```
+Typora 适合单篇 Markdown 阅读和排版预览；部分 Markdown 语法和样式效果需要 Typora 支持。代码块语法高亮、主题安装和其他设置见 [Typora 自定义配置](tools/typora/typora配置修改.md)。
 
 Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，优先使用 Obsidian 内部操作，让链接能够自动跟踪更新。
 
