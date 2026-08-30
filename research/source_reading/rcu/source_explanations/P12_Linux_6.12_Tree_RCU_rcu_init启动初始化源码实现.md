@@ -21,6 +21,8 @@ source_version: "6.12.20"
 
 读-复制-更新（Read-Copy Update，RCU）是一类把读侧临时访问与更新后的延迟回收分开的同步机制。Tree RCU 是 Linux 普通 RCU 的一种实现家族专名；`Tree` 不是缩写，它表示该实现用分层 `rcu_node` 树汇聚许多中央处理器（Central Processing Unit，CPU）的完成证据。`rcu_init` 则是内核源码函数标识符，不存在需要展开的英文全称；本章讨论的是它在启动阶段怎样把静态初值变成可供后续 RCU 路径使用的基础设施。
 
+下面的启动片段还会先用到四个简称：NOCB 是 no-callbacks 回调卸载策略；代码注释里的 GP/CB 分别是宽限期（grace period）与回调（callback）；HPC 是高性能计算（high-performance computing）。`CONFIG_RCU_NOCB_CPU` 是编译期启用 NOCB 基础设施的 Kconfig 布尔配置；`rcu_nocbs=` 与 `nohz_full=` 都是内核启动参数，前者直接选择回调卸载 CPU，后者选择 full-dynticks CPU 并把这些 CPU 纳入回调卸载集合；代码注释中的 `NO_HZ_FULL` 指的正是这种 full-dynticks 模式。
+
 读者实际遇到它的位置不是 `kernel/rcu/` 目录的孤立函数，而是 [`init/main.c`](../../linux/init/main.c) 中的：
 
 ```c
@@ -35,10 +37,15 @@ init_IRQ();                 /* 执行体系结构相关的中断初始化，接�
 tick_init();                /* 初始化时钟滴答广播框架；具体时钟事件设备会在后续路径中注册。 */
 
 /*
- * 初始化 RCU 回调卸载机制：
- * 确定需要卸载 RCU 回调处理的 CPU，
- * 配置各 CPU 的回调卸载链，并建立宽限期/回调线程分组关系；
- * 未启用或未指定 RCU 回调卸载时直接返回。
+ * 初始化 Tree RCU 的 NOCB callback-offload 拓扑：
+ * 识别需要避免本地执行 RCU 回调的 CPU（如 rcu_nocbs/nohz_full CPU），
+ * 将其 per-CPU callback list 切换为 offloaded 模式，并建立 NOCB
+ * GP/CB kthread 分组。
+ *
+ * 注意：NOCB 不改变 Tree RCU 的宽限期检测算法，
+ * 只改变这些 CPU 的 RCU callback 推进/执行上下文，
+ * 主要用于 NO_HZ_FULL、CPU isolation、HPC 和实时低抖动场景；
+ * CONFIG_RCU_NOCB_CPU 未启用或最终 offload mask 为空时，不建立上述布局。
  */
 rcu_init_nohz();
 
@@ -124,7 +131,9 @@ softirq_init();             /* 初始化 tasklet 队列并登记 tasklet 软件�
 | [RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.2_先建立源码分类坐标) | 区分保护域、实现家族、读侧模型与运行策略 |
 | [拓扑与 CPU 热插拔模块导读](../navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.1_本模块究竟解决什么问题) | 追踪静态树和 CPU 参与集合的模块关系 |
 | [GP 全局生命周期模块导读](../navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.1_模块问题与版本边界) | 区分本章基础设施与稍后创建的 GP 内核线程 |
+| [回调与 NOCB 模块导读](../navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#7.6_NOCB为何拆成GP线程与CB线程) | 从模块层理解 `rcu_init_nohz()` 建立的回调卸载组织关系 |
 | [稳定机制正文 P07](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md#7.1_具体问题_CPU的QS究竟要写进哪一个节点) | 建立跨版本的初始化、拓扑和执行上下文模型 |
+| [稳定机制正文 P16](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_NOCB回调卸载.md#16.2_卸载前后责任对比) | 区分 Tree RCU 宽限期算法、回调卸载策略与执行位置 |
 
 ## 12.3\_先证明当前调用解析为哪一种RCU
 
