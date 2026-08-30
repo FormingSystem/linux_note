@@ -18,7 +18,7 @@ topics:
 
 本篇阅读 `kernel/rcu/tiny.c` 怎样在单 CPU、非 PREEMPT_RCU 构建中兑现普通 RCU 契约。它不重新定义 reader，不属于 Tasks flavor；它删除的是跨 CPU 汇聚复杂度。
 
-进入前必须核对目标构建的 `CONFIG_SMP`、`CONFIG_TINY_RCU` 和 `CONFIG_PREEMPT_RCU`。仓库已核对的既有 RCU 快照走 Tree + PREEMPT_RCU，本篇是固定 Linux 6.12.20 源码分支阅读，不声称在该快照上运行 Tiny。
+进入前必须核对目标构建的 [`CONFIG_SMP` 构建含义](../../../../knowledge/foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md#1.1.3_Linux中的CONFIG_SMP表示构建能力)、`CONFIG_TINY_RCU` 和 `CONFIG_PREEMPT_RCU`。仓库已核对的既有 RCU 快照走 Tree + PREEMPT_RCU，本篇是固定 Linux 6.12.20 源码分支阅读，不声称在该快照上运行 Tiny。
 
 ## 11.2\_公共接口怎样落到Tiny
 

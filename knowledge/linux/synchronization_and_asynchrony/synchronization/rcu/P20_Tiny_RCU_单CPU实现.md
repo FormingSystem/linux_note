@@ -98,7 +98,7 @@ sequenceDiagram
 
 ## 20.6\_配置边界和源码证据
 
-Linux 6.12.20 的典型构建关系是：SMP 系统使用 Tree RCU；单 CPU 且未启用 PREEMPT_RCU 的构建可以选择 Tiny RCU。实际结果必须以目标 `.config` 为准：
+Linux 6.12.20 的典型构建关系是：[SMP 构建](../../../../foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md#1.1.3_Linux中的CONFIG_SMP表示构建能力)默认选择 Tree RCU；`CONFIG_SMP=n` 且未启用 PREEMPT_RCU 的构建默认选择 Tiny RCU。这里描述的是 Kconfig 构建选择，不是根据运行时 online CPU 数量切换实现；实际结果必须以目标 `.config` 为准：
 
 ```bash
 grep -E '^(CONFIG_SMP|CONFIG_TREE_RCU|CONFIG_TINY_RCU|CONFIG_PREEMPT_RCU)=' .config
