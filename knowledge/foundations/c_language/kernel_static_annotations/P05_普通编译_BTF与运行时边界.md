@@ -385,7 +385,7 @@ Linux 内核需要防止未初始化的内核栈内容随着结构体复制泄�
 
 这里的 `user` 是交给插件的自定义 GCC 属性，不是 Sparse 的 `address_space(__user)`，也不是 BTF 中的 `user` 字符串节点。插件使用它寻找需要防泄漏初始化的栈对象，随后改变的是普通编译产生的初始化代码；它并不检查某个指针是否通过 `copy_from_user()` 或 `copy_to_user()`。
 
-更强的 `GCC_PLUGIN_STRUCTLEAK_BYREF` 与 `GCC_PLUGIN_STRUCTLEAK_BYREF_ALL` 会把覆盖面扩大到更多按引用传递、可能未初始化的栈变量，因此不能把整个插件概括成“只处理用户指针”。本章矩阵只解释为什么 `compiler_types.h` 在 `STRUCTLEAK_PLUGIN` 分支中要把 `__user` 映射为插件属性；完整安全加固策略仍由相应 Kconfig 和 GCC 插件实现决定。[Linux 6.12 的 STRUCTLEAK Kconfig 说明](https://github.com/torvalds/linux/blob/v6.12/security/Kconfig.hardening#L2-L15)解释了插件要弥补的未初始化变量缺口，[USER 模式说明](https://github.com/torvalds/linux/blob/v6.12/security/Kconfig.hardening#L56-L66)则给出 `__user` 标记与零初始化的关系。
+更强的 `GCC_PLUGIN_STRUCTLEAK_BYREF` 与 `GCC_PLUGIN_STRUCTLEAK_BYREF_ALL` 会把覆盖面扩大到更多按引用传递、可能未初始化的栈变量，因此不能把整个插件概括成“只处理用户指针”。本章矩阵只解释为什么 `compiler_types.h` 在 `STRUCTLEAK_PLUGIN` 分支中要把 `__user` 映射为插件属性；完整安全加固策略仍由相应 Kconfig 和 GCC 插件实现决定。[Linux 6.12.20 的 STRUCTLEAK Kconfig 说明](../../../../research/source_reading/linux/security/Kconfig.hardening)解释了插件要弥补的未初始化变量缺口，同一文件的 USER 模式说明则给出 `__user` 标记与零初始化的关系。
 
 因此不能写出“`__user` 就是某一个固定属性”的绝对结论。稳定结论是：它表达用户指针边界；具体展开由分析器、插件、调试配置和工具能力决定。
 
@@ -599,5 +599,5 @@ bpftool btf dump file vmlinux format raw
 - [pahole与dwarves工具源码仓库](https://git.kernel.org/pub/scm/devel/pahole/pahole.git/)
 - [Linux内核构建的pahole要求](https://docs.kernel.org/process/changes.html#pahole)
 - [Linux使用Sparse进行类型检查](https://docs.kernel.org/dev-tools/sparse.html)
-- [Linux 6.12 STRUCTLEAK加固配置](https://github.com/torvalds/linux/blob/v6.12/security/Kconfig.hardening#L2-L99)
+- [Linux 6.12.20 STRUCTLEAK加固配置](../../../../research/source_reading/linux/security/Kconfig.hardening)
 - [BPF特殊map字段与kptr兼容性边界](https://docs.kernel.org/bpf/bpf_design_QA.html#q-what-is-the-compatibility-story-for-special-bpf-types-in-map-values)
