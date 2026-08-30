@@ -19,16 +19,16 @@
   "title": "深入理解 Linux RCU",
   "version": "2026.08",
   "release_date": "2026-08-01",
-  "generated_at": "2026-08-24T05:14:33.026Z",
+  "generated_at": "2026-08-30T09:33:50.910Z",
   "timezone": "Asia/Shanghai",
   "manifest": {
     "path": "markbook/manifests/rcu.json",
-    "sha256": "29d73486b3aeab399049d0be212fdfc2d2502e4bc9f5856b95c49d1bcdb987d2"
+    "sha256": "ee72c3cc938d42e60468016e421fc9ed96bc5db791c85b6419345f25a6d20590"
   },
   "knowledge_repository": {
-    "head": "36627b4a9279a7a5f66ba12c72d9367dd3d4c66c",
-    "source_state": "clean",
-    "dirty_source_count": 0
+    "head": "9fc197bb653f90e47d3807221fab06e71e145ef2",
+    "source_state": "contains_uncommitted_sources",
+    "dirty_source_count": 3
   },
   "linux_source_baseline": {
     "repository": "https://github.com/nxp-imx/linux-imx.git",
@@ -44,7 +44,7 @@
   },
   "counts": {
     "volumes": 4,
-    "documents": 53,
+    "documents": 50,
     "attachments": 2
   },
   "source_documents": [
@@ -56,8 +56,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md",
       "volume_id": "mechanism_and_application",
       "role": "guide",
-      "bytes": 30450,
-      "sha256": "f499d5705a56e89e730fc7224cab896b6ba17eb7586dce3f6584ce6dceba1871",
+      "bytes": 15224,
+      "sha256": "9fbcdc360f42138c001db262683f9facbbdc868bfe935d1a06310b55e1e29403",
       "worktree_state": "clean"
     },
     {
@@ -68,8 +68,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P01_为什么需要_RCU.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 29753,
-      "sha256": "ff8c86d5e7a0e9f4ab565e0586e01ea16a9ac7e8ef9f10969d77f8ec52aa72ca",
+      "bytes": 29755,
+      "sha256": "008843a441f9838f611499c7fe1324a7a9f702a9a60606a58b247dc2f7dd9faa",
       "worktree_state": "clean"
     },
     {
@@ -80,8 +80,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P02_RCU_抽象机制推演.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 12643,
-      "sha256": "c995a4462dd397767ddf84ad6ce38f9a5c31b34f805aba0cbb1f07a105195c0c",
+      "bytes": 12642,
+      "sha256": "a3e21ad7010105c0a9ce4b265f014bfb77760f008a025930d8029f5e37ca409a",
       "worktree_state": "clean"
     },
     {
@@ -92,104 +92,56 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 10981,
-      "sha256": "85b944d3343a04396667a3bd26aaa57b0c624bc846237ac7a24ee1529c5c7b49",
+      "bytes": 17180,
+      "sha256": "df7a737d1d6162ee9e436953eb4f32b2131065f579ebcc6c5c588dc51fa76aa6",
       "worktree_state": "clean"
     },
     {
-      "id": "knowledge.linux.synchronization.rcu.kref_composite_lifetime",
-      "title": "RCU、kref 与复合对象生命周期",
+      "id": "knowledge.linux.synchronization.rcu.flavors_and_kernel_configuration",
+      "title": "RCU 分类坐标与内核配置",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P04_RCU_kref与复合对象生命周期.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P04_RCU_分类坐标与内核配置.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 18492,
-      "sha256": "b9cdefd8902a7f53ccc4a5e2919434c745ca803ba62e65d8ca5cef7e07465a8f",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "knowledge.linux.synchronization.rcu.nonpreempt_tree_proof_model",
-      "title": "非抢占式 Tree RCU 的问题与证明模型",
-      "kind": "mechanism",
-      "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_非抢占式_Tree_RCU_问题与证明模型.md",
-      "volume_id": "mechanism_and_application",
-      "role": "chapter",
-      "bytes": 24073,
-      "sha256": "eb131ad199138915ad0546b1b19b49d4be5150d040e55f2b672d6d218a275e29",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "knowledge.linux.synchronization.rcu.nonpreempt_tree_source_mechanism",
-      "title": "非抢占式 Tree RCU 源码同步机制",
-      "kind": "mechanism",
-      "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_非抢占式_Tree_RCU_源码同步机制.md",
-      "volume_id": "mechanism_and_application",
-      "role": "chapter",
-      "bytes": 48527,
-      "sha256": "0de99df25bd32f98de7c8b4efe71b7ac304770f95cd6edf381123b1e21eaec3e",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "knowledge.linux.synchronization.rcu.preempt_tree_task_model",
-      "title": "抢占式 Tree RCU 的问题与任务跟踪模型",
-      "kind": "mechanism",
-      "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_抢占式_Tree_RCU_问题与任务跟踪模型.md",
-      "volume_id": "mechanism_and_application",
-      "role": "chapter",
-      "bytes": 14385,
-      "sha256": "6ea9820a3971d5aee7b542432c7d07bb91ac2fae5dd7690da603f1a9fe25d0f1",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "knowledge.linux.synchronization.rcu.tree_reader_preemption",
-      "title": "抢占式 Tree RCU 源码同步机制",
-      "kind": "mechanism",
-      "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_抢占式_Tree_RCU_源码同步机制.md",
-      "volume_id": "mechanism_and_application",
-      "role": "chapter",
-      "bytes": 28067,
-      "sha256": "51fe6cb7c22a36f2341ec9a9eb9d278a7ccd28929c7361856c59087693d2d5fc",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "knowledge.linux.synchronization.rcu.hardware_foundation_memory_model",
-      "title": "RCU 机制完善：硬件与运行约束",
-      "kind": "mechanism",
-      "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P09_RCU_机制完善_硬件与运行约束.md",
-      "volume_id": "mechanism_and_application",
-      "role": "chapter",
-      "bytes": 18206,
-      "sha256": "7e7b9ff1cf6c8f3b67fc461a4c5dff51064a8bc3bea30c7c158887b96829a306",
+      "bytes": 45147,
+      "sha256": "3d86b7db00c0dd82c7cff1f98ec9fae712b22f05cddafdbc28880bbdb85095ce",
       "worktree_state": "clean"
     },
     {
       "id": "knowledge.linux.synchronization.rcu.tree_state_notification",
-      "title": "Tree RCU 统一状态与通知总图",
+      "title": "Tree RCU 公共骨架与完整周期",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P10_Tree_RCU_统一状态与通知总图.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 60710,
-      "sha256": "1bdc5b42562f623342a92635ad1d4a29f57863bb7403359880c5be3b17c5083a",
+      "bytes": 23799,
+      "sha256": "1924f6f40c89cad41d06d9b62e17248b8811a45ce2c3c74a7f98e50fcd372152",
       "worktree_state": "clean"
+    },
+    {
+      "id": "knowledge.linux.synchronization.rcu.tree_reader_execution_models",
+      "title": "Tree RCU 读侧执行模型与配置差异",
+      "kind": "mechanism",
+      "maintenance_status": "evolving",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md",
+      "volume_id": "mechanism_and_application",
+      "role": "chapter",
+      "bytes": 24051,
+      "sha256": "d0206bb17b65b955dd0e3a789ed269e5275cd10a81f8cc4f06b6ace81d1231e0",
+      "worktree_state": "modified:M"
     },
     {
       "id": "knowledge.linux.synchronization.rcu.tree_init_topology_execution",
       "title": "Tree RCU 初始化、拓扑与执行上下文",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_初始化_拓扑与执行上下文.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 14044,
-      "sha256": "5ab7473f28ebd1e3fb3b779123ee803675ba41ac5355f4e735600429b284329a",
+      "bytes": 14042,
+      "sha256": "548e54a33e514d64365e0efe3a9ae958531a46fe1dc2a449c55319c493920b6f",
       "worktree_state": "clean"
     },
     {
@@ -197,11 +149,11 @@
       "title": "Tree RCU GP 请求与全局生命周期",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_GP请求与全局生命周期.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 27499,
-      "sha256": "8d0a893ecb6328311ab1a3d49e305a74cb21cab110ccb5df00fcb57fc1306bf3",
+      "bytes": 28176,
+      "sha256": "6aa2bb70f9fa61f8b1acc6174a533432e0bdb46471db5a6a4d35ddf0ebc9e257",
       "worktree_state": "clean"
     },
     {
@@ -209,11 +161,11 @@
       "title": "Tree RCU QS、EQS 与 Context Tracking",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P13_Tree_RCU_QS_EQS与Context_Tracking.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P09_Tree_RCU_QS_EQS与Context_Tracking.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 10215,
-      "sha256": "327bb84768de1eadbb599c2b98e011e9a69339271d1512912e76ea601d02fe17",
+      "bytes": 10861,
+      "sha256": "d6df5fedb058432d9983cfc4ded89d046477cbb8c7c80dda7a430e57388f068e",
       "worktree_state": "clean"
     },
     {
@@ -221,35 +173,11 @@
       "title": "Tree RCU rcu_node 树与分层汇聚",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P14_Tree_RCU_rcu_node树与分层汇聚.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P10_Tree_RCU_rcu_node树与分层汇聚.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 8657,
-      "sha256": "794b314d1f6b652611cbf3b92f6777ad5c65e4d9d82ce0373464b1bae5decc20",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "knowledge.linux.synchronization.rcu.tree_force_qs_stall",
-      "title": "Tree RCU force-QS、迟延与 Stall",
-      "kind": "mechanism",
-      "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_force_QS迟延与Stall.md",
-      "volume_id": "mechanism_and_application",
-      "role": "chapter",
-      "bytes": 11911,
-      "sha256": "3a366364ab9791f03a53b55ccca66fdbc8c525934b63af316b32591da1b979b8",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "knowledge.linux.synchronization.rcu.tree_expedited_gp",
-      "title": "Tree RCU Expedited GP",
-      "kind": "mechanism",
-      "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_Expedited_GP.md",
-      "volume_id": "mechanism_and_application",
-      "role": "chapter",
-      "bytes": 11209,
-      "sha256": "6c210285e289428831e48f0e5b891cc2b8a69d5f900d51de950a752ef1b82cc8",
+      "bytes": 8680,
+      "sha256": "096a5a0686b5a86d76091e3e59690bfd8f21d8b15edf124a72ba8472e841b99c",
       "worktree_state": "clean"
     },
     {
@@ -257,11 +185,11 @@
       "title": "Tree RCU rcu_segcblist 回调状态机",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_rcu_segcblist回调状态机.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_rcu_segcblist回调状态机.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 9884,
-      "sha256": "f10c38310b6e3b66d993680f88f5e615f243cda58c3dc1e5b20a6cc70a89c002",
+      "bytes": 9912,
+      "sha256": "844a19158da06096ec6b4f8e75c104604a8fe3b333ee1d8af5018b500c2f603d",
       "worktree_state": "clean"
     },
     {
@@ -269,23 +197,11 @@
       "title": "Tree RCU 回调执行、批处理与限流",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_Tree_RCU_回调执行_批处理与限流.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_回调执行_批处理与限流.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 9519,
-      "sha256": "6eeeacb91574cdf493152dc0f81706d8a39a56fed1a97cd0e2e58c68c38178b4",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "knowledge.linux.synchronization.rcu.tree_nocb",
-      "title": "Tree RCU NOCB 回调卸载",
-      "kind": "mechanism",
-      "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P19_Tree_RCU_NOCB回调卸载.md",
-      "volume_id": "mechanism_and_application",
-      "role": "chapter",
-      "bytes": 9723,
-      "sha256": "e5f544621af0e4104dfbf7f1a94a8bbc5aa6fd2cb51d81f436d888a9bf27b99b",
+      "bytes": 9530,
+      "sha256": "a806dd153ba19ba4196bfa190569898ff3bca9f2abc38ed46d13cfe6d8e5f5bf",
       "worktree_state": "clean"
     },
     {
@@ -293,11 +209,47 @@
       "title": "Tree RCU 同步等待与 rcu_barrier",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P20_Tree_RCU_同步等待与rcu_barrier.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P13_Tree_RCU_同步等待与rcu_barrier.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 11368,
-      "sha256": "10adfa85f5204b1b5fc3da582b6ace639d60fe70a0eea17e88994ae6cda48c90",
+      "bytes": 12281,
+      "sha256": "9c7f301b9e8baff69a504b1c6631567acb4222ecf6e1f6d87c2db35a3e15415a",
+      "worktree_state": "clean"
+    },
+    {
+      "id": "knowledge.linux.synchronization.rcu.tree_force_qs_stall",
+      "title": "Tree RCU force-QS、迟延与 Stall",
+      "kind": "mechanism",
+      "maintenance_status": "evolving",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P14_Tree_RCU_force_QS迟延与Stall.md",
+      "volume_id": "mechanism_and_application",
+      "role": "chapter",
+      "bytes": 12297,
+      "sha256": "89f7c33ca485e44f74a4d136e917f9b11fc54028d8a0b8e45faa17faf2834456",
+      "worktree_state": "clean"
+    },
+    {
+      "id": "knowledge.linux.synchronization.rcu.tree_expedited_gp",
+      "title": "Tree RCU Expedited GP",
+      "kind": "mechanism",
+      "maintenance_status": "evolving",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_Expedited_GP.md",
+      "volume_id": "mechanism_and_application",
+      "role": "chapter",
+      "bytes": 11184,
+      "sha256": "23c3ef8f6ef7241272754820eebde3a9f97bc048de19083dd47fef2cbd35510d",
+      "worktree_state": "clean"
+    },
+    {
+      "id": "knowledge.linux.synchronization.rcu.tree_nocb",
+      "title": "Tree RCU NOCB 回调卸载",
+      "kind": "mechanism",
+      "maintenance_status": "evolving",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_NOCB回调卸载.md",
+      "volume_id": "mechanism_and_application",
+      "role": "chapter",
+      "bytes": 9883,
+      "sha256": "8b2a893a21fad987eacd7dfa447d40c0a6a9399f96eccf8482b41cc82f283268",
       "worktree_state": "clean"
     },
     {
@@ -305,23 +257,11 @@
       "title": "Tree RCU CPU 热插拔与回调迁移",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P21_Tree_RCU_CPU热插拔与回调迁移.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_CPU热插拔与回调迁移.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 11433,
-      "sha256": "a05f740e2ef9f176935965bcd250fff9743894f7a07be1fa3b31a01504abaa44",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "knowledge.linux.synchronization.rcu.flavors_and_kernel_configuration",
-      "title": "RCU 实现家族与内核配置",
-      "kind": "mechanism",
-      "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_实现家族与内核配置.md",
-      "volume_id": "mechanism_and_application",
-      "role": "chapter",
-      "bytes": 9771,
-      "sha256": "698723cd782bbb4098ec3c8db0f9459986e606826163949ffa40baa95405910c",
+      "bytes": 11423,
+      "sha256": "d63cb58502e95da73607ad13997006253df501cdedda53c655cf2c7061808553",
       "worktree_state": "clean"
     },
     {
@@ -329,23 +269,47 @@
       "title": "SRCU 私有域与双 index 状态机",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_SRCU_私有域与双_index_状态机.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_SRCU_私有域与双_index_状态机.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 13041,
-      "sha256": "bffd76b1f1e482413d67b7a3dbf3b208cb066658f3aa9f5023fab68aca85b892",
+      "bytes": 13273,
+      "sha256": "878e318a6a7a8052eca388732d3df1302da97961bf3bf2d8b4341bbf4158e88a",
       "worktree_state": "clean"
     },
     {
-      "id": "knowledge.linux.synchronization.rcu.tasks_tiny_boundaries",
-      "title": "Tasks RCU 与 Tiny RCU 实现边界",
+      "id": "knowledge.linux.synchronization.rcu.tasks_rcu_execution_history",
+      "title": "Tasks RCU 任务轨迹宽限期",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P24_Tasks_RCU与Tiny_RCU实现边界.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P19_Tasks_RCU_任务轨迹宽限期.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 15377,
-      "sha256": "f567f824ae4544ea837a122d06984aa8e19565770fbd8635195cb24271a73fef",
+      "bytes": 8603,
+      "sha256": "ab2a26eacb3162f85d557ddbb4f0d586bf7201998232bb1e744bdcf211e36296",
+      "worktree_state": "clean"
+    },
+    {
+      "id": "knowledge.linux.synchronization.rcu.tiny_rcu_uniprocessor",
+      "title": "Tiny RCU 单 CPU 实现",
+      "kind": "mechanism",
+      "maintenance_status": "evolving",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P20_Tiny_RCU_单CPU实现.md",
+      "volume_id": "mechanism_and_application",
+      "role": "chapter",
+      "bytes": 6668,
+      "sha256": "fd215e20c758e58706af87318f5f01593e388da5844e0763892223b86a331cf4",
+      "worktree_state": "clean"
+    },
+    {
+      "id": "knowledge.linux.synchronization.rcu.kref_composite_lifetime",
+      "title": "RCU、kref 与复合对象生命周期",
+      "kind": "mechanism",
+      "maintenance_status": "evolving",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md",
+      "volume_id": "mechanism_and_application",
+      "role": "chapter",
+      "bytes": 18743,
+      "sha256": "8f02a5b7ca81e0d6901a1f1c448dedbd471211b206cfe71b67c22c7b47992a5a",
       "worktree_state": "clean"
     },
     {
@@ -353,11 +317,11 @@
       "title": "RCU 驱动与子系统应用模式",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P25_RCU_驱动与子系统应用模式.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_驱动与子系统应用模式.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 14915,
-      "sha256": "ba8dd29525a9bf5ac3fc01239c7f3177c02ef3bcdf35ef3a3474b6b3502f49d2",
+      "bytes": 15660,
+      "sha256": "80e37005d69afda48825730059692ecbc6c500dee12b3a69d72a92edde4bdfd3",
       "worktree_state": "clean"
     },
     {
@@ -365,11 +329,11 @@
       "title": "RCU 类型语义、Sparse 与 Lockdep",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P26_RCU_类型语义_Sparse与Lockdep.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 24844,
-      "sha256": "e6b450885394a63964846c48045ca2e204950f9b22c1c4bef40ac722280c2eac",
+      "bytes": 25089,
+      "sha256": "5d9a73aefe4539a3f4bd5816ea3b8c6dc675b4e45cc0805968e253bedb5d34c4",
       "worktree_state": "clean"
     },
     {
@@ -377,11 +341,11 @@
       "title": "RCU 调试、验证与集成误用",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P27_RCU_调试验证与集成误用.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P24_RCU_调试验证与集成误用.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 12539,
-      "sha256": "733b74d0d00d1fdb81fcb4f7570ae35b06f11c91b328b033648e1728520fb636",
+      "bytes": 13223,
+      "sha256": "8d9fb3d1e06dd89a0e6e34e3655af96af3af4f85b6f48aa9ee3f6bcad903b110",
       "worktree_state": "clean"
     },
     {
@@ -389,71 +353,35 @@
       "title": "RCU 内存序、误用与选择边界",
       "kind": "mechanism",
       "maintenance_status": "evolving",
-      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P28_RCU_内存序_误用与选择边界.md",
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P25_RCU_内存序_误用与选择边界.md",
       "volume_id": "mechanism_and_application",
       "role": "chapter",
-      "bytes": 9929,
-      "sha256": "c94be90f91788196b4b7f48e8b21b2236ff91a8b97e13fb1c8d00a64145d2537",
+      "bytes": 10213,
+      "sha256": "1609d390fbe3323ab5f0bf2d73b154d28fde6ddb9bcc0d76cb116765ea0fc3dd",
       "worktree_state": "clean"
     },
     {
-      "id": "research.source_reading.rcu.linux_6_12_source_guide",
+      "id": "research.source_reading.rcu.index",
       "title": "Linux 6.12 RCU 源码总阅读索引",
       "kind": "source",
       "maintenance_status": "evolving",
       "path": "research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 17370,
-      "sha256": "b1f660e57dabdc6cf483251e2bd1711f052be40499b2dc8bd8a6bc4c36d167ff",
-      "worktree_state": "clean"
+      "bytes": 10355,
+      "sha256": "c8276fddbc4169824c0a9d8287c4c33b49b7bb136a9bfeba85dcce20e34d8dc0",
+      "worktree_state": "modified:M"
     },
     {
-      "id": "research.source_reading.rcu.linux_6_12_nonpreempt_tree",
-      "title": "Linux 6.12 非抢占式 Tree RCU 模块源码概念导读",
+      "id": "research.source_reading.rcu.public_api_reader_models_navigation",
+      "title": "Linux 6.12 RCU 公共接口与读侧模型模块源码概念导读",
       "kind": "source",
       "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/navigation/P02_Linux_6.12_非抢占式_Tree_RCU_模块源码概念导读.md",
+      "path": "research/source_reading/rcu/navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 16863,
-      "sha256": "f2f038415b1642688b379b77d88233dad722d28ab5e90b09c2b926d92eca9acf",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "research.source_reading.rcu.linux_6_12_preempt_tree",
-      "title": "Linux 6.12 抢占式 Tree RCU 模块源码概念导读",
-      "kind": "source",
-      "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/navigation/P03_Linux_6.12_抢占式_Tree_RCU_模块源码概念导读.md",
-      "volume_id": "source_navigation",
-      "role": "chapter",
-      "bytes": 14681,
-      "sha256": "57b48c8ff7c60a8db8729f237872737545c98c231588eb4b82eaf6839c817aec",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "research.source_reading.rcu.linux_6_12_tasks_tiny",
-      "title": "Linux 6.12 Tasks RCU 与 Tiny RCU 模块源码概念导读",
-      "kind": "source",
-      "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/navigation/P04_Linux_6.12_Tasks_RCU与Tiny_RCU模块源码概念导读.md",
-      "volume_id": "source_navigation",
-      "role": "chapter",
-      "bytes": 7233,
-      "sha256": "b0d95523028bc57f23540dedd9dc97d0c83a69a9ecb3c1b8380cbda151e1f4fe",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "research.source_reading.rcu.linux_6_12_lockdep_adapter_navigation",
-      "title": "Linux 6.12 RCU Lockdep适配模块源码概念导读",
-      "kind": "source",
-      "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/navigation/P05_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md",
-      "volume_id": "source_navigation",
-      "role": "chapter",
-      "bytes": 9554,
-      "sha256": "74a7f8ed0f59f5f08dd8ff7aa6079165724359c1f95f9588e81a63efbb0e7b62",
+      "bytes": 13176,
+      "sha256": "d4436c363aa08f36245ba275c320deab16b31a676441814f25d24ce71dcc7ca3",
       "worktree_state": "clean"
     },
     {
@@ -461,23 +389,11 @@
       "title": "Linux 6.12 Tree RCU GP 全局生命周期模块源码概念导读",
       "kind": "source",
       "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md",
+      "path": "research/source_reading/rcu/navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 18773,
-      "sha256": "49a04908b724609db5e0a4b121efab61b360e70ed2d91fe969cbe16c74d8fd20",
-      "worktree_state": "clean"
-    },
-    {
-      "id": "research.source_reading.rcu.linux_6_12_tree_srcu_navigation",
-      "title": "Linux 6.12 Tree SRCU 模块源码概念导读",
-      "kind": "source",
-      "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_SRCU模块源码概念导读.md",
-      "volume_id": "source_navigation",
-      "role": "chapter",
-      "bytes": 12220,
-      "sha256": "b48d0030a5ce2558084c9d7bf674516f1858f223ab4905474d694c27fcffdf88",
+      "bytes": 18931,
+      "sha256": "a7bd2a8bb66b437aee8468ff18d830605aa6464987e98bf36509171723455abc",
       "worktree_state": "clean"
     },
     {
@@ -485,11 +401,11 @@
       "title": "Linux 6.12 Tree RCU 拓扑与 CPU 热插拔模块源码概念导读",
       "kind": "source",
       "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/navigation/P08_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md",
+      "path": "research/source_reading/rcu/navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 13092,
-      "sha256": "e54bd32d0f843ec9fc04bdfc02911a89a36d6e68041eca892a6d53ac7830f51a",
+      "bytes": 13359,
+      "sha256": "b971a15f2873450f6d2af7fa210573a276e30c5868d7d2005f9e9e84ce81c67c",
       "worktree_state": "clean"
     },
     {
@@ -497,11 +413,11 @@
       "title": "Linux 6.12 Tree RCU force-QS 与 Stall 模块源码概念导读",
       "kind": "source",
       "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/navigation/P09_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md",
+      "path": "research/source_reading/rcu/navigation/P05_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 10931,
-      "sha256": "239432ac91694dcdc2cf4aa14cd888da34f07ae74c9612ae43afac969b2f9be7",
+      "bytes": 11211,
+      "sha256": "6af8e7bfe1870b5dbe84cbfc6c449cd695104f580f9db4929cf09597eecf6a55",
       "worktree_state": "clean"
     },
     {
@@ -509,11 +425,11 @@
       "title": "Linux 6.12 Tree RCU Expedited GP 模块源码概念导读",
       "kind": "source",
       "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/navigation/P10_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md",
+      "path": "research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 11782,
-      "sha256": "a76ac19760bdd5e46000d662e826906b1dd2ae997d7a1090ea63592f69235f5c",
+      "bytes": 11775,
+      "sha256": "d7eab6dfc6e7910604249579895edbc36152c15a693da95a3d263b9da868dc5f",
       "worktree_state": "clean"
     },
     {
@@ -521,11 +437,11 @@
       "title": "Linux 6.12 Tree RCU 回调与 NOCB 模块源码概念导读",
       "kind": "source",
       "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/navigation/P11_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md",
+      "path": "research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 13882,
-      "sha256": "48f3718c2334e47e00bd88c1de806da010dd32a0ed18661080d18ce7574f1cfe",
+      "bytes": 14292,
+      "sha256": "2b4c5d66e0f08c4b673e195b38a1bd77c8cd8cd8a7c5c08cf23f1848b170a2bc",
       "worktree_state": "clean"
     },
     {
@@ -533,11 +449,59 @@
       "title": "Linux 6.12 Tree RCU 同步等待与 rcu_barrier 模块源码概念导读",
       "kind": "source",
       "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/navigation/P12_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md",
+      "path": "research/source_reading/rcu/navigation/P08_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md",
       "volume_id": "source_navigation",
       "role": "chapter",
-      "bytes": 11717,
-      "sha256": "54c9ccb1b56cf8c64fb513d137a65672e726af14d8432a1901c0be06381fe783",
+      "bytes": 11885,
+      "sha256": "731420eef1f8d9a4858f90074922d9743aa1457c26f3e68d85ab6abe7c7990dd",
+      "worktree_state": "clean"
+    },
+    {
+      "id": "research.source_reading.rcu.linux_6_12_tree_srcu_navigation",
+      "title": "Linux 6.12 Tree SRCU 模块源码概念导读",
+      "kind": "source",
+      "maintenance_status": "evolving",
+      "path": "research/source_reading/rcu/navigation/P09_Linux_6.12_Tree_SRCU模块源码概念导读.md",
+      "volume_id": "source_navigation",
+      "role": "chapter",
+      "bytes": 12220,
+      "sha256": "65465a5ffdfb5e34d675f1b18eefb2e5e402d36348c2c2446bc325a0b12f6d00",
+      "worktree_state": "clean"
+    },
+    {
+      "id": "research.source_reading.rcu.tasks_rcu_navigation",
+      "title": "Linux 6.12 Tasks RCU 模块源码概念导读",
+      "kind": "source",
+      "maintenance_status": "evolving",
+      "path": "research/source_reading/rcu/navigation/P10_Linux_6.12_Tasks_RCU模块源码概念导读.md",
+      "volume_id": "source_navigation",
+      "role": "chapter",
+      "bytes": 4753,
+      "sha256": "52749cfb925d716268c1431366c4a47b4882126ab56f0ffc5fa5c63880c50d0c",
+      "worktree_state": "clean"
+    },
+    {
+      "id": "research.source_reading.rcu.tiny_rcu_navigation",
+      "title": "Linux 6.12 Tiny RCU 模块源码概念导读",
+      "kind": "source",
+      "maintenance_status": "evolving",
+      "path": "research/source_reading/rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md",
+      "volume_id": "source_navigation",
+      "role": "chapter",
+      "bytes": 3335,
+      "sha256": "95514d85172dbeb2023eb341905b4d0861ac8eccbd94d163199a1649aafd7884",
+      "worktree_state": "clean"
+    },
+    {
+      "id": "research.source_reading.rcu.linux_6_12_lockdep_adapter_navigation",
+      "title": "Linux 6.12 RCU Lockdep适配模块源码概念导读",
+      "kind": "source",
+      "maintenance_status": "evolving",
+      "path": "research/source_reading/rcu/navigation/P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md",
+      "volume_id": "source_navigation",
+      "role": "chapter",
+      "bytes": 9816,
+      "sha256": "ef044a201d5ba5bb8e212a318d583d7ece7ce56dde5e11d7e797979d8a51e15c",
       "worktree_state": "clean"
     },
     {
@@ -548,32 +512,32 @@
       "path": "research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 19228,
-      "sha256": "b6d93a45a8ef05d0c27f71db99942b302710804ad876c745865316196605a74f",
+      "bytes": 19231,
+      "sha256": "896a7ae8d1fe42f84dfe4635ebb63ca439a3f7880971acc4fd6833e9c1294d47",
       "worktree_state": "clean"
     },
     {
-      "id": "research.source_reading.rcu.linux_6_12_nonpreempt_tree_implementation",
-      "title": "Linux 6.12 非抢占式 Tree RCU 关键函数源码实现",
+      "id": "research.source_reading.rcu.linux_6_12_tree_wait_qs_aggregation_implementation",
+      "title": "Linux 6.12 Tree RCU 等待桥、QS 与节点汇聚关键函数源码实现",
       "kind": "source",
       "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/source_explanations/P02_Linux_6.12_非抢占式_Tree_RCU_关键函数源码实现.md",
+      "path": "research/source_reading/rcu/source_explanations/P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 13660,
-      "sha256": "6bba6791b2ad0e38527fc232a5992b594240ee77bd905f43d1da25960f94eb24",
-      "worktree_state": "clean"
+      "bytes": 13846,
+      "sha256": "4d2546793585e102fa1de0b8ae3b9f0deecc7c76c4abf8e2947f98582b37e8dc",
+      "worktree_state": "modified:M"
     },
     {
-      "id": "research.source_reading.rcu.linux_6_12_preempt_tree_implementation",
-      "title": "Linux 6.12 抢占式 Tree RCU 关键函数源码实现",
+      "id": "research.source_reading.rcu.linux_6_12_tree_preempted_reader_debt_implementation",
+      "title": "Linux 6.12 Tree RCU 抢占读者债务关键函数源码实现",
       "kind": "source",
       "maintenance_status": "evolving",
-      "path": "research/source_reading/rcu/source_explanations/P03_Linux_6.12_抢占式_Tree_RCU_关键函数源码实现.md",
+      "path": "research/source_reading/rcu/source_explanations/P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 17387,
-      "sha256": "d48957e51ecbeaf87a7d65e335f9ada78ee01edc02b519de839d0e9eccf18a31",
+      "bytes": 17247,
+      "sha256": "50cd7a74ce796952d82f1dd79d5cbdf9e9b963db6989d1715d794e2509ed6403",
       "worktree_state": "clean"
     },
     {
@@ -584,8 +548,8 @@
       "path": "research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 29741,
-      "sha256": "784ace1205a447682cc90bc41fa5b0e5dd4d860afe2eeafae343683c9c5e0b3e",
+      "bytes": 31526,
+      "sha256": "70d7aaff24d0ea5e015f1ee93ca5e29f97108d7a7cadfffe8f3fb6a3bd377da4",
       "worktree_state": "clean"
     },
     {
@@ -596,8 +560,8 @@
       "path": "research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 55740,
-      "sha256": "9d124a1445ebd4c58a8651593c7c260187db60200915dbf9ed00e6546606c621",
+      "bytes": 56279,
+      "sha256": "7454c7844a63b87ab70ff08998beef23ec8c86ce99b62566a32ee3d10995b0ab",
       "worktree_state": "clean"
     },
     {
@@ -608,8 +572,8 @@
       "path": "research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 18253,
-      "sha256": "b0686deca8cf24e30b938432635def5424fb086cc577dc53e3741178235989f8",
+      "bytes": 18495,
+      "sha256": "6da14cdf5e28b24b9750aab6b23133e19a3c43ee4fd6168bb2e1935e28fb79d7",
       "worktree_state": "clean"
     },
     {
@@ -620,8 +584,8 @@
       "path": "research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 16260,
-      "sha256": "d17face73ce7e69cca3218301c00568b731a41a2c76ac0399ed3a9650ac839c9",
+      "bytes": 16823,
+      "sha256": "252b35c708ae3a89d16c99ba795ed2644e67b93c41e8c23c8469d39de72b3d7c",
       "worktree_state": "clean"
     },
     {
@@ -632,8 +596,8 @@
       "path": "research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 20253,
-      "sha256": "b844e08b46ae37e0d560d43d76377fe60af7d951a720b10e2122ef9655e6a25e",
+      "bytes": 20987,
+      "sha256": "1e9b9570ac3bc15deae90a9c872ee24f3d15295a73eac082a83fc2ac0acae3bd",
       "worktree_state": "clean"
     },
     {
@@ -644,8 +608,8 @@
       "path": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 30293,
-      "sha256": "7d1b534e84cfaf819c830b1274d28211b420af87880a2fefa08df0e9beb4e1d6",
+      "bytes": 30971,
+      "sha256": "c42976a86ce5f388f203a64b82c81228b1c603810d435123488aacfe6cae5e8a",
       "worktree_state": "clean"
     },
     {
@@ -656,8 +620,8 @@
       "path": "research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 17014,
-      "sha256": "a95f366d0c0f59db59eeeb3ec6e6a80d3d701b9ff9e7ffc99d17c8e4e4731e54",
+      "bytes": 17442,
+      "sha256": "ac8fc356aefa3353992e2aaacaec538956f3ca09cf0f30d1e5765568f3df6193",
       "worktree_state": "clean"
     },
     {
@@ -668,8 +632,8 @@
       "path": "research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md",
       "volume_id": "source_explanations",
       "role": "chapter",
-      "bytes": 38057,
-      "sha256": "147f3094a5a3cb9b593a8a5d84f3cdc378a8ff2dd89f2e363efeb761b3c933f6",
+      "bytes": 39802,
+      "sha256": "ab96e597ec2585ec5658121f602b3cbad113ea3162d0880ea58ab7eb332ef929",
       "worktree_state": "clean"
     },
     {
@@ -680,8 +644,8 @@
       "path": "labs/kernel/rcu/P01_晚到读者与抢占读者/README.md",
       "volume_id": "experiment",
       "role": "chapter",
-      "bytes": 8000,
-      "sha256": "00af2c977864fa86d35d12508244fa69d9c909029100b84bb6e11d2ddc4352dd",
+      "bytes": 8267,
+      "sha256": "22ceb001c9d72859bdbb30f853635895aaf38a152eb1a52c85e2d828dd263a25",
       "worktree_state": "clean"
     }
   ],
@@ -704,8 +668,8 @@
   "artifacts": [
     {
       "path": "index.html",
-      "bytes": 1656150,
-      "sha256": "6315226acc87290f48fb8cb57fa9a8605efb74406549bed3a90fddc35cfb4bf6"
+      "bytes": 1457880,
+      "sha256": "a3509885c88ed9d06f7332698c32c80966ab82f7f16626b05d694769b8c53c64"
     },
     {
       "path": "assets/markbook.css",
