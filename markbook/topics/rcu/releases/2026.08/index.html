@@ -1103,6 +1103,65 @@
               <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_srcu_implementation--11.12.2_与普通tree_rcu逐项对照">11.12.2_与普通Tree_RCU逐项对照</a></li>
             </ol>
           </details>
+      </li>
+      <li class="toc_document">
+        <a class="toc_link" data_toc_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization">第 12 章　Linux 6.12 Tree RCU rcu_init 启动初始化源码实现</a>
+        <details class="toc_sections">
+            <summary>展开章内目录</summary>
+            <ol class="toc_section_list">
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.1_从start_kernel里的一个调用固定本章任务">12.1_从start_kernel里的一个调用固定本章任务</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.2_术语入口与源码身份">12.2_术语入口与源码身份</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.3_先证明当前调用解析为哪一种rcu">12.3_先证明当前调用解析为哪一种RCU</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.4_进入rcu_init以前内核已经保证了什么">12.4_进入rcu_init以前内核已经保证了什么</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.5_逐行展开rcu_init的直接动作">12.5_逐行展开rcu_init的直接动作</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.6_i0到i13的初始化阶段账本">12.6_I0到I13的初始化阶段账本</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.7_i1为何在树建立以前先运行自检">12.7_I1为何在树建立以前先运行自检</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.7.1_config_prove_rcu关闭时它是什么">12.7.1_CONFIG_PROVE_RCU关闭时它是什么</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.7.2_开启证明检查后测试了哪五条早期路径">12.7.2_开启证明检查后测试了哪五条早期路径</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.7.3_同步等待为什么此时不需要真实gp线程">12.7.3_同步等待为什么此时不需要真实GP线程</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.8_i2怎样建立kfree_rcu延迟释放流水线">12.8_I2怎样建立kfree_rcu延迟释放流水线</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.8.1_先分清三类对象">12.8.1_先分清三类对象</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.8.2_完整初始化语句及其后续消费者">12.8.2_完整初始化语句及其后续消费者</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.9_i3与i4先公布异常配置再净化线程优先级">12.9_I3与I4先公布异常配置再净化线程优先级</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.9.1_rcu_bootup_announce不只是打印实现名称">12.9.1_rcu_bootup_announce()不只是打印实现名称</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.9.2_公告路径包含两处实际参数修正">12.9.2_公告路径包含两处实际参数修正</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.9.3_sanitize_kthread_prio为什么放在公告以后">12.9.3_sanitize_kthread_prio()为什么放在公告以后</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.10_i5从编译期容量中裁出本次启动真正使用的树">12.10_I5从编译期容量中裁出本次启动真正使用的树</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.10.1_为什么既有编译期几何又有运行时几何">12.10.1_为什么既有编译期几何又有运行时几何</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.10.2_几何计算的完整决策顺序">12.10.2_几何计算的完整决策顺序</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.10.3_dump_tree只增加观测不改变拓扑">12.10.3_dump_tree只增加观测不改变拓扑</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.11_i6把几何兑现为全局树_每节点状态和每cpu入口">12.11_I6把几何兑现为全局树_每节点状态和每CPU入口</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.11.1_三层状态分别落在哪里">12.11.1_三层状态分别落在哪里</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.11.2_i6同时预埋了可选分支的状态但没有启动执行者">12.11.2_I6同时预埋了可选分支的状态但没有启动执行者</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.12_i7与i8接上回调执行入口和系统睡眠策略">12.12_I7与I8接上回调执行入口和系统睡眠策略</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.12.1_use_softirq决定谁执行rcu_core">12.12.1_use_softirq决定谁执行rcu_core()</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.12.2_pm_notifier的编译期分歧">12.12.2_pm_notifier()的编译期分歧</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.13_i9用三段协议把启动cpu加入已经存在的树">12.13_I9用三段协议把启动CPU加入已经存在的树</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.13.1_第一段_rcutree_prepare_cpu建立cpu私有运行容器">12.13.1_第一段_rcutree_prepare_cpu()建立CPU私有运行容器</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.13.2_第二段_rcutree_report_cpu_starting发布身份与位图">12.13.2_第二段_rcutree_report_cpu_starting()发布身份与位图</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.13.3_第三段_rcutree_online_cpu只完成当前阶段允许的部分">12.13.3_第三段_rcutree_online_cpu()只完成当前阶段允许的部分</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.14_i10与i11建立异步执行面并修复过早发起的poll请求">12.14_I10与I11建立异步执行面并修复过早发起的poll请求</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.14.1_三个rcu工作队列不能混为一个">12.14.1_三个RCU工作队列不能混为一个</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.14.2_为什么qovld_calc必须在节点锁以后计算">12.14.2_为什么qovld_calc必须在节点锁以后计算</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.14.3_早期expedited_poll为什么需要一次kick-start">12.14.3_早期expedited_poll为什么需要一次kick-start</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.15_i12与i13收尾_再测同步原语并建立tasks_rcu回调分片">12.15_I12与I13收尾_再测同步原语并建立Tasks_RCU回调分片</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.15.1_i12重新验证的是切换边界">12.15.1_I12重新验证的是切换边界</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.15.2_tasks_cblist_init_generic初始化的是三种可选tasks_flavor">12.15.2_tasks_cblist_init_generic()初始化的是三种可选Tasks_flavor</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.16_函数返回后rcu还远未进入完整运行态">12.16_函数返回后RCU还远未进入完整运行态</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.16.1_启动后半程的真实接力顺序">12.16.1_启动后半程的真实接力顺序</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.16.2_rcu_init明确没有做什么">12.16.2_rcu_init()明确没有做什么</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.17_编译配置如何改变同一个函数体的实际事务">12.17_编译配置如何改变同一个函数体的实际事务</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.18_异常与失败不是一种统一语义">12.18_异常与失败不是一种统一语义</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.19_直接符号覆盖账本">12.19_直接符号覆盖账本</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.20_修改这段代码时必须守住的顺序边界">12.20_修改这段代码时必须守住的顺序边界</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.20.1_不可随意交换的依赖">12.20.1_不可随意交换的依赖</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.20.2_改动时要同步核对的调用方和配置">12.20.2_改动时要同步核对的调用方和配置</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.21_怎样观察并验证这次初始化">12.21_怎样观察并验证这次初始化</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.21.1_静态核对">12.21.1_静态核对</a></li>
+              <li class="toc_section_depth_3"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.21.2_运行时观测及其证明边界">12.21.2_运行时观测及其证明边界</a></li>
+              <li class="toc_section_depth_2"><a data_toc_section_link href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.22_结论_rcu_init完成的是可运行前的状态协议">12.22_结论_rcu_init()完成的是可运行前的状态协议</a></li>
+            </ol>
+          </details>
       </li></ol>
       </details>
       <details class="toc_volume" >
@@ -1126,7 +1185,7 @@
           </details>
       </li></ol>
       </details></nav>
-    <div class="sidebar_footer">2026 年 08 月刊 · 50 篇源文档</div>
+    <div class="sidebar_footer">2026 年 08 月刊 · 51 篇源文档</div>
   </aside>
   <button class="sidebar_backdrop" type="button" data_action="close_sidebar" aria-label="关闭目录"></button>
   <main class="book_shell" id="book_content">
@@ -1139,7 +1198,7 @@
           <div class="cover_meta_item"><span>版本</span><strong>2026 年 08 月刊</strong></div>
           <div class="cover_meta_item"><span>出版维护</span><strong>FormingSystem</strong></div>
           <div class="cover_meta_item"><span>源码基线</span><strong>Linux 6.12.20</strong></div>
-          <div class="cover_meta_item"><span>文档规模</span><strong>50 篇 · 466,504 字符</strong></div>
+          <div class="cover_meta_item"><span>文档规模</span><strong>51 篇 · 506,969 字符</strong></div>
         </div>
       </div>
     </section>
@@ -1164,10 +1223,10 @@
             <dt>不可变提交</dt><dd><code>dfaf2136deb2af2e60b994421281ba42f1c087e0</code></dd>
             <dt>内核版本</dt><dd>Linux 6.12.20</dd>
             <dt>配置边界</dt><dd><code>CONFIG_TREE_RCU=y</code>、<code>CONFIG_PREEMPT_RCU=y</code></dd>
-            <dt>知识仓库 HEAD</dt><dd><code>9fc197bb653f90e47d3807221fab06e71e145ef2</code></dd>
-            <dt>生成时间</dt><dd>2026年8月30日 17:33（Asia/Shanghai）</dd>
+            <dt>知识仓库 HEAD</dt><dd><code>474013faaf7ec781caddd3ff34924fa462119bcd</code></dd>
+            <dt>生成时间</dt><dd>2026年8月30日 23:20（Asia/Shanghai）</dd>
           </dl>
-          <p class="source_state_warning"><strong>快照提示：</strong>本期收录了 3 个当时尚未提交的源文件。这些内容由逐文件 SHA-256 标识，不能仅用下方知识仓库 HEAD 还原。</p>
+          <p class="source_state_warning"><strong>快照提示：</strong>本期收录了 10 个当时尚未提交的源文件。这些内容由逐文件 SHA-256 标识，不能仅用下方知识仓库 HEAD 还原。</p>
         </article>
       </div>
     </section>
@@ -4651,16 +4710,29 @@ CPU位为0，gp_tasks也为空
 <h2 id="document-knowledge-linux-synchronization-rcu-tree_init_topology_execution--7.2_启动代码不是一条单函数调用">7.2_启动代码不是一条单函数调用</h2>
 
 <p>Linux 6.12.20 的主要入口 <code>kernel/rcu/tree.c::rcu_init()</code> 依次完成：</p>
-<pre class="code_block" data-language="c"><code class="hljs language-c">rcu_init_geometry();
+<pre class="code_block" data-language="c"><code class="hljs language-c">rcu_early_boot_tests();
+kfree_rcu_batch_init();
+rcu_bootup_announce();
+sanitize_kthread_prio();
+rcu_init_geometry();
 rcu_init_one();
-open_softirq(RCU_SOFTIRQ, rcu_core_si); <span class="hljs-comment">/* use_softirq时 */</span>
+<span class="hljs-keyword">if</span> (dump_tree)
+	rcu_dump_rcu_node_tree();
+<span class="hljs-keyword">if</span> (use_softirq)
+	open_softirq(RCU_SOFTIRQ, rcu_core_si);
+pm_notifier(rcu_pm_notify, <span class="hljs-number">0</span>);          <span class="hljs-comment">/* PM_SLEEP关闭时为空操作 */</span>
 rcutree_prepare_cpu(boot_cpu);
 rcutree_report_cpu_starting(boot_cpu);
 rcutree_online_cpu(boot_cpu);
 rcu_gp_wq = alloc_workqueue(<span class="hljs-string">&quot;rcu_gp&quot;</span>, WQ_MEM_RECLAIM, <span class="hljs-number">0</span>);
 sync_wq = alloc_workqueue(<span class="hljs-string">&quot;sync_wq&quot;</span>, WQ_MEM_RECLAIM, <span class="hljs-number">0</span>);
+qovld_calc = qovld &lt; <span class="hljs-number">0</span> ? DEFAULT_RCU_QOVLD_MULT * qhimark : qovld;
+start_poll_synchronize_rcu_expedited();
+rcu_test_sync_prims();
+tasks_cblist_init_generic();
 </code></pre>
-<p>这段顺序有启动约束：<code>rcu_init()</code> 很早执行，此时源码断言在线 CPU 数不超过一个；其他 CPU 以后通过 CPU hotplug/bring-up 钩子逐个准备。GP kthread、boost/nocb/expedited 工作线程还受 <code>kthreadd</code> 和对应初始化阶段是否就绪的限制，不能把“<code>rcu_init()</code> 一次创建全部执行者”当作事实。</p>
+<p>这段顺序同时建立早期契约测试、<code>kfree_rcu</code> 批处理、参数派生、固定拓扑、boot CPU 身份、softirq/PM 入口、三个工作队列、callback 过载门闩、过早 poll 修复和 Tasks RCU callback 分片。完整版本化调用账本、配置分支、失败语义和后半程接力见 <a href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.6_i0到i13的初始化阶段账本">Linux 6.12 Tree RCU <code>rcu_init()</code> 启动初始化源码实现</a>。</p>
+<p>这段顺序有启动约束：<code>rcu_init()</code> 很早执行，此时源码断言在线 CPU 数不超过一个；其他 CPU 以后通过 CPU hotplug/bring-up 钩子逐个准备。GP kthread、boost/nocb/expedited 工作线程还受 <code>kthreadd</code> 和对应初始化阶段是否就绪的限制，不能把“<code>rcu_init()</code> 一次创建全部执行者”当作事实。早期 <code>synchronize_rcu()</code> 采用单启动任务语义，workqueue 对象虽可创建/排队，完整 worker 执行仍要等待 <code>workqueue_init()</code>。</p>
 <p>这里第一次出现的 <strong>GP kthread</strong> 是一个长期存在的内核调度任务：<code>rcu_spawn_gp_kthread()</code> 创建 <code>task_struct</code>，入口为 <code>rcu_gp_kthread()</code>，任务指针保存在 <code>rcu_state.gp_kthread</code>，无请求时睡在 <code>rcu_state.gp_wq</code>。它不是每轮 GP 新建的线程，不是第五颗 CPU，也不负责执行所有 callback。完整术语和生命周期见 <a href="#document-knowledge-linux-synchronization-rcu-tree_gp_lifecycle--8.3_为什么需要一个长期存在的gp内核线程">Tree RCU GP 请求与全局生命周期</a>，版本化模块协作见 <a href="#document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_navigation--3.5_线程怎样创建并安全发布">GP 全局生命周期模块源码概念导读</a>；<code>rcu_init()</code> 与稍后线程创建的启动分界见 <a href="#document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_implementation--5.5.1_先从内核启动链定位early_initcall">从内核启动链定位 <code>early_initcall</code></a>，创建与发布语句见 <a href="#document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_implementation--5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务"><code>rcu_spawn_gp_kthread()</code></a>。</p>
 <h2 id="document-knowledge-linux-synchronization-rcu-tree_init_topology_execution--7.3_s0到s6_拓扑建立的统一阶段">7.3_S0到S6_拓扑建立的统一阶段</h2>
 
@@ -4910,7 +4982,7 @@ grep -E <span class="hljs-string">&#x27;CONFIG_(TREE_RCU|RCU_FANOUT|RCU_NOCB_CPU
 ps -eLo pid,psr,cls,rtprio,<span class="hljs-built_in">comm</span> | grep -E <span class="hljs-string">&#x27;rcu|rcuc|rcuo|rcub|rcuog|rcuop&#x27;</span>
 </code></pre>
 <p>不要预期所有配置都出现同一组线程：<code>use_softirq</code>、NOCB、boost、PREEMPT_RT 和 CPU 数量会改变执行者。观察目标是把实际线程/softirq与本章状态职责对应，而不是靠线程名反推全部语义。</p>
-<p>Linux 6.12.20 的版本化阅读先进入 <a href="#document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_guide--4.1_本模块究竟解决什么问题">拓扑与 CPU 热插拔模块源码概念导读</a>，再分别直达 <a href="#document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_implementation--6.4_rcu_init_one建立固定汇聚树并绑定每cpu叶节点"><code>rcu_init_one()</code> 建立固定汇聚树</a> 与 <a href="#document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_implementation--6.5_boot初始化与prepare为何仍未让cpu加入当前gp">boot/prepare 两阶段初始化</a>。普通 GP kthread 继续进入 <a href="#document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_implementation--5.5.1_先从内核启动链定位early_initcall">启动、创建到运行期的唯一实现</a>，每 CPU core 执行者进入 <a href="#document-research-source_reading-rcu-linux_6_12_tree_callback_nocb_implementation--9.7_普通cpu怎样选择softirq或rcuc执行者">回调与 NOCB 源码实现</a>；不能由启动函数名把它们视为同一线程。</p>
+<p>Linux 6.12.20 的版本化阅读先进入 <a href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.1_从start_kernel里的一个调用固定本章任务"><code>rcu_init()</code> 启动初始化源码实现</a>，再由 <a href="#document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_guide--4.1_本模块究竟解决什么问题">拓扑与 CPU 热插拔模块源码概念导读</a> 分流，分别直达 <a href="#document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_implementation--6.4_rcu_init_one建立固定汇聚树并绑定每cpu叶节点"><code>rcu_init_one()</code> 建立固定汇聚树</a> 与 <a href="#document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_implementation--6.5_boot初始化与prepare为何仍未让cpu加入当前gp">boot/prepare 两阶段初始化</a>。普通 GP kthread 继续进入 <a href="#document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_implementation--5.5.1_先从内核启动链定位early_initcall">启动、创建到运行期的唯一实现</a>，每 CPU core 执行者进入 <a href="#document-research-source_reading-rcu-linux_6_12_tree_callback_nocb_implementation--9.7_普通cpu怎样选择softirq或rcuc执行者">回调与 NOCB 源码实现</a>；不能由启动函数名把它们视为同一线程。</p>
 <h2 id="document-knowledge-linux-synchronization-rcu-tree_init_topology_execution--7.11_成本与边界">7.11_成本与边界</h2>
 
 <ul>
@@ -10815,6 +10887,10 @@ srcu_read_unlock(&amp;config_srcu, idx);
 <td><a href="#document-research-source_reading-rcu-linux_6_12_tree_srcu_implementation--11.2_源码符号覆盖账本">P11 Tree SRCU</a></td>
 <td>reader 累计账本、双扫描、callback 与 barrier</td>
 </tr>
+<tr>
+<td><a href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.19_直接符号覆盖账本">P12 <code>rcu_init()</code> 启动初始化</a></td>
+<td><code>start_kernel()</code> 调用现场、Tree/Tiny 分派、I0～I13、boot CPU 发布、workqueue 与后继 initcall 边界</td>
+</tr>
 </tbody></table>
 <p>P02 与 P03 是同一读侧模块中的公共 CPU 路径和 PREEMPT_RCU 增量，不是非抢占 / 抢占两套完整系统。</p>
 <h2 id="document-research-source_reading-rcu-index--1.6_建议的源码阅读顺序">1.6_建议的源码阅读顺序</h2>
@@ -10823,6 +10899,7 @@ srcu_read_unlock(&amp;config_srcu, idx);
 <pre class="code_block" data-language="text"><code class="hljs language-text">知识正文P01-P06
     → 本索引P01
     → P02公共接口与读侧模型
+    → P12 rcu_init启动事务
     → P03 GP生命周期
     → P04拓扑与hotplug
     → P07 callback/NOCB
@@ -11000,7 +11077,7 @@ kfree(old);
 <p>源码阅读只在差异列展开条件分支，公共出口不再复制。</p>
 <h2 id="document-research-source_reading-rcu-public_api_reader_models_navigation--2.5_非抢占分支的最小调用链">2.5_非抢占分支的最小调用链</h2>
 
-<p>非抢占普通读侧把“任务是否仍持有旧指针”压缩成 CPU 不变量：任务若还在读侧，普通抢占不能把它换出，因此一个发生在 GP 边界之后的合法 CPU QS 足以排除该 CPU 上的既有旧 reader。</p>
+<p>非抢占普通读侧把“任务是否仍持有旧指针”压缩成 CPU 不变量：<strong>任务若还在读侧，普通抢占不能把它换出，因此一个发生在 GP 边界之后的合法 CPU QS 足以排除该 CPU 上的既有旧 reader</strong>。</p>
 <p>下面的 <code>EQS</code> 是 <strong>Extended Quiescent State（扩展静止状态）</strong> 的缩写，表示 CPU 已进入一段可由 RCU 持续视为不承载本类旧 reader 的状态；这里它是一类形成或预先声明静止证据的 CPU 路径名称，不是新的 GP 阶段。</p>
 <p>阅读顺序：</p>
 <pre class="code_block" data-language="text"><code class="hljs language-text">rcu_read_lock()/unlock的非PREEMPT_RCU分支
@@ -11136,7 +11213,7 @@ rcu_node.blkd_tasks与gp_tasks边界
           <div class="chapter_body"><h2 id="document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_navigation--3.1_模块问题与版本边界">3.1_模块问题与版本边界</h2>
 
 <p>本章回答“普通 Tree RCU 怎样把许多 GP 需求合并成串行的物理 GP，并由一个长期 GP kthread 完成开始、等待和 cleanup”。对应源码基线为 NXP Linux 6.12.20、提交 <code>dfaf2136deb2af2e60b994421281ba42f1c087e0</code>，配置边界为 <code>CONFIG_TREE_RCU=y</code> 与 <code>CONFIG_PREEMPT_RCU=y</code>。</p>
-<p>先读稳定机制正文的 <a href="#document-knowledge-linux-synchronization-rcu-tree_gp_lifecycle--8.1_本章先回答gp究竟是什么">GP 究竟是什么</a>，再用本章定位文件、对象、状态和阅读顺序。具体宏体与函数体只在 <a href="#document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_implementation--5.2_源码符号覆盖账本">GP 全局生命周期源码实现</a>唯一展开。</p>
+<p>先读稳定机制正文的 <a href="#document-knowledge-linux-synchronization-rcu-tree_gp_lifecycle--8.1_本章先回答gp究竟是什么">GP 究竟是什么</a>，再用本章定位文件、对象、状态和阅读顺序。具体宏体与函数体只在 <a href="#document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_implementation--5.2_源码符号覆盖账本">GP 全局生命周期源码实现</a> 唯一展开。</p>
 <p>本章不讲 SRCU GP。SRCU 的 reader 是指定 <code>srcu_struct</code> 私有域中的双 index 计数，不读写普通 <code>rcu_state.gp_kthread</code>；应转入 <a href="#document-research-source_reading-rcu-linux_6_12_tree_srcu_navigation--9.1_先分清tree_rcu与tree_srcu">Tree SRCU 模块源码概念导读</a>。</p>
 <h2 id="document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_navigation--3.2_先把四个对象摆到源码现场">3.2_先把四个对象摆到源码现场</h2>
 
@@ -11186,7 +11263,7 @@ rcu_node.blkd_tasks与gp_tasks边界
 </tr>
 </thead>
 <tbody><tr>
-<td><a href="https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c"><code>init/main.c</code></a></td>
+<td><a href="../../../../../research/source_reading/linux/init/main.c"><code>init/main.c</code></a></td>
 <td><code>start_kernel()</code>、<code>rest_init()</code>、<code>kernel_init()</code>、<code>do_pre_smp_initcalls()</code></td>
 <td>区分早期 <code>rcu_init()</code>、<code>kthreadd</code> 就绪、early initcall 分派和 SMP bring-up</td>
 </tr>
@@ -11742,6 +11819,7 @@ rcu_node.blkd_tasks与gp_tasks边界
 <h2 id="document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_guide--4.6_端到端时序_gp中途cpu4下线">4.6_端到端时序_GP中途CPU4下线</h2>
 
 <pre class="mermaid">sequenceDiagram
+    autonumber
     participant GP as GP kthread
     participant N as CPU4叶rcu_node
     participant C4 as outgoing CPU4
@@ -11762,7 +11840,7 @@ rcu_node.blkd_tasks与gp_tasks边界
     HP-&gt;&gt;C4: disable源cblist
     HP--&gt;&gt;GP: 若合并后需要新GP则唤醒
 </pre>
-<p>被抢占 reader 是关键分支：任务可能在 CPU4 上进入普通 RCU 临界区，随后被抢占并迁移到其他 CPU。CPU4 下线只清 CPU 位，不能清 <code>blkd_tasks</code> 中的任务债务；该任务最终解阻时仍沿其记录的叶节点路径报告。</p>
+<p>第 2～5 步只处理 CPU4 对当前/未来 CPU 集合的证明债务，第 7～11 步另行迁移 callback 所有权；两组状态不能互相替代。被抢占 reader 是关键分支：任务可能在 CPU4 上进入普通 RCU 临界区，随后被抢占并迁移到其他 CPU。CPU4 下线只清 CPU 位，不能清 <code>blkd_tasks</code> 中的任务债务；该任务最终解阻时仍沿其记录的叶节点路径报告。</p>
 <h2 id="document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_guide--4.7_正常路径特殊路径与强制慢路径">4.7_正常路径特殊路径与强制慢路径</h2>
 
 <table>
@@ -11816,6 +11894,11 @@ rcu_node.blkd_tasks与gp_tasks边界
 </tr>
 </thead>
 <tbody><tr>
+<td><code>start_kernel()</code> 中 <code>rcu_init()</code> 的完整启动事务、配置分派和后继阶段</td>
+<td><a href="../../../../../research/source_reading/linux/init/main.c"><code>init/main.c</code></a>、<a href="../../../../../research/source_reading/linux/kernel/rcu/tree.c"><code>kernel/rcu/tree.c</code></a></td>
+<td><a href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.6_i0到i13的初始化阶段账本">P12：<code>rcu_init()</code> I0～I13</a></td>
+</tr>
+<tr>
 <td><code>node[]/level[]</code>、父子关系与 CPU 绑定</td>
 <td><a href="../../../../../research/source_reading/linux/kernel/rcu/tree.c"><code>kernel/rcu/tree.c</code></a>、<a href="../../../../../research/source_reading/linux/kernel/rcu/tree.h"><code>tree.h</code></a></td>
 <td><a href="#document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_implementation--6.4_rcu_init_one建立固定汇聚树并绑定每cpu叶节点">P06：<code>rcu_init_one()</code></a></td>
@@ -11849,7 +11932,8 @@ rcu_node.blkd_tasks与gp_tasks边界
 <h2 id="document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_guide--4.9_建议阅读顺序与验收">4.9_建议阅读顺序与验收</h2>
 
 <ol>
-<li>先在 <code>tree.h</code> 找到 <code>rcu_state.node[]/level[]</code>、<code>rcu_node.qsmask*</code> 和 <code>rcu_data.mynode/grpmask</code>；</li>
+<li>先读 <code>start_kernel()</code> 中的 <a href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.4_进入rcu_init以前内核已经保证了什么"><code>rcu_init()</code> 完整启动事务</a>，确定调用现场和后半程尚未发生的动作；</li>
+<li>在 <code>tree.h</code> 找到 <code>rcu_state.node[]/level[]</code>、<code>rcu_node.qsmask*</code> 和 <code>rcu_data.mynode/grpmask</code>；</li>
 <li>再读 <code>rcu_init_one()</code>，只回答静态地址怎样建立；</li>
 <li>沿 <code>rcutree_prepare_cpu()</code> 到 <code>rcutree_report_cpu_starting()</code>，区分“数据准备好”和“加入未来参与集合”；</li>
 <li>回到普通 GP <code>rcu_gp_init()</code>，观察 next 集合何时变成 current 债务；</li>
@@ -15599,7 +15683,7 @@ synchronize_rcu()
 
 <p>本章是 Linux 6.12.20 普通 Tree RCU GP 全局控制实现的唯一函数体讲解，负责从内核启动期注册并创建 GP kthread，到 <code>rcu_state</code> 的 GP 控制字段、<code>rcu_seq_*</code>、需求漏斗、唤醒、主循环、init、FQS <strong>调度循环</strong> 和 cleanup。CPU 怎样产生并逐层报告 QS，仍由 <a href="#document-research-source_reading-rcu-linux_6_12_tree_wait_qs_aggregation_implementation--2.2_函数实现索引">非抢占式 Tree RCU 关键函数源码实现</a>负责；被抢占 reader 怎样进入任务债务，仍由 <a href="#document-research-source_reading-rcu-linux_6_12_tree_preempted_reader_debt_implementation--3.2_任务与节点的共享状态实现">抢占式 Tree RCU 关键函数源码实现</a>负责；watching snapshot、叶扫描、urgent/resched 和 stall 分类由 <a href="#document-research-source_reading-rcu-linux_6_12_tree_force_qs_stall_implementation--7.2_源码符号覆盖账本">force-QS 与 Stall 源码实现</a>唯一展开。</p>
 <p>模块协作、参与者与阅读顺序见 <a href="#document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_navigation--3.3_源码文件与状态所有权">GP 全局生命周期模块源码概念导读</a>，跨版本概念见 <a href="#document-knowledge-linux-synchronization-rcu-tree_gp_lifecycle--8.2_六个必须分开的专有名词">Tree RCU GP 请求与全局生命周期</a>。</p>
-<p>下列 <code>/** ... */</code> 块都是本仓库为阅读补充的中文 Doxygen 说明，不是上游源码原注释。RCU 函数体裁剪自仓库保存并经固定提交核对的文件；启动调度顺序另外对照同一不可变提交的官方 <a href="https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c"><code>init/main.c</code></a>。只删除不改变主状态机的 trace、torture、重复诊断，以及已明确转入独立章节的 NOCB/boost/strict 测试细节，所有影响启动次序、请求、CPU 集合、证明债务、完成发布和等待者交付的动作都保留或在紧邻小节展开。完整实现仍以链接的固定源码文件为准。</p>
+<p>下列 <code>/** ... */</code> 块都是本仓库为阅读补充的中文 Doxygen 说明，不是上游源码原注释。RCU 函数体裁剪自仓库保存并经固定提交核对的文件；启动调度顺序另外对照同一不可变提交的本地 <a href="../../../../../research/source_reading/linux/init/main.c"><code>init/main.c</code></a>。只删除不改变主状态机的 trace、torture、重复诊断，以及已明确转入独立章节的 NOCB/boost/strict 测试细节，所有影响启动次序、请求、CPU 集合、证明债务、完成发布和等待者交付的动作都保留或在紧邻小节展开。完整实现仍以链接的固定源码文件为准。</p>
 <p>每个源码标题都按同一组 <strong>实现原理</strong> 复核：进入前持有什么锁或代际，语句写入哪个具体地址，谁在后续路径读取，以及该顺序防止哪一种请求丢失、跨代报告或完成发布竞态。</p>
 <h2 id="document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_implementation--5.2_源码符号覆盖账本">5.2_源码符号覆盖账本</h2>
 
@@ -15626,7 +15710,7 @@ synchronize_rcu()
 </tr>
 <tr>
 <td><code>early_initcall()</code>、<code>do_pre_smp_initcalls()</code>、<code>kernel_init_freeable()</code></td>
-<td><a href="../../../../../research/source_reading/linux/include/linux/init.h"><code>include/linux/init.h</code></a>、<a href="https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L1369-L1573"><code>init/main.c</code></a></td>
+<td><a href="../../../../../research/source_reading/linux/include/linux/init.h"><code>include/linux/init.h</code></a>、<a href="../../../../../research/source_reading/linux/init/main.c"><code>init/main.c</code></a></td>
 <td><a href="#document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_implementation--5.5.1_先从内核启动链定位early_initcall">5.5.1</a></td>
 <td>把链接期登记的 early initcall 放到 <code>kthreadd</code> 就绪后、SMP 启动前分派</td>
 </tr>
@@ -16010,8 +16094,8 @@ synchronize_rcu()
 <span class="hljs-comment">/* early initcall只用于内建代码，并在SMP初始化前运行。 */</span>
 <span class="hljs-meta">#<span class="hljs-keyword">define</span> early_initcall(fn) __define_initcall(fn, early)</span>
 </code></pre>
-<p>Linux 6.12.20 的真实启动顺序必须分成两个 RCU 事件看。第一个事件是 <a href="https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L985-L1013"><code>start_kernel()</code> 里的 <code>rcu_init()</code></a>：它先建立 Tree RCU 几何、节点、boot CPU 状态、softirq/workqueue 等基础设施，<strong>此时还没有创建普通 GP kthread</strong>。第二个事件发生在 <code>rest_init()</code> 以后：启动路径先把 <code>kthreadd</code> 建好，再由 PID 1 的 <code>kernel_init</code> 线程分派 early initcalls。</p>
-<p><a href="https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L699-L739"><code>init/main.c</code></a> 与 <a href="https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L1460-L1573"><code>kernel_init_freeable()</code></a> 给出的关键先后关系是：</p>
+<p>Linux 6.12.20 的真实启动顺序必须分成两个 RCU 事件看。第一个事件是本地 <a href="../../../../../research/source_reading/linux/init/main.c"><code>init/main.c</code></a> 中 <code>start_kernel()</code> 调用 <code>rcu_init()</code>：它先建立 Tree RCU 几何、节点、boot CPU 状态、softirq/workqueue 等基础设施，<strong>此时还没有创建普通 GP kthread</strong>。第二个事件发生在 <code>rest_init()</code> 以后：启动路径先把 <code>kthreadd</code> 建好，再由 PID 1 的 <code>kernel_init</code> 线程分派 early initcalls。</p>
+<p>本地 <a href="../../../../../research/source_reading/linux/init/main.c"><code>init/main.c</code></a> 中的 <code>rest_init()</code> 与 <code>kernel_init_freeable()</code> 给出的关键先后关系是：</p>
 <pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-comment">/* 官方固定提交的结构化调用顺序裁剪；省略号与中文注释由本仓库补充。 */</span>
 rest_init()
 {
@@ -16836,10 +16920,18 @@ trace_complete_out:
  */</span>
 <span class="hljs-type">static</span> <span class="hljs-type">void</span> __init <span class="hljs-title function_">rcu_init_one</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
 {
+	<span class="hljs-type">static</span> <span class="hljs-type">const</span> <span class="hljs-type">char</span> * <span class="hljs-type">const</span> buf[] = RCU_NODE_NAME_INIT;
+	<span class="hljs-type">static</span> <span class="hljs-type">const</span> <span class="hljs-type">char</span> * <span class="hljs-type">const</span> fqs[] = RCU_FQS_NAME_INIT;
+	<span class="hljs-type">static</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">lock_class_key</span> <span class="hljs-title">rcu_node_class</span>[<span class="hljs-title">RCU_NUM_LVLS</span>];</span>
+	<span class="hljs-type">static</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">lock_class_key</span> <span class="hljs-title">rcu_fqs_class</span>[<span class="hljs-title">RCU_NUM_LVLS</span>];</span>
 	<span class="hljs-type">int</span> levelspread[RCU_NUM_LVLS];
 	<span class="hljs-type">int</span> cpustride = <span class="hljs-number">1</span>;
 	<span class="hljs-type">int</span> i, j;
 	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">rcu_node</span> *<span class="hljs-title">rnp</span>;</span>
+
+	BUILD_BUG_ON(RCU_NUM_LVLS &gt; ARRAY_SIZE(buf));
+	<span class="hljs-keyword">if</span> (rcu_num_lvls &lt;= <span class="hljs-number">0</span> || rcu_num_lvls &gt; RCU_NUM_LVLS)
+		panic(<span class="hljs-string">&quot;rcu_init_one: rcu_num_lvls out of range&quot;</span>);
 
 	<span class="hljs-comment">/* level[i] 不是独立分配，而是指向 node[] 内第 i 层首元素。 */</span>
 	<span class="hljs-keyword">for</span> (i = <span class="hljs-number">1</span>; i &lt; rcu_num_lvls; i++)
@@ -16853,7 +16945,11 @@ trace_complete_out:
 		rnp = rcu_state.level[i];
 		<span class="hljs-keyword">for</span> (j = <span class="hljs-number">0</span>; j &lt; num_rcu_lvl[i]; j++, rnp++) {
 			raw_spin_lock_init(&amp;ACCESS_PRIVATE(rnp, lock));
+			lockdep_set_class_and_name(&amp;ACCESS_PRIVATE(rnp, lock),
+						   &amp;rcu_node_class[i], buf[i]);
 			raw_spin_lock_init(&amp;rnp-&gt;fqslock);
+			lockdep_set_class_and_name(&amp;rnp-&gt;fqslock,
+						   &amp;rcu_fqs_class[i], fqs[i]);
 			rnp-&gt;gp_seq = rcu_state.gp_seq;
 			rnp-&gt;gp_seq_needed = rcu_state.gp_seq;
 			rnp-&gt;completedqs = rcu_state.gp_seq;
@@ -16872,22 +16968,39 @@ trace_complete_out:
 				rnp-&gt;parent = rcu_state.level[i - <span class="hljs-number">1</span>] +
 					      j / levelspread[i - <span class="hljs-number">1</span>];
 			}
+			rnp-&gt;level = i;
 			INIT_LIST_HEAD(&amp;rnp-&gt;blkd_tasks);
-			<span class="hljs-comment">/* 省略：NOCB、expedited waitqueue/work 与 boost 初始化。 */</span>
+			<span class="hljs-comment">/* 为可选NOCB GP协调建立节点等待队列。 */</span>
+			rcu_init_one_nocb(rnp);
+			<span class="hljs-comment">/* expedited序列低两位选择四个等待槽。 */</span>
+			init_waitqueue_head(&amp;rnp-&gt;exp_wq[<span class="hljs-number">0</span>]);
+			init_waitqueue_head(&amp;rnp-&gt;exp_wq[<span class="hljs-number">1</span>]);
+			init_waitqueue_head(&amp;rnp-&gt;exp_wq[<span class="hljs-number">2</span>]);
+			init_waitqueue_head(&amp;rnp-&gt;exp_wq[<span class="hljs-number">3</span>]);
+			spin_lock_init(&amp;rnp-&gt;exp_lock);
+			<span class="hljs-comment">/* 后续boost/expedited线程创建和亲和性修改共用。 */</span>
+			mutex_init(&amp;rnp-&gt;kthread_mutex);
+			raw_spin_lock_init(&amp;rnp-&gt;exp_poll_lock);
+			rnp-&gt;exp_seq_poll_rq = RCU_GET_STATE_COMPLETED;
+			INIT_WORK(&amp;rnp-&gt;exp_poll_wq, sync_rcu_do_polled_gp);
 		}
 	}
 
+	init_swait_queue_head(&amp;rcu_state.gp_wq);
+	init_swait_queue_head(&amp;rcu_state.expedited_wq);
 	rnp = rcu_first_leaf_node();
 	for_each_possible_cpu(i) {
 		<span class="hljs-keyword">while</span> (i &gt; rnp-&gt;grphi)
 			rnp++;
 		per_cpu_ptr(&amp;rcu_data, i)-&gt;mynode = rnp;
+		per_cpu_ptr(&amp;rcu_data, i)-&gt;barrier_head.next =
+			&amp;per_cpu_ptr(&amp;rcu_data, i)-&gt;barrier_head;
 		rcu_boot_init_percpu_data(i);
 	}
 }
 </code></pre>
 <p>实现原理：<code>node[]</code> 的数组位置保存树形层次，<code>parent/grpmask</code> 保存向上一层报告所需的地址和位。CPU 本地 QS 不需要搜索整棵树：<code>rdp-&gt;mynode</code> 直接定位叶，<code>rdp-&gt;grpmask</code> 直接给出本节点位；叶节点完成以后再用 <code>rnp-&gt;parent/rnp-&gt;grpmask</code> 逐层传播。</p>
-<p><code>for_each_possible_cpu()</code> 在启动时为尚未 online 的 CPU也建立映射，因此 hotplug 不需要运行期分配节点或改父子拓扑。代价是 <code>node[]</code> 与全部 <code>rcu_data</code> 按 possible CPU 规模预留。</p>
+<p><code>for_each_possible_cpu()</code> 在启动时为尚未 online 的 CPU也建立映射，因此 hotplug 不需要运行期分配节点或改父子拓扑。代价是 <code>node[]</code> 与全部 <code>rcu_data</code> 按 possible CPU 规模预留。<code>exp_wq[4]</code>、poll work、NOCB 等状态也在此时预埋，但相应 kthread/worker 仍要等 <code>kthreadd</code> 与 workqueue 进入后续阶段；初始化承载地址不等于启动执行者。</p>
 <h2 id="document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_implementation--6.5_boot初始化与prepare为何仍未让cpu加入当前gp">6.5_boot初始化与prepare为何仍未让CPU加入当前GP</h2>
 
 <pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-comment">/**
@@ -16897,9 +17010,13 @@ trace_complete_out:
  */</span>
 <span class="hljs-type">static</span> <span class="hljs-type">void</span> __init <span class="hljs-title function_">rcu_boot_init_percpu_data</span><span class="hljs-params">(<span class="hljs-type">int</span> cpu)</span>
 {
+	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">context_tracking</span> *<span class="hljs-title">ct</span> =</span> this_cpu_ptr(&amp;context_tracking);
 	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">rcu_data</span> *<span class="hljs-title">rdp</span> =</span> per_cpu_ptr(&amp;rcu_data, cpu);
 
 	rdp-&gt;grpmask = leaf_node_cpu_bit(rdp-&gt;mynode, cpu);
+	INIT_WORK(&amp;rdp-&gt;strict_work, strict_work_handler);
+	WARN_ON_ONCE(ct-&gt;nesting != <span class="hljs-number">1</span>);
+	WARN_ON_ONCE(rcu_watching_snap_in_eqs(ct_rcu_watching_cpu(cpu)));
 	rdp-&gt;barrier_seq_snap = rcu_state.barrier_sequence;
 	rdp-&gt;rcu_ofl_gp_seq = rcu_state.gp_seq;
 	rdp-&gt;rcu_ofl_gp_state = RCU_GP_CLEANED;
@@ -16917,13 +17034,24 @@ trace_complete_out:
  */</span>
 <span class="hljs-type">int</span> <span class="hljs-title function_">rcutree_prepare_cpu</span><span class="hljs-params">(<span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> cpu)</span>
 {
+	<span class="hljs-type">unsigned</span> <span class="hljs-type">long</span> flags;
+	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">context_tracking</span> *<span class="hljs-title">ct</span> =</span> per_cpu_ptr(&amp;context_tracking, cpu);
 	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">rcu_data</span> *<span class="hljs-title">rdp</span> =</span> per_cpu_ptr(&amp;rcu_data, cpu);
-	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">rcu_node</span> *<span class="hljs-title">rnp</span> =</span> rdp-&gt;mynode;
+	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">rcu_node</span> *<span class="hljs-title">rnp</span> =</span> rcu_get_root();
 
-	<span class="hljs-comment">/* 省略：根锁下重置 FQS 计数、context tracking 和 batch limit。 */</span>
+	<span class="hljs-comment">/* 先借根锁取得一致的全局FQS快照并恢复CPU初始watching状态。 */</span>
+	raw_spin_lock_irqsave_rcu_node(rnp, flags);
+	rdp-&gt;qlen_last_fqs_check = <span class="hljs-number">0</span>;
+	rdp-&gt;n_force_qs_snap = READ_ONCE(rcu_state.n_force_qs);
+	rdp-&gt;blimit = blimit;
+	ct-&gt;nesting = <span class="hljs-number">1</span>;
+	raw_spin_unlock_rcu_node(rnp); <span class="hljs-comment">/* IRQ仍保持关闭。 */</span>
+
+	<span class="hljs-comment">/* 保留NOCB或早期call_rcu()已经启用并装入的回调链。 */</span>
 	<span class="hljs-keyword">if</span> (!rcu_segcblist_is_enabled(&amp;rdp-&gt;cblist))
 		rcu_segcblist_init(&amp;rdp-&gt;cblist);
 
+	rnp = rdp-&gt;mynode;
 	raw_spin_lock_rcu_node(rnp);
 	rdp-&gt;gp_seq = READ_ONCE(rnp-&gt;gp_seq);
 	rdp-&gt;gp_seq_needed = rdp-&gt;gp_seq;
@@ -16931,14 +17059,19 @@ trace_complete_out:
 	rdp-&gt;core_needs_qs = <span class="hljs-literal">false</span>;
 	rdp-&gt;rcu_iw_pending = <span class="hljs-literal">false</span>;
 	rdp-&gt;rcu_iw = IRQ_WORK_INIT_HARD(rcu_iw_handler);
-	raw_spin_unlock_rcu_node(rnp);
+	rdp-&gt;rcu_iw_gp_seq = rdp-&gt;gp_seq - <span class="hljs-number">1</span>;
+	trace_rcu_grace_period(rcu_state.name, rdp-&gt;gp_seq, TPS(<span class="hljs-string">&quot;cpuonl&quot;</span>));
+	raw_spin_unlock_irqrestore_rcu_node(rnp, flags);
 
 	rcu_spawn_rnp_kthreads(rnp);
 	rcu_spawn_cpu_nocb_kthread(cpu);
+	ASSERT_EXCLUSIVE_WRITER(rcu_state.n_online_cpus);
+	WRITE_ONCE(rcu_state.n_online_cpus, rcu_state.n_online_cpus + <span class="hljs-number">1</span>);
 	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
 }
 </code></pre>
 <p>实现原理：prepare 解决“该 CPU 的本地对象现在可以被后续路径使用”，starting 才解决“该 CPU 何时进入未来 RCU 参与集合”。二者分开是因为 prepare 在控制 CPU 上、incoming CPU 尚未出现；starting 在 incoming CPU 自己、精确的 IRQ-disabled 位置执行。把两者合并会让参与位发布早于 CPU 上下文和内存顺序准备完成。</p>
+<p>启动 CPU 调用 prepare 时，<code>rcu_scheduler_fully_active</code> 仍为假，两个 spawn 辅助函数不会实际创建 boost/expedited/NOCB 线程；它们要在 pre-SMP early initcall 建立 GP kthread 后补建。末尾递增的 <code>rcu_state.n_online_cpus</code> 是 RCU 私有初始化门闩，令 <code>rcu_init_invoked()</code> 开始为真，不是通用 CPU hotplug 的 <code>num_online_cpus()</code>。</p>
 <h2 id="document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_implementation--6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮">6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮</h2>
 
 <p>上线 CPU 只能加入下一轮参与集合；下线 CPU 若仍欠当前轮债务，则要先完成当前轮交接，再退出未来集合。两个方向看似都在改 online 位，实际写入顺序相反，下面分别核对。</p>
@@ -17138,6 +17271,7 @@ trace_complete_out:
 <h2 id="document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_implementation--6.10_源码时序总图">6.10_源码时序总图</h2>
 
 <pre class="mermaid">sequenceDiagram
+    autonumber
     participant I as rcu_init_one
     participant R as rcu_state/rcu_node
     participant P as rcutree_prepare_cpu
@@ -17156,6 +17290,7 @@ trace_complete_out:
     M-&gt;&gt;R: advance并merge到存活CPU
     M--&gt;&gt;G: 必要时唤醒新GP
 </pre>
+<p>第 1～3 步只建立固定地址和 CPU 私有初值，第 4～5 步才把未来参与集合冻结为一轮 GP 的当前债务。CPU 下线时，第 6～7 步先清偿并撤销证明债务，第 8～10 步再迁移 callback 所有权；因此清 CPU 位不能代替迁移队列，迁移队列也不能替代当前 GP 的 QS 报告。</p>
 <h2 id="document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_implementation--6.11_验证清单">6.11_验证清单</h2>
 
 <ol>
@@ -20262,7 +20397,1540 @@ CPU3：unlock_count[0] += 1
 <p>模块概念入口：<a href="#document-research-source_reading-rcu-linux_6_12_tree_srcu_navigation--9.3_源码文件和对象层次">Tree SRCU 模块源码概念导读</a>。</p>
 <p>总阅读索引：<a href="#document-research-source_reading-rcu-index--1.6_建议的源码阅读顺序">Linux 6.12 RCU 源码总阅读索引</a>。</p>
 </div>
-          <nav class="chapter_navigation" aria-label="章节导航"><a href="#document-research-source_reading-rcu-linux_6_12_tree_sync_barrier_implementation"><span>上一篇</span>Linux 6.12 Tree RCU 同步等待与 rcu_barrier 源码实现</a><a href="#document-labs-kernel-rcu-late_and_preempted_reader"><span>下一篇</span>晚到读者与抢占读者的对象回收实验</a></nav>
+          <nav class="chapter_navigation" aria-label="章节导航"><a href="#document-research-source_reading-rcu-linux_6_12_tree_sync_barrier_implementation"><span>上一篇</span>Linux 6.12 Tree RCU 同步等待与 rcu_barrier 源码实现</a><a href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization"><span>下一篇</span>Linux 6.12 Tree RCU rcu_init 启动初始化源码实现</a></nav>
+        </article>
+        <article class="chapter" id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization" data_chapter data-title="Linux 6.12 Tree RCU rcu_init 启动初始化源码实现" data-volume="卷三　Linux 6.12 唯一实现讲解">
+          <header class="chapter_header">
+            <p class="chapter_eyebrow">卷三　Linux 6.12 唯一实现讲解 · 第 12 章</p>
+            <h1 class="chapter_title">Linux 6.12 Tree RCU rcu_init 启动初始化源码实现</h1>
+            <p class="chapter_source">权威来源：research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md</p>
+          </header>
+          <div class="chapter_body"><h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.1_从start_kernel里的一个调用固定本章任务">12.1_从start_kernel里的一个调用固定本章任务</h2>
+
+<p>读-复制-更新（Read-Copy Update，RCU）是一类把读侧临时访问与更新后的延迟回收分开的同步机制。Tree RCU 是 Linux 普通 RCU 的一种实现家族专名；<code>Tree</code> 不是缩写，它表示该实现用分层 <code>rcu_node</code> 树汇聚许多中央处理器（Central Processing Unit，CPU）的完成证据。<code>rcu_init</code> 则是内核源码函数标识符，不存在需要展开的英文全称；本章讨论的是它在启动阶段怎样把静态初值变成可供后续 RCU 路径使用的基础设施。</p>
+<p>读者实际遇到它的位置不是 <code>kernel/rcu/</code> 目录的孤立函数，而是 <a href="../../../../../research/source_reading/linux/init/main.c"><code>init/main.c</code></a> 中的：</p>
+<pre class="code_block" data-language="c"><code class="hljs language-c">workqueue_init_early();     <span class="hljs-comment">/* 先建立工作队列的早期基础设施和系统工作队列；此时 worker 线程尚未开始执行工作。 */</span>
+
+rcu_init();                 <span class="hljs-comment">/* 初始化普通 Tree RCU：建立分层树、启动 CPU 状态、回调承载物和后续异步处理入口。 */</span>
+
+trace_init();               <span class="hljs-comment">/* 初始化内核跟踪事件基础设施；从这里之后，常规 trace event 才可使用。 */</span>
+context_tracking_init();    <span class="hljs-comment">/* 初始化用户态、空闲态与内核态的上下文跟踪，为 RCU 识别扩展静止状态提供依据。 */</span>
+early_irq_init();           <span class="hljs-comment">/* 初始化通用中断描述符以及中断子系统的早期管理结构。 */</span>
+init_IRQ();                 <span class="hljs-comment">/* 执行体系结构相关的中断初始化，接通中断控制器与架构中断入口。 */</span>
+tick_init();                <span class="hljs-comment">/* 初始化时钟滴答广播框架；具体时钟事件设备会在后续路径中注册。 */</span>
+
+<span class="hljs-comment">/*
+ * 初始化 RCU 回调卸载机制：
+ * 确定需要卸载 RCU 回调处理的 CPU，
+ * 配置各 CPU 的回调卸载链，并建立宽限期/回调线程分组关系；
+ * 未启用或未指定 RCU 回调卸载时直接返回。
+ */</span>
+rcu_init_nohz();
+
+init_timers();              <span class="hljs-comment">/* 初始化普通内核定时器的每 CPU 基座，并登记定时器软件中断处理函数。 */</span>
+srcu_init();                <span class="hljs-comment">/* 完成可睡眠 RCU 的全局启动，使早期积压请求可转入正常延迟工作路径。 */</span>
+hrtimers_init();            <span class="hljs-comment">/* 初始化高精度定时器的每 CPU 基座，并登记高精度定时器软件中断处理函数。 */</span>
+softirq_init();             <span class="hljs-comment">/* 初始化 tasklet 队列并登记 tasklet 软件中断；RCU 软件中断入口已由 rcu_init() 登记。 */</span>
+</code></pre>
+<p>只看这一个调用仍无法回答：</p>
+<ol>
+<li>链接到 <code>rcu_init()</code> 的究竟是 Tree RCU 还是 Tiny RCU，是否存在运行时类型分派；</li>
+<li>为什么函数能在中断、完整 workqueue、普通 GP 内核线程和第二颗 CPU 都未就绪时运行；</li>
+<li>它除了建 <code>rcu_node</code> 树，还初始化了哪些测试、延迟释放、softirq、休眠通知、每 CPU 状态、workqueue、回调过载阈值和 Tasks RCU 队列；</li>
+<li>哪些名字带有“init”，却明确不属于这个函数；</li>
+<li>任意一行被提前、删除或改成“失败后继续”会破坏哪条后续不变量。</li>
+</ol>
+<p>本章在 Linux 6.12.20 固定源码上逐项回答这些问题。读完以后，读者应能从 <code>start_kernel()</code> 手工展开 <code>rcu_init()</code>，对每个直接动作说出 <strong>写入地址、写入者、后续读取者、配置退化和启动时序约束</strong>，并能判断一个初始化修改需要同步检查哪些后续消费者。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.2_术语入口与源码身份">12.2_术语入口与源码身份</h2>
+
+<p>本章会反复使用以下名称。它们属于不同类型，不能都当成“RCU 类型”：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>类型与朴素含义</th>
+<th>当前职责</th>
+<th>不能误解成</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>宽限期（Grace Period，GP）</td>
+<td>逻辑等待边界</td>
+<td>证明边界以前的旧读侧访问已经结束</td>
+<td>固定时长、线程或 workqueue</td>
+</tr>
+<tr>
+<td>静止状态（Quiescent State，QS）</td>
+<td>CPU 或任务越过旧访问边界的证据</td>
+<td>后续由每 CPU状态向节点树汇聚</td>
+<td>“CPU 没有任务”或休眠时间</td>
+</tr>
+<tr>
+<td>callback</td>
+<td>GP 完成后才获得执行资格的延迟函数</td>
+<td>承接对象释放、唤醒或其他延迟动作</td>
+<td>GP 本身</td>
+</tr>
+<tr>
+<td>boot CPU</td>
+<td>启动时唯一 online 的 CPU</td>
+<td>执行 <code>start_kernel()</code> 和本章全部初始化写入</td>
+<td>永远固定为逻辑 CPU0 的 API 契约</td>
+</tr>
+<tr>
+<td>per-CPU</td>
+<td>每个 possible CPU 都有独立槽位的存储模型</td>
+<td>保存 <code>rcu_data</code>、<code>kfree_rcu</code> 批次等本地状态</td>
+<td>只有 online CPU 才分配</td>
+</tr>
+<tr>
+<td><code>rcu_state</code></td>
+<td>Tree RCU 的唯一全局状态载体</td>
+<td>保存 GP 代际、节点数组、等待队列和执行者入口</td>
+<td>“整个 RCU 只有一个状态机”</td>
+</tr>
+<tr>
+<td><code>rcu_data</code></td>
+<td>每 CPU Tree RCU 状态载体</td>
+<td>保存叶节点地址、本地 QS、callback 与热插拔快照</td>
+<td><code>rcu_node</code> 的动态副本</td>
+</tr>
+<tr>
+<td><code>rcu_node</code></td>
+<td>分层汇聚节点结构体</td>
+<td>保存一组 CPU/子节点的证明债务、锁和慢路径状态</td>
+<td>调度域或非一致内存访问拓扑</td>
+</tr>
+<tr>
+<td>Kconfig</td>
+<td>Linux 构建期配置系统专名</td>
+<td>决定编译哪个实现文件和哪些条件分支</td>
+<td>启动后可任意切换的运行时参数</td>
+</tr>
+<tr>
+<td>softirq</td>
+<td>软件中断执行机制专名</td>
+<td>在普通配置中承载 <code>rcu_core()</code> 本地推进</td>
+<td>一个长期内核任务</td>
+</tr>
+<tr>
+<td>workqueue</td>
+<td>Linux 异步工作执行框架专名</td>
+<td>承载延迟释放、SRCU、轮询 GP 和同步请求清理</td>
+<td><code>rcu_init()</code> 当场执行工作项</td>
+</tr>
+<tr>
+<td>NOCB</td>
+<td>“no callbacks” 回调卸载策略的历史简称</td>
+<td>把指定 CPU 的 callback 推进/执行交给卸载线程</td>
+<td>新的保护域或第二棵普通 GP 树</td>
+</tr>
+<tr>
+<td>Tasks RCU</td>
+<td>以任务轨迹为证明对象的独立保护域家族</td>
+<td>本函数末尾只建立其 callback 运输账本</td>
+<td>Tree RCU 的抢占配置</td>
+</tr>
+</tbody></table>
+<p>为避免源码标识符先于解释出现，下面先建立本章会直接追踪的符号类型账本；表中“宏、函数、字段、类型、变量、配置符号”是 C 源码角色，不是新的 RCU flavor：</p>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>源码类型</th>
+<th>本章所需朴素含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CONFIG_TREE_SRCU</code>、<code>CONFIG_TINY_RCU</code>、<code>CONFIG_NR_CPUS</code></td>
+<td>Kconfig 配置符号</td>
+<td>分别控制 Tree SRCU、Tiny RCU 与静态最大 CPU 容量</td>
+</tr>
+<tr>
+<td><code>CONFIG_RCU_BOOST</code>、<code>CONFIG_RCU_TORTURE_TEST</code></td>
+<td>Kconfig 配置符号</td>
+<td>控制 reader priority boosting 与内建 RCU 压力测试分支</td>
+</tr>
+<tr>
+<td><code>CONFIG_TASKS_RCU_GENERIC</code>、<code>CONFIG_TASKS_RCU</code></td>
+<td>Kconfig 配置符号</td>
+<td>前者汇总 Tasks family 公共骨架，后者启用普通 Tasks RCU flavor</td>
+</tr>
+<tr>
+<td><code>WARN_ON</code>、<code>WARN_ON_ONCE</code>、<code>BUG_ON</code></td>
+<td>诊断宏</td>
+<td>条件为真时分别告警、一次性告警或触发不可继续的错误</td>
+</tr>
+<tr>
+<td><code>WQ_MEM_RECLAIM</code>、<code>WQ_UNBOUND</code></td>
+<td>workqueue 标志宏</td>
+<td>分别要求内存回收前进能力、允许工作不绑定提交 CPU</td>
+</tr>
+<tr>
+<td><code>GFP_KERNEL</code></td>
+<td>内存分配标志宏</td>
+<td>允许普通内核上下文睡眠式分配，本章调用现场可用</td>
+</tr>
+<tr>
+<td>强制静止态扫描（Force Quiescent State，FQS）</td>
+<td>RCU 慢路径专名</td>
+<td>在被动证据迟迟不到时检查或催促参与者提供 QS</td>
+</tr>
+<tr>
+<td><code>DEFAULT_RCU_QOVLD_MULT</code>、<code>MSEC_PER_SEC</code>、<code>KFREE_N_BATCHES</code>、<code>FREE_N_CHANNELS</code></td>
+<td>编译期常量宏</td>
+<td>分别给出默认过载倍率、每秒毫秒数、释放批次数和释放通道数</td>
+</tr>
+<tr>
+<td><code>RCU_NUM_LVLS</code>、<code>RCU_JIFFIES_TILL_FORCE_QS</code>、<code>RCU_JIFFIES_FQS_DIV</code>、<code>ULONG_MAX</code></td>
+<td>容量/哨兵常量宏</td>
+<td>限制静态树层数，派生 FQS 延迟，并用最大无符号长整型表示“未指定”</td>
+</tr>
+<tr>
+<td><code>INIT_RCU_WORK</code>、<code>INIT_WORK</code>、<code>INIT_DELAYED_WORK</code>、<code>INIT_LIST_HEAD</code></td>
+<td>初始化宏</td>
+<td>分别建立 RCU work、普通 work、延迟 work 和空双向链表头</td>
+</tr>
+<tr>
+<td><code>IS_ENABLED</code>、<code>IS_BUILTIN</code></td>
+<td>配置查询宏</td>
+<td>在 C 表达式中判断配置是否启用、是否内建进内核</td>
+</tr>
+<tr>
+<td><code>DIV_ROUND_UP</code></td>
+<td>算术宏</td>
+<td>执行向上取整除法，保证残余 CPU 仍分到一个节点</td>
+</tr>
+<tr>
+<td><code>ACCESS_PRIVATE</code></td>
+<td>封装访问宏</td>
+<td>取得被上游标为 private 的锁字段，供同一实现内部初始化</td>
+</tr>
+<tr>
+<td><code>WRITE_ONCE</code></td>
+<td>单次访问宏</td>
+<td>抑制编译器拆分/合并一次共享字段写入；它本身不是完整跨 CPU 发布协议</td>
+</tr>
+<tr>
+<td><code>rcu_head</code>、<code>rcu_work</code>、<code>delayed_work</code></td>
+<td>结构体类型</td>
+<td>分别承载 callback 节点、等待 RCU 条件的 work 和带定时器的 work</td>
+</tr>
+<tr>
+<td><code>alloc_workqueue()</code>、<code>local_irq_disable()</code></td>
+<td>函数接口</td>
+<td>分别创建 workqueue 对象、关闭本地中断</td>
+</tr>
+<tr>
+<td><code>rcu_barrier()</code>、<code>srcu_barrier()</code>、<code>synchronize_rcu_expedited()</code></td>
+<td>同步函数接口</td>
+<td>分别等待历史 callback 或等待加速 GP 边界</td>
+</tr>
+<tr>
+<td><code>start_poll_synchronize_rcu_expedited()</code></td>
+<td>轮询函数接口</td>
+<td>返回可供以后检查的 GP cookie，并在条件具备时补排 expedited 工作</td>
+</tr>
+<tr>
+<td><code>rcutree_prepare_cpu()</code>、<code>rcutree_report_cpu_starting()</code>、<code>rcutree_online_cpu()</code></td>
+<td>CPU 生命周期函数</td>
+<td>依次准备私有容器、发布启动身份、启用在线期状态</td>
+</tr>
+<tr>
+<td><code>tasks_cblist_init_generic()</code>、<code>cblist_init_generic()</code></td>
+<td>Tasks RCU 初始化函数</td>
+<td>前者按配置分派 flavor，后者建立一个 flavor 的 per-CPU callback 分片</td>
+</tr>
+<tr>
+<td><code>rcu_pm_notify()</code>、<code>rcu_init_one_nocb()</code></td>
+<td>内部函数</td>
+<td>分别处理 PM 事件、初始化节点的 NOCB 协调状态</td>
+</tr>
+<tr>
+<td><code>pm_notifier()</code></td>
+<td>条件登记宏</td>
+<td><code>CONFIG_PM_SLEEP=y</code> 时生成并注册 notifier block，关闭配置时为空操作</td>
+</tr>
+<tr>
+<td><code>kfree_rcu_scheduler_running()</code>、<code>rcu_set_runtime_mode()</code></td>
+<td>后继阶段函数</td>
+<td>分别接通早期延迟释放积压、把 RCU 切到完整运行模式</td>
+</tr>
+<tr>
+<td><code>mynode</code>、<code>grpmask</code>、<code>parent</code>、<code>blkd_tasks</code>、<code>cbovldmask</code></td>
+<td><code>rcu_data</code>/<code>rcu_node</code> 字段</td>
+<td>保存叶节点地址、本节点位、父地址、阻塞 reader 链与 callback 过载位</td>
+</tr>
+<tr>
+<td><code>exp_mutex</code>、<code>exp_poll_lock</code>、<code>expedited_wq</code></td>
+<td>expedited 状态字段</td>
+<td>串行 expedited GP、保护 poll 请求、等待 expedited 状态推进</td>
+</tr>
+<tr>
+<td><code>system_highpri_wq</code></td>
+<td>全局 workqueue 变量</td>
+<td>内核预建的高优先级工作队列，本章只借它立即补页</td>
+</tr>
+<tr>
+<td><code>SRS</code></td>
+<td>内部字段前缀专名</td>
+<td>源码没有声明可供 API 依赖的 English full name（英文全称）；本章按行为称为“同步等待者直接批处理分支”</td>
+</tr>
+<tr>
+<td><code>INACTIVE</code>、<code>INIT</code>、<code>RUNNING</code></td>
+<td>RCU scheduler 模式枚举值名称</td>
+<td>依次表示早期单任务阶段、调度器初始阶段和完整运行阶段</td>
+</tr>
+<tr>
+<td>进程标识符（Process Identifier，PID）</td>
+<td>任务编号专名</td>
+<td>后文 PID 1 指启动的第一个用户态祖先任务</td>
+</tr>
+</tbody></table>
+<p>源码身份为 NXP <code>linux-imx</code> 官方发布标签 <code>lf-6.12.20-2.0.0</code>，解引用提交 <code>dfaf2136deb2af2e60b994421281ba42f1c087e0</code>，Linux 6.12.20。本次会话重新核对官方标签，并将仓库保存的 <code>init/main.c</code>、<code>tree.c</code>、<code>tree.h</code>、<code>tree_plugin.h</code>、<code>tree_nocb.h</code>、<code>tree_exp.h</code>、<code>update.c</code>、<code>rcu.h</code> 与 <code>rcupdate.h</code> 的 Git blob 逐项和固定提交比较一致。</p>
+<p>既有配置快照只确认 <code>CONFIG_TREE_RCU=y</code> 与 <code>CONFIG_PREEMPT_RCU=y</code>。本章以这个 <strong>可抢占 Tree RCU</strong> 主分支解释真实结果；未在快照中确认的 <code>CONFIG_PROVE_RCU</code>、<code>CONFIG_PREEMPT_RT</code>、<code>CONFIG_RCU_NOCB_CPU</code>、<code>CONFIG_PM_SLEEP</code> 和 Tasks RCU 各 flavor 都明确写成条件分支，不把“源码存在”伪装成“目标内核已经执行”。</p>
+<p>关联入口：</p>
+<table>
+<thead>
+<tr>
+<th>入口</th>
+<th>本章怎样复用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="../../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.5.1_RCU%E5%AE%B6%E6%97%8F%E8%AF%81%E6%8D%AE">Linux 源码阅读基线</a></td>
+<td>固定官方远端、不可变提交、配置快照与仓库保存的源码证据</td>
+</tr>
+<tr>
+<td><a href="#document-research-source_reading-rcu-index--1.2_先建立源码分类坐标">RCU 源码总阅读索引</a></td>
+<td>区分保护域、实现家族、读侧模型与运行策略</td>
+</tr>
+<tr>
+<td><a href="#document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_guide--4.1_本模块究竟解决什么问题">拓扑与 CPU 热插拔模块导读</a></td>
+<td>追踪静态树和 CPU 参与集合的模块关系</td>
+</tr>
+<tr>
+<td><a href="#document-research-source_reading-rcu-linux_6_12_tree_gp_lifecycle_navigation--3.1_模块问题与版本边界">GP 全局生命周期模块导读</a></td>
+<td>区分本章基础设施与稍后创建的 GP 内核线程</td>
+</tr>
+<tr>
+<td><a href="#document-knowledge-linux-synchronization-rcu-tree_init_topology_execution--7.1_具体问题_cpu的qs究竟要写进哪一个节点">稳定机制正文 P07</a></td>
+<td>建立跨版本的初始化、拓扑和执行上下文模型</td>
+</tr>
+</tbody></table>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.3_先证明当前调用解析为哪一种rcu">12.3_先证明当前调用解析为哪一种RCU</h2>
+
+<p><code>include/linux/rcupdate.h</code> 只给出共同声明：</p>
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-type">void</span> <span class="hljs-title function_">rcu_init</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>;
+</code></pre>
+<p>它不是函数指针，也没有运行时 <code>switch</code>。固定提交的 <code>kernel/rcu/Makefile</code> 根据 Kconfig 把不同目标文件链接进内核：</p>
+<pre class="code_block" data-language="makefile"><code class="hljs language-makefile">obj-y += update.o sync.o
+obj-<span class="hljs-variable">$(CONFIG_TREE_SRCU)</span> += srcutree.o
+obj-<span class="hljs-variable">$(CONFIG_TREE_RCU)</span> += tree.o
+obj-<span class="hljs-variable">$(CONFIG_TINY_RCU)</span> += tiny.o
+</code></pre>
+<p>因此类型判断发生在 <strong>构建期链接</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>构建条件</th>
+<th>提供 <code>rcu_init()</code> 的文件</th>
+<th>这个函数建立什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CONFIG_TREE_RCU=y</code></td>
+<td><code>kernel/rcu/tree.c</code></td>
+<td>分层节点、每 CPU 状态、普通/expedited/NOCB/延迟释放等 Tree 基础设施</td>
+</tr>
+<tr>
+<td><code>CONFIG_TINY_RCU=y</code></td>
+<td><code>kernel/rcu/tiny.c</code></td>
+<td>单 CPU 普通 RCU 的 softirq、早期测试和 Tasks callback 账本</td>
+</tr>
+</tbody></table>
+<p><code>CONFIG_PREEMPT_RCU=y</code> 又会选择 <code>tree_plugin.h</code> 中的可抢占读侧分支，但仍然复用同一个 <code>tree.c::rcu_init()</code>、同一 <code>rcu_state</code> 和同一节点树。它改变的是被抢占 reader 的债务保存和节点完成条件，不会动态替换成另一套初始化入口。</p>
+<p>当前快照所以沿以下编译链解释：</p>
+<pre class="code_block" data-language="text"><code class="hljs language-text">CONFIG_PREEMPT_RCU=y
+    → 选择 CONFIG_TREE_RCU=y
+    → kernel/rcu/tree.o 提供 rcu_init()
+    → tree.c 末尾包含 tree_plugin.h
+    → rcu_bootup_announce() 选择“Preemptible hierarchical RCU”分支
+</code></pre>
+<p>Tiny RCU 固定版本中的同名函数只有三个顶层动作：注册 <code>RCU_SOFTIRQ</code>、运行早期测试、初始化 Tasks callback 账本。它是 <strong>替代实现证据</strong>，不是当前调用接下来还会执行的第二段代码。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.4_进入rcu_init以前内核已经保证了什么">12.4_进入rcu_init以前内核已经保证了什么</h2>
+
+<p><code>start_kernel()</code> 的位置决定了本函数可以使用什么，也决定了它不能做什么。进入时已经成立：</p>
+<ol>
+<li><code>smp_setup_processor_id()</code>、<code>boot_cpu_init()</code> 已确定当前 boot CPU；</li>
+<li><code>setup_nr_cpu_ids()</code> 已把 <code>nr_cpu_ids</code> 收敛为本次启动实际需要覆盖的 possible CPU 上界；</li>
+<li><code>setup_per_cpu_areas()</code> 已建立 per-CPU 地址，因此可以遍历全部 possible CPU 的 <code>rcu_data</code> 和 <code>kfree_rcu</code> 槽位；</li>
+<li>命令行的 early 参数与普通内核参数已经解析，<code>rcutree.*</code> 参数已有最终启动值；</li>
+<li>页分配、slab 依赖和调度器基础结构已经建立；</li>
+<li><code>housekeeping_init()</code> 已确定隔离/housekeeping 边界；</li>
+<li><code>workqueue_init_early()</code> 已允许创建 workqueue 和排队/取消 work，但完整 worker 执行要等以后 <code>workqueue_init()</code>；</li>
+<li><code>local_irq_disable()</code> 以后中断一直关闭；online CPU 数应为一；尚未发生第一次任务上下文切换。</li>
+</ol>
+<p>进入时仍然不成立：</p>
+<ul>
+<li><code>rcu_state.node[]</code> 尚未按本次 <code>nr_cpu_ids</code> 建立有效父子关系；</li>
+<li>普通 GP kthread、每 CPU <code>rcuc</code>、NOCB、boost 与 expedited worker 尚未创建；</li>
+<li><code>rcu_scheduler_active</code> 仍为 <code>RCU_SCHEDULER_INACTIVE</code>；</li>
+<li><code>rcu_init_nohz()</code>、<code>srcu_init()</code>、<code>softirq_init()</code> 尚未调用；</li>
+<li>第二颗 CPU 尚未进入 RCU 参与协议。</li>
+</ul>
+<p>这解释了为什么本函数可以无 CPU-hotplug 锁地写共享初始化状态，却不能当场依赖一个可调度的 RCU 内核线程推进工作。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.5_逐行展开rcu_init的直接动作">12.5_逐行展开rcu_init的直接动作</h2>
+
+<p>下面的中文 Doxygen 和行内注释由本仓库补充，不是上游原文；函数语句保持 Linux 6.12.20 固定提交的原始顺序。</p>
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-comment">/**
+ * @brief 建立 Tree RCU 在 boot CPU 与 possible CPU 集合上的启动基础设施。
+ * @context start_kernel()，中断关闭，仅 boot CPU online，调度器尚未进入运行模式。
+ * @post 拓扑、每 CPU 地址、boot CPU 参与位和异步执行入口已经可供后续阶段消费。
+ * @note 本函数不创建普通 GP kthread，也不完成 NO_HZ、SRCU 或 Tasks GP 线程启动。
+ */</span>
+<span class="hljs-type">void</span> __init <span class="hljs-title function_">rcu_init</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+	<span class="hljs-type">int</span> cpu = smp_processor_id();
+
+	<span class="hljs-comment">/* I1：在功能状态尚未完全建立时验证早期 RCU 契约。 */</span>
+	rcu_early_boot_tests();
+
+	<span class="hljs-comment">/* I2：建立 kfree_rcu()/kvfree_rcu() 的批处理与回收执行基础。 */</span>
+	kfree_rcu_batch_init();
+
+	<span class="hljs-comment">/* I3：报告实现/非默认配置，并规整公告路径中的少数启动参数。 */</span>
+	rcu_bootup_announce();
+	<span class="hljs-comment">/* I4：把后续RCU线程的优先级收敛到合法范围。 */</span>
+	sanitize_kthread_prio();
+
+	<span class="hljs-comment">/* I5～I6：计算运行期树几何，再把静态数组变成有效拓扑。 */</span>
+	rcu_init_geometry();
+	rcu_init_one();
+	<span class="hljs-keyword">if</span> (dump_tree)
+		rcu_dump_rcu_node_tree();
+
+	<span class="hljs-comment">/* I7：普通配置登记 softirq handler；RT 分支稍后使用 rcuc 线程。 */</span>
+	<span class="hljs-keyword">if</span> (use_softirq)
+		open_softirq(RCU_SOFTIRQ, rcu_core_si);
+
+	<span class="hljs-comment">/* I8：按 CONFIG_PM_SLEEP 注册真实 notifier，或编译为无动作。 */</span>
+	pm_notifier(rcu_pm_notify, <span class="hljs-number">0</span>);
+
+	<span class="hljs-comment">/* 此时仍只能有 boot CPU。 */</span>
+	WARN_ON(num_online_cpus() &gt; <span class="hljs-number">1</span>);
+
+	<span class="hljs-comment">/* I9：准备 boot CPU、发布参与位，再完成 early-online 状态。 */</span>
+	rcutree_prepare_cpu(cpu);
+	rcutree_report_cpu_starting(cpu);
+	rcutree_online_cpu(cpu);
+
+	<span class="hljs-comment">/* I10：建立 SRCU/expedited/strict 与同步请求清理使用的 workqueue。 */</span>
+	rcu_gp_wq = alloc_workqueue(<span class="hljs-string">&quot;rcu_gp&quot;</span>, WQ_MEM_RECLAIM, <span class="hljs-number">0</span>);
+	WARN_ON(!rcu_gp_wq);
+	sync_wq = alloc_workqueue(<span class="hljs-string">&quot;sync_wq&quot;</span>, WQ_MEM_RECLAIM, <span class="hljs-number">0</span>);
+	WARN_ON(!sync_wq);
+
+	<span class="hljs-comment">/* I10：节点锁已就绪以后，才开放 callback 过载检查阈值。 */</span>
+	<span class="hljs-keyword">if</span> (qovld &lt; <span class="hljs-number">0</span>)
+		qovld_calc = DEFAULT_RCU_QOVLD_MULT * qhimark;
+	<span class="hljs-keyword">else</span>
+		qovld_calc = qovld;
+
+	<span class="hljs-comment">/* I11：补发早于完整初始化出现的轮询式 expedited GP 请求。 */</span>
+	(<span class="hljs-type">void</span>)start_poll_synchronize_rcu_expedited();
+
+	<span class="hljs-comment">/* I12：再次验证拓扑建立后的早期同步等待语义。 */</span>
+	rcu_test_sync_prims();
+
+	<span class="hljs-comment">/* I13：按实际启用的 Tasks flavor 建立 per-CPU callback 运输账本。 */</span>
+	tasks_cblist_init_generic();
+}
+</code></pre>
+<p>这里不是一个单一状态机，而是八组正交状态按顺序汇合：测试生命状态、延迟释放批次、配置派生值、固定拓扑、每 CPU 参与状态、本地执行入口、workqueue 执行能力以及 Tasks callback 运输状态。某一组“初始化完成”不能替代另一组。</p>
+<p>实现原理：先建立不会被后续并发重写的地址关系和门闩，再发布唯一启动 CPU 的参与身份，最后才开放可能异步执行或取得节点锁的路径。I0～I13 不是按功能目录随意排列，而是把每个消费者的前置状态压成一条可证明的偏序。</p>
+<pre class="mermaid">flowchart LR
+    SK[&quot;start_kernel()&lt;br/&gt;boot CPU&quot;] --&gt;|&quot;调用&quot;| RI[&quot;rcu_init()&quot;]
+    RI --&gt;|&quot;早期与后置自检&quot;| TEST[&quot;update.c&lt;br/&gt;自检计数与早期callback&quot;]
+    RI --&gt;|&quot;建立批次与回收队列&quot;| KRC[&quot;每CPU kfree_rcu_cpu&lt;br/&gt;rcu_reclaim_wq&quot;]
+    RI --&gt;|&quot;计算并写入&quot;| global_state[&quot;全局 rcu_state&lt;br/&gt;node[] level[] GP等待队列&quot;]
+    RI --&gt;|&quot;绑定并发布boot CPU&quot;| RD[&quot;每CPU rcu_data&lt;br/&gt;mynode grpmask cblist&quot;]
+    RI --&gt;|&quot;登记处理入口&quot;| DISP[&quot;softirq_vec或稍后rcuc&quot;]
+    RI --&gt;|&quot;登记休眠事件&quot;| PM[&quot;PM notifier链&quot;]
+    RI --&gt;|&quot;分配执行域&quot;| WQ[&quot;rcu_gp_wq&lt;br/&gt;sync_wq&quot;]
+    RI --&gt;|&quot;初始化callback分片&quot;| TASKS[&quot;Tasks RCU&lt;br/&gt;rtpcp_array与cblist&quot;]
+    global_state --&gt;|&quot;稍后由GP线程读取&quot;| GPK[&quot;rcu_gp_kthread&quot;]
+    RD --&gt;|&quot;本地QS与callback&quot;| CORE[&quot;rcu_core()&quot;]
+    WQ --&gt;|&quot;稍后执行&quot;| SRCU[&quot;SRCU/expedited/strict/SRS&quot;]
+    TASKS --&gt;|&quot;稍后创建线程&quot;| TSK[&quot;Tasks flavor GP kthread&quot;]
+</pre>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.6_i0到i13的初始化阶段账本">12.6_I0到I13的初始化阶段账本</h2>
+
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>触发与写入地址</th>
+<th>写入者</th>
+<th>后续读取者</th>
+<th>退出条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>I0 固定现场</td>
+<td><code>cpu = smp_processor_id()</code></td>
+<td>boot CPU</td>
+<td>三个 boot CPU 生命周期调用</td>
+<td>本次函数始终指向同一当前 CPU</td>
+</tr>
+<tr>
+<td>I1 早期契约测试</td>
+<td>自检计数、可选早期 callback/轮询 cookie</td>
+<td><code>rcu_early_boot_tests()</code></td>
+<td>late initcall 验证器、后续 callback 路径</td>
+<td>早期 API 没有破坏未初始化状态</td>
+</tr>
+<tr>
+<td>I2 延迟释放基础</td>
+<td><code>rcu_reclaim_wq</code>、每 CPU <code>krc</code>、shrinker</td>
+<td>boot CPU</td>
+<td><code>kvfree_call_rcu()</code>、监控/回收 work、内存回收器</td>
+<td>每个 possible CPU 批次对象可安全接收请求</td>
+</tr>
+<tr>
+<td>I3 配置公告</td>
+<td>日志、NO_HZ 耐心值、Tasks stall 倍数</td>
+<td><code>rcu_bootup_announce()</code> 调用链</td>
+<td>FQS/NOCB/Tasks 诊断</td>
+<td>实现与异常配置已报告，公告路径参数已归一化</td>
+</tr>
+<tr>
+<td>I4 优先级净化</td>
+<td><code>kthread_prio</code></td>
+<td><code>sanitize_kthread_prio()</code></td>
+<td>后续 RCU 线程创建</td>
+<td>优先级满足配置相关下限与 <code>0～99</code> 上限</td>
+</tr>
+<tr>
+<td>I5 几何</td>
+<td><code>rcu_num_lvls</code>、<code>num_rcu_lvl[]</code>、<code>rcu_num_nodes</code>、FQS 延时</td>
+<td><code>rcu_init_geometry()</code></td>
+<td><code>rcu_init_one()</code>、GP 与 FQS 路径</td>
+<td>运行期层数覆盖全部 <code>nr_cpu_ids</code></td>
+</tr>
+<tr>
+<td>I6 拓扑与静态槽位</td>
+<td><code>node[]/level[]</code>、节点锁/队列、<code>rdp-&gt;mynode/grpmask</code></td>
+<td><code>rcu_init_one()</code></td>
+<td>QS、GP、NOCB、expedited、barrier</td>
+<td>每个 possible CPU 可 O(1) 定位叶节点</td>
+</tr>
+<tr>
+<td>I7 core执行入口</td>
+<td><code>softirq_vec[RCU_SOFTIRQ]</code> 或明确不登记</td>
+<td>boot CPU</td>
+<td><code>raise_softirq()</code> 或稍后 <code>rcuc</code></td>
+<td>对应配置的 core 入口选择已兑现</td>
+</tr>
+<tr>
+<td>I8 电源入口</td>
+<td>PM notifier 链或编译期空操作</td>
+<td>boot CPU</td>
+<td>suspend/hibernate 通知</td>
+<td>睡眠配置分支已登记或明确为空</td>
+</tr>
+<tr>
+<td>I9 boot CPU 接入</td>
+<td><code>rdp</code> 快照/cblist、参与位、<code>ncpus</code>、<code>beenonline</code>、<code>ffmask</code></td>
+<td>boot CPU</td>
+<td>下一轮 GP、expedited、FQS、core</td>
+<td>私有容器、身份发布和在线状态三段完成</td>
+</tr>
+<tr>
+<td>I10 异步执行与过载门闩</td>
+<td><code>rcu_gp_wq</code>、<code>sync_wq</code>、<code>qovld_calc</code></td>
+<td>boot CPU</td>
+<td>SRCU、strict、exp poll、SRS cleanup、callback过载路径</td>
+<td>workqueue 对象已分配且节点锁可供过载检查；执行仍等待完整 workqueue 阶段</td>
+</tr>
+<tr>
+<td>I11 早期轮询补发</td>
+<td><code>rnp-&gt;exp_seq_poll_rq</code>、<code>exp_poll_wq</code> work</td>
+<td>boot CPU</td>
+<td><code>sync_rcu_do_polled_gp()</code></td>
+<td>当前/更早 cookie 将由稍后 work 推进覆盖</td>
+</tr>
+<tr>
+<td>I12 后置契约测试</td>
+<td>普通与 expedited 早期序列</td>
+<td><code>rcu_test_sync_prims()</code></td>
+<td>后续 scheduler 模式切换自检</td>
+<td>拓扑建立后早期同步原语仍成立</td>
+</tr>
+<tr>
+<td>I13 Tasks callback 运输</td>
+<td>各 flavor <code>rtpcp_array</code> 与 per-CPU <code>cblist</code></td>
+<td>boot CPU</td>
+<td>后续 Tasks GP/CB 线程</td>
+<td>所有已启用 flavor 可以安全接收 callback</td>
+</tr>
+</tbody></table>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.7_i1为何在树建立以前先运行自检">12.7_I1为何在树建立以前先运行自检</h2>
+
+<p>I1 先验证“尚无节点树和运行期执行者时，公共 RCU API 仍不得越界访问”，再把诊断分支和功能分支分开追踪。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.7.1_config_prove_rcu关闭时它是什么">12.7.1_CONFIG_PROVE_RCU关闭时它是什么</h3>
+
+<p><code>rcu_early_boot_tests()</code> 定义在 <a href="../../../../../research/source_reading/linux/kernel/rcu/update.c"><code>kernel/rcu/update.c</code></a>。<code>CONFIG_PROVE_RCU=n</code> 时，编译结果就是空函数：</p>
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-type">void</span> <span class="hljs-title function_">rcu_early_boot_tests</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span> {}
+</code></pre>
+<p>这条分支不修改功能状态。<code>CONFIG_PROVE_RCU</code> 是 RCU 动态证明/Lockdep 检查相关的 Kconfig 配置项；它属于诊断轴，不是新的 RCU 实现家族。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.7.2_开启证明检查后测试了哪五条早期路径">12.7.2_开启证明检查后测试了哪五条早期路径</h3>
+
+<p>开启配置后，<code>rcu_self_test</code> 是只读启动参数；只有显式启用它，才登记异步测试动作：</p>
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-comment">/**
+ * @brief 在完整 Tree RCU 拓扑建立以前制造合法的早期 API 请求。
+ * @note 中文说明由本仓库补充；源码裁剪自 kernel/rcu/update.c。
+ */</span>
+<span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">early_boot_test_call_rcu</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+	<span class="hljs-type">int</span> idx;
+	<span class="hljs-type">static</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">rcu_head</span> <span class="hljs-title">head</span>;</span>
+	<span class="hljs-type">static</span> <span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">rcu_head</span> <span class="hljs-title">shead</span>;</span>
+	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">early_boot_kfree_rcu</span> *<span class="hljs-title">rhp</span>;</span>
+
+	idx = srcu_down_read(&amp;early_srcu);                 <span class="hljs-comment">/* 1. 进入静态 SRCU 域。 */</span>
+	srcu_up_read(&amp;early_srcu, idx);                    <span class="hljs-comment">/* 2. 退出同一 SRCU 域。 */</span>
+	call_rcu(&amp;head, test_callback);                    <span class="hljs-comment">/* 3. 提前登记普通 RCU callback。 */</span>
+	early_srcu_cookie = start_poll_synchronize_srcu(&amp;early_srcu); <span class="hljs-comment">/* 4. 保存轮询 cookie。 */</span>
+	call_srcu(&amp;early_srcu, &amp;shead, test_callback);     <span class="hljs-comment">/* 5. 提前登记 SRCU callback。 */</span>
+	rhp = kmalloc(<span class="hljs-keyword">sizeof</span>(*rhp), GFP_KERNEL);
+	<span class="hljs-keyword">if</span> (!WARN_ON_ONCE(!rhp))
+		kfree_rcu(rhp, rh);                         <span class="hljs-comment">/* 6. 提前进入延迟释放入口。 */</span>
+}
+
+<span class="hljs-type">void</span> <span class="hljs-title function_">rcu_early_boot_tests</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+	pr_info(<span class="hljs-string">&quot;Running RCU self tests\n&quot;</span>);
+	<span class="hljs-keyword">if</span> (rcu_self_test)
+		early_boot_test_call_rcu();
+	rcu_test_sync_prims();
+}
+</code></pre>
+<p>上面的编号有六个语句，但验证的是五类能力：SRCU 读侧配对、普通 callback、SRCU 轮询、SRCU callback 和 <code>kfree_rcu()</code>。它们不会在这里被假装成“已经执行完成”：普通/SRCU callback 计数由后续执行增加，<code>late_initcall(rcu_verify_early_boot_tests)</code> 再用 <code>rcu_barrier()</code>、<code>srcu_barrier()</code>、cookie 轮询和计数比较验证，最后清理静态测试 SRCU。</p>
+<p><code>kfree_rcu()</code> 此时甚至早于 I2。固定实现允许这种顺序：每 CPU <code>krc.initialized</code> 仍为假时，批量页路径拒绝接收，请求退回内嵌 <code>rcu_head</code> 链表；I2 随后建立 <code>rcu_work</code> 和监控 work，<code>rcu_set_runtime_mode()</code> 更晚调用 <code>kfree_rcu_scheduler_running()</code>，才为已有积压安排延迟监控。若重构时把 fallback 删除，早期自检就会直接暴露初始化先后依赖。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.7.3_同步等待为什么此时不需要真实gp线程">12.7.3_同步等待为什么此时不需要真实GP线程</h3>
+
+<p><code>rcu_test_sync_prims()</code> 只在 <code>CONFIG_PROVE_RCU=y</code> 时执行：</p>
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-type">void</span> <span class="hljs-title function_">rcu_test_sync_prims</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+	<span class="hljs-keyword">if</span> (!IS_ENABLED(CONFIG_PROVE_RCU))
+		<span class="hljs-keyword">return</span>;
+	pr_info(<span class="hljs-string">&quot;Running RCU synchronous self tests\n&quot;</span>);
+	synchronize_rcu();
+	synchronize_rcu_expedited();
+}
+</code></pre>
+<p>此时 <code>rcu_scheduler_active == RCU_SCHEDULER_INACTIVE</code>。<code>rcu_blocking_is_gp()</code> 因而返回真：启动现场只有一个不可抢占的启动任务，阻塞式调用本身足以越过需要证明的边界。普通函数推进早期 <code>gp_seq</code> 记账；expedited 函数推进 <code>expedited_sequence</code> 记账，但二者都不等待尚不存在的 GP kthread、IPI 或节点树完成。</p>
+<p>I1 在树建立以前测试一次，I12 在树和 boot CPU 建立以后再测试一次；后续 <code>rcu_scheduler_starting()</code> 与 <code>rcu_set_runtime_mode()</code> 还会在模式切换两侧继续调用。它们共同检查“早期空集/单任务证明 → 调度器初始模式 → 完整运行模式”的切换，没有把诊断自检写成功能 GP 的初始化动作。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.8_i2怎样建立kfree_rcu延迟释放流水线">12.8_I2怎样建立kfree_rcu延迟释放流水线</h2>
+
+<p>I2 先为最早可能到来的延迟释放请求准备所有权和异步承载物，下面从对象类别进入逐句实现。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.8.1_先分清三类对象">12.8.1_先分清三类对象</h3>
+
+<p><code>kfree_rcu()</code>/<code>kvfree_rcu()</code> 是“等待适当 GP 后释放对象”的接口族。I2 不释放任何业务对象，而是初始化三类承载物：</p>
+<table>
+<thead>
+<tr>
+<th>承载物</th>
+<th>地址与所有者</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>rcu_reclaim_wq</code></td>
+<td>全局 <code>workqueue_struct *</code></td>
+<td>在可睡眠 workqueue 上下文批量执行最终释放</td>
+</tr>
+<tr>
+<td><code>struct kfree_rcu_cpu krc</code></td>
+<td>每 possible CPU 一份</td>
+<td>收集尚未提交、等待 GP 和等待最终释放的批次</td>
+</tr>
+<tr>
+<td><code>rcu-kfree</code> shrinker</td>
+<td>内存回收器登记对象</td>
+<td>内存压力下主动排空缓存/批次，而不是绕过 GP</td>
+</tr>
+</tbody></table>
+<p>这里的 shrinker 是 Linux 内存回收回调框架专名；它只催促可回收缓存和已满足条件的批次，不能授权过早释放仍受 RCU 读侧保护的对象。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.8.2_完整初始化语句及其后续消费者">12.8.2_完整初始化语句及其后续消费者</h3>
+
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-comment">/**
+ * @brief 建立 kvfree_rcu 的全局执行队列、每 CPU 双批次和内存回收入口。
+ * @note 中文说明由本仓库补充；源码裁剪自 kernel/rcu/tree.c。
+ */</span>
+<span class="hljs-type">static</span> <span class="hljs-type">void</span> __init <span class="hljs-title function_">kfree_rcu_batch_init</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+	<span class="hljs-type">int</span> cpu;
+	<span class="hljs-type">int</span> i, j;
+	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">shrinker</span> *<span class="hljs-title">kfree_rcu_shrinker</span>;</span>
+
+	rcu_reclaim_wq = alloc_workqueue(<span class="hljs-string">&quot;kvfree_rcu_reclaim&quot;</span>,
+			WQ_UNBOUND | WQ_MEM_RECLAIM, <span class="hljs-number">0</span>);
+	WARN_ON(!rcu_reclaim_wq);
+
+	<span class="hljs-comment">/* 页缓存补充延迟只接受 0～100 秒。 */</span>
+	<span class="hljs-keyword">if</span> (rcu_delay_page_cache_fill_msec &lt; <span class="hljs-number">0</span> ||
+	    rcu_delay_page_cache_fill_msec &gt; <span class="hljs-number">100</span> * MSEC_PER_SEC) {
+		rcu_delay_page_cache_fill_msec =
+			clamp(rcu_delay_page_cache_fill_msec, <span class="hljs-number">0</span>,
+			      (<span class="hljs-type">int</span>)(<span class="hljs-number">100</span> * MSEC_PER_SEC));
+		pr_info(<span class="hljs-string">&quot;Adjusting rcutree.rcu_delay_page_cache_fill_msec to %d ms.\n&quot;</span>,
+			rcu_delay_page_cache_fill_msec);
+	}
+
+	for_each_possible_cpu(cpu) {
+		<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">kfree_rcu_cpu</span> *<span class="hljs-title">krcp</span> =</span> per_cpu_ptr(&amp;krc, cpu);
+
+		<span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; KFREE_N_BATCHES; i++) {
+			INIT_RCU_WORK(&amp;krcp-&gt;krw_arr[i].rcu_work, kfree_rcu_work);
+			krcp-&gt;krw_arr[i].krcp = krcp;
+			<span class="hljs-keyword">for</span> (j = <span class="hljs-number">0</span>; j &lt; FREE_N_CHANNELS; j++)
+				INIT_LIST_HEAD(&amp;krcp-&gt;krw_arr[i].bulk_head_free[j]);
+		}
+		<span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; FREE_N_CHANNELS; i++)
+			INIT_LIST_HEAD(&amp;krcp-&gt;bulk_head[i]);
+
+		INIT_DELAYED_WORK(&amp;krcp-&gt;monitor_work, kfree_rcu_monitor);
+		INIT_DELAYED_WORK(&amp;krcp-&gt;page_cache_work, fill_page_cache_func);
+		krcp-&gt;initialized = <span class="hljs-literal">true</span>;
+	}
+
+	kfree_rcu_shrinker = shrinker_alloc(<span class="hljs-number">0</span>, <span class="hljs-string">&quot;rcu-kfree&quot;</span>);
+	<span class="hljs-keyword">if</span> (!kfree_rcu_shrinker) {
+		pr_err(<span class="hljs-string">&quot;Failed to allocate kfree_rcu() shrinker!\n&quot;</span>);
+		<span class="hljs-keyword">return</span>;
+	}
+	kfree_rcu_shrinker-&gt;count_objects = kfree_rcu_shrink_count;
+	kfree_rcu_shrinker-&gt;scan_objects = kfree_rcu_shrink_scan;
+	shrinker_register(kfree_rcu_shrinker);
+}
+</code></pre>
+<p><code>KFREE_N_BATCHES=2</code> 让一个批次可以在等待/执行时，另一个继续接收请求；<code>FREE_N_CHANNELS=2</code> 按指针最终需要 <code>kfree()</code> 还是 <code>vfree()</code> 分流。每个批次的 <code>rcu_work</code> 先等待 RCU 条件，再在 <code>rcu_reclaim_wq</code> 上运行 <code>kfree_rcu_work()</code>；<code>monitor_work</code> 负责把暂存请求定时推入等待 GP 的批次；<code>page_cache_work</code> 只补充用于批量记录指针的页缓存。</p>
+<p><code>WQ_UNBOUND</code> 表示工作不绑定提交 CPU；<code>WQ_MEM_RECLAIM</code> 要求 workqueue 保留内存回收进展能力。通用 workqueue 对象、pool、worker 和 rescuer 的唯一教程归 <a href="../../../../../research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.1_%E7%89%88%E6%9C%AC%E8%BE%B9%E7%95%8C%E4%B8%8E%E9%98%85%E8%AF%BB%E4%BB%BB%E5%8A%A1">Linux 6.12 工作队列源码总阅读索引</a>；本章只负责这三个 RCU 实例的参数、初始化时机和消费者。</p>
+<p>失败语义不相同：<code>rcu_reclaim_wq</code> 分配失败只触发 <code>WARN_ON</code>，函数仍继续建立 per-CPU 状态；shrinker 分配失败会记录错误并返回，但已经建立的正常批处理流水线仍在，只缺少内存压力主动扫描入口。源码没有在这里提供完整回滚或替代 workqueue，因此不能把告警描述成“自动降级后功能等价”。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.9_i3与i4先公布异常配置再净化线程优先级">12.9_I3与I4先公布异常配置再净化线程优先级</h2>
+
+<p>这两步共同把“用户请求的启动配置”变成“日志可观察且后继消费者可安全采用的配置”，但二者修改的字段并不相同。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.9.1_rcu_bootup_announce不只是打印实现名称">12.9.1_rcu_bootup_announce()不只是打印实现名称</h3>
+
+<p>当前 <code>CONFIG_PREEMPT_RCU=y</code> 选择 <code>tree_plugin.h</code> 中的可抢占分支，所以启动日志中的实现名称是 <code>Preemptible hierarchical RCU implementation.</code>。这里的 <strong>hierarchical</strong> 对应后面建立的 <code>rcu_node</code> 汇聚树；<strong>preemptible</strong> 表示普通 RCU 读侧临界区内的任务可以被抢占，Tree RCU 必须额外跟踪被阻塞的读者。它不表示 <code>rcu_init()</code> 本身已经打开抢占或已经启动 RCU 线程。</p>
+<p>随后 <code>rcu_bootup_announce_oddness()</code> 把偏离默认值、会改变证明边界或常用于调试的条件写入启动日志：</p>
+<table>
+<thead>
+<tr>
+<th>条件族</th>
+<th>典型检查项</th>
+<th>对运行机制的含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>树形</td>
+<td><code>rcu_fanout_leaf</code>、<code>rcu_fanout_exact</code>、运行时 <code>nr_cpu_ids</code></td>
+<td>改变层数、节点数或叶节点覆盖范围</td>
+</tr>
+<tr>
+<td>回调压力</td>
+<td><code>blimit</code>、<code>qhimark</code>、<code>qlowmark</code>、<code>qovld</code></td>
+<td>改变每轮调用数量与过载判定</td>
+</tr>
+<tr>
+<td>FQS</td>
+<td>首次/后续强制静止态延迟、调度器催促延迟</td>
+<td>改变普通 GP 主动探测参与者的时机</td>
+</tr>
+<tr>
+<td>停滞检测</td>
+<td><code>CONFIG_PROVE_RCU</code>、stall timeout、stall suppress</td>
+<td>改变诊断能力，不等价于改变 RCU 正确性契约</td>
+</tr>
+<tr>
+<td>抢占与提升</td>
+<td><code>CONFIG_RCU_BOOST</code>、<code>kthread_prio</code>、boost delay</td>
+<td>改变被阻塞读者和 RCU 线程的调度行为</td>
+</tr>
+<tr>
+<td>回调执行</td>
+<td><code>use_softirq</code></td>
+<td>在 RCU softirq 与每 CPU <code>rcuc</code> 线程之间选择</td>
+</tr>
+<tr>
+<td>no-CB 与调试</td>
+<td>NOCB、对象调试、EQS 调试、GP 调试延迟</td>
+<td>改变卸载或观测路径</td>
+</tr>
+<tr>
+<td>Tasks RCU</td>
+<td>Tasks、Tasks Rude、Tasks Trace 启用情况</td>
+<td>决定 I13 要初始化哪些独立回调队列族</td>
+</tr>
+</tbody></table>
+<p>这条调用链还会进入 <code>rcupdate_announce_bootup_oddness()</code> 和 <code>rcu_tasks_bootup_oddness()</code>。因此它覆盖 Tree RCU、通用 RCU 参数以及 Tasks RCU 三层信息，而不是只打印一行名称。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.9.2_公告路径包含两处实际参数修正">12.9.2_公告路径包含两处实际参数修正</h3>
+
+<p>“announce” 这个名字容易让人误以为路径只读。实际至少有两处钳位：</p>
+<ol>
+<li>Tree RCU 把 <code>nohz_full_patience_delay</code> 限制在 <code>0～5000 ms</code>，然后换算为 jiffies，供 nohz_full CPU 的催促策略使用。</li>
+<li>Tasks RCU 把 <code>rcu_task_stall_info_mult</code> 限制在 <code>1～10</code>，避免停滞信息输出倍率越界。</li>
+</ol>
+<p>所以若移动或删除 I3，既会丢启动诊断，也可能让消费者看到未经净化的参数。日志中观察到“参数被修正”还只能证明配置归一化发生，不能证明 GP 线程或 Tasks RCU 线程已经运行。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.9.3_sanitize_kthread_prio为什么放在公告以后">12.9.3_sanitize_kthread_prio()为什么放在公告以后</h3>
+
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-comment">/**
+ * @brief 把命令行给出的 RCU 内核线程优先级收敛到合法区间。
+ * @note 中文说明由本仓库补充；源码裁剪自 kernel/rcu/tree.c。
+ */</span>
+<span class="hljs-type">static</span> <span class="hljs-type">void</span> __init <span class="hljs-title function_">sanitize_kthread_prio</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+	<span class="hljs-type">int</span> kthread_prio_in = kthread_prio;
+
+	<span class="hljs-keyword">if</span> (IS_ENABLED(CONFIG_RCU_BOOST) &amp;&amp; kthread_prio &lt; <span class="hljs-number">2</span> &amp;&amp;
+	    IS_BUILTIN(CONFIG_RCU_TORTURE_TEST))
+		kthread_prio = <span class="hljs-number">2</span>;
+	<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (IS_ENABLED(CONFIG_RCU_BOOST) &amp;&amp; kthread_prio &lt; <span class="hljs-number">1</span>)
+		kthread_prio = <span class="hljs-number">1</span>;
+	<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (kthread_prio &lt; <span class="hljs-number">0</span>)
+		kthread_prio = <span class="hljs-number">0</span>;
+	<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (kthread_prio &gt; <span class="hljs-number">99</span>)
+		kthread_prio = <span class="hljs-number">99</span>;
+
+	<span class="hljs-keyword">if</span> (kthread_prio != kthread_prio_in)
+		pr_alert(<span class="hljs-string">&quot;%s: Limited prio to %d from %d\n&quot;</span>,
+			 __func__, kthread_prio, kthread_prio_in);
+}
+</code></pre>
+<p>I3 先公布用户请求值，I4 再公布实际修正值，日志因而保留“输入是什么、内核最终采用什么”两份证据。普通 RCU boost 至少取 <code>1</code>；内建 <code>RCU_TORTURE_TEST</code> 与 boost 同时启用时至少取 <code>2</code>；其他情况仍限制在实时优先级表示所接受的 <code>0～99</code>。这些值稍后供 <code>rcuc</code>、<code>rcub</code>、<code>rcuo</code> 和 expedited 相关线程使用，I4 自己 <strong>不创建、不唤醒、不调度</strong> 任何线程。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.10_i5从编译期容量中裁出本次启动真正使用的树">12.10_I5从编译期容量中裁出本次启动真正使用的树</h2>
+
+<p>参数归一化以后，I5 才能把静态数组的最大容量换算成此次启动实际要初始化的层数与节点前缀。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.10.1_为什么既有编译期几何又有运行时几何">12.10.1_为什么既有编译期几何又有运行时几何</h3>
+
+<p><code>struct rcu_state</code> 中的 <code>node[]</code> 是静态数组，尺寸必须在编译时由 <code>CONFIG_NR_CPUS</code>、<code>RCU_FANOUT</code> 和 <code>RCU_FANOUT_LEAF</code> 决定；但一次启动可能通过 <code>nr_cpus=</code> 减少 <code>nr_cpu_ids</code>，也可能通过 <code>rcutree.rcu_fanout_leaf=</code> 改变叶节点覆盖量。I5 不能重新分配 <code>node[]</code>，只能验证参数后，计算这个静态容量中本次实际使用的前缀：</p>
+<table>
+<thead>
+<tr>
+<th>输出</th>
+<th>含义</th>
+<th>I6中的消费者</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>rcu_num_lvls</code></td>
+<td>实际树层数</td>
+<td>控制逐层初始化循环</td>
+</tr>
+<tr>
+<td><code>num_rcu_lvl[]</code></td>
+<td>每层实际节点数</td>
+<td>决定每层数组片段长度</td>
+</tr>
+<tr>
+<td><code>rcu_num_nodes</code></td>
+<td>实际节点总数</td>
+<td>遍历与诊断边界</td>
+</tr>
+<tr>
+<td><code>rcu_fanout_leaf</code></td>
+<td>最终叶节点扇出</td>
+<td>计算叶节点数量和 CPU 范围</td>
+</tr>
+<tr>
+<td>FQS jiffies 参数</td>
+<td>首次、后续和调度器催促延迟</td>
+<td>后续 GP/FQS 路径</td>
+</tr>
+</tbody></table>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.10.2_几何计算的完整决策顺序">12.10.2_几何计算的完整决策顺序</h3>
+
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-comment">/**
+ * @brief 根据本次启动的 CPU 数和参数计算 Tree RCU 实际几何。
+ * @note 中文说明由本仓库补充；源码裁剪自 kernel/rcu/tree.c。
+ */</span>
+<span class="hljs-type">void</span> <span class="hljs-title function_">rcu_init_geometry</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+	ulong d;
+	<span class="hljs-type">int</span> i;
+	<span class="hljs-type">static</span> <span class="hljs-type">unsigned</span> <span class="hljs-type">long</span> old_nr_cpu_ids;
+	<span class="hljs-type">int</span> rcu_capacity[RCU_NUM_LVLS];
+	<span class="hljs-type">static</span> <span class="hljs-type">bool</span> initialized;
+
+	<span class="hljs-comment">/* SRCU 等路径允许重复调用，但 CPU 数不得在首次计算后变化。 */</span>
+	<span class="hljs-keyword">if</span> (initialized) {
+		WARN_ON_ONCE(old_nr_cpu_ids != nr_cpu_ids);
+		<span class="hljs-keyword">return</span>;
+	}
+	old_nr_cpu_ids = nr_cpu_ids;
+	initialized = <span class="hljs-literal">true</span>;
+
+	<span class="hljs-comment">/* 未显式指定时，让 FQS 默认延迟随可能 CPU 数小幅增长。 */</span>
+	d = RCU_JIFFIES_TILL_FORCE_QS + nr_cpu_ids / RCU_JIFFIES_FQS_DIV;
+	<span class="hljs-keyword">if</span> (jiffies_till_first_fqs == ULONG_MAX)
+		jiffies_till_first_fqs = d;
+	<span class="hljs-keyword">if</span> (jiffies_till_next_fqs == ULONG_MAX)
+		jiffies_till_next_fqs = d;
+	adjust_jiffies_till_sched_qs();
+
+	<span class="hljs-comment">/* 编译期参数恰好覆盖本次启动时，不必重算静态默认表。 */</span>
+	<span class="hljs-keyword">if</span> (rcu_fanout_leaf == RCU_FANOUT_LEAF &amp;&amp; nr_cpu_ids == NR_CPUS)
+		<span class="hljs-keyword">return</span>;
+
+	<span class="hljs-comment">/* 一个节点的位图至少容纳 2 位，最多容纳 unsigned long 的位数。 */</span>
+	<span class="hljs-keyword">if</span> (rcu_fanout_leaf &lt; <span class="hljs-number">2</span> ||
+	    rcu_fanout_leaf &gt; <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">unsigned</span> <span class="hljs-type">long</span>) * <span class="hljs-number">8</span>) {
+		rcu_fanout_leaf = RCU_FANOUT_LEAF;
+		WARN_ON(<span class="hljs-number">1</span>);
+		<span class="hljs-keyword">return</span>;
+	}
+
+	<span class="hljs-comment">/* 从叶层向上计算编译期最大层数能覆盖的 CPU 容量。 */</span>
+	rcu_capacity[<span class="hljs-number">0</span>] = rcu_fanout_leaf;
+	<span class="hljs-keyword">for</span> (i = <span class="hljs-number">1</span>; i &lt; RCU_NUM_LVLS; i++)
+		rcu_capacity[i] = rcu_capacity[i - <span class="hljs-number">1</span>] * RCU_FANOUT;
+	<span class="hljs-keyword">if</span> (nr_cpu_ids &gt; rcu_capacity[RCU_NUM_LVLS - <span class="hljs-number">1</span>]) {
+		rcu_fanout_leaf = RCU_FANOUT_LEAF;
+		WARN_ON(<span class="hljs-number">1</span>);
+		<span class="hljs-keyword">return</span>;
+	}
+
+	<span class="hljs-comment">/* 选择第一个足以覆盖 nr_cpu_ids 的层数，再计算各层节点数。 */</span>
+	<span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; nr_cpu_ids &gt; rcu_capacity[i]; i++)
+		<span class="hljs-keyword">continue</span>;
+	rcu_num_lvls = i + <span class="hljs-number">1</span>;
+	<span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; rcu_num_lvls; i++)
+		num_rcu_lvl[i] = DIV_ROUND_UP(nr_cpu_ids,
+					      rcu_capacity[rcu_num_lvls - i - <span class="hljs-number">1</span>]);
+	rcu_num_nodes = <span class="hljs-number">0</span>;
+	<span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; rcu_num_lvls; i++)
+		rcu_num_nodes += num_rcu_lvl[i];
+}
+</code></pre>
+<p>上面保留了决定状态的语句，省略的只是原注释和打印。第一次调用把 <code>initialized</code> 设真；若另一个早期子系统再次调用，它只核对 <code>nr_cpu_ids</code> 是否稳定后返回。这不是“第二次刷新几何”。</p>
+<p>参数非法或静态数组容量不足时，函数 <code>WARN_ON</code> 并退回编译期几何；这是显式失败关闭到已知可容纳结构，而不是强行按越界参数写 <code>node[]</code>。<code>rcu_init_levelspread()</code> 随后还会在 I6 中决定父节点如何平均接纳子节点：默认尽量均衡；<code>rcu_fanout_exact</code> 为真时才严格按叶扇出和内部扇出分组。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.10.3_dump_tree只增加观测不改变拓扑">12.10.3_dump_tree只增加观测不改变拓扑</h3>
+
+<p>I6 完成后，<code>dump_tree</code> 为真才调用 <code>rcu_dump_rcu_node_tree()</code>。此时打印的是已经计算并写好的层数、节点范围和掩码；函数不重新分配或重连节点。它适合核对启动参数是否形成预期几何，但日志缺失可能只是 <code>dump_tree</code> 未启用，不能反推初始化失败。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.11_i6把几何兑现为全局树_每节点状态和每cpu入口">12.11_I6把几何兑现为全局树_每节点状态和每CPU入口</h2>
+
+<p><code>rcu_init_one()</code> 是 I6 的唯一函数体展开位置，完整逐句讲解见 <a href="#document-research-source_reading-rcu-linux_6_12_tree_topology_hotplug_implementation--6.4_rcu_init_one建立固定汇聚树并绑定每cpu叶节点">Linux 6.12 Tree RCU <code>rcu_init_one()</code> 拓扑源码实现</a>。本节不复制该函数体，而是说明它在 <code>rcu_init()</code> 总事务中的输入、输出与后续依赖。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.11.1_三层状态分别落在哪里">12.11.1_三层状态分别落在哪里</h3>
+
+<table>
+<thead>
+<tr>
+<th>层级</th>
+<th>具体地址</th>
+<th>I6写入内容</th>
+<th>后续主要写入者/读取者</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>全局</td>
+<td><code>rcu_state</code></td>
+<td><code>level[]</code>、GP/expedited 等待队列、初始序列</td>
+<td>GP kthread、expedited 路径、屏障路径</td>
+</tr>
+<tr>
+<td>汇聚节点</td>
+<td><code>rcu_state.node[]</code> 中实际前缀</td>
+<td>锁、CPU 范围、父指针、父位、GP 快照、QS 位图、阻塞读者链、expedited 4 槽等待队列和 poll work</td>
+<td>叶节点由 CPU 报告，父节点由最后一个子节点上报，根节点形成全局结论</td>
+</tr>
+<tr>
+<td>本地</td>
+<td>每 possible CPU 的 <code>rcu_data</code></td>
+<td><code>mynode</code>、<code>grpmask</code>、CPU 号、初始 GP 快照、屏障哨兵、NOCB/回调基础状态</td>
+<td>本 CPU <code>rcu_core()</code>、热插拔、GP/FQS/NOCB 路径</td>
+</tr>
+</tbody></table>
+<p>其中 <code>mynode</code> 是从每 CPU 私有状态直达其叶节点的指针，<code>grpmask</code> 是该 CPU 在叶节点位图中的唯一位。运行期 CPU 报告 QS 时不需要重新搜索树：先清自己的叶位；若成为该叶最后一个参与者，再按 <code>parent</code> 与节点级 <code>grpmask</code> 逐层汇聚。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.11.2_i6同时预埋了可选分支的状态但没有启动执行者">12.11.2_I6同时预埋了可选分支的状态但没有启动执行者</h3>
+
+<ul>
+<li><code>CONFIG_PREEMPT_RCU</code>：初始化每个节点的 <code>blkd_tasks</code>，供被抢占读者按叶节点登记；当前基线走该分支。</li>
+<li><code>CONFIG_RCU_NOCB_CPU</code>：<code>rcu_init_one_nocb()</code> 和 per-CPU 启动初始化建立 NOCB GP 等待队列、锁、回调分段与定时器；是否有 CPU 实际卸载由 CPU mask 决定。</li>
+<li>expedited RCU：每个节点建立 4 个按序列低位复用的 <code>exp_wq[]</code>、<code>exp_poll_lock</code>、请求哨兵与 <code>exp_poll_wq</code>；根级再有 <code>exp_mutex</code>/<code>expedited_wq</code> 等协调状态。</li>
+<li>strict GP、boost 等编译分支：初始化各自的 work、锁或阻塞读者辅助状态。</li>
+</ul>
+<p>这些初始化解决的是“以后从哪个地址收集证据、用什么锁保护、向谁传播”；I6 结束时没有 GP kthread、<code>rcuc</code>、<code>rcuo</code>、boost 或 expedited worker 正在运行。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.12_i7与i8接上回调执行入口和系统睡眠策略">12.12_I7与I8接上回调执行入口和系统睡眠策略</h2>
+
+<p>树和每 CPU 地址建立以后，I7 选择本地 core 的未来执行入口，I8 则登记跨系统睡眠事务的策略入口。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.12.1_use_softirq决定谁执行rcu_core">12.12.1_use_softirq决定谁执行rcu_core()</h3>
+
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-keyword">if</span> (use_softirq)
+	open_softirq(RCU_SOFTIRQ, rcu_core_si);
+</code></pre>
+<p>非 PREEMPT_RT 构建中，<code>use_softirq</code> 默认真，并可由只读启动参数 <code>rcutree.use_softirq=</code> 改变；PREEMPT_RT 构建把它固定为假。真分支把 <code>RCU_SOFTIRQ</code> 的 action 槽写为 <code>rcu_core_si()</code>，后者再调用本 CPU 的 <code>rcu_core()</code>；假分支不登记该 softirq，稍后由每 CPU <code>rcuc/%u</code> 内核线程承担核心回调推进。</p>
+<p><code>open_softirq()</code> 此时只写静态 <code>softirq_vec[]</code> 的函数指针，不要求 <code>softirq_init()</code> 已经运行。后者在 <code>start_kernel()</code> 更靠后的位置初始化 tasklet 的 per-CPU 队列并登记 tasklet softirq；它不是 RCU action 槽可写的前置条件。反过来，I7 也没有“触发一次 RCU softirq”，因为中断仍关闭、尚无运行期回调事件。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.12.2_pm_notifier的编译期分歧">12.12.2_pm_notifier()的编译期分歧</h3>
+
+<p><code>CONFIG_PM_SLEEP=y</code> 时，<code>pm_notifier(rcu_pm_notify, 0)</code> 生成一个静态 <code>notifier_block</code> 并登记到 PM notifier 链：</p>
+<ul>
+<li><code>PM_SUSPEND_PREPARE</code>/<code>PM_HIBERNATION_PREPARE</code>：<code>rcu_async_hurry()</code> 让 lazy 回调加速，<code>rcu_expedite_gp()</code> 增加 expedited 嵌套计数。</li>
+<li><code>PM_POST_SUSPEND</code>/<code>PM_POST_HIBERNATION</code>：<code>rcu_unexpedite_gp()</code> 撤销嵌套，<code>rcu_async_relax()</code> 恢复 lazy 策略。</li>
+</ul>
+<p>系统启动期的 <code>rcu_expedited_nesting</code> 初值已经让 RCU 偏向 expedited；该 notifier 负责未来睡眠事务的成对进入/退出，不在登记时模拟一次挂起。<code>CONFIG_PM_SLEEP=n</code> 时宏只保留对函数名的编译期引用并成为空操作，不存在运行时“登记失败后重试”。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.13_i9用三段协议把启动cpu加入已经存在的树">12.13_I9用三段协议把启动CPU加入已经存在的树</h2>
+
+<p>这里必须区分三件事：准备本地容器、发布 CPU 已开始、启用在线期策略。它们分别由 <code>rcutree_prepare_cpu()</code>、<code>rcutree_report_cpu_starting()</code>、<code>rcutree_online_cpu()</code> 完成，不能压缩成一句“把 CPU online”。</p>
+<pre class="mermaid">sequenceDiagram
+    autonumber
+    participant Boot as 启动CPU
+    participant RDP as 本CPU rcu_data
+    participant Leaf as 叶rcu_node
+    participant Root as rcu_state/上层节点
+    participant Later as 后续GP与热插拔路径
+    Boot-&gt;&gt;RDP: prepare：复位计数、连接cblist并设置本地GP快照
+    Boot-&gt;&gt;Leaf: prepare：在根锁保护下确认本CPU容器并累计n_online_cpus
+    Boot-&gt;&gt;Leaf: report_starting：加入普通下一GP初始位图
+    Boot-&gt;&gt;Leaf: report_starting：加入expedited ever-online位图
+    Boot-&gt;&gt;Root: release发布ncpus与beenonline
+    Root--&gt;&gt;Later: 后续读者可见CPU身份先于在线事实
+    Boot-&gt;&gt;Leaf: online：设置ffmask并检查调度器模式
+    Leaf--&gt;&gt;Boot: 当前仍INACTIVE，提前返回
+    Later-&gt;&gt;RDP: 运行期按mynode与grpmask报告QS/执行回调
+</pre>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.13.1_第一段_rcutree_prepare_cpu建立cpu私有运行容器">12.13.1_第一段_rcutree_prepare_cpu()建立CPU私有运行容器</h3>
+
+<p>它在根 <code>rcu_node</code> 锁下调用 <code>rcu_cpu_kthread_setup(cpu)</code> 和 <code>rcu_spawn_one_nocb_kthread(cpu)</code>；但 <code>rcu_scheduler_fully_active</code> 尚为假，因此这些 spawn 辅助函数只保存/检查状态并返回，不会绕过 <code>kthreadd</code> 提前造线程。然后函数：</p>
+<ol>
+<li>复位本 CPU 的回调长度/FQS 快照和批处理上限，设置 context-tracking 初始嵌套。</li>
+<li>只有 <code>rcu_segcblist</code> 尚未启用时才初始化它，因而不会抹掉更早 <code>call_rcu()</code> 或 NOCB 路径已经放入的回调。</li>
+<li>从 <code>mynode-&gt;gp_seq</code> 取得本地 GP 快照，设置 <code>gp_seq_needed</code>，把普通 flavor 的 <code>cpu_no_qs.b.norm</code> 置真，表示下一次需要提供 QS 证据。</li>
+<li>初始化 <code>rcu_core</code> 标志与 irq_work 等本地承载物，并把全局 <code>n_online_cpus</code> 从 0 增到 1。</li>
+</ol>
+<p>这里的 <code>n_online_cpus</code> 是 Tree RCU 自己的初始化门闩，不等于通用 CPU hotplug 子系统的 <code>num_online_cpus()</code>。后者在调用前用于断言“启动现场至多一个在线 CPU”；前者让 <code>rcu_init_invoked()</code> 从假变真，I11 的早期 expedited poll 修复因而可以安全使用树和工作队列。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.13.2_第二段_rcutree_report_cpu_starting发布身份与位图">12.13.2_第二段_rcutree_report_cpu_starting()发布身份与位图</h3>
+
+<p>该函数要求本地 IRQ 关闭且每个 CPU 只调用一次。它持有 <code>ofl_lock</code>、barrier lock 和叶节点锁，完成四类发布：</p>
+<ul>
+<li>把 CPU 的 <code>grpmask</code> 加进普通下一轮 GP 的初始参与位图，使未来 GP 知道应等待谁。</li>
+<li>把同一位加进 expedited 的“曾经在线”位图，避免 expedited 路径漏掉刚出现的 CPU。</li>
+<li>更新 <code>cpu_started</code>、online 序列、溢出快照和 CPU 计数。</li>
+<li>以 release 语义发布 <code>ncpus</code> 与 <code>beenonline</code>，并在返回前用完整内存屏障保证以后 RCU 读侧看见完整身份状态。</li>
+</ul>
+<p>release 发布回答的是“其他 CPU 看见这个在线事实时，前面的节点位、每 CPU 地址和初始状态是否已经可见”。如果只写 online 标志再补普通字段，GP/FQS 或 barrier 路径可能拿到一个可枚举但尚未连接到树的 CPU。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.13.3_第三段_rcutree_online_cpu只完成当前阶段允许的部分">12.13.3_第三段_rcutree_online_cpu()只完成当前阶段允许的部分</h3>
+
+<p>它先把 CPU 位写入叶节点 <code>ffmask</code>，供后续 force-QS/热插拔路径判断完全在线集合。接着检查 <code>rcu_scheduler_active</code>：当前仍是 <code>RCU_SCHEDULER_INACTIVE</code>，函数立即返回，所以不会做运行期 expedited 清理、线程亲和性调整或 tick dependency 清理。这种提前返回是启动阶段的预期路径，不是半初始化错误；剩余动作要在调度器和热插拔状态机具备运行条件后发生。</p>
+<p>三段结束后得到的是“唯一启动 CPU 已有可发布、可汇聚的 RCU 身份”，而不是“多 CPU RCU 已经开始并发运行”。次级 CPU 仍由后续 SMP/CPU hotplug 回调走同一状态机加入。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.14_i10与i11建立异步执行面并修复过早发起的poll请求">12.14_I10与I11建立异步执行面并修复过早发起的poll请求</h2>
+
+<p>boot CPU 身份发布后，初始化可以安全开放依赖节点锁、RCU 私有在线门闩和 workqueue 的异步控制路径。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.14.1_三个rcu工作队列不能混为一个">12.14.1_三个RCU工作队列不能混为一个</h3>
+
+<p><code>rcu_init()</code> 本次一共分配三个全局 workqueue：I2 的 <code>rcu_reclaim_wq</code>，以及 I10 的 <code>rcu_gp_wq</code>、<code>sync_wq</code>。</p>
+<table>
+<thead>
+<tr>
+<th>workqueue</th>
+<th>标志</th>
+<th>直接/主要消费者</th>
+<th>为什么不能互换</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>rcu_reclaim_wq</code></td>
+<td><code>WQ_UNBOUND | WQ_MEM_RECLAIM</code></td>
+<td><code>kfree_rcu</code> monitor、RCU work、页缓存补充的延迟重试</td>
+<td>最终释放可在任意合适 CPU 执行，故使用 unbound；流量可能很大，必须与 GP 控制面隔离</td>
+</tr>
+<tr>
+<td><code>rcu_gp_wq</code></td>
+<td><code>WQ_MEM_RECLAIM</code></td>
+<td>Tree SRCU work、strict-GP work、每节点 expedited poll work</td>
+<td>承担“推进/补足 GP 条件”的控制工作，I11 立即依赖它</td>
+</tr>
+<tr>
+<td><code>sync_wq</code></td>
+<td><code>WQ_MEM_RECLAIM</code></td>
+<td>SRS（synchronize_rcu 请求合并）清理工作</td>
+<td>处理普通同步请求的生命周期，避免与 expedited/释放工作互相阻塞</td>
+</tr>
+</tbody></table>
+<p><code>WQ_MEM_RECLAIM</code> 要求 workqueue 在内存回收依赖链中保留前进能力；它不表示分配动作不会失败，也不表示 worker 已经在 I10 开始执行。<code>workqueue_init_early()</code> 已在 I0 前运行，所以可以创建并排队；真正的 worker 池、rescuer 和常规执行能力要到后面的 <code>workqueue_init()</code> 才完整建立。</p>
+<p><code>page_cache_work</code> 有一条细分路径：需要立刻补页时先投递到 <code>system_highpri_wq</code>，延迟重试才投递到 <code>rcu_reclaim_wq</code>；<code>monitor_work</code> 和等待 GP 的 <code>rcu_work</code> 使用 <code>rcu_reclaim_wq</code>。I2 初始化的是同一个 <code>delayed_work</code> 对象，具体投向由后来触发现场选择，不能从 <code>INIT_DELAYED_WORK()</code> 一行反推出唯一队列。</p>
+<p>两次 <code>alloc_workqueue()</code> 后都只有 <code>WARN_ON(!wq)</code>，没有回滚前面树/CPU 状态，也没有备用执行器。后续代码仍按非空 workqueue 使用这些指针，因此内存分配失败是严重启动异常，不能宣称 RCU 会自动退回同步执行。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.14.2_为什么qovld_calc必须在节点锁以后计算">12.14.2_为什么qovld_calc必须在节点锁以后计算</h3>
+
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-comment">/* qovld &lt; 0 表示采用默认倍率，0 表示关闭过载阈值，正数表示显式阈值。 */</span>
+<span class="hljs-keyword">if</span> (qovld &lt; <span class="hljs-number">0</span>)
+	qovld_calc = DEFAULT_RCU_QOVLD_MULT * qhimark;
+<span class="hljs-keyword">else</span>
+	qovld_calc = qovld;
+</code></pre>
+<p><code>qovld_calc</code> 的静态初值为 <code>-1</code>。回调入队路径在它小于 0 时不会尝试按过载阈值更新叶节点；I6 初始化全部 <code>rcu_node-&gt;lock</code> 以后，I10 才把它变成最终阈值。这样可以容纳 I6 以前发生的早期 <code>call_rcu()</code>，又不会让它们锁一个尚未初始化的叶节点。默认值是 <code>DEFAULT_RCU_QOVLD_MULT * qhimark</code>；<code>qovld=0</code> 明确禁用该阈值；正值直接采用。</p>
+<p>运行期回调数量跨过阈值时，本 CPU 路径才会在叶节点记录 <code>cbovldmask</code>，让 GP/FQS 逻辑知道哪个 CPU 的回调积压严重。I10 只发布阈值，不虚构一次过载事件。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.14.3_早期expedited_poll为什么需要一次kick-start">12.14.3_早期expedited_poll为什么需要一次kick-start</h3>
+
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-comment">/**
+ * @brief 为过早取得但尚未被实际GP覆盖的cookie补排expedited工作。
+ * @note 中文说明由本仓库补充；源码裁剪自 kernel/rcu/tree_exp.h。
+ */</span>
+<span class="hljs-type">unsigned</span> <span class="hljs-type">long</span> <span class="hljs-title function_">start_poll_synchronize_rcu_expedited</span><span class="hljs-params">(<span class="hljs-type">void</span>)</span>
+{
+	<span class="hljs-type">unsigned</span> <span class="hljs-type">long</span> flags;
+	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">rcu_data</span> *<span class="hljs-title">rdp</span>;</span>
+	<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">rcu_node</span> *<span class="hljs-title">rnp</span>;</span>
+	<span class="hljs-type">unsigned</span> <span class="hljs-type">long</span> s;
+
+	s = get_state_synchronize_rcu();
+	rdp = per_cpu_ptr(&amp;rcu_data, raw_smp_processor_id());
+	rnp = rdp-&gt;mynode;
+	<span class="hljs-keyword">if</span> (rcu_init_invoked())
+		raw_spin_lock_irqsave(&amp;rnp-&gt;exp_poll_lock, flags);
+	<span class="hljs-keyword">if</span> (!poll_state_synchronize_rcu(s) &amp;&amp; rcu_init_invoked()) {
+		rnp-&gt;exp_seq_poll_rq = s;
+		queue_work(rcu_gp_wq, &amp;rnp-&gt;exp_poll_wq);
+	}
+	<span class="hljs-keyword">if</span> (rcu_init_invoked())
+		raw_spin_unlock_irqrestore(&amp;rnp-&gt;exp_poll_lock, flags);
+	<span class="hljs-keyword">return</span> s;
+}
+</code></pre>
+<p>I11 以前，某个启动路径可能调用该 API 取得 cookie；当时 <code>rcu_init_invoked()</code> 仍为假，函数只能返回状态快照，不能访问尚未建立的 <code>mynode</code> 锁或 <code>rcu_gp_wq</code>。I11 再调用一次并丢弃返回值，意图不是给 <code>rcu_init()</code> 自己保存 cookie，而是检查当前快照是否仍未被任何 GP 覆盖：</p>
+<ol>
+<li>I6 已建立 <code>rdp-&gt;mynode</code>、<code>exp_poll_lock</code> 和 <code>exp_poll_wq</code>。</li>
+<li>I9 已使 RCU 私有 <code>n_online_cpus</code> 非零，<code>rcu_init_invoked()</code> 返回真。</li>
+<li>I10 已分配 <code>rcu_gp_wq</code>。</li>
+<li>若 <code>poll_state_synchronize_rcu(s)</code> 仍为假，就在节点保存 <code>exp_seq_poll_rq=s</code> 并排 <code>sync_rcu_do_polled_gp()</code>。</li>
+<li>worker 以后反复调用 <code>synchronize_rcu_expedited()</code>，直到 <code>poll_state_synchronize_rcu(s)</code> 为真，再清除请求哨兵。</li>
+</ol>
+<p>这也是 I6、I9、I10 不能随意换到 I11 后面的直接证据。I11 的正常结果可能只是一项都不排：若早期单任务语义已经覆盖 cookie，poll 立即成功。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.15_i12与i13收尾_再测同步原语并建立tasks_rcu回调分片">12.15_I12与I13收尾_再测同步原语并建立Tasks_RCU回调分片</h2>
+
+<p>Tree RCU 的基础状态已经闭合；最后一组动作分别验证阶段切换，并为独立的 Tasks RCU family 预留 callback 所有权。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.15.1_i12重新验证的是切换边界">12.15.1_I12重新验证的是切换边界</h3>
+
+<p>I12 再次调用 <code>rcu_test_sync_prims()</code>，仍只在 <code>CONFIG_PROVE_RCU=y</code> 时有代码。与 I1 中的调用相比，树、boot CPU 身份、softirq action、workqueue 和 poll 修复入口现在都已存在，但 <code>rcu_scheduler_active</code> 仍未进入 INIT/RUNNING。因此这次测试检查“基础状态已经建立时，早期阻塞式同步仍遵守单启动任务语义”，不是要求真实 GP kthread 已完成一轮宽限期。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.15.2_tasks_cblist_init_generic初始化的是三种可选tasks_flavor">12.15.2_tasks_cblist_init_generic()初始化的是三种可选Tasks_flavor</h3>
+
+<p><code>CONFIG_TASKS_RCU_GENERIC</code> 在 Tasks RCU、Tasks Rude RCU 或 Tasks Trace RCU 任一 flavor 启用时自动成立。I13 要求 IRQ 关闭并再次确认只有启动 CPU，然后对每个启用 flavor 调用 <code>cblist_init_generic()</code>：</p>
+<pre class="code_block" data-language="c"><code class="hljs language-c"><span class="hljs-comment">/**
+ * @brief 建立一个Tasks RCU flavor的per-CPU回调分片和辅助work。
+ * @note 中文说明由本仓库补充；源码裁剪自 kernel/rcu/tasks.h。
+ */</span>
+<span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title function_">cblist_init_generic</span><span class="hljs-params">(<span class="hljs-keyword">struct</span> rcu_tasks *rtp)</span>
+{
+	<span class="hljs-type">int</span> cpu;
+	<span class="hljs-type">int</span> lim;
+	<span class="hljs-type">int</span> shift;
+	<span class="hljs-type">int</span> maxcpu;
+	<span class="hljs-type">int</span> index = <span class="hljs-number">0</span>;
+
+	<span class="hljs-comment">/* 负数表示从1开始并允许以后自适应，0也归一化为1。 */</span>
+	<span class="hljs-keyword">if</span> (rcu_task_enqueue_lim &lt; <span class="hljs-number">0</span>) {
+		rcu_task_enqueue_lim = <span class="hljs-number">1</span>;
+		rcu_task_cb_adjust = <span class="hljs-literal">true</span>;
+	} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (rcu_task_enqueue_lim == <span class="hljs-number">0</span>) {
+		rcu_task_enqueue_lim = <span class="hljs-number">1</span>;
+	}
+	lim = rcu_task_enqueue_lim;
+
+	<span class="hljs-comment">/* 数组保存指向各possible CPU静态per-CPU对象的指针。 */</span>
+	rtp-&gt;rtpcp_array = kcalloc(num_possible_cpus(),
+				  <span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">struct</span> rcu_tasks_percpu *), GFP_KERNEL);
+	BUG_ON(!rtp-&gt;rtpcp_array);
+
+	for_each_possible_cpu(cpu) {
+		<span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">rcu_tasks_percpu</span> *<span class="hljs-title">rtpcp</span> =</span> per_cpu_ptr(rtp-&gt;rtpcpu, cpu);
+
+		WARN_ON_ONCE(!rtpcp);
+		<span class="hljs-comment">/* CPU0的锁已有静态初值，其余CPU在这里补齐。 */</span>
+		<span class="hljs-keyword">if</span> (cpu)
+			raw_spin_lock_init(&amp;ACCESS_PRIVATE(rtpcp, lock));
+		<span class="hljs-keyword">if</span> (rcu_segcblist_empty(&amp;rtpcp-&gt;cblist))
+			rcu_segcblist_init(&amp;rtpcp-&gt;cblist);
+		INIT_WORK(&amp;rtpcp-&gt;rtp_work, rcu_tasks_invoke_cbs_wq);
+		rtpcp-&gt;cpu = cpu;
+		rtpcp-&gt;rtpp = rtp;
+		rtpcp-&gt;index = index++;
+		rtp-&gt;rtpcp_array[rtpcp-&gt;index] = rtpcp;
+		<span class="hljs-keyword">if</span> (!rtpcp-&gt;rtp_blkd_tasks.next)
+			INIT_LIST_HEAD(&amp;rtpcp-&gt;rtp_blkd_tasks);
+		<span class="hljs-keyword">if</span> (!rtpcp-&gt;rtp_exit_list.next)
+			INIT_LIST_HEAD(&amp;rtpcp-&gt;rtp_exit_list);
+		rtpcp-&gt;barrier_q_head.next = &amp;rtpcp-&gt;barrier_q_head;
+		maxcpu = cpu;
+	}
+
+	rcu_task_cpu_ids = maxcpu + <span class="hljs-number">1</span>;
+	<span class="hljs-keyword">if</span> (lim &gt; rcu_task_cpu_ids)
+		lim = rcu_task_cpu_ids;
+	shift = ilog2(rcu_task_cpu_ids / lim);
+	<span class="hljs-keyword">if</span> (((rcu_task_cpu_ids - <span class="hljs-number">1</span>) &gt;&gt; shift) &gt;= lim)
+		shift++;
+	WRITE_ONCE(rtp-&gt;percpu_enqueue_shift, shift);
+	WRITE_ONCE(rtp-&gt;percpu_dequeue_lim, lim);
+	<span class="hljs-comment">/* 先写完所有分片和选择参数，最后发布允许入队的队列数。 */</span>
+	smp_store_release(&amp;rtp-&gt;percpu_enqueue_lim, lim);
+}
+</code></pre>
+<p>以上保留了改变初始化状态的完整主干，权威源码位置是 <code>kernel/rcu/tasks.h</code> 的 <code>cblist_init_generic()</code>。<code>rtpcp_array</code> 不是再次分配整组 per-CPU 对象，而是为已经静态定义的 <code>rtp-&gt;rtpcpu</code> 建立按 possible CPU 枚举顺序排列的指针表。先初始化每个对象的锁、分段回调链、work、反向 <code>rtpp</code>、阻塞/退出链和 barrier 哨兵，再计算 CPU ID 到 callback 分片的右移量；最后 release 发布 <code>percpu_enqueue_lim</code>，使并发入队者一旦看见非零上限，也必然看见此前全部对象与选择参数。</p>
+<p><code>kcalloc()</code> 失败使用 <code>BUG_ON</code>，不同于 I2/I10 的告警式失败；因为没有这个数组便无法构造 Tasks RCU 回调所有权，源码选择终止启动。若所有 Tasks flavor 都关闭，<code>tasks_cblist_init_generic()</code> 是内联空函数。</p>
+<p>I13 <strong>不创建 Tasks RCU GP 线程</strong>。真正的 <code>rcu_init_tasks_generic()</code> 在 <code>kernel_init_freeable()</code> 中、<code>workqueue_init()</code> 之后调用，才按启用 flavor 启动 <code>rcu_tasks_kthread</code> 等执行者。Tree RCU 和 Tasks RCU 在此共享“RCU”名字与部分 callback 基础设施，但其静止态证明对象不同：Tree RCU 追踪 CPU/任务读侧状态，Tasks RCU family 追踪任务调度、粗暴全任务边界或 tracing 读侧边界。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.16_函数返回后rcu还远未进入完整运行态">12.16_函数返回后RCU还远未进入完整运行态</h2>
+
+<p>要准确理解 <code>rcu_init()</code> 的完成条件，必须继续沿 <code>start_kernel()</code> 后半程追踪哪些消费者何时真正获得执行上下文。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.16.1_启动后半程的真实接力顺序">12.16.1_启动后半程的真实接力顺序</h3>
+
+<pre class="mermaid">sequenceDiagram
+    autonumber
+    participant SK as start_kernel
+    participant RI as rcu_init
+    participant Sub as 后续子系统初始化
+    participant RS as rest_init
+    participant KF as kernel_init_freeable
+    participant EI as early/core initcall
+    participant SMP as SMP/次级CPU
+    SK-&gt;&gt;RI: I0～I13建立静态状态、boot CPU身份和排队入口
+    RI--&gt;&gt;SK: 返回，调度器模式仍为INACTIVE
+    SK-&gt;&gt;Sub: rcu_init_nohz、定时器、srcu_init、softirq_init等
+    SK-&gt;&gt;RS: rest_init
+    RS-&gt;&gt;RS: rcu_scheduler_starting()切到INIT
+    RS-&gt;&gt;RS: 创建PID 1与kthreadd
+    KF-&gt;&gt;KF: workqueue_init()开放完整异步执行
+    KF-&gt;&gt;KF: rcu_init_tasks_generic()创建Tasks flavor执行者
+    EI-&gt;&gt;EI: rcu_spawn_gp_kthread()及core/NOCB/boost/exp辅助线程
+    EI-&gt;&gt;EI: rcu_set_runtime_mode()切到RUNNING
+    EI-&gt;&gt;RI: 调度I2积压的kfree_rcu工作
+    SMP-&gt;&gt;SMP: 次级CPU按prepare/starting/online协议加入树
+</pre>
+<p>重要的后继动作是：</p>
+<ol>
+<li><code>rcu_init_nohz()</code> 把 <code>nohz_full</code>、默认全卸载或启动参数形成的 CPU 集合并入回调卸载掩码，给对应回调链加上卸载标志并组织线程分组；它不创建这些线程，也不负责建立用户态/空闲态的扩展静止状态账本。</li>
+<li><code>srcu_init()</code> 初始化通用 SRCU 运行框架；I10 的 <code>rcu_gp_wq</code> 只是 Tree SRCU 后续会使用的执行队列之一。</li>
+<li><code>softirq_init()</code> 初始化 tasklet 的 per-CPU 队列并登记普通/高优先级 tasklet action；I7 已提前登记 RCU action，因此这里不会重复初始化 RCU softirq。</li>
+<li><code>rcu_scheduler_starting()</code> 把状态从 <code>INACTIVE</code> 改为 <code>INIT</code>，重新测试同步原语。</li>
+<li><code>workqueue_init()</code> 后 workqueue 才具备常规 worker 执行能力。</li>
+<li>pre-SMP early initcall 创建 Tree RCU GP、core、NOCB、boost、expedited 等适用线程；随后才启动次级 CPU。</li>
+<li>core initcall <code>rcu_set_runtime_mode()</code> 把模式改为 <code>RUNNING</code>，并让早期 <code>kfree_rcu</code> 积压进入正常异步流水线。</li>
+</ol>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.16.2_rcu_init明确没有做什么">12.16.2_rcu_init()明确没有做什么</h3>
+
+<ul>
+<li>没有调用 <code>rcu_init_nohz()</code>、<code>srcu_init()</code> 或 <code>rcu_init_tasks_generic()</code>。</li>
+<li>没有创建 GP kthread、<code>rcuc</code>、<code>rcuo</code>、boost、Tasks 或 expedited kthread。</li>
+<li>没有启动次级 CPU，也没有替它们填 online 位。</li>
+<li>没有打开本地 IRQ，没有让 scheduler 开始上下文切换。</li>
+<li>没有保证三个新 workqueue 上的 work 已经执行。</li>
+<li>没有主动完成一轮运行期 Tree RCU GP；早期自检采用启动阶段的单任务证明，I11 只在必要时排队补足 poll cookie。</li>
+<li>没有立即释放 <code>kfree_rcu()</code> 对象；I2 只建立延迟释放容器和入口。</li>
+<li>没有把所有 <code>rcu_state.node[]</code> 静态容量都变成实际节点；只初始化 I5 算出的前缀。</li>
+</ul>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.17_编译配置如何改变同一个函数体的实际事务">12.17_编译配置如何改变同一个函数体的实际事务</h2>
+
+<table>
+<thead>
+<tr>
+<th>配置/参数</th>
+<th>当前基线</th>
+<th>对I0～I13的影响</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CONFIG_TREE_RCU</code></td>
+<td><code>y</code></td>
+<td>链接 <code>tree.o</code> 中的本函数；若改为 Tiny RCU，整个实现被 <code>tiny.c::rcu_init()</code> 替换</td>
+</tr>
+<tr>
+<td><code>CONFIG_PREEMPT_RCU</code></td>
+<td><code>y</code></td>
+<td>公告可抢占 hierarchical RCU，启用阻塞读者状态；不是另一个 <code>rcu_init()</code></td>
+</tr>
+<tr>
+<td><code>CONFIG_PREEMPT_RT</code></td>
+<td>依 <code>.config</code> 实值</td>
+<td>为真时 <code>use_softirq=false</code>，以后由 <code>rcuc</code> 线程执行 core</td>
+</tr>
+<tr>
+<td><code>CONFIG_RCU_NOCB_CPU</code></td>
+<td>依 <code>.config</code> 实值</td>
+<td>I6 建 NOCB 节点/per-CPU 状态，线程仍稍后创建；实际卸载还取决于 mask</td>
+</tr>
+<tr>
+<td><code>CONFIG_RCU_BOOST</code></td>
+<td>依 <code>.config</code> 实值</td>
+<td>I4 的最小优先级与 I6 的 boost 状态生效</td>
+</tr>
+<tr>
+<td><code>CONFIG_PROVE_RCU</code></td>
+<td>依 <code>.config</code> 实值</td>
+<td>I1/I12 自检与可选 <code>rcu_self_test</code> 才存在</td>
+</tr>
+<tr>
+<td><code>CONFIG_PM_SLEEP</code></td>
+<td>依 <code>.config</code> 实值</td>
+<td>I8 登记 PM notifier；关闭时编译为空操作</td>
+</tr>
+<tr>
+<td><code>CONFIG_TASKS_RCU*</code></td>
+<td>依各 flavor</td>
+<td>任一启用则 I13 分配对应的 per-CPU callback 数组</td>
+</tr>
+<tr>
+<td><code>rcutree.use_softirq</code></td>
+<td>启动参数</td>
+<td>非 RT 下决定 I7 是否登记 RCU softirq</td>
+</tr>
+<tr>
+<td><code>rcutree.rcu_fanout_leaf</code>/<code>rcu_fanout_exact</code></td>
+<td>启动参数</td>
+<td>改变 I5/I6 的实际树形；非法时退回编译期几何</td>
+</tr>
+<tr>
+<td><code>rcutree.qovld</code></td>
+<td>启动参数</td>
+<td>I10 选择默认、禁用或显式过载阈值</td>
+</tr>
+<tr>
+<td><code>rcutree.dump_tree</code></td>
+<td>启动参数</td>
+<td>只在 I6 后打印拓扑</td>
+</tr>
+</tbody></table>
+<p>Tiny RCU 的同名函数只登记 <code>RCU_SOFTIRQ</code>、执行早期测试并初始化 Tasks callback list，不建立 <code>rcu_node</code> 树、三个 Tree RCU workqueue或 boot CPU 三段协议。当前构建由 Makefile 与 <code>.config</code> 在链接期排除了该路径，不能在运行时从 Tree 切到 Tiny。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.18_异常与失败不是一种统一语义">12.18_异常与失败不是一种统一语义</h2>
+
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>触发条件</th>
+<th>源码动作</th>
+<th>初始化还能保证什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>I2</td>
+<td>reclaim workqueue 分配失败</td>
+<td><code>WARN_ON</code> 后继续</td>
+<td>per-CPU 批次仍建立，但没有等价的最终异步执行保证</td>
+</tr>
+<tr>
+<td>I2</td>
+<td>shrinker 分配失败</td>
+<td><code>pr_err</code> 并从 I2 返回</td>
+<td>正常批处理结构保留，只缺内存压力扫描入口</td>
+</tr>
+<tr>
+<td>I3</td>
+<td>nohz/Tasks stall 参数越界</td>
+<td>钳位并打印</td>
+<td>消费者看到合法值</td>
+</tr>
+<tr>
+<td>I4</td>
+<td>kthread priority 越界/过低</td>
+<td>钳位并告警</td>
+<td>后续线程取得修正值</td>
+</tr>
+<tr>
+<td>I5</td>
+<td>叶扇出非法或容量不足</td>
+<td><code>WARN_ON</code>，退回编译期几何</td>
+<td>不按非法参数越界写节点数组</td>
+</tr>
+<tr>
+<td>I6</td>
+<td><code>rcu_num_lvls</code> 超出静态范围</td>
+<td><code>panic</code></td>
+<td>视为内部不变量破坏，不能继续</td>
+</tr>
+<tr>
+<td>I9</td>
+<td>通用在线 CPU 数已大于1</td>
+<td><code>WARN_ON</code></td>
+<td>代码仍继续，但启动顺序假设已破坏，结果不可视为正常基线</td>
+</tr>
+<tr>
+<td>I10</td>
+<td><code>rcu_gp_wq</code>/<code>sync_wq</code> 分配失败</td>
+<td><code>WARN_ON</code> 后继续</td>
+<td>已建立树仍在，但后继无完整替代路径</td>
+</tr>
+<tr>
+<td>I13</td>
+<td>Tasks per-CPU 数组分配失败</td>
+<td><code>BUG_ON</code></td>
+<td>直接终止，避免发布无所有权的 callback 分片</td>
+</tr>
+<tr>
+<td>I1/I12</td>
+<td>自检条件不成立</td>
+<td>WARN/晚期计数核对失败</td>
+<td>诊断暴露阶段协议错误，不应当作可忽略性能信息</td>
+</tr>
+</tbody></table>
+<p>因此检查启动日志时必须记录“哪个检查点、是钳位/回退/告警/终止中的哪一种”，不能用“RCU init 有 warning 但应该降级了”覆盖差异。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.19_直接符号覆盖账本">12.19_直接符号覆盖账本</h2>
+
+<p>这张表用于防止阅读时只追长函数而漏掉一行状态门闩。每个 <code>rcu_init()</code> 直接符号都在前文有归属：</p>
+<table>
+<thead>
+<tr>
+<th>直接符号</th>
+<th>角色</th>
+<th>本章位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>smp_processor_id()</code></td>
+<td>捕获唯一启动 CPU 编号</td>
+<td>12.4、12.13</td>
+</tr>
+<tr>
+<td><code>rcu_early_boot_tests()</code></td>
+<td>树建立前的可选自检</td>
+<td>12.7</td>
+</tr>
+<tr>
+<td><code>kfree_rcu_batch_init()</code></td>
+<td>延迟释放流水线</td>
+<td>12.8</td>
+</tr>
+<tr>
+<td><code>rcu_bootup_announce()</code></td>
+<td>实现/异常参数公告与部分钳位</td>
+<td>12.9</td>
+</tr>
+<tr>
+<td><code>sanitize_kthread_prio()</code></td>
+<td>线程优先级净化</td>
+<td>12.9</td>
+</tr>
+<tr>
+<td><code>rcu_init_geometry()</code></td>
+<td>实际层数与节点数</td>
+<td>12.10</td>
+</tr>
+<tr>
+<td><code>rcu_init_one()</code></td>
+<td>全局、节点、每CPU状态</td>
+<td>12.11及P06唯一实现讲解</td>
+</tr>
+<tr>
+<td><code>dump_tree</code>/<code>rcu_dump_rcu_node_tree()</code></td>
+<td>可选拓扑观测</td>
+<td>12.10</td>
+</tr>
+<tr>
+<td><code>use_softirq</code>/<code>open_softirq()</code>/<code>rcu_core_si()</code></td>
+<td>core执行入口选择</td>
+<td>12.12</td>
+</tr>
+<tr>
+<td><code>pm_notifier()</code>/<code>rcu_pm_notify()</code></td>
+<td>睡眠事务策略</td>
+<td>12.12</td>
+</tr>
+<tr>
+<td><code>num_online_cpus()</code>/<code>WARN_ON</code></td>
+<td>验证单启动CPU前提</td>
+<td>12.13</td>
+</tr>
+<tr>
+<td><code>rcutree_prepare_cpu()</code></td>
+<td>建 boot CPU 私有容器</td>
+<td>12.13</td>
+</tr>
+<tr>
+<td><code>rcutree_report_cpu_starting()</code></td>
+<td>发布 boot CPU 身份与位图</td>
+<td>12.13</td>
+</tr>
+<tr>
+<td><code>rcutree_online_cpu()</code></td>
+<td>建在线期 mask并按模式提前返回</td>
+<td>12.13</td>
+</tr>
+<tr>
+<td><code>alloc_workqueue(&quot;rcu_gp&quot;)</code></td>
+<td>GP/SRCU/expedited控制工作队列</td>
+<td>12.14</td>
+</tr>
+<tr>
+<td><code>alloc_workqueue(&quot;sync_wq&quot;)</code></td>
+<td>SRS清理工作队列</td>
+<td>12.14</td>
+</tr>
+<tr>
+<td><code>qovld</code>/<code>qovld_calc</code>/<code>qhimark</code></td>
+<td>回调过载阈值门闩</td>
+<td>12.14</td>
+</tr>
+<tr>
+<td><code>start_poll_synchronize_rcu_expedited()</code></td>
+<td>补排早期poll需求</td>
+<td>12.14</td>
+</tr>
+<tr>
+<td><code>rcu_test_sync_prims()</code></td>
+<td>树建立后的可选自检</td>
+<td>12.15</td>
+</tr>
+<tr>
+<td><code>tasks_cblist_init_generic()</code></td>
+<td>Tasks family回调分片</td>
+<td>12.15</td>
+</tr>
+</tbody></table>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.20_修改这段代码时必须守住的顺序边界">12.20_修改这段代码时必须守住的顺序边界</h2>
+
+<p>这段初始化最脆弱的不是单行赋值，而是“对象存在、身份发布、执行能力开放”三类事件的先后关系。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.20.1_不可随意交换的依赖">12.20.1_不可随意交换的依赖</h3>
+
+<ol>
+<li><code>setup_nr_cpu_ids()</code> 必须先于 I5，否则几何会冻结错误的 <code>nr_cpu_ids</code>。</li>
+<li><code>setup_per_cpu_areas()</code> 必须先于 I2/I6/I13，否则 per-CPU 地址尚不可用。</li>
+<li><code>workqueue_init_early()</code> 必须先于 I2/I10，否则 workqueue 对象甚至不能安全创建/排队。</li>
+<li>I5 必须先于 I6；I6 必须先于 I9、<code>qovld_calc</code> 发布和 I11。</li>
+<li>I6 的 <code>exp_poll_lock</code>/work、I9 的 <code>n_online_cpus</code> 门闩、I10 的 <code>rcu_gp_wq</code> 必须全部先于 I11。</li>
+<li>I9 必须在中断、调度器和次级 CPU 启动以前保持单 CPU、IRQ-off 前提。</li>
+<li>I13 必须先于 <code>rcu_init_tasks_generic()</code>，后者只能消费已经发布的 per-CPU callback 分片。</li>
+<li>GP/core/NOCB/boost 等线程创建必须等 <code>kthreadd</code> 和相应初始化阶段，不能为“提前并行”塞进 <code>rcu_init()</code>。</li>
+</ol>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.20.2_改动时要同步核对的调用方和配置">12.20.2_改动时要同步核对的调用方和配置</h3>
+
+<p>若改变 I0～I13 任一步，至少同时检查：<code>start_kernel()</code> 和 <code>rest_init()</code> 的阶段顺序、<code>kernel_init_freeable()</code> 的 workqueue/Tasks 初始化、RCU early/core initcall、CPU hotplug 回调、Tree/Tiny Makefile 选择、PREEMPT/RT/NOCB/BOOST/PROVE/PM/TASKS 配置分支、早期 <code>call_rcu()</code>/poll API 以及 <code>rcutorture</code> 启动测试。只让默认 SMP 非 RT 配置启动成功，不足以证明重排安全。</p>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.21_怎样观察并验证这次初始化">12.21_怎样观察并验证这次初始化</h2>
+
+<p>验证必须把静态身份、启动日志和运行期执行证据分层，避免用后来的线程名替代早期状态发布证明。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.21.1_静态核对">12.21.1_静态核对</h3>
+
+<pre class="code_block" data-language="bash"><code class="hljs language-bash"><span class="hljs-comment"># 确认实现选择与关键配置；本仓库记录的是配置事实，不以线程名猜配置。</span>
+grep -E <span class="hljs-string">&#x27;CONFIG_(TREE_RCU|TINY_RCU|PREEMPT_RCU|PREEMPT_RT|RCU_NOCB_CPU|RCU_BOOST|PROVE_RCU|PM_SLEEP|TASKS_RCU)&#x27;</span> .config
+
+<span class="hljs-comment"># 确认链接分派和直接调用次序。</span>
+grep -n <span class="hljs-string">&#x27;CONFIG_TREE_RCU\|CONFIG_TINY_RCU&#x27;</span> kernel/rcu/Makefile
+sed -n <span class="hljs-string">&#x27;/void __init rcu_init(void)/,/^}/p&#x27;</span> kernel/rcu/tree.c
+</code></pre>
+<p>源码树身份必须同时核对 official remote、固定提交 <code>dfaf2136deb2af2e60b994421281ba42f1c087e0</code>、Linux <code>6.12.20</code>、相关 <code>.config</code> 与相对路径；本机目录名不能充当版本证据。</p>
+<h3 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.21.2_运行时观测及其证明边界">12.21.2_运行时观测及其证明边界</h3>
+
+<ul>
+<li>启动日志中的 <code>Preemptible hierarchical RCU implementation.</code> 证明公告分支被执行；它不证明 GP kthread 已经运行。</li>
+<li>参数修正、几何调整、oddness 与 <code>dump_tree</code> 日志能核对配置和拓扑；没有日志可能只是采用默认值或未启用 dump。</li>
+<li>完整启动后可观察 <code>rcu_gp</code>、<code>rcuc/*</code>、<code>rcuo*</code>、Tasks 等线程，但名称只证明对应执行者被创建，不能单独证明某个 GP 已完成。</li>
+<li>tracepoint、RCU stall detector、<code>rcutorture</code> 和 callback 计数可以观察后续状态推进；“未告警”只有在配置启用、hook 存在、测试路径实际执行且检查器未失效时才是有限证据。</li>
+<li>要验证启动期早期 callback/poll 边界，应使用带 <code>CONFIG_PROVE_RCU</code>、早期 self-test 或专门启动测试的内核；普通用户态 <code>synchronize_rcu()</code> 无法回到 I1/I11 的时间窗口。</li>
+</ul>
+<h2 id="document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization--12.22_结论_rcu_init完成的是可运行前的状态协议">12.22_结论_rcu_init()完成的是可运行前的状态协议</h2>
+
+<p>这次初始化的本质不是“启动一个 RCU 线程”，而是依固定顺序建立完整前提：选择 Tree/Preemptible 实现；验证早期 API；建立延迟释放承载物；公布并净化参数；从编译期容量计算实际树；初始化全局、节点和每 CPU 状态；选择 <code>rcu_core()</code> 的执行入口；登记睡眠策略；以三段发布协议把唯一启动 CPU 接入树；建立异步控制队列与回调过载门闩；修复过早 poll 请求；最后初始化可选 Tasks RCU 回调分片。</p>
+<p>函数返回时，所有后续执行者已经有明确的状态地址、锁、队列、父子关系和发布顺序，但调度器模式仍是 <code>INACTIVE</code>。只有后续 <code>rcu_scheduler_starting()</code>、<code>workqueue_init()</code>、Tasks/Tree RCU initcall、<code>rcu_set_runtime_mode()</code> 与 SMP bring-up 依次接力，这套静态协议才变成多 CPU 上持续运行的 GP、QS 汇聚和 callback 执行系统。</p>
+</div>
+          <nav class="chapter_navigation" aria-label="章节导航"><a href="#document-research-source_reading-rcu-linux_6_12_tree_srcu_implementation"><span>上一篇</span>Linux 6.12 Tree SRCU 源码实现</a><a href="#document-labs-kernel-rcu-late_and_preempted_reader"><span>下一篇</span>晚到读者与抢占读者的对象回收实验</a></nav>
         </article>
       </section>
       <section class="volume" id="volume-experiment">
@@ -20432,7 +22100,7 @@ make clean
 </code></pre>
 <p>模块退出会先把正式 RCU 入口改为 <code>NULL</code>，执行 <code>synchronize_rcu()</code>，再释放最后发布的对象。构建产物由 <code>.gitignore</code> 排除，不属于知识仓库正文。</p>
 </div>
-          <nav class="chapter_navigation" aria-label="章节导航"><a href="#document-research-source_reading-rcu-linux_6_12_tree_srcu_implementation"><span>上一篇</span>Linux 6.12 Tree SRCU 源码实现</a><span></span></nav>
+          <nav class="chapter_navigation" aria-label="章节导航"><a href="#document-research-source_reading-rcu-linux_6_12_tree_rcu_init_boot_initialization"><span>上一篇</span>Linux 6.12 Tree RCU rcu_init 启动初始化源码实现</a><span></span></nav>
         </article>
       </section>
     <section class="book_colophon" id="references">
