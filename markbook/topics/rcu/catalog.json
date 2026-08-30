@@ -7,11 +7,11 @@
     {
       "version": "2026.08",
       "release_date": "2026-08-01",
-      "generated_at": "2026-08-24T05:14:33.026Z",
+      "generated_at": "2026-08-30T09:33:50.910Z",
       "href": "releases/2026.08/index.html",
-      "documents": 53,
+      "documents": 50,
       "attachments": 2,
-      "source_state": "clean"
+      "source_state": "contains_uncommitted_sources"
     }
   ]
 }
