@@ -23,11 +23,11 @@ source_version: "6.12.20"
 
 | 分支 | 文件 | 职责 |
 | --- | --- | --- |
-| spinlock | [`include/linux/spinlock_types.h`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/spinlock_types.h) | 普通与 RT 配置下 `spinlock_t` 类型映射 |
-| spinlock | [`include/linux/spinlock.h`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/spinlock.h) | 公共包装、raw 路径与架构边界 |
+| spinlock | [`include/linux/spinlock_types.h`](../../linux/include/linux/spinlock_types.h) | 普通与 RT 配置下 `spinlock_t` 类型映射 |
+| spinlock | [`include/linux/spinlock.h`](../../linux/include/linux/spinlock.h) | 公共包装、raw 路径与架构边界 |
 | spinlock | `arch/arm/include/asm/spinlock.h` 及选定实现 | ARM 架构原子锁实现；结论限 ARM/配置 |
-| mutex | [`include/linux/mutex_types.h`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/mutex_types.h)、[`kernel/locking/mutex.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/kernel/locking/mutex.c) | owner/wait list、乐观自旋、慢路径与 handoff |
-| rwsem | [`include/linux/rwsem.h`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/rwsem.h)、[`kernel/locking/rwsem.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/kernel/locking/rwsem.c) | count/owner、读写 waiter、批量读唤醒 |
+| mutex | [`include/linux/mutex_types.h`](../../linux/include/linux/mutex_types.h)、[`kernel/locking/mutex.c`](../../linux/kernel/locking/mutex.c) | owner/wait list、乐观自旋、慢路径与 handoff |
+| rwsem | [`include/linux/rwsem.h`](../../linux/include/linux/rwsem.h)、[`kernel/locking/rwsem.c`](../../linux/kernel/locking/rwsem.c) | count/owner、读写 waiter、批量读唤醒 |
 | RT 边界 | `kernel/locking/spinlock_rt.c`、`kernel/locking/rtmutex.c` | PREEMPT_RT 下普通 spin/mutex 基础；本轮只标边界 |
 
 ## 1.3\_三条实现分支
