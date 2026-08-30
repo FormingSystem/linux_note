@@ -14,7 +14,16 @@ topics:
 
 # 第6章\_Tree\_RCU\_读侧执行模型与配置差异
 
-先对齐本章的本地语言。中央处理器（Central Processing Unit，CPU）执行普通 RCU 读侧；读侧参与者称为 reader；静止状态（Quiescent State，QS）是 CPU 可用于排除旧 reader 的证据；宽限期（Grace Period，GP）是收集这类证据并证明边界前旧 reader 已结束的周期；上下文切换（context switch）是调度器把 CPU 从一个任务交给另一个任务的事件；callback 是 GP 完成后才获得执行资格的回调函数。`PREEMPT_RCU` 是 `CONFIG_PREEMPT_RCU` 配置分支的简称，表示普通 reader 可以被调度器非自愿抢占；`rcu_node` 则是 Tree RCU 汇聚 CPU 与任务证明债务的 C 结构体标识符。
+先对齐本章的本地语言。
+
+1. 中央处理器（Central Processing Unit，CPU）执行普通 RCU 读侧；
+2. 读侧参与者称为 reader；
+3. 静止状态（Quiescent State，QS）是 CPU 可用于排除旧 reader 的证据；
+4. 宽限期（Grace Period，GP）是收集这类证据并证明边界前旧 reader 已结束的周期；
+5. 上下文切换（context switch）是调度器把 CPU 从一个任务交给另一个任务的事件；
+6. callback 是 GP 完成后才获得执行资格的回调函数。
+7. `PREEMPT_RCU` 是 `CONFIG_PREEMPT_RCU` 配置分支的简称，表示普通 reader 可以被调度器非自愿抢占；
+8. `rcu_node` 则是 Tree RCU 汇聚 CPU 与任务证明债务的 C 结构体标识符。
 
 P05 已经建立 Tree RCU 的公共完整周期。本章只放大其中的 **读侧进入/退出、context switch 与节点完成条件**：先说明非抢占式配置为什么可以依赖 CPU QS，再用一个被抢占旧 reader 击穿该证明，最后观察 PREEMPT_RCU 增加的任务债务怎样重新接回公共 `rcu_node` 汇聚链。
 

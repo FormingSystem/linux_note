@@ -111,6 +111,7 @@ NOCB CPU 的 callback 本来就由 offload kthread 管理，因此 hotplug 迁�
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant GP as GP kthread
     participant N as CPU4叶rcu_node
     participant C4 as outgoing CPU4
@@ -132,7 +133,7 @@ sequenceDiagram
     HP-->>GP: 若合并后需要新GP则唤醒
 ```
 
-被抢占 reader 是关键分支：任务可能在 CPU4 上进入普通 RCU 临界区，随后被抢占并迁移到其他 CPU。CPU4 下线只清 CPU 位，不能清 `blkd_tasks` 中的任务债务；该任务最终解阻时仍沿其记录的叶节点路径报告。
+第 2～5 步只处理 CPU4 对当前/未来 CPU 集合的证明债务，第 7～11 步另行迁移 callback 所有权；两组状态不能互相替代。被抢占 reader 是关键分支：任务可能在 CPU4 上进入普通 RCU 临界区，随后被抢占并迁移到其他 CPU。CPU4 下线只清 CPU 位，不能清 `blkd_tasks` 中的任务债务；该任务最终解阻时仍沿其记录的叶节点路径报告。
 
 ## 4.7\_正常路径特殊路径与强制慢路径
 
@@ -148,6 +149,7 @@ sequenceDiagram
 
 | 阅读目标 | 源文件 | 唯一实现讲解 |
 | --- | --- | --- |
+| `start_kernel()` 中 `rcu_init()` 的完整启动事务、配置分派和后继阶段 | [`init/main.c`](../../linux/init/main.c)、[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P12：`rcu_init()` I0～I13](../source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.6_I0到I13的初始化阶段账本) |
 | `node[]/level[]`、父子关系与 CPU 绑定 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`tree.h`](../../linux/kernel/rcu/tree.h) | [P06：`rcu_init_one()`](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点) |
 | boot per-CPU 初值与 CPU prepare | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P06：boot 与 prepare](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.5_boot初始化与prepare为何仍未让CPU加入当前GP) |
 | CPU starting/dead 的 current/next 交接 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P06：starting/dead](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮) |
@@ -157,11 +159,12 @@ sequenceDiagram
 
 ## 4.9\_建议阅读顺序与验收
 
-1. 先在 `tree.h` 找到 `rcu_state.node[]/level[]`、`rcu_node.qsmask*` 和 `rcu_data.mynode/grpmask`；
-2. 再读 `rcu_init_one()`，只回答静态地址怎样建立；
-3. 沿 `rcutree_prepare_cpu()` 到 `rcutree_report_cpu_starting()`，区分“数据准备好”和“加入未来参与集合”；
-4. 回到普通 GP `rcu_gp_init()`，观察 next 集合何时变成 current 债务；
-5. 最后沿 `rcutree_report_cpu_dead()` 与 `rcutree_migrate_callbacks()`，分别追踪证明债务和 callback 所有权。
+1. 先读 `start_kernel()` 中的 [`rcu_init()` 完整启动事务](../source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.4_进入rcu_init以前内核已经保证了什么)，确定调用现场和后半程尚未发生的动作；
+2. 在 `tree.h` 找到 `rcu_state.node[]/level[]`、`rcu_node.qsmask*` 和 `rcu_data.mynode/grpmask`；
+3. 再读 `rcu_init_one()`，只回答静态地址怎样建立；
+4. 沿 `rcutree_prepare_cpu()` 到 `rcutree_report_cpu_starting()`，区分“数据准备好”和“加入未来参与集合”；
+5. 回到普通 GP `rcu_gp_init()`，观察 next 集合何时变成 current 债务；
+6. 最后沿 `rcutree_report_cpu_dead()` 与 `rcutree_migrate_callbacks()`，分别追踪证明债务和 callback 所有权。
 
 验收时应能不看函数名回答：CPU4 在 GP 中途上线为何不加入该轮；CPU4 在 GP 中途离线为何必须先还当前债务；被抢占 reader 为什么不随 CPU 位清除；`barrier_lock` 为什么出现在 callback 迁移而不是 QS 证明中。
 

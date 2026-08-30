@@ -24,7 +24,7 @@ source_version: "6.12.20"
 
 模块协作、参与者与阅读顺序见 [GP 全局生命周期模块源码概念导读](../navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.3_源码文件与状态所有权)，跨版本概念见 [Tree RCU GP 请求与全局生命周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.2_六个必须分开的专有名词)。
 
-下列 `/** ... */` 块都是本仓库为阅读补充的中文 Doxygen 说明，不是上游源码原注释。RCU 函数体裁剪自仓库保存并经固定提交核对的文件；启动调度顺序另外对照同一不可变提交的官方 [`init/main.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c)。只删除不改变主状态机的 trace、torture、重复诊断，以及已明确转入独立章节的 NOCB/boost/strict 测试细节，所有影响启动次序、请求、CPU 集合、证明债务、完成发布和等待者交付的动作都保留或在紧邻小节展开。完整实现仍以链接的固定源码文件为准。
+下列 `/** ... */` 块都是本仓库为阅读补充的中文 Doxygen 说明，不是上游源码原注释。RCU 函数体裁剪自仓库保存并经固定提交核对的文件；启动调度顺序另外对照同一不可变提交的本地 [`init/main.c`](../../linux/init/main.c)。只删除不改变主状态机的 trace、torture、重复诊断，以及已明确转入独立章节的 NOCB/boost/strict 测试细节，所有影响启动次序、请求、CPU 集合、证明债务、完成发布和等待者交付的动作都保留或在紧邻小节展开。完整实现仍以链接的固定源码文件为准。
 
 每个源码标题都按同一组 **实现原理** 复核：进入前持有什么锁或代际，语句写入哪个具体地址，谁在后续路径读取，以及该顺序防止哪一种请求丢失、跨代报告或完成发布竞态。
 
@@ -34,7 +34,7 @@ source_version: "6.12.20"
 | --- | --- | --- | --- |
 | `struct rcu_state` 全字段域、全局 `rcu_state` 实例、`RCU_GP_*` | [`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h)、[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.3](#5.3_rcu_state把线程命令代际和等待队列放在一起) | 分流九个子机制，定义普通 GP 的任务、命令、阶段与序列地址，并建立各域初值 |
 | `rcu_seq_start/end/snap/done()` | [`kernel/rcu/rcu.h`](../../linux/kernel/rcu/rcu.h) | [5.4](#5.4_rcu_seq辅助函数怎样维护开始目标与完成) | 推进代际并约束发布顺序 |
-| `early_initcall()`、`do_pre_smp_initcalls()`、`kernel_init_freeable()` | [`include/linux/init.h`](../../linux/include/linux/init.h)、[`init/main.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L1369-L1573) | [5.5.1](#5.5.1_先从内核启动链定位early_initcall) | 把链接期登记的 early initcall 放到 `kthreadd` 就绪后、SMP 启动前分派 |
+| `early_initcall()`、`do_pre_smp_initcalls()`、`kernel_init_freeable()` | [`include/linux/init.h`](../../linux/include/linux/init.h)、[`init/main.c`](../../linux/init/main.c) | [5.5.1](#5.5.1_先从内核启动链定位early_initcall) | 把链接期登记的 early initcall 放到 `kthreadd` 就绪后、SMP 启动前分派 |
 | `rcu_spawn_gp_kthread()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.5.2](#5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务) | 创建并 release 发布 GP 任务 |
 | `rcu_start_this_gp()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.6](#5.6_rcu_start_this_gp漏斗记录未来需求) | 前推 `gp_seq_needed`、设置 INIT |
 | `rcu_gp_kthread_wake()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.7](#5.7_rcu_gp_kthread_wake把共享命令变成调度唤醒) | 唤醒 `gp_wq` 并记录诊断值 |
@@ -279,9 +279,9 @@ GP kthread 不能只在源码中“有一个函数”便视为可用：启动链
 #define early_initcall(fn) __define_initcall(fn, early)
 ```
 
-Linux 6.12.20 的真实启动顺序必须分成两个 RCU 事件看。第一个事件是 [`start_kernel()` 里的 `rcu_init()`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L985-L1013)：它先建立 Tree RCU 几何、节点、boot CPU 状态、softirq/workqueue 等基础设施，**此时还没有创建普通 GP kthread**。第二个事件发生在 `rest_init()` 以后：启动路径先把 `kthreadd` 建好，再由 PID 1 的 `kernel_init` 线程分派 early initcalls。
+Linux 6.12.20 的真实启动顺序必须分成两个 RCU 事件看。第一个事件是本地 [`init/main.c`](../../linux/init/main.c) 中 `start_kernel()` 调用 `rcu_init()`：它先建立 Tree RCU 几何、节点、boot CPU 状态、softirq/workqueue 等基础设施，**此时还没有创建普通 GP kthread**。第二个事件发生在 `rest_init()` 以后：启动路径先把 `kthreadd` 建好，再由 PID 1 的 `kernel_init` 线程分派 early initcalls。
 
-[`init/main.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L699-L739) 与 [`kernel_init_freeable()`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c#L1460-L1573) 给出的关键先后关系是：
+本地 [`init/main.c`](../../linux/init/main.c) 中的 `rest_init()` 与 `kernel_init_freeable()` 给出的关键先后关系是：
 
 ```c
 /* 官方固定提交的结构化调用顺序裁剪；省略号与中文注释由本仓库补充。 */

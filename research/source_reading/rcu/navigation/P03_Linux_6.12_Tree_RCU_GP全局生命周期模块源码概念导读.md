@@ -22,7 +22,7 @@ source_version: "6.12.20"
 
 本章回答“普通 Tree RCU 怎样把许多 GP 需求合并成串行的物理 GP，并由一个长期 GP kthread 完成开始、等待和 cleanup”。对应源码基线为 NXP Linux 6.12.20、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，配置边界为 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y`。
 
-先读稳定机制正文的 [GP 究竟是什么](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.1_本章先回答GP究竟是什么)，再用本章定位文件、对象、状态和阅读顺序。具体宏体与函数体只在 [GP 全局生命周期源码实现](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.2_源码符号覆盖账本)唯一展开。
+先读稳定机制正文的 [GP 究竟是什么](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.1_本章先回答GP究竟是什么)，再用本章定位文件、对象、状态和阅读顺序。具体宏体与函数体只在 [GP 全局生命周期源码实现](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.2_源码符号覆盖账本) 唯一展开。
 
 本章不讲 SRCU GP。SRCU 的 reader 是指定 `srcu_struct` 私有域中的双 index 计数，不读写普通 `rcu_state.gp_kthread`；应转入 [Tree SRCU 模块源码概念导读](P09_Linux_6.12_Tree_SRCU模块源码概念导读.md#9.1_先分清Tree_RCU与Tree_SRCU)。
 
@@ -41,7 +41,7 @@ source_version: "6.12.20"
 
 | 上游相对位置 | 关键对象或函数 | 本模块职责 |
 | --- | --- | --- |
-| [`init/main.c`](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/init/main.c) | `start_kernel()`、`rest_init()`、`kernel_init()`、`do_pre_smp_initcalls()` | 区分早期 `rcu_init()`、`kthreadd` 就绪、early initcall 分派和 SMP bring-up |
+| [`init/main.c`](../../linux/init/main.c) | `start_kernel()`、`rest_init()`、`kernel_init()`、`do_pre_smp_initcalls()` | 区分早期 `rcu_init()`、`kthreadd` 就绪、early initcall 分派和 SMP bring-up |
 | [`include/linux/init.h`](../../linux/include/linux/init.h) | `early_initcall()`、`__define_initcall()` | 把创建函数登记到链接期 initcall 段，而不是立即调用 |
 | [`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h) | `struct rcu_state`、`RCU_GP_FLAG_*`、`RCU_GP_*` | 全局线程指针、等待队列、命令和观察阶段 |
 | [`kernel/rcu/rcu.h`](../../linux/kernel/rcu/rcu.h) | `rcu_seq_start/end/snap/done()` | 代际开始、完成和目标判断 |
