@@ -2,8 +2,17 @@
   "schema_version": 1,
   "topic_id": "rcu",
   "title": "深入理解 Linux RCU",
-  "latest": "2026.08",
+  "latest": "2026.09",
   "releases": [
+    {
+      "version": "2026.09",
+      "release_date": "2026-09-01",
+      "generated_at": "2026-09-01T02:43:06.738Z",
+      "href": "releases/2026.09/index.html",
+      "documents": 51,
+      "attachments": 2,
+      "source_state": "clean"
+    },
     {
       "version": "2026.08",
       "release_date": "2026-08-01",
