@@ -1,4 +1,4 @@
-name: MarkBook monthly publication
+name: MarkBook monthly verification
 
 on:
   schedule:
@@ -27,14 +27,14 @@ on:
         type: boolean
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: markbook-monthly-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  publish:
+  verify:
     if: github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -58,8 +58,7 @@ jobs:
       - name: Test MarkBook publisher
         run: npm test --prefix markbook
 
-      - name: Build monthly publication
-        id: build
+      - name: Build and verify monthly publication
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -91,17 +90,6 @@ jobs:
 
           node markbook/scripts/publish_markbook.mjs "${publish_arguments[@]}"
           node markbook/scripts/publish_markbook.mjs "${verify_arguments[@]}"
-          echo "release_month=$release_month" >> "$GITHUB_OUTPUT"
-
-      - name: Commit one monthly version
+      - name: Check generated tree
         shell: bash
-        env:
-          RELEASE_MONTH: ${{ steps.build.outputs.release_month }}
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- markbook/runtime markbook/topics
-          git diff --cached --check
-          git commit -m "release(markbook): 发布 ${RELEASE_MONTH} 专题月刊"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+        run: git diff --check

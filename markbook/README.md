@@ -18,27 +18,41 @@ MarkBook 把同一专题分布在知识正文、版本化源码阅读、唯一�
 
 ## 1.2\_当前刊物
 
-- [RCU MarkBook](topics/rcu/README.md)：从 RCU 的问题、通用契约和分类坐标，一直读到 Tree RCU 公共骨架、模块差异、Linux 6.12.20 的模块导航、唯一实现讲解和晚到/抢占读者实验。
+- [RCU MarkBook](topics/rcu/README.md)：从 RCU 的问题、通用契约和分类坐标，依次进入普通 Tree RCU、SRCU、Tasks 与 Tiny 的原理及当前已有 Linux 6.12.20 源码证据，最后用对象生命周期、工程应用、诊断和选择边界收束。
 
 ## 1.3\_月度发布契约
 
 - 常规版本使用 `YYYY.MM`，发布日期固定为中国时区当月 1 日。
-- 每月 1 日统一执行一次全部启用专题的发布；同专题同月份已经存在时，发布在任何写入前失败。
+- 每月 1 日由维护者在本地已同步且干净的 `master` 上统一执行一次全部启用专题的发布；同专题同月份已经存在时，发布在任何写入前失败。
 - 首次建刊可以显式传入 `--initial`；它只允许没有历史版本的专题在非 1 日生成首版。
 - 只有维护者明确要求覆盖更新时才使用 `--overwrite`。普通更新进入下一月版本。
 - 已生成的 HTML 不手工编辑；源文件变化后由生成器完整重建并重写来源台账。
 
-仓库的 `.github/workflows/markbook_monthly.yml` 在中国时区每月 1 日 08:00 运行单测、生成全部启用专题、校验来源与产物，然后以一次符合仓库提交规范的快进提交发布。当远端在构建期间前进、同月版本已经存在或任何校验失败时，推送会失败，不使用强制更新。
+仓库的 `.github/workflows/markbook_monthly.yml` 在中国时区每月 1 日 08:00 运行单测、试生成全部启用专题并校验来源与产物。该工作流只有仓库读取权限，**不得提交或推送 `master`**；runner 中的试生成结果在任务结束后丢弃，只回答“当前权威来源能否生成本月刊物”。这是有意的 Git 边界：GitHub 托管 runner 无法在本机离线、关机或工作区有修改时同步移动本地分支，让远端自动写 `master` 必然会制造本地落后窗口。
+
+正式发布采用 **本地先形成提交、远端后接收提交** 的顺序。发布前先确认本地 `master` 与 `origin/master` 指向同一提交且工作区为空；生成、验证和提交都在本地完成，最后执行普通 push。若 push 被拒绝，本地发布提交仍完整保留，应先取得远端变化并处理，不得强推，也不得让远端自动生成一份本地不存在的提交。
 
 ## 1.4\_维护命令
 
 在仓库根目录执行：
 
 ```bash
+# 发布前：以下两项都必须为空或显示 0 0
+git status --short
+git fetch origin
+git rev-list --left-right --count master...origin/master
+
 npm ci --prefix markbook
 
 # 每月 1 日生成全部启用专题
 npm run publish:all --prefix markbook
+
+# 验证、在本地提交，然后普通推送
+npm run verify --prefix markbook -- --all --release-month YYYY.MM
+git add -- markbook/runtime markbook/topics
+git diff --cached --check
+git commit -m "release(markbook): 发布 YYYY.MM 专题月刊"
+git push origin HEAD:master
 
 # 首次建刊（仅当专题还没有任何版本）
 npm run publish --prefix markbook -- --topic rcu --release-month 2026.08 --initial
@@ -46,7 +60,7 @@ npm run publish --prefix markbook -- --topic rcu --release-month 2026.08 --initi
 # 验证某一期的产物和来源台账
 npm run verify --prefix markbook -- --topic rcu --release-month 2026.08
 
-# 验证当月全部启用专题
+# 单独验证指定月份的全部启用专题
 npm run verify --prefix markbook -- --all --release-month 2026.08
 ```
 
