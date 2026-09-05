@@ -623,6 +623,7 @@ mindmap-plugin: basic
             - 🔴 [P10 Linux 6.12 Tree RCU 同步等待与 rcu_barrier 源码实现](../../research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md)
             - 🔴 [P11 Linux 6.12 Tree SRCU 源码实现](../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md)
             - 🔴 [P12 Linux 6.12 Tree RCU rcu_init 启动初始化源码实现](../../research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md)
+            - 🔴 [P13 Linux 6.12 Tiny RCU 源码实现](../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.1_实现所有权与本章读者任务)
 
 ## 1.9\_🟡 参考与出版物
 - 🟢 参考资料
