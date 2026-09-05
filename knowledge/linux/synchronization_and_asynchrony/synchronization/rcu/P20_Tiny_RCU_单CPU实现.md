@@ -18,6 +18,21 @@ P19 讨论的是 Tasks 家族怎样重新定义旧执行轨迹。本章回到 **
 
 Tiny 不是应用在运行时选择的轻量 flavor。相同的普通 RCU 调用点由 Kconfig 选择底层实现，调用者仍需遵守 P03 的发布、取得和回收协议。
 
+本章所说的 **QS（Quiescent State，静止态）** 是唯一 CPU 到达后足以排除本轮旧普通 reader 的事件；它仍是正确性证据，不是“CPU 暂时没有工作”的性能现象。
+
+先把本章会比较的实现名称落到源码角色。`rcu_node` 是 Tree RCU 的分层汇聚结构体类型，`qsmask` 是其中记录 CPU 静止态债务的位图字段；`rcu_ctrlblk` 是 Tiny RCU 的全局控制块结构体类型，`rcu_segcblist` 是 Tree RCU 的分段回调列表结构体类型。**NOCB（no-callbacks-on-this-CPU，从指定 CPU 卸载回调）** 是 Tree RCU 的回调执行策略；`RCU_SOFTIRQ` 是 RCU 软件中断向量枚举常量，`rcuc` 是可承载本地 RCU core 的每 CPU 内核线程名称。`call_rcu()` 是登记异步 RCU callback 的公共函数；它只提交未来的回收动作，不在调用现场证明对象已经安全。
+
+先给本实现一张“身份证”，把“单 CPU 简化”与“换了一种保护域”严格分开：
+
+| 层次 | Tiny RCU 在本专题中的答案 | 本章展开位置 |
+| --- | --- | --- |
+| 分类位置 | 普通 RCU 保护域在 UP、非抢占构建中的 Tiny 后端；不是业务代码选择的新 flavor | 20.1、20.5～20.6 |
+| 问题背景 | 单 CPU 不再需要跨 CPU 债务位、节点树和缓存一致性汇聚，但时间上的旧 reader 仍然存在 | 20.1 |
+| reader 与完成证据 | 当前唯一 CPU 上的普通非抢占 reader；该 CPU 经过合法 QS 即可排除旧集合 | 20.2～20.3 |
+| 运行原理 | T0～T4 保留发布、callback 等待、QS、成熟和 softirq 执行，只删除跨 CPU 汇聚 | 20.3～20.4 |
+| 初始化与实现 | Kconfig 选择静态 Tiny 状态和本地执行路径；Linux 6.12 已闭合模块导读和逐函数实现 | 20.6 |
+| 选择边界 | 调用者仍写普通 RCU API；结论不能外推到 SMP、`PREEMPT_RCU`、SRCU 或 Tasks | 20.4～20.7 |
+
 ## 20.1\_单CPU删除了什么问题
 
 Tree RCU 之所以需要 `rcu_node` 树，是因为多个 CPU 各自可能包含旧 reader，证据需要避免集中争用并逐层汇聚。单 CPU 构建中：
@@ -55,6 +70,7 @@ Tiny 的正确性没有来自“代码很少”，而来自单 CPU 和非抢占�
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant R as 唯一CPU上的旧reader
     participant W as writer/callback生产者
     participant Q as Tiny回调状态
@@ -104,9 +120,9 @@ Linux 6.12.20 的典型构建关系是：[SMP 构建](../../../../foundations/co
 grep -E '^(CONFIG_SMP|CONFIG_TREE_RCU|CONFIG_TINY_RCU|CONFIG_PREEMPT_RCU)=' .config
 ```
 
-Tiny 核心实现位于 `kernel/rcu/tiny.c`，公共接口仍来自 `include/linux/rcupdate.h` 和 RCU 公共更新路径。版本化阅读顺序见 [Tiny RCU 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md#11.1_模块问题与单CPU前提)。
+Tiny 核心实现位于 `kernel/rcu/tiny.c`，公共接口仍来自 `include/linux/rcupdate.h` 和 RCU 公共更新路径。先用 [Tiny RCU 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md#11.1_模块问题与当前配置前提)建立角色与阅读顺序，再进入 [Linux 6.12 Tiny RCU 源码实现](../../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.2_源码符号覆盖账本)核对控制块、`call_rcu()`、QS、softirq、同步、poll、barrier 与初始化函数。
 
-仓库当前的既有 RCU 配置快照启用了 `CONFIG_TREE_RCU=y` 和 `CONFIG_PREEMPT_RCU=y`，因此可用于 Tree RCU 证据，不是 Tiny RCU 的运行实验环境。Tiny 章节的源码结论受固定 Linux 6.12.20 提交约束，不能伪装成当前板级实测结果。
+2026-09-05 已重新核对当前标准工作树的 `.config` 与生成配置：`CONFIG_TINY_RCU=y`、`CONFIG_SMP=n`、`CONFIG_PREEMPT_NONE=y`，因此当前构建确实走 Tiny；该生成结果来自当前工作树中尚未提交的板级配置种子差量，不能倒推成固定标签或分支头的默认配置。历史 Tree + PREEMPT_RCU 快照仍只用于对应 Tree 分支。源码函数体受固定 Linux 6.12.20 提交约束，配置结论受这次生成配置快照约束，两者不能互相替代。
 
 ## 20.7\_验收与主线回收
 
