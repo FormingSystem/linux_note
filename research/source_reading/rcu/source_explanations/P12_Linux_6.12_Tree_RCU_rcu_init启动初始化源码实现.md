@@ -69,27 +69,32 @@ softirq_init();             /* 初始化 tasklet 队列并登记 tasklet 软件�
 
 本章会反复使用以下名称。它们属于不同类型，不能都当成“RCU 类型”：
 
+`CONFIG_PREEMPT_RT` 是 Kconfig 配置符号；它表示目标内核是否启用实时抢占模型，并在本章相关分支中影响 RCU core 由 softirq 还是 `rcuc` 线程承载。这里只追踪该配置对 `rcu_init()` 事务的影响，不把实时抢占子系统本身并入本章。
+
 | 名称 | 类型与朴素含义 | 当前职责 | 不能误解成 |
 | --- | --- | --- | --- |
-| 宽限期（Grace Period，GP） | 逻辑等待边界 | 证明边界以前的旧读侧访问已经结束 | 固定时长、线程或 workqueue |
-| 静止状态（Quiescent State，QS） | CPU 或任务越过旧访问边界的证据 | 后续由每 CPU状态向节点树汇聚 | “CPU 没有任务”或休眠时间 |
-| callback | GP 完成后才获得执行资格的延迟函数 | 承接对象释放、唤醒或其他延迟动作 | GP 本身 |
-| boot CPU | 启动时唯一 online 的 CPU | 执行 `start_kernel()` 和本章全部初始化写入 | 永远固定为逻辑 CPU0 的 API 契约 |
-| per-CPU | 每个 possible CPU 都有独立槽位的存储模型 | 保存 `rcu_data`、`kfree_rcu` 批次等本地状态 | 只有 online CPU 才分配 |
-| `rcu_state` | Tree RCU 的唯一全局状态载体 | 保存 GP 代际、节点数组、等待队列和执行者入口 | “整个 RCU 只有一个状态机” |
-| `rcu_data` | 每 CPU Tree RCU 状态载体 | 保存叶节点地址、本地 QS、callback 与热插拔快照 | `rcu_node` 的动态副本 |
-| `rcu_node` | 分层汇聚节点结构体 | 保存一组 CPU/子节点的证明债务、锁和慢路径状态 | 调度域或非一致内存访问拓扑 |
-| Kconfig | Linux 构建期配置系统专名 | 决定编译哪个实现文件和哪些条件分支 | 启动后可任意切换的运行时参数 |
-| softirq | 软件中断执行机制专名 | 在普通配置中承载 `rcu_core()` 本地推进 | 一个长期内核任务 |
-| workqueue | Linux 异步工作执行框架专名 | 承载延迟释放、SRCU、轮询 GP 和同步请求清理 | `rcu_init()` 当场执行工作项 |
-| NOCB | “no callbacks” 回调卸载策略的历史简称 | 把指定 CPU 的 callback 推进/执行交给卸载线程 | 新的保护域或第二棵普通 GP 树 |
-| Tasks RCU | 以任务轨迹为证明对象的独立保护域家族 | 本函数末尾只建立其 callback 运输账本 | Tree RCU 的抢占配置 |
+| 宽限期（Grace Period，GP） | 逻辑等待边界 | 证明边界以前的旧读侧访问已经结束 | <span style="color:gray;">~~固定时长、线程或 workqueue~~</span> |
+| 静止状态（Quiescent State，QS） | CPU 或任务越过旧访问边界的证据 | 后续由每 CPU状态向节点树汇聚 | <span style="color:gray;">~~“CPU 没有任务”或休眠时间~~</span> |
+| callback | GP 完成后才获得执行资格的延迟函数 | 承接对象释放、唤醒或其他延迟动作 | <span style="color:gray;">~~GP 本身~~</span> |
+| boot CPU | 启动时唯一 online 的 CPU | 执行 `start_kernel()` 和本章全部初始化写入 | <span style="color:gray;">~~永远固定为逻辑 CPU0 的 API 契约~~</span> |
+| per-CPU | 每个 possible CPU 都有独立槽位的存储模型 | 保存 `rcu_data`、`kfree_rcu` 批次等本地状态 | <span style="color:gray;">~~只有 online CPU 才分配~~</span> |
+| `rcu_state` | Tree RCU 的唯一全局状态载体 | 保存 GP 代际、节点数组、等待队列和执行者入口 | <span style="color:gray;">~~“整个 RCU 只有一个状态机”~~</span> |
+| `rcu_data` | 每 CPU Tree RCU 状态载体 | 保存叶节点地址、本地 QS、callback 与热插拔快照 | <span style="color:gray;">~~`rcu_node` 的动态副本~~</span> |
+| `rcu_node` | 分层汇聚节点结构体 | 保存一组 CPU/子节点的证明债务、锁和慢路径状态 | <span style="color:gray;">~~调度域或非一致内存访问拓扑~~</span> |
+| Kconfig | Linux 构建期配置系统专名 | 决定编译哪个实现文件和哪些条件分支 | <span style="color:gray;">~~启动后可任意切换的运行时参数~~</span> |
+| `defconfig` / `.config` | 配置种子 / Kconfig 求解后的完整结果 | 前者只记录需要显式给出的输入，后者才记录本次构建最终启用的配置 | <span style="color:gray;">~~`defconfig` 没写就等于功能关闭~~</span> |
+| softirq | 软件中断执行机制专名 | 在普通配置中承载 `rcu_core()` 本地推进 | <span style="color:gray;">~~一个长期内核任务~~</span> |
+| workqueue | Linux 异步工作执行框架专名 | 承载延迟释放、SRCU、轮询 GP 和同步请求清理 | <span style="color:gray;">~~`rcu_init()` 当场执行工作项~~</span> |
+| NOCB | “no callbacks” 回调卸载策略的历史简称 | 把指定 CPU 的 callback 推进/执行交给卸载线程 | <span style="color:gray;">~~新的保护域或第二棵普通 GP 树~~</span> |
+| Tasks RCU | 以任务轨迹为证明对象的独立保护域家族 | 本函数末尾只建立其 callback 运输账本 | <span style="color:gray;">~~Tree RCU 的抢占配置~~</span> |
 
 为避免源码标识符先于解释出现，下面先建立本章会直接追踪的符号类型账本；表中“宏、函数、字段、类型、变量、配置符号”是 C 源码角色，不是新的 RCU flavor：
 
 | 符号 | 源码类型 | 本章所需朴素含义 |
 | --- | --- | --- |
-| `CONFIG_TREE_SRCU`、`CONFIG_TINY_RCU`、`CONFIG_NR_CPUS` | Kconfig 配置符号 | 分别控制 Tree SRCU、Tiny RCU 与静态最大 CPU 容量 |
+| `CONFIG_SMP`、`CONFIG_PREEMPT`、`CONFIG_PREEMPT_BUILD`、`CONFIG_PREEMPTION` | Kconfig 配置符号 | 分别表示多处理器构建、用户选择的完全可抢占模型、该模型的内部构建开关及其公共能力；它们会参与普通 RCU 实现的自动选择 |
+| `CONFIG_TREE_RCU`、`CONFIG_PREEMPT_RCU`、`CONFIG_TINY_RCU` | Kconfig 配置符号 | 分别选择 Tree 实现、Tree 中可抢占读侧模型和单 CPU Tiny 实现 |
+| `CONFIG_TREE_SRCU`、`CONFIG_NR_CPUS` | Kconfig 配置符号 | 分别控制 Tree SRCU 与静态最大 CPU 容量 |
 | `CONFIG_RCU_BOOST`、`CONFIG_RCU_TORTURE_TEST` | Kconfig 配置符号 | 控制 reader priority boosting 与内建 RCU 压力测试分支 |
 | `CONFIG_TASKS_RCU_GENERIC`、`CONFIG_TASKS_RCU` | Kconfig 配置符号 | 前者汇总 Tasks family 公共骨架，后者启用普通 Tasks RCU flavor |
 | `WARN_ON`、`WARN_ON_ONCE`、`BUG_ON` | 诊断宏 | 条件为真时分别告警、一次性告警或触发不可继续的错误 |
@@ -107,6 +112,7 @@ softirq_init();             /* 初始化 tasklet 队列并登记 tasklet 软件�
 | `alloc_workqueue()`、`local_irq_disable()` | 函数接口 | 分别创建 workqueue 对象、关闭本地中断 |
 | `rcu_barrier()`、`srcu_barrier()`、`synchronize_rcu_expedited()` | 同步函数接口 | 分别等待历史 callback 或等待加速 GP 边界 |
 | `start_poll_synchronize_rcu_expedited()` | 轮询函数接口 | 返回可供以后检查的 GP cookie，并在条件具备时补排 expedited 工作 |
+| `rcu_early_boot_tests()`、`rcu_test_sync_prims()` | 内部自检函数 | 分别在基础设施建立前后检查早期 RCU API 和同步原语契约，不承担正常 GP 推进 |
 | `rcutree_prepare_cpu()`、`rcutree_report_cpu_starting()`、`rcutree_online_cpu()` | CPU 生命周期函数 | 依次准备私有容器、发布启动身份、启用在线期状态 |
 | `tasks_cblist_init_generic()`、`cblist_init_generic()` | Tasks RCU 初始化函数 | 前者按配置分派 flavor，后者建立一个 flavor 的 per-CPU callback 分片 |
 | `rcu_pm_notify()`、`rcu_init_one_nocb()` | 内部函数 | 分别处理 PM 事件、初始化节点的 NOCB 协调状态 |
@@ -115,13 +121,13 @@ softirq_init();             /* 初始化 tasklet 队列并登记 tasklet 软件�
 | `mynode`、`grpmask`、`parent`、`blkd_tasks`、`cbovldmask` | `rcu_data`/`rcu_node` 字段 | 保存叶节点地址、本节点位、父地址、阻塞 reader 链与 callback 过载位 |
 | `exp_mutex`、`exp_poll_lock`、`expedited_wq` | expedited 状态字段 | 串行 expedited GP、保护 poll 请求、等待 expedited 状态推进 |
 | `system_highpri_wq` | 全局 workqueue 变量 | 内核预建的高优先级工作队列，本章只借它立即补页 |
-| `SRS` | 内部字段前缀专名 | 源码没有声明可供 API 依赖的 English full name（英文全称）；本章按行为称为“同步等待者直接批处理分支” |
+| `SRS` | 内部字段前缀专名 | 源码没有声明可供 API 依赖的英文全称；本章按行为称为“同步等待者直接批处理分支” |
 | `INACTIVE`、`INIT`、`RUNNING` | RCU scheduler 模式枚举值名称 | 依次表示早期单任务阶段、调度器初始阶段和完整运行阶段 |
 | 进程标识符（Process Identifier，PID） | 任务编号专名 | 后文 PID 1 指启动的第一个用户态祖先任务 |
 
 源码身份为 NXP `linux-imx` 官方发布标签 `lf-6.12.20-2.0.0`，解引用提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，Linux 6.12.20。本次会话重新核对官方标签，并将仓库保存的 `init/main.c`、`tree.c`、`tree.h`、`tree_plugin.h`、`tree_nocb.h`、`tree_exp.h`、`update.c`、`rcu.h` 与 `rcupdate.h` 的 Git blob 逐项和固定提交比较一致。
 
-既有配置快照只确认 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y`。本章以这个 **可抢占 Tree RCU** 主分支解释真实结果；未在快照中确认的 `CONFIG_PROVE_RCU`、`CONFIG_PREEMPT_RT`、`CONFIG_RCU_NOCB_CPU`、`CONFIG_PM_SLEEP` 和 Tasks RCU 各 flavor 都明确写成条件分支，不把“源码存在”伪装成“目标内核已经执行”。
+既有配置快照只确认 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y`。本章以这个 **可抢占 Tree RCU** 历史快照解释真实结果；2026-09-05 重新核对的当前标准工作树已经改为 `CONFIG_TINY_RCU=y`、`CONFIG_SMP=n`、`CONFIG_PREEMPT_NONE=y`，其当前入口见 [Linux 6.12 Tiny RCU 源码实现](P13_Linux_6.12_Tiny_RCU源码实现.md#13.14_rcu_init的三个动作不是Tiny的全部实现)。未在各自快照中确认的分支不把“源码存在”伪装成“目标内核已经执行”。
 
 关联入口：
 
@@ -137,13 +143,112 @@ softirq_init();             /* 初始化 tasklet 队列并登记 tasklet 软件�
 
 ## 12.3\_先证明当前调用解析为哪一种RCU
 
-`include/linux/rcupdate.h` 只给出共同声明：
+`rcu_init()` 声明于：`include/linux/rcupdate.h`：
 
 ```c
 void rcu_init(void);
 ```
 
-它不是函数指针，也没有运行时 `switch`。固定提交的 `kernel/rcu/Makefile` 根据 Kconfig 把不同目标文件链接进内核：
+看到 `arch/arm/configs/imx_v7_test_defconfig` 没有 `CONFIG_TREE_RCU=y`，不能直接推出“这个内核没有配置 RCU”。这里必须依次区分 **配置种子、Kconfig 派生结果、最终链接对象** 三层证据。
+
+### 12.3.1\_defconfig没有RCU行为什么仍会启用RCU
+
+`defconfig` 不是最终配置的完整清单，而是交给 Kconfig 求解器的一组输入。执行：
+
+```bash
+make ARCH=arm imx_v7_test_defconfig
+```
+
+以后，Kconfig 还会应用依赖、`default` 和 `select`，最后把求解结果写入 `.config`；真正供后续构建规则读取的还包括由它生成的 `include/config/auto.conf`。因此，检查某个实现是否启用时，证据强弱依次是：
+
+```text
+最终 .config / include/config/auto.conf
+    > Kconfig 的依赖、default 与 select 推导
+    > defconfig 中是否出现同名字符串
+```
+
+`kernel/rcu/Kconfig` 中的 `TREE_RCU`、`PREEMPT_RCU` 和 `TINY_RCU` 都只有 `bool`，没有面向配置界面的提示字符串。这类 **隐藏配置符号** 不能由用户在菜单中直接勾选，通常由其他配置和 Kconfig 规则自动派生。“`defconfig` 没写 RCU”在这里往往正是正常现象，而不是 RCU 被关闭的证据。
+
+固定提交中的标准 `arch/arm/configs/imx_v7_defconfig` 也能说明这种关系：它显式给出 `CONFIG_SMP=y` 与 `CONFIG_PREEMPT=y`，却没有显式写 `CONFIG_TREE_RCU=y`；Tree/Preempt RCU 由下面的隐藏规则派生。`imx_v7_test_defconfig` 不在本章固定提交的源码快照中，所以本章不把它的具体内容冒充成固定版本证据；若要确认开发工作树中这个自定义/后续配置的实际结果，必须在那棵源码树上重新生成并检查最终 `.config`。
+
+### 12.3.2\_SMP与抢占模型怎样派生RCU实现
+
+固定提交的 [`kernel/rcu/Kconfig`](../../linux/kernel/rcu/Kconfig) 给出三条关键规则。在 Kconfig 源文件中，`SMP`、`PREEMPTION`、`TREE_RCU`、`PREEMPT_RCU` 与 `TINY_RCU` 都是配置符号名称；写入生成的 `.config` 后才带 `CONFIG_` 前缀：
+
+```kconfig
+config TREE_RCU
+    bool
+    default y if SMP
+
+config PREEMPT_RCU
+    bool
+    default y if PREEMPTION
+    select TREE_RCU
+
+config TINY_RCU
+    bool
+    default y if !PREEMPT_RCU && !SMP
+```
+
+`kernel/Kconfig.preempt` 又把用户选择的抢占模型接到内部公共能力；其中 `PREEMPT`、`PREEMPT_BUILD` 与 `PREEMPTION` 仍是 Kconfig 配置符号名称：
+
+```kconfig
+config PREEMPT_BUILD
+    bool
+    select PREEMPTION
+
+config PREEMPT
+    bool "Preemptible Kernel (Low-Latency Desktop)"
+    select PREEMPT_BUILD
+```
+
+于是可以按因果关系，而不是按“文件里有没有 RCU 字样”，展开为：
+
+```text
+CONFIG_SMP=y
+    → TREE_RCU 的 default 条件成立
+    → CONFIG_TREE_RCU=y
+
+CONFIG_PREEMPT=y
+    → CONFIG_PREEMPT_BUILD=y
+    → CONFIG_PREEMPTION=y
+    → PREEMPT_RCU 的 default 条件成立
+    → CONFIG_PREEMPT_RCU=y
+    → select CONFIG_TREE_RCU=y
+
+CONFIG_SMP=n 且 CONFIG_PREEMPT_RCU=n
+    → TINY_RCU 的 default 条件成立
+    → CONFIG_TINY_RCU=y
+```
+
+这里有两个容易混淆的结论：
+
+1. 只要 `CONFIG_SMP=y`，即使没有启用可抢占 RCU，也会自动选择 Tree RCU；
+2. 即使是单 CPU 构建，只要 `CONFIG_PREEMPTION=y` 使 `CONFIG_PREEMPT_RCU=y`，后者仍会选择 Tree RCU。只有 **非 SMP 且非 PREEMPT_RCU** 的构建才落入 Tiny RCU。
+
+可以把常见结果压缩成下表：
+
+| 求解条件 | 普通 RCU 后端 | 读侧模型 |
+| --- | --- | --- |
+| `CONFIG_SMP=y`，`CONFIG_PREEMPT_RCU=n` | Tree RCU | 不跟踪被抢占的普通 RCU reader |
+| `CONFIG_PREEMPT_RCU=y`，无论是否 SMP | Tree RCU | 跟踪被抢占的普通 RCU reader |
+| `CONFIG_SMP=n` 且 `CONFIG_PREEMPT_RCU=n` | Tiny RCU | 利用单 CPU、非可抢占条件简化普通 RCU |
+
+### 12.3.3\_最终配置怎样决定链接哪个rcu\_init
+
+若要核对 `imx_v7_test_defconfig`，应使用独立输出目录，避免覆盖开发工作树当前正在使用的 `.config`：
+
+```bash
+rcu_config_out=/tmp/imx_rcu_config_check
+mkdir -p "$rcu_config_out"
+make ARCH=arm O="$rcu_config_out" imx_v7_test_defconfig
+grep -E '^(CONFIG_(SMP|PREEMPT|PREEMPT_BUILD|PREEMPTION|PREEMPT_RCU|TREE_RCU|TINY_RCU)=|# CONFIG_(SMP|PREEMPT|PREEMPT_BUILD|PREEMPTION|PREEMPT_RCU|TREE_RCU|TINY_RCU) is not set)' \
+    "$rcu_config_out/.config"
+```
+
+若结果含有 `CONFIG_SMP=y`，至少应看到 `CONFIG_TREE_RCU=y`；若还含有 `CONFIG_PREEMPTION=y`，则应同时看到 `CONFIG_PREEMPT_RCU=y`；Tiny 分支应显示为未启用。这个实测结果才回答“这份板级配置最终选中了哪一种 RCU”。
+
+随后，`kernel/rcu/Makefile` 根据已经求解的配置把不同目标文件链接进内核：
 
 ```makefile
 obj-y += update.o sync.o
@@ -152,7 +257,7 @@ obj-$(CONFIG_TREE_RCU) += tree.o
 obj-$(CONFIG_TINY_RCU) += tiny.o
 ```
 
-因此类型判断发生在 **构建期链接**：
+RCU的类型判断发生在 **构建期链接**，分类型实现并引入相应的工程文件：
 
 | 构建条件 | 提供 `rcu_init()` 的文件 | 这个函数建立什么 |
 | --- | --- | --- |
@@ -161,7 +266,7 @@ obj-$(CONFIG_TINY_RCU) += tiny.o
 
 `CONFIG_PREEMPT_RCU=y` 又会选择 `tree_plugin.h` 中的可抢占读侧分支，但仍然复用同一个 `tree.c::rcu_init()`、同一 `rcu_state` 和同一节点树。它改变的是被抢占 reader 的债务保存和节点完成条件，不会动态替换成另一套初始化入口。
 
-当前快照所以沿以下编译链解释：
+本章既有配置快照已经独立确认 `CONFIG_PREEMPT_RCU=y` 与 `CONFIG_TREE_RCU=y`，所以沿以下编译链解释；这项结论来自最终配置快照，并不声称这两个符号必须逐字写在某个 `defconfig` 中：
 
 ```text
 CONFIG_PREEMPT_RCU=y
@@ -171,7 +276,9 @@ CONFIG_PREEMPT_RCU=y
     → rcu_bootup_announce() 选择“Preemptible hierarchical RCU”分支
 ```
 
-Tiny RCU 固定版本中的同名函数只有三个顶层动作：注册 `RCU_SOFTIRQ`、运行早期测试、初始化 Tasks callback 账本。它是 **替代实现证据**，不是当前调用接下来还会执行的第二段代码。
+Tiny RCU 固定版本中的同名函数只有三个顶层动作：注册 `RCU_SOFTIRQ`、运行早期测试、初始化 Tasks callback 账本。这里说的只是 **`tiny.c::rcu_init()` 入口很短**，不是说 Tiny RCU 的全部工作只有一次串行测试。Tiny RCU 是针对非 SMP、非 PREEMPT_RCU 构建的完整替代后端：它利用同一时刻只有一个 CPU 执行内核代码的约束，省掉 Tree RCU 的多 CPU 分层汇聚状态，但仍要向内核其余子系统提供读侧契约、宽限期推进和 callback 延迟执行能力。单 CPU 上任务、中断和 softirq 仍会在时间上交错，更新后也仍可能需要等旧读侧使用结束再回收对象；被省掉的是 **跨 CPU 的证明汇聚成本**，不是 RCU 的生命周期语义。
+
+因此，这段 Tiny 代码是 **互斥的替代实现证据**，不是当前 Tree RCU 调用接下来还会执行的第二段代码，也不是用来验证 Tree RCU 的串行测试框架。
 
 ## 12.4\_进入rcu\_init以前内核已经保证了什么
 
@@ -305,6 +412,26 @@ flowchart LR
 | I11 早期轮询补发 | `rnp->exp_seq_poll_rq`、`exp_poll_wq` work | boot CPU | `sync_rcu_do_polled_gp()` | 当前/更早 cookie 将由稍后 work 推进覆盖 |
 | I12 后置契约测试 | 普通与 expedited 早期序列 | `rcu_test_sync_prims()` | 后续 scheduler 模式切换自检 | 拓扑建立后早期同步原语仍成立 |
 | I13 Tasks callback 运输 | 各 flavor `rtpcp_array` 与 per-CPU `cblist` | boot CPU | 后续 Tasks GP/CB 线程 | 所有已启用 flavor 可以安全接收 callback |
+
+### 12.6.1\_I阶段怎样回接公共实现抽象与运行周期
+
+I0～I13 描述的是一次 **启动初始化事务**，不是一轮宽限期。为了让源码不脱离原理，下面把每组 I 阶段映射回 [P04 的七项实现抽象](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P04_RCU_分类坐标与内核配置.md#4.1.4_先提炼跨类型实现都必须回答的七个问题)、[P07 的 S0～S6 初始化模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md#7.3_S0到S6_拓扑建立的统一阶段)和 [P05 的运行期 S0～S9 周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md#5.5_S0到S9的一次完整周期)：
+
+| 源码阶段 | 建立或检查的抽象职责 | 对应 P07 初始化阶段 | 后续运行期意义 |
+| --- | --- | --- | --- |
+| I0、I3、I4 | 固定启动执行者、公布构建/参数选择并净化后续线程条件 | S0 以前的启动边界 | 限定后续状态属于哪个实现和执行配置，本身不产生 GP 完成证据 |
+| I1、I12 | 检查公共 API 在早期状态下没有越过契约 | 不建立功能状态 | 只增加诊断证据；检查通过不能代替运行期 reader、GP 与 callback 证明 |
+| I2 | 建立延迟释放的容器、批次与异步工作入口 | 与 S3 和 S6 的结果交付基础设施相邻 | 为 P05 S8～S9 的释放交付准备地址，但此时没有执行目标 callback |
+| I5 | 计算汇聚拓扑的实际容量与层级 | S0 | 让 P05 S4 可以只对本次启动实际存在的节点建债 |
+| I6 | 初始化 `rcu_node`、每 CPU `rcu_data` 及其直接映射 | S1～S2 | 为 P05 S4～S7 提供建债、局部证据和分层汇聚地址，并为 S8 保留本地 callback 状态 |
+| I7 | 登记 softirq core 入口或明确选择线程分支 | S3 | 让后续本地证据检查和 callback 推进拥有消费执行上下文 |
+| I8 | 把系统睡眠事件接到 RCU 生命周期入口 | S3 的系统事件边界 | suspend/hibernate 到来时能够调整运行状态；它不是普通 GP 的完成路径 |
+| I9 | 依次准备、发布并 online 启动 CPU | S4～S5 | 让后续 GP 在 P05 S4 从正确参与集合建债，并让本 CPU 在 S5 记录证据 |
+| I10 | 建立异步 workqueue 与 callback 过载计算条件 | S6 的一部分 | 为 GP 请求、轮询、SRS cleanup 和 callback 管理提供排队能力；完整 worker 仍在后继阶段开放 |
+| I11 | 把过早提出的 expedited poll 请求接回稍后可运行的 work | S6 的请求修复分支 | 维护请求代际与未来完成之间的连续性，不直接宣布 P05 S7 已完成 |
+| I13 | 建立 Tasks flavor 的 callback 运输账本 | 不属于普通 Tree 的 reader/QS 初始化 | 只为 Tasks RCU 的结果交付预留 per-CPU 队列；其 reader 定义、GP 线程和完成证据在独立类型中建立 |
+
+因此，读初始化源码时先问“这一行让哪项职责以后成为可能”，再进入运行期调用者；不能因为字段已经初始化，就提前断言对应 GP、callback 或 Tasks flavor 已经运行。
 
 ## 12.7\_I1为何在树建立以前先运行自检
 
@@ -461,7 +588,7 @@ static void __init kfree_rcu_batch_init(void)
 
 ### 12.9.1\_rcu\_bootup\_announce()不只是打印实现名称
 
-当前 `CONFIG_PREEMPT_RCU=y` 选择 `tree_plugin.h` 中的可抢占分支，所以启动日志中的实现名称是 `Preemptible hierarchical RCU implementation.`。这里的 **hierarchical** 对应后面建立的 `rcu_node` 汇聚树；**preemptible** 表示普通 RCU 读侧临界区内的任务可以被抢占，Tree RCU 必须额外跟踪被阻塞的读者。它不表示 `rcu_init()` 本身已经打开抢占或已经启动 RCU 线程。
+本章采用的历史 Tree 快照由 `CONFIG_PREEMPT_RCU=y` 选择 `tree_plugin.h` 中的可抢占分支，所以该快照启动日志中的实现名称是 `Preemptible hierarchical RCU implementation.`。这里的 **hierarchical** 对应后面建立的 `rcu_node` 汇聚树；**preemptible** 表示普通 RCU 读侧临界区内的任务可以被抢占，Tree RCU 必须额外跟踪被阻塞的读者。它不表示 `rcu_init()` 本身已经打开抢占或已经启动 RCU 线程。
 
 随后 `rcu_bootup_announce_oddness()` 把偏离默认值、会改变证明边界或常用于调试的条件写入启动日志：
 
@@ -925,7 +1052,7 @@ sequenceDiagram
 | `rcutree.qovld` | 启动参数 | I10 选择默认、禁用或显式过载阈值 |
 | `rcutree.dump_tree` | 启动参数 | 只在 I6 后打印拓扑 |
 
-Tiny RCU 的同名函数只登记 `RCU_SOFTIRQ`、执行早期测试并初始化 Tasks callback list，不建立 `rcu_node` 树、三个 Tree RCU workqueue或 boot CPU 三段协议。当前构建由 Makefile 与 `.config` 在链接期排除了该路径，不能在运行时从 Tree 切到 Tiny。
+Tiny RCU 的同名函数只登记 `RCU_SOFTIRQ`、执行早期测试并初始化 Tasks callback list，不建立 `rcu_node` 树、三个 Tree RCU workqueue或 boot CPU 三段协议。本章采用的 Tree 配置快照由 Makefile 与 `.config` 在链接期排除了该路径，不能在运行时从 Tree 切到 Tiny；当前 Tiny 配置则相反，由链接期排除 `tree.o`。
 
 ## 12.18\_异常与失败不是一种统一语义
 

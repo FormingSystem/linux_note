@@ -36,6 +36,7 @@ domains:
 | --- | --- | --- |
 | 既有 RCU 研究快照 | `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y` | 支撑现有抢占式 Tree RCU 主分支导读；不外推到本次工作树 |
 | 2026-08-24 开发工作树 | `CONFIG_TREE_RCU=y`、`CONFIG_SMP=y`、`CONFIG_MUTEX_SPIN_ON_OWNER=y`、`CONFIG_RWSEM_SPIN_ON_OWNER=y`；未启用普通 `CONFIG_PREEMPT`，未启用 `CONFIG_WQ_WATCHDOG` | 支撑本次锁、等待、序列计数器和工作队列的可运行分支判断 |
+| 2026-09-02 建立、2026-09-05 复核的 Tiny RCU 工作树 | `CONFIG_TINY_RCU=y`、`CONFIG_TINY_SRCU=y`、`CONFIG_PREEMPT_NONE=y`、`CONFIG_PROVE_LOCKING=y`、`CONFIG_PROVE_RCU=y`；`CONFIG_SMP=n` | 支撑普通 Tiny RCU 当前编译路径、Lockdep 接入和 early-test 条件判断；配置种子含尚未提交到 `lf-6.12.y` 的工作树差量，不外推到固定标签、Tree RCU 或 Tasks flavor |
 
 2026-08-24 重新发现的候选工作树已核对官方远端与 `lf-6.12.y` 分支；其 `HEAD=7b60e547d2783f8fee61ff7d7be3e066825b9c3a`，以固定发布提交为 merge-base 并前进 3 个提交。工作树 `Makefile` 仍为 Linux 6.12.20。本文新增源码导读全部通过该工作树中的标签对象读取固定提交内容，不把分支头的后续变化混入实现讲解。
 
@@ -101,7 +102,7 @@ domains:
 
 ### 1.5.1\_RCU家族证据
 
-下列 RCU 核心文件已在 2026-08-07 与发布标签 `lf-6.12.20-2.0.0` 解引用到的 Git 提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 逐文件核对，其中 `tree.c`、`tree.h`、`tree_plugin.h`、`update.c` 和 `rcupdate.h` 的仓库副本 SHA-256 与原文件一致。2026-08-20 又通过 NXP 官方 GitHub contents API 重新比较 `tree.c`、`tree.h` 和 `rcu.h` 的 Git blob hash，三者均与该固定提交一致；2026-08-24 为补充 GP kthread 启动链，再次比较 `tree.c` 与 `include/linux/init.h` 的 Git blob hash，两份仓库副本也都与固定提交一致。2026-08-30 为追踪 `init/main.c::rcu_init()`，再次通过官方远端核对发布标签解引用提交，并比较仓库保存的 `init/main.c`、`tree.c`、`tree.h`、`tree_plugin.h`、`tree_nocb.h`、`tree_exp.h`、`update.c`、`rcu.h` 与 `rcupdate.h`，均与固定提交一致；未保存的 `kernel/rcu/tasks.h`、`kernel/rcu/tiny.c`、`kernel/softirq.c` 和 `include/linux/suspend.h` 只按同一固定提交只读核对：
+下列 RCU 核心文件已在 2026-08-07 与发布标签 `lf-6.12.20-2.0.0` 解引用到的 Git 提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 逐文件核对，其中 `tree.c`、`tree.h`、`tree_plugin.h`、`update.c` 和 `rcupdate.h` 的仓库副本 SHA-256 与原文件一致。2026-08-20 又通过 NXP 官方 GitHub contents API 重新比较 `tree.c`、`tree.h` 和 `rcu.h` 的 Git blob hash，三者均与该固定提交一致；2026-08-24 为补充 GP kthread 启动链，再次比较 `tree.c` 与 `include/linux/init.h` 的 Git blob hash，两份仓库副本也都与固定提交一致。2026-08-30 为追踪 `init/main.c::rcu_init()`，再次通过官方远端核对发布标签解引用提交，并比较仓库保存的 `init/main.c`、`tree.c`、`tree.h`、`tree_plugin.h`、`tree_nocb.h`、`tree_exp.h`、`update.c`、`rcu.h` 与 `rcupdate.h`，均与固定提交一致。2026-09-02 为闭合 Tiny RCU 当前实现，新增保存 `kernel/rcu/tiny.c` 与 `include/linux/rcutiny.h`；2026-09-05 再次确认两份副本的 SHA-256 同时与固定提交及当前分支头一致。未保存的 `kernel/rcu/tasks.h`、`kernel/softirq.c` 和 `include/linux/suspend.h` 只按同一固定提交只读核对：
 
 | 相对路径 | 主要用途 |
 | --- | --- |
@@ -114,7 +115,9 @@ domains:
 | `kernel/rcu/tree_nocb.h` | NOCB callback offload |
 | `kernel/rcu/tree_stall.h` | stall 检测与诊断 |
 | `kernel/rcu/rcu_segcblist.c`、`rcu_segcblist.h` | callback 分段列表实现 |
+| `kernel/rcu/tiny.c` | 普通 Tiny RCU 控制块、callback 入队、QS、softirq、同步、poll、barrier 与初始化 |
 | `include/linux/rcupdate.h` | 公共读侧接口、发布/取得、`rcu_check_sparse()`、`RCU_LOCKDEP_WARN()`、`kfree_rcu()` |
+| `include/linux/rcutiny.h` | Tiny 条件下的调度 QS、poll/expedited 包装与无须维护的 Tree 专用接口边界 |
 | `include/linux/init.h` | `early_initcall()` 与 initcall 链接段登记规则，用于定位 GP kthread 创建时机 |
 | `init/main.c` | `start_kernel()`、`rest_init()`、`kernel_init()` 与 initcall/SMP 启动顺序 |
 | `kernel/rcu/Kconfig.debug` | `PROVE_RCU`、RCU 列表 Lockdep 和其他 RCU 调试配置 |
@@ -122,7 +125,7 @@ domains:
 | `include/linux/rcu_segcblist.h` | callback 分段列表结构和接口 |
 | `include/linux/srcu.h`、`srcutree.h`、`kernel/rcu/srcutree.c` | Tree SRCU 公共接口、状态和实现 |
 
-调度入口 `kernel/sched/core.c`、`kernel/rcu/tasks.h`、`kernel/rcu/tiny.c`、BPF/ftrace 调用方以及 6.12 context tracking 文件当前仍直接从只读原始源码树核对，未为单个调用点复制整个大文件。任务字段使用已经保存的 `include/linux/sched.h`；GP kthread 启动链使用已经保存并与同一不可变提交核对一致的 [`init/main.c`](init/main.c) 追踪 `start_kernel()`、`rest_init()`、`kernel_init()`、`do_pre_smp_initcalls()` 与 `smp_init()` 的顺序。版本化阅读记录见：
+调度入口 `kernel/sched/core.c`、`kernel/rcu/tasks.h`、BPF/ftrace 调用方以及 6.12 context tracking 文件当前仍直接从只读原始源码树核对，未为单个调用点复制整个大文件。任务字段使用已经保存的 `include/linux/sched.h`；GP kthread 启动链使用已经保存并与同一不可变提交核对一致的 [`init/main.c`](init/main.c) 追踪 `start_kernel()`、`rest_init()`、`kernel_init()`、`do_pre_smp_initcalls()` 与 `smp_init()` 的顺序。版本化阅读记录见：
 
 - [RCU 总阅读索引](../rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.2_先建立源码分类坐标)
 - [RCU 公共接口与读侧模型模块源码概念导读](../rcu/navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md#2.1_模块问题与配置边界)
@@ -134,7 +137,7 @@ domains:
 - [Tree RCU 同步等待与 rcu_barrier 模块源码概念导读](../rcu/navigation/P08_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md#8.1_等RCU至少有三种不同对象)
 - [Tree SRCU 模块源码概念导读](../rcu/navigation/P09_Linux_6.12_Tree_SRCU模块源码概念导读.md#9.1_先分清Tree_RCU与Tree_SRCU)
 - [Tasks RCU 模块源码概念导读](../rcu/navigation/P10_Linux_6.12_Tasks_RCU模块源码概念导读.md#10.1_模块问题与三个flavor)
-- [Tiny RCU 模块源码概念导读](../rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md#11.1_模块问题与单CPU前提)
+- [Tiny RCU 模块源码概念导读](../rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md#11.1_模块问题与当前配置前提)
 - [RCU Lockdep适配模块源码概念导读](../rcu/navigation/P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#12.1_模块问题与实现所有权)
 - [RCU 公共接口与检查机制源码详解](../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.1_源码详解边界与引用入口)
 - [Tree RCU 等待桥、QS 与节点汇聚关键函数源码实现](../rcu/source_explanations/P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.1_实现讲解边界与入口)
@@ -148,6 +151,7 @@ domains:
 - [Tree RCU 同步等待与 rcu_barrier 源码实现](../rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.2_源码符号覆盖账本)
 - [Tree SRCU 源码实现](../rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.2_源码符号覆盖账本)
 - [Tree RCU `rcu_init()` 启动初始化源码实现](../rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.19_直接符号覆盖账本)
+- [Tiny RCU 源码实现](../rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.2_源码符号覆盖账本)
 
 ### 1.5.2\_Lockdep证据
 
