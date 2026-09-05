@@ -9,3 +9,4 @@
 research/source_reading/linux/**/*.c text eol=lf
 research/source_reading/linux/**/*.h text eol=lf
 research/source_reading/linux/**/*.rst text eol=lf
+markbook/topics/*/releases/** text eol=lf

@@ -150,13 +150,22 @@ test("未知代码语言可靠退化为纯文本且 Mermaid 保持独立渲染�
   );
 });
 
-test("月度工作流 YAML 可解析并固定在每月一号", async () => {
+test("月度工作流固定在每月一号且无仓库写权限", async () => {
   const workflow_content = await readFile(
     path.join(repository_root, ".github", "workflows", "markbook_monthly.yml"),
     "utf8"
   );
   const workflow = parse_yaml(workflow_content);
   assert.equal(workflow.on.schedule[0].cron, "0 0 1 * *");
-  assert.equal(workflow.permissions.contents, "write");
+  assert.equal(workflow.permissions.contents, "read");
   assert.equal(workflow.concurrency["cancel-in-progress"], false);
+  assert.ok(workflow.jobs.verify);
+  assert.equal(workflow.jobs.publish, undefined);
+  assert.doesNotMatch(workflow_content, /git\s+commit/u);
+  assert.doesNotMatch(workflow_content, /git\s+push/u);
+});
+
+test("冻结产物强制以 LF 检出以保持发布摘要稳定", async () => {
+  const attributes = await readFile(path.join(repository_root, ".gitattributes"), "utf8");
+  assert.match(attributes, /^markbook\/topics\/\*\/releases\/\*\* text eol=lf$/mu);
 });
