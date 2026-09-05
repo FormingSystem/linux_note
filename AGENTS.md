@@ -214,16 +214,16 @@ docs(repository/git): 更新分支与提交规范
 | Git 提交 | `dfaf2136deb2af2e60b994421281ba42f1c087e0` |
 | 内核版本 | Linux `6.12.20` |
 | 默认架构 | 顶层 `Makefile` 为 `ARCH ?= arm` |
-| 当前配置边界 | 已核对工作树的 `.config` 启用 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y` |
+| 当前配置边界 | 2026-09-05 已核对标准工作树的 `.config` 启用 `CONFIG_TINY_RCU=y` 与 `CONFIG_PREEMPT_NONE=y`，未启用 `CONFIG_SMP`、Tree RCU 和 Preempt RCU；该结果来自工作树中尚未提交的 `arch/arm/configs/imx_v7_test_defconfig` 配置差量 |
 
 `linux-imx` 是面向多个 NXP i.MX SoC 的厂商内核仓库；i.MX6ULL 是本仓库当前使用它研究和验证的目标平台之一，不能把源码仓库身份写成“i.MX6ULL 专属仓库”。`lf-6.12.y` 是可能继续前进的分支，长期证据以不可变 Git 提交、版本、配置和源码相对路径共同定位。详细基线见 `research/source_reading/linux/SOURCE_BASELINE.md`。
 
-本地工作树路径属于机器和会话环境，不属于仓库事实。**禁止在 `AGENTS.md`、知识正文、研究记录或其他已跟踪文件中写入 UNC 路径、本机盘符、用户名目录、IP 地址或挂载点来充当源码身份。** 任何看似包含版本号的本地目录名也必须经过远端、分支、提交和 `Makefile` 验证后才能使用。
+本地工作树路径属于访问环境，不属于源码身份。当前 Windows 协作环境把 Linux 源码共享统一映射为 `W:`，NXP Linux 6.12 标准工作树入口固定为 `W:\linux\nxp\kernel\linux-imx-6.12`。这个盘符路径可以写在 `AGENTS.md` 中承担 **工作树发现入口**，但不得写入知识正文、研究记录或其他长期技术证据，也不得替代官方远端、分支、提交、版本和配置核验。UNC 路径、用户名目录、IP 地址和服务器挂载点仍不得进入已跟踪文档；任何看似包含版本号的本地目录名也必须经过身份验证后才能使用。
 
 每次新会话中，只要任务需要核对外部 Linux 源码，AI 协作者必须重新执行以下流程，不得沿用上一会话记住的绝对路径：
 
 1. 先读本节和 `research/source_reading/linux/SOURCE_BASELINE.md`，取得预期的官方远端、分支、提交和版本。
-2. 从当前会话中开发者明确提供的位置或当前环境可访问的位置取得候选工作树；若没有可靠候选，不进行大范围盲搜，应向开发者确认本次工作树位置。
+2. Windows 环境优先检查标准入口 `W:\linux\nxp\kernel\linux-imx-6.12`，存在时直接把它作为候选工作树，不再要求开发者逐会话重复提供位置。若 `W:` 未映射或虚拟机重启后持久映射失效，先从 `$env:APPDATA\Microsoft\Windows\Network Shortcuts` 下的 `target.lnk` 读取名称为 `work` 的既有网络位置目标；目标共享可访问且 `W:` 未被其他目标占用时，使用 `New-PSDrive -Name W -PSProvider FileSystem -Root <resolved_share> -Persist -Scope Global` 恢复映射，再重新检查标准入口。若 `W:` 已指向其他共享、快捷方式目标不可访问或服务器的 SMB 端口未就绪，不得覆盖现有盘符、修改凭据或在本机盲搜，必须报告当前状态并等待环境恢复。UNC、IP 和用户名只从本机快捷方式动态取得，不写入仓库。其他平台没有约定入口时，再从开发者明确提供的位置取得候选。
 3. 对候选工作树只读核对 `remote`、当前分支、`HEAD`、顶层 `Makefile` 和任务相关 `.config`。可用命令为：
 
    ```bash
@@ -233,7 +233,7 @@ docs(repository/git): 更新分支与提交规范
    ```
 
 4. 预期官方远端为 `https://github.com/nxp-imx/linux-imx.git`，当前记录的来源分支为 `lf-6.12.y`，不可变证据为发布标签 `lf-6.12.20-2.0.0` 解引用到的提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。若 `HEAD`、版本或配置与基线不同，必须明确报告差异，再决定是继续核对新工作树、比较版本，还是只使用仓库已保存的旧提交证据；不得静默混用。
-5. Git 若因 UNC 所有权或 `safe.directory` 拒绝访问，不得擅自修改用户全局 Git 配置；可只读检查候选工作树的 `.git/config`、`.git/HEAD`、对应 ref 与顶层 `Makefile`，或请开发者在源码环境中执行验证命令。
+5. Git 若因网络盘所有权或 `safe.directory` 拒绝访问，不得擅自修改用户全局 Git 配置。标准 Windows 入口可在单条命令中使用 `git -c safe.directory='W:/linux/nxp/kernel/linux-imx-6.12' -C <linux_imx_worktree> ...`，使例外只作用于当前 Git 进程；也可只读检查候选工作树的 `.git/config`、`.git/HEAD`、对应 ref 与顶层 `Makefile`，或请开发者在源码环境中执行验证命令。
 6. 若工作树不可访问、远端身份不匹配或版本无法确认，应明确标记“本次源码核对未完成”，不得凭目录名或记忆伪造函数位置、配置和版本结论。
 
 完成身份核对后的使用约定如下：
