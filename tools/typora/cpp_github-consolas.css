@@ -239,8 +239,9 @@ table td:last-child {
 .md-fences,
 code,
 tt {
-    border: 1px solid #e7eaed;
-    background-color: #f8f8f8;
+    color: #24292e;
+    border: 1px solid #d0d7de;
+    background-color: #f6f8fa;
     border-radius: 3px;
     padding: 0;
     padding: 2px 4px 0px 4px;
@@ -276,7 +277,7 @@ code {
 }
 
 .md-fences {
-	background-color: #f8f8f8;
+	background-color: #f6f8fa;
 }
 #write pre.md-meta-block {
 	padding: 1rem;
@@ -422,23 +423,23 @@ a:visited {
  * 代码块语法高亮后备映射：为 Typora 原生 CodeMirror 模式提供基础配色。
  *
  * C/C++ 的主要识别不由这里按关键字猜测，而由 enhancements 扩展加载 VS Code
- * TextMate grammar 后生成 cm-tm-* 语法作用域；扩展自带的作用域配色会覆盖本后备层。
+ * TextMate grammar 后生成 cm-tm-* 语法作用域；扩展使用 GitHub Light 颜色覆盖本后备层。
  * 这里仍保留 cm-* 映射，供 Typora 的其他内置语言模式使用。代码围栏需要写明语言。
  */
 :root {
-    --code-keyword-color: #0000ff;
-    --code-comment-color: #008000;
-    --code-string-color: #a31515;
-    --code-number-color: #008000;
-    --code-definition-color: #808080;
-    --code-type-color: #a31515;
-    --code-variable-color: #333333;
-    --code-builtin-color: #007acc;
-    --code-literal-color: #a31515;
-    --code-meta-color: #2b91af;
-    --code-tag-color: #0000ff;
-    --code-attribute-color: #ff0000;
-    --code-symbol-color: #00b0e8;
+    --code-keyword-color: #d73a49;
+    --code-comment-color: #6a737d;
+    --code-string-color: #032f62;
+    --code-number-color: #005cc5;
+    --code-definition-color: #6f42c1;
+    --code-type-color: #6f42c1;
+    --code-variable-color: #005cc5;
+    --code-builtin-color: #e36209;
+    --code-literal-color: #005cc5;
+    --code-meta-color: #005cc5;
+    --code-tag-color: #22863a;
+    --code-attribute-color: #005cc5;
+    --code-symbol-color: #e36209;
 }
 
 /* 控制流、存储类、类型限定符和其他语言关键字。 */
@@ -446,10 +447,10 @@ a:visited {
     color: var(--code-keyword-color);
 }
 
-/* VS Code 的 VS Light 预览样式使用绿色斜体注释。 */
+/* GitHub Light 使用低饱和灰色注释，不额外使用斜体。 */
 .cm-s-inner .cm-comment {
     color: var(--code-comment-color);
-    font-style: italic;
+    font-style: normal;
 }
 
 /* 字符串、字符常量与正则表达式。 */
@@ -476,7 +477,7 @@ a:visited {
     color: var(--code-variable-color);
 }
 
-/* 类型令牌对应 VS Code 预览中的 hljs-type。 */
+/* 类型名使用 GitHub 的 entity 色，和函数、类等命名实体保持一致。 */
 .cm-s-inner .cm-variable-3,
 .cm-s-inner .cm-type {
     color: var(--code-type-color);
@@ -524,6 +525,6 @@ a:visited {
 
 .cm-s-inner .cm-error,
 .cm-s-inner .cm-invalidchar {
-    color: #ffffff;
-    background-color: #cf222e;
+    color: #b31d28;
+    background-color: #ffeef0;
 }

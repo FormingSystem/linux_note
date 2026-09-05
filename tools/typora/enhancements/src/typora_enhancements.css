@@ -1,16 +1,17 @@
 :root {
-  --linux-note-code-foreground: #000000;
-  --linux-note-code-comment: #008000;
-  --linux-note-code-string: #a31515;
-  --linux-note-code-number: #098658;
-  --linux-note-code-keyword: #0000ff;
-  --linux-note-code-control: #af00db;
-  --linux-note-code-function: #795e26;
-  --linux-note-code-type: #267f99;
-  --linux-note-code-variable: #001080;
-  --linux-note-code-constant: #0070c1;
-  --linux-note-code-preprocessor: #0000ff;
-  --linux-note-code-invalid: #cd3131;
+  --linux-note-code-foreground: #24292e;
+  --linux-note-code-comment: #6a737d;
+  --linux-note-code-string: #032f62;
+  --linux-note-code-number: #005cc5;
+  --linux-note-code-keyword: #d73a49;
+  --linux-note-code-control: #d73a49;
+  --linux-note-code-function: #6f42c1;
+  --linux-note-code-type: #6f42c1;
+  --linux-note-code-variable: #005cc5;
+  --linux-note-code-constant: #005cc5;
+  --linux-note-code-preprocessor: #005cc5;
+  --linux-note-code-invalid: #b31d28;
+  --linux-note-code-invalid-background: #ffeef0;
 }
 
 .cm-s-inner .cm-tm-comment {
@@ -60,6 +61,7 @@
 
 .cm-s-inner .cm-tm-invalid {
   color: var(--linux-note-code-invalid);
+  background-color: var(--linux-note-code-invalid-background);
   text-decoration: wavy underline;
   text-decoration-color: var(--linux-note-code-invalid);
 }
