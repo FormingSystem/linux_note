@@ -14,9 +14,22 @@ topics:
 
 # 第19章\_Tasks\_RCU\_任务轨迹宽限期
 
-P18 的 SRCU 仍然围绕显式对象保护域记账；Tasks RCU 家族换了问题：更新者需要修改或回收的是 **可能仍被任务执行轨迹触及的代码或 tracing 状态**。因此它不能照搬普通 Tree RCU 的短对象 reader，也不能用 SRCU 的双 index 计数定义所有旧执行。
+P18 的 SRCU 仍然围绕显式对象保护域记账；Tasks **RCU（Read-Copy Update，读-复制-更新）** 家族换了问题：更新者需要修改或回收的是 **可能仍被任务执行轨迹触及的代码或 tracing 状态**。因此它不能照搬普通 Tree RCU 的短对象 reader，也不能用 SRCU 的双 index 计数定义所有旧执行。
 
 本章先建立共同任务轨迹问题，再比较 Tasks、Tasks Rude 与 Tasks Trace 三种 flavor 的完成证据。Tiny RCU 属于普通 RCU 的单 CPU 实现轴，将在 P20 单独讲解，不再与 Tasks 家族混排。
+
+先建立后文源码名称的最小入口。**BPF（Berkeley Packet Filter，伯克利包过滤器）** 在现代 Linux 中也指受验证程序及其内核执行设施；`rcu_read_lock_trace()` 与 `rcu_read_unlock_trace()` 是 Tasks Trace RCU 的显式读侧边界函数。`schedule_on_each_cpu()` 是让每个在线 CPU 执行一次给定工作的函数，Tasks Rude 借这类动作取得强制调度边界。后文伪代码中的 `AND` 是表示 logical conjunction（逻辑合取）的运算符名称，说明多个独立生命期条件必须同时满足。
+
+先给这个家族一张“身份证”。它内部包含三个 flavor，因此共同骨架和各自完成证据必须分栏理解：
+
+| 层次 | Tasks RCU 家族在本专题中的答案 | 本章展开位置 |
+| --- | --- | --- |
+| 分类位置 | 保护旧任务执行轨迹的 flavor 家族；不是普通 RCU 的 Tree/Tiny 后端选择 | 19.1～19.2 |
+| 问题背景 | 更新后仍可能有任务停留在旧代码或 trace 执行轨迹，普通对象宽限期没有覆盖该 reader 集合 | 19.1 |
+| reader 与完成证据 | Tasks 等自然任务边界，Tasks Rude 强制 CPU 跨调度边界，Tasks Trace 观察显式 trace reader | 19.3～19.6 |
+| 运行原理 | 共享宽限期内核线程、callback 运输和 holdout 框架，由 flavor 钩子改变观察集合、探测与完成条件 | 19.2～19.6 |
+| 初始化与实现 | 全局 flavor 控制对象和每 CPU callback 队列在启动期建立；当前材料只闭合到模块源码导读 | 19.8 |
+| 选择边界 | 只关闭对应旧代码轨迹；若对象还由普通 RCU、SRCU 或 kref 保护，必须分别关闭其他生命期 | 19.7～19.9 |
 
 ## 19.1\_为什么普通对象GP不能直接证明旧代码轨迹消失
 
@@ -94,6 +107,7 @@ Tasks Trace 因而引入显式 `rcu_read_lock_trace()` / `rcu_read_unlock_trace(
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant R as trace reader任务
     participant G as Tasks Trace GP线程
     participant P as 探测/调度路径
