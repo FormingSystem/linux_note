@@ -4,8 +4,8 @@
   "topic_id": "rcu",
   "enabled": true,
   "title": "深入理解 Linux RCU",
-  "subtitle": "从通用契约与分类坐标，到 Tree RCU 公共骨架、模块差异、Linux 6.12 源码与实验",
-  "description": "面向希望系统掌握 RCU 的读者，先建立通用概念、公共 API 与分类坐标，再按功能模块解释公共骨架和抢占/非抢占差异，最后用实现家族、源码证据和实验完成验证。",
+  "subtitle": "从问题与应用接口，到实现抽象、类型独立闭环、Linux 6.12 源码与实验",
+  "description": "面向希望系统掌握 RCU 的读者，先从对象回收问题建立公共 API 闭环，再提炼跨类型实现职责与分类依据；随后分别闭合普通 Tree RCU、SRCU、Tasks 与 Tiny 的背景、原理和源码证据，并把实验、诊断与选择放回它们验证的具体结论附近。",
   "publisher": "FormingSystem",
   "language": "zh-CN",
   "source_baseline": {
@@ -15,65 +15,275 @@
     "commit": "dfaf2136deb2af2e60b994421281ba42f1c087e0",
     "kernel_version": "Linux 6.12.20",
     "config": [
-      "CONFIG_TREE_RCU=y",
-      "CONFIG_PREEMPT_RCU=y"
+      "历史 Tree 配置快照：CONFIG_TREE_RCU=y",
+      "历史 Tree 配置快照：CONFIG_PREEMPT_RCU=y",
+      "2026-09-05 当前 Tiny 生成配置：CONFIG_TINY_RCU=y",
+      "2026-09-05 当前 Tiny 生成配置：CONFIG_SMP=n",
+      "2026-09-05 当前 Tiny 生成配置：CONFIG_PREEMPT_NONE=y",
+      "当前 Tiny 生成配置来自尚未提交的 arch/arm/configs/imx_v7_test_defconfig 差量，不是固定标签默认配置"
     ],
     "reference": "research/source_reading/linux/SOURCE_BASELINE.md"
   },
   "volumes": [
     {
-      "id": "mechanism_and_application",
-      "title": "卷一　机制、实现与应用",
-      "description": "从对象回收问题出发，推演 RCU 抽象角色与正确性边界；随后建立公共 API 和分类坐标，按 Tree RCU 功能模块解释公共路径、抢占/非抢占差异、实现家族、调试与应用选择。",
+      "id": "problem_and_api",
+      "title": "卷一　问题背景、抽象契约与应用接口",
+      "description": "从锁与对象回收缺口推出 RCU，建立不依赖 Linux 字段的最小机制，再用同步、异步、失败清理和模块退出闭合公共 API。",
       "sources": [
         {
           "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md",
           "role": "guide"
         },
         {
-          "directory": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu",
-          "include": "P*.md",
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P01_为什么需要_RCU.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P02_RCU_抽象机制推演.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md",
           "role": "chapter"
         }
       ]
     },
     {
-      "id": "source_navigation",
-      "title": "卷二　Linux 6.12 源码导航",
-      "description": "按读者目标组织源码入口、参与者、状态落点、函数协作和阅读顺序，不在本卷重复展开上游函数体。",
+      "id": "implementation_abstraction_and_classification",
+      "title": "卷二　实现抽象、分类依据与源码坐标",
+      "description": "先提炼保护域、reader 状态、GP 请求、局部证据、汇聚、结果交付和初始化七项共同职责，再把保护域、实现家族、执行模型、运行策略与诊断设施放回正交坐标。",
       "sources": [
         {
-          "directory": "research/source_reading/rcu/navigation",
-          "include": "P*.md",
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P04_RCU_分类坐标与内核配置.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md",
           "role": "chapter"
         }
       ]
     },
     {
-      "id": "source_explanations",
-      "title": "卷三　Linux 6.12 唯一实现讲解",
-      "description": "集中收录同一版本边界内宏、字段、函数体和配置分支的唯一实现讲解，并回接卷二的模块导读。",
+      "id": "ordinary_tree_rcu",
+      "title": "卷三　普通 Tree RCU 原理、初始化与源码闭环",
+      "description": "沿同一对象替换与 S0～S9 周期，按读侧证明、启动初始化、GP、QS、节点汇聚、callback、同步等待和慢路径逐模块交错阅读稳定机制、源码导读、唯一实现与实验。",
       "sources": [
         {
-          "directory": "research/source_reading/rcu/source_explanations",
-          "include": "P*.md",
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md",
           "role": "chapter"
-        }
-      ]
-    },
-    {
-      "id": "experiment",
-      "title": "卷四　实验与证据闭环",
-      "description": "用晚到读者与被抢占读者的可观测实验检验宽限期边界，并保留可独立复现的模块源码和构建入口。",
-      "sources": [
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md",
+          "role": "chapter"
+        },
         {
           "path": "labs/kernel/rcu/P01_晚到读者与抢占读者/README.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P09_Tree_RCU_QS_EQS与Context_Tracking.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P10_Tree_RCU_rcu_node树与分层汇聚.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_rcu_segcblist回调状态机.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_回调执行_批处理与限流.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P13_Tree_RCU_同步等待与rcu_barrier.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P08_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P14_Tree_RCU_force_QS迟延与Stall.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P05_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_Expedited_GP.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_NOCB回调卸载.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_CPU热插拔与回调迁移.md",
           "role": "chapter"
         }
       ],
       "attachments": [
         "labs/kernel/rcu/P01_晚到读者与抢占读者/Makefile",
         "labs/kernel/rcu/P01_晚到读者与抢占读者/late_and_preempted_reader.c"
+      ]
+    },
+    {
+      "id": "srcu",
+      "title": "卷四　SRCU 背景、原理与实现",
+      "description": "从可睡眠 reader 和私有保护域问题出发，闭合双 index 证明、域生命周期、Linux 6.12 模块协作与唯一函数实现。",
+      "sources": [
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_SRCU_私有域与双_index_状态机.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P09_Linux_6.12_Tree_SRCU模块源码概念导读.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md",
+          "role": "chapter"
+        }
+      ]
+    },
+    {
+      "id": "tasks_rcu",
+      "title": "卷五　Tasks RCU 家族背景、原理与源码导读",
+      "description": "从旧代码轨迹不能由普通对象 GP 证明结束的问题出发，比较 Tasks、Tasks Rude 与 Tasks Trace 的共享骨架和完成证据；当前版本保留逐函数实现讲解缺口。",
+      "sources": [
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P19_Tasks_RCU_任务轨迹宽限期.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P10_Linux_6.12_Tasks_RCU模块源码概念导读.md",
+          "role": "chapter"
+        }
+      ]
+    },
+    {
+      "id": "tiny_rcu",
+      "title": "卷六　Tiny RCU 单 CPU 原理与源码实现",
+      "description": "把 Tiny 放回普通 RCU 实现家族坐标，解释单 CPU 前提删除了哪些跨 CPU 状态、保留了哪些 GP 与 callback 边界，并沿二级指针队列、QS 和 softirq 闭合逐函数实现。",
+      "sources": [
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P20_Tiny_RCU_单CPU实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md",
+          "role": "chapter"
+        }
+      ]
+    },
+    {
+      "id": "application_diagnostics_and_choice",
+      "title": "卷七　对象生命周期、工程应用、诊断与选择",
+      "description": "在各类型身份和实现链已经成立后，再组合 kref、驱动模式、Sparse、Lockdep、调试、内存序与替代机制，避免应用和检查器提前打断主机制。",
+      "sources": [
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_驱动与子系统应用模式.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/navigation/P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P24_RCU_调试验证与集成误用.md",
+          "role": "chapter"
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P25_RCU_内存序_误用与选择边界.md",
+          "role": "chapter"
+        }
       ]
     }
   ],

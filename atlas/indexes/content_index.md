@@ -72,7 +72,7 @@ domains:
 
 | 书名 | 当前内容入口 |
 | --- | --- |
-| 《深入理解 Linux RCU》MarkBook | [当前版本](../../markbook/topics/rcu/latest.html)、[版本目录与说明](../../markbook/topics/rcu/README.md#1.2_发行入口)、[2026.08 来源与产物台账](../../markbook/topics/rcu/releases/2026.08/publication.json) |
+| 《深入理解 Linux RCU》MarkBook | [当前版本](../../markbook/topics/rcu/latest.html)、[版本目录与说明](../../markbook/topics/rcu/README.md#1.2_发行入口)、[2026.09 来源与产物台账](../../markbook/topics/rcu/releases/2026.09/publication.json) |
 | 《奔跑吧 Linux 内核（入门篇·第 2 版）》 | [电子书说明与目录](../../publications/books/running_linux_kernel/README.md) |
 
 ## 1.7\_维护入口
