@@ -15,7 +15,7 @@ topics:
 
 ## 1.1\_版本边界与总索引职责
 
-本目录以 NXP `linux-imx` 官方发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`、Linux 6.12.20 为固定源码身份。既有 RCU 配置快照确认 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`；其他配置分支属于同一固定源码的条件阅读，不伪装成该快照的运行结果。
+本目录以 NXP `linux-imx` 官方发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`、Linux 6.12.20 为固定源码身份。历史 RCU 快照曾确认 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`；2026-09-05 重新核对的当前标准工作树则确认 `CONFIG_TINY_RCU=y`、`CONFIG_SMP=n`、`CONFIG_PREEMPT_NONE=y`。两份配置用于验证同一固定源码的不同条件分支，不得混成一个运行结果；当前 Tiny 配置种子还是工作树差量，也不得倒推成固定标签默认配置。详见源码基线的配置快照表。
 
 总索引承担三项职责：
 
@@ -71,7 +71,7 @@ flowchart LR
 | P08 | [同步等待与 rcu_barrier](P08_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md#8.1_等RCU至少有三种不同对象) | 等 GP、等一个 callback 与等历史 callback 的区别 | P13 |
 | P09 | [Tree SRCU](P09_Linux_6.12_Tree_SRCU模块源码概念导读.md#9.1_先分清Tree_RCU与Tree_SRCU) | 私有域、双 index reader 证明和 callback 需求树 | P18 |
 | P10 | [Tasks RCU](P10_Linux_6.12_Tasks_RCU模块源码概念导读.md#10.1_模块问题与三个flavor) | 共享控制骨架与 Tasks/Rude/Trace 的 flavor 证据 | P19 |
-| P11 | [Tiny RCU](P11_Linux_6.12_Tiny_RCU模块源码概念导读.md#11.1_模块问题与单CPU前提) | 单 CPU 怎样保留普通 RCU 的 QS 与 callback 边界 | P20 |
+| P11 | [Tiny RCU](P11_Linux_6.12_Tiny_RCU模块源码概念导读.md#11.1_模块问题与当前配置前提) | 单 CPU 怎样保留普通 RCU 的 QS 与 callback 边界 | P20 |
 | P12 | [RCU Lockdep 适配](P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#12.1_模块问题与实现所有权) | 功能状态、检查器影子状态和配置退化 | P23、P24 |
 
 表中“对应知识正文”只是读者任务映射，不要求两层文档逐句同步。知识正文建立稳定因果模型；模块导读固定版本化文件、状态地址和函数协作。
@@ -92,6 +92,7 @@ flowchart LR
 | [P10 同步等待与 barrier](../source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.2_源码符号覆盖账本) | `synchronize_rcu()`、哨兵、entrain 与全队列扫描 |
 | [P11 Tree SRCU](../source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.2_源码符号覆盖账本) | reader 累计账本、双扫描、callback 与 barrier |
 | [P12 `rcu_init()` 启动初始化](../source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.19_直接符号覆盖账本) | `start_kernel()` 调用现场、Tree/Tiny 分派、I0～I13、boot CPU 发布、workqueue 与后继 initcall 边界 |
+| [P13 Tiny RCU](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.2_源码符号覆盖账本) | UP 非抢占 reader 边界、二级指针 callback 分界、QS、softirq、同步、poll、barrier 与初始化 |
 
 P02 与 P03 是同一读侧模块中的公共 CPU 路径和 PREEMPT_RCU 增量，不是非抢占 / 抢占两套完整系统。
 
@@ -112,6 +113,15 @@ P02 与 P03 是同一读侧模块中的公共 CPU 路径和 PREEMPT_RCU 增量�
 ```
 
 比较其他家族时，从分类坐标直接进入 P09 SRCU、P10 Tasks 或 P11 Tiny，不必先读完普通 Tree 的所有优化模块。
+
+当前只研究 Tiny 时，采用更短路径：
+
+```text
+本索引P01
+    → P11 Tiny模块概念导读
+    → P13 Tiny源码实现
+    → 用当前.config与Bear编译数据库核对tiny.c
+```
 
 ## 1.7\_实验与观察入口
 
