@@ -239,6 +239,37 @@ def format_duration(seconds: float | None) -> str:
     return f"{minutes:02d}:{remaining_seconds:02d}"
 
 
+def display_repository_path(path: Path, option_name: str) -> str:
+    try:
+        relative_path = path.resolve().relative_to(repo_root)
+    except ValueError:
+        return f"<由 {option_name} 指定的仓库外路径>"
+    return relative_path.as_posix() or "."
+
+
+def display_cache_root(cache_root: Path) -> str:
+    return display_repository_path(cache_root, "--cache-root")
+
+
+def display_destination(cache_root: Path, destination: Path) -> str:
+    try:
+        relative_path = destination.resolve().relative_to(cache_root)
+    except ValueError:
+        return "<无效的缓存目标>"
+    cache_label = display_cache_root(cache_root)
+    relative_label = relative_path.as_posix()
+    return f"{cache_label}/{relative_label}" if relative_label else cache_label
+
+
+def display_error(error: BaseException, path_replacements: list[tuple[Path, str]]) -> str:
+    message = str(error)
+    for path, replacement in path_replacements:
+        resolved_path = path.resolve()
+        for path_text in {str(resolved_path), resolved_path.as_posix()}:
+            message = message.replace(path_text, replacement)
+    return message
+
+
 def supports_unicode(stream: Any) -> bool:
     encoding = getattr(stream, "encoding", None) or "utf-8"
     try:
@@ -284,6 +315,7 @@ def inspected_file_state(record: dict[str, Any]) -> str:
 
 def print_document_entry(
     document: dict[str, Any],
+    cache_root: Path,
     destination: Path,
     position: int,
     total: int,
@@ -301,7 +333,7 @@ def print_document_entry(
         f"|  页数：{document['pages']}"
     )
     print(f"  文件：{destination.name}")
-    print(f"  保存：{destination}")
+    print(f"  保存：{display_destination(cache_root, destination)}")
     state = (
         inspected_file_state(record)
         if record is not None
@@ -324,10 +356,10 @@ def print_run_overview(
     direct_size = sum(document["size_bytes"] for document in direct_documents)
     heading("linux-note 外部资料获取工具")
     print(f"模式：{mode}")
-    print(f"清单：{manifest_path}")
+    print(f"清单：{display_repository_path(manifest_path, '--manifest')}")
     print("链接更新：编辑上述清单中对应 documents[] 条目的 official_page/download_url。")
     print("版本更新：同时核对 version、size_bytes、pages 和 sha256，不能只替换网址。")
-    print(f"保存目录：{cache_root}")
+    print(f"保存目录：{display_cache_root(cache_root)}")
     print(
         f"条目：共 {len(documents)} 项；自动下载 {len(direct_documents)} 项 "
         f"（合计 {format_size(direct_size)}）；手工获取 {manual_count} 项"
@@ -347,6 +379,7 @@ def print_document_plan(
         record = records[position - 1] if records is not None else None
         print_document_entry(
             document=document,
+            cache_root=cache_root,
             destination=resolve_destination(cache_root, document),
             position=position,
             total=len(documents),
@@ -530,13 +563,17 @@ def inspect_documents(
             verified, detail = verify_file(document, destination)
         except OSError as error:
             verified = False
-            detail = f"cannot read the target: {error}"
+            destination_label = display_destination(cache_root, destination)
+            error_detail = display_error(error, [(destination, destination_label)])
+            detail = f"cannot read the target: {error_detail}"
             action = "failed"
-            print(f"无法安全读取；{error}")
+            print(f"无法安全读取；{error_detail}")
             records.append(
                 {
                     "document": document,
+                    "cache_root": cache_root,
                     "destination": destination,
+                    "destination_label": destination_label,
                     "verified": verified,
                     "detail": detail,
                     "action": action,
@@ -561,7 +598,9 @@ def inspect_documents(
         records.append(
             {
                 "document": document,
+                "cache_root": cache_root,
                 "destination": destination,
+                "destination_label": display_destination(cache_root, destination),
                 "verified": verified,
                 "detail": detail,
                 "action": action,
@@ -578,12 +617,14 @@ def process_document(
     total: int,
 ) -> str:
     document = record["document"]
+    cache_root = record["cache_root"]
     destination = record["destination"]
+    destination_label = record["destination_label"]
     print(
         f"\n[{position:02d}/{total:02d}] 处理 "
         f"{document_identity(document)} — {destination.name}"
     )
-    print(f"  目标：{destination}")
+    print(f"  目标：{destination_label}")
     if record["action"] == "skip":
         print(f"  结果：本地文件校验通过，跳过下载；{record['detail']}")
         return "verified"
@@ -595,7 +636,7 @@ def process_document(
     if record["action"] == "manual":
         print("  结果：需要手工获取；官方入口没有登记可自动使用的稳定直链。")
         print(f"  来源：{document['official_page']}")
-        print(f"  放置：合法取得后保存为 {destination}")
+        print(f"  放置：合法取得后保存为 {destination_label}")
         print(
             f"  校验：大小 {format_size(document['size_bytes'])}，"
             f"SHA-256 {document['sha256']}"
@@ -606,7 +647,8 @@ def process_document(
     temporary_path = destination.with_name(destination.name + ".download")
     last_error = "download did not start"
     print(f"  来源：{document['download_url']}")
-    print(f"  临时：{temporary_path}")
+    temporary_label = display_destination(cache_root, temporary_path)
+    print(f"  临时：{temporary_label}")
     if destination.exists():
         print("  覆盖：旧文件会保留到新文件完成全部校验；校验失败时不会覆盖。")
 
@@ -620,10 +662,16 @@ def process_document(
                 raise RuntimeError(temporary_detail)
             os.replace(temporary_path, destination)
             print(f"  结果：下载及校验通过；{temporary_detail}")
-            print(f"  文件：{destination}")
+            print(f"  文件：{destination_label}")
             return "downloaded"
         except (OSError, RuntimeError, urllib.error.URLError) as error:
-            last_error = str(error)
+            last_error = display_error(
+                error,
+                [
+                    (temporary_path, temporary_label),
+                    (destination, destination_label),
+                ],
+            )
             print(f"  重试：{last_error}", file=sys.stderr)
             if attempt < retry_count:
                 retry_delay = min(attempt * 5, 30)
@@ -631,7 +679,7 @@ def process_document(
                 time.sleep(retry_delay)
 
     print(f"  结果：下载失败；{last_error}", file=sys.stderr)
-    print(f"  临时文件（如存在）：{temporary_path}", file=sys.stderr)
+    print(f"  临时文件（如存在）：{temporary_label}", file=sys.stderr)
     return "failed"
 
 
@@ -663,6 +711,7 @@ def main() -> int:
             reconfigure(encoding="utf-8", errors="replace")
 
     args = parse_args()
+    manifest_path = default_manifest_path
     try:
         manifest_path = (
             args.manifest.expanduser().resolve()
@@ -680,7 +729,9 @@ def main() -> int:
             list_documents(documents, cache_root)
             return 0
     except (OSError, ValueError, json.JSONDecodeError) as error:
-        print(f"[失败] 清单：{error}", file=sys.stderr)
+        manifest_label = display_repository_path(manifest_path, "--manifest")
+        error_detail = display_error(error, [(manifest_path, manifest_label)])
+        print(f"[失败] 清单：{error_detail}", file=sys.stderr)
         return 2
 
     records = inspect_documents(documents, cache_root, args.verify_only)
