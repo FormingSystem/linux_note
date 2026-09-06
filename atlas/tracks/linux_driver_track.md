@@ -60,6 +60,8 @@ domains:
 
 建议依次完成现有 i.MX6ULL 实验：
 
+开始实验前，先从[Arm、GIC、RK3588 与 i.MX6ULL 外部资料索引](../../reference/external_resources/arm/README.md#1.4_版本选择与阅读顺序)确认处理器架构、GIC 代际和芯片手册版本。外部资料给出硬件契约，下面的实验记录给出特定板卡与软件版本上的观测结果，二者不能互相替代。
+
 1. [LED 的 ioremap 实现](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P01_LED点灯+ioremap.md)。
 2. [LED 的设备树实现](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md)。
 3. [BEEP 的设备树实现](../../labs/platforms/nxp/imx6ull/drivers/P02_BEEP/P01_beep+dts.md)。
