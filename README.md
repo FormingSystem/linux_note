@@ -82,7 +82,6 @@ https://github.com/FormingSystem/linux_note.git
 
 推荐使用 Typora 或 Obsidian 阅读。
 
-Typora 适合单篇 Markdown 阅读和排版预览；部分 Markdown 语法和样式效果需要 Typora 支持。
 
 Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，优先使用 Obsidian 内部操作，让链接能够自动跟踪更新。
 
@@ -280,3 +279,11 @@ LICENSES/
 仓库中的源码阅读内容仅用于个人学习、知识整理、源码分析和笔记沉淀。由于笔记中可能包含个人理解、阶段性判断、AI 辅助整理内容或尚未最终校对的材料，因此不保证所有解释都与 Linux kernel 官方实现意图完全一致。
 
 如需确认 Linux kernel 的准确实现、许可证边界或最新源码状态，请以 Linux kernel 官方源码仓库、官方文档以及原始文件中的许可证声明为准。
+
+### 1.9.5\_外部厂商资料
+
+Arm、NXP 与 Rockchip 在本节中都是公司或品牌专名。Arm 架构规范、处理器核手册、芯片数据手册、技术参考手册和开发板配套资料等外部文件，其版权、商标和许可仍归这些公司及其他原权利人所有。公开可下载不等于允许本仓库再次分发，根目录的 `GPL-2.0-only` 也不会重新许可这些第三方文件。
+
+除非文件附带明确允许再分发且与本仓库用途相容的许可，新引入的外部厂商资料只在 `reference/external_resources/` 保存来源、版本、版权边界和完整性校验信息，实际文件由使用者从权利人入口下载到 Git 忽略的 `.cache/`。这类文件不得放入普通 Git、Git LFS、GitHub Release 或其他公共镜像。
+
+当前 Arm、RK3588 与 i.MX6ULL 资料入口见 [外部资料索引](reference/external_resources/arm/README.md#1.1_索引定位与存储边界)。

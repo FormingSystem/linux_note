@@ -52,7 +52,7 @@ mindmap-plugin: basic
 
 ## 1.4\_全量覆盖基线
 - 本次盘点覆盖 308 篇 `knowledge/` Markdown：28 个正式专题入口、240 个正式 `PXX` 章节及 40 篇尚未统一成正式大纲的知识材料。
-- 另纳入 53 篇支撑材料：工程方法 1 篇、平台实现 3 篇、实验 16 篇、研究 25 篇、参考 1 篇、出版物 7 篇。
+- 另纳入 54 篇支撑材料：工程方法 1 篇、平台实现 3 篇、实验 16 篇、研究 25 篇、参考 2 篇、出版物 7 篇。
 - 正式章节人工进度
     - 🟢 30 章：Kref P01～P15、红黑树 P01～P15。
     - 🟡 9 章：Lockdep P01～P09，已完成人工通读和批注，重构后待复核。
@@ -66,6 +66,7 @@ mindmap-plugin: basic
     - 🔴 1 篇：Lockdep 锁顺序反转与报告解读实验。
     - 🔴 1 篇：Sparse 地址空间与上下文记账实验。
     - 🟢 1 篇：`reference/` 下的参考资料。
+    - 🔴 1 篇：`reference/` 下的外部资料索引。
     - 🟢 6 篇：`publications/` 下的出版物材料。
     - 🔴 1 篇：`markbook/` 下的 RCU 专题月刊入口。
 - `projects/` 当前没有正式内容，因此不创建占位节点。
@@ -626,10 +627,12 @@ mindmap-plugin: basic
             - 🔴 [P13 Linux 6.12 Tiny RCU 源码实现](../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.1_实现所有权与本章读者任务)
 
 ## 1.9\_🟡 参考与出版物
-- 🟢 参考资料
+- 🟡 参考资料
     - 标准
         - GPL
             - 🟢 [GPL 协议说明(总论)](../../reference/standards/gpl/GPL协议说明.md)
+    - 外部资料
+        - 🔴 [Arm、RK3588 与 i.MX6ULL 外部资料索引](../../reference/external_resources/arm/README.md#1.1_索引定位与存储边界)
 - 🟡 出版物
     - 🟢 [奔跑吧 Linux 内核](../../publications/books/running_linux_kernel/README.md)
         - 🟢 [P01 linux系统基础知识](../../publications/books/running_linux_kernel/P01_linux系统基础知识.md)
