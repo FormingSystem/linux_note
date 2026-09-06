@@ -23,6 +23,7 @@ domains:
 | 读懂内核编译期注解 | [编译器与 Sparse 注解专题](../knowledge/foundations/c_language/kernel_static_annotations/大纲.md#1.1_专题定位)、[研究型实验](../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标)、[Linux 6.12 源码导读](../research/source_reading/compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务) | 从预处理展开进入地址域、context、BTF 与工具验证 |
 | 理解并验证锁协议 | [Lockdep 专题](../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md#1.1_专题定位)、[锁顺序反转实验](../labs/kernel/lockdep/P01_锁顺序反转与报告解读/README.md)、[Linux 6.12 源码总阅读索引](../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序) | 从锁序与 IRQ 反例建立模型，亲手读取报告，再核对版本化状态和调用链 |
 | 学习驱动开发 | [Linux驱动开发学习路线](tracks/linux_driver_track.md) | 从模块、字符设备走到平台驱动和 Input 子系统 |
+| 查阅架构、GIC 与芯片原始资料 | [Arm、RK3588 与 i.MX6ULL 外部资料索引](../reference/external_resources/arm/README.md#1.4_版本选择与阅读顺序) | 选择对应版本的官方资料，并区分规范、SoC 实现与仓库学习笔记 |
 | 查找现有内容 | [仓库内容索引](indexes/content_index.md) | 按领域定位文档、实验和研究材料 |
 | 规划后续建设 | [知识库建设路线图](roadmaps/content_roadmap.md) | 查看内容覆盖、缺口和维护优先级 |
 
@@ -30,7 +31,7 @@ domains:
 
 - 知识本体：[基础知识](../knowledge/foundations)、[Linux 通用机制](../knowledge/linux)、[内核子系统](../knowledge/kernel_subsystems)、[驱动模型](../knowledge/driver_model)、[系统软件](../knowledge/system_software)。
 - 平台与验证：[平台实现](../platforms)、[实验](../labs)。
-- 研究与查询：[源码阅读与调查](../research)、[参考资料](../reference)。
+- 研究与查询：[源码阅读与调查](../research)、[参考资料](../reference/README.md#1.1_定位与使用边界)。
 - 电子书与出版物：[RCU MarkBook](../markbook/topics/rcu/README.md#1.2_发行入口)、[《奔跑吧 Linux 内核》](../publications/books/running_linux_kernel/README.md)。MarkBook 是按月冻结的专题派生快照，事实仍回到权威正文、源码研究和实验维护。
 - 仓库维护：[信息架构设计](../governance/architecture/repository_information_architecture.md)、[Git 协作与提交规范](../governance/conventions/git_guide.md)。
 
