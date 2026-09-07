@@ -75,6 +75,7 @@ Linux 内核结构、模块与数据结构
 
 - 平台实现记录：[i.MX6ULL 移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)、[RK3566 Linux SDK 编译](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)。
 - 外部规范与芯片资料：[Arm、GIC、RK3588 与 i.MX6ULL 版本选择](../../reference/external_resources/arm/README.md#1.4_版本选择与阅读顺序)。该入口提供原始资料身份和取得方式，不替代通用机制正文或平台实现记录。
+- GIC 硬件学习：[GICv3 物理中断专题](../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)。从零建立概念并沿官方目录查证，先学 GIC-600 r1p6 / GICv3.0，不以 GICv2 或 GICv4 为前置，也不并入 Linux IRQ 管理正文。
 - 最小验证实验：[i.MX6ULL 驱动实验](../../labs/platforms/nxp/imx6ull/drivers)。
 - 调查材料入口：[调查目录说明](../../research/investigations/README.md)。
 - 版本化并发源码入口：[锁](../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)、[序列计数器](../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.5_建议阅读顺序)、[等待与完成量](../../research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)、[工作队列](../../research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.6_建议阅读顺序)、[Lockdep](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)、[RCU](../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)。

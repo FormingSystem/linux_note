@@ -62,12 +62,23 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="覆盖清单声明的本地缓存根目录",
     )
-    parser.add_argument(
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument(
         "--select",
         action="append",
         default=[],
         metavar="DOCUMENT_ID",
         help="只处理一个文档 ID；可重复指定多个条目",
+    )
+    selection.add_argument(
+        "--profile",
+        metavar="PROFILE_ID",
+        help="按清单中的学习资料组选取；使用 --list-profiles 查看组名",
+    )
+    selection.add_argument(
+        "--list-profiles",
+        action="store_true",
+        help="只列出学习资料组，不读取缓存文件也不访问网络",
     )
     parser.add_argument(
         "--list",
@@ -109,7 +120,7 @@ def load_manifest(manifest_path: Path) -> dict[str, Any]:
     with resolved_path.open("r", encoding="utf-8") as manifest_file:
         manifest = json.load(manifest_file)
 
-    if manifest.get("schema_version") != 1:
+    if manifest.get("schema_version") != 2:
         raise ValueError("unsupported or missing manifest schema_version")
     if not isinstance(manifest.get("cache_root"), str):
         raise ValueError("manifest cache_root must be a string")
@@ -117,6 +128,7 @@ def load_manifest(manifest_path: Path) -> dict[str, Any]:
         raise ValueError("manifest documents must be a non-empty list")
 
     document_ids: set[str] = set()
+    document_paths: set[str] = set()
     for index, document in enumerate(manifest["documents"]):
         if not isinstance(document, dict):
             raise ValueError(f"document entry {index} must be an object")
@@ -152,7 +164,36 @@ def load_manifest(manifest_path: Path) -> dict[str, Any]:
             if not isinstance(url, str) or urllib.parse.urlparse(url).scheme != "https":
                 raise ValueError(f"{document_id}: {url_field} must use HTTPS")
 
-        validate_relative_path(document_id, document["relative_path"])
+        relative_path = validate_relative_path(document_id, document["relative_path"])
+        # 按 Windows 的大小写不敏感语义检查，禁止两个条目覆盖同一缓存文件。
+        path_key = relative_path.as_posix().casefold()
+        if path_key in document_paths:
+            raise ValueError(f"duplicate document relative_path: {relative_path}")
+        document_paths.add(path_key)
+
+    profiles = manifest.get("profiles")
+    if not isinstance(profiles, dict) or not profiles:
+        raise ValueError("manifest profiles must be a non-empty object")
+    for profile_id, profile in profiles.items():
+        if not re.fullmatch(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*", profile_id):
+            raise ValueError(f"invalid profile id: {profile_id}")
+        if not isinstance(profile, dict):
+            raise ValueError(f"{profile_id}: profile must be an object")
+        for field in ("title", "description"):
+            if not isinstance(profile.get(field), str) or not profile[field].strip():
+                raise ValueError(f"{profile_id}: {field} must be a non-empty string")
+        profile_ids = profile.get("document_ids")
+        if (
+            not isinstance(profile_ids, list)
+            or not profile_ids
+            or any(not isinstance(item, str) for item in profile_ids)
+        ):
+            raise ValueError(f"{profile_id}: document_ids must be a non-empty string list")
+        if len(profile_ids) != len(set(profile_ids)):
+            raise ValueError(f"{profile_id}: duplicate document ids")
+        unknown_ids = sorted(set(profile_ids) - document_ids)
+        if unknown_ids:
+            raise ValueError(f"{profile_id}: unknown document ids: {', '.join(unknown_ids)}")
 
     return manifest
 
@@ -175,9 +216,15 @@ def validate_relative_path(document_id: str, relative_path: Any) -> PurePosixPat
 
 
 def select_documents(
-    manifest: dict[str, Any], selected_ids: list[str]
+    manifest: dict[str, Any], selected_ids: list[str], profile_id: str | None = None
 ) -> list[dict[str, Any]]:
     documents = manifest["documents"]
+    if profile_id is not None:
+        if selected_ids:
+            raise ValueError("--profile and --select cannot be combined")
+        if profile_id not in manifest["profiles"]:
+            raise ValueError(f"unknown profile id: {profile_id}; use --list-profiles")
+        selected_ids = manifest["profiles"][profile_id]["document_ids"]
     if not selected_ids:
         return documents
 
@@ -185,7 +232,14 @@ def select_documents(
     unknown_ids = sorted(set(selected_ids) - document_by_id.keys())
     if unknown_ids:
         raise ValueError(f"unknown document ids: {', '.join(unknown_ids)}")
-    return [document_by_id[document_id] for document_id in selected_ids]
+    # 保留选择顺序，同时避免重复参数导致同一文件被重复处理。
+    return [document_by_id[document_id] for document_id in dict.fromkeys(selected_ids)]
+
+
+def list_profiles(manifest: dict[str, Any]) -> None:
+    for profile_id, profile in manifest["profiles"].items():
+        print(f"{profile_id} — {profile['title']}（{len(profile['document_ids'])} 项）")
+        print(f"  {profile['description']}")
 
 
 def resolve_cache_root(manifest: dict[str, Any], override: Path | None) -> Path:
@@ -719,12 +773,19 @@ def main() -> int:
             else (repo_root / args.manifest).resolve()
         )
         manifest = load_manifest(args.manifest)
-        documents = select_documents(manifest, args.select)
+        if args.list_profiles:
+            list_profiles(manifest)
+            return 0
+        documents = select_documents(manifest, args.select, args.profile)
         cache_root = resolve_cache_root(manifest, args.cache_root)
         mode = "仅展示（不访问网络）" if args.list else (
             "只校验（不访问网络）" if args.verify_only else "下载缺失文件并校验"
         )
         print_run_overview(manifest_path, cache_root, documents, mode)
+        if args.profile:
+            profile = manifest["profiles"][args.profile]
+            print(f"学习资料组：{args.profile} — {profile['title']}")
+            print(f"阅读边界：{profile['description']}")
         if args.list:
             list_documents(documents, cache_root)
             return 0

@@ -48,6 +48,10 @@ source_version: "6.12.20"
 | 名字与源码类型 | 本章中的本地含义 |
 | --- | --- |
 | `CONFIG_TINY_RCU`、`CONFIG_PREEMPT_RCU`、`CONFIG_PROVE_RCU`、`CONFIG_PROVE_LOCKING`、`CONFIG_RCU_LAZY` | Kconfig 配置符号，分别控制 Tiny 后端、可抢占普通 RCU、RCU 证明检查、Lockdep 证明和 lazy callback |
+| `CONFIG_DEBUG_OBJECTS`、`CONFIG_DEBUG_OBJECTS_RCU_HEAD` | Kconfig 配置符号，分别控制通用对象生命周期检查框架和 RCU 节点的检查接入；选择 Tiny 不等于选择这两项 |
+| `CONFIG_DEBUG_LOCK_ALLOC`、`CONFIG_RCU_TRACE`、`CONFIG_PREEMPT_COUNT` | Kconfig 配置符号，分别控制锁依赖状态登记、可选 RCU trace 事件和抢占计数维护；三者须分别核对，不能由 Tiny 名称推断 |
+| `CONFIG_TASKS_RCU_GENERIC`、`CONFIG_TRACING`、`CONFIG_PRINTK` | Kconfig 配置符号，分别控制 Tasks RCU 公共实现、通用跟踪设施和内核日志输出；通用设施开启不代表每个子系统检查点都开启 |
+| `CONFIG_TRACE_IRQFLAGS`、`CONFIG_DEBUG_IRQFLAGS` | Kconfig 配置符号，分别控制中断启闭状态的检查接入和错误恢复中断状态的额外诊断；与 `CONFIG_RCU_TRACE`、节点生命周期检查是不同开关 |
 | `SMP` | **Symmetric Multiprocessing（对称多处理）** 的 Kconfig 配置符号；写入生成配置后名为 `CONFIG_SMP`，值为 `n` 表示该内核不构建多 CPU 支持 |
 | `CONFIG_PREEMPT_NONE`、`CONFIG_PREEMPT_DYNAMIC`、`CONFIG_PREEMPTION`、`CONFIG_PREEMPT_NONE_BUILD` | 抢占模型的直接选择或内部派生符号；本章会从配置种子追踪到每一项的有效与无效结果 |
 | `defconfig` | Kconfig 的配置种子文件；它只保存需要交给求解器的输入，不是最终生效配置的完整副本 |
@@ -77,13 +81,15 @@ source_version: "6.12.20"
 - [`kernel/rcu/tiny.c`](../../linux/kernel/rcu/tiny.c)：Tiny 控制块、callback、QS、同步与轮询入口；
 - [`include/linux/rcutiny.h`](../../linux/include/linux/rcutiny.h)：Tiny 条件下的调度 QS、poll/expedited 包装和空操作边界；
 - [`include/linux/rcupdate.h`](../../linux/include/linux/rcupdate.h)：公共读侧包装和实现头文件选择；
+- [`kernel/rcu/rcu.h`](../../linux/kernel/rcu/rcu.h) 与 [`lib/Kconfig.debug`](../../linux/lib/Kconfig.debug)：RCU 内部检查帮助器及其配置依赖；本章按当前关闭节点生命周期检查的分支展开；
+- [`include/linux/irqflags.h`](../../linux/include/linux/irqflags.h)、[`include/linux/typecheck.h`](../../linux/include/linux/typecheck.h)、[`arch/arm/include/asm/irqflags.h`](../../linux/arch/arm/include/asm/irqflags.h)：队列临界区保存/恢复中断状态的宏、类型检查和当前 ARM 实现；
 - [`kernel/rcu/update.c`](../../linux/kernel/rcu/update.c)：公共 early test、等待 callback 和 Lockdep 状态；
 - `arch/arm/configs/imx_v7_test_defconfig`：当前开发树中需要长期保存的 ARM 板级配置种子；该文件存在于当前 `lf-6.12.y` 分支头，但不存在于固定发布提交，当前 Tiny 输入又是相对分支头尚未提交的工作树差量，因此只能作为本次开发配置证据；
 - `arch/arm/Kconfig` 与 `kernel/Kconfig.preempt`：分别定义 `SMP` 和抢占模型的用户可选入口；
 - [`kernel/rcu/Kconfig`](../../linux/kernel/rcu/Kconfig) 与 [`kernel/rcu/Makefile`](../../linux/kernel/rcu/Makefile)：前者根据已选能力派生隐藏的 RCU 后端，后者把派生结果变成实际链接对象；
 - `$O/.config`、`$O/include/config/auto.conf` 与 `$O/include/generated/autoconf.h`：Kconfig/Kbuild 生成并实际消费的构建结果，不是应手工长期维护的源码文件。
 
-本章代码块中的 `/** ... */` 中文 Doxygen、中文行内注释和阶段标签均由仓库补充，不是上游原注释；函数语句保持上游先后顺序，只裁剪与当前结论无关的 trace、KASAN 或诊断分支。
+本章代码块中的 `/** ... */` 中文 Doxygen、中文行内注释和阶段标签均由仓库补充，不是上游原注释。源码展示与配置分析分开：先保留被讲解函数、宏的原始语句和分支，再说明本次生成配置选择了什么、运行条件又决定了什么。当前不生效的检查分支和空操作调用仍保留在源码中，不能用“优化后的等价代码”替换原实现。按阅读任务摘录头文件中的一组定义时，标明所属条件和完整源码入口，不省略影响这些定义的判断来简化结论。
 
 ## 13.2\_源码符号覆盖账本
 
@@ -92,10 +98,13 @@ source_version: "6.12.20"
 | `TREE_RCU`、`PREEMPT_RCU`、`TINY_RCU` 与 RCU Makefile | [13.3](#13.3_配置怎样在链接期选择Tiny) | 让普通 RCU 的同名符号只由 `tiny.o` 提供 |
 | `__rcu_read_lock()`、`__rcu_read_unlock()`、`rcu_note_context_switch()` | [13.5](#13.5_reader不登记名单但不能跨过调度边界) | 用非抢占执行约束包住 reader，并在调度边界报告 QS |
 | `struct rcu_ctrlblk` | [13.6](#13.6_一个链表和两个二级指针怎样表达三种状态) | 保存共享 callback 链表、成熟分界、队尾和 poll 序列 |
+| `local_irq_save()` / `local_irq_restore()`、对应 raw 宏和 ARM 保存/恢复函数 | [13.6.3](#13.6.3_flags怎样保存和恢复中断状态) | 向局部变量写入旧中断状态，屏蔽本 CPU 普通 IRQ，保护队列更新后恢复原状态 |
 | `call_rcu()` | [13.7](#13.7_call_rcu只入队不宣布安全) | 追加 callback，必要时催促 idle CPU 调度 |
+| `debug_rcu_head_queue()`、`debug_rcu_head_unqueue()` | [13.15](#13.15_错误路径与执行上下文不能被短代码掩盖) | 保留原始条件编译两侧；当前分别返回 0、执行空操作，不维护入队检查账本 |
 | `rcu_sched_clock_irq()`、`rcu_softirq_qs()` | [13.8](#13.8_谁产生QS谁只催促QS) | 用户态 tick 或满足前提的长 softirq 路径报告 QS；内核态 tick 在有欠账时请求调度 |
 | `rcu_qs()` | [13.9](#13.9_rcu_qs一次性冻结当前等待批次) | 把当前队尾发布为成熟分界，置位 softirq，并推进 poll 序列 |
 | `rcu_process_callbacks()`、`rcu_reclaim_tiny()` | [13.10](#13.10_RCU_SOFTIRQ只摘成熟前缀再执行) | 摘下成熟前缀，在 softirq 上下文调用普通 callback 或直接 `kvfree()` |
+| `debug_rcu_head_callback()` | [13.15](#13.15_错误路径与执行上下文不能被短代码掩盖) | 不受节点生命周期检查开关控制；函数指针为 NULL 时调用对象诊断，不阻止随后的函数调用 |
 | `synchronize_rcu()` 与 poll API | [13.12](#13.12_synchronize_rcu立即返回不等于没有宽限期语义) | 利用合法调用现场本身已是 QS，并使轮询者看到序列变化 |
 | `rcu_barrier()` | [13.13](#13.13_rcu_barrier等待的是旧callback实际执行) | 在 FIFO 尾部追加 completion 哨兵并等待其执行 |
 | `rcu_init()` | [13.14](#13.14_rcu_init的三个动作不是Tiny的全部实现) | 登记 `RCU_SOFTIRQ`、接入早期自检、调用条件化的 Tasks 初始化 |
@@ -182,7 +191,7 @@ make ARCH=arm O="$tiny_rcu_out" olddefconfig
 
 ### 13.3.3\_当前真正生效的是生成配置
 
-2026-09-05 核对 `.config`、`include/config/auto.conf` 和 `include/generated/autoconf.h`，三者共同确认：
+2026-09-05 核对、2026-09-06 复核 `.config`、`include/config/auto.conf` 和 `include/generated/autoconf.h`，三者共同确认下列配置状态（关闭项按 `.config` 的形式展示，生成头文件中对应宏未定义）：
 
 ```text
 CONFIG_PREEMPT_NONE_BUILD=y
@@ -191,7 +200,13 @@ CONFIG_TINY_RCU=y
 # CONFIG_SMP is not set
 CONFIG_PROVE_LOCKING=y
 CONFIG_PROVE_RCU=y
+CONFIG_DEBUG_LOCK_ALLOC=y
+CONFIG_PREEMPT_COUNT=y
+# CONFIG_DEBUG_OBJECTS is not set
+# CONFIG_RCU_TRACE is not set
 ```
+
+其中 `CONFIG_DEBUG_OBJECTS_RCU_HEAD` 依赖 `CONFIG_DEBUG_OBJECTS`，当前父开关关闭，子开关也未启用，生成头文件没有定义这两个宏。**`CONFIG_PROVE_RCU=y` 不会代替节点生命周期检查开关。** 后文必须分别判断普通 Tiny 功能路径、Lockdep 检查路径和对象生命周期检查路径，不能把它们合成“调试已开启”。
 
 这里记录的是当时开发工作树的实际结果。读者重新生成时应检查自己的 `$O/.config`，预期的直接输入和派生结果为：
 
@@ -330,7 +345,7 @@ Tiny 不保存 reader 名单，但必须保证 reader 不会悄悄跨过被当�
 
 ### 13.5.1\_公共读侧包装保留非抢占执行约束
 
-在 `!CONFIG_PREEMPT_RCU` 分支中，普通读侧最终落到：
+在 `!CONFIG_PREEMPT_RCU` 分支中，普通读侧最终落到下面两个函数。`IS_ENABLED()` 是把 Kconfig 配置状态变为常量条件的宏；`CONFIG_RCU_STRICT_GRACE_PERIOD` 是严格宽限期行为的 Kconfig 配置符号，源码保留了其解锁检查点，当前未启用。
 
 ```c
 /**
@@ -345,10 +360,16 @@ static inline void __rcu_read_lock(void)
 static inline void __rcu_read_unlock(void)
 {
 	preempt_enable();  /* 结束最外层非抢占执行约束。 */
+	if (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD))
+		rcu_read_unlock_strict();
 }
 ```
 
-当前又是 `CONFIG_PREEMPT_NONE=y`，内核任务本来就不会被普通抢占，但公共包装仍维护统一的 preempt 边界和 Lockdep/Sparse 语义。Tiny 不为每个 reader 分配节点，也不在 `rcu_ctrlblk` 中增加 reader 计数；正确性依赖的约束是：**合法普通 reader 不阻塞，并且不能跨过真正的任务调度切换。**
+上面保留 `__rcu_read_unlock()` 的完整函数体。当前 `CONFIG_RCU_STRICT_GRACE_PERIOD` 未启用，该条件不成立；而且同一头文件在 `CONFIG_TINY_RCU` 分支把 `rcu_read_unlock_strict()` 定义为空宏。不能为了说明当前执行结果，就从原函数中删掉这两行。
+
+当前是 `CONFIG_PREEMPT_NONE=y`、`CONFIG_PREEMPT_COUNT=y`、`CONFIG_PREEMPTION=n`。按 `include/linux/preempt.h` 的实际分支，`preempt_disable()` 增加抢占计数并执行编译器屏障，`preempt_enable()` 执行编译器屏障并减少计数，不进入可抢占构建的 `__preempt_schedule()` 分支。因此不能把当前读侧包装说成全空，也不能说解锁会主动触发任务抢占。Tiny 不为每个 reader 分配节点，也不在 `rcu_ctrlblk` 中增加 reader 计数；正确性依赖的约束是：**合法普通 reader 不阻塞，并且不能跨过真正的任务调度切换。**
+
+公共 `rcu_read_lock()` / `rcu_read_unlock()` 还包含 Lockdep 登记与上下文检查。当前 `CONFIG_DEBUG_LOCK_ALLOC=y`，对应 map 登记不是空操作；但 Tiny 的 `rcu_is_watching()` 在 `include/linux/rcutiny.h` 中恒返 `true`，所以包装中的 `RCU_LOCKDEP_WARN(!rcu_is_watching(), ...)` 条件恒假。两者不能混称为“都有检查”或“都没有检查”；公共适配实现见 [RCU 读侧检查包装](P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.4.2_三种读侧API为何按这个顺序配对)。
 
 这里的“无 reader 名单”不是“没有通信”。reader 把成本转成执行约束；调度器在上下文切换点读取这条约束已经结束的事实，再调用 Tiny 的 QS 路径。被删除的是逐 reader 登记和跨 CPU 汇聚，不是读侧边界。
 
@@ -359,7 +380,7 @@ static inline void __rcu_read_unlock(void)
 ```c
 /**
  * @brief 在真实任务切换前报告普通 Tiny RCU 静止态。
- * @note 宏还顺带通知 Tasks RCU；该 flavor 不属于本章。
+ * @note 保留上游宏的两个调用位置；当前配置中的 Tasks 调用为空操作。
  */
 #define rcu_note_context_switch(preempt) \
 	do { \
@@ -369,6 +390,8 @@ static inline void __rcu_read_unlock(void)
 ```
 
 `kernel/sched/core.c::__schedule()` 在关闭本地中断后调用这个宏。一个合法非抢占 reader 不可能执行到 `__schedule()` 后仍声称自己处在原临界区，所以这次切换足以排除调用前的旧普通 reader。
+
+当前没有启用 `CONFIG_TASKS_RCU_GENERIC`，`include/linux/rcupdate.h` 选中 `#define rcu_tasks_qs(t, preempt) do { } while (0)`。因此这次构建的宏只产生普通 Tiny 的 `rcu_qs()` 动作，没有额外向 Tasks reader 发送通知。
 
 ## 13.6\_一个链表和两个二级指针怎样表达三种状态
 
@@ -423,38 +446,263 @@ rcucblist
 
 所有会修改这三个链表指针的短临界区都使用 `local_irq_save()`。UP 消除了远端 CPU 并发，却没有消除本 CPU 硬中断对任务或 softirq 的嵌套；本地关中断正是这里替代自旋锁的互斥手段。
 
-## 13.7\_call\_rcu只入队不宣布安全
+### 13.6.3\_flags怎样保存和恢复中断状态
+
+队列操作中的 `unsigned long flags;` 是本次调用的局部变量，用来接收 **CPU 在进入临界区前的中断状态快照**。它不需要预先初始化，因为 `local_irq_save(flags)` 是会向参数表达式写值的宏，不是把未初始化数值按值传入的普通 C 函数。实际赋值在下一层宏中的 `flags = arch_local_irq_save()`；随后 `local_irq_restore(flags)` 才读取已经保存的值。自动变量未写初始化式，与运行时读取了未初始化值，是两回事；编译器也可能把这个局部值放在寄存器中，不能仅凭局部声明认定它一定是栈内存。
+
+先沿 [`include/linux/irqflags.h`](../../linux/include/linux/irqflags.h) 查看这四个宏的完整定义，保留 `local_irq_*` 的两种配置分支。`typecheck()` 检查实参类型是否为 `unsigned long`；这里通过 `typeof(flags)` 取得类型，不读取 `flags` 的未初始化数值，定义见 [`include/linux/typecheck.h`](../../linux/include/linux/typecheck.h)。`raw_check_bogus_irq_restore()` 是额外的恢复前检查宏，当前 `CONFIG_DEBUG_IRQFLAGS=n`，它定义为空操作；下面仍保留原调用。
 
 ```c
+/* 仓库补充：摘录完整宏定义；同一头文件中的其他中断API不在本节展开。 */
+#define raw_local_irq_save(flags) \
+	do { \
+		typecheck(unsigned long, flags); \
+		flags = arch_local_irq_save(); \
+	} while (0)
+#define raw_local_irq_restore(flags) \
+	do { \
+		typecheck(unsigned long, flags); \
+		raw_check_bogus_irq_restore(); \
+		arch_local_irq_restore(flags); \
+	} while (0)
+
+#ifdef CONFIG_TRACE_IRQFLAGS
+#define local_irq_save(flags) \
+	do { \
+		raw_local_irq_save(flags); \
+		if (!raw_irqs_disabled_flags(flags)) \
+			trace_hardirqs_off(); \
+	} while (0)
+#define local_irq_restore(flags) \
+	do { \
+		if (!raw_irqs_disabled_flags(flags)) \
+			trace_hardirqs_on(); \
+		raw_local_irq_restore(flags); \
+	} while (0)
+#else /* !CONFIG_TRACE_IRQFLAGS */
+#define local_irq_save(flags) do { raw_local_irq_save(flags); } while (0)
+#define local_irq_restore(flags) do { raw_local_irq_restore(flags); } while (0)
+#endif /* CONFIG_TRACE_IRQFLAGS */
+```
+
+当前 `CONFIG_TRACE_IRQFLAGS=y`，所以会选中上面的检查包装。`raw_irqs_disabled_flags(flags)` 检查保存值是否表示“原来已关中断”；只有原来开启时，`trace_hardirqs_off()` / `trace_hardirqs_on()` 才报告关/开状态转换。这些是检查接入，真正操作 CPU 的是 `arch_local_irq_save()` / `arch_local_irq_restore()`。此开关开启与 `CONFIG_RCU_TRACE=n` 并不矛盾，二者控制不同的调用点。
+
+底层要按当前 ARM 架构继续追踪。Kconfig 配置为 `CONFIG_CPU_V7=y`、`CONFIG_CPU_32v7=y`，未启用 `CONFIG_CPU_V7M`；`arch/arm/Makefile` 为这组架构输入设置 `__LINUX_ARM_ARCH__=7`。因此 [`arch/arm/include/asm/irqflags.h`](../../linux/arch/arm/include/asm/irqflags.h) 选择 ARMv6 及以上的保存函数，且 `IRQMASK_REG_NAME_R` 为 `"cpsr"`、`IRQMASK_REG_NAME_W` 为 `"cpsr_c"`，不是 Cortex-M 的 `primask` 路径。
+
+**CPSR（Current Program Status Register，当前程序状态寄存器）** 是 CPU 寄存器；其 I 位控制普通 **IRQ（Interrupt Request，中断请求）** 的屏蔽，I=1 表示屏蔽，I=0 表示不屏蔽。以下保留当前架构分支的两个完整函数；其他 ARM 架构分支保存在链接的原始头文件中：
+
+```c
+/**
+ * @brief 读取旧CPU状态，然后屏蔽普通IRQ，并返回旧状态。
+ * @note 仓库补充中文说明；当前选中 __LINUX_ARM_ARCH__ >= 6 分支。
+ */
+static inline unsigned long arch_local_irq_save(void)
+{
+	unsigned long flags;
+
+	asm volatile(
+		"	mrs	%0, " IRQMASK_REG_NAME_R "	@ arch_local_irq_save\n"
+		"	cpsid	i"
+		: "=r" (flags) : : "memory", "cc");
+	return flags;
+}
+
+/**
+ * @brief 使用保存值恢复CPU状态的控制字段，其中包含IRQ屏蔽位。
+ * @note 仓库补充中文说明；保留原始汇编语句和操作数约束。
+ */
+static inline void arch_local_irq_restore(unsigned long flags)
+{
+	asm volatile(
+		"	msr	" IRQMASK_REG_NAME_W ", %0	@ local_irq_restore"
+		:
+		: "r" (flags)
+		: "memory", "cc");
+}
+```
+
+`mrs` 把旧 CPSR 读入输出寄存器；约束 `"=r" (flags)` 中的 `=` 表示 **只写输出**，不是读取该局部变量的旧值。接着 `cpsid i` 设置 CPU 的 I 位，最后把旧 CPSR 值返回给外层的 `flags`。内联函数里的局部 `flags` 与调用者的 `flags` 是不同 C 作用域的变量，通过返回值和宏内赋值传递同一份快照。恢复函数则用 `"r" (flags)` 读取保存值，`msr cpsr_c, ...` 写回控制字段。`"memory"` 约束阻止编译器把普通队列内存访问随意搬出这段关中断区域；它不是跨 CPU 的锁。
+
+下面只画 CPU 状态、局部快照和共享队列之间的数据流；检查包装的调用位置以上面的原始宏为准。`head` 是本次待入队节点的指针：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant caller as 当前调用路径
+    participant cpu as 唯一CPU的CPSR
+    participant saved as 调用者局部变量flags
+    participant queue as 共享rcu_ctrlblk与节点next
+
+    caller->>cpu: arch_local_irq_save：mrs读取旧CPSR
+    cpu-->>caller: 读得旧CPSR值，暂存于输出寄存器
+    caller->>cpu: cpsid i：设置I=1，屏蔽普通IRQ
+    caller->>saved: flags = arch_local_irq_save()的返回值
+    Note over caller,saved: 第一次使用flags的数值是写入<br/>没有读取其未初始化内容
+    caller->>queue: *rcu_ctrlblk.curtail = head
+    caller->>queue: rcu_ctrlblk.curtail = &head->next
+    caller->>saved: local_irq_restore读取已保存的flags
+    saved-->>caller: 同一份旧状态快照
+    caller->>cpu: msr cpsr_c：恢复原来的中断控制状态
+```
+
+图中第 4 步写入 `flags`，第 7 步才读取它；第 5、6 步必须共同维持队列不变量，所以保护的是 **共享队列更新过程**。例如原来空队列的 `curtail=&rcucblist`：任务先把 `rcucblist` 写成 A、尚未更新 `curtail` 时，如果硬中断也入队 B，就会沿旧尾槽把 `rcucblist` 覆盖成 B；中断返回后，任务再把 `curtail` 改成 `&A.next`。结果链头指向 B，尾槽却落在脱链的 A 内。关本地 IRQ 正是为了不让这段交错插入两次更新之间，和“防止局部变量 flags 被别人改写”没有关系。
+
+为什么最后必须恢复，而不能直接开中断，可以用同一组保存/恢复语句比较：
+
+| 进入前的普通 IRQ 状态 | `flags` 保存的 I 位 | 队列更新期间 | `local_irq_restore(flags)` 后 |
+| --- | --- | --- | --- |
+| 已开启 | 0 | I=1，屏蔽 | 恢复 I=0 |
+| 已关闭，例如外层已经关中断 | 1 | I=1，继续屏蔽 | 保持 I=1，不破坏外层约束 |
+
+所以不要给 `flags` 硬编码初值来“修复未初始化”，也不要把 restore 改成无条件 enable；必须在同一控制流中用本次 save 写入的值配对恢复。`mrs` 与 `cpsid` 之间即使先响应了一个 IRQ，队列更新也尚未开始；处理完并返回后才会关 IRQ、进入临界区。这里依赖 UP 与普通 IRQ 屏蔽，不阻止其他 CPU，也不屏蔽 ARM 的 **FIQ（Fast Interrupt Request，快速中断请求）**；不能把这种保护直接用于有其他未屏蔽访问者的共享状态。
+
+## 13.7\_call\_rcu只入队不宣布安全
+
+上一节已经说明节点怎样串成等待链，但队列以后拿到一个节点时，还需要知道“该执行哪个函数、把哪个对象交给它”。`call_rcu()` 的两个参数正好提供这两项信息：
+
+| 参数 | C 类型与实际传入的值 | 在本次登记中的作用 |
+| --- | --- | --- |
+| `head` | `struct rcu_head *`，指向调用者提供的回调节点 | 指定本次入队的是哪个节点；节点通常内嵌在待回收对象中 |
+| `func` | `rcu_callback_t`，是函数指针类型，定义为 `typedef void (*rcu_callback_t)(struct rcu_head *head);` | 指定以后调用哪个函数；该函数接收一个 `struct rcu_head *`，返回 `void` |
+
+`head` 指向的节点中有 `next` 和 `func` 两个字段：`next` 保存后继节点地址，`func` 保存回调函数地址。因此 **绑定发生在 `head->func = func` 这一句**：等号右边是本次调用传入的函数指针，左边是节点内用于保存它的字段。它只保存地址，此时没有调用这个函数。类型声明可在 [`include/linux/types.h`](../../linux/include/linux/types.h) 核对；该版本通过宏把 `rcu_head` 映射为 `callback_head`，二者在这里指同一种节点结构。
+
+下面保留 [`kernel/rcu/tiny.c`](../../linux/kernel/rcu/tiny.c) 中 `call_rcu()` 的完整函数体，以及紧邻它的泄漏占位回调。`doublefrees` 是函数内静态的 `atomic_t` 原子计数器，供错误分支限制打印次数；`tiny_rcu_leak_callback()` 是不做回收的空函数。错误字符串中的 **CB（callback，回调）** 是上游使用的简称。是否进入这些诊断动作，要在读完原函数后按配置判断。
+
+```c
+/**
+ * @brief 诊断分支使用的空回调，避免继续调用原来的普通回调。
+ * @note 仓库补充中文说明；函数体按上游保留为空。
+ */
+static void tiny_rcu_leak_callback(struct rcu_head *rhp)
+{
+}
+
 /**
  * @brief 把一个 callback 追加到 Tiny 共享链表。
  * @param head 调用者对象内嵌的 rcu_head。
  * @param func 宽限期后执行的回调。
- * @note 仓库补充中文说明，保留 kernel/rcu/tiny.c 的关键顺序。
+ * @note 仓库补充中文说明；保留上游完整函数体，配置生效情况在下文解释。
  */
 void call_rcu(struct rcu_head *head, rcu_callback_t func)
 {
+	static atomic_t doublefrees;
 	unsigned long flags;
 
 	if (debug_rcu_head_queue(head)) {
-		/* 重复入队时记录错误，并阻止同一节点破坏链表。 */
+		if (atomic_inc_return(&doublefrees) < 4) {
+			pr_err("%s(): Double-freed CB %p->%pS()!!!  ", __func__, head, head->func);
+			mem_dump_obj(head);
+		}
+
+		if (!__is_kvfree_rcu_offset((unsigned long)head->func))
+			WRITE_ONCE(head->func, tiny_rcu_leak_callback);
 		return;
 	}
 
-	head->func = func;
-	head->next = NULL;
+	head->func = func; /* 把回调函数地址保存到本次入队的节点内。 */
+	head->next = NULL; /* 初始化链表后继；这与回调函数地址是两个字段。 */
 
-	local_irq_save(flags);
+	local_irq_save(flags); /* 宏先写入旧中断状态，再在关IRQ状态下进入队列操作。 */
 	*rcu_ctrlblk.curtail = head;     /* 旧尾槽现在指向新节点。 */
 	rcu_ctrlblk.curtail = &head->next; /* 新尾槽变成新节点的next。 */
-	local_irq_restore(flags);
+	local_irq_restore(flags); /* 使用上面保存的值，恢复调用前的中断状态。 */
 
-	if (unlikely(is_idle_task(current)))
+	if (unlikely(is_idle_task(current))) {
 		resched_cpu(0); /* 只催促调度；真正成熟仍由rcu_qs完成。 */
+	}
 }
 ```
 
-这段函数没有改 `donetail`，也没有 raise `RCU_SOFTIRQ`。因此 `call_rcu()` 的唯一正常结果是“callback 已进入等待后缀”，不是“旧对象已经安全”。
+现在再套入 [13.3.3 的当前配置](#13.3.3_当前真正生效的是生成配置)：`CONFIG_DEBUG_OBJECTS_RCU_HEAD` 未启用，`kernel/rcu/rcu.h` 为 `debug_rcu_head_queue()` 提供恒返 0 的内联定义。所以本次不会进入上面完整保留的错误分支，原子计数、打印、替换回调和提前返回都不会发生。它是 **有定义但不检查**，不是已经检查并确认安全。完整条件编译两侧及其状态含义见 [13.15](#13.15_错误路径与执行上下文不能被短代码掩盖)。
+
+`flags` 的赋值藏在 `local_irq_save()` 的宏展开中，不需要调用者预先初始化；它保存的是 CPU 的旧中断状态，保护对象则是两次共享队列指针更新。具体赋值、ARM 指令与恢复顺序见 [13.6.3](#13.6.3_flags怎样保存和恢复中断状态)。
+
+**把两个实参放回一个具体对象中。** 下面是解释绑定关系的教学片段，省略分配、发布和撤销入口的完整流程。假设 `old` 指向一个用 `kmalloc()` 分配的 `struct demo_item`；更新者已经撤掉它的共享入口，剩余使用者都受普通 RCU 读侧保护，没有额外长期引用。`container_of()` 根据成员地址、所属结构体类型和成员名找回外层对象，`kfree()` 最终释放该对象。
+
+```c
+struct demo_item {
+	int value;           /* 业务数据。 */
+	struct rcu_head rcu; /* 内嵌回调节点，与业务数据处于同一次分配中。 */
+};
+
+static void free_demo_item(struct rcu_head *head)
+{
+	struct demo_item *item = container_of(head, struct demo_item, rcu);
+
+	kfree(item); /* 宽限期后，由内嵌节点找回并释放外层对象。 */
+}
+
+static void retire_demo_item(struct demo_item *old)
+{
+	/* 前提：旧入口已撤销；同一节点尚未入队。 */
+	call_rcu(&old->rcu, free_demo_item);
+	/* 交给回调回收，此后不再通过 old 访问或释放对象。 */
+}
+```
+
+调用时，`&old->rcu` 传给形参 `head`，函数名 `free_demo_item` 转换为函数指针后传给形参 `func`。下面画的是 **本次入队完成、还没有后续节点接入时** 的地址关系；箭头表示传参、字段写入或指针指向，不表示回调已经执行。
+
+```mermaid
+flowchart TB
+    call_site["call_rcu(&old->rcu, free_demo_item)"]
+    head_arg["形参 head<br/>值为 &old->rcu"]
+    func_arg["形参 func<br/>值为 free_demo_item 的函数地址"]
+    queue["Tiny 共享等待链<br/>旧尾槽保存 head"]
+
+    subgraph old_object["外层对象 *old：struct demo_item"]
+        value_field["value：业务数据"]
+        subgraph rcu_node["内嵌节点 old->rcu：struct rcu_head"]
+            next_field["next 字段：NULL"]
+            func_field["func 字段：free_demo_item 的函数地址"]
+        end
+    end
+
+    callback_code["函数代码 free_demo_item<br/>接收 struct rcu_head *head"]
+    call_site -->|"第一个实参"| head_arg
+    call_site -->|"第二个实参"| func_arg
+    head_arg -->|"指向节点本体"| rcu_node
+    func_arg -->|"head->func = func：写入地址"| func_field
+    queue -->|"*rcu_ctrlblk.curtail = head：接入节点"| rcu_node
+    func_field -->|"保存的地址指向函数代码"| callback_code
+
+    classDef node_state fill:#dbeafe,stroke:#2563eb,color:#000;
+    classDef callback_state fill:#dcfce7,stroke:#16a34a,color:#000;
+    class head_arg,next_field node_state;
+    class func_arg,func_field,callback_code callback_state;
+```
+
+这次登记保存的是 **一个节点地址，以及该节点内部的一份函数指针**。RCU 不复制整个 `demo_item`，也不在别处建立“对象编号 → 函数”的映射表。`head` 这个形参即使随 `call_rcu()` 返回而结束使用，节点及其 `func` 字段仍然留在 `old` 的内存中，队列可以沿保存的节点地址找到它们。
+
+**以后怎样把同一个节点交回这个函数。** 下图放大 [13.11 的 T1～T5 阶段](#13.11_一次异步回收的统一阶段)，只追踪普通函数回调。`rcu_reclaim_tiny()` 是成熟节点的执行入口，其中局部函数指针 `f` 用于暂存 `head->func`；队列成熟与摘链细节分别见 [13.9](#13.9_rcu_qs一次性冻结当前等待批次) 和 [13.10](#13.10_RCU_SOFTIRQ只摘成熟前缀再执行)。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant updater as 更新者
+    participant enqueue as call_rcu
+    participant node as old->rcu 节点内存
+    participant reclaim as RCU_SOFTIRQ 中的 rcu_reclaim_tiny
+    participant callback as free_demo_item
+
+    updater->>enqueue: T1 call_rcu(&old->rcu, free_demo_item)
+    enqueue->>node: head->func = func<br/>保存 free_demo_item 的函数地址
+    enqueue->>node: head->next = NULL
+    enqueue->>enqueue: 把 head 接入共享等待链<br/>更新 curtail，保持 donetail 不变
+    enqueue-->>updater: 返回，不在本函数内调用 func
+    Note over node,reclaim: T2～T4：入队后经过 QS，取得成熟资格<br/>softirq 摘下成熟前缀，遍历到同一个 &old->rcu
+    reclaim->>node: T5 f = head->func<br/>先读取并保存函数地址
+    reclaim->>node: WRITE_ONCE(head->func, 0)<br/>清空节点中的函数指针字段
+    reclaim->>callback: f(head)，即 free_demo_item(&old->rcu)
+    callback->>callback: container_of(head, struct demo_item, rcu)<br/>找回原来的 old
+    callback->>callback: kfree(item)<br/>释放外层对象及其内嵌节点
+```
+
+图中第 2 步建立绑定，第 6～8 步消费绑定：**传入回调的参数仍是当初登记的那个节点地址**。即使第 7 步清空了节点字段，第 6 步保存的局部变量 `f` 仍指向函数代码，所以第 8 步可以正常调用。回调中的 `head` 与 `call_rcu()` 中的 `head` 是不同调用现场的形参，它们承接的是同一个指针值；`container_of()` 再从成员位置找回外层对象，而不是由 RCU 猜测业务类型。
+
+不同对象的节点可以保存同一个 `free_demo_item` 函数地址，回调凭每次收到的 `head` 区分要回收哪个对象。反过来，同一个节点在已有回调尚未执行时不能再次登记：那会改写尚待消费的 `func` 和 `next`，破坏第一次登记。上述图示对应普通函数指针分支；`kfree_rcu()` / `kvfree_rcu()` 的偏移编码分支见 [13.10.2](#13.10.2_恢复硬中断后才调用业务callback)。
+
+`call_rcu()` 本身没有改 `donetail`，也没有 raise `RCU_SOFTIRQ`。因此它的唯一正常结果是“callback 已进入等待后缀”，不是“旧对象已经安全”。
 
 若调用者正是 idle task，系统可能长时间没有普通任务切换。`resched_cpu(0)` 请求唯一 CPU 进入调度路径，以便随后由 `rcu_note_context_switch()` 调用 `rcu_qs()`。它是 **催促 QS 的通信**，不是回调执行通知。
 
@@ -522,14 +770,16 @@ void rcu_qs(void)
 
 ### 13.10.1\_先在关中断区切断共享链
 
+先保留 `rcu_process_callbacks()` 的完整函数体：前半段修改共享链，后半段遍历已经摘下的本地链。这样可以直接看到 `local_irq_restore(flags)` 与 callback 循环的先后位置；本小节解释摘链，下一小节解释执行。
+
 ```c
 /**
  * @brief 摘下donetail之前的成熟前缀，并在共享链上保留等待后缀。
- * @note 仓库补充中文说明，裁剪自 kernel/rcu/tiny.c。
+ * @note 仓库补充中文说明，保留 kernel/rcu/tiny.c 的完整函数体。
  */
-static void rcu_process_callbacks(void)
+static __latent_entropy void rcu_process_callbacks(void)
 {
-	struct rcu_head *list;
+	struct rcu_head *next, *list;
 	unsigned long flags;
 
 	local_irq_save(flags);
@@ -546,7 +796,14 @@ static void rcu_process_callbacks(void)
 	rcu_ctrlblk.donetail = &rcu_ctrlblk.rcucblist;  /* 新共享链暂无成熟项。 */
 	local_irq_restore(flags);
 
-	/* 随后遍历本地list并执行callback。 */
+	/* 恢复原中断状态后才消费本地成熟链。 */
+	while (list) {
+		next = list->next;
+		prefetch(next);
+		debug_rcu_head_unqueue(list); /* 当前配置为空操作，仍保留原调用。 */
+		rcu_reclaim_tiny(list);
+		list = next;
+	}
 }
 ```
 
@@ -562,22 +819,47 @@ static void rcu_process_callbacks(void)
 
 ### 13.10.2\_恢复硬中断后才调用业务callback
 
-```c
-/**
- * @brief 在RCU_SOFTIRQ上下文执行已经摘下的本地成熟链。
- */
-while (list) {
-	next = list->next;
-	prefetch(next);
-	debug_rcu_head_unqueue(list);
-	rcu_reclaim_tiny(list);
-	list = next;
-}
-```
+上一小节完整函数末尾的 `while (list)` 每轮先把后继保存到 `next`，再执行当前节点的回调，最后用 `list = next` 进入下一项。因为回调可能释放包含当前节点的对象，所以必须在调用前读取 `list->next`，不能调用后再访问它。`prefetch(next)` 是预取提示，不承担摘链或判定成熟的职责。
 
 共享链的关中断临界区已经结束，业务 callback 不会把本地硬中断长期关闭；但它仍运行在 `RCU_SOFTIRQ` 上下文，不是可任意睡眠的进程上下文。
 
-`rcu_reclaim_tiny()` 区分两种编码：普通 `head->func` 就清除调试状态并调用函数；`kfree_rcu()`/`kvfree_rcu()` 可把对象内偏移编码进 `func`，此时直接由 Tiny 计算对象起始地址并 `kvfree()`。两种分支都只消费已经成熟的本地链。
+`debug_rcu_head_unqueue()` 在当前配置中不做任何事情；真正从共享队列摘下成熟节点的是上一小节的指针修改，不能把函数名中的 `unqueue` 误读成实际摘链动作。之后进入 `rcu_reclaim_tiny()`，它把 `head->func` 解释为普通函数地址或 `kfree_rcu()` / `kvfree_rcu()` 使用的对象内偏移。下面保留该函数的完整原始函数体：
+
+```c
+/**
+ * @brief 消费一个已经成熟的 Tiny 节点，执行普通回调或按偏移释放对象。
+ * @note 仓库补充中文说明；保留 kernel/rcu/tiny.c 的全部分支和 trace 调用。
+ */
+static inline bool rcu_reclaim_tiny(struct rcu_head *head)
+{
+	rcu_callback_t f;
+	unsigned long offset = (unsigned long)head->func;
+
+	rcu_lock_acquire(&rcu_callback_map); /* 当前有效：登记Lockdep回调上下文。 */
+	if (__is_kvfree_rcu_offset(offset)) {
+		trace_rcu_invoke_kvfree_callback("", head, offset);
+		kvfree((void *)head - offset); /* 偏移分支不调用普通函数指针。 */
+		rcu_lock_release(&rcu_callback_map);
+		return true;
+	}
+
+	trace_rcu_invoke_callback("", head);
+	f = head->func;
+	debug_rcu_head_callback(head); /* 独立于DEBUG_OBJECTS_RCU_HEAD的检查。 */
+	WRITE_ONCE(head->func, (rcu_callback_t)0L);
+	f(head);
+	rcu_lock_release(&rcu_callback_map);
+	return false;
+}
+```
+
+这里仍有三个必须按当前配置分开的细节：
+
+1. `rcu_lock_acquire()` / `rcu_lock_release()` 由 `CONFIG_DEBUG_LOCK_ALLOC` 控制，当前为 `y`，所以保留对 `rcu_callback_map` 的 Lockdep 影子状态登记。它们不为 Tiny 队列取得一把真实锁，也不建立节点重复入队检查；map 的公共实现见 [回调上下文身份](P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.7_rcu_callback_map怎样标记延迟动作上下文)。
+2. `debug_rcu_head_callback()` 定义在 `rcu.h` 的 `CONFIG_DEBUG_OBJECTS_RCU_HEAD` 条件块之后，不随该开关关闭而消失。它只在 `rhp->func` 为 NULL 时调用 `kmem_dump_obj(rhp)`，没有返回错误来阻断调用者；当前 `CONFIG_PRINTK=y`，`include/linux/slab.h` 选择实际对象诊断函数的声明，而非恒返 `false` 的空帮助器。Tiny 在此前用 `__is_kvfree_rcu_offset(offset)` 的 `offset < 4096` 条件分流，NULL 对应的零值也属于偏移编码范围，因此合法普通回调走到这里时条件为假；它不是 Tiny 普通回调的重复入队防线，更不能保证损坏指针被安全拦截。
+3. `WRITE_ONCE(head->func, 0)` 清的是节点中的函数指针字段，不是 debug objects 账本。先保存到 `f`，再清字段，最后 `f(head)`，正好对应 13.7 图中的绑定消费顺序。偏移分支则直接计算对象起始地址并 `kvfree()`；两种分支都只消费已经成熟的本地链。
+
+源码中的 `trace_rcu_invoke_callback()` 和 `trace_rcu_invoke_kvfree_callback()` 在 `include/trace/events/rcu.h` 中使用 `TRACE_EVENT_RCU` 定义；当前 `CONFIG_RCU_TRACE=n`，该宏选择 `TRACE_EVENT_NOP`。因此不能把这两处 trace 调用当成本次构建已经记录回调执行的证据，也不能由 `CONFIG_TRACING=y` 推出它们开启。
 
 ## 13.11\_一次异步回收的统一阶段
 
@@ -642,7 +924,7 @@ void synchronize_rcu(void)
 - 另一个任务中的旧 reader：在 UP、非抢占内核中，它若不先结束，当前任务就不能开始执行到本函数；若通过调度切换交出 CPU，该切换本身就是 QS。
 - 硬中断或 softirq 中的旧 reader：当前进程上下文必须等中断/softirq 返回后才能继续调用本函数；它们已经退出旧读侧轨迹。
 
-因此合法调用者到达函数体时，调用前的旧 reader 集合已经为空，不必再创建 GP 线程或等待队列。Lockdep 警告负责捕获“自己还在 RCU read-side critical section 内就调用同步接口”的非法情况。
+因此合法调用者到达函数体时，调用前的旧 reader 集合已经为空，不必再创建 GP 线程或等待队列。当前 `CONFIG_PROVE_RCU=y` 使 `RCU_LOCKDEP_WARN()` 的检查分支存在，三个 map 的 held 查询用于发现“自己还在 RCU read-side critical section 内就调用同步接口”的非法情况；真正报告还要求 `debug_lockdep_rcu_enabled()` 成立，且该调用点尚未报告过。它不依赖 `CONFIG_DEBUG_OBJECTS_RCU_HEAD`，也不检查节点是否重复入队；具体告警门控见 [RCU 自等待检查](P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.6.3_断言和自等待检查怎样使用map)。
 
 这不是所有配置都成立的编译器优化，也不能成为业务代码在中断上下文调用同步 API 的理由；公共 API 的调用上下文契约仍按可能睡眠的同步接口对待。
 
@@ -656,10 +938,12 @@ unsigned long get_state_synchronize_rcu(void)
 
 unsigned long start_poll_synchronize_rcu(void)
 {
-	unsigned long old = get_state_synchronize_rcu();
-	if (unlikely(is_idle_task(current)))
+	unsigned long gp_seq = get_state_synchronize_rcu();
+
+	if (unlikely(is_idle_task(current))) {
 		resched_cpu(0);
-	return old;
+	}
+	return gp_seq;
 }
 
 bool poll_state_synchronize_rcu(unsigned long oldstate)
@@ -709,23 +993,77 @@ void __init rcu_init(void)
 
 1. 把 `softirq_vec[RCU_SOFTIRQ].action` 设为 `rcu_process_callbacks()`，接通 Tiny 的长期 callback 消费者；
 2. 调用 `update.c` 的公共早期测试入口；当前 `CONFIG_PROVE_RCU=y`，但真正排入测试 callback 还受启动参数 `rcu_self_test` 控制；
-3. 调用公共 Tasks callback 账本初始化函数，其中每个 flavor 又受 `CONFIG_TASKS_RCU`、`CONFIG_TASKS_RUDE_RCU`、`CONFIG_TASKS_TRACE_RCU` 条件控制。
+3. 保留 `tasks_cblist_init_generic()` 这个公共调用位置；当前 `CONFIG_TASKS_RCU_GENERIC` 未启用，`kernel/rcu/rcu.h` 直接提供空的 `static inline void tasks_cblist_init_generic(void) { }`，本次不会执行 Tasks callback 账本初始化。
 
 它们不包含 `call_rcu()`、`rcu_qs()` 和 `rcu_process_callbacks()` 的运行循环，因为控制块已经静态初始化，函数之间靠以后发生的入队、调度边界和 softirq 事件协作。`rcu_init()` 短，只说明 Tiny 不需要动态构造多 CPU 拓扑和 GP kthread，不能推出“Tiny 只是启动时跑一次串行验证”。
 
-当前配置虽然含 `CONFIG_NEED_TASKS_RCU=y`，却没有启用上述三个 Tasks flavor，所以 `tasks_cblist_init_generic()` 的 flavor 初始化语句均被条件编译排除。这一调用是共享启动边界，不是普通 Tiny callback 状态机的一部分。
+当前配置虽然含 `CONFIG_NEED_TASKS_RCU=y`，却没有启用 `CONFIG_TASKS_RCU`、`CONFIG_TASKS_RUDE_RCU`、`CONFIG_TASKS_TRACE_RCU` 或它们选择的 `CONFIG_TASKS_RCU_GENERIC`。因此应把第三个调用讲成当前头文件中的空定义，而不是让读者以为本次真的进入 Tasks 实现后才逐项跳过初始化；前两个调用也仍须按其自身的编译和运行条件判断。
 
 ## 13.15\_错误路径与执行上下文不能被短代码掩盖
 
+13.7 保留了 `call_rcu()` 中的错误处理，但它是否执行，取决于下面的帮助器定义。以下摘自 [`kernel/rcu/rcu.h`](../../linux/kernel/rcu/rcu.h)，保留控制入队检查的 **完整 `#ifdef` / `#else` 两侧**，以及位于条件块之外的 `debug_rcu_head_callback()`。
+
+开启侧的 `rcuhead_debug_descr` 是 RCU 节点的检查类型描述对象，定义在 `kernel/rcu/update.c`；`STATE_RCU_HEAD_READY` / `STATE_RCU_HEAD_QUEUED` 是检查框架记录的就绪/已登记状态值，不是 Tiny 链表中的指针或成熟分界。`debug_object_activate()` 登记对象激活并返回结果，`debug_object_active_state()` 核对并推进这份检查状态，`debug_object_deactivate()` 撤销激活；这些操作与真实链表操作分别进行。
+
+```c
+/* 仓库补充：这组原始定义来自 kernel/rcu/rcu.h，两个配置分支均保留。 */
+#ifdef CONFIG_DEBUG_OBJECTS_RCU_HEAD
+# define STATE_RCU_HEAD_READY  0
+# define STATE_RCU_HEAD_QUEUED 1
+
+extern const struct debug_obj_descr rcuhead_debug_descr;
+
+static inline int debug_rcu_head_queue(struct rcu_head *head)
+{
+	int r1;
+
+	r1 = debug_object_activate(head, &rcuhead_debug_descr);
+	debug_object_active_state(head, &rcuhead_debug_descr,
+				  STATE_RCU_HEAD_READY,
+				  STATE_RCU_HEAD_QUEUED);
+	return r1;
+}
+
+static inline void debug_rcu_head_unqueue(struct rcu_head *head)
+{
+	debug_object_active_state(head, &rcuhead_debug_descr,
+				  STATE_RCU_HEAD_QUEUED,
+				  STATE_RCU_HEAD_READY);
+	debug_object_deactivate(head, &rcuhead_debug_descr);
+}
+#else /* !CONFIG_DEBUG_OBJECTS_RCU_HEAD：当前构建选中这一侧。 */
+static inline int debug_rcu_head_queue(struct rcu_head *head)
+{
+	return 0;
+}
+
+static inline void debug_rcu_head_unqueue(struct rcu_head *head)
+{
+}
+#endif /* CONFIG_DEBUG_OBJECTS_RCU_HEAD */
+
+/* 此函数在条件块之外，不能随上面两个帮助器一起判断为空。 */
+static inline void debug_rcu_head_callback(struct rcu_head *rhp)
+{
+	if (unlikely(!rhp->func))
+		kmem_dump_obj(rhp);
+}
+```
+
+当前 `CONFIG_DEBUG_OBJECTS=n`，其子开关 `CONFIG_DEBUG_OBJECTS_RCU_HEAD` 也未启用，所以选中 `#else`：入队帮助器固定返回 0，配套帮助器为空，没有维护节点生命周期检查账本。位于 `#endif` 后面的函数仍保留自己的 NULL 检查；它在 Tiny 回收路径中的位置和限制已在 [13.10.2](#13.10.2_恢复硬中断后才调用业务callback) 逐项解释。
+
+这不是 Tiny 固有的限制。固定版本的 [`lib/Kconfig.debug`](../../linux/lib/Kconfig.debug) 只要求 `DEBUG_OBJECTS_RCU_HEAD` 依赖 `DEBUG_OBJECTS`，没有排除 Tiny；另行启用后才选择上面的检查分支。以下表格把当前行为与可选诊断分开：
+
 | 分支 | 触发条件 | 处理 | 证明边界 |
 | --- | --- | --- | --- |
-| `debug_rcu_head_queue()` 报重复入队 | 同一 `rcu_head` 尚在队列又被提交 | 最多打印若干错误；普通 callback 被改成泄漏占位函数 | 诊断分支避免链表继续被同一节点破坏，但对象可能故意泄漏，不能当成功回收 |
+| 当前配置的重复入队 | 同一 `rcu_head` 尚在队列又被提交 | `debug_rcu_head_queue()` 仍返回 0，继续改写节点的 `func`、`next` 和尾槽 | 没有重复入队拦截；调用者违反约束后可能破坏链表、丢失回调或重复执行 |
+| 另行启用节点生命周期检查后的诊断分支 | `CONFIG_DEBUG_OBJECTS_RCU_HEAD=y`，且帮助器返回非零 | 前几次错误打印；普通 callback 改成泄漏占位函数并提前返回 | 属于可选配置路径，本次未编入有效调用；检查器还须处于有效状态，不能把它当成功回收 |
 | `__is_kvfree_rcu_offset()` | `func` 中编码对象内偏移 | `kvfree(head - offset)` | 只改变结果交付方式，不改变 QS 成熟条件 |
 | softirq 运行期间又 `call_rcu()` | callback 或硬中断追加新节点 | 新节点进入共享等待后缀 | 不能复用刚刚消费的成熟资格 |
 | idle 中入队或启动 poll | 当前是 idle task | `resched_cpu(0)` | 只保证系统被催促到调度路径，不直接保证 callback 已执行 |
 | 内核态 tick 看到欠账 | `donetail != curtail` | 设置 resched 标志 | 当前轨迹可能仍是 reader，不能直接调用回收函数 |
 
-当前 `CONFIG_PROVE_LOCKING=y`、`CONFIG_PROVE_RCU=y` 让部分 Lockdep 与早期检查代码真实编入；“启动无告警”仍只覆盖已经执行的路径。若没有触发重复入队、非法同步嵌套或对应 callback 交错，就不能把未告警解释成所有 Tiny 路径都已验证。
+当前 `CONFIG_PROVE_LOCKING=y`、`CONFIG_PROVE_RCU=y` 让部分 Lockdep 与早期检查代码真实编入，但 `CONFIG_DEBUG_OBJECTS_RCU_HEAD=n` 使节点生命周期检查缺席。对于重复入队，**即使错误路径实际发生，也不能期待该帮助器告警**；对于已编入的 Lockdep 检查，“未告警”还要求检查器有效、目标路径已接入并且相关交错确实执行过。Tiny 的正确性仍由调用约束、QS 分界和摘链顺序建立，不能由“启动无告警”代替。
 
 ## 13.16\_用Bear和构建产物核对实际编译路径
 

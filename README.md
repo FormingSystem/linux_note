@@ -80,6 +80,8 @@ https://github.com/FormingSystem/linux_note.git
 
 ## 1.4\_阅读方式
 
+本仓库从零建立专题概念，不默认读者知道模块、平台、架构或代际之间的关系。阅读先沿“现实问题 → 朴素方案 → 缺口 → 新角色及其关系 → 一次完整过程 → 具体实现”推进，再比较已经分别讲清的对象；不必先背分类表。写作与冷读检查遵循[专题结构从零建立的方法](tools/ai/codex/skills/build-linux-note-topic/references/topic-design.md#12-让专题结构本身也从零建立)。
+
 推荐使用 Typora 或 Obsidian 阅读。
 
 
@@ -88,6 +90,8 @@ Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，�
 专题阅读从 [知识库导航](atlas/home.md#1.1_按目标进入)或 [仓库内容索引](atlas/indexes/content_index.md#1.2_Linux通用机制)进入。内核并发与事件先从[同步和异步机制总纲](knowledge/linux/synchronization_and_asynchrony/大纲.md)分流；锁、序列计数器、等待/完成量、RCU、Lockdep 与工作队列都在各自权威专题保存跨版本正文。需要核对 Linux 6.12.20 实现时，从[锁](research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)、[序列计数器](research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.5_建议阅读顺序)、[等待与完成量](research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)、[工作队列](research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.6_建议阅读顺序)、[Lockdep](research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)或 [RCU](research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)的总阅读索引进入，再从模块导读跳到唯一函数实现标题。
 
 需要连续阅读一个完整专题时，从 [MarkBook 专题电子书](markbook/README.md#1.2_当前刊物)进入。MarkBook 只做月度快照和出版编排，不替代上述权威正文；书中显示的版本、来源哈希和工作树状态用于还原当期内容。
+
+面向 RK3588 的硬件中断控制器学习，从 [GICv3 物理中断专题大纲](platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)进入：十篇中文命名正文从外设事件逐步讲到状态、配置、消息翻译与软件交接，另有 RK3588 集成记录。正文可独立阅读，关键概念附中英文术语与官方章节对照；GICv3 虚拟化、GICv4、逐函数源码与板上实验后续展开。与 Linux IRQ 管理的分工见[交叉阅读入口](atlas/roadmaps/gic_learning_plan.md#1.7_与现有中断章节的交叉阅读)。
 
 ### 1.4.1\_回路\_Markdown\_工作台
 
@@ -286,4 +290,4 @@ Arm、NXP 与 Rockchip 在本节中都是公司或品牌专名。Arm 架构规�
 
 除非文件附带明确允许再分发且与本仓库用途相容的许可，新引入的外部厂商资料只在 `reference/external_resources/` 保存来源、版本、版权边界和完整性校验信息，实际文件由使用者从权利人入口下载到 Git 忽略的 `.cache/`。这类文件不得放入普通 Git、Git LFS、GitHub Release 或其他公共镜像。
 
-当前 Arm、RK3588 与 i.MX6ULL 资料入口见 [外部资料索引](reference/external_resources/arm/README.md#1.1_索引定位与存储边界)。
+当前 Arm、RK3588 与 i.MX6ULL 资料入口见 [外部资料索引](reference/external_resources/arm/README.md#1.1_索引定位与存储边界)。独立 GIC 专题从 [GICv3 物理中断大纲](platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)阅读，长期扩展由[建设路线](atlas/roadmaps/gic_learning_plan.md#1.6_建设落点与当前交付边界)维护；资料可按 `--profile rk3588_gicv3` 选取。
