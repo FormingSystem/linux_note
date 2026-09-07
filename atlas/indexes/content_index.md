@@ -60,6 +60,7 @@ domains:
 | --- | --- |
 | i.MX6ULL 平台 | [U-Boot 与内核移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)、[内核配置编译](../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md) |
 | RK3566 平台 | [Linux SDK 编译](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md) |
+| RK3588 与 Arm 中断控制器 | [GICv3 物理中断专题](../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)、[RK3588 集成与手册核对](../../platforms/arm/rockchip/rk3588/P01_RK3588的GIC-600集成与手册核对.md#1.2_怎样确认控制器身份)；十篇概念正文已落地，源码与板上实验仍需固定目标环境 |
 | 内存顺序实验 | [访问宽度与 ARM 反汇编](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md)、[READ_ONCE 编译器访问](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)、[LKMM Litmus](../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md) |
 | C 语言静态分析实验 | [Sparse 地址空间与上下文记账](../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标) |
 | Lockdep 实验 | [锁顺序反转与报告解读](../../labs/kernel/lockdep/P01_锁顺序反转与报告解读/README.md) |
@@ -83,6 +84,7 @@ domains:
 - [知识库专题阅读与评审地图](../maps/knowledge_review_map.md)
 - [知识库建设路线图](../roadmaps/content_roadmap.md)
 - [Linux I/O 与驱动子系统建设路线](../roadmaps/linux_io_driver_subsystems.md)
+- [GIC 专题建设与阅读路线](../roadmaps/gic_learning_plan.md#1.2_从零开始的阅读地图)
 - [仓库信息架构设计](../../governance/architecture/repository_information_architecture.md)
 - [Git 协作与提交规范](../../governance/conventions/git_guide.md)
 - [全量目录重构记录](../../governance/migration/P01_全量目录重构记录.md)

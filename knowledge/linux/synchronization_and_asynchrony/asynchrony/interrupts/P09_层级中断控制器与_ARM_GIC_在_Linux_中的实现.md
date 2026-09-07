@@ -30,7 +30,9 @@ domains:
 
 本章的阅读前提：已理解第3章的 irq_domain 基本概念、已理解第5章的 GPIO 中断触发语义，否则读到 9.3 以后会觉得“为什么这里又要设类型”。
 
-阅读本章涉及的硬件契约时，从[Arm、GIC、RK3588 与 i.MX6ULL 外部资料索引](../../../../../reference/external_resources/arm/README.md#1.4_版本选择与阅读顺序)选择对应版本：NXP i.MX 6UltraLite（i.MX6ULL，片上系统产品型号）主要对照 ARMv7-A 与 GICv2，Rockchip RK3588（片上系统产品型号）主要对照 Armv8-A 与 GICv3。规范用于确认硬件状态、寄存器与接口保证；本章讨论的 `irq_chip`、`irq_domain`、`irq_desc` 和 `irqchip` 驱动属于 Linux 软件实现，不能从规范标题直接推断其版本化调用链。
+阅读本章涉及的硬件契约时，从[资料索引](../../../../../reference/external_resources/arm/README.md#1.4_版本选择与阅读顺序)选择对应版本：NXP i.MX 6UltraLite（i.MX6ULL，片上系统产品型号）主要对照 ARMv7-A 与 GICv2；Rockchip RK3588（片上系统产品型号）实际集成 GIC-600 r1p6，实现 GICv3.0，型号证据见[手册核对表](../../../../../reference/external_resources/arm/README.md#1.4.2_型号判断的证据与适用边界)。GIC（Generic Interrupt Controller，通用中断控制器）描述硬件请求的组织与递送；`irq_chip`、`irq_domain`、`irq_desc` 和 `irqchip` 驱动属于 Linux 软件实现，不能从规范标题直接推断其版本化调用链。
+
+控制器自身的角色、状态与编程从 [GICv3 独立专题](../../../../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)从零建立，再由[软件交接章节](../../../../../platforms/arm/architecture/gic/P10_软件交接_部署与分层排障.md#10.2_固件_控制器驱动与设备驱动怎样交接)回到本章的软件映射问题。本章不承担完整的 GIC 架构教材，不把 GICv4 当作 RK3588 能力，也不要求通过两个平台的对照表才能进入 GICv3.0 主线。
 
 ------
 

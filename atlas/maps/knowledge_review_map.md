@@ -47,12 +47,15 @@ mindmap-plugin: basic
 - 核对源码与实践证据
     - [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md#1.1_当前来源)
     - [仓库内容索引](../indexes/content_index.md#1.5_平台_实验_研究与参考)
+- 从 RK3588 开始学习中断控制器
+    - [GICv3 物理中断专题大纲](../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)，章节评审节点见下方“工程方法与平台实现 → Arm 平台”。
+    - 🔴 [GIC 专题建设与阅读路线](../roadmaps/gic_learning_plan.md#1.2_从零开始的阅读地图)
 - 了解知识库建设范围
     - [知识库建设路线图](../roadmaps/content_roadmap.md)
 
 ## 1.4\_全量覆盖基线
 - 本次盘点覆盖 308 篇 `knowledge/` Markdown：28 个正式专题入口、240 个正式 `PXX` 章节及 40 篇尚未统一成正式大纲的知识材料。
-- 另纳入 55 篇支撑材料：工程方法 1 篇、平台实现 3 篇、实验 16 篇、研究 25 篇、参考 3 篇、出版物 7 篇。
+- 另纳入 67 篇支撑材料：工程方法 1 篇、平台实现 15 篇（本轮新增 GIC 大纲、10 篇正文与 1 篇 RK3588 集成记录）、实验 16 篇、研究 25 篇、参考 3 篇、出版物 7 篇。
 - 正式章节人工进度
     - 🟢 30 章：Kref P01～P15、红黑树 P01～P15。
     - 🟡 9 章：Lockdep P01～P09，已完成人工通读和批注，重构后待复核。
@@ -484,12 +487,26 @@ mindmap-plugin: basic
             - 🟢 [GPIO 调试、迁移与工程模板](../../engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md)
 - 平台实现
     - Arm 平台
+        - GICv3 物理中断
+            - 🔴 [专题大纲](../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)
+            - 🔴 [P01 从外设事件到中断请求](../../platforms/arm/architecture/gic/P01_从外设事件到中断请求.md#1.1_数据已经到了_程序为什么还不知道)
+            - 🔴 [P02 从控制器规则到芯片与软件身份](../../platforms/arm/architecture/gic/P02_从控制器规则到芯片与软件身份.md#2.1_已经知道职责_为什么还要分清名称)
+            - 🔴 [P03 多核控制器的角色、寄存器与编号](../../platforms/arm/architecture/gic/P03_多核控制器的角色_寄存器与编号.md#3.1_增加第二个处理器后_什么必须拆开)
+            - 🔴 [P04 一次中断的状态转换与完成协议](../../platforms/arm/architecture/gic/P04_一次中断的状态转换与完成协议.md#4.1_处理入口已经运行_为什么还没有完成)
+            - 🔴 [P05 优先级、屏蔽与嵌套处理](../../platforms/arm/architecture/gic/P05_优先级_屏蔽与嵌套处理.md#5.1_已经挂起的请求_为什么仍然不能进入)
+            - 🔴 [P06 权限、安全分组与初始化闭环](../../platforms/arm/architecture/gic/P06_权限_安全分组与初始化闭环.md#6.1_为什么照着寄存器名写值还不够)
+            - 🔴 [P07 目标选择、核间通知与电源交接](../../platforms/arm/architecture/gic/P07_目标选择_核间通知与电源交接.md#7.1_把请求交给另一个处理器_改变了什么)
+            - 🔴 [P08 从消息请求到内存中的中断状态](../../platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md#8.1_来源越来越多_为什么让设备发送一条消息)
+            - 🔴 [P09 设备事件翻译与命令完成](../../platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md#9.1_两个设备都发事件0_怎样区分)
+            - 🔴 [P10 软件交接、部署与分层排障](../../platforms/arm/architecture/gic/P10_软件交接_部署与分层排障.md#10.1_硬件模型闭合后_软件该接管哪一段)
         - NXP
             - i.MX6ULL
                 - 移植与构建
                     - 🟢 [阅读人群](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)
                     - 🟢 [下载编译器](../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md)
         - Rockchip
+            - RK3588
+                - 🔴 [GIC-600 集成与手册核对](../../platforms/arm/rockchip/rk3588/P01_RK3588的GIC-600集成与手册核对.md#1.1_通用规则没有告诉我们这颗芯片接了什么)
             - RK3566
                 - 构建环境
                     - 🟢 [资料下载](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)
@@ -625,6 +642,7 @@ mindmap-plugin: basic
             - 🔴 [P11 Linux 6.12 Tree SRCU 源码实现](../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md)
             - 🔴 [P12 Linux 6.12 Tree RCU rcu_init 启动初始化源码实现](../../research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md)
             - 🔴 [P13 Linux 6.12 Tiny RCU 源码实现](../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.1_实现所有权与本章读者任务)
+                - 🔴 [13.6.3 flags保存恢复与ARM本地中断保护](../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.6.3_flags怎样保存和恢复中断状态)
 
 ## 1.9\_🟡 参考与出版物
 - 🟡 参考资料

@@ -40,6 +40,10 @@ domains:
 
 2026-08-24 重新发现的候选工作树已核对官方远端与 `lf-6.12.y` 分支；其 `HEAD=7b60e547d2783f8fee61ff7d7be3e066825b9c3a`，以固定发布提交为 merge-base 并前进 3 个提交。工作树 `Makefile` 仍为 Linux 6.12.20。本文新增源码导读全部通过该工作树中的标签对象读取固定提交内容，不把分支头的后续变化混入实现讲解。
 
+2026-09-06 对上述 Tiny 工作树的 `.config`、`include/config/auto.conf` 和 `include/generated/autoconf.h` 进一步核对：`CONFIG_PREEMPT_COUNT=y`、`CONFIG_DEBUG_LOCK_ALLOC=y`，但 `CONFIG_DEBUG_OBJECTS=n`、`CONFIG_DEBUG_OBJECTS_RCU_HEAD=n`、`CONFIG_RCU_TRACE=n`、`CONFIG_TASKS_RCU_GENERIC=n`。因此当前 `debug_rcu_head_queue()` 恒返 0，配套 `debug_rcu_head_unqueue()` 与 Tasks 初始化帮助器为空操作；Lockdep 接入与节点生命周期检查必须分别判断。涉及的 `kernel/rcu/rcu.h`、`kernel/rcu/tiny.c`、`include/linux/rcupdate.h`、`include/linux/rcutiny.h`、`include/linux/preempt.h`、`include/trace/events/rcu.h` 和 `lib/Kconfig.debug` 已确认与固定提交无差异；这些配置结论仍只描述本次开发构建，不是所有 Tiny 构建的固定属性。
+
+同日核对 Tiny 队列的中断保护路径：`CONFIG_CPU_V7=y`、`CONFIG_CPU_32v7=y`、`CONFIG_TRACE_IRQFLAGS=y`，未启用 `CONFIG_CPU_V7M` 和 `CONFIG_DEBUG_IRQFLAGS`。`arch/arm/Makefile` 设置 `__LINUX_ARM_ARCH__=7`，对应保存 CPSR、屏蔽普通 IRQ 并按旧值恢复控制字段的 ARM 路径；该结论不外推到 Cortex-M 或其他架构。下表新增的三个头文件按固定提交保存并核对 Git blob，原工作树中的对应文件以及 `arch/arm/Makefile`、`arch/arm/include/uapi/asm/ptrace.h` 与固定提交无差异。
+
 本基线标识的是 NXP `linux-imx` 仓库中的一份确定源码快照，不是某个用户名、目录名、共享地址或挂载点。以后补充或复核源码时，应先验证候选工作树的官方远端、分支、`HEAD`、`Makefile` 和相关 Kconfig，再引用上游相对路径；本地绝对路径不得写入已跟踪文档。
 
 ## 1.2\_保存规则
@@ -121,6 +125,9 @@ domains:
 | `include/linux/init.h` | `early_initcall()` 与 initcall 链接段登记规则，用于定位 GP kthread 创建时机 |
 | `init/main.c` | `start_kernel()`、`rest_init()`、`kernel_init()` 与 initcall/SMP 启动顺序 |
 | `kernel/rcu/Kconfig.debug` | `PROVE_RCU`、RCU 列表 Lockdep 和其他 RCU 调试配置 |
+| [`include/linux/irqflags.h`](include/linux/irqflags.h) | `local_irq_save/restore` 与 raw 宏的完整定义、中断状态检查包装 |
+| [`include/linux/typecheck.h`](include/linux/typecheck.h) | 核对 `flags` 类型而不读取其未初始化数值的编译期类型检查 |
+| [`arch/arm/include/asm/irqflags.h`](arch/arm/include/asm/irqflags.h) | ARM 中断状态保存/恢复的原始架构分支、CPSR 与屏蔽指令；[Tiny 队列中的使用解释](../rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.6.3_flags怎样保存和恢复中断状态) |
 | `include/linux/rculist.h` | list/hlist 的 RCU 访问封装 |
 | `include/linux/rcu_segcblist.h` | callback 分段列表结构和接口 |
 | `include/linux/srcu.h`、`srcutree.h`、`kernel/rcu/srcutree.c` | Tree SRCU 公共接口、状态和实现 |

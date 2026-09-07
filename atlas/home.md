@@ -24,6 +24,7 @@ domains:
 | 理解并验证锁协议 | [Lockdep 专题](../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md#1.1_专题定位)、[锁顺序反转实验](../labs/kernel/lockdep/P01_锁顺序反转与报告解读/README.md)、[Linux 6.12 源码总阅读索引](../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序) | 从锁序与 IRQ 反例建立模型，亲手读取报告，再核对版本化状态和调用链 |
 | 学习驱动开发 | [Linux驱动开发学习路线](tracks/linux_driver_track.md) | 从模块、字符设备走到平台驱动和 Input 子系统 |
 | 查阅架构、GIC 与芯片原始资料 | [Arm、RK3588 与 i.MX6ULL 外部资料索引](../reference/external_resources/arm/README.md#1.4_版本选择与阅读顺序) | 选择对应版本的官方资料，并区分规范、SoC 实现与仓库学习笔记 |
+| 从 RK3588 开始学习 GIC | [GICv3 物理中断专题](../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图) | 十篇独立概念讲解与 RK3588 集成记录，术语中英文对照、就近追溯官方目录 |
 | 查找现有内容 | [仓库内容索引](indexes/content_index.md) | 按领域定位文档、实验和研究材料 |
 | 规划后续建设 | [知识库建设路线图](roadmaps/content_roadmap.md) | 查看内容覆盖、缺口和维护优先级 |
 
