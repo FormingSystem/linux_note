@@ -84,6 +84,7 @@ https://github.com/FormingSystem/linux_note.git
 
 推荐使用 Typora 或 Obsidian 阅读。
 
+[Typora Code](https://github.com/FormingSystem/typora_code) 是针对本仓库文档跳转链接多、源码阅读与修改频繁的场景制作的 Typora 阅读适配工具，围绕多文档阅读、链接定位、源码查看与编辑提供工作台增强。工具的配置、实现、测试和开发历史均在独立仓库维护，本仓库仅保留此链接与背景介绍。
 
 Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，优先使用 Obsidian 内部操作，让链接能够自动跟踪更新。
 
