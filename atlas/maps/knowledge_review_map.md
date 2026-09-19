@@ -55,7 +55,7 @@ mindmap-plugin: basic
 
 ## 1.4\_全量覆盖基线
 - 本次盘点覆盖 308 篇 `knowledge/` Markdown：28 个正式专题入口、240 个正式 `PXX` 章节及 40 篇尚未统一成正式大纲的知识材料。
-- 另纳入 67 篇支撑材料：工程方法 1 篇、平台实现 15 篇（本轮新增 GIC 大纲、10 篇正文与 1 篇 RK3588 集成记录）、实验 16 篇、研究 25 篇、参考 3 篇、出版物 7 篇。
+- 另纳入 68 篇支撑材料：工程方法 1 篇、平台实现 16 篇（包括 GIC 大纲、10 篇主线正文、1 篇 UART 流程复盘草稿与 1 篇 RK3588 集成记录）、实验 16 篇、研究 25 篇、参考 3 篇、出版物 7 篇。
 - 正式章节人工进度
     - 🟢 30 章：Kref P01～P15、红黑树 P01～P15。
     - 🟡 9 章：Lockdep P01～P09，已完成人工通读和批注，重构后待复核。
@@ -480,7 +480,9 @@ mindmap-plugin: basic
         - 🟢 [阅读说明](../../knowledge/system_software/uboot/uboot-makefile.md)
         - 🟢 [SPL和main构建的时候 是如何区分对应的函数不会冲突的](../../knowledge/system_software/uboot/uboot提问.md)
 
-## 1.6\_🟢 工程方法与平台实现
+## 1.6\_工程方法与平台实现
+
+分组评审标记：🟢
 - 工程方法
     - 驱动开发方法
         - GPIO
@@ -499,6 +501,7 @@ mindmap-plugin: basic
             - 🔴 [P08 从消息请求到内存中的中断状态](../../platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md#8.1_来源越来越多_为什么让设备发送一条消息)
             - 🔴 [P09 设备事件翻译与命令完成](../../platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md#9.1_两个设备都发事件0_怎样区分)
             - 🔴 [P10 软件交接、部署与分层排障](../../platforms/arm/architecture/gic/P10_软件交接_部署与分层排障.md#10.1_硬件模型闭合后_软件该接管哪一段)
+            - 🔴 [P11 UART 中断的端到端流程复盘](../../platforms/arm/architecture/gic/P11_UART中断的端到端流程复盘.md#11.1_阶段导航)（草稿）
         - NXP
             - i.MX6ULL
                 - 移植与构建
@@ -644,7 +647,9 @@ mindmap-plugin: basic
             - 🔴 [P13 Linux 6.12 Tiny RCU 源码实现](../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.1_实现所有权与本章读者任务)
                 - 🔴 [13.6.3 flags保存恢复与ARM本地中断保护](../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.6.3_flags怎样保存和恢复中断状态)
 
-## 1.9\_🟡 参考与出版物
+## 1.9\_参考与出版物
+
+分组评审标记：🟡
 - 🟡 参考资料
     - 🔴 [参考资料导航](../../reference/README.md#1.1_定位与使用边界)
     - 标准
