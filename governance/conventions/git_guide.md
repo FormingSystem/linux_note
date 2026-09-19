@@ -2,12 +2,12 @@
 id: governance.conventions.git_guide
 title: "Git协作、提交与发布规范"
 kind: reference
-status: stable
+status: maintained
 domains:
   - governance
 ---
 
-# 第1章\_Git\_协作、提交与发布规范
+# 第1章\_Git\_协作\_提交与发布规范
 
 ## 1.1\_目标
 

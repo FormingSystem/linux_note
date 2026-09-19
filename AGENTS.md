@@ -203,7 +203,7 @@ docs(repository/git): 更新分支与提交规范
 - 新增、移动、拆分、合并或删除知识正文、工程方法、平台记录、实验、源码研究、参考或出版物时，还必须同步 `atlas/maps/knowledge_review_map.md` 的对应节点和链接；新节点一律从 🔴 **未校正** 开始。章节已进入人工阅读时可以在章节下维护 🟡 小节评审点，未得到开发者明确确认不得把节点改为 🟢。
 - 同一次专题整改包含不同性质的修改时，尽量按 `structure`、`rewrite`、`link` 等类型拆分 Git 提交，便于审查结构变化、正文变化和导航变化。
 
-## 1.11\_Linux\_源码身份、会话发现与使用边界
+## 1.11\_Linux\_源码身份\_会话发现与使用边界
 
 本仓库用于源码核对的基线来自 NXP 官方发布的 i.MX 厂商内核仓库，而不是某个本地目录本身：
 
@@ -245,7 +245,7 @@ docs(repository/git): 更新分支与提交规范
 - 涉及设备树、pinctrl、GPIO、时钟、中断控制器、SoC 外设或 BSP 补丁时，应将其视为 NXP i.MX6ULL/厂商树证据，正文标明平台与版本边界，不将厂商实现写成通用 Linux 契约。
 - 修改知识正文前只读检索外部源码；不要在知识整理任务中改动、格式化、切换、拉取或提交这棵外部工作树。需要保存长期证据时，按仓库规范整理到 `research/source_reading/linux/`。
 
-## 1.13\_Codex\_skill\_仓库备份
+## 1.12\_Codex\_skill\_仓库备份
 
 仓库维护的 Codex skill 统一保存在 `tools/ai/codex/skills/`。这里的版本是可评审、可追溯的 **权威副本**；`$CODEX_HOME/skills/` 下的同名目录只是当前 Codex 运行环境的安装镜像，不得反过来成为唯一来源，也不得把任一本机绝对路径写入已跟踪文件。
 
@@ -273,7 +273,7 @@ skill 更新流程如下：
 
 Codex skill 的 Markdown 是运行时指令，不是知识库章节：`scripts/format_metadata.sh` 和 `scripts/format_markdown.sh` 必须跳过 `tools/ai/codex/skills/`，避免补入仓库正文元数据或重写 skill 标题。链接与路径检查仍应覆盖 skill 内的相对引用。layout-only 工作必须优先运行 `scripts/audit_content_conservation.py`；它是严格行级对比工具，失败表示需要逐项核对差异，不自动等同于技术内容丢失。修改 skill 后至少运行对应审计脚本、skill 结构校验、仓库链接检查和 `git diff --check`。某个校验因环境缺少依赖无法运行时，必须准确报告缺失项。
 
-## 1.14\_MarkBook\_专题电子出版物
+## 1.13\_MarkBook\_专题电子出版物
 
 `markbook/` 保存由权威正文、源码研究和实验按专题编排出来的月度电子出版物。它解决仓库工程化分层后单一专题入口分散、连续阅读和全文检索不便的问题，但不是第二份知识正文：专题事实仍只在 `knowledge/`、`research/`、`labs/`、`engineering/`、`platforms/` 和 `reference/` 的权威位置维护，MarkBook 只保存编排清单、生成工具、版本目录和来源台账，不接受人工直接修改生成后的章节内容。
 
