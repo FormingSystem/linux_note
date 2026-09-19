@@ -12,6 +12,7 @@ if ! printf '%s\n' "$subject" | grep -Eq "$format_regex"; then
 
 必须使用：
   <类型>[(<project>/<module>)]!?: <中文结果>
+
   - 描述1
   - 描述2
 
@@ -34,9 +35,18 @@ if ! printf '%s\n' "$description" | LC_ALL=C grep -q '[^ -~]'; then
 fi
 
 body_lines="$(tail -n +2 "$msg_file" | grep -Ev '^[[:space:]]*(#.*)?$' || true)"
-if [ -n "$body_lines" ] &&
-   printf '%s\n' "$body_lines" | grep -Ev '^- .+' >/dev/null; then
-  printf '%s\n' '提交正文存在时，每一行都必须使用“- 描述”。' >&2
+if [ -z "$body_lines" ]; then
+  printf '%s\n' '提交必须在标题后空一行，并至少提供一条“- 描述”明细。' >&2
+  exit 1
+fi
+
+if ! sed -n '2p' "$msg_file" | grep -Eq '^[[:space:]]*$'; then
+  printf '%s\n' '提交标题与明细之间必须保留一个空行。' >&2
+  exit 1
+fi
+
+if printf '%s\n' "$body_lines" | grep -Ev '^- [^[:space:]].*' >/dev/null; then
+  printf '%s\n' '每条提交明细必须使用“- 描述”，描述不得为空或只有空白。' >&2
   exit 1
 fi
 

@@ -116,10 +116,12 @@ git config commit.template governance/templates/git_commit_message.txt
 
 ```text
 <类型>[(<project>/<module>)]!?: <中文结果>
-[可选：标题无法完整表达时才添加]
+
 - 描述1
 - 描述2
 ```
+
+每次提交必须在标题后空一行，再写至少一条 `- 描述` 明细；明细说明具体变化，不能只重复标题。下方示例展示标题写法，实际提交仍须补齐明细。
 
 类型固定为：
 
