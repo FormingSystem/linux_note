@@ -1,4 +1,4 @@
 interface:
   display_name: "构建技术书籍与专题"
-  short_description: "按认知路径、动态机制和证据链构建可推导的技术专题"
-  default_prompt: "使用 $build-linux-note-topic 为主题建立完整认知大纲，再按问题链、错误模型、动态过程、证据和工程边界生成或重构专题。"
+  short_description: "以连贯叙述、贯穿实例和渐进实验构建循序渐进、可推理的技术教材"
+  default_prompt: "使用 $build-linux-note-topic 按读者认识的变化设计专题，用完整样章校准讲解，再以贯穿实例、自然语气、适量幽默、实验与渐进练习完成有证据、可迁移的连续教材。"

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "skills": [
+    {
+      "name": "build-linux-note-topic",
+      "source": "codex_home/skills/build-linux-note-topic",
+      "mirror": "tools/ai/codex/skills/build-linux-note-topic",
+      "direction": "codex_to_repository"
+    }
+  ]
+}
