@@ -55,7 +55,7 @@ mindmap-plugin: basic
 
 ## 1.4\_全量覆盖基线
 - 本次盘点覆盖 308 篇 `knowledge/` Markdown：28 个正式专题入口、240 个正式 `PXX` 章节及 40 篇尚未统一成正式大纲的知识材料。
-- 另纳入 68 篇支撑材料：工程方法 1 篇、平台实现 16 篇（包括 GIC 大纲、10 篇主线正文、1 篇 UART 流程复盘草稿与 1 篇 RK3588 集成记录）、实验 16 篇、研究 25 篇、参考 3 篇、出版物 7 篇。
+- 原盘点另纳入 68 篇支撑材料：工程方法 1 篇、平台实现 16 篇（包括 GIC 大纲、10 篇主线正文、1 篇 UART 流程复盘草稿与 1 篇 RK3588 集成记录）、实验 16 篇、研究 25 篇、参考 3 篇、出版物 7 篇。2026-09-21 新增内核模块构建与部署大纲及 4 篇工程正文，均从 🔴 开始；本行保留原盘点边界，不把历史计数冒充当前全仓实时统计。
 - 正式章节人工进度
     - 🟢 30 章：Kref P01～P15、红黑树 P01～P15。
     - 🟡 9 章：Lockdep P01～P09，已完成人工通读和批注，重构后待复核。
@@ -90,6 +90,7 @@ mindmap-plugin: basic
         - 🔴 [P10 字符设备驱动模板](../../knowledge/driver_model/character_device/P10_字符设备驱动模板.md)
         - 🔴 [P11 字符设备构建运行与验证](../../knowledge/driver_model/character_device/P11_构建运行与验证.md)
         - 🔴 [P12 字符设备常见故障与排查](../../knowledge/driver_model/character_device/P12_常见故障与排查.md)
+        - 🔴 [P13 流式字符设备与等待通知模板](../../knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md)
     - 🔴 [设备树与 Platform](../../knowledge/driver_model/device_tree/readme.md)
         - 🔴 [设备树中的 GPIO 语法(Kernel 6.1+)](../../knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md)
         - 🔴 [pinctrl 总体概念与语法框架(Linux Kernel ≥ 6.1)](../../knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md)
@@ -101,14 +102,14 @@ mindmap-plugin: basic
             - 🔴 [P02 设备树驱动开发方式](../../knowledge/driver_model/device_tree/设备树+platform开发/P02_设备树驱动开发方式.md)
             - 🔴 [P03 设备树语法与标准示例](../../knowledge/driver_model/device_tree/设备树+platform开发/P03_设备树语法与标准示例.md)
     - 驱动基础
-        - 驱动框架模型
+        - 🔴 [驱动框架学习地图](../../knowledge/driver_model/fundamentals/framework_model/大纲.md)
+            - 🔴 [从一个驱动到多个设备](../../knowledge/driver_model/fundamentals/framework_model/前言.md)
             - 🔴 [P01 驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md)
-            - 🔴 [kobject讲解](../../knowledge/driver_model/fundamentals/framework_model/kobject讲解.md)
-            - 🔴 [前言](../../knowledge/driver_model/fundamentals/framework_model/前言.md)
+            - 🔴 [kobject 与一个只读属性](../../knowledge/driver_model/fundamentals/framework_model/kobject讲解.md)
         - 内核驱动机制
             - 基础数据结构说明
-                - 🔴 [引言](../../knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_class.md)
-                - 🔴 [成员介绍](../../knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_file_operations.md)
+                - 🔴 [class 成员与接口参考](../../knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_class.md)
+                - 🔴 [file_operations 成员与版本边界](../../knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_file_operations.md)
     - 🔴 [GPIO 专题](../../knowledge/driver_model/gpio/大纲.md)
         - 章节评审：8 章未评审
         - 🔴 [P01 从寄存器位到 GPIO 连接抽象](../../knowledge/driver_model/gpio/P01_从寄存器位到_GPIO_连接抽象.md)
@@ -131,7 +132,12 @@ mindmap-plugin: basic
         - 🔴 [P04 Input 事件帧与多点触控](../../knowledge/driver_model/input/P04_事件帧与多点触控.md)
         - 🔴 [P05 Input 并发、丢帧与电源管理](../../knowledge/driver_model/input/P05_并发丢帧与电源管理.md)
         - 🔴 [P06 Input 触摸驱动设计与验证](../../knowledge/driver_model/input/P06_触摸驱动设计与验证.md)
-    - 🔴 [misc 设备](../../knowledge/driver_model/misc/readme.md)
+    - 🔴 [用 misc 发布一个小型字符设备](../../knowledge/driver_model/misc/readme.md)
+    - 🔴 [文件操作学习路线](../../knowledge/driver_model/file_operations/大纲.md)
+        - 🔴 [P01 一次打开与最后一次释放](../../knowledge/driver_model/file_operations/P01_一次打开与最后一次释放.md)
+        - 🔴 [P02 迭代读取与请求位置](../../knowledge/driver_model/file_operations/P02_迭代读取与请求位置.md)
+        - 🔴 [P03 只读映射与后备页寿命](../../knowledge/driver_model/file_operations/P03_只读映射与后备页寿命.md)
+        - 🔴 [P04 扩展接口的契约与选择](../../knowledge/driver_model/file_operations/P04_扩展接口的契约与选择.md)
     - 🔴 [Platform Bus](../../knowledge/driver_model/platform_bus/readme.md)
 - 基础理论
     - C 语言
@@ -204,13 +210,14 @@ mindmap-plugin: basic
 - Linux 通用机制
     - 内核架构
         - 内核组成
-            - 🔴 [linux内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)
+            - 🔴 [Linux 内核概貌：从读取一份文件开始](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)
         - 模块与设备节点
-            - 🔴 [模块与设备节点基础](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)
-            - 🔴 [设备号与设备节点 从 0 到多实例](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作基础.md)
-            - 🔴 [走进驱动的 Makefile](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_驱动开发_Makefile_指南.md)
+            - 🔴 [模块与设备入口大纲](../../knowledge/linux/architecture/modules_and_device_nodes/大纲.md)
+            - 🔴 [模块装载与设备访问入口](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)
+            - 🔴 [多实例设备的身份与组织](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作基础.md)
+            - 🔴 [从模块生命周期进入构建与部署](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_驱动开发_Makefile_指南.md)
         - 源码树
-            - 🔴 [/arch](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)
+            - 🔴 [Linux 源码树：从问题找到文件](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)
     - 数据结构
         - 🔴 [Linux内核链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)
             - 章节评审：9 章未评审
@@ -265,14 +272,24 @@ mindmap-plugin: basic
         - 🔴 [P09 Deferred Probe、解绑与 remove](../../knowledge/linux/device_model/P09_deferred_probe解绑与remove.md)
         - 🔴 [P10 fwnode、OF 与 Platform 适配](../../knowledge/linux/device_model/P10_fwnode_OF与Platform适配.md)
         - 🔴 [P11 class、sysfs、uevent 与 modalias](../../knowledge/linux/device_model/P11_class_sysfs_uevent与modalias.md)
+            - 🔴 [class 与 sysfs 学习路线](../../knowledge/linux/device_model/class_sysfs/大纲.md)
+                - 🔴 [P01 两个没有设备节点的分类实例](../../knowledge/linux/device_model/class_sysfs/P01_两个没有设备节点的分类实例.md)
+                - 🔴 [P02 让属性控制字符读取](../../knowledge/linux/device_model/class_sysfs/P02_让属性控制字符读取.md)
+                - 🔴 [P03 从发布到设备节点](../../knowledge/linux/device_model/class_sysfs/P03_从发布到设备节点.md)
+                - 🔴 [P04 并发访问与撤销](../../knowledge/linux/device_model/class_sysfs/P04_并发访问与撤销.md)
+                - 🔴 [P05 系统属性与接口选择参考](../../knowledge/linux/device_model/class_sysfs/P05_系统属性与接口选择参考.md)
         - 🔴 [P12 devres 资源事务](../../knowledge/linux/device_model/P12_devres资源事务.md)
         - 🔴 [P13 device link 与电源管理](../../knowledge/linux/device_model/P13_device_link与电源管理.md)
         - 🔴 [P14 热插拔与模块生命周期](../../knowledge/linux/device_model/P14_热插拔与模块生命周期.md)
         - 🔴 [P15 复合设备、MFD 与 Component](../../knowledge/linux/device_model/P15_复合设备_MFD与Component.md)
         - 🔴 [P16 设备模型 API、调试与选择边界](../../knowledge/linux/device_model/P16_API调试与选择边界.md)
     - 错误处理
-        - 🔴 [模块 Linux 内核错误指针机制(Error Pointer System)](../../knowledge/linux/error_handling/error_pointer/readme.md)
-            - 🔴 [错误指针机制概述与设计哲学](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)
+        - 🔴 [错误指针专题](../../knowledge/linux/error_handling/error_pointer/大纲.md)
+            - 🔴 [取得对象以后，先判断返回了什么](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)
+            - 🔴 [P02 错误值的编码与判定](../../knowledge/linux/error_handling/error_pointer/P02_错误值的编码与判定.md)
+            - 🔴 [P03 资源失败与驱动回滚](../../knowledge/linux/error_handling/error_pointer/P03_资源失败与驱动回滚.md)
+            - 🔴 [P04 观察返回值与释放顺序](../../knowledge/linux/error_handling/error_pointer/P04_观察返回值与释放顺序.md)
+            - 🔴 [错误指针接口与排错速查](../../knowledge/linux/error_handling/error_pointer/readme.md)
     - I/O 模型
         - 阻塞 I/O
             - 🔴 [poll 机制 从用户等待到驱动唤醒的完整链路](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)
@@ -484,6 +501,12 @@ mindmap-plugin: basic
 
 分组评审标记：🟢
 - 工程方法
+    - 🔴 内核模块构建与部署
+        - 🔴 [专题大纲](../../engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)
+        - 🔴 [P01 从 C 文件到匹配目标内核的模块](../../engineering/build/kernel_modules/P01_从C文件到匹配目标内核的模块.md)
+        - 🔴 [P02 让多个源文件形成清楚的模块边界](../../engineering/build/kernel_modules/P02_让多个源文件形成清楚的模块边界.md)
+        - 🔴 [P03 把模块接入 Kconfig 与内核构建](../../engineering/build/kernel_modules/P03_把模块接入Kconfig与内核构建.md)
+        - 🔴 [P04 部署模块并沿错误定位构建问题](../../engineering/build/kernel_modules/P04_部署模块并沿错误定位构建问题.md)
     - 驱动开发方法
         - GPIO
             - 🟢 [GPIO 调试、迁移与工程模板](../../engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md)
@@ -525,6 +548,16 @@ mindmap-plugin: basic
                 - 观测结果
                     - 🟢 [2026-08-02 访问宽度与 ARM 编译器观察](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/expected/2026-08-02_compiler_observation.md)
 - Linux 内核实验
+    - 链表
+        - 🔴 [链表教材实验材料](../../labs/kernel/linked_list/materials/README.md)
+    - 驱动入口
+        - 🔴 [sysfs 与 misc 教材实验材料](../../labs/kernel/driver_entries/materials/README.md)
+        - 🔴 [文件操作教材实验材料](../../labs/kernel/file_operations/materials/README.md)
+        - 🔴 [class 与 sysfs 实验材料](../../labs/kernel/class_sysfs/materials/README.md)
+    - 错误指针
+        - 🔴 [错误指针教材实验材料](../../labs/kernel/error_pointer/materials/README.md)
+    - 字符设备
+        - 🔴 [字符设备教材实验材料](../../labs/kernel/character_device/materials/README.md)
     - 内存顺序
         - 🟢 [READ ONCE 编译器访问实验](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)
             - 观测结果
@@ -559,6 +592,32 @@ mindmap-plugin: basic
     - Linux 设备模型
         - 🔴 [设备模型 34 章原始总稿迁移核对源](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
 - 源码阅读
+    - 🔴 链表
+        - 🔴 [链表源码阅读大纲](../../research/source_reading/linked_list/大纲.md)
+        - 🔴 [Linux 6.12 链表源码阅读索引](../../research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md)
+        - 🔴 [拓扑修改与发布边界导读](../../research/source_reading/linked_list/navigation/P02_拓扑修改与发布边界导读.md)
+        - 🔴 [list.h 的连接与游标实现](../../research/source_reading/linked_list/source_explanations/include/linux/list.h.md)
+    - 🔴 驱动入口
+        - 🔴 [驱动入口源码阅读地图](../../research/source_reading/driver_entries/大纲.md)
+        - 🔴 [Linux 6.12 驱动入口源码阅读索引](../../research/source_reading/driver_entries/navigation/P01_Linux_6.12_驱动入口源码阅读索引.md)
+        - 🔴 [对象属性与字符入口导读](../../research/source_reading/driver_entries/navigation/P02_对象属性与字符入口导读.md)
+        - 🔴 [对象创建与 misc 分派](../../research/source_reading/driver_entries/source_explanations/P01_对象创建与misc分派.md)
+        - 🔴 [分类对象与属性事务导读](../../research/source_reading/driver_entries/navigation/P03_分类对象与属性事务导读.md)
+        - 🔴 [core.c 的设备创建与属性分派](../../research/source_reading/driver_entries/source_explanations/drivers/base/core.c.md)
+    - 🔴 错误指针与资源失败
+        - 🔴 [错误指针源码阅读大纲](../../research/source_reading/error_pointer/大纲.md)
+        - 🔴 [Linux 6.12 错误指针源码阅读索引](../../research/source_reading/error_pointer/navigation/P01_Linux_6.12_错误指针源码阅读索引.md)
+        - 🔴 [返回值与清理路径导读](../../research/source_reading/error_pointer/navigation/P02_返回值与清理路径导读.md)
+        - 🔴 [err.h 错误值编码与检查](../../research/source_reading/error_pointer/source_explanations/P01_err.h_错误值编码与检查.md)
+    - 🔴 字符设备 I/O 与文件操作
+        - 🔴 [版本源码阅读大纲](../../research/source_reading/character_device/大纲.md#1.1_当前可读范围)
+        - 🔴 [Linux 6.12 字符设备源码阅读索引](../../research/source_reading/character_device/navigation/P01_Linux_6.12_字符设备源码阅读索引.md#1.2_由问题进入模块导读)
+        - 🔴 [有限缓冲区 I/O 模块导读](../../research/source_reading/character_device/navigation/P02_Linux_6.12_有限缓冲区IO模块导读.md#2.2_按同一组阶段读两个函数)
+        - 🔴 [libfs 有限缓冲区复制实现](../../research/source_reading/character_device/source_explanations/fs/libfs.c.md#1.1_simple_read_from_buffer)
+        - 🔴 [普通用户复制的失败边界](../../research/source_reading/character_device/source_explanations/include/linux/uaccess.h.md#1.1_普通复制的短复制处理)
+        - 🔴 [文件操作与打开寿命导读](../../research/source_reading/character_device/navigation/P03_文件操作与打开寿命导读.md)
+        - 🔴 [文件关闭入口实现](../../research/source_reading/character_device/source_explanations/fs/open.c.md#1.1_filp_close归还文件引用)
+        - 🔴 [读取分派与同步适配](../../research/source_reading/character_device/source_explanations/fs/read_write.c.md#1.1_vfs_read选择回调)
     - Linux 通用机制
         - 🔴 [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md)
         - 驱动实验

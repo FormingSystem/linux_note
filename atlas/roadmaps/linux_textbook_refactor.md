@@ -1,0 +1,103 @@
+---
+id: atlas.roadmaps.linux_textbook_refactor
+title: "Linux 教材重构蓝图与批次记录"
+kind: track
+status: evolving
+domains:
+  - navigation
+  - linux
+---
+
+# 第1章\_Linux教材重构蓝图与批次记录
+
+本轮目标是把 Linux 材料组织成可以连续学习的原创教材：借鉴《C Primer Plus》《C++ Primer Plus》循序渐进、实例带动、耐心解释和渐进练习的教学方式，不复制原书表达或目录。本文保存作者的工作型蓝图和批次结果；读者从 [Linux 内核机制学习路线](../tracks/linux_kernel_track.md)开始，人工评审结论仍只在 [评审地图](../maps/knowledge_review_map.md)维护。
+
+## 1.1\_范围与基线
+
+2026-09-21 盘点，Git 起点为 `d2a942520db0b5dd0ab9d8e71225119e1bbf5042`。计数包含大纲、参考页和正文，不等于已完成的教材章数：`knowledge/linux/` 207 篇、`knowledge/kernel_subsystems/` 27 篇、`knowledge/driver_model/` 48 篇，共 282 篇 Linux 主体材料。另有 `knowledge/system_software/` 18 篇作为系统构建扩展，`knowledge/foundations/` 28 篇按实际先修依赖审查。不能把“全部 Linux”缩成只处理名字叫 linux 的一个目录，也不因此改写无关基础知识。
+
+本次采用 **rewrite**：用户先选定基础入口与阅读路线作为首批，随后授权全仓按同一标准持续推进。上面的统计保留初始 Linux 范围；当前全仓范围以[逐文件工作清单](../../governance/migration/textbook_refactor_inventory.json)为准，后续批次无须逐批等待确认。未实际处理的正文不标为已重构。已有人工批注、事实边界和有效知识点先盘点再处理。路径和稳定 ID 没有实际重组需要时保留，避免把改名数量当作进度。
+
+源码研究、平台记录、实验和出版编排在全仓范围中分别按证据、平台边界、可复现过程和阅读组织的职责审查；不把它们全部套成同一种教材，也不把稳定正文与版本化导读改成镜像，不回写历史刊物。Codex skill 主源与仓库副本的同步关系见 [AGENTS.md](../../AGENTS.md#1.12_Codex_skill_仓库备份)。
+
+## 1.2\_全量阅读依赖与批次
+
+各批描述未来工作范围，不预建尚不存在的章节链接。表内入口均指向现有材料；“待进入”表示尚未完成本轮重写，与人工评审状态无关。
+
+| 批次与范围 | 读者带入的认识 | 本批需要获得的能力 | 现有入口与执行状态 |
+| --- | --- | --- | --- |
+| B01 基础入口：architecture 中的概貌、源码树及 Atlas 路线 | 能读变量、函数、数组与循环；尚不认识内核对象 | 从读文件区分应用、内核、硬件；按问题找源码，区分源文件与产物 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)；本批实施，验证结果见 1.5 |
+| B02 模块与设备节点：architecture 其余 3 篇、error_handling 初始 2 篇、驱动 fundamentals 与 misc | 用户与内核边界、源码身份 | 区分装入代码、注册服务和建立访问入口；能恢复一个失败的最小模块实验 | [模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes)、[错误处理](../../knowledge/linux/error_handling)、[驱动基础](../../knowledge/driver_model/fundamentals)；分批推进，已完成组与下一项见 1.5 |
+| B03 对象组织：data_structures 33 篇 | C 指针、对象与资源 | 从查找和更新需求选择链表、哈希表或树，解释节点与容器关系 | [数据结构](../../knowledge/linux/data_structures)；链表十篇已完成本轮作者审查和适用验证，哈希表与树仍待逐篇审查 |
+| B04 生命周期：object_lifetime 20 篇 | 能辨别对象、入口和使用者 | 解释引用何时取得、由谁放弃、什么时候可销毁 | [对象生命周期](../../knowledge/linux/object_lifetime)；待进入 |
+| B05 并发与事件：synchronization_and_asynchrony 125 篇 | 单个操作及对象生命期 | 从两条交错路径推出同步、等待、通知、延迟执行与回收；以具体状态完成证明 | [同步与异步总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)；待进入，内部再按依赖拆批；kernel_subsystems/irq 当前无正式文件，不建立占位入口 |
+| B06 文件与观测：io_model 5 篇、kernel_subsystems/vfs 与 tracing | 读文件主线、等待与对象持有 | 串起路径、打开实例、数据、阻塞、缓存及日志证据 | [VFS](../../knowledge/kernel_subsystems/vfs/大纲.md)、[I/O 模型](../../knowledge/linux/io_model)、[观测](../../knowledge/kernel_subsystems/tracing)；待进入 |
+| B07 设备与驱动：device_model 17 篇，driver_model 中 character_device、device_tree、gpio、gpio_consumers、input、platform_bus | 内核公共机制、文件入口 | 区分硬件描述、注册、匹配、请求处理和拆除，完成一个有恢复路径的设备实例 | [设备模型](../../knowledge/linux/device_model/大纲.md)、[驱动路线](../tracks/linux_driver_track.md)；待进入，各设备家族单独校准 |
+| B08 系统构建扩展：system_software 18 篇及实际依赖的工程、平台记录 | 代码、配置、产物和运行系统的区别 | 解释引导程序、内核、根文件系统怎样接力，并能判断运行物是否来自预期构建 | [系统软件](../../knowledge/system_software)、[系统地图](../maps/linux_system_map.md#1.5_系统启动与构建)；待进入 |
+
+```mermaid
+flowchart LR
+    a[读文件的可见结果] -->|建立应用与内核边界| b[源码与模块]
+    b -->|识别对象和持有者| c[数据结构与生命周期]
+    c -->|加入第二个执行者| d[并发与事件]
+    d -->|解释等待和回收| e[文件与观测]
+    e -->|把公共机制接到硬件| f[设备与驱动]
+    b -->|追踪配置和构建产物| g[系统构建]
+    f -->|结合目标平台验证| g
+```
+
+这是一条教材主线，不禁止按问题选读。中断上下文、内存顺序、锁、等待、RCU 和检查器有交叉依赖，B05 必须先建立正常执行、可睡眠条件和基本同步，再展开变体；不能把整批压成一章。
+
+## 1.3\_共同写法与质量基准
+
+每批先写出读者已经能解释什么、目前会怎样预测、本章要改变哪个认识。选一个足够小的贯穿任务，先得到一个可见结果，再改变一个条件。正文就地解释代码、输入、返回值和失败原因；旁支在需要时进入，避免先列完整分类再要求读者理解。
+
+章末回顾应回答本章问题，练习按“预测 → 小修改 → 排错 → 迁移”选择合适梯度。答案给出判断过程与边界，不能只贴标准代码。参考页仍以查询为主，不要求每个条目编故事。规则和校准方法统一使用 [讲解写法与读者理解验收](../../tools/ai/codex/skills/build-linux-note-topic/references/explanation-quality.md)。
+
+每批完成条件是正文已经兑现章节契约、示例经过适用验证、入口同步且局限如实记录。作者自查不等于真实读者试读；自动检查也不能升级人工评审状态。
+
+## 1.4\_首批章节契约与内容去向
+
+| 章节 | 贯穿任务与新增认识 | 原材料的处理 |
+| --- | --- | --- |
+| 内核概貌 | 读取一份文本，区分程序、进程、库函数、系统调用、文件状态、缓存及硬件；改变输入后预测结果 | 保留硬件、架构差异、进程、内存、文件系统、权限、挂载、驱动、模块等主题；按因果重新组织，纠正架构优劣泛化、实时性保证、所有文件操作都需 fd 等过度结论；原架构图保留为辅助视图 |
+| 源码目录 | 由读文件问题定位文件处理、内存与硬件目录；判断缺少产物是否表示源码不完整 | 原 37 个条目按源码职责、配置构建、生成产物、版本管理归类；纠正 usr、firmware、git、调度目录和块层文件等错误，保留原 RCU 启动链深读入口并补总索引 |
+| 内核路线与入口 | 明确第一篇从哪里读、两章之后能做什么、哪些材料只用于深化 | 保留原各专题入口与版本源码链接；把名词列表转为带问题、先修和退出条件的路线，避免暗示后续旧章已按新标准改完 |
+
+术语顺序：程序 → 正在运行的进程 → 用户态与内核态 → 库函数与系统调用 → 路径与打开状态 → 缓存与设备 → 源文件与构建产物。源码追踪止于当前章节所需的目录、身份及契约，不提前展开 RCU 或文件系统内部算法。
+
+## 1.5\_批次结果与续接点
+
+B01 的两篇正文与阅读路线已重写。概貌从短文本读取进入应用、内核与设备的边界；源码树从同一次读取的问题进入目录定位。两章均包含预测、操作、解释、练习和解答。保留原文件路径与稳定 ID，已同步首页、Atlas 导航、系统地图、内容索引及评审地图的显示名称；原有出版物与 RCU 入链仍有效，无需为不变路径改写调用方。没有改写出版快照，也没有改变人工评审结论。
+
+内容统计用于追踪本次 rewrite，不作为质量或内容守恒的替代证明：概貌从 250 行、24 个标题变为 200 行、9 个标题，新增 1 个完整 C 示例和 2 张 Mermaid 图；源码树从 245 行、37 个标题变为 136 行、8 个标题，新增职责与产物表、只读定位实验及 1 张 Mermaid 图。原先按名词反复列点的段落收拢为连续叙述，错误结论按 1.4 中的去向纠正；这不是仅排版任务，不用逐行一致作为验收标准。
+
+本轮验证与边界：
+
+- Codex 主源同步：6 个文件更新、1 个参考文件新增；完成后文件集与规范化内容一致。单向同步工具的 6 项临时仓库测试通过；skill 结构校验通过。
+- 教学示例：从正文提取 C 程序，经 Windows MinGW GCC 的 C11 编译及警告检查；短输入、超长输入、空文件、含零字节输入、缺失文件和参数错误共 6 个场景通过。只验证了可移植 C 逻辑，未把它称为 Linux 系统调用跟踪或缓存实测。
+- 源码定位：虚拟机恢复后，只读核对本地 NXP 仓库及官方固定提交，定位实验命中预期文件与读取系统调用定义。本地 3 笔实验提交不作为技术分析基线；本地配置不冒充官方发布配置。没有修改外部源码树。
+- 两篇正文的连续阅读严格审计通过；4 张 Mermaid 图（含本蓝图）通过仓库所用 Mermaid 11.17.0 解析，未声称经过浏览器视觉验收。
+- 概貌术语审计通过。源码树审计保留两项有理由的提示：VFS 是明确前置章已建立且本章回顾的概念，不重复整套定义；LICENSES 是已就地解释用途的目录名称，不是需要编造全称的缩写。其余首次使用问题已经补充或调整。
+- 元数据、标题与链接检查通过；MSYS2 中 `format.sh doctor` 发现缺少 `python3`，因此使用本机 Python 直接执行三个仓库脚本内的原始检查程序，而未宣称统一 Bash 入口已通过。skill 目录按仓库约定排除正文标题与元数据格式化，但参与链接检查。
+- 通用 `audit_topic.py` 假定目标具有 `大纲.md` 和 `PXX` 文件，不适用于本批保留身份的两篇独立入口；另会把既有忽略目录 `.cache/` 内快照误计为重复 ID。未为通过此检查制造空大纲或改动无关缓存；本批改以真实文件的元数据、标题、链接与连续阅读审计验收。
+
+以上是作者自查与工具验证，尚无真实初学者试读结论。本批不暂存或提交。开发者随后将范围扩展至全仓，逐文件清单与续接入口见[全仓教材重构记录](../../governance/migration/repository_textbook_refactor.md#1.1_范围与恢复入口)。
+
+B02a 已将旧 Makefile 教程重构为[模块构建与部署四章](../../engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)，旧入口保留必要机制桥接。已完成检查与未执行的目标实验详见[本批结果](../../governance/migration/repository_textbook_refactor.md#1.4.1_B02a模块构建与部署)。B02 的模块与设备节点正文、字符设备模板仍在推进，其他批次不能因此标记完成。
+
+B02b 已完成[字符设备读写契约](../../knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md)及对应固定版本 I/O 证据，先补齐模板需要的部分复制、记录提交和互斥范围前提；设备号 P02 只修复节点创建路径，尚未完成全章重写。模型验证、源码核对、审计保留项与下一组见[本次续接记录](../../governance/migration/repository_textbook_refactor.md#1.4.2_B02b读写契约与复制进度)。
+
+B02c 已将 P10 的混合模板拆成[有限窗口](../../knowledge/driver_model/character_device/P10_字符设备驱动模板.md)和[P13 环形流](../../knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md)，同时重写 P11 的四种入口验证与 P12 分层排错，提供完整材料。ARM 语法、回调边界模型、注册回滚与文档检查的实际范围见[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.3_B02c窗口与环形流模板及运行排错)。尚未执行目标 Kbuild、装卸和并发实验；两份旧模块入口和 P02 仍待完成，不把本批成果等同于 B02 或字符设备全专题完成。
+
+B02d 完成两份旧入口的内容迁移与正文重写，并重写字符设备 P02；新增[模块与设备入口大纲](../../knowledge/linux/architecture/modules_and_device_nodes/大纲.md#1.1_沿三个问题进入正文)，保留人工批注，以次号解码程序和只读观察衔接服务、路径及多实例身份。内容去向、固定源码核对与验证边界见[本批记录](../../governance/migration/repository_textbook_refactor.md#1.4.4_B02d模块入口与设备身份)。下一组进入错误指针与驱动基础，B02 和全仓仍未完成。
+
+B02e 已把[错误指针专题](../../knowledge/linux/error_handling/error_pointer/大纲.md#1.1_四次认识变化)重构为返回契约、编码边界、资源回滚与完整观察实验四篇，并保留查询页。纠正 NULL/错误值混用、自动回滚误解及虚构源码，配套固定版本源码导读。源码、宿主模型、ARM 语法检查与未执行目标实验的边界见[本批记录](../../governance/migration/repository_textbook_refactor.md#1.4.5_B02e错误指针与资源失败)。下一组进入驱动框架、kobject 与 misc，随后处理 class 和 file_operations 长文，B02 与全仓仍未完成。
+
+B02f 完成[驱动框架入门](../../knowledge/driver_model/fundamentals/framework_model/大纲.md#1.1_四个问题怎样接起来)：从多实例分离职责，追踪登记与绑定，再用完整 sysfs 属性和 misc 字符模块解释对象、回调及模块寿命。已核对固定源码并完成 ARM 语法、宿主失败路径与文档检查；真实目标装卸尚未执行。内容去向、保留理由和证明边界见[本批记录](../../governance/migration/repository_textbook_refactor.md#1.4.6_B02f驱动框架与两个最小入口)。下一组为 class 与 file_operations 两篇长文；B02 与全仓仍未完成。
+
+B02g 已把原 file_operations 长文重构为[打开、迭代与映射四章](../../knowledge/driver_model/file_operations/大纲.md#1.1_沿对象寿命逐步增加约束)，原路径保留为成员参考，配套三个完整模块、映射用户程序与版本源码说明。ARM 语法、宿主分支、材料一致性和文档检查通过；真实 Linux 运行未执行。原知识去向、源码副本差异修正、保留项及证据边界见[本批记录](../../governance/migration/repository_textbook_refactor.md#1.4.7_B02g文件操作与打开寿命)。下一批为尚未完整冷读的 struct_class；全仓清单仍有待审项，不把本批视为全部完成。
+
+B02h 完整冷读并重构 struct_class 长文，原路径保留[成员参考](../../knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_class.md)，连续正文进入设备模型下的[class 与 sysfs 五篇教材](../../knowledge/linux/device_model/class_sysfs/大纲.md#1.1_从分类观察到可控数据入口)。两份完整模块分别建立纯属性分类和属性控制读取，固定源码解释发布与活动寿命。ARM、宿主分支及文档验证与未执行目标实验详见[本批记录](../../governance/migration/repository_textbook_refactor.md#1.4.8_B02h分类对象与属性事务)。下一批进入 B03 单链表；其他字符/设备模型正文及全仓仍待逐项审查。
+
+B03a 已完整冷读并重构[链表九章与大纲](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)，以三个任务串起节点、拓扑、并发、发布、失败回滚和容器选择。保留稳定路径、人工批注与评审状态，新增完整材料及版本源码导读。实际验证和局限见[B03a 工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.9_B03a链表拓扑与发布)。下一批为哈希表及 hlist 的版本、算法和接口审查；树专题尚待逐章冷读，B03 与全仓均未完成。

@@ -1,0 +1,3742 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "d2a942520db0b5dd0ab9d8e71225119e1bbf5042",
+  "baseline_includes_uncommitted": true,
+  "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
+  "entries": [
+    {
+      "path": ".github/copilot-instructions.md",
+      "baseline_sha256": "4aad5558deb455f6b8bc38baf19219935cfc9dcb5c4fa14ab86bd681dc024f91",
+      "lines": 6,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": ".github/instructions/mermaid.instructions.md",
+      "baseline_sha256": "6a91984bb661cef3f6e10c9922c821d2c3726e7509e3206a6f0ddeb7a7be253a",
+      "lines": 85,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "AGENTS.md",
+      "baseline_sha256": "2db2c4b63ee1a1b868520930a4356ffa9829f9c4a12a1f77e8f770c327f07195",
+      "lines": 295,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "README.md",
+      "baseline_sha256": "151359b2aa9e66cb69cad5e2463ef09051c5995b926bcc54023afae9b38ed793",
+      "lines": 257,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "atlas/home.md",
+      "baseline_sha256": "677063e6556ffce47860fa9489802e0b11fb966e318e0b22f88db4511b9ff899",
+      "lines": 47,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "atlas/indexes/content_index.md",
+      "baseline_sha256": "d0bb9b43de99f3b42a308d14bc226115bf041c57f12810f673df671219446ce1",
+      "lines": 91,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "atlas/maps/knowledge_review_map.md",
+      "baseline_sha256": "a9d2cb316942613d7a30d6e2f493f894c0dee7eb9bad2ccb858cf2425b432a83",
+      "lines": 668,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "atlas/maps/linux_system_map.md",
+      "baseline_sha256": "7209a44e094322427ffd4c39deaccf3ae1431838e0b060f24bd7a998897884bc",
+      "lines": 84,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "atlas/roadmaps/content_roadmap.md",
+      "baseline_sha256": "5a4dc227e022da2ce5fc124251fd8f418ab79413d877e2b37f9d3a77458cce30",
+      "lines": 64,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "atlas/roadmaps/gic_learning_plan.md",
+      "baseline_sha256": "949798b87f650f2ac3be8bab1bcc19eac63f1abb51bd68b48df1774a76b07a62",
+      "lines": 142,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "atlas/roadmaps/linux_io_driver_subsystems.md",
+      "baseline_sha256": "65cf99e930d90e18dda0a6c23fb6cbfbe36d2f52e8c5dca0a78857199f0b4190",
+      "lines": 97,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "atlas/roadmaps/linux_textbook_refactor.md",
+      "baseline_sha256": "f46517a8c4abd61229395e57aafc1ef13a7393ce5285b58102cc03f69d793a65",
+      "lines": 85,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "atlas/tracks/linux_driver_track.md",
+      "baseline_sha256": "3a5c4b7de5fcb8f8b48d07af678f493425c01a7511231ea2dfa0750c56f678a9",
+      "lines": 75,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "atlas/tracks/linux_kernel_track.md",
+      "baseline_sha256": "9ea73a334fa11a42afa43a52709cee1195f5a6c66e61f0410ae9de96c588e40b",
+      "lines": 80,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "engineering/build/kernel_modules/P01_从C文件到匹配目标内核的模块.md",
+      "baseline_sha256": null,
+      "lines": 178,
+      "state": "validated",
+      "reason": "本轮新增 B02a 教材；完成固定版本核对、连续阅读与适用静态和隔离模拟检查，未执行目标内核编译装载。",
+      "current_lines": 178
+    },
+    {
+      "path": "engineering/build/kernel_modules/P02_让多个源文件形成清楚的模块边界.md",
+      "baseline_sha256": null,
+      "lines": 198,
+      "state": "validated",
+      "reason": "本轮新增 B02a 教材；完成固定版本核对、连续阅读与适用静态和隔离模拟检查，未执行目标内核编译装载。",
+      "current_lines": 198
+    },
+    {
+      "path": "engineering/build/kernel_modules/P03_把模块接入Kconfig与内核构建.md",
+      "baseline_sha256": null,
+      "lines": 117,
+      "state": "validated",
+      "reason": "本轮新增 B02a 教材；完成固定版本核对、连续阅读与适用静态和隔离模拟检查，未执行目标内核编译装载。",
+      "current_lines": 117
+    },
+    {
+      "path": "engineering/build/kernel_modules/P04_部署模块并沿错误定位构建问题.md",
+      "baseline_sha256": null,
+      "lines": 233,
+      "state": "validated",
+      "reason": "本轮新增 B02a 教材；完成固定版本核对、连续阅读与适用静态和隔离模拟检查，未执行目标内核编译装载。",
+      "current_lines": 233
+    },
+    {
+      "path": "engineering/build/kernel_modules/大纲.md",
+      "baseline_sha256": null,
+      "lines": 54,
+      "state": "validated",
+      "reason": "本轮新增 B02a 教材；完成固定版本核对、连续阅读与适用静态和隔离模拟检查，未执行目标内核编译装载。",
+      "current_lines": 54
+    },
+    {
+      "path": "engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md",
+      "baseline_sha256": "159e2568bcb290baaec81f71a4a4f77a665a497900e8f8f3f47cbcb8acc1bf6d",
+      "lines": 125,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "governance/architecture/repository_information_architecture.md",
+      "baseline_sha256": "bd4a7cfb1e500a4cb1c8aa3c864f9598abb6b927570e5a4d88bbe3103df87fe6",
+      "lines": 311,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "governance/conventions/git_guide.md",
+      "baseline_sha256": "f15ea503be4e4f43207ac0ce5f069b42a6bdd8247fab86fa64789e435b162299",
+      "lines": 187,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "governance/migration/P01_全量目录重构记录.md",
+      "baseline_sha256": "c07bdb430cfc13fb5f3e752c884a8b75bd0d65af80accf182859d4cade84c3fc",
+      "lines": 56,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "governance/migration/P02_并发与竞争专题迁移地图.md",
+      "baseline_sha256": "334c5bf731970fcd49a05de016e0ef1fc874b0175b34cf4254a68b78abd8c198",
+      "lines": 43,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P01_字符设备最小模型.md",
+      "baseline_sha256": "5e93487d83b904f27d180dda0b74abb87cdef93d78ada02f54125517cdbde7fe",
+      "lines": 156,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P02_设备号_注册与设备节点.md",
+      "baseline_sha256": "f51b98a1f31de7a4cc1f26a021cc44864e3a3c6dad9670e2683a7122feda2eaf",
+      "lines": 156,
+      "state": "validated",
+      "reason": "B02d 重写设备号占用、cdev 分派、节点发布的分布状态与 S0～S4 周期；固定提交核对 devtmpfs 请求和清理边界，空设备观察未在 Linux 执行。",
+      "current_lines": 180
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P03_打开路径与文件操作.md",
+      "baseline_sha256": "d489f80bdaf26802e74a8105fa247cf22a6a58978fba36bdcebc4a33335b65de",
+      "lines": 207,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P04_文件操作并发与生命周期.md",
+      "baseline_sha256": "6f03458c0f4e9d5fc84b28e7ce6e85afde224333889771f9760fcbf74830b098",
+      "lines": 262,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md",
+      "baseline_sha256": "a8fb944bb337978fbee130bdef45af9da3c4edc5bbf9d302ab5adf788f369abd",
+      "lines": 70,
+      "state": "validated",
+      "reason": "B02b：完成读写契约教材重写、完整 C 复制提交模型及 8 个边界检查，固定源码核对和文档检查通过；未运行内核 I/O。",
+      "current_lines": 258
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P06_阻塞_poll与异步通知.md",
+      "baseline_sha256": "2d709995e4e72f6295806d2bbf532a7c97bd823a9f53b007661f2e80101d0c0d",
+      "lines": 67,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P07_mmap与跨文件生命周期.md",
+      "baseline_sha256": "8255838c71cca542461b4a17c829b3ad668e7a4a7d1688a080885d00ea45a78e",
+      "lines": 51,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P08_设备模型与硬件子系统交接.md",
+      "baseline_sha256": "e6c7fbd77b3ffbdfc65aff63f1c955adb35fec3485708b6ba4fa800563dd0856",
+      "lines": 50,
+      "state": "pending",
+      "reason": "B02h 已冷读并修正与分类发布交叉的顺序及关系图；其硬件协作教材尚未完成全面重构，保留待审。"
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P09_安全移除_旧fd与模块卸载.md",
+      "baseline_sha256": "72533780a3a7fc2b568348da42712eafe20f53eeb596297e5a2be783d6844088",
+      "lines": 48,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P10_字符设备驱动模板.md",
+      "baseline_sha256": "a5a5d1eb2c16ecc723eb9b10069953a990ba4ecc11d53b3405ba259f02d91c76",
+      "lines": 1256,
+      "state": "validated",
+      "reason": "B02c：完整重写有限窗口与整组注册，修复部分复制、参数边界、发布和回滚；ARM 语法、实际回调宿主检查及文档检查通过，目标 Kbuild 与装卸未执行。",
+      "current_lines": 448
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P11_构建运行与验证.md",
+      "baseline_sha256": "f9f684cd08710cc419eaa9d42f70d279d29d62768098a36efbb564551075078a",
+      "lines": 85,
+      "state": "validated",
+      "reason": "B02c：以真实模块参数、完整 C probe 和四种编号/节点组合重写实验；源码与材料一致，C 编译与 Bash 语法通过，目标运行未执行。",
+      "current_lines": 204
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P12_常见故障与排查.md",
+      "baseline_sha256": "5ccef0ef9c2f477fcea8ea45331714866ff5770fcc3182a7e7f07dfdf47f545c",
+      "lines": 68,
+      "state": "validated",
+      "reason": "B02c：按路径到读写的失败层重写，纠正十六进制设备号比较、覆盖与 EOF 误判、退出唤醒依赖；核对 GNU stat 帮助及官方 udev 手册，规则未实际安装。",
+      "current_lines": 115
+    },
+    {
+      "path": "knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md",
+      "baseline_sha256": null,
+      "lines": 353,
+      "state": "validated",
+      "reason": "B02c 新增：环形流按检查、等待、提交、唤醒、重查串起数据和 poll；完整模块 ARM 语法、宿主边界模型、图与文档检查通过，真实调度和目标执行未验证。",
+      "current_lines": 353
+    },
+    {
+      "path": "knowledge/driver_model/character_device/大纲.md",
+      "baseline_sha256": "fc083d9afa4a6006277d31645cf973f19005c0d321c45d44decadfb9bb7c6a8d",
+      "lines": 76,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/device_tree/readme.md",
+      "baseline_sha256": "63dc4ea3723a216a1db271c0ca3c50288321213dc63269ebc37fa41e9f86ec0b",
+      "lines": 40,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/device_tree/设备树+platform开发/P01_旧式平台设备与资源机制.md",
+      "baseline_sha256": "ed96d979567efd8c5470821dedbad8d354bf9184820f175feaaeb772b2fb1b69",
+      "lines": 713,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/device_tree/设备树+platform开发/P02_设备树驱动开发方式.md",
+      "baseline_sha256": "15df562462fc65aa7486009827c5bb20d6654999d1f72c485d55b6fee74ff75d",
+      "lines": 1427,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/device_tree/设备树+platform开发/P03_设备树语法与标准示例.md",
+      "baseline_sha256": "2801cd10359fa3fc7508bd9bb3d568bca649dde1d4baaf091101bd8b5fa267fa",
+      "lines": 5630,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md",
+      "baseline_sha256": "ddb1b3d1bfbbf9afa31d40ceb8c264cfaf3558c9b4d0fc86863547e5993b3377",
+      "lines": 892,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md",
+      "baseline_sha256": "c8d10a417f11601be1fc680e0fb4d8ee9e3de7732228e82eccfd31fdcc8a8928",
+      "lines": 4462,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md",
+      "baseline_sha256": "87242d5b740b5e7b3cc19c32a992035d04bd8eea08376897c4fbbc371d96826f",
+      "lines": 977,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt示例.md",
+      "baseline_sha256": "902a17dba663627c7397997e7b04cee06d3f01ff5ac8abe2b4a52dbd3ceb09cc",
+      "lines": 1954,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/device_tree/设备树语法专题-05-设备节点和驱动的绑定操作说明.md",
+      "baseline_sha256": "e90a41f22f29e27e590bb292c52572f9962f69ea66b336b2b41ffb4867634b8e",
+      "lines": 1368,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/file_operations/P01_一次打开与最后一次释放.md",
+      "baseline_sha256": null,
+      "lines": 219,
+      "state": "validated",
+      "reason": "B02g 新增打开引用教材；完整 session 模块、dup/fdinfo 预测、失败路径及源码核对，ARM 语法与宿主状态检查通过，目标实验未执行。",
+      "current_lines": 219
+    },
+    {
+      "path": "knowledge/driver_model/file_operations/P02_迭代读取与请求位置.md",
+      "baseline_sha256": null,
+      "lines": 193,
+      "state": "validated",
+      "reason": "B02g 新增迭代请求教材；完整 read_iter 模块、readv/pread 观察与分派证据；18 种复制预算和边界、ARM 语法通过，真实调用未执行。",
+      "current_lines": 193
+    },
+    {
+      "path": "knowledge/driver_model/file_operations/P03_只读映射与后备页寿命.md",
+      "baseline_sha256": null,
+      "lines": 225,
+      "state": "validated",
+      "reason": "B02g 新增只读映射教材；完整专用页模块与用户程序，范围权限和寿命推导；ARM 模块语法、失败分支替身通过，目标用户编译和映射运行未执行。",
+      "current_lines": 225
+    },
+    {
+      "path": "knowledge/driver_model/file_operations/P04_扩展接口的契约与选择.md",
+      "baseline_sha256": null,
+      "lines": 118,
+      "state": "validated",
+      "reason": "B02g 新增应用边界参考，承接目录/控制/通知/锁/持久化/搬运/ABI 有效知识；实际核对固定接口，目录模型输出验证，不称为各子系统完整教程。",
+      "current_lines": 118
+    },
+    {
+      "path": "knowledge/driver_model/file_operations/大纲.md",
+      "baseline_sha256": null,
+      "lines": 36,
+      "state": "validated",
+      "reason": "B02g 新增真实章节依赖图、认识增量、前置和后续问题；正文、实验、查询和源码职责分开。",
+      "current_lines": 36
+    },
+    {
+      "path": "knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md",
+      "baseline_sha256": "1bff208029e5c704362f8faba78134ef71d37340d46db24931155d5671af3ee2",
+      "lines": 262,
+      "state": "validated",
+      "reason": "B02f 以公共对象、登记集合与绑定 S0～S4 重写，纠正旧伪接口与事件到系统调用图，完整只读观察脚本经过夹具分支验证。",
+      "current_lines": 158
+    },
+    {
+      "path": "knowledge/driver_model/fundamentals/framework_model/kobject讲解.md",
+      "baseline_sha256": "0f412e646615dcd7766b4fd7f16493ec77f30d65957ce5819f445ba7a8344240",
+      "lines": 124,
+      "state": "validated",
+      "reason": "B02f 用完整只读 sysfs 模块取代过时字段和可写无 store 示例；区分引用与活动排空，ARM 语法和失败/退出顺序模型通过。",
+      "current_lines": 181
+    },
+    {
+      "path": "knowledge/driver_model/fundamentals/framework_model/前言.md",
+      "baseline_sha256": "351b153b397dd227e9c86418e297be14070fa35153d161197cf582094d0fb734",
+      "lines": 164,
+      "state": "validated",
+      "reason": "B02f 完整冷读后重写：两实例推导描述/操作/匹配/接口分离；保留资源、异步、DMA、子系统及观测边界，撤销自动移植和解绑自动卸载等错误。",
+      "current_lines": 88
+    },
+    {
+      "path": "knowledge/driver_model/fundamentals/framework_model/大纲.md",
+      "baseline_sha256": null,
+      "lines": 36,
+      "state": "validated",
+      "reason": "B02f 新增真实因果阅读地图，职责、先修、未决问题与相邻权威入口已核对。",
+      "current_lines": 40
+    },
+    {
+      "path": "knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_class.md",
+      "baseline_sha256": "bddb2d1db92f5a42e287f8030774793da14f2842b1bc7d4c36717297f1340657",
+      "lines": 8496,
+      "state": "validated",
+      "reason": "B02h 完整冷读并重构：class 原稿知识去向见工作记录；P11 保留设备模型桥接。作者自查与适用验证完成，不代表人工评审或目标运行。",
+      "current_lines": 70
+    },
+    {
+      "path": "knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_file_operations.md",
+      "baseline_sha256": "b66bed6d0708f06601814743ea0312c8837fb989fe783c2ace3d4d579bf38475",
+      "lines": 3249,
+      "state": "validated",
+      "reason": "B02g 完整冷读原 3249 行，保留身份和来源批注，改为当前操作表成员参考；全部知识单元去向、错误纠正及边界记入工作记录。",
+      "current_lines": 73
+    },
+    {
+      "path": "knowledge/driver_model/gpio/P01_从寄存器位到_GPIO_连接抽象.md",
+      "baseline_sha256": "645af2f5614a91bef0fcca627cd9aae29cd43aa72e2943a5a7411d485b6061c0",
+      "lines": 101,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/gpio/P02_GPIO_角色_状态与完整操作周期.md",
+      "baseline_sha256": "5d5b60ad1068b2c7e25ca3f1c6c4547e8240631c628587edda6bddcef0f0a8c7",
+      "lines": 131,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/gpio/P03_从朴素模型到可用_GPIO_机制.md",
+      "baseline_sha256": "33e3dbf3c25bf0aef5e538d483bc31add3014bdf947e61303a550afc868728a9",
+      "lines": 97,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/gpio/P04_Linux_gpiolib_核心实现.md",
+      "baseline_sha256": "bdc45f45f190ba2627e9eac8abcd9ad21b1fba05d8658609c1a930b5fcded571",
+      "lines": 121,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/gpio/P05_GPIO_Consumer_请求与使用.md",
+      "baseline_sha256": "58117966ed0493e4bc23ce1fb732ded911522cd682bb6a4ccb33c09cb25b0644",
+      "lines": 158,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/gpio/P06_GPIO_Provider_控制器实现.md",
+      "baseline_sha256": "be615ca2e08a4c1d33c19e80d53ea815ea9107d366fdf280c92b10dfd84410d0",
+      "lines": 123,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/gpio/P07_GPIO_中断桥接与事件传播.md",
+      "baseline_sha256": "02a17e9caa6fbb45033f2377e773155a784078537ba23c37b6ebd855c53a105b",
+      "lines": 126,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/gpio/P08_用户空间_ABI_迁移与方案选择.md",
+      "baseline_sha256": "88d2733e73c57a5ffb935a1b6d0d6267ce7613eac82cd7af5da316b02481efc6",
+      "lines": 113,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/gpio/大纲.md",
+      "baseline_sha256": "910d2f4e6be71b7029196e79291c88e38d95d99256d738ee94ebbf41e5afb182",
+      "lines": 87,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/gpio_consumers/P01_为什么优先使用标准_GPIO_Consumer.md",
+      "baseline_sha256": "326e73b92c91314bf702525bb2aab690f030981430c1a65fff195f3539b9fa5a",
+      "lines": 60,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/gpio_consumers/P02_输入_指示_电源与控制类_GPIO_Consumer.md",
+      "baseline_sha256": "29446b6979116d5c8a0bacef80e9e8c5fe79f08d56b9ec4a39db14ca8793cad4",
+      "lines": 80,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/gpio_consumers/大纲.md",
+      "baseline_sha256": "5b8e77f682ff0a0eb8eefa5cda85ccacd9a2011986a11d22f1332b77338f4cae",
+      "lines": 44,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/input/P01_从硬件样本到统一输入事件.md",
+      "baseline_sha256": "1d931716c104e2741dbc81836098818bd51e17669c368d226b91c85b293b155e",
+      "lines": 92,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/input/P02_体系结构与事件传递.md",
+      "baseline_sha256": "74d5300a4ab994ca4b55a9bc5087454c203ce423baa446403e2b11ec272106fd",
+      "lines": 140,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/input/P03_设备注册能力与生命周期.md",
+      "baseline_sha256": "c383335fa5e9cb8ae7da13870b3ab82dbd86e23b7bca64d7632ebe8cd0c875bd",
+      "lines": 154,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/input/P04_事件帧与多点触控.md",
+      "baseline_sha256": "b10c53526bdcfcc8f4780228255f7d1c45cc7c094c2f630d94e2a039ade678f5",
+      "lines": 125,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/input/P05_并发丢帧与电源管理.md",
+      "baseline_sha256": "884a3a4d6839aa20936acb958671a1e4fc30653d8774190b4043e0054e297deb",
+      "lines": 140,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/input/P06_触摸驱动设计与验证.md",
+      "baseline_sha256": "83df91e15c4001ae0d7a7ca427096c20773b5b58f9b983ce19cb401cb64feb0a",
+      "lines": 204,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/input/大纲.md",
+      "baseline_sha256": "fc2b1265fe4f29a47d3936e9b13f75d5f2e8aed23db348fd53f953a55381501d",
+      "lines": 42,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/driver_model/misc/readme.md",
+      "baseline_sha256": "ea180e3126384a2adbd9aa74ed1d1b202ee3c52c8a492635169c892aeeb73d65",
+      "lines": 10,
+      "state": "validated",
+      "reason": "B02f 将仅元数据的空页写成完整问候服务教材，解释共享分派、位置、动态次号、模块引用与热拔插边界；ARM 语法和回调边界模型通过。",
+      "current_lines": 212
+    },
+    {
+      "path": "knowledge/driver_model/platform_bus/readme.md",
+      "baseline_sha256": "4544bba0f23c18929d37ddbb9c77e151939806b400ce00f96e62033f6d41b69b",
+      "lines": 10,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/c_language/gnu_extensions/C_language_extension.md",
+      "baseline_sha256": "f96394315671f8ff661f658ba19d925beaa16f0c63913384534b323ad9ae9789",
+      "lines": 449,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/c_language/kernel_static_annotations/P01_同一份源码怎样面对多个消费者.md",
+      "baseline_sha256": "1444b124c15d572c4a0b665ea414d290ddd17a357c387f55fca3b5714eaf4aec",
+      "lines": 338,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/c_language/kernel_static_annotations/P02_预处理器_GNU属性与表达式扩展.md",
+      "baseline_sha256": "4ad388ef145a9771925e2d7847e3bba4bb4c63e73e966c7e8ce42770f075f27a",
+      "lines": 477,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/c_language/kernel_static_annotations/P03_Sparse地址空间与指针类型契约.md",
+      "baseline_sha256": "11590388305aa85922a41d6b11f229dc42e09683cd6d5b3037808cebe828d128",
+      "lines": 933,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/c_language/kernel_static_annotations/P04_Sparse上下文与控制流记账.md",
+      "baseline_sha256": "ce7c9b493b5778a48e4976bacaa8720d82c4a12fdba539cda91bb2628acccd62",
+      "lines": 479,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/c_language/kernel_static_annotations/P05_普通编译_BTF与运行时边界.md",
+      "baseline_sha256": "dc0e4772338a8131760b30f87f26f5495ee60cbc640212881e998ea8a67e2620",
+      "lines": 603,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/c_language/kernel_static_annotations/P06_在Linux内核中使用Sparse与设计注解.md",
+      "baseline_sha256": "2d88e20be97434a67e59e4b5b7c64810bf27d5b652e3395015d39fc7ff712194",
+      "lines": 1473,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/c_language/kernel_static_annotations/大纲.md",
+      "baseline_sha256": "f389598321c1e25fa977678dd106bb12eb4f2e174a45f7693cd2f918d61e1bd8",
+      "lines": 97,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md",
+      "baseline_sha256": "60b42e30daeee424fd452d2eee024a789a824a59697b2c782280437055b1fbcd",
+      "lines": 164,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/P02_MESI_状态机与一致性事务.md",
+      "baseline_sha256": "2a103a1eb08f19ba48c0e32c7782e5e50efda752bcd5dfa84d07f97a038ab319",
+      "lines": 189,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/P03_缓存行所有权竞争与伪共享.md",
+      "baseline_sha256": "bad88c8cc9e1c18e20206bc4ffe2197346184166c18a4bd90028bbe411978338",
+      "lines": 159,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/P04_ARM_ACE_CHI_与一致性域.md",
+      "baseline_sha256": "90e8527853a6be2e6298a0c8ea3b28b31c8a80da8ca8ef376e03e32cfb92b2d8",
+      "lines": 131,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/P05_Snooping_与_Directory_一致性.md",
+      "baseline_sha256": "123e1e66846f4eb7ed98307541c7be3ee7b5c3a6c30cf5079f380bb25b45d577",
+      "lines": 68,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/P06_MESIF_MOESI_与协议扩展.md",
+      "baseline_sha256": "f1b46c53f34538147622fb94fa46060741c3782947485dda0e0dcb90a6557c11",
+      "lines": 63,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/P07_LLC_包含策略与缓存写策略.md",
+      "baseline_sha256": "662c5e14447d5b96cf4e1dd643b92d060ea2b217211fadbbd28f9da4beecfc03",
+      "lines": 58,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/P08_ccNUMA_与多_Socket_一致性.md",
+      "baseline_sha256": "b04408b0a26fd5d5d5fb472a9f0786cbce49cb70b65fb34be111f0b3b331208a",
+      "lines": 65,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/P09_CXL.cache_与设备一致性.md",
+      "baseline_sha256": "e4f28aa22fcde008eec4181a58a242f400982131a7da1052f155d8d910b2d518",
+      "lines": 62,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/P10_缓存一致性协议边界与学习核对.md",
+      "baseline_sha256": "e3af4421cdca9cd0e3fdfff5214517e9a913ee1f27a3855e1be7f42cfe1673dc",
+      "lines": 55,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/cache_coherence/大纲.md",
+      "baseline_sha256": "2691fabf0259593fbd8380b74d319c0a4223f28d97a599bdde98a1a1378e46d7",
+      "lines": 48,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/memory_ordering/P01_为什么需要体系结构内存模型.md",
+      "baseline_sha256": "af90c493b5e1367a44bb894df0c7fb82e3122674d2d20f236484c5c3f76c90ad",
+      "lines": 185,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/memory_ordering/P02_访问粒度_对齐与撕裂.md",
+      "baseline_sha256": "507b0e884ee36068b801f2c551ee61f9a7fa9a1f9bf91ea74da798190628baff",
+      "lines": 164,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/memory_ordering/P03_乱序执行_Store_Buffer与观察时机.md",
+      "baseline_sha256": "fb859cbc2deeb28681dea7babe56d986a035856939ba7a0d592aef74ac169dad",
+      "lines": 187,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/memory_ordering/P04_一致性序_传播与多副本原子性.md",
+      "baseline_sha256": "1b4f8f32181fb505e347980f336f56cfc6a835c254273f3e12123000f12991ce",
+      "lines": 170,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/memory_ordering/P05_屏障_Acquire_Release与依赖顺序.md",
+      "baseline_sha256": "b88970d6ac7f74a97795afaca7505a5e50042c937e0f1ae4b5e56ff2cfd6cd2d",
+      "lines": 180,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/memory_ordering/P06_Litmus_Test_并发交错推演.md",
+      "baseline_sha256": "4da228a5819bc6e4a66058d4559c0112c8208680ca01bee2e81dff553a9b5718",
+      "lines": 179,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/memory_ordering/P07_反汇编_压力测试与形式化验证边界.md",
+      "baseline_sha256": "dbf34760f4cc9418ec7ed6c1167f945ddb8113db3168c73f663adfb5ce5cbd92",
+      "lines": 180,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/computer_architecture/memory_ordering/大纲.md",
+      "baseline_sha256": "6951fa63665b1c17aa44e8304b42a66752245eb1ed3246d8ef391346284b6e09",
+      "lines": 67,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/foundations/operating_systems/concepts/宏内核和微内核.md",
+      "baseline_sha256": "c98a603ce74d51eb1e67b921a0d17ab28f67c6fbb14eb99ef68b12d3512deb99",
+      "lines": 235,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md",
+      "baseline_sha256": "0c4242b871c474052e1eb9d03dbf26d797a0b8f1087120edc4832e913ad0ba9a",
+      "lines": 679,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P01_为什么需要_VFS.md",
+      "baseline_sha256": "ec5ad3e02df610b71cfe4ae3d333c0ccb80091d1773cf089dab0f96b30ce6d55",
+      "lines": 117,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P02_VFS抽象机制推演.md",
+      "baseline_sha256": "0311495c08ba16bbbfa26d765187e358adb15ad3dbfad40cfd36b01940e74208",
+      "lines": 66,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P03_VFS_状态与对象拓扑.md",
+      "baseline_sha256": "b7e91525285fe5d4c0271baa5a02e0bdadec27e0c7a7db05bbc8cf86d8d136fd",
+      "lines": 123,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P04_文件系统类型注册.md",
+      "baseline_sha256": "7be3f001e6bfc55fbe643a273ece8a94841d394e536720df5667704a72c4807e",
+      "lines": 39,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P05_fs_context挂载事务.md",
+      "baseline_sha256": "8090f1f25c987762106fbe9060a540b8be32383914f95c08e563ce206e01055c",
+      "lines": 41,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P06_superblock实例状态与生命周期.md",
+      "baseline_sha256": "5b0059be82a858c552a81ed37022d6a709f75d8a4bad593a1141874a66851f92",
+      "lines": 37,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P07_mount与mount_namespace.md",
+      "baseline_sha256": "056b4e5b85905c1875f627b646dff22d97aba0bf9c2176342f97553c51bd7ec4",
+      "lines": 37,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P08_dcache与名称状态.md",
+      "baseline_sha256": "6fc9775a7dc3c5198a9cd2ec125700733994e2f145803a6273051da5c29ee64e",
+      "lines": 43,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P09_路径查找状态机.md",
+      "baseline_sha256": "9285a96b78db0c009e9b62f4fa06f1a362ab4717a07535f7a56da71be0deb5fa",
+      "lines": 68,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P10_RCU-walk与ref-walk.md",
+      "baseline_sha256": "5279c94ee8391a07a784ce8ea7319e4e26558ca9ff78a742b8eaf4f47ac0bc8f",
+      "lines": 47,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P11_创建删除链接与重命名.md",
+      "baseline_sha256": "9b024ac98cb8df621ea2d71109a09a40be57ed8f6eacd5ec028c597bc5830ffa",
+      "lines": 46,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P12_open状态机.md",
+      "baseline_sha256": "c21354a6958c0a926a64e182694b400d3f8f70291ea43b84e329a0b44d65f721",
+      "lines": 46,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P13_fd_table与file生命周期.md",
+      "baseline_sha256": "49eec2ca07e94136860d8ff0447f21e73dc596c8682813d18c67056f44556308",
+      "lines": 43,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P14_VFS_read_write分派.md",
+      "baseline_sha256": "e796338cad8a9da00c3c099fe43b486a75aa99c73eecf2e02147fff0eb35ddc3",
+      "lines": 49,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P15_address_space_folio与页缓存.md",
+      "baseline_sha256": "04d2e59917058e722df1dc31af1933ee97a23611ba51f258f8e73b83c0dbcefd",
+      "lines": 51,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P16_writeback_fsync与错误传播.md",
+      "baseline_sha256": "f4e845d0c81350a9800e3b806d4e9a5e841f1fad4a84554fe6a6bb3d37c4680e",
+      "lines": 41,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P17_Direct_IO与异步完成.md",
+      "baseline_sha256": "4121bacb8ab54b3054f47e1a58a546f1c4bc9fca9dbdfc0e562aaec3bae71b53",
+      "lines": 38,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P18_文件mmap与page_fault.md",
+      "baseline_sha256": "a47d2c98147f2c29e01bb19f92495b10a53cf53ff444aa1f26a81d2ce40f6023",
+      "lines": 43,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P19_权限凭据与安全钩子.md",
+      "baseline_sha256": "a7301622b7c614d1eba7f58fc28df01e1d9a9c9263a9d9f00e7ca953b32dd5e4",
+      "lines": 36,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P20_fsnotify_inotify与fanotify.md",
+      "baseline_sha256": "45d7ff3d9660f102cd5888ea1199993348d2d0c4dc5a238e3367ebedf20afaae",
+      "lines": 37,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P21_file_dentry_inode与superblock回收.md",
+      "baseline_sha256": "ce29a29cededf0f4b1c6ec1d7d700871016a3ff0c404f90f4c8324bff6bda533",
+      "lines": 42,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P22_freeze_unmount与故障退出.md",
+      "baseline_sha256": "2f05be0bec1379bbb355b4672074bee305abfe1fd6c1f257cb4701aae424ea49",
+      "lines": 47,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P23_具体文件系统接入VFS.md",
+      "baseline_sha256": "36fac63b0902bb82277c92ced3f04685bcc6b196a940fff657873a981ab1b326",
+      "lines": 44,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P24_特殊文件与伪文件系统接入.md",
+      "baseline_sha256": "461386114e63c9ad530b03a15fc105b6add84c7391eff5f51aef19eb4195ff0a",
+      "lines": 43,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/P25_VFS调试与源码追踪.md",
+      "baseline_sha256": "e95a56b6459e99ca4739e3c8fd8000f2e3005b275876af36a1ed06b0dc374a8f",
+      "lines": 57,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/kernel_subsystems/vfs/大纲.md",
+      "baseline_sha256": "65272503fb80472221c29c816656732ac9ac8ea324d0e0a56ddff0af11e923d0",
+      "lines": 107,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/architecture/kernel_composition/linux内核概貌.md",
+      "baseline_sha256": "76775eb02e46cabf8010163bd54f12f1d2bdfa8bf4a4ed4d41fa72de53b7cab6",
+      "lines": 200,
+      "state": "validated",
+      "reason": "前一轮 B01 已完成正文重写和检查，详见 Linux 重构蓝图 1.5",
+      "current_lines": 200
+    },
+    {
+      "path": "knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md",
+      "baseline_sha256": "9ac339373c9584b61bda952c5d667b34c58e9bc8cf7e5bfedfdb744e55b363c6",
+      "lines": 1206,
+      "state": "validated",
+      "reason": "B02d 完整冷读后按模块代码、服务与路径重写；保留来源批注，重复驱动移由 P10/P11 承担；固定提交核对初始化失败，观察步骤仅语法验证。",
+      "current_lines": 141
+    },
+    {
+      "path": "knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作基础.md",
+      "baseline_sha256": "21cf0cfd3bd501a6339e8223c593e5c4dc8b2cf66cb4183aba57f4ab64b58434",
+      "lines": 1277,
+      "state": "validated",
+      "reason": "B02d 完整核对独有内容，重写别名、多实例、连续与稀疏次号、硬件身份及扩展边界；人工批注逐字保留，完整 C 解码和边界执行通过。",
+      "current_lines": 146
+    },
+    {
+      "path": "knowledge/linux/architecture/modules_and_device_nodes/Linux_驱动开发_Makefile_指南.md",
+      "baseline_sha256": "e3dcc87cb916df2f365cacd481c5d4907133e8e4b1c0796a79181680a622cacf",
+      "lines": 1646,
+      "state": "validated",
+      "reason": "B02a：完整构建职责迁入 engineering 四章，旧入口保留生命周期桥接与字符设备边界；完成文档检查，目标模块实验未执行。",
+      "current_lines": 49
+    },
+    {
+      "path": "knowledge/linux/architecture/modules_and_device_nodes/大纲.md",
+      "baseline_sha256": null,
+      "lines": 37,
+      "state": "validated",
+      "reason": "B02d 新增模块入口阅读地图，三篇既有文章职责与工程、字符设备后续链接齐全；标题、元数据、链接和 Mermaid 解析通过。",
+      "current_lines": 37
+    },
+    {
+      "path": "knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md",
+      "baseline_sha256": "9382ef5341af69c3d660303cc98af77fb990135f239c080981ad07465b1399bb",
+      "lines": 136,
+      "state": "validated",
+      "reason": "前一轮 B01 已完成正文重写和检查，详见 Linux 重构蓝图 1.5",
+      "current_lines": 136
+    },
+    {
+      "path": "knowledge/linux/data_structures/单链表_linked_list/P01_概念_定位与底层实现.md",
+      "baseline_sha256": "6b772bdc71e4f0dd6c95010f0f77b5cc8e7c01ea6be76b2b5c3b77e9d75fa8f4",
+      "lines": 74,
+      "state": "validated",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "current_lines": 81
+    },
+    {
+      "path": "knowledge/linux/data_structures/单链表_linked_list/P02_初始化与基本操作.md",
+      "baseline_sha256": "41f561d4cee3655a991adfc7fdd11dc1f5c0676716e68e6ff70b0b1c70ec7bf3",
+      "lines": 307,
+      "state": "validated",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "current_lines": 161
+    },
+    {
+      "path": "knowledge/linux/data_structures/单链表_linked_list/P03_并发原语与原子性.md",
+      "baseline_sha256": "46675d1698f30ac9c5ad602377ce3d3bd7c95b67d61eaa3d7aa2c0fcc7708744",
+      "lines": 131,
+      "state": "validated",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "current_lines": 117
+    },
+    {
+      "path": "knowledge/linux/data_structures/单链表_linked_list/P04_一次性初始化.md",
+      "baseline_sha256": "d482ecd64a12d73adc5f9bae5ad2a3202cfdcaeadb4bb289d14cfbbfd06e096d",
+      "lines": 146,
+      "state": "validated",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "current_lines": 163
+    },
+    {
+      "path": "knowledge/linux/data_structures/单链表_linked_list/P05_接口_示例与注意事项.md",
+      "baseline_sha256": "a9af8152b8d74b005b25d60a8441fffdbf6fb197d757b0e1163d9eac6c1fe440",
+      "lines": 114,
+      "state": "validated",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "current_lines": 164
+    },
+    {
+      "path": "knowledge/linux/data_structures/单链表_linked_list/P06_调试与验证.md",
+      "baseline_sha256": "2da554140382560ea133fe2bf91acde7798a10307bbc384e218d4ad217679bdf",
+      "lines": 110,
+      "state": "validated",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "current_lines": 68
+    },
+    {
+      "path": "knowledge/linux/data_structures/单链表_linked_list/P07_总结与学习资源.md",
+      "baseline_sha256": "ff99b7cd86c7250a782bcad0635090514c2afabd3a5ac2fc53c36d4ba5c6b915",
+      "lines": 41,
+      "state": "validated",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "current_lines": 50
+    },
+    {
+      "path": "knowledge/linux/data_structures/单链表_linked_list/P08_高级应用.md",
+      "baseline_sha256": "e8a8241cd032ca8b15e3c67f4fc6be6a8f4e2813aac86466b27560509624ee5d",
+      "lines": 63,
+      "state": "validated",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "current_lines": 59
+    },
+    {
+      "path": "knowledge/linux/data_structures/单链表_linked_list/P09_优化与总结.md",
+      "baseline_sha256": "42cc3edb198ce0136b2ebaa67527217a75cb240b33e49bd111b743ddbab893ea",
+      "lines": 62,
+      "state": "validated",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "current_lines": 67
+    },
+    {
+      "path": "knowledge/linux/data_structures/单链表_linked_list/大纲.md",
+      "baseline_sha256": "c0fcbf72a1a46ea2c624da62394cf7662e237e056faa9a263b35479646ef0c7c",
+      "lines": 48,
+      "state": "validated",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "current_lines": 44
+    },
+    {
+      "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md",
+      "baseline_sha256": "3242a2f92d478fa9a540e98d523c07b45e490fa28f6c78603ce35a9cc11fb694",
+      "lines": 108,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
+      "baseline_sha256": "44a1207c177e379c53cf372b3cf60b45961466131a330042146c4ef1ca6958c4",
+      "lines": 1127,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P03_算法之魂_哈希函数与位运算优化.md",
+      "baseline_sha256": "f0ea15365ab8fe82d212980cec743eeabc9cb9d85a1d22cb4f4570e16f65e6a3",
+      "lines": 508,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P04_并发保护与RCU机制_多核下的读写博弈.md",
+      "baseline_sha256": "9eabe4bf90b6a080fca0801ce2564b5f9f08aee0118860825158eee48673c854",
+      "lines": 173,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P05_动态伸缩的rhashtable_无感扩容的艺术.md",
+      "baseline_sha256": "1200dbef266fe6e866fc6e8a5946570e1f0a770729bba6425b30de166a0181db",
+      "lines": 768,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P06_哈希表在内核子系统中的影子(深度拆解篇).md",
+      "baseline_sha256": "fa6bb64c834803d6e22d7b5cc14c922824877f58c337f9b0f4de584cc2c0219f",
+      "lines": 289,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P07_内核模块实战指南.md",
+      "baseline_sha256": "a36ae21955cd289620e989da1aee16cb970bb6d56fc0fe949ae422f61ba46215",
+      "lines": 185,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md",
+      "baseline_sha256": "3597cf07d3840a84c5e9f505c06b85a62b2a6f0c87984814f7b3ac9988c53255",
+      "lines": 2342,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P02_二叉树.md",
+      "baseline_sha256": "a2f30cb068ebd7d13937456dd0b782822fb38b1ce16b9bda717553c6b65449b7",
+      "lines": 4294,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md",
+      "baseline_sha256": "18af1d503feffddcbf4219623b6507f6c4a310f653cb45fa4891e29353ce0b2c",
+      "lines": 2829,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md",
+      "baseline_sha256": "bd9720906663691733b716c0add6e8532ab9d174502396a135dd11c98e78fac9",
+      "lines": 625,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md",
+      "baseline_sha256": "b80f5ccbe3e2d06938bd3fdf360339f7cab96f77d8cc4f7b8372db5de6ab3ee3",
+      "lines": 3991,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md",
+      "baseline_sha256": "9bd2b356a1f938c542847f77ebc28f5e11060de8b18322e3e2f86b882ed9d7fd",
+      "lines": 6195,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md",
+      "baseline_sha256": "e7ab4da73a107251bf517b1772d65510acdd2495fecb044bbc1761e890b214ee",
+      "lines": 6588,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md",
+      "baseline_sha256": "8a5ee2865aeae37229bb67500910ea4c1fab50ea0c5fc9d2ccdc0221df4b8e60",
+      "lines": 3355,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md",
+      "baseline_sha256": "d23e9d86c4fa97c9e225b26f80e9325146d8e0988c10535f61c24258168aff5d",
+      "lines": 4209,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md",
+      "baseline_sha256": "c02d313dff8f748bf7917d60df130e711af73a806f7a87016ce07b2a79e12345",
+      "lines": 2508,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md",
+      "baseline_sha256": "e6447a463ff71ca1b85ae38d683501f6fb79a4f820d7ed7a58a8fffdab662cbe",
+      "lines": 3325,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md",
+      "baseline_sha256": "5757b6505f3ff296e4ae6e15c6ef1a6be3d7d72dbb0120e241597c40a4e680f6",
+      "lines": 1886,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md",
+      "baseline_sha256": "3b0c2b8a2eea8432166123d6f8c13d136be09052330a0860597b93d4200dc591",
+      "lines": 1214,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md",
+      "baseline_sha256": "74535c69707d9118f48dc5ad4694552adbd364d5bb3221ebced0443d754088ab",
+      "lines": 1833,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md",
+      "baseline_sha256": "2de6e1b8f40fadcc9f3e5294a114f8902a20aed4c1a35cccc6ad8d7e0875baec",
+      "lines": 1804,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/大纲.md",
+      "baseline_sha256": "c63899c3c89e32a6e2b4ed70671877fa0b8258499fe11d5a9a391994acfd929a",
+      "lines": 116,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P01_为什么需要设备模型.md",
+      "baseline_sha256": "3d4132a909f66164a9422cab871e435ebcc18e405df3994ba5506fd6abbd6b79",
+      "lines": 18,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P02_设备模型抽象机制推演.md",
+      "baseline_sha256": "64b623d06348bbf075d03512501790594c845f2124f8468218c5f3641bcf2d14",
+      "lines": 21,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P03_机制完善_生命周期并发与失败.md",
+      "baseline_sha256": "ba840b5d5125f7acb6f30616a8bb7cce48e774568437aba24547cdf9b44e70e1",
+      "lines": 22,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P04_Driver_Core状态拓扑.md",
+      "baseline_sha256": "b23e4e9246e795c62f565b49b040c84451a41583b84c70b2366f2c4a0adfeb80",
+      "lines": 26,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P05_kobject_kset与sysfs对象树.md",
+      "baseline_sha256": "c1bd9dfe73e3a1ced2c847eaedfecf1c9925ee57000c9b1613228589ae894f9c",
+      "lines": 23,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P06_device注册与生命周期.md",
+      "baseline_sha256": "751514a16e124139d3594a54e801a3e2372911dc9aee4257d71a41e1a6ca43bd",
+      "lines": 25,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P07_bus与driver注册.md",
+      "baseline_sha256": "c4146409ed24277a9210bada264abe3063e3f096071a6261187856649a0da194",
+      "lines": 18,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P08_匹配绑定与probe状态机.md",
+      "baseline_sha256": "e97a7274f49b649937b0ac2aac15c30f9ea0f08862a795fddf61451d01669b7e",
+      "lines": 33,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P09_deferred_probe解绑与remove.md",
+      "baseline_sha256": "2dd97ee946f96857d9486ae5bfb890739483e71fdd640bb1cd8d1d01aa3a6f74",
+      "lines": 15,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P10_fwnode_OF与Platform适配.md",
+      "baseline_sha256": "b9edd90a974c0a2b4dd95d53a35e7aac363a2b55c0307b7de621ff526d427d9c",
+      "lines": 20,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P11_class_sysfs_uevent与modalias.md",
+      "baseline_sha256": "5bafa0691493d9058d4a4ead4c3ca314c5b4d91f3f6d0645bacf1332b3e92a6a",
+      "lines": 15,
+      "state": "validated",
+      "reason": "B02h 完整冷读并重构：class 原稿知识去向见工作记录；P11 保留设备模型桥接。作者自查与适用验证完成，不代表人工评审或目标运行。",
+      "current_lines": 22
+    },
+    {
+      "path": "knowledge/linux/device_model/P12_devres资源事务.md",
+      "baseline_sha256": "82bfac9e6a3a6c01419bdee8590fab0283041bce93614500021a614efb7c48be",
+      "lines": 17,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P13_device_link与电源管理.md",
+      "baseline_sha256": "db2b95a7744c23ab0d7ae14fac01a5e6e7b46a111b1e3942231447bab19578d0",
+      "lines": 15,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P14_热插拔与模块生命周期.md",
+      "baseline_sha256": "7a3e41afbdaa0afb65a09b00f8bdec11de7317c2629768f4512b37b31f3895a0",
+      "lines": 15,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P15_复合设备_MFD与Component.md",
+      "baseline_sha256": "fd285b6347663d551c86c7d40b92841d43a9c44fc9dfa6591dbae57f76eadb72",
+      "lines": 20,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/P16_API调试与选择边界.md",
+      "baseline_sha256": "23db480790dac9a87590f5eb1478f6b26ddaed56d3a05fdad361be63d560e302",
+      "lines": 23,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/device_model/class_sysfs/P01_两个没有设备节点的分类实例.md",
+      "baseline_sha256": null,
+      "lines": 196,
+      "state": "validated",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。",
+      "current_lines": 196
+    },
+    {
+      "path": "knowledge/linux/device_model/class_sysfs/P02_让属性控制字符读取.md",
+      "baseline_sha256": null,
+      "lines": 263,
+      "state": "validated",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。",
+      "current_lines": 265
+    },
+    {
+      "path": "knowledge/linux/device_model/class_sysfs/P03_从发布到设备节点.md",
+      "baseline_sha256": null,
+      "lines": 130,
+      "state": "validated",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。",
+      "current_lines": 132
+    },
+    {
+      "path": "knowledge/linux/device_model/class_sysfs/P04_并发访问与撤销.md",
+      "baseline_sha256": null,
+      "lines": 113,
+      "state": "validated",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。",
+      "current_lines": 115
+    },
+    {
+      "path": "knowledge/linux/device_model/class_sysfs/P05_系统属性与接口选择参考.md",
+      "baseline_sha256": null,
+      "lines": 101,
+      "state": "validated",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。",
+      "current_lines": 101
+    },
+    {
+      "path": "knowledge/linux/device_model/class_sysfs/大纲.md",
+      "baseline_sha256": null,
+      "lines": 34,
+      "state": "validated",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。",
+      "current_lines": 34
+    },
+    {
+      "path": "knowledge/linux/device_model/大纲.md",
+      "baseline_sha256": "48f673b328808866b5407e4aa500ba525173551b034cb9862c4ced24a382285b",
+      "lines": 40,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/error_handling/error_pointer/P02_错误值的编码与判定.md",
+      "baseline_sha256": null,
+      "lines": 121,
+      "state": "validated",
+      "reason": "B02e 新增编码推导与完整 Python 模型，32/64 位各穷举 4095 个错误值；明确非错误不等于可访问、便利接口的 NULL 边界。",
+      "current_lines": 121
+    },
+    {
+      "path": "knowledge/linux/error_handling/error_pointer/P03_资源失败与驱动回滚.md",
+      "baseline_sha256": null,
+      "lines": 145,
+      "state": "validated",
+      "reason": "B02e 按固定源码独立解释可选缺席、资源获取与启用、devres 状态及 S0～S4 回滚，修复 devm_kzalloc、probe 内部变号和跨子系统契约误导。",
+      "current_lines": 145
+    },
+    {
+      "path": "knowledge/linux/error_handling/error_pointer/P04_观察返回值与释放顺序.md",
+      "baseline_sha256": null,
+      "lines": 219,
+      "state": "validated",
+      "reason": "B02e 完整无硬件依赖模块及四路径实验，实际 probe 提取模型 20 路径通过、ARM 语法通过；未执行目标装载/探测，正文明确观察边界。",
+      "current_lines": 219
+    },
+    {
+      "path": "knowledge/linux/error_handling/error_pointer/readme.md",
+      "baseline_sha256": "682f1c0dff3ed70e2c45d33c1a3d688f622a817faf6ccd0a350fd7aa87a5bd1b",
+      "lines": 138,
+      "state": "validated",
+      "reason": "B02e 原对话式规划改为查询页，保留接口与 17 项错误码，核对 Rust 固定实现及用户 errno 边界，撤销无据演进提案。",
+      "current_lines": 77
+    },
+    {
+      "path": "knowledge/linux/error_handling/error_pointer/大纲.md",
+      "baseline_sha256": null,
+      "lines": 36,
+      "state": "validated",
+      "reason": "B02e 真实四章因果地图与参考/源码入口，已逐链核对，不预建未完成章节。",
+      "current_lines": 36
+    },
+    {
+      "path": "knowledge/linux/error_handling/error_pointer/错误指针机制简介.md",
+      "baseline_sha256": "74b6aa9ccc758999a23613456da0a427292d5479ac3f13131b04afe6936e5a59",
+      "lines": 3122,
+      "state": "validated",
+      "reason": "B02e 完整冷读原总稿并按内容去向拆章；本篇用完整 C 查找程序建立返回契约，纠正单一错误方式与自动传播误解，宿主输出和文档检查通过。",
+      "current_lines": 162
+    },
+    {
+      "path": "knowledge/linux/io_model/blocking_io/poll与epoll的区别.md",
+      "baseline_sha256": "9b4984bb8d8eb9fd6415830c433cd67396c8c7ad0084136d2bf11e618032d45b",
+      "lines": 720,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md",
+      "baseline_sha256": "6acaec23540099b1bb46b4c3c20f7983c02b07c0c570a50e04e0bfb0b5d70ca6",
+      "lines": 235,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/io_model/dma/大纲.md",
+      "baseline_sha256": "3f182cb86928ca8a0241c0945b84c7e3a4f9113aa252ea7dc93d426887a5af2b",
+      "lines": 16,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md",
+      "baseline_sha256": "6b65666a0a1ef499879a68efa37d8210df89ccc96fd6ab94c5c7a0a3d1d5d391",
+      "lines": 130,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/io_model/mmio/大纲.md",
+      "baseline_sha256": "ec0ee3c8f3c8f89d93236bbf04ecc1582483310801c5d6d67d4fe89e31798576",
+      "lines": 16,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/devres/devres_API说明.md",
+      "baseline_sha256": "1deaa8c3a0eb0f3a8ad4e360d724950628facfd75a705abaaf780c5ffcf4fda9",
+      "lines": 436,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/devres/devres_旧机制_udev_mdev的讨论.md",
+      "baseline_sha256": "96e6dec97822ab6048c7e2951292cf603f096910df545f4e3f54a8a9bd63765a",
+      "lines": 1276,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md",
+      "baseline_sha256": "89c06e9a194908f91684038130de75c14be5cedb7a8d335e4edc65dd15ad2fbd",
+      "lines": 187,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/integration/大纲.md",
+      "baseline_sha256": "0d166a3a72db23d97109e35236bebb0d4d48639bd43e6ee0efa9316b7d46d749",
+      "lines": 16,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md",
+      "baseline_sha256": "a0889e89114a07e8693e11118b3d2220f0215c42f50356cba86900fd2f3cc9fb",
+      "lines": 1313,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md",
+      "baseline_sha256": "fc6360dbeaf67da45c37398993c69defd1dd827608332f1294e609c44af354f7",
+      "lines": 2715,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md",
+      "baseline_sha256": "c266a9d36ff803e35d3cd79dfb99ba39a3ea4b902fd31b0e88f5118f4cb53421",
+      "lines": 2879,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P04_kref_三条核心规则.md",
+      "baseline_sha256": "6b75af1111de649d11b58e5b1c52fdf984757840bb0f21a835d9b1911a9f7d08",
+      "lines": 1120,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md",
+      "baseline_sha256": "c89559c518e3e5a5f5d7b52c48e624f7417da6ae77ea2f9f8f72704c3cbd3ea1",
+      "lines": 1652,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md",
+      "baseline_sha256": "d96f8c1c1ed6c57f2b6dff2b15c1db52b41825de97f8f9164bd4d49d54bb0148",
+      "lines": 1833,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md",
+      "baseline_sha256": "6bc766042ca22c53f8db7d93d5f64df9260e48f218df12555b6ac1ce1bf07fad",
+      "lines": 2253,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero().md",
+      "baseline_sha256": "1813e9e594cb1d7c6dcca13024886c0d0e5e682bca3ddad29f31a0f8c32688db",
+      "lines": 2834,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md",
+      "baseline_sha256": "e350a6cc7f069da72fae2b9cda2c68afc7555a82eb79ad969d581a6f335272d5",
+      "lines": 3545,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md",
+      "baseline_sha256": "9353a98dfa3f4f581613d2db8d66f1cf9ab83eb702fbfa0df94a4e94fd801e60",
+      "lines": 1773,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md",
+      "baseline_sha256": "7a7e48f6d46b649d6bc1e536e73513028552cdeb23d7f44c079300afb7847cba",
+      "lines": 1880,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md",
+      "baseline_sha256": "9329122f628aa14ae1bf5f4a7121e0151059ebaac2c1f3656beca77d95bf43eb",
+      "lines": 2164,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P13_工程模板.md",
+      "baseline_sha256": "2ff2f3eb2519857f7f8f1fb91b3ce2046d549f5b59d609e0f24c6df091c81ce2",
+      "lines": 2954,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P14_源码阅读实验.md",
+      "baseline_sha256": "8780dc1f0781faa550994d96ccc6399692cb60b5c5f209f5dc6f6df91dbaec73",
+      "lines": 2508,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P15_最终验收标准.md",
+      "baseline_sha256": "711db6496d5ab7ced7ed2a0bdb8382baaa7cff2899166cc97eaae1b8e015aee3",
+      "lines": 2099,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/大纲.md",
+      "baseline_sha256": "4a8f3c3a46fb864d60a60c0ffeb8c4f81ade362c3ef7830789e6686e828ed822",
+      "lines": 502,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P01_异步通知全景与知识地图.md",
+      "baseline_sha256": "92c3eaae03f082d7308a62c5af21dc8a03e5d44966028472a7fe0728472faec3",
+      "lines": 1395,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P02_Linux_IO_与信号机制基础.md",
+      "baseline_sha256": "afddee296bfc3fdbfbdd64343c8e4bfe55540cba3a2c19172fb05fffa4e57e77",
+      "lines": 1952,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P03_fasync_机制的历史与设计动机.md",
+      "baseline_sha256": "1ab37e862862a9632e5016c674c298b78115c64c32fbab9b2e70c44cf65352c4",
+      "lines": 544,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P04_内核视角_核心数据结构与控制路径.md",
+      "baseline_sha256": "f54cc38a334e83912a7ba52d3ad6188908b6bec7e2262c50d8102ee4215ae9b4",
+      "lines": 1901,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P05_VFS_与文件系统中的异步通知支持.md",
+      "baseline_sha256": "4574731de10e31d1bb0ab176d1040c2135f0d6b0495c76c818956fd98fb19779",
+      "lines": 1234,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P06_字符设备中实现异步通知的基础模式.md",
+      "baseline_sha256": "f9b3d1d240313f6581c857044ed9661f7a3f470e5cd0e2740178ea3682308cc8",
+      "lines": 2535,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P07_中断驱动设备的异步通知实践.md",
+      "baseline_sha256": "b62c4f99625d1357b8c3007cbe01629ef098b2a49bae67d57bb53061950787f0",
+      "lines": 3397,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P08_流式设备与高级场景中的异步通知.md",
+      "baseline_sha256": "22e313ea112142cedb7644dcc2653ae50cfca194110bad6cc745adad169903e5",
+      "lines": 2386,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P09_用户态编程_从_SIGIO_到_signalfdepoll.md",
+      "baseline_sha256": "fd597076249e7e38bc8c94d457fb68493076b7a8ee53aadd692f03f17804ea5a",
+      "lines": 4178,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P10_并发_竞态与内存可见性问题.md",
+      "baseline_sha256": "70a52957255b462910cdee79d622720fa15224d3e4adf6182b9fd1655a731f52",
+      "lines": 3610,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P11_调试_排错与性能分析.md",
+      "baseline_sha256": "bbe3ff99559c4a9ef68f5da34709fd37d88537fe7db771cffd9186ab16e5014a",
+      "lines": 2945,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P12_fasync_与其他通知机制的对比与整合.md",
+      "baseline_sha256": "b8b2663d7d2498818602b8db6f433d03bf3c63b7dc6ac01d8dacdf29737db939",
+      "lines": 2345,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P13_工程实践案例与编码核对表.md",
+      "baseline_sha256": "0355260bcb3309fe9bb1709e23be6256bcd94c2d5ae6d85d4b19b9fb1da15cb2",
+      "lines": 4027,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md",
+      "baseline_sha256": "3f45b5964df25a84c03ed34183624b45dbe305b9ee892329ced27aa7165c7c16",
+      "lines": 189,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P01_中断的定位与演化.md",
+      "baseline_sha256": "cf7272b1ee74a33117d81dab65fed07bfaf6a3a257047e02e2bbc09036cd6635",
+      "lines": 246,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P02_SoC_视角下的中断体系.md",
+      "baseline_sha256": "e0c93b1576f5698768d3545d8e7744d4963974eb9297132e0be57a30e6eef8e1",
+      "lines": 208,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P03_Linux_的中断抽象_irq_chip_irq_domain_与_irq_desc.md",
+      "baseline_sha256": "7104c9f2412ecc9e71f915d27316ba5d9519d5c1fa5a518ff46679cd6f0956ff",
+      "lines": 231,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P04_Linux_驱动中的中断注册与接口.md",
+      "baseline_sha256": "48a7e39284f7be7b75a186ff73b917f592b50a4e52dee8db367c259c0dd88d38",
+      "lines": 389,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P05_GPIO_与触发语义_电平_边沿_DTS_与_只来一次一直来_为何出现.md",
+      "baseline_sha256": "7e80aaec0cd5ca72800ca9906262b12da6c7b99f68c14b8acea759e1357a6276",
+      "lines": 1027,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P06_Linux_中断的调试与诊断.md",
+      "baseline_sha256": "dc06e78d49f3cf7966a1729a0ff5ff57abf2446478746bd431e075c922429b42",
+      "lines": 233,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P07_中断下半部机制与驱动中的选择.md",
+      "baseline_sha256": "2e5e97f0af1f6036520407395f67df3195f0f9a61192e82811cd94142a294169",
+      "lines": 604,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P08_中断_x_高精度定时器(hrtimer)_去抖_延时确认与一次性中断再使能.md",
+      "baseline_sha256": "382a7e514f118fad8cd2c215609f932224e750f583edd515f278045f71233239",
+      "lines": 798,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P09_层级中断控制器与_ARM_GIC_在_Linux_中的实现.md",
+      "baseline_sha256": "0d852594e463eccd6b6aeb897f2f69fece3a863c81dcc1b745ed09d157c443dd",
+      "lines": 561,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P10_SMP_与中断亲和性_IPI_机制.md",
+      "baseline_sha256": "3c517806acd6a58bde9027d84903c3cf12f5501cb91a7c73a2b9db2f73d961e6",
+      "lines": 274,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P11_电源管理中的中断_suspendresume_与唤醒源.md",
+      "baseline_sha256": "0827d2f582cb1cb7be956b44fd38ac06e7bd7bbf195716949cd948782e27b9f2",
+      "lines": 719,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P12_MSI_MSI-X_与_PCIe_设备的中断框架.md",
+      "baseline_sha256": "5eca25d08aa4024b72de5968b0a98344e3874a8a3f91346a721965c88f44d645",
+      "lines": 950,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P13_特殊与高优先级中断_NMI_定时器_性能中断.md",
+      "baseline_sha256": "71c0a78f97239873ca142fd9951f56a4cd71c5f0c30ea9a304167277488f9b16",
+      "lines": 513,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P14_中断风暴_抖动与防御机制.md",
+      "baseline_sha256": "34df31af3f6eca7a9896e06a5dbf1e937a5be8edcf91d5dd099d97c77d3f8a40",
+      "lines": 377,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/大纲.md",
+      "baseline_sha256": "8664242cb9006b4db9b4345406c350a9b68f4b466cb91e2cd26ab08c545bc96d",
+      "lines": 124,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P01_驱动中的_时间问题_概述.md",
+      "baseline_sha256": "eb8abea54e19170f68d8c7fc90b8edbd4c179551d117c753c2207472cb13f67c",
+      "lines": 353,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P02_Linux_时间基础与_timekeeping_框架速览.md",
+      "baseline_sha256": "8dda755091a79b3bae3c399f3462d38a1d94b7da1f45dea6a05c5ed0acf00f61",
+      "lines": 372,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P03_时间表示与转换接口详解.md",
+      "baseline_sha256": "bebe9fc513e32230442bd06a9f6c364cebc0628a3832cd04305d604700c2534f",
+      "lines": 1100,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P04_基础定时器机制_struct_timer_list.md",
+      "baseline_sha256": "8dc9c4301112b8b7e8a517367ba63119428fd1510ee877f9bef1e69b27db24e8",
+      "lines": 362,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P05_高精度定时器_hrtimer_的驱动用法.md",
+      "baseline_sha256": "313958c27f6a0ab34d75116a3fe762d034657ffe283a9c2392a03fc7c83aef0e",
+      "lines": 1336,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P06_基于工作队列的延迟执行_delayed_work.md",
+      "baseline_sha256": "5420a557f50d81f4e07f12104dd914c3ff2b059c9d67ca90ea6b7104ccec2f17",
+      "lines": 2126,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P07_睡眠与超时调度接口.md",
+      "baseline_sha256": "83ddc4d652c1fd9047ab72181059fed34140b5f58fa28c555da1de0cf8afee5a",
+      "lines": 775,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P08_忙等待与短延时_udelay()_ndelay()_的边界.md",
+      "baseline_sha256": "9ee19651433211ee44cfc9f8a926f2dfe545a1cb395e43e42c03e6a26c113815",
+      "lines": 812,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P09_时间与设备树平台数据的对接.md",
+      "baseline_sha256": "97d0dd433c81aa5accfbf815ba2e05bc72d8a1e84b34aacadfe3fda742fa58b7",
+      "lines": 461,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P10_与_devres_驱动生命周期和_PM_的关系.md",
+      "baseline_sha256": "24c6b6e934c8945e7876ddcb321fde19044119c1d67079ca28fe61ff2b178396",
+      "lines": 345,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P11_电源管理_系统挂起与定时唤醒.md",
+      "baseline_sha256": "b864e0fde932710c380a3d0b8ac28b479fc4754e24fb48aa9751d5b8c1f120f5",
+      "lines": 746,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P12_常用模式与代码模板.md",
+      "baseline_sha256": "f469bcefdfa1ef4f8443014a365be9264117a6638734c30702bdaa0b722d335b",
+      "lines": 492,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P13_调试_验证与常见陷阱.md",
+      "baseline_sha256": "4d281fccddd6ac612f40fbaed16900e3feea90ef87e3e301f2e99896e01ff666",
+      "lines": 294,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/大纲.md",
+      "baseline_sha256": "3955f6d79fa4cf2479338495509e199acaa9f1e69d61f21ca70523e672b9b2b1",
+      "lines": 153,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P01_工作队列.md",
+      "baseline_sha256": "96b0cd2741b02067db33121de9622d9c5979095d8e7d91836a2b7de336005d57",
+      "lines": 225,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P02_异步执行的抽象状态机.md",
+      "baseline_sha256": "5f7e9ac038134c499e64261d040ae6604947b634815652745da95c842fcc4a33",
+      "lines": 89,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P03_cmwq对象层次与状态所有权.md",
+      "baseline_sha256": "a4d3fb78235af30f67f9aa5979f6f971e7d8965e44cfb4de82a1c1b4063562bb",
+      "lines": 73,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P04_work投递激活与pending合并.md",
+      "baseline_sha256": "1073dfc799f33530787de3c269f7ab985bf199a0ad960bc183d3ffc134438d8b",
+      "lines": 78,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P05_worker并发管理与执行循环.md",
+      "baseline_sha256": "be695ca3385960735eeb46b55eedd91de0bcb882369edbcae14fd2d12234ec68",
+      "lines": 87,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P06_flush_cancel与颜色代际.md",
+      "baseline_sha256": "0b2b2468f5542789afd2588fc7037b66c6dc27526517c4c4f4a8c67be9cde7b4",
+      "lines": 84,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P07_unbound_rescuer与回收前进性.md",
+      "baseline_sha256": "dbc51a9437c883ce3c5dde34a6022a9637e9e1e8995f87c7c6d8e08ea9327f69",
+      "lines": 79,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P08_CPU热插拔电源管理与生命周期.md",
+      "baseline_sha256": "b5e1b28c7c8b27f6f3a324c20bf943365e1094b649f75f577e934882f9b8ad43",
+      "lines": 88,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/大纲.md",
+      "baseline_sha256": "2410569cae619112b5bee8956ab36480dd3b4ffd30339bc16828ae512fa56fa0",
+      "lines": 42,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/大纲.md",
+      "baseline_sha256": "93fe0f34527e574cf93961310dcebbc66ee53b041eb262dfaa978f5c5e8ca149",
+      "lines": 39,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P01_为什么需要_Lockdep.md",
+      "baseline_sha256": "648fd76623af223b266d6da703be843012a821e498eb37b1597ba67d3faf447e",
+      "lines": 217,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md",
+      "baseline_sha256": "10aca3f352e352ee197446a6c369bb20b76c438476f0621d30586bb38656181c",
+      "lines": 154,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md",
+      "baseline_sha256": "c08bd05df2994d834d2c61d6b65add38f89b1009ca69d9c367bb21cdc3618707",
+      "lines": 210,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md",
+      "baseline_sha256": "fd63a97f04bf97771037b4fb551c55dae92fc7375ce1c1af6403c2129793e177",
+      "lines": 190,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md",
+      "baseline_sha256": "f00ca908c5fa5447b67cba98abf56afe25096c1c8bfac80f908ed476b7e30ec3",
+      "lines": 169,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md",
+      "baseline_sha256": "7b51caeb08d4a908d2c8ed863f63d51c9d3fd91763e03387f84403c5126bd885",
+      "lines": 192,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md",
+      "baseline_sha256": "4b6bb6e9224d61909c4faa657527ff123e48b60bc21bab305991d2f1eb987d10",
+      "lines": 137,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md",
+      "baseline_sha256": "287d06e9928b326d328df7e77538b58d9a26d80dc8ae29d23bde6b9efa536f03",
+      "lines": 231,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md",
+      "baseline_sha256": "bda6222aec5c98e20edb03ef8daf149b2cb89f7727cdc45f4e354aa7d1d89c5e",
+      "lines": 159,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md",
+      "baseline_sha256": "74d14f8fe5d33eeaff1fb47f6d45ae80b66ed15d8441bb9e5a8c25516c9c887f",
+      "lines": 133,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P01_自旋锁.md",
+      "baseline_sha256": "9968e19bb4ae8231dbf64d57b11a43dd2d3212afd2d49de35ce3af159146951c",
+      "lines": 165,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P02_互斥锁与读写信号量.md",
+      "baseline_sha256": "e52eb2645ae42f0c88208742f5d482745716d3fa957055ce9feeae3920318ebc",
+      "lines": 164,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P03_锁的统一状态与通信周期.md",
+      "baseline_sha256": "0190777e5accaec6f5a13596e78e89c6bd1ccb1e00e4770feef80012c6c38528",
+      "lines": 121,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P04_spinlock实现与上下文边界.md",
+      "baseline_sha256": "d8fe4b6b2d3f0d7331f4ff08c17086e6f3623107a511c138a8898810da6ad478",
+      "lines": 92,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P05_mutex慢路径与所有权交接.md",
+      "baseline_sha256": "93a9a69c07d434816d7e9d6b9c83ad7026118012e3a76e7987b0ecf5fb1febfc",
+      "lines": 100,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P06_rwsem读写汇聚与唤醒.md",
+      "baseline_sha256": "9898ae1afdac6539c1b1c95884f66934edbb947297f1f2dc2b57e3dffdef8b82",
+      "lines": 94,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P07_PREEMPT_RT生命周期与选型.md",
+      "baseline_sha256": "e69b130ecd018828949345b6102006f43d4188ce57db196d57a7db65976bf43b",
+      "lines": 100,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/大纲.md",
+      "baseline_sha256": "f2b975d0bacc459818060f6edc69abb7c3200d2bd3b1a9fbb38d59904652614d",
+      "lines": 50,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P01_READ_WRITE_ONCE_与_SMP_内存顺序原语.md",
+      "baseline_sha256": "9092c6a7fa4dcc76940fd03e48ea458ae60fe9c2f4cbae89d8c60de702fc9cee",
+      "lines": 159,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md",
+      "baseline_sha256": "7b4816029621844f5bef598d0465e14d295ba39a2afc3b1c102e0baf35b15733",
+      "lines": 170,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P03_Linux_SMP屏障与顺序域.md",
+      "baseline_sha256": "224f3d59ef5a2f920bf4b9fa2afa9fa976f77f750baad8febcb488ebb10769e2",
+      "lines": 165,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P04_release_acquire_发布协议.md",
+      "baseline_sha256": "5c7305d4257acd43b817cd529b7c9bde3ba5a20d1ec5667b5a0b814990cf91a8",
+      "lines": 188,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P05_数据依赖_控制依赖与RCU取得.md",
+      "baseline_sha256": "4bbaa68e53e10aadcf551871e0b235565b2137c4004e861402d4f3ba039aebca",
+      "lines": 169,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P06_原子RMW_顺序后缀与条件成功.md",
+      "baseline_sha256": "bde95259f239240020be4d1baf8abf63dd9501d6c72be9dda4a2f93784a09a37",
+      "lines": 143,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P07_锁_调度_中断与隐式顺序.md",
+      "baseline_sha256": "20d476ebd5d17049b2bf62887db0686832e5817f61fdf746cd389b0ade376087",
+      "lines": 168,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P08_LKMM事件_关系与一致性判定.md",
+      "baseline_sha256": "dccd3019b476564d75368bdb33f7bb530e24038e7dec778ff7e01d5950a943ac",
+      "lines": 162,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P09_Litmus_形式验证与硬件实验.md",
+      "baseline_sha256": "ac4ac74978fd9f3c250b904e9e99a71a5dc2f9dc8e66bb74ee7a7dbdbb51e89c",
+      "lines": 219,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P10_子系统边界_误用诊断与选型.md",
+      "baseline_sha256": "b108db52fb0926974c97fd553d7dd55a030976539c3ebe6b578cbdb61d109ad9",
+      "lines": 146,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/大纲.md",
+      "baseline_sha256": "6721cad365e9192aa87d0b424a19f01aedf410838d0d27a05cdd4bd458a6cac8",
+      "lines": 62,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P01_为什么需要_RCU.md",
+      "baseline_sha256": "008843a441f9838f611499c7fe1324a7a9f702a9a60606a58b247dc2f7dd9faa",
+      "lines": 560,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P02_RCU_抽象机制推演.md",
+      "baseline_sha256": "a3e21ad7010105c0a9ce4b265f014bfb77760f008a025930d8029f5e37ca409a",
+      "lines": 307,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md",
+      "baseline_sha256": "df7a737d1d6162ee9e436953eb4f32b2131065f579ebcc6c5c588dc51fa76aa6",
+      "lines": 353,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P04_RCU_分类坐标与内核配置.md",
+      "baseline_sha256": "82ad0a92bb3358cba9fb02614877bbdc0e233a655f15cc49a204b5d78357ab1d",
+      "lines": 465,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md",
+      "baseline_sha256": "8e808df68d7eaa57876234a50c475e8adaa7888d8303d2eab5edfa6dc686db1b",
+      "lines": 309,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md",
+      "baseline_sha256": "d0206bb17b65b955dd0e3a789ed269e5275cd10a81f8cc4f06b6ace81d1231e0",
+      "lines": 336,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md",
+      "baseline_sha256": "9cb980bcb6808916d72c1655ea590f80fa8863171f9ae4a1e0784820806cb281",
+      "lines": 268,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md",
+      "baseline_sha256": "6aa2bb70f9fa61f8b1acc6174a533432e0bdb46471db5a6a4d35ddf0ebc9e257",
+      "lines": 378,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P09_Tree_RCU_QS_EQS与Context_Tracking.md",
+      "baseline_sha256": "d6df5fedb058432d9983cfc4ded89d046477cbb8c7c80dda7a430e57388f068e",
+      "lines": 228,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P10_Tree_RCU_rcu_node树与分层汇聚.md",
+      "baseline_sha256": "096a5a0686b5a86d76091e3e59690bfd8f21d8b15edf124a72ba8472e841b99c",
+      "lines": 207,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_rcu_segcblist回调状态机.md",
+      "baseline_sha256": "844a19158da06096ec6b4f8e75c104604a8fe3b333ee1d8af5018b500c2f603d",
+      "lines": 205,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_回调执行_批处理与限流.md",
+      "baseline_sha256": "f8a00ccd24806fd500613e57f771ef2e57f12da21123673a5bca2a43327de913",
+      "lines": 210,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P13_Tree_RCU_同步等待与rcu_barrier.md",
+      "baseline_sha256": "9c7f301b9e8baff69a504b1c6631567acb4222ecf6e1f6d87c2db35a3e15415a",
+      "lines": 247,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P14_Tree_RCU_force_QS迟延与Stall.md",
+      "baseline_sha256": "89f7c33ca485e44f74a4d136e917f9b11fc54028d8a0b8e45faa17faf2834456",
+      "lines": 225,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_Expedited_GP.md",
+      "baseline_sha256": "23c3ef8f6ef7241272754820eebde3a9f97bc048de19083dd47fef2cbd35510d",
+      "lines": 210,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_NOCB回调卸载.md",
+      "baseline_sha256": "d13bd354f45eaa52021eaf77a52fa994afcb4cba16c12bcf1dd6c98d63109a44",
+      "lines": 453,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_CPU热插拔与回调迁移.md",
+      "baseline_sha256": "d63cb58502e95da73607ad13997006253df501cdedda53c655cf2c7061808553",
+      "lines": 202,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_SRCU_私有域与双_index_状态机.md",
+      "baseline_sha256": "78c9c7ea5c02336301d578fb908b2a97ed17a8ca44e616603e2293e80cafcc77",
+      "lines": 295,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P19_Tasks_RCU_任务轨迹宽限期.md",
+      "baseline_sha256": "a19f4c558c1d8142e14d14653081aae42d3ca61dec9fc4fe5858b79e1d5e741b",
+      "lines": 178,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P20_Tiny_RCU_单CPU实现.md",
+      "baseline_sha256": "5a6121f0921525cfc3fa88b74a9b069033de5ff292f5f301c5ee57f7eac73b9f",
+      "lines": 141,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md",
+      "baseline_sha256": "8f02a5b7ca81e0d6901a1f1c448dedbd471211b206cfe71b67c22c7b47992a5a",
+      "lines": 444,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_驱动与子系统应用模式.md",
+      "baseline_sha256": "80e37005d69afda48825730059692ecbc6c500dee12b3a69d72a92edde4bdfd3",
+      "lines": 461,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md",
+      "baseline_sha256": "5d9a73aefe4539a3f4bd5816ea3b8c6dc675b4e45cc0805968e253bedb5d34c4",
+      "lines": 428,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P24_RCU_调试验证与集成误用.md",
+      "baseline_sha256": "8d9fb3d1e06dd89a0e6e34e3655af96af3af4f85b6f48aa9ee3f6bcad903b110",
+      "lines": 299,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P25_RCU_内存序_误用与选择边界.md",
+      "baseline_sha256": "1609d390fbe3323ab5f0bf2d73b154d28fde6ddb9bcc0d76cb116765ea0fc3dd",
+      "lines": 207,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md",
+      "baseline_sha256": "9a80090c253e3454e219db7978489a5dca5bcbb18efc78e0f259accd39f7730e",
+      "lines": 196,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P01_seqcount_seqlock_读重试快照机制.md",
+      "baseline_sha256": "7749ab9feaf222ed1bb3f5bf8d1dff569f9c0d3560a1f07ce990c9e0531271d1",
+      "lines": 183,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P02_一致快照的证明模型.md",
+      "baseline_sha256": "0659e91242514df3632e785609c4c18cc3780e1ca7f492b0b64f209c1d90e3d9",
+      "lines": 98,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P03_seqcount读写路径与内存顺序.md",
+      "baseline_sha256": "0f64dc5c6928fa2f3e06e1a679bb554353e84fc2a5c2984baedf4d21b22c378f",
+      "lines": 79,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P04_seqcount_latch双副本状态机.md",
+      "baseline_sha256": "a9de49924f72851b93e4b65cd5348bfce1c145a082b7ee45b1c41762913f97ee",
+      "lines": 92,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P05_关联锁变体与实时性边界.md",
+      "baseline_sha256": "519324de2c2959bb7ce922e9059decd93918b022161b268c765eb9cb181487c9",
+      "lines": 78,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P06_生命周期误用诊断与选型.md",
+      "baseline_sha256": "7725570f3dd23f53689c596f739974183ae57494ac0788090d78a44d6dffebb0",
+      "lines": 79,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/大纲.md",
+      "baseline_sha256": "7c8d625249e19b3af4f03a867a4193b7931c4b57debaec1d31292c698fdb2faf",
+      "lines": 38,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P01_等待队列.md",
+      "baseline_sha256": "ff47c8f8d5e788aa7005eb397aa4049eb7dd4bc321726760d47d06d442831671",
+      "lines": 226,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P02_completion_完成量.md",
+      "baseline_sha256": "e5c5234baf57cc819caffe3347f8c24439726e0c8298f79066635ece9618cf8e",
+      "lines": 210,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P03_条件等待的统一状态机.md",
+      "baseline_sha256": "d47b0b6cb47f8e4a63491a61131c21a07763684382cf16ee2ade1889f74d9d9d",
+      "lines": 99,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P04_wait_event入队与唤醒调用链.md",
+      "baseline_sha256": "f48dc12ad0db6fffa812a2ba63b517781d9b1c0c981973fda14c03b71e77b77b",
+      "lines": 79,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P05_独占等待批量唤醒与公平性.md",
+      "baseline_sha256": "5cd2e060b1050da954c52e295cf12fe5754bb95bd5d81d0e40e994fbf2180314",
+      "lines": 86,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P06_completion令牌状态与调用链.md",
+      "baseline_sha256": "b78d22478d529273380dc5b4f75fc234c5fc3f9a25afd608bec1ed6658e17e80",
+      "lines": 80,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P07_swait生命周期调试与选型.md",
+      "baseline_sha256": "24f48d56faebe41056147084474f434db4db643a5c25bb1215ab27a00e1c3fb2",
+      "lines": 80,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/大纲.md",
+      "baseline_sha256": "f0e12dfe978be798d1d1398cb611aada1916acfee041722fd40fb7d9e892e02f",
+      "lines": 48,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/大纲.md",
+      "baseline_sha256": "9144ce6520fb6772eec7a61859277b3740dd47b8ecedd2fcfeda1f38e7c9ae03",
+      "lines": 44,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/大纲.md",
+      "baseline_sha256": "f4d8550aed4edab7ba53be835abe15d87374ded9879efeda4a6054e734e641d9",
+      "lines": 38,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P00_全书学习地图.md",
+      "baseline_sha256": "b957ec560cae0b2c6ce6ea880534549cb30a77a727291c7f620b04a9f60467e3",
+      "lines": 196,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P01_引言与基础.md",
+      "baseline_sha256": "029b84d4c48d8bffd8fd6132113339197257d59e8bc23d5f39ee86413930c0c3",
+      "lines": 799,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P02_工具链的构建流程概览.md",
+      "baseline_sha256": "b5fda15e8457c59c3a9b0f1a6ab4368f2684274436242c2bb2951951146b33f3",
+      "lines": 1035,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P03_外部工具链的使用.md",
+      "baseline_sha256": "36bd021728ca51715a942d3e8f551cf2e7135f5da6cd5477493dbca52b51917d",
+      "lines": 897,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P04_工具链的调试与问题排查.md",
+      "baseline_sha256": "ccac6b57b8cee4f958c5130c91c099ae2d319de8e4028eeff8e00ab862c57dce",
+      "lines": 1091,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P05_文件系统构建与定制.md",
+      "baseline_sha256": "05f3b311c7f926b66639ad07431799a8eddfeed3e906b40985a9ec92d5b04e3b",
+      "lines": 1029,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P06_包集成与系统服务.md",
+      "baseline_sha256": "3a0eafb1639a41230c9f86c3a8454f24dcfac905388349f9cd91bf943cdb46ca",
+      "lines": 1123,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P07_镜像生成与部署.md",
+      "baseline_sha256": "7d5d22de6320af1cae22afbd61089205b1bf98e795d4db0b0d3626dd13e4e111",
+      "lines": 1061,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P08_高级定制与集成.md",
+      "baseline_sha256": "4c97e5fbf54976d8c9b069c7334b21d8543c09fc8b6b20cc781205eb5df07219",
+      "lines": 952,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P09_包开发与维护.md",
+      "baseline_sha256": "46708da6b45decb26a071ee326fa0f384bfb66881d46ca29f505233070c86102",
+      "lines": 1050,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P10_镜像生成与部署.md",
+      "baseline_sha256": "14dc35392eea3c8c7e9e8f8d9fa1f21f00d491a25f95ecdbf82c4b2e3442d48d",
+      "lines": 949,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P11_调试与问题排查.md",
+      "baseline_sha256": "c3709701a4ff7cdd0bcf89a38190ddf7cc57285c60099f9721394b6b314c6ad4",
+      "lines": 1012,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P12_高级主题.md",
+      "baseline_sha256": "39fa469669f296c3be2735a739189ad3e9d5276747f9442199bcedf6ad781b5d",
+      "lines": 809,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/buildroot/P13_附录.md",
+      "baseline_sha256": "32943fe9b35653dca756d7d5325cdee3b3b79b405b5a74299e0e57b06298b342",
+      "lines": 475,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/kconfig/基础语法.md",
+      "baseline_sha256": "9b8b16e89dc0fc50b5f488be4e55ae134d61583e90d3d52c851a169efd22c895",
+      "lines": 578,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/linker/lds_基础语法.md",
+      "baseline_sha256": "d0664cc13486267fd19fc58fd501252fbf726313c7511e212f4f47df8c31fb70",
+      "lines": 1749,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/uboot/uboot-makefile.md",
+      "baseline_sha256": "61a7777de4816aa76f4354e5f0316692eaaebd1a64ee60ff2169df0a35b06edb",
+      "lines": 8081,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "knowledge/system_software/uboot/uboot提问.md",
+      "baseline_sha256": "5da61d9c750bde853026ceb04747d0702037f404ee4ed872118794ab8a2b95ae",
+      "lines": 624,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md",
+      "baseline_sha256": "adee574b588a68847df223b705192eee6cceaf328a7788316d622bd03425a01b",
+      "lines": 557,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md",
+      "baseline_sha256": "060b674043bb3ba70a79324e88c704b3381e9baf8bf0f1e26e9286364b03f929",
+      "lines": 86,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/expected/2026-08-02_compiler_observation.md",
+      "baseline_sha256": "6c71bb1dc9ea0237148c7f5fad878e34beaefd8fc8442d5bf6f3b53c033b2c7c",
+      "lines": 86,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/kernel/character_device/materials/README.md",
+      "baseline_sha256": null,
+      "lines": 24,
+      "state": "validated",
+      "reason": "B02c 新增：只说明四份完整 C 源码、Kbuild 与正文归属，不复制实验手册；逐字核对正文代码，保留目标构建和运行未执行边界。",
+      "current_lines": 25
+    },
+    {
+      "path": "labs/kernel/class_sysfs/materials/README.md",
+      "baseline_sha256": null,
+      "lines": 22,
+      "state": "validated",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。",
+      "current_lines": 21
+    },
+    {
+      "path": "labs/kernel/driver_entries/materials/README.md",
+      "baseline_sha256": null,
+      "lines": 24,
+      "state": "validated",
+      "reason": "B02f 两份完整模块与只读观察脚本的取用入口；材料与正文逐字一致，保留导航用途而不复制实验讲解。",
+      "current_lines": 24
+    },
+    {
+      "path": "labs/kernel/error_pointer/materials/README.md",
+      "baseline_sha256": null,
+      "lines": 21,
+      "state": "validated",
+      "reason": "B02e 材料职责索引与三份完整示例一致，运行步骤保留正文，无第二套手册。",
+      "current_lines": 21
+    },
+    {
+      "path": "labs/kernel/file_operations/materials/README.md",
+      "baseline_sha256": null,
+      "lines": 26,
+      "state": "validated",
+      "reason": "B02g 新增实验材料入口，三个模块和用户程序与四份正文代码一致；保持取用职责，观察解释在正文。",
+      "current_lines": 26
+    },
+    {
+      "path": "labs/kernel/linked_list/materials/README.md",
+      "baseline_sha256": null,
+      "lines": 21,
+      "state": "validated",
+      "reason": "本轮新增 B03a 链表材料与版本证据；按实验入口、总索引、模块导读或唯一实现的职责审查，完成源码/材料一致性及适用文档验证。目标 Linux 运行未执行。",
+      "current_lines": 21
+    },
+    {
+      "path": "labs/kernel/lockdep/P01_锁顺序反转与报告解读/README.md",
+      "baseline_sha256": "587d216b21845c8999f57e57b286da8933f1a598432954dd72edbace9a93b6aa",
+      "lines": 213,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md",
+      "baseline_sha256": "d37c20cdbe3c95545174b51e06b008e7ead38d9be59c19618678090a26e0ada0",
+      "lines": 113,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-08-02_windows_x86_64.md",
+      "baseline_sha256": "13f6aaacfaa4af68027efb632df906425a262f62f25ddba41a697c016f111585",
+      "lines": 99,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md",
+      "baseline_sha256": "db24d7fa1e06c37a4ff8be97c7d3b6c178da95dcc39efb32d94d67a2d760b220",
+      "lines": 121,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/kernel/rcu/P01_晚到读者与抢占读者/README.md",
+      "baseline_sha256": "22ceb001c9d72859bdbb30f853635895aaf38a152eb1a52c85e2d828dd263a25",
+      "lines": 180,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P01_LED点灯+ioremap.md",
+      "baseline_sha256": "e7f4158090b1b7516c8b6e1d5904d699a97ecad4bfa61771f1537e0a824e0068",
+      "lines": 1041,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md",
+      "baseline_sha256": "4eb567d79ee6aca3105d46f83d838ea9497f2b59a8d7318a10dbf9e01ae8059a",
+      "lines": 358,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P03_字符设备_LED与设备树完整实验.md",
+      "baseline_sha256": "b3ba652920fba8d66d453f92a4519196a9279cb95d2d7c6fd05d6234bbeab05f",
+      "lines": 1081,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/platforms/nxp/imx6ull/drivers/P02_BEEP/P01_beep+dts.md",
+      "baseline_sha256": "64372fc000f39211c9c7287bd764420407403be84ebb1d189e3df8794caecba7",
+      "lines": 14,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_key_led_interrupt.md",
+      "baseline_sha256": "d9c3ab078dd4d8304a043ea2fc76db683d5fa2606a95808ae2f3622933bf1345",
+      "lines": 325,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_key_led_interrupt_move_shake_01.md",
+      "baseline_sha256": "e8de5271ae48c3ab492af41839196b686922dbe3a7567fff6a64e1b6e85822be",
+      "lines": 287,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md",
+      "baseline_sha256": "2532c115f32ae8f2a5db2b2c2e2da7551463dbd8303f5a9d51af8ee4faf14c8e",
+      "lines": 385,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md",
+      "baseline_sha256": "cb49c0b561cb3c9941261e6b3f9d0d1d5e6c5f08a4822f39ee65c27cfaeafe9e",
+      "lines": 467,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "markbook/README.md",
+      "baseline_sha256": "2900920b396edf901b0947b23e9b6d9977a52cb75b385b5ef303a40b793cc5cd",
+      "lines": 81,
+      "state": "supporting_pending",
+      "reason": "出版入口与派生产物，不回写历史刊物正文"
+    },
+    {
+      "path": "markbook/topics/rcu/README.md",
+      "baseline_sha256": "15a42908086e87dfd430df9e81b3a7f1a8aa85e51db5b6c99e51e133f589451f",
+      "lines": 46,
+      "state": "supporting_pending",
+      "reason": "出版入口与派生产物，不回写历史刊物正文"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/P01_从外设事件到中断请求.md",
+      "baseline_sha256": "9836107b23cb14ddd7bc2518a13e7ddc6d6b50611f6d8a7b5a82bbca4d94658b",
+      "lines": 115,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/P02_从控制器规则到芯片与软件身份.md",
+      "baseline_sha256": "6e2b6184ef467d2c70eb52f98c28e01d537a6823550c7a55b317c0dbecfbaad5",
+      "lines": 96,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/P03_多核控制器的角色_寄存器与编号.md",
+      "baseline_sha256": "31d304c14dcb6bcb777a205d48c499f2670603f80779520f52ecb5793cb64501",
+      "lines": 111,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/P04_一次中断的状态转换与完成协议.md",
+      "baseline_sha256": "7f262a0990a5f8626de8d710f8a5c68475ba895dfdc8b576249d1608723f6052",
+      "lines": 236,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/P05_优先级_屏蔽与嵌套处理.md",
+      "baseline_sha256": "1dfe46ff494df708679e6382694c38935911fa2d0a628d8b886b1c8dac14bbea",
+      "lines": 201,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/P06_权限_安全分组与初始化闭环.md",
+      "baseline_sha256": "5d5b02322c6420fe7f7dc4bb89133683decab7705dc6df85a65f9a1723aaadcc",
+      "lines": 209,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/P07_目标选择_核间通知与电源交接.md",
+      "baseline_sha256": "5d9b1c49b579521dbb61314e7bb81e1d9e3b1bb53d9b7cb41c41c2deb4a532fa",
+      "lines": 144,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md",
+      "baseline_sha256": "bcbb6798a5f10614219e389c49f7c7893d75e2ddacb0e4bfefe0d439503deb5d",
+      "lines": 119,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md",
+      "baseline_sha256": "103609cdfc3d4acf8701a098b18aa758f6c61a87871501cfdb5fb1824f0fdf99",
+      "lines": 144,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/P10_软件交接_部署与分层排障.md",
+      "baseline_sha256": "d0eaab890d5a4536241c15f69d8017aa59f34c9233b7baff84fa21dd10662771",
+      "lines": 115,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/P11_UART中断的端到端流程复盘.md",
+      "baseline_sha256": "f6740e5a7d43f122dda32dc5723cde943cb4283e1e2d8f700595888f614376c5",
+      "lines": 2094,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/architecture/gic/大纲.md",
+      "baseline_sha256": "748efd4cf28fbc7de7d9d6c221819d3f2d266cb1ad73ddfbb84e62100dd2ecc0",
+      "lines": 84,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md",
+      "baseline_sha256": "60d92fcb61d43df5749a4a78018dddc3f0ba625c18698a437ba33c52e2c740ae",
+      "lines": 3918,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md",
+      "baseline_sha256": "772a341af0f828776934895b59bd43880347f3395f8f13e513647083d89f935a",
+      "lines": 165,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md",
+      "baseline_sha256": "656acbbbbf73e7aa51255df76ab0bc3efda7baa5f1eee2b57a6cb2d56c0d3843",
+      "lines": 369,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "platforms/arm/rockchip/rk3588/P01_RK3588的GIC-600集成与手册核对.md",
+      "baseline_sha256": "baa2c89aa478c72ed7a5f5cb3101ba2a5cef4f62685c63d240db7d1030882fc0",
+      "lines": 90,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "publications/books/running_linux_kernel/P01_linux系统基础知识.md",
+      "baseline_sha256": "0d6a8a05f3425672c7b3ff37e64646f8b20920caa8bdd6255ad07cb425bf10d4",
+      "lines": 27,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "publications/books/running_linux_kernel/P02_Linux内核中常用的数据结构和算法.md",
+      "baseline_sha256": "60471347d5598023bc090752b824b08d33a3a49607cd31cc7af07068ff3b7f02",
+      "lines": 240,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "publications/books/running_linux_kernel/P03_内核引导和初始化.md",
+      "baseline_sha256": "876646157e7ec59dcc9ec1f1928e90515beecc01b951a1e8bd920ce4ebb5280e",
+      "lines": 4031,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "publications/books/running_linux_kernel/P04_uboot启动流程说明.md",
+      "baseline_sha256": "5f389aa30e2947baa9cc95e569034713f1049926df44ee75967203ddaab6e279",
+      "lines": 981,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "publications/books/running_linux_kernel/README.md",
+      "baseline_sha256": "7b1a4395fdde5860f5f7e0a853e781ad9ac639d9e03378223ef8356064a0abc8",
+      "lines": 276,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "publications/books/running_linux_kernel/copyright_and_disclaimer.md",
+      "baseline_sha256": "e8cca34ee1ef7a508b8d59bc0df9de8ac70e022ab9511410dd0141aa92fb513b",
+      "lines": 52,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "reference/README.md",
+      "baseline_sha256": "d7bde5209250a0325de3cda74df655b4a6aff94be5f6630a5681c889135a260a",
+      "lines": 38,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "reference/external_resources/arm/README.md",
+      "baseline_sha256": "82bad9cdb7cc554018197238982713258c23bf71c4567d2d3cca432ef2bc816c",
+      "lines": 220,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "reference/standards/gpl/GPL协议说明.md",
+      "baseline_sha256": "0685256d7ca68102d406bcc42212636813df4f9b04bb2857eacec12fd37255dc",
+      "lines": 177,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/investigations/README.md",
+      "baseline_sha256": "d3a274004a7441c87a99785817d5ee0535f7488cebe68f10ee94d5b8d8f39b21",
+      "lines": 20,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/investigations/character_device/字符设备扩展接口历史草稿.md",
+      "baseline_sha256": "1af182c77e755a72a1bc54306878d4dced8802310f5f56fd8fd6bc8e61a0b83c",
+      "lines": 4682,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/investigations/device_model/legacy_设备模型34章原始总稿.md",
+      "baseline_sha256": "51358a6af135b187e2263e0a44de6ca0d13cd996178513378ececb556d35788f",
+      "lines": 10769,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/character_device/navigation/P01_Linux_6.12_字符设备源码阅读索引.md",
+      "baseline_sha256": null,
+      "lines": 28,
+      "state": "validated",
+      "reason": "B02b 新增固定版本 I/O 证据入口或讲解；与官方提交核对、关联链接和适用阅读检查通过，不声称内核运行验证。",
+      "current_lines": 31
+    },
+    {
+      "path": "research/source_reading/character_device/navigation/P02_Linux_6.12_有限缓冲区IO模块导读.md",
+      "baseline_sha256": null,
+      "lines": 68,
+      "state": "validated",
+      "reason": "B02b 新增固定版本 I/O 证据入口或讲解；与官方提交核对、关联链接和适用阅读检查通过，不声称内核运行验证。",
+      "current_lines": 68
+    },
+    {
+      "path": "research/source_reading/character_device/navigation/P03_文件操作与打开寿命导读.md",
+      "baseline_sha256": null,
+      "lines": 113,
+      "state": "validated",
+      "reason": "B02g 新增固定版本模块导读，追踪引用、关闭分支、请求位置和映射，列明原文保存与只读核对范围，不复制函数体。",
+      "current_lines": 113
+    },
+    {
+      "path": "research/source_reading/character_device/source_explanations/fs/libfs.c.md",
+      "baseline_sha256": null,
+      "lines": 89,
+      "state": "validated",
+      "reason": "B02b 新增固定版本 I/O 证据入口或讲解；与官方提交核对、关联链接和适用阅读检查通过，不声称内核运行验证。",
+      "current_lines": 89
+    },
+    {
+      "path": "research/source_reading/character_device/source_explanations/fs/open.c.md",
+      "baseline_sha256": null,
+      "lines": 69,
+      "state": "validated",
+      "reason": "B02g 新增唯一关闭实现讲解，区分 filp_close 与 close 的 __fput_sync 路径；完整函数语句核对，裁剪范围、中文阅读注释和副作用明确。",
+      "current_lines": 69
+    },
+    {
+      "path": "research/source_reading/character_device/source_explanations/fs/read_write.c.md",
+      "baseline_sha256": null,
+      "lines": 98,
+      "state": "validated",
+      "reason": "B02g 新增唯一读取分派/同步适配讲解，两个完整函数与固定提交语句一致，连接请求位置和同步约束。",
+      "current_lines": 98
+    },
+    {
+      "path": "research/source_reading/character_device/source_explanations/include/linux/uaccess.h.md",
+      "baseline_sha256": null,
+      "lines": 40,
+      "state": "validated",
+      "reason": "B02b 新增固定版本 I/O 证据入口或讲解；与官方提交核对、关联链接和适用阅读检查通过，不声称内核运行验证。",
+      "current_lines": 40
+    },
+    {
+      "path": "research/source_reading/character_device/大纲.md",
+      "baseline_sha256": null,
+      "lines": 26,
+      "state": "validated",
+      "reason": "B02b 新增固定版本 I/O 证据入口或讲解；与官方提交核对、关联链接和适用阅读检查通过，不声称内核运行验证。",
+      "current_lines": 26
+    },
+    {
+      "path": "research/source_reading/compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md",
+      "baseline_sha256": "0152f819aac0594a34096e715b26adae4b6b0e52503a8aebf09535509e9e970d",
+      "lines": 187,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/compiler_annotations/navigation/P02_Linux_6.12_compiler_types注解模块概念导读.md",
+      "baseline_sha256": "b832022637fac04960dd17b70509e1efe01843074b4b6104cdd089af97e5cc79",
+      "lines": 124,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/compiler_annotations/source_explanations/P01_Linux_6.12_compiler_types注解宏源码实现.md",
+      "baseline_sha256": "9eba7c0006539b44a9390b430d693c330ecb7dbb769bcdcfe34da6609ab04db4",
+      "lines": 367,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/driver_entries/navigation/P01_Linux_6.12_驱动入口源码阅读索引.md",
+      "baseline_sha256": null,
+      "lines": 32,
+      "state": "validated",
+      "reason": "B02f 固定官方提交、配置边界和按现象查文件的阅读索引，链接全部模块导读与唯一实现。",
+      "current_lines": 35
+    },
+    {
+      "path": "research/source_reading/driver_entries/navigation/P02_对象属性与字符入口导读.md",
+      "baseline_sha256": null,
+      "lines": 84,
+      "state": "validated",
+      "reason": "B02f 逐步核对动态对象、属性活动、等待排空和 misc 状态交接；只组织跨文件协作，不重复函数体。",
+      "current_lines": 84
+    },
+    {
+      "path": "research/source_reading/driver_entries/navigation/P03_分类对象与属性事务导读.md",
+      "baseline_sha256": null,
+      "lines": 79,
+      "state": "validated",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。",
+      "current_lines": 79
+    },
+    {
+      "path": "research/source_reading/driver_entries/source_explanations/P01_对象创建与misc分派.md",
+      "baseline_sha256": null,
+      "lines": 269,
+      "state": "validated",
+      "reason": "B02f 固定源码下唯一解释动态创建和 misc 登记/打开/注销，含中文阅读注释、明确裁剪、状态所有权和修改边界。",
+      "current_lines": 269
+    },
+    {
+      "path": "research/source_reading/driver_entries/source_explanations/drivers/base/core.c.md",
+      "baseline_sha256": null,
+      "lines": 136,
+      "state": "validated",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。",
+      "current_lines": 136
+    },
+    {
+      "path": "research/source_reading/driver_entries/大纲.md",
+      "baseline_sha256": null,
+      "lines": 17,
+      "state": "validated",
+      "reason": "B02f 建立源代码主题职责入口；只组织总索引、模块导读与唯一实现讲解。",
+      "current_lines": 19
+    },
+    {
+      "path": "research/source_reading/error_pointer/navigation/P01_Linux_6.12_错误指针源码阅读索引.md",
+      "baseline_sha256": null,
+      "lines": 36,
+      "state": "validated",
+      "reason": "B02e 固定 NXP 提交身份、配置边界、问题入口与验证用途逐项核对。",
+      "current_lines": 36
+    },
+    {
+      "path": "research/source_reading/error_pointer/navigation/P02_返回值与清理路径导读.md",
+      "baseline_sha256": null,
+      "lines": 87,
+      "state": "validated",
+      "reason": "B02e 按实际源码追踪返回位置与设备资源记录、分配/包装失败/核心清理，附辅助证据路径；不重复函数体。",
+      "current_lines": 87
+    },
+    {
+      "path": "research/source_reading/error_pointer/source_explanations/P01_err.h_错误值编码与检查.md",
+      "baseline_sha256": null,
+      "lines": 163,
+      "state": "validated",
+      "reason": "B02e 唯一展开 err.h 编码/检测/传播/每 CPU 注解簇，中文阅读注释、输入范围、状态边界和修改影响已核对原文。",
+      "current_lines": 163
+    },
+    {
+      "path": "research/source_reading/error_pointer/大纲.md",
+      "baseline_sha256": null,
+      "lines": 23,
+      "state": "validated",
+      "reason": "B02e 新增源码职责导航，区分总索引、固定模块导读和唯一实现体。",
+      "current_lines": 23
+    },
+    {
+      "path": "research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md",
+      "baseline_sha256": null,
+      "lines": 37,
+      "state": "validated",
+      "reason": "本轮新增 B03a 链表材料与版本证据；按实验入口、总索引、模块导读或唯一实现的职责审查，完成源码/材料一致性及适用文档验证。目标 Linux 运行未执行。",
+      "current_lines": 36
+    },
+    {
+      "path": "research/source_reading/linked_list/navigation/P02_拓扑修改与发布边界导读.md",
+      "baseline_sha256": null,
+      "lines": 68,
+      "state": "validated",
+      "reason": "本轮新增 B03a 链表材料与版本证据；按实验入口、总索引、模块导读或唯一实现的职责审查，完成源码/材料一致性及适用文档验证。目标 Linux 运行未执行。",
+      "current_lines": 67
+    },
+    {
+      "path": "research/source_reading/linked_list/source_explanations/include/linux/list.h.md",
+      "baseline_sha256": null,
+      "lines": 182,
+      "state": "validated",
+      "reason": "本轮新增 B03a 链表材料与版本证据；按实验入口、总索引、模块导读或唯一实现的职责审查，完成源码/材料一致性及适用文档验证。目标 Linux 运行未执行。",
+      "current_lines": 181
+    },
+    {
+      "path": "research/source_reading/linked_list/大纲.md",
+      "baseline_sha256": null,
+      "lines": 16,
+      "state": "validated",
+      "reason": "本轮新增 B03a 链表材料与版本证据；按实验入口、总索引、模块导读或唯一实现的职责审查，完成源码/材料一致性及适用文档验证。目标 Linux 运行未执行。",
+      "current_lines": 15
+    },
+    {
+      "path": "research/source_reading/linux/SOURCE_BASELINE.md",
+      "baseline_sha256": "e2092c3c096872629cb5c8309f495ffce04cf86acb1184e8213e6c1a7e346d69",
+      "lines": 276,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/linux/drivers/input/README.md",
+      "baseline_sha256": "b14efb1a4dc4abe0a3e97f753cc448eb3c6a86053d44aca82778783a8973d81f",
+      "lines": 60,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/linux/gpio/linux_6.12_gpio_核心路径.md",
+      "baseline_sha256": "42eada96df83d7fdaa08dd0a81d8d8ef7fccab328b8a827997797525f473bea1",
+      "lines": 142,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md",
+      "baseline_sha256": "78f152a4571db75fd736302eca1f4bcb5378b8051261c4264b77537925419982",
+      "lines": 129,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md",
+      "baseline_sha256": "110fe7a4f445880f6b0e5f06f916fbc1d08b3d8f4f2587a36767f86c8508e0d2",
+      "lines": 81,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md",
+      "baseline_sha256": "ee49d6d396b625fc3a62139f3c31bff2803ebe39f14aea0cd04e8df7bc0b962d",
+      "lines": 82,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md",
+      "baseline_sha256": "281ef4912567ed4d493a1b22c989e17c24dc623970042e53a69900815f35b4c7",
+      "lines": 92,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md",
+      "baseline_sha256": "31ee21a97314194688d56403aff1557b64b6801d1c34cb739f6de8d992e71506",
+      "lines": 208,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md",
+      "baseline_sha256": "ee3c472bed82cff410ccfd3bb5448ecceaf108f4ed237ac8010552105831ff6e",
+      "lines": 239,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/lockdep/source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md",
+      "baseline_sha256": "27e286d68a7c676de2a5990087bfb4732974ab3a655b4e282dc1baf6c1770edb",
+      "lines": 282,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md",
+      "baseline_sha256": "8f7825a44f80e59a7d30c1b421ee80cc14b18438626102d3b37cbc0070b8ffb8",
+      "lines": 249,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md",
+      "baseline_sha256": "276e107d60c333352992b810f39894f3654e0169aff15084e669e378ea253afc",
+      "lines": 84,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/locking/navigation/P02_Linux_6.12_spinlock模块源码概念导读.md",
+      "baseline_sha256": "563be29d08c98e44c09602b647581abe381945908ec770da3d3ef394a0b75e96",
+      "lines": 83,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md",
+      "baseline_sha256": "5b08565fc400c136d305ea893c7b20b53fda5132d155bdc8aa50747b52446a25",
+      "lines": 79,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/locking/source_explanations/P01_Linux_6.12_spinlock包装与raw路径源码实现.md",
+      "baseline_sha256": "685265a3fd2b0ebbb2b120f1f0f0f89266ed3ecfa618d2b842e77a59dfce0169",
+      "lines": 109,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/locking/source_explanations/P02_Linux_6.12_mutex慢路径源码实现.md",
+      "baseline_sha256": "280b27038b69a2943be8e0b19cd2a3f553a466616dd3cd6508783ef37b743a1d",
+      "lines": 118,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/locking/source_explanations/P03_Linux_6.12_rwsem慢路径源码实现.md",
+      "baseline_sha256": "e2ee0e1ef88f3f030d3790df51f41e4187f30373f54312deca47e9b348dad6d4",
+      "lines": 110,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md",
+      "baseline_sha256": "0ea2d7d36fe6c57226b4e348dd5bb6351795a7fa0030c5dcd4d5af514d24babe",
+      "lines": 216,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md",
+      "baseline_sha256": "d16835da0d6a18d771090d9518b50df6c3d9ed89053a61bf5881631852692c85",
+      "lines": 144,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md",
+      "baseline_sha256": "05cf2e464e941e6651203d769bec3d034dbb78a1d1dca6efe3f3b3f2e33f6de3",
+      "lines": 224,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md",
+      "baseline_sha256": "74ce20fc414c8b7f9d0239094d3e52be53deb95872043a0d1b185ec64294f3fc",
+      "lines": 241,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md",
+      "baseline_sha256": "c9972e9d21d4740db256d463de2056d5218347bd705c9c79aa63ca991af33a7e",
+      "lines": 171,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P05_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md",
+      "baseline_sha256": "6af8e7bfe1870b5dbe84cbfc6c449cd695104f580f9db4929cf09597eecf6a55",
+      "lines": 163,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md",
+      "baseline_sha256": "d7eab6dfc6e7910604249579895edbc36152c15a693da95a3d263b9da868dc5f",
+      "lines": 174,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md",
+      "baseline_sha256": "2b4c5d66e0f08c4b673e195b38a1bd77c8cd8cd8a7c5c08cf23f1848b170a2bc",
+      "lines": 195,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P08_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md",
+      "baseline_sha256": "731420eef1f8d9a4858f90074922d9743aa1457c26f3e68d85ab6abe7c7990dd",
+      "lines": 169,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P09_Linux_6.12_Tree_SRCU模块源码概念导读.md",
+      "baseline_sha256": "65465a5ffdfb5e34d675f1b18eefb2e5e402d36348c2c2446bc325a0b12f6d00",
+      "lines": 204,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P10_Linux_6.12_Tasks_RCU模块源码概念导读.md",
+      "baseline_sha256": "52749cfb925d716268c1431366c4a47b4882126ab56f0ffc5fa5c63880c50d0c",
+      "lines": 106,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md",
+      "baseline_sha256": "a2b6f4d77152639850120d9e4150d40e4175d56e52713293dc7cef71777edddc",
+      "lines": 105,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/navigation/P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md",
+      "baseline_sha256": "ef044a201d5ba5bb8e212a318d583d7ece7ce56dde5e11d7e797979d8a51e15c",
+      "lines": 164,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md",
+      "baseline_sha256": "896a7ae8d1fe42f84dfe4635ebb63ca439a3f7880971acc4fd6833e9c1294d47",
+      "lines": 278,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md",
+      "baseline_sha256": "4d2546793585e102fa1de0b8ae3b9f0deecc7c76c4abf8e2947f98582b37e8dc",
+      "lines": 315,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md",
+      "baseline_sha256": "50cd7a74ce796952d82f1dd79d5cbdf9e9b963db6989d1715d794e2509ed6403",
+      "lines": 390,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md",
+      "baseline_sha256": "70d7aaff24d0ea5e015f1ee93ca5e29f97108d7a7cadfffe8f3fb6a3bd377da4",
+      "lines": 578,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md",
+      "baseline_sha256": "d77f931b8fe58186623c93631d5363d4648779ec26635a0953ab9d5d5f234bec",
+      "lines": 1074,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md",
+      "baseline_sha256": "0fa90ba83abcdc9e914a1a2fe741aa7e122677b196d90a5866723d8bdcdaa8e7",
+      "lines": 440,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md",
+      "baseline_sha256": "252b35c708ae3a89d16c99ba795ed2644e67b93c41e8c23c8469d39de72b3d7c",
+      "lines": 393,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md",
+      "baseline_sha256": "1e9b9570ac3bc15deae90a9c872ee24f3d15295a73eac082a83fc2ac0acae3bd",
+      "lines": 543,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md",
+      "baseline_sha256": "c42976a86ce5f388f203a64b82c81228b1c603810d435123488aacfe6cae5e8a",
+      "lines": 797,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md",
+      "baseline_sha256": "ac8fc356aefa3353992e2aaacaec538956f3ca09cf0f30d1e5765568f3df6193",
+      "lines": 365,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md",
+      "baseline_sha256": "ab96e597ec2585ec5658121f602b3cbad113ea3162d0880ea58ab7eb332ef929",
+      "lines": 952,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md",
+      "baseline_sha256": "fcd9209b13e12244c2bf895f8e2573b8b0e78f24d1fe584d81f69570529cd954",
+      "lines": 1149,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md",
+      "baseline_sha256": "a687fa9e5247c2f07548579d3dc1e5e75f3d83fb904e210f8783f6221e2ad0ce",
+      "lines": 1213,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md",
+      "baseline_sha256": "76921be2bfc7e3ae44b6a77a791e88b315dd58254b8f47f48185379e10fa8c7c",
+      "lines": 70,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/sequence_counters/navigation/P02_Linux_6.12_seqcount与seqlock模块源码概念导读.md",
+      "baseline_sha256": "b0f12da4c6e2bf15b386abdfd33fb13419f7f7bde18859c68f0d8eba449236e0",
+      "lines": 70,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/sequence_counters/source_explanations/P01_Linux_6.12_seqlock_h读写与latch源码实现.md",
+      "baseline_sha256": "e2734735133288bdf730aa9c1d7ea4958eb1288a5ac73a5a15de900684e13bc7",
+      "lines": 136,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md",
+      "baseline_sha256": "71088beb65daf0ca368431e935f688247a5ebaec076e9817377117613f93f931",
+      "lines": 69,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/waiting_notification/navigation/P02_Linux_6.12_普通等待队列模块源码概念导读.md",
+      "baseline_sha256": "901646879b752dd5eb9c5c00426502855365ec87f726749895c38730f1de58a6",
+      "lines": 70,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/waiting_notification/navigation/P03_Linux_6.12_completion模块源码概念导读.md",
+      "baseline_sha256": "5c4b54750a33a0ae2fea016e8df721dd4b3d9b19cde7dfb7583908e664e851fe",
+      "lines": 68,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md",
+      "baseline_sha256": "d87f02ff17fa2a5f6d67066fe88d0d94074685dc71a3265df42dd4bc31f9944c",
+      "lines": 118,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/waiting_notification/source_explanations/P02_Linux_6.12_completion_c令牌与等待源码实现.md",
+      "baseline_sha256": "08fbd3b88ee8f14793f2cadca34393c164c4e3b4848cf529f93f6f9e97a8090f",
+      "lines": 112,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md",
+      "baseline_sha256": "e5203e9ee2bdf46b95a9dd74f3c1f70531e440c7013e3bcc37f5b341c48b4b3b",
+      "lines": 81,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/workqueue/navigation/P02_Linux_6.12_工作队列对象与投递模块源码概念导读.md",
+      "baseline_sha256": "bd2833069b92780d4d1ff27cd8c893a59596d892dee6bda255991da236cf9e1b",
+      "lines": 70,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/workqueue/navigation/P03_Linux_6.12_worker管理模块源码概念导读.md",
+      "baseline_sha256": "74286a5bcc80b91c2165c49c53b051d1f2b8f038086fed71f710a1a9f325ac2a",
+      "lines": 76,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/workqueue/navigation/P04_Linux_6.12_flush取消与生命周期模块源码概念导读.md",
+      "baseline_sha256": "09e011d256164b23fa26f1bb6b740f8e6fc51432a438e1f8d6fc40d77486daa0",
+      "lines": 67,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/workqueue/source_explanations/P01_Linux_6.12_工作队列对象布局源码实现.md",
+      "baseline_sha256": "873dfa882a9b87e92802fc604f8d39121223115e866686239185ca8470ea8364",
+      "lines": 103,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/workqueue/source_explanations/P02_Linux_6.12_工作队列投递与激活源码实现.md",
+      "baseline_sha256": "e0fd4fea78e419f638247bcac6bf168b93b217fe3c83897426e0bfa4b072deac",
+      "lines": 97,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/workqueue/source_explanations/P03_Linux_6.12_worker_flush与取消源码实现.md",
+      "baseline_sha256": "ffcf8110ce2de752efa5ddfe9c76239a149222564d05993304c2389680d7d452",
+      "lines": 145,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "tools/ai/application/gemini_ask_method.md",
+      "baseline_sha256": "43d4b3be57d08cf530c03294d778c32f3ef98ef211d08d7c57164641e3d80406",
+      "lines": 38,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "tools/ai/application/mermaid_require.md",
+      "baseline_sha256": "521db23f2032684231c8b43e7df112b206158227a7af20ac025b9e58dec52e97",
+      "lines": 219,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "tools/ai/codex/skills/build-linux-note-topic/SKILL.md",
+      "baseline_sha256": "c849ea8525a87161425e0b899163d41ab749016263f031bfb9f9d0531473a5a6",
+      "lines": 433,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "tools/ai/codex/skills/build-linux-note-topic/references/explanation-quality.md",
+      "baseline_sha256": "e1aa3d26e813077d3b9f6b3f008558310e206919c335aa6c5efd49dd4eeeede1",
+      "lines": 138,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "tools/ai/codex/skills/build-linux-note-topic/references/lockdep-case-study.md",
+      "baseline_sha256": "bf4ab086be36d4ed99247aaa345a672b41eb92d88a651b6af1230eabaf03a5c1",
+      "lines": 109,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "tools/ai/codex/skills/build-linux-note-topic/references/mechanism-reasoning.md",
+      "baseline_sha256": "52d748c95362dc7206e35de0f181acb27eb91009425fc3a40e01cf4db56538b3",
+      "lines": 234,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "tools/ai/codex/skills/build-linux-note-topic/references/rcu-case-study.md",
+      "baseline_sha256": "d7fab67eae294268f4324838d714249ac17c4c226f887d50413fb8452f6a85e8",
+      "lines": 195,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "tools/ai/codex/skills/build-linux-note-topic/references/repository-topic-requirements.md",
+      "baseline_sha256": "c667027b9235903ddf197ea3365fe315b38d49d3c5b24e6dc06227d273a5a666",
+      "lines": 227,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "tools/ai/codex/skills/build-linux-note-topic/references/review-checklist.md",
+      "baseline_sha256": "681a3b3e345d29dc5238e2a20aa46e8f124b9afc3c0c99604e4f4e82374d6129",
+      "lines": 211,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "tools/ai/codex/skills/build-linux-note-topic/references/source-evidence.md",
+      "baseline_sha256": "b1972df32af25f3b917a60acdcc01524af4104e0a57f30fbf35db99234d2c4ba",
+      "lines": 195,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "tools/ai/codex/skills/build-linux-note-topic/references/topic-design.md",
+      "baseline_sha256": "0dbffdb11e838ba0c904a81dee4461096187988b425f7b745eae4dba7065ecf8",
+      "lines": 475,
+      "state": "supporting_pending",
+      "reason": "运行规则或仓库治理，按真实受影响关系审查，不套教材故事"
+    },
+    {
+      "path": "tools/ai/topic_summary_requirements/P01_主题章节的要求.md",
+      "baseline_sha256": "b7c449161a129ee6555e3ff05e35865e67c765110c208f4b9cab49f0641b5ed3",
+      "lines": 95,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "tools/ai/topic_summary_requirements/P02_主题章节的要求.md",
+      "baseline_sha256": "b63fe7f2aa457056b8c6ab4e461775873fce26086f7ced0db7ac45d24c5c9fbf",
+      "lines": 100,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "tools/ai/topic_summary_requirements/P03_主题章节的要求.md",
+      "baseline_sha256": "f574212c51f5ed9ce313cfc166f3daacf79c9b2e9be2d0b1869494e294409cab",
+      "lines": 171,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "tools/ai/topic_summary_requirements/P04_主题章节的要求.md",
+      "baseline_sha256": "12c143c467af7ed59a6b2277b73689122a90b9492997aef14fb936e544bab4a4",
+      "lines": 176,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "tools/ai/topic_summary_requirements/P05_主题章节的要求.md",
+      "baseline_sha256": "75c31e977c47ab2f980f563b6d03c68081c7054de6cb227465f4feab2a354a84",
+      "lines": 60,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "tools/obsidian/markmind/markmind使用技巧.md",
+      "baseline_sha256": "f521a57b3ade638ab108ade1cfe6f31423152662f320cec23992206895ce6423",
+      "lines": 8,
+      "state": "pending",
+      "reason": "按职责冷读并确定保留、修复或重写范围"
+    }
+  ]
+}

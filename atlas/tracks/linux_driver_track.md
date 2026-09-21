@@ -19,18 +19,18 @@ domains:
 
 ## 1.2\_第一阶段\_模块与字符设备
 
-1. [Linux 内核模块与设备节点操作入门](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)。
-2. [Linux 驱动开发 Makefile 指南](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_驱动开发_Makefile_指南.md)。
+1. 先完成[内核模块构建与部署](../../engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)，从 Hello 模块建立目标身份、构建和装卸闭环，再学习多文件与配置集成。
+2. 阅读[模块装载与设备访问入口](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)，观察 Hello 模块与现有文件，区分代码、服务和路径；沿[模块入口大纲](../../knowledge/linux/architecture/modules_and_device_nodes/大纲.md#1.1_沿三个问题进入正文)进入号码登记与多实例身份。
 3. 先阅读[VFS 的对象拓扑](../../knowledge/kernel_subsystems/vfs/P03_VFS_状态与对象拓扑.md)、[open 状态机](../../knowledge/kernel_subsystems/vfs/P12_open状态机.md)和[fd/file 生命周期](../../knowledge/kernel_subsystems/vfs/P13_fd_table与file生命周期.md)，明确字符设备接入的上游边界；VFS 自身的完整路线仍以[VFS 专题大纲](../../knowledge/kernel_subsystems/vfs/大纲.md)为准。
 4. 按序完成[字符设备专题](../../knowledge/driver_model/character_device/大纲.md)。
-5. 结合[字符设备驱动模板](../../knowledge/driver_model/character_device/P10_字符设备驱动模板.md)完成最小驱动。
+5. 用[有限窗口模板](../../knowledge/driver_model/character_device/P10_字符设备驱动模板.md)和[运行验证](../../knowledge/driver_model/character_device/P11_构建运行与验证.md)观察位置、内容与节点关系；再以[环形流模板](../../knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md)引入消费、等待和 poll，不把两种 EOF 规则混用。
 
 阶段验收：能独立完成模块装卸、设备号分配、`cdev` 注册、设备节点创建和基础文件操作。
 
 ## 1.3\_第二阶段\_驱动所需通用机制
 
 1. [Linux 同步和异步机制总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)。
-2. [错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md)。
+2. [错误指针专题](../../knowledge/linux/error_handling/error_pointer/大纲.md#1.1_四次认识变化)。
 3. [devres API](../../knowledge/linux/object_lifetime/devres/devres_API说明.md)。
 4. [驱动中的时间问题](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P01_驱动中的_时间问题_概述.md)，再按需要学习睡眠、timer、hrtimer 和 delayed work。
 5. [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)及[异步通知](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md)。
@@ -39,8 +39,10 @@ domains:
 
 ## 1.4\_第三阶段\_设备模型与Platform
 
-1. 按序完成[Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)。
-2. 阅读[驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md)。
+1. 从[驱动框架学习地图](../../knowledge/driver_model/fundamentals/framework_model/大纲.md#1.1_四个问题怎样接起来)进入：先分离实例和代码，再观察登记与绑定，完成只读 sysfs 属性和 misc 字符入口，区分对象引用、活动回调和旧打开者。
+   完成 misc 后，沿[文件操作教材](../../knowledge/driver_model/file_operations/大纲.md#1.1_沿对象寿命逐步增加约束)观察 dup 与独立打开、readv 与 pread、关闭 fd 后的映射引用；不要把 file_operations 当作必须全部填写的成员清单。
+2. 按序完成[Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)，继续研究匹配、依赖、热拔插和完整生命周期；小型入口不能代替这部分协议。
+   第 11 章进入[class 与 sysfs 分支](../../knowledge/linux/device_model/class_sysfs/大纲.md#1.1_从分类观察到可控数据入口)，先观察无节点的两个分类实例，再运行属性控制字符读取，解释输入失败、权限和撤销边界。
 3. 按序完成[设备树与 Platform 开发](../../knowledge/driver_model/device_tree/设备树+platform开发)。
 4. 选读[GPIO 与 pinctrl 设备树示例](../../knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md)。
 

@@ -18,6 +18,7 @@ domains:
 | 选择可读内容并查看人工确认程度 | [知识库专题阅读与评审地图](maps/knowledge_review_map.md) | 使用 MarkMind 按领域、专题和章节跳转，并识别未校正、人工评审中、评审完成三种状态 |
 | 建立全局认识 | [Linux系统与驱动知识地图](maps/linux_system_map.md) | 了解各领域边界及依赖关系 |
 | 系统学习内核机制 | [Linux内核机制学习路线](tracks/linux_kernel_track.md) | 从内核结构学到并发、中断和设备模型 |
+| 第一次进入 Linux 内核 | [读取一份文件](../knowledge/linux/architecture/kernel_composition/linux内核概貌.md#1.1_先让程序读到几个字) → [从问题找到源码](../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md#1.1_先区分源码目录与正在运行的系统) | 有 C 基础，从可运行的小例子建立边界，再认识源码与构建产物 |
 | 聚焦连续阅读一个专题 | [RCU MarkBook](../markbook/topics/rcu/README.md#1.2_发行入口) | 在一册月度快照中连续阅读稳定机制、Linux 6.12 源码导航、唯一实现讲解与实验，同时保留来源追溯 |
 | 推演同步与异步机制 | [同步和异步机制总纲](../knowledge/linux/synchronization_and_asynchrony/大纲.md)、[Linux 6.12 源码基线](../research/source_reading/linux/SOURCE_BASELINE.md#1.5.3_锁_序列计数器_等待与工作队列证据) | 从锁、快照、等待和异步执行的稳定模型进入版本化状态与调用链 |
 | 读懂内核编译期注解 | [编译器与 Sparse 注解专题](../knowledge/foundations/c_language/kernel_static_annotations/大纲.md#1.1_专题定位)、[研究型实验](../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标)、[Linux 6.12 源码导读](../research/source_reading/compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务) | 从预处理展开进入地址域、context、BTF 与工具验证 |
@@ -27,6 +28,7 @@ domains:
 | 从 RK3588 开始学习 GIC | [GICv3 物理中断专题](../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图) | 十篇独立概念讲解与 RK3588 集成记录，术语中英文对照、就近追溯官方目录 |
 | 查找现有内容 | [仓库内容索引](indexes/content_index.md) | 按领域定位文档、实验和研究材料 |
 | 规划后续建设 | [知识库建设路线图](roadmaps/content_roadmap.md) | 查看内容覆盖、缺口和维护优先级 |
+| 跟进 Linux 教材重构 | [批次蓝图](roadmaps/linux_textbook_refactor.md) | 查看全量范围、学习依赖、已实施批次及下一批入口 |
 
 ## 1.2\_按内容类型进入
 

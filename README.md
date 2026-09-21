@@ -84,6 +84,24 @@ https://github.com/FormingSystem/linux_note.git
 
 推荐使用 Typora 或 Obsidian 阅读。
 
+准备运行第一个内核模块时，从[内核模块构建与部署](engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)建立目标身份、构建与装载闭环，再沿[模块与设备入口](knowledge/linux/architecture/modules_and_device_nodes/大纲.md#1.1_沿三个问题进入正文)区分代码、服务、路径与多实例身份，进入字符设备和 I/O。
+
+[错误指针专题](knowledge/linux/error_handling/error_pointer/大纲.md#1.1_四次认识变化)从普通 C 的返回契约进入编码、可选资源与失败回收，并用无硬件依赖的模块观察四条路径；[固定版本源码索引](research/source_reading/error_pointer/navigation/P01_Linux_6.12_错误指针源码阅读索引.md#1.2_按问题进入源码)将值转换与驱动清理分开核对。
+
+[驱动框架入门](knowledge/driver_model/fundamentals/framework_model/大纲.md#1.1_四个问题怎样接起来)从多个实例共用一份代码进入登记、探测与解绑，再用完整的 sysfs 属性和 misc 字符设备实验区分可见入口、对象引用和模块寿命。
+
+[文件操作教材](knowledge/driver_model/file_operations/大纲.md#1.1_沿对象寿命逐步增加约束)以 dup/关闭、readv/pread 和只读映射三个完整实验，区分打开上下文、请求位置与后备页寿命；原成员清单保留为固定版本查询页。
+
+[class 与 sysfs 教材](knowledge/linux/device_model/class_sysfs/大纲.md#1.1_从分类观察到可控数据入口)从两个无设备节点的分类对象开始，再让属性控制字符读取，解释节点发布、权限、并发与撤销；配套完整模块及固定版本源码导读。
+
+[Linux 链表教材](knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)从三个任务的成员连接进入双向循环、共享修改、初始化发布和失败回滚，再比较子系统封装与容器代价；配有可运行的宿主模型、完整模块和[固定版本源码索引](research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md#1.2_由结论进入唯一实现)。
+
+字符设备的[读写契约](knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md)用字节记录解释短传输、复制失败和提交时机；对应的[版本源码入口](research/source_reading/character_device/navigation/P01_Linux_6.12_字符设备源码阅读索引.md#1.2_由问题进入模块导读)分别组织模块导读与唯一实现讲解。
+
+[有限窗口模板](knowledge/driver_model/character_device/P10_字符设备驱动模板.md)、[构建运行](knowledge/driver_model/character_device/P11_构建运行与验证.md)与[环形流模板](knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md)分别落实位置、设备入口和等待通知，附完整材料及渐进实验。
+
+第一次进入 Linux 内核，可以从 [读取一份文件的小程序](knowledge/linux/architecture/kernel_composition/linux内核概貌.md#1.1_先让程序读到几个字)开始，再读 [从问题找到源码文件](knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md#1.1_先区分源码目录与正在运行的系统)。两篇基础正文已采用实例、逐步讲解、预测与练习相结合的教材写法；后续材料沿 [内核学习路线](atlas/tracks/linux_kernel_track.md)阅读，整体改写按 [重构蓝图](atlas/roadmaps/linux_textbook_refactor.md)分批推进。
+
 [Typora Code](https://github.com/FormingSystem/typora_code) 是针对本仓库文档跳转链接多、源码阅读与修改频繁的场景制作的 Typora 阅读适配工具，围绕多文档阅读、链接定位、源码查看与编辑提供工作台增强。工具的配置、实现、测试和开发历史均在独立仓库维护，本仓库仅保留此链接与背景介绍。
 
 Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，优先使用 Obsidian 内部操作，让链接能够自动跟踪更新。

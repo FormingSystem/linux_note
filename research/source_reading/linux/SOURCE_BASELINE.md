@@ -57,6 +57,12 @@ domains:
 
 ## 1.3\_字符设备与\_VFS\_证据
 
+有限缓冲区 I/O 的模块概念与具体函数分别从[字符设备源码阅读索引](../character_device/navigation/P01_Linux_6.12_字符设备源码阅读索引.md#1.2_由问题进入模块导读)进入。2026-09-22 重构读写契约时，已按上表官方固定提交重新核对 `fs/libfs.c`、`drivers/base/core.c`、`drivers/base/devtmpfs.c`，并补入同提交的 `include/linux/uaccess.h`；未混入工作树后续实验提交。
+
+同日重构有限窗口和环形流模板，重新核对 `fs/char_dev.c`、`fs/open.c`、`fs/file.c`、`fs/read_write.c`、`include/linux/wait.h`，补入同提交的 `include/linux/device/class.h` 与 `include/linux/poll.h`。这些证据用于确认注册发布与引用、`stream_open`、共享位置串行化、类创建签名和等待登记接口。ARM 语法检查使用本地已生成配置头，不把该配置冒充官方发布配置；没有以语法检查替代完整模块构建或目标执行。
+
+模块入口与设备号正文续接时，继续直接读取该固定 Git 对象中的 `kernel/module/main.c`，核对初始化失败不调用正常退出函数；读取 `drivers/char/mem.c` 与 `include/uapi/linux/major.h`，核对空设备示例的主号 1、次号 3 及打开分派。这三份文件本轮未复制全文，定位以固定提交加上游相对路径为准，不由本地分支头或目录名推断。devtmpfs 的请求链、完成通知和设备事件顺序复用并重新核对下表已有证据。
+
 | 相对路径 | 主要用途 |
 | --- | --- |
 | `fs/char_dev.c` | 设备号登记、`cdev_map`、`chrdev_open()`、cdev 生命周期 |
@@ -71,6 +77,10 @@ domains:
 | `fs/filesystems.c` | `file_system_type` 注册 |
 | `include/linux/fs.h` | superblock、inode、file、file_operations 等核心定义 |
 | `include/linux/cdev.h` | `struct cdev` 和字符设备接口 |
+| `include/linux/device/class.h` | `class_create` 当前签名与 class 接口 |
+| `include/linux/poll.h` | `poll_wait` 登记和就绪事件接口 |
+| `include/linux/wait.h` | 条件等待宏、等待队列登记与唤醒接口 |
+| `include/linux/uaccess.h` | 普通用户复制的未复制量、短复制尾部处理与包装边界 |
 | `include/linux/dcache.h` | dentry 定义与接口 |
 | `include/linux/mount.h` | mount 的公开边界 |
 | `include/linux/file.h` | file/fd 辅助接口 |
@@ -274,3 +284,82 @@ domains:
 | `upstream_versions/v6.1/lib/rbtree.c` | Linux 6.1 rbtree 核心实现 |
 
 这些文件只服务于明确标注为 Linux 6.1 的历史比较。稳定正文讨论当前仓库基线时仍链接本目录根部的 6.12.20 文件；其他旧版本若没有保存精确副本，就不得把网络地址机械替换为当前版本。
+
+## 1.10\_错误指针与资源失败证据
+
+2026-09-22 重新核对官方来源、固定标签、版本和相关配置后，按同一固定提交补入下列源码。总入口为[错误指针源码阅读索引](../error_pointer/navigation/P01_Linux_6.12_错误指针源码阅读索引.md#1.2_按问题进入源码)，模块导读区分返回值与设备资源记录，具体编码函数只在 `source_explanations` 展开。
+
+| 保存的上游相对路径 | 证据用途 |
+| --- | --- |
+| [include/linux/err.h](include/linux/err.h) | 编码、检测、空值组合、跨类型传递与每 CPU 注解适配 |
+| [drivers/base/dd.c](drivers/base/dd.c) | probe 失败内部变号、延迟状态识别和明确清理调用 |
+| [drivers/base/devres.c](drivers/base/devres.c) | NULL 分配契约、成功登记、锁内摘取与锁外逆序回调 |
+| [drivers/gpio/gpiolib-devres.c](drivers/gpio/gpiolib-devres.c) | GPIO 申请、包装登记失败回退及可选获取 |
+| [rust/kernel/error.rs](rust/kernel/error.rs) | 负错误范围不变量与 C 错误指针到类型化结果的桥接 |
+
+五份新增副本，以及既有 `include/linux/device.h`、`drivers/base/core.c`，均与固定 Git 对象在换行规范化后核对一致。时钟、稳压器、pinctrl、I2C、errno 和日志格式的辅助文件只读核对，具体路径与检查点见[模块导读](../error_pointer/navigation/P02_返回值与清理路径导读.md#2.4_其他表示与观测入口)，不把未保存文件写成已建立全文副本。
+
+本次工作树启用 ARM、MODULES、GPIOLIB、COMMON_CLK、REGULATOR、PINCTRL、I2C，未启用 KASAN；这是本地配置而非官方发布配置。实验模块仅用平台设备和 devres 观察软件失败，不访问真实外设。ARM 静态语法检查不能替代 Kbuild、MODPOST、装载与真实释放观察，也不验证其他架构页表布局。
+
+## 1.11\_对象属性与misc入口证据
+
+2026-09-22 按同一官方固定提交核对驱动框架与两个最小入口。版本入口为[驱动入口源码阅读索引](../driver_entries/navigation/P01_Linux_6.12_驱动入口源码阅读索引.md#1.2_从现象进入文件)，模块导读追踪属性活动与字符分派，函数体唯一展开在该专题的 source_explanations 中。
+
+| 保存的上游相对路径 | 本批用途 |
+| --- | --- |
+| [lib/kobject.c](lib/kobject.c)、[include/linux/kobject.h](include/linux/kobject.h) | 既有原文核对；动态创建引用、类型回收、属性适配与延迟释放配置 |
+| [fs/sysfs/file.c](fs/sysfs/file.c) | 新增原文；属性读回调、移除包装与文本输出 |
+| [fs/kernfs/dir.c](fs/kernfs/dir.c) | 新增原文；节点去激活、活动计数和等待排空 |
+| [drivers/char/misc.c](drivers/char/misc.c)、[include/linux/miscdevice.h](include/linux/miscdevice.h) | 新增原文；共享号码、登记失败、操作表交接与注销边界 |
+| [Documentation/filesystems/sysfs.rst](Documentation/filesystems/sysfs.rst) | 新增原文；属性接口契约及 show 的格式化要求 |
+
+上述七份原文与固定 Git 对象逐一核对一致。另核对既有 fs/libfs.c 中的有限读取辅助；drivers/base/platform.c、bus.c、base.h，include/linux/fs.h、sysfs.h 及 include/uapi/linux/major.h 仅只读核对，不称为新增全文副本。drivers/base/dd.c 的绑定集合与探测关联沿已有证据使用。
+
+本地配置启用 ARM、MODULES、SYSFS、DEVTMPFS，仍不等于官方发布配置。两个教学模块分别通过 ARMv7 静态语法检查，依赖的已跟踪头文件与固定提交无差异；生成头和配置来自本地构建。没有执行 Kbuild、MODPOST、模块链接、实际装卸或 sysfs/misc 目标观察，没有写入外部内核树。
+
+## 1.12\_文件操作与映射引用证据
+
+2026-09-22 继续采用官方固定提交，不采用当前工作树的三笔实验提交。阅读从[字符设备总索引](../character_device/navigation/P01_Linux_6.12_字符设备源码阅读索引.md#1.1_版本和阅读边界)进入，再按[文件操作导读](../character_device/navigation/P03_文件操作与打开寿命导读.md)追踪文件引用、同步清理、请求位置和映射保活。
+
+| 上游相对路径 | 本批处理和用途 |
+| --- | --- |
+| [include/linux/fs.h](include/linux/fs.h)、[fs/open.c](fs/open.c)、[fs/read_write.c](fs/read_write.c)、[fs/file_table.c](fs/file_table.c) | 既有副本与固定对象一致；成员、close/filp_close 分支、读分派、最终引用处理 |
+| [include/linux/uio.h](include/linux/uio.h)、[fs/proc/fd.c](fs/proc/fd.c)、[fs/readdir.c](fs/readdir.c) | 新增原文；迭代器后端、fdinfo 临时引用与目录位置交接 |
+| [mm/mmap.c](mm/mmap.c) | 修正既有副本与固定提交的差异；映射保存文件引用 |
+| [mm/vmalloc.c](mm/vmalloc.c)、[mm/vma.c](mm/vma.c) | 新增原文；用户映射专用页及 VMA 撤销后的引用归还 |
+| [Documentation/driver-api/ioctl.rst](Documentation/driver-api/ioctl.rst) | 新增原文；命令编码、用户结构与兼容 ABI |
+
+上述 11 份副本逐一重新提取并按规范化换行核对。旧 mmap.c 缺少 memfd seals 检查、无地址提示时的 THP 条件及映射合并的预分配分支；本批恢复为指定官方对象，未混入其他版本，也未修改已有 VFS 正文或外部源码。它的旧副本不能继续作为该提交的逐行证据。
+
+锁、splice、范围重映射、io_uring、无 MMU、procfs/debugfs 的辅助位置只读核对，完整文件清单和定位项见模块导读，不称为本批新增副本。三个模块的 ARM 语法检查采用本地生成配置，相关已跟踪头未被本地差量改变；不等于官方发布构建或设备运行。目标 Kbuild、MODPOST、用户程序 Linux 编译、模块装卸、真实 readv/pread 和映射阻止卸载实验尚未执行。
+
+## 1.13\_分类对象与属性事务证据
+
+2026-09-22 按同一官方固定提交重构 class 长文。新建[分类对象与属性事务导读](../driver_entries/navigation/P03_分类对象与属性事务导读.md)，实现仅在[core.c 设备创建与属性分派](../driver_entries/source_explanations/drivers/base/core.c.md)逐句展开。当前 HEAD 的三笔本地实验提交未参与证据。
+
+| 保存的上游相对路径 | 处理与用途 |
+| --- | --- |
+| [drivers/base/class.c](drivers/base/class.c)、[drivers/base/base.h](drivers/base/base.h) | 新增原文，公开 class 策略与内部集合分离 |
+| [drivers/base/core.c](drivers/base/core.c)、[drivers/base/devtmpfs.c](drivers/base/devtmpfs.c) | 既有副本复核一致，设备便利创建、属性分派、节点请求与事件先后 |
+| [include/linux/device/class.h](include/linux/device/class.h)、[fs/sysfs/file.c](fs/sysfs/file.c) | 既有副本复核一致，当前成员及属性适配 |
+| [fs/kernfs/file.c](fs/kernfs/file.c)、[lib/kstrtox.c](lib/kstrtox.c) | 新增原文，每次打开的锁、活动引用、输入复制与整数转换 |
+
+八份源码逐一与固定对象核对一致；三段完整函数体剥离仓库注释及空白后与原实现一致。设备树、PM、cgroup、configfs、bpffs、网络 class 和配置等辅助证据的只读范围写在导读，不称为本批保存的全文。
+
+note_class 与 note_control 采用本地 ARMv7 生成头和配置完成语法检查，实际使用的已跟踪头无相对固定提交的差量。宿主替身检查初始化回滚、属性输入及字符读取分支，不证明内核真实锁、活动计数或引用实现。未执行目标 Kbuild、MODPOST、模块装卸、节点策略、并发撤销或性能测量，未修改外部源码树。
+
+## 1.14\_链表拓扑与一次性初始化证据
+
+2026-09-22 继续使用 NXP 官方固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0（Linux 6.12.20），不采用本地三个实验提交。阅读从[链表源码索引](../linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md#1.1_版本和阅读任务)进入，模块导读与 [list.h 唯一实现讲解](../linked_list/source_explanations/include/linux/list.h.md)各自承担定位和逐句说明。
+
+| 保存的上游相对路径 | 用途与处理 |
+| --- | --- |
+| [include/linux/list.h](include/linux/list.h)、[include/linux/types.h](include/linux/types.h) | 既有副本复核一致，节点、初始化、增删、游标与拼接 |
+| [include/asm-generic/rwonce.h](include/asm-generic/rwonce.h) | 既有副本复核一致，单次访问与尺寸限制 |
+| [include/linux/poison.h](include/linux/poison.h)、[lib/list_debug.c](lib/list_debug.c) | 新增原文，毒化值及局部拓扑检查 |
+| [include/linux/once.h](include/linux/once.h)、[lib/once.c](lib/once.c)、[include/linux/once_lite.h](include/linux/once_lite.h) | 新增原文，公共锁、每展开点完成状态、静态分支优化和不同 once 契约 |
+| [include/linux/llist.h](include/linux/llist.h) | 新增原文，特定生产消费组合与架构限制，不与普通 list_head 混用 |
+
+九份副本按规范化换行与固定对象核对；十一段完整函数和一个安全遍历宏与原语句一致。辅助只读位置包括 include/linux/wait.h、include/linux/skbuff.h、mm/slab.h、drivers/base/base.h、include/linux/klist.h、lib/Kconfig.debug、arch/arm/include/asm/barrier.h 和 Documentation/core-api/wrappers/memory-barriers.rst；这些位置用于核对封装、配置和访问边界，不都属于本批新增全文。
+
+当前 ARM、PREEMPT_NONE、TINY_RCU、非 SMP 配置启用 PROVE_LOCKING，未观察到 DEBUG_LIST/LIST_HARDENED/KASAN 启用；该工作配置不是官方发布配置。note_list 的 ARMv7 语法检查使用本地生成头，实际依赖的 357 份头中，已跟踪文件没有使用相对固定提交的差量。宿主替身只验证业务分支、内存配对和普通串行拓扑，不证明真实锁、内存序或动态检查器。未执行目标 Kbuild、MODPOST、模块装卸、真实并发或性能测试。

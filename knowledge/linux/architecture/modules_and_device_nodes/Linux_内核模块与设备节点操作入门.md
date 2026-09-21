@@ -1,6 +1,6 @@
 ---
 id: knowledge.linux.architecture.modules_and_device_nodes.linux_内核模块与设备节点操作入门
-title: "模块与设备节点基础"
+title: "模块装载与设备访问入口"
 kind: mechanism
 status: evolving
 domains:
@@ -8,1199 +8,134 @@ domains:
   - kernel
 ---
 
-------
+# 第1章\_模块装载与设备访问入口
 
-**内容摘抄自GPT。**
+在[模块构建第一章](../../../../engineering/build/kernel_modules/P01_从C文件到匹配目标内核的模块.md)中，`hello_note.ko` 已经能够打印装载和卸载日志。但是 `/dev` 中没有同名文件。先别给初始化函数补一条打印：初始化明明已经执行了，缺少的是另一种关系。
 
-# 第1章\_模块与设备节点基础
+本章接着这个 Hello 实验，区分“代码进入内核”“服务可以接受请求”和“用户有一条路径能够找到服务”。我们先观察已有系统对象，再判断还需要由谁建立什么状态。读完后，应能解释为什么一个模块可以没有设备节点、一个节点可以没有同名模块，以及为什么一次成功的 `cat` 还不足以证明驱动正常。
 
-在 Linux 内核开发中，驱动模块（`.ko` 文件）和设备节点（`/dev/xxx`）是一对常常让初学者困惑的组合。
- 许多同学第一次写好驱动、编译成 `.ko` 文件后，迫不及待地执行：
+## 1.1\_装入模块并没有替你决定提供什么服务
 
-```bash
-sudo insmod demo.ko
-```
+`.ko` 是可加载内核模块的文件。它包含代码、数据和模块元信息，还需要目标内核解析符号、处理重定位和检查装载条件，不能当作普通应用程序执行。`insmod ./hello_note.ko` 请求装入这个文件；当流程走到初始化入口时，内核调用我们通过 `module_init` 指定的函数。这个函数实际做了什么，决定模块提供了什么能力。
 
-内核的确打印出了“驱动加载成功”，可当他们尝试：
+Hello 的初始化只写日志，因而没有用户可读写的数据服务，也没有创建字符设备。另一个模块可能注册文件系统、网络协议或硬件驱动；这些职责不必都表现为 `/dev` 文件。反过来，一种驱动也可能被直接编进内核，在启动阶段初始化，根本没有一个需要单独装载的 `.ko`。
 
-```bash
-echo "123" > /dev/demo
-```
-
-却发现什么日志都没有，甚至 `/dev/demo` 压根不存在。于是便会产生疑惑：*为什么我加载了驱动，设备文件却没有呢？*
-
-要解开这个谜团，我们需要从“内核模块”和“设备节点”的关系说起。
-
-------
-
-## 1.1\_内核模块的生命周期
-
-一个内核模块是内核功能的扩展单元。它就像一块可以插拔的“乐高积木”，在需要时加载进内核，不需要时卸载出去。
-
-模块的典型操作包括：
-
-- **加载**：
-
-  ```bash
-  insmod demo.ko
-  ```
-
-  这条命令只是把 `demo.ko` 对应的代码映射进内核地址空间，并调用你在 `module_init()` 里注册的入口函数。
-
-- **卸载**：
-
-  ```bash
-  rmmod demo
-  ```
-
-  它会调用 `module_exit()` 中定义的清理逻辑，并把模块从内核中移除。
-
-- **查看状态**：
-
-  ```bash
-  lsmod | grep demo
-  ```
-
-  或者直接查看 `/proc/modules`。
-
-- **调试日志**：
-   模块里常用 `printk()` 输出，用户空间可用 `dmesg` 查看。
-
-在这一层，模块只代表“内核里多了一段功能代码”。但是用户要访问驱动，**还需要一个通向它的入口** —— 设备节点。
-
-------
-
-## 1.2\_设备号与设备节点
-
-Linux 的设备访问机制是通过“主设备号 + 次设备号”来区分的。
- 你可以把它类比为“电话区号 + 分机号”：
-
-- 主设备号（major number）相当于区号，标识是哪一类设备驱动。
-- 次设备号（minor number）相当于分机号，用于区分同类驱动下的不同实例。
-
-在驱动中，我们通常这样申请设备号：
-
-```c
-ret = alloc_chrdev_region(&devnum, 0, 1, "mychardev");
-```
-
-这里 `devnum` 里就保存了主次设备号。例如主设备号可能是 `240`，次设备号是 `0`。
-
-然而，仅有设备号还不够。用户空间无法直接通过数字访问设备，它需要一个 `/dev/xxx` 文件作为入口。这个入口就是 **设备节点**。
-
-------
-
-## 1.3\_设备节点的创建
-
-在 Linux 中，字符设备驱动的灵魂在于 **设备号** 与 **设备节点**。驱动注册了设备号，内核才知道有这样一个设备；而用户空间要访问这个设备，则必须通过 `/dev` 下的设备节点。
- 因此，理解设备节点的创建方式，是从“模块”走向“驱动”的必经之路。
-
-------
-
-### 1.3.1\_设备号的来源
-
-设备号由 **主设备号（major）** 和 **次设备号（minor）** 组成，内核通过二者唯一标识一个设备。
-
-在驱动里，设备号对应的数据类型是 `dev_t`，常见的申请方式有两种：
-
-1. **静态分配（开发者指定设备号）**
-
-   ```c
-   #define DEMO_MAJOR 200
-   #define DEMO_MINOR 0
-
-   dev_t devnum = MKDEV(DEMO_MAJOR, DEMO_MINOR);
-   ret = register_chrdev_region(devnum, 1, "demo");
-   ```
-
-   这里我们直接写死了主设备号 200，次设备号从 0 开始。
-    这种方式的好处是 **设备号固定**，便于用户空间程序直接访问 `/dev/demo`。
-    缺点是：如果 200 已被别的驱动占用，就会注册失败。
-
-2. **动态分配（内核随机分配）**
-
-   ```c
-   ret = alloc_chrdev_region(&devnum, 0, 1, "demo");
-   ```
-
-   在这种方式下，内核会自动分配一个空闲的主设备号。
-    结果保存在 `devnum` 里，主次设备号可通过 `MAJOR(devnum)` 和 `MINOR(devnum)` 提取。
-    好处是避免冲突，缺点是用户无法事先知道 major 值，需要依赖内核日志或 `udev` 来创建设备节点。
-
-------
-
-### 1.3.2\_手工创建设备节点\_mknod
-
-驱动虽然注册了设备号，但 `/dev` 下默认不会有对应节点。
- 我们可以用 `mknod` 命令来手工创建：
+在已经按前置章节核对目标身份、准备好 Hello 产物的 **目标 Linux** 上，进入产物所在目录。下面这组命令用于观察，不重新编译，也不操作外部源码取证树：
 
 ```bash
-sudo mknod /dev/demo c <major> <minor>
-sudo chmod 666 /dev/demo
+modinfo ./hello_note.ko
+sudo insmod ./hello_note.ko
+awk '$1 == "hello_note" {print}' /proc/modules
+test -d /sys/module/hello_note && printf '模块目录已经出现\n'
+ls -ld /dev/hello_note
 ```
 
-其中：
+最后一条在这个 Hello 实验中预期报告路径不存在，它不是前面装载失败的证据。`/proc/modules` 的记录证明这个可加载模块当前在内核中；`/sys/module/hello_note` 反映模块对象；两者都不承诺创建字符设备节点。若同名路径原先就存在，先辨认它的来源，不能把它归功于这次 Hello。
 
-- `c` 表示字符设备；
-- `<major>` 必须等于驱动注册的主设备号；
-- `<minor>` 必须等于驱动注册的次设备号。
+观察结束执行 `sudo rmmod hello_note`。注意装载按文件路径，卸载按模块名，后者没有 `.ko` 后缀。`modinfo ./hello_note.ko` 读取给定文件的元信息，也不是查询“当前正在运行的就是这个文件”。安装后的按名称查找、依赖索引、`modprobe` 和 `depmod` 在[构建与部署第四章](../../../../engineering/build/kernel_modules/P04_部署模块并沿错误定位构建问题.md)继续说明。
 
-> 举例：如果驱动里静态注册了 `(200, 0)`，则命令为：
->
-> ```bash
-> sudo mknod /dev/demo c 200 0
-> ```
+## 1.2\_路径先告诉内核这是哪一种文件
 
-如果使用动态分配，则必须先查看日志：
+假设在不存在的路径上执行 `echo ABC > /dev/demo`，shell 可能创建一个普通文件，再把三个字母和换行写进去。随后 `cat /dev/demo` 读出这些字节，完全可以不经过你的字符驱动。文件名位于 `/dev`，并不会自动改变文件类型。
+
+普通文件保存内容，字符设备节点则保存文件类型和主、次设备号等元信息。打开字符节点时，文件系统把这组号码交给字符设备分派逻辑，后者寻找服务请求的操作。节点自身不保存驱动代码，也不必保存设备数据。
+
+先在临时目录中有意建立普通文件，与系统已有的 `/dev/null` 对比。这里不伪造设备号，也不创建任何设备节点：
 
 ```bash
-dmesg | tail
-# demo: loaded, major=240
+work_dir=$(mktemp -d) || exit 1
+printf 'ABC\n' > "$work_dir/ordinary"
+ls -l "$work_dir/ordinary" /dev/null
+cat "$work_dir/ordinary"
+cat /dev/null
+rm -- "$work_dir/ordinary"
+rmdir -- "$work_dir"
 ```
 
-然后再执行：
+第一行列表的类型字符应为 `-`，`/dev/null` 在通常的 Linux 环境中应为 `c`。前一个 `cat` 输出 `ABC`，后一个立即结束且不输出字节；这两次结束分别来自普通文件内容读完和空设备定义的读取行为。受限容器或不完整根文件系统可能没有预期的 `/dev/null`，这时先记录环境差异，不创建普通文件来冒充它。
 
-```bash
-sudo mknod /dev/demo c 240 0
+这个实验没有验证自制驱动，只建立一项判断能力：**路径名与读出的内容，不能代替文件类型和设备号证据。** 后续真实字符设备实验应先检查 `test -c 路径`，再核对设备号属于本次注册，最后才比较读写返回值。
+
+即使已经进入正确的驱动，写入成功也不必意味着数据被保存。一个只消费输入的设备可以接受字节、返回已处理数量，而读取始终返回零；保存内容再读回则需要驱动自己维护缓冲区与有效长度。不能用“write 成功，所以 cat 必须回显”代替设备的读写约定。
+
+## 1.3\_从代码到一次访问还缺哪些连接
+
+设想模块现在要提供一个内存窗口，让应用写入字节后再读出。代码已经在内核，接下来仍有三件独立的工作。
+
+首先，需要保留一个设备号范围，避免与别的服务争用同一身份。然后，要把这个号码范围连接到一张文件操作表，告诉内核打开和读写时调用什么函数。最后，应用需要一个字符节点，路径解析才能取得这组号码。节点可以手工创建，也可以由设备模型配合 devtmpfs 或用户空间管理程序建立。
+
+```mermaid
+flowchart LR
+    ko[模块文件] -->|装载并执行初始化| code[内核中的代码与状态]
+    code -->|保留号码范围| number[设备号占用登记]
+    code -->|发布号码到操作表的关系| mapping[字符设备映射]
+    node[文件系统中的字符节点] -->|保存主次设备号| mapping
+    app[应用给出路径] -->|路径解析与权限检查| node
+    mapping -->|选择打开和读写回调| code
 ```
 
-这就是 **mknod 参数和驱动代码的直接对应关系**。
+图中保留号码的箭头没有直接连到应用，因为“号码已经分配”不等于“请求可以执行”。同样，路径可以先存在，而服务尚未发布；这时打开可能失败。手工 `mknod` 只建立特殊文件，不能把 Hello 自动变成字符驱动。
 
-------
+自动创建也不是 `insmod` 的内置副作用。驱动注册带设备号的设备对象，设备核心才有信息请求创建节点或发出设备事件；能否在用户当前的 `/dev` 看见它，还取决于相关文件系统、挂载和管理程序。内核管理的节点文件系统叫 devtmpfs，用户空间设备管理程序 udev 可以管理权限和别名，它们不是同一个组件。
 
-### 1.3.3\_自动创建设备节点\_class\_+\_device
+完整接口和状态落点在[字符设备第二章](../../../driver_model/character_device/P02_设备号_注册与设备节点.md)展开。这里先记住三个可分别观察的结果：号码归谁占用、号码能否分派、路径能否取得号码。它们允许不同的建立顺序，但访问开放之前必须准备好被访问的状态。
 
-在现代 Linux 中，更推荐使用自动创建机制：
- 在驱动里调用 `class_create()` 和 `device_create()`，即可在加载时由 `devtmpfs`/`udev` 自动生成节点：
+## 1.4\_初始化失败与正常卸载不是同一条路
 
-```c
-cls = class_create(THIS_MODULE, "demo_class");
-device_create(cls, NULL, devnum, NULL, "demo");
+如果模块初始化先申请缓冲区，再申请设备号，而后者失败，初始化函数必须释放已经取得的缓冲区，并返回负错误码。不能指望内核接着调用模块的正常退出函数：初始化失败和成功装载后的卸载，走的是不同路径。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant L as 模块装载路径
+    participant I as 初始化函数
+    participant R as 驱动取得的资源
+    participant U as 正常卸载路径
+    L->>I: 调用初始化入口
+    I->>R: 取得第一项资源
+    alt 后续初始化失败
+        I->>R: 在失败路径撤销已取得资源
+        I-->>L: 返回负错误码
+        L->>L: 回收模块装载相关状态
+    else 初始化成功
+        I-->>L: 返回 0
+        U->>U: 后续卸载先检查使用条件
+        U->>R: 通过退出函数完成服务收尾
+    end
 ```
 
-这样，加载模块时 `/dev/demo` 会自动出现，卸载模块时节点会自动清理。
- 用户无需手工 mknod，大大提高了可用性。
+对提供文件操作的模块，成功打开的文件通常应持有模块引用，使其代码在文件仍可调用时不会被普通卸载移走。如果还存在打开者，`rmmod` 被拒绝可能正是在保护正在执行的请求。先让本次应用结束并关闭描述符，再卸载；不是见到“正在使用”就强行销毁资源。
 
-------
+三个撤销动作也不能互相代替：删除路径不关闭旧描述符；撤销字符设备映射不让旧文件中的操作表消失；归还设备号不释放驱动缓冲区。独立硬件移除还要处理离线状态、等待任务与异步工作，继续由[生命周期章节](../../../driver_model/character_device/P09_安全移除_旧fd与模块卸载.md)承担。
 
-### 1.3.4\_两种方式的比较
+## 1.5\_现在怎样选择下一步实验
 
-| 方式                           | 优点                   | 缺点                         | 适用场景                 |
-| ------------------------------ | ---------------------- | ---------------------------- | ------------------------ |
-| **静态设备号 + 手工 mknod**    | 设备号固定，简单直观   | 可能冲突，需要人工创建节点   | 嵌入式系统、教学实验     |
-| **动态设备号 + device_create** | 避免冲突，自动生成节点 | major 不固定，调试时需看日志 | 桌面 Linux，现代驱动开发 |
+从本章的模型进入实现时，先决定读写承诺，再挑代码。若保存一份可以反复读取的有限内容，就需要位置、有效长度和读到末尾的规则；若数据持续到来且读走就消费，就需要空闲空间、等待条件和通知。后者不是“更多接口的前者”，两者对空缓冲区的解释不同。
 
-------
+| 接下来要回答的问题 | 对应正文与实验结果 |
+| --- | --- |
+| 号码、映射和节点各存在哪里，如何发布 | [字符设备第二章](../../../driver_model/character_device/P02_设备号_注册与设备节点.md)；能区分登记、分派与可见性 |
+| 同一模块怎样提供多个独立对象，名称怎样对应身份 | [多实例设备的身份与组织](Linux_内核模块与设备节点操作基础.md)；能判断别名、次号和实例是否真独立 |
+| 写后读、覆盖、追加与位置怎样配合 | [有限窗口完整模板](../../../driver_model/character_device/P10_字符设备驱动模板.md)和[构建运行](../../../driver_model/character_device/P11_构建运行与验证.md)；使用同一描述符逐字节检查 |
+| 晚到数据怎样让读取者继续 | [环形流完整模板](../../../driver_model/character_device/P13_流式字符设备与等待通知模板.md)；观察回绕、短传输和等待通知 |
+| 成功输出为何仍不足以证明并发安全 | [读写契约](../../../driver_model/character_device/P05_文件操作契约与数据路径.md)；区分单次互斥、复制进度与多次读取快照 |
+| 路径、模块或返回值出错时先查什么 | [分层排错](../../../driver_model/character_device/P12_常见故障与排查.md)；按第一项失效条件保留现场 |
 
-### 1.3.5\_小结
+这条路线保留完整代码和实验的唯一位置。遇到例子中的主设备号，不把它当作目标固定值；动态分配是在可用范围内选择，不等于“随机数”，更不保证重装后保持不变。
 
-设备号是驱动在内核中的“身份证”，而设备节点则是用户空间访问它的“入口”。
+## 1.6\_回顾与练习
 
-- **静态分配**强调确定性，但要开发者自己避开冲突；
-- **动态分配**强调灵活性，但需要借助 `udev` 或 `device_create()` 生成节点。
+1. Hello 已出现在 `/proc/modules`，却没有 `/dev/hello_note`，应该修改装载命令还是先看初始化提供了什么服务？
+2. 把普通文件命名成 `/dev/my_sensor`，读取成功，能证明字符设备注册完成吗？
+3. 初始化申请第三项资源失败，只写 `return -ENOMEM`，正常退出函数写得很完整，为什么仍可能泄漏？
+4. 删除一个手工节点后，已经打开的文件还能否继续调用驱动？若目标代码直接编进内核，是否应该在 `lsmod` 中寻找它？
 
-无论哪种方式，`mknod` 的三个核心参数（类型、主设备号、次设备号）都与驱动中的 `dev_t` 成员一一对应，这一点一定要牢牢记住。
+解答：第一题先看初始化职责，Hello 只打印日志。第二题不能，普通文件的文件系统会自行完成读写。第三题没有成功进入正常服务阶段，失败分支必须撤销此前取得的资源，退出函数不会替它补做。第四题旧打开文件不靠每次重新查找路径执行操作；是否继续服务由驱动状态与引用协议决定。内建代码不作为可加载模块出现在 `lsmod`，设备是否存在应另查其服务入口和设备对象。
 
-------
+本章模块入口与失败路径按 NXP 官方 Linux 6.12.20 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的 `kernel/module/main.c` 核对；字符设备证据从[源码阅读入口](../../../../research/source_reading/character_device/navigation/P01_Linux_6.12_字符设备源码阅读索引.md)继续。上面的目标命令是实验步骤，不表示已经在当前虚拟机或板上执行。
 
-✅ 这样改写后的 **1.3 节** 就既有概念，又有代码，又有命令，还兼顾了静态/动态两种情况，并且明确了 `mknod` 与驱动成员之间的关系。
+原稿保留的来源批注：
 
-要不要我帮你把 **1.1 ~ 1.3 节** 整合成一个“书籍式的完整第一章”，这样你后面复习的时候就能直接拿来当教材用了？
+> **内容摘抄自GPT。**
 
-------
-
-## 1.4\_模块与设备节点的关系
-
-现在我们可以清楚地看到：
-
-- `insmod demo.ko` 只会把驱动逻辑加载进内核，**不会自动有 `/dev/demo`**。
-- 没有设备节点时，你往 `/dev/demo` 写，其实只是在普通文件 `/dev/demo` 上写数据，根本没触发驱动。
-- 只有当 `/dev/demo` 是字符设备节点，并且 (major, minor) 对应你的驱动注册的设备号时，写操作才会进入驱动的 `my_write()`，读操作才会进入 `my_read()`。
-
-------
-
-✍️ 这一章我们从“为什么 `insmod` 后没有 `/dev/demo`”出发，讲清楚了模块和设备节点的区别与联系。下一章我可以继续写一份 **实验流程**：一步步加载模块 → 创建设备节点 → `echo/cat` 验证 → 对应的驱动代码走向。
-
-------
-
-# 第2章\_实验流程\_从\_insmod\_到设备访问
-
-本章我们通过一个最小字符设备驱动，演示完整的加载、创建设备节点、读写验证的流程。这样可以把前一章的概念变成实操体验。
-
-------
-
-## 2.1\_准备驱动代码
-
-先写一个最简版的字符设备驱动 `demo.c`：
-
-```c
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/device.h>
-#include <linux/uaccess.h>
-
-static dev_t devnum;
-static struct cdev my_cdev;
-static struct class *cls;
-
-static int my_open(struct inode *inode, struct file *file) {
-    printk(KERN_INFO "demo: open()\n");
-    return 0;
-}
-
-static int my_release(struct inode *inode, struct file *file) {
-    printk(KERN_INFO "demo: release()\n");
-    return 0;
-}
-
-static ssize_t my_read(struct file *file, char __user *buf,
-                       size_t count, loff_t *ppos) {
-    printk(KERN_INFO "demo: read()\n");
-    return 0;
-}
-
-static ssize_t my_write(struct file *file, const char __user *buf,
-                        size_t count, loff_t *ppos) {
-    printk(KERN_INFO "demo: write(), count=%zu\n", count);
-    return count;
-}
-
-static struct file_operations fops = {
-    .owner   = THIS_MODULE,
-    .open    = my_open,
-    .release = my_release,
-    .read    = my_read,
-    .write   = my_write,
-};
-
-static int __init my_init(void) {
-    int ret;
-
-    /* 1. 申请设备号 */
-    ret = alloc_chrdev_region(&devnum, 0, 1, "demo");
-    if (ret < 0) return ret;
-
-    /* 2. 注册 cdev */
-    cdev_init(&my_cdev, &fops);
-    my_cdev.owner = THIS_MODULE;
-    ret = cdev_add(&my_cdev, devnum, 1);
-    if (ret < 0) {
-        unregister_chrdev_region(devnum, 1);
-        return ret;
-    }
-
-    /* 3. 创建设备节点 */
-    cls = class_create(THIS_MODULE, "demo_class");
-    if (IS_ERR(cls)) {
-        cdev_del(&my_cdev);
-        unregister_chrdev_region(devnum, 1);
-        return PTR_ERR(cls);
-    }
-    device_create(cls, NULL, devnum, NULL, "demo");  // → /dev/demo
-
-    printk(KERN_INFO "demo: loaded, major=%d\n", MAJOR(devnum));
-    return 0;
-}
-
-static void __exit my_exit(void) {
-    device_destroy(cls, devnum);
-    class_destroy(cls);
-    cdev_del(&my_cdev);
-    unregister_chrdev_region(devnum, 1);
-    printk(KERN_INFO "demo: unloaded\n");
-}
-
-module_init(my_init);
-module_exit(my_exit);
-MODULE_LICENSE("GPL");
-```
-
-> 和你上一版的区别是：这里用 `class_create + device_create`，模块加载时会自动生成 `/dev/demo` 节点；卸载时自动删除。
-
-------
-
-## 2.2\_编译驱动模块
-
-编写 `Makefile`：
-
-```make
-obj-m += demo.o
-
-all:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
-
-clean:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-```
-
-执行：
-
-```bash
-make
-```
-
-成功后会得到 `demo.ko`。
-
-------
-
-## 2.3\_加载模块
-
-加载模块：
-
-```bash
-sudo insmod demo.ko
-```
-
-查看日志：
-
-```bash
-dmesg | tail
-```
-
-会看到类似：
-
-```text
-demo: loaded, major=240
-```
-
-确认设备节点：
-
-```bash
-ls -l /dev/demo
-# crw------- 1 root root 240, 0 ...
-```
-
-注意这里第一列是 `c`，说明它是字符设备节点。
-
-------
-
-## 2.4\_读写验证
-
-写入：
-
-```bash
-echo "hello" > /dev/demo
-```
-
-查看内核日志：
-
-```bash
-dmesg | tail
-# 会看到：demo: write(), count=6
-```
-
-读取：
-
-```bash
-cat /dev/demo
-```
-
-查看内核日志：
-
-```bash
-dmesg | tail
-# 会看到：demo: read()
-```
-
-由于我们 `my_read()` 直接返回 0，`cat` 不会输出内容，但日志能证明已经进入驱动。
-
-------
-
-## 2.5\_卸载模块
-
-卸载：
-
-```bash
-sudo rmmod demo
-```
-
-查看日志：
-
-```bash
-dmesg | tail
-# demo: unloaded
-```
-
-同时 `/dev/demo` 节点会被自动删除。
-
-------
-
-## 2.6\_小结
-
-通过这个实验我们完整走了一遍流程：
-
-1. 编译驱动得到 `.ko` 模块
-2. `insmod` 加载模块 → 驱动注册字符设备
-3. `device_create` 自动生成 `/dev/demo` 节点
-4. 通过 `echo/cat` 与节点交互 → 驱动函数被调用
-5. `rmmod` 卸载 → 节点消失
-
-这就把“模块”与“设备节点”两个概念清晰地连了起来。
-
-------
-
-👉 下一章，我可以帮你写 **常见错误与排查**，比如：
-
-- 为什么 `/dev/demo` 没有出现？
-- 为什么写入没触发驱动？
-- 为什么卸载失败（device busy）？
-
-要不要我继续？
-
-好👌 那我们继续第三章，把常见问题和排查方法写出来，延续前面教材化的风格。
-
-------
-
-# 第3章\_常见问题与排查
-
-虽然我们在第二章已经能够顺利加载模块、自动生成 `/dev/demo` 并进行读写，但在实际开发中，驱动新手往往会遇到各种困惑。本章我们就像“常见疑难解答”一样，总结几个高频问题，并给出排查思路。
-
-------
-
-## 3.1\_为什么\_insmod\_demo.ko\_后没有\_/dev/demo
-
-**原因 1：驱动代码里没有 `device_create()`**
-
-- 如果你的模块只做了 `alloc_chrdev_region + cdev_add`，而没有调用 `class_create` / `device_create`，那么内核只知道设备号，却没有告诉用户空间要创建设备节点。
-- 结果就是：`insmod` 成功，但 `/dev` 下没有入口。
-
-**解决办法：**
-
-- 手工创建：
-
-  ```bash
-  sudo mknod /dev/demo c <major> 0
-  sudo chmod 666 /dev/demo
-  ```
-
-- 或在驱动里加上自动创建设备节点的逻辑（第二章给的 `device_create()` 方法）。
-
-------
-
-## 3.2\_为什么\_echo\_"111"\_>\_/dev/demo\_没有任何日志
-
-**可能情况：**
-
-1. `/dev/demo` 不是字符设备节点，而是一个普通文件。
-
-   - 你可能在之前手工 `touch /dev/demo` 过。
-
-   - 检查方法：
-
-     ```bash
-     ls -l /dev/demo
-     ```
-
-     如果第一列是 `-` 而不是 `c`，那就是普通文件。
-
-2. 节点的设备号与驱动注册的不一致。
-
-   - 比如你的驱动申请到的 major 是 240，但你用 `mknod` 建的是 241。
-   - 这时候写入的请求就不会进入驱动。
-
-**解决办法：**
-
-- 确认 `/dev/demo` 是 `c` 开头。
-- 确认 `ls -l /dev/demo` 打印的 `(major, minor)` 与 `dmesg` 里驱动申请到的完全一致。
-
-------
-
-## 3.3\_为什么\_cat\_/dev/demo\_会打印出\_111
-
-这其实是一个 **典型的误会**。
-
-- 如果 `/dev/demo` 是普通文件，那么 `echo "111" > /dev/demo` 只是往这个文件写入了内容。
-- 当你再执行 `cat /dev/demo`，它当然会打印出 "111"，但这和你的驱动毫无关系。
-- 这正是你在一开始遇到的现象。
-
-**教训**：一定要确认 `/dev/demo` 是“字符设备”，而不是普通文件。
-
-------
-
-## 3.4\_为什么卸载模块\_rmmod\_demo\_失败\_提示\_Device\_or\_resource\_busy
-
-**原因：**
-
-- 有进程仍然打开着 `/dev/demo`。
-- 内核引用计数没有归零。
-
-**解决办法：**
-
-- 找到占用进程：
-
-  ```bash
-  fuser /dev/demo
-  ```
-
-  或者：
-
-  ```bash
-  lsof /dev/demo
-  ```
-
-- 杀掉对应进程，再执行 `rmmod`。
-
-------
-
-## 3.5\_为什么\_rmmod\_demo\_后\_/dev/demo\_节点还在
-
-**原因：**
-
-- 你手工用 `mknod` 创建的节点，和驱动卸载时的生命周期没有关系。它就是个普通的文件系统节点，除非手工删除，否则不会消失。
-
-**解决办法：**
-
-- 手工删除：
-
-  ```bash
-  sudo rm -f /dev/demo
-  ```
-
-- 如果是 `device_create()` 自动生成的节点，就会随着 `device_destroy()` 在 `my_exit()` 中被清理掉。
-
-------
-
-## 3.6\_为什么卸载再加载\_会报\_File\_exists
-
-**原因：**
-
-- 你没有在 `my_exit()` 里正确清理资源。
-- 常见错误是 `cdev_del()`、`unregister_chrdev_region()`、`device_destroy()`、`class_destroy()` 漏掉了。
-- 上一次的设备号还占着，下一次再 `insmod` 时就冲突了。
-
-**解决办法：**
-
-- 在退出函数 `my_exit()` 里对称清理所有分配的资源。
-- 确认卸载日志里有 `"demo: unloaded"`，再 `insmod`。
-
-------
-
-## 3.7\_为什么\_modinfo\_demo.ko\_报错
-
-如果你在目标板上执行 `modinfo demo.ko`，报错：
-
-```text
-modinfo: can't open '/lib/modules/6.1.xx/modules.dep'
-```
-
-**原因：**
-
-- 板子根文件系统没有 `/lib/modules/<uname -r>/` 目录，也没有生成 `modules.dep`。
-- `modinfo` 默认会查这里。
-
-**解决办法：**
-
-- 用绝对路径：
-
-  ```bash
-  modinfo ./demo.ko
-  ```
-
-  这样直接解析 ELF 里的信息，不依赖 `modules.dep`。
-
-- 如果希望 `modinfo demo` 这种形式也能用，需要在宿主机 `make modules_install INSTALL_MOD_PATH=<rootfs>` 并执行 `depmod -b`，把 `/lib/modules/<uname -r>/` 拷到目标板。
-
-------
-
-✍️ 本章我们从实际操作中常遇到的坑出发，讲了 **节点不存在、节点错建、驱动未清理、设备被占用** 等问题的成因和解决方法。
-
-------
-
-👉 下一章我可以写 **一个完整复盘示例**：从编译 demo.ko，到 insmod、echo/cat、dmesg，再到 rmmod 清理，全过程像做实验报告一样串起来。你要我继续吗？
-
-好👌 那我们写 **第 4 章：完整实验复盘**。这一章就像一本教材里的“实验报告”，带你从零走一遍：编译、加载、交互、卸载、清理。
-
-------
-
-# 第4章\_完整实验复盘
-
-在这一章，我们将把前面讲解的内容串成一条完整实验路线。你可以在开发板或虚拟机上按步骤操作，并对照日志，验证驱动和设备节点的行为。
-
-------
-
-## 4.1\_准备工作
-
-1. **源文件：`demo.c`**
-
-   使用我们在第二章写好的字符设备驱动（带自动创建设备节点功能）：
-
-   ```c
-   #include <linux/init.h>
-   #include <linux/module.h>
-   #include <linux/fs.h>
-   #include <linux/cdev.h>
-   #include <linux/device.h>
-   #include <linux/uaccess.h>
-
-   static dev_t devnum;
-   static struct cdev my_cdev;
-   static struct class *cls;
-
-   static int my_open(struct inode *inode, struct file *file) {
-       printk(KERN_INFO "demo: open()\n");
-       return 0;
-   }
-
-   static int my_release(struct inode *inode, struct file *file) {
-       printk(KERN_INFO "demo: release()\n");
-       return 0;
-   }
-
-   static ssize_t my_read(struct file *file, char __user *buf,
-                          size_t count, loff_t *ppos) {
-       printk(KERN_INFO "demo: read()\n");
-       return 0;
-   }
-
-   static ssize_t my_write(struct file *file, const char __user *buf,
-                           size_t count, loff_t *ppos) {
-       printk(KERN_INFO "demo: write(), count=%zu\n", count);
-       return count;
-   }
-
-   static struct file_operations fops = {
-       .owner   = THIS_MODULE,
-       .open    = my_open,
-       .release = my_release,
-       .read    = my_read,
-       .write   = my_write,
-   };
-
-   static int __init my_init(void) {
-       int ret;
-
-       ret = alloc_chrdev_region(&devnum, 0, 1, "demo");
-       if (ret < 0) return ret;
-
-       cdev_init(&my_cdev, &fops);
-       ret = cdev_add(&my_cdev, devnum, 1);
-       if (ret < 0) {
-           unregister_chrdev_region(devnum, 1);
-           return ret;
-       }
-
-       cls = class_create(THIS_MODULE, "demo_class");
-       if (IS_ERR(cls)) {
-           cdev_del(&my_cdev);
-           unregister_chrdev_region(devnum, 1);
-           return PTR_ERR(cls);
-       }
-
-       device_create(cls, NULL, devnum, NULL, "demo"); // 自动创建设备节点
-       printk(KERN_INFO "demo: loaded, major=%d\n", MAJOR(devnum));
-       return 0;
-   }
-
-   static void __exit my_exit(void) {
-       device_destroy(cls, devnum);
-       class_destroy(cls);
-       cdev_del(&my_cdev);
-       unregister_chrdev_region(devnum, 1);
-       printk(KERN_INFO "demo: unloaded\n");
-   }
-
-   module_init(my_init);
-   module_exit(my_exit);
-   MODULE_LICENSE("GPL");
-   ```
-
-2. **Makefile**
-
-   ```make
-   obj-m += demo.o
-
-   all:
-   	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
-
-   clean:
-   	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-   ```
-
-3. **编译**
-
-   ```bash
-   make
-   ```
-
-   成功后会得到 `demo.ko`。
-
-------
-
-## 4.2\_加载模块
-
-```bash
-sudo insmod demo.ko
-```
-
-检查日志：
-
-```bash
-dmesg | tail
-```
-
-输出示例：
-
-```text
-[ 1234.567890] demo: loaded, major=240
-```
-
-------
-
-## 4.3\_确认设备节点
-
-```bash
-ls -l /dev/demo
-```
-
-输出示例：
-
-```text
-crw------- 1 root root 240, 0 Jan  1 00:00 /dev/demo
-```
-
-- `c` → 字符设备
-- `240,0` → 主设备号 240，次设备号 0
-
-说明节点已经自动创建成功。
-
-------
-
-## 4.4\_写入测试
-
-```bash
-echo "hello" > /dev/demo
-```
-
-查看内核日志：
-
-```bash
-dmesg | tail
-```
-
-输出示例：
-
-```text
-[ 1235.123456] demo: write(), count=6
-```
-
-这说明写入操作成功进入了驱动的 `my_write()`。
-
-------
-
-## 4.5\_读取测试
-
-```bash
-cat /dev/demo
-```
-
-查看日志：
-
-```bash
-dmesg | tail
-```
-
-输出示例：
-
-```text
-[ 1236.654321] demo: read()
-```
-
-由于 `my_read()` 返回 0，`cat` 会立刻结束，但日志证明驱动确实被调用。
-
-------
-
-## 4.6\_卸载模块
-
-```bash
-sudo rmmod demo
-```
-
-查看日志：
-
-```bash
-dmesg | tail
-```
-
-输出示例：
-
-```text
-[ 1237.987654] demo: unloaded
-```
-
-再次检查 `/dev/demo`：
-
-```bash
-ls -l /dev/demo
-```
-
-会提示：
-
-```text
-ls: cannot access '/dev/demo': No such file or directory
-```
-
-说明节点已随模块卸载被自动清理。
-
-------
-
-## 4.7\_实验总结
-
-通过这次实验，你已经完成了一个**完整的生命周期**：
-
-1. 编译驱动 → 得到 `demo.ko`
-2. `insmod` → 驱动注册字符设备
-3. 自动生成 `/dev/demo` → 用户空间可访问
-4. `echo/cat` → 分别触发写/读函数
-5. `rmmod` → 驱动退出，节点清理
-
-这条链路将“模块”与“设备节点”牢牢地串联了起来。以后当你在实际项目中遇到“为什么节点没出现”“为什么写入没触发驱动”时，就能有条不紊地去定位问题。
-
-------
-
-✍️ 到这里，我们已经把最小实验完整复盘了。
- 👉 下一章我可以写 **扩展实验**：比如给驱动加一个内存缓冲区，真正实现读写数据（`echo` 写入什么，`cat` 就能读出来），这样驱动就不仅仅是日志了。
-
-要不要我继续？
-
-好👌 那我们进入 **第 5 章：扩展实验**，让驱动真正能保存并返回数据，而不仅仅是打印日志。这样你用 `echo` 写入的内容，再用 `cat` 就能读出来，设备行为就更像一个“真正的文件”。
-
-------
-
-# 第5章\_扩展实验\_实现内存缓冲区
-
-在前面的实验里，我们的 `my_read()` 总是返回 0（EOF），`my_write()` 只是打印日志。虽然能证明驱动逻辑没问题，但并没有形成数据交互。
- 本章我们将为字符设备增加一个内存缓冲区，完成“写入-读取”的闭环。
-
-------
-
-## 5.1\_驱动代码修改
-
-在 `demo.c` 里，增加一个静态缓冲区和长度记录：
-
-```c
-#define BUF_SIZE 1024
-
-static char device_buf[BUF_SIZE];
-static size_t data_size = 0;  // 缓冲区里已有数据大小
-```
-
-修改 `my_read()` 和 `my_write()`：
-
-```c
-static ssize_t my_read(struct file *file, char __user *buf,
-                       size_t count, loff_t *ppos) {
-    size_t to_copy;
-
-    printk(KERN_INFO "demo: read(), count=%zu, ppos=%lld\n", count, *ppos);
-
-    if (*ppos >= data_size) {
-        return 0;  // 已经读到结尾
-    }
-
-    to_copy = min(count, data_size - *ppos);
-
-    if (copy_to_user(buf, device_buf + *ppos, to_copy)) {
-        return -EFAULT;
-    }
-
-    *ppos += to_copy;
-    return to_copy;
-}
-
-static ssize_t my_write(struct file *file, const char __user *buf,
-                        size_t count, loff_t *ppos) {
-    size_t to_copy;
-
-    printk(KERN_INFO "demo: write(), count=%zu\n", count);
-
-    to_copy = min(count, BUF_SIZE);
-
-    if (copy_from_user(device_buf, buf, to_copy)) {
-        return -EFAULT;
-    }
-
-    data_size = to_copy;  // 更新已写入的数据长度
-    return to_copy;
-}
-```
-
-现在：
-
-- 写入时，数据会被保存到 `device_buf`。
-- 读取时，返回缓冲区的内容，并支持多次分块读取。
-
-------
-
-## 5.2\_重新编译并加载
-
-```bash
-make clean && make
-sudo insmod demo.ko
-```
-
-确认节点：
-
-```bash
-ls -l /dev/demo
-```
-
-------
-
-## 5.3\_写入数据
-
-```bash
-echo "Hello Kernel" > /dev/demo
-```
-
-查看日志：
-
-```bash
-dmesg | tail
-```
-
-输出：
-
-```text
-demo: write(), count=13
-```
-
-------
-
-## 5.4\_读取数据
-
-```bash
-cat /dev/demo
-```
-
-屏幕输出：
-
-```text
-Hello Kernel
-```
-
-日志：
-
-```yaml
-demo: read(), count=65536, ppos=0
-```
-
-说明数据被正确保存和返回。
-
-------
-
-## 5.5\_多次写入与覆盖
-
-再次写入：
-
-```bash
-echo "Second Line" > /dev/demo
-cat /dev/demo
-```
-
-输出变为：
-
-```text
-Second Line
-```
-
-日志显示：
-
-```text
-demo: write(), count=12
-demo: read(), count=65536, ppos=0
-```
-
-说明写入操作覆盖了原有缓冲区。
-
-------
-
-## 5.6\_卸载与清理
-
-```bash
-sudo rmmod demo
-```
-
-日志：
-
-```yaml
-demo: unloaded
-```
-
-节点 `/dev/demo` 消失。
-
-------
-
-## 5.7\_小结
-
-通过增加一个缓冲区，我们把最初只能“打印日志”的 demo 驱动，扩展成了一个真正能“存取数据”的字符设备：
-
-- `echo` 写入 → 数据进入内核缓冲区。
-- `cat` 读取 → 数据从缓冲区返回到用户空间。
-
-这就是一个最小的“内存型字符设备”的雏形。
-
-------
-
-👉 下一章，我可以帮你写 **更进一步的扩展**：比如
-
-- 支持多进程并发访问（加锁 `mutex`），
-- 支持 `ioctl` 实现控制命令，
-- 甚至挂接到 sysfs，导出属性。
-
-要不要我继续写 **第 6 章：并发与锁**？
-
-好👌 那我们进入 **第 6 章：并发与锁**。在前一章，我们的字符设备已经能存取数据，但它还是“单线程思维”，如果多个进程同时访问，就可能出现数据错乱。本章我们将讨论并发访问带来的问题，并通过 **互斥锁（mutex）** 解决。
-
-------
-
-# 第6章\_并发与锁
-
-## 6.1\_为什么要考虑并发
-
-Linux 是一个多任务操作系统。想象这样一个场景：
-
-1. 进程 A 执行 `echo "AAAA" > /dev/demo`，正在往驱动写数据；
-2. 此时进程 B 执行 `echo "BBBB" > /dev/demo`，也在写数据；
-3. 如果驱动里没有同步机制，两份数据就可能在缓冲区里交错，结果既不是 "AAAA" 也不是 "BBBB"，而是一团乱码。
-
-这就是典型的**竞争条件（race condition）**。
-
-类似地，读操作也可能在写操作还没完成时就被触发，从而读到半成品数据。
-
-------
-
-## 6.2\_内核同步原语
-
-Linux 内核为并发访问提供了多种同步机制：
-
-- **spinlock**：自旋锁，适用于短时间的原子操作（不可睡眠）。
-- **mutex**：互斥锁，适用于需要睡眠的场景（比如字符设备的读写）。
-- **semaphore**：信号量，早期常用，现在更推荐 `mutex`。
-- **rwlock**：读写锁，适合读多写少的情况。
-
-对于字符设备的读写，最常见的做法是用 **mutex**。
-
-------
-
-## 6.3\_在\_demo\_驱动中加入互斥锁
-
-在 `demo.c` 中加入一个全局的 `struct mutex`：
-
-```c
-#include <linux/mutex.h>
-
-#define BUF_SIZE 1024
-
-static char device_buf[BUF_SIZE];
-static size_t data_size = 0;
-static DEFINE_MUTEX(demo_mutex);  // 定义并初始化互斥锁
-```
-
-修改 `my_read()`：
-
-```c
-static ssize_t my_read(struct file *file, char __user *buf,
-                       size_t count, loff_t *ppos) {
-    size_t to_copy;
-
-    if (mutex_lock_interruptible(&demo_mutex))
-        return -ERESTARTSYS;
-
-    printk(KERN_INFO "demo: read(), count=%zu, ppos=%lld\n", count, *ppos);
-
-    if (*ppos >= data_size) {
-        mutex_unlock(&demo_mutex);
-        return 0;
-    }
-
-    to_copy = min(count, data_size - *ppos);
-
-    if (copy_to_user(buf, device_buf + *ppos, to_copy)) {
-        mutex_unlock(&demo_mutex);
-        return -EFAULT;
-    }
-
-    *ppos += to_copy;
-    mutex_unlock(&demo_mutex);
-    return to_copy;
-}
-```
-
-修改 `my_write()`：
-
-```c
-static ssize_t my_write(struct file *file, const char __user *buf,
-                        size_t count, loff_t *ppos) {
-    size_t to_copy;
-
-    if (mutex_lock_interruptible(&demo_mutex))
-        return -ERESTARTSYS;
-
-    printk(KERN_INFO "demo: write(), count=%zu\n", count);
-
-    to_copy = min(count, BUF_SIZE);
-
-    if (copy_from_user(device_buf, buf, to_copy)) {
-        mutex_unlock(&demo_mutex);
-        return -EFAULT;
-    }
-
-    data_size = to_copy;
-
-    mutex_unlock(&demo_mutex);
-    return to_copy;
-}
-```
-
-------
-
-## 6.4\_测试并发场景
-
-1. 编译并加载新模块：
-
-   ```bash
-   make clean && make
-   sudo insmod demo.ko
-   ```
-
-2. 打开两个终端，同时执行：
-
-   ```bash
-   echo "AAAA" > /dev/demo
-   echo "BBBB" > /dev/demo
-   ```
-
-3. 再读取：
-
-   ```bash
-   cat /dev/demo
-   ```
-
-结果要么是 `AAAA`，要么是 `BBBB`，不会出现 `ABAB` 之类的乱序。
-
-日志：
-
-```bash
-demo: write(), count=5
-demo: write(), count=5
-demo: read(), count=65536, ppos=0
-```
-
-说明互斥锁正确保护了读写操作。
-
-------
-
-## 6.5\_小结
-
-通过引入 `mutex`，我们解决了并发访问导致的数据错乱问题。这里有几点要特别注意：
-
-- 使用 `mutex_lock_interruptible()`，避免进程在等待锁时无法响应信号；
-- 每一个加锁的地方必须对应一次 `mutex_unlock()`；
-- 锁的粒度要适度，既要保证数据一致性，又不要过度影响性能。
-
-------
-
-✍️ 本章我们让 demo 驱动从“单线程玩具”升级成了“多进程安全”的字符设备。
-
+本轮正文已按上述职责重新编写；原稿六组模块、字符设备、缓冲区和并发材料的去向记录在[全仓工作记录](../../../../governance/migration/repository_textbook_refactor.md)。

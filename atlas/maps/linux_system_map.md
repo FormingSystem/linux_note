@@ -36,27 +36,29 @@ Linux 内核结构、模块与数据结构
 ## 1.2\_基础与内核骨架
 
 - [宏内核和微内核](../../knowledge/foundations/operating_systems/concepts/宏内核和微内核.md)：理解内核组织方式。
-- [Linux 内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)：建立 Linux 内核组成视图。
-- [Linux kernel 目录结构说明](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)：定位源码功能域。
-- [Linux 内核模块与设备节点操作基础](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作基础.md)：连接模块、设备号和用户空间入口。
+- [Linux 内核概貌：从读取一份文件开始](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md#1.1_先让程序读到几个字)：运行短读取程序，由结果建立应用、内核、缓存和设备的关系。
+- [Linux 源码树：从问题找到文件](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md#1.1_先区分源码目录与正在运行的系统)：按问题定位职责，区分源码、配置、构建产物和运行系统。初学者依照 [内核学习路线](../tracks/linux_kernel_track.md#1.2_第一阶段_内核边界与源码定位)连续读这两篇。
+- [内核模块构建与部署](../../engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)：先完成目标身份、Hello 构建、文件组织与装载排错，再进入[模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)。
 - 《奔跑吧 Linux 内核》相关编排已归入[电子书目录](../../publications/books/running_linux_kernel/README.md)；其中的数据结构章节可作为知识正文的辅助阅读材料。
 
 ## 1.3\_通用机制
 
 | 机制 | 解决的问题 | 当前入口 |
 | --- | --- | --- |
-| 数据结构 | 如何组织和检索内核对象 | [单链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)、[哈希表](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)、[红黑树](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md) |
+| 数据结构 | 怎样在对象地址、成员关系、同步与查找代价之间做选择 | [Linux 双向循环链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)、[哈希表](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)、[红黑树](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md) |
 | 同步和异步机制 | 如何约束并发状态，并让事件跨上下文或时间继续推进 | [总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)、[同步机制](../../knowledge/linux/synchronization_and_asynchrony/synchronization/大纲.md)、[异步机制](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/大纲.md) |
 | 生命周期 | 如何确保对象被安全持有和释放 | [kref](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)、[devres](../../knowledge/linux/object_lifetime/devres/devres_API说明.md) |
 | I/O 模型 | 用户进程如何等待设备事件并完成数据传输 | [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)、[VFS I/O 数据路径](../../knowledge/kernel_subsystems/vfs/P14_VFS_read_write分派.md) |
-| 错误处理 | 如何在指针返回值中表达错误 | [错误指针机制](../../knowledge/linux/error_handling/error_pointer/错误指针机制简介.md) |
+| 错误处理 | 如何在指针返回值中表达错误 | [错误指针专题](../../knowledge/linux/error_handling/error_pointer/大纲.md#1.1_四次认识变化) |
 
 ## 1.4\_子系统与驱动模型
 
 - [中断的定位与演化](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P01_中断的定位与演化.md)解释硬件事件进入 Linux 后的处理链。
 - [VFS 子系统](../../knowledge/kernel_subsystems/vfs/大纲.md)完整解释文件系统注册、挂载、路径、打开文件、I/O、缓存和对象回收；字符设备只是其特殊文件交叉分支之一。
 - [设备模型抽象机制与 Driver Core 状态拓扑](../../knowledge/linux/device_model/大纲.md)解释 kobject、device、driver、bus 与 class 的关系，以及注册、匹配和生命周期状态机。
-- [驱动框架模型](../../knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md)把公共机制映射到驱动结构。
+- [class 与 sysfs](../../knowledge/linux/device_model/class_sysfs/大纲.md#1.1_从分类观察到可控数据入口)通过分类实例和属性控制模块，把功能视图、字符分派、节点发布及业务同步分开观察。
+- [驱动框架入门](../../knowledge/driver_model/fundamentals/framework_model/大纲.md#1.1_四个问题怎样接起来)从多实例引出对象关系、绑定周期、sysfs 属性与 misc 字符入口，配套完整模块和固定版本源码。
+- [文件操作教材](../../knowledge/driver_model/file_operations/大纲.md#1.1_沿对象寿命逐步增加约束)在 misc 与字符读写之后，通过打开引用、迭代请求及只读映射连接 VFS 的文件和内存模型。
 - [字符设备最小模型](../../knowledge/driver_model/character_device/P01_字符设备最小模型.md)解释设备号、`cdev`、VFS 与文件操作如何形成用户入口。
 - [GPIO 专题](../../knowledge/driver_model/gpio/大纲.md)从连接抽象、状态机和源码实现连接控制器、消费者、设备树与中断。
 - [旧式平台设备与资源机制](../../knowledge/driver_model/device_tree/设备树+platform开发/P01_旧式平台设备与资源机制.md)进入 Platform 与设备树匹配。
