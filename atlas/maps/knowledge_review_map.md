@@ -231,6 +231,7 @@ mindmap-plugin: basic
             - 🔴 [P08 高级应用](../../knowledge/linux/data_structures/单链表_linked_list/P08_高级应用.md)
             - 🔴 [P09 优化与总结](../../knowledge/linux/data_structures/单链表_linked_list/P09_优化与总结.md)
         - 哈希表
+            - 🔴 [哈希表学习路线](../../knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md)
             - P01 数据结构理论基础
                 - 🔴 [P01 哈希表核心原理 空间与时间的终极博弈](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)
             - P02 Linux 内核 5.10 核心实现
@@ -548,6 +549,8 @@ mindmap-plugin: basic
                 - 观测结果
                     - 🟢 [2026-08-02 访问宽度与 ARM 编译器观察](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/expected/2026-08-02_compiler_observation.md)
 - Linux 内核实验
+    - 哈希表
+        - 🔴 [哈希桶与位宽实验材料](../../labs/kernel/hash_table/materials/README.md)
     - 链表
         - 🔴 [链表教材实验材料](../../labs/kernel/linked_list/materials/README.md)
     - 驱动入口
@@ -592,6 +595,11 @@ mindmap-plugin: basic
     - Linux 设备模型
         - 🔴 [设备模型 34 章原始总稿迁移核对源](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
 - 源码阅读
+    - 🔴 哈希计算
+        - 🔴 [哈希表源码阅读大纲](../../research/source_reading/hash_table/大纲.md)
+        - 🔴 [Linux 6.12 哈希计算源码阅读索引](../../research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md)
+        - 🔴 [键位宽与落桶导读](../../research/source_reading/hash_table/navigation/P02_键位宽与落桶导读.md)
+        - 🔴 [hash.h 的位宽与取高位实现](../../research/source_reading/hash_table/source_explanations/include/linux/hash.h.md)
     - 🔴 链表
         - 🔴 [链表源码阅读大纲](../../research/source_reading/linked_list/大纲.md)
         - 🔴 [Linux 6.12 链表源码阅读索引](../../research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md)

@@ -37,7 +37,7 @@ domains:
 一次打开已经产生了需要保存和释放的状态。对象多起来以后，先要能找到它们，再要判断最后一个使用者什么时候离开。本阶段先学对象怎样组织，再学谁负责持有和释放；数据结构与生命期回答不同问题。
 
 1. [Linux 双向循环链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)：先用三个任务区分对象与成员，再运行 C 模型观察摘除和重入；加入第二个修改者后解释锁、发布、失败回滚和寿命边界。固定版本证据从[源码索引](../../research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md#1.2_由结论进入唯一实现)进入。历史目录名不表示 list_head 是单向链表。
-2. [哈希表理论基础](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)。
+2. 沿[哈希表路线](../../knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md#1.1_沿问题增加约束)进入[桶与冲突](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)，用完整 C 程序验证完整键比较与重新分桶；再结合节点学习[位宽与哈希计算](../../knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P03_算法之魂_哈希函数与位运算优化.md)，避免把桶号当作对象身份。
 3. [Linux hlist](../../knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md)。
 4. [红黑树基础](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md)，随后按目录序号读至 Linux rbtree 和 Maple Tree。
 5. [kref 要解决的问题](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)，随后按序完成生命周期专题。

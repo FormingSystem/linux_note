@@ -45,7 +45,7 @@ Linux 内核结构、模块与数据结构
 
 | 机制 | 解决的问题 | 当前入口 |
 | --- | --- | --- |
-| 数据结构 | 怎样在对象地址、成员关系、同步与查找代价之间做选择 | [Linux 双向循环链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)、[哈希表](../../knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md)、[红黑树](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md) |
+| 数据结构 | 怎样在对象地址、成员关系、同步与查找代价之间做选择 | [Linux 双向循环链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)、[哈希表](../../knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md#1.1_沿问题增加约束)、[红黑树](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md) |
 | 同步和异步机制 | 如何约束并发状态，并让事件跨上下文或时间继续推进 | [总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)、[同步机制](../../knowledge/linux/synchronization_and_asynchrony/synchronization/大纲.md)、[异步机制](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/大纲.md) |
 | 生命周期 | 如何确保对象被安全持有和释放 | [kref](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)、[devres](../../knowledge/linux/object_lifetime/devres/devres_API说明.md) |
 | I/O 模型 | 用户进程如何等待设备事件并完成数据传输 | [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)、[VFS I/O 数据路径](../../knowledge/kernel_subsystems/vfs/P14_VFS_read_write分派.md) |

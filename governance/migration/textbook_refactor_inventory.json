@@ -5,6 +5,48 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md",
+      "baseline_sha256": "3c3fac69eb105d493a49024d2175c8dbf9ed05bc0ad4963d2be976348f7acd7f",
+      "lines": 41,
+      "state": "validated",
+      "reason": "B03b 新增哈希桶、位宽计算或源码入口；按文档职责冷读，完成固定源码、C 模型及适用文档检查，未执行目标内核运行。"
+    },
+    {
+      "path": "labs/kernel/hash_table/materials/README.md",
+      "baseline_sha256": "54c0b0dc843a1fb5f6cb6dc94de1d38f6bb816e0aeb090129b5890b4b7a35c81",
+      "lines": 18,
+      "state": "validated",
+      "reason": "B03b 新增哈希桶、位宽计算或源码入口；按文档职责冷读，完成固定源码、C 模型及适用文档检查，未执行目标内核运行。"
+    },
+    {
+      "path": "research/source_reading/hash_table/大纲.md",
+      "baseline_sha256": "9bdc91bf883a589196228ef37f1b83913de73d8dffe73ff58ff6489e4aa8c939",
+      "lines": 15,
+      "state": "validated",
+      "reason": "B03b 新增哈希桶、位宽计算或源码入口；按文档职责冷读，完成固定源码、C 模型及适用文档检查，未执行目标内核运行。"
+    },
+    {
+      "path": "research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md",
+      "baseline_sha256": "4dcce6e503a4e8929d4c9195689ea8d84086d422467cfb3bc419054eaf54e80c",
+      "lines": 35,
+      "state": "validated",
+      "reason": "B03b 新增哈希桶、位宽计算或源码入口；按文档职责冷读，完成固定源码、C 模型及适用文档检查，未执行目标内核运行。"
+    },
+    {
+      "path": "research/source_reading/hash_table/navigation/P02_键位宽与落桶导读.md",
+      "baseline_sha256": "1a7cf09ebd54153ca577c27b33088ce58c0b166f5829fb2db99e0dd0a3674af7",
+      "lines": 53,
+      "state": "validated",
+      "reason": "B03b 新增哈希桶、位宽计算或源码入口；按文档职责冷读，完成固定源码、C 模型及适用文档检查，未执行目标内核运行。"
+    },
+    {
+      "path": "research/source_reading/hash_table/source_explanations/include/linux/hash.h.md",
+      "baseline_sha256": "8514b9c77067075741c0ca7f3e78453afcfd3406e522350d7a3af8ea34a31592",
+      "lines": 105,
+      "state": "validated",
+      "reason": "B03b 新增哈希桶、位宽计算或源码入口；按文档职责冷读，完成固定源码、C 模型及适用文档检查，未执行目标内核运行。"
+    },
+    {
       "path": ".github/copilot-instructions.md",
       "baseline_sha256": "4aad5558deb455f6b8bc38baf19219935cfc9dcb5c4fa14ab86bd681dc024f91",
       "lines": 6,
@@ -188,8 +230,8 @@
       "path": "knowledge/driver_model/character_device/P02_设备号_注册与设备节点.md",
       "baseline_sha256": "f51b98a1f31de7a4cc1f26a021cc44864e3a3c6dad9670e2683a7122feda2eaf",
       "lines": 156,
-      "state": "validated",
-      "reason": "B02d 重写设备号占用、cdev 分派、节点发布的分布状态与 S0～S4 周期；固定提交核对 devtmpfs 请求和清理边界，空设备观察未在 Linux 执行。",
+      "state": "pending",
+      "reason": "B02d 重写设备号占用、cdev 分派、节点发布的分布状态与 S0～S4 周期；固定提交核对 devtmpfs 请求和清理边界，空设备观察未在 Linux 执行。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 180
     },
     {
@@ -270,8 +312,8 @@
       "path": "knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md",
       "baseline_sha256": null,
       "lines": 353,
-      "state": "validated",
-      "reason": "B02c 新增：环形流按检查、等待、提交、唤醒、重查串起数据和 poll；完整模块 ARM 语法、宿主边界模型、图与文档检查通过，真实调度和目标执行未验证。",
+      "state": "pending",
+      "reason": "B02c 新增：环形流按检查、等待、提交、唤醒、重查串起数据和 poll；完整模块 ARM 语法、宿主边界模型、图与文档检查通过，真实调度和目标执行未验证。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 353
     },
     {
@@ -348,16 +390,16 @@
       "path": "knowledge/driver_model/file_operations/P01_一次打开与最后一次释放.md",
       "baseline_sha256": null,
       "lines": 219,
-      "state": "validated",
-      "reason": "B02g 新增打开引用教材；完整 session 模块、dup/fdinfo 预测、失败路径及源码核对，ARM 语法与宿主状态检查通过，目标实验未执行。",
+      "state": "pending",
+      "reason": "B02g 新增打开引用教材；完整 session 模块、dup/fdinfo 预测、失败路径及源码核对，ARM 语法与宿主状态检查通过，目标实验未执行。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 219
     },
     {
       "path": "knowledge/driver_model/file_operations/P02_迭代读取与请求位置.md",
       "baseline_sha256": null,
       "lines": 193,
-      "state": "validated",
-      "reason": "B02g 新增迭代请求教材；完整 read_iter 模块、readv/pread 观察与分派证据；18 种复制预算和边界、ARM 语法通过，真实调用未执行。",
+      "state": "pending",
+      "reason": "B02g 新增迭代请求教材；完整 read_iter 模块、readv/pread 观察与分派证据；18 种复制预算和边界、ARM 语法通过，真实调用未执行。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 193
     },
     {
@@ -372,8 +414,8 @@
       "path": "knowledge/driver_model/file_operations/P04_扩展接口的契约与选择.md",
       "baseline_sha256": null,
       "lines": 118,
-      "state": "validated",
-      "reason": "B02g 新增应用边界参考，承接目录/控制/通知/锁/持久化/搬运/ABI 有效知识；实际核对固定接口，目录模型输出验证，不称为各子系统完整教程。",
+      "state": "pending",
+      "reason": "B02g 新增应用边界参考，承接目录/控制/通知/锁/持久化/搬运/ABI 有效知识；实际核对固定接口，目录模型输出验证，不称为各子系统完整教程。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 118
     },
     {
@@ -388,8 +430,8 @@
       "path": "knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md",
       "baseline_sha256": "1bff208029e5c704362f8faba78134ef71d37340d46db24931155d5671af3ee2",
       "lines": 262,
-      "state": "validated",
-      "reason": "B02f 以公共对象、登记集合与绑定 S0～S4 重写，纠正旧伪接口与事件到系统调用图，完整只读观察脚本经过夹具分支验证。",
+      "state": "pending",
+      "reason": "B02f 以公共对象、登记集合与绑定 S0～S4 重写，纠正旧伪接口与事件到系统调用图，完整只读观察脚本经过夹具分支验证。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 158
     },
     {
@@ -569,8 +611,8 @@
       "path": "knowledge/driver_model/misc/readme.md",
       "baseline_sha256": "ea180e3126384a2adbd9aa74ed1d1b202ee3c52c8a492635169c892aeeb73d65",
       "lines": 10,
-      "state": "validated",
-      "reason": "B02f 将仅元数据的空页写成完整问候服务教材，解释共享分派、位置、动态次号、模块引用与热拔插边界；ARM 语法和回调边界模型通过。",
+      "state": "pending",
+      "reason": "B02f 将仅元数据的空页写成完整问候服务教材，解释共享分派、位置、动态次号、模块引用与热拔插边界；ARM 语法和回调边界模型通过。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 212
     },
     {
@@ -1033,16 +1075,16 @@
       "path": "knowledge/linux/data_structures/单链表_linked_list/P03_并发原语与原子性.md",
       "baseline_sha256": "46675d1698f30ac9c5ad602377ce3d3bd7c95b67d61eaa3d7aa2c0fcc7708744",
       "lines": 131,
-      "state": "validated",
-      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "state": "pending",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 117
     },
     {
       "path": "knowledge/linux/data_structures/单链表_linked_list/P04_一次性初始化.md",
       "baseline_sha256": "d482ecd64a12d73adc5f9bae5ad2a3202cfdcaeadb4bb289d14cfbbfd06e096d",
       "lines": 146,
-      "state": "validated",
-      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "state": "pending",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 163
     },
     {
@@ -1081,8 +1123,8 @@
       "path": "knowledge/linux/data_structures/单链表_linked_list/P09_优化与总结.md",
       "baseline_sha256": "42cc3edb198ce0136b2ebaa67527217a75cb240b33e49bd111b743ddbab893ea",
       "lines": 62,
-      "state": "validated",
-      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。",
+      "state": "pending",
+      "reason": "B03a 全篇冷读并重写；保留人工批注、路径与 ID，纠正拓扑/同步/发布/版本边界，完成固定源码、宿主模型与分支、ARM 语法及文档验证。未执行目标装卸、并发或性能实测；具体知识去向见工作记录 1.4.9。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 67
     },
     {
@@ -1097,50 +1139,50 @@
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P01_数据结构理论基础/P01_哈希表核心原理_空间与时间的终极博弈.md",
       "baseline_sha256": "3242a2f92d478fa9a540e98d523c07b45e490fa28f6c78603ce35a9cc11fb694",
       "lines": 108,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B03b 冷读并重写：完整 C 桶模型或固定宽度模型、因果讲解和练习；核对固定 NXP 源码，宿主算法与边界检查通过。目标运行及性能未验证。"
     },
     {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
       "baseline_sha256": "44a1207c177e379c53cf372b3cf60b45961466131a330042146c4ef1ca6958c4",
       "lines": 1127,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03b 已初读以核对学习依赖；本篇仍待独立重构与验证，人工批注保留。"
     },
     {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P03_算法之魂_哈希函数与位运算优化.md",
       "baseline_sha256": "f0ea15365ab8fe82d212980cec743eeabc9cb9d85a1d22cb4f4570e16f65e6a3",
       "lines": 508,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B03b 冷读并重写：完整 C 桶模型或固定宽度模型、因果讲解和练习；核对固定 NXP 源码，宿主算法与边界检查通过。目标运行及性能未验证。"
     },
     {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P04_并发保护与RCU机制_多核下的读写博弈.md",
       "baseline_sha256": "9eabe4bf90b6a080fca0801ce2564b5f9f08aee0118860825158eee48673c854",
       "lines": 173,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03b 已初读以核对学习依赖；本篇仍待独立重构与验证，人工批注保留。"
     },
     {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P05_动态伸缩的rhashtable_无感扩容的艺术.md",
       "baseline_sha256": "1200dbef266fe6e866fc6e8a5946570e1f0a770729bba6425b30de166a0181db",
       "lines": 768,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03b 已初读以核对学习依赖；本篇仍待独立重构与验证，人工批注保留。"
     },
     {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P06_哈希表在内核子系统中的影子(深度拆解篇).md",
       "baseline_sha256": "fa6bb64c834803d6e22d7b5cc14c922824877f58c337f9b0f4de584cc2c0219f",
       "lines": 289,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03b 已初读以核对学习依赖；本篇仍待独立重构与验证，人工批注保留。 PID 小节已纠正为固定提交的 IDR 索引，不能据此称全篇完成。"
     },
     {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P07_内核模块实战指南.md",
       "baseline_sha256": "a36ae21955cd289620e989da1aee16cb970bb6d56fc0fe949ae422f61ba46215",
       "lines": 185,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03b 已初读以核对学习依赖；本篇仍待独立重构与验证，人工批注保留。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md",
@@ -1379,8 +1421,8 @@
       "path": "knowledge/linux/device_model/class_sysfs/P02_让属性控制字符读取.md",
       "baseline_sha256": null,
       "lines": 263,
-      "state": "validated",
-      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。",
+      "state": "pending",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 265
     },
     {
@@ -1403,8 +1445,8 @@
       "path": "knowledge/linux/device_model/class_sysfs/P05_系统属性与接口选择参考.md",
       "baseline_sha256": null,
       "lines": 101,
-      "state": "validated",
-      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。",
+      "state": "pending",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 101
     },
     {
@@ -1426,8 +1468,8 @@
       "path": "knowledge/linux/error_handling/error_pointer/P02_错误值的编码与判定.md",
       "baseline_sha256": null,
       "lines": 121,
-      "state": "validated",
-      "reason": "B02e 新增编码推导与完整 Python 模型，32/64 位各穷举 4095 个错误值；明确非错误不等于可访问、便利接口的 NULL 边界。",
+      "state": "pending",
+      "reason": "B02e 新增编码推导与完整 Python 模型，32/64 位各穷举 4095 个错误值；明确非错误不等于可访问、便利接口的 NULL 边界。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 121
     },
     {
@@ -2687,16 +2729,16 @@
       "path": "labs/kernel/driver_entries/materials/README.md",
       "baseline_sha256": null,
       "lines": 24,
-      "state": "validated",
-      "reason": "B02f 两份完整模块与只读观察脚本的取用入口；材料与正文逐字一致，保留导航用途而不复制实验讲解。",
+      "state": "pending",
+      "reason": "B02f 两份完整模块与只读观察脚本的取用入口；材料与正文逐字一致，保留导航用途而不复制实验讲解。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 24
     },
     {
       "path": "labs/kernel/error_pointer/materials/README.md",
       "baseline_sha256": null,
       "lines": 21,
-      "state": "validated",
-      "reason": "B02e 材料职责索引与三份完整示例一致，运行步骤保留正文，无第二套手册。",
+      "state": "pending",
+      "reason": "B02e 材料职责索引与三份完整示例一致，运行步骤保留正文，无第二套手册。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 21
     },
     {
@@ -2711,8 +2753,8 @@
       "path": "labs/kernel/linked_list/materials/README.md",
       "baseline_sha256": null,
       "lines": 21,
-      "state": "validated",
-      "reason": "本轮新增 B03a 链表材料与版本证据；按实验入口、总索引、模块导读或唯一实现的职责审查，完成源码/材料一致性及适用文档验证。目标 Linux 运行未执行。",
+      "state": "pending",
+      "reason": "本轮新增 B03a 链表材料与版本证据；按实验入口、总索引、模块导读或唯一实现的职责审查，完成源码/材料一致性及适用文档验证。目标 Linux 运行未执行。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
       "current_lines": 21
     },
     {

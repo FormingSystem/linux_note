@@ -96,6 +96,8 @@ https://github.com/FormingSystem/linux_note.git
 
 [Linux 链表教材](knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)从三个任务的成员连接进入双向循环、共享修改、初始化发布和失败回滚，再比较子系统封装与容器代价；配有可运行的宿主模型、完整模块和[固定版本源码索引](research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md#1.2_由结论进入唯一实现)。
 
+[哈希表路线](knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md#1.1_沿问题增加约束)从按编号查找进入桶与冲突；基础两章用完整 C11 程序观察键比较、重新分桶、固定宽度乘法和位宽差异，并由[计算源码索引](research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md#1.2_从问题选择入口)核对当前版本。后续 hlist、并发和伸缩沿各自问题继续阅读。
+
 字符设备的[读写契约](knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md)用字节记录解释短传输、复制失败和提交时机；对应的[版本源码入口](research/source_reading/character_device/navigation/P01_Linux_6.12_字符设备源码阅读索引.md#1.2_由问题进入模块导读)分别组织模块导读与唯一实现讲解。
 
 [有限窗口模板](knowledge/driver_model/character_device/P10_字符设备驱动模板.md)、[构建运行](knowledge/driver_model/character_device/P11_构建运行与验证.md)与[环形流模板](knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md)分别落实位置、设备入口和等待通知，附完整材料及渐进实验。

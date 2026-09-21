@@ -363,3 +363,17 @@ note_class 与 note_control 采用本地 ARMv7 生成头和配置完成语法检
 九份副本按规范化换行与固定对象核对；十一段完整函数和一个安全遍历宏与原语句一致。辅助只读位置包括 include/linux/wait.h、include/linux/skbuff.h、mm/slab.h、drivers/base/base.h、include/linux/klist.h、lib/Kconfig.debug、arch/arm/include/asm/barrier.h 和 Documentation/core-api/wrappers/memory-barriers.rst；这些位置用于核对封装、配置和访问边界，不都属于本批新增全文。
 
 当前 ARM、PREEMPT_NONE、TINY_RCU、非 SMP 配置启用 PROVE_LOCKING，未观察到 DEBUG_LIST/LIST_HARDENED/KASAN 启用；该工作配置不是官方发布配置。note_list 的 ARMv7 语法检查使用本地生成头，实际依赖的 357 份头中，已跟踪文件没有使用相对固定提交的差量。宿主替身只验证业务分支、内存配对和普通串行拓扑，不证明真实锁、内存序或动态检查器。未执行目标 Kbuild、MODPOST、模块装卸、真实并发或性能测试。
+
+
+## 1.15\_哈希计算与编号索引证据
+
+2026-09-22 按相同 NXP 官方固定提交核对 Linux 6.12.20 的哈希计算，不采用本地三笔实验提交。[哈希源码索引](../hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md#1.1_版本和任务边界)区分计算规则、桶内连接及对象寿命；[位宽导读](../hash_table/navigation/P02_键位宽与落桶导读.md)负责调用关系，五个完整函数仅在 [hash.h 实现讲解](../hash_table/source_explanations/include/linux/hash.h.md#1.1_32位乘法与取高位)展开。
+
+| 保存的上游相对路径 | 用途与处理 |
+| --- | --- |
+| [include/linux/hash.h](include/linux/hash.h)、[include/linux/hashtable.h](include/linux/hashtable.h) | 既有原文复核；乘法、截断、接口类型选择和固定桶数组宏 |
+| [kernel/pid.c](kernel/pid.c)、[include/linux/pid.h](include/linux/pid.h)、[include/linux/pid_namespace.h](include/linux/pid_namespace.h) | 新增原文；当前 find_pid_ns 使用 ns->idr，upid 不含旧稿的 pid_chain |
+
+五份原文与固定对象核对。辅助只读 arch/arm/Kconfig 与顶层 Makefile；当前 ARM、非 64 位配置未启用 HAVE_ARCH_HASH，这是工作树配置边界，不是所有平台的统一实现。
+
+C11 宿主程序覆盖冲突、重复键、摘除、重新分桶和固定宽度计算；将固定通用函数的 BITS_PER_LONG 分别设为 32 与 64 进行算法分支比较，每种配置核对 10,000 个输入和六种输出宽度。不把宿主算法分支模拟称为 ARM 执行、32 位 ABI 编译、内核并发或性能测试。本批未执行目标 Kbuild、模块装卸及体系结构指令检查，未修改外部内核树。

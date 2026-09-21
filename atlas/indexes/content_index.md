@@ -25,7 +25,7 @@ domains:
 | 领域 | 当前内容入口 |
 | --- | --- |
 | 内核架构 | [从读取文件认识内核](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md#1.1_先让程序读到几个字)、[从问题定位源码](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md#1.1_先区分源码目录与正在运行的系统)、[模块与设备入口](../../knowledge/linux/architecture/modules_and_device_nodes/大纲.md#1.1_沿三个问题进入正文) |
-| 数据结构 | [Linux 双向循环链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)、[哈希表专题](../../knowledge/linux/data_structures/哈希表_Hash_Table)、[红黑树专题](../../knowledge/linux/data_structures/红黑树_rb-tree) |
+| 数据结构 | [Linux 双向循环链表](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)、[哈希表专题](../../knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md#1.1_沿问题增加约束)、[红黑树专题](../../knowledge/linux/data_structures/红黑树_rb-tree) |
 | 同步和异步机制 | [总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)、[同步机制](../../knowledge/linux/synchronization_and_asynchrony/synchronization/大纲.md)、[异步机制](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/大纲.md)、[锁](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/大纲.md)、[序列计数器](../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/大纲.md)、[等待与完成量](../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/大纲.md)、[RCU](../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md)、[Lockdep](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md)、[工作队列](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/大纲.md) |
 | 对象生命周期 | [kref](../../knowledge/linux/object_lifetime/kref)、[devres](../../knowledge/linux/object_lifetime/devres) |
 | I/O 模型 | [阻塞 I/O](../../knowledge/linux/io_model/blocking_io)、[MMIO](../../knowledge/linux/io_model/mmio/大纲.md)、[DMA](../../knowledge/linux/io_model/dma/大纲.md) |
@@ -68,6 +68,7 @@ domains:
 | C 语言静态分析实验 | [Sparse 地址空间与上下文记账](../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标) |
 | Lockdep 实验 | [锁顺序反转与报告解读](../../labs/kernel/lockdep/P01_锁顺序反转与报告解读/README.md) |
 | 链表实验与源码 | [完整模型与模块材料](../../labs/kernel/linked_list/materials/README.md)、[固定版本总索引](../../research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md#1.2_由结论进入唯一实现)、[拓扑与发布模块导读](../../research/source_reading/linked_list/navigation/P02_拓扑修改与发布边界导读.md#2.1_先找到连接状态的地址) |
+| 哈希计算实验与源码 | [C11 桶与位宽模型](../../labs/kernel/hash_table/materials/README.md)、[固定版本索引](../../research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md#1.2_从问题选择入口)、[键位宽与落桶导读](../../research/source_reading/hash_table/navigation/P02_键位宽与落桶导读.md#2.1_从调用表达式追到计算路径) |
 | i.MX6ULL 实验 | [驱动实验目录](../../labs/platforms/nxp/imx6ull/drivers) |
 | 调查 | [investigations](../../research/investigations/README.md) |
 | 源码阅读 | [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md#1.1_当前来源)、[Linux 6.12 编译器与 Sparse 注解导读](../../research/source_reading/compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务)、[Linux 6.12 LKMM 导读](../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md)、[Linux 6.12 RCU 总阅读索引](../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)、[Linux 6.12 Lockdep 总阅读索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标) |
