@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P35_红黑插入与红红冲突上推.md",
+      "baseline_sha256": "a2097c6af50808b5b12eefe7824d018efdc280a0b20222ce03fa7603a5880d6d",
+      "lines": 1421,
+      "state": "validated",
+      "reason": "B03ac 完整保留并冷读原插入图解及提问，补一般黑高证明、根与父槽、完整 C++ 程序和有限全排列/极值/多层传播检查；非内核或并发验证。"
+    },
+    {
       "path": "research/source_reading/maple_tree/source_explanations/mm/mmap.c.md",
       "baseline_sha256": "d338c39c084eff3f3c923d52952baab48aedf88f3198ddd07cdb9e1d736d77a4",
       "lines": 93,
@@ -1574,7 +1581,7 @@
       "baseline_sha256": "e7ab4da73a107251bf517b1772d65510acdd2495fecb044bbc1761e890b214ee",
       "lines": 6588,
       "state": "pending",
-      "reason": "B03ab 已完整冷读 7.1～7.3、7.4.1、7.6 并补 C++ 静态检查与高度证明；7.4.2/7.4.3 修复、其余概念、7.5 映射及 7.7 回顾待审，整章仍 pending。"
+      "reason": "B03ab 已审性质与高度，B03ac 完整迁移并修订原 7.4.2 插入为 P35，保留桥接；7.4.3 删除、其余概念、7.5 映射和 7.7 回顾仍待审，整章 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md",

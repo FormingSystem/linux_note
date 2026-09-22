@@ -90,3 +90,5 @@ domains: [c_language, data_structures]
 [vma_range_model.cpp](vma_range_model.cpp)在[P14 G/H 区间实例](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md#14.9.3_运行G与H的区间模型)中用 C++17 顺序容器观察精确查询、向后查询、相交、权限切分、取消映射和最低空洞。查询指针不能跨容器修改使用；不模拟内核的 VMA 合并、系统调用回滚、Maple 节点、RCU 或硬件性能。
 
 [rbtree_invariants.cpp](rbtree_invariants.cpp)在[P07 性质实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md#7.3.9_让程序区分三种非法结构)中检查稳定对象组成的唯一键树，区分红红、黑高、祖先范围及重复节点，并报告到 NIL 的路径边数。它不执行修复，不识别悬空地址，不检查父指针或并发生命周期。
+
+[rbtree_insert.cpp](rbtree_insert.cpp)在[P35 插入实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P35_红黑插入与红红冲突上推.md#35.3_运行完整插入程序)中完整实现唯一键的自底向上插入，以稳定地址容器拥有节点，观察左右镜像、内侧角色更新和多层染色上推。它是单线程教学树，不实现删除或 Linux 接口；重复键不改结构，分配成功后才写树槽。

@@ -266,6 +266,7 @@ mindmap-plugin: basic
             - 🔴 **未校正** [P31 2-3-4 树预修复删除](../../knowledge/linux/data_structures/红黑树_rb-tree/P31_2-3-4树预修复删除.md)
             - 🔴 **未校正** [P32 2-3-4 树下溢回溯与根收缩](../../knowledge/linux/data_structures/红黑树_rb-tree/P32_2-3-4树下溢回溯与根收缩.md)
             - 🟢 [P07 红黑树 把 2-3-4 树映射成二叉表示](../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md)
+            - 🔴 **未校正** [P35 红黑插入与红红冲突上推](../../knowledge/linux/data_structures/红黑树_rb-tree/P35_红黑插入与红红冲突上推.md)
             - 🔴 **未校正** [P33 从多路删除到红黑缺口](../../knowledge/linux/data_structures/红黑树_rb-tree/P33_从多路删除到红黑缺口.md)
             - 🟢 [P08 Linux 6.12 内核 rbtree 基础结构与工程模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md)
             - 🟢 [P09 Linux 6.12 内核 rbtree 嵌入式节点与使用者接口](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md)
