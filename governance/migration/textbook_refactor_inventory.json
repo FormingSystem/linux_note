@@ -5,6 +5,34 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md",
+      "baseline_sha256": "232607bedbfdb201771eaa23b89a28a18da2ea9c8074b169828250f897b51e80",
+      "lines": 172,
+      "state": "validated",
+      "reason": "B03m 固定源码查询入口、状态导读与四函数一宏的唯一实现；按固定 Git 对象核对，C 模型验证查询反例，未执行内核/RCU/目标板验证。"
+    },
+    {
+      "path": "research/source_reading/rbtree/navigation/P02_查找路径与返回边界导读.md",
+      "baseline_sha256": "a1f3c5b67ce33b84f2880c4f4c09e683e4c4e2d6ca7bee4a2a47acc5edd99728",
+      "lines": 82,
+      "state": "validated",
+      "reason": "B03m 固定源码查询入口、状态导读与四函数一宏的唯一实现；按固定 Git 对象核对，C 模型验证查询反例，未执行内核/RCU/目标板验证。"
+    },
+    {
+      "path": "research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md",
+      "baseline_sha256": "822734d5d618f978350799146265e5e2f649ca27d3f9a3cd4f140940cad76f82",
+      "lines": 38,
+      "state": "validated",
+      "reason": "B03m 固定源码查询入口、状态导读与四函数一宏的唯一实现；按固定 Git 对象核对，C 模型验证查询反例，未执行内核/RCU/目标板验证。"
+    },
+    {
+      "path": "research/source_reading/rbtree/大纲.md",
+      "baseline_sha256": "71d3cd6b119a8c9a72647469fcf1ed95ccad3e959cb92ffdec2a9e093a3a46de",
+      "lines": 30,
+      "state": "validated",
+      "reason": "B03m 固定源码查询入口、状态导读与四函数一宏的唯一实现；按固定 Git 对象核对，C 模型验证查询反例，未执行内核/RCU/目标板验证。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P25_AVL高度诊断与更新传播.md",
       "baseline_sha256": "ce1a3eda2d685a4dfe8d3a7ec66027fc861bd3ceae7a38d0c1e0a17137953eed",
       "lines": 1224,
@@ -1427,7 +1455,7 @@
       "baseline_sha256": "c02d313dff8f748bf7917d60df130e711af73a806f7a87016ce07b2a79e12345",
       "lines": 2508,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03m 已完成查找单元与完整 C 反例；整篇已冷读，插入修复的忠实源码和唯一展开仍待完成。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md",
@@ -1441,7 +1469,7 @@
       "baseline_sha256": "5757b6505f3ff296e4ae6e15c6ef1a6be3d7d72dbb0120e241597c40a4e680f6",
       "lines": 1886,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03m 仅冷读并同步并发单元和总结的查询/寿命边界；cached、augmented、完整示例与其余正文仍待审查。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md",

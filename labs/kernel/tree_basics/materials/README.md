@@ -51,4 +51,6 @@ domains: [c_language, data_structures]
 
 [avl_height_demo.c](avl_height_demo.c)在 [P25 完整实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P25_AVL高度诊断与更新传播.md#25.23_运行完整高度维护程序)中增加缓存高度、插入和删除后的回溯、等高停止及多层修复。它由根负责动态节点回收，失败保留原树，main 的失败出口销毁已建成部分；本例是独占 AVL 模型，不是 Linux rbtree 的实现。
 
+[lookup_paths.c](lookup_paths.c)在[P10 查找实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md#10.2.10_用完整C程序观察相等节点和旧路径)中串行重放重复键左旋、旧根漏查与错误写序形成环。对象全程存活，坏树查询使用有限预算，防止实验挂起；它不执行真实线程竞争，也不把预算耗尽当成通用判环结果。
+
 以上均为宿主内存模型，不使用 Linux API，不验证内核容器、并发或硬件；节点拓扑由程序构造，未声称能校验任意输入图。每份材料独立编译，按相应正文的 C11/C++17 命令运行。各批实际检查范围见[工作记录](../../../../governance/migration/repository_textbook_refactor.md#1.4_批次结果)。

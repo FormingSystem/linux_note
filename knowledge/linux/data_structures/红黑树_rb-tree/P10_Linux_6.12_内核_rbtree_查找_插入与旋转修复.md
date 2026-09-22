@@ -12,6 +12,8 @@ domains:
 
 ## 10.1\_章节内容说明
 
+本章开始把视角推进到算法源码。先追踪一个具体任务：树中三个业务对象的 key 都是 10，查找应当返回哪一个？当别的执行者正在旋转时，返回 NULL 又能说明什么？把这两个问题说清楚以后，再追踪新节点如何接入并修复颜色。
+
 ### 10.1.1\_本章在\_Linux\_rbtree\_学习路线中的位置
 
 第 8 章已经讲清楚 Linux rbtree 的基础结构：
@@ -38,8 +40,6 @@ RB_CLEAR_NODE()
 rbtree 核心只维护树结构和红黑性质。
 ```
 
-本章开始把视角推进到算法源码。
-
 本章重点不是再重复“红黑树插入有三个 case”，而是要把 Linux 6.12 的真实代码读顺：
 
 ```text
@@ -60,7 +60,9 @@ __rb_rotate_set_parents()
 
 ### 10.1.2\_本章参照的源码文件
 
-本章主要参照以下源码笔记：
+版本入口是[固定源码阅读索引](../../../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)：NXP 官方 lf-6.12.20-2.0.0，提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，Linux 6.12.20。目录名和本地实验提交不作为证据。查找函数的唯一函数体讲解见[查找模块导读](../../../../research/source_reading/rbtree/navigation/P02_查找路径与返回边界导读.md#2.2_按一次查找定位源码)。
+
+本章对应以下上游文件原文：
 
 * [include/linux/rbtree.h](../../../../research/source_reading/linux/include/linux/rbtree.h)
 * [lib/rbtree.c](../../../../research/source_reading/linux/lib/rbtree.c)
@@ -129,6 +131,8 @@ __rb_rotate_set_parents()
 
 ## 10.2\_rbtree\_查找逻辑\_手写\_search\_与内核辅助接口
 
+先把树固定在一个不变的时刻，追踪“业务键怎样使一次查找选择左或右”。然后允许多个对象匹配同一个查询，最后才引入查找期间发生旋转的情况；每一步只放松一个前提。
+
 ### 10.2.1\_查找逻辑为什么不在\_rbtree\_核心中实现
 
 Linux rbtree 的核心结构是 `struct rb_node`，它只有：
@@ -182,10 +186,12 @@ rbtree 核心只能看到 `rb`，看不到 `key`，除非使用者通过 `rb_ent
 如果内核 rbtree 强行提供统一 compare 回调，就会把所有使用者都拖进函数指针调用模型。Linux rbtree 的设计选择是：
 
 ```text
-普通路径：使用者手写 search / insert core，性能最好；
+普通路径：使用者手写 search / insert core，直接表达业务比较；
 辅助路径：rbtree.h 提供 rb_find()、rb_add() 等内联辅助接口；
 rbtree 核心：只管链接、旋转、染色、遍历、替换。
 ```
+
+这里没有“手写一定更快”的排序。辅助接口是内联函数，比较函数能否被内联取决于调用点和编译结果；性能还受树形、键分布和访问局部性影响。选择时先看接口能否表达业务语义，需要比较速度时再针对同一工作负载测量。
 
 这就是第 9 章讲过的核心边界：
 
@@ -321,12 +327,14 @@ else
 这段代码的关键不在写法，而在不变量：
 
 ```text
-插入时怎样比较，查找时就必须怎样比较。
+查找的左/右判断必须与建树时建立的中序次序相容。
 ```
 
 如果插入时按 `item->key`，查找时也必须按 `item->key`。
 
-如果插入时按 `(start, end)` 复合规则，查找时也必须按同一套复合规则。
+如果要查找完整的 `(start, end)`，就按建树所用的字典序比较两个字段。也可以只查询 start：按 start 分组的节点在这个中序顺序中连续，因此查找较小 start 向左、较大 start 向右仍然成立；相等时返回某个成员，或者用下文的 first/next 枚举整个组。
+
+不能随意改成只按 end 剪枝。例如中序为 `(1, 100)、(2, 5)、(3, 50)`，end 的 100、5、50 并不有序。从根 `(2, 5)` 按 end=100 向右，会错过左侧已有的目标。关键是查询比较能否正确排除整棵子树，而不是比较函数是否逐字相同。
 
 红黑树修复只能保证：
 
@@ -400,11 +408,13 @@ return NULL;
 
 注意返回的是 `struct rb_node *`。
 
-如果调用者需要业务对象，还要再做一次：
+如果调用者需要业务对象，应先区分未找到；普通 `rb_entry()` 不替你处理空指针：
 
 ```c
-item = rb_entry(node, struct demo_item, rb);
+item = node ? rb_entry(node, struct demo_item, rb) : NULL;
 ```
+
+这里还没有取得额外引用。若返回后要离开锁或 RCU（Read-Copy Update，读—复制—更新）的读侧保护区，必须按该对象的寿命协议保留引用或复制数据，不能只带走裸指针。这里用到的是它让旧读者完成访问后再回收对象的寿命职责，具体读侧模型在下文链接的 RCU 专题中建立。
 
 这里有一个工程取舍：
 
@@ -439,7 +449,7 @@ key 相等：
 
 ```text
 第一，不允许重复 key。
-	插入时发现相等就返回 -EEXIST。
+	插入时发现相等就返回 -EEXIST，表示对象已存在。
 
 第二，允许重复 key，并约定相等节点统一插到右侧。
 	中序遍历时相等节点会形成一段连续区间。
@@ -447,10 +457,12 @@ key 相等：
 第三，使用复合 key。
 	先按主 key 排序；
 	主 key 相等后按 secondary key 排序；
-	最终仍然保证全序关系。
+	按复合字段区分业务身份；仍须决定完整复合键相等时拒绝还是保留多个对象。
 ```
 
-普通 `rb_find()` 在重复 key 场景下只保证找到某个匹配节点，不保证是第一个。
+“相等插右侧”只决定 **本次插入的落点**。设相同 key 的 A、B、C 依次接成右链，对 A 左旋后 B 升到根，A 在 B 的左侧，C 在右侧；中序仍为 A、B、C。旋转保持的是非递减键序，不是“相等者永远只在右边”。所以遇到相等以后，左侧也可能还有相等成员。
+
+普通 `rb_find()` 在重复 key 场景下只保证找到某个匹配节点，不保证是第一个。上面旋转后的树会先命中 B；如果要第一个，应找到 A，而不是把 B 误当成插入最早或唯一的对象。
 
 所以 `rbtree.h` 还提供了：
 
@@ -527,7 +539,7 @@ if (c <= 0) {
 
 `rb_for_each()` 它适合这种树：
 
-```bash
+```text
 中序顺序：
 
 key=10, id=A
@@ -572,46 +584,65 @@ Linux rbtree 文档里也把 `rb_first()`、`rb_last()`、`rb_next()`、`rb_prev
 
 ### 10.2.7\_rb\_find\_rcu()\_的边界
 
-`rb_find_rcu()` 和 `rb_find()` 的结构相似，只是向下走子树时使用：
+前面的查询先假定树在查找期间保持稳定。现在让一个写者与读者交错：读者已经把根 10 存入局部变量，写者把 20 旋到根。读者手里的地址仍然是 10，10 的右孩子却已经改成中间子树 15。它查询 20 时走到 15，再走到空指针；20 从未删除，读者仍可能报告未找到。
+
+这就是 **假阴性**：目标存在，本次查询却返回不存在。原因不是比较错了，而是这条查询路径由不同时刻的树边拼成；整次查找没有得到一个稳定快照。
+
+`rb_find_rcu()` 在向下读取孩子时使用：
 
 ```c
 rcu_dereference_raw(node->rb_left)
 rcu_dereference_raw(node->rb_right)
 ```
 
-它的重点不是“自动并发安全”，而是：
+但固定版函数的首次取根仍写成 `node = tree->rb_node`。不能把它描述成“每次读取都自动带 RCU 保护”；它既不进入读侧临界区，也不获取锁、增加引用、检查业务对象有效性或替调用者确认根入口的发布协议。具体语句见[rb_find_rcu 实现](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.4_rb_find_rcu的孩子读取与缺失边界)。
 
-```text
-在 RCU 读侧遍历时，用 RCU 方式读取孩子指针。
+源码还要求两件独立的事：孩子指针写入使用 `WRITE_ONCE()`，以及旋转的写入顺序不在程序顺序中构造临时环。后者不能从前者自动推出。对于 10→20 的边，如果先把 20.left 指回 10，却还没有撤去 10.right→20，查询 15 会在 10 和 20 之间反复往返；哪怕两次赋值都标上 `WRITE_ONCE()`，这个结构环仍存在。正确写序先把 10.right 改为中间子树，再建立 20.left→10。
+
+这项设计保住的是 **沿左右孩子向下搜索的有限路径**，并不让整个旋转原子化，也不保证看到全部子树。源码注释还明确将父指针更新排除在这项论证之外；`rb_next()` 会沿父链上行，不能据此声称并发 `rb_for_each()` 也安全。
+
+```mermaid
+flowchart LR
+    owner["调用者的对象拥有者"] -->|"分配、初始化 key；按协议延迟回收"| obj["业务对象：key 与内嵌 rb_node"]
+    writer["串行化的写者"] -->|"改 rb_left/rb_right；维护根和父链"| obj
+    writer -->|"更新树入口"| root["共享 rb_root.rb_node"]
+    root -->|"S1 读取地址"| cursor["读者栈上的 node"]
+    obj -->|"S3 比较 key，取得下一孩子"| cursor
+    cursor -->|"命中候选或返回 NULL"| caller["查询调用者"]
+    caller -->|"需要严格缺失结论时，按业务协议复核"| writer
 ```
 
-但是源码注释明确指出一个限制：
+节点字段是共享状态，`node`、比较结果和匹配候选是读者局部状态。这里没有一个由 rbtree 维护的“旋转完成”通知，也没有查找自动重试计数。调用者若需要严格的“确实不存在”，可以用与写者相同的锁重新搜索；是否允许直接接受假阴性，要由业务语义决定。
 
-```text
-tree descent vs concurrent tree rotations is unsound
-and can result in false-negatives.
+把一次查询按 S0～S4 串起来，才能看清路径与寿命是两件事：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant R as 读者与局部 node
+    participant T as 根槽与节点字段
+    participant W as 持写侧锁的写者
+    participant O as 对象拥有者与回收协议
+    R->>O: S0 建立本应用要求的寿命保护
+    R->>T: S1 读取旧根地址 10
+    W->>T: S2 10.right=15，20.left=10，根=20
+    R->>T: S3 从旧 10 查 20，经 15 到 NULL
+    alt 本次需要严格缺失结论
+        R->>W: S4 按协议结束读侧保护，再取得同一树锁
+        R->>T: 从当前根重查，命中 20
+        R->>O: 在保护内消费，或取得合法持有权后带走
+    else 业务允许本次漏查
+        R->>O: S4 结束本次保护，接受有限查询结果
+    end
+    opt 写者另行摘除对象
+        W->>O: 撤下后登记延迟回收
+        O-->>O: 等旧读者退出且其他持有权满足释放条件后回收
+    end
 ```
 
-也就是说：
+图中的锁复核和寿命交接是 **调用者方案**，不是 `rb_find_rcu()` 的内置动作。尤其不要在不能睡眠的 RCU 读区里照抄“取得任意锁”；按锁类型和上下文安排退出、重新加锁及重新搜索。RCU 的保护细节沿用[RCU 权威路线](../../synchronization_and_asynchrony/synchronization/rcu/大纲.md)，本节只定位 rbtree 留给调用者的责任。
 
-```text
-并发旋转时，RCU 查找可能漏掉实际存在的节点；
-如果查找返回节点，那么这个节点是正确的；
-如果查找返回 NULL，不能证明节点一定不存在。
-```
-
-这和 `lib/rbtree.c` 开头的 lockless lookup 注释一致：
-
-```text
-WRITE_ONCE() 可以避免遍历陷入临时环；
-可以保证遍历最终结束；
-可以保证返回的元素是有效元素；
-但不能保证遍历一定看到所有子树。
-```
-
-所以 `rb_find_rcu()` 不是把 rbtree 变成无锁 map。
-
-它只是给特定 RCU 模型下的读路径提供一个工具。
+“若返回节点则匹配正确”也有前提：比较规则与键值稳定、相关字段已正确发布、节点仍然活着。它不表示函数替你延长了寿命，更不表示对象离开保护后仍有效。需要最容易推理的强查询时，先用锁覆盖完整操作；只有读侧确实允许上述返回边界、且有完整发布与回收协议时，才考虑这种弱查询路径。
 
 ------
 
@@ -651,7 +682,7 @@ WRITE_ONCE() 可以避免遍历陷入临时环；
 无论选择哪种方式，都必须守住同一个底线：
 
 ```text
-查找比较规则必须和插入比较规则一致。
+查找的剪枝必须与插入建立的中序次序相容。
 ```
 
 ------
@@ -675,6 +706,156 @@ WRITE_ONCE() 可以避免遍历陷入临时环；
 ```
 
 ------
+
+### 10.2.10\_用完整C程序观察相等节点和旧路径
+
+先预测三个结果：相等节点左旋后谁位于左侧；从旧根查询新根的 key 会不会漏掉；故意把撤边与反接颠倒，查询中间值会怎样。下面使用全部存活的自动对象，把读写事件 **串行重放**，不创建线程，也不让普通 C 指针发生数据竞争。它是查找路径模型，不是可替代 Linux rbtree 的实现：没有颜色修复、父指针、RCU 或内存屏障。
+
+```c
+#include <stdio.h>
+
+/* 只保存本次观察所需的向下连接，不模拟 Linux 颜色或父指针。 */
+struct lookup_node {
+    int key;
+    char tag;
+    struct lookup_node *left;
+    struct lookup_node *right;
+};
+
+static struct lookup_node *find_any(struct lookup_node *node, int key)
+{
+    while (node) {
+        if (key < node->key)
+            node = node->left;
+        else if (key > node->key)
+            node = node->right;
+        else
+            return node;
+    }
+    return NULL;
+}
+
+static struct lookup_node *find_first(struct lookup_node *node, int key)
+{
+    struct lookup_node *match = NULL;
+
+    while (node) {
+        if (key <= node->key) {
+            if (key == node->key)
+                match = node;
+            node = node->left;
+        } else {
+            node = node->right;
+        }
+    }
+    return match;
+}
+
+/* 调用者保证存在右孩子；三个普通写入只在这个串行模型中执行。 */
+static void rotate_left(struct lookup_node **root)
+{
+    struct lookup_node *old = *root;
+    struct lookup_node *up = old->right;
+    struct lookup_node *middle = up->left;
+
+    old->right = middle; /* 先撤去旧的向上路径。 */
+    up->left = old;      /* 再建立反向父子连接。 */
+    *root = up;
+}
+
+/* 只用于故意造环的实验：到达预算时停止，绝不挂住终端。 */
+static struct lookup_node *find_bounded(struct lookup_node *node, int key,
+                                        unsigned int budget, int *exhausted)
+{
+    *exhausted = 0;
+    while (node && budget) {
+        --budget;
+        if (key == node->key)
+            return node;
+        node = key < node->key ? node->left : node->right;
+    }
+    *exhausted = node != NULL;
+    return NULL;
+}
+
+int main(void)
+{
+    struct lookup_node a = {10, 'A', NULL, NULL};
+    struct lookup_node b = {10, 'B', NULL, NULL};
+    struct lookup_node c = {10, 'C', NULL, NULL};
+    struct lookup_node x = {10, 'X', NULL, NULL};
+    struct lookup_node middle = {15, 'M', NULL, NULL};
+    struct lookup_node y = {20, 'Y', NULL, NULL};
+    struct lookup_node *root = &a;
+    struct lookup_node *saved;
+    struct lookup_node *any;
+    struct lookup_node *first;
+    int exhausted;
+
+    a.right = &b;
+    b.right = &c;
+    rotate_left(&root);
+    any = find_any(root, 10);
+    first = find_first(root, 10);
+    printf("equal: root=%c left=%c any=%c first=%c\n",
+           root->tag, root->left->tag,
+           any ? any->tag : '-', first ? first->tag : '-');
+
+    x.right = &y;
+    y.left = &middle;
+    root = &x;
+    saved = root; /* 模拟读者已经取走旧根，随后写者完成旋转。 */
+    rotate_left(&root);
+    printf("stale: saved=%d current=%d miss=%d current_hit=%d\n",
+           saved->key, root->key, find_any(saved, 20) == NULL,
+           find_any(root, 20) == &y);
+
+    /* 重置后故意先反接：X.right 仍是 Y，而 Y.left 已经变为 X。 */
+    x.right = &y;
+    y.left = &middle;
+    root = &x;
+    y.left = &x;
+    (void)find_bounded(root, 15, 6, &exhausted);
+    printf("bad_order: budget_exhausted=%d cycle=%d\n",
+           exhausted, x.right == &y && y.left == &x);
+
+    /* 补上撤边和根更新；所有对象在 main 返回前一直存活。 */
+    x.right = &middle;
+    root = &y;
+    printf("repaired: middle_hit=%d\n", find_any(root, 15) == &middle);
+    return 0;
+}
+```
+
+完整材料为[lookup_paths.c](../../../../labs/kernel/tree_basics/materials/lookup_paths.c)。在仓库根目录执行；`cc` 为支持 C11 的编译器，程序只依赖标准库：
+
+```bash
+cc -std=c11 -Wall -Wextra -Werror -pedantic \
+  labs/kernel/tree_basics/materials/lookup_paths.c -o lookup_paths
+./lookup_paths
+```
+
+输出应为：
+
+```text
+equal: root=B left=A any=B first=A
+stale: saved=10 current=20 miss=1 current_hit=1
+bad_order: budget_exhausted=1 cycle=1
+repaired: middle_hit=1
+```
+
+第一行同时观察任意匹配和最左匹配。第二行不是释放后访问：旧根 10 一直存活，只是它不再能向下到达新根 20。第三行用六步预算让错误路径安全停止；循环来自 10.right→20 与 20.left→10，两条边的地址可以直接核对。第四行先补上撤边再更新根，查询 15 恢复正常。三个现象都不需要弱内存序才能出现，因此“只要加屏障就解决一切”解释不了它们。
+
+`find_bounded()` 是演示防挂措施；预算耗尽只说明这次还未结束，并不是通用判环算法。足够长的合法路径也可能用完预算。Linux 的 `rb_find*` 没有这里的六步上限，不能把它当成内核自动检测坏树的证据。
+
+试着修改程序，再解释观察：
+
+1. 把三个相等键改为 10、20、30，查询 20。旋转后任意匹配和最左匹配都为 B；多个返回结果来自等价类，而非 first 额外改变树形。
+2. 第二段从旧 10 查询 15，会命中 M；旧入口并非必然查不到任何东西。查询 20 的失败不能推出“整棵旧子树失效”。
+3. 在坏写序的中间态查询 10 或 20，会提前命中。只用这些测试键不能排除结构环；15 才会在两条相反方向的边之间往返。
+4. 若业务要确认“key=20 不存在才插入”，能直接根据旧路径的 NULL 插入吗？不能。应在与写者一致的保护下重新查重并插入，否则会把弱查询的漏查变成重复对象。
+
+这一单元已经区分返回值与查询承诺。下一节保留同一业务比较规则，改为寻找一个可以写入的新节点槽；旋转和染色在接入之后发生。
 
 ## 10.3\_rbtree\_插入前半段\_搜索落点与\_rb\_link\_node()
 
@@ -2422,10 +2603,10 @@ lockless iteration 不保证正确遍历；
 如果返回元素，那么返回的是正确元素。
 ```
 
-这就是 `WRITE_ONCE()` 的边界：
+这里的“遍历”只指注释讨论的向下查找，仍要求对象寿命和比较字段有效；不能扩展到沿父指针上行的遍历。完整反例见[旧路径实验](#10.2.10_用完整C程序观察相等节点和旧路径)。这就是它与其他前提共同构成的边界：
 
 ```text
-它保证可遍历性和基本指针可见性；
+它约束单次结构指针访问；无临时环还依赖写入顺序；
 不保证并发查找完整性；
 不替代锁；
 不替代 RCU 生命周期管理。
@@ -2505,4 +2686,3 @@ node 始终是红色；
 下一章继续进入删除路径。
 
 删除比插入更难，是因为它不只是处理红红冲突，而是要处理黑高缺失；Linux 源码也把删除拆成了“结构删除”和“颜色修复”两段。
-

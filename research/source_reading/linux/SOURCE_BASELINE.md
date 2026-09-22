@@ -401,3 +401,11 @@ list.h、hashtable.h、types.h、rculist.h、rcupdate.h 五份既有副本与固
 本批复核已有 [fs/dcache.c](fs/dcache.c)，新增 [include/linux/list_bl.h](include/linux/list_bl.h)、[net/netfilter/nf_conntrack_core.c](net/netfilter/nf_conntrack_core.c)、[include/net/netfilter/nf_conntrack_tuple.h](include/net/netfilter/nf_conntrack_tuple.h)、[include/net/netfilter/nf_conntrack.h](include/net/netfilter/nf_conntrack.h)、[include/net/neighbour.h](include/net/neighbour.h)、[net/core/neighbour.c](net/core/neighbour.c)。七份原文按固定对象核对；辅助读取 net/ipv4/arp.c，仅用于确认 ARP 表回调和阈值归属。十四个函数的裁剪体保持上游代码，中文说明另行标识。
 
 完整身份 C 模型与固定桶模块业务替身只验证匹配条件、串行拓扑、失败分支和内存配对。note_hash_table 通过 ARMv7 语法检查，实际使用 359 份头，已跟踪头相对固定提交的差量交集为空。当前 ARM、TINY_RCU、PREEMPT_NONE、非 SMP 配置不是 VFS 或网络并发实测；未执行目标 Kbuild、MODPOST、装卸、网络流量、SMP 或性能验证。没有修改外部内核树。
+
+## 1.19\_rbtree查找与旋转路径证据
+
+按同一官方固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0 核对 Linux 6.12.20 的查询路径。[总索引](../rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)组织版本边界，[查找模块导读](../rbtree/navigation/P02_查找路径与返回边界导读.md#2.2_按一次查找定位源码)串起共享字段、局部游标和返回责任，四个查找函数与遍历宏在[rbtree.h 实现](../rbtree/source_explanations/include/linux/rbtree.h.md#1.1_rb_find的任意匹配)唯一展开。
+
+既有 include/linux/rbtree_types.h、rbtree.h、rbtree_augmented.h、lib/rbtree.c 和 Documentation/core-api/rbtree.rst 五份 raw 文件与固定 Git blob 一致。本地 HEAD 仍含三笔实验差量，未用它替代发布对象。查找首次取根、孩子 RCU 取得、WRITE_ONCE 与不成环写序、父指针论证排除项均按固定文件核对，不修改外部源码。
+
+C11 程序串行重放相等键旋转、旧入口漏查与错误写序成环，全部对象在观察期内存活。宿主检查不证明真实内核、RCU 宽限期、SMP 可见顺序或目标 ARM 执行；未执行目标 Kbuild、模块装卸、内存模型工具或性能实验。插入/删除实现仍按后续批次整理，当前入口不代表整套 rbtree 重构完成。

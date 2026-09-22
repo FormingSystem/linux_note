@@ -125,3 +125,5 @@ B03j 完整冷读 P05，先完成[普通单旋与互逆实验](../../knowledge/l
 B03k 将全部组合单元组织为[P24 形状判断](../../knowledge/linux/data_structures/红黑树_rb-tree/P24_组合旋转与形状判断.md#24.1_章节内容说明)，保留十一张图和内部例子，纠正形状即失衡的混淆，提供三份完整 C/C++ 材料与双旋拒绝检查。内容去向、验证及边界见[B03k 记录](../../governance/migration/repository_textbook_refactor.md#1.4.21_B03k组合旋转与形状诊断边界)。下一项继续 AVL 高度诊断与实现，P05 和全仓尚未全部完成。
 
 B03l 将诊断与回溯组织为[P25 AVL 更新传播](../../knowledge/linux/data_structures/红黑树_rb-tree/P25_AVL高度诊断与更新传播.md#25.23_运行完整高度维护程序)，保留原推导并补齐缓存、停止条件、完整 C 程序和多层删除观察。518400 组插删次序、失败回收及其他边界见[B03l 记录](../../governance/migration/repository_textbook_refactor.md#1.4.22_B03lAVL高度诊断与更新传播)。下一项为固定版本 Linux 旋转证据与 P05 收束，全仓仍待继续。
+
+B03m 先完成[P10 查找与旧路径实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md#10.2.10_用完整C程序观察相等节点和旧路径)，建立[固定源码查询入口](../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)，并同步 P05/P12 的并发事实。具体保留与纠错、验证及边界见[B03m 记录](../../governance/migration/repository_textbook_refactor.md#1.4.23_B03m查找契约与旧入口路径)。P05、P10、P12 均未标记整章完成，下一项继续插入修复的忠实源码与唯一展开；全仓继续。
