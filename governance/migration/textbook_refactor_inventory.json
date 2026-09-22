@@ -5,6 +5,41 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P08_rhashtable接口与回收实验.md",
+      "baseline_sha256": "4d38dfe78dd05b852587875108528c73c5c6496ef303cd6f9b7f3ded56a7a9eb",
+      "lines": 226,
+      "state": "validated",
+      "reason": "B03d 新建动态表实验或版本源码说明；固定源码、C业务检查、ARM语法和文档检查通过，不代表目标装卸、实际伸缩或并发性能已验证。"
+    },
+    {
+      "path": "research/source_reading/hash_table/navigation/P04_动态表迁移与接口边界导读.md",
+      "baseline_sha256": "09247869189ff4914fc2502d78bea42bfb1f94a3db15dd1d0851fc23a06a8187",
+      "lines": 57,
+      "state": "validated",
+      "reason": "B03d 新建动态表实验或版本源码说明；固定源码、C业务检查、ARM语法和文档检查通过，不代表目标装卸、实际伸缩或并发性能已验证。"
+    },
+    {
+      "path": "research/source_reading/hash_table/source_explanations/include/linux/rhashtable-types.h.md",
+      "baseline_sha256": "727c855ed553aa3f64d9964720dbffda43f0c3a80e157ab3d4ec77c455969cef",
+      "lines": 149,
+      "state": "validated",
+      "reason": "B03d 新建动态表实验或版本源码说明；固定源码、C业务检查、ARM语法和文档检查通过，不代表目标装卸、实际伸缩或并发性能已验证。"
+    },
+    {
+      "path": "research/source_reading/hash_table/source_explanations/include/linux/rhashtable.h.md",
+      "baseline_sha256": "352327771c326f84d86ab2ebe669d8c626b421aa92638b36ae624eb8168d3499",
+      "lines": 304,
+      "state": "validated",
+      "reason": "B03d 新建动态表实验或版本源码说明；固定源码、C业务检查、ARM语法和文档检查通过，不代表目标装卸、实际伸缩或并发性能已验证。"
+    },
+    {
+      "path": "research/source_reading/hash_table/source_explanations/lib/rhashtable.c.md",
+      "baseline_sha256": "6a85070be5f5229edfee84e031054930646ce540a65965234587ad8b0233f42e",
+      "lines": 573,
+      "state": "validated",
+      "reason": "B03d 新建动态表实验或版本源码说明；固定源码、C业务检查、ARM语法和文档检查通过，不代表目标装卸、实际伸缩或并发性能已验证。"
+    },
+    {
       "path": "research/source_reading/hash_table/navigation/P03_节点连接与并发边界导读.md",
       "baseline_sha256": "c0ff75edfc4f8327f7f9c37d9fb07f13955576019cc99b9753c52bf703adb550",
       "lines": 49,
@@ -1195,8 +1230,8 @@
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P05_动态伸缩的rhashtable_无感扩容的艺术.md",
       "baseline_sha256": "1200dbef266fe6e866fc6e8a5946570e1f0a770729bba6425b30de166a0181db",
       "lines": 768,
-      "state": "pending",
-      "reason": "B03b 已初读以核对学习依赖；本篇仍待独立重构与验证，人工批注保留。"
+      "state": "validated",
+      "reason": "B03d 完整冷读并重构容量、标记、迁移、重扫和接口边界；两条人工批注保留。固定源码、C模型与ARM语法及文档检查通过，目标运行与真实性能未验证。"
     },
     {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P06_哈希表在内核子系统中的影子(深度拆解篇).md",

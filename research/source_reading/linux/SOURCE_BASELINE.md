@@ -385,3 +385,11 @@ C11 宿主程序覆盖冲突、重复键、摘除、重新分桶和固定宽度�
 list.h、hashtable.h、types.h、rculist.h、rcupdate.h 五份既有副本与固定对象一致。十四个完整函数和二十一个宏与固定摘录逐项核对。没有用本地实验提交或目录名代替版本证据，也没有修改外部内核树。
 
 当前 ARM、TINY_RCU、PREEMPT_NONE、非 SMP 配置启用 PROVE_LOCKING，未启用 PROVE_RCU_LIST；这不代表其他配置或历史 Tree 快照的状态。note_hlist_rcu 通过 ARMv7 语法检查，实际依赖的 358 份头中已跟踪文件没有相对固定对象的差量。C 宿主程序和固定函数替身检查入口槽、后置状态、旧 next、回调登记、失败回滚和清理，不能证明真实 RCU 宽限期或内存序。未执行目标 Kbuild、MODPOST、装卸、SMP 或性能实验。
+
+## 1.17\_动态表迁移与接口证据
+
+2026-09-22 按同一 NXP 官方固定提交核对 rhashtable 的布局、查找和迁移，新增 [include/linux/rhashtable.h](include/linux/rhashtable.h)与 [lib/rhashtable.c](lib/rhashtable.c)原文；[include/linux/rhashtable-types.h](include/linux/rhashtable-types.h)既有副本复核一致。辅助只读 include/linux/list_nulls.h 的通用链尾编码，不使用本地实验提交。
+
+[动态表模块导读](../hash_table/navigation/P04_动态表迁移与接口边界导读.md#4.2_沿R0到R5追踪一次迁移)按 R0～R5 串起后继发布、尾节点迁移、链尾身份重扫、入口切换和旧桶回收；31 个函数、7 个结构体和 3 个宏与固定摘录一致。源码中的桶锁位、nulls 结束标记和 future_tbl 分别解释，未沿用旧稿的 redirect tag 伪机制。
+
+当前 ARM、TINY_RCU、PREEMPT_NONE、非 SMP 配置下，note_rhashtable 通过 ARMv7 语法检查；实际使用 363 份头，已跟踪头没有相对固定对象的差量。C 宿主模型只重放确定跨链，公开接口替身只验证业务资源配对和失败处理。未执行目标 Kbuild、装卸、实际伸缩、SMP、walker/嵌套分配全路径或性能测量；未修改外部内核树。

@@ -10,759 +10,250 @@ domains:
 
 # 第5章\_动态伸缩的rhashtable\_无感扩容的艺术
 
-我们要解决的核心工程痛点是：**如何在数据量从 100 激增到 1,000,000 时，既不让查询变慢，又不让系统因为扩容而瞬间卡顿？**
+上一章允许读者与删除者重叠，并把“撤下入口”和“销毁对象”分开。它仍有一个固定条件：桶数组的大小不变。如果会话数量从几百逐渐长到几万，原来短的候选链会变长；如果从一开始就预留很大的数组，低负载时又会保存许多空桶。
 
-以下是重新生成的第 5 章，我们把代码和战场结合起来看。
+本章先从这个容量矛盾推导在线换表需要的状态，再核对 Linux 的 rhashtable（Resizable Hash Table，可调整大小的哈希表）。文件名中的“无感”不表示延迟没有变化：分配、重哈希、重试和额外内存都有成本。本章不作恒定时间、零抖动或攻击必然失效的承诺。
 
-------
+## 5.1\_先想清楚为什么不能只换一个数组
 
-## 5.1\_动态伸缩的\_rhashtable\_解决\_弹性扩展\_的死穴
+共同锁方案仍有价值：先阻止表的使用者，分配新桶，把全部节点按新容量重新分桶，再替换入口。读者只见到完整的旧版或新版，证明很简单。若表很小、维护窗口允许暂停或变更极少，这种方案可能已足够。
 
-在内核开发中，我们经常面临“预测未来的困境”。
+问题出现在暂停预算短而对象很多时。每个节点都要重新计算桶号并改连接；一万项与一百万项不是同一次常数工作。查询者等锁，后续请求在队列里积累，等待时间取决于实际迁移、内存分配和调度，而不是仅由桶数公式决定。不能脱离硬件和负载虚构“必然停顿 100 毫秒”。
 
-- **背景 A（网络连接）**：正常情况下系统有 1000 个 TCP 连接，但遭受 DDoS 攻击时会瞬间涌入 1,000,000 个。
-- **背景 B（文件缓存）**：系统刚启动时只打开了几个文件，但运行大型数据库时，缓存条目会爆炸。
+如果希望查询继续，就不能一边随意改旧节点的 next，一边要求所有读者仍按静态旧表解释路径。至少要解决四个问题：新表从哪里被发现；新插入的对象归哪张表；读者跨进另一条链后怎样发现；旧桶数组何时允许释放。RCU 能推迟存储回收，但不会替我们设计前三条协议。
 
-**如果用第 2 章学的普通哈希表**：
+## 5.2\_把业务对象和索引容器分开
 
-- 设小了：冲突链表过长，查询从 $O(1)$ 退化到 $O(n)$，CPU 全耗在遍历链表上。
-- 设大了：在低负载时浪费数 MB 甚至 GB 的宝贵内存。
-
-### 5.1.1\_为什么要\_动态伸缩\_(工程矛盾)
-
-传统哈希表扩容需要“Stop-the-world”——锁住整张表，开辟新内存，Rehash。但在内核协议栈里，如果你敢让处理网络包的 CPU 为了等扩容而原地打转（Spin）100 毫秒，那成千上万的包就会被丢弃。
-
-**rhashtable 的使命**：在**不阻塞读者**的情况下，像气球一样平滑地胀大或缩小。
-
-------
-
-### 5.1.2\_核心句柄\_struct\_rhashtable\_的实战意图
-
-观察源码 [include/linux/rhashtable-types.h](../../../../../research/source_reading/linux/include/linux/rhashtable-types.h) ，我们会发现它不是一个死板的数组，而是一个**异步管理中心**：
-
-```c
-// 简化定义
-struct rhashtable {
-    struct bucket_table __rcu    *tbl;       // 核心：当前正在用的“桶表”
-    struct work_struct           run_work;   // 幕后推手：异步扩容的工作队列
-    struct mutex                 mutex;      // 只有写者（扩容者）才用的互斥锁
-    atomic_t                     nelems;     // 原子计数：随时知道现在有多少个球（元素）
-    struct rhashtable_params     p;          // 策略控制中心
-    // ...
-};
-```
-
-原定义：
-
-```c
-/**
- * struct rhashtable - 哈希表句柄
- * @tbl: 存储桶表
- * @key_len: 哈希函数的键长度
- * @max_elems: 表中元素的最大数量
- * @p: 配置参数
- * @rhlist: 如果这是一个 rhltable，则为真
- * @run_work: 延迟工作，用于异步扩展/缩小表
- * @mutex: 保护当前/未来表交换的互斥锁
- * @lock: 保护遍历器列表的自旋锁
- * @nelems: 表中元素的数量
- */
-struct rhashtable {
-	struct bucket_table __rcu	 *tbl;			// 核心：当前正在用的“桶表”
-	unsigned int				key_len;
-	unsigned int				max_elems;
-	struct rhashtable_params	 p;			    // 策略控制中心
-	bool					   rhlist;
-	struct work_struct			run_work;		// 幕后推手：异步扩容的工作队列
-	struct mutex                 mutex;			 // 只有写者（扩容者）才用的互斥锁
-	spinlock_t				    lock;
-	atomic_t				   nelems;		    // 原子计数：随时知道现在有多少个球（元素）
-};
-```
-
-
-
-#### (1)\_工程设计解读
-
-1. **`run_work` 是灵丹妙药**：当 `nelems` 触发扩容阈值时，内核不会在当前路径（如收包路径）扩容，而是丢给一个后台线程（kworker）去慢慢搬。**业务路径只负责触发，不负责干脏活。**
-2. **`tbl` 必须遵循 RCU 协议**：读者通过 `rcu_dereference(ht->tbl)` 取得当前发布的表指针。RCU 保护该版本在读侧区间内不被提前回收，但不表示扩容期间整个哈希表内容静止不变；查找还必须服从 rhashtable 自己的迁移和重试协议。
-
-------
-
-### 5.1.3\_策略引擎\_rhashtable\_params\_是如何防止崩溃的
-
-源码中的 `struct rhashtable_params` 实际上是内核给开发者留的“调校按钮”。
-
-| **关键参数**          | **工程背景** | **作用**                                                     |
-| --------------------- | ------------ | ------------------------------------------------------------ |
-| `nelem_hint`          | 预判场景     | 比如你做 conntrack，根据系统内存预设初始大小。               |
-| `max_size`            | **防爆破**   | 防止恶意攻击（Hash DoS）导致哈希表无限扩张，撑爆内存。       |
-| `automatic_shrinking` | 资源回收     | 在云原生等对内存敏感的场景，不用的空间要还给系统。           |
-| `key_offset`          | 零拷贝设计   | 哈希表不存数据副本，它直接通过偏移量去你的结构体里“勾”出 Key。 |
-
-`struct rhashtable_params` 定义位于 [include/linux/rhashtable-types.h](../../../../../research/source_reading/linux/include/linux/rhashtable-types.h) ：
-
-```c
-/**
- * struct rhashtable_params - 哈希表构造参数
- * @nelem_hint: 元素数量的提示，应该是期望大小的 75%
- * @key_len: 键的长度
- * @key_offset: 键在结构体中的偏移量，用于哈希
- * @head_offset: rhash_head 在结构体中的偏移量，用于哈希
- * @max_size: 扩展时的最大大小
- * @min_size: 缩小时的最小大小
- * @automatic_shrinking: 启用哈希表的自动缩小功能
- * @hashfn: 哈希函数（默认：如果 !(key_len % 4)，则使用 jhash2，否则使用 jhash）
- * @obj_hashfn: 哈希对象的函数
- * @obj_cmpfn: 用于比较键与对象的函数
- */
-struct rhashtable_params {
-	u16				 nelem_hint;
-	u16				 key_len;
-	u16				 key_offset;
-	u16				 head_offset;
-	unsigned int	  max_size;
-	u16				 min_size;
-	bool			 automatic_shrinking;
-	rht_hashfn_t	  hashfn;
-	rht_obj_hashfn_t  obj_hashfn;
-	rht_obj_cmpfn_t	  obj_cmpfn;
-};
-```
-
-------
-
-### 5.1.4\_搬迁的艺术\_两个表并存的\_叠加态
-
-这是 `rhashtable` 最硬核的地方：**扩容期间，系统里有两个表。**
-
-当后台线程搬迁时：
-
-1. **双重查找**：读者先去 `tbl` 找，如果没找到，且发现系统正在搬迁，它会自动去 `future_tbl`（新表）再找一次。
-2. **原子分位**：搬迁是以“桶”为单位的。搬完一个桶，就在旧桶打个标记（通常是修改指针低位）。
-
-```mermaid
-graph TD
-    subgraph "Normal Status (稳定状态)"
-        R1[Reader] --> TBL[tbl: 当前桶]
-    end
-
-    subgraph "Resizing (异步搬迁中)"
-        R2[Reader] --> TBL_OLD[Old Table]
-        TBL_OLD -->|Missing or Marked| TBL_NEW[Future Table]
-
-        W[Worker] -->|逐个桶 Rehash| TBL_NEW
-    end
-
-    style TBL_NEW fill:#e1f5fe,stroke:#01579b
-    style W fill:#fff3e0,stroke:#ff9800
-```
-
-------
-
-### 5.1.5\_进阶\_rhltable(支持重复键的工程方案)
-
-你提供的源码里有一个 `struct rhltable`：
-
-```c
-struct rhltable {
-    struct rhashtable ht;
-};
-```
-
-**为什么要它？** 在某些协议（如处理带有相同标签的 VLAN 包）中，Key 可能是重复的。标准的 `rhashtable` 假设 Key 唯一。
-
-`rhltable` 在每个哈希槽里又挂了一个内部链表（`rhlist_head`），专门处理**“一键多值”**的工程需求。
-
-------
-
-#### (1)\_针对\_Batch\_1\_的总结思考(笔记精华)
-
-> **“rhashtable = 空间置换 + 时间平摊”**
->
-> 它解决了内核中最头疼的 **$O(1)$ 扩展性问题**。
->
-> 1. **空间隔离**：利用 `key_offset` 实现了结构体无关性。
-> 2. **性能隔离**：利用 `run_work` 实现了业务路径与管理路径的隔离。
-> 3. **读写隔离**：利用 `RCU` 实现了搬迁与查找的完全并行。
-
-**这是第 5 章的 Batch 1（工程背景与架构总览）。** 有了这些背景，你应该能感知到为什么代码里会有 `work_struct` 和各种 `offset` 了。
-
-**接下来在 Batch 2 中，我们将深入源码细节：**
-
-1. **`rhashtable_lookup` 的位运算**：它是如何通过 offset 魔法从一个 `void *` 变成数据的？
-2. **迁移时的指针标记**：如何利用地址对齐产生的“废位”来标记搬迁状态？
-3. **防止哈希攻击**：为什么 `hashfn` 必须要带上 `seed`？
-
-既然架构的地基已经打好，我们现在就进入 **第 5 章的 Batch 2**。
-
-如果说 Batch 1 是在看“气球”的整体设计，那么这一部分我们将拿起放大镜，去观察内核是如何在不确定数据类型的情况下，通过**位运算**和**偏移量魔法**实现高性能操作的。
-
-------
-
-### 5.1.6\_偏移量魔法\_如何实现\_通用\_数据结构
-
-在 C++ 中，我们习惯用模板 `template <typename T>` 来处理通用类型。但 Linux 内核是纯 C 语言写的，它使用了一种更接近底层、更高效的“偏移量（Offset）”方案。
-
-#### (1)\_零拷贝的精髓\_key\_offset\_与\_head\_offset
-
-观察 `rhashtable_params` 中的这两个字段：
-
-```c
-struct rhashtable_params {
-    u16 key_offset;    // 键值（Key）在业务结构体中的偏移
-    u16 head_offset;   // rhash_head 在业务结构体中的偏移
-    // ...
-};
-```
-
-**工程背景**：
-
-假设你有一个管理网络连接的结构体 `struct my_connection`。你不想为了把这个结构体存入哈希表而对它进行昂贵的拷贝操作。
-
-内核的做法是：
-
-1. 你把 `struct rhash_head` 像挂钩一样直接“埋”在你的结构体里。
-2. 内核不需要知道你的结构体长什么样，它只需要根据 `head_offset` 找到钩子来挂链表，根据 `key_offset` 找到 Key 来做哈希。
-
-#### (2)\_内存布局图
-
-这是理解 `rhashtable_lookup` 如何在内存中“摸索”数据的关键：
-
-```mermaid
-graph LR
-    subgraph "Your Business Struct (e.g., my_connection)"
-        Start[Struct Base Address] -->|offset: 0| Data1[Other Data]
-        Start -->|key_offset| Key[The KEY for Hashing]
-        Start -->|head_offset| RHead[rhash_head: next pointer]
-        Start -->|offset: N| Data2[More Data]
-    end
-
-    RHead -->|Point to| NextRHead[Next rhash_head in bucket]
-
-    style RHead fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    style Key fill:#fff3e0,stroke:#ff9800,stroke-width:2px
-```
+rhashtable 不复制每个业务对象。调用者在对象中嵌入 rhash_head，库用配置中的偏移找到节点、键和宿主。rhash_head 只有前向 next，不是上一章带 pprev 的 hlist_node；删除通常需要在候选链中定位相应节点的前驱。
 
 <span style="color:red">为啥不直接使用 `container_of()`，然后记录成员地址？反而是采用 `offset`？</span>
 
-这个问题问得非常到位，你已经触及了 Linux 内核**通用编程（Generic Programming）**的核心矛盾：**编译期静态检查 vs. 运行期动态适配。**
+container_of 的调用点知道具体类型和成员名，编译器可以在那里检查类型并计算偏移；独立编译的通用库不知道将来用户的 struct note_record。用户用 offsetof 生成数字参数，库保存 head_offset/key_offset 后按字节寻址，于是同一份实现可以服务不同结构体。二者不是互斥技术，都是根据真实布局恢复地址；“省掉类型检查所以执行更快”没有由此成立。
 
-你觉得 `container_of` 更自然，是因为它是内核中处理“已知结构”的标配。但 `rhashtable` 使用 `offset` 而不直接写死 `container_of`，主要有三个深层的工程考量：
+一个对象按编号、名称进入两个独立索引时，要有两个独立 rhash_head，并给两张表传入各自的 head_offset。不能把同一节点的 next 同时交给两种成员关系维护。容器不移动业务对象，调用者仍负责让其地址和键在成员期间保持有效；原地修改键却不移除重插，会让查找和删除按新键寻找错误的桶。
 
-------
+```mermaid
+flowchart LR
+    base["业务对象起点"] -->|"加 key_offset"| key["键的固定字节区域"]
+    base -->|"加 head_offset"| node["嵌入的 rhash_head"]
+    node -->|"减 head_offset"| base
+    node -->|"next"| next["同一索引中的后继"]
+    params["本表参数"] -->|"规定偏移、键长度与比较方式"| base
+```
 
-#### (3)\_深度辩证\_为什么用\_offset\_而非\_container\_of
+固定字节键还要考虑 C 的填充字节。若把含 padding 的结构体整体当键，未初始化字节可能使逻辑相同的字段比较不等；应规范键的编码，或提供与哈希一致的比较函数。字符串指针不是字符串内容，变长键需要相应的对象哈希与比较策略。具体字段与初始化边界见[动态表源码导读](../../../../../research/source_reading/hash_table/navigation/P04_动态表迁移与接口边界导读.md#4.1_表句柄桶数组与业务节点)。
 
-##### 1)\_彻底解耦\_库(Library)与用户(User)的隔离
+## 5.3\_三类状态不能共用一个解释
 
-`rhashtable` 是一个通用的库（实现在 `lib/rhashtable.c` 中）。
+先给旧表增加 future 指针：它指向已经准备好的后继表，插入者据此改变目的地，读者在旧桶查无结果后也能继续。若换表请求重叠，可能形成多个版本的后继链；“永远只有两张表”只是最小示意，不是实现上界。
 
-- **`container_of` 的局限**：它是一个宏，要求在**编译时**必须知道结构体的名称（`type`）和成员名（`member`）。
-  - 例：`container_of(ptr, struct my_connection, rhead)`。
-- **工程困境**：`rhashtable.c` 编译时，根本不知道未来会有 `struct my_connection`。如果它使用了 `container_of`，它就没法变成一个通用的 `.o` 文件供所有模块调用。
-- **`offset` 的优势**：它把类型信息降级为一个**纯数值**。用户在 `init` 时告诉哈希表“钩子在第 16 字节”，哈希表只需要做简单的指针减法即可，完全不需要知道你的结构体叫什么。
+仅有 future 仍不够。设旧桶 A → B → C；迁移者把 C.next 改成新桶链头。已经拿到 C 的读者随后会沿新链走下去，不能再把遇到的任何链尾都当成“我已经完整检查过旧桶”。因此链尾要包含桶身份，读者确认结束位置；身份不匹配时重扫原桶，确认原桶已扫描完成后再访问后继表。
 
-##### 2)\_运行时灵活性\_支持同一个结构体的多个实例
+固定 Linux 实现有三种不同载体：
 
-有时候，同一个业务结构体可能需要根据不同的 Key 挂在两个不同的哈希表里。
+| 状态 | 保存地址及消费者 | 不能解释成什么 |
+| --- | --- | --- |
+| 桶锁位 | 桶头指针值的 bit 0；写者原子加锁，读者取得入口时清除此位 | 不是迁移完成标志 |
+| nulls 链尾标记 | 节点 next 链尾中的带桶地址标记值；读者比较是否为原桶的结束标记 | 空桶也有相应结束语义，不表示这个桶正在搬家 |
+| future_tbl | bucket_table 内的后继表指针；插入、查找、删除和迁移按协议读取 | 不是把一个桶指针直接强制转换成新表 |
+
+空桶在数组槽里实际保存 NULL，读者的取得辅助函数会生成与该槽地址对应的 nulls 标记；桶槽不直接保存这个标记，因为它的低位已经用于锁。对齐允许编码这些值，但必须先辨认自己读的是哪个地址、哪种状态。
+
+桶布局、标记与取得函数的唯一实现见[版本化对象布局](../../../../../research/source_reading/hash_table/source_explanations/include/linux/rhashtable-types.h.md#1.1_从句柄到节点的状态落点)和[标记与查找](../../../../../research/source_reading/hash_table/source_explanations/include/linux/rhashtable.h.md#1.1_桶锁位与链尾身份)。本专题固定源码统一从[总阅读索引](../../../../../research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md#1.1_版本和任务边界)进入。
+
+## 5.4\_一次迁移怎样保持可以继续查找
+
+这是几组正交状态共同推进的过程：表版本关系、桶内写互斥、业务对象可达性、读者局部游标以及旧表回收条件。用 R0～R5 追踪一次换表；它描述表版本迁移，不等同于上一章 S0～S5 的单对象删除周期。
+
+| 阶段 | 谁写哪个地址 | 后续消费者与退出条件 |
+| --- | --- | --- |
+| R0 当前表 | ht.tbl 指向旧 bucket_table；对象由旧桶连接 | 读者取得旧表，写者按桶互斥 |
+| R1 准备后继 | 分配者填新表 size/hash_rnd/空桶 | 分配失败保留已有表，按路径返回错误或安排重试 |
+| R2 挂接后继 | 竞争者用原子比较交换安装 old.future_tbl | 只接受一个后继；插入者检查后转向末端表 |
+| R3 逐项迁移 | worker 持旧桶锁，从尾节点开始；先改节点 next、发布新桶，再绕过旧入口 | 旧读者可能跨链，按链尾身份重扫；新插入由后继协议接收 |
+| R4 切换入口 | worker 用 RCU 发布 ht.tbl，登记旧表回收 | 旧表还可能被先前读者引用，不能立即 free |
+| R5 回收旧表 | RCU 在所需宽限期后调用核心库的旧表释放函数 | 释放桶存储；业务对象仍由新表连接，并未被销毁 |
+
+本表 R3 中旧尾 C 改 next 的动作，与上一章“删除 B 时保留 B.next”看似不同。原因是协议不同：单桶删除保持旧链连续；动态表允许改变方向，但增加带身份的结束标记、重扫和后继表搜索。不能把 rhashtable 的做法直接套回普通 hlist 删除。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant r as RCU 读者
+    participant o as 旧表与旧桶 A/B/C
+    participant w as 迁移者
+    participant n as 后继表
+    participant g as RCU 回收设施
+    w->>o: R2 安装 future_tbl 指向已初始化的新表
+    r->>o: 取得旧表，遍历到已保存的 C 地址
+    w->>o: R3 获取旧桶锁，选取尾节点 C
+    w->>n: 锁新桶，C.next 指向新链，发布 C
+    w->>o: 旧前驱绕过 C，最终释放旧桶锁
+    r->>n: 沿 C.next 走到新桶链尾
+    r->>o: 链尾身份不匹配，重扫原桶
+    r->>n: 原桶查无结果，再沿 future_tbl 搜索
+    w->>o: R4 完成所有旧桶，发布新的 ht.tbl
+    w->>g: 登记旧 bucket_table 的回收
+    r->>r: 结束使用旧表并退出读侧
+    g->>o: R5 所需宽限期满足后释放旧桶存储
+```
+
+图中“先发布新连接，再绕过旧入口”是一个节点的操作顺序，不是整个新表瞬间对所有 CPU 可见的口号。读者查无结果后还有读取屏障与 future_tbl 的取得；写者有桶锁和后继发布协议。完整证明依赖这些配套动作，而不只依赖 RCU 不释放内存。对应函数见[迁移实现](../../../../../research/source_reading/hash_table/source_explanations/lib/rhashtable.c.md#1.2_尾节点迁移与表入口交接)。
+
+## 5.5\_用C模型观察走错链尾后的重扫
+
+下面把每张表简化为一个桶，并用独立节点表示链尾身份。所有动作在一个线程按顺序执行；hook 只在读者已经取得 C 后插入一次迁移，因此能稳定复现跨链。它不使用 Linux 指针位、不模拟锁或内存乱序，不把串行断言当成并发正确性证明。
+
+保存为 rehash_path_model.c，或从[材料目录](../../../../../labs/kernel/hash_table/materials/README.md)取用：
 
 ```c
-struct device {
-    struct rhash_head id_node;    // 按 ID 索引的钩子
-    struct rhash_head name_node;  // 按名称索引的钩子
-    // ...
+/* 确定性串行模型：用独立链尾对象模拟桶身份，不模拟指针位或真实并发。 */
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+
+struct node {
+    int key;
+    bool terminal;
+    struct node *next;
 };
-```
-
-如果哈希表内部写死了某种 `container_of` 逻辑，它就很难优雅地处理这种“一个对象两个钩子”的情况。通过传入不同的 `head_offset`，同一个 `rhashtable` 实现可以完美适配不同的业务逻辑。
-
-##### 3)\_性能\_本质上它们是\_殊途同归
-
-其实，`container_of` 的底层核心就是 `offsetof` 宏。
-
-- `container_of` 是在编译时算出偏移量。
-- `rhashtable` 是在初始化时记录偏移量。
-
-在运行时，它们执行的指令几乎是一样的：**指针地址 - 偏移量 = 对象基地址**。
-
-```c
-/* 哈希表内部获取对象基地址的逻辑 */
-void *obj = (void *)ptr - ht->p.head_offset;
-```
-
-这行代码比 `container_of` 的宏展开更简洁，因为它规避了繁琐的类型检查，直接进行原始指针运算，非常符合内核追求极致速度的特性。
-
-------
-
-### 5.1.7\_迁移时的\_双表\_查找\_Batch\_2\_的收尾
-
-在理解了偏移量魔法后，我们必须看一眼 `rhashtable` 在扩容搬迁时的**状态切换**。这是 RCU 章节和本章的交汇点。
-
-#### (1)\_读者查找流程(源码逻辑拆解)
-
-当哈希表处于 `resizing`（搬迁中）状态时，`rhashtable_lookup` 的动作如下：
-
-1. **读取当前表（Old Table）**：首先在 `ht->tbl` 里查。
-2. **检测迁移标记（The Bit Magic）**：
-   - 在搬迁桶时，写者会将旧桶的指针打上一个标记（指针低位变 1）。
-   - 如果读者读到这个标记，说明“此桶已搬，请去新家”。
-3. **转向新表（Future Table）**：如果旧表没找到或正在搬，读者自动转向 `ht->tbl->future_tbl`（新表）再次查找。
-
-------
-
-#### (2)\_Batch\_2\_总结思考\_内核的\_极简主义
-
-| **维度**     | **container_of**     | **offset 变量**                |
-| ------------ | -------------------- | ------------------------------ |
-| **确定时机** | 编译期（静态）       | 运行期（动态）                 |
-| **通用性**   | 低（必须知道类型）   | 极高（类型无关）               |
-| **安全性**   | 高（编译器检查类型） | 中（依赖开发者传入正确的数值） |
-| **适用场景** | 具体的驱动/业务逻辑  | 通用的内核库/基础设施          |
-
-> **笔记金句：**
->
-> “`container_of` 是给程序员看的，而 `offset` 是给指令集看的。`rhashtable` 牺牲了编译期的类型检查，换取了跨模块的通用性和零拷贝的极致扩展性。”
-
-------
-
-#### (3)\_指针标记(Pointer\_Tagging)\_搬迁状态的隐形信号
-
-在第 5.4 节我们提到，扩容期间读写是并行的。那么读者怎么知道一个桶（Bucket）正在搬家？
-
-**硬核细节：地址对齐的“废位”利用**
-
-在 Linux 内核中，结构体地址通常是 4 字节或 8 字节对齐的。这意味着指针的最低 1 到 2 位永远是 `0`。
-
-`rhashtable` 利用了这一点：
-
-1. **迁移标记**：当写者开始搬运一个桶时，它会给该桶的头指针做一个位运算，把最低位设为 `1`。
-
-2. **读者检测**：
-
-   ```c
-   // 简化逻辑
-   if (unlikely(ptr & BIT(0))) {
-       // 发现标记，说明这个桶正在变动，去新表（future_tbl）找！
-   }
-   ```
-
-**工程价值**：这种做法不需要在桶里增加额外的 `bool` 字段（那样会破坏缓存行对齐），而是直接在指针里“塞”信号。这体现了内核对内存和性能近乎吝啬的极致追求。
-
----
-
-### 5.1.8\_算法安全\_为什么\_hashfn\_必须要带\_seed
-
-源码定义中，哈希函数必须接收一个 `seed`：
-```c
-typedef u32 (*rht_hashfn_t)(const void *data, u32 len, u32 seed);
-```
-
-#### (1)\_工程威胁\_Hash\_DoS\_攻击
-
-如果不引入随机种子，哈希算法是确定的。
-
-- **攻击手段**：黑客可以精心构造一批特殊的键值（Key），它们的哈希值完全相同。
-- **后果**：这些键值会全部挤在同一个桶里，哈希表瞬间退化成一条 $O(n)$ 的极长链表。此时，黑客只要发送少量请求，就能耗尽服务器的 CPU 资源，导致系统瘫痪。
-
-#### (2)\_内核对策\_动态随机种子
-
-`rhashtable` 在初始化或检测到冲突异常过多时，会更换 `seed`。
-
-由于 `seed` 是随机的，黑客无法预测哈希结果，攻击自然失效。这保证了即使在极端恶劣的网络环境下，哈希表依然能保持 $O(1)$ 的性能。
-
-------
-
-### 5.1.9\_Batch\_2\_知识小结
-
-| **核心特性**     | **工程目的**       | **实现手段**                                  |
-| ---------------- | ------------------ | --------------------------------------------- |
-| **Offset 寻址**  | 通用性 & 零拷贝    | 通过 `void *` 指针加偏移量定位 Key 和钩子。   |
-| **指针 Tagging** | 扩容状态同步       | 利用指针低位 bit 标记迁移状态，不占额外内存。 |
-| **随机 Seed**    | 防御 Hash DoS 攻击 | 在哈希计算中引入随机扰动，防止黑客构造冲突。  |
-
-------
-
-**这是第 5 章最硬核的“底层魔法”拆解。** 有了这一层理解，当你看到源码里那些复杂的指针转换（如 `(char *)obj + ht->p.key_offset`）时，你就知道它是在通过“空间位置”来绕过 C 语言的类型系统限制。
-
-**接下来在 Batch 3（本章收尾）中，我们将讨论：**
-
-1. **`rhashtable_insert_slow`**：当插入遇到扩容时，内核如何处理“左右为难”的情况？
-2. **异步 Worker 的触发时机**：它到底是怎么感知到该干活了？
-3. **rhashtable 的优雅退出**：如何确保在销毁表时，没有读者还在“旧梦”里徘徊？
-
-既然已经攻克了底层的偏移量魔法和指针位运算，我们现在进入 **第 5 章的 Batch 3**，也是本章的收网阶段。
-
-这一部分我们要讨论的是 `rhashtable` 的“动态灵魂”——它是如何感知负载、如何异步扩容，以及在扩容的混乱期，它是如何维持数据一致性的。
-
-------
-
-### 5.1.10\_异步触发机制\_run\_work\_的幕后推手
-
-在内核的极致性能要求下，扩容绝对不能发生在“快路径（Fast Path）”上。
-
-#### (1)\_工程痛点\_避免\_扩容停顿
-
-想象一下，一个 CPU 核心正在以每秒 1400 万个包的速度处理网络流量。如果此时哈希表满了，需要申请内存并 Rehash 十万个节点：
-
-- **如果原地扩容**：当前 CPU 会被卡住几十毫秒，导致后续数据包全部丢弃（Drop），引发严重的抖动。
-- **rhashtable 的对策**：利用 **`work_struct`**。
-
-#### (2)\_触发逻辑\_只检测\_不干活
-
-在 `rhashtable_insert` 的路径中，内核只做一个极其轻量的判断：
-
-1. **原子计数**：读取 `atomic_t nelems`。
-2. **阈值检查**：如果节点数超过桶总数的 **75%**。
-3. **提交任务**：调用 `schedule_work(&ht->run_work)`。
-
-此时，插入操作会立即返回。真正的搬迁工作是由内核线程（kworker）在**后台**慢慢完成的。这种**“异步解耦”**的设计，保证了业务请求的响应时间始终是稳定的 $O(1)$。
-
-------
-
-### 5.1.11\_扩容期间的并发控制\_rhashtable\_insert\_slow
-
-当后台线程 `run_work` 正在搬迁数据时，前台的插入操作如果撞上了正在“变动”的桶，就会进入 `slow` 路径。这里要解决的是**数据不丢失**与**可见性一致**。
-
-#### (1)\_核心挑战\_新数据该插到哪
-
-在网络协议栈（如 `conntrack`）中，顺序虽然重要，但哈希表的主要职责是**查找“流”状态**。
-
-- **现象**：如果一个桶正在从旧表搬往新表。
-- **风险**：若插到旧表，可能搬迁线程已经扫描过该位置，新数据会被遗留在即将废弃的旧表中；若随意插入，读者可能在新老表之间“迷失”。
-
-#### (2)\_源码级逻辑实现\_重定向插入
-
-内核通过“指针标记（Pointer Tagging）”实现了一套无感切换机制。以下是简化的逻辑实现：
-
-```c
-/* 简化后的内核 rhashtable_insert_slow 逻辑 */
-int rhashtable_insert_slow(struct rhashtable *ht, void *obj)
+struct table {
+    struct node *head;
+    struct node *end;
+    struct table *future;
+};
+static struct node old_end = { 0, true, NULL };
+static struct node new_end = { 0, true, NULL };
+static struct node a = { 10, false, NULL };
+static struct node b = { 18, false, NULL };
+static struct node c = { 26, false, NULL };
+static struct table old_table = { NULL, &old_end, NULL };
+static struct table new_table = { NULL, &new_end, NULL };
+static unsigned int retries;
+
+/* 新表已通过 future 可发现。先发布尾节点到新链，再绕过旧入口。 */
+static void move_tail(void)
 {
-    struct bucket_table *tbl, *new_tbl;
-    struct rhash_head *head;
-    unsigned int hash;
-
-    rcu_read_lock();
-    tbl = rhashtable_dereference_rcu(ht->tbl, ht);
-    hash = head_hashfn(ht, tbl, obj);
-
-    // 1. 获取桶锁（Bucket Lock），防止与搬迁线程冲突
-    spin_lock(bucket_lock(tbl, hash));
-
-    // 2. 检测迁移标记：内核利用指针低位 Bit 0
-    // 如果 head & 1，说明搬迁线程已经接管了该桶
-    head = rht_dereference_bucket(tbl->buckets[hash], tbl, hash);
-    if (rht_is_a_nulls(head)) {
-        // 【关键】发现迁移标记！旧表此处已“封票”
-        new_tbl = rhashtable_dereference_rcu(tbl->future_tbl, ht);
-
-        // 3. 重定向：直接计算新哈希并插入到“新表”中
-        spin_unlock(bucket_lock(tbl, hash));
-        return rhashtable_insert_into_new_table(ht, new_tbl, obj);
+    struct node **slot = &old_table.head;
+    struct node *item = *slot;
+    assert(old_table.future == &new_table && !item->terminal);
+    while (!item->next->terminal) {
+        slot = &item->next;
+        item = item->next;
     }
+    struct node *old_next = item->next;
+    item->next = new_table.head;
+    new_table.head = item;
+    *slot = old_next;
+}
 
-    // 4. 若无标记，正常执行“头插法”进入旧表，后续会被 Worker 搬走
-    rcu_assign_pointer(tbl->buckets[hash], obj);
+/* hook 在读者已经拿到旧尾 C 后插入一次迁移动作。 */
+static struct node *lookup(struct table *table, int key, bool hook)
+{
+    while (table) {
+        struct node *cursor;
+        do {
+            cursor = table->head;
+            while (!cursor->terminal) {
+                if (hook && cursor == &c) {
+                    move_tail();
+                    hook = false;
+                }
+                if (cursor->key == key)
+                    return cursor;
+                cursor = cursor->next;
+            }
+            if (cursor != table->end)
+                ++retries;
+        } while (cursor != table->end);
+        table = table->future;
+    }
+    return NULL;
+}
 
-    spin_unlock(bucket_lock(tbl, hash));
-    rcu_read_unlock();
+int main(void)
+{
+    a.next = &b;
+    b.next = &c;
+    c.next = &old_end;
+    old_table.head = &a;
+    new_table.head = &new_end;
+    old_table.future = &new_table;
+
+    assert(lookup(&old_table, 99, true) == NULL);
+    assert(retries == 1); /* 走到新桶的尾标记，必须重扫旧桶。 */
+    assert(b.next == &old_end && new_table.head == &c);
+    assert(lookup(&old_table, 26, false) == &c);
+    printf("wrong_end_retries=%u moved_key=%d\n", retries, c.key);
+
+    move_tail();
+    move_tail();
+    assert(old_table.head == &old_end);
+    assert(lookup(&new_table, 10, false) == &a);
+    assert(lookup(&new_table, 18, false) == &b);
+    assert(lookup(&new_table, 26, false) == &c);
+    assert(lookup(&new_table, 99, false) == NULL);
+    puts("迁移后对象地址不变，三个键都可查到");
     return 0;
 }
 ```
 
-#### (3)\_深度辨析\_顺序与冲突真的混乱吗
+```bash
+cc -std=c11 -Wall -Wextra -Werror -pedantic rehash_path_model.c -o rehash_path_model
+./rehash_path_model
+```
 
-针对你担心的“顺序混乱”和“顶替”问题，内核有两层物理保障：
+预期 wrong_end_retries=1、moved_key=26，随后报告三个对象仍能按原地址找到。查询 99 故意查无结果：读者经 C 走到新链尾，重扫旧桶，再查后继表；查询 26 则在后继表命中。若去掉链尾身份比较，可能把一次混合路径误当成原桶完整扫描。模型没有证明所有真实交错，但指出了重扫判断究竟要补哪个缺口。
 
-1. **哈希桶内部是“无序”的**：
+本例 move_tail 每次移走旧链尾，正好对应固定实现选择尾节点的动作；它没有模拟多个桶、多个后继、失败分配或缩容。下一节把这些工程条件加回来。
 
-   在哈希桶的链表里，节点 $A$ 在 $B$ 前还是后不影响正确性，因为查询是基于 Key 的精确匹配。哈希表记录的是 **“状态（State）”**，而 **“数据包顺序（Sequence）”** 是由上层 TCP 协议栈处理的。
+## 5.6\_正常路径与慢路径各承担什么
 
-2. **头插法（LIFO）的缓存优势**：
+普通插入先定位桶并持有该桶的位锁。若未出现后继表、链长和数量限制都允许，就把候选发布到桶头，增加 nelems，释放桶锁；超过适用的增长阈值时安排 run_work。worker 后来运行并取得 ht.mutex，协调分配后继、迁移和当前表切换。ht.lock 则服务于全表遍历器登记；不能把这两把锁都说成保护每次业务写入。
 
-   内核默认使用头插法。新插入的节点（最新到达的包所对应的状态）处于链表最前端。这利用了 **时间局部性**：最近活跃的流，最有几率被再次访问，且其数据通常还在 L1 缓存中。
+```mermaid
+flowchart LR
+    caller["插入者或删除者"] -->|"更新数量并安排工作"| work["ht.run_work"]
+    work -->|"worker 取得 ht.mutex"| manager["表版本管理"]
+    caller -->|"各自取得桶位锁"| buckets["桶入口与节点连接"]
+    manager -->|"取得旧桶及目的桶位锁"| buckets
+    readers["RCU 读者"] -->|"取得当前表和后继，核对链尾"| buckets
+    manager -->|"撤下旧表后登记回收"| rcu["RCU 基础设施"]
+```
+
+遇到 future_tbl、过长候选链或增长压力时，插入可能转慢路径。它在各版本中检查同键对象，转向后继表，并可能在当前调用中尝试非睡眠分配新表、挂接后继，随后安排 worker。返回 EAGAIN 的内部尝试还可能重试。因此“业务路径只发通知，从不分配或循环”不成立，名称中的 fast 也不保证最坏常数时间。
+
+具体边界见[插入和调整实现](../../../../../research/source_reading/hash_table/source_explanations/lib/rhashtable.c.md#1.3_后台调整与插入慢路径)。固定版本的普通增长判断是元素数大于桶数的 75% 并未触及增长上界；允许自动缩小时，低于约 30% 且大于最小桶数才有收缩条件。两阈值之间留出间隔以减少反复伸缩，但不能保证任何负载下都没有抖动。触发条件、worker 真正执行和迁移完成是不同事件。
+
+随机种子保存在每个 bucket_table 的 hash_rnd 中，新表分配时重新取得；同样的键可能因此落到不同桶，不能只按旧桶号切一位来搬迁。种子使事先构造某一映射更困难，却不是密码学抗碰撞证明，不能保证攻击失效或最坏 O(1)。过长链的检测与重哈希也可能消耗额外 CPU 和内存；资源约束仍须业务层处理。
+
+## 5.7\_参数与接口怎样转成可执行选择
+
+| 需求 | 参数或接口起点 | 还须满足的条件 |
+| --- | --- | --- |
+| 预计对象数 | nelem_hint、min_size | 只是初始规模提示和边界；先测真实负载及桶存储 |
+| 限制增长 | max_size | 约束桶数，初始化还推导 max_elems；不是完整内存预算或攻击防线 |
+| 空闲后归还桶空间 | automatic_shrinking | 接受后台迁移、旧新表短时共存和反复调整的成本 |
+| 固定字节键且拒绝重复 | rhashtable_lookup_insert_fast | 处理 EEXIST；键长度、偏移、编码与比较必须一致 |
+| 已有外部去重协议 | rhashtable_insert_fast | 本接口传空查重键，不应假定自动拒绝同键对象 |
+| 同键多个对象 | rhltable、rhlist_head | 同键组再连一条链；不同于哈希冲突，销毁仍需业务协议 |
+
+偏移字段与部分容量提示是有限宽度整数，不应随意把任意 size_t 截进去。参数值应来自真实结构布局；默认比较按字节比较完整键，不等于只比较 hash。同一业务在两个索引中的键规范、发布和回滚还必须一起设计。
+
+lookup 在普通 RCU 读侧中返回借用对象。lookup_fast 内部短暂进入和退出读侧，但返回以后不会自动保活；只有额外寿命协议成立才能使用它。remove_fast 只撤下成员，调用者仍决定何时销毁对象。free_and_destroy 会停止表的后台工作并释放容器，但不会替调用者关闭外部入口或等待任意业务读者。完整的错误、移除和销毁闭环见[接口与回收实验](P08_rhashtable接口与回收实验.md#8.1_先固定本例的拥有者)。
 
 <span style="color:red;">所以，hash存储解决的是查找和插入的时间优化，并不解决顺序逻辑上的问题；而顺序问题要由数据结构本身来解决。</span>
 
-#### (4)\_并发博弈的最终结果
+这里保留原批注，并补一个边界：哈希索引本身不定义业务顺序。若还需要 FIFO、时间顺序或有序范围查询，应另选队列、树或排序协议，不是每种数据结构自动替业务决定顺序。头插也只说明插入位置，不能推出“最近使用的对象必定在最前面”；一次查询不会自动把对象移到链头。
 
-| **插入时机**   | **处理动作**              | **结果**                                       |
-| -------------- | ------------------------- | ---------------------------------------------- |
-| **搬迁标记前** | 插入旧表。                | 随后被 Worker 线程整体搬迁至新表。             |
-| **搬迁标记后** | 发现 Bit 0 置位，重定向。 | 节点直接进入新表，新老读者都能通过新表找到它。 |
+## 5.8\_回顾与渐进练习
 
-**结论**：`rhashtable` 通过这种“侧向探测”机制，确保了在几十万个网络流并发涌入时，即便处于扩容的混乱期，也不会出现“流失踪”或“双份流”的情况。
+1. 空桶没有迁移过，却也能被读者解释成 nulls 链尾。这为什么足以反驳“bit 0 是已搬标志”？
+2. 模型先查询 26，再查询 99 并触发迁移。哪次一定经过链尾身份检查，为什么？
+3. 一个调用者在 lookup_fast 返回后才复制名字，需要补上什么寿命条件？
+4. 把 max_size 设为固定数后，为何内存仍可能增长到超出“桶数乘指针大小”的估算？
+5. 负载稳定且共同锁的等待在预算内，是否应该仅因动态表功能更多而替换现有实现？
 
-------
+解答：第一题的标记表达结束位置身份，与迁移无必然对应；第二题成功命中可提前返回，查无键的完整扫描才需要判断结束位置。第三题要有外部引用或不会并发销毁的协议，不能借短读侧的名字推断保护。第四题还包含业务对象、并存表、嵌套分配及待回收状态。第五题应保留已满足约束且更简单的方案，迁移协议带来的复杂度必须由实际需求解释。
 
-#### (5)\_搬迁与插入的动态协作\_(Mermaid)
-
-```mermaid
-sequenceDiagram
-    participant P as 插入者 (如: 中断收包路径)
-    participant W as 搬迁者 (kworker 线程)
-    participant T1 as Old Table (旧表)
-    participant T2 as New Table (新表)
-
-    W->>T1: 1. 锁桶并打上迁移标记 (Bit 0 = 1)
-    Note over W, T1: 此桶对旧表路径关闭写入
-
-    P->>T1: 2. 尝试插入数据
-    T1-->>P: 返回迁移标记 (碰撞)
-
-    P->>T2: 3. 重定向: 计算新哈希并插入新表
-    Note right of P: 保证了新老数据在“时间轴”上的平滑过渡
-
-    W->>T1: 4. 扫描旧桶，将剩余数据重哈希至 T2
-    W->>T1: 5. 迁移完成，彻底废弃旧桶
-```
-
-------
-
-既然 RCU 的核心铁律是**读者绝不能阻塞**，那么在 `rhashtable` 扩容的混乱期，读者面对“正在搬家”的桶（Bucket）时，采用的是一种极其高效的**“跳表重读”**策略。
-
-------
-
-#### (6)\_读者遇到\_封存桶\_无锁重定向(Non-blocking\_Redirect)
-
-在 `rhashtable` 扩容期间，写者（Worker）会逐个处理旧桶。为了保证并发安全，读者在查找时必须能够识别并处理“正在搬迁中”的状态，且过程必须保持 $O(1)$ 的非阻塞特性。
-
-##### 1)\_读者策略\_不阻塞\_直接跳
-
-当读者执行 `rhashtable_lookup` 走到旧表（Old Table）的某个桶，发现该桶指针被打上了**迁移标记**（Bit 0 = 1）时，它既不会等待写者完成，也不会原地打转，而是立即执行**“无缝重定向”**。
-
-- **探测标记**：通过 `rcu_dereference` 获取桶头指针。
-- **识别封存**：利用位运算检测 Bit 0。如果置位，说明该桶的数据已经全部或部分迁移到了新表。
-- **重读跳转**：读者立即转向 `ht->tbl->future_tbl`（新表），重新计算哈希并查找。
-
-##### 2)\_源码逻辑模拟(读者视角)
-
-```c
-struct rhash_head *rhashtable_lookup(struct rhashtable *ht, const void *key) {
-    struct bucket_table *tbl;
-    struct rhash_head *head;
-
-    rcu_read_lock();
-    tbl = rcu_dereference(ht->tbl); // 先获取当前表引用
-
-restart:
-    hash = key_hashfn(ht, tbl, key);
-    head = rcu_dereference(tbl->buckets[hash]);
-
-    // 【核心逻辑】检测迁移标记
-    if (unlikely(rht_is_a_nulls(head))) {
-        // 发现标记！说明该桶已“封票”，立刻换到新表查找
-        tbl = rcu_dereference(tbl->future_tbl);
-        if (tbl)
-            goto restart; // 非阻塞重定向
-    }
-
-    // ... 在确定的表中执行正常的链表遍历 ...
-    rcu_read_unlock();
-}
-```
-
-##### 3)\_数据一致性保障\_可见性先后序
-
-你可能会担心：如果跳到新表时，数据还没搬过去怎么办？内核通过**写者的严格操作顺序**规避了这种“真空期”：
-
-1. **先铺路**：写者（Worker）先将旧桶内的所有节点 Rehash 并发布到**新表**。此时，新表里已经存在数据的引用。
-2. **后封门**：只有确认新表数据对所有 CPU 可见后，写者才会回头修改**旧表**的桶指针，打上迁移标记（Bit 0 = 1）。
-3. **结果**：读者要么在旧表找到数据（封门前），要么在新表找到数据（封门后），**绝不存在两头落空的情况**。
-
-##### 4)\_读者的\_三不\_原则(笔记精要)
-
-- **不阻塞**：遇到标记立即换表，不浪费任何 CPU 周期在等待上。
-- **不重叠**：通过位锁标记，确保新老数据在逻辑上只有一个“主战场”，防止读到两份重复数据。
-- **不感知**：业务层只管调用 `lookup`，底层的双表切换由 RCU 语义和位运算魔法在纳秒级完成。
-
-------
-
-##### 5)\_逻辑流程总结
-
-```mermaid
-graph TD
-    A[开始查找] --> B(读取旧表 tbl)
-    B --> C{桶指针 Bit 0 == 1 ?}
-    C -- No --> D[在旧表中遍历链表]
-    C -- Yes --> E[获取 future_tbl 引用]
-    E --> F[在新表中重新计算哈希]
-    F --> G[在新表中遍历链表]
-    D --> H[返回结果]
-    G --> H
-
-    style E fill:#fff3e0,stroke:#ff9800
-    style F fill:#fff3e0,stroke:#ff9800
-    style C fill:#f1f8ff,stroke:#0288d1
-```
-
-> **深度笔记：**
->
-> “在 `rhashtable` 的扩容设计中，写者承担了所有的‘有序性’复杂工作，而读者只需学会‘见标记就跳’。这种**非阻塞重定向**保证了即便在百万级并发的连接跟踪（Conntrack）场景下，扩容动作也不会对读者的响应延迟（Latency）产生任何可感知的抖动。”
-
-**这段 5.11 引入了位运算标记和重定向逻辑，解决了你关心的“新老交替”顺序问题。** 这种“先封票，再引流”的策略，是内核在无锁化背景下保持数据一致性的最高准则。
-
-为了彻底理清逻辑，我们需要在 **5.11.7** 中建立一个从“宏观结构”到“微观动作”的完整映射。我们将“表与桶”的物理关系作为地基，推导出内核如何通过局部锁定实现全局扩容。
-
-------
-
-#### (7)\_动态搬迁的一致性保障\_表与桶的原子协作
-
-##### 1)\_物理层级\_表(bucket\_table)与桶(bucket)的关系
-
-在理解搬迁逻辑前，必须明确哈希表在内存中的层级结构：
-
-- **表（`bucket_table`）**：这是哈希表的**物理载体**。它在内存中表现为一个连续的**指针数组**。我们可以将其类比为图书馆的一层楼。
-- **桶（`bucket`）**：这是数组中的**一个元素（槽位）**。每个桶存放着指向冲突链表首节点的指针。我们可以将其类比为楼层中的一个特定书架。
-
-**核心矛盾**：我们的目标是更换整张“表”（扩容），但如果直接锁定整张表，会导致全系统 CPU 停顿。因此，内核将“搬表”动作分解为对数千个“桶”的独立操作。
-
-------
-
-##### 2)\_搬迁原子性\_化整为零的\_封门\_艺术
-
-当负载超过 **$75\%$** 阈值时，后台任务（`Worker`）启动。它分配好 **`future_tbl`（新表）** 后，开始对旧表中的每一个**桶**执行原子搬迁。
-
-###### a)\_搬迁\_Worker\_的\_四步走\_逻辑
-
-1. **加锁（Locking）**：获取旧表中当前桶的 **`bit lock`（位锁）**。此时，该桶进入写互斥状态。
-2. **移动（Rehash）**：遍历该桶内的所有节点，计算其在新表中的位置并完成挂载。
-3. **封门（Tagging）**：将旧桶的头指针修改为 **`redirect tag`（重定向标记）**。这标志着该桶在旧表中正式废弃，成为了指向新世界的“路标”。
-4. **解锁（Unlocking）**：释放位锁。
-
-------
-
-##### 3)\_写者(插入者)的并发冲突处理
-
-由于搬迁是逐桶进行的，写者在插入数据时会遇到三种状态：
-
-- **状态 A（尚未搬迁）**：写者发现桶既无锁也无标记 $\to$ 获取桶锁并插入 $\to$ 随后 `Worker` 到达，会看到新插入的节点并将其搬走。
-- **状态 B（正在搬迁）**：写者发现桶已上锁 $\to$ 执行 **`spinning`（自旋等待）** $\to$ 锁释放后重新检查，发现标记。
-- **状态 C（已经搬迁）**：写者读取桶指针，识别出 **`redirect tag`** $\to$ 意识到“旧表此位置已关闭” $\to$ 立即转向 **`future_tbl`**，重新计算位置并插入。
-
-**结论**：写者虽然会遭遇短暂的局部阻塞（自旋），但这种阻塞被限制在**单个桶**的范围内，不会影响对表中其他 $99\%$ 数据的并发访问。
-
-------
-
-##### 4)\_读者(查找者)的非阻塞跳转
-
-RCU 机制确保了读者在任何时刻都**不看锁、不阻塞**：
-
-- 即使桶被锁住，读者依然可以遍历其中的旧链表。
-- 一旦读到 **`redirect tag`**，读者立即执行 **`Non-blocking Redirect`（无锁重定向）**，转入新表查找。
-
-------
-
-##### 5)\_架构总结\_职责的彻底分离
-
-通过对“表”与“桶”关系的深度解耦，`rhashtable` 实现了以下工程准则：
-
-1. **哈希表的本分**：仅负责**查找与插入的时间优化**（实现接近 $O(1)$ 的定位能力）。
-2. **数据一致性**：通过**桶锁（局部互斥）**与**重定向标记（逻辑引导）**确保搬迁中不丢数据。
-3. **顺序逻辑**：哈希表物理上不保证顺序。**顺序问题由上层业务逻辑（如 TCP 序列号或 FIFO 队列）自行解决。**
-
-------
-
-6. #### 动态协作逻辑图
-
-```mermaid
-sequenceDiagram
-    participant W as 搬迁 Worker (后台)
-    participant P as 插入写者 (业务路径)
-    participant T1 as Old bucket_table (旧表)
-    participant T2 as future_tbl (新表)
-
-    Note over W, T1: 逐桶处理 (Iterating Buckets)
-    W->>T1: 1. 获取特定桶的 Bit Lock
-    Note over W,T1: 物理锁定: 确保此桶数据静止
-    P->>T1: 2. 尝试插入 (发现 Locked, 开始 Spinning)
-    W->>T2: 3. 执行 Rehash 并发布到新表
-    W->>T1: 4. 设置 Redirect Tag (封门标记)
-    W->>T1: 5. 释放 Bit Lock
-    P->>T1: 6. 拿到锁后发现 Tag
-    P->>T2: 7. 跳转至新表完成插入 (Redirect)
-```
-
-> **归档结语：**
->
-> 扩容不是一次瞬间的平移，而是一场有序的疏散。`rhashtable` 利用**位锁（Bit Lock）**保障了微观原子性，利用**重定向标记（Redirect Tag）**保障了宏观连通性，最终在“换表”的剧烈变动中，保住了读者的绝对自由。
-
-------
-
-**这个 5.11.7 小结将“表与桶”的层级关系与“搬迁/重定向”的逻辑完美融合。** 这种基于局部性的同步策略，是理解所有高性能内核数据结构的关键。
-
-------
-
-### 5.1.12\_动态收缩\_优雅的资源回收
-
-`rhashtable` 不仅能变大，还能变小（Shrink）。
-
-#### (1)\_触发背景
-
-在资源极其宝贵的内核环境中（如嵌入式设备或几十万个容器共存的服务器），空载的哈希表会浪费大量的 **连续物理内存（SLAB）**。
-
-- **阈值**：当负载低于 **30%** 时，触发异步收缩。
-- **开关**：开发者可以通过 `p.automatic_shrinking` 参数来控制是否开启这个功能，以防在负载波动剧烈时出现“扩容-缩容-再扩容”的 **抖动效应（Thrashing）**。
-
-------
-
-### 5.1.13\_总结与闭环
-
-我们将 `rhashtable` 的动态特性浓缩为这张图：
-
-```mermaid
-graph TD
-    subgraph "Fast Path (收包/查找路径)"
-        Insert[Insert Node] --> AtomicInc[nelems 原子自增]
-        AtomicInc --> Check{Load > 75%?}
-        Check -- Yes --> Trigger[schedule_work: run_work]
-        Check -- No --> Done[完成插入]
-    end
-
-    subgraph "Slow Path (后台异步搬迁)"
-        Trigger -.-> Worker[kworker 运行]
-        Worker --> NewTBL[分配新表: 大小翻倍]
-        Worker --> Rehash[逐个桶搬迁: RCU 保护]
-        Worker --> Mark[旧桶打上迁移标记: Bit 0=1]
-        Worker --> Finish[切换 tbl 指针 / 释放旧表]
-    end
-
-    subgraph "Reader/Writer Safety"
-        Reader[Reader] -->|查旧表发现标记| FutureTBL[转向 future_tbl]
-        SlowInsert[rhashtable_insert_slow] -->|Mutex 保护| FutureTBL
-    end
-
-    style Trigger fill:#fff1f1,stroke:#d32f2f
-    style Worker fill:#fff3e0,stroke:#ff9800
-    style FutureTBL fill:#e8f5e9,stroke:#2e7d32
-```
-
-
-
-------
-
-#### (1)\_针对\_Batch\_3\_的总结建议
-
-> **“rhashtable 是工程妥协的艺术。”**
->
-> 它通过 **`work_struct`** 牺牲了搬迁的即时性，换取了业务的零抖动；
->
-> 它通过 **指针 Tagging** 牺牲了少许位运算性能，换取了扩容期间读写的完美并发。
->
-> 在内核中，这种 **“异步搬迁 + 双表查找”** 的模式，是处理弹性扩展问题的教科书级方案。
-
-------
-
-**第 5 章：动态伸缩的 rhashtable，正式地收官了。**
-
-通过这一章，你不仅理解了它是怎么工作的，更理解了内核是如何在复杂的并发环境下，通过“异步”和“状态标记”来保住性能的。
-
-**至此，我们已经完成了：**
-
-1. 哈希函数基础（jhash/hash_32）。
-2. 哈希表的冲突处理（hlist 链表）。
-3. 现代同步机制（RCU 深度解析）。
-4. 动态扩容机制（rhashtable）。
-
-**你现在已经构建了一个非常完整的 Linux 内核哈希知识体系。**
+本章证明了为什么需要后继关系、带身份的链尾以及重试，尚未把它等同于所有架构上的性能结论。接着可做[完整接口实验](P08_rhashtable接口与回收实验.md)，或沿默认路线进入[子系统应用](../P04_内核实战与应用/P06_哈希表在内核子系统中的影子%28深度拆解篇%29.md)。上一篇：[RCU 旧路径](P04_并发保护与RCU机制_多核下的读写博弈.md)。返回[大纲](../大纲.md)。

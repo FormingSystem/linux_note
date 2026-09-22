@@ -240,6 +240,7 @@ mindmap-plugin: basic
             - P03 高级进阶与性能调优
                 - 🔴 [P04 并发保护与RCU机制 多核下的读写博弈](../../knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P04_并发保护与RCU机制_多核下的读写博弈.md)
                 - 🔴 [P05 动态伸缩的rhashtable 无感扩容的艺术](../../knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P05_动态伸缩的rhashtable_无感扩容的艺术.md)
+                - 🔴 [P08 rhashtable接口与回收实验](../../knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P08_rhashtable接口与回收实验.md)
             - P04 内核实战与应用
                 - 🔴 [P06 哈希表在内核子系统中的影子(深度拆解篇)](../../knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P06_哈希表在内核子系统中的影子%28深度拆解篇%29.md)
                 - 🔴 [P07 内核模块实战指南](../../knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P07_内核模块实战指南.md)
@@ -604,6 +605,10 @@ mindmap-plugin: basic
         - 🔴 [list.h 的单桶连接与遍历](../../research/source_reading/hash_table/source_explanations/include/linux/list.h.md)
         - 🔴 [hashtable.h 的固定桶数组包装](../../research/source_reading/hash_table/source_explanations/include/linux/hashtable.h.md)
         - 🔴 [rculist.h 的单桶发布与旧路径](../../research/source_reading/hash_table/source_explanations/include/linux/rculist.h.md)
+        - 🔴 [动态表迁移与接口边界导读](../../research/source_reading/hash_table/navigation/P04_动态表迁移与接口边界导读.md)
+        - 🔴 [rhashtable 的对象布局与参数](../../research/source_reading/hash_table/source_explanations/include/linux/rhashtable-types.h.md)
+        - 🔴 [rhashtable.h 的标记查找与公开包装](../../research/source_reading/hash_table/source_explanations/include/linux/rhashtable.h.md)
+        - 🔴 [rhashtable.c 的迁移调度与销毁](../../research/source_reading/hash_table/source_explanations/lib/rhashtable.c.md)
     - 🔴 链表
         - 🔴 [链表源码阅读大纲](../../research/source_reading/linked_list/大纲.md)
         - 🔴 [Linux 6.12 链表源码阅读索引](../../research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md)
