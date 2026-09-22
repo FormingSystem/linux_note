@@ -109,3 +109,5 @@ B03b 完成哈希 P01 的完整 C 桶模型与 P03 的固定宽度计算教材�
 B03c 完成 hlist 入口槽与 RCU 旧路径两章、两份 C 程序及一个完整模块，新增节点模块导读与三份唯一实现讲解。人工批注及有效知识的去向、固定证据、检查结果和未执行目标实验见[B03c 记录](../../governance/migration/repository_textbook_refactor.md#1.4.13_B03c节点入口槽与RCU旧路径)。下一批继续动态容量、子系统应用与综合模块，全仓清单仍有待审项。
 
 B03d 重写动态表 P05，并新增[P08 接口回收实验](../../knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P08_rhashtable接口与回收实验.md#8.1_先固定本例的拥有者)。固定源码纠正三类标记混淆和无依据性能承诺，C 模型重放链尾重扫；证据、验证与未执行项见[B03d 记录](../../governance/migration/repository_textbook_refactor.md#1.4.14_B03d动态表迁移与接口回收)。下一批继续子系统应用和综合模块，全仓尚未完成。
+
+B03e 完成 P06 子系统身份比较与 P07 固定桶完整模块：保留近期 PID 版本修正及人工批注，增加 C 完整身份模型、失败回滚与五篇源码导读/实现说明。证据、检查和目标运行限制见[B03e 记录](../../governance/migration/repository_textbook_refactor.md#1.4.15_B03e子系统身份与固定桶完整实验)。下一组进入树结构逐章冷读；全仓尚未完成。

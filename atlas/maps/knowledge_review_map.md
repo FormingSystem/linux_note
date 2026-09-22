@@ -609,6 +609,11 @@ mindmap-plugin: basic
         - 🔴 [rhashtable 的对象布局与参数](../../research/source_reading/hash_table/source_explanations/include/linux/rhashtable-types.h.md)
         - 🔴 [rhashtable.h 的标记查找与公开包装](../../research/source_reading/hash_table/source_explanations/include/linux/rhashtable.h.md)
         - 🔴 [rhashtable.c 的迁移调度与销毁](../../research/source_reading/hash_table/source_explanations/lib/rhashtable.c.md)
+        - 🔴 [子系统索引身份与寿命导读](../../research/source_reading/hash_table/navigation/P05_子系统索引身份与寿命导读.md)
+        - 🔴 [dcache.c的名称候选与序列交接](../../research/source_reading/hash_table/source_explanations/fs/dcache.c.md)
+        - 🔴 [nf_conntrack_core.c的候选与身份复核](../../research/source_reading/hash_table/source_explanations/net/netfilter/nf_conntrack_core.c.md)
+        - 🔴 [neighbour.h的桶链与设备身份](../../research/source_reading/hash_table/source_explanations/include/net/neighbour.h.md)
+        - 🔴 [neighbour.c的引用与桶存储](../../research/source_reading/hash_table/source_explanations/net/core/neighbour.c.md)
     - 🔴 链表
         - 🔴 [链表源码阅读大纲](../../research/source_reading/linked_list/大纲.md)
         - 🔴 [Linux 6.12 链表源码阅读索引](../../research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md)

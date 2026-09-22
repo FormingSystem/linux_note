@@ -5,6 +5,41 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/hash_table/navigation/P05_子系统索引身份与寿命导读.md",
+      "baseline_sha256": "432db4cc68713822c525095557af0f6a98472f54345d381d9b735f321ad5cb6f",
+      "lines": 79,
+      "state": "validated",
+      "reason": "B03e 新建子系统源码导读或唯一实现讲解；固定证据、C 模型/业务分支、ARM 语法与文档检查通过，未执行目标运行、网络并发或性能测量。"
+    },
+    {
+      "path": "research/source_reading/hash_table/source_explanations/fs/dcache.c.md",
+      "baseline_sha256": "b5dcaa71d465dcd0e3c7fc92fd5a35d1b292678faba39431978c8faabb331915",
+      "lines": 129,
+      "state": "validated",
+      "reason": "B03e 新建子系统源码导读或唯一实现讲解；固定证据、C 模型/业务分支、ARM 语法与文档检查通过，未执行目标运行、网络并发或性能测量。"
+    },
+    {
+      "path": "research/source_reading/hash_table/source_explanations/net/netfilter/nf_conntrack_core.c.md",
+      "baseline_sha256": "17bc22a44c5767b96ed15ee331ac85f4bf3001cacedb51f7cb8b36326c774b06",
+      "lines": 143,
+      "state": "validated",
+      "reason": "B03e 新建子系统源码导读或唯一实现讲解；固定证据、C 模型/业务分支、ARM 语法与文档检查通过，未执行目标运行、网络并发或性能测量。"
+    },
+    {
+      "path": "research/source_reading/hash_table/source_explanations/include/net/neighbour.h.md",
+      "baseline_sha256": "14235ed3d4c53aed666af8a265eda75aad0b70d8e58ff25bf71dbe256e4d9594",
+      "lines": 56,
+      "state": "validated",
+      "reason": "B03e 新建子系统源码导读或唯一实现讲解；固定证据、C 模型/业务分支、ARM 语法与文档检查通过，未执行目标运行、网络并发或性能测量。"
+    },
+    {
+      "path": "research/source_reading/hash_table/source_explanations/net/core/neighbour.c.md",
+      "baseline_sha256": "ed298a6772a831c0dc6d39cb20c3c3db2bebaf59a36cb27f7c54deb875396d3c",
+      "lines": 91,
+      "state": "validated",
+      "reason": "B03e 新建子系统源码导读或唯一实现讲解；固定证据、C 模型/业务分支、ARM 语法与文档检查通过，未执行目标运行、网络并发或性能测量。"
+    },
+    {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P08_rhashtable接口与回收实验.md",
       "baseline_sha256": "4d38dfe78dd05b852587875108528c73c5c6496ef303cd6f9b7f3ded56a7a9eb",
       "lines": 226,
@@ -1237,15 +1272,15 @@
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P06_哈希表在内核子系统中的影子(深度拆解篇).md",
       "baseline_sha256": "fa6bb64c834803d6e22d7b5cc14c922824877f58c337f9b0f4de584cc2c0219f",
       "lines": 289,
-      "state": "pending",
-      "reason": "B03b 已初读以核对学习依赖；本篇仍待独立重构与验证，人工批注保留。 PID 小节已纠正为固定提交的 IDR 索引，不能据此称全篇完成。"
+      "state": "validated",
+      "reason": "B03e 全文冷读重写：保留近期 PID 核对，按名称、连接和邻居完整身份解释候选及业务边界；固定源码、九项 C 身份断言及文档检查通过，未验证实际网络或 VFS 运行。"
     },
     {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P07_内核模块实战指南.md",
       "baseline_sha256": "a36ae21955cd289620e989da1aee16cb970bb6d56fc0fe949ae422f61ba46215",
       "lines": 185,
-      "state": "pending",
-      "reason": "B03b 已初读以核对学习依赖；本篇仍待独立重构与验证，人工批注保留。"
+      "state": "validated",
+      "reason": "B03e 全文冷读重写并保留人工批注；完整 C 模块完成私有固定桶增删查改和回滚，宿主业务分支及 ARM 语法检查通过，未执行目标 Kbuild 或装卸。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md",

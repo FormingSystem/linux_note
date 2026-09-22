@@ -98,7 +98,7 @@ https://github.com/FormingSystem/linux_note.git
 
 [Linux 链表教材](knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)从三个任务的成员连接进入双向循环、共享修改、初始化发布和失败回滚，再比较子系统封装与容器代价；配有可运行的宿主模型、完整模块和[固定版本源码索引](research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md#1.2_由结论进入唯一实现)。
 
-[哈希表路线](knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md#1.1_沿问题增加约束)从按编号查找进入桶与冲突；完整 C 程序观察键比较、重新分桶、位宽和 hlist 入口槽，RCU 模块追踪旧路径、回调与卸载边界，并由[计算源码索引](research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md#1.2_从问题选择入口)核对当前版本。动态表继续用 C 模型解释跨链重扫，并提供独立的[接口回收实验](knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P08_rhashtable接口与回收实验.md#8.1_先固定本例的拥有者)。目标模块运行仍待验证；子系统应用和综合模块继续逐章审查。
+[哈希表路线](knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md#1.1_沿问题增加约束)从按编号查找进入桶与冲突；完整 C 程序观察键比较、重新分桶、位宽和 hlist 入口槽，RCU 模块追踪旧路径、回调与卸载边界，并由[计算源码索引](research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md#1.2_从问题选择入口)核对当前版本。动态表继续用 C 模型解释跨链重扫，并提供独立的[接口回收实验](knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P08_rhashtable接口与回收实验.md#8.1_先固定本例的拥有者)。[子系统导读](research/source_reading/hash_table/navigation/P05_子系统索引身份与寿命导读.md#5.1_先区分索引任务与业务结论)继续比较候选、引用和业务状态，固定桶模块补齐增删查改与失败回滚。目标模块运行仍待验证，全仓其他专题继续逐项审查。
 
 字符设备的[读写契约](knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md)用字节记录解释短传输、复制失败和提交时机；对应的[版本源码入口](research/source_reading/character_device/navigation/P01_Linux_6.12_字符设备源码阅读索引.md#1.2_由问题进入模块导读)分别组织模块导读与唯一实现讲解。
 

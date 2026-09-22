@@ -18,7 +18,11 @@ domains: [linux, c_language]
 | [statement_expression.c](statement_expression.c) | GNU C 语句表达式的结果与一次求值 |
 | [note_hlist_rcu.c](note_hlist_rcu.c)、[Makefile](Makefile) | 完整模块：保留旧节点前向路径、排队回收与卸载前等待回调，支持 fail_at=1/2/3 注入 |
 | [rehash_path_model.c](rehash_path_model.c) | 串行安排旧读者跨进新链，按链尾身份重扫，并沿后继表查找 |
+| [identity_key_model.c](identity_key_model.c) | 九项完整身份断言：父目录、网络命名空间与 zone、设备身份不可省略 |
+| [note_hash_table.c](note_hash_table.c) | 私有固定桶完整模块：增删查改、改名失败保持原值、三处注入与统一回滚 |
 | [note_rhashtable.c](note_rhashtable.c) | 完整动态表接口模块：固定键去重、复制读取、单项移除和失败/退出销毁 |
+
+完整身份模型同样使用标准 C11，不模拟 Linux 网络编码、哈希算法或安全检查。固定桶模块的实际命令与预期观察见[P07](../../../../knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P07_内核模块实战指南.md#7.3_构建运行与失败后的重试)。
 
 动态迁移模型使用标准 C11，完整接口模块的命令和验收见[P08](../../../../knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P08_rhashtable接口与回收实验.md#8.3_预测日志并在匹配目标验证)。模型不模拟真实并发，接口输出也不证明已经触发实际扩容。
 

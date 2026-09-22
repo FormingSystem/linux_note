@@ -393,3 +393,11 @@ list.h、hashtable.h、types.h、rculist.h、rcupdate.h 五份既有副本与固
 [动态表模块导读](../hash_table/navigation/P04_动态表迁移与接口边界导读.md#4.2_沿R0到R5追踪一次迁移)按 R0～R5 串起后继发布、尾节点迁移、链尾身份重扫、入口切换和旧桶回收；31 个函数、7 个结构体和 3 个宏与固定摘录一致。源码中的桶锁位、nulls 结束标记和 future_tbl 分别解释，未沿用旧稿的 redirect tag 伪机制。
 
 当前 ARM、TINY_RCU、PREEMPT_NONE、非 SMP 配置下，note_rhashtable 通过 ARMv7 语法检查；实际使用 363 份头，已跟踪头没有相对固定对象的差量。C 宿主模型只重放确定跨链，公开接口替身只验证业务资源配对和失败处理。未执行目标 Kbuild、装卸、实际伸缩、SMP、walker/嵌套分配全路径或性能测量；未修改外部内核树。
+
+## 1.18\_子系统身份与引用证据
+
+2026-09-22 按同一 NXP 官方固定提交核对名称缓存、连接跟踪和邻居索引。[子系统导读](../hash_table/navigation/P05_子系统索引身份与寿命导读.md#5.1_先区分索引任务与业务结论)负责源码入口，具体实现按上游位置分别展开，不使用本地三笔实验提交。
+
+本批复核已有 [fs/dcache.c](fs/dcache.c)，新增 [include/linux/list_bl.h](include/linux/list_bl.h)、[net/netfilter/nf_conntrack_core.c](net/netfilter/nf_conntrack_core.c)、[include/net/netfilter/nf_conntrack_tuple.h](include/net/netfilter/nf_conntrack_tuple.h)、[include/net/netfilter/nf_conntrack.h](include/net/netfilter/nf_conntrack.h)、[include/net/neighbour.h](include/net/neighbour.h)、[net/core/neighbour.c](net/core/neighbour.c)。七份原文按固定对象核对；辅助读取 net/ipv4/arp.c，仅用于确认 ARP 表回调和阈值归属。十四个函数的裁剪体保持上游代码，中文说明另行标识。
+
+完整身份 C 模型与固定桶模块业务替身只验证匹配条件、串行拓扑、失败分支和内存配对。note_hash_table 通过 ARMv7 语法检查，实际使用 359 份头，已跟踪头相对固定提交的差量交集为空。当前 ARM、TINY_RCU、PREEMPT_NONE、非 SMP 配置不是 VFS 或网络并发实测；未执行目标 Kbuild、MODPOST、装卸、网络流量、SMP 或性能验证。没有修改外部内核树。
