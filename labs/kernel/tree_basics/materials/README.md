@@ -80,3 +80,6 @@ domains: [c_language, data_structures]
 
 
 [tree234_erase_bottom.cpp](tree234_erase_bottom.cpp)在[P32 回溯删除](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P32_2-3-4树下溢回溯与根收缩.md#32.4_运行完整回溯删除)中允许暂时零键，并通过 deleted/underflow 返回修复结果；内部零键节点仍保留唯一孩子。六组独立场景包含两层合并与根收缩，池所有权沿用前例；未命中下降不写树，无须额外预查。它不提供并发、插入或节点槽复用。
+
+
+[rbtree_height_balance.cpp](rbtree_height_balance.cpp)在[P33 黑高收支](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P33_从多路删除到红黑缺口.md#33.3_用黑高收支检查父层是否仍有缺口)中计算合并与远侄借位的局部高度。它只枚举 h=1～8 和父的两种颜色，检查算术推导；不执行指针旋转、不验证整棵红黑树或内核实现。

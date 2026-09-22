@@ -158,3 +158,6 @@ B03w 完整冷读 P06 原 6.6.1～6.6.9，组织为[P31 预修复删除](../../k
 
 
 B03x 将 P06 自底向上单元组织为[P32 下溢回溯](../../knowledge/linux/data_structures/红黑树_rb-tree/P32_2-3-4树下溢回溯与根收缩.md#32.3_内部零键节点怎样继续传播)，保留原图例并补齐零键内部节点、孩子移交、完整 C++ 程序和同场景比较。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.34_B03x多路下溢回溯)记录范围与验证；下一项为 P06 红黑删除对照的前置、事实与阅读位置，映射及后续扩展仍 pending。
+
+
+B03y 冷读并修订 P06 叶层/编码/回顾，将成熟删除比较组织为[P33](../../knowledge/linux/data_structures/红黑树_rb-tree/P33_从多路删除到红黑缺口.md#33.1_在两套规则建立以后对照)，安排在 P07 定义之后，修正合并传播、阶段容量、后继身份与哨兵父槽。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.35_B03y多路编码与红黑缺口)区分黑高算术检查与完整实现；P06 页级索引/Maple 和 P07 全篇仍 pending，下一项继续 P06 6.9 实际冷读。
