@@ -21,6 +21,7 @@ domains:
 | [note_session.c](note_session.c) | [第一章](../../../../knowledge/driver_model/file_operations/P01_一次打开与最后一次释放.md)：dup、flush、release 与 fdinfo |
 | [note_iter.c](note_iter.c) | [第二章](../../../../knowledge/driver_model/file_operations/P02_迭代读取与请求位置.md)：readv、pread 与实际复制进度 |
 | [note_mapping.c](note_mapping.c)、[mapping_probe.c](mapping_probe.c) | [第三章](../../../../knowledge/driver_model/file_operations/P03_只读映射与后备页寿命.md)：专用只读页与关闭 fd 后的映射 |
+| [directory_model.c](directory_model.c) | [第四章](../../../../knowledge/driver_model/file_operations/P04_扩展接口的契约与选择.md#4.3_需要列目录或显示状态时)：C11 分页输出模型，不依赖内核模块 |
 | [Makefile](Makefile) | 用匹配目标的 Kbuild 构建三个独立模块，用户程序另用用户空间编译器 |
 
 接口按 NXP 官方 Linux 6.12.20 固定提交核对，目标要求 MODULES，fdinfo 要求 PROC_FS，映射实验要求 MMU。设置 KDIR、装卸及失败恢复均见正文；ARM 语法和宿主替身不等于目标 Kbuild 或实际装载。

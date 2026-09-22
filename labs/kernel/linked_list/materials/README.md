@@ -13,9 +13,11 @@ domains: [linux, kernel]
 | 文件 | 对应内容 |
 | --- | --- |
 | [chain_model.c](chain_model.c) | P02 单线程宿主模型，观察摘链、重入和成员地址 |
-| [once_retry.py](once_retry.py) | P04 私有候选、首次失败与两调用者重试，不模拟内核内存序 |
+| [interleave_model.c](interleave_model.c) | P03 确定顺序重放丢失节点，不制造真实 C 数据竞争 |
+| [once_retry.cpp](once_retry.cpp) | P04 共同锁、私有候选、首次失败与两个调用者重试 |
+| [search_cost.c](search_cost.c) | P09 逐项查询的实际比较次数，不测处理器时间 |
 | [note_list.c](note_list.c)、[Makefile](Makefile) | P05 真实 Linux 接口、私有批次、可控分配失败和退出清理 |
 
-C 模型使用 C11 编译器；Python 模型只用标准库。内核模块要求匹配运行内核的构建配置，固定证据为 NXP Linux 6.12.20。模块没有字符设备、异步使用者和硬件，不把它当成并发驱动模板。
+C 模型使用 C11 编译器；一次性初始化模型使用 C++17 线程标准库，具体编译命令和状态解释在 P04。自检实验保留 assert，不定义 NDEBUG。内核模块要求匹配运行内核的构建配置，固定证据为 NXP Linux 6.12.20。模块没有字符设备、异步使用者和硬件，不把它当成并发驱动模板。
 
 宿主执行与 ARM 语法检查的结果及范围见[工作记录](../../../../governance/migration/repository_textbook_refactor.md#1.4.9_B03a链表拓扑与发布)。真实 Kbuild、MODPOST、模块装卸和内核动态检查器仍须在目标执行，不能以宿主通过替代。
