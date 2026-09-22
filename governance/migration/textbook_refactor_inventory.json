@@ -5,6 +5,41 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P17_前序遍历与先根处理.md",
+      "baseline_sha256": "b3bb44e971db002217d8142fc36cadb33b8d0ac1a5ffe4e80d219fbd160ec0fd",
+      "lines": 711,
+      "state": "validated",
+      "reason": "B03g 完整冷读原 P02，保留手工推演和二十一张原图并拆为六篇；九份 C/C++ 程序、分配失败回收、队列容量和查询反例已验证。宿主结果不证明内核、任意拓扑或人工评审完成。"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P18_中序遍历与有序性前提.md",
+      "baseline_sha256": "a4bfb56da972adde7e2a703d8c30335eb43d2b4176fed5ba22f2c02e9346f22e",
+      "lines": 730,
+      "state": "validated",
+      "reason": "B03g 完整冷读原 P02，保留手工推演和二十一张原图并拆为六篇；九份 C/C++ 程序、分配失败回收、队列容量和查询反例已验证。宿主结果不证明内核、任意拓扑或人工评审完成。"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P19_后序遍历与子树完成.md",
+      "baseline_sha256": "bf6b74a7b4d542a95716465733878a9ac7a5a6b0d3aee627ee9e38a2c66e00bd",
+      "lines": 762,
+      "state": "validated",
+      "reason": "B03g 完整冷读原 P02，保留手工推演和二十一张原图并拆为六篇；九份 C/C++ 程序、分配失败回收、队列容量和查询反例已验证。宿主结果不证明内核、任意拓扑或人工评审完成。"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P20_层序遍历与队列边界.md",
+      "baseline_sha256": "d075589bec334a0e6eb84e74b5b32f743c04a3599414f208f2fc1aa05da86667",
+      "lines": 833,
+      "state": "validated",
+      "reason": "B03g 完整冷读原 P02，保留手工推演和二十一张原图并拆为六篇；九份 C/C++ 程序、分配失败回收、队列容量和查询反例已验证。宿主结果不证明内核、任意拓扑或人工评审完成。"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P21_递归状态与二叉树基本查询.md",
+      "baseline_sha256": "361e03c05986007333df2fe5fb211d9194a6731fdfb080b1c1a59ffc9e3ccf66",
+      "lines": 951,
+      "state": "validated",
+      "reason": "B03g 完整冷读原 P02，保留手工推演和二十一张原图并拆为六篇；九份 C/C++ 程序、分配失败回收、队列容量和查询反例已验证。宿主结果不证明内核、任意拓扑或人工评审完成。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md",
       "baseline_sha256": "f2283a94a36c50358e6bd7463cecd56256f9acda094886bec2da5d83ac4b8363",
       "lines": 1332,
@@ -1307,8 +1342,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P02_二叉树.md",
       "baseline_sha256": "a2f30cb068ebd7d13937456dd0b782822fb38b1ce16b9bda717553c6b65449b7",
       "lines": 4294,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B03g 完整冷读原 P02，保留手工推演和二十一张原图并拆为六篇；九份 C/C++ 程序、分配失败回收、队列容量和查询反例已验证。宿主结果不证明内核、任意拓扑或人工评审完成。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md",

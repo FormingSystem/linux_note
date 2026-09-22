@@ -249,6 +249,11 @@ mindmap-plugin: basic
             - 🟢 [P01 树的基本概念](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md)
             - 🔴 [P16 普通树的表示与构建实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md)
             - 🟢 [P02 二叉树](../../knowledge/linux/data_structures/红黑树_rb-tree/P02_二叉树.md)
+            - 🔴 [P17 前序遍历与先根处理](../../knowledge/linux/data_structures/红黑树_rb-tree/P17_前序遍历与先根处理.md)
+            - 🔴 [P18 中序遍历与有序性前提](../../knowledge/linux/data_structures/红黑树_rb-tree/P18_中序遍历与有序性前提.md)
+            - 🔴 [P19 后序遍历与子树完成](../../knowledge/linux/data_structures/红黑树_rb-tree/P19_后序遍历与子树完成.md)
+            - 🔴 [P20 层序遍历与队列边界](../../knowledge/linux/data_structures/红黑树_rb-tree/P20_层序遍历与队列边界.md)
+            - 🔴 [P21 递归状态与二叉树基本查询](../../knowledge/linux/data_structures/红黑树_rb-tree/P21_递归状态与二叉树基本查询.md)
             - 🟢 [P03 二叉搜索树 BST](../../knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md)
             - 🟢 [P04 为什么 BST 会退化](../../knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md)
             - 🟢 [P05 旋转的作用与局部重排](../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md)
@@ -554,7 +559,7 @@ mindmap-plugin: basic
     - 哈希表
         - 🔴 [哈希桶与位宽实验材料](../../labs/kernel/hash_table/materials/README.md)
     - 普通树
-        - 🔴 [普通树表示实验材料](../../labs/kernel/tree_basics/materials/README.md)
+        - 🔴 [普通树与二叉遍历实验材料](../../labs/kernel/tree_basics/materials/README.md)
     - 链表
         - 🔴 [链表教材实验材料](../../labs/kernel/linked_list/materials/README.md)
     - 驱动入口
