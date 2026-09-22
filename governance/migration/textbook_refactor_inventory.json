@@ -1497,7 +1497,7 @@
       "baseline_sha256": "9bd2b356a1f938c542847f77ebc28f5e11060de8b18322e3e2f86b882ed9d7fd",
       "lines": 6195,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03u 已冷读修订 6.1～6.4 容量/区间/只读查找与完整 C 实验；6.5 以后插入、删除、红黑映射和工程扩展仍待实际审查。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md",

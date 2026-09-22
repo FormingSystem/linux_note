@@ -146,3 +146,6 @@ B03s 将已修订内容完整组织为[P11 删除](../../knowledge/linux/data_st
 
 
 B03t 完成 P05 收束：普通单旋与既有完整材料保留，内核部分移入[P29 旋转完成边界](../../knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md#29.1_为什么没有一一对应的旋转调用)，在修复前提建立后解释回调中间态、比较辅助接口与可证版本差异。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.30_B03t普通旋转与内核完成边界)保存内容去向和验证限制。下一项从 P06 多路与红黑桥梁开始实际冷读，再推进 P07～P09/P12；全仓尚未完成。
+
+
+B03u 完成 P06 的 6.1～6.4 读者入口、容量/区间和[完整 C 查找](../../knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md#6.4.7_用完整C程序观察区间下行)，保留五张原图，用高度界和有限模型区分定义、维护与性能。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.31_B03u多路节点与区间查找)说明实际范围；P06 的更新、红黑映射和工程扩展仍 pending，下一项继续 6.5 插入的两种分裂时机，不能把前四节称为整章完成。
