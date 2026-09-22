@@ -1574,7 +1574,7 @@
       "baseline_sha256": "e7ab4da73a107251bf517b1772d65510acdd2495fecb044bbc1761e890b214ee",
       "lines": 6588,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03ab 已完整冷读 7.1～7.3、7.4.1、7.6 并补 C++ 静态检查与高度证明；7.4.2/7.4.3 修复、其余概念、7.5 映射及 7.7 回顾待审，整章仍 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md",

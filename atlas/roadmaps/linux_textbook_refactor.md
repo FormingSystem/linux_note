@@ -166,3 +166,5 @@ B03y 冷读并修订 P06 叶层/编码/回顾，将成熟删除比较组织为[P
 B03z 完整冷读 P06 原 6.9，组织为[P34 页级索引](../../knowledge/linux/data_structures/红黑树_rb-tree/P34_从多路节点到页级索引.md#34.3_运行页请求与未命中的计数模型)，保留原概念和应用推演，修正页/缓存层次、相等键路由、定位符与读写比较；完整 C++ 四页模型解释请求减少为何不等于未命中同比减少。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.36_B03z页级索引与访问成本)记录官方资料和固定 ext4 格式证据。下一项 P06 6.10 Maple；P06 整章及全仓仍未完成。
 
 B03aa 完整冷读 P06 原 6.10 与 P14，将重复的 VMA 概念收拢至[P14 范围实例](../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md#14.9.3_运行G与H的区间模型)，保留 G/H 推演并修正权限、pivot、TLB 与历史数据边界；新增 C++ 区间模型和[固定查询源码](../../research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.37_B03aa范围契约与Maple入口)区分有限模型与目标运行。P06 分批内容已审完，下一项按依赖继续 P07；P15 只迁移四个查询函数体，其余仍待实际冷读。
+
+B03ab 实际冷读 P07 的 7.1～7.3、7.4.1 和 7.6，补[静态性质检查器](../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md#7.3.9_让程序区分三种非法结构)、统一黑高/高度口径并完成节点数归纳证明。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.38_B03ab红黑性质与高度证明)保留其余长单元为 pending，下一项继续 7.4.2 插入冲突；本批不把完整图或有限枚举当成全章完成。
