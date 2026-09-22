@@ -595,11 +595,15 @@ mindmap-plugin: basic
     - Linux 设备模型
         - 🔴 [设备模型 34 章原始总稿迁移核对源](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
 - 源码阅读
-    - 🔴 哈希计算
+    - 🔴 哈希计算与节点
         - 🔴 [哈希表源码阅读大纲](../../research/source_reading/hash_table/大纲.md)
         - 🔴 [Linux 6.12 哈希计算源码阅读索引](../../research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md)
         - 🔴 [键位宽与落桶导读](../../research/source_reading/hash_table/navigation/P02_键位宽与落桶导读.md)
         - 🔴 [hash.h 的位宽与取高位实现](../../research/source_reading/hash_table/source_explanations/include/linux/hash.h.md)
+        - 🔴 [节点连接与并发边界导读](../../research/source_reading/hash_table/navigation/P03_节点连接与并发边界导读.md)
+        - 🔴 [list.h 的单桶连接与遍历](../../research/source_reading/hash_table/source_explanations/include/linux/list.h.md)
+        - 🔴 [hashtable.h 的固定桶数组包装](../../research/source_reading/hash_table/source_explanations/include/linux/hashtable.h.md)
+        - 🔴 [rculist.h 的单桶发布与旧路径](../../research/source_reading/hash_table/source_explanations/include/linux/rculist.h.md)
     - 🔴 链表
         - 🔴 [链表源码阅读大纲](../../research/source_reading/linked_list/大纲.md)
         - 🔴 [Linux 6.12 链表源码阅读索引](../../research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md)

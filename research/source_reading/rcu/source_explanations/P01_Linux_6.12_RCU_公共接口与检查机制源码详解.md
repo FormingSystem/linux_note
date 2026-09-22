@@ -170,6 +170,31 @@ do {                                                                  \
 
 **可修改性说明：** 这段桥接被 `rcu_assign_pointer()`、`RCU_INIT_POINTER()`、`rcu_dereference*()` 和 `unrcu_pointer()` 等公共入口复用。修改 `space` 的施加位置、删除比较表达式或在普通编译器分支求值参数，都会同时改变大量调用方的诊断或生成代码边界。复核时至少准备一个正确的 `__rcu` 入口和一个故意缺少 `__rcu` 的入口，运行 `make C=2 M=<目标目录>`，确认前者通过、后者出现 different address spaces 诊断；普通 `make` 或运行时无告警不能替代这项验证。稳定语义与实验命令见 [RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md#23.5_Sparse具体检查什么)。
 
+### 1.3.4\_rcu\_dereference\_raw的无检查取得
+
+hlist 的 RCU 遍历需要沿 `head.first` 和 `node.next` 逐步取得节点。它把上下文检查放在循环入口，因此这里使用不自行执行动态上下文警告的 raw 取得。raw 省去的是这层检查，不是读侧区间、依赖顺序或对象寿命约束。
+
+```c
+/**
+ * __rcu_dereference_raw - 仓库补充阅读说明：对 p 进行一次 READ_ONCE 取得，以独立局部量返回同一地址。
+ * @p: 调用方已经按 RCU 协议保护的指针表达式。
+ * @local: 外层宏生成的局部名字，避免与调用点变量冲突。
+ */
+#define __rcu_dereference_raw(p, local) \
+({ \
+	/* Dependency order vs. p above. */ \
+	typeof(p) local = READ_ONCE(p); \
+	((typeof(*p) __force __kernel *)(local)); \
+})
+#define rcu_dereference_raw(p) __rcu_dereference_raw(p, __UNIQUE_ID(rcu))
+```
+
+`__UNIQUE_ID(rcu)` 只生成展开所需的局部标识符；它不创建全局对象。GNU C 的语句表达式先用 `typeof(p)` 确定局部指针类型，再执行一次 `READ_ONCE(p)`。末尾转换中的 `__force`、`__kernel` 是 Sparse 类型标注桥接，返回的仍是所取得的地址，没有分配副本、增加引用或获取业务锁。相比上节的普通取得路径，这里不调用 `rcu_check_sparse` 或 `RCU_LOCKDEP_WARN`；不能据此推断调用方没有检查。
+
+[哈希节点导读](../../hash_table/navigation/P03_节点连接与并发边界导读.md#3.2_普通修改与RCU发布的分界)的 S2 展示其调用位置；[rculist.h 遍历实现](../../hash_table/source_explanations/include/linux/rculist.h.md#1.3_遍历的取得与检查分开)解释循环入口的 `__list_check_rcu`、可选条件和配置退化。取得之后的成员恢复只改变地址表达方式，受保护区间仍由调用者建立。
+
+**可修改性说明：** 不要因名称带 raw 而替换为普通指针读取，也不要在调用方尚未建立独立引用时把结果带出读侧。调整展开必须检查表达式求值次数、局部名字冲突、Sparse 标注、地址依赖以及所有使用者的独立检查位置；上述调用图复用 hlist 的 S1 发布、S2 取得、S3 摘除到 S5 回收周期，本原语不推进宽限期。
+
 ## 1.4\_synchronize\_rcu接口实现
 
 `synchronize_rcu()` 同时包含接口检查、运行策略、早期启动退化、普通等待和 expedited 分流。为了避免公共接口文档与 Tree RCU 状态机各维护一份函数体，本章只保留检查层职责边界：入口用 `RCU_LOCKDEP_WARN()` 检查调用者是否正在受本次等待覆盖的普通 RCU 读侧中；告警与否不改变 GP 的安全条件，关闭检查配置也不放宽“可阻塞且不得自等待”的 API 契约。

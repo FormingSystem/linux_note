@@ -28,7 +28,7 @@ domains:
 | --- | --- | --- | --- |
 | B01 基础入口：architecture 中的概貌、源码树及 Atlas 路线 | 能读变量、函数、数组与循环；尚不认识内核对象 | 从读文件区分应用、内核、硬件；按问题找源码，区分源文件与产物 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)；本批实施，验证结果见 1.5 |
 | B02 模块与设备节点：architecture 其余 3 篇、error_handling 初始 2 篇、驱动 fundamentals 与 misc | 用户与内核边界、源码身份 | 区分装入代码、注册服务和建立访问入口；能恢复一个失败的最小模块实验 | [模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes)、[错误处理](../../knowledge/linux/error_handling)、[驱动基础](../../knowledge/driver_model/fundamentals)；分批推进，已完成组与下一项见 1.5 |
-| B03 对象组织：data_structures 33 篇 | C 指针、对象与资源 | 从查找和更新需求选择链表、哈希表或树，解释节点与容器关系 | [数据结构](../../knowledge/linux/data_structures)；链表十篇已完成本轮作者审查和适用验证，哈希桶与计算两章已完成本批重构；先前引入的 Python 教学程序按新要求回审，hlist、其余哈希章与树仍待逐篇完成 |
+| B03 对象组织：data_structures 33 篇 | C 指针、对象与资源 | 从查找和更新需求选择链表、哈希表或树，解释节点与容器关系 | [数据结构](../../knowledge/linux/data_structures)；链表十篇已完成本轮作者审查和适用验证，哈希桶、计算、hlist 与 RCU 旧路径四章已完成本轮重构；此前十六项教学语言复核已完成，哈希其余章与树仍待逐篇审查 |
 | B04 生命周期：object_lifetime 20 篇 | 能辨别对象、入口和使用者 | 解释引用何时取得、由谁放弃、什么时候可销毁 | [对象生命周期](../../knowledge/linux/object_lifetime)；待进入 |
 | B05 并发与事件：synchronization_and_asynchrony 125 篇 | 单个操作及对象生命期 | 从两条交错路径推出同步、等待、通知、延迟执行与回收；以具体状态完成证明 | [同步与异步总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)；待进入，内部再按依赖拆批；kernel_subsystems/irq 当前无正式文件，不建立占位入口 |
 | B06 文件与观测：io_model 5 篇、kernel_subsystems/vfs 与 tracing | 读文件主线、等待与对象持有 | 串起路径、打开实例、数据、阻塞、缓存及日志证据 | [VFS](../../knowledge/kernel_subsystems/vfs/大纲.md)、[I/O 模型](../../knowledge/linux/io_model)、[观测](../../knowledge/kernel_subsystems/tracing)；待进入 |
@@ -105,3 +105,5 @@ B02h 完整冷读并重构 struct_class 长文，原路径保留[成员参考](.
 B03a 已完整冷读并重构[链表九章与大纲](../../knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)，以三个任务串起节点、拓扑、并发、发布、失败回滚和容器选择。保留稳定路径、人工批注与评审状态，新增完整材料及版本源码导读。实际验证和局限见[B03a 工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.9_B03a链表拓扑与发布)。下一批为哈希表及 hlist 的版本、算法和接口审查；树专题尚待逐章冷读，B03 与全仓均未完成。
 
 B03b 完成哈希 P01 的完整 C 桶模型与 P03 的固定宽度计算教材，并同步纠正 P06 的 PID 版本事实；后者仍保留待审。源码、模型、导航和验证边界见[B03b 记录](../../governance/migration/repository_textbook_refactor.md#1.4.10_B03b哈希桶与计算契约)。开发者新增 C/C++ 优先要求，已将此前涉及 Python 教学示例的十六项退回待修订，下一批先处理这些实际程序和说明，再继续 hlist。此为新要求下的复核，不抹去历史检查结果，也不把此前验证视为新要求已经满足。
+
+B03c 完成 hlist 入口槽与 RCU 旧路径两章、两份 C 程序及一个完整模块，新增节点模块导读与三份唯一实现讲解。人工批注及有效知识的去向、固定证据、检查结果和未执行目标实验见[B03c 记录](../../governance/migration/repository_textbook_refactor.md#1.4.13_B03c节点入口槽与RCU旧路径)。下一批继续动态容量、子系统应用与综合模块，全仓清单仍有待审项。

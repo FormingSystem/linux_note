@@ -377,3 +377,11 @@ note_class 与 note_control 采用本地 ARMv7 生成头和配置完成语法检
 五份原文与固定对象核对。辅助只读 arch/arm/Kconfig 与顶层 Makefile；当前 ARM、非 64 位配置未启用 HAVE_ARCH_HASH，这是工作树配置边界，不是所有平台的统一实现。
 
 C11 宿主程序覆盖冲突、重复键、摘除、重新分桶和固定宽度计算；将固定通用函数的 BITS_PER_LONG 分别设为 32 与 64 进行算法分支比较，每种配置核对 10,000 个输入和六种输出宽度。不把宿主算法分支模拟称为 ARM 执行、32 位 ABI 编译、内核并发或性能测试。本批未执行目标 Kbuild、模块装卸及体系结构指令检查，未修改外部内核树。
+
+## 1.16\_hlist入口槽与RCU旧路径证据
+
+2026-09-22 继续按官方固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0（Linux 6.12.20）核对节点连接与对象寿命。[节点导读](../hash_table/navigation/P03_节点连接与并发边界导读.md#3.1_节点与桶数组分别负责什么)组织单桶、固定数组和 RCU 旧路径；三个唯一实现文档分别对应 list.h、hashtable.h 和 rculist.h，通用 raw 取得仍由[RCU 公共接口](../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.4_rcu_dereference_raw的无检查取得)展开。
+
+list.h、hashtable.h、types.h、rculist.h、rcupdate.h 五份既有副本与固定对象一致。十四个完整函数和二十一个宏与固定摘录逐项核对。没有用本地实验提交或目录名代替版本证据，也没有修改外部内核树。
+
+当前 ARM、TINY_RCU、PREEMPT_NONE、非 SMP 配置启用 PROVE_LOCKING，未启用 PROVE_RCU_LIST；这不代表其他配置或历史 Tree 快照的状态。note_hlist_rcu 通过 ARMv7 语法检查，实际依赖的 358 份头中已跟踪文件没有相对固定对象的差量。C 宿主程序和固定函数替身检查入口槽、后置状态、旧 next、回调登记、失败回滚和清理，不能证明真实 RCU 宽限期或内存序。未执行目标 Kbuild、MODPOST、装卸、SMP 或性能实验。

@@ -5,6 +5,34 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/hash_table/navigation/P03_节点连接与并发边界导读.md",
+      "baseline_sha256": "c0ff75edfc4f8327f7f9c37d9fb07f13955576019cc99b9753c52bf703adb550",
+      "lines": 49,
+      "state": "validated",
+      "reason": "B03c 新建版本化节点导读与唯一实现讲解；固定源码、C 业务与拓扑检查、ARM 语法及文档检查通过，未执行目标内核装卸或并发验证。"
+    },
+    {
+      "path": "research/source_reading/hash_table/source_explanations/include/linux/list.h.md",
+      "baseline_sha256": "bb043891d2165b35f94f0bf20d4c8a6a194f4a31d40c739837890a2d7f8972d7",
+      "lines": 191,
+      "state": "validated",
+      "reason": "B03c 新建版本化节点导读与唯一实现讲解；固定源码、C 业务与拓扑检查、ARM 语法及文档检查通过，未执行目标内核装卸或并发验证。"
+    },
+    {
+      "path": "research/source_reading/hash_table/source_explanations/include/linux/hashtable.h.md",
+      "baseline_sha256": "718dd3703f4fcc216afe3cbe38b765cf920fc6aedc812ab04921dd07459e3b01",
+      "lines": 131,
+      "state": "validated",
+      "reason": "B03c 新建版本化节点导读与唯一实现讲解；固定源码、C 业务与拓扑检查、ARM 语法及文档检查通过，未执行目标内核装卸或并发验证。"
+    },
+    {
+      "path": "research/source_reading/hash_table/source_explanations/include/linux/rculist.h.md",
+      "baseline_sha256": "a9de138ec162ab309945809acf7ea008abcb58d6a76a47060711f8b15d8af455",
+      "lines": 136,
+      "state": "validated",
+      "reason": "B03c 新建版本化节点导读与唯一实现讲解；固定源码、C 业务与拓扑检查、ARM 语法及文档检查通过，未执行目标内核装卸或并发验证。"
+    },
+    {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md",
       "baseline_sha256": "3c3fac69eb105d493a49024d2175c8dbf9ed05bc0ad4963d2be976348f7acd7f",
       "lines": 41,
@@ -1146,8 +1174,8 @@
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P02_内核基石_hlist非对称链表.md",
       "baseline_sha256": "44a1207c177e379c53cf372b3cf60b45961466131a330042146c4ef1ca6958c4",
       "lines": 1127,
-      "state": "pending",
-      "reason": "B03b 已初读以核对学习依赖；本篇仍待独立重构与验证，人工批注保留。"
+      "state": "validated",
+      "reason": "B03c 完整冷读并重构入口槽、删除后置状态、遍历与语句表达式；保留批注和学习推断，C 模型与固定源码及文档检查通过。"
     },
     {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P02_Linux_内核_5.10_核心实现/P03_算法之魂_哈希函数与位运算优化.md",
@@ -1160,8 +1188,8 @@
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P04_并发保护与RCU机制_多核下的读写博弈.md",
       "baseline_sha256": "9eabe4bf90b6a080fca0801ce2564b5f9f08aee0118860825158eee48673c854",
       "lines": 173,
-      "state": "pending",
-      "reason": "B03b 已初读以核对学习依赖；本篇仍待独立重构与验证，人工批注保留。"
+      "state": "validated",
+      "reason": "B03c 完整冷读并重构共同锁到 RCU 旧路径、回调与卸载；完整 C 模块经 ARM 语法与宿主业务检查，未执行目标装卸或真实并发。"
     },
     {
       "path": "knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P05_动态伸缩的rhashtable_无感扩容的艺术.md",

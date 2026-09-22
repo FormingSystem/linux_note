@@ -50,6 +50,8 @@ synchronize_rcu();
 kfree(old);
 ```
 
+容器可能把取得和检查分开：hlist 的 RCU 循环用 [rcu_dereference_raw](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.4_rcu_dereference_raw的无检查取得)取得 first/next，在循环入口另行检查上下文。其局部对象周期见[哈希节点导读](../../hash_table/navigation/P03_节点连接与并发边界导读.md#3.2_普通修改与RCU发布的分界)。这改变检查放置的位置，不改变调用方建立读侧区间和推迟销毁的责任。
+
 源码阅读要分清两条线：
 
 1. **对象协议线**：发布、取得和回收契约由公共头文件与调用者代码建立；
