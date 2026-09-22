@@ -111,3 +111,5 @@ B03c 完成 hlist 入口槽与 RCU 旧路径两章、两份 C 程序及一个完
 B03d 重写动态表 P05，并新增[P08 接口回收实验](../../knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P08_rhashtable接口与回收实验.md#8.1_先固定本例的拥有者)。固定源码纠正三类标记混淆和无依据性能承诺，C 模型重放链尾重扫；证据、验证与未执行项见[B03d 记录](../../governance/migration/repository_textbook_refactor.md#1.4.14_B03d动态表迁移与接口回收)。下一批继续子系统应用和综合模块，全仓尚未完成。
 
 B03e 完成 P06 子系统身份比较与 P07 固定桶完整模块：保留近期 PID 版本修正及人工批注，增加 C 完整身份模型、失败回滚与五篇源码导读/实现说明。证据、检查和目标运行限制见[B03e 记录](../../governance/migration/repository_textbook_refactor.md#1.4.15_B03e子系统身份与固定桶完整实验)。下一组进入树结构逐章冷读；全仓尚未完成。
+
+B03f 完整冷读树 P01，保留原有术语、图和表示推导，将存储与实验移入[P16](../../knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md#16.7_运行预测与资源回收)，补齐 C 程序的分配失败与回收，原人工状态不变。范围、保留理由与验证见[B03f 记录](../../governance/migration/repository_textbook_refactor.md#1.4.16_B03f树关系与表示实验)。下一批继续 P02 二叉树；未把首章拆分称为全树专题完成。

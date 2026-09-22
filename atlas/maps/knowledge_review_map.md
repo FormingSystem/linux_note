@@ -247,6 +247,7 @@ mindmap-plugin: basic
         - 🟢 [红黑树学习路线](../../knowledge/linux/data_structures/红黑树_rb-tree/大纲.md)
             - 章节评审：15 章完成
             - 🟢 [P01 树的基本概念](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md)
+            - 🔴 [P16 普通树的表示与构建实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md)
             - 🟢 [P02 二叉树](../../knowledge/linux/data_structures/红黑树_rb-tree/P02_二叉树.md)
             - 🟢 [P03 二叉搜索树 BST](../../knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md)
             - 🟢 [P04 为什么 BST 会退化](../../knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md)
@@ -552,6 +553,8 @@ mindmap-plugin: basic
 - Linux 内核实验
     - 哈希表
         - 🔴 [哈希桶与位宽实验材料](../../labs/kernel/hash_table/materials/README.md)
+    - 普通树
+        - 🔴 [普通树表示实验材料](../../labs/kernel/tree_basics/materials/README.md)
     - 链表
         - 🔴 [链表教材实验材料](../../labs/kernel/linked_list/materials/README.md)
     - 驱动入口

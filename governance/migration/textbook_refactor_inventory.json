@@ -5,6 +5,20 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md",
+      "baseline_sha256": "f2283a94a36c50358e6bd7463cecd56256f9acda094886bec2da5d83ac4b8363",
+      "lines": 1332,
+      "state": "validated",
+      "reason": "B03f 保留已有表示讲解并补齐 C 实验；内容迁移、十九张原图、完整代码、失败清理与文档检查已核对，不代表 Linux 容器或后续树章节完成验证。"
+    },
+    {
+      "path": "labs/kernel/tree_basics/materials/README.md",
+      "baseline_sha256": "7644f59184bb7cc53e0a075ba5a2fbb2e21b2033a3ab9030c8822045cf57db9a",
+      "lines": 15,
+      "state": "validated",
+      "reason": "B03f 完整 C11 程序材料入口，正常统计、五次注入、五次实际分配失败替身、非法参数与回收配对通过；未验证任意外部拓扑、并发、内核或硬件。"
+    },
+    {
       "path": "research/source_reading/hash_table/navigation/P05_子系统索引身份与寿命导读.md",
       "baseline_sha256": "432db4cc68713822c525095557af0f6a98472f54345d381d9b735f321ad5cb6f",
       "lines": 79,
@@ -1286,8 +1300,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md",
       "baseline_sha256": "3597cf07d3840a84c5e9f505c06b85a62b2a6f0c87984814f7b3ac9988c53255",
       "lines": 2342,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B03f 全文冷读，以保留内容的结构拆分为主；保留术语图和反例，表示移入 P16，修正链形、搜索前提与根入口边界，补练习；人工完成状态不变。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P02_二叉树.md",
@@ -1391,8 +1405,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/大纲.md",
       "baseline_sha256": "c63899c3c89e32a6e2b4ed70671877fa0b8258499fe11d5a9a391994acfd929a",
       "lines": 116,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B03f 核对现有章节与标题，将不可点击的旧文件名表改为实际链接，补 P01→P16→P02 阅读依赖、因果地图与实验入口；不表示其余十四章正文已完成本轮审查。"
     },
     {
       "path": "knowledge/linux/device_model/P01_为什么需要设备模型.md",
