@@ -152,3 +152,6 @@ B03u 完成 P06 的 6.1～6.4 读者入口、容量/区间和[完整 C 查找](.
 
 
 B03v 将 P06 插入单元完整组织为[P30 两种分裂时机](../../knowledge/linux/data_structures/红黑树_rb-tree/P30_2-3-4树插入与分裂时机.md#30.3_运行完整的两种插入)，保留十一张图与推演，用完整 C++ 程序补齐临时容量、查重、精确资源预留和失败不改树。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.32_B03v多路插入与分裂时机)说明形状差异、保留依据与有限验证；P06 删除、红黑映射和扩展仍 pending，下一项继续 6.6 删除。
+
+
+B03w 完整冷读 P06 原 6.6.1～6.6.9，组织为[P31 预修复删除](../../knowledge/linux/data_structures/红黑树_rb-tree/P31_2-3-4树预修复删除.md#31.3_运行完整预修复删除)，保留四组图解、补齐内部命中三分支和资源寿命，提供完整 C++ 程序。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.33_B03w多路预修复删除)记录有限验证及范围；P06 的自底向上、红黑对照和后续扩展继续 pending，不把本单元称为全部删除重构完成。
