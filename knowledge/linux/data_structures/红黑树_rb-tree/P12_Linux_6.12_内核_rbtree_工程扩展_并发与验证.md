@@ -782,7 +782,7 @@ use-after-free。
 
 `lib/rbtree.c` 开头有一段 lockless lookup 注释。
 
-本节按[固定版本索引](../../../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)核对；[P10 完整 C 实验](P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md#10.2.10_用完整C程序观察相等节点和旧路径)已经展示旧根漏查和错误写序形成的环，这里把它落实为调用者的并发边界。
+本节按[固定版本索引](../../../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)核对；[P10 完整 C 实验](P10_Linux_6.12_内核_rbtree_查找与返回边界.md#10.2.10_用完整C程序观察相等节点和旧路径)已经展示旧根漏查和错误写序形成的环，这里把它落实为调用者的并发边界。
 
 它强调：
 

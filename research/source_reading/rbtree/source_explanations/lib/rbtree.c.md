@@ -14,7 +14,7 @@ domains: [linux, source_reading]
 | --- | --- |
 | 版本身份 | [固定索引](../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界) |
 | 上游位置 | [lib/rbtree.c](../../../linux/lib/rbtree.c) |
-| 读者场景 | [P10 插入后半段](../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md#10.4_rbtree_插入后半段_rb_insert_color%28%29_与插入修复) |
+| 读者场景 | [P26 插入修复](../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P26_Linux红叶接入与插入修复.md#26.3_rbtree_插入后半段_rb_insert_color%28%29_与插入修复) |
 | 状态地址与时序 | [模块 3.1](../../navigation/P03_红叶接入与冲突修复导读.md#3.1_空槽与修复游标各归谁所有)、[模块 3.2](../../navigation/P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进) |
 
 中文 Doxygen 和中文行内注释为仓库补充、非上游原文；下面函数体去注释后保持固定提交的语句。所有操作依赖合法树和调用者的写侧串行化，不内置参数检查或锁。
@@ -376,6 +376,6 @@ void __rb_insert_augmented(struct rb_node *node, struct rb_root *root,
 
 裁剪说明：本节保留三种空回调定义和两种插入包装，省略导出声明、普通删除使用的 dummy_callbacks 结构实例及其他非插入函数。实现原理是回调参数选择；上游将核心标记为 always_inline，普通路径以消除空回调开销为意图，但具体目标机器码仍要以相应构建结果确认。
 
-可修改性：替换回调必须遵守 Case 2 中间态，不允许它发布“插入完成”、释放节点或再次改这棵树。增强插入前的路径聚合更新也不会因有 rotate 回调就自动完成。对应普通入口的完整观察程序见[教材插入实验](../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md#10.4.15_在内核模块中观察五组插入)。
+可修改性：替换回调必须遵守 Case 2 中间态，不允许它发布“插入完成”、释放节点或再次改这棵树。增强插入前的路径聚合更新也不会因有 rotate 回调就自动完成。对应普通入口的完整观察程序见[教材插入实验](../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P26_Linux红叶接入与插入修复.md#26.3.15_在内核模块中观察五组插入)。
 
 返回[插入导读](../../navigation/P03_红叶接入与冲突修复导读.md#3.3_回调不等于整个操作完成)或[总索引](../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
