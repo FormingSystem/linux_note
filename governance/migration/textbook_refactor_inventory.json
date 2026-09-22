@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P30_2-3-4树插入与分裂时机.md",
+      "baseline_sha256": "3df2be183964ce1c9fba42ac9a3960888f3cb40cc8d655de6c9f2216d0645dc4",
+      "lines": 1655,
+      "state": "validated",
+      "reason": "B03v 完整冷读原插入单元，保留十一张图，补齐两种完整 C++ 插入与资源失败契约；八键全排列及独立不变量检查通过，只验证有限独占模型。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md",
       "baseline_sha256": "0d77d5d33d56f73bfcb1e1df0a951f2f4dfa06652adf5e3eaf984a56aa98637b",
       "lines": 388,
@@ -1497,7 +1504,7 @@
       "baseline_sha256": "9bd2b356a1f938c542847f77ebc28f5e11060de8b18322e3e2f86b882ed9d7fd",
       "lines": 6195,
       "state": "pending",
-      "reason": "B03u 已冷读修订 6.1～6.4 容量/区间/只读查找与完整 C 实验；6.5 以后插入、删除、红黑映射和工程扩展仍待实际审查。"
+      "reason": "B03u 完成 6.1～6.4 容量、区间、高度界与完整 C 查找；B03v 插入单元完整迁至 P30 并验证，6.5 保留桥接。6.6 删除、红黑映射及工程扩展仍待完整冷读，不升级整章。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md",

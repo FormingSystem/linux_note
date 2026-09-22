@@ -262,6 +262,7 @@ mindmap-plugin: basic
             - 🔴 **未校正** [P24 组合旋转与形状判断](../../knowledge/linux/data_structures/红黑树_rb-tree/P24_组合旋转与形状判断.md)
             - 🔴 **未校正** [P25 AVL 高度诊断与更新传播](../../knowledge/linux/data_structures/红黑树_rb-tree/P25_AVL高度诊断与更新传播.md)
             - 🟢 [P06 2-3-4 树 从多路平衡到红黑树的结构桥梁](../../knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md)
+            - 🔴 **未校正** [P30 2-3-4 树插入与分裂时机](../../knowledge/linux/data_structures/红黑树_rb-tree/P30_2-3-4树插入与分裂时机.md)
             - 🟢 [P07 红黑树 把 2-3-4 树映射成二叉表示](../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md)
             - 🟢 [P08 Linux 6.12 内核 rbtree 基础结构与工程模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md)
             - 🟢 [P09 Linux 6.12 内核 rbtree 嵌入式节点与使用者接口](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md)

@@ -149,3 +149,6 @@ B03t 完成 P05 收束：普通单旋与既有完整材料保留，内核部分�
 
 
 B03u 完成 P06 的 6.1～6.4 读者入口、容量/区间和[完整 C 查找](../../knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md#6.4.7_用完整C程序观察区间下行)，保留五张原图，用高度界和有限模型区分定义、维护与性能。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.31_B03u多路节点与区间查找)说明实际范围；P06 的更新、红黑映射和工程扩展仍 pending，下一项继续 6.5 插入的两种分裂时机，不能把前四节称为整章完成。
+
+
+B03v 将 P06 插入单元完整组织为[P30 两种分裂时机](../../knowledge/linux/data_structures/红黑树_rb-tree/P30_2-3-4树插入与分裂时机.md#30.3_运行完整的两种插入)，保留十一张图与推演，用完整 C++ 程序补齐临时容量、查重、精确资源预留和失败不改树。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.32_B03v多路插入与分裂时机)说明形状差异、保留依据与有限验证；P06 删除、红黑映射和扩展仍 pending，下一项继续 6.6 删除。
