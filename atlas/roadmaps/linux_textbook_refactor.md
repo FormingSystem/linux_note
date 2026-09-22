@@ -131,3 +131,6 @@ B03m 先完成[P10 查找与旧路径实验](../../knowledge/linux/data_structur
 B03n 修订 P10 的红叶接入与插入修复，补齐完整私有内核模块，并恢复固定上游语句与共享父槽的唯一实现。范围、C 算法验证及目标未运行边界见[B03n 记录](../../governance/migration/repository_textbook_refactor.md#1.4.24_B03n插入修复与父槽交接)。下一项先将查询与插入完整组织为两个阅读单元，再继续删除、后继、替换与 P05 收束；P10 仍 pending，全仓尚未完成。
 
 B03o 将已修订内容完整组织为[P10 查询](../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找与返回边界.md#10.1_从业务对象走到一条查询路径)与[P26 插入](../../knowledge/linux/data_structures/红黑树_rb-tree/P26_Linux红叶接入与插入修复.md#26.1_章节内容说明)，保留 193 个代码围栏和全部有效推导，完成路径/锚点同步。范围和未执行项见[B03o 记录](../../governance/migration/repository_textbook_refactor.md#1.4.25_B03o查询与插入阅读分工)。下一项 P11 删除、后继与替换，全仓仍未完成。
+
+
+B03p 完成[P11 删除周期与完整模块](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.3.12_用完整模块观察取消请求)，保留原中文源码注释到唯一实现，修正后继身份、重复键、缺黑父槽和回调中间态。范围、有限 C 验证及目标未运行边界见[B03p 记录](../../governance/migration/repository_textbook_refactor.md#1.4.26_B03p对象摘除与缺黑修复)。P11 遍历/替换及整章组织继续 pending，全仓尚未完成。

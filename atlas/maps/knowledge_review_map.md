@@ -615,8 +615,9 @@ mindmap-plugin: basic
         - 🔴 **未校正** [查找路径与返回边界导读](../../research/source_reading/rbtree/navigation/P02_查找路径与返回边界导读.md)
         - 🔴 **未校正** [rbtree.h 查找与节点接入实现](../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md)
         - 🔴 **未校正** [红叶接入与冲突修复导读](../../research/source_reading/rbtree/navigation/P03_红叶接入与冲突修复导读.md)
-        - 🔴 **未校正** [rbtree.c 插入修复与旋转收尾实现](../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md)
-        - 🔴 **未校正** [rbtree_augmented.h 父色与入口槽实现](../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md)
+        - 🔴 **未校正** [对象摘除与缺黑修复导读](../../research/source_reading/rbtree/navigation/P04_对象摘除与缺黑修复导读.md)
+        - 🔴 **未校正** [rbtree.c 插入删除修复与旋转收尾实现](../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md)
+        - 🔴 **未校正** [rbtree_augmented.h 父槽与结构删除实现](../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md)
     - 🔴 哈希计算与节点
         - 🔴 [哈希表源码阅读大纲](../../research/source_reading/hash_table/大纲.md)
         - 🔴 [Linux 6.12 哈希计算源码阅读索引](../../research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md)

@@ -55,4 +55,7 @@ domains: [c_language, data_structures]
 
 以上均为宿主内存模型，不使用 Linux API，不验证内核容器、并发或硬件；节点拓扑由程序构造，未声称能校验任意输入图。每份材料独立编译，按相应正文的 C11/C++17 命令运行。各批实际检查范围见[工作记录](../../../../governance/migration/repository_textbook_refactor.md#1.4_批次结果)。
 
-[note_rbtree_insert.c](note_rbtree_insert.c)是另一类材料：实际调用 Linux rbtree 的内核模块，同目录 [Makefile](Makefile)只构建它。按[P26 五组插入](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P26_Linux红叶接入与插入修复.md#26.3.15_在内核模块中观察五组插入)准备匹配目标的内核构建环境；根与自动节点只在私有 run_case 中存活，无分配、外部注册或异步持有者。ARM 语法检查已完成，目标 Kbuild、装卸和实际日志仍待验证，不以宿主模型结果代替。
+[note_rbtree_insert.c](note_rbtree_insert.c)是另一类材料：实际调用 Linux rbtree 的内核模块，同目录 [Makefile](Makefile)分别构建插入和删除两个模块。按[P26 五组插入](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P26_Linux红叶接入与插入修复.md#26.3.15_在内核模块中观察五组插入)准备匹配目标的内核构建环境；根与自动节点只在私有 run_case 中存活，无分配、外部注册或异步持有者。ARM 语法检查已完成，目标 Kbuild、装卸和实际日志仍待验证，不以宿主模型结果代替。
+
+
+[note_rbtree_erase.c](note_rbtree_erase.c)对应[P11 取消请求](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.3.12_用完整模块观察取消请求)，用数组身份观察后继移位、黑叶修复以及删除与清标记的区别。ARM 语法和明确适配的宿主路径检查已完成，目标 Kbuild/装卸/日志未执行；没有分配、外部注册或共享读者。

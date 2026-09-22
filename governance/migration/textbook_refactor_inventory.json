@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/rbtree/navigation/P04_对象摘除与缺黑修复导读.md",
+      "baseline_sha256": "738b5740f33eff4ec5748f65b54398995cfd430c4b5cabfa82b57fb84c8c01f8",
+      "lines": 85,
+      "state": "validated",
+      "reason": "B03p 固定删除周期与状态地址导读已冷读，五函数两宏语句核对、C 删除排列及 ARM 语法通过；目标 Kbuild/运行和并发未验证。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P26_Linux红叶接入与插入修复.md",
       "baseline_sha256": "7782c0dd4f51dcb4feba2c9d09ee34e1922ff86c64e14fea16ea2f989c278952",
       "lines": 1740,
@@ -16,14 +23,14 @@
       "baseline_sha256": "e4df356a7bed3ab178313ebf6e79eaa3933f4303266e91172f6c07bfee0c9cdc",
       "lines": 381,
       "state": "validated",
-      "reason": "B03n 固定插入状态导读与唯一实现，保留原注释；语句核对、C 算法验证和实际模块 ARM 语法通过，目标运行/并发未验证。"
+      "reason": "B03n/p 插入与删除各按固定证据保留唯一实现和中文注释；新删除五函数两宏核对，C 检查及 ARM 语法完成，目标执行/并发未验证。"
     },
     {
       "path": "research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md",
       "baseline_sha256": "af316fc00f2b73603a6289793059eb7d2d8fef56a20f3abc7ea5bd87c1ef4c3b",
       "lines": 82,
       "state": "validated",
-      "reason": "B03n 固定插入状态导读与唯一实现，保留原注释；语句核对、C 算法验证和实际模块 ARM 语法通过，目标运行/并发未验证。"
+      "reason": "B03n/p 插入与删除各按固定证据保留唯一实现和中文注释；新删除五函数两宏核对，C 检查及 ARM 语法完成，目标执行/并发未验证。"
     },
     {
       "path": "research/source_reading/rbtree/navigation/P03_红叶接入与冲突修复导读.md",
@@ -37,7 +44,7 @@
       "baseline_sha256": "232607bedbfdb201771eaa23b89a28a18da2ea9c8074b169828250f897b51e80",
       "lines": 172,
       "state": "validated",
-      "reason": "B03m 固定源码查询入口、状态导读与四函数一宏的唯一实现；按固定 Git 对象核对，C 模型验证查询反例，未执行内核/RCU/目标板验证。"
+      "reason": "B03n/p 插入与删除各按固定证据保留唯一实现和中文注释；新删除五函数两宏核对，C 检查及 ARM 语法完成，目标执行/并发未验证。"
     },
     {
       "path": "research/source_reading/rbtree/navigation/P02_查找路径与返回边界导读.md",
@@ -1490,7 +1497,7 @@
       "baseline_sha256": "e6447a463ff71ca1b85ae38d683501f6fb79a4f820d7ed7a58a8fffdab662cbe",
       "lines": 3325,
       "state": "pending",
-      "reason": "B03n 只冷读并迁移共享父槽助手，删除主体未改；需完整冷读删除/后继/替换，仍 pending。"
+      "reason": "B03p 已完整冷读并重构删除单元，原有效注释收拢唯一实现；遍历/替换与最终章节组织仍待独立完成。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md",
