@@ -1,14 +1,14 @@
 ---
 id: research.source_reading.rbtree.lookup_implementation
-title: "rbtree.h 查找与节点接入实现"
+title: "rbtree.h 查询接入与遍历接口实现"
 kind: source
 status: evolving
 domains: [linux, source_reading]
 ---
 
-# 第1章\_rbtree.h查找与节点接入实现
+# 第1章\_rbtree.h查询接入与遍历接口实现
 
-[模块导读](../../../navigation/P02_查找路径与返回边界导读.md#2.2_按一次查找定位源码)已经建立共享根与局部游标的 L0～L3。下面核对固定 [include/linux/rbtree.h](../../../../linux/include/linux/rbtree.h) 中的实际分支；版本和范围见[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。中文 Doxygen 为仓库补充，函数体保持上游语句；这些片段依赖内核头文件，不是独立可编译程序。
+[查找模块](../../../navigation/P02_查找路径与返回边界导读.md#2.2_按一次查找定位源码)已经建立共享根与局部游标的 L0～L3，后续插入、删除与[遍历模块](../../../navigation/P05_有序推进与整树销毁导读.md#5.1_拓扑与游标分别保存在哪)继续说明接入、标记和循环的职责。下面分别核对固定 [include/linux/rbtree.h](../../../../linux/include/linux/rbtree.h) 中的实际分支；版本和范围见[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。中文 Doxygen 为仓库补充，函数体保持上游语句；这些片段依赖内核头文件，不是独立可编译程序。
 
 ## 1.1\_rb\_find的任意匹配
 
@@ -127,7 +127,7 @@ rb_next_match(const void *key, struct rb_node *node,
 
 宏先调用 first；若它返回 NULL，循环体根本不执行。非空才会在循环尾调用 next_match。不要从“遍历宏”推断它是 safe 变体：如果循环体释放当前对象，下一步可能再用该地址调用 rb_next；若发生结构重排，也可能破坏遍历路径。这里只检查区间边界，不承担删除协议。
 
-可修改性：把 first 换成普通 find 会跳过匹配区间前半段；把 cmp 的非零检查删除会越过同键组。rb_next 的实现位于固定 lib/rbtree.c，它是否沿父链上行取决于树形；本节保留调用契约，不重复展开后继函数体。
+可修改性：把 first 换成普通 find 会跳过匹配区间前半段；把 cmp 的非零检查删除会越过同键组。[rb_next 的唯一实现](../../lib/rbtree.c.md#1.7_中序端点与父链推进)按树形决定是否沿父链上行；本节只保留调用契约。
 
 ## 1.4\_rb\_find\_rcu的孩子读取与缺失边界
 
@@ -356,3 +356,41 @@ rb_find_add_rcu(struct rb_node *node, struct rb_root *tree,
 **可修改性：** 在节点仍被树引用时清标记会破坏父链，已经释放后再清则是无效访问。业务若使用此宏防重复删除，必须从初始化、成功入树、摘除后清理到复用始终维护同一协议；只有锁定寿命与成员变化之后，状态检查才有意义。已脱离树但仍有 RCU 读者使用旧节点时，更不能未审查读者路径就立即改写旧字段。
 
 本簇对应[关系图](../../../navigation/P04_对象摘除与缺黑修复导读.md#4.1_谁拥有地址和颜色)中调用者的成员/寿命职责，以及[时序图](../../../navigation/P04_对象摘除与缺黑修复导读.md#4.2_从对象到缺黑父槽)最后返回后的 D4；这两个宏不属于 D1～D3 的内部自动动作。完整私有示例见[P11 取消模块](../../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.3.12_用完整模块观察取消请求)，返回[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
+
+## 1.9\_后序safe的两个局部游标
+
+循环体准备释放当前对象时，下一次计算必须先于释放。宏使用 pos 和 n 两个调用者局部变量实现这个顺序，真实边界来自[后序销毁时序](../../../navigation/P05_有序推进与整树销毁导读.md#5.3_整树销毁为何不用逐个平衡)。以下宏体保留上游 include/linux/rbtree.h；中文 Doxygen 为仓库补充、非上游原文。
+
+```c
+/**
+ * rb_entry_safe - 非空时由嵌入节点找外层对象，空时返回 NULL。
+ * @ptr: 节点表达式，先存局部临时量，避免重复求值。
+ * @type: 外层对象类型。
+ * @member: rb_node 成员名。
+ * 使用 GNU C typeof 和语句表达式，不检查寿命或地址有效性。
+ */
+#define rb_entry_safe(ptr, type, member) \
+	({ typeof(ptr) ____ptr = (ptr); \
+	   ____ptr ? rb_entry(____ptr, type, member) : NULL; \
+	})
+
+/**
+ * rbtree_postorder_for_each_entry_safe - 允许循环体使当前对象失效。
+ * @pos: 当前外层对象指针。
+ * @n: 下一外层对象的临时指针。
+ * @root: 有效根对象，内部根节点可空。
+ * @field: 嵌入的 rb_node 成员名。
+ * 只保护当前对象在循环体失效；不允许 rb_erase 等重排，也不加锁。
+ */
+#define rbtree_postorder_for_each_entry_safe(pos, n, root, field) \
+	for (pos = rb_entry_safe(rb_first_postorder(root), typeof(*pos), field); \
+	     pos && ({ n = rb_entry_safe(rb_next_postorder(&pos->field), \
+			typeof(*pos), field); 1; }); \
+	     pos = n)
+```
+
+**实现原理：** 初始化先取后序起点；每轮条件先确认 pos 非空，接着计算 n，再以 1 让循环体执行；迭代部分才把 n 交给 pos。最后一个对象的 n=NULL 仍会进入本轮循环体，因此根也能被处理。rb_entry_safe 保存的临时量只避免表达式求值两次，不提供任何引用计数或指针有效性检查。
+
+**可修改性：** 把 n 的计算移进迭代部分会使其发生在循环体之后，当前内存可能已无效。改成“只有 n 非空才进循环体”则会跳过最后根对象。保存 n 不意味着可以旋转；旋转改变尚未访问对象的父关系，可能跳过节点。释放后应丢弃根，不能按普通查询继续使用半销毁的树。
+
+本簇对应[关系图](../../../navigation/P05_有序推进与整树销毁导读.md#5.1_拓扑与游标分别保存在哪)中的 pos/n 交接，以及[销毁时序](../../../navigation/P05_有序推进与整树销毁导读.md#5.3_整树销毁为何不用逐个平衡)第 1、2、4 步；第 3、5 步属于调用者。后序函数的唯一实现见[lib/rbtree.c](../../lib/rbtree.c.md#1.8_后序推进只跨向未完成部分)，返回[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。

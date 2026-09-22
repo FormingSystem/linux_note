@@ -24,7 +24,7 @@ domains: [linux, source_reading]
 
 五份既有原文均按固定 Git 对象核对，统一身份见[Linux 基线](../../linux/SOURCE_BASELINE.md#1.19_rbtree查找与旋转路径证据)。当前访问配置为 ARM、TINY_RCU、PREEMPT_NONE、非 SMP；这个访问环境不构成 SMP、RCU 或目标板运行证据。本地三笔实验提交不用于推导，保留的历史 v6.1 原文也不替代本表基线。
 
-当前唯一函数体讲解覆盖查询、接入、插入修复、结构删除、缺黑修复与游离标记。遍历和替换的独立整理仍在继续，不能把本索引视为整套 rbtree 已完成审查。
+当前唯一函数体讲解覆盖查询、接入、插入修复、结构删除、缺黑修复与游离标记。中序与后序遍历也已按独立任务组织，替换整理仍在继续，不能把本索引视为整套 rbtree 已完成审查。
 
 ## 1.2\_按问题选择源码入口
 
@@ -41,5 +41,7 @@ domains: [linux, source_reading]
 | 取消的是哪个对象，缺黑出现在哪个槽 | [删除周期](P04_对象摘除与缺黑修复导读.md#4.2_从对象到缺黑父槽) | [结构摘除](../source_explanations/include/linux/rbtree_augmented.h.md#1.3_结构摘除与缺黑父槽) |
 | 为什么近侄旋转后还不能沿父链任意遍历 | [缺黑转换](P04_对象摘除与缺黑修复导读.md#4.3_转换与上推怎样结束) | [四类修复](../source_explanations/lib/rbtree.c.md#1.5_缺黑修复的四种转换) |
 | 删除返回是否已清标记或释放对象 | [观察与退出](P04_对象摘除与缺黑修复导读.md#4.4_怎样观察地址身份与退出条件) | [入口](../source_explanations/lib/rbtree.c.md#1.6_删除入口与黑色位辅助)、[游离标记](../source_explanations/include/linux/rbtree.h.md#1.8_游离标记不等于成员搜索) |
+| 下一对象怎样跨过一次删除 | [有序推进](P05_有序推进与整树销毁导读.md#5.2_同一中序关系如何跨过删除) | [端点与父链](../source_explanations/lib/rbtree.c.md#1.7_中序端点与父链推进) |
+| 后序 safe 为什么不能随意重排 | [销毁周期](P05_有序推进与整树销毁导读.md#5.3_整树销毁为何不用逐个平衡) | [后序函数](../source_explanations/lib/rbtree.c.md#1.8_后序推进只跨向未完成部分)、[safe 宏](../source_explanations/include/linux/rbtree.h.md#1.9_后序safe的两个局部游标) |
 
 代码的公共结构与查询规则不因当前 ARM 配置而改变；读取顺序、发布、生命周期和所用同步接口必须按具体调用者及配置核对。宿主 C 程序只验证串行路径或明确适配位宽的算法模型，插入观察模块的 ARM 语法检查不等于目标装卸和运行；边界见[插入证据](../../linux/SOURCE_BASELINE.md#1.20_rbtree插入与父槽证据)。返回[源码大纲](../大纲.md#1.1_从查询承诺进入实现)。

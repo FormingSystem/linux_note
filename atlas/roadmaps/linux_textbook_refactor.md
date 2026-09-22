@@ -134,3 +134,6 @@ B03o 将已修订内容完整组织为[P10 查询](../../knowledge/linux/data_st
 
 
 B03p 完成[P11 删除周期与完整模块](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.3.12_用完整模块观察取消请求)，保留原中文源码注释到唯一实现，修正后继身份、重复键、缺黑父槽和回调中间态。范围、有限 C 验证及目标未运行边界见[B03p 记录](../../governance/migration/repository_textbook_refactor.md#1.4.26_B03p对象摘除与缺黑修复)。P11 遍历/替换及整章组织继续 pending，全仓尚未完成。
+
+
+B03q 完成[P11 遍历与销毁单元](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.4.9_运行完整遍历与销毁模块)，以四键漏访反例解释中序取消与后序 safe 的不同条件，补齐完整模块、失败清理和唯一遍历实现。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.27_B03q有序推进与整树销毁)区分宿主/ARM 检查与目标未运行。下一项 P11 替换及最终分章，P11 与全仓仍未完成。

@@ -1,12 +1,12 @@
 ---
 id: research.source_reading.rbtree.insert_implementation
-title: "rbtree.c 插入删除修复与旋转收尾实现"
+title: "rbtree.c 更新与遍历实现"
 kind: source
 status: evolving
 domains: [linux, source_reading]
 ---
 
-# 第1章\_rbtree.c插入删除修复与旋转收尾实现
+# 第1章\_rbtree.c更新与遍历实现
 
 [插入模块导读](../../navigation/P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进)已经解释 I0～I5：找到空槽，接入红叶，按叔节点颜色推进或旋转。[删除模块](../../navigation/P04_对象摘除与缺黑修复导读.md#4.2_从对象到缺黑父槽)接着追踪 D0～D4 的摘除、缺口和修复。本篇分别兑现两轮操作真正改边与染色的语句，保留原教材中文注释和形状图，但函数的分支、变量与访问形式以固定上游为准。
 
@@ -1241,3 +1241,161 @@ void __rb_erase_color(struct rb_node *parent, struct rb_root *root,
 **实现原理：** rb_erase 只在 rebalance 非空时进入 D3；NULL 包含红叶、红孩子补位、删除唯一根等情况，不表示业务对象已经被释放。rb_set_black 在 Case 2 的红父分支使用，加一保留合法父地址并置最低位；若对黑节点重复加一，就可能改坏低位编码。导出包装不改变修复算法，只为另一调用路径提供符号。
 
 **可修改性：** 普通删除不能换成任意调用 copy/rotate 来“通知成员减少”；零旋转路径也会成功删除。调用者必须在 D0 确认对象属于此 root，D4 自行更新业务标记和回收协议。参数不合法时没有自动回滚。状态地址与端到端图仍为[删除模块 D0～D4](../../navigation/P04_对象摘除与缺黑修复导读.md#4.2_从对象到缺黑父槽)，本节对应入口调用、条件分支和最终返回箭头。返回[总索引](../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
+
+## 1.7\_中序端点与父链推进
+
+取消当前对象之前，先找到下一对象的地址。这个地址靠排序关系确定，但找它既可能向孩子走，也可能沿父链回溯。[遍历模块 W1/W2](../../navigation/P05_有序推进与整树销毁导读.md#5.2_同一中序关系如何跨过删除)先解释两条路径，再对照本页上游 lib/rbtree.c 的四个函数。中文 Doxygen 与行内注释为仓库补充、非上游原文，功能语句保持固定版本。
+
+```c
+/**
+ * rb_first - 仓库阅读说明：返回稳定树的最左节点，空树返回 NULL。
+ * @root: 有效根对象，调用者保证树与节点存活。
+ */
+struct rb_node *rb_first(const struct rb_root *root)
+{
+	struct rb_node	*n;
+
+	n = root->rb_node;
+	if (!n)
+		return NULL;
+	while (n->rb_left)
+		n = n->rb_left;
+	return n;
+}
+
+/**
+ * rb_last - 仓库阅读说明：返回稳定树的最右节点，空树返回 NULL。
+ * @root: 有效根对象，调用者保证树与节点存活。
+ */
+struct rb_node *rb_last(const struct rb_root *root)
+{
+	struct rb_node	*n;
+
+	n = root->rb_node;
+	if (!n)
+		return NULL;
+	while (n->rb_right)
+		n = n->rb_right;
+	return n;
+}
+
+/**
+ * rb_next - 仓库阅读说明：返回下一中序对象，而非严格更大的键。
+ * @node: 仍存活的非 NULL 节点；游离标记只允许提前退出。
+ */
+struct rb_node *rb_next(const struct rb_node *node)
+{
+	struct rb_node *parent;
+
+	if (RB_EMPTY_NODE(node))
+		return NULL;
+
+	/* 有右子树，先向右一步，再沿左孩子到底。 */
+	if (node->rb_right) {
+		node = node->rb_right;
+		while (node->rb_left)
+			node = node->rb_left;
+		return (struct rb_node *)node;
+	}
+
+	/* 无右子树，向上越过右孩子边，停在首次由左侧到达的父节点。 */
+	while ((parent = rb_parent(node)) && node == parent->rb_right)
+		node = parent;
+
+	return parent;
+}
+
+/**
+ * rb_prev - 仓库阅读说明：返回上一中序对象。
+ * @node: 仍存活的非 NULL 节点；需要稳定的孩子和父链。
+ */
+struct rb_node *rb_prev(const struct rb_node *node)
+{
+	struct rb_node *parent;
+
+	if (RB_EMPTY_NODE(node))
+		return NULL;
+
+	/* 有左子树，先向左一步，再沿右孩子到底。 */
+	if (node->rb_left) {
+		node = node->rb_left;
+		while (node->rb_right)
+			node = node->rb_right;
+		return (struct rb_node *)node;
+	}
+
+	/* 无左子树，向上越过左孩子边，停在首次由右侧到达的父节点。 */
+	while ((parent = rb_parent(node)) && node == parent->rb_left)
+		node = parent;
+
+	return parent;
+}
+```
+
+**实现原理：** first/last 从根下行，next/prev 先处理各自内侧子树，否则上行越过已完成的一侧。父指针本身保存了“递归本来需要返回到哪里”，所以函数不建立递归栈，也不保存版本号。相等键也有不同节点地址，中序后继可能与当前对象 key 相等。RB_EMPTY_NODE 只识别约定标记；next/prev 没有在访问该宏前检查 node=NULL，不能将空指针当作合法参数。
+
+单次端点或后继操作最坏走一条高 h 的路径；稳定树完整走一轮时，每条相关边只经历常数次下行/上行，因此总计 O(n)、额外游标 O(1)。这不表示每次 next 都是常数时间，也不证明一边改树一边遍历仍具有相同总成本。
+
+**可修改性：** 不能先清当前父色或释放当前对象，再调用 next；必须在 W2 保存下一仍存活对象，W3 才处理当前。父链遍历不在仅向下 RCU 查询的有限路径论证内；这些函数没有取得读锁、引用或快照。调用者让其他写者改树，或者释放保存的下一对象，都会使原协议失效。
+
+[角色图](../../navigation/P05_有序推进与整树销毁导读.md#5.1_拓扑与游标分别保存在哪)的字段读取，以及[中序取消时序](../../navigation/P05_有序推进与整树销毁导读.md#5.2_同一中序关系如何跨过删除)第 1、2 步对应本组函数，第 5 步为调用者游标赋值；删除本身在 W3 调用既有[删除入口](#1.6_删除入口与黑色位辅助)。教材见[P11 有序遍历](../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.4_rbtree_遍历接口)。
+
+## 1.8\_后序推进只跨向未完成部分
+
+中序关注 key 次序，后序关注“孩子完成之后才处理父”。如果准备销毁全部对象，保留排序合法性已不再是每一步的目标，但仍须保证下次计算不会读取已经释放的对象。下面三函数来自同一 lib/rbtree.c；先看[后序销毁时序](../../navigation/P05_有序推进与整树销毁导读.md#5.3_整树销毁为何不用逐个平衡)。
+
+```c
+/**
+ * rb_left_deepest_node - 仓库阅读说明：按左优先到叶，得到局部第一个后序节点。
+ * @node: 非 NULL 的子树根；不是寻找全树深度最大的叶子。
+ */
+static struct rb_node *rb_left_deepest_node(const struct rb_node *node)
+{
+	for (;;) {
+		if (node->rb_left)
+			node = node->rb_left;
+		else if (node->rb_right)
+			node = node->rb_right;
+		else
+			return (struct rb_node *)node;
+	}
+}
+
+/**
+ * rb_next_postorder - 仓库阅读说明：返回当前节点之后的后序节点。
+ * @node: 当前仍存活节点，允许 NULL 并返回 NULL。
+ */
+struct rb_node *rb_next_postorder(const struct rb_node *node)
+{
+	const struct rb_node *parent;
+	if (!node)
+		return NULL;
+	parent = rb_parent(node);
+
+	/* 当前对象的孩子已经完成，接下来只判断父与兄弟关系。 */
+	if (parent && node == parent->rb_left && parent->rb_right) {
+		/* 当前在左侧且父有右子树，进入右子树的第一个后序位置。 */
+		return rb_left_deepest_node(parent->rb_right);
+	} else
+		/* 右侧已完成或没有右侧，父节点就是下一对象。 */
+		return (struct rb_node *)parent;
+}
+
+/**
+ * rb_first_postorder - 仓库阅读说明：从有效根对象取得第一个后序节点。
+ * @root: 有效根对象；内部根指针可空。
+ */
+struct rb_node *rb_first_postorder(const struct rb_root *root)
+{
+	if (!root->rb_node)
+		return NULL;
+
+	return rb_left_deepest_node(root->rb_node);
+}
+```
+
+**实现原理：** left_deepest 沿有左取左、无左取右的路径到叶，不比较整树叶子深度。next_postorder 从当前的父出发：当前为左孩子且还有右子树，就下降到右子树第一个后序节点；否则父就是下一个。它不重新读取当前已经完成的左右子树。safe 宏必须在释放当前以前调用它，把结果保存在另一个局部游标中。
+
+**可修改性：** 这是固定拓扑下的完成次序，旋转会改变“哪个父/右子树尚未处理”的答案。不能因为保存了一个下一地址就允许 rb_erase 重排整树。仅计算第一个后序位置时 root 必须有效；next_postorder 允许 NULL，和 next/prev 的输入条件不同。也不能只因对象设置了 RB_CLEAR_NODE 就把它当作本函数可遍历的合法树成员，后序路径没有检查那个标记。
+
+[状态图](../../navigation/P05_有序推进与整树销毁导读.md#5.1_拓扑与游标分别保存在哪)中 pos/n 属于当前调用栈；[销毁时序](../../navigation/P05_有序推进与整树销毁导读.md#5.3_整树销毁为何不用逐个平衡)第 1、2 步是本组读取，释放和最终置空根由调用者负责。宏的确切求值顺序见[后序 safe](../include/linux/rbtree.h.md#1.9_后序safe的两个局部游标)，返回[总索引](../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
