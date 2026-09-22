@@ -471,3 +471,10 @@ P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_str
 剥离注释后，__rb_insert、__rb_rotate_set_parents、____rb_erase_color 的函数语句在这两个对象间一致；这不表示所调用的辅助或所有接口都相同。实际差量包括 rb_set_black/父色打包的或到加法、Case 3 注释图标签，以及 rb_find_add_rcu/rb_find_rcu/rb_add_augmented_cached 新入口。P29 五段短裁剪均为当前固定 lib/rbtree.c 的连续语句，完整实现仍在[rbtree 唯一讲解](../rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支)。
 
 本次未核对 5.15，不再保留原正文对该版本的一致性主张。没有修改算法和实际材料，不重复声称新的目标运行、ABI、并发或性能验证；源码树只读。
+
+
+## 1.27\_页级索引与ext4范围格式证据
+
+[P34 页级索引](../../../knowledge/linux/data_structures/红黑树_rb-tree/P34_从多路节点到页级索引.md#34.2.13_文件系统中的_B/B+_树应用)只读核对同一 NXP 固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0 的 Documentation/filesystems/ext4/ifork.rst，blob 为 dc31f505e6c835bf590998a88676e9fa48d4c0f9。文档区分内部 ext4_extent_idx 与叶层 ext4_extent，根放在 inode.i_block；本次仅引用格式职责和根不一定独占外部块的边界，不展开函数体，不声称已验证挂载模式、分配算法或 I/O 性能。
+
+数据库/存储引擎对照独立依据 SQLite 文件格式、MySQL 8.4、PostgreSQL 18 和 RocksDB 官方概览，不作为 NXP 内核实现证据。完整 C++ 四页模型实际只读宿主数组，逻辑页请求、模型未命中与设备 I/O 分开；未执行目标数据库、文件系统挂载或硬件性能实验。外部工作树未改，本地三笔实验提交仍不作证据。

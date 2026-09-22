@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P34_从多路节点到页级索引.md",
+      "baseline_sha256": "30e838d00e7195199e0f061898c1e9614d19d90b09e9a53f2daaf53d13414a77",
+      "lines": 1150,
+      "state": "validated",
+      "reason": "B03z 完整冷读页级索引，保留二十一张图并修正缓存流水线和区间；官方格式证据与 C++ 访问计数检查通过，未验证真实数据库或 I/O 性能。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P33_从多路删除到红黑缺口.md",
       "baseline_sha256": "74c5f5d31edf3db5a14f72701cdc35ce0307af558d84637368d27179b76367b4",
       "lines": 677,
@@ -1525,7 +1532,7 @@
       "baseline_sha256": "9bd2b356a1f938c542847f77ebc28f5e11060de8b18322e3e2f86b882ed9d7fd",
       "lines": 6195,
       "state": "pending",
-      "reason": "B03u 前四节、B03v/w/x 插入及两种删除、B03y 叶层/编码/回顾与 P33 删除对照已修订；只剩 6.9 页级索引与 6.10 Maple 待完整冷读，整章仍 pending。"
+      "reason": "B03u～B03z 已审查前四节、插入、两类删除、叶层/编码/回顾与页级索引；仅 6.10 Maple 待完整冷读，整章仍 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md",

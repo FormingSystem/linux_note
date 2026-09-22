@@ -83,3 +83,6 @@ domains: [c_language, data_structures]
 
 
 [rbtree_height_balance.cpp](rbtree_height_balance.cpp)在[P33 黑高收支](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P33_从多路删除到红黑缺口.md#33.3_用黑高收支检查父层是否仍有缺口)中计算合并与远侄借位的局部高度。它只枚举 h=1～8 和父的两种颜色，检查算术推导；不执行指针旋转、不验证整棵红黑树或内核实现。
+
+
+[page_index_model.cpp](page_index_model.cpp)在[P34 页请求模型](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P34_从多路节点到页级索引.md#34.3_运行页请求与未命中的计数模型)中读取固定根和三个叶页，分别统计逻辑请求与模型缓存未命中。物理块号只是标签，所有数据实际在宿主数组中；无设备 I/O、更新或缓存逐出。对范围/点查、热状态和根驻留的比较不能外推为真实数据库性能。
