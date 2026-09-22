@@ -115,3 +115,5 @@ B03e 完成 P06 子系统身份比较与 P07 固定桶完整模块：保留近�
 B03f 完整冷读树 P01，保留原有术语、图和表示推导，将存储与实验移入[P16](../../knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md#16.7_运行预测与资源回收)，补齐 C 程序的分配失败与回收，原人工状态不变。范围、保留理由与验证见[B03f 记录](../../governance/migration/repository_textbook_refactor.md#1.4.16_B03f树关系与表示实验)。下一批继续 P02 二叉树；未把首章拆分称为全树专题完成。
 
 B03g 完整冷读 P02，并沿[二叉结构、四种遍历与查询路线](../../knowledge/linux/data_structures/红黑树_rb-tree/大纲.md#1.1_沿问题进入现有章节)拆为 P02/P17～P21，保留二十一张图和手工推演，补齐九份 C/C++ 完整材料的资源、容量和查询边界。内容去向、保留依据、验证与未执行项见[B03g 记录](../../governance/migration/repository_textbook_refactor.md#1.4.17_B03g二叉遍历与查询边界)。下一批进入 P03 搜索树；全仓尚未完成。
+
+B03h 完整冷读 P03，将搜索插入、[删除回接](../../knowledge/linux/data_structures/红黑树_rb-tree/P22_BST删除与子树回接.md#22.2_从图中的替换走到地址上的回接)与[排序验证](../../knowledge/linux/data_structures/红黑树_rb-tree/P23_BST验证与高度边界.md#23.6_运行全子树边界反例)组织为三个单元，保留原二十八张图及批注，补齐三份 C/C++ 程序。证据与检查、内容去向和未执行项见[B03h 记录](../../governance/migration/repository_textbook_refactor.md#1.4.18_B03h搜索树插入删除与验证)。下一批从 P04 退化继续；全仓尚未完成。

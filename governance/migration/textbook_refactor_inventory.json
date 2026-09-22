@@ -5,6 +5,20 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P22_BST删除与子树回接.md",
+      "baseline_sha256": "1449aba3da94847c80274a3e62c56f703dfc0dfeb880ca27ae8a94e7028cd168",
+      "lines": 1926,
+      "state": "validated",
+      "reason": "B03h 从 P03 保留完整删除/验证内容并局部纠错，二十八张原图和两处批注保留；完整 C/C++ 及片段编译、分配失败和 720 种次序删除检查通过，仅证明有限宿主串行模型。"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P23_BST验证与高度边界.md",
+      "baseline_sha256": "c6f672e5490101a4c70651c539d994d938394b1515215bc579b13c09dfcc7330",
+      "lines": 310,
+      "state": "validated",
+      "reason": "B03h 从 P03 保留完整删除/验证内容并局部纠错，二十八张原图和两处批注保留；完整 C/C++ 及片段编译、分配失败和 720 种次序删除检查通过，仅证明有限宿主串行模型。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P17_前序遍历与先根处理.md",
       "baseline_sha256": "b3bb44e971db002217d8142fc36cadb33b8d0ac1a5ffe4e80d219fbd160ec0fd",
       "lines": 711,
@@ -1349,8 +1363,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md",
       "baseline_sha256": "18af1d503feffddcbf4219623b6507f6c4a310f653cb45fa4891e29353ce0b2c",
       "lines": 2829,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B03h 冷读 2828 行当前正文，保留图解与人工重点，拆出删除和验证；修正高度计数、返回契约、地址身份和概率前提，完成三份 C/C++ 程序及适用检查。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md",

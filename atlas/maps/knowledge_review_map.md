@@ -255,6 +255,8 @@ mindmap-plugin: basic
             - 🔴 [P20 层序遍历与队列边界](../../knowledge/linux/data_structures/红黑树_rb-tree/P20_层序遍历与队列边界.md)
             - 🔴 [P21 递归状态与二叉树基本查询](../../knowledge/linux/data_structures/红黑树_rb-tree/P21_递归状态与二叉树基本查询.md)
             - 🟢 [P03 二叉搜索树 BST](../../knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md)
+            - 🔴 [P22 BST 删除与子树回接](../../knowledge/linux/data_structures/红黑树_rb-tree/P22_BST删除与子树回接.md)
+            - 🔴 [P23 BST 验证与高度边界](../../knowledge/linux/data_structures/红黑树_rb-tree/P23_BST验证与高度边界.md)
             - 🟢 [P04 为什么 BST 会退化](../../knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md)
             - 🟢 [P05 旋转的作用与局部重排](../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md)
             - 🟢 [P06 2-3-4 树 从多路平衡到红黑树的结构桥梁](../../knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md)
@@ -559,7 +561,7 @@ mindmap-plugin: basic
     - 哈希表
         - 🔴 [哈希桶与位宽实验材料](../../labs/kernel/hash_table/materials/README.md)
     - 普通树
-        - 🔴 [普通树与二叉遍历实验材料](../../labs/kernel/tree_basics/materials/README.md)
+        - 🔴 [树结构实验材料](../../labs/kernel/tree_basics/materials/README.md)
     - 链表
         - 🔴 [链表教材实验材料](../../labs/kernel/linked_list/materials/README.md)
     - 驱动入口

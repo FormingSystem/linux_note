@@ -1,12 +1,12 @@
 ---
 id: labs.kernel.tree_basics.materials
-title: "普通树与二叉遍历实验材料"
+title: "树结构实验材料"
 kind: lab
 status: evolving
 domains: [c_language, data_structures]
 ---
 
-# 第1章\_普通树与二叉遍历实验材料
+# 第1章\_树结构实验材料
 
 [tree_representation.c](tree_representation.c)与[P16 正文](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md#16.6_示例_普通树的一个简单链式实现)提供同一份完整 C11 程序。先读[P01](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md#1.2_什么是树)的逻辑关系，再预测五节点的深度、高度、叶子及各失败点的回收数。
 
@@ -24,5 +24,15 @@ domains: [c_language, data_structures]
 八份程序均接受 0～7 的构建失败参数，省略参数表示正常运行。C 由根负责已连接树的释放，构建失败回收独立节点；C++ 的唯一拥有者数组负责释放，左右边只借用地址。层序 C 版检查调用者队列容量，C++ 队列仍可能抛出分配异常。实际命令和过程解释在各篇正文，先手算再运行。
 
 [binary_queries.c](binary_queries.c)是[P21 的完整查询实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P21_递归状态与二叉树基本查询.md#21.8_让查询接受一个反例)，用非 BST 的四节点反例检查高度、计数、叶子和普通查找。它使用自动数组，无须动态释放。
+
+增加排序约束后，沿下列三份完整材料继续观察：
+
+| 材料 | 读者任务 | 正文 |
+| --- | --- | --- |
+| [bst_insert_demo.c](bst_insert_demo.c) | 查找、查重与失败保持原树；参数 1～9 在第几次申请前失败 | [P03](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md#3.7_运行查找与插入) |
+| [bst_erase_demo.cpp](bst_erase_demo.cpp) | 三类删除、返回新根、后继右孩子回接与地址身份 | [P22](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P22_BST删除与子树回接.md#22.12_运行后再追一个地址) |
+| [bst_order_check.cpp](bst_order_check.cpp) | 祖先上界、重复键、整数极值及每次验证的状态重置 | [P23](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P23_BST验证与高度边界.md#23.6_运行全子树边界反例) |
+
+这三份材料独立编译，分别使用 C11、C++17、C++17；不要把各自节点结构和 main 拼接到同一翻译单元。它们都处理独占的小树，不是并发容器或 Linux rbtree 的替身。
 
 标准 C11 编译器即可运行，命令、输出与练习见[运行说明](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md#16.7_运行预测与资源回收)。这是宿主内存模型，不使用 Linux API，不验证内核容器、并发或硬件；输入拓扑由程序构造，未声称能校验任意图。实际检查范围见[工作记录](../../../../governance/migration/repository_textbook_refactor.md#1.4.16_B03f树关系与表示实验)。
