@@ -47,4 +47,6 @@ domains: [c_language, data_structures]
 | [rotate_right_branch.c](rotate_right_branch.c) | [右旋内部父槽](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md#5.4.8_C_成品示例_右旋子树根节点) |
 | [rotation_pair.cpp](rotation_pair.cpp) | [旧根地址与互逆动作](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md#5.4.11_用根引用运行一对互逆动作) |
 
+组合旋转在 [P24](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P24_组合旋转与形状判断.md#24.1_章节内容说明)接着运行：[rotation_cases.c](rotation_cases.c)和[rotation_cases.cpp](rotation_cases.cpp)各自从四组三节点输入识别两级方向并重排；[rotation_internal_lr.c](rotation_internal_lr.c)保留内部子树案例，展示形状为 LR 并不代表该处已经违反 AVL 高度约束。三份程序仍独立编译，检查孩子非空不能代替节点存活、成员关系或平衡诊断。
+
 以上均为宿主内存模型，不使用 Linux API，不验证内核容器、并发或硬件；节点拓扑由程序构造，未声称能校验任意输入图。每份材料独立编译，按相应正文的 C11/C++17 命令运行。各批实际检查范围见[工作记录](../../../../governance/migration/repository_textbook_refactor.md#1.4_批次结果)。

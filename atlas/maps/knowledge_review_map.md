@@ -259,6 +259,7 @@ mindmap-plugin: basic
             - 🔴 [P23 BST 验证与高度边界](../../knowledge/linux/data_structures/红黑树_rb-tree/P23_BST验证与高度边界.md)
             - 🟢 [P04 为什么 BST 会退化](../../knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md)
             - 🟢 [P05 旋转的作用与局部重排](../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md)
+            - 🔴 **未校正** [P24 组合旋转与形状判断](../../knowledge/linux/data_structures/红黑树_rb-tree/P24_组合旋转与形状判断.md)
             - 🟢 [P06 2-3-4 树 从多路平衡到红黑树的结构桥梁](../../knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md)
             - 🟢 [P07 红黑树 把 2-3-4 树映射成二叉表示](../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md)
             - 🟢 [P08 Linux 6.12 内核 rbtree 基础结构与工程模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md)

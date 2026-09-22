@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P24_组合旋转与形状判断.md",
+      "baseline_sha256": "c9c606980b28fb40c58855feb2e3d56394e1cdb707f6b1dee07c3fa241d841fa",
+      "lines": 1273,
+      "state": "validated",
+      "reason": "B03k 保留原全部组合图解和内部案例，区分方向与真实失衡，完整 C/C++ 三程序及每份 192 组结构/192 组拒绝检查通过；未验证完整 AVL、内核或并发。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P22_BST删除与子树回接.md",
       "baseline_sha256": "1449aba3da94847c80274a3e62c56f703dfc0dfeb880ca27ae8a94e7028cd168",
       "lines": 1926,
@@ -1378,7 +1385,7 @@
       "baseline_sha256": "b80f5ccbe3e2d06938bd3fdf360339f7cab96f77d8cc4f7b8372db5de6ab3ee3",
       "lines": 3991,
       "state": "pending",
-      "reason": "B03j 已完整冷读原 3990 行并闭合 5.1～5.4 单旋，保留原图和四份 C 程序，新增 C++ 互逆实验及七键全排列结构检查；5.5～5.8 版本证据、组合条件、AVL 接口与长章拆分仍待必要修改，未把宿主检查视为全章完成。"
+      "reason": "B03j 已完整冷读原 3990 行并闭合单旋；B03k 全部组合单元迁入 P24，纠正形状与失衡条件并验证三份 C/C++ 材料。5.5 Linux 证据、5.7～5.8 AVL 诊断和接口及最终拆章仍待修改，未把宿主检查视为全章完成。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md",
