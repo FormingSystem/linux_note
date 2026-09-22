@@ -1399,3 +1399,65 @@ struct rb_node *rb_first_postorder(const struct rb_root *root)
 **可修改性：** 这是固定拓扑下的完成次序，旋转会改变“哪个父/右子树尚未处理”的答案。不能因为保存了一个下一地址就允许 rb_erase 重排整树。仅计算第一个后序位置时 root 必须有效；next_postorder 允许 NULL，和 next/prev 的输入条件不同。也不能只因对象设置了 RB_CLEAR_NODE 就把它当作本函数可遍历的合法树成员，后序路径没有检查那个标记。
 
 [状态图](../../navigation/P05_有序推进与整树销毁导读.md#5.1_拓扑与游标分别保存在哪)中 pos/n 属于当前调用栈；[销毁时序](../../navigation/P05_有序推进与整树销毁导读.md#5.3_整树销毁为何不用逐个平衡)第 1、2 步是本组读取，释放和最终置空根由调用者负责。宏的确切求值顺序见[后序 safe](../include/linux/rbtree.h.md#1.9_后序safe的两个局部游标)，返回[总索引](../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
+
+## 1.9\_同键替换的普通与RCU入口
+
+旧对象可能还有使用者，新对象需要进入同一个排序位置。函数负责替换 rb_node 的结构关系，业务 key/载荷、其他索引、增强值和回收由调用者负责。先沿[替换模块 R0～R4](../../navigation/P06_同键替换与旧对象退出导读.md#6.2_一轮替换怎样交接入口)区分地址和排序，再读本页上游 lib/rbtree.c 的两个函数。中文 Doxygen 与注释为仓库补充、非上游原文。
+
+```c
+/**
+ * rb_replace_node - 在调用者保护下把同键新节点接到旧位置。
+ * @victim: 此 root 中的有效成员，替换后不再由根可达。
+ * @new: 已准备业务载荷、尚未入树的独立对象内节点。
+ * @root: victim 所属的有效根。
+ * 不搜索、不比较键、不旋转、不复制业务对象、不清旧标记。
+ */
+void rb_replace_node(struct rb_node *victim, struct rb_node *new,
+		     struct rb_root *root)
+{
+	struct rb_node *parent = rb_parent(victim);
+
+	/* 只复制嵌入节点的父色与孩子，不复制外层业务载荷。 */
+	*new = *victim;
+
+	/* 先让孩子的反向父指针改到替代对象。 */
+	if (victim->rb_left)
+		rb_set_parent(victim->rb_left, new);
+	if (victim->rb_right)
+		rb_set_parent(victim->rb_right, new);
+	__rb_change_child(victim, new, parent, root);
+}
+
+/**
+ * rb_replace_node_rcu - 先准备新结构，再以 RCU 方式发布外部入口。
+ * @victim: 旧节点；可能还有旧读者持有，不在这里释放。
+ * @new: 同键、私有准备好的新对象内节点。
+ * @root: 写者已按协议串行化的根；读者采用匹配的读取和寿命协议。
+ * 不自动建立读侧、不等待宽限期，也不承诺父链的并发快照。
+ */
+void rb_replace_node_rcu(struct rb_node *victim, struct rb_node *new,
+			 struct rb_root *root)
+{
+	struct rb_node *parent = rb_parent(victim);
+
+	/* 只复制嵌入节点的父色与孩子，不复制外层业务载荷。 */
+	*new = *victim;
+
+	/* 先让孩子的反向父指针改到替代对象。 */
+	if (victim->rb_left)
+		rb_set_parent(victim->rb_left, new);
+	if (victim->rb_right)
+		rb_set_parent(victim->rb_right, new);
+
+	/* 最后以 RCU 方式发布父/根入口；新节点的前向孩子已准备好。 */
+	__rb_change_child_rcu(victim, new, parent, root);
+}
+```
+
+**实现原理：** R1 的结构体赋值只覆盖 struct rb_node 的成员，保留 new 外层载荷。R2 改写孩子的 parent 为 new；R3 才修改父/根指向 new 的入口。普通路径调用[父槽替换](../include/linux/rbtree_augmented.h.md#1.2_替换父节点或根的入口槽)，RCU 路径调用[发布助手](../include/linux/rbtree_augmented.h.md#1.5_RCU外部入口发布)。旧 victim 自身的三个字段不清零，它仍可能指着原孩子；这不是继续从旧对象作成员遍历的许可。
+
+RCU 最后发布使采用匹配读取协议的向下读者能从新入口读到已准备字段，不能据此证明孩子与 parent 所有方向同时切换。孩子反向父边在发布前已经改变，旧读者可能继续持有 victim，故父链遍历尤其不能借用这一发布结论。接口也不取得外部引用、不迁移其他索引中的指针。
+
+**可修改性：** 不可把外部发布提前到新节点复制之前，也不可把整个业务结构赋值给 new 来冒充当前语句；那会覆盖调用者刚准备的新载荷。改变排序键时应删除后重新寻找落点。替换增强树还要维护新对象的子树摘要；若新载荷参与统计，需重新计算受影响路径。把 cached 包装遗漏或把旧对象立刻释放，都超出本函数保证。
+
+[角色图](../../navigation/P06_同键替换与旧对象退出导读.md#6.1_地址身份与排序位置)中的结构字段和外部槽在 R1～R3 交接，[时序](../../navigation/P06_同键替换与旧对象退出导读.md#6.2_一轮替换怎样交接入口)中旧读者退出和 R4 回收由调用者执行。本函数不产生“旧对象已无人使用”的通知。教材场景见[P11 同键替换](../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.5_rb_replace_node%28%29_与_rb_replace_node_rcu%28%29)，返回[总索引](../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。

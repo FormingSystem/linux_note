@@ -137,3 +137,6 @@ B03p 完成[P11 删除周期与完整模块](../../knowledge/linux/data_structur
 
 
 B03q 完成[P11 遍历与销毁单元](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.4.9_运行完整遍历与销毁模块)，以四键漏访反例解释中序取消与后序 safe 的不同条件，补齐完整模块、失败清理和唯一遍历实现。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.27_B03q有序推进与整树销毁)区分宿主/ARM 检查与目标未运行。下一项 P11 替换及最终分章，P11 与全仓仍未完成。
+
+
+B03r 完成[P11 同键替换单元](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.5.7_运行同键替换观察模块)，按 R0～R4 解释节点复制、回指、发布、缓存入口和旧对象回收，补齐完整 C 模块与唯一源码。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.28_B03r同键替换与旧对象退出)区分有限串行检查与目标/并发未验证。下一项 P11 最终分章，随后继续 P05 证据收束与工程扩展，P11 与全仓尚未完成。

@@ -394,3 +394,31 @@ rb_find_add_rcu(struct rb_node *node, struct rb_root *tree,
 **可修改性：** 把 n 的计算移进迭代部分会使其发生在循环体之后，当前内存可能已无效。改成“只有 n 非空才进循环体”则会跳过最后根对象。保存 n 不意味着可以旋转；旋转改变尚未访问对象的父关系，可能跳过节点。释放后应丢弃根，不能按普通查询继续使用半销毁的树。
 
 本簇对应[关系图](../../../navigation/P05_有序推进与整树销毁导读.md#5.1_拓扑与游标分别保存在哪)中的 pos/n 交接，以及[销毁时序](../../../navigation/P05_有序推进与整树销毁导读.md#5.3_整树销毁为何不用逐个平衡)第 1、2、4 步；第 3、5 步属于调用者。后序函数的唯一实现见[lib/rbtree.c](../../lib/rbtree.c.md#1.8_后序推进只跨向未完成部分)，返回[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
+
+## 1.10\_替换时的最左缓存入口
+
+普通 root 只有树根；cached 根还保存另一个直接到最小对象的地址。替换最左对象时两条入口都要改。上游位置仍为 include/linux/rbtree.h；中文 Doxygen 为仓库补充、非上游原文。
+
+```c
+/**
+ * rb_replace_node_cached - 同键替换并保持最左缓存。
+ * @victim: 此 cached 树中的旧成员。
+ * @new: 同键且未入树的替代对象内节点。
+ * @root: 同时拥有普通树根和最左缓存的根对象。
+ * 需要覆盖整次操作的调用者保护，不是 RCU cached 替换接口。
+ */
+static inline void rb_replace_node_cached(struct rb_node *victim,
+					  struct rb_node *new,
+					  struct rb_root_cached *root)
+{
+	if (root->rb_leftmost == victim)
+		root->rb_leftmost = new;
+	rb_replace_node(victim, new, &root->rb_root);
+}
+```
+
+**实现原理：** 只有 victim 正是缓存对象时才重写 rb_leftmost；随后复用[普通替换](../../lib/rbtree.c.md#1.9_同键替换的普通与RCU入口)。因此 cached 写入发生在 new 节点结构复制之前，独立读缓存的人不能在此时闯入。完成后树的排序位置、最左对象和缓存重新一致；非最左替换不动缓存。
+
+**可修改性：** 省掉首个分支会让缓存留着旧对象地址，旧对象回收后会悬空。改为调用 RCU 替换也不能自动使这个普通缓存写入获得发布协议；固定头文件没有提供本函数的 RCU 合并变体。调用者须按真实读写协议设计保护，而不是拼两个名字相似的函数。
+
+本节是[替换模块](../../../navigation/P06_同键替换与旧对象退出导读.md#6.3_附加入口与回收条件)中的附加入口分支，复用[角色图](../../../navigation/P06_同键替换与旧对象退出导读.md#6.1_地址身份与排序位置)及[时序](../../../navigation/P06_同键替换与旧对象退出导读.md#6.2_一轮替换怎样交接入口)：缓存改写在 R1 前，随后执行普通 R1～R3。返回[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。

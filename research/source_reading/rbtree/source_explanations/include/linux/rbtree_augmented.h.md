@@ -639,3 +639,53 @@ copy 只是给 successor 一份旧子树增强值作为起点。深后继分支�
 **可修改性：** 不能把 successor 颜色检查移到父色覆盖之后，也不能在直接后继分支执行 successor.right=child，那会让节点指向自身。不能把 copy 替换成业务结构整体赋值；增强字段之外的 key、请求身份与引用关系应保持原对象含义。WRITE_ONCE 的写序与此前路径约束仍须保留。功能代码不检验成员、不取锁、不释放对象，错误前提不会转成可恢复的错误码。
 
 [状态关系图](../../../navigation/P04_对象摘除与缺黑修复导读.md#4.1_谁拥有地址和颜色)中的“写孩子槽/父色”由本函数执行；[完整时序](../../../navigation/P04_对象摘除与缺黑修复导读.md#4.2_从对象到缺黑父槽)中 D1 的摘除、copy/propagate 和 D2 的返回正对应这些语句。回到[教材结构删除](../../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.2_rbtree_删除前半段_rb_erase%28%29_与结构删除)或[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
+
+## 1.4\_保持颜色的父地址替换
+
+孩子的父节点改变，但颜色不应因此变化。rb_color 取得最低颜色位，rb_set_parent 在保留这一位的前提下换入新的父地址；不要和 1.1 中同时指定新颜色的函数混淆。上游位置仍为 include/linux/rbtree_augmented.h，中文 Doxygen 为仓库补充、非上游原文。
+
+```c
+/**
+ * rb_set_parent - 保留颜色，替换打包字段中的父地址。
+ * @rb: 存活的有效节点。
+ * @p: 新父地址；根节点可为 NULL。
+ * 不反向更新 p 的孩子槽。
+ */
+static inline void rb_set_parent(struct rb_node *rb, struct rb_node *p)
+{
+	rb->__rb_parent_color = rb_color(rb) + (unsigned long)p;
+}
+```
+
+**实现原理：** Linux 节点对齐留下低位空间，父地址与最低颜色位相加不会改掉地址部分。本函数在[替换 R2](../../../navigation/P06_同键替换与旧对象退出导读.md#6.2_一轮替换怎样交接入口)配合前向结构复制使用；只改它而不改前向边会使两个方向矛盾。**可修改性：** 不可把保色赋值随意换成强制黑色，也不可绕过成员与寿命前提。宿主 Windows 的 unsigned long 不能装下 64 位指针，教材行为检查明确用 uintptr_t 适配；本页保留 Linux 原文。
+
+## 1.5\_RCU外部入口发布
+
+此助手与 1.2 选择同一条外部槽，但通过 rcu_assign_pointer 发布。需要先理解[RCU 公共接口索引](../../../../rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)的匹配读写和寿命前提；发布宏本体只在[RCU 唯一实现](../../../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.1_rcu_assign_pointer发布实现)展开。本函数仍来自上游 include/linux/rbtree_augmented.h。
+
+```c
+/**
+ * __rb_change_child_rcu - 最后发布已准备节点到父或根入口。
+ * @old: 原槽中的有效节点。
+ * @new: 已完成内部初始化的替代节点。
+ * @parent: old 的实际父；NULL 表示 old 为根。
+ * @root: 根对象；调用者已串行化写者。
+ * 不检查 old 是否属于 parent，不等待读者，也不修 new 自身父色。
+ */
+static inline void
+__rb_change_child_rcu(struct rb_node *old, struct rb_node *new,
+		      struct rb_node *parent, struct rb_root *root)
+{
+	if (parent) {
+		if (parent->rb_left == old)
+			rcu_assign_pointer(parent->rb_left, new);
+		else
+			rcu_assign_pointer(parent->rb_right, new);
+	} else
+		rcu_assign_pointer(root->rb_node, new);
+}
+```
+
+中文 Doxygen 为仓库补充、非上游原文。**实现原理：** parent 非空时，old 若不等于左孩子就按前提写右槽；parent 为空则发布 root.rb_node。RCU 版本的差别在该槽的发布方式，不是自动给整棵树加读写锁。读者必须采用匹配的入口取得和寿命协议；旧节点仍需在 R4 满足回收条件。
+
+**可修改性：** 不能把“父槽已发布”解释为旧读者不再使用 old，也不能擅自重写旧孩子边后立即释放。操作错误树或错误 parent 会发布到错误槽，函数没有失败回滚。复用[地址关系图](../../../navigation/P06_同键替换与旧对象退出导读.md#6.1_地址身份与排序位置)与[完整时序](../../../navigation/P06_同键替换与旧对象退出导读.md#6.2_一轮替换怎样交接入口)：1.4 对应 R2 孩子父地址写入，本节对应 R3 外部入口发布；R4 等待/回收不在本页函数内。返回[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。

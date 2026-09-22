@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/rbtree/navigation/P06_同键替换与旧对象退出导读.md",
+      "baseline_sha256": "2e0c99e49aff2334f9a84ed24544c4a7eee94ecbda76167cad3e31b88a1ecda0",
+      "lines": 74,
+      "state": "validated",
+      "reason": "B03r 同键替换 R0～R4 冷读完成；固定五函数、C 全排列/失败回收与 ARM 语法检查通过，目标运行和并发未验证。"
+    },
+    {
       "path": "research/source_reading/rbtree/navigation/P05_有序推进与整树销毁导读.md",
       "baseline_sha256": "6e30e426fabd932f5f192b66ccd7aaac016a2374a364c434a60e8c85f6460350",
       "lines": 77,
@@ -30,14 +37,14 @@
       "baseline_sha256": "e4df356a7bed3ab178313ebf6e79eaa3933f4303266e91172f6c07bfee0c9cdc",
       "lines": 381,
       "state": "validated",
-      "reason": "B03n/p/q 插入、删除与遍历按固定证据唯一展开；C 行为和 ARM 语法验证，目标运行、ABI 与并发未验证。"
+      "reason": "B03n/p/q 插入、删除与遍历按固定证据唯一展开；C 行为和 ARM 语法验证，目标运行、ABI 与并发未验证。 B03r 补入固定替换/父地址/发布/缓存相关入口并核对唯一实现，有限 C 和 ARM 检查通过。"
     },
     {
       "path": "research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md",
       "baseline_sha256": "af316fc00f2b73603a6289793059eb7d2d8fef56a20f3abc7ea5bd87c1ef4c3b",
       "lines": 82,
       "state": "validated",
-      "reason": "B03n/p 插入与删除各按固定证据保留唯一实现和中文注释；新删除五函数两宏核对，C 检查及 ARM 语法完成，目标执行/并发未验证。"
+      "reason": "B03n/p 插入与删除各按固定证据保留唯一实现和中文注释；新删除五函数两宏核对，C 检查及 ARM 语法完成，目标执行/并发未验证。 B03r 补入固定替换/父地址/发布/缓存相关入口并核对唯一实现，有限 C 和 ARM 检查通过。"
     },
     {
       "path": "research/source_reading/rbtree/navigation/P03_红叶接入与冲突修复导读.md",
@@ -51,7 +58,7 @@
       "baseline_sha256": "232607bedbfdb201771eaa23b89a28a18da2ea9c8074b169828250f897b51e80",
       "lines": 172,
       "state": "validated",
-      "reason": "B03n/p/q 插入、删除与遍历按固定证据唯一展开；C 行为和 ARM 语法验证，目标运行、ABI 与并发未验证。"
+      "reason": "B03n/p/q 插入、删除与遍历按固定证据唯一展开；C 行为和 ARM 语法验证，目标运行、ABI 与并发未验证。 B03r 补入固定替换/父地址/发布/缓存相关入口并核对唯一实现，有限 C 和 ARM 检查通过。"
     },
     {
       "path": "research/source_reading/rbtree/navigation/P02_查找路径与返回边界导读.md",
@@ -1504,7 +1511,7 @@
       "baseline_sha256": "e6447a463ff71ca1b85ae38d683501f6fb79a4f820d7ed7a58a8fffdab662cbe",
       "lines": 3325,
       "state": "pending",
-      "reason": "B03p/q 删除、遍历及完整模块已重构，源码唯一展开；替换与最终章节组织仍待完成。"
+      "reason": "B03p/q/r 删除、遍历、替换及完整模块已重构，源码唯一展开；最终章节组织仍待完成。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md",

@@ -617,6 +617,7 @@ mindmap-plugin: basic
         - 🔴 **未校正** [红叶接入与冲突修复导读](../../research/source_reading/rbtree/navigation/P03_红叶接入与冲突修复导读.md)
         - 🔴 **未校正** [对象摘除与缺黑修复导读](../../research/source_reading/rbtree/navigation/P04_对象摘除与缺黑修复导读.md)
         - 🔴 **未校正** [有序推进与整树销毁导读](../../research/source_reading/rbtree/navigation/P05_有序推进与整树销毁导读.md)
+        - 🔴 **未校正** [同键替换与旧对象退出导读](../../research/source_reading/rbtree/navigation/P06_同键替换与旧对象退出导读.md)
         - 🔴 **未校正** [rbtree.c 更新与遍历实现](../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md)
         - 🔴 **未校正** [rbtree_augmented.h 父槽与结构删除实现](../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md)
     - 🔴 哈希计算与节点

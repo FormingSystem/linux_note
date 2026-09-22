@@ -439,3 +439,14 @@ C 检查使用固定核心语句，仅在忽略缓存中适配 Windows uintptr_t
 六对象全部 720 种插入次序分别按唯一键/重复键构建 1440 棵树，以独立递归次序核对中序、逆序、后序和保存后继删除，共 8640 次删除后推进；另查清标记节点、空树及 postorder 的 NULL。四键 10/20/30/40 复现 postorder 混用 rb_erase 漏访 20。实际材料的宿主适配运行两种正确回收和自动对象反例，并逐个注入八处申请失败，确认零存活分配，另查重复键、空输入和单节点。宿主采用 uintptr_t 父色适配和普通 WRITE_ONCE，不是 Linux ABI、并发或内存序验证。
 
 note_rbtree_walk 通过 ARMv7 语法检查，实际使用 357 份头，已跟踪头对固定对象的差量交集为空，生成头仍来自当前配置。没有执行目标 Kbuild、MODPOST、装卸或真实日志；外部源码树未改。
+
+
+## 1.24\_rbtree同键替换与旧对象退出证据
+
+同一固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0 的 rb_replace_node、rb_replace_node_rcu、rb_set_parent、__rb_change_child_rcu、rb_replace_node_cached 五函数已核对到[唯一替换实现](../rbtree/source_explanations/lib/rbtree.c.md#1.9_同键替换的普通与RCU入口)及[模块导读](../rbtree/navigation/P06_同键替换与旧对象退出导读.md#6.2_一轮替换怎样交接入口)。只复制嵌入节点，孩子父地址先改，RCU 外部入口最后发布；cached 包装先写 rb_leftmost，不能据此推导无保护读取安全。
+
+额外只读核对 include/linux/rcupdate.h 与 kernel/rcu/tiny.c，固定 blob 分别为 48e5c03df1dd83c246a61d0fcc8aa638adcd7654、b3b3ce34df6310f7bddba40b2be1bdf6c9f00232；读取、发布及等待复用既有 RCU 唯一解释，不复制函数体。访问配置仍为 ARM/TINY_RCU/PREEMPT_NONE/非 SMP，本地三笔实验提交不作为证据。
+
+C 宿主以六对象的 720 种插入次序，分别唯一键/重复键、六个替换位置、普通/cached/RCU 三个入口，共 25920 次替换，独立递归核对中序对象集合、父链、颜色、黑高与缓存，另检查旧字段保留和新业务字段未覆盖。实际材料经显式适配运行，两个申请失败出口无泄漏，检查读侧退出后才能等待；RCU 访问替身只是普通赋值，Windows 父色用 uintptr_t，不构成内核 ABI、并发、宽限期或屏障证明。
+
+note_rbtree_replace 通过 ARMv7 语法检查，实际使用 357 份头，已跟踪头对固定对象的差量交集为空，生成头来自当前配置。目标 Kbuild、MODPOST、装卸和真实日志未执行；外部树未改。宿主删除夹具的 rb_set_parent 从对齐前提下等价的按位或改为上游实际加法后，重新运行此前 6220800 次删除及 8640 次遍历删除，结果一致。
