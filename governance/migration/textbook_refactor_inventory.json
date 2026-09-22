@@ -1370,8 +1370,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md",
       "baseline_sha256": "bd9720906663691733b716c0add6e8532ab9d174502396a135dd11c98e78fac9",
       "lines": 625,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B03i 完整冷读并保留两处人工重点、五张原树形图；修正家族关系图与维护边界，新增 C 访问计数实验，验证 1..31 规模及容量/查重/缺失，未做性能、内核或并发验证。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md",

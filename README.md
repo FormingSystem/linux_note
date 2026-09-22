@@ -100,7 +100,7 @@ https://github.com/FormingSystem/linux_note.git
 
 [哈希表路线](knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md#1.1_沿问题增加约束)从按编号查找进入桶与冲突；完整 C 程序观察键比较、重新分桶、位宽和 hlist 入口槽，RCU 模块追踪旧路径、回调与卸载边界，并由[计算源码索引](research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md#1.2_从问题选择入口)核对当前版本。动态表继续用 C 模型解释跨链重扫，并提供独立的[接口回收实验](knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P08_rhashtable接口与回收实验.md#8.1_先固定本例的拥有者)。[子系统导读](research/source_reading/hash_table/navigation/P05_子系统索引身份与寿命导读.md#5.1_先区分索引任务与业务结论)继续比较候选、引用和业务状态，固定桶模块补齐增删查改与失败回滚。目标模块运行仍待验证，全仓其他专题继续逐项审查。
 
-[树结构入门](knowledge/linux/data_structures/红黑树_rb-tree/大纲.md#1.1_沿问题进入现有章节)先建立父子、路径与子树，再用[普通树 C 实验](knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md#16.7_运行预测与资源回收)比较存储表示并核对分配失败和递归回收。随后沿[四种遍历与查询路线](knowledge/linux/data_structures/红黑树_rb-tree/大纲.md#1.1_沿问题进入现有章节)运行完整 C/C++ 程序，比较处理时机、所有权及队列容量。[搜索树实验](knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md#3.7_运行查找与插入)继续检验查重、删除回接与全局排序；平衡及 Linux 实现继续按清单审查。
+[树结构入门](knowledge/linux/data_structures/红黑树_rb-tree/大纲.md#1.1_沿问题进入现有章节)先建立父子、路径与子树，再用[普通树 C 实验](knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md#16.7_运行预测与资源回收)比较存储表示并核对分配失败和递归回收。随后沿[四种遍历与查询路线](knowledge/linux/data_structures/红黑树_rb-tree/大纲.md#1.1_沿问题进入现有章节)运行完整 C/C++ 程序，比较处理时机、所有权及队列容量。[搜索树实验](knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md#3.7_运行查找与插入)继续检验查重、删除回接与全局排序；[退化计数实验](knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md#4.2.4_用节点访问次数观察退化)进一步区分键序与高度保证；旋转及 Linux 实现继续按清单审查。
 
 字符设备的[读写契约](knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md)用字节记录解释短传输、复制失败和提交时机；对应的[版本源码入口](research/source_reading/character_device/navigation/P01_Linux_6.12_字符设备源码阅读索引.md#1.2_由问题进入模块导读)分别组织模块导读与唯一实现讲解。
 

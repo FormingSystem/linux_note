@@ -117,3 +117,5 @@ B03f 完整冷读树 P01，保留原有术语、图和表示推导，将存储�
 B03g 完整冷读 P02，并沿[二叉结构、四种遍历与查询路线](../../knowledge/linux/data_structures/红黑树_rb-tree/大纲.md#1.1_沿问题进入现有章节)拆为 P02/P17～P21，保留二十一张图和手工推演，补齐九份 C/C++ 完整材料的资源、容量和查询边界。内容去向、保留依据、验证与未执行项见[B03g 记录](../../governance/migration/repository_textbook_refactor.md#1.4.17_B03g二叉遍历与查询边界)。下一批进入 P03 搜索树；全仓尚未完成。
 
 B03h 完整冷读 P03，将搜索插入、[删除回接](../../knowledge/linux/data_structures/红黑树_rb-tree/P22_BST删除与子树回接.md#22.2_从图中的替换走到地址上的回接)与[排序验证](../../knowledge/linux/data_structures/红黑树_rb-tree/P23_BST验证与高度边界.md#23.6_运行全子树边界反例)组织为三个单元，保留原二十八张图及批注，补齐三份 C/C++ 程序。证据与检查、内容去向和未执行项见[B03h 记录](../../governance/migration/repository_textbook_refactor.md#1.4.18_B03h搜索树插入删除与验证)。下一批从 P04 退化继续；全仓尚未完成。
+
+B03i 完成[P04 退化观察](../../knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md#4.2.4_用节点访问次数观察退化)，新增完整 C 计数实验，区分相对失衡、维护代价和静态构建边界，保留原图解及人工重点并修正多路家族关系。证据、保留理由与验证见[B03i 记录](../../governance/migration/repository_textbook_refactor.md#1.4.19_B03i退化观察与平衡代价)。下一批进入 P05 旋转，全仓尚未完成。
