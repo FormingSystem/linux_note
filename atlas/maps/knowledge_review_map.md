@@ -608,11 +608,14 @@ mindmap-plugin: basic
     - Linux 设备模型
         - 🔴 [设备模型 34 章原始总稿迁移核对源](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
 - 源码阅读
-    - 🔴 **未校正** rbtree 查询
+    - 🔴 **未校正** rbtree 查询与插入
         - 🔴 **未校正** [rbtree 源码阅读路线](../../research/source_reading/rbtree/大纲.md)
         - 🔴 **未校正** [Linux 6.12 rbtree 源码阅读索引](../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md)
         - 🔴 **未校正** [查找路径与返回边界导读](../../research/source_reading/rbtree/navigation/P02_查找路径与返回边界导读.md)
-        - 🔴 **未校正** [rbtree.h 查找实现与返回边界](../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md)
+        - 🔴 **未校正** [rbtree.h 查找与节点接入实现](../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md)
+        - 🔴 **未校正** [红叶接入与冲突修复导读](../../research/source_reading/rbtree/navigation/P03_红叶接入与冲突修复导读.md)
+        - 🔴 **未校正** [rbtree.c 插入修复与旋转收尾实现](../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md)
+        - 🔴 **未校正** [rbtree_augmented.h 父色与入口槽实现](../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md)
     - 🔴 哈希计算与节点
         - 🔴 [哈希表源码阅读大纲](../../research/source_reading/hash_table/大纲.md)
         - 🔴 [Linux 6.12 哈希计算源码阅读索引](../../research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md)

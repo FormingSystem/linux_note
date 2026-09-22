@@ -84,71 +84,9 @@ include/linux/rbtree.h
 
 ## 11.2\_rbtree\_删除前半段\_rb\_erase()\_与结构删除
 
-`__rb_change_child()` 源码展示：
+删除前半段需要把父节点或根原来指向 node 的槽，改指向保留下来的孩子或后继。这与插入旋转的外部槽回接是同一种操作；[父槽替换的唯一实现](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md#1.2_替换父节点或根的入口槽)保留完整参数与中文说明，本节继续追踪删除特有的状态变化。
 
-[include/linux/rbtree_augmented.h](../../../../research/source_reading/linux/include/linux/rbtree_augmented.h)
-
-```c
-/*
- * __rb_change_child - 替换父节点指向的孩子节点
- * @old:    原来的孩子节点。
- *          也就是即将被替换掉的节点。
- *
- * @new:    新的孩子节点。
- *          用它来替换 @old。
- *          可以为 NULL，表示把原来的孩子位置清空。
- *
- * @parent: @old 的父节点。
- *          如果 parent 非 NULL，说明 old 不是根节点；
- *          如果 parent 为 NULL，说明 old 是整棵红黑树的根节点。
- *
- * @root:   红黑树根。
- *          当 old 是根节点时，需要更新 root->rb_node。
- *
- * 功能：
- *   把 parent 或 root 中原来指向 old 的指针，改成指向 new。
- *
- * 注意：
- *   这个函数只修改“父节点指向孩子”的链接。
- *   它不负责修改 new 的 parent 指针。
- *
- *   也就是说：
- *
- *      parent -> old
- *
- *   会被改成：
- *
- *      parent -> new
- *
- *   但是：
- *
- *      new->__rb_parent_color
- *
- *   需要调用者自己设置。
- */
-static inline void
-__rb_change_child(struct rb_node *old,
-                  struct rb_node *new,
-                  struct rb_node *parent,
-                  struct rb_root *root)
-{
-	/*
-	 * 如果 parent 非 NULL，说明 old 不是根节点。
-	 *
-	 * 此时 old 一定位于 parent 的左孩子或者右孩子位置。
-	 */
-	if (parent) {
-		if (parent->rb_left == old)
-			WRITE_ONCE(parent->rb_left, new);
-		else
-			WRITE_ONCE(parent->rb_right, new);
-	} else
-		/*
-		 * parent 为 NULL，说明 old 是根节点。
-		 */
-		WRITE_ONCE(root->rb_node, new);
-}
-```
+`__rb_change_child()` 允许 new 为 NULL，只改“父或根→孩子”的边，不改 new 自身的父色。parent 非空时必须已经是 old 的真实父节点，parent 为空时 old 必须是根；函数不验证这两项前提。删除调用者因此还需配对维护新节点自身字段，不能以为换一条入口边就完成整次替换。固定版本与共享实现见[源码总索引](../../../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。
 
 
 
@@ -3322,4 +3260,3 @@ new 必须保持 victim 的排序位置；
 ```
 
 下一章继续讲 cached rbtree、augmented rbtree、并发控制、示例代码、调试验证和内核使用场景。
-

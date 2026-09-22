@@ -409,3 +409,11 @@ list.h、hashtable.h、types.h、rculist.h、rcupdate.h 五份既有副本与固
 既有 include/linux/rbtree_types.h、rbtree.h、rbtree_augmented.h、lib/rbtree.c 和 Documentation/core-api/rbtree.rst 五份 raw 文件与固定 Git blob 一致。本地 HEAD 仍含三笔实验差量，未用它替代发布对象。查找首次取根、孩子 RCU 取得、WRITE_ONCE 与不成环写序、父指针论证排除项均按固定文件核对，不修改外部源码。
 
 C11 程序串行重放相等键旋转、旧入口漏查与错误写序成环，全部对象在观察期内存活。宿主检查不证明真实内核、RCU 宽限期、SMP 可见顺序或目标 ARM 执行；未执行目标 Kbuild、模块装卸、内存模型工具或性能实验。插入/删除实现仍按后续批次整理，当前入口不代表整套 rbtree 重构完成。
+
+## 1.20\_rbtree插入与父槽证据
+
+沿同一 NXP 固定提交继续核对 include/linux/rbtree.h、rbtree_augmented.h 与 lib/rbtree.c。[插入模块](../rbtree/navigation/P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进)用 I0～I5 对应空槽、红叶、上推与旋转；[修复实现](../rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支)恢复实际分支、变量与 WRITE_ONCE，保留教材原中文推导。新增十五个函数与已有四个查询函数逐语句核对，共十九个函数；父槽助手只在一个实现标题展开，知识正文仍保留机制任务。
+
+note_rbtree_insert 使用实际接口观察四种三键方向和叔红输入，当前 ARMv7 语法检查通过；实际使用 351 份头，其中已跟踪文件与固定提交的差量交集为空。生成头和配置来自当前 ARM 工作树，不称为官方发布配置。未执行目标 Kbuild、MODPOST、装卸或真实日志，未修改外部树。
+
+C 算法检查仅在忽略缓存中把宿主打包字段及两处 unsigned long 转换适配为 uintptr_t，避免 Windows LLP64 截断地址；其他核心功能语句来自固定对象，WRITE_ONCE 在该模型中只是普通赋值。八对象全排列分别按互异键和成对相等键构建，检查 645120 次插入后的排序、父链、根色、红红禁令、等黑高、可达对象及至多两次旋转，并观察到 Case 2 回调中间态。这是有限串行算法验证，不是 Linux ABI、内存序、RCU 或性能验证。

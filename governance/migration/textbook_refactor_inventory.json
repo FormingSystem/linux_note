@@ -5,6 +5,27 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/rbtree/source_explanations/lib/rbtree.c.md",
+      "baseline_sha256": "e4df356a7bed3ab178313ebf6e79eaa3933f4303266e91172f6c07bfee0c9cdc",
+      "lines": 381,
+      "state": "validated",
+      "reason": "B03n 固定插入状态导读与唯一实现，保留原注释；语句核对、C 算法验证和实际模块 ARM 语法通过，目标运行/并发未验证。"
+    },
+    {
+      "path": "research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md",
+      "baseline_sha256": "af316fc00f2b73603a6289793059eb7d2d8fef56a20f3abc7ea5bd87c1ef4c3b",
+      "lines": 82,
+      "state": "validated",
+      "reason": "B03n 固定插入状态导读与唯一实现，保留原注释；语句核对、C 算法验证和实际模块 ARM 语法通过，目标运行/并发未验证。"
+    },
+    {
+      "path": "research/source_reading/rbtree/navigation/P03_红叶接入与冲突修复导读.md",
+      "baseline_sha256": "662a00c1963e8ed7136be7d4bfd5253cac019dbfd32056a3abc75889bf960a7d",
+      "lines": 87,
+      "state": "validated",
+      "reason": "B03n 固定插入状态导读与唯一实现，保留原注释；语句核对、C 算法验证和实际模块 ARM 语法通过，目标运行/并发未验证。"
+    },
+    {
       "path": "research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md",
       "baseline_sha256": "232607bedbfdb201771eaa23b89a28a18da2ea9c8074b169828250f897b51e80",
       "lines": 172,
@@ -1455,14 +1476,14 @@
       "baseline_sha256": "c02d313dff8f748bf7917d60df130e711af73a806f7a87016ce07b2a79e12345",
       "lines": 2508,
       "state": "pending",
-      "reason": "B03m 已完成查找单元与完整 C 反例；整篇已冷读，插入修复的忠实源码和唯一展开仍待完成。"
+      "reason": "B03m/n 查询与插入、完整程序和固定源码已修订验证；仍需将两个阅读任务完整拆分并维护桥接，未标记整章完成。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md",
       "baseline_sha256": "e6447a463ff71ca1b85ae38d683501f6fb79a4f820d7ed7a58a8fffdab662cbe",
       "lines": 3325,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03n 只冷读并迁移共享父槽助手，删除主体未改；需完整冷读删除/后继/替换，仍 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md",

@@ -1,12 +1,12 @@
 ---
 id: research.source_reading.rbtree.lookup_implementation
-title: "rbtree.h 查找实现与返回边界"
+title: "rbtree.h 查找与节点接入实现"
 kind: source
 status: evolving
 domains: [linux, source_reading]
 ---
 
-# 第1章\_rbtree.h查找实现与返回边界
+# 第1章\_rbtree.h查找与节点接入实现
 
 [模块导读](../../../navigation/P02_查找路径与返回边界导读.md#2.2_按一次查找定位源码)已经建立共享根与局部游标的 L0～L3。下面核对固定 [include/linux/rbtree.h](../../../../linux/include/linux/rbtree.h) 中的实际分支；版本和范围见[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。中文 Doxygen 为仓库补充，函数体保持上游语句；这些片段依赖内核头文件，不是独立可编译程序。
 
@@ -170,3 +170,162 @@ rb_find_rcu(const void *key, const struct rb_root *tree,
 可修改性：不要把这里的 raw 读取机械替换进 first/next 就宣称得到并发等价遍历，也不要只增加一次读屏障就承诺查找完整性。若业务需要严格缺失，须由外层同步或经过证明的复核协议提供。通用 raw 取得本体已在[RCU 公共实现](../../../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.4_rcu_dereference_raw的无检查取得)唯一展开，本节只解释它在孩子读取处的职责。
 
 返回[模块导读](../../../navigation/P02_查找路径与返回边界导读.md#2.5_返回以后还缺什么)或[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
+
+## 1.5\_红叶挂接与发布
+
+查找单元只是读一个槽；插入 I0 的循环保存槽本身的地址，I1 才有权把新节点写进去。`rb_link_node` 只完成接入，必须由后续颜色修复闭合红黑性质。相应状态图与时序见[插入模块](../../../navigation/P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进)，本节落在 I1 箭头。
+
+```c
+/**
+ * rb_link_node - 仓库阅读说明：将私有红叶接入已找到的空槽。
+ * @node: 尚未属于任何树的有效新节点。
+ * @parent: 新父节点或 NULL。
+ * @rb_link: 当前为空的根槽或父孩子槽。
+ *
+ * 不取得锁、不分配对象，也不检测节点是否已经在树中。
+ */
+static inline void rb_link_node(struct rb_node *node, struct rb_node *parent,
+				struct rb_node **rb_link)
+{
+	node->__rb_parent_color = (unsigned long)parent;
+	node->rb_left = node->rb_right = NULL;
+
+	*rb_link = node;
+}
+
+/**
+ * rb_link_node_rcu - 仓库阅读说明：以 RCU 发布语义完成最后的槽写入。
+ * @node: 已初始化业务字段的新节点。
+ * @parent: 新父节点或 NULL。
+ * @rb_link: 调用者已找到并保护的空槽。
+ *
+ * 不取得锁、不分配对象，也不检测节点是否已经在树中。
+ */
+static inline void rb_link_node_rcu(struct rb_node *node, struct rb_node *parent,
+				    struct rb_node **rb_link)
+{
+	node->__rb_parent_color = (unsigned long)parent;
+	node->rb_left = node->rb_right = NULL;
+
+	rcu_assign_pointer(*rb_link, node);
+}
+```
+
+实现原理：先在新节点内写父地址和空孩子，再写共享槽。红色为零，因此父地址转成 unsigned long 后低颜色位保持红。RCU 版本只改变最后的发布方式，不能让后面的旋转原子化，也不获取写锁。普通版本适用于调用者已经建立相应保护的路径；RCU 版本需要对象字段在发布前完成初始化并有完整的读侧/回收协议。
+
+可修改性：`*rb_link` 必须为预期空槽，不能拿一个已入树节点再初始化，否则会清空它的孩子并破坏原树。不能先发布地址再初始化业务字段；颜色修复也必须晚于节点接入。没有错误返回不意味着任意参数都被接受。
+
+## 1.6\_不查重的rb\_add
+
+如果业务允许等价节点，或已经在外层保证这次不重复，辅助接口可以把 I0、I1 与修复入口串起来。less 返回 false 时都会向右，包括相等；旋转后相等成员并不保证仍只在右侧。
+
+```c
+/**
+ * rb_add - 仓库阅读说明：用 less 找落点并完成普通插入。
+ * @node: 私有待插节点。
+ * @tree: 调用者保护的树。
+ * @less: 定义中序次序的布尔比较，不负责查重。
+ *
+ * 不取得锁、不分配对象，也不检测节点是否已经在树中。
+ */
+static __always_inline void
+rb_add(struct rb_node *node, struct rb_root *tree,
+       bool (*less)(struct rb_node *, const struct rb_node *))
+{
+	struct rb_node **link = &tree->rb_node;
+	struct rb_node *parent = NULL;
+
+	while (*link) {
+		parent = *link;
+		if (less(node, parent))
+			link = &parent->rb_left;
+		else
+			link = &parent->rb_right;
+	}
+
+	rb_link_node(node, parent, link);
+	rb_insert_color(node, tree);
+}
+```
+
+实现原理：link 总是某个可写指针字段的地址，parent 保存该字段所属的父节点；退出 while 才调用挂接和修复。这里没有 cmp=0 分支，不会因全序比较存在就自动拒绝完全相同的键。
+
+可修改性：less 必须建立一致的严格排序关系，不能在搜索途中改键或返回不稳定结果。若业务要求发现已存在对象，应该选择下一节的接口或外层查重，而不是在 rb_add 返回后再猜是否插入。
+
+## 1.7\_查重后插入与RCU发布变体
+
+find_add 的返回语义与 find 不同：非 NULL 表示已有等价对象，待插节点没有接入；NULL 表示查找未命中并已完成插入。调用者若事先分配了待插对象，重复分支还需自行回收或保留它。
+
+```c
+/**
+ * rb_find_add - 仓库阅读说明：命中已有等价节点或接入新节点。
+ * @node: 用来查重或插入的私有节点。
+ * @tree: 调用者保护的树。
+ * @cmp: 负/零/正的节点比较函数。
+ *
+ * 不取得锁、不分配对象，也不检测节点是否已经在树中。
+ */
+static __always_inline struct rb_node *
+rb_find_add(struct rb_node *node, struct rb_root *tree,
+	    int (*cmp)(struct rb_node *, const struct rb_node *))
+{
+	struct rb_node **link = &tree->rb_node;
+	struct rb_node *parent = NULL;
+	int c;
+
+	while (*link) {
+		parent = *link;
+		c = cmp(node, parent);
+
+		if (c < 0)
+			link = &parent->rb_left;
+		else if (c > 0)
+			link = &parent->rb_right;
+		else
+			return parent;
+	}
+
+	rb_link_node(node, parent, link);
+	rb_insert_color(node, tree);
+	return NULL;
+}
+
+/**
+ * rb_find_add_rcu - 仓库阅读说明：在未命中分支采用 RCU 发布。
+ * @node: 私有待插节点。
+ * @tree: 调用者保护并负责寿命协议的树。
+ * @cmp: 与树序相容的节点比较函数。
+ *
+ * 不取得锁、不分配对象，也不检测节点是否已经在树中。
+ */
+static __always_inline struct rb_node *
+rb_find_add_rcu(struct rb_node *node, struct rb_root *tree,
+		int (*cmp)(struct rb_node *, const struct rb_node *))
+{
+	struct rb_node **link = &tree->rb_node;
+	struct rb_node *parent = NULL;
+	int c;
+
+	while (*link) {
+		parent = *link;
+		c = cmp(node, parent);
+
+		if (c < 0)
+			link = &parent->rb_left;
+		else if (c > 0)
+			link = &parent->rb_right;
+		else
+			return parent;
+	}
+
+	rb_link_node_rcu(node, parent, link);
+	rb_insert_color(node, tree);
+	return NULL;
+}
+```
+
+实现原理：两者搜索时都使用普通指针读取和同一 cmp 分支；区别是未命中后使用普通挂接还是 RCU 发布挂接。二者都在同一次调用内调用颜色修复，但都没有写侧互斥。这也是为什么名字带 RCU 不意味着可以让两个写者同时操作。
+
+可修改性：把 NULL 当作插入失败会颠倒所有权处理；非 NULL 时释放已有对象而非私有待插对象也会破坏索引。RCU 变体没有把搜索改成读侧接口，仍须按写者路径串行化。根/父槽、修复游标和回调时机见[插入导读](../../../navigation/P03_红叶接入与冲突修复导读.md#3.1_空槽与修复游标各归谁所有)，公共修复入口见[lib/rbtree.c](../../lib/rbtree.c.md#1.4_普通与增广入口)。
+
+返回[插入模块](../../../navigation/P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进)或[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。

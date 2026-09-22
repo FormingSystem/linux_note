@@ -859,22 +859,7 @@ repaired: middle_hit=1
 
 ## 10.3\_rbtree\_插入前半段\_搜索落点与\_rb\_link\_node()
 
-`rb_link_node()` 源码展示：
-
-[include/linux/rbtree.h](../../../../research/source_reading/linux/include/linux/rbtree.h)
-
-```c
-static inline
-void rb_link_node(struct rb_node *node, struct rb_node *parent, struct rb_node **rb_link)
-{
-	node->__rb_parent_color = (unsigned long)parent;
-	node->rb_left = node->rb_right = NULL;
-
-	*rb_link = node;
-}
-```
-
-
+搜索已经给出了“去左边还是右边”，现在把最后的空指针保存为可写的槽地址。普通路径先接入红叶，再修复颜色；完整接口讲解见[红叶挂接与发布](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.5_红叶挂接与发布)，源码位置与阶段关系见[插入模块导读](../../../../research/source_reading/rbtree/navigation/P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进)。下面逐步解释两个局部变量怎样把比较结果变成共享树中的一条边。
 
 ### 10.3.1\_插入为什么先按\_BST\_规则搜索落点
 
@@ -1022,7 +1007,7 @@ node->rb_left = node->rb_right = NULL;
 
 所以：
 
-```bash
+```text
 node->__rb_parent_color = parent + 0
 ```
 
@@ -1143,7 +1128,7 @@ rb_link_node_rcu() 只处理链接发布；
 
 ```text
 调用者已经允许重复；
-或者 less() 定义了全序；
+或者调用者已按自己的身份规则保证本次不重复；
 不需要发现等价节点。
 ```
 
@@ -1242,314 +1227,13 @@ Linux rbtree 的新节点通过 __rb_parent_color 低位自然成为红色。
 
 ## 10.4\_rbtree\_插入后半段\_rb\_insert\_color()\_与插入修复
 
-`rb_set_parent_color()` 源码展示：
-
-[include/linux/rbtree_augmented.h](../../../../research/source_reading/linux/include/linux/rbtree_augmented.h)
-
-```c
-static inline void
-rb_set_parent_color(struct rb_node *rb, struct rb_node *p, int color)
-{
-	rb->__rb_parent_color = (unsigned long)p + color;
-}
-```
-
-
-
-`rb_insert_color()` 源码展示：
-
-[lib/rbtree.c](../../../../research/source_reading/linux/lib/rbtree.c)
-
-```c
-/*
- * 非增强型 rbtree 操作函数。
- *
- * 这里使用空的增强回调函数，并让编译器在生成
- * rb_insert_color() 和 rb_erase() 函数定义时，
- * 将这些空回调优化掉。
- */
-
-static inline void dummy_propagate(struct rb_node *node, struct rb_node *stop) {}
-static inline void dummy_copy(struct rb_node *old, struct rb_node *new) {}
-static inline void dummy_rotate(struct rb_node *old, struct rb_node *new) {}
-
-static __always_inline void
-__rb_insert(struct rb_node *node, struct rb_root *root,
-	    void (*augment_rotate)(struct rb_node *old,
-				   struct rb_node *new))
-{
-	struct rb_node *parent;
-	struct rb_node *gparent;
-	struct rb_node *uncle;
-	struct rb_node *tmp;
-
-	/*
-	 * 新插入节点默认是红色。
-	 * rb_red_parent(node) 的语义是：
-	 *     node 是红色节点，直接从 __rb_parent_color 中取 parent。
-	 */
-	parent = rb_red_parent(node);
-
-	while (true) {
-		/*
-		 * 循环不变式：
-		 *     node 一定是红色节点。
-		 *
-		 * 所以每一轮只需要判断：
-		 *     1. node 是否已经到根；
-		 *     2. parent 是否为黑；
-		 *     3. parent 若为红，如何修复红红冲突。
-		 */
-
-		if (!parent) {
-			/*
-			 * 情况 0：
-			 *     node 已经成为根节点。
-			 *
-			 * 根节点必须是黑色。
-			 */
-			rb_set_parent_color(node, NULL, RB_BLACK);
-			break;
-		}
-
-		if (rb_is_black(parent)) {
-			/*
-			 * 情况 1：
-			 *     parent 是黑色。
-			 *
-			 * 新插入 node 是红色，不改变黑高；
-			 * parent 又是黑色，没有红红冲突；
-			 * 所以修复结束。
-			 */
-			break;
-		}
-
-		/*
-		 * 走到这里说明：
-		 *     node   是红色；
-		 *     parent 是红色；
-		 *
-		 * 出现红红冲突。
-		 *
-		 * parent 不可能是根，因为根必须黑。
-		 * 因此一定存在 gparent。
-		 */
-		gparent = rb_red_parent(parent);
-
-		/*
-		 * 下面先处理 parent 是 gparent 左孩子的情况。
-		 *
-		 *          G
-		 *         / \
-		 *        P   U
-		 *       /
-		 *      N
-		 */
-		if (parent == gparent->rb_left) {
-			uncle = gparent->rb_right;
-
-			if (uncle && rb_is_red(uncle)) {
-				/*
-				 * Case 1：叔叔节点是红色。
-				 *
-				 *          G(B)                 G(R)
-				 *         /   \                /   \
-				 *      P(R)   U(R)    ->    P(B)   U(B)
-				 *      /
-				 *    N(R)
-				 *
-				 * 处理：
-				 *     parent 染黑；
-				 *     uncle  染黑；
-				 *     gparent 染红；
-				 *
-				 * 结果：
-				 *     当前局部黑高不变；
-				 *     但 gparent 变红后，可能和更上层父节点继续红红冲突。
-				 *
-				 * 所以：
-				 *     node 上移到 gparent；
-				 *     继续 while。
-				 */
-				rb_set_parent_color(uncle, gparent, RB_BLACK);
-				rb_set_parent_color(parent, gparent, RB_BLACK);
-
-				node = gparent;
-				parent = rb_parent(node);
-				rb_set_parent_color(node, parent, RB_RED);
-				continue;
-			}
-
-			/*
-			 * 走到这里：
-			 *     uncle 是黑色或 NULL。
-			 *
-			 * 需要通过旋转解决。
-			 */
-
-			if (node == parent->rb_right) {
-				/*
-				 * Case 2：内侧插入，左右型。
-				 *
-				 *          G(B)                 G(B)
-				 *         /   \                /   \
-				 *      P(R)   U(B)    ->    N(R)   U(B)
-				 *        \                  /
-				 *        N(R)             P(R)
-				 *
-				 * 处理：
-				 *     先对 parent 左旋；
-				 *     把“左右型”转换成“左左型”。
-				 *
-				 * 注意：
-				 *     Case 2 自己不完成最终修复；
-				 *     它只是把结构转换成 Case 3。
-				 */
-
-				tmp = node->rb_left;
-
-				parent->rb_right = tmp;
-				node->rb_left = parent;
-
-				if (tmp)
-					rb_set_parent_color(tmp, parent, RB_BLACK);
-
-				rb_set_parent_color(parent, node, RB_RED);
-
-				/*
-				 * 增强型 rbtree 在旋转后同步增强字段。
-				 * 普通 rbtree 这里传 dummy_rotate，最终会被编译器优化掉。
-				 */
-				augment_rotate(parent, node);
-
-				parent = node;
-			}
-
-			/*
-			 * Case 3：外侧插入，左左型。
-			 *
-			 *          G(B)                 P(B)
-			 *         /   \                /   \
-			 *      P(R)   U(B)    ->    N(R)   G(R)
-			 *      /                            \
-			 *    N(R)                           U(B)
-			 *
-			 * 处理：
-			 *     parent 染黑；
-			 *     gparent 染红；
-			 *     对 gparent 右旋；
-			 *
-			 * 修复结束。
-			 */
-			tmp = parent->rb_right;
-
-			gparent->rb_left = tmp;
-			parent->rb_right = gparent;
-
-			if (tmp)
-				rb_set_parent_color(tmp, gparent, RB_BLACK);
-
-			__rb_rotate_set_parents(gparent, parent, root, RB_RED);
-			augment_rotate(gparent, parent);
-			break;
-		}
-
-		/*
-		 * 镜像分支：
-		 *     parent 是 gparent 的右孩子。
-		 *
-		 *          G
-		 *         / \
-		 *        U   P
-		 *             \
-		 *              N
-		 */
-		else {
-			uncle = gparent->rb_left;
-
-			if (uncle && rb_is_red(uncle)) {
-				/*
-				 * Case 1 镜像：
-				 *     叔叔红，只变色，上推。
-				 */
-				rb_set_parent_color(uncle, gparent, RB_BLACK);
-				rb_set_parent_color(parent, gparent, RB_BLACK);
-
-				node = gparent;
-				parent = rb_parent(node);
-				rb_set_parent_color(node, parent, RB_RED);
-				continue;
-			}
-
-			if (node == parent->rb_left) {
-				/*
-				 * Case 2 镜像：右左型。
-				 *
-				 *          G(B)                 G(B)
-				 *         /   \                /   \
-				 *      U(B)   P(R)    ->    U(B)   N(R)
-				 *             /                        \
-				 *           N(R)                       P(R)
-				 *
-				 * 先对 parent 右旋；
-				 * 转成右右型。
-				 */
-				tmp = node->rb_right;
-
-				parent->rb_left = tmp;
-				node->rb_right = parent;
-
-				if (tmp)
-					rb_set_parent_color(tmp, parent, RB_BLACK);
-
-				rb_set_parent_color(parent, node, RB_RED);
-
-				augment_rotate(parent, node);
-
-				parent = node;
-			}
-
-			/*
-			 * Case 3 镜像：右右型。
-			 *
-			 *          G(B)                 P(B)
-			 *         /   \                /   \
-			 *      U(B)   P(R)    ->    G(R)   N(R)
-			 *               \          /
-			 *               N(R)     U(B)
-			 *
-			 * 对 gparent 左旋；
-			 * 修复结束。
-			 */
-			tmp = parent->rb_left;
-
-			gparent->rb_right = tmp;
-			parent->rb_left = gparent;
-
-			if (tmp)
-				rb_set_parent_color(tmp, gparent, RB_BLACK);
-
-			__rb_rotate_set_parents(gparent, parent, root, RB_RED);
-			augment_rotate(gparent, parent);
-			break;
-		}
-	}
-}
-
-void rb_insert_color(struct rb_node *node, struct rb_root *root)
-{
-	__rb_insert(node, root, dummy_rotate);
-}
-EXPORT_SYMBOL(rb_insert_color);
-```
-
-**分析**：
+接入红叶以后，路径黑数没有增加；现在只需解决根为红或红父红子的冲突。先沿下文的案例推演，再到[完整固定实现](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支)对照实际变量和写入。该实现保留本章原中文注释与图形，并按官方固定提交保留 WRITE_ONCE、tmp 复用及左右分支；父色写入另见[打包接口](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md#1.1_父色打包写入)。
 
 `__rb_insert()` 的入口前提是：**节点已经被 `rb_link_node()` 挂进树里**。它不负责查找插入位置、不负责比较 key、不负责处理重复 key，只负责把“插入红节点后可能破坏的红黑树性质”修回来。Linux 文档也明确说明，rbtree 的插入位置查找和锁保护由使用者自己负责，核心库只提供链接、着色、旋转等基础操作。
 
 最核心的不变量是：
 
-```bash
+```text
 node 一定是红色。
 ```
 
@@ -1589,14 +1273,7 @@ rb_insert_color() 从 node 开始向上修复；
 维护对象生命周期。
 ```
 
-普通版本的实现非常短：
-
-```c
-void rb_insert_color(struct rb_node *node, struct rb_root *root)
-{
-	__rb_insert(node, root, dummy_rotate);
-}
-```
+普通包装将 node、root 和空旋转回调传给内部核心，函数体只在[普通与增广入口](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.4_普通与增广入口)展开。这里继续区分这个短包装与它调用的完整修复过程。
 
 这里 `dummy_rotate` 是普通 rbtree 的空增强回调。
 
@@ -1649,7 +1326,7 @@ augment_rotate = 用户提供的 rotate 回调
 void (*augment_rotate)(struct rb_node *old, struct rb_node *new)
 ```
 
-每次发生旋转后，都会调用：
+代码在每次局部旋转的规定位置调用：
 
 ```c
 augment_rotate(old, new);
@@ -1657,7 +1334,7 @@ augment_rotate(old, new);
 
 普通树中它什么都不做。
 
-增强树中它会修正子树增强字段。
+增强树中它会修正子树增强字段。但“调用回调”不等于整个树已经恢复一致：内侧 Case 2 调用时，祖父的孩子槽与上移节点的父色尚未完全回接。它紧接着还要进入 Case 3；回调必须遵守局部聚合更新契约，不能沿父链随意遍历或通知其他任务插入已完成。
 
 ------
 
@@ -1683,7 +1360,7 @@ rb_red_parent(node) 只有在 node 是红色时才适合这样取父指针。
 Loop invariant: node is red.
 ```
 
-这句话要强记。
+这句话解释了后面为什么可以直接从打包字段取父地址；每次叔红上推都会先把新的 node 染红，读者可以沿 continue 前的赋值自行检查它仍成立。
 
 整个插入修复围绕这个不变量展开：
 
@@ -1724,7 +1401,7 @@ Loop invariant: node is red.
 
 如果插成红色，则不会增加任何路径黑高。
 
-可能破坏的只有性质 4：
+除空树插入还需把新根变黑以外，可能破坏的是性质 4：
 
 ```text
 红节点不能有红孩子。
@@ -1741,7 +1418,7 @@ node red
 
 Linux rbtree 的 `rb_link_node()` 正好利用 `RB_RED == 0`：
 
-```bash
+```text
 node->__rb_parent_color = parent
 ```
 
@@ -1771,7 +1448,7 @@ if (!parent) {
 这覆盖两种情况：
 
 ```text
-第一，插入的是第一颗树的第一个节点。
+第一，插入的是空树中的第一个节点。
 
 第二，Case 1 染色后把 gparent 当成新的 node 向上推进，
      最后推进到了根。
@@ -1862,13 +1539,12 @@ node    = n
 
 Linux 源码把左侧和右侧镜像都展开写了，没有抽象成统一函数。
 
-这样做的好处是：
+从读代码的角度可以直接看到：
 
 ```text
-少一层方向判断；
-少一层回调；
-旋转中的指针写入更直接；
-编译器更容易优化。
+左侧分支直接写左旋和右旋所需的字段；
+右侧分支给出镜像字段；
+不需要在一个通用旋转函数中另解方向参数。
 ```
 
 代价是：
@@ -1876,6 +1552,8 @@ Linux 源码把左侧和右侧镜像都展开写了，没有抽象成统一函�
 ```text
 源码阅读时要手动对照左右镜像。
 ```
+
+这说明的是当前实现组织方式，不是在没有对照构建和测量的情况下证明它更快；实际机器码、回调是否内联及成本仍受编译配置影响。
 
 ------
 
@@ -2124,9 +1802,9 @@ Case 3：
 	围绕 gparent 左旋并结束。
 ```
 
-源码中的镜像旋转写法是：
+只看孩子边的方向，镜像关系可记为下表。它刻意省略父色、外部槽和访问形式，不是可执行的上游函数体；完整语句见[固定插入实现](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支)。
 
-```c
+```text
 Case 2：
 	parent->rb_left = tmp;
 	node->rb_right = parent;
@@ -2151,7 +1829,7 @@ right rotate <-> left rotate
 
 ### 10.4.11\_插入路径中的\_augment\_rotate()\_回调
 
-每次发生旋转后，源码都会调用：
+源码在局部旋转规定的时点调用：
 
 ```c
 augment_rotate(old, new);
@@ -2172,6 +1850,8 @@ augment_rotate = 用户提供的 rotate 回调
 ```
 
 它负责更新增强信息。
+
+其中 Case 2 尚未完成外部槽和全部父色的回接；这里更新的是回调契约允许的局部统计，不是发布插入完成。没有旋转的插入不调用它，所以它也不能承担每次插入的业务成员计数。
 
 为什么旋转会影响增强信息？
 
@@ -2261,7 +1941,7 @@ tree->count++;
 
 cached rbtree 要在插入时正确传入 `leftmost`。
 
-augmented rbtree 要在插入前沿搜索路径更新增强信息，并调用 `rb_insert_augmented()`。
+augmented rbtree 要按其聚合规则在修复前准备搜索路径上的增强信息，并调用 `rb_insert_augmented()`。如果允许查重失败，就不能无条件先把统计当作成功插入来修改；应先确定接纳该对象，或为提前修改设计正确回滚。具体方案由 P12 的增强单元继续说明。
 
 RCU 插入还要注意发布顺序和对象生命周期。
 
@@ -2270,9 +1950,11 @@ RCU 插入还要注意发布顺序和对象生命周期。
 ```text
 业务对象初始化
 	↓
-搜索落点，同时维护 parent/link/leftmost/augment 信息
+搜索落点，保存 parent/link、最左判断及需要更新的聚合路径
 	↓
 发现重复则失败返回
+	↓
+确认接纳后按增强协议准备路径统计（普通树无此步）
 	↓
 rb_link_node()
 	↓
@@ -2305,80 +1987,180 @@ rb_insert_color() 或 rb_insert_augmented()
 第八，augment_rotate() 让普通 rbtree 和 augmented rbtree 共享同一套旋转修复代码。
 ```
 
+把刚才各个分支合在一起，注意“上推继续”与“旋转后结束”的区别。图中 I0～I5 与固定源码导读对应；状态留在已说明的节点父色/孩子字段中，node 等局部游标只决定本次调用下一步从哪里读。
+
+```mermaid
+flowchart TD
+    prepare["I0 对象初始化与空槽搜索"] -->|"通过业务查重"| link["I1 接入红叶"]
+    link -->|"node 指向新红节点"| check["I2 检查根与父色"]
+    check -->|"无父：根染黑；或父已黑"| done["返回业务插入者"]
+    check -->|"父红，叔红"| recolor["I3 父叔黑、祖父红"]
+    recolor -->|"node 上移到祖父"| check
+    check -->|"父红，叔黑，内侧"| inner["I4 先重排父与当前节点"]
+    inner -->|"回调只看局部；重新选择 parent/tmp"| outer["I5 祖父旋转、父色继承、外部槽回接"]
+    check -->|"父红，叔黑，外侧"| outer
+    outer -->|"局部红冲突消除，黑高不变"| done
+```
+
 ------
+
+### 10.4.15\_在内核模块中观察五组插入
+
+现在把刚才的图形交给真实接口。前三个键分别组成 LL、LR、RR、RL：先预测第三次插入是否需要内侧预处理，最终根是否都是 20。第五组 50、30、70、20 则让新 20 遇到红父 30 和红叔 70；这次没有旋转，父叔变黑，祖父 50 被上推后重新作为黑根退出。
+
+下面的业务结构 note_item 内嵌 rb_node；insert_item 用 parent/link 找槽并拒绝重复，再顺序调用挂接与修复。run_case 的根和四个节点都在它的栈上，所有查找和打印在返回前结束，地址从不逃逸，也没有注册到别的子系统。因此这个私有观察不需要共享树锁、不需要堆分配和删除回收。若以后把根保存到全局或交给工作队列，必须先重新设计寿命与同步，不能保留这里的自动对象。
+
+| 本例接口或检查点 | 当前职责 | 条件与误用后果 | 固定实现 |
+| --- | --- | --- | --- |
+| rb_link_node | 把私有红叶写入空槽 | 先完成比较；节点不能已在另一棵树中 | [挂接](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.5_红叶挂接与发布) |
+| rb_insert_color | 恢复根颜色或红红冲突 | 接入后调用；不会重新查重或管理内存 | [修复](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支) |
+| rb_first/rb_next | 稳定树上按中序打印 | 此处没有并发修改；不从弱查询推导父链安全 | [固定原文](../../../../research/source_reading/linux/lib/rbtree.c)，具体后继实现进入 P11 |
+| node_color 与根检查 | 显示该版本最低颜色位，核对预期根 | 只观察，不是完整红黑性质验证器 | [父色边界](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md#1.1_父色打包写入) |
+
+```c
+// SPDX-License-Identifier: GPL-2.0
+/* 私有插入观察：所有节点与根仅在 run_case 内存活，不发布给外部读者。 */
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/rbtree.h>
+#include <linux/errno.h>
+
+struct note_item {
+    int key;
+    struct rb_node rb;
+};
+
+static int insert_item(struct rb_root *root, struct note_item *item)
+{
+    struct rb_node **link = &root->rb_node;
+    struct rb_node *parent = NULL;
+
+    while (*link) {
+        struct note_item *entry = rb_entry(*link, struct note_item, rb);
+
+        parent = *link;
+        if (item->key < entry->key)
+            link = &parent->rb_left;
+        else if (item->key > entry->key)
+            link = &parent->rb_right;
+        else
+            return -EEXIST;
+    }
+    rb_link_node(&item->rb, parent, link);
+    rb_insert_color(&item->rb, root);
+    return 0;
+}
+
+/* 本次固定版本将最低位用于颜色：黑为 1，红为 0；只做观察。 */
+static char node_color(const struct rb_node *node)
+{
+    return (node->__rb_parent_color & 1UL) ? 'B' : 'R';
+}
+
+static int run_case(const char *name, const int *keys, unsigned int count,
+                    int expected_root)
+{
+    struct note_item items[4] = {0};
+    struct rb_root root = RB_ROOT;
+    struct rb_node *node;
+    struct note_item *top;
+    unsigned int i;
+    int error;
+
+    if (!count || count > ARRAY_SIZE(items))
+        return -EINVAL;
+    for (i = 0; i < count; ++i) {
+        items[i].key = keys[i];
+        error = insert_item(&root, &items[i]);
+        if (error)
+            return error;
+    }
+    top = rb_entry(root.rb_node, struct note_item, rb);
+    if (top->key != expected_root || node_color(root.rb_node) != 'B')
+        return -EINVAL;
+    pr_info("note_rbtree_insert: %s root=%d\n", name, top->key);
+    for (node = rb_first(&root); node; node = rb_next(node)) {
+        struct note_item *item = rb_entry(node, struct note_item, rb);
+        struct rb_node *parent = rb_parent(node);
+
+        if (parent) {
+            struct note_item *up = rb_entry(parent, struct note_item, rb);
+
+            pr_info("note_rbtree_insert: key=%d parent=%d color=%c\n",
+                    item->key, up->key, node_color(node));
+        } else {
+            pr_info("note_rbtree_insert: key=%d parent=none color=%c\n",
+                    item->key, node_color(node));
+        }
+    }
+    /* 根和节点都不逃逸；没有分配、注册、回调或等待释放的外部持有者。 */
+    return 0;
+}
+
+static int __init note_rbtree_insert_init(void)
+{
+    static const int cases[5][4] = {
+        {30, 20, 10, 0}, {30, 10, 20, 0},
+        {10, 20, 30, 0}, {10, 30, 20, 0},
+        {50, 30, 70, 20}
+    };
+    static const char *const names[5] = {"LL", "LR", "RR", "RL", "recolor"};
+    unsigned int i;
+
+    for (i = 0; i < ARRAY_SIZE(cases); ++i) {
+        int error = run_case(names[i], cases[i], i == 4 ? 4 : 3,
+                             i == 4 ? 50 : 20);
+
+        if (error) {
+            pr_err("note_rbtree_insert: %s failed: %d\n", names[i], error);
+            return error;
+        }
+    }
+    return 0;
+}
+
+static void __exit note_rbtree_insert_exit(void)
+{
+    pr_info("note_rbtree_insert: observation complete\n");
+}
+module_init(note_rbtree_insert_init);
+module_exit(note_rbtree_insert_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("私有红黑树插入、父链与颜色观察");
+```
+
+材料是[note_rbtree_insert.c](../../../../labs/kernel/tree_basics/materials/note_rbtree_insert.c)，同目录 [Makefile](../../../../labs/kernel/tree_basics/materials/Makefile)只构建这个模块，不把此前的宿主 C 程序编入内核。下面在 **Linux 构建环境的仓库根目录** 执行，先按[模块构建路线](../../../../engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)准备与目标运行内核匹配的构建目录、配置和交叉工具链：
+
+```bash
+: "${KERNEL_BUILD:?先设置与目标内核匹配的构建目录}"
+: "${CROSS_COMPILE:?先设置ARM交叉编译器前缀}"
+make -C "$KERNEL_BUILD" M="$PWD/labs/kernel/tree_basics/materials" \
+  ARCH=arm CROSS_COMPILE="$CROSS_COMPILE" modules
+```
+
+把生成的 ko 部署到对应 ARM 目标后，在目标上执行；不能把 ARM 模块加载进宿主 x86 内核。加载只运行这个私有观察，没有设备节点或后台工作：
+
+```bash
+sudo insmod ./note_rbtree_insert.ko
+sudo dmesg | tail -n 30
+sudo rmmod note_rbtree_insert
+```
+
+按本章推导，四组三键日志均应显示根 20 为黑，10 和 30 为红且父为 20。叔红组应为根 50 黑、30 黑且父 50、70 黑且父 50、20 红且父 30。日志逐行中序打印，所以叔红组的键次序仍是 20、30、50、70，不按插入顺序输出。
+
+这些是目标运行时应核对的预期。当前材料已通过 ARM 头环境的语法检查，尚未取得目标 Kbuild、装卸与真实日志；不能把源码推导当成已在板上运行。加载失败时先查看 dmesg：格式/版本/符号不匹配属于构建部署问题，程序若发现根不符则返回 EINVAL，重复插入返回 EEXIST。失败前可能已经打印前几组结果，不能把部分日志当作五组全部完成。
+
+再做三次修改，先预测再运行：
+
+1. 把 LL 的第三个键改成 20。insert_item 应发现重复，模块初始化失败；新节点没有接入。所有对象仍在私有栈范围，失败不留下外部资源。
+2. 只保留 50、30、70 三键。根仍为 50，30/70 尚为红；第四键触发的变色不是每次插入都会发生。
+3. 如果把成员计数写在 augment_rotate 中，五组输入会不会都正确加一？不会。有的修复零次旋转，有的两次；业务成员计数必须放在插入成功路径，而非旋转回调里。
+
+接下来回看公共收尾：为什么只换局部孩子还不够，哪些字段要继承，哪个槽才是外部入口。
 
 ## 10.5\_rb\_rotate\_set\_parents()\_旋转后的公共收尾逻辑
 
-源码展示：
-
-[include/linux/rbtree_augmented.h](../../../../research/source_reading/linux/include/linux/rbtree_augmented.h)
-
-```c
-/*
- * 将父节点视角下的 child 指针从 old 替换为 new。
- *
- * 参数说明：
- * @old:    原来挂在 parent 下面的旧节点。
- *          如果 parent == NULL，则 old 原来是整棵树的根节点。
- *
- * @new:    用来替换 old 的新节点。
- *          可以是真实节点，也可以是 NULL。
- *
- * @parent: old 原来的父节点。
- *          如果 parent != NULL，则 old 必须是 parent->rb_left
- *          或 parent->rb_right 之一。
- *          如果 parent == NULL，则表示 old 是根节点。
- *
- * @root:   红黑树根对象。
- *          仅在 parent == NULL 时使用，用于更新 root->rb_node。
- *
- * 函数职责：
- *   - 如果 old 是 parent 的左孩子，则 parent->rb_left = new；
- *   - 如果 old 是 parent 的右孩子，则 parent->rb_right = new；
- *   - 如果 old 是根节点，则 root->rb_node = new。
- *
- * 注意：
- *   本函数只负责更新“父节点 -> 子节点”这一条边。
- *   它不负责更新 old/new 的 parent、color、left、right 字段。
- */
-static inline void
-__rb_change_child(struct rb_node *old, struct rb_node *new,
-		  		 struct rb_node *parent, struct rb_root *root)
-{
-	if (parent) {
-		if (parent->rb_left == old)
-			WRITE_ONCE(parent->rb_left, new);
-		else
-			WRITE_ONCE(parent->rb_right, new);
-	} else
-		WRITE_ONCE(root->rb_node, new);
-}
-```
-
-
-
-源码展示：
-
-[lib/rbtree.c](../../../../research/source_reading/linux/lib/rbtree.c)
-
-```c
-/*
- * 旋转操作的辅助函数：
- * - old 的父节点和颜色赋给 new
- * - old 的父节点设为 new，并将 old 的颜色设为 color。
- */
-static inline void
-__rb_rotate_set_parents(struct rb_node *old, struct rb_node *new,
-					  struct rb_root *root, int color)
-{
-	struct rb_node *parent = rb_parent(old);
-	new->__rb_parent_color = old->__rb_parent_color;
-	rb_set_parent_color(old, new, color);
-	__rb_change_child(old, new, parent, root);
-}
-```
-
-
+单旋和双旋已经排好了局部左右边，却还要回答“从整棵树的入口怎样到达新局部根”。[父槽替换](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md#1.2_替换父节点或根的入口槽)与[父色收尾](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.2_父槽与颜色收尾)分别承担外部边和节点自身字段的写入；真实函数体只在这两个标题下展开，原中文参数说明一并保留。下面仍按旧根、新根与外部父节点的关系解释它们为何必须配对。
 
 ### 10.5.1\_为什么旋转后的父子关系更新容易出错
 

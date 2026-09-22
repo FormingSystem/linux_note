@@ -24,7 +24,7 @@ domains: [linux, source_reading]
 
 五份既有原文均按固定 Git 对象核对，统一身份见[Linux 基线](../../linux/SOURCE_BASELINE.md#1.19_rbtree查找与旋转路径证据)。当前访问配置为 ARM、TINY_RCU、PREEMPT_NONE、非 SMP；这个访问环境不构成 SMP、RCU 或目标板运行证据。本地三笔实验提交不用于推导，保留的历史 v6.1 原文也不替代本表基线。
 
-当前唯一函数体讲解覆盖 rbtree.h 的查询入口。插入/删除正文仍在继续整理，不能把本索引视为整套平衡实现已完成审查。
+当前唯一函数体讲解覆盖查询、接入、插入修复与共享父槽操作。删除与后继实现仍在继续整理，不能把本索引视为整套 rbtree 已完成审查。
 
 ## 1.2\_按问题选择源码入口
 
@@ -34,5 +34,9 @@ domains: [linux, source_reading]
 | 为什么相等后还要向左 | [等价区间](P02_查找路径与返回边界导读.md#2.3_等价区间与后继协作) | [rb_find_first](../source_explanations/include/linux/rbtree.h.md#1.2_rb_find_first的候选保存) |
 | 遍历同键组何时停止 | [后继协作](P02_查找路径与返回边界导读.md#2.3_等价区间与后继协作) | [rb_next_match 与宏](../source_explanations/include/linux/rbtree.h.md#1.3_rb_next_match与匹配遍历宏) |
 | RCU 名称是否意味着自动取得保护 | [旋转交错](P02_查找路径与返回边界导读.md#2.4_旋转期间沿什么路径继续) | [rb_find_rcu](../source_explanations/include/linux/rbtree.h.md#1.4_rb_find_rcu的孩子读取与缺失边界) |
+| 空槽与新红叶怎样相接 | [插入状态地址](P03_红叶接入与冲突修复导读.md#3.1_空槽与修复游标各归谁所有) | [link 与 add](../source_explanations/include/linux/rbtree.h.md#1.5_红叶挂接与发布) |
+| 叔红上推与叔黑旋转怎样协作 | [插入周期](P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进) | [完整修复](../source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支) |
+| 为什么回调时不能随意沿父链遍历 | [回调边界](P03_红叶接入与冲突修复导读.md#3.3_回调不等于整个操作完成) | [中间态与收尾](../source_explanations/lib/rbtree.c.md#1.2_父槽与颜色收尾) |
+| 只改父孩子槽是否足够 | [插入 I5](P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进) | [父色与槽](../source_explanations/include/linux/rbtree_augmented.h.md#1.1_父色打包写入) |
 
-代码的公共结构与查询规则不因当前 ARM 配置而改变；读取顺序、发布、生命周期和所用同步 API 必须按具体调用者及配置核对。本组完整 C 程序只验证串行路径反例，不声称测试了真实内核并发。返回[源码大纲](../大纲.md#1.1_从查询承诺进入实现)。
+代码的公共结构与查询规则不因当前 ARM 配置而改变；读取顺序、发布、生命周期和所用同步接口必须按具体调用者及配置核对。宿主 C 程序只验证串行路径或明确适配位宽的算法模型，插入观察模块的 ARM 语法检查不等于目标装卸和运行；边界见[插入证据](../../linux/SOURCE_BASELINE.md#1.20_rbtree插入与父槽证据)。返回[源码大纲](../大纲.md#1.1_从查询承诺进入实现)。

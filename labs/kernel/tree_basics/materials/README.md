@@ -54,3 +54,5 @@ domains: [c_language, data_structures]
 [lookup_paths.c](lookup_paths.c)在[P10 查找实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md#10.2.10_用完整C程序观察相等节点和旧路径)中串行重放重复键左旋、旧根漏查与错误写序形成环。对象全程存活，坏树查询使用有限预算，防止实验挂起；它不执行真实线程竞争，也不把预算耗尽当成通用判环结果。
 
 以上均为宿主内存模型，不使用 Linux API，不验证内核容器、并发或硬件；节点拓扑由程序构造，未声称能校验任意输入图。每份材料独立编译，按相应正文的 C11/C++17 命令运行。各批实际检查范围见[工作记录](../../../../governance/migration/repository_textbook_refactor.md#1.4_批次结果)。
+
+[note_rbtree_insert.c](note_rbtree_insert.c)是另一类材料：实际调用 Linux rbtree 的内核模块，同目录 [Makefile](Makefile)只构建它。按[P10 五组插入](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找_插入与旋转修复.md#10.4.15_在内核模块中观察五组插入)准备匹配目标的内核构建环境；根与自动节点只在私有 run_case 中存活，无分配、外部注册或异步持有者。ARM 语法检查已完成，目标 Kbuild、装卸和实际日志仍待验证，不以宿主模型结果代替。
