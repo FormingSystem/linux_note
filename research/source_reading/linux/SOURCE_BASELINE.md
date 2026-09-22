@@ -455,3 +455,19 @@ note_rbtree_replace 通过 ARMv7 语法检查，实际使用 357 份头，已跟
 ## 1.25\_rbtree删除遍历与替换阅读分工
 
 B03p/q/r 的固定源码事实和检查结果不变，知识正文按任务完整组织为[P11 删除](../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md#11.1.3_一轮取消经过哪些状态)、[P27 遍历](../../../knowledge/linux/data_structures/红黑树_rb-tree/P27_Linux有序遍历与整树销毁.md#27.1_从一次取消走到整轮处理)、[P28 替换](../../../knowledge/linux/data_structures/红黑树_rb-tree/P28_Linux同键替换与旧对象退出.md#28.1_从保存地址走到交接地址)。三个完整模块及全部图/代码围栏原样保留；只调整开头、结尾、标题与引用。此次未重新执行算法或目标运行，沿用相应批次已明确范围的证据，不能把章节拆分当作新增并发或目标验证。
+
+
+## 1.26\_普通旋转与内核修复版本对照
+
+P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md#29.1_为什么没有一一对应的旋转调用)。当前分析仍采用 NXP 固定 dfaf2136deb2af2e60b994421281ba42f1c087e0；为核对旧声明，只读比较 1.9 节保存的上游 6.1 固定对象 830b3c68c1fb1e9176028d02ef86f3cf76aa2476。四份旧副本与 Git blob 一致，原文未修改：
+
+| 上游相对位置 | 上游 6.1 blob | 当前固定 blob |
+| --- | --- | --- |
+| lib/rbtree.c | c4ac5c2421f255c4c60954c45ee567f77403cffc | 989c2d615f927a1e7415f1c8888db4f69f6dd0c9 |
+| include/linux/rbtree.h | f7edca369edaddb6adf4b7ba8a9ad745fea52356 | 7c173aa64e1e3f26a38f94ffa5c5031d9aa99c53 |
+| include/linux/rbtree_augmented.h | d1c53e9d8c7532173f5aa24725f553561f805b6d | 6dbc5a1bf6a8ce04042df4c07167cc226d53a466 |
+| Documentation/core-api/rbtree.rst | ed1a9fbc779e1b9de88e878035abc8e6c9a02078 | ed1a9fbc779e1b9de88e878035abc8e6c9a02078 |
+
+剥离注释后，__rb_insert、__rb_rotate_set_parents、____rb_erase_color 的函数语句在这两个对象间一致；这不表示所调用的辅助或所有接口都相同。实际差量包括 rb_set_black/父色打包的或到加法、Case 3 注释图标签，以及 rb_find_add_rcu/rb_find_rcu/rb_add_augmented_cached 新入口。P29 五段短裁剪均为当前固定 lib/rbtree.c 的连续语句，完整实现仍在[rbtree 唯一讲解](../rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支)。
+
+本次未核对 5.15，不再保留原正文对该版本的一致性主张。没有修改算法和实际材料，不重复声称新的目标运行、ABI、并发或性能验证；源码树只读。

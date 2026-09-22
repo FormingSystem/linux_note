@@ -270,6 +270,7 @@ mindmap-plugin: basic
             - 🟢 [P11 Linux 6.12 内核 rbtree 删除与缺黑修复](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md)
             - 🔴 **未校正** [P27 Linux 有序遍历与整树销毁](../../knowledge/linux/data_structures/红黑树_rb-tree/P27_Linux有序遍历与整树销毁.md)
             - 🔴 **未校正** [P28 Linux 同键替换与旧对象退出](../../knowledge/linux/data_structures/红黑树_rb-tree/P28_Linux同键替换与旧对象退出.md)
+            - 🔴 **未校正** [P29 普通旋转与 Linux 修复的完成边界](../../knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md)
             - 🟢 [P12 Linux 6.12 内核 rbtree 工程扩展 并发与验证](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md)
             - 🟢 [P13 再扩展到 B 树与 B+ 树](../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md)
             - 🟢 [P14 Maple Tree 与 VMA 管理](../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md)

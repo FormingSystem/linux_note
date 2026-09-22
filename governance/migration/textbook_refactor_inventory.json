@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md",
+      "baseline_sha256": "0d77d5d33d56f73bfcb1e1df0a951f2f4dfa06652adf5e3eaf984a56aa98637b",
+      "lines": 388,
+      "state": "validated",
+      "reason": "B03t 完整冷读内核映射并修正比较器、回调中间态和版本边界；五个源码裁剪、四份旧 blob 与当前差量核对；沿用前批实验，目标未运行。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P28_Linux同键替换与旧对象退出.md",
       "baseline_sha256": "17765d7a79c4e11567394342d473e66affcbee57be1dd1556e00623c81b74dd1",
       "lines": 517,
@@ -1482,8 +1489,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md",
       "baseline_sha256": "b80f5ccbe3e2d06938bd3fdf360339f7cab96f77d8cc4f7b8372db5de6ab3ee3",
       "lines": 3991,
-      "state": "pending",
-      "reason": "B03j 完整冷读原 3990 行并闭合普通单旋；B03k 组合迁入 P24，B03l AVL 诊断迁入 P25 并补完整 C 实现和停止条件。5.5 旧 Linux 旋转源码证据与阅读位置仍待核对收束，未把宿主模型视为全章完成。"
+      "state": "validated",
+      "reason": "B03j/k/l 普通单旋、组合与高度诊断已实际修订；B03t 内核单元完整移 P29 并纠错，P05 保留教材/桥接，材料和其他正文守恒，原人工状态不变。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md",

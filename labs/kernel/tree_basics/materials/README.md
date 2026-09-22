@@ -65,3 +65,6 @@ domains: [c_language, data_structures]
 
 
 [note_rbtree_replace.c](note_rbtree_replace.c)对应[P28 同键替换](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P28_Linux同键替换与旧对象退出.md#28.2.7_运行同键替换观察模块)：普通/cached 使用私有自动对象，RCU 使用单任务顺序重放和堆对象。检查旧字段、新 payload、缓存与退出后等待，不能作为并发或弱内存序证明。宿主适配和 ARM 语法已查，目标 Kbuild/装卸未执行。
+
+
+[P29 旋转映射](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md#29.3_相同形状不等于相同中间状态)复用上述单旋程序、插入和删除模块：材料只能观察对应程序实际暴露的检查点，操作返回后的输出不能证明回调中间态或并发安全，无需拼接源码裁剪片段。

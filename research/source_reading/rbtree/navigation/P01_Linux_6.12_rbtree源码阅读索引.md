@@ -47,3 +47,6 @@ domains: [linux, source_reading]
 | 最左缓存先改还是后改 | [附加入口](P06_同键替换与旧对象退出导读.md#6.3_附加入口与回收条件) | [cached 包装](../source_explanations/include/linux/rbtree.h.md#1.10_替换时的最左缓存入口) |
 
 代码的公共结构与查询规则不因当前 ARM 配置而改变；读取顺序、发布、生命周期和所用同步接口必须按具体调用者及配置核对。宿主 C 程序只验证串行路径或明确适配位宽的算法模型，插入观察模块的 ARM 语法检查不等于目标装卸和运行；边界见[插入证据](../../linux/SOURCE_BASELINE.md#1.20_rbtree插入与父槽证据)。返回[源码大纲](../大纲.md#1.1_从查询承诺进入实现)。
+
+
+完成插入和删除后，可在[普通旋转与 Linux 修复的完成边界](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md#29.3_相同形状不等于相同中间状态)回看局部责任；[历史比较](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md#29.4_怎样读历史版本而不混用证据)仅覆盖保存的上游 6.1 与本表 NXP 固定提交，不混用接口集合。

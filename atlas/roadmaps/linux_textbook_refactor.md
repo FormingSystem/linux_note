@@ -143,3 +143,6 @@ B03r 完成[P28 同键替换单元](../../knowledge/linux/data_structures/红黑
 
 
 B03s 将已修订内容完整组织为[P11 删除](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md#11.1.3_一轮取消经过哪些状态)、[P27 遍历](../../knowledge/linux/data_structures/红黑树_rb-tree/P27_Linux有序遍历与整树销毁.md#27.1_从一次取消走到整轮处理)和[P28 替换](../../knowledge/linux/data_structures/红黑树_rb-tree/P28_Linux同键替换与旧对象退出.md#28.1_从保存地址走到交接地址)，保留全部有效推导、图与完整模块，同步入口和标题定位。守恒检查与边界见[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.29_B03s删除遍历与替换阅读分工)。下一项 P05 历史源码收束，然后继续尚待冷读的红黑理论/接口与 P12 工程扩展；全仓尚未完成。
+
+
+B03t 完成 P05 收束：普通单旋与既有完整材料保留，内核部分移入[P29 旋转完成边界](../../knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md#29.1_为什么没有一一对应的旋转调用)，在修复前提建立后解释回调中间态、比较辅助接口与可证版本差异。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.30_B03t普通旋转与内核完成边界)保存内容去向和验证限制。下一项从 P06 多路与红黑桥梁开始实际冷读，再推进 P07～P09/P12；全仓尚未完成。
