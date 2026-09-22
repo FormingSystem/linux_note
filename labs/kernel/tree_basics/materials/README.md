@@ -77,3 +77,6 @@ domains: [c_language, data_structures]
 
 
 [tree234_erase.cpp](tree234_erase.cpp)在[P31 预修复删除](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P31_2-3-4树预修复删除.md#31.3_运行完整预修复删除)中独立构建六组合法树，观察直接删除、左右借位、合并、前驱/后继与根收缩。固定池保有退休对象的存储，alive 与活动拓扑相对应；删除不申请资源，入口先查找以保证未命中不改形状。程序不含插入、池空槽复用或并发接口。
+
+
+[tree234_erase_bottom.cpp](tree234_erase_bottom.cpp)在[P32 回溯删除](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P32_2-3-4树下溢回溯与根收缩.md#32.4_运行完整回溯删除)中允许暂时零键，并通过 deleted/underflow 返回修复结果；内部零键节点仍保留唯一孩子。六组独立场景包含两层合并与根收缩，池所有权沿用前例；未命中下降不写树，无须额外预查。它不提供并发、插入或节点槽复用。

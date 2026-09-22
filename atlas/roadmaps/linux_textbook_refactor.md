@@ -155,3 +155,6 @@ B03v 将 P06 插入单元完整组织为[P30 两种分裂时机](../../knowledge
 
 
 B03w 完整冷读 P06 原 6.6.1～6.6.9，组织为[P31 预修复删除](../../knowledge/linux/data_structures/红黑树_rb-tree/P31_2-3-4树预修复删除.md#31.3_运行完整预修复删除)，保留四组图解、补齐内部命中三分支和资源寿命，提供完整 C++ 程序。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.33_B03w多路预修复删除)记录有限验证及范围；P06 的自底向上、红黑对照和后续扩展继续 pending，不把本单元称为全部删除重构完成。
+
+
+B03x 将 P06 自底向上单元组织为[P32 下溢回溯](../../knowledge/linux/data_structures/红黑树_rb-tree/P32_2-3-4树下溢回溯与根收缩.md#32.3_内部零键节点怎样继续传播)，保留原图例并补齐零键内部节点、孩子移交、完整 C++ 程序和同场景比较。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.34_B03x多路下溢回溯)记录范围与验证；下一项为 P06 红黑删除对照的前置、事实与阅读位置，映射及后续扩展仍 pending。

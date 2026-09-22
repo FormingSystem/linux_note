@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P32_2-3-4树下溢回溯与根收缩.md",
+      "baseline_sha256": "e65edc06bb1b08bc4db1675383ee6f4cced78f798b4f7b34b3854c4fc689c031",
+      "lines": 905,
+      "state": "validated",
+      "reason": "B03x 完整冷读回溯删除，保留十一张原图，补齐零键内部节点、U0～U4 和完整 C++；全排列、深树、极值与未命中检查通过，仅有限独占模型。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P31_2-3-4树预修复删除.md",
       "baseline_sha256": "92fec7ed502540b7fb132ed6c3398e25e10093b0d3a0f49395599bb945f97ce3",
       "lines": 1219,
@@ -1511,7 +1518,7 @@
       "baseline_sha256": "9bd2b356a1f938c542847f77ebc28f5e11060de8b18322e3e2f86b882ed9d7fd",
       "lines": 6195,
       "state": "pending",
-      "reason": "B03u 前四节已完成，B03v 插入迁至 P30，B03w 预修复删除迁至 P31 并验证；保留桥接。当前 6.6.1 自底向上、6.6.2 红黑比较及映射/工程扩展仍待完整冷读，整章 pending。"
+      "reason": "B03u 前四节已完成；B03v/w/x 将插入、预修复与回溯删除分别组织为 P30/P31/P32 并验证，P06 保留桥接。当前 6.6.1 红黑删除对照、6.7～6.11 及工程扩展仍待完整冷读，整章 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md",
