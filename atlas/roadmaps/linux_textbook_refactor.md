@@ -119,3 +119,5 @@ B03g 完整冷读 P02，并沿[二叉结构、四种遍历与查询路线](../..
 B03h 完整冷读 P03，将搜索插入、[删除回接](../../knowledge/linux/data_structures/红黑树_rb-tree/P22_BST删除与子树回接.md#22.2_从图中的替换走到地址上的回接)与[排序验证](../../knowledge/linux/data_structures/红黑树_rb-tree/P23_BST验证与高度边界.md#23.6_运行全子树边界反例)组织为三个单元，保留原二十八张图及批注，补齐三份 C/C++ 程序。证据与检查、内容去向和未执行项见[B03h 记录](../../governance/migration/repository_textbook_refactor.md#1.4.18_B03h搜索树插入删除与验证)。下一批从 P04 退化继续；全仓尚未完成。
 
 B03i 完成[P04 退化观察](../../knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md#4.2.4_用节点访问次数观察退化)，新增完整 C 计数实验，区分相对失衡、维护代价和静态构建边界，保留原图解及人工重点并修正多路家族关系。证据、保留理由与验证见[B03i 记录](../../governance/migration/repository_textbook_refactor.md#1.4.19_B03i退化观察与平衡代价)。下一批进入 P05 旋转，全仓尚未完成。
+
+B03j 完整冷读 P05，先完成[普通单旋与互逆实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md#5.4.11_用根引用运行一对互逆动作)，保留图解及四个 C 示例，补齐根槽、写入依赖、独占前提和 C++ 完整程序。七键全排列检查及未执行项见[B03j 记录](../../governance/migration/repository_textbook_refactor.md#1.4.20_B03j普通左右旋与入口槽)。组合条件、AVL 诊断、Linux 证据与拆章继续推进，P05 仍保留待完成，全仓尚未完成。

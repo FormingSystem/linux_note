@@ -1378,7 +1378,7 @@
       "baseline_sha256": "b80f5ccbe3e2d06938bd3fdf360339f7cab96f77d8cc4f7b8372db5de6ab3ee3",
       "lines": 3991,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03j 已完整冷读原 3990 行并闭合 5.1～5.4 单旋，保留原图和四份 C 程序，新增 C++ 互逆实验及七键全排列结构检查；5.5～5.8 版本证据、组合条件、AVL 接口与长章拆分仍待必要修改，未把宿主检查视为全章完成。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md",

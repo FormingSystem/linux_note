@@ -37,4 +37,14 @@ domains: [c_language, data_structures]
 
 [bst_height_model.c](bst_height_model.c)接入[P04 退化观察](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md#4.2.4_用节点访问次数观察退化)：在 31 节点固定池内，用相同键集合比较升序和已知中位数顺序，输出树高、构建访问和查找最大键的访问次数。它不测运行时间，也没有实现动态平衡；内部指针指向池中的对象，建好后不能按值复制模型。
 
-标准 C11 编译器即可运行，命令、输出与练习见[运行说明](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md#16.7_运行预测与资源回收)。这是宿主内存模型，不使用 Linux API，不验证内核容器、并发或硬件；输入拓扑由程序构造，未声称能校验任意图。实际检查范围见[工作记录](../../../../governance/migration/repository_textbook_refactor.md#1.4.16_B03f树关系与表示实验)。
+旋转沿用自动节点，不分配或释放对象。四份 C11 程序分别观察整树根和内部子树根；C++17 程序观察根引用和逆旋，命令与完整讲解位于正文：
+
+| 材料 | 观察责任 |
+| --- | --- |
+| [rotate_left_root.c](rotate_left_root.c) | [左旋根入口](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md#5.3.7_C_成品示例_左旋整棵树根) |
+| [rotate_left_branch.c](rotate_left_branch.c) | [左旋内部父槽](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md#5.3.8_C_成品示例_左旋子树根节点) |
+| [rotate_right_root.c](rotate_right_root.c) | [右旋根入口](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md#5.4.7_C_成品示例_右旋整棵树根) |
+| [rotate_right_branch.c](rotate_right_branch.c) | [右旋内部父槽](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md#5.4.8_C_成品示例_右旋子树根节点) |
+| [rotation_pair.cpp](rotation_pair.cpp) | [旧根地址与互逆动作](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md#5.4.11_用根引用运行一对互逆动作) |
+
+以上均为宿主内存模型，不使用 Linux API，不验证内核容器、并发或硬件；节点拓扑由程序构造，未声称能校验任意输入图。每份材料独立编译，按相应正文的 C11/C++17 命令运行。各批实际检查范围见[工作记录](../../../../governance/migration/repository_textbook_refactor.md#1.4_批次结果)。
