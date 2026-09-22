@@ -478,3 +478,26 @@ P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_str
 [P34 页级索引](../../../knowledge/linux/data_structures/红黑树_rb-tree/P34_从多路节点到页级索引.md#34.2.13_文件系统中的_B/B+_树应用)只读核对同一 NXP 固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0 的 Documentation/filesystems/ext4/ifork.rst，blob 为 dc31f505e6c835bf590998a88676e9fa48d4c0f9。文档区分内部 ext4_extent_idx 与叶层 ext4_extent，根放在 inode.i_block；本次仅引用格式职责和根不一定独占外部块的边界，不展开函数体，不声称已验证挂载模式、分配算法或 I/O 性能。
 
 数据库/存储引擎对照独立依据 SQLite 文件格式、MySQL 8.4、PostgreSQL 18 和 RocksDB 官方概览，不作为 NXP 内核实现证据。完整 C++ 四页模型实际只读宿主数组，逻辑页请求、模型未命中与设备 I/O 分开；未执行目标数据库、文件系统挂载或硬件性能实验。外部工作树未改，本地三笔实验提交仍不作证据。
+
+## 1.28\_Maple范围与VMA查询证据
+
+[P14 VMA 范围教材](../../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md#14.1_一个地址为什么需要三种查询)沿同一固定提交核对区间、节点容量、查询封装和返回对象保护；[Maple 总索引](../maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)区分模块导读与唯一函数体。P15 的四个 VMA 查询函数体移入对应上游路径的实现文档，其余 P15 内容仍待独立审查。
+
+| 上游相对路径 | 固定 blob | 本批职责 |
+| --- | --- | --- |
+| Documentation/core-api/maple_tree.rst | ccdd1615cf974f40ad2f655ca734b7bfcdb5ba94 | 闭区间、空洞树、普通/高级接口与锁契约 |
+| include/linux/maple_tree.h | c2c11004085e5a98702a2aa8b1671d7a0f5bfe25 | pivot 包含同号槽上界，32/64 位容量与 gap 布局 |
+| include/linux/mm.h | 8617adc6becd1f9325e7217b885c4cc4124c5cc3 | vma_lookup 和 VMA 游标入口 |
+| include/linux/mm_types.h | 6894de506b364fa7f3396146f53216d0d40b80d2 | VMA、mm_mt 与 MM_MT_FLAGS |
+| mm/mmap.c | 6183805f6f9e6ef1a6d3204834ff1c367d0376b1 | find_vma、相交查询、前驱组合 |
+| mm/memory.c | 525f96ad65b8d77fe9d1feb5c7db1dc70d39647f | CONFIG_PER_VMA_LOCK 分支的候选稳定与边界检查 |
+| lib/maple_tree.c | 8d73ccf66f3aa0588d5ee00a6e7dad3258110d83 | 封装所调用的范围查找核心位置，不据此宣称本批全核心已审查 |
+| Documentation/mm/page_tables.rst | be47b192a596e5fc45d517ec75698897d92d8bef | TLB 未命中、页表遍历与访问异常的区别 |
+| kernel/fork.c | e192bdbc9adebbd6472ed4bb3e3f77260e98c673 | mm_mt 初始化及外部 mmap 锁关联 |
+| kernel/sched/fair.c | 58ba14ed8fbcb98ef1d2bb6779aae1a51c71e595 | pick_eevdf 仍访问红黑树，调度策略不等同于 VMA 索引 |
+
+前七份已有副本中，mm.h、mm_types.h、memory.c、maple_tree.c 与固定对象存在差量，已只按官方固定对象同步：涉及页表共享计数、写封印辅助、缺页回退/大页地址对齐，以及 Maple 分裂、根空值存入与循环分配游标重置。未把这些差量猜作某个本地实验提交的成果，也不根据函数名宣称其全部机制已审完；仓库正文没有这些变化函数的逐句展开调用方，本批四个查询封装语句不变。七份现有副本均按 LF 规范化后的 Git blob 核对一致。
+
+页表说明、fork.c 与 fair.c 只读固定 Git 内容，没有为简短职责比较复制整份文件。当前工作树身份仍为官方 NXP 来源、lf-6.12.y、三笔实验提交之后的 HEAD；证据只取 dfaf2136deb2af2e60b994421281ba42f1c087e0。配置为 ARM32、MMU、Tiny RCU、PREEMPT_NONE、非 SMP，未启用 CONFIG_PER_VMA_LOCK；不把该配置外推到发布标签或别的架构。
+
+旧组合另核对 torvalds/linux 的 v5.19 标签中 mm_types.h、sched.h 和 mm/vmacache.c：缓存属于任务，mm 保存失效代号；这是历史来源，不写成 NXP 当前结构。2020-12-10 RFC 及 2022-09 v14 说明仅承担演进与历史数据，早期未支持 32 位/非 RCU 的性能结果不外推到本机。C++ 范围模型不执行真实系统调用、Maple 核心或硬件页表遍历，本次未运行目标内核性能实验。

@@ -617,6 +617,12 @@ mindmap-plugin: basic
     - Linux 设备模型
         - 🔴 [设备模型 34 章原始总稿迁移核对源](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
 - 源码阅读
+    - 🔴 Maple 范围查询
+        - 🔴 [Maple 查询源码路线](../../research/source_reading/maple_tree/大纲.md)
+        - 🔴 [Linux 6.12 Maple 范围源码阅读索引](../../research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md)
+        - 🔴 [范围契约与查询入口](../../research/source_reading/maple_tree/navigation/P02_范围契约与查询入口.md)
+        - 🔴 [mm.h VMA 点查询](../../research/source_reading/maple_tree/source_explanations/include/linux/mm.h.md)
+        - 🔴 [mmap.c VMA 范围查询](../../research/source_reading/maple_tree/source_explanations/mm/mmap.c.md)
     - 🔴 **未校正** rbtree 查询与插入
         - 🔴 **未校正** [rbtree 源码阅读路线](../../research/source_reading/rbtree/大纲.md)
         - 🔴 **未校正** [Linux 6.12 rbtree 源码阅读索引](../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md)

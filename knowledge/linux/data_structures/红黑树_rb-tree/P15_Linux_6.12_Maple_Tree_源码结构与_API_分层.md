@@ -1331,7 +1331,7 @@ flowchart TD
 
 ------
 
-## 15.12\_mmap.c\_里的三个查找入口
+## 15.12\_VMA的三个查找入口
 
 VMA 相关源码里经常出现三个名字：
 
@@ -1347,20 +1347,7 @@ find_vma_intersection()
 
 源码位置：[include/linux/mm.h](../../../../research/source_reading/linux/include/linux/mm.h)
 
-```c
-/*
- * vma_lookup() - 查找指定地址上的 VMA
- * @mm: 进程地址空间
- * @addr: 用户地址
- *
- * 返回：给定地址上的 vm_area_struct；如果没有则返回 NULL。
- */
-static inline
-struct vm_area_struct *vma_lookup(struct mm_struct *mm, unsigned long addr)
-{
-	return mtree_load(&mm->mm_mt, addr);
-}
-```
+完整固定版本函数体及仓库补充注释见[唯一实现讲解](../../../../research/source_reading/maple_tree/source_explanations/include/linux/mm.h.md#1.2_vma_lookup只查询当前地址)。这里继续用查询结果对照其职责，不重复展开函数体。
 
 语义：
 
@@ -1373,23 +1360,7 @@ addr 必须落在某个 VMA 范围内，才返回这个 VMA。
 
 源码位置：[mm/mmap.c](../../../../research/source_reading/linux/mm/mmap.c)
 
-```c
-/*
- * find_vma() - 查找给定地址上的 VMA，或者后面的下一个 VMA。
- * @mm: 要检查的 mm_struct
- * @addr: 地址
- *
- * 返回：与 addr 关联的 VMA，或者下一个 VMA。
- * 如果 addr 处以及 addr 之后都没有 VMA，则可能返回 NULL。
- */
-struct vm_area_struct *find_vma(struct mm_struct *mm, unsigned long addr)
-{
-	unsigned long index = addr;
-
-	mmap_assert_locked(mm);
-	return mt_find(&mm->mm_mt, &index, ULONG_MAX);
-}
-```
+完整固定版本函数体及仓库补充注释见[唯一实现讲解](../../../../research/source_reading/maple_tree/source_explanations/mm/mmap.c.md#1.2_find_vma与上界)。这里继续用查询结果对照其职责，不重复展开函数体。
 
 语义：
 
@@ -1404,26 +1375,7 @@ struct vm_area_struct *find_vma(struct mm_struct *mm, unsigned long addr)
 
 源码位置：[mm/mmap.c](../../../../research/source_reading/linux/mm/mmap.c)
 
-```c
-/*
- * find_vma_intersection() - 查找第一个与区间相交的 VMA
- * @mm: 进程地址空间
- * @start_addr: 用户地址区间的包含式起点
- * @end_addr: 用户地址区间的排除式终点
- *
- * 返回：给定范围内的第一个 VMA；没有则返回 NULL。
- * 假设 start_addr < end_addr。
- */
-struct vm_area_struct *find_vma_intersection(struct mm_struct *mm,
-					     unsigned long start_addr,
-					     unsigned long end_addr)
-{
-	unsigned long index = start_addr;
-
-	mmap_assert_locked(mm);
-	return mt_find(&mm->mm_mt, &index, end_addr - 1);
-}
-```
+完整固定版本函数体及仓库补充注释见[唯一实现讲解](../../../../research/source_reading/maple_tree/source_explanations/mm/mmap.c.md#1.3_find_vma_intersection翻译排除式终点)。这里继续用查询结果对照其职责，不重复展开函数体。
 
 它和 `find_vma()` 的关键差别是上界：
 
@@ -1481,7 +1433,7 @@ flowchart LR
     GAP -.-> I2
 ```
 
-这也是 Maple Tree 比单纯 rbtree 更适合 VMA 的地方：这些范围查询和“找后继”的需求，不需要 VM 子系统自己维护一套链表缓存来兜底。
+这些封装把范围和向后搜索的契约集中在 VMA/Maple 接口上；红黑树也能实现相同查询，不能由接口名称反推只有 Maple 才能查前驱或后继。
 
 ------
 
@@ -1489,33 +1441,7 @@ flowchart LR
 
 `find_vma_prev()` 在 [mm/mmap.c](../../../../research/source_reading/linux/mm/mmap.c) 里：
 
-```c
-/*
- * find_vma_prev() - 查找给定地址上的 VMA，或者下一个 VMA，
- * 同时把前一个 VMA 写入 pprev。
- * @mm: 要检查的 mm_struct
- * @addr: 地址
- * @pprev: 用来接收前一个 VMA 的指针
- *
- * 注意这里缺少 RCU lock，因为使用的是外部 mmap_lock()。
- *
- * 返回：与 addr 关联的 VMA，或者下一个 VMA。
- * 如果 addr 处以及 addr 之后都没有 VMA，则可能返回 NULL。
- */
-struct vm_area_struct *
-find_vma_prev(struct mm_struct *mm, unsigned long addr,
-			struct vm_area_struct **pprev)
-{
-	struct vm_area_struct *vma;
-	VMA_ITERATOR(vmi, mm, addr);
-
-	vma = vma_iter_load(&vmi);
-	*pprev = vma_prev(&vmi);
-	if (!vma)
-		vma = vma_next(&vmi);
-	return vma;
-}
-```
+完整固定版本函数体及仓库补充注释见[唯一实现讲解](../../../../research/source_reading/maple_tree/source_explanations/mm/mmap.c.md#1.4_find_vma_prev保持两个结果)。这里继续用查询结果对照其职责，不重复展开函数体。
 
 这个函数说明一件事：即使不再有全局 VMA 链表，VM 子系统仍然需要“前驱 / 后继”语义。
 

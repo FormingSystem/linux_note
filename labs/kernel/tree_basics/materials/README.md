@@ -86,3 +86,5 @@ domains: [c_language, data_structures]
 
 
 [page_index_model.cpp](page_index_model.cpp)在[P34 页请求模型](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P34_从多路节点到页级索引.md#34.3_运行页请求与未命中的计数模型)中读取固定根和三个叶页，分别统计逻辑请求与模型缓存未命中。物理块号只是标签，所有数据实际在宿主数组中；无设备 I/O、更新或缓存逐出。对范围/点查、热状态和根驻留的比较不能外推为真实数据库性能。
+
+[vma_range_model.cpp](vma_range_model.cpp)在[P14 G/H 区间实例](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md#14.9.3_运行G与H的区间模型)中用 C++17 顺序容器观察精确查询、向后查询、相交、权限切分、取消映射和最低空洞。查询指针不能跨容器修改使用；不模拟内核的 VMA 合并、系统调用回滚、Maple 节点、RCU 或硬件性能。

@@ -5,6 +5,41 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/maple_tree/source_explanations/mm/mmap.c.md",
+      "baseline_sha256": "d338c39c084eff3f3c923d52952baab48aedf88f3198ddd07cdb9e1d736d77a4",
+      "lines": 93,
+      "state": "validated",
+      "reason": "B03aa 新增范围查询职责链，固定 NXP 声明与四个封装核对；完整标题与图检查，不代表 Maple 核心或目标运行已验证。"
+    },
+    {
+      "path": "research/source_reading/maple_tree/source_explanations/include/linux/mm.h.md",
+      "baseline_sha256": "e9ab1574852a259ce131d043ea0aac1a26e272ff53609c25ef6696d77184076e",
+      "lines": 40,
+      "state": "validated",
+      "reason": "B03aa 新增范围查询职责链，固定 NXP 声明与四个封装核对；完整标题与图检查，不代表 Maple 核心或目标运行已验证。"
+    },
+    {
+      "path": "research/source_reading/maple_tree/navigation/P02_范围契约与查询入口.md",
+      "baseline_sha256": "6b40b8fcd6987e2ea58018f280689f627d1fc638f4e7278e7a382cdb48339da0",
+      "lines": 59,
+      "state": "validated",
+      "reason": "B03aa 新增范围查询职责链，固定 NXP 声明与四个封装核对；完整标题与图检查，不代表 Maple 核心或目标运行已验证。"
+    },
+    {
+      "path": "research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md",
+      "baseline_sha256": "0398c8e9a4f10e539a146210727c4bea52bbd299f978baf039286ba18899294d",
+      "lines": 37,
+      "state": "validated",
+      "reason": "B03aa 新增范围查询职责链，固定 NXP 声明与四个封装核对；完整标题与图检查，不代表 Maple 核心或目标运行已验证。"
+    },
+    {
+      "path": "research/source_reading/maple_tree/大纲.md",
+      "baseline_sha256": "1d429ecfc9253855bbe91d64fb79bc484d80e1082831dff3617043b871a8f03a",
+      "lines": 36,
+      "state": "validated",
+      "reason": "B03aa 新增范围查询职责链，固定 NXP 声明与四个封装核对；完整标题与图检查，不代表 Maple 核心或目标运行已验证。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P34_从多路节点到页级索引.md",
       "baseline_sha256": "30e838d00e7195199e0f061898c1e9614d19d90b09e9a53f2daaf53d13414a77",
       "lines": 1150,
@@ -1531,8 +1566,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md",
       "baseline_sha256": "9bd2b356a1f938c542847f77ebc28f5e11060de8b18322e3e2f86b882ed9d7fd",
       "lines": 6195,
-      "state": "pending",
-      "reason": "B03u～B03z 已审查前四节、插入、两类删除、叶层/编码/回顾与页级索引；仅 6.10 Maple 待完整冷读，整章仍 pending。"
+      "state": "validated",
+      "reason": "B03u～B03aa 全部单元已分批完整冷读；保留多路基础与桥接，插删模型及范围工程各归权威单元；不代表人工复审或目标验证。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md",
@@ -1587,15 +1622,15 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md",
       "baseline_sha256": "74535c69707d9118f48dc5ad4694552adbd364d5bb3221ebced0443d754088ab",
       "lines": 1833,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B03aa 全篇冷读并收拢 P06 重复概念，保留 G/H 推演，修正权限、区间、锁、TLB 与版本；C++ 范围/空洞及极值检查通过，目标未运行。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md",
       "baseline_sha256": "2de6e1b8f40fadcc9f3e5294a114f8902a20aed4c1a35cccc6ad8d7e0875baec",
       "lines": 1804,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03aa 只冷读 15.12/15.13 四个查询封装并移入唯一实现，保留结果推演；其余源码与状态章节待完整冷读，仍 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/大纲.md",

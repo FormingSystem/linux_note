@@ -10,62 +10,27 @@ domains:
 
 # 第14章\_Maple\_Tree\_与\_VMA\_管理
 
-## 14.1\_专有名词说明
+## 14.1\_一个地址为什么需要三种查询
 
-1. VMA：virtual memory areas，虚拟内存域；
-2. EEVDF：Earliest Eligible Virtual Deadline First。它是 Linux 公平调度器里的一个调度算法，解决的是：当前 CPU 上有多个 runnable task，下一次应该选谁运行？
+前面已经看到，多路节点可以把更多边界放在一次索引访问附近。但如果查找的不是整数 30，而是进程访问的地址 `0x50012000`，怎样判断它属于哪段映射？如果地址正好落在空洞，应该返回空，还是返回后面最近的一段？准备映射一块新区域时，我们甚至要查找“尚未存对象”的地方。
 
-3.
+这些问题属于 **虚拟地址范围管理**。本章以两个相邻区域 G、H 为主线：先区别精确命中、向后查找与范围相交，再观察跨边界改权限和取消映射怎样改变区间。随后把相同操作放到旧红黑树组合与 Maple Tree 上，比较它们保存什么、维护什么，以及范围索引不能替调用方完成什么。
 
-## 14.2\_章节内容说明
+阅读依赖是前面的有序树和 [P34 页级索引的成本模型](P34_从多路节点到页级索引.md#34.1_高度相同不等于访问成本相同)。本章用 C++ 顺序容器执行区间语义，不重新实现 Maple Tree；读完应能画出 G/H 修改后的片段、预测边界查询，并说明树读安全为什么不等于返回对象可永久使用。
 
-这一章是对前面 rbtree 使用场景的一次补充澄清。
+## 14.2\_先把地址空间和调度任务分开
 
-前面第 8-12 章已经把 Linux `rbtree` 的基础结构、使用方式、插入删除修复、cached / augmented / RCU 边界讲完。
+VMA 是 **Virtual Memory Area，虚拟内存区域**，描述一个进程地址空间中具有一组共同属性的连续虚拟地址。`mm_struct` 是内核保存这个地址空间管理状态的对象；同一进程的多个线程通常共享它。Maple Tree 是范围索引实现的名称，用于把地址范围关联到 VMA。
 
-但是学习 Linux 内核数据结构时，很容易记住一句话：
+一次内存访问可能需要查询 VMA；决定当前哪个可运行任务获得 CPU 则属于调度。本章后面保留 EEVDF 调度算法的对照，用来划清职责，此时不需要先学完调度器。Maple Tree 也不承担页表翻译、物理页分配或数据预取。
 
-```text
-新内核里，VMA 管理已经从 rbtree 转向 Maple Tree。
-```
-
-这句话大方向是对的，但它必须加上边界：
-
-```text
-Maple Tree 主要替代的是内存管理里的 VMA rbtree / linked list / vmacache 模型；
-它不是整个内核中所有 rbtree 的替代品；
-它也不是公平调度从 CFS 走向 EEVDF 的原因；
-它不是页表，也不是物理页预取机制。
-```
-
-本章不把 Maple Tree 当成一个完整源码实现章来写。
-
-本章只解决一个问题：
-
-```text
-为什么 VMA 这种范围对象适合从 rbtree 管理方式转向 Maple Tree 管理方式？
-```
-
-参考资料：
-
-```text
-Linux Maple Tree 文档：
-https://docs.kernel.org/core-api/maple_tree.html
-
-Linux EEVDF 调度文档：
-https://docs.kernel.org/scheduler/sched-eevdf.html
-
-Maple Tree 引入补丁说明：
-https://lkml.iu.edu/2202.1/09876.html
-```
-
-------
+先记住本章只讨论的映射：`虚拟地址范围 → VMA 元数据对象`。VMA 本身与它描述的用户数据页不是同一块内存。
 
 ## 14.3\_Maple\_Tree\_是什么
 
 Maple Tree 是 Linux 内核中的一种范围索引结构。
 
-Linux 官方文档把它定位为：
+固定版本文档把它定位为 B-Tree 范围容器。这里先说明 RCU 是 Read-Copy Update（读复制更新），用于约束并发读取、更新与旧节点回收；其具体使用条件在 14.11 展开。容器提供的能力包括：
 
 ```text
 B-Tree 数据类型；
@@ -73,7 +38,7 @@ B-Tree 数据类型；
 范围大小可以是 1；
 支持范围迭代；
 支持 cache-efficient 的 previous / next 访问；
-可以进入 RCU-safe 模式；
+可以启用 RCU（Read-Copy Update，读复制更新）模式保护树的并发读取；
 最重要的用途是跟踪 virtual memory areas，也就是 VMA。
 ```
 
@@ -113,7 +78,9 @@ Maple Tree 可以配置成 RCU-safe 模式，让读路径和写路径在一定�
 
 但这不等于写侧无锁。
 
-官方文档明确说明，写者仍然必须通过锁同步，可以使用默认 spinlock，也可以配置外部锁。
+写者仍须串行化，默认可用树内自旋锁，也可由调用方提供外部锁。RCU 延后旧节点的回收，使正在读取旧结构的任务不立即碰到已释放的节点；它不替 VMA 字段提供一整套锁规则。14.11 先闭合外部读写锁这条路径，再限定 RCU 分支。
+
+本章当前实现以 NXP 官方 Linux 6.12.20 固定提交为准；先从 [Maple 范围源码阅读索引](../../../../research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)进入。旧模型另标 Linux v5.19，2020 年 RFC 数据另作历史讨论，三者不混用。
 
 ------
 
@@ -121,7 +88,7 @@ Maple Tree 可以配置成 RCU-safe 模式，让读路径和写路径在一定�
 
 VMA 是 Virtual Memory Area，即虚拟内存区域。
 
-一个 VMA 描述进程虚拟地址空间中的一段连续区域：
+一个 VMA 的 vm_start 字段保存包含式起点，vm_end 字段保存排除式终点，描述进程虚拟地址空间中的一段连续区域：
 
 ```text
 [vm_start, vm_end)
@@ -148,7 +115,7 @@ mmap 文件映射 VMA；
 这段虚拟地址范围从哪里开始，到哪里结束；
 这段范围允许读、写、执行哪些权限；
 这段范围是匿名映射还是文件映射；
-这段范围发生 page fault 时应该怎么处理；
+这段范围发生 page fault（缺页或访问保护异常）时应该怎么处理；
 这段范围是否能和相邻 VMA 合并。
 ```
 
@@ -169,7 +136,7 @@ mmap 文件映射 VMA；
 这个页表项怎么填写？
 ```
 
-那些问题属于页表、缺页处理和物理内存管理路径。
+那些问题属于页表、缺页处理和物理内存管理路径。VMA 可关联文件对象及映射操作表 vm_ops，后者给出这类映射需要的处理回调；NUMA（Non-Uniform Memory Access，非一致内存访问）策略涉及在多内存节点机器上如何选分配位置。这些属性帮助处理路径作决定，不表示 VMA 内已经放着全部物理页号。
 
 Maple Tree 优化的是 VMA 范围索引元数据，不是用户数据页本体。
 
@@ -188,14 +155,14 @@ find_vma(addr)：
 vma_lookup(addr)：
 	查找包含 addr 的 VMA。
 
-vma_find(start, end)：
-	在一段地址范围内查找 VMA。
+vma_find(vmi, end)：
+	从调用方的迭代器当前位置向后找，end 是排除式上界。
 
-vma_find_intersection(start, end)：
+find_vma_intersection(mm, start, end)：
 	查找和某个范围相交的 VMA。
 
 mmap：
-	插入新的 VMA 范围。
+	选择或使用指定地址建立映射，更新已有范围集合。
 
 munmap：
 	删除或拆分一段 VMA 范围。
@@ -246,7 +213,7 @@ range 是否和已有范围重叠；
 遍历某段虚拟地址范围时要连续访问多个 VMA。
 ```
 
-因此，Maple Tree 的“非重叠范围集合 + 多路索引 + 范围迭代”模型，比普通“一个 VMA 一个 rb_node”的模型更贴近 VMA 的真实语义。
+因此，Maple Tree 将这些范围操作放入同一套容器契约。红黑树也能表达这些语义；真正的取舍是哪些信息由调用方维护、哪些由容器维护，以及查询与修改的实际成本。
 
 ------
 
@@ -254,7 +221,7 @@ range 是否和已有范围重叠；
 
 为了避免后面只停留在概念上，本章先固定一个稍微复杂一点的进程地址空间。
 
-下面这个例子不是某个真实进程的完整布局，只是把 VMA 管理中最常见的复杂情况放在同一张图里：
+下面固定一张教学地址图。所有范围右端不包含，地址按 4 KiB 对齐；这不是某个真实进程的装载记录，也不假定每种体系结构都使用这套用户地址上限。r/w/x 表示读/写/执行，p 表示私有映射，anon 表示匿名映射；代码段、数据段和库的名字用来说明属性来源。
 
 ```text
 低地址
@@ -321,7 +288,7 @@ flowchart LR
 	class addr0,addr1 addr;
 ```
 
-这个例子里可以推演很多真实操作：
+这个例子里可以推演多种操作。PROT_NONE 是撤去读写执行访问权限的参数；它不会取消映射本身，所以与 munmap 形成空洞不同：
 
 ```text
 page fault addr = 0x01012000：
@@ -330,8 +297,8 @@ page fault addr = 0x01012000：
 page fault addr = 0x00460000：
 	落在 A 和 B 之间的 gap，不应该命中 VMA。
 
-mprotect 0x50008000-0x50018000：
-	跨越 G 的后半段和 H 的前半段，可能导致两个 VMA split。
+mprotect 0x50008000-0x50018000，设为 PROT_NONE：
+	撤去该段访问权限，跨越 G 后半段和 H 前半段，形成四个属性片段。
 
 munmap 0x50008000-0x50028000：
 	可能把 G/H 切掉中间一段，并留下前后残片。
@@ -363,26 +330,13 @@ range 两侧的 previous / next VMA 是谁；
 
 ## 14.7\_旧模型\_rbtree\_+\_linked\_list\_+\_vmacache
 
+同一组 A～I 对象同时参与按地址定位、顺序访问与最近命中。先看各入口各自节省什么，再观察一次改动如何跨入口维护一致性。
+
 ### 14.7.1\_用复杂示例看旧模型的三套结构
 
-> VMA 管理的对象是“虚拟地址范围 + 属性”。
->
-> rbtree 可以支持：
->     addr 命中查找；
->     范围遍历；
->     gap 查找；
->     split / merge。
->
-> 但 rbtree 做这些时，很多能力需要外部补：
->     范围判断靠调用方；
->     顺序遍历靠 linked list；
->     gap 查找靠 augmentation；
->     局部性优化靠 vmacache；
->     并发读侧还要额外设计。
->
-> Maple Tree 的意义是：
->     直接把“非重叠地址范围集合”作为一等模型；
->     用一套结构同时承载查找、遍历、gap、更新和 RCU 演进。
+旧模型以 Linux v5.19 为对照：`mm_struct.mm_rb` 是树根，VMA 内嵌 `vm_rb` 并保存 `vm_next/vm_prev`，`rb_subtree_gap` 汇总子树空洞；最近命中缓存则属于每个任务，不能画成 mm 内的一张共享缓存。[旧版范围结构](https://raw.githubusercontent.com/torvalds/linux/v5.19/include/linux/mm_types.h)与[任务结构](https://raw.githubusercontent.com/torvalds/linux/v5.19/include/linux/sched.h)分别说明这两类所有权。
+
+红黑树已经支持后继遍历，链表是这版 VMA 管理采用的直接相邻入口，并非红黑树遍历在算法上必须另有链表。增广空洞信息也能加速空洞搜索。升级要比较整个组合的维护成本，不能先拿掉旧方案的有效能力。
 
 仍然使用前面的 A-I 这组 VMA。
 
@@ -410,20 +364,20 @@ flowchart TD
 	F["F lib data<br/>40024000-40028000"]
 	I["I stack<br/>7ffde000-80000000"]
 
+	E --> C
+	E --> G
 	C --> B
-	C --> G
+	C --> D
 	B --> A
-	G --> D
+	G --> F
 	G --> H
-	D --> E
-	E --> F
 	H --> I
 
 	classDef rb fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
 	class C,B,G,A,D,H,E,F,I rb;
 ```
 
-这张图不是在画真实内核某一刻的红黑树颜色，只是在表达旧模型的关键点：
+这张图是满足二叉排序关系的示意，不是内核快照。若根 E、C/G、B/D/F/H 为黑，A/I 为红，也可满足黑高约束；颜色省略是为了突出对象入口：
 
 ```text
 一个 VMA 对象对应一个树节点；
@@ -454,7 +408,7 @@ flowchart LR
 
 ```text
 最近访问过的若干 VMA 被缓存起来；
-如果 page fault 地址落在最近 VMA 附近，可以避免完整树查找。
+如果地址仍落在缓存 VMA 内且缓存有效，可以避免完整树查找；仅仅“在附近”并不保证命中。
 ```
 
 把三者放在同一张图中：
@@ -476,7 +430,8 @@ flowchart TD
 
 	mm --> rb
 	mm --> list
-	mm --> cache
+	task["task_struct: 每任务缓存所有者"] -->|保存最近命中| cache
+	task -->|引用共享地址空间| mm
 
 	rb --> A
 	rb --> C
@@ -488,7 +443,7 @@ flowchart TD
 	list --> G
 	list --> I
 	cache -.recent.-> C
-	cache -.recent.-> H
+	cache -.recent.-> G
 
 	classDef root fill:#fff3e0,stroke:#ef6c00,color:#000,stroke-width:2px;
 	classDef index fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
@@ -527,7 +482,7 @@ H：0x50010000-0x50030000  rw- anon
 假设执行：
 
 ```text
-mprotect(0x50008000, 0x10000, PROT_READ)
+mprotect(0x50008000, 0x10000, PROT_NONE)
 ```
 
 也就是修改：
@@ -561,16 +516,16 @@ flowchart LR
 50008000-50018000
 ```
 
-修改后可能变成：
+假定调用成功、不计后续其他请求，撤去访问权限后的逻辑片段为：
 
 ```text
 G1：50000000-50008000  r-- file
-G2：50008000-50010000  r-- file  修改范围内
-H1：50010000-50018000  r-- anon  修改范围内
+G2：50008000-50010000  --- file  修改范围内
+H1：50010000-50018000  --- anon  修改范围内
 H2：50018000-50030000  rw- anon
 ```
 
-是否能合并还要看：
+这里 G 原本只读，若仍改为 PROT_READ（允许读），就不能用“G 一定拆分”作推导；改用 PROT_NONE 才同时改变 G 与 H 的属性。G2 与 H1 虽同为无权限，但一个文件映射、一个匿名映射，不因此合并。其他相邻片段能否合并还要看：
 
 ```text
 权限；
@@ -591,8 +546,8 @@ flowchart LR
 
 	after["修改后"]
 	G1["G1<br/>50000000-50008000<br/>r-- file"]
-	G2["G2<br/>50008000-50010000<br/>r-- file"]
-	H1["H1<br/>50010000-50018000<br/>r-- anon"]
+	G2["G2<br/>50008000-50010000<br/>--- file"]
+	H1["H1<br/>50010000-50018000<br/>--- anon"]
 	H2["H2<br/>50018000-50030000<br/>rw anon"]
 
 	before --> G --> H
@@ -627,7 +582,7 @@ vmacache：
 
 VMA 生命周期：
 	拆出来的新 VMA 要初始化；
-	被删除或替换的 VMA 要按引用和 RCU 规则释放。
+	被删除或替换的 VMA 要遵守该版本的锁和对象释放规则，不能套用另一版本的 RCU 路径。
 ```
 
 这就是旧模型的维护成本。
@@ -702,7 +657,7 @@ flowchart LR
 前后相邻 VMA 是否可以合并。
 ```
 
-Maple Tree 的范围模型天然围绕这些问题组织。
+Maple Tree 可维护取消映射后的空区间，但拆分 VMA、处理页表和回收映射资源仍由 mm 路径完成。索引容器不能独自执行整个 munmap。
 
 而 rbtree 旧模型要通过：
 
@@ -721,10 +676,9 @@ Maple Tree 的范围模型天然围绕这些问题组织。
 
 新模型可以简化理解为：
 
-```c
-struct mm_struct {
-	struct maple_tree mm_mt;
-};
+```text
+mm_struct 的相关成员：struct maple_tree mm_mt
+（位置摘记，不是完整结构体定义）
 ```
 
 也就是：
@@ -744,7 +698,7 @@ maple_state / ma_state；
 vma_iterator；
 vma_lookup()；
 vma_find()；
-vma_find_intersection()；
+find_vma_intersection()；
 ```
 
 来组织。
@@ -757,13 +711,14 @@ vma_find_intersection()；
 mm_struct
 	├── mmap      -> VMA linked list
 	├── mm_rb     -> VMA rbtree
-	└── vmacache
+	└── vmacache_seqnum -> 失效代号（具体缓存属于 task_struct）
 
 新模型：
 
 mm_struct
 	└── mm_mt     -> Maple Tree
-	                 └── VMA iterator
+
+调用方局部的 VMA iterator -> 引用 mm_mt，记录当前范围与遍历位置
 ```
 
 这里要抓住核心变化：
@@ -773,7 +728,7 @@ mm_struct
 新模型偏“非重叠范围集合 + 多路范围索引 + iterator”。
 ```
 
-VMA iterator 的意义是：
+VMA iterator 是调用方拥有的游标对象，不是长期挂在树下的共享节点。它包含 ma_state 操作状态，记录索引、范围末端和当前位置；多个调用方各用各的游标。它的意义是：
 
 ```text
 让 VMA 遍历、查找、插入、删除围绕同一个范围索引状态推进；
@@ -802,12 +757,12 @@ iterator 带着当前位置在范围集合里移动。
 
 ```mermaid
 flowchart TD
-	root["Maple root<br/>pivots: 01000000 | 50000000 | 7ffde000"]
+	root["Maple root<br/>pivots: 00ffffff | 4fffffff | 7ffdffff"]
 
-	n0["node0<br/>< 01000000<br/>A text / B data / gaps"]
-	n1["node1<br/>01000000-50000000<br/>C heap / D-E-F libs / gaps"]
-	n2["node2<br/>50000000-7ffde000<br/>G-H mmap / gaps"]
-	n3["node3<br/>>= 7ffde000<br/>I stack"]
+	n0["node0<br/>[0,00ffffff]<br/>A text / B data / gaps"]
+	n1["node1<br/>[01000000,4fffffff]<br/>C heap / D-E-F libs / gaps"]
+	n2["node2<br/>[50000000,7ffdffff]<br/>G-H mmap / gaps"]
+	n3["node3<br/>[7ffde000,上界]<br/>I stack"]
 
 	A["A<br/>00400000-00452000"]
 	B["B<br/>00651000-00657000"]
@@ -834,7 +789,7 @@ flowchart TD
 	class A,B,C,D,G,I vma;
 ```
 
-这张图不是 Maple Tree 真实节点布局的逐字段复刻。
+此图使用 Maple 的包含式 pivot：等于 pivot 的索引仍走同号槽。它是人为选取的多层布局，九个 VMA 并不必然需要这样的高度；空洞也会占据语义上的范围，不是 VMA 对象。
 
 它表达的是心智模型：
 
@@ -924,7 +879,7 @@ VMA 管理不只是查已有 VMA。
 
 例如要映射：
 
-```c
+```text
 size = 0x20000
 ```
 
@@ -952,7 +907,7 @@ H-I 之间 gap。
 
 也就是说，gap 是两个 VMA 之间推导出来的。
 
-Maple Tree 支持 gap 查找能力，这和 VMA 场景高度贴合。
+普通范围树可存空值；初始化时启用 MT_FLAGS_ALLOC_RANGE 的分配树还维护子树最大空洞，便于跳过容纳不下请求的孩子。这一汇总占空间，降低同大小内部节点能保存的槽数，并增加更新成本。VMA 的 mm_mt 选择了这个配置。
 
 可以用图表示：
 
@@ -986,6 +941,7 @@ VMA 查找是按 vm_start 查找。
 
 ```text
 VMA 管理需要同时处理已映射范围和未映射空洞。
+长度够只是必要条件，还要考虑搜索上下限、地址对齐、随机化和栈保护间隔；图中 choose address 不是保证下一次 mmap 必定选中该处。
 ```
 
 ------
@@ -1041,7 +997,7 @@ Maple Tree：
 	一个树节点管理多个范围边界和多个槽位。
 ```
 
-这就是 Maple Tree 能减少树高、改善缓存局部性的基础。
+多个边界放在一个索引对象里，使同次下行可利用邻近元数据；较高有效分支数有机会缩短依赖指针链。不过一个节点可能跨多条缓存行，加载一个节点不是一次硬件加载，缓存未命中也不必随树高同比减少。节点占用率、查询分布与更新带来的分配成本仍要测量。
 
 ------
 
@@ -1057,8 +1013,8 @@ keys:
 
 children:
 	<30
-	30-60
-	60-90
+	[30,60)
+	[60,90)
 	>=90
 ```
 
@@ -1066,13 +1022,13 @@ Maple Tree 的教学化模型：
 
 ```text
 pivots:
-	[01000000 | 50000000 | 7ffde000]
+	[00ffffff | 4fffffff | 7ffdffff]
 
 slots:
-	<01000000                -> node0
-	01000000-50000000        -> node1
-	50000000-7ffde000        -> node2
-	>=7ffde000               -> node3
+	[0,00ffffff]             -> node0
+	[01000000,4fffffff]       -> node1
+	[50000000,7ffdffff]       -> node2
+	[7ffde000,父范围上界]     -> node3
 ```
 
 相似点：
@@ -1086,9 +1042,9 @@ slots:
 差异点：
 
 ```text
-B+ 树主要是 key 到 record 的页级索引；
+前章所选的数据库 B+ 树例子按 key 到 record 组织页级索引；
 Maple Tree 主要是 index / range 到 entry 的内核范围映射；
-Maple Tree 还要处理非重叠范围、gap、RCU-safe、保留值和内核指针约束。
+Maple Tree 还要处理非重叠范围、gap、RCU-safe、保留值和内核指针约束；它也能作为内存索引，不能根据名字推断节点对应存储设备页。
 ```
 
 所以：
@@ -1100,11 +1056,234 @@ Maple Tree 属于 B-Tree 思想方向；
 
 ------
 
+### 14.9.2\_范围边界和节点容量都带有前提
+
+VMA 用半开区间 `[start,end)`，Maple 索引用包含两端的 `[first,last]`。只有确认 `start < end` 后才能转换为 `[start,end-1]`；空区间不能先减一，否则无符号的 0 会变成最大值。反方向也不能一律算 `last+1`：通用 Maple 范围可以到 ULONG_MAX，而同宽整数无法表示它之后的位置。VMA 的有效用户范围有自己的约束，不能把通用容器边界直接抄成 VMA 地址上限。
+
+以 G/H 的共同边界 `0x50010000` 为例，G 对应闭区间末端是 `0x5000ffff`，因此边界本身属于 H。在节点里寻找第一个不小于 index 的有效 pivot，等于 pivot 时留在其对应槽；最后一槽上界由当前父范围确定。14.8 图中的 pivot 都据此减一。它和前章采用“右孩子最小键”为分隔键的 B+ 例子方向不同，不能仅背诵“相等一律向右”。
+
+内核节点使用 unsigned long 边界，槽可能指向下一层，也可能关联最终对象；NULL 表示未存对象的空范围。指针不是比较键。`maple_range_64` 名字里的 64 不意味着在 ARM32 构建中 unsigned long 自动变为 64 位。CONFIG_64BIT 表示 64 位内核构建，BUILD_VDSO32_64 是头文件中的另一容量选择条件，不应只凭宿主位宽判断。固定头文件按构建条件选择容量：
+
+| 构建条件 | 范围节点槽数组上限 | 带空洞汇总节点槽数组上限 |
+| --- | --- | --- |
+| CONFIG_64BIT 或 BUILD_VDSO32_64 | 16 | 10 |
+| 普通 32 位分支 | 32 | 21 |
+
+这些是数组容量，不是每个节点始终装满的分支数；节点类型、有效项、元数据占用与填充情况还会影响可用项。带 gap 汇总的布局用额外空间换取快速排除不够大的子树。本次 ARM32 配置走后一分支，因此早期文章中的 10/16 不能不加条件抄成所有 Maple 树的固定事实。[版本模块导读](../../../../research/source_reading/maple_tree/navigation/P02_范围契约与查询入口.md#2.2_先核对区间再核对容量)给出对应声明位置。
+
+如果局部数组有帮助，为何不把所有 VMA 放进一张大数组？要先区分 **VMA 本体数组** 与 **VMA 指针数组**。移动前者可能改变对象地址；移动后者不会搬走 VMA，但中间插入仍要移动后续指针，扩容和并发发布也要另行处理。静态、小规模集合可以接受这些成本，不能因存在移动就说数组一无是处。
+
+```mermaid
+flowchart LR
+    array["按地址排序的指针数组"]
+    movement["中间插入：后缀槽位移动，VMA 本体不动"]
+    chunks["限制每块大小：移动约束在块内"]
+    index["块增加后：上层索引负责选块"]
+    tree["多路范围树候选"]
+    array -->|"出现频繁更新"| movement
+    movement -->|"减少一次移动跨度"| chunks
+    chunks -->|"避免顺序找块"| index
+    index -->|"仍需分裂、合并与同步"| tree
+```
+
+Maple 节点集中的是索引元数据，不要求 VMA 本体或用户物理页连续。它增加了独立节点的分配、再平衡和 RCU 回收工作；减少树高不能抹掉这些成本。
+
+### 14.9.3\_运行G与H的区间模型
+
+现在先预测三个结果：查询共同边界属于谁；在 G 前面一个地址调用精确查询和向后查询会不会相同；取消中间 `0x20000` 字节后，留下哪两段。
+
+下面是完整 C++17 程序，材料为 [vma_range_model.cpp](../../../../labs/kernel/tree_basics/materials/vma_range_model.cpp)。它用有序 vector 保存半开区间，以顺序扫描刻意隔离“查询契约”与“树的实现”。权限值 1 表示读、2 表示写、3 表示读写、0 表示无访问权限；owner 只区分 G/H 来源，不是完整文件偏移或匿名映射状态。
+
+程序的查询返回 vector 内对象地址，仅在容器未修改时可用。protect 与 unmap 构造新的片段后替换容器，旧地址随之失效；这与真实内核 VMA 的分配方式不同，但可以直接提醒我们：查到指针和取得长期使用权是两件事。protect 的“范围必须全覆盖，否则一点不改”是本模型的契约，不宣称 Linux mprotect 对所有失败都提供相同回滚保证。
+
+```cpp
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
+#include <optional>
+#include <utility>
+#include <vector>
+
+using address = std::uint64_t;
+
+struct region {
+    address start;
+    address end;
+    unsigned permissions;
+    char owner;
+};
+
+class range_map {
+public:
+    std::vector<region> regions;
+
+    // 输入是有效、递增且不重叠的半开区间；空洞没有对象。
+    explicit range_map(std::vector<region> input) : regions(std::move(input)) {
+        for (std::size_t i = 0; i < regions.size(); ++i) {
+            assert(regions[i].start < regions[i].end);
+            assert(i == 0 || regions[i - 1].end <= regions[i].start);
+        }
+    }
+
+    const region* lookup(address index) const {
+        for (const auto& item : regions)
+            if (item.start <= index && index < item.end)
+                return &item;
+        return nullptr;
+    }
+
+    const region* find(address index) const {
+        for (const auto& item : regions)
+            if (index < item.end)
+                return &item;
+        return nullptr;
+    }
+
+    const region* intersection(address start, address end) const {
+        if (start >= end)
+            return nullptr;
+        const auto* item = find(start);
+        return item && item->start < end ? item : nullptr;
+    }
+
+    // 仅寻找给定窗口内最低的连续空洞，不模拟对齐和栈保护间隔。
+    std::optional<address> gap(address low, address high, address length) const {
+        if (low >= high || length == 0 || length > high - low)
+            return std::nullopt;
+        address cursor = low;
+        for (const auto& item : regions) {
+            if (item.end <= cursor)
+                continue;
+            if (item.start >= high)
+                break;
+            if (item.start > cursor && length <= item.start - cursor)
+                return cursor;
+            cursor = std::max(cursor, item.end);
+            if (cursor >= high)
+                return std::nullopt;
+        }
+        return length <= high - cursor ? std::optional<address>(cursor)
+                                       : std::nullopt;
+    }
+
+    // 修改已有映射；要求全部覆盖才修改，这是教学模型自己的失败契约。
+    bool protect(address start, address end, unsigned permissions) {
+        if (start >= end)
+            return false;
+        address cursor = start;
+        for (const auto& item : regions) {
+            if (item.end <= cursor)
+                continue;
+            if (item.start > cursor)
+                return false;
+            cursor = std::min(end, item.end);
+            if (cursor == end)
+                break;
+        }
+        if (cursor != end)
+            return false;
+        rewrite(start, end, permissions, false);
+        return true;
+    }
+
+    void unmap(address start, address end) {
+        if (start < end)
+            rewrite(start, end, 0, true);
+    }
+
+private:
+    void rewrite(address start, address end, unsigned permissions, bool erase) {
+        std::vector<region> next;
+        for (const auto& item : regions) {
+            if (end <= item.start || item.end <= start) {
+                next.push_back(item);
+                continue;
+            }
+            if (item.start < start)
+                next.push_back({item.start, start, item.permissions, item.owner});
+            if (!erase)
+                next.push_back({std::max(start, item.start), std::min(end, item.end),
+                                permissions, item.owner});
+            if (end < item.end)
+                next.push_back({end, item.end, item.permissions, item.owner});
+        }
+        // 为了直接观察切分保留相邻片段，不模拟 Linux 的合并条件。
+        regions.swap(next);
+    }
+};
+
+static void show(const range_map& map) {
+    for (const auto& item : map.regions)
+        std::cout << item.owner << " [" << std::hex << item.start << ','
+                  << item.end << ") permissions=" << item.permissions << '\n';
+}
+
+int main() {
+    const std::vector<region> original{
+        {0x50000000, 0x50010000, 1, 'G'},
+        {0x50010000, 0x50030000, 3, 'H'}
+    };
+    range_map map(original);
+    assert(map.lookup(0x50010000)->owner == 'H');
+    assert(map.lookup(0x4fffffff) == nullptr);
+    assert(map.find(0x4fffffff)->owner == 'G');
+    assert(map.intersection(0x4fff0000, 0x50000000) == nullptr);
+    assert(map.intersection(0x4fff0000, 0x50000001)->owner == 'G');
+    const bool protected_all = map.protect(0x50008000, 0x50018000, 0);
+    assert(protected_all);
+    std::cout << "protect:\n";
+    show(map);
+    map = range_map(original);
+    map.unmap(0x50008000, 0x50028000);
+    std::cout << "unmap:\n";
+    show(map);
+    const auto vacant = map.gap(0x50000000, 0x50030000, 0x20000);
+    assert(vacant && *vacant == 0x50008000);
+    std::cout << "gap=" << std::hex << *vacant << '\n';
+    return 0;
+}
+```
+
+在材料目录编译运行；命令中的 g++ 指 C++ 编译器，不需要 Python：
+
+```bash
+g++ -std=c++17 -Wall -Wextra -Werror -pedantic vma_range_model.cpp -o vma_range_model
+./vma_range_model
+```
+
+预期输出：
+
+```text
+protect:
+G [50000000,50008000) permissions=1
+G [50008000,50010000) permissions=0
+H [50010000,50018000) permissions=0
+H [50018000,50030000) permissions=3
+unmap:
+G [50000000,50008000) permissions=1
+H [50028000,50030000) permissions=3
+gap=50008000
+```
+
+第一次操作保留四片；重置到原 G/H 后再取消中段，剩两片。区间切分沿着原对象逐个求交：左残片继承原属性，中段改变权限或删除，右残片继续继承；未相交的对象原样保留。这也解释了为何只调用一次容器“写入范围”不能包办 Linux 的 VMA 分裂、文件偏移、页表和对象回收。
+
+空洞查找先排除长度为零或超出窗口的请求，用 `length <= high-cursor` 判断容纳关系，避免先做 `cursor+length` 溢出。程序不模拟对齐、栈保护间隔、随机化、节点分裂、空洞汇总或并发，它的线性时间不能拿来测量 Maple Tree 性能。
+
+动手改三处，再解释结果：
+
+1. 把取消映射上界设为 `0x50010000`：H 应完整留下，边界查询仍命中 H。
+2. 在 G 与 H 之间制造空洞，再让 protect 横跨它：本模型应返回 false 且保持原片段；Linux 系统调用的错误/回滚行为需另做目标验证。
+3. 把 gap 请求长度增加 1：现有中间空洞不够，窗口内应找不到结果。若增大 high，尾部空洞可能再次成为候选，不是“树查询失败后永远没有空间”。
+
+---
+
 ## 14.10\_Maple\_Tree\_的普通\_API\_与高级\_API
 
 官方文档把 Maple Tree 接口大致分成普通 API 和高级 API。
 
-普通 API 更容易使用。
+API 即 Application Programming Interface，供调用方使用的程序接口。普通接口封装常见操作，但读者仍需按所选锁模式遵守对象保护约定。
 
 典型接口包括：
 
@@ -1165,7 +1344,7 @@ mas_pause()
 高级 API 的特点是：
 
 ```text
-性能和控制力更强；
+允许复用操作位置与预分配，具体是否更快取决于调用路径；
 可以复用 walk 状态；
 适合复杂范围操作；
 调用者要更小心锁、RCU 和状态管理。
@@ -1185,7 +1364,7 @@ mas_pause()
 
 ### 14.10.1\_rbtree\_使用方式和\_Maple\_Tree\_普通\_API\_的差异
 
-前面第 9 章讲过，Linux `rbtree` 的典型使用方式是：
+前面的 [P26 红叶接入与插入修复](P26_Linux红叶接入与插入修复.md#26.1_章节内容说明)讲过，Linux `rbtree` 的典型使用方式是：
 
 ```text
 调用者定义业务结构体；
@@ -1206,7 +1385,7 @@ store index/range -> entry；
 load index -> entry；
 find range；
 iterate range；
-erase index/range。
+erase 所在的整段范围，或通过 store NULL 清除指定子范围。
 ```
 
 对比表：
@@ -1240,118 +1419,64 @@ Maple Tree 普通 API 更像：
 
 ## 14.11\_Maple\_Tree\_的锁和\_RCU\_边界
 
-Maple Tree 支持 RCU-safe 模式，但这句话不能误读。
+范围索引保存的是 VMA 指针。即使树节点仍可读取，指针指向的对象也可能正在改权限、改边界或退出地址空间。要使用结果，必须同时解决 **树结构可读、对象存活、属性稳定** 三个问题。
 
-官方文档说明：
+先固定最容易闭合的路径：查询者持有地址空间 `mm->mmap_lock` 的读锁，修改者持有其写锁。这里的读写锁让多个只读操作共存，范围写入必须等待这些读者退出。Maple 的 `mm_mt` 位于共享 mm；VMA 对象另行分配；游标 `vma_iterator` 位于各调用方自己的执行上下文。锁保护期间才能把三类状态看成可使用的一组，不能保存一个 VMA 指针、释放所有保护后继续访问。
 
-```text
-Maple Tree 使用 RCU 和内部 spinlock 同步访问；
-一些读接口内部会进入 RCU 读侧；
-一些写接口内部会获取 ma_lock；
-写者仍然必须同步；
-也可以配置外部锁。
+`MM_MT_FLAGS` 将 VMA 树配置为记录空洞、使用外部锁及 RCU 模式。`kernel/fork.c` 的地址空间初始化把外部锁关联到 `mm->mmap_lock`。这没有取消外部同步要求：`find_vma` 的固定版本实现还检查 mmap 锁的持有条件。接口、返回边界与锁断言见[三类查询的实现讲解](../../../../research/source_reading/maple_tree/source_explanations/mm/mmap.c.md#1.2_find_vma与上界)。
+
+```mermaid
+flowchart LR
+    reader["查询任务：局部游标与 addr"]
+    writer["修改任务：请求范围与预备对象"]
+    lock["共享 mm->mmap_lock"]
+    tree["共享 mm->mm_mt：范围索引"]
+    objects["独立 VMA 对象：边界/权限/映射来源"]
+    reader -->|"取得读侧保护"| lock
+    writer -->|"取得写侧保护"| lock
+    reader -->|"按地址读取 pivot/slot"| tree
+    tree -->|"返回候选指针"| reader
+    reader -->|"在保护期间读属性"| objects
+    writer -->|"更新范围索引"| tree
+    writer -->|"准备、修改和退出对象"| objects
 ```
-
-所以它和 `rbtree` 的并发边界不同。
-
-Linux `rbtree` 的普通接口更底层：
-
-```text
-rbtree 核心不内置锁；
-调用者自己决定 spinlock、mutex、RCU、引用计数；
-RCU 版本接口只处理部分发布和读取语义。
-```
-
-Maple Tree 的普通 API 封装了更多同步细节：
-
-```text
-普通读接口可内部使用 RCU；
-普通写接口可内部使用 Maple Tree 的锁；
-高级 API 允许更复杂的外部锁和状态管理。
-```
-
-但两个结构都不能替调用者解决对象生命周期的全部问题。
-
-比如从 Maple Tree 里查到一个 VMA 指针后，仍然要考虑：
-
-```text
-当前是否持有 mmap_lock；
-是否在 RCU 读侧；
-VMA 是否可能被并发删除；
-返回指针在锁释放后能否继续使用；
-是否需要引用或其他生命周期保证。
-```
-
-所以不要把 RCU-safe 理解成：
-
-```text
-所有访问都可以随便无锁。
-```
-
-更准确的理解是：
-
-```text
-Maple Tree 设计了适合 RCU 读路径的树结构和 API，
-但具体对象生命周期仍然要符合内核内存管理的同步规则。
-```
-
-------
 
 ### 14.11.1\_复杂并发场景\_page\_fault\_读路径与\_munmap\_写路径
 
-理解 RCU-safe 时，可以想一个高频场景：
-
-```text
-CPU0：
-	用户程序访问 0x50012000，触发 page fault，需要查 VMA H。
-
-CPU1：
-	另一个线程正在 munmap 0x50008000-0x50028000，
-	会拆分 / 删除 G 和 H 的部分范围。
-```
-
-教学化流程图：
+现在让查询 H 的任务与取消 G/H 中段映射的任务交错。下图描述外部锁下的 **VMA 元数据观察周期**，不是整个缺页处理函数逐行时序。进入页表修改等后续阶段可能释放或重取锁，必须按对应路径重新判断，不能把这个图当成“所有缺页从头到尾都持同一锁”。
 
 ```mermaid
 sequenceDiagram
-	participant CPU0 as CPU0 page fault
-	participant MT as Maple Tree / mm_mt
-	participant CPU1 as CPU1 munmap
-	participant VMA as VMA objects
-
-	CPU0->>MT: RCU/read-side lookup addr 0x50012000
-	MT-->>CPU0: returns candidate VMA H or retry condition
-	CPU1->>MT: writer-side update range 50008000-50028000
-	CPU1->>VMA: split/delete affected VMA pieces
-	CPU1->>MT: publish updated range structure
-	CPU0->>VMA: validate VMA permissions/lifetime under mm rules
+    autonumber
+    participant R as 查询任务 R
+    participant L as mm->mmap_lock
+    participant M as mm->mm_mt 与 VMA
+    participant W as munmap 任务 W
+    R->>L: S0 取得读锁
+    R->>M: S1 查询 0x50012000
+    M-->>R: H 候选及受保护属性
+    W->>L: 请求写锁，R 未退出时等待
+    R->>M: S2 检查范围和本次访问权限
+    R->>L: S3 退出本轮 VMA 读取并释放读锁
+    L-->>W: 允许进入写侧临界区
+    W->>M: S4 按 mm 规则拆分/取消 G、H 中段并更新索引
+    W->>L: S5 释放写锁
+    R->>L: 下一轮重新取得读锁
+    R->>M: 重新查询同一地址
+    M-->>R: 此时地址落入新空洞
 ```
 
-这个图要表达的不是“page fault 一定无锁完成”。
+S0～S3 的私有查询状态由 R 维护；共享边界和索引在本周期内由锁阻止 W 同时改动。S4 改变的是共享映射关系，不是把 R 的旧游标直接交给 W。R 再次进入时重新查询，不能沿用锁外的旧 H 指针。这里等待方得到继续执行的依据来自读写锁的释放与获取，不是每次查询向所有 CPU 广播。
 
-它要表达的是：
+RCU（读复制更新）允许另一种树节点读取方式：写者发布新路径，旧节点延后回收，读者在规定的读侧区间内访问可追踪的节点。被移除的“全程读写互斥”成本换成了发布顺序、旧节点保留、重试和对象同步，而不是所有通信都消失。普通 `mtree_load` 内部短暂进入 RCU，只保护其内部查找过程；函数返回后不会自动替业务对象持有引用或 VMA 锁。
 
-```text
-Maple Tree 设计目标之一，是让范围索引更适合 RCU 读路径；
-但写侧 munmap 仍然必须同步；
-VMA 对象本身的生命周期仍然受 mm 同步规则约束。
-```
+固定版本还存在 `CONFIG_PER_VMA_LOCK` 控制的 `lock_vma_under_rcu`：它从树取得候选后尝试稳定该 VMA，并再次检查隔离状态和地址边界，失败不能直接使用候选。这个分支需结合各架构调用方阅读；本次 ARM32 配置未启用它，不能把其他架构的 RCU 缺页快路径宣称为当前目标的运行现象。源码模块导读保留[同步分支入口](../../../../research/source_reading/maple_tree/navigation/P02_范围契约与查询入口.md#2.4_返回指针的使用期限)，本章实验只验证独占区间语义，不模拟 RCU。
 
-也就是说：
-
-```text
-树结构的 RCU-safe
-	不等于
-业务对象可以随便释放。
-```
-
-这和第 12 章讲 rbtree RCU 边界时的结论一致，只是 Maple Tree 在 API 和结构层面封装得更多。
-
-------
+高级 `mas_*` 接口把更多锁与游标管理责任交给调用方；普通 `mt*` 接口的内部保护也不等于外部锁模式下可以绕过调用约定。释放树节点和释放 VMA 是不同对象的生命周期。
 
 ## 14.12\_Maple\_Tree\_为什么不是普通\_B+\_树
 
-Maple Tree 和 B/B+ 树有亲缘关系，因为它们都属于多路树思想。
+Maple 字面上是“枫树”，这里是具体实现的名称；不能从植物名称推出分支数或平衡规则。Maple Tree 和 B/B+ 树都采用多路组织，但名称相近也不意味着接口契约相同。
 
 但不要把 Maple Tree 直接等同于教科书 B+ 树。
 
@@ -1394,7 +1519,7 @@ Maple Tree 是面向 Linux 内核范围管理场景设计的 B-Tree 变体。
 
 ## 14.13\_Maple\_Tree\_不是页表\_也不是预取系统
 
-这个误区很常见。
+现在把范围管理放回一次访问中，检查索引优化发生在哪一段。
 
 因为 Maple Tree 管 VMA，而 VMA 又和虚拟内存相关，所以容易误以为：
 
@@ -1405,7 +1530,7 @@ Maple Tree 负责物理页预取；
 Maple Tree 让用户数据页连续存放。
 ```
 
-这些都不对。
+这些都不对。下面提到的 TLB（Translation Lookaside Buffer）是地址翻译缓存，页表则保存翻译与访问控制信息；两者的访问层次不由 VMA 索引取代。
 
 地址访问路径可以粗略拆成：
 
@@ -1414,7 +1539,7 @@ CPU 访问虚拟地址
 	↓
 TLB / 页表翻译
 	↓
-如果缺页，进入 page fault
+若页表翻译或权限等条件不满足，产生异常；TLB 未命中本身不等于异常
 	↓
 内核根据 fault address 查找 VMA
 	↓
@@ -1452,36 +1577,33 @@ Maple Tree 优化的是 VMA 索引元数据路径，不是物理内存访问路�
 
 ### 14.13.1\_page\_fault\_路径中的\_Maple\_Tree\_位置
 
-用图把 Maple Tree 放进 page fault 路径里：
+TLB 是 Translation Lookaside Buffer，保存近期的地址翻译。下图选用硬件页表遍历模型：TLB 未命中仍可能从有效页表得到翻译；命中也不能绕过权限检查。COW（Copy-on-Write，写时复制）造成的保护异常则可能是正常优化路径。固定版本 [页表文档](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/mm/page_tables.rst)解释这一区别，图不规定全部架构的异常入口细节。
 
 ```mermaid
 flowchart TD
-	user["用户态访问虚拟地址<br/>addr = 0x50012000"]
-	tlb{"TLB 命中?"}
-	hw["硬件完成地址翻译"]
-	fault["进入 page fault"]
-	find_vma["查找 VMA<br/>Maple Tree / mm_mt"]
-	check["检查 VMA 权限和类型"]
-	pt["处理页表 / 分配页 / COW / 文件页"]
-	resume["返回用户态继续执行"]
-	segv["SIGSEGV / fault error"]
-
-	user --> tlb
-	tlb -->|是| hw --> resume
-	tlb -->|否| fault --> find_vma --> check
-	check -->|合法| pt --> resume
-	check -->|非法| segv
-
-	classDef maple fill:#e8f5e9,stroke:#2e7d32,color:#000,stroke-width:2px;
-	classDef normal fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
-	classDef warn fill:#ffebee,stroke:#c62828,color:#000,stroke-width:2px;
-
-	class find_vma maple;
-	class user,tlb,hw,fault,check,pt,resume normal;
-	class segv warn;
+    user["用户态访问虚拟地址"]
+    tlb{"TLB 有可用翻译?"}
+    walk["硬件页表遍历"]
+    permit{"翻译存在且本次访问被允许?"}
+    access["访问物理内存，继续执行"]
+    fault["缺页或访问保护异常"]
+    query["按当前 mm 同步规则查 VMA"]
+    valid{"有覆盖区域且权限适合?"}
+    handle["按页表/映射类型处理：可能分配、写时复制或读文件页"]
+    retry["成功后重试原访问"]
+    error["错误处理：可能发信号"]
+    user --> tlb
+    tlb -->|"命中"| permit
+    tlb -->|"未命中"| walk --> permit
+    permit -->|"是"| access
+    permit -->|"否"| fault --> query --> valid
+    valid -->|"是"| handle
+    valid -->|"否"| error
+    handle -->|"成功"| retry --> user
+    handle -->|"资源或映射错误"| error
 ```
 
-图里只有 `查找 VMA` 这一段属于 Maple Tree 优化范围。
+图中“按当前 mm 同步规则查 VMA”使用范围索引；余下处理还可能遍历映射，但 Maple 本身并不执行硬件地址翻译。处理失败也不保证每次都只产生同一种信号。
 
 后面的：
 
@@ -1514,7 +1636,7 @@ Maple Tree 优化 page fault 等路径中的 VMA 元数据查找和范围管理�
 
 Maple Tree 替代 VMA rbtree，不等于整个内核不用 rbtree。
 
-更准确的分类是：
+先把类型区分开：CFS（Completely Fair Scheduler）和后面的 EEVDF 讨论调度策略；XArray 是稀疏整数索引容器；cached/augmented 是对红黑树入口缓存和子树汇总的扩展。下表给出场景入口，不将它们当作同一类型的竞争产品：
 
 | 子系统或场景 | 更准确的结构理解 |
 | --- | --- |
@@ -1554,43 +1676,33 @@ VMA 是范围集合，所以 Maple Tree 更贴合。
 
 ### 14.14.1\_更细的结构选择图
 
-把前面学过的结构放到同一张决策图里：
+下图按查询契约列候选，不是自动选型器。XArray 是内核的稀疏整数索引容器，支持按索引迭代，不能因为它出现在“等值”分支就说它没有顺序。cached 最小值与 augmented 子树汇总也可以同时使用。
 
 ```mermaid
 flowchart TD
-	start["要管理一组对象"]
-	ordered{"需要有序关系吗?"}
-	eq["哈希表 / IDR / XArray 等<br/>按等值或整数索引"]
-	range{"对象本质是范围吗?"}
-	overlap{"范围是否可能重叠?"}
-	point["rbtree<br/>动态有序对象集合"]
-	cached{"频繁取最小值?"}
-	cached_rb["cached rbtree"]
-	aug{"需要子树聚合信息?"}
-	aug_rb["augmented rbtree / interval tree"]
-	maple["Maple Tree<br/>非重叠范围集合"]
-	page{"主要成本是页访问吗?"}
-	btree["B/B+ 树类结构<br/>页级索引"]
-
-	start --> ordered
-	ordered -->|否| eq
-	ordered -->|是| range
-	range -->|否| cached
-	cached -->|是| cached_rb
-	cached -->|否| point
-	point --> aug
-	aug -->|是| aug_rb
-	aug -->|否| point
-	range -->|是| overlap
-	overlap -->|非重叠| maple
-	overlap -->|可能重叠| aug_rb
-	start --> page
-	page -->|是| btree
-
-	classDef choice fill:#fff3e0,stroke:#ef6c00,color:#000,stroke-width:2px;
-	classDef struct fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
-	class start,ordered,range,overlap,cached,aug,page choice;
-	class eq,point,cached_rb,aug_rb,maple,btree struct;
+    start["先说明查询契约和主要成本"]
+    storage{"是否按存储页组织索引?"}
+    disk["考虑 B/B+ 树类，再核对维护与恢复成本"]
+    kind{"内存对象按什么查询?"}
+    equal["等值键：哈希表候选"]
+    integer["稀疏整数索引：XArray 候选"]
+    ordered{"动态有序对象是否需要子树汇总?"}
+    aug["增广 rbtree；可与缓存最小值组合"]
+    rb["普通 rbtree；常取最小值可加缓存"]
+    ranges{"需要同时保存互相重叠的范围吗?"}
+    interval["区间树等重叠查询结构"]
+    maple["Maple 候选：非重叠范围/空洞"]
+    start --> storage
+    storage -->|"是"| disk
+    storage -->|"否"| kind
+    kind -->|"等值键"| equal
+    kind -->|"整数下标"| integer
+    kind -->|"有序键"| ordered
+    kind -->|"范围"| ranges
+    ordered -->|"是"| aug
+    ordered -->|"否"| rb
+    ranges -->|"是"| interval
+    ranges -->|"否"| maple
 ```
 
 这张图的关键是：
@@ -1605,6 +1717,8 @@ VMA 刚好满足这个条件。
 ------
 
 ## 14.15\_不要和\_EEVDF\_调度混淆
+
+同一个版本既可能更新调度策略，也可能更新内存管理索引。先区分算法要选择的对象，再比较所依赖的数据结构，才能避免把两个变化串成一条错误因果链。
 
 ### 14.15.1\_EEVDF\_介绍
 
@@ -1639,7 +1753,7 @@ EEVDF
 
 任务调度这边也容易混淆。
 
-老 CFS 的经典讲法是：
+CFS 是 Completely Fair Scheduler，完全公平调度器。经典模型的说法是：
 
 ```text
 可运行调度实体按 vruntime 放在 tasks_timeline 红黑树中；
@@ -1659,7 +1773,7 @@ virtual deadline；
 选择更早 virtual deadline 的任务。
 ```
 
-Linux 官方 EEVDF 文档说明，EEVDF 会使用 lag 判断任务是否 eligible，并在 eligible 任务中选择 virtual deadline 更早者运行。
+在本仓库固定版本中，pick_eevdf 仍从 tasks_timeline 的红黑树根读取，并结合可运行资格和虚拟截止时间选择实体。虚拟截止时间用于公平份额排序，不是硬实时截止期限；这里仅说明策略与结构的分工，不把不同内核版本的完整 EEVDF 行为压成这几句话。证据来自固定提交 kernel/sched/fair.c，见[基线的本批核对记录](../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.28_Maple范围与VMA查询证据)。
 
 这件事和 Maple Tree 不是一条线。
 
@@ -1795,6 +1909,31 @@ I stack
 
 ------
 
+### 14.17.1\_怎样读历史性能表而不误用它
+
+原先用于解释 Maple 收益的数字来自 2020 年 12 月 RFC（Request for Comments，征求意见补丁）。它以 Linux 5.10-rc1 为基线，在 144 核机器运行 mmtests；作者明确说该版尚未支持 32 位、当时运行在非 RCU 模式。它不是本仓库 ARM32/Linux 6.12.20 的测量，更不能拿来证明当前 RCU 缺页路径收益。[原始 RFC](https://lkml.iu.edu/hypermail/linux/kernel/2012.1/03913.html)
+
+保留原摘要数字时，必须把摘要与逐项结果区别开：
+
+| 作者的摘要项 | 原摘要范围 | 阅读限制 |
+| --- | --- | --- |
+| malloc1-processes | 约 +1%～+9% | 同信详细结果也有负值，不是所有进程数都提升 |
+| malloc1-threads | 约 +29%～+71% | 不是详细结果的最小/最大值 |
+| pthread_mutex1-threads | 约 0%～+16% | 不代表所有线程数都非负 |
+| signal1-processes | 约 +2%～+17% | 是历史摘要，不能当置信区间 |
+| brk1 | 约 -25%～-33% | 作者对测试目标提出疑问，但不能据此删除回退 |
+| kernbuild system time | 约 -3%～-5% 的性能变化 | 是系统 CPU 时间增加造成的回退，不是耗时减少 |
+
+例如同一份详细结果中，malloc1-threads 的 110 线程项为 -63.21%，而 2 线程项为 +1295.39%。只摘 +29%～+71% 会把复杂曲线改写成稳定收益。系统时间、墙钟时间和单位时间完成量的“越大越好”方向也不同，比较前要先说明指标。
+
+2022 年 v14 补丁说明可用于确认替换红黑树、VMA 链表与缓存的演进范围，但不能把不同补丁版本的数字并入一张无版本表。[v14 原始说明](https://lists.infradead.org/pipermail/maple-tree/2022-September/001576.html)
+
+现在能够提出的是待验证假设：VMA 多、查找或范围迭代多时，较短的索引依赖链可能减少访问成本；写入密集时，节点分配、复制和汇总维护也可能增加成本。mmap_lock 竞争明显时，必须确认到底更换了查询结构还是也改变了锁协议，不能把两者收益混算。小集合、热点命中、不同填充率和不同机器均可能给出不同结果。
+
+要验证本机，应固定内核提交、配置、机器、VMA 数量、地址分布、线程数和操作比例，分别记录吞吐、延迟、CPU 时间、内存用量与可取得的缓存/锁指标，重复运行并报告波动。本章仅运行区间语义模型，没有执行这项性能实验。
+
+---
+
 ## 14.18\_本章小结
 
 本章最重要的结论是：
@@ -1825,9 +1964,6 @@ I stack
 第八，调度器从 CFS 走向 EEVDF 是调度算法语义变化，不是 Maple Tree 替代调度树。
 ```
 
-一句话压缩：
+回到最初的问题，地址相等时到底命中 G 还是 H，取决于区间的包含规则；查不到时返回空还是下一段，取决于查询契约；得到指针后能否继续读，取决于锁与对象生命周期。三者不能由“用了多路树”一句话替代。
 
-```text
-Maple Tree 是 VMA 范围索引模型的升级，不是整个内核 rbtree 世界的终结。
-```
-
+下一章进入 [Linux 6.12 Maple 源码与接口层次](P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.1_本章涉及的源码文件)，进一步追踪这些契约怎样落在节点与操作状态上。
