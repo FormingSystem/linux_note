@@ -230,8 +230,8 @@
       "path": "knowledge/driver_model/character_device/P02_设备号_注册与设备节点.md",
       "baseline_sha256": "f51b98a1f31de7a4cc1f26a021cc44864e3a3c6dad9670e2683a7122feda2eaf",
       "lines": 156,
-      "state": "pending",
-      "reason": "B02d 重写设备号占用、cdev 分派、节点发布的分布状态与 S0～S4 周期；固定提交核对 devtmpfs 请求和清理边界，空设备观察未在 Linux 执行。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
+      "state": "validated",
+      "reason": "B02d 重写设备号占用、cdev 分派、节点发布的分布状态与 S0～S4 周期；固定提交核对 devtmpfs 请求和清理边界，空设备观察未在 Linux 执行。 C01b 已改为完整 C/C++ 用户程序，核对失败清理、正文材料和 ARM 对象编译；未链接或在 Linux 目标执行。",
       "current_lines": 180
     },
     {
@@ -312,8 +312,8 @@
       "path": "knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md",
       "baseline_sha256": null,
       "lines": 353,
-      "state": "pending",
-      "reason": "B02c 新增：环形流按检查、等待、提交、唤醒、重查串起数据和 poll；完整模块 ARM 语法、宿主边界模型、图与文档检查通过，真实调度和目标执行未验证。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
+      "state": "validated",
+      "reason": "B02c 新增：环形流按检查、等待、提交、唤醒、重查串起数据和 poll；完整模块 ARM 语法、宿主边界模型、图与文档检查通过，真实调度和目标执行未验证。 C01b 已改为完整 C/C++ 用户程序，核对失败清理、正文材料和 ARM 对象编译；未链接或在 Linux 目标执行。",
       "current_lines": 353
     },
     {
@@ -390,16 +390,16 @@
       "path": "knowledge/driver_model/file_operations/P01_一次打开与最后一次释放.md",
       "baseline_sha256": null,
       "lines": 219,
-      "state": "pending",
-      "reason": "B02g 新增打开引用教材；完整 session 模块、dup/fdinfo 预测、失败路径及源码核对，ARM 语法与宿主状态检查通过，目标实验未执行。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
+      "state": "validated",
+      "reason": "B02g 新增打开引用教材；完整 session 模块、dup/fdinfo 预测、失败路径及源码核对，ARM 语法与宿主状态检查通过，目标实验未执行。 C01b 已改为完整 C/C++ 用户程序，核对失败清理、正文材料和 ARM 对象编译；未链接或在 Linux 目标执行。",
       "current_lines": 219
     },
     {
       "path": "knowledge/driver_model/file_operations/P02_迭代读取与请求位置.md",
       "baseline_sha256": null,
       "lines": 193,
-      "state": "pending",
-      "reason": "B02g 新增迭代请求教材；完整 read_iter 模块、readv/pread 观察与分派证据；18 种复制预算和边界、ARM 语法通过，真实调用未执行。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
+      "state": "validated",
+      "reason": "B02g 新增迭代请求教材；完整 read_iter 模块、readv/pread 观察与分派证据；18 种复制预算和边界、ARM 语法通过，真实调用未执行。 C01b 已改为完整 C/C++ 用户程序，核对失败清理、正文材料和 ARM 对象编译；未链接或在 Linux 目标执行。",
       "current_lines": 193
     },
     {
@@ -430,8 +430,8 @@
       "path": "knowledge/driver_model/fundamentals/framework_model/P01_驱动框架模型.md",
       "baseline_sha256": "1bff208029e5c704362f8faba78134ef71d37340d46db24931155d5671af3ee2",
       "lines": 262,
-      "state": "pending",
-      "reason": "B02f 以公共对象、登记集合与绑定 S0～S4 重写，纠正旧伪接口与事件到系统调用图，完整只读观察脚本经过夹具分支验证。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
+      "state": "validated",
+      "reason": "B02f 以公共对象、登记集合与绑定 S0～S4 重写，纠正旧伪接口与事件到系统调用图，完整只读观察脚本经过夹具分支验证。 C01b 已改为完整 C/C++ 用户程序，核对失败清理、正文材料和 ARM 对象编译；未链接或在 Linux 目标执行。 sysfs 目录夹具的枚举与错误分支通过；MinGW 链接解析未返回目标名，不能作为 Linux canonical 运行证明。",
       "current_lines": 158
     },
     {
@@ -611,8 +611,8 @@
       "path": "knowledge/driver_model/misc/readme.md",
       "baseline_sha256": "ea180e3126384a2adbd9aa74ed1d1b202ee3c52c8a492635169c892aeeb73d65",
       "lines": 10,
-      "state": "pending",
-      "reason": "B02f 将仅元数据的空页写成完整问候服务教材，解释共享分派、位置、动态次号、模块引用与热拔插边界；ARM 语法和回调边界模型通过。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
+      "state": "validated",
+      "reason": "B02f 将仅元数据的空页写成完整问候服务教材，解释共享分派、位置、动态次号、模块引用与热拔插边界；ARM 语法和回调边界模型通过。 C01b 已改为完整 C/C++ 用户程序，核对失败清理、正文材料和 ARM 对象编译；未链接或在 Linux 目标执行。",
       "current_lines": 212
     },
     {
@@ -1421,8 +1421,8 @@
       "path": "knowledge/linux/device_model/class_sysfs/P02_让属性控制字符读取.md",
       "baseline_sha256": null,
       "lines": 263,
-      "state": "pending",
-      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
+      "state": "validated",
+      "reason": "本轮新增 B02h 分类与属性教材或证据；完成固定源码、适用静态与宿主分支、文档及人工冷读自查。未执行目标装卸、并发和性能测量。 C01b 已改为完整 C/C++ 用户程序，核对失败清理、正文材料和 ARM 对象编译；未链接或在 Linux 目标执行。",
       "current_lines": 265
     },
     {
@@ -2729,8 +2729,8 @@
       "path": "labs/kernel/driver_entries/materials/README.md",
       "baseline_sha256": null,
       "lines": 24,
-      "state": "pending",
-      "reason": "B02f 两份完整模块与只读观察脚本的取用入口；材料与正文逐字一致，保留导航用途而不复制实验讲解。 2026-09-22 新要求：教学与配套验证优先 C/C++，本项涉及 Python 教学程序或入口，退回待修订；既有内容和历史验证保留。",
+      "state": "validated",
+      "reason": "B02f 两份完整模块与只读观察脚本的取用入口；材料与正文逐字一致，保留导航用途而不复制实验讲解。 C01b 已改为完整 C/C++ 用户程序，核对失败清理、正文材料和 ARM 对象编译；未链接或在 Linux 目标执行。",
       "current_lines": 24
     },
     {

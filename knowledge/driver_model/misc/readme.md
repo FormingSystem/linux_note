@@ -155,43 +155,91 @@ sudo cat /dev/note_misc
 
 第一条 cat 应显示 10:某个实际次号，第二条打印 hello from misc。不要把示例中的“某个实际次号”抄进 mknod。节点通常由已挂载的 devtmpfs 配合系统管理机制提供；若 /sys/class/misc/note_misc/dev 存在而 /dev/note_misc 不存在，应按[节点排错](../character_device/P12_常见故障与排查.md)检查节点管理及挂载，不先把注册成功推翻。
 
-再运行完整的分段读取观察程序。O_RDONLY 表示只读打开，finally 保证异常时也关闭描述符：
+再运行完整的分段读取观察程序。O_RDONLY 表示只读打开；返回值和字节内容分别检查，out 清理路径归还已经打开的描述符。两次非空读取应为 5 与 11 字节，随后是 0；再次打开后应读到完整 16 字节：
+
+保存下面完整程序为 `misc_probe.c`。它使用 Linux 用户空间头文件和 C11 编译器，编译后在装有对应教学模块的目标运行：
+
+```c
+/* 每次打开各自维护读取位置，错误时也关闭已有描述符。 */
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
+static int read_part(int fd, size_t requested, const char *expected)
+{
+    char data[64];
+    size_t length = strlen(expected);
+    ssize_t count = read(fd, data, requested);
+    if (count < 0) { perror("read"); return 0; }
+    if ((size_t)count != length || memcmp(data, expected, length)) {
+        fputs("读取内容或长度不符\n", stderr);
+        return 0;
+    }
+    printf("read: %zd bytes\n", count);
+    return 1;
+}
+
+int main(void)
+{
+    int fd = open("/dev/note_misc", O_RDONLY), result = 1;
+    if (fd < 0) { perror("open"); return 1; }
+    if (!read_part(fd, 5, "hello") || !read_part(fd, 64, " from misc\n") ||
+        !read_part(fd, 64, ""))
+        goto out;
+    if (close(fd) < 0) { perror("close"); return 1; }
+    fd = open("/dev/note_misc", O_RDONLY);
+    if (fd < 0) { perror("reopen"); return 1; }
+    if (read_part(fd, 64, "hello from misc\n"))
+        result = 0;
+out:
+    if (close(fd) < 0) { perror("close"); result = 1; }
+    return result;
+}
+```
 
 ```bash
-sudo python3 - <<'PY'
-import os
-
-fd = os.open("/dev/note_misc", os.O_RDONLY)
-try:
-    first = os.read(fd, 5)
-    rest = os.read(fd, 64)
-    end = os.read(fd, 64)
-    print(repr(first), repr(rest), repr(end))
-finally:
-    os.close(fd)
-
-with open("/dev/note_misc", "rb", buffering=0) as device:
-    print(repr(device.read(64)))
-PY
+cc -std=c11 -Wall -Wextra -Werror -pedantic misc_probe.c -o misc_probe
+sudo ./misc_probe
 sudo rmmod note_misc
 test ! -e /sys/class/misc/note_misc && echo removed
 ```
 
-预期第一行是 `b'hello' b' from misc\n' b''`，第二行是 `b'hello from misc\n'`。第一次打开的两个非空读取合起来正好 16 字节，第三次为空；新打开又得到完整内容。零字节结果在本服务中表示结尾，不表示设备断线。退出后模型入口应消失；如果曾手工建立节点，其路径可能仍在，不能由路径残留推断服务还在运行。
+预期四行读取字节数依次是 5、11、0、16，程序还逐字节核对 hello、剩余内容和完整问候。第一次打开的两个非空读取合起来正好 16 字节，第三次为空；新打开又得到完整内容。零字节结果在本服务中表示结尾，不表示设备断线。退出后模型入口应消失；如果曾手工建立节点，其路径可能仍在，不能由路径残留推断服务还在运行。
 
 最后单独观察模块引用。上一组已经卸载，因此先重新装载；在终端 A 执行以下完整程序，它打开设备后等待回车，并保证退出时关闭描述符：
 
 ```bash
 sudo insmod ./note_misc.ko
-sudo python3 -c '
-import os
-fd = os.open("/dev/note_misc", os.O_RDONLY)
-try:
-    print("设备保持打开；现在可在终端 B 尝试普通卸载。")
-    input("按回车关闭设备：")
-finally:
-    os.close(fd)
-'
+```
+
+保存下面完整程序为 `hold_open.c`。它使用 Linux 用户空间头文件和 C11 编译器，编译后在装有对应教学模块的目标运行：
+
+```c
+/* 保留打开文件，供另一个终端观察普通模块卸载的引用限制。 */
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
+
+int main(void)
+{
+    int fd = open("/dev/note_misc", O_RDONLY);
+    int result = 0;
+    if (fd < 0) { perror("open"); return 1; }
+    puts("设备保持打开；现在可在终端 B 尝试普通卸载。");
+    puts("按回车关闭设备：");
+    if (getchar() == EOF && ferror(stdin)) {
+        perror("stdin");
+        result = 1;
+    }
+    if (close(fd) < 0) { perror("close"); result = 1; }
+    return result;
+}
+```
+
+```bash
+cc -std=c11 -Wall -Wextra -Werror -pedantic hold_open.c -o hold_open
+sudo ./hold_open
 ```
 
 在终端 A 按回车前，到终端 B 执行 `sudo rmmod note_misc`。未关闭时应拒绝卸载，因为 file 保存的操作表仍持有模块引用。回到 A 按回车，确认程序结束，再在 B 执行相同命令，此时应成功。只使用普通卸载，不把强制卸载作为测试恢复手段；若还有其他打开者，需先确认并正常关闭它们，不能据第二次失败推断引用已经泄漏。
