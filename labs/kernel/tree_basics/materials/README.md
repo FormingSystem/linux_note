@@ -49,4 +49,6 @@ domains: [c_language, data_structures]
 
 组合旋转在 [P24](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P24_组合旋转与形状判断.md#24.1_章节内容说明)接着运行：[rotation_cases.c](rotation_cases.c)和[rotation_cases.cpp](rotation_cases.cpp)各自从四组三节点输入识别两级方向并重排；[rotation_internal_lr.c](rotation_internal_lr.c)保留内部子树案例，展示形状为 LR 并不代表该处已经违反 AVL 高度约束。三份程序仍独立编译，检查孩子非空不能代替节点存活、成员关系或平衡诊断。
 
+[avl_height_demo.c](avl_height_demo.c)在 [P25 完整实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P25_AVL高度诊断与更新传播.md#25.23_运行完整高度维护程序)中增加缓存高度、插入和删除后的回溯、等高停止及多层修复。它由根负责动态节点回收，失败保留原树，main 的失败出口销毁已建成部分；本例是独占 AVL 模型，不是 Linux rbtree 的实现。
+
 以上均为宿主内存模型，不使用 Linux API，不验证内核容器、并发或硬件；节点拓扑由程序构造，未声称能校验任意输入图。每份材料独立编译，按相应正文的 C11/C++17 命令运行。各批实际检查范围见[工作记录](../../../../governance/migration/repository_textbook_refactor.md#1.4_批次结果)。

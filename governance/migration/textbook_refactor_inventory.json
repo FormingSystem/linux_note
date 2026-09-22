@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P25_AVL高度诊断与更新传播.md",
+      "baseline_sha256": "ce1a3eda2d685a4dfe8d3a7ec66027fc861bd3ceae7a38d0c1e0a17137953eed",
+      "lines": 1224,
+      "state": "validated",
+      "reason": "B03l 完整迁入原 AVL 诊断推导，补齐缓存与停止因果、完整 C 插删回收；518400 组次序和分配失败/等高/多层删除检查通过，不证明任意图、内核或并发。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P24_组合旋转与形状判断.md",
       "baseline_sha256": "c9c606980b28fb40c58855feb2e3d56394e1cdb707f6b1dee07c3fa241d841fa",
       "lines": 1273,
@@ -1385,7 +1392,7 @@
       "baseline_sha256": "b80f5ccbe3e2d06938bd3fdf360339f7cab96f77d8cc4f7b8372db5de6ab3ee3",
       "lines": 3991,
       "state": "pending",
-      "reason": "B03j 已完整冷读原 3990 行并闭合单旋；B03k 全部组合单元迁入 P24，纠正形状与失衡条件并验证三份 C/C++ 材料。5.5 Linux 证据、5.7～5.8 AVL 诊断和接口及最终拆章仍待修改，未把宿主检查视为全章完成。"
+      "reason": "B03j 完整冷读原 3990 行并闭合普通单旋；B03k 组合迁入 P24，B03l AVL 诊断迁入 P25 并补完整 C 实现和停止条件。5.5 旧 Linux 旋转源码证据与阅读位置仍待核对收束，未把宿主模型视为全章完成。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md",
