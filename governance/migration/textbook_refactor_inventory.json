@@ -5,6 +5,20 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P28_Linux同键替换与旧对象退出.md",
+      "baseline_sha256": "17765d7a79c4e11567394342d473e66affcbee57be1dd1556e00623c81b74dd1",
+      "lines": 517,
+      "state": "validated",
+      "reason": "B03q/r 正文已冷读修订，B03s 完整分章并检查内容守恒、导航和材料一致性；目标运行未验证，新人工状态为红色。"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P27_Linux有序遍历与整树销毁.md",
+      "baseline_sha256": "a3b5a29e9eb3e2604ede03108fae813de9aa07c764262b43242bf73d373570ba",
+      "lines": 525,
+      "state": "validated",
+      "reason": "B03q/r 正文已冷读修订，B03s 完整分章并检查内容守恒、导航和材料一致性；目标运行未验证，新人工状态为红色。"
+    },
+    {
       "path": "research/source_reading/rbtree/navigation/P06_同键替换与旧对象退出导读.md",
       "baseline_sha256": "2e0c99e49aff2334f9a84ed24544c4a7eee94ecbda76167cad3e31b88a1ecda0",
       "lines": 74,
@@ -1507,11 +1521,11 @@
       "reason": "B03m/o 查询契约、完整 C 反例与阅读分工完成；原 ID/人工状态保留，插入内容完整迁 P26，程序未变；并发和目标运行未验证。"
     },
     {
-      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md",
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md",
       "baseline_sha256": "e6447a463ff71ca1b85ae38d683501f6fb79a4f820d7ed7a58a8fffdab662cbe",
       "lines": 3325,
-      "state": "pending",
-      "reason": "B03p/q/r 删除、遍历、替换及完整模块已重构，源码唯一展开；最终章节组织仍待完成。"
+      "state": "validated",
+      "reason": "B03p/q/r 实际冷读修订，B03s 完整分章，删除周期留 P11；原稳定 ID/人工状态及基线哈希保留，目标运行未验证。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md",

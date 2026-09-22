@@ -15,7 +15,7 @@ domains: [linux, source_reading]
 | 固定版本 | [总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界) |
 | 上游位置 | [include/linux/rbtree_augmented.h](../../../../linux/include/linux/rbtree_augmented.h) |
 | 插入的调用位置 | [公共收尾](../../lib/rbtree.c.md#1.2_父槽与颜色收尾) |
-| 另一个使用场景 | [P11 结构删除](../../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.2_rbtree_删除前半段_rb_erase%28%29_与结构删除) |
+| 另一个使用场景 | [P11 结构删除](../../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md#11.2_rbtree_删除前半段_rb_erase%28%29_与结构删除) |
 
 中文 Doxygen 与中文行内注释为仓库补充、非上游原文。函数体保持固定语句；这里是内部辅助层，不是供调用者跳过插入/删除接口直接修坏树的公共契约。
 
@@ -638,7 +638,7 @@ copy 只是给 successor 一份旧子树增强值作为起点。深后继分支�
 
 **可修改性：** 不能把 successor 颜色检查移到父色覆盖之后，也不能在直接后继分支执行 successor.right=child，那会让节点指向自身。不能把 copy 替换成业务结构整体赋值；增强字段之外的 key、请求身份与引用关系应保持原对象含义。WRITE_ONCE 的写序与此前路径约束仍须保留。功能代码不检验成员、不取锁、不释放对象，错误前提不会转成可恢复的错误码。
 
-[状态关系图](../../../navigation/P04_对象摘除与缺黑修复导读.md#4.1_谁拥有地址和颜色)中的“写孩子槽/父色”由本函数执行；[完整时序](../../../navigation/P04_对象摘除与缺黑修复导读.md#4.2_从对象到缺黑父槽)中 D1 的摘除、copy/propagate 和 D2 的返回正对应这些语句。回到[教材结构删除](../../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.2_rbtree_删除前半段_rb_erase%28%29_与结构删除)或[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
+[状态关系图](../../../navigation/P04_对象摘除与缺黑修复导读.md#4.1_谁拥有地址和颜色)中的“写孩子槽/父色”由本函数执行；[完整时序](../../../navigation/P04_对象摘除与缺黑修复导读.md#4.2_从对象到缺黑父槽)中 D1 的摘除、copy/propagate 和 D2 的返回正对应这些语句。回到[教材结构删除](../../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md#11.2_rbtree_删除前半段_rb_erase%28%29_与结构删除)或[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
 
 ## 1.4\_保持颜色的父地址替换
 

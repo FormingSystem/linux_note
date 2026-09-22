@@ -133,10 +133,13 @@ B03n 修订 P10 的红叶接入与插入修复，补齐完整私有内核模块�
 B03o 将已修订内容完整组织为[P10 查询](../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找与返回边界.md#10.1_从业务对象走到一条查询路径)与[P26 插入](../../knowledge/linux/data_structures/红黑树_rb-tree/P26_Linux红叶接入与插入修复.md#26.1_章节内容说明)，保留 193 个代码围栏和全部有效推导，完成路径/锚点同步。范围和未执行项见[B03o 记录](../../governance/migration/repository_textbook_refactor.md#1.4.25_B03o查询与插入阅读分工)。下一项 P11 删除、后继与替换，全仓仍未完成。
 
 
-B03p 完成[P11 删除周期与完整模块](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.3.12_用完整模块观察取消请求)，保留原中文源码注释到唯一实现，修正后继身份、重复键、缺黑父槽和回调中间态。范围、有限 C 验证及目标未运行边界见[B03p 记录](../../governance/migration/repository_textbook_refactor.md#1.4.26_B03p对象摘除与缺黑修复)。P11 遍历/替换及整章组织继续 pending，全仓尚未完成。
+B03p 完成[P11 删除周期与完整模块](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md#11.3.12_用完整模块观察取消请求)，保留原中文源码注释到唯一实现，修正后继身份、重复键、缺黑父槽和回调中间态。范围、有限 C 验证及目标未运行边界见[B03p 记录](../../governance/migration/repository_textbook_refactor.md#1.4.26_B03p对象摘除与缺黑修复)。P11 遍历/替换及整章组织继续 pending，全仓尚未完成。
 
 
-B03q 完成[P11 遍历与销毁单元](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.4.9_运行完整遍历与销毁模块)，以四键漏访反例解释中序取消与后序 safe 的不同条件，补齐完整模块、失败清理和唯一遍历实现。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.27_B03q有序推进与整树销毁)区分宿主/ARM 检查与目标未运行。下一项 P11 替换及最终分章，P11 与全仓仍未完成。
+B03q 完成[P27 遍历与销毁单元](../../knowledge/linux/data_structures/红黑树_rb-tree/P27_Linux有序遍历与整树销毁.md#27.2.9_运行完整遍历与销毁模块)，以四键漏访反例解释中序取消与后序 safe 的不同条件，补齐完整模块、失败清理和唯一遍历实现。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.27_B03q有序推进与整树销毁)区分宿主/ARM 检查与目标未运行。下一项 P11 替换及最终分章，P11 与全仓仍未完成。
 
 
-B03r 完成[P11 同键替换单元](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.5.7_运行同键替换观察模块)，按 R0～R4 解释节点复制、回指、发布、缓存入口和旧对象回收，补齐完整 C 模块与唯一源码。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.28_B03r同键替换与旧对象退出)区分有限串行检查与目标/并发未验证。下一项 P11 最终分章，随后继续 P05 证据收束与工程扩展，P11 与全仓尚未完成。
+B03r 完成[P28 同键替换单元](../../knowledge/linux/data_structures/红黑树_rb-tree/P28_Linux同键替换与旧对象退出.md#28.2.7_运行同键替换观察模块)，按 R0～R4 解释节点复制、回指、发布、缓存入口和旧对象回收，补齐完整 C 模块与唯一源码。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.28_B03r同键替换与旧对象退出)区分有限串行检查与目标/并发未验证。下一项 P11 最终分章，随后继续 P05 证据收束与工程扩展，P11 与全仓尚未完成。
+
+
+B03s 将已修订内容完整组织为[P11 删除](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md#11.1.3_一轮取消经过哪些状态)、[P27 遍历](../../knowledge/linux/data_structures/红黑树_rb-tree/P27_Linux有序遍历与整树销毁.md#27.1_从一次取消走到整轮处理)和[P28 替换](../../knowledge/linux/data_structures/红黑树_rb-tree/P28_Linux同键替换与旧对象退出.md#28.1_从保存地址走到交接地址)，保留全部有效推导、图与完整模块，同步入口和标题定位。守恒检查与边界见[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.29_B03s删除遍历与替换阅读分工)。下一项 P05 历史源码收束，然后继续尚待冷读的红黑理论/接口与 P12 工程扩展；全仓尚未完成。

@@ -58,10 +58,10 @@ domains: [c_language, data_structures]
 [note_rbtree_insert.c](note_rbtree_insert.c)是另一类材料：实际调用 Linux rbtree 的内核模块，同目录 [Makefile](Makefile)分别构建插入、删除、遍历、替换四个模块。按[P26 五组插入](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P26_Linux红叶接入与插入修复.md#26.3.15_在内核模块中观察五组插入)准备匹配目标的内核构建环境；根与自动节点只在私有 run_case 中存活，无分配、外部注册或异步持有者。ARM 语法检查已完成，目标 Kbuild、装卸和实际日志仍待验证，不以宿主模型结果代替。
 
 
-[note_rbtree_erase.c](note_rbtree_erase.c)对应[P11 取消请求](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.3.12_用完整模块观察取消请求)，用数组身份观察后继移位、黑叶修复以及删除与清标记的区别。ARM 语法和明确适配的宿主路径检查已完成，目标 Kbuild/装卸/日志未执行；没有分配、外部注册或共享读者。
+[note_rbtree_erase.c](note_rbtree_erase.c)对应[P11 取消请求](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md#11.3.12_用完整模块观察取消请求)，用数组身份观察后继移位、黑叶修复以及删除与清标记的区别。ARM 语法和明确适配的宿主路径检查已完成，目标 Kbuild/装卸/日志未执行；没有分配、外部注册或共享读者。
 
 
-[note_rbtree_walk.c](note_rbtree_walk.c)对应[P11 遍历与销毁](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.4.9_运行完整遍历与销毁模块)：堆对象展示中序取消、后序回收及申请失败清理，自动对象重放 postorder 与 rb_erase 混用漏访。宿主适配和 ARM 语法已查，目标 Kbuild/装卸未执行。
+[note_rbtree_walk.c](note_rbtree_walk.c)对应[P27 遍历与销毁](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P27_Linux有序遍历与整树销毁.md#27.2.9_运行完整遍历与销毁模块)：堆对象展示中序取消、后序回收及申请失败清理，自动对象重放 postorder 与 rb_erase 混用漏访。宿主适配和 ARM 语法已查，目标 Kbuild/装卸未执行。
 
 
-[note_rbtree_replace.c](note_rbtree_replace.c)对应[P11 同键替换](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除_遍历与替换.md#11.5.7_运行同键替换观察模块)：普通/cached 使用私有自动对象，RCU 使用单任务顺序重放和堆对象。检查旧字段、新 payload、缓存与退出后等待，不能作为并发或弱内存序证明。宿主适配和 ARM 语法已查，目标 Kbuild/装卸未执行。
+[note_rbtree_replace.c](note_rbtree_replace.c)对应[P28 同键替换](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P28_Linux同键替换与旧对象退出.md#28.2.7_运行同键替换观察模块)：普通/cached 使用私有自动对象，RCU 使用单任务顺序重放和堆对象。检查旧字段、新 payload、缓存与退出后等待，不能作为并发或弱内存序证明。宿主适配和 ARM 语法已查，目标 Kbuild/装卸未执行。
