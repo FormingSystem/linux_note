@@ -990,3 +990,7 @@ B05c只读固定dfaf2136的arch/arm/include/asm/vdso/processor.h，确认cpu_rel
 ## 1.111\_屏障方向与UP配置边界
 
 B05d核对固定include/asm-generic/barrier.h的CONFIG_SMP分支和ARM屏障映射，公共UP回退与底层__smp宏存在分开说明；[原语导读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)继续承担入口。C单槽待写模型及单边约束变体严格编译执行，只说明教学规则下的结果，未执行herd7、Linux屏障、ARM SMP或设备协议。
+
+## 1.112\_发布取得与反向归还
+
+B05e沿固定通用release/acquire回退的类型和先后关系核对正文边界，删去说明性冒号伪C而保留职责表及[源码导读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)。单槽一万轮宿主C++17发布/归还通过，标准原子一致性和严格单生产/单消费协议不冒充Linux实现；未运行herd7、目标ARM、取消、故障恢复或多参与者队列。

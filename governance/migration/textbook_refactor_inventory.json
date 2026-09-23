@@ -2944,8 +2944,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P04_release_acquire_发布协议.md",
       "baseline_sha256": "5c7305d4257acd43b817cd529b7c9bde3ba5a20d1ec5667b5a0b814990cf91a8",
       "lines": 188,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05e实际冷读保留十二节，完整单槽C++17反向归还协议严格编译执行一万轮；S0到S5解释所有权、顺序与寿命，未冒充Linux、LKMM或多参与者协议验证。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P05_数据依赖_控制依赖与RCU取得.md",
