@@ -30,6 +30,7 @@ domains: [linux, source_reading]
 
 | 要回答的问题 | 模块导读 | 唯一实现标题 |
 | --- | --- | --- |
+| 普通树正确为何首缓存仍可能错误 | [缓存 C0～C6](P08_最左缓存与结构更新导读.md#8.2_沿接入与摘除跟踪C0到C6) | [取首](../source_explanations/include/linux/rbtree.h.md#1.12_缓存取首只读取入口)、[插入](../source_explanations/include/linux/rbtree.h.md#1.13_缓存写入先于插入修复)、[删除](../source_explanations/include/linux/rbtree.h.md#1.14_缓存删除先取后继)、[辅助搜索](../source_explanations/include/linux/rbtree.h.md#1.15_辅助插入如何产生最左标志) |
 | 节点、根和编码值由谁读写 | [布局状态 T0～T4](P07_节点布局与编码状态导读.md#7.2_沿一个节点的成员周期读写字段) | [类型与对齐](../source_explanations/include/linux/rbtree_types.h.md#1.1_rb_node的三个字段与对齐)、[父与业务地址](../source_explanations/include/linux/rbtree.h.md#1.11_父地址与业务地址的两种还原)、[颜色掩码](../source_explanations/include/linux/rbtree_augmented.h.md#1.6_颜色位与父地址掩码) |
 | 比较回调是否决定重复政策 | [教材比较契约](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_让同一个比较规则走两种调用路径)；[插入模块](P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进) | [布尔 less](../source_explanations/include/linux/rbtree.h.md#1.6_不查重的rb_add)、[三态 cmp](../source_explanations/include/linux/rbtree.h.md#1.7_查重后插入与RCU发布变体) |
 | 同类型成员为什么不能互换 | [所有者还原](P07_节点布局与编码状态导读.md#7.4_从嵌入成员回到所有者) | [偏移与类型检查](../source_explanations/include/linux/container_of.h.md#1.1_一次还原中的求值与类型检查)、[const 入口](../source_explanations/include/linux/container_of.h.md#1.2_只读限定由哪个入口保留) |

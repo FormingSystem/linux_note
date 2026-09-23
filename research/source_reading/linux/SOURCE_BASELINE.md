@@ -519,3 +519,9 @@ P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_str
 [P37 完整框架](../../../knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md#37.16_运行完整的私有调用者框架)复用上表固定树操作，主例只在初始化中私有执行，按 U0～U5 管理根、计数、复制输出和对象交还。note_rbtree_owner 的 ARMv7 前端实际读取 354 份头，所读已跟踪头与固定提交的差量交集为空；生成头仍来自当前 ARM/TINY_RCU 配置。首次检查发现 current 与内核宏冲突，改为 entry 后通过。
 
 宿主复用固定树语句的位宽适配夹具，普通整数锁替身只检查串行临界区。36 组插入/删除顺序检查计数、复制值、重复键、已挂入状态和移除输出，四个申请失败点验证无剩余分配。目标 Kbuild、MODPOST、装卸、并发及真实日志未执行，未改外部树。
+
+## 1.30\_rbtree最左缓存与返回边界
+
+固定 rbtree.h 的 rb_first_cached、rb_insert_color_cached、rb_erase_cached、rb_add_cached 进入[唯一缓存标题](../rbtree/source_explanations/include/linux/rbtree.h.md#1.12_缓存取首只读取入口)，由[缓存模块 C0～C6](../rbtree/navigation/P08_最左缓存与结构更新导读.md#8.2_沿接入与摘除跟踪C0到C6)组织状态与读写顺序。四个片段逐字核对既有固定原文；返回 NULL 不能统一解释为插入失败或删后树空。
+
+完整 note_rbtree_cached 使用私有自动数组，故障注入普通删除后对象仍活着。宿主明确位宽适配的固定语句夹具覆盖五对象 120 种插入乘 120 种删除次序、144000 次操作检查，另运行正文反例。ARMv7 前端读取 348 份头，消费的已跟踪头对固定提交差量为空；生成配置来自本地已核对环境。没有目标 Kbuild、MODPOST、装卸、真实日志、并发或性能证据，外部树未改。

@@ -188,3 +188,5 @@ B03aj 完成 P09 的 9.2.5～9.2.7 冷读与修订，补[比较契约 C 实验](
 B03ak 收束 P09 的 9.2.8～9.2.9，[双索引寿命 C 模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个入口关闭之后谁还在使用对象)以 S0～S5 连接入口槽、引用持有和最终回收，修正 RCU 片段的旧字段改写与锁/RCU/引用计数的混用。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.47_B03ak入口引用与回收条件)记录有限验证；下一项 9.3，整章仍 pending。
 
 B03al 将 P09 原使用者长单元独立为[P37 调用者框架](../../knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md#37.16_运行完整的私有调用者框架)，保留图解并修正重复键、比较、根槽、移除输出与并发边界；补完整内核 C 示例、U0～U5 和失败清理。P09 留有阅读桥接，原人工状态不变，P37 默认红色；[记录](../../governance/migration/repository_textbook_refactor.md#1.4.48_B03al调用者框架与完整示例)说明验证及未执行目标项。下一项 P12 工程扩展，全仓继续。
+
+B03am 完成 P12 引入与 cached 单元冷读，以[完整缓存模块](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行缓存一致性实验)演示缓存独立不变量、插入/删除返回和普通删除反例，新增固定模块导读及唯一实现入口。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.49_B03am最左缓存与一致性)记录验证边界；P12 增强树、并发和后续单元仍 pending。

@@ -454,3 +454,102 @@ static inline void rb_replace_node_cached(struct rb_node *victim,
 实现原理：取父读取父色字段，再在 unsigned long 宽度下屏蔽最低两位；取业务对象则调用通用 container_of，依靠编译时已知的成员偏移，具体[类型检查与 const 边界](container_of.h.md#1.1_一次还原中的求值与类型检查)在对应上游文件位置单独展开。宏不说明节点属于哪一棵树；游离时字段可能等于自身地址，误沿它回溯就可能得到自环。
 
 可修改性：不能把取父简化为直接转换黑节点打包值，不能把两个还原操作互换。若业务一个对象嵌入两个树成员，rb_entry 必须选实际返回的那个成员；选错不会由红黑树修复检测出来。关系与成员周期见[布局导读 T0～T4](../../../navigation/P07_节点布局与编码状态导读.md#7.2_沿一个节点的成员周期读写字段)，返回[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
+
+
+## 1.12\_缓存取首只读取入口
+
+上游位置仍为本页固定 include/linux/rbtree.h；下面中文 Doxygen 均为仓库阅读补充。先沿[缓存状态 C0～C6](../../../navigation/P08_最左缓存与结构更新导读.md#8.2_沿接入与摘除跟踪C0到C6)定位两个入口，再看 C4 的读取：
+
+```c
+/**
+ * rb_first_cached - 仓库阅读说明：读取调用者维护的中序首入口。
+ * @root: 缓存与拓扑一致且按业务协议受保护的根对象。
+ * 不加锁、不取得引用，也不沿树复核该地址是否仍为成员。
+ */
+#define rb_first_cached(root) (root)->rb_leftmost
+```
+
+宏只读一个槽；常量时间仅描述取得地址，不包括后续摘除、锁等待或对象回收。改普通根而漏改缓存时，它会忠实返回错误旧值，不会自动修复。返回[缓存导读](../../../navigation/P08_最左缓存与结构更新导读.md#8.2_沿接入与摘除跟踪C0到C6)。
+
+## 1.13\_缓存写入先于插入修复
+
+```c
+/**
+ * rb_insert_color_cached - 仓库阅读说明：维护同一受保护操作内的缓存与拓扑。
+ * @node: 刚通过正确空槽接入的有效节点。
+ * @root: 本次操作的缓存根。
+ * @leftmost: 调用者按实际搜索路径确定的新首节点标志。
+ */
+static inline void rb_insert_color_cached(struct rb_node *node,
+					  struct rb_root_cached *root,
+					  bool leftmost)
+{
+	if (leftmost)
+		root->rb_leftmost = node;
+	rb_insert_color(node, &root->rb_root);
+}
+```
+
+C3 在条件成立时先写缓存，再进入普通 rb_insert_color；因此观察者不能越过调用者保护，在两次更新之间同时要求稳定树和缓存。false 不代表不插入，true 也不会重新验证排序。修改 leftmost 的来源会留下结构正确而缓存错误的树。 该函数不提供锁或读侧寿命保护。回到[同阶段模块导读](../../../navigation/P08_最左缓存与结构更新导读.md#8.2_沿接入与摘除跟踪C0到C6)核对调用者、槽地址和完成边界。
+
+## 1.14\_缓存删除先取后继
+
+```c
+/**
+ * rb_erase_cached - 仓库阅读说明：维护同一受保护操作内的缓存与拓扑。
+ * @node: 此树中要摘除的成员。
+ * @root: 与该成员对应的缓存根。
+ * 返回新后继仅限删除旧首节点；其他删除也返回 NULL。
+ */
+static inline struct rb_node *
+rb_erase_cached(struct rb_node *node, struct rb_root_cached *root)
+{
+	struct rb_node *leftmost = NULL;
+
+	if (root->rb_leftmost == node)
+		leftmost = root->rb_leftmost = rb_next(node);
+
+	rb_erase(node, &root->rb_root);
+
+	return leftmost;
+}
+```
+
+C5 先比较对象身份，删中缓存时从仍在树中的 node 调用 rb_next，再保存后继，最后进行结构删除。不能换成删除后沿旧节点遍历。局部 leftmost 初始为 NULL，故非首节点删除返回 NULL；删完最后节点也返回 NULL，不能由返回值判断整树是否为空。函数不释放对象，不清游离标记，C6 的寿命条件仍归调用者。 该函数不提供锁或读侧寿命保护。回到[同阶段模块导读](../../../navigation/P08_最左缓存与结构更新导读.md#8.2_沿接入与摘除跟踪C0到C6)核对调用者、槽地址和完成边界。
+
+## 1.15\_辅助插入如何产生最左标志
+
+```c
+/**
+ * rb_add_cached - 仓库阅读说明：维护同一受保护操作内的缓存与拓扑。
+ * @node: 未在树中且地址稳定的新节点。
+ * @tree: 由调用者保护的缓存根。
+ * @less: 严格比较谓词，规则需与该树既有顺序相容。
+ * 返回 node 仅表示成为新首节点；NULL 不表示插入失败。
+ */
+static __always_inline struct rb_node *
+rb_add_cached(struct rb_node *node, struct rb_root_cached *tree,
+	      bool (*less)(struct rb_node *, const struct rb_node *))
+{
+	struct rb_node **link = &tree->rb_root.rb_node;
+	struct rb_node *parent = NULL;
+	bool leftmost = true;
+
+	while (*link) {
+		parent = *link;
+		if (less(node, parent)) {
+			link = &parent->rb_left;
+		} else {
+			link = &parent->rb_right;
+			leftmost = false;
+		}
+	}
+
+	rb_link_node(node, parent, link);
+	rb_insert_color_cached(node, tree, leftmost);
+
+	return leftmost ? node : NULL;
+}
+```
+
+C1 的局部 leftmost 初始为 true，任何一次向右后置 false；后续再向左也不能越过曾位于自己左侧的祖先。相等时 less 为 false，继续向右，本接口不拒绝等价键。C2 接到空槽后调用 C3 包装；返回的标志只报告是否新成首节点。不能在调用后再重复执行普通挂接和修复，也不能把 NULL 当失败后释放已入树的对象。 该函数不提供锁或读侧寿命保护。回到[同阶段模块导读](../../../navigation/P08_最左缓存与结构更新导读.md#8.2_沿接入与摘除跟踪C0到C6)核对调用者、槽地址和完成边界。

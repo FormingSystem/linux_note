@@ -12,352 +12,269 @@ domains:
 
 ## 12.1\_章节内容说明
 
+[P37 调用者框架](P37_构建rbtree调用者接口.md#37.16_运行完整的私有调用者框架)已把对象、计数和失败清理接成程序，后续查询、插入、删除、遍历和同键替换又逐项建立了底层契约。现在回到一组按到期时间排序的任务：若业务反复问“下一件事是什么”，每次都从根重新向左查找是否值得？
+
 ### 12.1.1\_本章在\_Linux\_rbtree\_学习路线中的位置
 
-按专题默认路线，P08～P10、P26、P11、P27、P28 已建立 Linux rbtree 的主干。P28 同键替换留下缓存、增广和共享保护问题；[P29 完成边界](P29_普通旋转与Linux修复的完成边界.md#29.5_回顾与练习)又明确回调中间态与整轮返回的区别，本章接着处理：
+默认路线 P08/P09/P37 → P10/P26 → P11/P27/P28 → P29 已建立类型、业务持有权、更新与返回边界。P28 留下额外缓存与摘要的维护责任；[P29 完成边界](P29_普通旋转与Linux修复的完成边界.md#29.5_回顾与练习)说明回调中间态不等于整轮完成。本章据此讨论三类不同问题：保存一个可直接取得的首节点入口、随子树变化维护摘要，以及在真实读写协议下验证结果。它们不互相替代。
 
-```text
-第 8 章：
-	基础结构、父指针颜色压缩、rb_root、rb_root_cached。
-
-第 9 章：
-	嵌入式节点、业务对象、调用者接口、生命周期。
-
-第 10 章与 P26：
-	查找返回、插入落点、rb_link_node()、__rb_insert()。
-
-第 11 章、P27、P28：
-	结构删除、删除修复、有序推进、整树销毁和同键替换。
-```
-
-本章收束工程扩展部分。
-
-重点回答：
-
-```text
-cached rbtree 为什么只缓存最左节点？
-augmented rbtree 如何在旋转和删除中维护增强信息？
-rbtree 为什么不内置锁？
-RCU 接口到底保证什么，不保证什么？
-怎样写一个完整示例？
-怎样验证红黑树结构没有坏？
-内核哪些场景适合用 rbtree？
-```
-
-------
+先在 12.2 解释缓存根的正常与故障过程，再进入增强信息、并发、接口和验证。取首常量时间不等于删除或整个调度操作常量时间；增加一个指针也不表示它自动具有新的并发保证。
 
 ### 12.1.2\_本章参照的源码文件
 
-本章主要参照：
+固定版本从[NXP Linux 6.12.20 源码总索引](../../../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)进入，不再引用旧的 kernel_source 路径。正文解释为何需要这些状态；实现语句按上游位置在源码层单独展开：
 
-```text
-../../kernel_source/include/linux/rbtree.h
-../../kernel_source/include/linux/rbtree_augmented.h
-../../kernel_source/lib/rbtree.c
-```
+| 上游位置 | 本章的阅读任务 |
+| --- | --- |
+| include/linux/rbtree_types.h | rb_root_cached 的普通根和最左入口 |
+| include/linux/rbtree.h | 缓存取首、插入、删除、替换包装与比较辅助 |
+| include/linux/rbtree_augmented.h | 增强回调、旋转时摘要与删除传播 |
+| lib/rbtree.c | 通用修复、遍历、替换及无锁下行的说明边界 |
 
-其中：
-
-```text
-rbtree.h：
-	rb_root_cached、rb_first_cached()、rb_insert_color_cached()、
-	rb_erase_cached()、rb_add_cached()、rb_find_rcu() 等。
-
-rbtree_augmented.h：
-	struct rb_augment_callbacks、
-	RB_DECLARE_CALLBACKS()、
-	RB_DECLARE_CALLBACKS_MAX()、
-	rb_insert_augmented()、
-	rb_erase_augmented()。
-
-rbtree.c：
-	lockless lookup 注释、WRITE_ONCE()、旋转、遍历和替换实现。
-```
-
-------
+先沿[缓存模块导读](../../../../research/source_reading/rbtree/navigation/P08_最左缓存与结构更新导读.md#8.2_沿接入与摘除跟踪C0到C6)观察状态地址，再按需要进入具体实现；不能把当前本地配置或实验分支头当作固定发布证据。
 
 ## 12.2\_cached\_rbtree\_struct\_rb\_root\_cached
 
+cached rbtree 是在普通树之外维护一个中序首地址的包装。没有改变红黑修复算法，而是增加了一项必须与树结构共同维护的不变量：稳定观察时，缓存地址应与沿左链找到的首节点 **完全相同**。有等价键时，“也是一个最小键”还不足以证明对象身份正确。
+
 ### 12.2.1\_为什么要缓存最左节点
 
-普通 `struct rb_root` 只保存：
+普通根只保存拓扑根地址。`rb_first(root)` 从根逐次读取左孩子，直到没有更左的节点；实际读取几层取决于当前形状，红黑高度给出对数上界，空树则直接返回空。一次查询已经很便宜，但频繁重复会访问同一段路径。
 
-```c
-struct rb_node *rb_node;
-```
+设某个稳定树形取得首节点需要读 L 个节点，业务在下一次更新前询问一千次。普通方式仍做一千次左链查找；若在更新时保存首地址，一千次询问就各读一次缓存槽。这是操作数量的推导，不是缓存未命中或时间的实测，也没有假定每次左链都落到主存。
 
-如果要找最小节点，需要调用：
+`struct rb_root_cached` 包含普通 `rb_root` 与 `rb_leftmost` 两个入口，完整类型见[缓存根实现](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.3_rb_root_cached增加一个最左入口)。`rb_first_cached()` 只读取后者，因此取得地址是 O(1)，但它不查树、不加锁、不取得引用，更不保证返回对象仍活着。宏体见[直接取首](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.12_缓存取首只读取入口)。
 
-```c
-rb_first(root);
-```
-
-`rb_first()` 的逻辑是：
-
-```text
-从根开始一直向左走。
-```
-
-复杂度是：
-
-```text
-O(log n)
-```
-
-对普通场景这已经足够。
-
-但是某些内核场景会频繁获取最小 key 对象，例如：
-
-```text
-最早到期的定时器；
-最小虚拟运行时间的调度实体；
-最靠前的请求位置；
-某个时间线上的下一个事件。
-```
-
-如果每次都从根向左走，虽然是 O(log n)，但仍然有重复成本。
-
-`struct rb_root_cached` 增加：
-
-```c
-struct rb_node *rb_leftmost;
-```
-
-它直接缓存最左节点。
-
-这样：
-
-```c
-rb_first_cached(root)
-```
-
-就是：
-
-```c
-(root)->rb_leftmost
-```
-
-复杂度变成：
-
-```text
-O(1)
-```
-
-------
+最早到期任务或下一个时间线事件是自然场景；若业务还需按位置、资格等额外条件挑选，最左节点未必就是最终候选。例如不能仅凭“调度器有虚拟运行时间”就推导所有版本的下一任务只读最左缓存，具体场景在本章后面分别核对。
 
 ### 12.2.2\_为什么只缓存最左节点\_不缓存最右节点
 
-`struct rb_root_cached` 只缓存：
+缓存不只占一枚指针，还在插入、删除和替换时增加判断与写入。两端都缓存，则每个采用该结构的根都需额外存储，并让两端的更新协议保持一致。固定头文件选择只提供最左入口；这是这份接口的工程取舍，不是最右端点在算法上难以缓存。
 
-```text
-rb_leftmost
-```
+只有偶尔取最小、树很小或主要按任意键查询时，继续用普通根可以省掉额外不变量。反复取首且更新路径可统一维护缓存时，cached 根才更有吸引力。若需要频繁取最大或两端，业务可以另行设计对应入口，但要明确所有修改如何维护它们；不能只给结构体增加一个字段。
 
-不缓存：
-
-```text
-rb_rightmost
-```
-
-这是工程取舍。
-
-缓存一个指针的成本是：
-
-```text
-每棵 cached rbtree 多一个指针字段；
-插入时要判断新节点是不是最左；
-删除最左节点时要更新缓存；
-替换最左节点时要更新缓存。
-```
-
-如果同时缓存最右节点：
-
-```text
-结构体更大；
-插入删除替换都要维护两套缓存；
-所有 cached 用户都承担成本；
-但只有少数用户真的需要 O(1) rb_last()。
-```
-
-所以 Linux 选择：
-
-```text
-内核统一提供 leftmost 缓存；
-需要 rightmost 的用户可以自行维护。
-```
-
-这符合内核数据结构设计的一贯风格：
-
-```text
-只把广泛有价值的优化放进通用结构；
-特殊需求留给具体使用者。
-```
-
-------
+已有缓存根不因“也需要最大值”就一定不适用：仍可沿右链偶尔查询最大值，或在确有收益时增加另一端缓存。选择依据是观察与更新负载、字段成本和维护复杂度，最终性能需要同一场景测量。
 
 ### 12.2.3\_rb\_insert\_color\_cached()\_的使用方式
 
-cached 插入接口：
+沿用普通插入的空槽搜索。新增局部布尔量 leftmost，初始 true：若一路向左，新节点将排在所有现存节点之前；只要有一次向右，就已有一个节点位于它之前，此后再向左也无法抹掉那个祖先。因此第一次向右时置 false，之后不恢复。
 
-```c
-static inline void rb_insert_color_cached(struct rb_node *node,
-					  struct rb_root_cached *root,
-					  bool leftmost)
-{
-	if (leftmost)
-		root->rb_leftmost = node;
-	rb_insert_color(node, &root->rb_root);
-}
+这里跟踪的是 **实际插入路径**。若等价键按“不小于则向右”处理，新对象并不是已有等价组中的首对象；不能只判断新键是否等于当前最小键就传 true。`rb_add_cached()` 已把搜索、标志计算、挂接和 cached 修复组合起来，它不做唯一键拒绝；需要拒绝重复的业务仍须使用相应搜索契约。
+
+手写路径先 rb_link_node 接入空槽，再传入正确 leftmost 给 rb_insert_color_cached。包装先按标志写缓存，再调用普通修复。此时不是两份独立可随意观察的结构：C2 挂接后缓存可能仍旧，C3 写缓存后红黑修复可能尚未完成，调用者必须保护整个操作。
+
+| 阶段 | 状态实际在哪里，谁修改 | 稳定性与后续动作 |
+| --- | --- | --- |
+| C0 初始化 | 调用者写普通根与 rb_leftmost 为 NULL | 空树与空缓存同时成立 |
+| C1 搜索 | 更新者的局部 parent、link、leftmost | 遇右置 false，直到得到空槽 |
+| C2 挂接 | rb_link_node 写节点字段和根/孩子槽 | 尚未完成缓存及红黑修复 |
+| C3 缓存与修复 | cached 包装按标志写 rb_leftmost，再调用普通插入修复 | 返回后才向受保护观察者承诺一致 |
+| C4 取首 | 读者按协议读 rb_leftmost | 只省查找路径，不替代对象寿命保护 |
+| C5 摘除 | 更新者必要时先用旧拓扑求后继并改缓存，再结构删除 | 返回时重新满足缓存等于当前中序首 |
+| C6 退出 | 调用者处理其他入口和持有权 | 与树中是否还保存旧地址是不同问题 |
+
+```mermaid
+flowchart LR
+    writer[受保护的更新者] -->|C2及C5写根与孩子槽| topology[普通树拓扑]
+    writer -->|C3及C5写首地址| cache[rb_leftmost槽]
+    topology -->|C4沿左链读到| first[当前中序首对象]
+    cache -->|C4直接指向同一地址| first
+    owner[业务持有权协议] -->|C6保持或回收| first
 ```
 
-关键参数是：
-
-```text
-leftmost
+```mermaid
+sequenceDiagram
+    participant W as 更新者
+    participant P as 局部搜索状态
+    participant T as 根与节点字段
+    participant C as 缓存槽
+    W->>P: C1 查空槽，初始leftmost=true
+    opt 曾向右
+        P->>P: leftmost=false
+    end
+    W->>T: C2 接入新节点
+    opt leftmost为true
+        W->>C: C3 保存新首地址
+    end
+    W->>T: C3 普通红黑修复
+    C-->>W: C4 现在可在保护下取得首对象
+    alt C5 删中首对象
+        W->>T: 删除前求rb_next
+        W->>C: 改为后继或NULL
+    else 删除其他对象
+        W->>W: 缓存不改
+    end
+    W->>T: C5 结构删除和修复
+    W->>W: C6 另行处理对象寿命
 ```
 
-它由调用者在搜索插入落点时判断。
-
-搜索时初始：
-
-```c
-leftmost = true
-```
-
-只要向右走过一次：
-
-```c
-leftmost = false
-```
-
-因为一旦新节点落在某个节点右侧，它就不可能是整棵树最左节点。
-
-`rb_add_cached()` 就是这样做的：
-
-```text
-从 root 开始搜索；
-如果 less(node, parent)，向左；
-否则向右并 leftmost = false；
-挂接；
-rb_insert_color_cached(node, tree, leftmost)。
-```
-
-这里要注意：
-
-```text
-rb_insert_color_cached() 本身不会重新判断 node 是否最左；
-它相信调用者传入的 leftmost。
-```
-
-如果这个参数传错，树结构仍然可能合法，但 `rb_first_cached()` 会返回错误节点。
-
-------
+源码对应[搜索产生标志](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.15_辅助插入如何产生最左标志)与[缓存先写、修复随后](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.13_缓存写入先于插入修复)。rb_add_cached 返回新节点仅表示它新成首节点；返回 NULL 时节点也已经插入，不能按“失败”释放它。
 
 ### 12.2.4\_rb\_erase\_cached()\_如何更新最左缓存
 
-删除 cached 节点时，最重要的问题是：
+若删除对象不是当前 rb_leftmost，首对象不变；若是，新的首对象是它的中序后继。必须在旧对象仍处于原拓扑时计算 rb_next，再修改缓存并调用 rb_erase。删除后旧节点不再是有效遍历起点，即使它的字段没有被清零；旋转和回接也可能改变其他节点的链接。
 
-```text
-被删节点是不是 rb_leftmost？
-```
+最后一个对象没有后继，缓存变为 NULL，结构删除后普通根也为空。返回值却要更仔细地读：固定 rb_erase_cached 的局部返回值初始 NULL，仅在删中缓存时赋为后继。因此下面两种删除都返回 NULL：删除非首对象而缓存未变；删除最后对象而后继为空。不能由这个返回值直接判断当前树是否有首节点。完整函数见[缓存删除](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.14_缓存删除先取后继)。
 
-如果不是：
-
-```text
-rb_leftmost 不变。
-```
-
-如果是：
-
-```text
-新的最左节点就是被删节点的中序后继。
-```
-
-源码逻辑：
-
-```c
-if (root->rb_leftmost == node)
-	root->rb_leftmost = rb_next(node);
-
-rb_erase(node, &root->rb_root);
-```
-
-为什么先 `rb_next(node)` 再 `rb_erase()`？
-
-因为删除和修复可能旋转。
-
-在节点还在树中时，`rb_next(node)` 可以根据当前结构找到中序后继。
-
-删除完成后，node 已经不再适合作为遍历起点。
-
-所以 cached 删除顺序是：
-
-```text
-先算新的 leftmost；
-再执行结构删除和颜色修复。
-```
-
-------
+同键替换也属于维护入口的操作：若旧对象正是缓存对象，即使键值不变，也必须改成新对象地址。[P28 缓存替换](P28_Linux同键替换与旧对象退出.md)及[唯一包装实现](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.10_替换时的最左缓存入口)已区分这个地址身份变化。更新缓存没有撤销已有读者保存的旧地址，C6 仍须按持有权协议完成。
 
 ### 12.2.5\_cached\_rbtree\_的使用边界
 
-cached rbtree 适合：
+使用 cached 根时，插入、删除、替换都要维持额外入口。只调用普通 rb_erase 可能留下“所有红黑性质都对，首指针却错”的状态。若旧对象被释放，继续相信缓存就会使用失效地址；若它尚存活，错误也不能因为暂时不崩溃而被忽略。
 
-```text
-频繁取最小 key；
-插入删除也比较频繁；
-希望避免每次 rb_first() 从根向左走；
-最左节点有明确业务意义。
+普通根和缓存不是一次原子写入，更没有因宏只读一个指针就自动支持无锁读者。当前标准包装需调用者完整保护更新；若需要另一种读写协议，应单独证明缓存发布、节点拓扑和回收条件，而不是把普通替换换成带 RCU 后缀的函数后就宣布完成。
+
+#### (1)\_运行缓存一致性实验
+
+下面用五个私有任务观察两种返回值与一次故障。按 `(deadline, id)` 排序，这组数据没有重复完整键；数组中的 active 是实验核对台账，不是 Linux 自动维护字段。它让我们独立扫描仍在树中的对象预测最小地址，再与普通左链和缓存比较。完整材料为 [note_rbtree_cached.c](../../../../labs/kernel/tree_basics/materials/note_rbtree_cached.c)：
+
+```c
+// SPDX-License-Identifier: GPL-2.0
+/* 私有自动对象：缓存故障演示不会释放对象，也不发布并发入口。 */
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/rbtree.h>
+#include <linux/errno.h>
+
+struct cached_job {
+    int deadline;
+    unsigned int id;
+    bool active;
+    struct rb_node rb;
+};
+
+static bool job_less(struct rb_node *a, const struct rb_node *b)
+{
+    struct cached_job *first = rb_entry(a, struct cached_job, rb);
+    const struct cached_job *second = rb_entry(b, struct cached_job, rb);
+    if (first->deadline != second->deadline)
+        return first->deadline < second->deadline;
+    return first->id < second->id;
+}
+
+/* 数组扫描独立预测最小对象，不从缓存或树的左链生成预期值。 */
+static bool cache_matches(struct rb_root_cached *root, struct cached_job *jobs,
+                          unsigned int count)
+{
+    struct cached_job *expected = NULL;
+    unsigned int i;
+    for (i = 0; i < count; ++i) {
+        if (jobs[i].active && (!expected || job_less(&jobs[i].rb, &expected->rb)))
+            expected = &jobs[i];
+    }
+    return rb_first_cached(root) == (expected ? &expected->rb : NULL) &&
+           rb_first(&root->rb_root) == (expected ? &expected->rb : NULL);
+}
+
+static int __init note_cached_init(void)
+{
+    struct cached_job jobs[] = {
+        {.deadline = 40, .id = 0}, {.deadline = 10, .id = 1},
+        {.deadline = 40, .id = 2}, {.deadline = 25, .id = 3},
+        {.deadline = 70, .id = 4}
+    };
+    struct rb_root_cached root = RB_ROOT_CACHED;
+    struct rb_node *result;
+    unsigned int i;
+
+    if (!cache_matches(&root, jobs, ARRAY_SIZE(jobs)))
+        return -EINVAL;
+    for (i = 0; i < ARRAY_SIZE(jobs); ++i) {
+        result = rb_add_cached(&jobs[i].rb, &root, job_less);
+        jobs[i].active = true;
+        if (result != (i < 2 ? &jobs[i].rb : NULL) ||
+            !cache_matches(&root, jobs, ARRAY_SIZE(jobs)))
+            return -EINVAL;
+    }
+    pr_info("note_cached: five inserts, first=10:1\n");
+
+    result = rb_erase_cached(&jobs[4].rb, &root); /* 删除非最小的 70。 */
+    jobs[4].active = false;
+    if (result || !cache_matches(&root, jobs, ARRAY_SIZE(jobs)))
+        return -EINVAL;
+    pr_info("note_cached: erase non-first returns NULL, first still exists\n");
+
+    result = rb_erase_cached(&jobs[1].rb, &root); /* 最小从 10 变为 25。 */
+    jobs[1].active = false;
+    if (result != &jobs[3].rb || !cache_matches(&root, jobs, ARRAY_SIZE(jobs)))
+        return -EINVAL;
+    pr_info("note_cached: erase first returns 25:3\n");
+
+    /* 故意混用普通删除：树结构更新，但额外入口仍指向已摘除的25。 */
+    rb_erase(&jobs[3].rb, &root.rb_root);
+    jobs[3].active = false;
+    if (cache_matches(&root, jobs, ARRAY_SIZE(jobs)))
+        return -EINVAL;
+    pr_info("note_cached: ordinary erase leaves a stale cache\n");
+    /* 故障演示中对象仍活着且完全独占，重建缓存后继续观察。 */
+    root.rb_leftmost = rb_first(&root.rb_root);
+    if (!cache_matches(&root, jobs, ARRAY_SIZE(jobs)))
+        return -EINVAL;
+
+    while ((result = rb_first_cached(&root)) != NULL) {
+        struct cached_job *item = rb_entry(result, struct cached_job, rb);
+        rb_erase_cached(result, &root);
+        item->active = false;
+        if (!cache_matches(&root, jobs, ARRAY_SIZE(jobs)))
+            return -EINVAL;
+    }
+    pr_info("note_cached: empty tree and empty cache agree\n");
+    return 0;
+}
+
+static void __exit note_cached_exit(void)
+{
+    /* 根与节点均为初始化期间私有自动对象，没有外部保存其地址。 */
+}
+module_init(note_cached_init);
+module_exit(note_cached_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("Private cached rbtree invariant exercise");
 ```
 
-不一定适合：
+先预测：插入 40:0 时它是首对象；插入 10:1 后首对象改变；后面三次返回 NULL，但都已插入。删除 70:4 返回 NULL 且树不空；删除 10:1 返回后继 25:3。故意用普通删除摘掉 25:3 时，树会修复，缓存仍保存那个旧成员地址，数组核对就会发现不一致。
 
-```text
-很少取最小节点；
-树规模很小；
-主要按 key 查找而不是取最小；
-需要同时缓存最小和最大。
+故障对象是仍然存活的局部数组元素，程序不会释放它，也没有并发入口。因此这里能安全比较地址并在独占条件下重新计算缓存，以便继续后面的观察；这不是建议生产代码对任意悬空缓存进行解引用后再修补。真正的修正是让所有合法修改路径维持不变量。
+
+所有对象与根都仅在初始化函数里存活，既无动态申请也无外部发布，任何检查失败返回都没有堆对象或共享入口需要回收。成功路径逐个 cached 摘除到空。程序没有用 RB_EMPTY_NODE 作为台账，因此不要求额外清游离标记；若业务采用该协议，应按自己的安全时机维护。
+
+已有 [Makefile](../../../../labs/kernel/tree_basics/materials/Makefile) 登记该模块。Linux 构建环境先设置匹配目标内核的 KDIR，并按工具链设置 ARCH/CROSS_COMPILE；在仓库根目录构建：
+
+```bash
+: "${KDIR:?先设置匹配目标内核的构建目录}"
+make -C "$KDIR" M="$PWD/labs/kernel/tree_basics/materials" modules
 ```
 
-使用 cached tree 时要统一使用 cached 接口：
+把 note_rbtree_cached.ko 放到匹配目标系统后，从它所在目录执行：
 
-```text
-rb_first_cached()
-rb_insert_color_cached()
-rb_add_cached()
-rb_erase_cached()
-rb_replace_node_cached()
+```bash
+sudo insmod ./note_rbtree_cached.ko
+sudo dmesg | tail -n 30
+sudo rmmod note_rbtree_cached
 ```
 
-如果混用普通接口：
+成功时预期五条核心消息如下；初始化失败时先检查 insmod 错误和日志，不假定模块已经加载：
 
 ```text
-rb_insert_color()
-rb_erase()
-rb_replace_node()
+note_cached: five inserts, first=10:1
+note_cached: erase non-first returns NULL, first still exists
+note_cached: erase first returns 25:3
+note_cached: ordinary erase leaves a stale cache
+note_cached: empty tree and empty cache agree
 ```
 
-就可能忘记维护 `rb_leftmost`。
-
-------
+本轮 ARMv7 前端与宿主显式适配检查已执行，目标 Kbuild、MODPOST、装卸及这组目标日志未执行。宿主父色位宽和访问宏有适配，只检查串行算法与接口返回，不证明内核 ABI、并发可见性或实际缓存性能。
 
 ### 12.2.6\_本节小结
 
-cached rbtree 的核心结论：
+缓存把反复查找首节点的工作移到更新者维护的额外入口，但不改变树操作和寿命契约。按 C0～C6 核对的是两个槽、树结构与对象持有三组不同状态；稳定时首地址一致，中间态需被保护。三个练习检查这个认识：
 
-```text
-第一，rb_root_cached 在普通 rb_root 外增加 rb_leftmost。
+1. 将 25 的输入改为 5，哪次插入会新成首节点？它会排在 10 之前，rb_add_cached 那次返回该节点；测试预期也须随输入契约改变，不能继续硬编码“只有前两次返回节点”。
+2. 删除非首对象时返回 NULL，能据此清空 root.rb_leftmost 吗？不能，NULL 在这个分支只是没有新的首地址要报告，原缓存仍正确。
+3. 只比较缓存键值与最小键值，能发现所有错误吗？不能，两个等价键对象地址不同；还需核对当前中序首对象身份以及它是否仍为有效成员。
 
-第二，rb_first_cached() 是 O(1) 获取最左节点。
+下一节不再缓存一个端点，而是给每个子树增加摘要。旋转仍保持中序关系，却会改变哪些节点属于某个子树，因此仅保存最左地址的办法不能直接维护区间最大值等增强信息。
 
-第三，插入时 leftmost 参数必须由搜索路径正确计算。
-
-第四，删除最左节点时，新 leftmost 是 rb_next(node)。
-
-第五，cached 接口只维护最左节点，不维护最右节点。
-```
-
-------
 
 ## 12.3\_augmented\_rbtree\_增强红黑树
 
