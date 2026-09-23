@@ -322,3 +322,5 @@ B04ax完成[P12 12.6并发与API误用](../../knowledge/linux/object_lifetime/kr
 B04ay完成[P12 12.7～12.8退出与设备诊断](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.7_remove_上下文和辅助_API_引用之外还有收尾协议)，区分资源排空与外壳归还、回调上下文与独占清理责任、设备公开接口与私有桥接。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.114_B04ay退出上下文与设备边界)记录复核范围；下一项12.9～12.10，P12仍pending。
 
 B04az完成[P12诊断方法、练习与章末回顾](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.10.2_最小审查流程)，P12全章作者审查收束，验证边界见[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.115_B04az诊断章末收束)。清单为641项：234 validated、389 pending、18 supporting_pending；下一项P13工程模板，不表示全仓完成。
+
+B04ba全量冷读P13原材料，完成[13.1～13.3模板入口、命名与创建](../../knowledge/linux/object_lifetime/kref/P13_工程模板.md#13.3.2_模板二_alloc/init/get/put/release_分层模板)，提供三阶段失败的完整模块与八例宿主检查。问题盘点和未执行项见[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.116_B04ba创建契约与失败模板)。P13仍pending，下一项13.4集合发布与撤下。

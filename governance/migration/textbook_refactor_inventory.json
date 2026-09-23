@@ -2399,7 +2399,7 @@
       "baseline_sha256": "2ff2f3eb2519857f7f8f1fb91b3ce2046d549f5b59d609e0f24c6df091c81ce2",
       "lines": 2954,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04u 只冷读并同步timer模板和remove入口的票据/重启前提，未改主体模板、未认定全篇完成。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04u 只冷读并同步timer模板和remove入口的票据/重启前提，未改主体模板、未认定全篇完成。 B04ba冷读全章，完成13.1～13.3入口/命名/最小对象及分层创建，新增完整note_kref_create阶段失败模块；固定普通函数八例宿主与ARM前端通过。后续集合发布份额、work关闭窗口、缓存撤下、业务检查和模块退出仍需整改，保持pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P14_源码阅读实验.md",
