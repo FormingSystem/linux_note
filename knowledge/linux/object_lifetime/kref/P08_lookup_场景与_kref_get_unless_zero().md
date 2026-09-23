@@ -302,372 +302,201 @@ if (removed)
 
 ## 8.4\_kref\_get\_unless\_zero()\_防复活\_不防悬挂指针
 
-这一组内容专门收束 `kref_get_unless_zero()`。
+上一节查找锁内能普通 get，是因为集合的一份尚在。现在考虑另一种设计：链表只是索引，**它不拥有引用**；对象最后一份由外部使用者归还，release 再拿索引锁摘链并回收。这样索引不必另有一条显式归还成员引用的路径，但查找必须面对一个新窗口：最后 put 已经把计数归零，release 正等着索引锁，节点仍在表里。
 
-它只解决一个问题：
-
-```text
-refcount 已经是 0 时，不能再把对象重新加引用复活。
-```
-
-它不解决另一个更基础的问题：
-
-```text
-obj 指针本身是否仍然指向有效内存。
-```
-
-所以它必须和锁、RCU、延迟释放或其他内存稳定机制配合使用。
+不要把这两种设计拼起来。拥有型集合“先摘链再归还成员那份”，非拥有索引“最后归零后由回调摘链”；两者的安全依据和 API 选择不同。
 
 ### 8.4.1\_kref\_get\_unless\_zero()\_的定位
 
-`kref_get_unless_zero()` 的语义是：
+查找持有索引锁时，回调不能越过这把锁去回收，因此计数地址仍可访问。可最后 put 在锁外执行，查找并不能阻止计数从 1 变成 0。它需要一个不可拆开的决定：**只有当前计数仍非零，才追加自己的一份；否则失败，绝不撤销已开始的清理。** 这就是条件取得的用途。
 
-```text
-如果引用计数不是 0，则尝试加 1；
-如果引用计数已经是 0，则失败，不加引用。
-```
+在正常计数范围内，`kref_get_unless_zero(&obj->ref)` 非零返回表示取得一份，零返回表示没有取得。本接口返回 int，调用者按布尔语义判断；失败后既不能因这次调用而 put，也不能把未拥有的地址带出保护窗口继续访问。
 
-接口形式：
+尝试增加不是“先 read 非零，再普通 get”。两步之间可能有最后一次减少。真实条件取得在比较和更新之间不能被插入一次成功的冲突修改；若观察值过时，必须重新判断。P05 已经给出这个机制，下面复用完整 [conditional_take.c](../../../../labs/kernel/object_lifetime/materials/conditional_take.c)，让四条分支在本章问题中重新变得可预测。
 
 ```c
-int kref_get_unless_zero(struct kref *kref);
+#include <assert.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdatomic.h>
+#include <stdio.h>
+
+enum interference { NONE, DROP_LAST, ADD_OWNER };
+
+/* refs 本身始终在有效存储中；这里只模拟零/正数，不模拟内核饱和。 */
+static bool try_take(atomic_uint *refs, enum interference event,
+                     unsigned int *attempts)
+{
+    unsigned int old = atomic_load_explicit(refs, memory_order_relaxed);
+    *attempts = 0;
+    while (old != 0) {
+        assert(old < UINT_MAX);
+        if (*attempts == 0 && event != NONE) {
+            /* 在第一次观察与比较之间，显式安排另一条路径先改变计数。 */
+            atomic_store_explicit(refs, event == DROP_LAST ? 0u : 2u,
+                                  memory_order_relaxed);
+        }
+        ++*attempts;
+        if (atomic_compare_exchange_strong_explicit(refs, &old, old + 1,
+                memory_order_relaxed, memory_order_relaxed))
+            return true;
+        /* 比较失败已把 old 更新为当前值，下一轮必须重新检查它是否为零。 */
+    }
+    return false;
+}
+
+int main(void)
+{
+    const unsigned int initial[] = {0, 1, 1, 1};
+    const enum interference events[] = {NONE, NONE, DROP_LAST, ADD_OWNER};
+    const unsigned int expected_count[] = {0, 2, 0, 3};
+    const unsigned int expected_attempts[] = {0, 1, 1, 2};
+    const bool expected_result[] = {false, true, false, true};
+    for (unsigned int path = 0; path < 4; ++path) {
+        atomic_uint refs;
+        atomic_init(&refs, initial[path]);
+        unsigned int attempts;
+        bool taken = try_take(&refs, events[path], &attempts);
+        unsigned int count = atomic_load_explicit(&refs, memory_order_relaxed);
+        assert(taken == expected_result[path]);
+        assert(count == expected_count[path]);
+        assert(attempts == expected_attempts[path]);
+        printf("path=%u taken=%u count=%u attempts=%u\n",
+               path, taken ? 1u : 0u, count, attempts);
+    }
+    return 0;
+}
 ```
 
-返回值通常按布尔语义使用：
+这是独立 C11 教学模型。`refs` 始终是仍有效的自动变量；模型不分配/释放对象，不实现 Linux 饱和标记，也不启动其他线程。`event` 在观察和比较之间顺序插入一个状态变化，模拟需要处理的交错。`atomic_compare_exchange_strong_explicit` 比较失败会把当前值写回 old，这正是下一轮判断所需的信息。
+
+在材料目录运行：
+
+```bash
+cc -std=c11 -Wall -Wextra -Werror -O2 conditional_take.c -o conditional_take
+./conditional_take
+```
+
+输出应为：
 
 ```text
-返回非 0：成功获得引用；
-返回 0：引用计数已经是 0，没有获得引用。
+path=0 taken=0 count=0 attempts=0
+path=1 taken=1 count=2 attempts=1
+path=2 taken=0 count=0 attempts=1
+path=3 taken=1 count=3 attempts=2
 ```
 
-典型使用：
+先只比较路径 1 和 2：同样先读到 1，路径 2 在首次比较前被改成 0，所以比较失败、old 更新为 0，循环结束，绝不重试成 1。路径 3 则把计数改成 2，第一次比较同样失败，但下一次可以把 2 改成 3。**比较失败不等于取得最终失败**；只有重新看到零，才走本模型的拒绝分支。
 
-```c
-if (!kref_get_unless_zero(&obj->ref))
-	return NULL;
-```
-
-它解决的问题是：
-
-```text
-避免对已经归零的引用计数重新加引用。
-```
-
-也就是避免这种错误：
-
-```text
-refcount 已经到 0；
-release 已经开始或即将开始；
-另一个路径又把 refcount 从 0 加回 1；
-对象被“复活”。
-```
-
-`kref_get_unless_zero()` 的核心价值是：
-
-```text
-只允许从非 0 引用计数上获得新引用；
-不允许从 0 重新复活对象。
-```
-
-------
+模型中的 assert 检查预期，编译时不要加 NDEBUG。运行结果不证明任意地址有效，也不证明 ARM 上的全部排序行为；这里观察的只是比较、重试与零值退出。
 
 ### 8.4.2\_kref\_get\_unless\_zero()\_不解决什么
 
-必须强调：
+条件操作的第一步仍然要读取计数。若返回的 obj 已释放，`&obj->ref` 指向的存储就没有本次协议保证，函数根本没有机会先安全地询问“这个地址还能不能读”。改成条件取得，或者先读一次编号、标志位，均不能修复这一点。
 
-```text
-kref_get_unless_zero() 不解决 obj 指针本身是否有效的问题。
-```
+即使地址没有失效，成功也只增加寿命责任。对象可能已停止接单；业务字段可能由另一个锁保护；地址复用以后编号可能代表另一代对象。这些分别需要业务状态、字段同步和身份协议。特别是内存已被复用成新对象时，某个非零计数不能证明它还是你最初寻找的那个对象。
 
-错误理解：
-
-```text
-普通 kref_get 不安全；
-换成 kref_get_unless_zero 就安全。
-```
-
-这是错的。
-
-如果 `obj` 指针已经悬挂，那么：
-
-```c
-kref_get_unless_zero(&obj->ref);
-```
-
-仍然是在访问释放后的内存。
-
-也就是说，它必须先访问：
-
-```c
-obj->ref
-```
-
-而访问 `obj->ref` 的前提是：
-
-```text
-obj 指针仍然指向有效内存。
-```
-
-所以 `kref_get_unless_zero()` 只解决：
-
-```text
-refcount 不是 0 才加引用。
-```
-
-它不解决：
-
-```text
-obj 指针是不是悬挂；
-obj 内存是不是已经 kfree；
-lookup 过程有没有并发删除；
-集合结构是不是一致；
-对象状态是否允许使用。
-```
-
-本章最重要的一句话：
-
-```text
-kref_get_unless_zero() 不是裸 lookup 的护身符。
-```
-
-------
+本章的正常返回契约也不覆盖引用计数损坏。固定 6.12.20 的条件链遇到异常值或溢出会走饱和诊断，可能仍返回非零；它不是一个“true 代表对象完全健康”的检查器。普通 get 同样有零值/溢出诊断，不能以“有诊断”推导允许从零取得。具体语句沿[源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入[条件取得实现](../../../../research/source_reading/kref/source_explanations/include/linux/refcount.h.md#1.5_条件增加与失败重试)和[普通增加的异常分支](../../../../research/source_reading/kref/source_explanations/include/linux/refcount.h.md#1.2_普通增加与异常检测)。
 
 ### 8.4.3\_kref\_get\_unless\_zero()\_仍然需要锁或\_RCU
 
-正确使用 `kref_get_unless_zero()` 时，仍然需要一种机制保证：
+把本节非拥有索引的一轮过程接回 S0～S5：S0 创建初始引用，S1 只建立索引关系、不追加索引份额；S2 查找持锁并条件取得；S4 最后归还可能在锁外发生；S5 回调必须先取相同索引锁，摘链后才回收。这里 S2 与 S4/S5 可以交叠，所以它不是“单一 LIVE 状态”能完整描述的对象。
 
-```text
-在执行 kref_get_unless_zero(&obj->ref) 时，
-obj 所在内存还没有被释放。
+```mermaid
+flowchart LR
+    L[查找者] -->|S2持有| M[索引mutex与链表关系]
+    L -->|读与条件比较更新| C[obj.ref计数]
+    P[外部引用持有者] -->|S4锁外最后put| C
+    C -->|归零同步进入| R[release]
+    R -->|S5必须取得同锁才能摘链| M
+    R -->|摘链并解锁后| F[回收对象存储]
 ```
 
-这个机制通常来自：
-
-```text
-mutex/spinlock 保护集合；
-RCU 保护读侧访问；
-延迟释放；
-对象内存由更外层结构保证；
-释放路径和 lookup 路径有明确序列化。
+```mermaid
+sequenceDiagram
+    participant L as 查找者
+    participant P as 最后外部持有者
+    participant M as 索引mutex
+    participant C as 对象计数
+    L->>M: S2持锁找到节点
+    alt 条件增加先完成
+        L->>C: 1变2，取得自己的份额
+        P->>C: S4归还原份额，2变1，不进回调
+        L->>M: 解锁并带引用返回
+    else 最后归零先完成
+        P->>C: S4将1变0，进入release
+        P->>M: S5请求同锁，必须等待
+        L->>C: 读到零或比较失败后见零，不取得
+        L->>M: 解锁，返回NULL
+        P->>M: 获锁并摘链，然后解锁
+        P->>P: 回收存储
+    end
 ```
 
-典型错误：
+图中查找者没有通知计数“等待我”，也没有给每个拥有者发消息。保护地址的成本由 mutex 的互斥与等待承担；计数竞争由共享原子比较承担。release 中拿这把可睡眠的锁还约束了最后 put 的上下文，不能把这套示例直接搬到中断回调。调用普通 put 时也不能已经持有同一 mutex，否则最后一份触发的回调会递归等待自己。
 
-```c
-obj = my_obj_lookup_raw(id);
-if (!obj)
-	return NULL;
-
-if (!kref_get_unless_zero(&obj->ref))
-	return NULL;
-
-return obj;
-```
-
-如果 `my_obj_lookup_raw()` 没有任何保护，这仍然是错的。
-
-正确形式应该是：
-
-```c
-mutex_lock(&my_obj_lock);
-
-obj = my_obj_lookup_locked(id);
-if (obj && !kref_get_unless_zero(&obj->ref))
-	obj = NULL;
-
-mutex_unlock(&my_obj_lock);
-
-return obj;
-```
-
-或者在 RCU 场景中：
-
-```c
-rcu_read_lock();
-
-obj = my_obj_lookup_rcu(id);
-if (obj && !kref_get_unless_zero(&obj->ref))
-	obj = NULL;
-
-rcu_read_unlock();
-
-return obj;
-```
-
-但 RCU 版本还要求：
-
-```text
-对象内存释放必须延迟到 RCU grace period 之后；
-release 不能立即 kfree 掉 RCU 读侧可能看到的对象内存。
-```
-
-这部分第 10 章会专门展开。
-
-------
+RCU 可以提供另一种读侧窗口，但必须先有匹配的发布/摘除和延迟回收协议，且窗口覆盖条件取得；仅写 `rcu_read_lock()` 不会让任意对象免于被 kfree。P10 再比较具体回收排序，本节不把两种协议混成可互换的锁函数。
 
 ### 8.4.4\_什么时候用\_kref\_get()\_什么时候用\_kref\_get\_unless\_zero()
 
 #### (1)\_可以确认\_refcount\_一定非\_0\_用\_kref\_get()
 
-如果锁保护下可以证明：
-
-```text
-对象还在集合中；
-集合持有引用；
-对象不可能正在释放；
-refcount 不可能为 0。
-```
-
-那么可以直接：
-
-```c
-kref_get(&obj->ref);
-```
-
-例如：
-
-```c
-mutex_lock(&my_obj_lock);
-
-obj = my_obj_find_locked(id);
-if (obj)
-	kref_get(&obj->ref);
-
-mutex_unlock(&my_obj_lock);
-```
-
-这个模式依赖：
-
-```text
-只要 obj 在 list 中，list 就持有一份引用。
-```
-
-因此 refcount 不可能是 0。
-
-------
+已有独立引用，或者查找锁内仍有容器拥有的一份，就已经获得正计数保证。此时普通 get 表达“在已有责任基础上增加一份”。P05 的另一种非拥有索引通过 `kref_put_mutex` 把最后减少也纳入同锁，锁内找到成员同样可以证明正数；不要仅按“容器是否拥有”这一个标签选 API。
 
 #### (2)\_可能看到正在退出的对象\_用\_kref\_get\_unless\_zero()
 
-如果 lookup 可能看到一个正在退出、正在撤销、refcount 可能接近 0 的对象，就适合用：
-
-```c
-kref_get_unless_zero()
-```
-
-例如某些场景下，对象可能仍被 RCU 读侧看到，但已经从正常生命周期中退出。
-
-此时不能无条件：
-
-```c
-kref_get(&obj->ref);
-```
-
-因为这可能把一个已经走向销毁的对象重新拉回来。
-
-应该：
-
-```c
-if (!kref_get_unless_zero(&obj->ref))
-	obj = NULL;
-```
-
-意思是：
-
-```text
-只有对象仍然有活跃引用时，当前路径才加入持有者集合；
-如果引用已经归零，就不要复活它。
-```
-
-------
+准确条件是 **计数存储仍有效，但最后归零不被当前保护窗口排除**。本节锁外最后减少、回调内取锁摘链就是实例。“正在退出”单独不够精确：一个已停止业务却仍有旧用户份额的对象，计数可以明确为正；选条件 get 也不会自动拒绝其业务。
 
 #### (3)\_判断表
 
-| 场景                      | 是否能用 `kref_get()` | 是否适合 `kref_get_unless_zero()` | 说明                    |
-| ------------------------- | --------------------- | --------------------------------- | ----------------------- |
-| 当前路径本来就持有引用    | 可以                  | 通常不需要                        | 已经证明对象有效        |
-| 锁内 lookup，集合持有引用 | 可以                  | 可用但通常多余                    | refcount 必然非 0       |
-| 无保护裸 lookup           | 不可以                | 也不可以                          | 指针本身可能悬挂        |
-| RCU lookup，内存延迟释放  | 不应无条件用          | 常用                              | 必须防止复活 0 引用对象 |
-| 对象可能正在退出          | 不应无条件用          | 常用                              | 失败表示不能获得引用    |
-| refcount 可能已为 0       | 不可以                | 可以尝试                          | 前提是 obj 内存仍有效   |
+| 已经证明的条件 | 取得选择 | 仍须另外证明什么 |
+| --- | --- | --- |
+| 调用者已有一份 | 普通 get | 追加用途及归还责任 |
+| 拥有型容器的成员在同锁内 | 普通 get | 插入交付一份、摘下才归还 |
+| 非拥有索引，最后减少也与查找同锁串行 | 普通 get 可成立 | 所有可能最后归还的路径都遵守该协议 |
+| 非拥有索引，最后减少在锁外，回调拿查找锁才回收 | 条件 get | 地址窗口、失败不 put、回调上下文 |
+| 正确延迟回收的 RCU 窗口，可能见到零 | 条件 get | 发布可见性、身份及回收排序 |
+| 无法证明地址期限 | 两种都不能用 | 先修复外层协议 |
 
-一句话：
-
-```text
-kref_get() 要求你已经证明对象活着；
-kref_get_unless_zero() 只允许你在对象尚未归零时加入引用者。
-```
-
-但两者共同前提都是：
-
-```text
-obj 指针本身必须有效。
-```
-
-------
+条件 get 可以在拥有型容器里使用，但正常失败本不应发生。若它真的失败，不能安慰自己“已安全处理不存在”：那可能说明本该由容器持有的份额已经被错误消耗，需要调查协议。不额外增加诊断分支也可以，普通 get 的前提本来就由程序设计证明。
 
 ### 8.4.5\_mutex\_+\_list\_+\_kref\_get\_unless\_zero()\_模板
 
-虽然在“list 持有引用”的模型里通常直接用 `kref_get()` 就够了，但也可以写成 `kref_get_unless_zero()` 模板。
+下面只展示配对的关键函数；创建、初始引用交付和节点发布须按本节非拥有索引协议完成。这是接口片段，不是另一份完整模块。所有节点变化使用 `index_lock`，发布前完成初始化；索引从不持有一份；全部普通 put 在未持此锁且可睡眠的上下文执行。不要把上一节拥有型 remove 再接到这里，两个退出者会争夺同一个节点。
 
 ```c
-struct my_obj *my_obj_lookup_get(int id)
+/* 借助同锁阻止回调摘链回收，但允许计数在锁外归零。 */
+static struct indexed_object *lookup_get(int id)
 {
-	struct my_obj *obj, *found = NULL;
+    struct indexed_object *obj, *found = NULL;
+    mutex_lock(&index_lock);
+    list_for_each_entry(obj, &object_index, node) {
+        if (obj->id != id)
+            continue;
+        if (kref_get_unless_zero(&obj->ref))
+            found = obj;
+        break; /* 本例要求编号唯一，零计数候选不再交付。 */
+    }
+    mutex_unlock(&index_lock);
+    return found;
+}
 
-	mutex_lock(&my_obj_lock);
-
-	list_for_each_entry(obj, &my_obj_list, node) {
-		if (obj->id != id)
-			continue;
-
-		if (kref_get_unless_zero(&obj->ref))
-			found = obj;
-
-		break;
-	}
-
-	mutex_unlock(&my_obj_lock);
-
-	return found;
+/* 仓库示意回调：最后普通put同步调用；调用者此时不得持index_lock。 */
+static void indexed_release(struct kref *ref)
+{
+    struct indexed_object *obj = container_of(ref, struct indexed_object, ref);
+    mutex_lock(&index_lock);
+    list_del(&obj->node); /* 唯一摘链者；不归还所谓的索引引用。 */
+    mutex_unlock(&index_lock);
+    kfree(obj);
 }
 ```
 
-这个模板表达的是：
+固定 NXP 文档中的该协议由[条件取得模块](../../../../research/source_reading/kref/navigation/P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有)组织，具体 kref 包装只在[唯一实现](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.7_有效地址上的条件取得)展开。上面的应用函数名是本章示意，不冒充上游同名函数。
 
-```text
-在锁内找到对象；
-确认引用计数未归零；
-成功则当前路径获得引用；
-失败则返回 NULL。
-```
+做两个推理练习：如果把 kfree 移到回调拿锁之前，图中哪一步首先失效？如果保持原回调，却让查找失败后也 put，会消耗哪一份？答案分别是查找锁不再保障计数地址，以及失败没有交付任何份额可供归还。最后回看四条 C 输出：能重试成功只说明尚有正计数，并没有给你一个新的业务许可。
 
-如果你的设计能保证：
-
-```text
-只要 obj 在 list 中，refcount 必然非 0。
-```
-
-那么 `kref_get_unless_zero()` 失败理论上不应该发生。
-
-这时可以加调试检查：
-
-```c
-if (WARN_ON(!kref_get_unless_zero(&obj->ref)))
-	found = NULL;
-else
-	found = obj;
-```
-
-但更常见的写法仍然是：
-
-```c
-kref_get(&obj->ref);
-```
-
-因为锁和 list 引用已经证明 refcount 非 0。
-
-------
+下一节保留已经讲清的拥有型协议，把单槽换成哈希桶和整数映射；重点将变成具体容器接口怎样维持同一取得窗口。
 
 ## 8.5\_常见容器\_lookup\_模板
 

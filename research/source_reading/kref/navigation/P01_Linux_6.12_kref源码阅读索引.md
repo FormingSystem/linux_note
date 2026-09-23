@@ -22,6 +22,7 @@ source_version: "6.12.20"
 | 状态真正存在哪里 | [计数成员](../source_explanations/include/linux/kref.h.md#1.1_计数成员) → [refcount 存储](../source_explanations/include/linux/refcount_types.h.md#1.1_原子存储字段) |
 | 正常归零与异常饱和怎样分流 | [模块边界](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [增减 helper](../source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支) → [告警收敛](../source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和) |
 | 最后减少与容器锁怎样交接 | [锁交接模块](P04_最后归还与锁交接导读.md#4.2_把最后减少留在锁内) → [快路径与重查](../source_explanations/lib/refcount.c.md#1.2_快路径保留最后一份) → [kref 回调入口](../source_explanations/include/linux/kref.h.md#1.8_归零时把锁交给回调) |
+| 地址有效却可能归零时怎样接续 | [协议与正文窗口](P03_条件取得与查找窗口导读.md#3.5_把版本协议回接到完整取得过程) → 两种最后归还排序的区别 |
 | 观察非零后为何还会取得失败 | [条件取得模块](P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有) → [比较循环](../source_explanations/include/linux/refcount.h.md#1.5_条件增加与失败重试)与[kref 入口](../source_explanations/include/linux/kref.h.md#1.7_有效地址上的条件取得) |
 | 三条规则为何不能机械加减 | [固定文档调用协议](P02_普通引用与归零回调导读.md#2.10_三条规则与两类查找协议)，比较转交、容器持有与归零串行化；[交付契约](P02_普通引用与归零回调导读.md#2.12_指定份额的交付与调用者责任)区分原子计数和外部责任槽 |
 | 已持引用为何仍被拒绝 | [业务关闭与引用状态模块](P02_普通引用与归零回调导读.md#2.9_停止业务的外层状态)，普通 kref 不检查 accepting |

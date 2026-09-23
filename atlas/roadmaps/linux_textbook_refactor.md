@@ -270,3 +270,5 @@ B04x 完成[P07 异步交付场景](../../knowledge/linux/object_lifetime/kref/P
 B04y 收束[P07 契约与完整请求](../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.6.1_一个完整请求对象_handoff_示例)的 7.4～7.8，新增同一请求的转交/共享模块，以十组宿主控制路径和 ARM 前端核对入队、出队、执行及拒绝。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.88_B04y请求双协议与P07收束)记录前提与未执行目标项；P07 本轮作者审查完成，下一项 P08，全仓继续。
 
 B04z 冷读 P08 全篇，先重写[8.1～8.3 查找取得窗口](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.3.1_正确模型一_mutex/list_lookup_+_kref_get%28%29)，用既有完整登记模块区分地址期限、正计数和独立份额，补齐两种交错及重复撤下规则。后续条件取得与各容器错误已记入[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.89_B04z拥有型查找与首次取得)，P08 仍 pending。
+
+B04aa 完成[P08 条件取得单元](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.4.3_kref_get_unless_zero%28%29_仍然需要锁或_RCU)，按同一非拥有索引解释地址保护、锁外归零、回调等待与比较重试，复用完整 C11 模型。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.90_B04aa条件取得与回调等待)保留验证边界；继续 8.5 容器，P08 未标完成。
