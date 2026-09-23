@@ -31,7 +31,7 @@ domains:
 
 1. [Linux 同步和异步机制总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)。
 2. [错误指针专题](../../knowledge/linux/error_handling/error_pointer/大纲.md#1.1_四次认识变化)。
-3. [devres API](../../knowledge/linux/object_lifetime/devres/devres_API说明.md)。
+3. [devres资源账本与分组](../../knowledge/linux/object_lifetime/devres/大纲.md#1.1_从退出责任进入资源接口)：先运行六条C回滚路径，再查具体资源接口。
 4. [驱动中的时间问题](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P01_驱动中的_时间问题_概述.md)，再按需要学习睡眠、timer、hrtimer 和 delayed work。
 5. [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)及[异步通知](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md)。
 

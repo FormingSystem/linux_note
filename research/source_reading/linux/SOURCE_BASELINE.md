@@ -954,3 +954,7 @@ B04ce沿固定dfaf2136既有kobject/device与清理证据，复核当前设备�
 ## 1.102\_最终模板验收收束
 
 B04cf复用固定dfaf2136已有引用与表协议证据，六组当前note_kref_table宿主检查重编通过。[收束导读](../kref/navigation/P02_普通引用与归零回调导读.md#2.34_最终验收回到实际表模块)记录初始/表/读者责任，不新增上游摘录、ARM构建或目标运行结论。
+
+## 1.103\_devres核心分组与回滚
+
+B04ch重新只读核对官方来源、标签dfaf2136、6.12.20与ARM配置；本地HEAD实验提交不作证据。既有drivers/base/devres.c、dd.c和include/linux/device.h与固定对象规范换行后相同，Documentation/driver-api/driver-model/devres.rst只读核对。新增[devres固定索引](../devres/navigation/P01_Linux_6.12_devres源码阅读索引.md#1.2_按问题进入实现)连接分组、登记及reset包装的唯一实现。六条宿主C平面模型不替代真实锁、嵌套或目标解绑；未新增硬件运行结论。

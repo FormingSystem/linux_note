@@ -1,7 +1,7 @@
 ---
 id: knowledge.linux.object_lifetime.devres.devres_api说明
 title: "devm API接口文档说明"
-kind: mechanism
+kind: reference
 status: evolving
 domains:
   - linux
@@ -10,103 +10,79 @@ domains:
 
 # 第1章\_devm\_API接口文档说明
 
-提问：
-
-* 那么我在哪里可以看到更全面的devm接口或者相关的文档说明呢？
-
-
-
-下面这些来源最系统、最权威，按优先级给你列好，并说明怎么查：
+本页用于查询接口，初次学习先读[从失败回滚到设备资源账本](P01_从失败回滚到设备资源账本.md#1.1_从两条退出路径提取同一份责任)。devres保存清理责任，devm包装登记具体资源；调用者仍负责错误判断、资源使用同步、业务关停和未托管责任。
 
 ## 1.1\_官方内核文档(首选)
 
-- **Devres 总文档**（在线）：*“Devres – Managed Device Resource”*（driver-model/devres）。这是 `devm`/devres 的权威说明，含工作机制、调用时机、释放顺序等。([Linux Kernel 文档](https://docs.kernel.org/driver-api/driver-model/devres.html?utm_source=chatgpt.com))
-- **历史版纯文本**（同内容的早期文档）：`Documentation/driver-model/devres.txt`。适合快速浏览。([kernel.org](https://www.kernel.org/doc/Documentation/driver-model/devres.txt?utm_source=chatgpt.com))
-
-> 如果你要看**内核 6.1 对应版本**的在线文档，也可以在 6.1 文档站点按主题跳转；例如 auxiliary bus 文档中也示例性提到 `devm_add_action_or_reset()` 的使用场景。([kernel.org](https://www.kernel.org/doc/html/v6.1/driver-api/auxiliary_bus.html?utm_source=chatgpt.com))
+优先阅读已确认版本源码中的`Documentation/driver-api/driver-model/devres.rst`，通过[固定源码索引](../../../../research/source_reading/devres/navigation/P01_Linux_6.12_devres源码阅读索引.md#1.1_固定版本与阅读任务)核对本仓库使用的NXP Linux 6.12.20、不可变提交与实际配置。在线[devres文档](https://docs.kernel.org/driver-api/driver-model/devres.html)方便检索，但滚动页面不能代替固定提交证据；历史`Documentation/driver-model/devres.txt`只作为旧目录线索，不用来证明当前接口原型。
 
 ## 1.2\_源码位置(实现\_&\_接口宣告)
 
-- **实现**：`lib/devres.c`（核心 devres 实现、释放流程、分组接口等）。可以直接对照阅读。([docs.huihoo.com](https://docs.huihoo.com/doxygen/linux/kernel/3.7/lib_2devres_8c.html?utm_source=chatgpt.com))
+核心实现位于`drivers/base/devres.c`，公共声明及action包装位于`include/linux/device.h`。`lib/devres.c`包含I/O等资源包装，不是本版本核心分组实现的位置。具体接口还散布在子系统头文件与实现中，既要核对成功路径，也要核对失败回滚及禁用配置下的桩。
 
-- **API 参考方式**：内核树内大量 `devm_*` 接口分散在各子系统头文件/源文件里（如 `include/linux/…`、`drivers/*`）。建议在内核源码根目录用：
+下面在已确认身份的源码仓库只读查询固定版本，不依赖当前实验工作树内容：
 
-  ```bash
-  rg -n "devm_[a-z0-9_]+\("  # 或者 git grep
-  ```
+```bash
+baseline=dfaf2136deb2af2e60b994421281ba42f1c087e0
+git grep -n -E 'devm_[a-z0-9_]+\(' "$baseline" -- include/linux drivers lib
+git show "$baseline":drivers/base/devres.c
+git show "$baseline":include/linux/device.h
+```
 
-  结合 `scripts/kernel-doc` 注释阅读（本地生成 API HTML 见下）。
+名字相似不代表返回值或释放责任相同。先找到声明，再沿实现和对应kernel-doc注释确认参数、返回表示、记录登记时点及自动清理动作。
 
 ## 1.3\_本地生成可浏览\_HTML\_文档
 
-- 在内核源码根目录执行：
+需要离线HTML时，在自己准备的对应版本文档构建树中安装Sphinx等构建依赖后运行`make htmldocs`；本仓库知识整理不会替读者修改外部核对树。默认输出入口为`Documentation/output/html/index.html`，设置独立输出目录时按构建配置定位。
 
-  ```bash
-  make htmldocs
-  # 生成后从 Documentation/output/html/index.html 进入
-  ```
-
-  这样能得到与你的源码版本**完全一致**的 `devm`/devres 文档与各子系统的 API 页面（比网上搜索更对版）。该文档集合的入口是 *The Linux driver implementer’s API guide*。([infradead.org](https://www.infradead.org/~mchehab/rst_conversion/driver-api/index.html?utm_source=chatgpt.com))
+生成结果与所选源码和文档匹配，但不保证所有API都有完整文档，也不会校验你的驱动使用顺序。本页没有把文档构建列为已执行验证；接口核对以保存的源码证据为准。
 
 ## 1.4\_扩展阅读(背景与实践)
 
-- **LWN 文章**：对设备模型与 devres 的背景有不错的讲解与历史线索，适合理解设计动机与使用边界。([LWN.net](https://lwn.net/Articles/645810/?utm_source=chatgpt.com))
-- **演示/讲义**：Haifux 的 *Managed Resource Allocation in Linux Device Drivers*（讲座 PDF），用实例解释 devres 的数据结构与调用路径。([haifux.org](https://www.haifux.org/lectures/323/haifux-devres.pdf?utm_source=chatgpt.com))
-- **子系统文档中的交叉引用**：例如 auxiliary bus 文档里用到 `devm_add_action_or_reset()` 的正确用法，便于理解“没有 devm 版本时用 action 封装”的思路。([Linux Kernel 文档](https://docs.kernel.org/driver-api/auxiliary_bus.html?utm_source=chatgpt.com))
-- **DRM 的对比说明**：DRM 文档说明了何时应使用 `drmm_*` 而非通用 `devm_*`（面向 userspace 可见对象的释放时机差异），有助于把握生命周期边界。([static.lwn.net](https://static.lwn.net/kerneldoc/gpu/drm-internals.html?utm_source=chatgpt.com))
+先沿[返回值与资源记录导读](../../../../research/source_reading/error_pointer/navigation/P02_返回值与清理路径导读.md#2.1_先把返回值与资源记录分开)区分错误传播和资源清理，再沿[devres模块导读](../../../../research/source_reading/devres/navigation/P02_记录与分组清理导读.md#2.1_从记录地址追踪S0到S4)检查状态落点。driver core对象引用与驱动资源期限的区别见[kref框架边界](../kref/P11_kref_refcount_t_kobject_的边界.md#11.4_driver_core_边界_device_class_bus_不是裸_kref)。
 
-------
-
-好的。下面按子系统分类，**逐个接口给出：作用、与同族接口的区别、典型使用场景、返回值与释放语义、常见误用**。基线为 Linux 6.1。只给必要信息，避免冗余。
-
-------
+历史背景可继续查[LWN讨论](https://lwn.net/Articles/645810/)与[Haifux讲义](https://www.haifux.org/lectures/323/haifux-devres.pdf)，它们不替代当前实现。auxiliary bus、DRM等子系统还会引入自己的对象寿命；例如`drmm_*`面向DRM对象的管理期限，不能直接当作通用`devm_*`别名。本页后续各族条目用于定位差异，最终以所选子系统版本契约为准。
 
 # 第2章\_devm\_接口\_作用与区别(按子系统)
 
 ## 2.1\_核心机制\_/\_分组接口
 
+本节按固定dfaf2136提交核对。模型与完整C实验见[六条回滚路径](P01_从失败回滚到设备资源账本.md#1.5_运行完整C模型观察六条路径)，下列接口只承担查询职责。
+
 ### 2.1.1\_devm\_add\_action
 
-**功能**：为“没有 `devm_*` 版本”的资源注册一个**受设备生命周期管理**的释放回调。
- **原型**：`int devm_add_action(struct device *dev, void (*action)(void *), void *data);`
- **参数**：
+调用形式为`int devm_add_action(struct device *dev, void (*action)(void *), void *data)`；本版本实际是宏，转到带调试名称参数的`__devm_add_action()`。成功返回0并登记一条记录；记录分配失败返回`-ENOMEM`，**不执行action**，已经取得的资源仍由调用者负责。登记后的回调在所选devres清理路径执行，参数必须活到该回调结束。
 
-- `dev`：目标设备；
-- `action`：释放回调；
-- `data`：回调的私有参数。
-   **返回值/错误**：`0` 成功；`-ENOMEM` 等。
-   **释放语义**：设备解绑/注销、或 `probe()` 早退时，按 **LIFO** 调用 `action(data)`。
-   **使用要点**：回调内必须满足可在解绑路径**同步**执行（不可睡眠要求取决于上下文，一般可睡眠）。
-   **常见误用**：把“运行状态复位”（如时钟关闭）只放进 `action` 而不在 `remove()`/PM 配对；应在 `remove()`/PM 明确回退状态。
+action可封装资源释放，也可封装符合依赖的关停动作。正常解绑的清理不会替代每次PM暂停/恢复；锁外回调也不自动取得任意睡眠资格。具体登记实现见[__devm_add_action](../../../../research/source_reading/devres/source_explanations/drivers/base/devres.c.md#1.1_普通action登记成功才转交责任)。
 
 ### 2.1.2\_devm\_add\_action\_or\_reset
 
-**功能**：与 `devm_add_action` 相同，但**注册失败**时会**立即**执行一次 `action(data)`，避免半初始化。
- **原型**：`int devm_add_action_or_reset(struct device *dev, void (*action)(void *), void *data);`
- **差异点**：失败时“即时回滚”。
- **适用**：没有 `devm_*` 版本、且初始化流程中间失败风险高的资源。
+调用参数与普通add相同。成功仍只登记，不立即执行；失败则在返回错误以前立即执行`action(data)`，此时不留下待清理记录。调用者在失败分支不能再重复释放同一资源；action须能在登记调用者的上下文执行。见[失败即时回滚实现](../../../../research/source_reading/devres/source_explanations/include/linux/device.h.md#1.1_reset包装失败直接执行)。
 
 ### 2.1.3\_devres\_open\_group
 
-**功能**：开启一个 devres 资源分组，便于阶段化回滚。
- **原型**：`struct devres_group *devres_open_group(struct device *dev, void *id, gfp_t gfp);`
- **参数**：`id` 可自定义用于后续引用；`gfp` 分配标志。
- **返回值**：组指针或 `NULL`。
- **使用要点**：在阶段开始处调用，随后登记的 `devm_*` 资源会进入该组。
+原型为`void *devres_open_group(struct device *dev, void *id, gfp_t gfp)`。返回组ID，分配失败返回NULL；**返回类型不是公开的struct devres_group指针**。传入非NULL标识须避免与另一组冲突，传NULL则由核心生成标识。成功只登记开始标记，后续记录沿同一设备链追加。见[open实现](../../../../research/source_reading/devres/source_explanations/drivers/base/devres.c.md#1.2_devres_open_group登记开始标记)。
 
 ### 2.1.4\_devres\_close\_group
 
-**功能**：关闭先前 `open_group` 的分组，固化该组资源。
- **原型**：`void devres_close_group(struct device *dev, struct devres_group *grp);`
- **使用要点**：阶段成功后调用，使该组不再被 `remove_group` 撤销。
+原型为`void devres_close_group(struct device *dev, void *id)`。给有效未关闭组追加结束标记，此后登记的资源在组外；不执行回调，也不取消之后显式release该组的能力。需要后来选择一个已关闭组时保存并传入明确ID；NULL选择最近未关闭组。不要重复关闭同一个组。见[close实现](../../../../research/source_reading/devres/source_explanations/drivers/base/devres.c.md#1.3_devres_close_group限定范围)。
 
 ### 2.1.5\_devres\_remove\_group
 
-**功能**：撤销（回滚）`open_group` 之后登记的资源。
- **原型**：`void devres_remove_group(struct device *dev, void *id);`
- **使用要点**：阶段失败时调用，实现“一键回滚”。
+原型为`void devres_remove_group(struct device *dev, void *id)`。它只移除该组的开始/结束标记并释放组管理结构，**不释放组内资源**。常用于中间层创建成功以后撤掉临时分组，让已登记资源继续由设备管理；它不是失败回滚接口。组被移除以后不得继续使用生成的ID选择它。见[remove实现](../../../../research/source_reading/devres/source_explanations/drivers/base/devres.c.md#1.4_devres_remove_group只拿走标记)。
 
-------
+### 2.1.6\_devres\_release\_group
+
+原型为`int devres_release_group(struct device *dev, void *id)`。选择从开始标记到结束标记的范围；未关闭组延伸到当前设备链尾。摘出组内普通资源及合法嵌套组，锁外逆序执行资源回调，并移除选中的组；返回释放的非组资源数量。无效ID不是正常重试办法，固定实现会告警，不能依靠它完成幂等业务。
+
+需要失败时只撤销本阶段，就调用它；需要成功后保留资源但不要组标记，则使用remove。见[范围选择实现](../../../../research/source_reading/devres/source_explanations/drivers/base/devres.c.md#1.5_devres_release_group摘取后回调)。
+
+### 2.1.7\_提前清理与撤销action
+
+`devm_release_action(dev, action, data)`匹配一条记录，执行回调并删除记录；`devm_remove_action(dev, action, data)`只删除记录，不执行action，实际资源责任须已被接走或履行。二者都要求函数与参数相符；重复登记同一对不代表一次操作会自动处理所有副本，未找到记录会告警。参见[分组与action选择](../../../../research/source_reading/devres/navigation/P02_记录与分组清理导读.md#2.3_选择接口先确定责任是否保留)。
+
+普通`free/put`不会自动摘掉对应devres记录，随后自动清理可能再次处理已释放资源。需要提前清理时选配套托管接口；新增action也不会撤销原有记录，不能把它当成消除重复清理的补丁。
+
 
 ## 2.2\_内存与字符串
 
@@ -382,16 +358,12 @@ domains:
 
 ## 2.14\_全局注意事项(统一要求)
 
-- `devm` 仅托管**对象/句柄/映射**的释放；**不托管运行状态**（时钟启停、电源上/下电、pinctrl 状态、PHY 电源/初始化、工作队列/定时器等）。
-- `probe()` 任意位置失败可直接返回；已登记的 `devm` 资源将按 LIFO 回滚。
-- `remove()` 只做**状态回退**；**不要**在 `remove()` 再释放 `devm_*` 资源，避免二次释放。
-- 生命周期**跨设备/全局**的资源不要使用 `devm_*`。
-- 需要在解绑前**提前释放**个别资源的场景，使用对应的 `devm_*_put()`/`devm_free_*()` 或 `devm_add_action_or_reset()` 封装。
+- 每个托管接口只履行其登记的清理责任；action可以封装状态关停，但不自动完成每次PM转换。必须逐项核对资源族的具体契约。
+- probe失败由核心清理已经登记的记录；未托管资源、尚未登记责任及已启动的异步使用者仍由驱动正确收束。
+- remove按依赖关闭入口、停止使用并处理未托管责任；已登记资源不能直接用普通free/put重复清理，需要提前结束时使用配套托管释放接口。
+- 需要活过解绑的资源不能仅依赖本设备devres账本；跨设备使用还要明确谁承担实际存储和资源责任。
+- 提前释放使用对应的托管释放或release_action；新登记action不会自动撤销已有释放记录。
 - 错误码：注意识别 `-EPROBE_DEFER`（依赖尚未就绪），按要求返回上层等待重试。
-
-------
-
-如果你需要，我可以把以上逐接口说明导出为 **Markdown/PDF 速查表**（每页左列“接口名/原型”，右列“语义/参数/错误/注意事项”），便于打印或团队内共享。
 
 ------
 
@@ -406,31 +378,21 @@ domains:
 | CLK          | `devm_clk_get` vs `devm_clk_bulk_get`             | 单个/批量获取          | 多时钟用 **bulk**             |
 | REGULATOR    | `devm_regulator_get` vs `_optional` vs `bulk_get` | 可缺省/批量            | 按依赖关系选择                |
 | RESET        | `get` vs `get_exclusive` vs `get_shared`          | 所有权模式             | 按硬件要求选择                |
-| 平台回滚     | `devres_open_group/close/remove`                  | 阶段化回滚控制         | 大型 `probe()` 使用           |
+| 平台回滚     | `devres_open_group/close/remove/release`                  | 划定范围、移除标记或真正回滚         | 大型 `probe()` 使用           |
 | 无 devm 资源 | `devm_add_action` vs `_or_reset`                  | 注册失败时是否立即回滚 | **`_or_reset` 优先**          |
 
 ------
 
 # 第4章\_常见误用与修正
 
-1. **在 `remove()` 手动释放 `devm_\*` 资源** → 可能二次释放。
-    **修正**：`remove()` 只回退“状态”，对象/句柄由 devres 回收。
-2. **将状态当成托管对象**（如把关电放在 `devm_add_action`） → 状态没有在 PM 路径配对。
-    **修正**：状态在 `remove()`/suspend 显式回退，与 `devm` 解耦。
-3. **跨设备/全局共享资源用 `devm_\*`** → 另一使用方仍需资源时被提前释放。
-    **修正**：此类资源使用旧机制，明确所有权与释放时机。
-4. **顶半部执行可睡眠操作** → 中断处理异常。
-    **修正**：使用 `devm_request_threaded_irq()`，在线程函数内执行可睡眠操作。
-5. **未处理 `-EPROBE_DEFER`** → 设备随机初始化失败。
-    **修正**：对依赖型资源获取失败时识别 `-EPROBE_DEFER` 并返回上层，等待重试。
-
-------
+1. 直接普通free/put一个仍有托管记录的资源，之后可能被再次清理。提前释放要同时处理登记记录，不能只处理底层对象。
+2. action负责解绑时关停，不等于它会在每次PM暂停时自动调用。单次退出与重复电源转换应分别设计，避免漏停或重复停。
+3. 旧用户能保持device外壳，不代表绑定期的devm内存继续存活。按实际需要建立独立外壳和资源失效协议。
+4. 硬中断处理函数仍须遵守不可睡眠约束；线程化IRQ的线程函数允许相应睡眠操作，但不改变顶半部约束。
+5. 依赖未就绪的错误要按获取接口契约传播，包括适用的`-EPROBE_DEFER`，不能把可选缺席与所有失败都转换成成功。
 
 # 第5章\_最小决策规则(学习与实战)
 
-- 句柄/映射/对象在**同一设备生命周期内** → 使用 `devm_*`。
-- 需要**阶段化回滚** → 使用分组接口。
-- 需要在 `probe()` 中某点**提前释放**或生命周期**跨设备/全局** → 使用旧机制或 `devm_add_action_or_reset()` 封装。
-- 所有**运行状态**（clk/regulator/pinctrl/PHY power/任务）**不由 `devm` 托管**，在 `remove()`/PM 路径显式回退。
+先画资源实际使用终点，再判断是否与设备绑定期清理相容。相容时选择对应托管包装；需要阶段回滚时使用release_group；需要保留资源但取消阶段标记时使用remove_group。独立寿命资源应有独立拥有者，不能通过晚登记一个action来延长已登记资源的寿命。
 
-如果你希望，我可以把这份清单转成 **PDF/Markdown 速查表**（按子系统分栏，附常见错误码对照），方便打印或内网Wiki收录。
+最后把成功、登记失败、后续probe失败、主动提前清理和正常解绑分别走一遍；再检查资源族是否还要求启停、同步、状态恢复或回调退出。返回[devres阅读路线](大纲.md#1.1_从退出责任进入资源接口)。

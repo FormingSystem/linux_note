@@ -2287,7 +2287,7 @@
       "baseline_sha256": "1deaa8c3a0eb0f3a8ad4e360d724950628facfd75a705abaaf780c5ffcf4fda9",
       "lines": 436,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04ch已冷读和重写来源、核心分组与全局边界；子系统条目2.2～2.13继续逐族核对，整页仍pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/devres/devres_旧机制_udev_mdev的讨论.md",
@@ -4752,6 +4752,55 @@
       "lines": 191,
       "state": "validated",
       "reason": "B04ca五模型、三固定引用对照、六表组通过，纠正告警预期、快照资格与断言修复误解；无真实UAF，新人工节点红色。"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/devres/P01_从失败回滚到设备资源账本.md",
+      "baseline_sha256": "9fad1283b3360143f6eec5d1620e4b1538c77a2dc45361691e8234300c205bb5",
+      "lines": 262,
+      "state": "validated",
+      "reason": "B04ch新建资源账本完整单元、六条C路径与固定源码分组/action证据；逐篇冷读并核对原文、导航职责、返回值与状态期限；模型和编译检查不冒称目标运行，新人工节点红色。"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/devres/大纲.md",
+      "baseline_sha256": "85afb518ee5a63714c9c9e612bffd0ade9d46824d25722b588cfbb8b366c0be3",
+      "lines": 31,
+      "state": "validated",
+      "reason": "B04ch新建资源账本完整单元、六条C路径与固定源码分组/action证据；逐篇冷读并核对原文、导航职责、返回值与状态期限；模型和编译检查不冒称目标运行，新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/devres/大纲.md",
+      "baseline_sha256": "15356ca68a6152dbb1aacbd63cd9054abc21aa99be14b12476a00324c39a4cac",
+      "lines": 21,
+      "state": "validated",
+      "reason": "B04ch新建资源账本完整单元、六条C路径与固定源码分组/action证据；逐篇冷读并核对原文、导航职责、返回值与状态期限；模型和编译检查不冒称目标运行，新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/devres/navigation/P01_Linux_6.12_devres源码阅读索引.md",
+      "baseline_sha256": "97d8de6a5e65e1fa4f0c9b0ba1f9f6fb5fd8a6df42af2e28d305b80fc0520262",
+      "lines": 30,
+      "state": "validated",
+      "reason": "B04ch新建资源账本完整单元、六条C路径与固定源码分组/action证据；逐篇冷读并核对原文、导航职责、返回值与状态期限；模型和编译检查不冒称目标运行，新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/devres/navigation/P02_记录与分组清理导读.md",
+      "baseline_sha256": "fd28533b132663d2c7da345967d46d9f26032e52cac950cf7241deb0305efaee",
+      "lines": 44,
+      "state": "validated",
+      "reason": "B04ch新建资源账本完整单元、六条C路径与固定源码分组/action证据；逐篇冷读并核对原文、导航职责、返回值与状态期限；模型和编译检查不冒称目标运行，新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/devres/source_explanations/drivers/base/devres.c.md",
+      "baseline_sha256": "561c21933d66100ac1e9e3ec396a4f5646389c81832c26ff186a602540643fc2",
+      "lines": 268,
+      "state": "validated",
+      "reason": "B04ch新建资源账本完整单元、六条C路径与固定源码分组/action证据；逐篇冷读并核对原文、导航职责、返回值与状态期限；模型和编译检查不冒称目标运行，新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/devres/source_explanations/include/linux/device.h.md",
+      "baseline_sha256": "cec99b09c1dd804d82724a10ffe3f0b0c7ef51efc35fe0ecc8e0b2c2b787f1f3",
+      "lines": 41,
+      "state": "validated",
+      "reason": "B04ch新建资源账本完整单元、六条C路径与固定源码分组/action证据；逐篇冷读并核对原文、导航职责、返回值与状态期限；模型和编译检查不冒称目标运行，新人工节点红色。"
     }
   ]
 }

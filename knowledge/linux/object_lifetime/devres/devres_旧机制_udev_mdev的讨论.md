@@ -169,7 +169,7 @@ static int foo_remove(struct platform_device *pdev)
    - 也就是说，即便 `remove()` 为 `NULL`，或者只做了部分状态回退，**`devm` 仍会把由 `devm_\*` 获取的句柄/映射/对象全部释放干净**。
 3. **特殊情况：`probe()` 失败早退**
    - 如果在 `probe()` 过程中已经用了一些 `devm_*` 接口，然后中途 `return -Exxx`，**这些已登记的 devm 资源同样会被自动回滚释放**。
-   - 如果使用了 `devres_open_group()/devres_remove_group()` 做阶段化初始化，也会得到相同的“一键回滚”效果。
+   - 如果使用了 `devres_open_group()/devres_release_group()` 做阶段化初始化，也会得到相同的“一键回滚”效果。
 
 ##### 2)\_你需要在\_remove()\_里做什么(而\_devm\_不会做的)
 
@@ -328,7 +328,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
 - **不要**在 `remove()` 再手动释放 `devm_*` 获取的对象（避免二次释放）；
 - **必须**在 `remove()`/PM 中回退**状态**（时钟、电源、pinctrl、工作队列/定时器等无 devm 版本的实体）；
 - **不要**将生命周期跨设备/全局共享的资源交给 `devm`；
-- 需要在 `probe()` 内“某一步立即释放”的精确时点控制时，使用非 `devm` 或 `devres_open_group()`/`devres_remove_group()` 实现阶段化回滚。
+- 需要在 `probe()` 内“某一步立即释放”的精确时点控制时，使用非 `devm` 或 `devres_open_group()`/`devres_release_group()` 实现阶段化回滚。
 
 
 
@@ -471,17 +471,19 @@ static int foo_remove(struct platform_device *pdev)
 当 `probe()` 很长且分阶段初始化时，可使用 devres 分组接口控制某一阶段的批量回滚：
 
 ```c
-struct devres_group *g = devres_open_group(dev, NULL, GFP_KERNEL);
+void *g = devres_open_group(dev, NULL, GFP_KERNEL);
+if (!g)
+    return -ENOMEM;
 /* 阶段 A：多个 devm_* */
 ...
 if (err) {
-    devres_remove_group(dev, g);  /* 回滚阶段 A */
+    devres_release_group(dev, g); /* 回滚阶段A，实际执行资源回调。 */
     return err;
 }
-devres_close_group(dev, g);  /* 固化阶段 A 的资源 */
+devres_close_group(dev, g); /* 划定阶段A的末端，不阻止以后release。 */
 ```
 
-- 作用：将同一阶段内登记的 `devm_*` 资源打包；若该阶段失败，统一撤销；若阶段完成，关闭该组，避免后续回滚波及。
+- 这是阶段边界示意，省略号不构成可编译程序。关闭组只使后来登记的资源位于组外；若不再需要阶段标记而要保留资源，使用remove_group。完整机制与C实验见[资源账本](P01_从失败回滚到设备资源账本.md#1.4_阶段失败为什么需要分组)。
 
 ------
 
@@ -815,7 +817,7 @@ sequenceDiagram
 2. **状态显式启用/关闭**：
    - 启用：`clk_prepare_enable()`、`regulator_enable()`、`pinctrl_select_state(default)`；
    - 关闭：在 `remove()`/PM 对称执行 `clk_disable_unprepare()`、`regulator_disable()`、`pinctrl_select_state(sleep)`。
-3. **失败路径**：任何一步失败，直接 `return -Exxx`；已登记的 `devm` 对象会自动回滚；必要时用 `devres_open_group()/remove_group()` 做阶段化回滚。
+3. **失败路径**：核心清理已登记的devm责任，驱动仍须处理未托管资源和已启动的使用者；必要时用`devres_open_group()/release_group()`做阶段回滚。remove_group只移除分组标记，不释放资源。
 4. **禁止重复释放**：`remove()` 不再对 `devm_*` 对象做 `*_put/free/unmap`。
 5. **导出对象的生命周期**：跨设备/全局共享对象不要用 `devm_*`；使用旧机制并制定集中释放函数。
 
@@ -1012,10 +1014,11 @@ assert_dev /dev/gpiochip0 660 gpio
 - 功能：阶段化回滚。
 - 头文件：`<linux/device.h>`
 - 原型：
-  - `struct devres_group *devres_open_group(struct device *dev, void *id, gfp_t gfp);`
-  - `void devres_close_group(struct device *dev, struct devres_group *grp);`
+  - `void *devres_open_group(struct device *dev, void *id, gfp_t gfp);`
+  - `void devres_close_group(struct device *dev, void *id);`
   - `void devres_remove_group(struct device *dev, void *id);`
-- 要点：`open_group` 后登记的 `devm_*` 资源归入该组；失败时 `remove_group` 撤销；成功后 `close_group` 固化。
+  - `int devres_release_group(struct device *dev, void *id);`
+- 要点：`open_group` 后登记的 `devm_*` 资源归入该组；失败时release_group执行组内清理；close_group只限定范围，remove_group只去掉标记并保留资源。
 
 ------
 

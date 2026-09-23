@@ -330,6 +330,8 @@ mindmap-plugin: basic
             - 🔴 [P01 MMIO 访问顺序与屏障](../../knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md)
     - 对象生命周期
         - devres
+            - 🔴 [devres资源管理阅读大纲](../../knowledge/linux/object_lifetime/devres/大纲.md)
+            - 🔴 [P01从失败回滚到设备资源账本](../../knowledge/linux/object_lifetime/devres/P01_从失败回滚到设备资源账本.md)
             - 🔴 [devm API接口文档说明](../../knowledge/linux/object_lifetime/devres/devres_API说明.md)
             - 🔴 [内核资源管理与用户态设备管理的全景与对比](../../knowledge/linux/object_lifetime/devres/devres_旧机制_udev_mdev的讨论.md)
         - 🔴 [Linux 对象生命周期集成专题](../../knowledge/linux/object_lifetime/integration/大纲.md)
@@ -876,3 +878,9 @@ mindmap-plugin: basic
         - 🟢 [版权与免责声明](../../publications/books/running_linux_kernel/copyright_and_disclaimer.md)
     - 🔴 专题月刊
         - 🔴 [RCU MarkBook](../../markbook/topics/rcu/README.md)
+
+- 🔴 [devres固定源码阅读大纲](../../research/source_reading/devres/大纲.md)
+    - 🔴 [固定源码索引](../../research/source_reading/devres/navigation/P01_Linux_6.12_devres源码阅读索引.md)
+    - 🔴 [记录与分组清理导读](../../research/source_reading/devres/navigation/P02_记录与分组清理导读.md)
+    - 🔴 [核心登记与分组实现](../../research/source_reading/devres/source_explanations/drivers/base/devres.c.md)
+    - 🔴 [action失败回滚包装](../../research/source_reading/devres/source_explanations/include/linux/device.h.md)
