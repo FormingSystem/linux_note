@@ -410,6 +410,8 @@ list.h、hashtable.h、types.h、rculist.h、rcupdate.h 五份既有副本与固
 
 C11 程序串行重放相等键旋转、旧入口漏查与错误写序成环，全部对象在观察期内存活。宿主检查不证明真实内核、RCU 宽限期、SMP 可见顺序或目标 ARM 执行；未执行目标 Kbuild、模块装卸、内存模型工具或性能实验。插入/删除实现仍按后续批次整理，当前入口不代表整套 rbtree 重构完成。
 
+2026-09-23 重构 P08 入口时，再次只读核对工作树身份并通过固定对象读取 rbtree.h 与 rbtree.rst；rb_add、rb_find、rb_find_add 的比较函数参数不能被文档中传统手写模型的说明掩盖。业务比较由调用者提供，不等于头文件没有比较辅助接口；树根不保存比较策略。2007 年使用文档的场景列表按历史背景引用，不冒充当前所有子系统的数据结构。宿主 ordered_jobs.cpp 仅观察业务排序契约，不作为 Linux 实现或性能证据。
+
 ## 1.20\_rbtree插入与父槽证据
 
 沿同一 NXP 固定提交继续核对 include/linux/rbtree.h、rbtree_augmented.h 与 lib/rbtree.c。[插入模块](../rbtree/navigation/P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进)用 I0～I5 对应空槽、红叶、上推与旋转；[修复实现](../rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支)恢复实际分支、变量与 WRITE_ONCE，保留教材原中文推导。新增十五个函数与已有四个查询函数逐语句核对，共十九个函数；父槽助手只在一个实现标题展开，知识正文仍保留机制任务。

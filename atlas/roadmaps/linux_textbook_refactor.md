@@ -174,3 +174,5 @@ B03ac 完整冷读 P07 原 7.4.2，将二十三张图与上下文提问组织为
 B03ad 完整冷读 P07 原 7.4.3，组织为[P36 删除周期](../../knowledge/linux/data_structures/红黑树_rb-tree/P36_红黑删除与缺黑位置传播.md#36.1_移走对象为何不一定马上产生缺口)，保留三十七张原图与全部分支，补缺口父槽、黑贡献证明、完整 C++ 删除及身份练习。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.40_B03ad红黑删除与缺口父槽)记录边界；下一项继续 P07 其余概念、映射和回顾，整章与全仓尚未完成。
 
 B03ae 完整冷读 P07 剩余概念、映射与回顾，保留三十一张图，补[区间折叠实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md#7.5.12_保持键区间的折叠实验)，纠正编码容量、左倾变体和普通旋转的颜色边界。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.41_B03ae红黑映射与全章收束)记录各单元审查依据；P07 经连续批次完成适用检查，下一项 P08 工程结构，全仓仍未完成。
+
+B03af 完成 P08 的入口与选型单元（8.1、8.2），以[任务排序实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#8.2.7_把排序契约变成可观察结果)建立对象身份、复合键和索引所有权，纠正固定版本比较辅助接口与历史场景边界。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.42_B03af业务排序与工程入口)列出检查与限制；P08 的 8.3、8.4 仍待完整冷读和重构，整章保持 pending，下一项继续节点表示。
