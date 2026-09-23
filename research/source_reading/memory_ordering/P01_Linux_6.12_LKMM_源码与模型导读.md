@@ -146,10 +146,10 @@ herd7 -conf linux-kernel.cfg /absolute/path/to/test.litmus
 3. 把 `smp_load_acquire(flag)` 映射为 acquire Read；
 4. `.bell` 给事件标记访问类别；
 5. 寄存器条件选择 Rflag 从发布 Write 取值，Rbuf 从初始写取值；
-6. `.cat` 组合 release/acquire、`po/rf/fr/co` 形成顺序环；
-7. 坏结果违反模型约束，Observation 为 `Never`。
+6. 写buf→release写flag形成po-rel；读取flag→读取buf形成acq-po；旧buf读取经fr、发布侧累积边及flag的rfe合成prop中的同线程回边，进入hb；
+7. 回边与取得侧ppo边形成hb环，违反acyclic hb；`Never`是由此解释的预期判定，不是本批执行的Observation记录。
 
-无序版本把两端换成 ONCE，关键 release/acquire 边消失，坏结果为 `Sometimes`。成对测试证明变化来自哪一类模型边。
+无序版本把两端换成ONCE，关键release/acquire边消失，材料的预期为 `Sometimes`。实际结果须执行成对测试并保存工具输出；不能用预期注释冒充验证。具体读取来源与回边推导见[关系教材](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P08_LKMM事件_关系与一致性判定.md#8.4.1_为MP坏结果找到真实的回边)，其C子图检查器也不是herd7替代品。
 
 ## 1.10\_RCU\_模型能证明什么
 

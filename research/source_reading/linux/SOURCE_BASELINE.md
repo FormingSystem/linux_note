@@ -1006,3 +1006,7 @@ B05g只读固定Documentation/atomic_t.txt全篇，核对非RMW、返回值、�
 ## 1.115\_隐式顺序与登记空窗
 
 B05h只读固定Documentation/memory-barriers.txt的隐式屏障部分及include/linux/wait.h、include/linux/sched.h、include/linux/rcupdate.h、kernel/sched/wait.c相关路径；原始屏障文档对象93d58d9a428b879194ff03ef1aa1ca7c9e01fa14与固定提交一致。核对锁顺序、schedule完整屏障、wake_up条件保证与wake_up_process无条件保证、wait_event快查及登记后重查、task.__state和finish清理。固定wait.c普通扫描没有bookmark分段，已校正[模块边界](../waiting_notification/navigation/P02_Linux_6.12_普通等待队列模块源码概念导读.md#2.5_bookmark与长队列)及知识侧对应引用；保留分段方案为独立概念推演。C模型10条排列中先检查登记丢1条、先登记重检丢0条，只证立即可见、单次持久事件模型，不代表ARM/Linux或herd7执行。
+
+## 1.116\_MP候选关系与模型回边
+
+B05i按固定tools/memory-model/linux-kernel.cat核对po-rel/acq-po、ppo、prop、hb与pb及RCU/plain检查，原始副本对象adf3c4f412296269bb9f8127cd7e04f276479a57与固定提交一致。MP坏候选的fr不是直接hb边；经发布侧累积关系和flag读取来源合成同线程prop回边后进入hb。更新[版本导读的MP阅读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.9_沿_MP_测试追踪一次判定)并区分Never预期与实际Observation。完整C只求这份已推导子图的可达闭包，四种后缀组合仅双侧出现环，不解析cat/不调用herd7；宿主PATH未发现herd7，本批未运行完整模型或目标硬件。

@@ -2972,8 +2972,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P08_LKMM事件_关系与一致性判定.md",
       "baseline_sha256": "dccd3019b476564d75368bdb33f7bb530e24038e7dec778ff7e01d5950a943ac",
       "lines": 162,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05i按固定cat展开候选rf/co/fr、MP同线程prop回边进入hb的真实证明与其他公理边界；完整C严格编译运行四图组合，不当作herd7实际模型执行。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P09_Litmus_形式验证与硬件实验.md",
