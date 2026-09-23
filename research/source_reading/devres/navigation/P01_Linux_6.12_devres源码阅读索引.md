@@ -22,6 +22,7 @@ domains: [linux, source_reading]
 | 关闭、移除、释放组为何不同 | [范围比较](P02_记录与分组清理导读.md#2.2_同一周期内比较分组范围) | [open](../source_explanations/drivers/base/devres.c.md#1.2_devres_open_group登记开始标记)、[close](../source_explanations/drivers/base/devres.c.md#1.3_devres_close_group限定范围)、[remove](../source_explanations/drivers/base/devres.c.md#1.4_devres_remove_group只拿走标记)、[release](../source_explanations/drivers/base/devres.c.md#1.5_devres_release_group摘取后回调) |
 | 登记失败后资源归谁 | [责任选择](P02_记录与分组清理导读.md#2.3_选择接口先确定责任是否保留) | [普通登记](../source_explanations/drivers/base/devres.c.md#1.1_普通action登记成功才转交责任)、[即时回滚](../source_explanations/include/linux/device.h.md#1.1_reset包装失败直接执行) |
 | 内存、映射、GPIO与IRQ的失败能否同样处理 | [资源族导读](P03_内存映射与中断资源导读.md#3.1_内存失败与零大小) | [基础映射](../source_explanations/lib/devres.c.md#1.1_基础映射失败保持NULL)、[resource包装](../source_explanations/lib/devres.c.md#1.2_资源包装将失败编码并撤回区域) |
+| 获取句柄是否同时启用，注册返回什么 | [启停与注册导读](P04_句柄启停与注册契约导读.md#4.1_时钟把退出动作放进同一记录) | [时钟初始化分支](../source_explanations/drivers/clk/clk-devres.c.md#1.1_获取与初始化分支)、[退出与put](../source_explanations/drivers/clk/clk-devres.c.md#1.2_退出动作先于句柄归还) |
 | probe失败与正常解绑怎样进入清理 | [已有错误路径导读](../../error_pointer/navigation/P02_返回值与清理路径导读.md#2.3_跟随驱动失败而不混用返回类型) | [固定dd.c](../../linux/drivers/base/dd.c)中的`really_probe`、`device_unbind_cleanup`与`__device_release_driver` |
 
 ## 1.3\_配置与验证边界

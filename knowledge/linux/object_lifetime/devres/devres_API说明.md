@@ -183,159 +183,142 @@ IRQ处理退出不等于它排出的work或其他异步活动也退出。需要�
 
 ## 2.6\_时钟(Common\_Clock\_Framework)
 
+时钟框架向设备提供运行所需时钟；“取得时钟句柄”与“准备并使能时钟”是不同责任。声明在`include/linux/clk.h`，管理包装在`drivers/clk/clk-devres.c`。沿[句柄与状态导读](../../../../research/source_reading/devres/navigation/P04_句柄启停与注册契约导读.md#4.1_时钟把退出动作放进同一记录)对照普通和enabled两条路径。
+
 ### 2.6.1\_devm\_clk\_get
 
-**功能**：获取一个时钟**句柄**。
- **原型**：`struct clk *devm_clk_get(struct device *dev, const char *id);`
- **返回**：`struct clk *` 或 `ERR_PTR(-Exxx)`。
- **释放**：解绑/失败时自动 `clk_put()`。
- **要点（关键）**：`devm` **只托管句柄**；`clk_prepare_enable()` / `clk_disable_unprepare()`（**状态**）需在 `probe/remove/PM` 显式配对。
+原型：`struct clk *devm_clk_get(struct device *dev, const char *id)`。启用相应实现时返回句柄或错误指针，托管的是clk_put，未自动调用clk_prepare_enable。若自行使能，就要按使用期限配对disable/unprepare，不能只依赖句柄回收。
+
+未启用对应时钟支持的头文件有空操作桩；NULL在部分桩或optional接口中可以表示无须实际操作的时钟，不应将所有NULL都编造成同一种硬件错误。驱动对真实时钟的要求还须由配置依赖和平台描述保障。
 
 ### 2.6.2\_devm\_clk\_bulk\_get
 
-**功能**：批量获取多个时钟句柄并在失败时统一回滚。
- **原型**：`int devm_clk_bulk_get(struct device *dev, int num_clks, struct clk_bulk_data *clks);`
- **返回**：`0` 或 `-Exxx`。
- **释放**：解绑/失败时自动 put。
- **适用**：多时钟域的外设。
+原型：`int devm_clk_bulk_get(struct device *dev, int num_clks, struct clk_bulk_data *clks)`。获取多项句柄，成功0，失败负错误；已取得项在批量获取失败时按底层契约回滚，成功登记后清理调用clk_bulk_put。这一接口不自动enable整组。
 
-------
+管理记录保存的是调用者的clks数组地址，而不是复制整个数组，因此数组和其中所需数据必须活到清理完成。不能把probe栈上的临时数组交给它后返回。参数批量化只减少代码重复，不消除启停、共享及异步使用的约束。
+
+### 2.6.3\_devm\_clk\_get\_enabled
+
+原型：`struct clk *devm_clk_get_enabled(struct device *dev, const char *id)`。先获取，再clk_prepare_enable；成功记录清理时先clk_disable_unprepare，再clk_put。使能失败会归还已取得句柄并释放未登记记录。它证明“devm永远不托管运行状态”是不成立的，但也不会代替每次PM暂停/恢复的策略。
+
+需要整个绑定期持续使能的简单责任可选择此包装；需要频繁电源转换或精确启停顺序时，须另行组织状态责任，避免在remove中重复disable已由托管回调承担的那一份。optional_enabled还有可选获取语义，不能仅凭名称当作必需时钟一定存在。
 
 ## 2.7\_电源(Regulator)
 
+regulator消费者句柄代表设备对供电资源的请求，获取和使能同样分开。共享供电轨的实际电平还取决于提供者约束和其他消费者；归还一个句柄不等于已经证明硬件断电。声明在`include/linux/regulator/consumer.h`，管理包装在`drivers/regulator/devres.c`，见[供电责任导读](../../../../research/source_reading/devres/navigation/P04_句柄启停与注册契约导读.md#4.2_供电的句柄记录与disable动作)。
+
 ### 2.7.1\_devm\_regulator\_get
 
-**功能**：获取一个 regulator 句柄。
- **原型**：`struct regulator *devm_regulator_get(struct device *dev, const char *id);`
- **返回**：`regulator *` 或 `ERR_PTR(-Exxx)`。
- **释放**：解绑/失败时自动 put。
- **要点（关键）**：`regulator_enable()`/`regulator_disable()`（**状态**）需在 `probe/remove/PM` 显式配对；`devm` 不托管电源启停。
+原型：`struct regulator *devm_regulator_get(struct device *dev, const char *id)`。正常实现返回句柄或错误指针，成功登记regulator_put责任，不自动regulator_enable。普通获取的提供者查找政策可能包含dummy替代，不能把非错误返回当作实测电压已经符合要求。
+
+无REGULATOR时普通获取桩返回NULL。驱动应遵循相应配置契约，不能把“编译通过且非错误”提升为存在真实供电控制器的结论。
 
 ### 2.7.2\_devm\_regulator\_get\_optional
 
-**功能**：与 6.1 相同，但资源可缺省。
- **原型**：`struct regulator *devm_regulator_get_optional(struct device *dev, const char *id);`
- **适用**：硬件版本差异。
+原型与普通get相同，名字为`devm_regulator_get_optional`。可选指不应强行采用普通获取的dummy替代；**缺席不是GPIO optional式的NULL契约**，启用实现保留相应错误指针，调用者须按供电依赖策略区分缺席、延迟探测和其他失败。无REGULATOR的optional桩返回`-ENODEV`错误指针。
+
+因此不可把所有子系统的optional写进同一个“NULL表示缺席”辅助函数。明确哪一类缺席允许继续工作，再处理其余错误。
 
 ### 2.7.3\_devm\_regulator\_bulk\_get
 
-**功能**：批量获取 regulator。
- **原型**：`int devm_regulator_bulk_get(struct device *dev, int num_consumers, struct regulator_bulk_data *consumers);`
- **返回**：`0` 或 `-Exxx`。
- **释放**：解绑/失败时自动 put。
- **要点**：启停同样需要批量 `enable/disable` 自行配对。
+原型：`int devm_regulator_bulk_get(struct device *dev, int num_consumers, struct regulator_bulk_data *consumers)`。成功0，失败负错误；获取失败时归还本次先前取得的项，成功后登记regulator_bulk_free责任。此函数没有隐含批量enable。
+
+consumers数组地址被管理记录保存，必须具有足够存储期限；批量启停若另行调用，也要按其成功/失败契约和资源依赖组织配对，不能仅在remove中无条件循环disable。
 
 ### 2.7.4\_devm\_regulator\_put(少用)
 
-**功能**：**提前**释放一个 `devm` 获取的 regulator 引用。
- **原型**：`void devm_regulator_put(struct regulator *regulator);`
- **适用**：特殊情况下提前放弃句柄；一般不必调用。
+原型：`void devm_regulator_put(struct regulator *regulator)`。通过句柄关联的设备找到管理记录，执行释放并移除该记录；它的参数里没有额外dev。用于提前结束由普通托管获取建立的句柄责任，不能用来自动撤销仍需要该句柄的其他action或使用者。
 
-------
+### 2.7.5\_devm\_regulator\_get\_enable
+
+原型：`int devm_regulator_get_enable(struct device *dev, const char *id)`。这里返回整数状态，**不返回供驱动继续操作的句柄**。成功先登记获取责任，再登记disable action，逆序时先disable后put；enable或action登记失败会回滚当前责任，action登记失败的reset路径已执行disable。
+
+适用于绑定期使能的明确需求；不能把它和“自己保存句柄、按PM反复启停”的模型混用。其optional变体仍按供电optional获取契约传播错误，不照搬GPIO的NULL规则。
 
 ## 2.8\_Reset\_控制
 
+复位控制描述硬件模块怎样被置于或释放出复位状态；句柄的共享政策与硬件当前是否处于复位是两组状态。公共包装在`include/linux/reset.h`选择shared、optional、acquired参数，核心在`drivers/reset/core.c`登记reset_control_put。见[复位及其他资源导读](../../../../research/source_reading/devres/navigation/P04_句柄启停与注册契约导读.md#4.3_复位所有权与缺席)。
+
 ### 2.8.1\_devm\_reset\_control\_get
 
-**功能**：获取复位控制句柄。
- **原型**：`struct reset_control *devm_reset_control_get(struct device *dev, const char *id);`
- **返回**：`reset_control *` 或 `ERR_PTR(-Exxx)`。
- **释放**：解绑/失败时自动 put。
- **要点**：具体复位时序（assert/deassert/pulse）由驱动控制；状态需在 `remove()/PM` 按需要复位。
+原型：`struct reset_control *devm_reset_control_get(struct device *dev, const char *id)`。本版本是exclusive获取的包装，成功返回控制句柄，失败错误指针；取得句柄不等于已经执行assert、deassert或reset操作。硬件复位时序须按设备协议实施。
 
 ### 2.8.2\_devm\_reset\_control\_get\_exclusive
 
-**功能**：获取**独占**复位控制句柄。
- **原型**：`struct reset_control *devm_reset_control_get_exclusive(struct device *dev, const char *id);`
- **差异**：拒绝共享。适用于硬件要求严格独占的复位线。
+原型：`struct reset_control *devm_reset_control_get_exclusive(struct device *dev, const char *id)`。请求已取得操作资格的独占控制，不能和其他不相容的持有方式同时使用同一控制。它管理最终put，不替驱动决定退出时应保持复位还是解除复位。
 
 ### 2.8.3\_devm\_reset\_control\_get\_shared
 
-**功能**：获取**共享**复位控制句柄。
- **原型**：`struct reset_control *devm_reset_control_get_shared(struct device *dev, const char *id);`
- **差异**：允许共享；注意并发与引用计数。
+原型：`struct reset_control *devm_reset_control_get_shared(struct device *dev, const char *id)`。面向硬件模块共享同一复位控制的情形。共享assert/deassert受复位核心的deassert_count等协议约束，不能把自己的assert当作不顾其他用户、立即拉动共享线的命令；必须按实际操作契约配对。
+
+“多个代码位置都想访问”本身不是选择shared的理由，应先证明硬件和消费者之间允许这种共享语义。
 
 ### 2.8.4\_devm\_reset\_control\_get\_optional
 
-**功能**：可缺省版本。
- **原型**：`struct reset_control *devm_reset_control_get_optional(struct device *dev, const char *id);`
+原型：`struct reset_control *devm_reset_control_get_optional(struct device *dev, const char *id)`。本版本转到optional_exclusive；允许描述中没有对应复位时返回NULL，其他失败仍是错误指针。底层返回NULL时管理包装释放尚未登记的记录，不创建一条假资源责任。
 
-------
+未启用RESET_CONTROLLER时optional桩返回NULL，非optional返回`-ENOTSUPP`错误指针。调用者要让配置要求与硬件必需条件一致，不能用optional掩盖缺失的控制器支持。
 
 ## 2.9\_DMA\_引擎
 
-### 2.9.1\_devm\_dma\_request\_chan
+DMAengine管理的是传输通道与提交给它的工作，不是CPU通过普通指针访问内存的同义操作。通道句柄、传输结束、回调退出及缓冲区寿命必须分别证明。
 
-**功能**：按名称从 DMA 引擎请求一个通道。
- **原型**：`struct dma_chan *devm_dma_request_chan(struct device *dev, const char *name);`
- **返回**：`dma_chan *` 或 `ERR_PTR(-ENODEV/-EPROBE_DEFER/…)`。
- **释放**：解绑/失败时自动释放引用。
- **要点**：可能返回 `-EPROBE_DEFER`；与设备树 `dmas`/`dma-names` 匹配。
+### 2.9.1\_dma\_request\_chan与显式管理
 
-------
+本基线的公共入口为`struct dma_chan *dma_request_chan(struct device *dev, const char *name)`，头文件`include/linux/dmaengine.h`；它不是devm接口。成功返回通道，失败错误指针，包括依赖未就绪时可能出现的`-EPROBE_DEFER`。按设备的通道描述和名称获取，退出通过dma_release_channel归还。
+
+若用devm_add_action_or_reset封装归还，必须先证明action参数到清理时仍有效，并在释放通道或缓冲区以前停止新提交、等待或终止已提交传输及其回调。dmaengine_terminate_sync成功返回才形成它所承诺的同步终止证据；其错误不能忽略，也不能在原子上下文或同通道完成回调里调用。这里给出管理边界，不提供省略停止流程的伪“自动DMA”模板。固定入口见[其他资源导读](../../../../research/source_reading/devres/navigation/P04_句柄启停与注册契约导读.md#4.4_DMA和PHY的独立阶段)。
 
 ## 2.10\_PHY
 
+这里指通用PHY框架管理的物理层部件，不把所有网络PHY接口都混为同一套API。取得部件句柄与初始化、上电等阶段是不同操作。
+
 ### 2.10.1\_devm\_phy\_get
 
-**功能**：获取 PHY 句柄。
- **原型**：`struct phy *devm_phy_get(struct device *dev, const char *string);`
- **返回**：`phy *` 或 `ERR_PTR(-Exxx)`。
- **释放**：解绑/失败时自动 put。
- **要点**：`phy_power_on/off`、`phy_init/exit` 属于**状态/阶段操作**，需在 `probe/remove/PM` 明确配对。
+原型：`struct phy *devm_phy_get(struct device *dev, const char *string)`，头文件`include/linux/phy/phy.h`。成功返回PHY句柄，失败错误指针；管理包装记录phy_put，未自动代办phy_init/exit或phy_power_on/off。
 
-------
+驱动按实际成功阶段回滚，并按PM和硬件依赖安排退出；不能在某次power_on失败以后假定它已建立需要power_off的责任。若关闭通用PHY支持，头文件桩有单独契约，须同时核对驱动的配置依赖。
 
 ## 2.11\_pinctrl
 
+pinctrl组织设备引脚复用和配置状态；句柄、某个命名状态对象、选择状态的结果分别属于不同步骤。
+
 ### 2.11.1\_devm\_pinctrl\_get
 
-**功能**：获取 pinctrl 句柄。
- **原型**：`struct pinctrl *devm_pinctrl_get(struct device *dev);`
- **返回**：`pinctrl *` 或 `ERR_PTR(-Exxx)`。
- **释放**：解绑/失败时自动 put。
- **要点**：`pinctrl_lookup_state()` + `pinctrl_select_state()` 的状态切换（如 `"default"`/`"sleep"`）**不受 devm 托管**，需在 `remove()/PM` 配对。
+原型：`struct pinctrl *devm_pinctrl_get(struct device *dev)`，头文件`include/linux/pinctrl/consumer.h`。启用实现成功返回句柄，失败错误指针，登记pinctrl_put；不因这次获取就自动完成驱动期待的default/sleep切换。
 
-------
+pinctrl_lookup_state返回状态对象或错误，pinctrl_select_state返回整数结果，二者的错误也要处理。框架已有自动状态选择路径与驱动的PM策略应协调，不能不看总线及驱动核心行为就在所有remove里重复切换。提前结束句柄使用devm_pinctrl_put；这不代替设备安全电平时序。源码入口见[状态与注册导读](../../../../research/source_reading/devres/navigation/P04_句柄启停与注册契约导读.md#4.5_pinctrl与注册类返回值)。
 
 ## 2.12\_平台辅助\_中断号/资源获取(非\_devm\_但常与\_devm\_组合)
 
-> 以下接口不是 `devm_*`，但与上面接口配合频繁，单独列出以免混淆。
+以下是platform资源查询入口，不承担devres自动登记。先完成查询，再把合法结果交给相应申请或映射接口。
 
 ### 2.12.1\_platform\_get\_irq
 
-**功能**：从 `platform_device` 获取中断号。
- **原型**：`int platform_get_irq(struct platform_device *pdev, unsigned int num);`
- **返回**：`>=0` 的 IRQ 号或 `-Exxx`。
- **组合**：获取到 IRQ 后，**再**调用 `devm_request_*_irq` 进行托管。
+原型：`int platform_get_irq(struct platform_device *pdev, unsigned int num)`，头文件`include/linux/platform_device.h`。成功返回有效正IRQ号，失败负错误；本实现会把不应出现的0当作无效IRQ处理。先判断负值并传播适用的延迟错误，再调用devm_request_irq或threaded变体；取得IRQ号本身未注册handler。
 
 ### 2.12.2\_platform\_get\_resource
 
-**功能**：从 `platform_device` 获取 `struct resource`。
- **原型**：`struct resource *platform_get_resource(struct platform_device *pdev, unsigned int type, unsigned int num);`
- **组合**：配合 `devm_ioremap_resource` 或 `devm_platform_ioremap_resource(_byname)`。
-
-------
+原型：`struct resource *platform_get_resource(struct platform_device *pdev, unsigned int type, unsigned int num)`。返回设备资源表中的匹配描述，找不到返回NULL；这是借用描述，不是新分配的托管资源。对内存区域可交给devm_ioremap_resource检查和申请，也可用组合platform映射入口；不要对该描述执行自创的free。
 
 ## 2.13\_注册类(示例)
 
+注册接口可能把驱动提供的对象、操作表或数据暴露给其他执行者。必须在注册允许调用之前完成初始化，并保持它们活到注销所要求的活动退出点；“自动注销”不说明所有对象都由框架代为分配和回收。
+
 ### 2.13.1\_devm\_led\_classdev\_register
 
-**功能**：注册 LED class 设备，解绑自动注销。
- **原型**：`int devm_led_classdev_register(struct device *dev, struct led_classdev *led_cdev);`
- **返回**：`0` 或 `-Exxx`。
- **要点**：并发访问的同步由驱动负责。
+原型：`int devm_led_classdev_register(struct device *dev, struct led_classdev *led_cdev)`，头文件`include/linux/leds.h`。本版本是ext注册接口的内联包装，成功0，失败负错误。成功登记led_classdev_unregister责任；led_cdev由调用者提供，不能指向probe返回后消失的栈变量。
 
-### 2.13.2\_devm\_thermal\_zone\_of\_sensor\_register
+失败时也要按真实注册结果处理，不能仅根据“devm”就当作已经有注销记录。并发回调及硬件访问的驱动约束仍需满足。
 
-**功能**：向 thermal 框架注册 OF 传感器，解绑自动注销。
- **原型**：`int devm_thermal_zone_of_sensor_register(struct device *dev, int id, void *data, const struct thermal_zone_of_device_ops *ops);`
- **返回**：`0` 或 `-Exxx`。
- **要点**：`ops` 回调需要保证热路径稳定。
+### 2.13.2\_devm\_thermal\_of\_zone\_register
 
-（其它如 `devm_extcon_dev_register`、IIO 的 `devm_*` 注册接口，语义一致：**注册成功 → 解绑自动注销**；差异体现在各子系统的回调与数据结构，按需查阅子系统文档。）
+本版本原型：`struct thermal_zone_device *devm_thermal_of_zone_register(struct device *dev, int id, void *data, const struct thermal_zone_device_ops *ops)`，头文件`include/linux/thermal.h`。成功返回热区对象，失败错误指针，使用IS_ERR/PTR_ERR；不是返回0/负错误的整数API。
 
-------
+包装成功登记thermal_of_zone_unregister清理，data和ops涉及的状态要活过回调使用期限。无THERMAL_OF配置时桩返回`-ENOTSUPP`错误指针。不要把旧函数名、旧ops类型或遗留源码注释中的名称拼成当前原型；应以声明和函数定义共同定位。
+
+其他如extcon、IIO及DRM有各自对象与清理期限，按对应子系统继续查阅；尤其drmm的生命周期对象不能直接等同于通用devm设备资源链。
+
 
 ## 2.14\_全局注意事项(统一要求)
 
@@ -352,14 +335,14 @@ IRQ处理退出不等于它排出的work或其他异步活动也退出。需要�
 
 | 类别         | 接口                                              | 主要区别点             | 推荐                          |
 | ------------ | ------------------------------------------------- | ---------------------- | ----------------------------- |
-| I/O 映射     | `devm_ioremap` vs `devm_ioremap_resource`         | 是否检查资源冲突       | **`_resource` 优先**          |
+| I/O 映射     | `devm_ioremap` vs `devm_ioremap_resource`         | 前者失败为NULL；后者校验并申请区域，失败为错误指针 | 需要同时取得区域占用责任时用`_resource`；不能重复申请已占用区域 |
 | 平台映射     | `devm_platform_ioremap_resource` vs `_byname`     | 按索引/按名称获取      | 依 DTS 命名使用               |
-| GPIO         | `devm_gpiod_get` vs `_optional` vs `_index`       | 资源可缺省；多路索引   | 资源可选用 `_optional`        |
+| GPIO         | `devm_gpiod_get` vs `_optional` vs `_index`       | optional允许规定的缺席，index选择多路中的一项 | 按硬件依赖选取；仍传播其他错误，并核对配置桩 |
 | IRQ          | `devm_request_irq` vs `devm_request_threaded_irq` | 是否提供线程化处理     | 需要可睡眠操作用 **threaded** |
-| CLK          | `devm_clk_get` vs `devm_clk_bulk_get`             | 单个/批量获取          | 多时钟用 **bulk**             |
-| REGULATOR    | `devm_regulator_get` vs `_optional` vs `bulk_get` | 可缺省/批量            | 按依赖关系选择                |
-| RESET        | `get` vs `get_exclusive` vs `get_shared`          | 所有权模式             | 按硬件要求选择                |
-| 平台回滚     | `devres_open_group/close/remove/release`                  | 划定范围、移除标记或真正回滚         | 大型 `probe()` 使用           |
+| CLK          | `devm_clk_get`、`devm_clk_bulk_get`与`devm_clk_get_enabled` | 普通单个/批量仅取得句柄；enabled同时准备使能并登记逆操作 | 按句柄与运行阶段责任选择；批量数组须活到清理结束 |
+| REGULATOR    | `devm_regulator_get`、`_optional`、`bulk_get`与`get_enable` | optional缺席按错误指针处理；get_enable返回整数并登记disable和put | 分清可选供电政策与运行阶段；批量数组期限由调用者保证 |
+| RESET        | `get` vs `get_exclusive` vs `get_shared`          | 此版本普通get即exclusive；shared受共享状态配对规则约束 | 依据真实复位线使用者与硬件协议选择，不能只为避开忙错误而改shared |
+| 阶段回滚     | `devres_open_group/close/remove/release`                  | close限定范围；remove仅撤标记；release实际清理组内资源 | 保留阶段成果用remove，撤销阶段责任用release |
 | 无 devm 资源 | `devm_add_action` vs `_or_reset`                  | 注册失败时是否立即回滚 | **`_or_reset` 优先**          |
 
 ------

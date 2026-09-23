@@ -352,7 +352,7 @@ SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/fo
      - GPIO 描述符：`devm_gpiod_get(_optional/_index)`
      - IRQ：`devm_request_irq`、`devm_request_threaded_irq`
      - 时钟/电源**句柄**：`devm_clk_get(_bulk)`、`devm_regulator_get(_optional/_bulk)`
-     - 其他：`devm_reset_control_get(_bulk)`、`devm_dma_request_chan`、`devm_phy_get`、部分 `devm_*register`
+     - 其他：`devm_reset_control_get(_bulk)`、`dma_request_chan`及其显式退出协议、`devm_phy_get`、部分 `devm_*register`
 
    - 行为：上述对象在解绑/失败时由 `devm` 自动调用对应释放回调。**不要**在 `remove()` 中重复释放这类对象。
 
@@ -1090,147 +1090,78 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ### 5.6.1\_devm\_clk\_get
 
-- 功能：获取时钟句柄。
-- 头文件：`<linux/clk.h>`
-- 原型：`struct clk *devm_clk_get(struct device *dev, const char *id);`
-- 返回/错误：`struct clk *` 或 `ERR_PTR(-Exxx)`。
-- 释放语义：解绑/失败自动 `clk_put()`。
-- 要点：启停属于**状态**，使用 `clk_prepare_enable()` / `clk_disable_unprepare()` 手动配对。
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.6.1_devm_clk_get)。
 
 ### 5.6.2\_devm\_clk\_bulk\_get
 
-- 功能：批量获取时钟句柄并在失败时统一回滚。
-- 原型：`int devm_clk_bulk_get(struct device *dev, int num_clks, struct clk_bulk_data *clks);`
-- 返回/错误：`0` 或 `-Exxx`。
-
-------
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.6.2_devm_clk_bulk_get)。
 
 ## 5.7\_电源(Regulator)
 
 ### 5.7.1\_devm\_regulator\_get
 
-- 功能：获取 regulator 句柄。
-- 头文件：`<linux/regulator/consumer.h>`
-- 原型：`struct regulator *devm_regulator_get(struct device *dev, const char *id);`
-- 返回/错误：`regulator *` 或 `ERR_PTR(-Exxx)`。
-- 释放语义：解绑/失败自动 put。
-- 要点：`regulator_enable()/disable()` 为**状态**，需手动配对。
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.7.1_devm_regulator_get)。
 
 ### 5.7.2\_devm\_regulator\_get\_optional
 
-- 功能：可缺省版本。
-- 原型：`struct regulator *devm_regulator_get_optional(struct device *dev, const char *id);`
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.7.2_devm_regulator_get_optional)。
 
 ### 5.7.3\_devm\_regulator\_bulk\_get
 
-- 功能：批量获取。
-- 原型：`int devm_regulator_bulk_get(struct device *dev, int num, struct regulator_bulk_data *consumers);`
-- 返回/错误：`0` 或 `-Exxx`。
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.7.3_devm_regulator_bulk_get)。
 
 ### 5.7.4\_devm\_regulator\_put
 
-- 功能：**提前**释放一个由 `devm` 获取的 regulator（一般不必调用）。
-- 原型：`void devm_regulator_put(struct regulator *regulator);`
-
-------
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.7.4_devm_regulator_put%28少用%29)。
 
 ## 5.8\_Reset\_控制
 
 ### 5.8.1\_devm\_reset\_control\_get
 
-- 功能：获取复位控制句柄。
-- 头文件：`<linux/reset.h>`
-- 原型：`struct reset_control *devm_reset_control_get(struct device *dev, const char *id);`
-- 返回/错误：`reset_control *` 或 `ERR_PTR(-Exxx)`。
-- 释放语义：解绑/失败自动 put。
-- 要点：复位的 assert/deassert/pulse 时序由驱动控制（状态不托管）。
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.8.1_devm_reset_control_get)。
 
 ### 5.8.2\_devm\_reset\_control\_get\_exclusive
 
-- 功能：独占复位控制句柄。
-- 原型：`struct reset_control *devm_reset_control_get_exclusive(struct device *dev, const char *id);`
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.8.2_devm_reset_control_get_exclusive)。
 
 ### 5.8.3\_devm\_reset\_control\_get\_shared
 
-- 功能：共享复位控制句柄。
-- 原型：`struct reset_control *devm_reset_control_get_shared(struct device *dev, const char *id);`
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.8.3_devm_reset_control_get_shared)。
 
 ### 5.8.4\_devm\_reset\_control\_get\_optional
 
-- 功能：可缺省版本。
-- 原型：`struct reset_control *devm_reset_control_get_optional(struct device *dev, const char *id);`
-
-------
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.8.4_devm_reset_control_get_optional)。
 
 ## 5.9\_DMA\_引擎
 
-### 5.9.1\_devm\_dma\_request\_chan
+### 5.9.1\_dma\_request\_chan与显式管理
 
-- 功能：按名称请求 DMA 通道。
-- 头文件：`<linux/dmaengine.h>`
-- 原型：`struct dma_chan *devm_dma_request_chan(struct device *dev, const char *name);`
-- 返回/错误：`dma_chan *` 或 `ERR_PTR(-ENODEV/-EPROBE_DEFER/…)`。
-- 释放语义：解绑/失败自动释放通道引用。
-- 要点：注意 `-EPROBE_DEFER`；与 `dmas`/`dma-names` 匹配。
-
-------
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.9.1_dma_request_chan与显式管理)。
 
 ## 5.10\_PHY
 
 ### 5.10.1\_devm\_phy\_get
 
-- 功能：获取 PHY 句柄。
-- 头文件：`<linux/phy/phy.h>`
-- 原型：`struct phy *devm_phy_get(struct device *dev, const char *string);`
-- 返回/错误：`phy *` 或 `ERR_PTR(-Exxx)`。
-- 释放语义：解绑/失败自动 put。
-- 要点：`phy_init/exit`、`phy_power_on/off` 等为**状态/阶段操作**，需手动配对。
-
-------
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.10.1_devm_phy_get)。
 
 ## 5.11\_pinctrl
 
 ### 5.11.1\_devm\_pinctrl\_get
 
-- 功能：获取 pinctrl 句柄。
-- 头文件：`<linux/pinctrl/consumer.h>`
-- 原型：`struct pinctrl *devm_pinctrl_get(struct device *dev);`
-- 返回/错误：`pinctrl *` 或 `ERR_PTR(-Exxx)`。
-- 释放语义：解绑/失败自动 put。
-- 要点：`pinctrl_lookup_state()` + `pinctrl_select_state()` 的状态切换需在 `remove()`/PM 手动配对。
-
-------
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.11.1_devm_pinctrl_get)。
 
 ## 5.12\_注册类接口(示例)
 
 ### 5.12.1\_devm\_led\_classdev\_register
 
-- 功能：注册 LED class 设备，解绑自动注销。
-- 头文件：`<linux/leds.h>`
-- 原型：`int devm_led_classdev_register(struct device *dev, struct led_classdev *led_cdev);`
-- 返回/错误：`0` 或 `-Exxx`。
-- 要点：并发访问同步需由驱动处理。
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.13.1_devm_led_classdev_register)。
 
-### 5.12.2\_devm\_thermal\_zone\_of\_sensor\_register
+### 5.12.2\_devm\_thermal\_of\_zone\_register
 
-- 功能：向 thermal 框架注册 OF 传感器，解绑自动注销。
-- 头文件：`<linux/thermal.h>`
-- 原型：`int devm_thermal_zone_of_sensor_register(struct device *dev, int id, void *data, const struct thermal_zone_of_device_ops *ops);`
-- 返回/错误：`0` 或 `-Exxx`。
-
-> 其它子系统（extcon、IIO、DRM 的 `drmm_*` 等）存在大量 `devm_*register` 形式；语义一致：注册成功 → 解绑自动注销。请按子系统文档补充。
-
-------
+接口参数、返回值与退出责任见[对应查询条目](devres_API说明.md#2.13.2_devm_thermal_of_zone_register)。
 
 ## 5.13\_全局要求与错误模式复核
 
-- `devm` 仅托管**对象/句柄/映射**释放；**不**托管**运行状态**（时钟启停、电源上/下电、pinctrl 状态、PHY 电源、线程/定时器等）。
-- `probe()` 任意点失败可直接返回；已登记的 `devm` 资源会按 LIFO 回滚。
-- `remove()` 仅回退**状态**；不要重复释放 `devm_*` 资源。
-- 生命周期跨设备/全局的对象不要用 `devm_*`。
-- 提前释放：使用对应的 `devm_*_put()`/`devm_free_*()` 或 `devm_add_action_or_reset()`。
-- 注意 `-EPROBE_DEFER` 的处理与重试路径。
+统一核对[全局责任边界](devres_API说明.md#2.14_全局注意事项%28统一要求%29)：获取是否包含启用、失败前已有何种责任、哪些异步使用者必须先退出、提前释放是否同时处理记录。不要把devm一概等同于“只有句柄”或“任意错误直接返回”；时钟enabled、供电get_enable与action都可能登记状态退出。
 
-------
-
-需要将本章导出为**可打印速查表（Markdown/PDF）**或增加特定子系统（如 IIO、DRM、SPI/I²C 控制器侧的 `devm_*` 变体）条目时，说明目标清单，我直接补齐。
+PM循环、解绑清理与独立外壳寿命分别按各自协议处理。附录是查询入口，完整机制从[资源账本教材](P01_从失败回滚到设备资源账本.md#1.1_从两条退出路径提取同一份责任)开始。

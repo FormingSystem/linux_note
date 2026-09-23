@@ -394,3 +394,5 @@ B04cg完成[kref大纲](../../knowledge/linux/object_lifetime/kref/大纲.md#1.1
 B04ch建立[devres资源账本](../../knowledge/linux/object_lifetime/devres/P01_从失败回滚到设备资源账本.md#1.1_从两条退出路径提取同一份责任)、核心API和固定源码分组/action证据；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.149_B04ch资源账本与分组回滚)记录六条C路径及边界。新增七项后清单674项：271 validated、385 pending、18 supporting_pending；API子系统条目和旧机制讨论尚待逐单元审查，不算整个devres完成。
 
 B04ci核对[内存、映射、GPIO和IRQ参考](../../knowledge/linux/object_lifetime/devres/devres_API说明.md#2.2_内存与字符串)，修正NULL/错误指针、零大小、可选缺席及清理责任；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.150_B04ci资源族返回与退出契约)保留11条包装与14项类型证据。清单676项：273 validated、385 pending、18 supporting_pending；API与旧讨论仍pending，继续2.6时钟等资源族。
+
+B04cj完成[devres API查询](../../knowledge/linux/object_lifetime/devres/devres_API说明.md#2.6_时钟%28Common_Clock_Framework%29)余下资源族及全页回看，纠正启停、optional、DMA与thermal边界；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.151_B04cj句柄启停与接口查询收束)记录六条时钟包装及21项类型验证。清单678项：276 validated、384 pending、18 supporting_pending；继续旧设备管理讨论与生命周期集成，非全仓完成。

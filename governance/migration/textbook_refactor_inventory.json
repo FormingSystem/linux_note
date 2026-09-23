@@ -2286,15 +2286,15 @@
       "path": "knowledge/linux/object_lifetime/devres/devres_API说明.md",
       "baseline_sha256": "1deaa8c3a0eb0f3a8ad4e360d724950628facfd75a705abaaf780c5ffcf4fda9",
       "lines": 436,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04ch已冷读和重写来源、核心分组与全局边界；子系统条目2.2～2.13继续逐族核对，整页仍pending。 B04ci核对API2.2～2.5，旧附录5.2～5.5对应重复条目改为精确查询入口；仍有其余资源族和正文未审，保持pending。"
+      "state": "validated",
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04ch已冷读和重写来源、核心分组与全局边界；子系统条目2.2～2.13继续逐族核对，整页仍pending。 B04ci核对API2.2～2.5，旧附录5.2～5.5对应重复条目改为精确查询入口；仍有其余资源族和正文未审，保持pending。 B04cj完成2.6～2.13及总表全页回看，明确enabled与普通句柄、各optional配置，纠正DMA/thermal名称与返回；全页查询职责完整，作者validated，人工仍红。"
     },
     {
       "path": "knowledge/linux/object_lifetime/devres/devres_旧机制_udev_mdev的讨论.md",
       "baseline_sha256": "96e6dec97822ab6048c7e2951292cf603f096910df545f4e3f54a8a9bd63765a",
       "lines": 1276,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04ci核对API2.2～2.5，旧附录5.2～5.5对应重复条目改为精确查询入口；仍有其余资源族和正文未审，保持pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04ci核对API2.2～2.5，旧附录5.2～5.5对应重复条目改为精确查询入口；仍有其余资源族和正文未审，保持pending。 B04cj附录5.6～5.13归并当前版本查询，正文各层机制仍待冷读，未提前标为完成。"
     },
     {
       "path": "knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md",
@@ -4815,6 +4815,20 @@
       "lines": 122,
       "state": "validated",
       "reason": "B04ci固定资源族导读和两映射包装逐函数核对；11条宿主包装路径与14项ARM接口类型通过，底层资源替身和真实运行边界明确；新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/devres/navigation/P04_句柄启停与注册契约导读.md",
+      "baseline_sha256": "7dabb6cc21f015bc836c06976e9656f6d6a46bf10a152cadcea862387ee1d92a",
+      "lines": 55,
+      "state": "validated",
+      "reason": "B04cj固定句柄/启停/注册导读及托管时钟实现逐项核对，六条宿主包装与21项ARM类型检查通过；不冒称硬件或注册运行，新人工状态红色。"
+    },
+    {
+      "path": "research/source_reading/devres/source_explanations/drivers/clk/clk-devres.c.md",
+      "baseline_sha256": "8013cf86943311165c2ffcc7331e71a769afd63c9dcc2d07fb6716af9ff421d1",
+      "lines": 93,
+      "state": "validated",
+      "reason": "B04cj固定句柄/启停/注册导读及托管时钟实现逐项核对，六条宿主包装与21项ARM类型检查通过；不冒称硬件或注册运行，新人工状态红色。"
     }
   ]
 }

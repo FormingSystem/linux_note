@@ -962,3 +962,7 @@ B04ch重新只读核对官方来源、标签dfaf2136、6.12.20与ARM配置；本
 ## 1.104\_devres内存映射与IRQ资源契约
 
 B04ci按固定dfaf2136核对内存、映射、platform、GPIO和IRQ声明/包装/配置桩；新增[lib/devres.c原文](lib/devres.c)及[资源族导读](../devres/navigation/P03_内存映射与中断资源导读.md#3.1_内存失败与零大小)。kernel/irq/devres.c、manage.c，drivers/base/platform.c，drivers/gpio/gpiolib.h及相关声明头仅只读核对，已有GPIO与device头副本复用。两个映射包装11条宿主路径通过，14项公开接口ARM类型断言通过；397份包含头中384份非生成头与固定对象一致，13份生成头体现工作树配置。无Kbuild/MODPOST、真实映射、GPIO、中断或目标解绑验证。
+
+## 1.105\_句柄启停与注册接口核对
+
+B04cj新增[drivers/clk/clk-devres.c固定原文](drivers/clk/clk-devres.c)与[句柄启停导读](../devres/navigation/P04_句柄启停与注册契约导读.md#4.1_时钟把退出动作放进同一记录)。其余clk/regulator/reset/DMAengine/PHY/pinctrl/platform/LED/thermal相关头和实现按固定dfaf2136只读核对；thermal采用实际定义名称与指针返回，DMA不虚构devm公共入口。时钟六条宿主包装路径及21项ARM接口类型断言通过，558份头中544份非生成头与固定对象一致，14份生成配置；无硬件启停、PM、DMA、复位或实际注册/注销运行。
