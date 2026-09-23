@@ -628,3 +628,9 @@ ARM 前端通过，348 个消费头文件的非生成部分与固定提交无差
 B04a 重新逐字核对固定提交的 include/linux/kref.h（blob d32e21a2538c292452db99b915b1bb6c3ab15e53）和 Documentation/core-api/kref.rst（blob c61eea6f1bf2bd76490718430130fe3501e2f7e8），本仓库副本按 LF 归一后相同。证据支持初始一份、已有有效引用下增加、交付前建立接收方责任、最后归还调用 release，以及 lookup 需要另行保护的契约；未使用本地实验提交。
 
 本批[P01 的责任模型](../../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md#1.6.1_运行完整的责任交接模型)不展开源码函数体，具体结构及唯一实现讲解仍由后续源码批次独立审查。完整 C 模型只验证串行责任闭合，不是 kref/refcount_t 的并发、内存序或饱和实现测试；不改变既有源码配置结论。
+
+## 1.45\_一次引用交付与工作队列边界
+
+B04b 按相同官方固定提交读取 include/linux/workqueue.h（blob 59c2695e12e7674d5bc4cdd1fb416074374f981c）与 kernel/workqueue.c（blob a9d64e08dffc7c7aef2caae2f170268d83e99e23）；与仓库既有副本 LF 归一后相同。核对 queue_work 的返回/发布契约、destroy_workqueue 的 drain 路径及 work 执行开始后允许释放工作项的实现边界，复用[工作队列生命周期导读](../workqueue/navigation/P04_Linux_6.12_flush取消与生命周期模块源码概念导读.md#4.5_destroy与对象生命期)，不复制另一套实现讲解。
+
+[P01 完整模块](../../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md#1.16.1_运行一次真实工作交付)使用一次私有工作交付与两份引用，无取消、重排或外部生产者；ARM 前端纳入 354 份头文件，非生成源码相对固定提交差异为空。生成配置不作为官方标签的一部分。宿主夹具仅以固定 kref 包装函数配合明确的下层替身验证五条清理顺序，不声称验证真实原子操作、调度、目标模块装卸或内存序。

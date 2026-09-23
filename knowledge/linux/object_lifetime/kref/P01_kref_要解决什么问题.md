@@ -290,934 +290,378 @@ accept=1 released=2
 
 ## 1.7\_kref\_不解决并发互斥问题
 
-这是第二个必须明确的边界。
+前六节已经解决“谁还需要对象”。现在假设两个处理者各自持有有效引用，同时修改 `state`。对象不会因为其中一方结束而提前释放，但两个修改仍可能相互干扰。要看清差别，可以先把一次 `state++` 拆成读旧值、计算、写回三个概念动作：
 
-`kref` 只能保证：
+| 时刻 | 处理者 A，持一份引用 | 处理者 B，持一份引用 |
+| --- | --- | --- |
+| T0 | 读到 state=0 | 读到 state=0 |
+| T1 | 在寄存器中得到 1 | 在寄存器中得到 1 |
+| T2 | 写回 1 | 写回 1 |
 
-```text
-对象内存还没有被释放
-```
+这条时间线说明了丢失更新的来源；真正无同步的 C 数据竞争不能被当作只会出现这一个结果。两份引用只覆盖对象寿命，没有串行化字段的读改写。
 
-这里说的“对象”，首先指自己定义并嵌入 `struct kref` 的对象，例如 `my_refobj`、request、session、cache entry 这类子系统内部对象。
-
-如果讨论的是 driver core 里的 `struct device`、`struct class`、`struct bus_type`，就不能把下面的 `my_refobj + kref + my_refobj_release` 模板直接套上去。它们属于基于 `kobject` 和设备模型封装好的框架对象，有自己的 `get_device()/put_device()`、`device_release()`、class/type release 分发规则。
-
-也就是说：
-
-```text
-裸 kref：讲自定义对象如何引用计数。
-device/class/bus：讲 driver core 如何分层管理框架对象。
-```
-
-它不能保证：
-
-```text
-对象字段不会被别人同时修改
-对象状态不会被并发改变
-对象链表节点不会被并发删除
-对象内部缓存不会被并发破坏
-设备当前仍然可访问
-当前路径拥有设备的独占访问权
-lookup 拿到的裸指针一定还有效
-```
-
-这点在设备相关代码里尤其重要。
-
-`kref` 不是“设备安全代理”，也不是“设备完整托管器”。它不负责决定：
-
-```text
-设备是否 online
-设备是否已经 remove
-设备是否允许新请求
-当前路径是否持有设备锁
-多个线程是否可以同时操作设备寄存器或私有字段
-```
-
-这些都属于外层对象或框架自己的规则，通常由设备锁、对象锁、容器锁、RCU、状态机或设备模型自身的引用规则来保证。
-
-可以把分工画成这样：
-
-```mermaid
-flowchart TD
-	ptr["拿到对象指针<br/>lookup / 回调 / private_data"]
-	proof["外部机制先证明对象可用<br/>已有引用 / 设备锁 / 容器锁 / RCU / 状态机"]
-	kref["kref_get / kref_put<br/>生命周期引用"]
-	access["业务访问<br/>读写字段 / 操作设备 / 提交请求"]
-	sync["业务同步<br/>mutex / spinlock / 状态检查"]
-	release["最后一个 put<br/>release 销毁对象"]
-
-	ptr --> proof
-	proof --> kref
-	kref --> access
-	sync --> access
-	access --> kref
-	kref --> release
-
-	kref_scope["kref 只负责：对象内存不会在持有引用期间释放"]
-	biz_scope["业务负责：设备是否可用、字段是否互斥、lookup 是否安全"]
-
-	kref -.-> kref_scope
-	release -.-> kref_scope
-	proof -.-> biz_scope
-	sync -.-> biz_scope
-```
-
-所以更准确的使用前提是：
-
-```text
-不是拿到裸指针之后，靠 kref_get() 让一切变安全；
-而是外部规则已经证明对象有效之后，才能 kref_get() 延长生命周期。
-```
-
-例如：
+给对象增加互斥锁，并要求所有冲突访问走同一把锁，才能让第二位处理者在第一位写回之后再读。下面是 **已有有效引用且可睡眠的进程上下文** 中的字段操作片段，不是完整模块：
 
 ```c
-struct my_refobj {
-	struct kref ref;
-	int state;
-};
-```
-
-下面代码即使持有引用，也不一定是并发安全的：
-
-```c
-kref_get(&refobj->ref);
-
-refobj->state++;
-
-kref_put(&refobj->ref, my_refobj_release);
-```
-
-`kref_get()` 只能说明：
-
-```text
-refobj 在当前引用释放前不会被 kfree
-```
-
-但它不说明：
-
-```text
-refobj->state++ 是互斥的
-```
-
-如果多个 CPU 同时执行：
-
-```c
-refobj->state++;
-```
-
-仍然会产生数据竞争。
-
-正确设计通常需要：
-
-```c
-struct my_refobj {
-	struct kref ref;
-	struct mutex lock;
-	int state;
-};
-```
-
-然后：
-
-```c
-kref_get(&refobj->ref);
-
 mutex_lock(&refobj->lock);
 refobj->state++;
 mutex_unlock(&refobj->lock);
-
-kref_put(&refobj->ref, my_refobj_release);
 ```
 
-这里分工是：
+这里不必为了同步调用再加一对 get/put。进入锁操作前必须已经保活整个对象，因为锁本身也嵌在对象内；不能对可能已经释放的 `refobj->lock` 加锁来挽救寿命。
 
-```text
-kref 保护对象生命周期
-mutex 保护对象字段一致性
+```mermaid
+flowchart TD
+    ptr["拿到地址：lookup / 回调 / private_data"]
+    proof["先成立寿命窗口：已有引用，或明确的查找保护协议"]
+    hold["取得或继承有效引用"]
+    sync["按共同协议加锁并检查业务状态"]
+    access["访问字段或提交业务操作"]
+    put["结束本份使用并归还引用"]
+    finish["最后归还者触发 release"]
+    ptr -->|"确认地址由谁保活"| proof
+    proof -->|"满足对应 get 或条件取得的前提"| hold
+    hold -->|"对象仍活着，锁地址才有效"| sync
+    sync -->|"状态允许才继续；否则走退出"| access
+    access -->|"业务操作结束并解锁"| put
+    sync -->|"状态拒绝，解锁后归还"| put
+    put -->|"计数归零"| finish
 ```
 
-这两个问题不能混在一起。
+本专题的直接对象是自行定义并嵌入 `struct kref` 的请求、会话、缓存项或设备私有对象。Linux 设备核心框架（driver core）中的 `struct device`、`struct class`、`struct bus_type` 则有分层管理规则；不能给这些框架对象套一份私有 `kref + kfree` 模板。设备使用 `get_device()/put_device()` 等框架接口，最终释放还涉及设备类型或类的 release 分发。`kobject` 是框架的基础对象机制，它与裸 kref 的边界留到[P11](P11_kref_refcount_t_kobject_的边界.md)。这里仅要求先分清正在管理的是哪一层对象。
 
-如果换成自己封装的设备私有对象，也可以这样理解：
-
-```text
-kref 保证私有对象内存不会提前释放；
-设备锁保证私有对象状态和寄存器访问不会并发冲突；
-状态机保证设备当前是否 online、是否允许请求；
-lookup 保护保证从全局结构拿到私有对象时不是悬挂指针。
-```
+因此，私有 kref 不负责替设备判断是否已移除、是否允许新请求、谁有独占访问权，也不负责容器节点、内部缓存和寄存器访问的并发一致性。锁、业务状态、查找保护及设备框架各有自己的协议；把它们列在一张图里，并不表示任选一个就能满足全部条件。
 
 ------
 
 ## 1.8\_生命周期保护和字段保护的区别
 
-可以把对象分成两个层次看：
+把“对象活着”和“数据一致”分开，还不足以直接选出同步原语。必须进一步说明保护哪组动作，以及谁遵守相同规则：
 
-```text
-对象是否还活着
-对象内部数据是否一致
-```
+| 工具或协议 | 解决的具体问题 | 仍须补足的条件 |
+| --- | --- | --- |
+| 有效 kref 引用 | 本份使用期限内，引用协议不允许最终释放对象 | 不自动锁住字段，也不能凭一个地址取得引用 |
+| mutex 互斥锁 | 串行化同一锁下的字段访问或状态事务 | 只能在允许睡眠的上下文使用，所有冲突方必须配合 |
+| spinlock 自旋锁 | 保护适合短临界区的共享更新 | 是否需要屏蔽本地中断取决于参与上下文，不能把普通加锁等同于中断安全 |
+| RCU 读侧与回收协议 | 让受保护读者沿发布的结构读取，并推迟旧对象回收 | 需要正确发布、删除和延迟释放；写者互斥及可变字段一致性要另定 |
+| atomic 原子操作 | 对规定变量完成不可分割更新 | 不自动把多个字段或整项业务变成一个事务 |
 
-`kref` 只管第一层：
+后两行尤其容易误解：RCU 并不自动让任意字段读写一致，某个字段用了原子加法也不表示“读状态、操作硬件、记录结果”整体受到保护。需要对一组字段取得一致快照时，还可能采用序列计数等协议；具体选择由读写参与者和重试条件决定，不由 kref 替它决定。
 
-```text
-对象是否还活着
-```
-
-锁、RCU、atomic 等机制管第二层：
-
-```text
-对象内部数据是否一致
-```
-
-例如：
-
-```text
-kref 解决：refobj 会不会在我使用时被 free
-mutex 解决：refobj->state 会不会被并发乱改
-spinlock 解决：中断/软中断/多 CPU 下的短临界区保护
-RCU 解决：读侧无锁查找与延迟释放
-atomic 解决：单个变量的原子更新
-```
-
-所以不能说：
-
-```text
-用了 kref 就线程安全了
-```
-
-更准确的说法是：
-
-```text
-用了 kref，只是让对象生命周期具备了引用所有权协议。
-```
-
-对象内部是否线程安全，还要看字段访问规则。
+保持有效引用之后，我们有了继续制定字段规则的基础。若读者连“所有修改这项状态的路径是否使用同一把锁”都答不出，就不能宣布对象线程安全。
 
 ------
 
 ## 1.9\_kref\_适合什么场景
 
-`kref` 适合这种对象：
+适合引用计数的问题通常具有多个独立使用期限：请求交给异步工作，连接被多个会话保存，缓存项在移出索引后仍供已取得引用的读者使用，或驱动私有对象同时被用户入口和完成回调持有。它们可以出现在 list、hash、xarray、idr 等容器里，但 **放入容器这个动作本身不会自动获得引用**。
 
-```text
-对象不是只在一个函数栈内使用
-对象会被多个模块保存
-对象会被多个线程访问
-对象会被异步回调使用
-对象会被放进 list/hash/xarray/idr 等容器
-对象会被 workqueue、timer、completion、设备回调延迟使用
-```
+以原来的请求对象为例，里面可能同时包含引用字段、链表节点、完成通知、结果状态和数据缓冲区。提交线程、硬件完成中断、超时定时器、取消路径以及 debugfs 调试查询都可能接触它。每一项职责必须分别决定是否独立持有，不能按这张名单机械地初始化为五个引用。
 
-典型场景包括：
+例如，取消与硬件完成如果都可能发生，就要指定谁有权完成请求，以及谁撤销另一条路径。仅由取消方归还自己的引用，并不表示中断再也不会到达；仅由完成通知唤醒等待者，也不表示所有 timer 和回调已经退出。`completion` 是等待/完成通信工具，本身不是对象持有者；是等待方或完成方的协议承担引用。
 
-```text
-设备私有对象
-连接对象
-请求对象
-会话对象
-缓存对象
-异步 IO 上下文
-驱动内部资源对象
-文件或 inode 相关私有对象
-```
-
-例如驱动里常见的结构：
-
-```c
-struct my_request {
-	struct kref ref;
-	struct list_head node;
-	struct completion done;
-	int status;
-	void *buffer;
-};
-```
-
-这个请求对象可能同时被：
-
-```text
-提交线程持有
-硬件完成中断路径持有
-超时 timer 持有
-取消路径持有
-debugfs 查询路径持有
-```
-
-如果没有明确引用规则，就很容易出现：
-
-```text
-取消路径释放了 request
-中断完成路径又访问 request
-```
-
-这就是典型生命周期 bug。
+反过来，若对象只在一个同步函数及其 helper 内使用，栈对象或明确的创建/销毁作用域通常更直接。若框架已经提供引用接口，就优先遵循框架规则。独立引用会增加计数更新、跨路径配对和错误清理成本；不要为了“更安全”再套一层无人解释的计数。
 
 ------
 
 ## 1.10\_为什么\_多个地方能拿到对象\_时必须有生命周期协议
 
-只要对象能从多个地方被拿到，就会出现一个问题：
+不使用引用计数也能有正确的生命周期协议。例如所有使用都在同一把锁的临界区内完成，销毁者取锁后关闭入口并释放；或者由拥有者停止新请求、等待所有使用者退出后统一回收。只要覆盖了所有参与者，这些方案同样成立。
 
-```text
-谁能决定释放对象？
-```
+引用计数的价值是把独立使用期限汇总为可执行的退出条件：A 用完归还 A 的份额，B 用完归还 B 的份额，最后的归还触发 release。调用者无需知道究竟是 A 还是 B 最晚结束。但这份“全局结论”只涵盖 **已经正确登记的责任**，不会发现偷偷保存的裸指针。
 
-如果没有引用计数，通常会变成这种危险模型：
-
-```text
-A 觉得自己用完了，于是 free
-B 其实还在用，于是 UAF
-```
-
-而 `kref` 把释放条件改成：
-
-```text
-不是某一个路径觉得自己用完了就释放，
-而是所有持有引用的路径都 put 之后才释放。
-```
-
-也就是：
-
-```text
-释放权不属于某一个使用者
-释放权属于最后一个 put
-```
-
-这就是引用计数的核心价值。
-
-它把对象释放从：
-
-```text
-某个路径主观决定
-```
-
-变成：
-
-```text
-所有权计数客观归零
-```
+读者因此要同时审查安全性与能否结束：少登记一份，可能提前释放；漏归还一份，可能永远不释放；对象互相持引用形成环，也不会自动降到零。容器拥有的引用何时撤下、取消路径怎样完成退出，都必须在应用协议里有答案。
 
 ------
 
 ## 1.11\_kref\_不能替代对象状态机
 
-还有一个常见误区：
+对象内存存在时，业务仍可能处于初始化、运行、停止中、已失效、错误或设备已移除等状态。计数轴回答“哪些责任仍未归还”，业务状态轴回答“允许做什么”；它们可以独立变化。例如旧文件描述符仍保留私有对象，但设备已经拒绝新请求。
 
-```text
-对象 refcount > 0，所以对象一定可用。
-```
+用 `online` 布尔字段表示“软件允许进入操作”时，检查必须与软件停止路径使用同一个同步协议。下表在已有引用的前提下，比较两种时序：
 
-这不一定对。
+| 阶段 | 有效协议 | 缺口 |
+| --- | --- | --- |
+| 进入 | 操作者持锁检查 online | 无锁读到 online=true |
+| 操作 | 协议要求保护的动作在同一临界区完成 | 检查后解锁，停止路径开始拆除硬件资源 |
+| 停止 | 停止者取得同一把锁后改为 offline，拒绝新操作 | 操作者依据旧读值继续访问已拆资源 |
 
-`refcount > 0` 只能说明：
-
-```text
-对象内存还活着
-```
-
-但对象可能处于：
-
-```text
-initializing
-running
-stopping
-dead
-error
-removed
-```
-
-等状态。
-
-例如某个驱动内部私有对象还活着，但它代表的硬件已经拔出：
+下面仅是第一列的进程上下文片段，`-ENODEV` 表示设备不可用；调用者持有引用并负责最终归还：
 
 ```c
-struct my_refobj {
-	struct kref ref;
-	struct mutex lock;
-	bool online;
-};
-```
-
-访问时可能需要：
-
-```c
-kref_get(&refobj->ref);
-
 mutex_lock(&refobj->lock);
 if (!refobj->online) {
-	mutex_unlock(&refobj->lock);
-	kref_put(&refobj->ref, my_refobj_release);
-	return -ENODEV;
+    mutex_unlock(&refobj->lock);
+    return -ENODEV;
 }
-
-/* 硬件在线，执行操作 */
+/* 在共同的停止协议下完成本次受保护操作。 */
 mutex_unlock(&refobj->lock);
-
-kref_put(&refobj->ref, my_refobj_release);
 ```
 
-这里：
-
-```text
-kref 保证 my_refobj 私有对象没被释放
-online 状态判断保证硬件当前是否可操作
-mutex 保证 online 状态检查和修改一致
-```
-
-所以对象生命周期和对象业务状态仍然是两个问题。
+这个片段不能单凭一个布尔值保证物理硬件永远在线。真实热拔插、在途直接内存访问 DMA（Direct Memory Access，由设备访问内存）和中断、异步输入输出 I/O（Input/Output） 还可能要求框架保活、停止提交、等待完成和硬件隔离；若操作必须越过锁的期限，还要建立独立的在途操作协议。这里证明的是“软件检查与软件状态转移不穿插”，不是“检测值等于永久硬件事实”。
 
 ------
 
 ## 1.12\_kref\_不能单独解决\_lookup\_问题
 
-假设有一个全局链表：
+原来的全局链表例子保留如下角色：每个对象有链表成员 `struct list_head node` 和整数标识 `int id`，全局链表头 `refobj_list` 用于查找，互斥锁对象 `refobj_list_lock` 负责查找与摘除。仅遍历得到地址后调用 get，仍可能发生“读到地址 → 删除方摘除并释放 → 查找方访问内部计数”的 UAF。
 
-```c
-static LIST_HEAD(refobj_list);
-static DEFINE_MUTEX(refobj_list_lock);
+先选定一种容易证明的协议：**链表中的每个对象由链表拥有一份引用，插入、查找取引用和摘除共用同一把锁。** 查找方持锁完成匹配和 get，得到独立引用后才解锁。删除方持锁摘除，解锁后归还链表的那份引用。于是查找与删除有两个可解释的顺序：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant L as 查找方
+    participant M as refobj_list_lock
+    participant D as 删除方
+    participant O as 对象与链表引用
+    alt 查找先持锁
+        L->>M: 加锁
+        L->>O: 沿链表找到对象；链表引用保证正数
+        L->>O: get，取得查找者的独立引用
+        L->>M: 解锁
+        D->>M: 加锁后摘除，再解锁
+        D->>O: put 链表引用；查找者的引用仍在
+    else 删除先持锁
+        D->>M: 加锁后摘除，再解锁
+        D->>O: put 链表引用，可能最终释放
+        L->>M: 加锁遍历，入口已不存在
+        L->>M: 解锁并返回未找到
+    end
 ```
 
-对象挂在链表里：
+这里能直接 get，不只因为“拿了锁”，还因为 **在锁保护下可达的对象拥有链表引用**。另一种设计可能让归零后的析构路径才摘除节点，这时就要重新证明计数与删除顺序，不能复制当前结论。
 
-```c
-struct my_refobj {
-	struct kref ref;
-	struct list_head node;
-	int id;
-};
-```
-
-错误查找模型：
-
-```c
-struct my_refobj *my_refobj_lookup(int id)
-{
-	struct my_refobj *refobj;
-
-	list_for_each_entry(refobj, &refobj_list, node) {
-		if (refobj->id == id) {
-			kref_get(&refobj->ref);
-			return refobj;
-		}
-	}
-
-	return NULL;
-}
-```
-
-这段代码的问题是：
-
-```text
-如果没有锁保护 refobj_list，
-查找过程中 refobj 可能已经被别的路径删除并释放。
-```
-
-也就是说：
-
-```c
-kref_get(&refobj->ref);
-```
-
-本身也需要一个前提：
-
-```text
-refobj 指向的内存此刻仍然是有效对象。
-```
-
-如果 `refobj` 已经是悬挂指针，`kref_get()` 就是在已经释放的内存上加引用，毫无意义，甚至更危险。
-
-正确方向是：
-
-```text
-lookup 路径要被 mutex/spinlock/RCU 等机制保护
-在对象仍然可达且未释放期间完成 get
-```
-
-也就是说：
-
-```text
-kref 保护对象拿到引用之后的生命周期
-锁/RCU 保护从容器里找到对象并取得引用的过程
-```
-
-这一点是后面学习 `kref_get_unless_zero()` 和 RCU 组合时的重点。
+RCU 查找还要分两件事：读侧窗口保证访问的内存尚未被回收，而 `kref_get_unless_zero()` 只在计数非零时增加并返回成功。调用者必须检查返回值；RCU 本身不会保证计数仍为正，条件增加也不会凭空保护已经失效的计数地址。锁查找与条件取得在[P08](P08_lookup_场景与_kref_get_unless_zero%28%29.md)细化，RCU 的回收及对象身份边界在[P10](P10_kref_与_RCU.md)展开。
 
 ------
 
 ## 1.13\_kref\_的三个核心角色
 
-一个完整的 `kref` 设计里，通常有三个角色。
+回看责任图，计数、持有者和最终清理分别落在三个位置。它们并非一个自动追踪所有指针的外部管理器。
 
 ### 1.13.1\_角色一\_对象本身
 
-对象内部嵌入 `struct kref`：
-
-```c
-struct my_refobj {
-	struct kref ref;
-	/* real fields */
-};
-```
-
-这说明：
-
-```text
-引用计数是对象生命周期的一部分
-```
-
-`kref` 不是外部分配的管理器。
-
-它跟对象同生共死。
-
-------
+自定义对象把 `struct kref ref` 嵌在内部，与业务字段一起分配。计数是对象生命周期的一部分，读取计数也需要对象地址有效。完整实例中的 `struct note_request` 还嵌入一个工作项 `work`；它们是同一分配对象的不同成员，不是两块独立可释放的内存。
 
 ### 1.13.2\_角色二\_持有者
 
-持有者是所有需要长期使用对象的执行路径。
+创建者、调用者、队列、定时器或其他子系统路径可以按协议持有引用。初始引用来自初始化，新份额来自有效持有下的 get，接收交接也可以继承旧份额。退出时归还自己的那份；不能因为有一个地址变量，就替别人的份额 put。
 
-例如：
-
-```text
-创建者
-调用者
-队列
-workqueue
-timer
-回调函数
-全局容器
-子系统模块
-```
-
-持有者的规则是：
-
-```text
-开始持有对象时 get
-不再持有对象时 put
-```
-
-如果是所有权转移，则要明确：
-
-```text
-当前引用交给谁
-转移后当前路径不能继续访问
-```
-
-------
+若同一路径另有一份有效引用，交出一份后仍可依靠保留的那份访问。若交出的是自己唯一的一份，则不能再访问。这比“handoff 后任何情况都不能访问”的口号精确，且与责任求和一致。
 
 ### 1.13.3\_角色三\_release\_回调
 
-release 是最后引用释放点。
+最后一份归还时，`kref_put()` 调用提供的 `release` 函数。参数是嵌入成员的地址，不一定是整个分配块的首地址；因此示例通过 `container_of()` 根据成员位置找到外层对象，再清理并释放。不能把 `kfree` 直接当作这个回调。
 
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	kfree(refobj);
-}
-```
-
-它表示：
-
-```text
-没有任何持有者了
-对象可以销毁
-```
-
-release 不是普通清理函数。
-
-它是对象生命周期的终点。
+`release` 是引用归零后清理的入口。简单对象可以立即释放，复杂对象可能清理子对象，或者安排 RCU 延迟回收；允许做什么还取决于最后归还发生的上下文和锁状态。回调不能假定自己一定在创建线程运行，也不能假定一定允许睡眠。[P06](P06_release_回调与复杂销毁模式.md)继续讨论复杂销毁，本章的完整模块只采用可立即释放的简单对象。
 
 ------
 
 ## 1.14\_为什么不能把\_kref\_当成普通计数器
 
-普通计数器可以随便读：
+`kref_read()` 提供计数快照，却不会为调用者新增引用、关闭入口或取得字段独占权。先考虑一个容易说错的情况：**自己仍持有一份有效引用时，其他守约持有者不能把计数减到零并释放对象。** 不能拿“别人可能随时 put 到零”解释此时的风险。
 
-```c
-if (count == 0)
-	...
-```
+真正的问题是，读到 1 并不能推出“下一步只有我能访问字段”。同一引用可能覆盖同步借用，另一个受保护入口也可能允许新持有者取得引用；如果协议没有排除这些路径，快照与后续写操作之间就没有独占保证。反过来，如果应用另有机制关闭所有新增入口、排除借用，并已建立同步，那么能否原地修改应由那套机制证明，不能只由数字 1 证明。
 
-但 `kref` 不能这样用。
+另一种情况是自己已经 put，看到函数返回 0，误以为“对象还在，可以再访问”。返回 0 只表示 **这次归还没有触发 release**；剩余持有者可能紧接着归还最后一份。除非自己另有有效保活依据，当前路径必须停止访问。
 
-即使你能读出当前引用数，也不能据此写出可靠逻辑：
-
-```c
-if (kref_read(&refobj->ref) == 1) {
-	/* 我是不是最后一个？ */
-}
-```
-
-这种判断在并发环境下通常是不可靠的。
-
-因为在你读完之后，其他 CPU 可能马上：
-
-```text
-get
-put
-release
-```
-
-`kref` 的可靠语义不在于“读当前值然后判断”，而在于这些操作：
-
-```text
-kref_get()
-kref_put()
-kref_get_unless_zero()
-```
-
-它们把引用变化和必要的原子语义封装起来。
-
-所以使用 `kref` 时不要围绕：
-
-```text
-当前计数是多少？
-```
-
-来设计，而要围绕：
-
-```text
-我是否拥有一个引用？
-我什么时候释放这个引用？
-最后一个 put 时如何销毁对象？
-```
-
-来设计。
+因此需要明确三个问题：此刻我凭哪份责任访问；取得新责任时已有何种保活窗口；归还后还剩什么属于我的保证。普通原子计数读数和 kref 操作都不能替代这些答案。
 
 ------
 
 ## 1.15\_kref\_的正确思维模型
 
-可以把 `kref` 思维模型总结成下面这张表：
+把结论收束成审查表，可以避免在每个场景重新混合不同保证：
 
-| 问题                              | kref 是否解决 | 说明                            |
-| --------------------------------- | ------------- | ------------------------------- |
-| 对象会不会在我使用时被释放        | 是            | 只要当前路径持有有效引用        |
-| 对象字段是否并发安全              | 否            | 需要 mutex/spinlock/atomic 等   |
-| 对象能否从全局表安全查找          | 否            | 需要锁、RCU 或其他查找保护      |
-| 最后一个使用者退出时释放对象      | 是            | `kref_put()` 归零后调用 release |
-| 对象业务状态是否可用              | 否            | 需要状态机和锁保护              |
-| put 后还能不能访问对象            | 否            | put 后对象可能已经释放          |
-| refcount 当前值能不能作为可靠判断 | 通常不能      | 并发下瞬时值意义有限            |
+| 问题 | 引用协议能证明什么 | 还需要什么 |
+| --- | --- | --- |
+| 使用中会不会最终释放 | 自己持有有效引用期间不会 | 所有使用者守约，无非法 free/put |
+| 字段是否一致 | 没有额外保证 | 对相应字段及上下文有效的同步 |
+| 全局入口能否安全取对象 | 取得引用后延长寿命 | lookup 到取得之间的保护 |
+| 谁触发最终清理 | 最后归还者调用 release | release 的上下文和依赖满足要求 |
+| 业务能否继续 | 对象仍可保存错误或停止状态 | 业务状态机、设备框架和在途操作规则 |
+| put 后是否还能访问 | 归还的那份不再提供保证 | 另有有效引用或其他明确的保活依据 |
+| 读到计数 1 是否独占 | 只得到一个瞬时观察 | 排除新增、借用及并发访问的独立协议 |
 
-最关键的一句是：
-
-```text
-kref 只回答“对象还活着吗”，不回答“对象状态正确吗”。
-```
+`kref` 不是可以拿一个任意地址去询问“它还活着吗”的探测器；它让已经正确建立的使用期限与最后回收建立联系。
 
 ------
 
 ## 1.16\_一个完整的错误模型
 
-下面是一个典型错误：
+原来的错误是把对象先交给 worker，再给 worker 补引用。为避免用一句“可能提前释放”跳过推导，明确初始责任：创建者拥有唯一一份，worker 的代码约定完成时归还自己的那份。若顺序写反，接收者其实没有获得那一份。
+
+| 时刻 | 创建者 | worker | 计数与问题 |
+| --- | --- | --- | --- |
+| T0 | 初始化一份 | 尚未运行 | 1，只属于创建者 |
+| T1 | 先 queue_work | 开始读对象 | 仍为 1，尚未预留 worker 责任 |
+| T2 | 尚未补 get | 按约定 put | 错误地归还了未交付的份额，降为 0 |
+| T3 | 尝试 get | 已返回 | 对已释放地址操作 |
+
+这一反例的关键是 **worker 归还了一份尚不存在的责任**。若它本来已有独立引用，创建者仍持原引用时就不能沿用这条“必被释放”的推导。
+
+### 1.16.1\_运行一次真实工作交付
+
+下面的完整模块只创建一个新对象、投递一次、没有重排或外部生产者。它落实 S0～S5：初始化创建者引用，投递前预留，成功后两方各归还一次，卸载前等待私有队列完成。文件为[note_kref_work.c](../../../../labs/kernel/object_lifetime/materials/note_kref_work.c)，配套 [Makefile](../../../../labs/kernel/object_lifetime/materials/Makefile)。若尚未完成内核模块的构建课程，可先阅读过程，稍后按[构建入口](../../../../engineering/build/kernel_modules/P01_从C文件到匹配目标内核的模块.md)准备目标环境。
+
+`work_struct` 保存交给工作队列的工作项，`INIT_WORK()` 为它关联回调；私有有序队列由 `alloc_ordered_workqueue()` 创建。`queue_work()` 返回是否成功排入，`destroy_workqueue()` 在本例无新生产者的前提下等已提交工作结束再销毁队列。成功 queue 的发布契约使本次投递前初始化的 `value` 能被回调看到；后续并发修改仍需单独同步。它们提供执行与等待，不替业务对象增加 kref。
+
+代码中的 `GFP_KERNEL` 是允许睡眠的内核分配标志，本例初始化在进程上下文；`-ENOMEM` 表示分配失败，`-EIO` 是这里对意外投递拒绝选择的错误返回。模块入口、日志和许可证声明沿前置模块课程使用，不把这些构建声明当作引用协议的一部分。
 
 ```c
-struct my_refobj {
-	struct kref ref;
-	int state;
+// SPDX-License-Identifier: GPL-2.0
+#include <linux/errno.h>
+#include <linux/kref.h>
+#include <linux/module.h>
+#include <linux/slab.h>
+#include <linux/workqueue.h>
+
+struct note_request {
+    struct kref ref;
+    struct work_struct work;
+    int value;
 };
 
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
+static struct workqueue_struct *note_wq;
 
-	kfree(refobj);
+static void note_release(struct kref *ref)
+{
+    struct note_request *request = container_of(ref, struct note_request, ref);
+    pr_info("note_kref: release\n");
+    kfree(request);
 }
 
-void start_worker(struct my_refobj *refobj)
+static void note_worker(struct work_struct *work)
 {
-	queue_work(system_wq, &refobj->work);
-	kref_get(&refobj->ref);
+    struct note_request *request = container_of(work, struct note_request, work);
+    pr_info("note_kref: value=%d\n", request->value);
+    kref_put(&request->ref, note_release);
+    /* 归还后不再访问 request，包括嵌入的 work。 */
 }
+
+static int __init note_init(void)
+{
+    struct note_request *request;
+
+    note_wq = alloc_ordered_workqueue("note_kref", 0);
+    if (!note_wq)
+        return -ENOMEM;
+    request = kzalloc(sizeof(*request), GFP_KERNEL);
+    if (!request) {
+        destroy_workqueue(note_wq);
+        return -ENOMEM;
+    }
+
+    kref_init(&request->ref); /* 初始引用属于创建者。 */
+    request->value = 42;
+    INIT_WORK(&request->work, note_worker);
+    kref_get(&request->ref); /* 在发布前为一次 worker 执行预留引用。 */
+    if (!queue_work(note_wq, &request->work)) {
+        /* 本例全新且仅提交一次；拒绝分支防御性归还两份责任。 */
+        kref_put(&request->ref, note_release);
+        kref_put(&request->ref, note_release);
+        destroy_workqueue(note_wq);
+        return -EIO;
+    }
+    kref_put(&request->ref, note_release); /* 创建者结束，之后不再碰对象。 */
+    return 0;
+}
+
+static void __exit note_exit(void)
+{
+    /* 队列只由本模块提交一次，无重排；等回调退出后才卸载代码。 */
+    destroy_workqueue(note_wq);
+}
+
+module_init(note_init);
+module_exit(note_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("一次工作交付的引用责任实验");
 ```
 
-这段代码的意图是：
+在源码匹配、配置和构建产物准备完成的独立实验环境中，采用标准外部模块命令；`KERNEL_BUILD` 指向目标内核构建目录，交叉编译参数沿构建课程设置：
 
-```text
-把 refobj 交给 worker 使用，所以给 worker 增加一个引用
+```bash
+make -C "$KERNEL_BUILD" M="$PWD" modules
+sudo insmod ./note_kref_work.ko
+sudo rmmod note_kref_work
+sudo dmesg | tail -n 20
 ```
 
-但是顺序错了。
+一次成功加载应出现 `note_kref: value=42`，最终恰有一条本次模块的 `note_kref: release`；其他内核日志可能夹在中间。处理者可能早于创建者归还，也可能晚于它，二者都合法。对象最后由谁归还不影响结果，卸载时私有队列确保回调代码不再运行。这是预期观察步骤，**本轮未实际装载或卸载目标模块**。
 
-错误点在这里：
+### 1.16.2\_失败和退出还剩哪些责任
 
-```c
-queue_work(system_wq, &refobj->work);
-kref_get(&refobj->ref);
-```
+工作队列分配失败时，没有对象；对象分配失败时，销毁已创建队列。投递若拒绝，本次预留没有被 worker 接收，需归还预留及创建者两份。当前例子的工作项是全新且仅投递一次，通常应成功；拒绝路径是防御性处理，不是宣称 `queue_work()` 对新工作会随机分配失败。
 
-对象先交出去，后 get。
+对于重复提交的一般程序，false 可能表示工作已在等待等情形，**不能据此取消或归还以前那次提交已拥有的责任**。每次“预留新份额”必须与本次是否成功产生执行责任配对；重排、取消和复用还要建立单独状态机。本例刻意不具备这些入口，不可直接扩展为通用队列封装。
 
-如果 worker 很快运行，或者另一个路径释放对象，就可能出现：
-
-```text
-refobj 已经被释放
-当前路径才执行 kref_get
-```
-
-这时 `kref_get()` 已经晚了。
-
-正确顺序应该是：
-
-```c
-kref_get(&refobj->ref);
-queue_work(system_wq, &refobj->work);
-```
-
-也就是：
-
-```text
-先保证 worker 拥有引用
-再把对象交给 worker
-```
-
-这就是 kref 的第一条核心规则：
-
-```text
-非临时拷贝指针之前，必须先 get。
-```
+同样，`destroy_workqueue()` 不自动阻止其他代码未来再投递，也不自动释放业务对象。本例只有初始化的一次提交，worker 不重排，才有封闭的生产者集合；更完整驱动要先关闭用户入口、定时器和中断等生产者。固定版本的[工作队列源码总索引](../../../../research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.6_建议阅读顺序)以及[生命周期模块导读](../../../../research/source_reading/workqueue/navigation/P04_Linux_6.12_flush取消与生命周期模块源码概念导读.md#4.5_destroy与对象生命期)承担后续实现阅读，不在此复制 worker 和队列内部算法。
 
 ------
 
 ## 1.17\_临时使用\_和\_长期持有\_的区别
 
-不是所有函数调用都需要 `kref_get()`。
+回访前面的 `borrow()`：调用者持有引用，helper 同步返回且不保存地址，整个借用期限都在调用者保护内，因此无需重复 get。若 helper 修改字段，则另外遵守字段同步；“无需新增引用”并不表示“无需锁”。
 
-例如：
+把地址保存为 `global_refobj` 则改变了责任边界。仅执行 `global_refobj = refobj`，没有声明谁保活、谁替换和谁最终归还。即使赋值前 get，也仍要处理旧值以及并发读取。以“槽拥有一份引用、槽的读写共用一把锁”为例，一次替换至少包含：
 
-```c
-static void my_refobj_do_something(struct my_refobj *refobj)
-{
-	refobj->state = 1;
-}
-```
+1. 来自有效持有者的新对象在发布前预留槽引用；允许清空时新值可以是空。
+2. 持槽锁保存旧值、发布新值；查询者必须在同一锁下读到非空对象并取得自己的引用，才能带出锁外。
+3. 解锁后归还旧槽引用；这样即使旧对象的 release 有额外清理，也不把它无意中放进槽锁内。
+4. 关闭槽时按同一协议置空并归还旧值，再处理外部入口的结束。
 
-如果调用者已经持有引用，并且这个函数只是同步调用、不会保存指针、不会异步使用指针，那么通常不需要在函数内部再次 `kref_get()`。
-
-例如：
-
-```c
-void caller(struct my_refobj *refobj)
-{
-	/* caller 已经持有 refobj 的引用 */
-
-	my_refobj_do_something(refobj);
-
-	/* caller 仍然持有引用 */
-}
-```
-
-这种属于临时借用。
-
-但是如果函数内部要保存指针：
-
-```c
-static struct my_refobj *global_refobj;
-
-void remember_refobj(struct my_refobj *refobj)
-{
-	global_refobj = refobj;
-}
-```
-
-那么就不是临时借用，而是长期持有。
-
-这时必须设计引用规则：
-
-```c
-void remember_refobj(struct my_refobj *refobj)
-{
-	kref_get(&refobj->ref);
-	global_refobj = refobj;
-}
-```
-
-后续替换或清理 `global_refobj` 时，也必须：
-
-```c
-kref_put(&global_refobj->ref, my_refobj_release);
-```
-
-所以判断是否需要 get 的关键不是函数层级，而是：
-
-```text
-是否把指针保存到当前调用栈之外？
-是否异步使用？
-是否跨越当前持有者的生命周期？
-```
+旧值和新值恰好相同时，一次预留和一次旧槽归还可以相抵，但读者仍须检查具体接口约定。这里保留原全局保存场景，同时明确它不是“get 后写全局变量”两行就完成的线程安全模板。
 
 ------
 
 ## 1.18\_kref\_和\_handoff
 
-还有一种情况容易误判：
+handoff 是 **引用所有权转移**。创建者已经不再需要对象时，可以直接让队列接收现有引用，省去额外的 get/put；前面 C 模型的 `submit(&pending, &producer, accept)` 就表达这种契约。
 
-```text
-我当前已经持有一个引用，现在我要把这个引用直接交给别人。
-```
+必须同时写清成功和失败：成功时队列接管原责任，创建者槽清空；失败时未转交，创建者仍拥有并负责归还。若接口选择“无论成功失败都消费传入引用”，那是另一种契约，调用方不能照搬前一种失败清理。接口名称本身无法告诉我们是哪一种。
 
-这叫 handoff，也就是引用所有权转移。
-
-例如：
+可以在调用点这样记录约定，而不是仅写一句“已经入队”：
 
 ```c
-/* 当前路径持有 refobj 的一个引用 */
-enqueue_refobj(refobj);
-
-/* 从这里开始，当前路径不再访问 refobj */
-```
-
-如果 `enqueue_refobj()` 的语义是：
-
-```text
-队列接管当前引用
-```
-
-那么这里不需要：
-
-```c
-kref_get(&refobj->ref);
-enqueue_refobj(refobj);
-kref_put(&refobj->ref, my_refobj_release);
-```
-
-这种 get 后马上 put 的写法可能是多余的。
-
-更清晰的写法是：
-
-```c
-enqueue_refobj(refobj);
-/* ownership moved to queue, do not touch refobj after this point */
-```
-
-但这个模型有一个严格要求：
-
-```text
-handoff 之后，当前路径不能再访问 refobj。
-```
-
-否则就变成：
-
-```text
-引用已经交出去了，但当前路径还在裸指针访问对象
-```
-
-这又会回到 UAF 风险。
-
-所以 handoff 代码必须写清楚注释。
-
-例如：
-
-```c
-/*
- * Transfer our reference to the queue.
- * Do not touch refobj after enqueue_refobj().
+/* 成功转交本路径唯一的引用，之后不再访问对象。
+ * 拒绝则仍由本路径归还；具体分支由接收接口的返回值决定。
  */
-enqueue_refobj(refobj);
 ```
 
-这种注释不是废话，而是生命周期协议的一部分。
+若调用者还要继续使用，就保留自己的一份并为队列预留新份额，采用 1.16 的模型。选择直接交接还是共享，依据的是两个使用期限是否同时存在，不是哪个写法 get/put 更少。
 
 ------
 
 ## 1.19\_kref\_设计最重要的几个问题
 
-写一个使用 `kref` 的内核对象时，不应该先问：
+审查一个对象时，可沿完整生命周期填写下面的账本，而不是先到处寻找加一减一的位置：
 
-```text
-我要在哪里 ++？
-我要在哪里 --？
-```
+| 阶段 | 必须说清的问题 |
+| --- | --- |
+| 创建 | 谁分配对象，失败怎样返回，初始引用归谁？ |
+| 保存 | 哪些路径只是借用，哪些有独立期限，容器是否拥有引用？ |
+| 取得 | 从全局 list/hash/xarray/idr 找到地址时，谁保护查找窗口并保证取得条件？ |
+| 交接 | 接收成功和失败分别由谁归还，是否可能重复提交、取消或重排？ |
+| 业务访问 | 哪组字段用什么同步，设备是否允许请求，在途操作是否需要独立保护？ |
+| 关闭 | 何时移除全局入口、停止生产者、等待借用者或异步路径退出？ |
+| 归零 | 最后一份可能在哪些上下文归还，release 是否需要锁，会不会反向依赖当前锁？ |
+| 回收 | 能否直接释放，是否须 RCU 延迟回收，子对象及模块代码是否仍有效？ |
 
-而应该先问：
-
-```text
-对象在哪里创建？
-创建后初始引用属于谁？
-对象会被哪些路径保存？
-哪些路径只是临时借用？
-哪些路径需要长期持有？
-对象是否会进入全局 list/hash/xarray/idr？
-从全局结构 lookup 时如何防止对象被释放？
-对象何时从全局结构移除？
-最后一个 put 时 release 做哪些清理？
-release 里是否需要锁？
-内存是直接 kfree，还是 kfree_rcu？
-```
-
-这才是 kref 的真正设计问题。
-
-如果这些问题答不出来，代码即使用了 `kref`，也只是形式上用了引用计数。
+如果对象间互相拥有引用，还要画出可能的环以及谁负责打断。正确性依赖完整的责任图，代码中出现 `struct kref` 并不能证明图已经闭合。
 
 ------
 
 ## 1.20\_本章小结
 
-本章的核心结论是：
+本章从同一请求的同步调用进入异步交付，建立了三种不同动作：借用沿用已有保护，共享增加独立责任，交接只转移已有责任。C 模型让这三者可观察，内核模块进一步展示投递前预留、失败归还以及回调退出先于模块卸载。
 
-```text
-kref 不是“计数器 API”，而是 Linux 内核对象生命周期协议。
-```
+现在能够证明的是：在所有参与者遵守引用协议、没有绕过它非法释放的前提下，一份有效引用覆盖自己的使用期限，最后归还触发最终清理。仍然不能由此推出字段一致、lookup 自动安全、设备在线、锁顺序正确或 RCU 宽限期已经结束。每一项都需要相应的状态和通信协议。
 
-它解决的问题是：
+用三个问题自测：已有引用下读到计数 1，为什么还不能直接宣称独占？同一工作项提交失败，为什么不能替早先一次执行归还引用？对象已从容器摘除，为什么仍可能有合法使用者？答案分别落在新增/借用入口、逐次责任配对和已取得引用的独立期限，而不在一句“引用计数线程安全”里。
 
-```text
-多个执行路径共享同一个对象时，
-如何保证对象在最后一个使用者退出之前不会被释放。
-```
-
-它不解决的问题是：
-
-```text
-字段并发访问
-状态机一致性
-全局容器查找保护
-锁顺序
-RCU grace period
-业务可用性判断
-设备独占访问和设备安全托管
-```
-
-所以 `kref` 的正确使用方式是：
-
-```text
-生命周期用 kref
-字段一致性用锁
-查找路径用锁或 RCU
-业务可用性用状态机
-设备访问安全由设备自己的锁和状态规则决定
-释放路径用 release 回调
-```
-
-记住本章最重要的一句话：
-
-```text
-有指针，不代表有引用；
-有引用，才代表对象在当前使用期间不能被释放。
-```
-
-下一章开始再进入源码入口：
-
-```c
-include/linux/kref.h
-include/linux/refcount.h
-```
-
-并正式分析：
-
-```c
-struct kref
-kref_init()
-kref_get()
-kref_put()
-container_of()
-```
-
-但在看源码之前，必须先把本章这个问题域建立起来。否则后面看到的就只是 `refcount_inc()` 和 `refcount_dec_and_test()`，而不是 Linux 内核对象生命周期管理模型。
+下一章把这些责任映射到 `include/linux/kref.h` 和 `include/linux/refcount.h`：内嵌的 `struct kref` 怎样保存计数，get/put 怎样转交给底层操作，release 怎样通过 `container_of()` 回到外层对象。先有这份责任模型，源码中的加减才有可检验的意义。
 
 ------
 

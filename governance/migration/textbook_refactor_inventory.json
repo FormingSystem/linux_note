@@ -2167,15 +2167,15 @@
       "path": "knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md",
       "baseline_sha256": "a0889e89114a07e8693e11118b3d2220f0215c42f50356cba86900fd2f3cc9fb",
       "lines": 1313,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04a 已冷读全篇并改写 1.1～1.6：同步借用、独立责任、交付失败与完整串行 C 模型；固定两份证据及六调度/两分配失败通过。1.7～1.20 访问边界和异步片段仍待修正，保持 pending 及原人工状态。"
+      "state": "validated",
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04a 已冷读全篇并改写 1.1～1.6：同步借用、独立责任、交付失败与完整串行 C 模型；固定两份证据及六调度/两分配失败通过。1.7～1.20 访问边界和异步片段仍待修正，保持 pending 及原人工状态。 B04b 完成 1.7～1.20 实际重写，保留全部二十个二级标题和有效场景，补锁/RCU/设备与引用责任边界、完整一次工作模块；ARM 前端和五路径显式替身检查通过，未执行目标运行；与 B04a 合计整章适用审查完成，人工绿色保持原样。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md",
       "baseline_sha256": "fc6360dbeaf67da45c37398993c69defd1dd827608332f1294e609c44af354f7",
       "lines": 2715,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04b 仅同步 P01 的前置承接，正文尚待独立冷读和源码结构重构。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md",

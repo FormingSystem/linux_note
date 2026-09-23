@@ -29,7 +29,7 @@ domains:
 | B01 基础入口：architecture 中的概貌、源码树及 Atlas 路线 | 能读变量、函数、数组与循环；尚不认识内核对象 | 从读文件区分应用、内核、硬件；按问题找源码，区分源文件与产物 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)；本批实施，验证结果见 1.5 |
 | B02 模块与设备节点：architecture 其余 3 篇、error_handling 初始 2 篇、驱动 fundamentals 与 misc | 用户与内核边界、源码身份 | 区分装入代码、注册服务和建立访问入口；能恢复一个失败的最小模块实验 | [模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes)、[错误处理](../../knowledge/linux/error_handling)、[驱动基础](../../knowledge/driver_model/fundamentals)；分批推进，已完成组与下一项见 1.5 |
 | B03 对象组织：data_structures 33 篇 | C 指针、对象与资源 | 从查找和更新需求选择链表、哈希表或树，解释节点与容器关系 | [数据结构](../../knowledge/linux/data_structures)；链表、哈希及子系统应用、综合模块、树原章节和依赖拆分单元已完成本轮逐篇审查与适用验证；教学语言复核已完成，目标未运行与研究算法边界逐批记录。继续 B04，不表示全仓完成 |
-| B04 生命周期：object_lifetime 20 篇 | 能辨别对象、入口和使用者 | 解释引用何时取得、由谁放弃、什么时候可销毁 | [对象生命周期](../../knowledge/linux/object_lifetime)；B04a 已完成 P01 1.1～1.6 的问题链与完整责任模型，后半章和后续机制继续逐篇审查 |
+| B04 生命周期：object_lifetime 20 篇 | 能辨别对象、入口和使用者 | 解释引用何时取得、由谁放弃、什么时候可销毁 | [对象生命周期](../../knowledge/linux/object_lifetime)；B04a/b 已完成 P01 全篇问题链、责任模型与一次工作交付，P02 及后续机制继续逐篇审查 |
 | B05 并发与事件：synchronization_and_asynchrony 125 篇 | 单个操作及对象生命期 | 从两条交错路径推出同步、等待、通知、延迟执行与回收；以具体状态完成证明 | [同步与异步总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)；待进入，内部再按依赖拆批；kernel_subsystems/irq 当前无正式文件，不建立占位入口 |
 | B06 文件与观测：io_model 5 篇、kernel_subsystems/vfs 与 tracing | 读文件主线、等待与对象持有 | 串起路径、打开实例、数据、阻塞、缓存及日志证据 | [VFS](../../knowledge/kernel_subsystems/vfs/大纲.md)、[I/O 模型](../../knowledge/linux/io_model)、[观测](../../knowledge/kernel_subsystems/tracing)；待进入 |
 | B07 设备与驱动：device_model 17 篇，driver_model 中 character_device、device_tree、gpio、gpio_consumers、input、platform_bus | 内核公共机制、文件入口 | 区分硬件描述、注册、匹配、请求处理和拆除，完成一个有恢复路径的设备实例 | [设备模型](../../knowledge/linux/device_model/大纲.md)、[驱动路线](../tracks/linux_driver_track.md)；待进入，各设备家族单独校准 |
@@ -220,3 +220,5 @@ B03az 完成 P15 15.10/15.11 的 VMA 接入与边界改写，保留原两节入�
 B03ba 冷读并收束 P15 15.12～15.17：查询/前驱例子按固定契约保留，补两个输出与返回范围边界；原 E/F/G 撤销进入[P42 两棵树](../../knowledge/linux/data_structures/红黑树_rb-tree/P42_撤销映射中的两棵Maple树.md#42.3_沿S0到S5观察职责转移)，总图纠正为职责图，未落地的旧第16～19章安排替换为真实模块与研究边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.63_B03ba查询收束与撤销两棵树)记录八函数、分区模型和未执行项。P15 及 B03 数据结构正文完成本轮逐篇审查；下一项 B04 kref 问题入口与生命周期路线，全仓继续。
 
 B04a 进入 kref：P01 前六节从同步借用推进到独立持有，以[完整 C 模型](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md#1.6.1_运行完整的责任交接模型)解释引用份额、成功/拒绝交付及 S0～S5 回收周期，保留后半章与原人工状态。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.64_B04a引用责任与交付周期)记录固定两份证据和有限测试；下一项 P01 1.7～1.20 的访问边界及异步反例，整章仍 pending。
+
+B04b 收束 P01 1.7～1.20：修正字段锁、设备在线、lookup 取引用窗口、计数快照和 handoff 的证明边界，用[完整内核 C 模块](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md#1.16.1_运行一次真实工作交付)解释预留、拒绝归还及回调代码退出。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.65_B04b访问边界与异步交付)记录五路径替身检查及未执行目标验证。P01 经两批完成作者审查，人工状态保留；下一项 P02 源码结构与权威实现入口，全仓继续。

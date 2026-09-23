@@ -51,6 +51,8 @@ delayed work 必须用 delayed 专用 cancel，因为 timer 仍可能持有尚�
 
 `destroy_workqueue()` 标记 DESTROYING、drain/flush 在途 work、拆除 attrs/pwq/pool 连接并延迟释放 RCU 可见对象。调用前仍必须封住 IRQ、timer、用户入口和其他队列等外部生产者。销毁 wq 也不自动保活嵌入 work 的业务对象。
 
+[kref 一次交付实验](../../../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md#1.16.1_运行一次真实工作交付)给出这个边界的最小调用场景：创建者只提交一次，worker 不重排；私有队列销毁等待回调退出，业务对象则由最后的 kref_put 清理。该实例尚未在目标上运行，不能作为通用 cancel/requeue 协议或动态验证证据。
+
 ## 4.6\_依赖检查
 
 workqueue Lockdep map 和 `check_flush_dependency()` 能发现部分 reclaim/flush 依赖；barrier work 使用独立 key 避免 BH 与线程队列假阳性。检查配置关闭、路径未执行或跨对象业务锁未接入时，未告警不构成完整死锁证明。
