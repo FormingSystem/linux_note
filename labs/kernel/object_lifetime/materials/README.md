@@ -168,3 +168,4 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.25\_离线责任账本
 
 [ownership_audit.c](ownership_audit.c)对应[P12诊断入口](../../../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.2.1_调试工具先导)，按单对象显式有序事件检查创建者与工作者份额，区分balanced、invalid_owner、leftover、incomplete和still_open。C11严格编译运行六条轨迹及两个练习变体；不执行真实get/put/free，不模拟内核计数实现，不证明日志完整度、多CPU顺序或诊断器实际覆盖。
+[P12章末练习](../../../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.10.2_最小审查流程)增加转交后访问、归还后访问、记录不完整和区间未结束四项预测。原C11检查器不变，六个既有用例与四项练习复核通过；仍为单对象离线顺序模型。

@@ -23,6 +23,7 @@ source_version: "6.12.20"
 | 正常归零与异常饱和怎样分流 | [模块边界](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [增减 helper](../source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支) → [告警收敛](../source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和) |
 | 最后减少与容器锁怎样交接 | [锁交接模块](P04_最后归还与锁交接导读.md#4.2_把最后减少留在锁内) → [快路径与重查](../source_explanations/lib/refcount.c.md#1.2_快路径保留最后一份) → [kref 回调入口](../source_explanations/include/linux/kref.h.md#1.8_归零时把锁交给回调) |
 | 容器接口自己的锁覆盖到哪里 | [整数索引模块](P06_整数索引与拥有型查找导读.md#6.2_把容器动作接到引用周期) → XArray 查询/删除包装与 IDR 编号初始化 |
+| 最终计数配平能否证明每次访问合法 | [诊断轨迹与真实责任](P02_普通引用与归零回调导读.md#2.20_从诊断轨迹回到真实责任) → [最终归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | release能否等待，设备私有引用怎样接续 | [回调上下文](P04_最后归还与锁交接导读.md#4.6_回调上下文与清理责任)；[设备错误定位](P08_device引用与资源退出导读.md#8.7_设备与私有引用的错误定位) |
 | 快照或条件失败是否代表已有访问资格 | [重置与条件返回诊断](P03_条件取得与查找窗口导读.md#3.9_快照与失败返回不交付引用) → [快照](../source_explanations/include/linux/kref.h.md#1.5_读取快照不新增责任)、[条件返回](../source_explanations/include/linux/kref.h.md#1.7_有效地址上的条件取得) |
 | release里摘链是否一定错误 | [集合与索引退出诊断](P04_最后归还与锁交接导读.md#4.5_拥有型集合与非拥有索引的退出诊断) → [保留最后一份与锁内重查](../source_explanations/lib/refcount.c.md#1.3_取得锁后再次减少判断) |
