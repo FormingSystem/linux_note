@@ -106,3 +106,9 @@ get_device对非空输入进入普通取得，不能检验悬空地址。设备�
 [P15框架与工程题](../../../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md#15.5_边界和错误验收_框架对象_错误模式和所有权表)复核device与kobject撤下不同、设备持有不保活驱动受管资源、class/bus公共描述与内部对象区别。已有P11及本导读的固定实现承担版本证据，未把对象关系画成class/bus直接继承kobject的树。
 
 当前设备八组和kobject七组宿主夹具比对材料后重编通过，另重跑责任账本六条C轨迹。init/add/delete、sysfs、devres等为既有明确替身，没有真实driver core绑定或目标诊断结论。P15将十类错误作为带前提的审查题，保留取得/归还对应体系，不重复实现框架回调。
+
+## 8.9\_组合退出中的设备桥接与私有份额
+
+[生命周期集成](../../../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md#1.9_完整停机状态机)以T0～T6组合原有D阶段和devres S阶段。T0为私有ctx取得owner桥接，走本页8.2的get_device；T5退出绑定资源，不经过“最后设备引用才释放资源”的假想路径；T6的ctx最终回调才归还其桥接份额，走put_device及既有唯一release分派。私有业务门与active属于应用状态，设备公开引用接口不会替它们赋值。
+
+若devres回调读取ctx，归还绑定期私有份额的记录须晚于这些依赖回调执行，见[devres责任导读](../../devres/navigation/P02_记录与分组清理导读.md#2.3_选择接口先确定责任是否保留)。这是应用组合约束，不能据此给所有device的引用分支增加固定等待用户文件的语义。六条新C轨迹只模拟份额与顺序，未执行真实kobject、devres、同步、VMA或硬件。

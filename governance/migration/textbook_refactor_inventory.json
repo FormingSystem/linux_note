@@ -2300,15 +2300,15 @@
       "path": "knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md",
       "baseline_sha256": "89c06e9a194908f91684038130de75c14be5cedb7a8d335e4edc65dd15ad2fbd",
       "lines": 187,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B04cn全篇冷读并重写组合退出，保留四层边界、异步/文件/映射/混用/误用等知识，补T0～T6地址与通信、绑定份额最后归还、完整六轨迹C及渐进练习；导航和固定证据同步，人工评审状态未升级，真实内核与目标运行未执行。"
     },
     {
       "path": "knowledge/linux/object_lifetime/integration/大纲.md",
       "baseline_sha256": "0d166a3a72db23d97109e35236bebb0d4d48639bd43e6ee0efa9316b7d46d749",
       "lines": 16,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B04cn全篇冷读并重写组合退出，保留四层边界、异步/文件/映射/混用/误用等知识，补T0～T6地址与通信、绑定份额最后归还、完整六轨迹C及渐进练习；导航和固定证据同步，人工评审状态未升级，真实内核与目标运行未执行。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md",

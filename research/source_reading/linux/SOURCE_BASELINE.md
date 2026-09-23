@@ -970,3 +970,7 @@ B04cj新增[drivers/clk/clk-devres.c固定原文](drivers/clk/clk-devres.c)与[�
 ## 1.106\_devres退出依赖与设备发布顺序
 
 B04ck重新只读核对官方远端、lf-6.12.y、固定标签dfaf2136和6.12.20；当前HEAD为三个本地实验提交后的7b60e547，不作证据。固定drivers/base/core.c、devtmpfs.c、dd.c与include/linux/platform_device.h用于核对add/探测、节点请求、清理入口及void remove类型，既有原文保留。[模块导读](../devres/navigation/P02_记录与分组清理导读.md#2.4_退出依赖与设备发布的不同证据)记录范围。当前ARM配置启用COMMON_CLK与DEVTMPFS，只说明配置存在，不证明目标时钟或/dev挂载运行；七条宿主C模型不作硬件结论。
+
+## 1.107\_组合退出与私有桥接
+
+B04cn沿固定device/kobject公开引用、device_unbind_cleanup与devres逆序记录证据组合T0～T6，具体入口见[设备导读](../kref/navigation/P08_device引用与资源退出导读.md#8.9_组合退出中的设备桥接与私有份额)。未新增函数展开或原文副本，私有ctx的门、活动与桥接属于应用设计。六条C宿主轨迹不等于Linux实现、真实同步、映射撤销或目标设备通过；继续保持固定dfaf2136而非本地实验HEAD为源码身份。
