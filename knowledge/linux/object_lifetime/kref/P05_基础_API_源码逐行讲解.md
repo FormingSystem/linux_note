@@ -12,153 +12,62 @@ domains:
 
 ## 5.1\_本章主线
 
-普通 init/get/put/read 及条件取得的版本化函数体已集中到[源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)及其唯一实现；本章保留调用者的参数、前提和应用判断。条件取得与锁组合已核对比较重试、最终归零及锁交接；其余调用者应用仍按后续批次独立核对。
+前四章已经能为一份引用写出取得、交付和归还责任。现在进一步检查调用点：同样是对象指针，为什么有时可以普通 get，有时只能条件取得；同样是 put，为什么有的回调不带锁，有的却必须接管一把锁？答案藏在每个接口的前提、返回值和状态副作用中。
 
-前面几章已经讲过：
+本章以调用者的选择为主线，普通计数、初始化与类型嵌入沿用前章结论。条件取得和锁组合各有完整实验，分别观察“比较失败以后怎么办”和“最后候选取锁后为何还要重查”。版本化函数体统一从[源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入唯一实现，正文不另维护一套上游函数副本。
 
-```text
-kref 是对象生命周期协议；
-struct kref 嵌入自定义引用对象内部；
-kref_init/get/put/release 构成生命周期状态机；
-三条核心规则约束 get、put、lookup。
-```
-
-本章开始补完 `kref` 的基础 API。
-
-但本章不再重复：
-
-```text
-struct kref 为什么嵌入对象内部
-release 为什么要 container_of
-kref 为什么不是锁
-put 后为什么不能访问对象
-lookup 为什么不能裸 get
-```
-
-这些已经在前 1-4 章讲过。
-
-本章只回答 API 层面的几个问题：
-
-```text
-每个 API 的源码形态是什么？
-它调用了 refcount_t 的哪个接口？
-它的使用前提是什么？
-它的返回值能不能忽略？
-它适合普通路径，还是 lookup/锁组合路径？
-```
-
-本章主线是：
-
-```text
-kref API 很少，但每个 API 都有明确的生命周期语义和使用前提。
-```
+学完这一章，应能在写下 API 名之前说明：参数指向的存储为何有效，当前路径负责哪一份，失败时有没有获得责任，最后回调由谁执行，以及锁最终由谁归还。
 
 ------
 
 ## 5.2\_kref\_API\_总览
 
-`include/linux/kref.h` 里主要有这些接口：
+先沿一个对象从定义到退出的过程回查接口，再按用途分组。KREF_INIT 是初始化器宏，其余列出的名称是函数；下面不把初始化写法和对象存储期绑成“静态/动态”的一一对应。
 
-```c
-KREF_INIT(n)
-kref_init()
-kref_read()
-kref_get()
-kref_put()
-kref_get_unless_zero()
-kref_put_mutex()
-kref_put_lock()
-```
-
-可以先按用途分组：
-
-| API                      | 用途                              | 普通路径/特殊路径   |
-| ------------------------ | --------------------------------- | ------------------- |
-| `KREF_INIT(n)`           | 静态初始化                        | 初始化路径          |
-| `kref_init()`            | 动态初始化为 1                    | 初始化路径          |
-| `kref_read()`            | 读取当前引用计数                  | 调试/观察路径       |
-| `kref_get()`             | 增加引用                          | 普通持有路径        |
-| `kref_put()`             | 释放引用，归零时 release          | 普通释放路径        |
-| `kref_get_unless_zero()` | 非 0 时尝试增加引用               | lookup/RCU/特殊路径 |
-| `kref_put_mutex()`       | put 到 0 时持 mutex 调 release    | 锁组合路径          |
-| `kref_put_lock()`        | put 到 0 时持 spinlock 调 release | 锁组合路径          |
-
-从使用频率看，最常用的是：
-
-```c
-kref_init()
-kref_get()
-kref_put()
-```
-
-从错误风险看，最需要小心的是：
-
-```c
-kref_get_unless_zero()
-kref_put_mutex()
-kref_put_lock()
-```
-
-因为它们通常出现在 lookup、删除、最后释放、锁组合这类复杂路径中。
-
-本章后面按职责重新归纳为几组：
-
-| 分组 | API | 关注点 |
+| 当前问题 | 接口 | 要保留的前提 |
 | --- | --- | --- |
-| 初始化类 | `KREF_INIT(n)`、`kref_init()` | 初始引用从哪里来 |
-| 观察类 | `kref_read()` | 只能观察，不能做生命周期判断 |
-| 普通引用类 | `kref_get()`、`kref_put()` | 已有有效对象上的 get/put |
-| 条件取得引用 | `kref_get_unless_zero()` | 返回值必须检查，仍需外部保护 |
-| 锁组合释放 | `kref_put_mutex()`、`kref_put_lock()` | 最后 put 与锁语义配套 |
-| 工程封装 | `my_refobj_get()`、`my_refobj_put()`、`lookup_get()` | 把引用规则收进对象接口 |
+| 定义对象时怎样写初值 | KREF_INIT(n) | n 对应真实初始责任，符合所处存储期的初始化规则 |
+| 私有创建阶段怎样建立初始一份 | kref_init | 设置为 1，不是向旧计数增加一份 |
+| 怎样观察当前数值 | kref_read | 先保护计数地址，观察本身不新增引用 |
+| 已有正引用保证时怎样新增一份 | kref_get | 不能从不受保护的裸指针开始 |
+| 一份责任结束时怎样归还 | kref_put | 类型回调与资源归属、上下文匹配 |
+| 地址有效但可能已归零时怎样尝试取得 | kref_get_unless_zero | 检查失败，保留完整查找窗口 |
+| 最终减少怎样与容器锁串行化 | kref_put_mutex、kref_put_lock | 可能最后时先取锁再减少，回调接管锁退出 |
+
+前三种分别是初始化和观察，普通 get/put 处理已有责任下的增减；条件取得与锁组合处理额外的查找/归零约束。工程封装再把这些动作绑定到对象类型，例如 create、get、put、lookup_get。分组的目的在于选择协议，不是让所有对象把每个接口都用一遍。
 
 ------
 
 ## 5.3\_kref\_API\_与\_refcount\_t\_的映射
 
-虽然第 2 章已经讲过结构模型，这里为了读 API 源码，需要保留最小上下文。
+对象内部的 ref 保存一个 refcount_t，后者再保存原子计数。kref 不在成员里保存回调；归还者把类型回调作为本次参数传入。具体字段见[计数成员](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.1_计数成员)。
 
-源码形态可以理解为：
-
-固定[计数成员定义](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.1_计数成员)仅保存 refcount_t，不保存回调或业务类型。
-
-也就是说，`kref` 的 API 本质上是对 `refcount_t` 的封装：
-
-```text
-kref_init              -> refcount_set
-kref_read              -> refcount_read
-kref_get               -> refcount_inc
-kref_put               -> refcount_dec_and_test
-kref_get_unless_zero   -> refcount_inc_not_zero
-kref_put_mutex         -> refcount_dec_and_mutex_lock
-kref_put_lock          -> refcount_dec_and_lock
-```
-
-可以画成：
+| kref 层入口 | 当前固定版本下层动作 |
+| --- | --- |
+| kref_init | refcount_set，将值设为 1 |
+| kref_read | refcount_read，返回快照 |
+| kref_get | refcount_inc，普通增加 |
+| kref_put | refcount_dec_and_test，真时调用参数 release |
+| kref_get_unless_zero | refcount_inc_not_zero，向上返回尝试结果 |
+| kref_put_mutex | refcount_dec_and_mutex_lock，真时持锁调用 release |
+| kref_put_lock | refcount_dec_and_lock，真时持锁调用 release |
 
 ```mermaid
-graph TD
-	A["kref API"]
-	B["refcount_t API"]
-	C["atomic/refcount 实现"]
-
-	A --> B
-	B --> C
+flowchart LR
+    U["调用者：外层地址与责任协议"] -->|"传入对象内kref地址；put另传回调"| K["kref接口"]
+    K -->|"定位成员并调用计数原语"| R["refcount_t／refs"]
+    R -->|"原子读写或比较交换共享计数"| A["原子实现"]
+    R -->|"归零或取得结果返回"| K
+    K -->|"正常最后归还时调用类型回调"| F["资源及存储退出"]
 ```
 
-本章看源码时，要始终记住：
-
-```text
-kref 层表达对象生命周期语义；
-refcount_t 层提供引用计数安全原语；
-底层 atomic 层提供原子操作能力。
-```
+这条链只说明分工。底层原子保证相应计数更新，refcount 增加引用计数相关的检查与顺序契约，kref 将正常归零接到类型回调；它们都不自动知道对象正被哪些用户持有，也不替调用者维护业务字段和发布入口。
 
 ------
 
 ## 5.4\_初始化类\_API
 
-初始化类 API 只解决一个问题：对象生命周期从哪个引用开始。静态对象用 `KREF_INIT(n)`，动态对象用 `kref_init()`。
+初始化类 API 决定初始责任如何建立：定义时可使用初始化器，私有准备阶段可调用设置函数；对象存储期及清理策略另行判断。
 
 ### 5.4.1\_KREF\_INIT(n)
 
@@ -188,66 +97,11 @@ static struct my_refobj global_refobj = {
 
 ### 5.4.4\_kref\_init()\_的使用前提
 
-`kref_init()` 的前提非常严格：
+初始化发生在一个新生命周期的私有准备阶段：存储已经取得，旧周期已经结束，没有并发使用者还按旧责任访问，也尚未把这个新对象发布出去。它既可以用于新分配的外壳，也不因外壳具有静态存储期就自动不适用；关键是初始化权限和生命周期边界。
 
-```text
-对象刚创建；
-对象还没有发布；
-对象还没有被其他路径看到；
-对象还没有已有引用关系。
-```
+以[P02 完整对象模块](P02_源码入口与结构定义.md#2.19_标准自定义引用对象模板)为例，外壳分配成功后先 init 建立初始一份，再申请 data；第二步失败时可通过类型 put 清理部分初始化对象。这个安排要求回调能够处理 data 尚未成功的状态。另一种创建协议可以在全部资源准备好之后才 init，失败时直接按已取得资源逆序清理。二者不能混用到某条分支既没有引用却调用 put，或已经有初始份额却遗忘归还。
 
-典型正确写法：
-
-```c
-struct my_refobj *my_refobj_alloc(void)
-{
-	struct my_refobj *refobj;
-
-	refobj = kzalloc(sizeof(*refobj), GFP_KERNEL);
-	if (!refobj)
-		return NULL;
-
-	kref_init(&refobj->ref);
-
-	return refobj;
-}
-```
-
-错误写法：
-
-```c
-void my_refobj_reset(struct my_refobj *refobj)
-{
-	kref_init(&refobj->ref);      /* 错：不能重置已有对象的引用计数 */
-}
-```
-
-为什么错？
-
-因为 `kref_init()` 是直接设置计数，不是“重新整理引用关系”。
-
-如果对象当前有多个持有者：
-
-```c
-refcount = 3
-```
-
-突然调用：
-
-```c
-kref_init(&refobj->ref);
-```
-
-就会把引用计数强行改成 1。
-
-这会破坏所有已有持有者的引用语义。
-
-所以规则是：
-
-```text
-kref_init() 只用于新对象初始化，不用于旧对象 reset。
-```
+原来的 reset 反例仍然成立：A/B/C 各持一份时重新 init 把数值从 3 覆盖成 1，三份外部责任没有消失，下一次正常 put 就可能过早回收。业务 reset 应处理业务状态；若要复用对象池内存，应先证明旧访问、旧入口和旧身份均已退出，再建立新周期。
 
 ------
 
@@ -285,7 +139,7 @@ WARN_ON(kref_read(&refobj->ref) == 0);
 
 ### 5.6.2\_kref\_get()\_的使用前提
 
-最直接的情形是当前路径尚持一份，或者新对象已经初始化且尚未发布，创建者仍持初始份额。集合锁也可能支持普通 get，但必须同时有“容器在成员可查找期间持一份，撤下及归还受同一协议控制”的证明；锁名本身不能保证计数为正。静态存储或延迟回收只证明地址尚在时，也不能据此普通 get 一个零计数对象。
+最直接的情形是当前路径尚持一份，或者新对象已经初始化且尚未发布，创建者仍持初始份额。集合锁也可能支持普通 get，但必须同时有“容器在成员可查找期间持一份，撤下及归还受同一协议控制”的证明；另一种方案让所有最终归零也与查找使用同一把锁，正如本章锁组合实例。锁名本身不能保证计数为正。静态存储或延迟回收只证明地址尚在时，也不能据此普通 get 一个零计数对象。
 
 ```c
 /* 调用者必须已证明地址与正引用；返回指针只是便于类型封装。 */
@@ -688,315 +542,89 @@ spinlock 版本具有同样的快路径、锁内重查和回调接锁结构；�
 
 ## 5.10\_API\_封装模板
 
-工程代码里通常不建议到处裸写 kref API，而是让对象类型自己提供 get/put/lookup_get 封装。
+把 get/put 集中到对象接口，主要是集中类型、回调和责任契约，使调用者不必在每次归还时重新选择清理函数。包装函数不会自动发现悬空地址，也不会因为返回了同一个指针就证明查找安全。
 
 ### 5.10.1\_裸\_kref\_私有对象的\_API\_封装模板
 
-工程上不要到处裸写：
+继续沿用[P02 完整对象程序](P02_源码入口与结构定义.md#2.19_标准自定义引用对象模板)。它的四个入口各承担一个明确职责：
 
-```c
-kref_get(&refobj->ref);
-kref_put(&refobj->ref, my_refobj_release);
-```
+| 封装 | 输入及输出责任 | 需要读实现确认的边界 |
+| --- | --- | --- |
+| my_refobj_alloc | 成功交付初始一份，失败返回 NULL | 外壳与 data 的部分初始化失败都完成清理 |
+| my_refobj_get | 从调用者已有有效份额新增一份并返回对象 | 要求非空及存活，不探测任意指针真假 |
+| my_refobj_put | 消费调用者负责的一份 | 本例允许 NULL 作为空槽，不意味着非空地址都可归还 |
+| my_refobj_release | 最后归还时回收 data 和外壳 | 参数是 ref 成员地址，按类型还原且匹配分配器 |
 
-更推荐封装：
+这样集中回调后，增加 trace 或诊断也有共同入口。但原来“先 WARN_ON(!refobj)，随后继续解引用”的写法不能作为空指针保护：告警通常不替程序 return，后面的 kref_get 仍会访问无效地址。若接口约定非空，就由调用者先处理分配/查找失败；若选择允许空值，则包装器必须明确返回行为，并要求调用者兑现该契约。
 
-```c
-struct my_refobj {
-	struct kref ref;
-	int state;
-};
-
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj;
-
-	refobj = container_of(ref, struct my_refobj, ref);
-
-	kfree(refobj);
-}
-
-static void my_refobj_init(struct my_refobj *refobj)
-{
-	kref_init(&refobj->ref);
-}
-
-static struct my_refobj *my_refobj_get(struct my_refobj *refobj)
-{
-	kref_get(&refobj->ref);
-	return refobj;
-}
-
-static void my_refobj_put(struct my_refobj *refobj)
-{
-	kref_put(&refobj->ref, my_refobj_release);
-}
-```
-
-这样做的好处是：
-
-```text
-release 函数集中在一个地方；
-调用点不容易传错 release；
-以后可以加 trace/WARN_ON/debug；
-对象生命周期接口更清楚。
-```
-
-例如可以扩展：
-
-```c
-static struct my_refobj *my_refobj_get(struct my_refobj *refobj)
-{
-	WARN_ON(!refobj);
-
-	kref_get(&refobj->ref);
-	return refobj;
-}
-```
-
-或者：
-
-```c
-static void my_refobj_put(struct my_refobj *refobj)
-{
-	if (!refobj)
-		return;
-
-	kref_put(&refobj->ref, my_refobj_release);
-}
-```
-
-是否允许 `NULL`，由具体工程风格决定。
-
+这里不再复制另一套缺分配与错误路径的类型模板。完整程序中的创建者把 consumer 取得后才放弃自身份额，consumer 最后归还；NULL put 是本对象封装的便利规则，不是原生 kref_put 支持 NULL。修改封装前，检查它的全部实际调用者，不以添加一个告警代替新的错误控制流。
 
 ### 5.10.2\_lookup\_场景的封装模板
 
-如果对象需要从容器中查找，建议封装成：
+lookup_get 应把搜索、保护窗口与取得放在内部，成功返回独立份额，未命中或条件取得失败返回明确的无对象结果。调用者于是按“成功使用并归还、失败不解引用”处理，不在容器保护外另补 get。
 
-```c
-static struct my_refobj *my_refobj_lookup_get(int id)
-{
-	struct my_refobj *refobj;
+这仍要求内部选择正确协议：容器持有引用时可在同锁可见期普通 get；非拥有索引需把最终归零串行化，或在地址有效窗口内条件取得。完整普通容器见[P02](P02_源码入口与结构定义.md#2.30.1_设计_A_容器持有引用)，非拥有索引见本章[锁交接模块](#5.8.2_kref_put_mutex%28%29_的典型用途)。函数名叫 lookup_get 只是给调用者的承诺，实际锁和责任才使这个承诺成立。
 
-	mutex_lock(&refobj_list_lock);
-
-	list_for_each_entry(refobj, &refobj_list, node) {
-		if (refobj->id == id) {
-			kref_get(&refobj->ref);
-			mutex_unlock(&refobj_list_lock);
-			return refobj;
-		}
-	}
-
-	mutex_unlock(&refobj_list_lock);
-	return NULL;
-}
-```
-
-调用者只看到：
-
-```c
-refobj = my_refobj_lookup_get(id);
-if (!refobj)
-	return -ENOENT;
-
-/* 使用 refobj */
-
-my_refobj_put(refobj);
-```
-
-这比让调用者自己写：
-
-```c
-refobj = lookup(id);
-kref_get(&refobj->ref);
-```
-
-更安全。
-
-因为查找和取得引用的保护规则被封装在对象内部。
-
-第 8 章会展开更复杂的 `kref_get_unless_zero()`、RCU、hash/xarray 模型。
+小练习：若从包装器中把 get 移到解锁之后，调用者虽然看不到代码变化，接口是否仍可靠？撤下者可以在间隙回收，因而返回类型没变也不能维持原契约。审查封装需要读完整路径，不能只检查命名。
 
 ------
 
 ## 5.11\_API\_和核心规则的对应关系
 
-第 4 章的三条规则，可以直接映射到本章 API。
+前章规则落实到接口时，保留借用、直接转交和外部保护条件：
 
-| 规则                    | 常用 API                                | 说明                         |
-| ----------------------- | --------------------------------------- | ---------------------------- |
-| 非临时拷贝前先 get      | `kref_get()`                            | 给新持有者增加引用           |
-| 使用完必须 put          | `kref_put()`                            | 释放当前持有者引用           |
-| lookup + get 必须被保护 | `kref_get()` / `kref_get_unless_zero()` | 在保护下把裸指针变成有效引用 |
-| 最后 put 和锁组合       | `kref_put_mutex()` / `kref_put_lock()`  | 处理最后释放与集合关系       |
-| 调试观察                | `kref_read()`                           | 只能观察，不能当生命周期判断 |
+| 当前责任变化 | 常见实现 | 必须额外说明什么 |
+| --- | --- | --- |
+| 新增独立份额 | 已有正引用保证下 kref_get | 新份额应在接收方可能执行前准备 |
+| 转交已有份额 | 成功消费责任的对象接口 | 不一定出现 get/put，失败语义须明确 |
+| 归还自己仍负责的份额 | 类型 put 包装 | 借用者不归还，转出的不重复归还 |
+| 从查找窗口取得份额 | 普通或条件 get | 地址、正引用/零值失败、身份及保护退出 |
+| 最终减少与索引协作 | 普通 put 的外层锁协议或锁组合 helper | 谁取锁、谁解锁、回调在哪种上下文 |
+| 观察 | kref_read | 不改变责任，不据此开始不受保护的使用 |
 
-可以这样理解：
-
-```text
-普通共享路径：kref_get + kref_put
-lookup 路径：锁/RCU + kref_get 或 kref_get_unless_zero
-删除释放路径：kref_put 或 kref_put_mutex/kref_put_lock
-调试路径：kref_read
-初始化路径：KREF_INIT/kref_init
-```
+选择哪一行由对象的使用协议决定。先把全部操作都改成条件 get 或锁组合 put，再尝试解释为什么安全，通常只是把原来的窗口藏到了新函数名后面。
 
 ------
 
 ## 5.12\_refcount\_t\_与\_kref\_的边界
 
-这一组内容只保留 API 使用者需要知道的底层边界：refcount_t 保证引用计数安全，但不把自定义引用对象变成并发安全对象。
+引用原语提供限定条件下的原子操作、顺序和异常防护，不是任意生命周期错误的恢复器。把它放在正确地址上且维护正确责任关系，才有讨论其保证的基础。
 
 ### 5.12.1\_refcount\_t\_内存序只讲到够用
 
-`kref` 底层使用 `refcount_t`，而 `refcount_t` 不是普通整数。
+固定普通增加采用 relaxed 原子动作，依赖调用者已经建立存活和发布前提；条件增加也不提供通用 acquire 发布读取保证。普通减少采用 release 语义，正常最后归零的路径再建立清理前的 acquire 顺序，具体见[减并检测](../../../../research/source_reading/kref/source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支)。不同 helper 的精确契约须分别读取，不能只因它们都叫 refcount 就宣称等同于完整内存屏障。
 
-对 `kref` 使用者来说，不需要在本章展开所有内存序细节。
+这些顺序用于引用退出与后续清理的协调，不修复此前业务字段的数据竞争。两个仍持引用的 CPU 同时修改普通 state，最后再调用一次 put，不会倒过来使前面的并发写合法。字段可以用 mutex、spinlock、符合契约的原子操作或 RCU 协议管理，但“有一个状态机名字”并不是同步实现。
 
-只需要先掌握几个够用结论：
-
-```text
-1. 引用计数增减是原子化的。
-2. refcount_t 会防护某些溢出、下溢、UAF 型误用。
-3. 最后一个 put 到 release/free 之间有必要的顺序保证。
-4. 这些顺序保证不能替代业务锁。
-```
-
-尤其最后一点很重要。
-
-不能因为 `kref_put()` 底层有内存序语义，就认为：
-
-```text
-对象字段访问天然同步。
-```
-
-字段一致性仍然由：
-
-```text
-mutex
-spinlock
-RCU
-atomic
-状态机
-```
-
-负责。
-
-本章只需要知道：
-
-```text
-kref 的 refcount_t 保证引用计数作为生命周期触发点是可靠的；
-但它不把对象变成并发安全对象。
-```
-
+饱和防护可以在某些越界增减中保守地保留内存，代价是泄漏；如果参数地址已经被释放，访问计数器本身就可能非法。也不能把没有 WARN 日志当作责任配平的证明。这里只建立选接口所需的边界，不推断 ARM 以外架构指令或未执行的并发验证结果。
 
 ### 5.12.2\_不要绕过\_kref\_直接操作\_refcount
 
-因为 `struct kref` 内部就是 `refcount_t`，所以技术上你可能能写：
+在自定义 kref 对象中直接调用内部 refcount_dec_and_test，然后忽略真值，会把计数减到零却漏掉类型回调。直接增加虽然可能改变相同数字，也可能绕过类型接口承担的跟踪和协议约束，维护者更难找出完整责任链。
 
-```c
-refcount_inc(&refobj->ref.refcount);
-refcount_dec_and_test(&refobj->ref.refcount);
-```
-
-但不建议业务代码这么做。
-
-原因是：
-
-```text
-绕过 kref 会破坏对象生命周期接口的一致性；
-调用点可能跳过 release；
-调用点可能绕过 my_refobj_get/my_refobj_put 封装；
-代码审查时更难判断引用归属。
-```
-
-正确做法是：
-
-```c
-my_refobj_get(refobj);
-my_refobj_put(refobj);
-```
-
-或者至少：
-
-```c
-kref_get(&refobj->ref);
-kref_put(&refobj->ref, my_refobj_release);
-```
-
-不要混用：
-
-```c
-kref_get(&refobj->ref);
-refcount_dec_and_test(&refobj->ref.refcount);
-```
-
-这种代码会让生命周期协议失去统一入口。
+因此对象使用者应沿本类型 get/put，类型内部集中选择正确回调和锁策略。这个建议不等于 refcount_t 不能独立使用；本来就设计为直接管理 refcount_t 的另一套对象系统可以有自己的完整回收协议。问题在于同一个对象体系内混用两套入口，却没有统一最后清理和责任约定。
 
 ------
 
 ## 5.13\_常见\_API\_误用清单
 
+把下面反例与本章完整程序对应，指出缺失的前提或退出动作。无需主动运行悬空访问；能重建导致错误的顺序，才知道修复应落在哪一行。
+
 ### 5.13.1\_误用\_1\_把\_kref\_init\_当\_reset
 
-```c
-kref_init(&refobj->ref);      /* 错：旧对象不能这样重置 */
-```
-
-正确理解：
-
-```text
-kref_init 只用于新对象初始化。
-```
-
+业务还在使用时 init 覆盖计数，会使实际份额和记录失配。重新启用服务应处理业务状态；内存复用的新周期须先结束旧责任和访问，不能靠 init 宣布它们已经消失。
 
 ### 5.13.2\_误用\_2\_用\_kref\_read\_判断对象是否可\_get
 
-```c
-if (kref_read(&refobj->ref) > 0)
-	kref_get(&refobj->ref);      /* 错 */
-```
-
-正确方向：
-
-```text
-使用锁/RCU 保护 lookup；
-必要时使用 kref_get_unless_zero()。
-```
-
+read>0 再 get 有两个时间点，其他路径可在中间归零。若已有正引用保证，直接普通 get；若只有地址保护，则按合适协议条件取得并处理失败；如果地址保护也没有，先修复查找窗口，不是在表达式里多加一个判断。
 
 ### 5.13.3\_误用\_3\_忽略\_kref\_get\_unless\_zero\_返回值
 
-```c
-kref_get_unless_zero(&refobj->ref);
-return refobj;                /* 错 */
-```
-
-正确：
-
-```c
-if (!kref_get_unless_zero(&refobj->ref))
-	return NULL;
-
-return refobj;
-```
-
+零值失败不交付一份，不能按成功返回给调用者。成功、失败和未命中都要沿包装器完整控制流退出原保护；本章 5.7 的例子在分支返回前先解锁，不把“检查了 if”误当作整个错误路径已经处理。
 
 ### 5.13.4\_误用\_4\_put\_后继续使用返回值判断对象安全
 
-```c
-if (!kref_put(&refobj->ref, my_refobj_release))
-	refobj->state = 1;          /* 错 */
-```
-
-正确：
-
-```text
-需要访问的字段在 put 前完成；
-put 后不再使用 refobj。
-```
-
+put 返回 0 后别的持有者可能已经完成回收；返回 1 也可能只是调用了安排延迟清理的回调。二者都不为当前路径新增使用权。先复制必要独立值，或保留另一份明确责任，不能靠返回值再次访问已放弃的那一份。
 
 ### 5.13.5\_误用\_5\_普通\_release\_用在\_kref\_put\_lock
 
@@ -1008,81 +636,28 @@ put 后不再使用 refobj。
 
 ## 5.14\_本章\_API\_速记
 
-可以把 API 压缩成下面几句话：
+将八个入口压缩成便于回查的短句时，仍保留各自边界：
 
-```text
-KREF_INIT(n)：静态对象初始化引用计数。
-kref_init()：动态对象创建初始引用，值为 1。
-kref_read()：读当前计数，只适合观察。
-kref_get()：已有有效对象上增加引用。
-kref_put()：释放当前引用，归零时 release。
-kref_get_unless_zero()：非 0 时尝试取得引用，返回值必须检查。
-kref_put_mutex()：最后 put 时持 mutex 调 release。
-kref_put_lock()：最后 put 时持 spinlock 调 release。
-```
+- KREF_INIT(n) 在定义时给初值，初始化形式不等于存储寿命。
+- kref_init 建立初始一份，不是重置现有责任。
+- kref_read 观察当前值，不取得使用权。
+- kref_get 从已有正引用保证中新增一份。
+- kref_put 归还一份，正常最后时调用本次类型回调。
+- kref_get_unless_zero 在地址有效窗口内尝试非零取得，检查失败；异常饱和不作健康证明。
+- kref_put_mutex 可能最后时先取 mutex 再减少，回调接管解锁。
+- kref_put_lock 使用普通 spinlock 的同类流程，不自动执行 irqsave。
 
-再压缩一点：
-
-```text
-init 建立初始引用；
-get 增加持有者；
-put 释放持有者；
-unless_zero 用于尝试取得引用；
-put_mutex/put_lock 用于最后释放与锁组合。
-```
+读到接口时先回想其完整过程，再用这些短句定位章节；短句不能替代保护窗口、责任表和回调契约。
 
 ------
 
 ## 5.15\_本章小结
 
-本章补完了 `kref` 基础 API 的源码形态和使用前提。
+本章从调用者问题进入固定接口链：初始化与存储分开，快照与持有分开，普通取得与条件尝试分开，最后归还与回调锁交接分开。条件模型显示一次非零观察可能在比较时失效；完整非拥有索引模块则显示最后候选取锁后仍可能不再是最后。
 
-核心接口关系是：
+回访实验时可以用三道问题检验理解：条件比较第一次失败后，old 为什么必须更新；索引锁等待期间新增一份后，谁归还原份额、谁解锁；类型包装器接受 NULL 后，为什么仍不能接受任意非空指针？它们分别要求比较循环、慢路径状态和地址契约的具体理由，不是背出一个 API 名。
 
-```text
-kref_init              -> refcount_set(..., 1)
-kref_read              -> refcount_read()
-kref_get               -> refcount_inc()
-kref_put               -> refcount_dec_and_test()
-kref_get_unless_zero   -> refcount_inc_not_zero()
-kref_put_mutex         -> refcount_dec_and_mutex_lock()
-kref_put_lock          -> refcount_dec_and_lock()
-```
-
-最重要的几个结论：
-
-```text
-1. kref_init() 只用于新对象初始化，不能用于 reset。
-2. kref_read() 只能观察，不能作为生命周期判断。
-3. kref_get() 没有返回值，因为它要求调用者已经证明对象有效。
-4. kref_put() 返回 1 只表示本次触发 release，返回 0 也不能继续访问对象。
-5. kref_get_unless_zero() 返回值必须检查，但它不证明裸指针有效。
-6. kref_put_mutex()/kref_put_lock() 是最后 put 与锁组合的特殊接口。
-7. release 是否能在持锁状态下运行，必须由调用者和 release 共同保证。
-8. 业务代码最好封装 my_refobj_get()/my_refobj_put()，不要到处裸操作 kref。
-```
-
-本章最关键的一句话是：
-
-```text
-kref API 的表面动作是 refcount 加减，真正约束是每个 API 的使用前提。
-```
-
-下一章进入：
-
-```text
-第 6 章：release 回调与复杂销毁模式
-```
-
-重点不再讲基础模板，而是展开：
-
-```text
-release 里释放哪些子资源；
-release 前是否必须脱链；
-release 是否能睡眠；
-release 和 work/timer/callback 如何收尾；
-release 和 RCU 延迟释放如何配合。
-```
+到这里，普通与条件引用、初始化器和两个锁组合的固定实现已有对应唯一入口。模型与宿主控制测试只验证已声明的路径，没有提供真实目标并发或所有资源清理证据。下一章继续处理类型回调：外壳之外的子资源归谁，入口在何时关闭，工作/timer/回调怎样退出，何时需要延迟回收，以及这些动作允许在哪种上下文中执行。
 
 ------
 

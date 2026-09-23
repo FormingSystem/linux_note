@@ -35,4 +35,4 @@ source_version: "6.12.20"
 | 定义时填值与归零如何对应 | [初始化模块](P02_普通引用与归零回调导读.md#2.6_初始化形式与存储寿命) → [KREF_INIT](../source_explanations/include/linux/kref.h.md#1.6_定义对象时建立计数) → [REFCOUNT_INIT](../source_explanations/include/linux/refcount.h.md#1.4_逐层构造初始值) → [ATOMIC_INIT](../source_explanations/include/linux/types.h.md#1.1_整数外还有一层结构) |
 | 编译属性到底保证什么 | [属性与构建](P02_普通引用与归零回调导读.md#2.5_编译语义与检查器边界) → [signed_wrap](../source_explanations/include/linux/compiler_types.h.md#1.1_检查器属性与构建选项分工)、[must_check](../source_explanations/include/linux/compiler_attributes.h.md#1.1_返回值诊断不是自动清理)、[构建选项](../source_explanations/Makefile.md#1.1_优化选项与函数属性分开核对) |
 
-当前落地普通引用链、定义时初始化、条件取得和两种最后归还锁组合。体系结构原子实现尚未在本研究目录展开；现有[P05](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md)对应单元仍须独立审查，不能把本索引当作所有 kref 变体已覆盖。
+当前落地普通引用链、定义时初始化、条件取得和两种最后归还锁组合。体系结构原子实现尚未在本研究目录展开；[P05](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.15_本章小结)已按接口职责完成本轮作者审查；P06 资源策略及后续组合章仍须独立推进，不能把源码索引当作全部应用变体已覆盖。

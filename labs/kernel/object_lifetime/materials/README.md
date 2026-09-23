@@ -47,7 +47,7 @@ B04d 布局调整后重新通过 ARM 前端、354 份头文件固定源码差异
 
 ## 1.6\_类型接口与部分初始化清理
 
-[note_kref_object.c](note_kref_object.c)是[P02 完整对象模板](../../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.19_标准自定义引用对象模板)的配套模块。外壳与 data 分别申请；init 建立创建者份额，部分初始化失败和正常最后归还共用 release，先清理 data 再清理外壳。NULL put 是本类型明确允许的空槽操作，get 仍须非空且已有正引用保护。
+[note_kref_object.c](note_kref_object.c)是[P02 完整对象模板](../../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.19_标准自定义引用对象模板)的配套模块。外壳与 data 分别申请；init 建立创建者份额，部分初始化失败和正常最后归还共用 release，先清理 data 再清理外壳。NULL put 是本类型明确允许的空槽操作，get 仍须非空且已有正引用保护。[P05 类型契约](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.10_API_封装模板)复用这些已验证分支解释封装边界；本次仅重构讲解，材料程序未修改，不新增目标验证结论。
 
 ARM 前端通过，354 份头文件中 342 份非生成源码与固定提交无差异。宿主 C 夹具采用实际模块代码和固定普通引用函数、明确的顺序原子/分配替身，覆盖成功、外壳分配失败、data 申请失败及空槽 put，检查释放顺序、回调次数、存活块归零和 ref 非首成员。未执行目标链接、装卸、真实分配器故障注入或并发。
 
