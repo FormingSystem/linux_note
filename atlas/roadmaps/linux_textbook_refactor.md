@@ -376,3 +376,5 @@ B04bx完成P14的14.6.2，新增[P37完整KASAN实验](../../knowledge/linux/obj
 B04by完成P14的14.6.3，新增[P38字段更新与KCSAN](../../knowledge/linux/object_lifetime/kref/P38_字段更新与KCSAN实验.md#38.1_两个有效使用者怎样丢掉一次更新)，三条真实C++并发对照与十二组内核宿主协议通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.140_B04by字段更新与KCSAN实验)保留动态检测未执行边界。清单665项：259 validated、388 pending、18 supporting_pending；P14继续Lockdep实验，仍pending。
 
 B04bz完成P14的14.6.4，新增[P39最后归还与Lockdep](../../knowledge/linux/object_lifetime/kref/P39_最后归还与Lockdep实验.md#39.1_先把一条隐含依赖画出来)，三种归还模式、十四组宿主协议与ARM前端通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.141_B04bz最后归还与锁依赖实验)保留目标诊断未运行边界。清单666项：260 validated、388 pending、18 supporting_pending；P14继续14.7误用实验，仍pending。
+
+B04ca完成P14的14.7，新增[P40多归还与失效窗口](../../knowledge/linux/object_lifetime/kref/P40_多归还与失效窗口实验.md#40.1_计数为正仍可能归还了别人的份额)，五条C模型、三条固定引用对照和六组表协议通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.142_B04ca误用窗口与引用异常实验)保留真实故障未执行边界。清单667项：261 validated、388 pending、18 supporting_pending；P14继续14.8旧用户与父子关系，仍pending。

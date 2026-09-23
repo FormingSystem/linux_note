@@ -2406,7 +2406,7 @@
       "baseline_sha256": "8780dc1f0781faa550994d96ccc6399692cb60b5c5f209f5dc6f6df91dbaec73",
       "lines": 2508,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04bs完成14.1～14.3准备与基础实验，P32完整模块六条宿主/ARM通过；14.4以后继续，pending。 B04bt完成14.4错误实验，P33十一条宿主轨迹通过，真实故障注入未执行；继续14.5，pending。 B04bu完成14.5.1/14.5.2查找实验，P34分开拥有型表与零值窗口，既有C/固定函数重跑通过；继续14.5.3，pending。 B04bv完成14.5.3工作交付实验，25条/组宿主检查重跑通过；继续14.6，pending。 B04bw完成14.6.1退休顺序实验，P36四模型/八组模块重跑通过，继续14.6.2动态检查，pending。 B04bx完成14.6.2，P37完整KASAN对照与固定配置导读，正确/失败/拒绝五路径及非KASAN ARM通过，故障未执行；继续14.6.3，pending。 B04by完成14.6.3，真实C++三并发对照、十二内核宿主组及无KCSAN ARM通过，故意竞争未执行；继续14.6.4，pending。 B04bz完成14.6.4，三种归还上下文与十四宿主组、ARM前端通过，实际Lockdep未运行；继续14.7，pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04bs完成14.1～14.3准备与基础实验，P32完整模块六条宿主/ARM通过；14.4以后继续，pending。 B04bt完成14.4错误实验，P33十一条宿主轨迹通过，真实故障注入未执行；继续14.5，pending。 B04bu完成14.5.1/14.5.2查找实验，P34分开拥有型表与零值窗口，既有C/固定函数重跑通过；继续14.5.3，pending。 B04bv完成14.5.3工作交付实验，25条/组宿主检查重跑通过；继续14.6，pending。 B04bw完成14.6.1退休顺序实验，P36四模型/八组模块重跑通过，继续14.6.2动态检查，pending。 B04bx完成14.6.2，P37完整KASAN对照与固定配置导读，正确/失败/拒绝五路径及非KASAN ARM通过，故障未执行；继续14.6.3，pending。 B04by完成14.6.3，真实C++三并发对照、十二内核宿主组及无KCSAN ARM通过，故意竞争未执行；继续14.6.4，pending。 B04bz完成14.6.4，三种归还上下文与十四宿主组、ARM前端通过，实际Lockdep未运行；继续14.7，pending。 B04ca完成14.7三个误用窗口，五C模型/三固定函数/六表组通过，继续14.8，pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P15_最终验收标准.md",
@@ -4730,7 +4730,7 @@
       "baseline_sha256": "90b57ab8df09e9364acb97b47d5df7c0f00a14884a07ce9d1f75adb723eb853d",
       "lines": 65,
       "state": "validated",
-      "reason": "B04bx固定Generic KASAN配置/报告前提及完整模块冷读，五宿主路径与非KASAN ARM前端通过；故意UAF与目标启用检测未执行，新人工节点红色。 B04by独立补齐KCSAN配置互斥、架构前提和采样证据，未改KASAN边界。 B04bz补充最后put隐含锁顺序，复用Lockdep唯一实现，未改KASAN/KCSAN边界。"
+      "reason": "B04bx固定Generic KASAN配置/报告前提及完整模块冷读，五宿主路径与非KASAN ARM前端通过；故意UAF与目标启用检测未执行，新人工节点红色。 B04by独立补齐KCSAN配置互斥、架构前提和采样证据，未改KASAN边界。 B04bz补充最后put隐含锁顺序，复用Lockdep唯一实现，未改KASAN/KCSAN边界。 B04ca补充责任重复与数值检测界限、快照和摘除差异。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P38_字段更新与KCSAN实验.md",
@@ -4745,6 +4745,13 @@
       "lines": 200,
       "state": "validated",
       "reason": "B04bz最后归还与锁依赖完整模块冷读，四组正交状态与S0至S4对应，十四组宿主及ARM前端通过；无真实Lockdep报告，新人工节点红色。"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P40_多归还与失效窗口实验.md",
+      "baseline_sha256": "e1a5f509d6d9fb17eb5fc9276d4023c2c46d482bf28c9f3daf0f7ac1f084ddfe",
+      "lines": 191,
+      "state": "validated",
+      "reason": "B04ca五模型、三固定引用对照、六表组通过，纠正告警预期、快照资格与断言修复误解；无真实UAF，新人工节点红色。"
     }
   ]
 }

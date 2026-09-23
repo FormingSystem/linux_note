@@ -269,3 +269,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.47\_最后归还与锁顺序
 
 [P39](../../../../knowledge/linux/object_lifetime/kref/P39_最后归还与Lockdep实验.md#39.1_先把一条隐含依赖画出来)展示[note_kref_lock_order.c](note_kref_lock_order.c)全部代码。mode=0在A外最后归还，mode=1在A内故意最后归还，mode=2在A内只归还非最后一份；三者随后走独立B到A。十四组宿主协议及当前ARM前端通过，不等于实际Lockdep报告；故障可能使检查器停止或系统panic，应按正文先验证控制路径与检查器生命状态。
+
+## 1.48\_多归还与失效窗口
+
+[P40](../../../../knowledge/linux/object_lifetime/kref/P40_多归还与失效窗口实验.md#40.1_计数为正仍可能归还了别人的份额)完整展示[misuse_windows.c](misuse_windows.c)，C11五场景已执行；shares是模型额外拥有表，alive=false只标记逻辑退休，不执行真实free。另三条固定引用对照与六组既有表模块宿主检查通过，无目标UAF或refcount报告。该程序不注册到内核Makefile。
