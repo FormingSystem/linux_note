@@ -314,3 +314,5 @@ B04at完成[P12 12.3.1～12.3.2](../../knowledge/linux/object_lifetime/kref/P12_
 B04au完成[P12 12.3.3～12.3.4](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.3.3_错误三_多_put_提前_release_或_underflow)，明确候选引用的失败回滚与成功交付，以及put后仍需哪项保护。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.110_B04au失败出口与归还后访问)记录四组固定引用C夹具；下一项12.4查找与交付错误，P12仍pending。
 
 B04av完成[P12 12.4查找与交付](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.4.1_错误五_lookup_后无保护_get)，按地址期限和正计数选择取得，补齐始终消费包装及调用方影响。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.111_B04av查找窗口与交付返回)记录两新增加十既有宿主检查；下一项12.5退出错误，P12仍pending。
+
+B04aw完成[P12 12.5最后清理与摘链](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.5.2_错误八_release_时对象仍挂在全局结构中)，区分延迟清理和业务复活、拥有型集合与非拥有索引，补慢路径重查时序。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.112_B04aw最后清理与索引退出)记录保持既有程序与未执行项；下一项12.6并发/API误用，P12仍pending。
