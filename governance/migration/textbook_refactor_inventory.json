@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/rbtree/navigation/P09_子树摘要与增强回调导读.md",
+      "baseline_sha256": "2a98260e30c4ba991ce66f7262544559ae3d95698b7ccde4e3b7d04fcbea6818",
+      "lines": 81,
+      "state": "validated",
+      "reason": "B03an 新增固定增强导读，按 A0～A5 定位三种回调的字段读写、停止及删除中间态；固定实现、宿主行为与 ARM 前端已核对，未执行目标运行，不替代人工评审。"
+    },
+    {
       "path": "research/source_reading/rbtree/navigation/P08_最左缓存与结构更新导读.md",
       "baseline_sha256": "fb897106a413bf9a6cc96f4d04dcb43dca4150b9939fd3b863ba5d3c288704e2",
       "lines": 79,
@@ -1658,7 +1665,7 @@
       "baseline_sha256": "5757b6505f3ff296e4ae6e15c6ef1a6be3d7d72dbb0120e241597c40a4e680f6",
       "lines": 1886,
       "state": "pending",
-      "reason": "B03am 已冷读并重构 12.1～12.2，C0～C6、完整缓存模块与固定四接口核对完成；12.3 及后续单元继续，保留 pending。"
+      "reason": "B03am/an 已冷读并重构 12.1～12.3；缓存 C0～C6 与增强 A0～A5、两个完整模块及固定实现完成适用检查，12.4 起继续，保持 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md",

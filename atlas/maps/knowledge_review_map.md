@@ -629,6 +629,7 @@ mindmap-plugin: basic
     - 🔴 **未校正** rbtree 查询与插入
         - 🔴 **未校正** [rbtree 源码阅读路线](../../research/source_reading/rbtree/大纲.md)
         - 🔴 **未校正** [Linux 6.12 rbtree 源码阅读索引](../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md)
+        - 🔴 **未校正** [子树摘要与增强回调导读](../../research/source_reading/rbtree/navigation/P09_子树摘要与增强回调导读.md)
         - 🔴 **未校正** [最左缓存与结构更新导读](../../research/source_reading/rbtree/navigation/P08_最左缓存与结构更新导读.md)
         - 🔴 **未校正** [节点布局与编码状态导读](../../research/source_reading/rbtree/navigation/P07_节点布局与编码状态导读.md)
         - 🔴 **未校正** [container_of.h 成员地址还原实现](../../research/source_reading/rbtree/source_explanations/include/linux/container_of.h.md)

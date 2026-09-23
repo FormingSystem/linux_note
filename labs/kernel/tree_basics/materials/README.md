@@ -112,3 +112,5 @@ domains: [c_language, data_structures]
 [note_rbtree_owner.c](note_rbtree_owner.c)是[P37 的完整调用者框架](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md#37.16_运行完整的私有调用者框架)：初始化期间私有运行唯一键插入、复制值查询、摘除交还和整树清理，Makefile 已登记。ARM 前端检查通过；宿主按显式位宽/锁适配运行 36 组插入移除顺序与四个分配失败点。目标 Kbuild、MODPOST、装卸和日志未执行，不由宿主模型推导实际并发保证。
 
 [note_rbtree_cached.c](note_rbtree_cached.c)配合[P12 缓存一致性](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行缓存一致性实验)，私有数组核对最左对象身份、辅助接口返回，以及普通删除留下过时缓存的反例。Makefile 已登记；ARM 前端与宿主 14400 组插入/删除次序检查通过，目标构建与装卸未执行，故障对象始终存活，不模拟任意悬空指针诊断。
+
+[note_rbtree_augmented.c](note_rbtree_augmented.c)配合[P12 区间摘要](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行完整区间摘要实验)，完整运行六个闭区间的插入、点查询、末端缩短和删除；按原始载荷独立核对子树最大值。Makefile 已登记；宿主 8640 组次序及逐点对照通过，ARM 前端通过；目标构建、装卸和并发验证未执行。

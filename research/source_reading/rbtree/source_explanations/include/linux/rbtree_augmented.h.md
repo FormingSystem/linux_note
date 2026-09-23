@@ -720,3 +720,231 @@ __rb_change_child_rcu(struct rb_node *old, struct rb_node *new,
 游离标记是整个字段等于自身地址，最低位为零并不代表它应当参加红红冲突修复。理论上的黑色 NIL 也不意味着 rb_is_black(NULL) 合法；该宏先解引用 rb。具体算法必须先依赖分支前提确认节点有效，再读颜色。源文件中快速直接还原红父的操作还要求红色零位前提，见 [rb_red_parent](../../lib/rbtree.c.md#1.1_rb_red_parent的红色前提)。
 
 可修改性：改颜色编码、对齐或宏类型会联动所有更新路径；手动发明第二低位的用途可能被保色换父丢弃。返回[布局导读](../../../navigation/P07_节点布局与编码状态导读.md#7.3_不要从一组位推出另一种状态)和[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。
+
+## 1.7\_三个回调的结构契约
+
+propagate 的 stop 由调用位置给出；通用模板不包含 stop，copy 不复制业务载荷，rotate 不管理对象寿命。回调操作的摘要地址属于具体业务结构体，公共层只传 rb_node 地址。
+
+```c
+/**
+ * rb_augment_callbacks - 提供路径传播、位置接替和旋转三个结构事件入口。
+ *
+ * 仓库补充的中文 Doxygen 阅读说明，非上游原文。
+ * 上游位置：include/linux/rbtree_augmented.h。
+ */
+struct rb_augment_callbacks {
+	void (*propagate)(struct rb_node *node, struct rb_node *stop);
+	void (*copy)(struct rb_node *old, struct rb_node *new);
+	void (*rotate)(struct rb_node *old, struct rb_node *new);
+};
+```
+
+对应[增强 A0～A5](../../../navigation/P09_子树摘要与增强回调导读.md#9.2_沿A0到A5维护同一份摘要)，版本与入口见[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。
+
+
+## 1.8\_通用模板的停止与移交
+
+RBSTATIC 控制回调表可见性，RBNAME 命名表及函数；RBSTRUCT/RBFIELD 用于还原对象，RBAUGMENTED 是摘要字段，RBCOMPUTE(node,exit) 写计算值并返回是否可停止。propagate 传 true，while 排除 stop；copy 只写摘要；rotate 将 old 的旧整体值交给 new，再以 false 强制重算 old。旋转继承要求摘要对同一对象集合不因树形改变。A2 在子摘要有效的前提下上推，A3 利用整体集合不变移交，A5 的 copy 则只提供删除接替的临时起点。
+
+```c
+/**
+ * RB_DECLARE_CALLBACKS - 生成回调表；传播遇到未变结果停止，旋转先移交旧摘要再重算。
+ *
+ * 仓库补充的中文 Doxygen 阅读说明，非上游原文。
+ * 上游位置：include/linux/rbtree_augmented.h。
+ */
+#define RB_DECLARE_CALLBACKS(RBSTATIC, RBNAME,				\
+			     RBSTRUCT, RBFIELD, RBAUGMENTED, RBCOMPUTE)	\
+static inline void							\
+RBNAME ## _propagate(struct rb_node *rb, struct rb_node *stop)		\
+{									\
+	while (rb != stop) {						\
+		RBSTRUCT *node = rb_entry(rb, RBSTRUCT, RBFIELD);	\
+		if (RBCOMPUTE(node, true))				\
+			break;						\
+		rb = rb_parent(&node->RBFIELD);				\
+	}								\
+}									\
+static inline void							\
+RBNAME ## _copy(struct rb_node *rb_old, struct rb_node *rb_new)		\
+{									\
+	RBSTRUCT *old = rb_entry(rb_old, RBSTRUCT, RBFIELD);		\
+	RBSTRUCT *new = rb_entry(rb_new, RBSTRUCT, RBFIELD);		\
+	new->RBAUGMENTED = old->RBAUGMENTED;				\
+}									\
+static void								\
+RBNAME ## _rotate(struct rb_node *rb_old, struct rb_node *rb_new)	\
+{									\
+	RBSTRUCT *old = rb_entry(rb_old, RBSTRUCT, RBFIELD);		\
+	RBSTRUCT *new = rb_entry(rb_new, RBSTRUCT, RBFIELD);		\
+	new->RBAUGMENTED = old->RBAUGMENTED;				\
+	RBCOMPUTE(old, false);						\
+}									\
+RBSTATIC const struct rb_augment_callbacks RBNAME = {			\
+	.propagate = RBNAME ## _propagate,				\
+	.copy = RBNAME ## _copy,					\
+	.rotate = RBNAME ## _rotate					\
+};
+```
+
+对应[增强 A0～A5](../../../navigation/P09_子树摘要与增强回调导读.md#9.2_沿A0到A5维护同一份摘要)，版本与入口见[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。
+
+
+## 1.9\_从本节点标量生成最大值
+
+这里 RBCOMPUTE(node) 返回本节点原始标量，与通用宏的双参数重算器不是同一契约。生成的 RBNAME_compute_max 负责读取存在的孩子、计算最大值、比较旧缓存和写入；随后把这个计算器交给通用模板。叶子初始化仍归业务方；预写缓存会破坏 A2 对旧结果的比较。
+
+```c
+/**
+ * RB_DECLARE_CALLBACKS_MAX - 合并自身标量与有效孩子摘要，允许在结果未变时停止。
+ *
+ * 仓库补充的中文 Doxygen 阅读说明，非上游原文。
+ * 上游位置：include/linux/rbtree_augmented.h。
+ */
+#define RB_DECLARE_CALLBACKS_MAX(RBSTATIC, RBNAME, RBSTRUCT, RBFIELD,	      \
+				 RBTYPE, RBAUGMENTED, RBCOMPUTE)	      \
+static inline bool RBNAME ## _compute_max(RBSTRUCT *node, bool exit)	      \
+{									      \
+	RBSTRUCT *child;						      \
+	RBTYPE max = RBCOMPUTE(node);					      \
+	if (node->RBFIELD.rb_left) {					      \
+		child = rb_entry(node->RBFIELD.rb_left, RBSTRUCT, RBFIELD);   \
+		if (child->RBAUGMENTED > max)				      \
+			max = child->RBAUGMENTED;			      \
+	}								      \
+	if (node->RBFIELD.rb_right) {					      \
+		child = rb_entry(node->RBFIELD.rb_right, RBSTRUCT, RBFIELD);  \
+		if (child->RBAUGMENTED > max)				      \
+			max = child->RBAUGMENTED;			      \
+	}								      \
+	if (exit && node->RBAUGMENTED == max)				      \
+		return true;						      \
+	node->RBAUGMENTED = max;					      \
+	return false;							      \
+}									      \
+RB_DECLARE_CALLBACKS(RBSTATIC, RBNAME,					      \
+		     RBSTRUCT, RBFIELD, RBAUGMENTED, RBNAME ## _compute_max)
+```
+
+对应[增强 A0～A5](../../../navigation/P09_子树摘要与增强回调导读.md#9.2_沿A0到A5维护同一份摘要)，版本与入口见[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。
+
+
+## 1.10\_增强插入只接入旋转回调
+
+本包装只访问 augment->rotate，不调用 propagate。A1、A2 必须由完整业务插入负责；之后无旋转也不意味着祖先摘要自动更新。底层修复仍沿既有 lib/rbtree.c 的插入状态机。
+
+```c
+/**
+ * rb_insert_augmented - 调用者已挂接并维护路径摘要，本函数把旋转回调交给平衡修复。
+ *
+ * 仓库补充的中文 Doxygen 阅读说明，非上游原文。
+ * 上游位置：include/linux/rbtree_augmented.h。
+ */
+static inline void
+rb_insert_augmented(struct rb_node *node, struct rb_root *root,
+		    const struct rb_augment_callbacks *augment)
+{
+	__rb_insert_augmented(node, root, augment->rotate);
+}
+```
+
+对应[增强 A0～A5](../../../navigation/P09_子树摘要与增强回调导读.md#9.2_沿A0到A5维护同一份摘要)，版本与入口见[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。
+
+
+## 1.11\_缓存增强插入的挂接与传播
+
+rb_insert_augmented_cached 只按 newleft 写最左槽后调用增强插入。辅助搜索维护 link/parent/leftmost；向右后 leftmost 变 false。挂接后传播从 parent 开始，所以叶子摘要必须在调用前有效。此函数不拒绝等价键，返回 NULL 只说明新节点不是最左，不代表插入失败。suboptimal 注释针对路径维护策略，不允许省略传播。
+
+```c
+/**
+ * rb_add_augmented_cached - 搜索、挂接后从 parent 传播，再执行缓存与增强插入收尾。
+ *
+ * 仓库补充的中文 Doxygen 阅读说明，非上游原文。
+ * 上游位置：include/linux/rbtree_augmented.h。
+ */
+static inline void
+rb_insert_augmented_cached(struct rb_node *node,
+			   struct rb_root_cached *root, bool newleft,
+			   const struct rb_augment_callbacks *augment)
+{
+	if (newleft)
+		root->rb_leftmost = node;
+	rb_insert_augmented(node, &root->rb_root, augment);
+}
+
+static __always_inline struct rb_node *
+rb_add_augmented_cached(struct rb_node *node, struct rb_root_cached *tree,
+			bool (*less)(struct rb_node *, const struct rb_node *),
+			const struct rb_augment_callbacks *augment)
+{
+	struct rb_node **link = &tree->rb_root.rb_node;
+	struct rb_node *parent = NULL;
+	bool leftmost = true;
+
+	while (*link) {
+		parent = *link;
+		if (less(node, parent)) {
+			link = &parent->rb_left;
+		} else {
+			link = &parent->rb_right;
+			leftmost = false;
+		}
+	}
+
+	rb_link_node(node, parent, link);
+	augment->propagate(parent, NULL); /* suboptimal */
+	rb_insert_augmented_cached(node, tree, leftmost, augment);
+
+	return leftmost ? node : NULL;
+}
+```
+
+对应[增强 A0～A5](../../../navigation/P09_子树摘要与增强回调导读.md#9.2_沿A0到A5维护同一份摘要)，版本与入口见[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。
+
+
+## 1.12\_增强删除的两段收尾
+
+__rb_erase_augmented 已在 1.3 唯一展开；返回的 rebalance 是缺黑父槽上下文，不是被删对象地址。仅在非空时调用颜色修复，把同组 rotate 交给它。最终返回才形成 A5 的结构与摘要稳定点；内联属性与具体编译器决策共同影响机器码大小。
+
+```c
+/**
+ * rb_erase_augmented - 先结构摘除与传播，再在需要时接上带旋转回调的颜色修复。
+ *
+ * 仓库补充的中文 Doxygen 阅读说明，非上游原文。
+ * 上游位置：include/linux/rbtree_augmented.h。
+ */
+static __always_inline void
+rb_erase_augmented(struct rb_node *node, struct rb_root *root,
+		   const struct rb_augment_callbacks *augment)
+{
+	struct rb_node *rebalance = __rb_erase_augmented(node, root, augment);
+	if (rebalance)
+		__rb_erase_color(rebalance, root, augment->rotate);
+}
+```
+
+对应[增强 A0～A5](../../../navigation/P09_子树摘要与增强回调导读.md#9.2_沿A0到A5维护同一份摘要)，版本与入口见[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。
+
+
+## 1.13\_增强删除同时维护最左缓存
+
+额外缓存槽不由聚合回调维护。这里先改最左入口，随后修改树和摘要，三组字段需要同一个外部保护窗口。它返回 void，不能套用普通 rb_erase_cached 的返回约定。
+
+```c
+/**
+ * rb_erase_augmented_cached - 若删中最左节点，先在旧拓扑求后继，再执行增强删除。
+ *
+ * 仓库补充的中文 Doxygen 阅读说明，非上游原文。
+ * 上游位置：include/linux/rbtree_augmented.h。
+ */
+static __always_inline void
+rb_erase_augmented_cached(struct rb_node *node, struct rb_root_cached *root,
+			  const struct rb_augment_callbacks *augment)
+{
+	if (root->rb_leftmost == node)
+		root->rb_leftmost = rb_next(node);
+	rb_erase_augmented(node, &root->rb_root, augment);
+}
+```
+
+对应[增强 A0～A5](../../../navigation/P09_子树摘要与增强回调导读.md#9.2_沿A0到A5维护同一份摘要)，版本与入口见[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。

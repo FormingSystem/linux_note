@@ -525,3 +525,9 @@ P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_str
 固定 rbtree.h 的 rb_first_cached、rb_insert_color_cached、rb_erase_cached、rb_add_cached 进入[唯一缓存标题](../rbtree/source_explanations/include/linux/rbtree.h.md#1.12_缓存取首只读取入口)，由[缓存模块 C0～C6](../rbtree/navigation/P08_最左缓存与结构更新导读.md#8.2_沿接入与摘除跟踪C0到C6)组织状态与读写顺序。四个片段逐字核对既有固定原文；返回 NULL 不能统一解释为插入失败或删后树空。
 
 完整 note_rbtree_cached 使用私有自动数组，故障注入普通删除后对象仍活着。宿主明确位宽适配的固定语句夹具覆盖五对象 120 种插入乘 120 种删除次序、144000 次操作检查，另运行正文反例。ARMv7 前端读取 348 份头，消费的已跟踪头对固定提交差量为空；生成配置来自本地已核对环境。没有目标 Kbuild、MODPOST、装卸、真实日志、并发或性能证据，外部树未改。
+
+## 1.31\_rbtree增强摘要与回调边界
+
+固定 include/linux/rbtree_augmented.h 的回调结构、两个生成宏、增强插入/删除和 cached 组合包装进入[唯一增强标题](../rbtree/source_explanations/include/linux/rbtree_augmented.h.md#1.7_三个回调的结构契约)，由[增强 A0～A5](../rbtree/navigation/P09_子树摘要与增强回调导读.md#9.2_沿A0到A5维护同一份摘要)组织。插入包装只传 rotate；propagate 的 stop 排除在外；copy 的删除临时移交与 rotate 的集合不变移交不可混同。相关片段逐字核对既有固定原文。固定 Documentation/core-api/rbtree.rst 的 Compiled code 段仅说明可能内联及每个使用者集中删除调用点，不是每编译单元只能一棵树。
+
+完整 note_rbtree_augmented 使用私有闭区间对象；固定回调宏与语句的宿主显式位宽适配夹具覆盖 8640 组次序、120960 个稳定状态、11007360 次逐点独立线性对照，以及失败不改摘要、错误上下界和过早停止。ARMv7 前端读取 349 份头，消费的已跟踪头与固定提交差量为空；生成配置来自已核对环境。没有目标 Kbuild、MODPOST、装卸、真实并发或性能证据，外部源码未修改。
