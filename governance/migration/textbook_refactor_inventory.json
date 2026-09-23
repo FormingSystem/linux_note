@@ -5,6 +5,27 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/kref/source_explanations/kernel/time/timer.c.md",
+      "baseline_sha256": "2cfee0132ac1db698127dc6ef6d1d964233e6500ea87547e302a45c32f625575",
+      "lines": 192,
+      "state": "validated",
+      "reason": "B04u 固定timer状态、改期和同步退出按职责独立讲解；八函数主体与固定源码一致、适用宿主分支验证通过，人工节点红色。真实计时/中断/RT和目标运行未执行。"
+    },
+    {
+      "path": "research/source_reading/kref/source_explanations/include/linux/timer.h.md",
+      "baseline_sha256": "0bff2f5db88ecfa03c6d3b076517e799607de23ffabf3c297ce3376e316d5c4b",
+      "lines": 38,
+      "state": "validated",
+      "reason": "B04u 固定timer状态、改期和同步退出按职责独立讲解；八函数主体与固定源码一致、适用宿主分支验证通过，人工节点红色。真实计时/中断/RT和目标运行未执行。"
+    },
+    {
+      "path": "research/source_reading/kref/navigation/P05_定时器重启与退出导读.md",
+      "baseline_sha256": "4b8fbff7a888418993d09f0c9c143b00a5b808d1221758674d74616bffb54973",
+      "lines": 74,
+      "state": "validated",
+      "reason": "B04u 固定timer状态、改期和同步退出按职责独立讲解；八函数主体与固定源码一致、适用宿主分支验证通过，人工节点红色。真实计时/中断/RT和目标运行未执行。"
+    },
+    {
       "path": "research/source_reading/kref/navigation/P04_最后归还与锁交接导读.md",
       "baseline_sha256": "418456156ba156f81c1bcd5d2dc3fab2c9709311c4021cdbee3e41a9dc664cb1",
       "lines": 80,
@@ -2294,7 +2315,7 @@
       "baseline_sha256": "d96f8c1c1ed6c57f2b6dff2b15c1db52b41825de97f8f9164bd4d49d54bb0148",
       "lines": 1833,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04s 冷读全章并实际重构6.1～6.4，补完整管理者借用工作模块、关闭周期及资源归属；九组宿主替身与ARM前端通过，目标运行未执行。6.5以后待后续批次，保持pending。 B04t 完成6.5～6.6，复用三完整程序解释入口份额、最终减少同锁与条件取得，修复解锁即可睡眠和RCU替代执行上下文的混淆；未新增运行证据，6.7以后仍待审查。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04s 冷读全章并实际重构6.1～6.4，补完整管理者借用工作模块、关闭周期及资源归属；九组宿主替身与ARM前端通过，目标运行未执行。6.5以后待后续批次，保持pending。 B04t 完成6.5～6.6，复用三完整程序解释入口份额、最终减少同锁与条件取得，修复解锁即可睡眠和RCU替代执行上下文的混淆；未新增运行证据，6.7以后仍待审查。 B04u 完成6.7六单元，补完整timer责任模型、注册退出两种协议及固定八函数实现；四模型轨迹、八同步分支和包装检查通过，6.8以后待收束。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md",
@@ -2343,7 +2364,7 @@
       "baseline_sha256": "2ff2f3eb2519857f7f8f1fb91b3ce2046d549f5b59d609e0f24c6df091c81ce2",
       "lines": 2954,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04u 只冷读并同步timer模板和remove入口的票据/重启前提，未改主体模板、未认定全篇完成。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P14_源码阅读实验.md",

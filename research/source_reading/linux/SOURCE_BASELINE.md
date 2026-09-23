@@ -716,3 +716,9 @@ B04q 核对固定 lib/refcount.c 的 refcount_dec_not_one、refcount_dec_and_mut
 ## 1.61\_管理者等待借用退出的组合边界
 
 B04s 再核对固定 kernel/workqueue.c 中 cancel_work_sync 的注释及既有唯一实现，blob a9d64e08dffc7c7aef2caae2f170268d83e99e23；无竞争投递是返回后不再 pending/执行的前提。[P06 组合模块](../kref/navigation/P02_普通引用与归零回调导读.md#2.11_借用退出与最后归还)不新增上游函数展开。新完整模块 ARM 前端通过，354 份头中 342 份非生成源码相对本基线无差异，生成头仍来自工作配置。宿主九组顺序替身检查验证分配退出、管理者保留和拒绝路径，未验证目标装卸、真实阻塞与硬件内存序。
+
+## 1.62\_定时器改期与最终退出证据
+
+B04u 核对固定 kernel/time/timer.c（blob 7835f9b376e76a010926c3c2036c9a458b1f553c）与 include/linux/timer.h（blob e67ecd1cbc97d6b92994c15b688cdde5ec3c998f）。[模块入口](../kref/navigation/P05_定时器重启与退出导读.md#5.2_从排队到最终关闭)关联八个唯一函数展开，函数体去注释规范化一致。mod_timer 对既有 pending 的改期不追加一次接收票据；shutdown 清空 function，与普通同步删除的再启动保证不同。
+
+宿主实际六函数配合显式 base/锁/运行退出替身，八种删除/关闭 × pending × running 组合及旧名包装通过；无真实计时、中断、SMP/RT、LOCKDEP、调度或内存序验证。独立 C 模型四条轨迹通过，只展示外层责任，不充当定时轮实现。未编造目标运行或修改外部工作树。

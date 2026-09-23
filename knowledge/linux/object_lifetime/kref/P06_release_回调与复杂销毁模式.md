@@ -413,340 +413,197 @@ P05 完整程序中的 `indexed_release_locked()` 正好表达这个契约：它
 
 ## 6.7\_异步路径\_work\_timer\_callback\_的引用闭环
 
-异步路径的问题通常不是 release 代码本身，而是 work/timer/callback 是否拥有引用、谁负责取消、谁负责 put 没有定义清楚。
+上一节解决了回调在哪个上下文运行，现在让对象面对多个异步来源。每条来源都要回答两个问题：它进入时靠哪份责任或借用窗口保活，关闭后谁保证它不再重新进入。work、timer 和注册回调都是“以后执行”，但接收规则不同，不能共享一句“提交前 get，结束时 put”就认为完成了设计。
 
 ### 6.7.1\_release\_和\_workqueue\_的收尾关系
 
-如果对象里有 `work_struct`：
+回访[P01 完整工作模块](P01_kref_要解决什么问题.md#1.16.1_运行一次真实工作交付)：创建者先保留自己的份额，再为一次成功工作预留一份，queue_work 接收后由 worker 在最后对象访问之后归还；若该次提交未被接收，只归还此次预留，不能替已有工作归还它的一份。这个例子只交付一次，不自行重排。
 
-```c
-struct my_refobj {
-	struct kref ref;
-	struct work_struct work;
-};
-```
+再对照本章 `owned_job`：worker 没有独立份额，始终借用管理者的一份；管理者关闭入口、等执行退出，再归还。两种模型里的 queue_work 可以相同，但引用协议不同，所以取消返回后该不该补 put 也不能只从 API 名字判断。
 
-必须明确：
+| 路径 | 一次成功工作独立持有 | 管理者统一保留、worker 借用 |
+| --- | --- | --- |
+| 正常执行完成 | worker 在最后对象访问后归还这次工作份额 | worker 不 put，管理者等待它返回 |
+| 本次排队拒绝 | 退回本次预留；原有工作的责任保持 | 没有新增份额可退 |
+| 尚未执行的唯一实例被取消 | 在无重排、取消者仍保活的前提下，由取消者接管其份额 | 仍无工作份额可退，只确认借用已结束 |
+| 执行已经开始 | 等执行路径按协议完成归还，不因返回 false 盲目再 put | 等它返回后才能让管理者退出 |
 
-```text
-work 是否持有对象引用？
-release 时 work 是否还可能运行？
-release 是否需要 cancel_work_sync？
-```
-
-常见安全模型之一：
-
-```text
-投递 work 前 kref_get；
-work 函数结束时 kref_put；
-release 不需要 cancel_work_sync 保护 work 对对象的访问。
-```
-
-示例：
-
-```c
-static int my_refobj_queue_work(struct my_refobj *refobj)
-{
-	kref_get(&refobj->ref);
-
-	if (!queue_work(system_wq, &refobj->work)) {
-		my_refobj_put(refobj);
-		return -EBUSY;
-	}
-
-	return 0;
-}
-
-static void my_refobj_workfn(struct work_struct *work)
-{
-	struct my_refobj *refobj = container_of(work, struct my_refobj, work);
-
-	/* 使用 refobj */
-
-	my_refobj_put(refobj);
-}
-```
-
-这个模型里，work 自己持有引用。
-
-所以只要 work 还没结束，对象就不会 release。
-
+[P03 工作票据模型](P03_kref_生命周期状态机.md#%287%29_所有权表要补充失败路径和取消路径)可重新运行六种顺序。若允许 running 期间再排一次或允许回调自行投递，必须为每次成功接收明确责任，不能把那个“一次 pending 实例”的取消模板直接扩大；最先要做的是封闭生产者，再判断哪些实例完成、哪些被取消。
 
 ### 6.7.2\_release\_中\_cancel\_work\_sync\_的风险
 
-有些设计会在 release 里取消 work：
+“work 持有的一份已经归还”只说明引用动作发生，不能推出 work function 已经返回。若该 put 在 worker 尾部触发 release，release 里同步取消本 work 就会等待自己的外层调用栈。即使移除这种直接自等待，仍要查是否持有 worker 需要的锁，以及普通工作队列的同步等待是否位于可睡眠上下文。
 
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
+另一方面，若 worker 仅借用而没有独立份额，又没有管理者等待，release 可能在它读对象时出现。此时增加一个 cancel 调用也要先证明：回调自身不会通过其他路径最后 put，生产者已被封闭，当前上下文可等待，而且对象在等待期间仍保留。可以设计满足这些条件的类型，但不宜把缺失的所有权分析藏进通用 release 模板。
 
-	cancel_work_sync(&refobj->work);
-	kfree(refobj);
-}
-```
-
-这要求非常谨慎。
-
-原因有两个。
-
-第一，`cancel_work_sync()` 可能睡眠。
-
-所以 release 必须保证在可睡眠上下文执行。
-
-第二，如果 work 本身持有引用，并且 work 结束时才 put，那么 release 一般不会在 work 还持有引用时发生。
-
-也就是说：
-
-```text
-如果 work 持有引用，release 发生时 work 理论上已经不再持有引用。
-```
-
-这时 release 里再 `cancel_work_sync()` 的意义需要重新审视。
-
-更危险的是互相等待模型：
-
-```text
-work 等待某个引用释放
-release 等待 work 结束
-```
-
-可能构成死锁。
-
-所以 work 模型要二选一并写清楚：
-
-```text
-模型 A：work 持有引用，work 完成后 put，release 不负责等待 work。
-模型 B：对象 owner 管理 work 生命周期，release 前已经保证 work 不再运行。
-```
-
-不要让 release 和 work 引用关系相互纠缠。
-
+本章默认采用容易复核的 S3/S4 分工：管理者有一份时主动关闭和排空，release 只收尾剩余资源。模块代码寿命还要额外保留到 work function 真正退出；对象内存提前在 worker 尾部回收，与模块可以立刻卸载是两件事。
 
 ### 6.7.3\_release\_和\_timer\_的收尾关系
 
-timer 比 work 更容易出错，因为 timer 回调可能在软中断上下文运行。
+定时器登记的是“这个 timer 下次何时执行”，不是一个按每次启动调用追加记录的请求队列。设管理者持一份，第一次启动前 get，计数变为 2；尚未到期又 get 并 mod_timer，计数变为 3。第二次只是调整同一个 pending timer 的到期时间，最后只发生一次回调，归还一份后剩 2；管理者再归还仍剩 1。泄漏来自 **把两次改期误当成两次独立接收**。
 
-如果对象里有 timer：
+在这里，pending 指 timer 仍登记在待执行队列中，running 指回调已进入但尚未返回。回调开始后可能已经不 pending；甚至某条路径又为这个正在执行的 timer 安排下一次到期，使“正在执行”和“还有下一次”同时成立。因此单看 timer_pending 为假不能释放对象，单看 mod_timer 返回值也不能完整计算活动实例的引用账本。
+
+以下完整 [timer_ownership.c](../../../../labs/kernel/object_lifetime/materials/timer_ownership.c) 用对象外账本安排四条顺序。先预测第一个反例最后剩多少份，再看管理者模式如何避开重复 get。这里没有实际时间流逝；`model_delete_sync` 显式完成 running 状态，只表示真实同步操作返回后的结果。
 
 ```c
-struct my_refobj {
-	struct kref ref;
-	struct timer_list timer;
+// SPDX-License-Identifier: GPL-2.0
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+
+/* 对象外的顺序观察账本，不是 struct timer_list 或真实引用计数器。 */
+struct timer_model {
+    bool pending;
+    bool running;
+    bool shutdown;
+    bool work_pending;
+    unsigned int refs;
+    unsigned int callbacks;
 };
-```
 
-必须明确：
-
-```text
-timer 回调是否持有引用？
-timer 删除发生在哪个阶段？
-release 能不能调用 del_timer_sync？
-最后 put 可能是否发生在 timer 回调中？
-```
-
-一种常见模型：
-
-```text
-启动 timer 前增加引用；
-timer 回调执行完释放引用；
-取消 timer 成功时释放 timer 引用。
-```
-
-示例模型：
-
-```c
-static void my_refobj_start_timer(struct my_refobj *refobj)
+static int model_mod(struct timer_model *timer)
 {
-	kref_get(&refobj->ref);
-	mod_timer(&refobj->timer, jiffies + HZ);
+    if (timer->shutdown)
+        return 0; /* 固定接口在 shutdown 后丢弃启动，也返回零。 */
+    int was_pending = timer->pending;
+    timer->pending = true; /* 改期仍然只有一个 pending，不新增票据。 */
+    return was_pending;
+}
+
+static void model_begin(struct timer_model *timer)
+{
+    assert(timer->pending && !timer->running);
+    timer->pending = false;
+    timer->running = true;
+    ++timer->callbacks;
+}
+
+static void model_end(struct timer_model *timer)
+{
+    assert(timer->running);
+    timer->running = false;
+}
+
+static int model_delete_sync(struct timer_model *timer, bool shutdown)
+{
+    if (shutdown)
+        timer->shutdown = true;
+    /* 显式完成已执行实例，表示等待之后的结果，不实现线程等待。 */
+    if (timer->running)
+        model_end(timer);
+    int was_pending = timer->pending;
+    timer->pending = false;
+    return was_pending;
+}
+
+static void model_work(struct timer_model *timer)
+{
+    assert(timer->work_pending);
+    timer->work_pending = false;
+    (void)model_mod(timer); /* 借用 worker 尝试重新启动 timer。 */
+}
+
+static void owner_exit(struct timer_model *timer)
+{
+    assert(!timer->pending && !timer->running && !timer->work_pending);
+    assert(timer->refs == 1);
+    --timer->refs;
+}
+
+int main(void)
+{
+    struct timer_model bad = { .refs = 1 };
+    ++bad.refs; assert(model_mod(&bad) == 0);
+    ++bad.refs; assert(model_mod(&bad) == 1);
+    model_begin(&bad); model_end(&bad); --bad.refs; /* 仅一次回调归还。 */
+    --bad.refs; /* 管理者退出，错误地留下无人认领的一份。 */
+    assert(bad.refs == 1 && bad.callbacks == 1);
+    puts("two gets, one callback: leaked responsibility=1");
+
+    struct timer_model owned = { .refs = 1 };
+    assert(model_mod(&owned) == 0 && model_mod(&owned) == 1);
+    model_begin(&owned);
+    assert(!owned.pending && owned.running); /* pending 为假并非已退出。 */
+    assert(model_delete_sync(&owned, true) == 0);
+    owner_exit(&owned);
+    assert(owned.refs == 0 && owned.callbacks == 1);
+    puts("owner retained through running callback: refs=0");
+
+    struct timer_model reopened = { .refs = 1 };
+    assert(model_mod(&reopened) == 0);
+    assert(model_delete_sync(&reopened, false) == 1);
+    assert(model_mod(&reopened) == 0 && reopened.pending);
+    assert(model_delete_sync(&reopened, true) == 1);
+    owner_exit(&reopened);
+    puts("delete allowed a later restart; shutdown closed it");
+
+    struct timer_model cycle = { .refs = 1, .work_pending = true };
+    assert(model_delete_sync(&cycle, true) == 0);
+    model_work(&cycle);
+    assert(!cycle.pending && !cycle.work_pending);
+    assert(model_mod(&cycle) == 0 && !cycle.pending);
+    owner_exit(&cycle);
+    puts("worker rearm after shutdown: discarded, refs=0");
+    return 0;
 }
 ```
 
-timer 回调：
+在材料所在目录编译运行：
 
-```c
-static void my_timer_fn(struct timer_list *t)
-{
-	struct my_refobj *refobj = from_timer(refobj, t, timer);
-
-	/* 使用 refobj */
-
-	my_refobj_put(refobj);
-}
+```bash
+cc -std=c11 -Wall -Wextra -Werror -O2 timer_ownership.c -o timer_ownership
+./timer_ownership
 ```
 
-取消路径必须处理：
+不要为这个实验定义 NDEBUG，因为程序使用 assert 检查并执行待观察的模型步骤。四行输出依次给出：两次 get 只有一次回调时遗留一份；管理者保留到旧回调退出后归零；普通删除后仍能重新启动；最终关闭以后 worker 的再启动被丢弃。模型没有真实分配，第一行的泄漏是责任账本残留，不是在实验里故意遗失一块堆内存。
 
-```text
-如果 timer 被成功取消，那么 timer 回调不会执行；
-因此原本给 timer 的引用要由取消路径 put。
-```
+第三、四条还揭示 API 返回值陷阱：正常 inactive timer 的 mod_timer 返回 0 可以表示启动成功；已 shutdown 的 timer 返回 0 却表示启动被丢弃。它不是 queue_work 的接收布尔值。固定版本的[定时器退出源码索引入口](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)连接[改期与关闭模块](../../../../research/source_reading/kref/navigation/P05_定时器重启与退出导读.md#5.2_从排队到最终关闭)，再到[唯一改期实现](../../../../research/source_reading/kref/source_explanations/kernel/time/timer.c.md#1.1_改期不等于追加一次回调)。
 
-示意：
-
-```c
-static void my_refobj_cancel_timer(struct my_refobj *refobj)
-{
-	if (del_timer_sync(&refobj->timer))
-		my_refobj_put(refobj);
-}
-```
-
-这里的核心是：
-
-```text
-timer 引用必须有唯一释放者：
-要么 timer 回调释放；
-要么取消成功路径释放。
-```
-
-否则会少 put 或多 put。
-
+并非 timer 永远不能独立持引用。单次启动、无改期/重排、管理者取消期间仍有自己的份额时，可以为唯一实例建立票据：回调执行则回调归还，被同步删除的 pending 实例则由取消者接管。若需要反复改期、回调重启或 timer/work 相互启动，要么扩展活动实例与票据的同步状态，要么选管理者保留到整个活动期结束的模型。本章选择后者，不把一次性票据模板假装成通用 timer 方案。
 
 ### 6.7.4\_release\_不应该负责模糊的\_timer\_语义
 
-错误倾向：
+原示例使用 del_timer_sync。固定 Linux 6.12.20 中它只是[旧名包装](../../../../research/source_reading/kref/source_explanations/include/linux/timer.h.md#1.2_旧名转到同步删除)，新代码使用 timer_delete_sync；但换名字不会自动解决重新启动。
 
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
+timer_delete_sync 在调用者防止重启的前提下撤销 pending 并等待回调结束。它没有永久封闭 timer；另一参与者以后调用 mod_timer 仍可启动。timer_shutdown_sync 则在同一个 base 锁下清空 callback 函数指针，并等待已经进入的回调退出，使之后的启动请求被丢弃。它用于最终退出，不适合之后还需要同一个 timer 正常工作的临时暂停；再次初始化一个身份不是继续使用已关闭身份的旁路。
 
-	del_timer_sync(&refobj->timer);
-	kfree(refobj);
-}
+现在把 timer 与 work 接成循环：timer 到期投递 work，work 结束再次启动 timer。只删 timer 后等 work，work 可能又启动 timer；只等 work 后删 timer，timer 又可能派生一个新 work。管理者应先停止其他外部生产者，保持自己的份额，再最终关闭 timer，随后排空这组私有 work，最后才归还。已在执行的 timer callback 仍可能投递最后一个 work，所以等待 work 必须安排在 timer 关闭并退出之后；此后的 work 再启动 timer 会被拒绝。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant M as 管理者
+    participant T as timer 状态与旧回调
+    participant W as 私有 worker
+    M->>T: S3/S4 shutdown，禁止再启动并等待旧回调
+    T->>W: 已进入的旧回调可能投递最后一次 work
+    T-->>M: timer 不再排队或执行
+    M->>W: S4 排空或销毁私有队列
+    W->>T: 尝试再启动
+    T-->>W: 已 shutdown，启动被丢弃
+    W-->>M: worker 返回
+    M->>M: S5 归还管理者，允许最终清理
 ```
 
-这不是绝对错误，但很容易掩盖生命周期不清晰。
-
-你必须回答：
-
-```text
-timer 启动时是否 get？
-timer 回调是否 put？
-release 发生时 timer 是否可能还持有引用？
-del_timer_sync 如果返回 1，是否需要 put timer 引用？
-如果 release 在 timer 回调中触发，会不会 del_timer_sync 自己等待自己？
-```
-
-如果这些问题答不清楚，就不应该把 timer 收尾简单塞进 release。
-
-更清晰的设计是：
-
-```text
-timer 的引用归属在启动、取消、回调路径中闭环；
-release 只检查 timer 已经不再活动，或只释放对象本体。
-```
-
+固定[同步退出实现](../../../../research/source_reading/kref/source_explanations/kernel/time/timer.c.md#1.2_等待执行与关闭重启)支持这一顺序，但不接管 kref 责任，也不使裸指针自动保活。所有调用 timer API 的路径仍须有有效地址；管理者在全部退出前不能 put 掉最后一份，剩余清理也不能依赖 timer 再触发一次才能结束。不要在本 timer 回调中同步等自己，也不要持有妨碍它退出的锁。当前普通非 RT timer 回调的软中断约束不能直接扩大成所有定时设施和配置都相同。
 
 ### 6.7.5\_release\_和\_callback\_的关系
 
-对象经常注册给某个子系统回调：
+注册回调又多一层差异：`unregister` 不是所有子系统共享同一含义的通用内核函数。应读取选定 API 的契约，明确它是只阻止以后进入，还是同时等待已经进入的回调返回。没有确定子系统时，不应给一个未定义的 unregister_callback 编造同步保证。
 
-```c
-register_callback(refobj, my_callback);
-```
+先建立两种可成立的协议。第一种由注册关系拥有一份，回调借用这段注册有效期；注册失败要归还预留，注销必须完成“入口关闭且旧回调退出”，才能归还注册关系那一份。第二种允许注销只关闭新入口，但每次已接收回调提前取得独立份额；注销归还注册关系后，旧回调仍各自保活，结束时归还。第二种还必须保证“判断允许进入—取得份额”与注销同一保护，不能先取出一个无保护裸指针再 get。
 
-这时必须定义：
-
-```text
-子系统是否持有 refobj 引用？
-callback 执行期间对象如何保证不被释放？
-unregister_callback 是否等待正在运行的 callback 结束？
-```
-
-一种安全模型：
-
-```text
-注册前 kref_get，引用属于 callback 注册关系；
-unregister 成功后 kref_put；
-callback 执行期间由注册关系保证对象存在。
-```
-
-示例：
-
-```c
-static int my_refobj_register(struct my_refobj *refobj)
-{
-	int ret;
-
-	kref_get(&refobj->ref);
-
-	ret = register_callback(refobj, my_callback);
-	if (ret) {
-		my_refobj_put(refobj);
-		return ret;
-	}
-
-	return 0;
-}
-
-static void my_refobj_unregister(struct my_refobj *refobj)
-{
-	unregister_callback(refobj);
-	my_refobj_put(refobj);
-}
-```
-
-这里必须确认：
-
-```text
-unregister_callback 返回后，不会再有新的 callback 进入；
-正在运行的 callback 是否已经退出，也必须由子系统语义保证。
-```
-
-如果 unregister 只是不再新增 callback，但不等待已有 callback，那么还需要额外同步机制。
-
+若 API 只做前半段，而回调又纯借用注册关系，注销后立即 put 就可能让回调访问已释放对象。补救应是补齐等待旧回调的阶段，或重设每次回调的取得协议，不是把 registered 布尔值清为 false 就当作退出证明。一次“未发生错误”测试也不能替代对 API 的这一项证据核对。
 
 ### 6.7.6\_release\_不能替代\_unregister
 
-不要把 unregister 全部推到 release 里。
+对注册关系拥有一份的模型，时间顺序必须主动发起：管理者关闭入口，处理旧回调，归还注册份额；其他持有者都退出后才可能到 release。让 release 负责首次注销并归还那同一份，会造成它永远等不到触发条件。
 
-错误倾向：
+对不拥有引用的索引或注册关系，回调内撤下并非一律禁止，但必须像 6.5 节那样另证地址保护、取得与归零的串行化以及回调上下文。不能因为表面上“对象还注册着”就断定计数绝不可能为零，也不能看到零就推断外部再没有旧借用者。
 
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
+把三种异步来源一起复核：work 的接收实例、timer 的改期/执行状态、注册关系的进入/注销语义各有自己的账本。kref 只消费已经定义好的责任，不替它们生成账本。现在已能把最后归还之前的活动退出说清；下一节处理另一种情况——业务引用已经结束，但旧读者的存储保护还没有结束。
 
-	unregister_callback(refobj);
-	kfree(refobj);
-}
-```
-
-这类代码可能有问题。
-
-因为 release 发生时已经没有合法引用了。
-
-但 callback 注册关系本身通常就应该是一个引用来源。
-
-如果对象还注册在外部子系统中，说明外部子系统可能还能回调它。
-
-这时引用计数怎么能已经归零？
-
-所以更合理的模型通常是：
-
-```text
-unregister 阶段撤销外部可见性；
-unregister 释放注册关系引用；
-最后一个 put 才进入 release。
-```
-
-也就是：
-
-```text
-release 不负责让对象不可见；
-release 只处理对象已经不可见之后的最终销毁。
-```
-
-当然某些内核子系统有自己的特殊规则，但通用原则是：
-
-```text
-外部注册关系应该在 release 前明确撤销。
-```
-
-------
 
 ## 6.8\_RCU\_边界\_生命周期结束不等于内存立刻回收
 

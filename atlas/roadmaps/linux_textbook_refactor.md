@@ -258,3 +258,5 @@ B04r 收束[P05 类型契约与章末应用](../../knowledge/linux/object_lifeti
 B04s 重构[P06 关闭与资源边界](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.2.2_运行一个由管理者等待借用退出的模块)的 6.1～6.4，以完整内核模块串起关闭提交、等待借用、管理者归还和最后清理。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.82_B04s管理者等待与资源归属)记录九组控制检查和未执行目标项；P06 仍 pending，下一项可见性、上下文与异步重启边界，全仓继续。
 
 B04t 完成[P06 可见性与上下文](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.5_外部可见性_脱链应该由谁负责)的 6.5～6.6，保留全部阅读任务，用既有完整程序比较三种查找协议、回调锁交接和自等待。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.83_B04t入口撤下与回调上下文)记录保留与未执行验证；下一项 6.7 异步启动，P06 仍 pending。
+
+B04u 重构[P06 异步退出](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.7.3_release_和_timer_的收尾关系)全单元，加入 timer 改期/关闭的 C 模型及[固定源码模块](../../research/source_reading/kref/navigation/P05_定时器重启与退出导读.md#5.2_从排队到最终关闭)，修正把启动次数、回调次数和引用数直接对应的错误。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.84_B04u异步票据与定时器重启)记录分支证据和目标未验证项；下一项 6.8～6.12，P06/P13 与全仓仍未完成。
