@@ -201,6 +201,7 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant L as 已取得引用的使用者
     participant E as 入口锁与槽
     participant D as 关闭者
@@ -1110,6 +1111,7 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant L as lookup 线程
     participant R as remove 线程
     participant Lock as my_obj_list_lock
@@ -1146,6 +1148,7 @@ remove 只是撤销集合可见性；
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant R as remove 线程
     participant L as lookup 线程
     participant Lock as my_obj_list_lock
@@ -1392,6 +1395,7 @@ kref 保护“对象内存是否仍然存在”。
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant A as 路径A
     participant G as 集合锁
     participant O as 对象锁
@@ -1478,6 +1482,7 @@ P06 已详细比较资源关闭与最后回收。本节只追问：把 release �
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant T as 当前调用者
     participant M as 全局mutex
     participant K as 普通kref_put
@@ -1809,602 +1814,322 @@ mutex 允许合法等待取得，但不会替应用判断等待图是否有环�
 
 ## 9.6\_完整模板\_锁\_+\_kref\_对象的组织方式
 
-前面的小节分别讲边界，这里把它们收束成一个完整模板。
+现在把查找、业务操作和撤下接成一个完整模块，并提出比 9.2 更紧的约束：对象仍登记时允许同步请求；撤下和关闭业务门放在同一个嵌套保护阶段，旧读者随后提交也必须被拒绝。
 
-这个模板重点展示：
-
-```text
-集合锁如何保护 lookup/remove；
-对象锁如何保护内部状态；
-kref 如何让锁外持有者安全使用对象内存；
-remove 如何先撤销可见性，再释放集合引用；
-release 如何只做最终检查和释放。
-```
+本例与 9.3.7 的两组状态模型任务不同：不再分别模拟 RUNNING/STOPPING，而用一个由对象锁保护的 state 表示本例同步服务是否接纳；链表成员仍由集合锁保护。没有硬件、worker 或 DMA，所以“一个请求完成”就是锁内增加一次 completed。先让这个小系统完整，再讨论真实驱动的额外退出阶段。
 
 ### 9.6.1\_一个完整的锁\_+\_kref\_对象模板
 
-对象：
+完整 [note_kref_table.c](../../../../labs/kernel/object_lifetime/materials/note_kref_table.c) 如下。每个对象有独立对象锁，所有表成员使用同一 table_lock；涉及两者的路径固定先集合锁、后对象锁。id 发布前固定，表内编号唯一；一个对象只允许成功发布一次，撤下以后不再重新发布。
 
 ```c
-enum my_obj_state {
-	MY_OBJ_NEW,
-	MY_OBJ_LIVE,
-	MY_OBJ_DYING,
+// SPDX-License-Identifier: GPL-2.0
+#include <linux/errno.h>
+#include <linux/kref.h>
+#include <linux/list.h>
+#include <linux/module.h>
+#include <linux/mutex.h>
+#include <linux/slab.h>
+
+enum object_state { OBJECT_NEW, OBJECT_LIVE, OBJECT_DYING };
+struct table_object {
+    int id; /* 发布前固定；编号在当前表内唯一。 */
+    struct list_head node; /* table_lock保护。 */
+    struct mutex lock; /* 保护state与completed。 */
+    enum object_state state;
+    unsigned int completed;
+    struct kref ref;
 };
+static LIST_HEAD(object_table);
+static DEFINE_MUTEX(table_lock);
+static unsigned int release_calls; /* 本模块无外部入口，初始化内顺序演示。 */
 
-struct my_obj {
-	struct kref ref;
-	struct list_head node;
-
-	struct mutex lock;
-	enum my_obj_state state;
-	int id;
-};
-
-static LIST_HEAD(my_obj_list);
-static DEFINE_MUTEX(my_obj_list_lock);
-```
-
-release：
-
-```c
-static void my_obj_release(struct kref *ref)
+static void table_release(struct kref *ref)
 {
-	struct my_obj *obj;
-
-	obj = container_of(ref, struct my_obj, ref);
-
-	WARN_ON(!list_empty(&obj->node));
-
-	kfree(obj);
+    struct table_object *obj = container_of(ref, struct table_object, ref);
+    WARN_ON(!list_empty(&obj->node));
+    WARN_ON(obj->state == OBJECT_LIVE);
+    ++release_calls;
+    kfree(obj); /* 正常协议已无其他使用者，所有对象锁操作已经结束。 */
 }
-```
 
-alloc：
-
-```c
-struct my_obj *my_obj_alloc(int id)
+static void table_put(struct table_object *obj)
 {
-	struct my_obj *obj;
-
-	obj = kzalloc(sizeof(*obj), GFP_KERNEL);
-	if (!obj)
-		return NULL;
-
-	kref_init(&obj->ref);
-	INIT_LIST_HEAD(&obj->node);
-	mutex_init(&obj->lock);
-
-	obj->id = id;
-	obj->state = MY_OBJ_NEW;
-
-	return obj;
+    if (obj)
+        kref_put(&obj->ref, table_release);
 }
-```
 
-publish：
-
-```c
-int my_obj_publish(struct my_obj *obj)
+static struct table_object *table_create(int id)
 {
-	kref_get(&obj->ref);    /* list 引用 */
-
-	mutex_lock(&my_obj_list_lock);
-
-	mutex_lock(&obj->lock);
-	obj->state = MY_OBJ_LIVE;
-	mutex_unlock(&obj->lock);
-
-	list_add_tail(&obj->node, &my_obj_list);
-
-	mutex_unlock(&my_obj_list_lock);
-
-	return 0;
+    struct table_object *obj = kzalloc(sizeof(*obj), GFP_KERNEL);
+    if (!obj)
+        return NULL;
+    obj->id = id;
+    INIT_LIST_HEAD(&obj->node);
+    mutex_init(&obj->lock);
+    obj->state = OBJECT_NEW;
+    kref_init(&obj->ref);
+    return obj;
 }
-```
 
-lookup：
-
-```c
-struct my_obj *my_obj_lookup_get(int id)
+/* 调用者持有一份；成功另给表一份，失败不消费。只发布一次。 */
+static int table_publish(struct table_object *obj)
 {
-	struct my_obj *obj;
-
-	mutex_lock(&my_obj_list_lock);
-
-	list_for_each_entry(obj, &my_obj_list, node) {
-		if (obj->id != id)
-			continue;
-
-		mutex_lock(&obj->lock);
-
-		if (obj->state != MY_OBJ_LIVE) {
-			mutex_unlock(&obj->lock);
-			break;
-		}
-
-		kref_get(&obj->ref);
-
-		mutex_unlock(&obj->lock);
-		mutex_unlock(&my_obj_list_lock);
-
-		return obj;
-	}
-
-	mutex_unlock(&my_obj_list_lock);
-	return NULL;
+    struct table_object *candidate;
+    int result = -EINVAL;
+    mutex_lock(&table_lock);
+    mutex_lock(&obj->lock);
+    if (obj->state != OBJECT_NEW || !list_empty(&obj->node))
+        goto out;
+    list_for_each_entry(candidate, &object_table, node) {
+        if (candidate->id == obj->id) {
+            result = -EEXIST;
+            goto out;
+        }
+    }
+    kref_get(&obj->ref);
+    obj->state = OBJECT_LIVE;
+    list_add_tail(&obj->node, &object_table);
+    result = 0;
+out:
+    mutex_unlock(&obj->lock);
+    mutex_unlock(&table_lock);
+    return result;
 }
-```
 
-use：
-
-```c
-int my_obj_do_something(int id)
+static struct table_object *table_lookup(int id)
 {
-	struct my_obj *obj;
-	int ret = 0;
-
-	obj = my_obj_lookup_get(id);
-	if (!obj)
-		return -ENOENT;
-
-	mutex_lock(&obj->lock);
-
-	if (obj->state != MY_OBJ_LIVE) {
-		ret = -ESHUTDOWN;
-		goto out_unlock;
-	}
-
-	/*
-	 * 访问 obj 内部字段。
-	 */
-
-out_unlock:
-	mutex_unlock(&obj->lock);
-
-	kref_put(&obj->ref, my_obj_release);
-	return ret;
+    struct table_object *obj, *found = NULL;
+    mutex_lock(&table_lock);
+    list_for_each_entry(obj, &object_table, node) {
+        if (obj->id != id)
+            continue;
+        mutex_lock(&obj->lock);
+        if (obj->state == OBJECT_LIVE) {
+            kref_get(&obj->ref);
+            found = obj;
+        }
+        mutex_unlock(&obj->lock);
+        break;
+    }
+    mutex_unlock(&table_lock);
+    return found;
 }
-```
 
-unpublish/remove：
-
-```c
-void my_obj_unpublish(struct my_obj *obj)
+/* 仅同步增加计数；不启动硬件或异步工作。调用者持有一份。 */
+static int table_request(struct table_object *obj, unsigned int *completed)
 {
-	mutex_lock(&my_obj_list_lock);
-
-	mutex_lock(&obj->lock);
-	obj->state = MY_OBJ_DYING;
-	mutex_unlock(&obj->lock);
-
-	if (!list_empty(&obj->node))
-		list_del_init(&obj->node);
-
-	mutex_unlock(&my_obj_list_lock);
-
-	kref_put(&obj->ref, my_obj_release);
+    int result = -ESHUTDOWN;
+    mutex_lock(&obj->lock);
+    if (obj->state == OBJECT_LIVE) {
+        *completed = ++obj->completed;
+        result = 0;
+    }
+    mutex_unlock(&obj->lock);
+    return result;
 }
-```
 
-创建并发布后释放创建者引用：
-
-```c
-int create_and_publish(int id)
+/* 调用者独立持有一份；只归还本次取回的表份额，支持有效参数上重复调用。 */
+static void table_unpublish(struct table_object *obj)
 {
-	struct my_obj *obj;
-	int ret;
-
-	obj = my_obj_alloc(id);
-	if (!obj)
-		return -ENOMEM;
-
-	ret = my_obj_publish(obj);
-	if (ret) {
-		kref_put(&obj->ref, my_obj_release);
-		return ret;
-	}
-
-	/*
-	 * 创建者不再需要自己的初始引用。
-	 * list 仍然持有一份引用。
-	 */
-	kref_put(&obj->ref, my_obj_release);
-
-	return 0;
+    bool removed = false;
+    mutex_lock(&table_lock);
+    mutex_lock(&obj->lock);
+    if (!list_empty(&obj->node)) {
+        obj->state = OBJECT_DYING;
+        list_del_init(&obj->node);
+        removed = true;
+    }
+    mutex_unlock(&obj->lock);
+    mutex_unlock(&table_lock);
+    if (removed)
+        table_put(obj);
 }
+
+static int __init note_table_init(void)
+{
+    struct table_object *creator = table_create(7), *reader;
+    unsigned int completed = 0;
+    int result;
+    if (!creator)
+        return -ENOMEM;
+    result = table_publish(creator);
+    if (result) {
+        table_put(creator);
+        return result;
+    }
+    reader = table_lookup(7);
+    if (!reader) {
+        table_unpublish(creator);
+        table_put(creator);
+        return -ENOENT;
+    }
+    table_put(creator);
+    result = table_request(reader, &completed);
+    pr_info("note_table: before=%d completed=%u\n", result, completed);
+    table_unpublish(reader);
+    table_unpublish(reader);
+    result = table_request(reader, &completed);
+    pr_info("note_table: after=%d completed=%u\n", result, completed);
+    table_put(reader);
+    return 0;
+}
+
+static void __exit note_table_exit(void)
+{
+    pr_info("note_table: release=%u empty=%d\n", release_calls, list_empty(&object_table));
+}
+
+module_init(note_table_init);
+module_exit(note_table_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("集合锁与对象锁配对的完整同步服务实验");
 ```
 
-这个模板体现了：
+先从正常日志预测整个过程：
 
 ```text
-list_lock 保护集合；
-obj->lock 保护字段；
-list 持有对象引用；
-lookup 在锁内 get；
-remove 先 DYING + unlink，再 put list 引用；
-release 只检查脱链并 kfree。
+note_table: before=0 completed=1
+note_table: after=-108 completed=1
+note_table: release=1 empty=1
 ```
 
-------
+- 第一次请求看到 LIVE，增加 completed 并成功返回。
+- 第一次 unpublish 同时关闭业务门、摘下成员，随后归还表的一份；reader 自己的一份仍在。
+- 第二次 unpublish 看到节点已空，不再归还任何成员份额；参数仍有效是因为 reader 的份额未结束。
+- 第二次请求看到 DYING，返回 -ESHUTDOWN，不改输出值和 completed；它没有继续业务，但仍可安全进入对象锁并检查。
+- reader 最后归还才进入回调，表为空、对象不再 LIVE，所有锁操作先结束再回收。
+
+这几步不要合并成“remove 释放对象”。在本例正常路径中，remove 恰好没有回收对象；最后回收发生在旧读者归还自己的那一份时。
+
+| 阶段 | 具体字段与责任 | 谁写、谁读，怎样交接 |
+| --- | --- | --- |
+| S0 私有创建 | id固定，node自链接，state=NEW，completed=0，ref=1 | 创建者初始化全部存储后才发布 |
+| S1 发布 | 检查NEW/空节点/唯一id；追加表份额，state=LIVE并挂链 | 集合锁→对象锁内完成；拒绝分支不新增份额 |
+| S2 查找 | 集合锁中定位id，对象锁内检查LIVE并get | 返回读者拥有一份，解锁后仍能安全访问对象锁 |
+| S3 请求 | 对象锁内检查state并更新completed | 自己的一份保护存储，锁保证检查与同步操作不可分割 |
+| S4 撤下 | 两锁内state=DYING和摘链；removed记录本次责任 | 解除两锁后归还成员那份，重复调用不归还 |
+| S5 回收 | 最后普通put触发检查与kfree | 正常协议下无其他使用者，不能再从对象读日志字段 |
+
+```mermaid
+flowchart LR
+    P[发布与撤下者] -->|先取得| G[table_lock与链表node]
+    P -->|再取得并更新| O[obj.lock与state]
+    L[查找者] -->|同顺序定位并取得引用| G
+    L -->|检查LIVE后get| R[obj.ref]
+    U[已持引用的请求者] -->|只取对象锁，检查并更新completed| O
+    P -->|实际摘下后，锁外归还表份额| R
+    U -->|解锁后归还自己的份额| R
+    R -->|最后归还| F[检查已撤下并回收]
+```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Q as 旧读者请求
+    participant U as 撤下者
+    participant G as 集合锁及成员
+    participant O as 对象锁及state
+    alt 请求先进入对象锁
+        Q->>O: 看见LIVE并完成同步增加
+        U->>G: 取得集合锁
+        U->>O: 等请求解除对象锁
+        Q->>O: 解锁
+        U->>O: 获锁写DYING
+        U->>G: 摘链
+        U->>O: 解锁
+        U->>G: 解锁，随后归还表份额
+    else 撤下先进入对象锁
+        U->>G: 取得集合锁
+        U->>O: 获锁写DYING并在集合锁内摘链
+        U->>O: 解锁
+        U->>G: 解锁，随后归还表份额
+        Q->>O: 获锁看到DYING，拒绝新请求
+    end
+    Note over Q,O: 旧读者自有份额始终保护检查时的对象存储
+```
+
+发布也要处理拒绝。重复发布同一对象违反只发布一次的状态约定，返回 -EINVAL；另一个新对象使用已占编号，则返回 -EEXIST。两者都在 get 之前退出，调用者初始份额始终保留，不需要猜“这次失败是否已经消费”。创建失败返回 -ENOMEM，尚无对象引用可归还。
+
+在材料目录设置匹配构建树的 KDIR，执行 `make -C "$KDIR" M="$PWD" modules`，将 note_kref_table.ko 放到匹配 Linux 实验环境中装卸并读取日志。这里给出的是预期输出：本轮仅完成 ARM 前端和宿主六组顺序检查，目标构建链接与装卸尚未执行。宿主使用实际模块、固定普通引用和链表删除 helper，锁、原子、分配、插入和遍历采用显式顺序替身；检查同节点/同编号拒绝、未发布退出、查找先后、重复移除、关闭后请求、锁顺序与无遗留分配，不声称真实线程竞争或内存序得到验证。
 
 ### 9.6.2\_上面模板的锁顺序
 
-模板中的锁顺序是：
+publish、lookup、unpublish 在需要两把锁时均为 table_lock→obj.lock；request 只持对象锁，且从不反向进入集合。这样依赖图没有 obj.lock→table_lock 的边。若以后在 request 中调用一个看似普通却内部查表的函数，就必须把它隐含的集合锁也加入检查，不能只看本函数表面。
 
-```text
-my_obj_list_lock -> obj->lock
-```
+相较 9.2 的分步关闭，本例以嵌套锁把业务门和成员撤下绑定。代价是撤下者等待对象锁时仍持集合锁，其他对象的查找也可能被它挡住；本例请求很短，所以先选择易于证明的规则。若业务变长，可考虑像 9.2 那样分阶段并明确关闭返回保证，或重新设计保护范围，但不能在拆锁后继续承诺原来那个不可分割的状态变化。
 
-所有路径都必须遵守。
-
-例如 lookup：
-
-```text
-先拿 my_obj_list_lock；
-再拿 obj->lock；
-检查 state；
-kref_get；
-释放 obj->lock；
-释放 my_obj_list_lock。
-```
-
-remove：
-
-```text
-先拿 my_obj_list_lock；
-再拿 obj->lock；
-设置 DYING；
-释放 obj->lock；
-list_del；
-释放 my_obj_list_lock；
-kref_put。
-```
-
-业务使用路径：
-
-```text
-lookup_get 已经返回带引用对象；
-此时不再持有 my_obj_list_lock；
-只需要拿 obj->lock 访问字段。
-```
-
-注意业务使用路径不再反向拿 list lock。
-
-否则可能破坏锁顺序。
-
-------
+put 都在本路径的对象锁和集合锁解除后执行。release 不再拿这两把锁，也没有异步执行者需要等待；这个简单回收之所以成立，是前面的成员/份额协议和同步业务范围都已落实，不是因为 kfree 本身会处理那些事情。
 
 ## 9.7\_错误模型\_注释和检查清单
 
-这一组内容作为本章的审查入口。
-
-实际 review 时可以按这个顺序看：
-
-```text
-先找错误模型；
-再看注释是否写清楚锁和引用归属；
-最后用检查清单确认 lookup、remove、put、release 是否闭环。
-```
+现在用完整模块反向定位错误。每一项都问“哪一份或哪一把锁提供保证”，而不是看到 get、lock、WARN 都出现就认为安全。
 
 ### 9.7.1\_锁组合下的错误模型
 
 #### (1)\_有\_kref\_没字段锁
 
-错误：
-
-```c
-obj = my_obj_lookup_get(id);
-if (!obj)
-	return -ENOENT;
-
-obj->state = MY_OBJ_LIVE;  /* 没有 obj->lock */
-
-kref_put(&obj->ref, my_obj_release);
-```
-
-问题：
-
-```text
-引用只保护内存；
-state 并发访问仍然可能竞争。
-```
-
-正确：
-
-```c
-mutex_lock(&obj->lock);
-obj->state = MY_OBJ_LIVE;
-mutex_unlock(&obj->lock);
-```
-
-------
+引用使对象存储存在，却不排斥其他请求者更新 completed。应像 table_request 一样把 state 检查与更新放在同一对象锁里。单纯在写 state 外面补锁也不等于任意把 DYING 改回 LIVE 合法，状态转换还必须符合只发布一次的业务协议。
 
 #### (2)\_有锁\_没\_get\_锁外使用
 
-错误：
-
-```c
-mutex_lock(&my_obj_list_lock);
-obj = my_obj_find_locked(id);
-mutex_unlock(&my_obj_list_lock);
-
-do_something(obj);
-```
-
-问题：
-
-```text
-离开 list_lock 后没有引用；
-obj 可能被 remove 并释放。
-```
-
-正确：
-
-```c
-mutex_lock(&my_obj_list_lock);
-obj = my_obj_find_locked(id);
-if (obj)
-	kref_get(&obj->ref);
-mutex_unlock(&my_obj_list_lock);
-```
-
-------
+如果查表仅在集合锁内读地址，返回后没有自己的份额，随后拿 obj.lock 也可能已访问失效存储。修复点在查找窗口里取得，而不是到业务函数开头再补一个无保护 get。
 
 #### (3)\_先\_put\_后\_unlock\_对象锁
 
-错误：
-
-```c
-mutex_lock(&obj->lock);
-obj->state = MY_OBJ_DYING;
-kref_put(&obj->ref, my_obj_release);
-mutex_unlock(&obj->lock);
-```
-
-问题：
-
-```text
-kref_put 可能释放 obj；
-obj->lock 所在内存可能已经释放；
-mutex_unlock 可能 UAF。
-```
-
-正确：
-
-```c
-mutex_lock(&obj->lock);
-obj->state = MY_OBJ_DYING;
-mutex_unlock(&obj->lock);
-
-kref_put(&obj->ref, my_obj_release);
-```
-
-------
+普通最后 put 可以直接回收包含锁的外壳，后面的 unlock 会访问失效锁地址。应把当前路径最后一次锁访问放在归还以前；特殊回调接锁必须另有一致契约，不能与本模块普通回调混用。
 
 #### (4)\_remove\_没有先阻止\_lookup
 
-错误：
-
-```c
-kref_put(&obj->ref, my_obj_release);
-```
-
-但对象还留在全局 list。
-
-问题：
-
-```text
-新 lookup 仍然可能找到对象；
-对象可能已经 release；
-全局集合留下悬挂指针。
-```
-
-正确：
-
-```c
-mutex_lock(&my_obj_list_lock);
-list_del_init(&obj->node);
-mutex_unlock(&my_obj_list_lock);
-
-kref_put(&obj->ref, my_obj_release);
-```
-
-------
+本模块的表拥有一份，所以必须在同锁下摘下，再归还成员份额。若仍在表中就消费那一份，查找的正计数证明消失；若二次 remove 没有实际摘下还继续 put，又会消耗 reader 的份额。不能把计数返回值当作成员归属判断。
 
 #### (5)\_release\_里重新拿外部锁导致死锁
 
-错误：
-
-```c
-mutex_lock(&global_lock);
-kref_put(&obj->ref, my_obj_release);
-mutex_unlock(&global_lock);
-```
-
-release：
-
-```c
-static void my_obj_release(struct kref *ref)
-{
-	mutex_lock(&global_lock);
-	...
-	mutex_unlock(&global_lock);
-}
-```
-
-问题：
-
-```text
-最后 put 在 global_lock 下执行；
-release 又拿 global_lock；
-死锁。
-```
-
-解决：
-
-```text
-不要在 global_lock 下做可能最后 put；
-或者 release 不拿 global_lock；
-或者重构释放路径。
-```
-
-------
+最后 put 会同步进入回调，因此要把回调再取锁和等待的依赖接到调用者已有锁上。本模块避免这个环的方法是锁外归还且 release 不重新取得表锁；非拥有索引采用别的配对协议时，必须重新说明谁取得、谁接管、谁释放。
 
 ### 9.7.2\_锁组合设计时要写清楚的注释
 
-建议每个复杂 kref 对象都写一段锁说明。
-
-例如：
+对完整模块，可以在代码旁写出下列中文约定。它们描述真实实现，不能只保留“由 lock 保护”而省略对应地址与责任：
 
 ```c
 /*
- * Lifetime:
- *   - kref protects struct my_obj memory.
- *   - my_obj_list holds one reference while obj is published.
- *   - my_obj_lookup_get() returns obj with a reference held.
- *
- * Locking:
- *   - my_obj_list_lock protects my_obj_list and obj->node.
- *   - obj->lock protects obj->state and mutable fields.
- *
- * Lock order:
- *   - my_obj_list_lock -> obj->lock.
- *
- * Removal:
- *   - Set state to MY_OBJ_DYING under locks.
- *   - Remove obj from my_obj_list.
- *   - Drop the list reference after unlocking.
- *
- * Release:
- *   - obj must not be on my_obj_list.
- *   - release does not take my_obj_list_lock.
+ * 存储：发布者最初一份，表在发布成功时新增一份，lookup成功另交付一份。
+ * 集合：table_lock保护object_table及每个成员node；id发布以后不再改变。
+ * 字段：obj->lock保护state与completed，所有相关读写遵守同一规则。
+ * 顺序：需要嵌套时先table_lock、后obj->lock；业务请求不得反向查表。
+ * 撤下：持两锁写DYING并摘链；只有实际摘下才在解锁后归还表份额。
+ * 参数：按对象地址撤下的调用者另持独立份额，覆盖整个调用。
+ * 回收：普通最后put同步调用release；它不再取得上述锁，回收前锁访问已结束。
+ * 范围：无异步硬件或worker，只有初始化内的同步实验；不允许重新发布同一对象。
  */
 ```
 
-中文可以写成：
-
-```text
-生命周期：
-    kref 保护 my_obj 内存；
-    obj 发布到全局 list 后，list 持有一份引用；
-    lookup_get 成功返回时，调用者持有一份引用。
-
-锁：
-    my_obj_list_lock 保护全局 list 和 obj->node；
-    obj->lock 保护 state 和可变字段。
-
-锁顺序：
-    my_obj_list_lock -> obj->lock。
-
-删除：
-    先设置 DYING；
-    再从 list 删除；
-    解锁后释放 list 引用。
-
-释放：
-    release 时对象必须已经不在 list 中；
-    release 不再拿 my_obj_list_lock。
-```
-
-这种注释比单纯写：
-
-```text
-protected by lock
-```
-
-有用得多。
-
-------
+代码发生变化时重新核对这些句子。例如新增一个不持对象锁的字段读取、新增一个回调中的查表，都会使原声明失真；注释不能成为忽略新路径的理由。
 
 ### 9.7.3\_本章检查清单
 
-写 kref + 锁代码时，逐项检查：
+沿一次完整操作回答下面的问题，能把答案落到具体字段、函数和分支才算完成：
 
-```text
-1. 哪把锁保护集合关系？
-2. 哪把锁保护对象字段？
-3. 对象挂入集合时，集合是否持有引用？
-4. lookup 是否在集合锁内完成？
-5. lookup 是否在锁内 get？
-6. 离开锁后使用对象，是否已经持有引用？
-7. 持有引用后访问字段，是否仍然按字段锁规则加锁？
-8. remove 是否先阻止新 lookup？
-9. remove 是否先 unlink，再 put 集合引用？
-10. put 是否可能在锁内触发 release？
-11. release 是否会拿当前已经持有的锁？
-12. release 是否可能睡眠？
-13. 最后 put 是否可能发生在中断/软中断上下文？
-14. obj->lock 是否嵌入在对象内？
-15. 是否存在 put 后 unlock obj->lock 的 UAF 风险？
-16. 是否定义了全局锁顺序？
-17. 是否有路径反向加锁？
-18. 是否错误地用 kref 替代字段锁？
-19. 是否错误地用锁替代长期引用？
-20. 是否需要 kref_put_mutex/kref_put_lock，还是普通 put 更清楚？
-```
+1. 哪些字段发布前固定，哪些会并发变化，各自由什么保护？
+2. 查找的地址窗口覆盖到取得完成了吗，计数为正由谁保证？
+3. 集合到底拥有一份还是只作索引，发布失败与重复移除由谁归还？
+4. 对象锁自己所在的存储，是否有覆盖每次 lock/unlock 的期限？
+5. 嵌套顺序是否在全部调用路径一致，包括同步回调与隐藏的查表函数？
+6. 最后归还可能来自哪些上下文，release 的锁、睡眠、等待与回收是否都适用？
+7. 成员撤下、业务门关闭和已有执行者退出是否被错误合并，接口保证具体在何时成立？
+8. 行为检查、顺序替身、前端编译和目标实际运行各自证明了什么，哪些尚未完成？
 
-最重要的问题是：
-
-```text
-对象为什么还活着？
-字段为什么不会被并发改乱？
-集合为什么不会留下悬挂指针？
-release 会在哪个上下文执行？
-```
-
-------
+不需要为了通过清单给每个对象增加更多锁或更多状态。单一锁、分步双锁和嵌套双锁都可以建立正确协议，选择依据是需要保证的不变量、允许的窗口与实际代价。
 
 ## 9.8\_本章小结
 
-kref 和锁的组合可以压缩成四句话：
+本章把“对象还在”和“这次操作一致”拆成两条证明，再通过取得与归还把它们连接起来：集合窗口让地址安全交到独立份额手里，份额覆盖对象锁的使用，业务锁让检查和更新形成完整决定，最后归还则把当前上下文交给回调。
 
-```text
-kref 保护对象内存生命周期；
-锁保护对象字段和集合关系；
-lookup 时锁保护 get 前窗口；
-remove 时先 unlink，再 put 集合引用。
-```
+回看两份完整服务程序：9.2 在清入口后再关闭对象门，用原入口份额覆盖中间窗口；9.6 按集合锁→对象锁绑定撤下与关闭决定，代价是等待对象锁时会占着集合锁。9.4 的非拥有索引又改变了最后归还规则，必须让回调接管已经取得的索引锁。它们不是三个可任意拼接的代码片段，而是三套需要完整采用的协议。
 
-不要写成：
+做三项渐进练习。先给完整链表模块增加第二个不同编号对象，预测哪个锁会被共享、哪个锁独立；再让第二个对象使用相同编号，检查失败者仍保留自己的初始份额；最后在纸上把 request 改成异步排队，列出新接收责任、拒绝回滚、关闭入口与等待退出还缺哪些状态。前两项可对照已覆盖的宿主分支，第三项仅是设计练习，不能沿用同步模块日志宣称异步退出已经实现。
 
-```text
-有 kref，所以不需要锁。
-```
-
-也不要写成：
-
-```text
-有锁，所以锁外也能用裸指针。
-```
-
-正确模型是：
-
-```text
-锁内证明对象有效；
-锁内获得引用；
-锁外靠引用保证对象不释放；
-访问字段仍然遵守字段锁；
-撤销对象时先阻止新 lookup；
-最后一个 put 才 release。
-```
-
-本章最关键的一句话：
-
-```text
-锁把对象安全地交到 kref 手里；kref 让对象活到使用者 put 为止。
-```
-
-也可以写成：
-
-```text
-锁解决“能不能安全拿到引用”；
-kref 解决“拿到引用后对象能不能活着”。
-```
-
-这就是 kref 与锁组合的核心工程模型。
-
-------
+下一章讨论 RCU 与 kref：取得前的地址窗口不再总是由排他的集合锁提供，回收顺序也会改变，但“自己的一份从哪里来、何时离开保护、谁负责最后回收”的问题仍要逐步回答。
 
 专题导航：[kref 引用计数机制章节大纲](大纲.md)。
 

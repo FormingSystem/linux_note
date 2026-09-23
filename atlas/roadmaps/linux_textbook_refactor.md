@@ -286,3 +286,5 @@ B04af 完成[P09 9.3.7～9.3.9](../../knowledge/linux/object_lifetime/kref/P09_k
 B04ag 完成[P09 9.4 最后归还](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md#9.4.5_kref_put_mutex%28%29_的典型模式)，复用完整非拥有索引模块，按实际慢路径重查、回调接锁和上下文比较普通/特殊归还；保留原阅读旁注并校正边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.96_B04ag最后归还与回调接锁)记录证据及未执行项；继续 9.5，P09 仍 pending。
 
 B04ah 完成[P09 9.5 调用上下文](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md#9.5.5_对象锁内只做决定_实际_put_尽量放到锁外)，明确中断参数不自动拥有引用、关闭标志不产生份额，以及嵌入锁、等待环与业务停止的分别保证。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.97_B04ah归还上下文与关闭票据)记录验证边界；继续 9.6～9.8，P09 仍 pending。
+
+B04ai 完成[P09 完整链表服务与章末收束](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md#9.6.1_一个完整的锁_+_kref_对象模板)，全章进入作者 validated，人工状态不变。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.98_B04ai完整链表服务与锁组合收束)记录六组宿主检查和 ARM 前端边界；下一项 P10 RCU 组合。
