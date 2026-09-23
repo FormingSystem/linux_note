@@ -202,6 +202,8 @@ ONCE/屏障源码定义
 
 ## 1.14\_配套入口
 
+[子系统边界参考](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P10_子系统边界_误用诊断与选型.md#10.1.1_有发布取得为什么仍会拼出两轮字段)用跨轮覆盖轨迹区分CPU顺序、修改资格与寿命；普通内存模型不替代DMA所有权、MMIO门铃到达和设备完成协议。固定memory-barriers.txt的dma示例及默认I/O属性下accessor规则，和Documentation/driver-api/device-io.rst的posted write说明分别承担相关证据，不把当前UP配置当作设备顺序已验证。
+
 [隐式顺序教材](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P07_锁_调度_中断与隐式顺序.md#7.7.1_把业务条件和任务状态分开)沿W0～W4区分业务条件、等待队列登记与任务可运行性；固定memory-barriers.txt支撑锁、失败加锁、中断、schedule和两种唤醒屏障的不同保证。C解释器十种动作排列只验证登记空窗，不是LKMM或调度器模拟；wait_event快速检查后的prepare重检与当前无bookmark路径，另见等待模块导读。
 
 [原子RMW教材](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P06_原子RMW_顺序后缀与条件成功.md#6.5_条件操作失败路径为什么最危险)按固定Documentation/atomic_t.txt区分无返回/有返回操作、条件失败、try_cmpxchg期望值回写和before/after_atomic加强范围；保存的原始文档Git对象与固定提交一致。完整C++材料选择成功acquire、失败relaxed，四工作者40,000次更新仅为宿主标准线程证据，不能代替Linux条件失败契约或herd7结果。

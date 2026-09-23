@@ -2986,15 +2986,15 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P10_子系统边界_误用诊断与选型.md",
       "baseline_sha256": "b108db52fb0926974c97fd553d7dd55a030976539c3ebe6b578cbdb61d109ad9",
       "lines": 146,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05k冷读十节并以跨轮覆盖、DMA门铃与完成、超时对象寿命校正诊断边界；固定文档核对，引用既有完整C++正例，不新增设备或错误并发执行。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/大纲.md",
       "baseline_sha256": "6721cad365e9192aa87d0b424a19f01aedf410838d0d27a05cdd4bd458a6cac8",
       "lines": 62,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05k全篇核对十章真实入口、先修缺口链和各实验不同证据能力，保留跨专题权威归属及人工评审状态；版本导读仍独立待审。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P01_为什么需要_RCU.md",
