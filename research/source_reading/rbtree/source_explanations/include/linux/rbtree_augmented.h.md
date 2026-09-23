@@ -692,3 +692,31 @@ __rb_change_child_rcu(struct rb_node *old, struct rb_node *new,
 
 
 父色编码相对保存的 6.1 原文有实际语句差异，见[固定版本比较](../../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md#29.4_怎样读历史版本而不混用证据)。本页仍按当前固定提交的加法写法，不反向改写历史原文。
+
+## 1.6\_颜色位与父地址掩码
+
+[布局导读 T2](../../../navigation/P07_节点布局与编码状态导读.md#7.2_沿一个节点的成员周期读写字段)需要同时读父与颜色。下面来自固定 include/linux/rbtree_augmented.h，中文 Doxygen 为仓库补充。
+
+```c
+/** 固定颜色编码：零为红，一为黑；不是任意业务状态枚举。 */
+#define	RB_RED		0
+#define	RB_BLACK	1
+
+/** __rb_parent - 仓库阅读说明：从有效的打包整型值还原父地址。 */
+#define __rb_parent(pc)    ((struct rb_node *)(pc & ~3))
+
+/** 以下整数形式只看最低颜色位，不验证编码是否合法。 */
+#define __rb_color(pc)     ((pc) & 1)
+#define __rb_is_black(pc)  __rb_color(pc)
+#define __rb_is_red(pc)    (!__rb_color(pc))
+/** 以下节点形式会读取字段，因此必须传入存活的非 NULL 节点。 */
+#define rb_color(rb)       __rb_color((rb)->__rb_parent_color)
+#define rb_is_red(rb)      __rb_is_red((rb)->__rb_parent_color)
+#define rb_is_black(rb)    __rb_is_black((rb)->__rb_parent_color)
+```
+
+实现原理：父地址掩掉低两位，颜色只用其中最低一位；这不赋予第二低位一个通用业务含义。rb_set_parent 保留的是 rb_color 读出的最低位，rb_set_parent_color 直接使用调用者给定的新颜色，二者都不是任意低位标记保存器。合法对齐父地址与 0/1 相加不会进位到父地址部分；这是当前加法写法与按位或在这些前提下等价的原因，不是可以忽略输入条件的理由。
+
+游离标记是整个字段等于自身地址，最低位为零并不代表它应当参加红红冲突修复。理论上的黑色 NIL 也不意味着 rb_is_black(NULL) 合法；该宏先解引用 rb。具体算法必须先依赖分支前提确认节点有效，再读颜色。源文件中快速直接还原红父的操作还要求红色零位前提，见 [rb_red_parent](../../lib/rbtree.c.md#1.1_rb_red_parent的红色前提)。
+
+可修改性：改颜色编码、对齐或宏类型会联动所有更新路径；手动发明第二低位的用途可能被保色换父丢弃。返回[布局导读](../../../navigation/P07_节点布局与编码状态导读.md#7.3_不要从一组位推出另一种状态)和[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。

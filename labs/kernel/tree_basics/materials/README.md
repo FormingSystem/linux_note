@@ -100,3 +100,5 @@ domains: [c_language, data_structures]
 [ordered_jobs.cpp](ordered_jobs.cpp)在[P08 业务契约实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#8.2.7_把排序契约变成可观察结果)中用 C++17 有序集合保存任务指针，观察复合键、下界、同时间组与改期摘接；标准库不作为 Linux rbtree 实现替身，不验证分配失败回滚或性能。
 
 [root_initializers.c](root_initializers.c)在[P08 根值实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#2%29_观察根值复制与对象存活)中直接包含固定源码的类型头，观察根值浅复制、缓存入口和块内匿名对象寿命。只验证赋值及地址关系，不模拟插入，不运行红黑更新或并发回收。
+
+[parent_color_word.c](parent_color_word.c)在[P08 父色编码实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#8.4.3_为什么颜色可以使用指针低位存储)中用明确位宽的整数观察对齐、红黑位、空父、游离自指与窄化丢高位；不会把这些数值转换成宿主指针，不是 ARM 或并发执行。

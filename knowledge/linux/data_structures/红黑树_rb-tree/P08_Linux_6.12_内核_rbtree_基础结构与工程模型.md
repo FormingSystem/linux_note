@@ -272,7 +272,7 @@ after clear: index=0 objects=6 changed=5:4
 
 ## 8.3\_Linux\_6.12\_rbtree\_源码文件总览
 
-这一节应该先把 **Linux 6.12 自己的结构讲稳**，再把它和教材模型对齐。下面这版按“源码结构 → 字段语义 → 工程意图 → 教材对比 → 总结心智模型”的顺序讲解。
+任务排序已经确定，接下来沿“源码结构 → 字段语义 → 工程意图 → 教材对照”识别存储位置。[布局状态导读](../../../../research/source_reading/rbtree/navigation/P07_节点布局与编码状态导读.md#7.1_先识别三个存储对象)负责版本化阅读顺序，具体定义只在对应实现标题展开。
 
 ### 8.3.1\_include/linux/rbtree\_types.h\_基础类型定义
 
@@ -290,56 +290,11 @@ struct rb_root_cached
 
 等价视图如下：
 
-```c
-struct rb_node {
-	unsigned long __rb_parent_color;
-	struct rb_node *rb_right;
-	struct rb_node *rb_left;
-};
-
-struct rb_root {
-	struct rb_node *rb_node;
-};
-
-struct rb_root_cached {
-	struct rb_root rb_root;
-	struct rb_node *rb_leftmost;
-};
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.1_rb_node的三个字段与对齐)按原位置保存；下面继续用字段关系解释本场景。
 
 源代码如下所示：
 
-```c
-struct rb_node {
-	unsigned long  __rb_parent_color;
-	struct rb_node *rb_right;
-	struct rb_node *rb_left;
-} __attribute__((aligned(sizeof(long))));
-/* 这个对齐看起来可能没有意义，但据说 CRIS 需要它 */
-
-struct rb_root {
-	struct rb_node *rb_node;
-};
-
-/*
- * 缓存最左节点的红黑树。
- *
- * 我们没有缓存最右节点，这是基于内存占用与能够
- * 从 O(1) rb_last() 中受益的潜在用户数量之间的权衡。
- * 这样做并不值得；需要这个功能的用户始终可以显式
- * 实现这套逻辑。
- *
- * 此外，想同时缓存两个指针的用户可能会觉得这有点
- * 不对称，但这是可以接受的。
- */
-struct rb_root_cached {
-	struct rb_root rb_root;
-	struct rb_node *rb_leftmost;
-};
-
-#define RB_ROOT (struct rb_root) { NULL, }
-#define RB_ROOT_CACHED (struct rb_root_cached) { {NULL, }, NULL }
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.1_rb_node的三个字段与对齐)按原位置保存；下面继续用字段关系解释本场景。
 
 这三个结构分别承担不同职责：
 
@@ -424,13 +379,7 @@ graph TD
 
 Linux 中的 `struct rb_node` 定义如下：
 
-```c
-struct rb_node {
-	unsigned long  __rb_parent_color;
-	struct rb_node *rb_right;
-	struct rb_node *rb_left;
-} __attribute__((aligned(sizeof(long))));
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.1_rb_node的三个字段与对齐)按原位置保存；下面继续用字段关系解释本场景。
 
 字段可以拆开看：
 
@@ -519,7 +468,7 @@ graph TD
 __attribute__((aligned(sizeof(long))))
 ```
 
-源码注释中也说：
+源码注释还提到 CRIS，即 Linux 曾支持的一种处理器架构；这里引用它说明该对齐有历史平台背景，并不要求读者先掌握这个架构：
 
 ```c
 /* 这个对齐看起来可能没有意义，但据说 CRIS 需要它 */
@@ -528,7 +477,7 @@ __attribute__((aligned(sizeof(long))))
 从算法理解角度，可以先建立这个印象：
 
 ```text
-节点地址因为对齐，低位通常不会被真实地址使用；
+节点地址满足本实现的对齐约束时，最低两位为零；
 
 Linux 借用这些低位保存颜色信息；
 
@@ -541,14 +490,14 @@ Linux 借用这些低位保存颜色信息；
 
 教材红黑树写成：
 
-```bash
+```c
 node->parent
 node->color
 ```
 
 Linux 里面变成：
 
-```bash
+```c
 node->__rb_parent_color
 ```
 
@@ -590,9 +539,9 @@ graph TD
 ```text
 每个节点最多两个孩子；
 
-左子树小于当前节点；
+唯一键时，左子树小于当前节点、右子树大于当前节点；
 
-右子树大于当前节点；
+允许比较等价的对象时，中序顺序为非递减，旋转可能把相等对象放在两侧；
 
 插入和删除仍然围绕旋转、染色、父子关系调整展开。
 ```
@@ -602,7 +551,7 @@ graph TD
 ```text
 Linux 不替你保存 key；
 
-Linux 不替你比较大小；
+Linux 不定义业务比较关系；辅助接口可以调用使用者提供的比较函数；
 
 Linux 不把 parent/color 明面拆成两个字段。
 ```
@@ -613,11 +562,7 @@ Linux 不把 parent/color 明面拆成两个字段。
 
 普通红黑树根结构非常简单：
 
-```c
-struct rb_root {
-	struct rb_node *rb_node;
-};
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.2_rb_root保存外部入口槽)按原位置保存；下面继续用字段关系解释本场景。
 
 它只有一个字段：
 
@@ -640,9 +585,7 @@ graph TD
 
 源码中提供了空树初始化宏：
 
-```c
-#define RB_ROOT (struct rb_root) { NULL, }
-```
+[两个初始化宏的固定定义](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.4_两个空根初始化器)集中保存；下文的展开式继续说明 C 语义。
 
 也就是：
 
@@ -687,9 +630,7 @@ rb_root 只保存根节点指针。
 
 Linux rbtree 中定义了一个非常短的宏：
 
-```c
-#define RB_ROOT (struct rb_root) { NULL, }
-```
+[两个初始化宏的固定定义](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.4_两个空根初始化器)集中保存；下文的展开式继续说明 C 语义。
 
 它不是宏函数，而是**对象式宏**。
 
@@ -725,11 +666,7 @@ RB_ROOT
 
 `struct rb_root` 的定义很简单：
 
-```c
-struct rb_root {
-	struct rb_node *rb_node;
-};
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.2_rb_root保存外部入口槽)按原位置保存；下面继续用字段关系解释本场景。
 
 一棵空红黑树，本质上就是：
 
@@ -883,9 +820,7 @@ root = { NULL, };
 
 所以 Linux 写成：
 
-```c
-#define RB_ROOT (struct rb_root) { NULL, }
-```
+[两个初始化宏的固定定义](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.4_两个空根初始化器)集中保存；下文的展开式继续说明 C 语义。
 
 这样 `RB_ROOT` 展开后是一个**类型明确的结构体值表达式**。
 
@@ -996,18 +931,11 @@ struct rb_root root = RB_ROOT;
 
 源码里还有一个 cached rbtree 的初始化宏：
 
-```c
-#define RB_ROOT_CACHED (struct rb_root_cached) { {NULL, }, NULL }
-```
+[两个初始化宏的固定定义](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.4_两个空根初始化器)集中保存；下文的展开式继续说明 C 语义。
 
 对应结构是：
 
-```c
-struct rb_root_cached {
-	struct rb_root rb_root;
-	struct rb_node *rb_leftmost;
-};
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.3_rb_root_cached增加一个最左入口)按原位置保存；下面继续用字段关系解释本场景。
 
 所以：
 
@@ -1218,12 +1146,7 @@ independent values: copy_empty=1 block_kept=1
 
 `struct rb_root_cached` 是普通 rbtree 的增强版本：
 
-```c
-struct rb_root_cached {
-	struct rb_root rb_root;
-	struct rb_node *rb_leftmost;
-};
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.3_rb_root_cached增加一个最左入口)按原位置保存；下面继续用字段关系解释本场景。
 
 它包含两个部分：
 
@@ -1249,9 +1172,7 @@ graph TD
 
 源码中对应的初始化宏是：
 
-```c
-#define RB_ROOT_CACHED (struct rb_root_cached) { {NULL, }, NULL }
-```
+[两个初始化宏的固定定义](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.4_两个空根初始化器)集中保存；下文的展开式继续说明 C 语义。
 
 也就是：
 
@@ -1284,7 +1205,7 @@ Linux 缓存了 leftmost；
 Linux 没有缓存 rightmost。
 ```
 
-原因不是不能做，而是不值得。
+这是固定实现对空间与潜在用户数量的取舍，不是最右缓存永远没有价值。调用者若经常获取最大对象，可以另行维护相应入口及更新规则。
 
 普通 `rb_root` 查找最小节点时，需要从根开始一路向左：
 
@@ -1390,7 +1311,7 @@ Linux 源码注释中的判断是：
 
 ```mermaid
 graph TD
-	rb_user_obj["业务对象<br/>例如 VMA / timer / epitem"]
+	rb_user_obj["业务对象<br/>例如本章待处理任务"]
 	rb_user_key["业务 key"]
 	rb_user_data["业务数据"]
 	rb_embedded_node["内嵌 struct rb_node"]
@@ -1474,9 +1395,7 @@ rb_entry 负责从树节点找回业务对象。
 
 [include/linux/rbtree.h](../../../../research/source_reading/linux/include/linux/rbtree.h)
 
-```c
-#define	rb_entry(ptr, type, member) container_of(ptr, type, member)
-```
+[rb_entry 的固定定义](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.11_父地址与业务地址的两种还原)转给 container_of；它不取得对象引用。
 
 老传统了，这和内核链表操作时一个套路。参考[`container_of`：通过成员地址反推结构体地址](../../../foundations/c_language/gnu_extensions/C_language_extension.md#1.3.2_container_of_通过成员地址反推结构体地址)
 
@@ -1529,13 +1448,7 @@ graph TD
 
 Linux 的节点则是：
 
-```c
-struct rb_node {
-	unsigned long  __rb_parent_color;
-	struct rb_node *rb_right;
-	struct rb_node *rb_left;
-};
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.1_rb_node的三个字段与对齐)按原位置保存；下面继续用字段关系解释本场景。
 
 示意图如下：
 
@@ -1828,11 +1741,7 @@ graph TD
 
 Linux 的普通根结构只有：
 
-```c
-struct rb_root {
-	struct rb_node *rb_node;
-};
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.2_rb_root保存外部入口槽)按原位置保存；下面继续用字段关系解释本场景。
 
 示意图如下：
 
@@ -1866,9 +1775,7 @@ Linux 的 `rb_root` 只负责：
 保存根节点指针。
 ```
 
-这也是为什么 Linux rbtree 的插入和查找不像教材那样“一步到位”。
-
-因为 Linux 根本没有保存比较函数，也不知道你的 key 在哪里。
+根没有保存比较策略，因此每次使用必须能取得业务比较关系。可以手写搜索，也可以把比较函数传给 rb_find/rb_add 等辅助接口；不要把“根不保存策略”误读为“没有带搜索的入口”。
 
 ------
 
@@ -1886,7 +1793,7 @@ Linux 的 `rb_root` 只负责：
 | 根结构             | 可能包含 root / nil / size / compare  | `struct rb_root` 只保存 `rb_node`                 |
 | 最小节点缓存       | 教材通常不强调                        | `struct rb_root_cached` 可缓存 `rb_leftmost`      |
 | 比较逻辑           | 树库可能负责                          | 使用者自己负责                                    |
-| 插入接口           | 可能封装成 `insert(tree, key, value)` | 用户搜索 + `rb_link_node()` + `rb_insert_color()` |
+| 插入接口           | 可能封装成 `insert(tree, key, value)` | 手写搜索后挂接修复，或使用带比较函数的辅助接口 |
 | 业务对象关系       | 节点就是业务数据                      | 业务对象内嵌 `rb_node`                            |
 | 设计目标           | 教学清晰、算法完整                    | 低开销、可嵌入、适合内核大量对象                  |
 
@@ -1914,7 +1821,7 @@ graph TD
 	rb_linux_side --> rb_linux_embed["rb_node 嵌入业务对象"]
 	rb_linux_side --> rb_linux_min_root["rb_root 极简"]
 	rb_linux_side --> rb_linux_cached["可选缓存 rb_leftmost"]
-	rb_linux_side --> rb_linux_user_cmp["用户自己比较和搜索"]
+	rb_linux_side --> rb_linux_user_cmp["用户定义比较，手写或辅助搜索"]
 ```
 
 ------
@@ -1971,6 +1878,8 @@ Linux rbtree 只维护节点之间的红黑树结构关系。
 
 `include/linux/rbtree.h` 是普通 rbtree 使用者最常接触的头文件。
 
+阅读接口表时先区分动词：parent/entry 还原父或业务地址，EMPTY_ROOT 读根是否为空，EMPTY_NODE 读节点的游离约定，CLEAR_NODE 写该约定。它们都不负责完整对象寿命；具体根与标记的差别在 8.4.8～8.4.10 就地验证。
+
 它提供以下类别的接口和宏：
 
 ```text
@@ -2015,7 +1924,6 @@ cached rbtree：
 	rb_find()
 	rb_find_add()
 	rb_find_add_rcu()
-	rb_find()
 	rb_find_rcu()
 	rb_find_first()
 	rb_next_match()
@@ -2145,7 +2053,7 @@ include/linux/rbtree_augmented.h；它可继续调用这里的缺黑修复。
 
 Linux 6.12 的 `lib/rbtree.c` 是普通 rbtree 的核心实现文件，源码中包含插入、删除、旋转、遍历、替换和 augmented rbtree 相关实现。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
 
-`lib/rbtree.c` 还包含 lockless lookup 相关说明：更新树结构中 `rb_left`、`rb_right` 指针时需要使用 `WRITE_ONCE()`，并且程序顺序上不能临时制造树结构环；这样不能保证无锁遍历一定看到完整树，但能保证遍历只看到有效元素并且不会陷入循环。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
+`lib/rbtree.c` 还包含 lockless lookup 相关说明：更新树结构中 `rb_left`、`rb_right` 指针时需要使用 `WRITE_ONCE()`，并且程序顺序上不能临时制造树结构环；这项说明只讨论遵守写序的孩子下行路径，不保证查询完整，也不覆盖任意父链遍历；对象寿命、读侧取得和写者串行化仍须由调用者保护。离开这些前提，不能仅凭 WRITE_ONCE 声称任意无锁访问安全。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
 
 这说明 Linux rbtree 源码不仅实现红黑树算法，还考虑了工程可见性问题：
 
@@ -2180,7 +2088,7 @@ rb_node 嵌入业务结构体；
 
 通过 rb_entry() 或 container_of() 还原业务对象；
 
-使用者自己实现 search 和 insert；
+传统手写模型由使用者实现 search 和 insert；本版也有接收比较函数的辅助入口；
 
 锁由使用者负责；
 
@@ -2284,17 +2192,13 @@ rbtree.rst：
 
 ## 8.4\_Linux\_rbtree\_的数据结构设计
 
+类型关系已经建立，现在把容易误用的几个值拆开验证：打包父色怎样还原，孩子链接如何服从比较，根入口与节点标记各自能说明什么。下面的实验检验表示，不再次实现一套平衡算法。
+
 ### 8.4.1\_struct\_rb\_node\_的字段组成
 
 Linux 6.12 中，`struct rb_node` 的核心字段是：
 
-```c
-struct rb_node {
-	unsigned long __rb_parent_color;
-	struct rb_node *rb_right;
-	struct rb_node *rb_left;
-};
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.1_rb_node的三个字段与对齐)按原位置保存；下面继续用字段关系解释本场景。
 
 它只保存红黑树结构信息：
 
@@ -2410,7 +2314,7 @@ unsigned long __rb_parent_color;
 	parent 指针主体。
 
 低位：
-	颜色标志和内部状态位。
+	最低一位保存颜色；不能自行给第二低位附加通用状态语义。
 ```
 
 示意如下：
@@ -2438,24 +2342,13 @@ Linux 6.12 的 `rbtree.h` 中，`rb_parent(r)` 通过对 `__rb_parent_color` 执
 
 ```text
 rb_set_parent_color(node, parent, color)
-	= parent 地址 | color 标志。
+	= 对齐父地址转为 unsigned long 后加上 0 或 1；
+	这与按位或只在合法对齐和颜色前提下等价。
 ```
 
 Linux 6.12 的 `rbtree_augmented.h` 中定义了 `RB_RED`、`RB_BLACK`、`rb_color()`、`rb_is_red()`、`rb_is_black()`、`rb_set_parent()`、`rb_set_parent_color()` 等底层颜色与父指针辅助逻辑。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree_augmented.h))
 
-这种设计的工程收益是：
-
-```text
-减少一个字段；
-
-减小 rb_node 结构体大小；
-
-提高节点密度；
-
-改善缓存局部性；
-
-减少大量内核对象嵌入 rb_node 时的内存成本。
-```
+以本次 ARM 前端所检查的四字节指针与 unsigned long 为例，三个字段共十二字节；若再用独立的四字节颜色字段加三个指针，则为十六字节。大量业务对象各嵌入一份链接时，这部分空间差会累积。但外围结构还可能有填充，减少字节也不自动等于缓存未命中更少或程序更快；实际布局与负载仍需测量。
 
 代价是：
 
@@ -2479,56 +2372,122 @@ Linux 6.12 的 `rbtree_augmented.h` 中定义了 `RB_RED`、`RB_BLACK`、`rb_col
 
 ### 8.4.3\_为什么颜色可以使用指针低位存储
 
-颜色可以放入指针低位，前提是 `struct rb_node` 的地址满足对齐要求。
+把整数地址写成二进制来看，四字节对齐意味着它能被 4 整除，最低两位为零。例如父地址 `0x1000` 的低两位为 `00`，黑色编码为 1；相加得到 `0x1001`，掩去低两位又回到 `0x1000`。前提是整型足以表示完整地址，而且对象确实满足对齐。不能先丢掉高位，再指望清低位把地址修回来。
 
-Linux 6.12 的 `struct rb_node` 带有 `aligned(sizeof(long))` 对齐属性；源码注释还提到该对齐与特定架构需求有关。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree_types.h))
+这里有三种不同的值，先预测再运行：
 
-当对象按机器字对齐时，有效地址的低若干位固定为 0。红黑树颜色只需要极少标志位，因此可以把这些低位用于颜色编码。
+| 情况 | 打包字段 | 应怎样理解 |
+| --- | --- | --- |
+| 父地址为 0x1000 的黑节点 | 0x1001 | 取父后才得到 0x1000，不能直接把 0x1001 当指针 |
+| 无父的黑根 | 1 | 根的整个打包字段不为零，但取父后为零 |
+| 自身地址为 0x2000 的游离节点 | 0x2000 | 整个字段是游离约定；低位虽为零，不把它当在树红节点 |
 
-可以理解为：
+固定版本中红为 0、黑为 1，**颜色只占最低一位**。取父清低两位，不等于另外一位就是“是否在树里”或某种通用内部状态。空节点约定比较的是整个字段与自身地址；实际宏的区别见[颜色位实现](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md#1.6_颜色位与父地址掩码)和[游离约定](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.8_游离标记不等于成员搜索)。
 
-```text
-真实 parent 地址：
-	低位为 0。
+下面以整数模拟 32 位和 64 位地址空间，不把数值转成宿主指针，也不模拟内存分配。这样可以在 Windows 的 LLP64 环境中观察位运算，而不会把真实 64 位指针塞进较短的 unsigned long。LLP64 指该环境的 long 仍为 32 位、指针为 64 位；这与当前 32 位 ARM Linux 的等宽关系不同。
 
-编码后的 __rb_parent_color：
-	高位仍然是 parent 地址；
-	低位写入颜色标志。
+程序用 `uint64_t` 承载模型值；`UINT32_MAX` / `UINT64_MAX` 分别给出相应无符号位宽的上限，`UINT64_C(...)` 为常量选择相应类型，避免先用较窄类型计算掩码。`PRIx64` 是十六进制打印这种整数的格式宏。`assert` 检查本次观察的前提，运行此实验不要定义会关闭断言的 `NDEBUG`。
+
+```c
+#include <assert.h>
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+
+/* 抽象地址整数模型，不把整数转换成宿主指针。 */
+static bool encode_parent(uint64_t parent, unsigned color, unsigned width,
+                          uint64_t *word)
+{
+    const uint64_t limit = width == 32 ? UINT32_MAX : UINT64_MAX;
+    if ((width != 32 && width != 64) || color > 1 ||
+        parent > limit || (parent & UINT64_C(3)) != 0)
+        return false;
+    *word = parent + color;
+    return true;
+}
+
+static uint64_t parent_part(uint64_t word)
+{
+    return word & ~UINT64_C(3);
+}
+
+static unsigned color_part(uint64_t word)
+{
+    return (unsigned)(word & UINT64_C(1));
+}
+
+int main(void)
+{
+    uint64_t word = 0;
+    assert(encode_parent(UINT64_C(0x1000), 1, 32, &word));
+    printf("black child: word=0x%" PRIx64 " parent=0x%" PRIx64
+           " color=%u\n", word, parent_part(word), color_part(word));
+
+    assert(encode_parent(0, 1, 32, &word));
+    printf("black root: word=0x%" PRIx64 " parent=0x%" PRIx64 "\n",
+           word, parent_part(word));
+
+    /* 自指是完整字段相等的游离约定，不是额外的一位。 */
+    const uint64_t self = UINT64_C(0x2000);
+    word = self;
+    printf("detached marker: self_match=%d low_color=%u\n",
+           word == self, color_part(word));
+
+    const uint64_t wide_parent = UINT64_C(0x100002000);
+    const bool fit32 = encode_parent(wide_parent, 0, 32, &word);
+    const bool fit64 = encode_parent(wide_parent, 0, 64, &word);
+    printf("wide address: fit32=%d fit64=%d\n",
+           fit32, fit64);
+    printf("bad truncation loses address: %d\n",
+           (uint64_t)(uint32_t)wide_parent != wide_parent);
+
+    unsigned cases = 0;
+    for (unsigned width = 32; width <= 64; width += 32) {
+        for (uint64_t parent = 0; parent < 65536; parent += 4) {
+            for (unsigned color = 0; color < 2; ++color) {
+                assert(encode_parent(parent, color, width, &word));
+                assert(parent_part(word) == parent && color_part(word) == color);
+                ++cases;
+            }
+        }
+        const uint64_t limit = width == 32 ? UINT32_MAX : UINT64_MAX;
+        assert(encode_parent(limit - 3, 1, width, &word));
+        assert(parent_part(word) == limit - 3);
+    }
+    assert(!encode_parent(UINT64_C(0x1001), 0, 32, &word));
+    assert(!encode_parent(0, 2, 32, &word));
+    assert(!encode_parent(0, 0, 16, &word));
+    printf("round trips: %u\n", cases);
+    return 0;
+}
 ```
 
-读取 parent 时清除低位：
+从仓库根目录运行：
 
-```text
-parent = __rb_parent_color & ~低位掩码
+```bash
+gcc -std=c11 -Wall -Wextra -Werror -pedantic \
+    labs/kernel/tree_basics/materials/parent_color_word.c -o parent_color_word
+./parent_color_word
 ```
 
-读取 color 时查看低位：
+Windows 可将输出指定为 `parent_color_word.exe`。完整材料为 [parent_color_word.c](../../../../labs/kernel/tree_basics/materials/parent_color_word.c)，预期输出：
 
 ```text
-color = __rb_parent_color & 颜色掩码
+black child: word=0x1001 parent=0x1000 color=1
+black root: word=0x1 parent=0x0
+detached marker: self_match=1 low_color=0
+wide address: fit32=0 fit64=1
+bad truncation loses address: 1
+round trips: 65536
 ```
 
-这个设计必须遵守几个规则：
+`0x100002000` 无法装入 32 位，所以模型拒绝，而不是静默变成 `0x2000`。随后那次显式缩窄转换故意展示丢高位的反例，程序没有解引用这个错误地址。有效编码中 parent 低两位为零、color 只取 0/1，因此加法不会向地址部分产生进位。循环检查有限地址集合的往返，末尾补最高对齐地址和非法颜色、对齐、位宽；有限检查仍不能替代这个位级推导。
 
-```text
-不能直接使用 __rb_parent_color 作为 parent；
+修改实验时，可以把四字节对齐条件放宽到两字节，再试父地址 `0x1002`。取父仍清两位，就会丢掉真实地址中的一位，这说明编码与解码必须共享同一对齐前提。再试颜色 2：现有模型应拒绝它，不要通过扩大颜色范围来掩盖错误。最后说明为什么 `rb_is_black(NULL)` 不能用来验证理论上的黑色空叶子——节点形式的宏先读字段，必须已经知道节点有效。
 
-不能设置 parent 时破坏 color；
+实际 Linux 操作仍使用内核辅助接口：普通取父清标志，保色换父只保存颜色位，设置新父色同时覆盖两者；它们不自动更新父亲的孩子槽。完整成员周期的写入者与存储地址见[布局状态导读](../../../../research/source_reading/rbtree/navigation/P07_节点布局与编码状态导读.md#7.2_沿一个节点的成员周期读写字段)。这个整数模型不证明真实指针转换、缓存行为、ARM 执行或并发可见顺序。
 
-不能设置 color 时破坏 parent；
-
-调试时需要先解码；
-
-所有修改必须通过内核辅助函数或宏完成。
-```
-
-因此，后续阅读源码时要记住：
-
-```text
-__rb_parent_color 是编码字段，不是普通字段。
-```
-
-------
 
 ### 8.4.4\_rb\_left\_与\_rb\_right\_的含义
 
@@ -2555,7 +2514,7 @@ struct demo_rb_item {
 };
 ```
 
-如果调用者规定：
+先考虑调用者要求唯一键，并拒绝重复插入的情况：
 
 ```text
 左子树 key < 当前 key
@@ -2573,10 +2532,10 @@ struct demo_rb_item {
 	进入 rb_right；
 
 新 key 等于当前 key：
-	按业务规则处理重复 key。
+	拒绝重复，或返回已有对象。
 ```
 
-rbtree 核心不会检查这个规则。
+若允许比较等价的对象，上面的严格不等式要改成中序非递减关系；插入时把相等对象送到右边，不保证旋转后它们永远只在右边。也可以像任务实验一样加唯一编号形成复合键。比较器须在树的整个使用期间保持一致，rbtree 核心不会替业务检查这个规则。
 
 如果调用者写错比较逻辑：
 
@@ -2609,11 +2568,7 @@ BST 排序语义由调用者负责。
 
 它的结构非常简单：
 
-```c
-struct rb_root {
-	struct rb_node *rb_node;
-};
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.2_rb_root保存外部入口槽)按原位置保存；下面继续用字段关系解释本场景。
 
 语义是：
 
@@ -2703,12 +2658,7 @@ O(log n)
 
 `struct rb_root_cached` 通过缓存最左节点解决这个问题：
 
-```c
-struct rb_root_cached {
-	struct rb_root rb_root;
-	struct rb_node *rb_leftmost;
-};
-```
+[固定类型定义与字段说明](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.3_rb_root_cached增加一个最左入口)按原位置保存；下面继续用字段关系解释本场景。
 
 其中：
 
@@ -2882,7 +2832,7 @@ RB_CLEAR_NODE() 只是删除后的节点状态标记。
 对象暂时保留但节点已从树中移除时，如何标识状态？
 ```
 
-示例语义：
+下列是调用者已经保护对象寿命及成员变化之后的判断片段：`EEXIST` 表示已存在，`ENOENT` 表示未找到，内核接口按约定返回它们的负值。它们本身不是并发保护。
 
 ```c
 if (!RB_EMPTY_NODE(&item->node))
@@ -2960,3 +2910,5 @@ RB_EMPTY_NODE / RB_CLEAR_NODE：
 ```
 
 ---
+
+本章现在可以从业务键、嵌入字段、根入口和编码值解释对象如何被组织。用三个小程序分别核对排序契约、根值赋值和父色整数编码后，继续 [P09 嵌入成员与使用接口](P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md)追踪成员地址怎样还原为业务对象；版本化字段入口回到[布局状态导读](../../../../research/source_reading/rbtree/navigation/P07_节点布局与编码状态导读.md#7.2_沿一个节点的成员周期读写字段)。返回[大纲](大纲.md#1.1_沿问题进入现有章节)。

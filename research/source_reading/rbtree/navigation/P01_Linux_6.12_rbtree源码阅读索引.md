@@ -30,6 +30,7 @@ domains: [linux, source_reading]
 
 | 要回答的问题 | 模块导读 | 唯一实现标题 |
 | --- | --- | --- |
+| 节点、根和编码值由谁读写 | [布局状态 T0～T4](P07_节点布局与编码状态导读.md#7.2_沿一个节点的成员周期读写字段) | [类型与对齐](../source_explanations/include/linux/rbtree_types.h.md#1.1_rb_node的三个字段与对齐)、[父与业务地址](../source_explanations/include/linux/rbtree.h.md#1.11_父地址与业务地址的两种还原)、[颜色掩码](../source_explanations/include/linux/rbtree_augmented.h.md#1.6_颜色位与父地址掩码) |
 | 根为空与节点带游离标记有何不同 | [根值实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#2%29_观察根值复制与对象存活)；[删除后观察](P04_对象摘除与缺黑修复导读.md#4.4_怎样观察地址身份与退出条件) | [根读取与游离标记](../source_explanations/include/linux/rbtree.h.md#1.8_游离标记不等于成员搜索) |
 | 为什么返回某个相等对象，而非唯一对象 | [一次查询](P02_查找路径与返回边界导读.md#2.2_按一次查找定位源码) | [rb_find](../source_explanations/include/linux/rbtree.h.md#1.1_rb_find的任意匹配) |
 | 为什么相等后还要向左 | [等价区间](P02_查找路径与返回边界导读.md#2.3_等价区间与后继协作) | [rb_find_first](../source_explanations/include/linux/rbtree.h.md#1.2_rb_find_first的候选保存) |

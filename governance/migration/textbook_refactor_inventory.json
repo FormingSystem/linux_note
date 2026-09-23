@@ -5,6 +5,20 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md",
+      "baseline_sha256": "41a75d79c355845b7a6855d60d507c6f925515335268bfae01210c019994def7",
+      "lines": 87,
+      "state": "validated",
+      "reason": "B03ah 新增固定节点布局的概念导读与唯一类型讲解，按 T0～T4 组织状态地址；定义、宏、链接与元数据核对，不冒充目标运行或人工评审。"
+    },
+    {
+      "path": "research/source_reading/rbtree/navigation/P07_节点布局与编码状态导读.md",
+      "baseline_sha256": "6b6f5f62afb8465142e189eccb4c0146b028e78e856bf1e578b391c3c325546c",
+      "lines": 74,
+      "state": "validated",
+      "reason": "B03ah 新增固定节点布局的概念导读与唯一类型讲解，按 T0～T4 组织状态地址；定义、宏、链接与元数据核对，不冒充目标运行或人工评审。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P36_红黑删除与缺黑位置传播.md",
       "baseline_sha256": "0a4c50ffc46d92e67730a6834bb184612e5c6592d969b349915f034913ffc88f",
       "lines": 2974,
@@ -1594,8 +1608,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md",
       "baseline_sha256": "8a5ee2865aeae37229bb67500910ea4c1fab50ea0c5fc9d2ccdc0221df4b8e60",
       "lines": 3355,
-      "state": "pending",
-      "reason": "B03af 完成 8.1/8.2；B03ag 已完整冷读后半，保留根初始化推导并补 C 实验，修正空树/游离契约；父色布局、重复实现片段和其余结构单元仍待整改，整章保持 pending。"
+      "state": "validated",
+      "reason": "B03af/ag/ah 全部单元实际冷读，保留原推导与批注；完整排序、根值与父色实验覆盖表示边界，固定定义进入源码实现并核对，有限检查不等于人工评审或目标执行。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md",

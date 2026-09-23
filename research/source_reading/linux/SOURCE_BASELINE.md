@@ -414,6 +414,8 @@ C11 程序串行重放相等键旋转、旧入口漏查与错误写序成环，�
 
 同日补核 P08 根值和游离边界：类型头的两个初始化宏只构造空根值，rbtree.h 的 RB_EMPTY_ROOT 使用 READ_ONCE 读根，RB_EMPTY_NODE/RB_CLEAR_NODE 读写约定标记。三宏在[rbtree.h 对应标题](../rbtree/source_explanations/include/linux/rbtree.h.md#1.8_游离标记不等于成员搜索)展开。root_initializers.c 直接包含保存的类型头，只运行宿主赋值与地址观察；另以 Clang armv7a-none-eabi 前端检查类型大小、对齐和块内初始化，不等于内核配置构建或 ARM 执行。rb_erase_augmented 的内联入口位于 rbtree_augmented.h，正文已纠正文件归属。
 
+P08 字段单元继续按同一固定提交核对 rbtree_types.h、rbtree.h、rbtree_augmented.h。三个结构、两个空根初始化器、取父/业务还原与颜色宏分别进入[类型实现](../rbtree/source_explanations/include/linux/rbtree_types.h.md#1.1_rb_node的三个字段与对齐)及既有实现页的新增标题；[布局导读](../rbtree/navigation/P07_节点布局与编码状态导读.md#7.2_沿一个节点的成员周期读写字段)以 T0～T4 组织读写者。第二低位不被自行解释为通用成员状态，保色换父只保留最低颜色位。整数模型检查 32/64 位编码，不转换真实宿主指针；当前宿主编译器报告 pointer 八字节、long 四字节，不能冒充 ARM ABI。
+
 ## 1.20\_rbtree插入与父槽证据
 
 沿同一 NXP 固定提交继续核对 include/linux/rbtree.h、rbtree_augmented.h 与 lib/rbtree.c。[插入模块](../rbtree/navigation/P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进)用 I0～I5 对应空槽、红叶、上推与旋转；[修复实现](../rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支)恢复实际分支、变量与 WRITE_ONCE，保留教材原中文推导。新增十五个函数与已有四个查询函数逐语句核对，共十九个函数；父槽助手只在一个实现标题展开，知识正文仍保留机制任务。
