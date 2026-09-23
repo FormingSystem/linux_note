@@ -2265,8 +2265,8 @@
       "path": "knowledge/linux/object_lifetime/kref/P04_kref_三条核心规则.md",
       "baseline_sha256": "6b75af1111de649d11b58e5b1c52fdf984757840bb0f21a835d9b1911a9f7d08",
       "lines": 1120,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04o 全篇20节冷读改写，保留规则/反例/模板/检查职责，核对固定kref.rst直接转交与同锁归零协议；完整复用C程序重验6责任安排和2分配失败，容器/关闭夹具重跑。未运行目标并发，人工状态未动。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md",

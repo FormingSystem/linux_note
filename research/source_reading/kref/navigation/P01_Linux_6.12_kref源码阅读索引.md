@@ -21,6 +21,7 @@ source_version: "6.12.20"
 | 一次创建、共享、归还如何相接 | [普通引用模块](P02_普通引用与归零回调导读.md#2.2_把S0到S5落到状态地址) → [kref 普通接口](../source_explanations/include/linux/kref.h.md#1.2_建立初始引用) |
 | 状态真正存在哪里 | [计数成员](../source_explanations/include/linux/kref.h.md#1.1_计数成员) → [refcount 存储](../source_explanations/include/linux/refcount_types.h.md#1.1_原子存储字段) |
 | 正常归零与异常饱和怎样分流 | [模块边界](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [增减 helper](../source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支) → [告警收敛](../source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和) |
+| 三条规则为何不能机械加减 | [固定文档调用协议](P02_普通引用与归零回调导读.md#2.10_三条规则与两类查找协议)，比较转交、容器持有与归零串行化 |
 | 已持引用为何仍被拒绝 | [业务关闭与引用状态模块](P02_普通引用与归零回调导读.md#2.9_停止业务的外层状态)，普通 kref 不检查 accepting |
 | 取消或拒绝后谁归还 | [外层责任模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [工作票据推演](../../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#%287%29_所有权表要补充失败路径和取消路径)，普通 put 只消耗调用者负责的一份 |
 | 回调里的告警能证明什么 | [外层状态模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [类型清理前提](../../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#3.7.1_release_阶段_对象销毁点)，引用原语不维护节点状态 |
