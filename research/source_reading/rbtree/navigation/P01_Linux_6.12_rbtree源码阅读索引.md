@@ -30,6 +30,7 @@ domains: [linux, source_reading]
 
 | 要回答的问题 | 模块导读 | 唯一实现标题 |
 | --- | --- | --- |
+| 真实子系统怎样组合排序与选择条件 | [调用场景](P10_内核调用场景与选择边界导读.md#10.2_按排序键和业务问题逐项阅读) | [timerqueue](../source_explanations/lib/timerqueue.c.md#1.1_到期时间决定比较顺序)、[fair](../source_explanations/kernel/sched/fair.c.md#1.1_树按虚拟截止时间比较)、[块请求](../source_explanations/block/elevator.c.md#1.1_按逻辑扇区接入请求)、[epoll](../source_explanations/fs/eventpoll.c.md#1.1_文件对象与描述符组成键) |
 | 更新完成后怎样独立检查不变量 | [有界快照实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行有界快照检查器) | 验证目标仍为既有[结构摘除](../source_explanations/include/linux/rbtree_augmented.h.md#1.3_结构摘除与缺黑父槽)与[增强模板](../source_explanations/include/linux/rbtree_augmented.h.md#1.8_通用模板的停止与移交)，模型不是另一份内核实现 |
 | 区间摘要何时更新、何时可以查询 | [增强 A0～A5](P09_子树摘要与增强回调导读.md#9.2_沿A0到A5维护同一份摘要) | [回调模板](../source_explanations/include/linux/rbtree_augmented.h.md#1.8_通用模板的停止与移交)、[插入](../source_explanations/include/linux/rbtree_augmented.h.md#1.10_增强插入只接入旋转回调)、[删除](../source_explanations/include/linux/rbtree_augmented.h.md#1.12_增强删除的两段收尾) |
 | 普通树正确为何首缓存仍可能错误 | [缓存 C0～C6](P08_最左缓存与结构更新导读.md#8.2_沿接入与摘除跟踪C0到C6) | [取首](../source_explanations/include/linux/rbtree.h.md#1.12_缓存取首只读取入口)、[插入](../source_explanations/include/linux/rbtree.h.md#1.13_缓存写入先于插入修复)、[删除](../source_explanations/include/linux/rbtree.h.md#1.14_缓存删除先取后继)、[辅助搜索](../source_explanations/include/linux/rbtree.h.md#1.15_辅助插入如何产生最左标志) |

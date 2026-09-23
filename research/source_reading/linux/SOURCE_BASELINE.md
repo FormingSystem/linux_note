@@ -547,3 +547,24 @@ P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_str
 [P12 有界快照](../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行有界快照检查器)使用 C11 固定容量数组与整数槽号，在访问前识别已知对象、拒绝重复进入，再检查键界、父链、颜色、黑计数、原始载荷重算摘要、计数与缓存身份。十二类样例通过；固定增强算法宿主夹具的 120960 个稳定状态转换为模型后通过联合检查，各状态再注入计数错误与非空摘要错误验证拒绝。固定算法来源与显式位宽适配仍见 1.31，不新增内核原文或另一套实现讲解。
 
 这是已知对象模型和有限输入证据，不验证任意损坏指针、并发快照采集、目标 ABI、RCU/SMP 或内核模块运行。结构与计数同时漏掉对象仍需外部业务台账才能发现，未报错不能超出执行路径与观察边界。
+
+## 1.35\_rbtree实际调用场景证据
+
+本批只读 git show 官方固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，核对以下完整文件，三笔本地实验提交不用于结论。选择性的完整函数讲解按上游路径放入 rbtree/source_explanations，未把临时缓存当作另一份正式源码镜像。
+
+| 上游位置 | 固定文件 Git blob |
+| --- | --- |
+| `kernel/sched/fair.c` | `58ba14ed8fbcb98ef1d2bb6779aae1a51c71e595` |
+| `lib/timerqueue.c` | `cdb9c7658478f0505e2d1bdc8e6ede6a812fa958` |
+| `include/linux/timerqueue.h` | `d306d9dd22073f04bb0106fcf3ba598e87ba9b07` |
+| `include/linux/timerqueue_types.h` | `dc298d0923e3b2f3baeca682c422367635f8d0ad` |
+| `kernel/time/hrtimer.c` | `db9c06bb23116a0d76d972477b40afd43b9b6d8f` |
+| `block/elevator.c` | `43ba4ab1ada7fd2462a44d3582de9e115973e4be` |
+| `block/mq-deadline.c` | `acdc28756d9d778ef4ac5e32cb5a1c363a08827f` |
+| `fs/eventpoll.c` | `1a06e462b6efba8824456cffebad040720c4226a` |
+| `include/linux/interval_tree_generic.h` | `aaa8a0767aa3a512c978d047556af3cee07af66f` |
+| `lib/interval_tree.c` | `3412737ff365ec9c91ac6ffa3fab15cc82896249` |
+
+[场景导读](../rbtree/navigation/P10_内核调用场景与选择边界导读.md#10.2_按排序键和业务问题逐项阅读)串联十八个唯一函数：timerqueue 依 expires 排序，add 的布尔值表示新成最早、del 则表示余队列非空；fair 的 entity_before 按 deadline，资格另由 vruntime 与加权状态判断，pick_eevdf 还处理当前实体及特性分支；elv 按逻辑扇区建索引，mq-deadline 另有 FIFO/批次/方向条件；epoll 注册树用 file/fd 复合键，就绪列表另有状态。interval_tree 使用闭区间相交与最大终点，不能套用 VMA 半开非重叠映射。
+
+十八个函数逐字比较固定文件，定义无重复；只是静态源码证据，没有这些完整子系统的 Kbuild、运行、并发压力或性能测量，外部树未修改。VMA 当前 mm_mt 证据继续沿已有 Maple 基线和 P14，不复制完整范围教程。

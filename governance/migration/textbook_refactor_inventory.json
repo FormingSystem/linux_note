@@ -5,6 +5,48 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/rbtree/source_explanations/fs/eventpoll.c.md",
+      "baseline_sha256": "e970683a14709349be4121e7b8af0f23e4cce72ed0eae44228ab3f164adb88b8",
+      "lines": 111,
+      "state": "validated",
+      "reason": "B03ar 新增调用场景阅读证据，按官方固定对象核对实际比较、返回与候选边界；十八个相关函数精确比对，不代表子系统运行或人工评审完成。"
+    },
+    {
+      "path": "research/source_reading/rbtree/source_explanations/block/elevator.c.md",
+      "baseline_sha256": "1d3c737e2ecab9270b9c8ca7e8358486a66c41e14d32d98042090f78dfd22878",
+      "lines": 88,
+      "state": "validated",
+      "reason": "B03ar 新增调用场景阅读证据，按官方固定对象核对实际比较、返回与候选边界；十八个相关函数精确比对，不代表子系统运行或人工评审完成。"
+    },
+    {
+      "path": "research/source_reading/rbtree/source_explanations/kernel/sched/fair.c.md",
+      "baseline_sha256": "d82eb3f9db92da0dde1c5b847420a620bbc59290432b3cb73a2766576208894a",
+      "lines": 191,
+      "state": "validated",
+      "reason": "B03ar 新增调用场景阅读证据，按官方固定对象核对实际比较、返回与候选边界；十八个相关函数精确比对，不代表子系统运行或人工评审完成。"
+    },
+    {
+      "path": "research/source_reading/rbtree/source_explanations/include/linux/timerqueue.h.md",
+      "baseline_sha256": "6f40ee2e80d686cd781339150a43de880f1ad0deb7758ed1d58dbb9dd2849bb6",
+      "lines": 34,
+      "state": "validated",
+      "reason": "B03ar 新增调用场景阅读证据，按官方固定对象核对实际比较、返回与候选边界；十八个相关函数精确比对，不代表子系统运行或人工评审完成。"
+    },
+    {
+      "path": "research/source_reading/rbtree/source_explanations/lib/timerqueue.c.md",
+      "baseline_sha256": "03ae18fde74af9d75bef983a28f03bace6d6f8258403cc5404e96a75127ebc0f",
+      "lines": 69,
+      "state": "validated",
+      "reason": "B03ar 新增调用场景阅读证据，按官方固定对象核对实际比较、返回与候选边界；十八个相关函数精确比对，不代表子系统运行或人工评审完成。"
+    },
+    {
+      "path": "research/source_reading/rbtree/navigation/P10_内核调用场景与选择边界导读.md",
+      "baseline_sha256": "f38f3c1156e3878f95750a6ccda9ec26db4489714fe07bc99bdc85c5b4c22a7a",
+      "lines": 50,
+      "state": "validated",
+      "reason": "B03ar 新增调用场景阅读证据，按官方固定对象核对实际比较、返回与候选边界；十八个相关函数精确比对，不代表子系统运行或人工评审完成。"
+    },
+    {
       "path": "research/source_reading/rbtree/navigation/P09_子树摘要与增强回调导读.md",
       "baseline_sha256": "2a98260e30c4ba991ce66f7262544559ae3d95698b7ccde4e3b7d04fcbea6818",
       "lines": 81,
@@ -1664,8 +1706,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md",
       "baseline_sha256": "5757b6505f3ff296e4ae6e15c6ef1a6be3d7d72dbb0120e241597c40a4e680f6",
       "lines": 1886,
-      "state": "pending",
-      "reason": "B03am～aq 已冷读并重构 12.1～12.7，联合不变量与误区有完整 C 快照检查及交叉验证；12.8 场景和 12.9 收束仍待处理，保持 pending。"
+      "state": "validated",
+      "reason": "B03am～ar 连续批次实际冷读全篇并完成必要改写：缓存、增强、并发、示例、验证、误区及固定调用场景；完整 C 模型/模块与静态证据完成适用检查，目标模块装卸和各子系统运行仍未执行，人工状态不变。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md",

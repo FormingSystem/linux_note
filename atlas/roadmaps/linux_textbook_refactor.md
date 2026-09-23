@@ -198,3 +198,5 @@ B03ao 完成 P12 并发单元冷读，以[双线程 C 实验](../../knowledge/li
 B03ap 冷读 P12 12.5，按九个原知识单元[回访完整调用者示例](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#12.5_Linux_内核_rbtree_示例代码)，统一 P37 程序的比较函数并收拢重复片段，保留遍历/销毁与寿命边界；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.52_B03ap调用者实例回访与比较收敛)逐项说明去向和重验。下一项 12.6 验证，P12 和全仓仍未完成。
 
 B03aq 完成 P12 12.6/12.7 冷读与改写，用[完整 C 检查器](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行有界快照检查器)建立已知对象、独立摘要、祖先界与错误返回，再以具体反例收束接口误区；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.53_B03aq联合不变量与有限证据)保留验证限制。下一项 12.8 固定内核场景与章末收束，P12/全仓继续。
+
+B03ar 完成 P12 剩余[固定内核场景](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#12.8_Linux_rbtree_在内核中的典型使用场景)和章末收束，核对十份官方固定文件与十八个函数，纠正调度排序、timerqueue 返回、epoll 注册/就绪及范围端点的混同；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.54_B03ar真实调用场景与P12收束)记录版本和未执行项。P12 经连续批次完成实际审查，下一项 P13，树专题与全仓仍未完成。

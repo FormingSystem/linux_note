@@ -629,6 +629,12 @@ mindmap-plugin: basic
     - 🔴 **未校正** rbtree 查询与插入
         - 🔴 **未校正** [rbtree 源码阅读路线](../../research/source_reading/rbtree/大纲.md)
         - 🔴 **未校正** [Linux 6.12 rbtree 源码阅读索引](../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md)
+        - 🔴 **未校正** [内核调用场景与选择边界导读](../../research/source_reading/rbtree/navigation/P10_内核调用场景与选择边界导读.md)
+        - 🔴 **未校正** [timerqueue.c到期顺序与返回值](../../research/source_reading/rbtree/source_explanations/lib/timerqueue.c.md)
+        - 🔴 **未校正** [timerqueue.h读取最早入口](../../research/source_reading/rbtree/source_explanations/include/linux/timerqueue.h.md)
+        - 🔴 **未校正** [fair.c排序资格与候选选择](../../research/source_reading/rbtree/source_explanations/kernel/sched/fair.c.md)
+        - 🔴 **未校正** [elevator.c请求位置索引](../../research/source_reading/rbtree/source_explanations/block/elevator.c.md)
+        - 🔴 **未校正** [eventpoll.c注册对象复合键](../../research/source_reading/rbtree/source_explanations/fs/eventpoll.c.md)
         - 🔴 **未校正** [子树摘要与增强回调导读](../../research/source_reading/rbtree/navigation/P09_子树摘要与增强回调导读.md)
         - 🔴 **未校正** [最左缓存与结构更新导读](../../research/source_reading/rbtree/navigation/P08_最左缓存与结构更新导读.md)
         - 🔴 **未校正** [节点布局与编码状态导读](../../research/source_reading/rbtree/navigation/P07_节点布局与编码状态导读.md)
