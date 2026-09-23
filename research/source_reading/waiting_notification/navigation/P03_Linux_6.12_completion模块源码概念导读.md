@@ -58,6 +58,8 @@ sequenceDiagram
 
 对象寿命的完整应用见[P07 完成与引用模块](../../../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.3.5_completion_场景里的引用归属)：等待者保留独立份额到工作同步退出，超时不自动归还完成方责任。该示例验证的是组合协议，本页的 done 与 swait 状态职责保持独立。
 
+[P22工程契约](../../../../knowledge/linux/object_lifetime/kref/P22_完成事件与等待者工程模板.md#22.1_等待之前先取得合法对象)用同一完整请求继续检查wait输入资格与超时收尾；其[多等待者选择](../../../../knowledge/linux/object_lifetime/kref/P22_完成事件与等待者工程模板.md#22.4_扩展到多个等待者之前)区分广播状态、单次结果发布与对象代次。原completion实现和本模块状态分工不变。
+
 ## 3.6\_源码阅读核对
 
 - done 为何不是布尔值，`UINT_MAX` 又为何不被 wait 递减？
