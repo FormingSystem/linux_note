@@ -2829,6 +2829,6 @@ then return referenced object
 
 专题导航：[kref 引用计数机制章节大纲](大纲.md)。
 
-上一篇：[handoff 所有权转移模型](P07_handoff_所有权转移模型.md)。
+上一篇：[handoff 所有权转移模型](P07_handoff_所有权转移模型.md#7.8_本章小结)。
 
 下一篇：[kref 与锁的组合](P09_kref_与锁的组合.md)。

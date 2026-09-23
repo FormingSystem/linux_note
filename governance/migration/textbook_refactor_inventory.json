@@ -2321,8 +2321,8 @@
       "path": "knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md",
       "baseline_sha256": "6bc766042ca22c53f8db7d93d5f64df9260e48f218df12555b6ac1ce1bf07fad",
       "lines": 2253,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04w 全篇冷读并完成7.1～7.2，复用完整责任槽C程序重验成功/拒绝，修正借用不能异步、take后绝无其他保护与统一失败消耗的概括；7.3以后待改写，仍pending。 B04x 完成7.3九场景及两种队列子单元，完整completion工作模块七组宿主/ARM前端通过，修正通知与退出、timer与queue_work接收和集合份额；7.4以后待收束，真实目标未执行。"
+      "state": "validated",
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04w 全篇冷读并完成7.1～7.2，复用完整责任槽C程序重验成功/拒绝，修正借用不能异步、take后绝无其他保护与统一失败消耗的概括；7.3以后待改写，仍pending。 B04x 完成7.3九场景及两种队列子单元，完整completion工作模块七组宿主/ARM前端通过，修正通知与退出、timer与queue_work接收和集合份额；7.4以后待收束，真实目标未执行。 B04y 完成7.4～7.8，补同一请求双协议完整模块、实际成功失败表、状态/锁/查找边界和练习；十组宿主及ARM前端通过，真实目标未执行。7.1～7.3保留，经三批全篇适用审查完成，人工状态不变。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero().md",

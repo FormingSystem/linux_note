@@ -25,6 +25,7 @@ source_version: "6.12.20"
 | 观察非零后为何还会取得失败 | [条件取得模块](P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有) → [比较循环](../source_explanations/include/linux/refcount.h.md#1.5_条件增加与失败重试)与[kref 入口](../source_explanations/include/linux/kref.h.md#1.7_有效地址上的条件取得) |
 | 三条规则为何不能机械加减 | [固定文档调用协议](P02_普通引用与归零回调导读.md#2.10_三条规则与两类查找协议)，比较转交、容器持有与归零串行化；[交付契约](P02_普通引用与归零回调导读.md#2.12_指定份额的交付与调用者责任)区分原子计数和外部责任槽 |
 | 已持引用为何仍被拒绝 | [业务关闭与引用状态模块](P02_普通引用与归零回调导读.md#2.9_停止业务的外层状态)，普通 kref 不检查 accepting |
+| 队列转交为什么可以不改变计数 | [双协议请求模块](P02_普通引用与归零回调导读.md#2.14_队列责任沿同一份移动) → 应用槽/阶段与 kref 字段分层 |
 | 等待超时以后为何还要保留对象 | [完成与引用组合](P02_普通引用与归零回调导读.md#2.13_完成事件不消费引用) → 等待模块与取消模块分别证明事件和执行退出 |
 | timer 改期与最终退出如何衔接 | [定时器模块](P05_定时器重启与退出导读.md#5.2_从排队到最终关闭) → [改期与同步退出](../source_explanations/kernel/time/timer.c.md#1.1_改期不等于追加一次回调)及[pending 观察](../source_explanations/include/linux/timer.h.md#1.1_pending只观察队列成员) |
 | 管理者如何等借用 worker 退出 | [关闭组合](P02_普通引用与归零回调导读.md#2.11_借用退出与最后归还)，区分同步取消保证与 kref 清理 |
@@ -38,4 +39,4 @@ source_version: "6.12.20"
 | 定义时填值与归零如何对应 | [初始化模块](P02_普通引用与归零回调导读.md#2.6_初始化形式与存储寿命) → [KREF_INIT](../source_explanations/include/linux/kref.h.md#1.6_定义对象时建立计数) → [REFCOUNT_INIT](../source_explanations/include/linux/refcount.h.md#1.4_逐层构造初始值) → [ATOMIC_INIT](../source_explanations/include/linux/types.h.md#1.1_整数外还有一层结构) |
 | 编译属性到底保证什么 | [属性与构建](P02_普通引用与归零回调导读.md#2.5_编译语义与检查器边界) → [signed_wrap](../source_explanations/include/linux/compiler_types.h.md#1.1_检查器属性与构建选项分工)、[must_check](../source_explanations/include/linux/compiler_attributes.h.md#1.1_返回值诊断不是自动清理)、[构建选项](../source_explanations/Makefile.md#1.1_优化选项与函数属性分开核对) |
 
-当前落地普通引用链、定义时初始化、条件取得、两种最后归还锁组合，以及定时器重启/退出的外层组合证据。体系结构原子实现尚未在本研究目录展开；[P05](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.15_本章小结)已按接口职责完成本轮作者审查；[P06](../../../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.12_本章小结)已按资源、异步和回收排序完成本轮作者审查，后续交付与组合章仍须独立推进，不能把源码索引当作全部应用变体已覆盖。
+当前落地普通引用链、定义时初始化、条件取得、两种最后归还锁组合，以及定时器重启/退出的外层组合证据。体系结构原子实现尚未在本研究目录展开；[P05](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.15_本章小结)已按接口职责完成本轮作者审查；[P06](../../../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.12_本章小结)已按资源、异步和回收排序完成本轮作者审查，[P07](../../../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.8_本章小结)也已完成交付协议与完整请求的本轮作者审查，lookup 及后续组合章仍须独立推进，不能把源码索引当作全部应用变体已覆盖。

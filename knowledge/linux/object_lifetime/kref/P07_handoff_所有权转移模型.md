@@ -463,1038 +463,357 @@ dmesg | tail -n 12
 
 ## 7.4\_接口契约\_成功\_失败\_命名和注释
 
-这一组内容不再展开新场景，而是把前面的场景收束成接口契约。
-
-一个 handoff API 至少要写清楚：
-
-```text
-成功是否消费引用；
-失败是否消费引用；
-重复提交、取消、超时时谁 put；
-函数名是否体现 borrow/ref/take；
-注释是否说明成功后调用者还能不能访问对象。
-```
+已经看过真实接收、等待、取消和完成过程，现在把一项接口的边界写下来。接口契约应从实际分支得到，不是先列一张看起来齐全的错误码表，再要求实现去符合它。下面的规则随后由 7.6 的同一请求模块兑现。
 
 ### 7.4.1\_handoff\_成功/失败路径必须写成表
 
-复杂代码里，单靠读代码很难判断引用归属。
+将业务队列限制为一个槽，用 `enqueue_take` 表示成功接管，用 `enqueue_ref` 表示内部追加。它们都不在入队时分配内存，所以本例入队表里没有凭空加入 ENOMEM；内存不足属于更早的创建阶段。
 
-建议为每个 handoff API 写归属表。
+| 接口与结果 | 队列这一份 | 调用者传入的份额 | 之后谁归还 |
+| --- | --- | --- | --- |
+| enqueue_take 成功 | 接管原份额 | 已交出 | 队列出队后转给消费者，再由执行者或失败接管者归还 |
+| enqueue_take 拒绝 | 未取得这次参数份额 | 仍属于调用者 | 调用者可保留、重试或归还 |
+| enqueue_ref 成功 | 内部追加并保留一份 | 原份额保留 | 队列一路和调用者一路分别归还 |
+| enqueue_ref 拒绝 | 内部预留已退回 | 原份额保留 | 调用者仍自行处理原份额 |
 
-例如：
+本例拒绝是槽被占用或请求已经不处于 NEW 状态，返回 `-EBUSY`。每个拒绝发生在实际发布以前，不会出现“返回失败但另一个消费者已经拿走了这一份”的隐藏分支。若某 API 确实允许部分接收或失败仍消费，就必须另写状态和返回契约，不能套用本表。
 
-```c
-int my_queue_take_request(struct my_queue *q, struct my_request *req);
-```
-
-归属表：
-
-| 路径     | 返回值    | 队列是否接管引用 | 调用者是否仍持有引用 | 谁负责 put  |
-| -------- | --------- | ---------------- | -------------------- | ----------- |
-| 入队成功 | 0         | 是               | 否                   | 队列/消费者 |
-| 参数错误 | -EINVAL   | 否               | 是                   | 调用者      |
-| 内存不足 | -ENOMEM   | 否               | 是                   | 调用者      |
-| 已经入队 | -EALREADY | 否               | 是                   | 调用者      |
-
-另一个接口：
-
-```c
-int my_queue_ref_request(struct my_queue *q, struct my_request *req);
-```
-
-归属表：
-
-| 路径     | 返回值    | 队列是否获得新引用 | 调用者是否仍持有原引用 | 谁负责 put              |
-| -------- | --------- | ------------------ | ---------------------- | ----------------------- |
-| 入队成功 | 0         | 是                 | 是                     | 队列和调用者各 put 一次 |
-| 参数错误 | -EINVAL   | 否                 | 是                     | 调用者                  |
-| 内存不足 | -ENOMEM   | 否                 | 是                     | 调用者                  |
-| 已经入队 | -EALREADY | 否                 | 是                     | 调用者                  |
-
-这个表比口头说“这里要注意引用”更有用。
-
-因为它直接回答：
-
-```text
-成功谁 put？
-失败谁 put？
-重复提交谁 put？
-```
-
-------
+还要把“入队成功”与“以后执行成功”分开。队列已经接管以后，消费者向 workqueue 的交付可能再失败；那时接管的是消费者手里的一份，由消费者按执行接口的失败约定归还，不能回头要求已经离开的生产者处理。
 
 ### 7.4.2\_错误路径回滚模型
 
-handoff 最容易漏的是错误路径。
+追加式包装器先 get 候选，然后调用接管式底层接口。接管成功，候选已经属于队列；拒绝，包装器只退回自己刚追加的候选。调用者原份额在两种结果下都存在，因此包装器不能失败时顺便多 put 一次。
 
-典型错误：
+回滚还包括业务状态。最容易证明的安排是先在队列锁内检查所有条件，再一起改变请求阶段和槽地址；如果检查失败，阶段保持原样。本章完整模块采用这个办法，不在发布前随意写 QUEUED，再在不知道是否已被别人观察时改回 NEW。
 
-```c
-kref_get(&obj->ref);
-
-ret = prepare_async(obj);
-if (ret)
-	return ret;       /* 错误：少 put */
-
-ret = queue_work(wq, &obj->work);
-if (ret)
-	return ret;       /* 错误：少 put */
-```
-
-正确写法：
-
-```c
-kref_get(&obj->ref);
-
-ret = prepare_async(obj);
-if (ret)
-	goto err_put;
-
-if (!queue_work(wq, &obj->work)) {
-	ret = -EALREADY;
-	goto err_put;
-}
-
-return 0;
-
-err_put:
-	kref_put(&obj->ref, my_obj_release);
-	return ret;
-```
-
-原则是：
-
-```text
-只要提前 get，而最终没有成功交给接收方，就必须 put 回滚。
-```
-
-可以写成公式：
-
-```text
-get 成功 + handoff 失败 = 当前路径 put
-get 成功 + handoff 成功 = 接收方 put
-```
-
-------
+不要根据惯用写法猜返回值。`queue_work()` 用布尔值表示本次接收，0 是未接收；自有 `enqueue_take()` 则约定 0 成功、负数拒绝。应先把底层返回转换为当前接口自己的结果，再处理归属，避免把成功当失败而退回已交付的一份。
 
 ### 7.4.3\_成功路径不应该偷偷留下引用
 
-另一类错误是成功路径忘记释放调用者引用。
+失败回滚全部正确，仍可能在成功路径泄漏。创建者的一份经过 enqueue_ref 后并未消失；如果函数直接返回且没有把这一份交给任何新拥有者，也没有归还，队列最终退出仍会留下它。
 
-例如创建对象并提交：
+若创建者要观察结果，可以明确保留到执行结束后再归还；若只负责产生请求，可以直接采用 enqueue_take，把初始份额交走。在两种情况下，决定是否 put 的依据都是“我当前还负责哪一份”，而不是“上一步返回了成功”。
 
-```c
-req = my_request_alloc();
-if (!req)
-	return -ENOMEM;
-
-ret = my_queue_ref_request(q, req);
-if (ret) {
-	kref_put(&req->ref, my_request_release);
-	return ret;
-}
-
-return 0;       /* 可能错误：初始引用还在当前路径手里 */
-```
-
-如果 `my_queue_ref_request()` 是内部 get 模型，那么成功后：
-
-```text
-队列持有新引用；
-当前路径仍然持有 alloc/init 的初始引用。
-```
-
-如果当前路径不再需要它，就必须：
-
-```c
-kref_put(&req->ref, my_request_release);
-return 0;
-```
-
-完整写法：
-
-```c
-req = my_request_alloc();
-if (!req)
-	return -ENOMEM;
-
-ret = my_queue_ref_request(q, req);
-if (ret) {
-	kref_put(&req->ref, my_request_release);
-	return ret;
-}
-
-/*
- * 当前路径不再需要 req。
- * 释放创建者引用。
- * 队列仍然持有自己的引用。
- */
-kref_put(&req->ref, my_request_release);
-
-return 0;
-```
-
-如果不想多一次 get/put，可以把接口设计成 take 模型：
-
-```c
-req = my_request_alloc();
-if (!req)
-	return -ENOMEM;
-
-ret = my_queue_take_request(q, req);
-if (ret) {
-	kref_put(&req->ref, my_request_release);
-	return ret;
-}
-
-/*
- * 成功后队列接管初始引用。
- * 当前路径不能再访问 req。
- */
-return 0;
-```
-
-这两种都可以，但不能混写。
-
-------
+同样，take 成功后再按 ref 模式 put，会消耗接收方正在使用的那一份。引用数可能只是提前正常到零，没有立即出现下溢告警；一次正常 release 日志并不能证明交付正确。
 
 ### 7.4.4\_函数命名要表达引用语义
 
-handoff 代码最好从函数名就能看出引用关系。
-
-不建议使用含糊名字：
-
-```c
-my_queue_add(obj);
-my_submit(obj);
-my_register(obj);
-```
-
-这些名字看不出：
-
-```text
-函数是否 get？
-函数是否 take？
-失败是否消费引用？
-成功后调用者还能不能访问？
-```
-
-建议使用更明确的名字。
+名字帮助读者提出正确的问题，接口注释和实现负责给出答案。已有系统 API 可能没有 take/ref 后缀，仍必须按它的真实契约使用；自有封装则可以把关键归属直接写进名字，减少调用者猜测。
 
 #### (1)\_borrow\_语义
 
-```c
-my_obj_dump(obj);
-my_obj_check(obj);
-my_obj_format(obj, buf);
-```
-
-含义：
-
-```text
-不保存 obj；
-不 get；
-不 put；
-调用者保证 obj 调用期间有效。
-```
-
-------
+`request_dump` 或 `request_format` 可以约定只在给定借用窗口中使用，不保存到窗口以外、不代还调用者的引用。若它确实会保存，就不能因为名字像打印函数而继续沿用只借用的文档；应明确新的保活或转交协议。
 
 #### (2)\_get/ref\_语义
 
-```c
-my_queue_ref_obj(q, obj);
-my_worker_get_obj(worker, obj);
-my_obj_get_for_async(obj);
-```
-
-含义：
-
-```text
-函数或接收方会获得一份新引用；
-调用者原引用不受影响；
-双方各自 put。
-```
-
-------
+`enqueue_ref` 表示队列内部建立独立份额，成功保留、拒绝回滚，调用者原份额不受影响。调用者不再额外为这个同一接收动作 get。若还有另一个独立使用者，需要另列那一份，不能混在同一个隐含“额外保护”里。
 
 #### (3)\_take/consume\_语义
 
-```c
-my_queue_take_obj(q, obj);
-my_request_submit_take(req);
-my_obj_consume(obj);
-```
-
-含义：
-
-```text
-成功后接收方接管调用者当前引用；
-调用者成功后不能再访问 obj；
-失败时通常仍由调用者负责 put，除非文档另有说明。
-```
-
-------
+`enqueue_take` 和 `execute_take` 都说明接收参数代表的一份，具体接收时点与拒绝行为仍要写清。本章二者都成功消费、失败保留；其他接口可能无条件消费。不能看到相同后缀就跳过失败路径核对。
 
 ### 7.4.5\_注释必须写清楚成功/失败归属
 
-好的 handoff 注释应该直接描述引用归属。
-
-例如：
+给完整模块里的两种入口写注释，应能直接指导一个不知道实现细节的调用者：
 
 ```c
-/**
- * my_queue_take_request - enqueue request and consume caller reference
- * @q: target queue
- * @req: request owned by caller
- *
- * On success, the queue owns the caller's reference to @req.
- * The caller must not access @req after success.
- *
- * On failure, the caller still owns @req and must drop it.
+/*
+ * enqueue_take：参数指向有效请求，调用者对传入的一份负责。
+ * 成功时这一份归队列；失败不消费，调用者仍负责。
+ * 成功发布后接收者可能提前执行；本函数不提供额外存活期。
  */
-int my_queue_take_request(struct my_queue *q, struct my_request *req);
-```
 
-中文可写成：
-
-```text
-成功后队列接管调用者传入的引用。
-成功返回后调用者不能再访问 req。
-失败时队列不接管引用，调用者仍负责 put。
-```
-
-另一个例子：
-
-```c
-/**
- * my_queue_ref_request - enqueue request with a new queue reference
- * @q: target queue
- * @req: request referenced by caller
- *
- * On success, the queue holds a new reference to @req.
- * The caller keeps its original reference.
- *
- * On failure, no queue reference is kept.
+/*
+ * enqueue_ref：调用者原份额在成功和失败两种返回下都保持。
+ * 成功时队列另有一份；失败时内部预留已经归还。
+ * 持引用只保护存储，读写业务结果仍遵守相应完成与同步协议。
  */
-int my_queue_ref_request(struct my_queue *q, struct my_request *req);
 ```
 
-中文可写成：
-
-```text
-成功后队列持有一份新引用。
-调用者仍然持有原引用。
-失败时队列不持有引用。
-```
-
-这种注释比“注意引用计数”有用得多。
-
-------
+取消、超时和重复提交若属于接口职责，也要标出它们是否消费以及谁完成尚未结束的工作。把“注意引用计数”换成这些具体承诺，才能在以后改动返回路径时发现协议已经变化。
 
 ## 7.5\_组合边界\_状态\_锁\_lookup\_和\_release
 
-这一组内容用来防止 handoff 和其他生命周期问题混在一起。
-
-handoff 只回答“引用交给谁”，但真实代码还要同时处理：
-
-```text
-状态字段什么时候改；
-集合结构由哪把锁保护；
-对象是不是通过 lookup 得到；
-最后是否能收敛到 release。
-```
-
-这些问题不能互相替代。
+责任明确以后，还要保证交付的状态地址和引用地址都有效。下面四项并不增加一种新的 handoff 类型，而是检查这次交付与周围机制的连接是否完整。
 
 ### 7.5.1\_handoff\_和状态字段的顺序
 
-如果对象有状态字段：
+完整模块采用 NEW、QUEUED、RUNNING 三个请求阶段：创建时写 NEW；入队锁内检查为 NEW 才能同时写 QUEUED 并发布槽；出队锁内清槽、写 RUNNING。每个请求只执行一次，因此 RUNNING 后即便还持有观察者引用，也不允许重新入队。这是本例的单次请求协议，不是 kref 自动限制。
 
-```c
-enum my_req_state {
-	REQ_NEW,
-	REQ_QUEUED,
-	REQ_RUNNING,
-	REQ_DONE,
-};
-```
-
-那么状态修改要和 handoff 顺序匹配。
-
-take 模型下，成功后当前路径不能再访问对象。
-
-所以状态必须在 handoff 前设置：
-
-```c
-req->state = REQ_QUEUED;
-
-ret = my_queue_take_request(q, req);
-if (ret) {
-	req->state = REQ_NEW;
-	return ret;
-}
-
-/*
- * 成功后不能再访问 req。
- */
-return 0;
-```
-
-如果状态必须在锁内和入队一起完成，则放到接收方函数内部：
-
-```c
-int my_queue_take_request(struct my_queue *q, struct my_request *req)
-{
-	mutex_lock(&q->lock);
-
-	if (req->state != REQ_NEW) {
-		mutex_unlock(&q->lock);
-		return -EINVAL;
-	}
-
-	req->state = REQ_QUEUED;
-	list_add_tail(&req->node, &q->list);
-
-	mutex_unlock(&q->lock);
-	return 0;
-}
-```
-
-调用者成功后不再改状态。
-
-错误写法：
-
-```c
-ret = my_queue_take_request(q, req);
-if (ret)
-	return ret;
-
-req->state = REQ_QUEUED;     /* 错误 */
-```
-
-原因：
-
-```text
-成功后 req 已经不归当前路径所有。
-```
-
-------
+尚未发布的私有输入可以由创建者准备，已经共享的队列阶段则在指定队列锁下转换。take 成功以后，发送者若只交出了唯一份额，连设置“已提交”这种看似无害的写入也没有存活依据；若还有另一份，仍须遵守阶段字段的同步规则。
 
 ### 7.5.2\_handoff\_和锁的关系
 
-handoff 经常发生在锁保护的集合结构里。
+`queue->lock` 同时保护槽和请求阶段，使“检查能否入队—写阶段—发布地址”成为一个受保护窗口。`request->ref` 记录独立引用数，保护窗口之外的存储寿命。前者不能让出锁后的裸指针自动存活，后者不能让两个线程无锁修改同一个槽。
 
-例如：
+本例只让每个请求属于同一个业务队列。若允许不同队列同时接收同一个请求，各队列自己的锁就不能互相保护同一个 phase，必须重新选择共同保护或明确的节点/归属结构，不能直接复制当前函数用于多队列。
 
-```text
-list
-hash
-xarray
-idr
-queue
-```
-
-锁保护的是：
-
-```text
-对象是否在集合中；
-对象状态字段是否一致；
-入队/出队的结构修改。
-```
-
-kref 保护的是：
-
-```text
-对象内存生命周期。
-```
-
-这两个不能互相替代。
-
-入队示例：
-
-```c
-int my_queue_ref_request(struct my_queue *q, struct my_request *req)
-{
-	kref_get(&req->ref);
-
-	mutex_lock(&q->lock);
-
-	if (req->state != REQ_NEW) {
-		mutex_unlock(&q->lock);
-		kref_put(&req->ref, my_request_release);
-		return -EINVAL;
-	}
-
-	req->state = REQ_QUEUED;
-	list_add_tail(&req->node, &q->list);
-
-	mutex_unlock(&q->lock);
-	return 0;
-}
-```
-
-这里：
-
-```text
-kref_get()：给队列准备生命周期引用；
-mutex：保护状态检查和 list 修改；
-kref_put()：失败时回滚引用。
-```
-
-不要把它理解成：
-
-```text
-有 kref，所以 list 操作不需要锁。
-```
-
-这是错误的。
-
-kref 不保护 list。
-
-kref 只保证对象内存不被释放。
-
-------
+在私有工作队列上，worker 写 result，共享模式的创建者等 flush 返回后才读。这里没有使用计数快照猜“别人已经写完”，也没有因自己持一份就省略结果同步。
 
 ### 7.5.3\_handoff\_和\_lookup\_的关系
 
-handoff 通常发生在已经拿到对象之后。
+查找先回答如何得到一个有效地址和可用份额，handoff 再决定如何把指定份额交走。如果 lookup_get 已给调用者一份，可以直接 take 给后续队列；若队列 ref 接口内部追加，调用者还要归还 lookup 得到的原份额。
 
-lookup 解决的是：
-
-```text
-如何从集合里找到对象，并安全获得引用。
-```
-
-handoff 解决的是：
-
-```text
-拿到引用之后，如何交给别人。
-```
-
-这两个问题不要混在一起。
-
-例如：
-
-```c
-obj = my_obj_lookup_get(id);
-if (!obj)
-	return -ENOENT;
-
-ret = my_obj_schedule_work(obj);
-kref_put(&obj->ref, my_obj_release);
-return ret;
-```
-
-这里有两个引用动作：
-
-```text
-my_obj_lookup_get()：
-    从集合中查找对象，并给当前路径一份引用。
-
-my_obj_schedule_work()：
-    给 work 路径一份引用。
-```
-
-当前路径最后 put 自己从 lookup 得到的引用。
-
-不要写成：
-
-```c
-obj = my_obj_lookup_raw(id);
-my_obj_schedule_work(obj);
-```
-
-除非 `my_obj_lookup_raw()` 的调用期间有锁或其他机制保证对象有效，并且 `my_obj_schedule_work()` 里面的 `kref_get()` 是安全的。
-
-换句话说：
-
-```text
-handoff 不能弥补 lookup 阶段的悬挂指针问题。
-```
-
-------
+无保护 raw lookup 不能因下一步马上 get 就变安全。必须在查找保护尚有效且满足正引用或条件取得前提时接到独立份额，再离开窗口；只有明确允许的借用型下游，才能在窗口内完成使用而不独立 get。下一章专门逐步展开这一取得窗口。
 
 ### 7.5.4\_handoff\_和\_release\_的关系
 
-handoff 最终必须收敛到 release。
+一次移交不增加总责任，追加会增加，归还才减少。所有已经结束的持有者都归还后，正常最后 put 触发 release；回调不需要知道对象经过了几个队列，但对象的清理协议必须已经覆盖入口、异步借用和资源退出。
 
-所有引用无论怎么转移，最后都必须满足：
-
-```text
-每一份 get 出来的引用都有对应 put；
-每一份转移出去的引用最终由接收方 put；
-最后一个 put 调用 release。
-```
-
-release 不关心对象曾经经过多少次 handoff。
-
-它只关心：
-
-```text
-当前已经没有任何持有者。
-```
-
-所以 handoff 设计得好不好，可以用 release 是否可达来判断。
-
-如果某条路径 handoff 后没有人 put：
-
-```text
-release 永远不执行 -> 泄漏
-```
-
-如果某条路径 handoff 后双方都 put：
-
-```text
-release 提前执行 -> UAF / underflow
-```
-
-如果 handoff 成功后当前路径还访问：
-
-```text
-对象可能已经被接收方 put 并 release -> UAF
-```
-
-------
+“release 可达”只是必要观察，不能单独判断设计好坏。少一份可能让它过早可达，多一份可能让它永远不可达；即使回收次数恰好为 1，也可能在某个旧借用者退出以前执行。验收需要同时看最后清理次数、此前访问是否合法以及退出之后有没有残留责任。
 
 ## 7.6\_完整模型\_同一请求对象的两种设计
 
-前面的小节分别讲单个场景，这里把它们收束成一个完整请求对象。
-
-同一个业务可以有两种合法设计：
-
-```text
-移动引用模型：引用沿着创建者 -> 队列 -> 消费者 -> work 一路转移。
-共享引用模型：每个长期持有者各自 get，使用结束各自 put。
-```
-
-关键不是哪种更“高级”，而是一个接口只能选择一种语义，并且所有成功/失败路径都按同一语义闭环。
+现在把前面分开的动作接成同一段可构建程序。业务队列使用一个槽，目的是突出责任转交；它不是一个高吞吐队列实现。每个请求从业务槽出队以后只提交一次到私有 workqueue，两个实验轮次完全收束以后才进入下一轮，不导出外部并发接口。
 
 ### 7.6.1\_一个完整请求对象\_handoff\_示例
 
-请求对象：
+完整 [note_kref_queue.c](../../../../labs/kernel/object_lifetime/materials/note_kref_queue.c)包含创建、两种入队、出队、异步执行、拒绝归还和退出，避免把未定义的队列或完成函数留给读者补齐：
 
 ```c
-struct my_request {
-	struct kref ref;
-	struct list_head node;
-	struct work_struct work;
-	struct completion done;
-	spinlock_t lock;
-	int status;
-	bool completed;
+// SPDX-License-Identifier: GPL-2.0
+#include <linux/errno.h>
+#include <linux/kref.h>
+#include <linux/module.h>
+#include <linux/mutex.h>
+#include <linux/slab.h>
+#include <linux/workqueue.h>
+
+enum request_phase { REQUEST_NEW, REQUEST_QUEUED, REQUEST_RUNNING };
+struct queued_request {
+    int result;
+    enum request_phase phase;
+    struct kref ref;
+    struct work_struct work;
 };
-```
+struct request_queue {
+    struct mutex lock;
+    struct queued_request *slot; /* 非空槽拥有一份；只在此队列处理这些请求。 */
+};
+static struct request_queue inbox;
+static struct workqueue_struct *execution_queue;
+static unsigned int release_calls; /* 演示每处理完一个对象才开始下一个。 */
 
-release：
-
-```c
-static void my_request_release(struct kref *ref)
+static void request_release(struct kref *ref)
 {
-	struct my_request *req;
-
-	req = container_of(ref, struct my_request, ref);
-
-	WARN_ON(!list_empty(&req->node));
-
-	kfree(req);
+    struct queued_request *request = container_of(ref, struct queued_request, ref);
+    ++release_calls;
+    kfree(request);
 }
-```
 
-初始化：
-
-```c
-struct my_request *my_request_alloc(void)
+static void request_put(struct queued_request *request)
 {
-	struct my_request *req;
-
-	req = kzalloc(sizeof(*req), GFP_KERNEL);
-	if (!req)
-		return NULL;
-
-	kref_init(&req->ref);
-	INIT_LIST_HEAD(&req->node);
-	INIT_WORK(&req->work, my_request_workfn);
-	init_completion(&req->done);
-	spin_lock_init(&req->lock);
-
-	req->status = 0;
-	req->completed = false;
-
-	return req;
+    kref_put(&request->ref, request_release);
 }
-```
 
-提交到队列，使用 take 模型：
-
-```c
-int my_request_submit_take(struct my_queue *q, struct my_request *req)
+static void request_worker(struct work_struct *work)
 {
-	mutex_lock(&q->lock);
-
-	if (!list_empty(&req->node)) {
-		mutex_unlock(&q->lock);
-		return -EINVAL;
-	}
-
-	list_add_tail(&req->node, &q->list);
-
-	mutex_unlock(&q->lock);
-
-	/*
-	 * 成功后 q 接管调用者引用。
-	 */
-	return 0;
+    struct queued_request *request = container_of(work, struct queued_request, work);
+    request->result = 42;
+    request_put(request); /* 归还经队列、消费者转来的同一份。 */
 }
-```
 
-调用者：
-
-```c
-int submit_one_request(struct my_queue *q)
+static struct queued_request *request_create(void)
 {
-	struct my_request *req;
-	int ret;
-
-	req = my_request_alloc();
-	if (!req)
-		return -ENOMEM;
-
-	ret = my_request_submit_take(q, req);
-	if (ret) {
-		kref_put(&req->ref, my_request_release);
-		return ret;
-	}
-
-	/*
-	 * 成功后 req 已经交给队列。
-	 * 当前路径不能再访问 req。
-	 */
-	return 0;
+    struct queued_request *request = kzalloc(sizeof(*request), GFP_KERNEL);
+    if (!request)
+        return NULL;
+    request->phase = REQUEST_NEW;
+    kref_init(&request->ref);
+    INIT_WORK(&request->work, request_worker);
+    return request;
 }
-```
 
-队列消费者出队：
-
-```c
-struct my_request *my_queue_pop(struct my_queue *q)
+/* 成功接管参数所代表的一份；失败不消费。参数必须有效且拥有一份。 */
+static int enqueue_take(struct request_queue *queue, struct queued_request *request)
 {
-	struct my_request *req;
-
-	mutex_lock(&q->lock);
-
-	if (list_empty(&q->list)) {
-		mutex_unlock(&q->lock);
-		return NULL;
-	}
-
-	req = list_first_entry(&q->list, struct my_request, node);
-	list_del_init(&req->node);
-
-	mutex_unlock(&q->lock);
-
-	/*
-	 * 队列引用转移给消费者。
-	 */
-	return req;
+    int result = 0;
+    mutex_lock(&queue->lock);
+    if (queue->slot || request->phase != REQUEST_NEW)
+        result = -EBUSY;
+    else {
+        request->phase = REQUEST_QUEUED;
+        queue->slot = request;
+    }
+    mutex_unlock(&queue->lock);
+    return result;
 }
-```
 
-消费者投递 work。
-
-这里使用当前消费者引用转移给 work 的模型：
-
-```c
-int my_request_run_async(struct my_request *req)
+/* 两种返回都保留调用者原份额；成功额外保留队列份额，失败退回预留。 */
+static int enqueue_ref(struct request_queue *queue, struct queued_request *request)
 {
-	if (!queue_work(system_wq, &req->work))
-		return -EALREADY;
-
-	/*
-	 * queue_work 成功后，当前引用交给 work。
-	 * 当前路径不能再访问 req。
-	 */
-	return 0;
-}
-```
-
-但是这个写法有个前提：
-
-```text
-queue_work 成功才消费当前引用；
-queue_work 失败不消费当前引用。
-```
-
-所以调用者必须这样写：
-
-```c
-req = my_queue_pop(q);
-if (!req)
-	return;
-
-ret = my_request_run_async(req);
-if (ret) {
-	/*
-	 * queue_work 失败，work 没有接管引用。
-	 * 当前路径仍然负责 put。
-	 */
-	kref_put(&req->ref, my_request_release);
-	return;
+    int result;
+    kref_get(&request->ref);
+    result = enqueue_take(queue, request);
+    if (result)
+        request_put(request);
+    return result;
 }
 
-/*
- * 成功后 work 接管引用。
- * 当前路径不能再访问 req。
- */
-```
-
-work 回调：
-
-```c
-static void my_request_workfn(struct work_struct *work)
+/* 返回非空时把槽拥有的一份交给消费者，计数不变。 */
+static struct queued_request *dequeue_take(struct request_queue *queue)
 {
-	struct my_request *req;
-
-	req = container_of(work, struct my_request, work);
-
-	spin_lock(&req->lock);
-	req->status = 0;
-	req->completed = true;
-	spin_unlock(&req->lock);
-
-	complete(&req->done);
-
-	/*
-	 * work 路径释放它接管的引用。
-	 */
-	kref_put(&req->ref, my_request_release);
+    struct queued_request *request;
+    mutex_lock(&queue->lock);
+    request = queue->slot;
+    if (request) {
+        queue->slot = NULL;
+        request->phase = REQUEST_RUNNING;
+    }
+    mutex_unlock(&queue->lock);
+    return request;
 }
+
+/* 本例每请求只投递一次；成功消费当前份额，拒绝时仍由消费者持有。 */
+static int execute_take(struct queued_request *request)
+{
+    return queue_work(execution_queue, &request->work) ? 0 : -EIO;
+}
+
+static int run_one(bool shared)
+{
+    struct queued_request *producer = request_create(), *consumer;
+    int result;
+    if (!producer)
+        return -ENOMEM;
+    result = shared ? enqueue_ref(&inbox, producer) : enqueue_take(&inbox, producer);
+    if (result) {
+        request_put(producer);
+        return result;
+    }
+    if (!shared)
+        producer = NULL; /* 只清本地变量，不再通过对象地址访问。 */
+    consumer = dequeue_take(&inbox); /* 本例无其他消费者，成功发布保证非空。 */
+    result = execute_take(consumer);
+    if (result)
+        request_put(consumer); /* 拒绝，消费者仍负责队列转来的一份。 */
+    consumer = NULL;
+    flush_workqueue(execution_queue); /* 无重排，等待执行后才观察或进入下一轮。 */
+    if (producer) {
+        pr_info("note_queue: shared result=%d\n", producer->result);
+        request_put(producer);
+    }
+    return result;
+}
+
+static int __init note_queue_init(void)
+{
+    int result;
+    mutex_init(&inbox.lock);
+    inbox.slot = NULL;
+    execution_queue = alloc_ordered_workqueue("note_queue", 0);
+    if (!execution_queue)
+        return -ENOMEM;
+    result = run_one(false);
+    if (!result)
+        result = run_one(true);
+    destroy_workqueue(execution_queue); /* 初始化内收束两轮，不导出并发入口。 */
+    return result;
+}
+
+static void __exit note_queue_exit(void)
+{
+    pr_info("note_queue: release=%u\n", release_calls);
+}
+
+module_init(note_queue_init);
+module_exit(note_queue_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("同一请求的队列转交与共享引用对照实验");
 ```
 
-这套模型的引用流是：
+第一轮 `run_one(false)` 只移动初始份额。创建者成功发布后把自己的局部变量清为 NULL，之后由 dequeue 的返回值把槽的一份接给 consumer，execute_take 再把同一份交给 worker。计数从初始化到工作结束前一直是一份，最终 worker 归还。如果执行交付失败，consumer 没交出去，由它归还。
 
-```text
-alloc/init：
-    创建者持有初始引用。
+清空 producer/consumer 只是本程序帮助表达归属的写法；它不能把别处复制的裸指针变安全。这里清的是局部变量，不是在交付以后通过可能已释放的对象访问某个成员。工作被接收后可能很快完成，所以 execute_take 的调用方成功后不再解引用 consumer。
 
-submit_take 成功：
-    初始引用从创建者转移给队列。
+这一轮按 S0～S5 追踪：S0 创建初始份额；S1 在业务锁下发布到槽；S2 出队，把同一份移给消费者；S3 接收到 workqueue 或拒绝；S4 执行/拒绝路径归还；S5 最后清理，flush 返回则另行确认执行函数已退出。代码中 phase 只表达业务队列阶段，S0～S5 是阅读用过程编号。
 
-pop 成功：
-    队列引用转移给消费者。
-
-queue_work 成功：
-    消费者引用转移给 work。
-
-workfn 结束：
-    work put。
-    如果这是最后引用，release。
+```mermaid
+flowchart LR
+    P["producer：S0 初始一份"] -->|"S1 enqueue_take 成功，原变量清空"| Q["inbox.slot：持有同一份"]
+    Q -->|"S2 锁内清槽，返回带份额的地址"| C["consumer：接管同一份"]
+    C -->|"S3 execute_take 接收"| W["worker：接管同一份"]
+    C -->|"S3 拒绝，S4 consumer put"| F["S5 release"]
+    W -->|"S4 最后访问后 put"| F
+    L["inbox.lock"] -->|"串行保护 slot 和 phase"| Q
 ```
 
-它的特点是：
-
-```text
-引用一直在移动；
-没有额外 get；
-每一步成功后当前路径都不能继续访问对象；
-失败路径必须由当前仍持有引用的一方 put。
+```mermaid
+sequenceDiagram
+    autonumber
+    participant P as 创建者
+    participant Q as 业务槽与锁
+    participant C as 消费者
+    participant W as worker
+    P->>Q: S1 成功入队并交出初始份额
+    C->>Q: S2 锁内摘除，取得队列份额
+    C->>W: S3 尝试交付
+    alt 成功，worker 可以在提交返回前结束
+        W->>W: 写 result，S4 put，S5 可立即回收
+        W-->>C: 返回接收成功，不再提供对象访问权
+    else 本次未接收
+        W-->>C: 返回拒绝，没有接管参数的一份
+        C->>C: S4 put 自己仍持有的一份
+    end
+    P->>W: flush 确认执行退出，第一轮结束
 ```
 
-------
+图中把逻辑角色分开画；当前模块由同一个初始化线程依次扮演创建者和业务队列消费者，work 由内核异步调度，不能把这张图当成已经实现多生产者/多消费者队列。
+
+在与目标运行内核匹配且已准备好的可写构建环境中：
+
+```bash
+# KDIR 指向匹配目标内核的构建目录，在仓库根目录执行。
+make -C "$KDIR" M="$PWD/labs/kernel/object_lifetime/materials" modules
+sudo insmod labs/kernel/object_lifetime/materials/note_kref_queue.ko
+sudo rmmod note_kref_queue
+dmesg | tail -n 12
+```
+
+正常情况下共享轮输出 `shared result=42`，卸载输出 `release=2`，表示两轮各清理一次。第一轮不能为了输出 result 而在 flush 后继续使用原 producer 地址：那一份早已交出，工作可能已经释放它。仅等待 work 退出不会重新创造对象引用。
+
+本轮 ARM 前端和宿主十组控制检查通过，包含创建失败、执行拒绝、提前/稍后执行、满槽拒绝、重复入队和已消费状态。宿主调度、锁、分配及原子为明确替身，提前执行由替身在 queue_work 返回以前运行回调来安排；未完成目标构建链接、装卸、实际线程竞争或内存序验证。
 
 ### 7.6.2\_同一个场景也可以设计成共享引用模型
 
-上面的例子是 take 模型。
+第二轮 `run_one(true)` 使用同一个对象结构、队列和 worker，只在入队处选择 enqueue_ref。包装器先 get，再调用相同的 take 底层；成功后队列一路拥有新份额，producer 仍有初始份额。队列的一份经出队和工作交付移动，worker 最后 put 时，producer 仍保留对象，因而不会回收。
 
-也可以设计成共享引用模型。
+创建者在 flush 之后读取 result，此时已有执行完成证据和自己的存活依据；读完再 put 初始份额，最终清理就在创建者一侧发生。若工作交付失败，consumer 归还队列的一份，producer 仍须归还原份额，此时 result 仍是创建时的零值，run_one 返回错误。
 
-提交时队列自己 get：
-
-```c
-int my_request_submit_ref(struct my_queue *q, struct my_request *req)
-{
-	kref_get(&req->ref);
-
-	mutex_lock(&q->lock);
-
-	if (!list_empty(&req->node)) {
-		mutex_unlock(&q->lock);
-		kref_put(&req->ref, my_request_release);
-		return -EINVAL;
-	}
-
-	list_add_tail(&req->node, &q->list);
-
-	mutex_unlock(&q->lock);
-	return 0;
-}
-```
-
-调用者：
-
-```c
-req = my_request_alloc();
-if (!req)
-	return -ENOMEM;
-
-ret = my_request_submit_ref(q, req);
-if (ret) {
-	kref_put(&req->ref, my_request_release);
-	return ret;
-}
-
-/*
- * 调用者仍然持有初始引用。
- * 如果当前路径不再需要，必须 put。
- */
-kref_put(&req->ref, my_request_release);
-return 0;
-```
-
-引用流：
-
-```text
-alloc/init：
-    创建者持有初始引用。
-
-submit_ref 成功：
-    队列 get 一份新引用。
-
-创建者不再需要：
-    创建者 put 初始引用。
-
-队列消费完成：
-    队列/消费者 put 队列引用。
-```
-
-这个模型的特点是：
-
-```text
-更直观；
-每个长期持有者各自 get/put；
-但多一次 get/put；
-成功后调用者是否还能访问，取决于它是否已经 put 掉自己的引用。
-```
-
-------
+共享模式多了一次 get/put，换来创建者独立保留和观察的能力。直接转交模式少这一对操作，但不能让创建者在交付后继续依赖原引用。二者应按实际使用期限选择，不是一个永远更安全或更高效。
 
 ### 7.6.3\_两种模型不要混用
 
-最危险的是把 take 模型和 ref 模型混在一起。
+当前程序合法地让 enqueue_ref 内部复用 enqueue_take，因为包装器明确准备了一份新候选，成功转交候选，失败退回候选。错误的是调用方把 enqueue_ref 当成消费原份额而漏 put，或者把 enqueue_take 当成保留原份额而再次 put。
 
-例如函数实际是 take：
+做三项练习来检验这一区别：
 
-```c
-int my_queue_take_request(struct my_queue *q, struct my_request *req);
-```
+1. 预测第二轮把 producer 的 put 提前到 flush 之前会怎样。若之后仍读 producer->result 就可能越过寿命；若同时删除后续对象访问，仍需保留代码退出等待。
+2. 在队列已满时分别调用两种入队，检查新请求的 phase 和引用是否保持，以及占槽的旧请求是否被误清。拒绝只能处理本次参数责任。
+3. 让 execute_take 故意拒绝，分别追踪 take 轮的一份和 ref 轮的两份。两条路径都应最终回收一次，且拒绝时不能让没有执行的 worker 承担 put。
 
-调用者却按 ref 模型继续访问：
-
-```c
-ret = my_queue_take_request(q, req);
-if (ret)
-	goto err;
-
-req->status = 0;       /* 错误 */
-kref_put(&req->ref, my_request_release);  /* 错误 */
-```
-
-或者函数实际是 ref：
-
-```c
-int my_queue_ref_request(struct my_queue *q, struct my_request *req);
-```
-
-调用者却以为成功后自己不持有引用，忘记 put：
-
-```c
-ret = my_queue_ref_request(q, req);
-if (ret)
-	goto err;
-
-return 0;       /* 错误：调用者初始引用泄漏 */
-```
-
-所以一个接口必须只有一种清晰语义。
-
-不要写这种模糊接口：
-
-```c
-int my_queue_add_request(struct my_queue *q, struct my_request *req);
-```
-
-除非注释明确说明引用归属。
-
-------
+第 2、3 项对应本轮宿主控制夹具已安排的分支；读者在真实模块中自行注入修改时，应重新构建并记录结果。第一项的错误访问只在纸上推演，不建议为了看到崩溃而把已知失效指针交给运行内核。
 
 ## 7.7\_handoff\_检查清单
 
-写 handoff 代码时，可以逐项检查：
+审查一个新接口时，按同一份责任的旅程回答下面的问题，每项都应能指向真实代码和状态地址。
 
-```text
-1. 当前路径进入函数时是否持有引用？
-2. 接收方是否需要长期保存对象？
-3. 如果只是同步使用，是否只是 borrow？
-4. 如果异步使用，是否先 get 再投递？
-5. 如果是 take 模型，成功后当前路径是否停止访问对象？
-6. 成功路径引用归谁？
-7. 失败路径引用归谁？
-8. 重复投递、取消、超时路径引用归谁？
-9. 每一个 kref_get() 是否都有对应 put？
-10. 每一次成功 handoff 是否有最终 put？
-11. release 前对象是否已经从全局结构脱链？
-12. 函数名和注释是否说明 take/ref/borrow 语义？
-```
+- **进入条件：** 参数靠已有独立引用、受保护查找还是明确借用窗口有效？接收者能否在窗口结束前接到它需要的保护？
+- **发布动作：** 哪一步让接收者可以执行，状态和责任是否已在此前准备？提交返回是否可能晚于接收者的最后访问？
+- **成功与拒绝：** 接管原份额、追加候选还是只借用？失败是否消费？重复提交是否只处理本次责任而不误动原有工作？
+- **中途退出：** 取消、超时、注销、出队和移除各自证明什么？有没有把计时结束或通知到达误当成执行者已退出？
+- **访问与结束：** 发送者以后凭哪份引用或借用继续使用？字段同步另由什么保证？所有取得/转交最终由谁归还，且不会早于最后合法访问？
+- **对象之外：** 集合是否真的拥有一份，最后清理是否仍有旧借用者，模块代码与异步执行者是否已经收束？函数名和中文注释是否陈述实际契约？
 
-最关键的是这几个问题：
-
-```text
-谁持有对象？
-谁负责 put？
-成功后当前路径还能不能访问？
-失败后当前路径要不要 put？
-```
-
-------
+其中“release 之前必须脱链”不能当成所有对象的一条固定检查结果。应检查当前选择的是拥有集合份额还是非拥有索引，以及它怎样把取得窗口与最终撤下连接；不同协议给出的正确顺序不同。
 
 ## 7.8\_本章小结
 
-handoff 是 kref 工程使用里最重要的协议之一。
+handoff 的核心是指定责任何时换了拥有者。borrow 在约定窗口内借用而不接管；get/ref 建立独立份额；take 移动已有份额，计数可以不变。它们可以组合成一个完整协议，但同一次调用的双方必须对成功、失败和发布点采用相同理解。
 
-它不是简单的传指针，而是引用所有权的流转。
+完整完成量模块表明，等待超时以后工作仍可能完成，通知与引用归还分别发生；完整队列模块又让同一请求沿两种协议走到最终清理。正确性来自每一步有连续的存活依据、字段同步和唯一归还责任，不是只看 get/put 行数相等或日志出现一次 release。
 
-本章可以压缩成三句话：
-
-```text
-borrow：只是临时借用，不 get，不 put，不保存。
-ref/get：给接收方一份新引用，双方各自 put。
-take/consume：接收方接管当前引用，成功后当前路径不能再访问。
-```
-
-再压缩成一条主线：
-
-```text
-handoff 的本质是定义“引用从谁手里走到谁手里，以及最后谁 put”。
-```
-
-写代码时不要只看：
-
-```text
-obj 指针传给了谁
-```
-
-而要看：
-
-```text
-引用归谁
-谁负责 put
-失败路径谁回滚
-成功后谁还有资格访问对象
-```
-
-只有把这些规则写清楚，kref 才能真正保护对象生命周期，而不是变成一堆看似对称、实际归属混乱的 `get/put`。
-
-------
+现在可以解释“交给别人以后我还能不能用”：先指出自己仍有的那一份或尚未结束的借用窗口，再检查业务许可与字段同步；说不出依据，就不能靠局部变量仍非空继续访问。下一章从更早一步追问：第一次从共享容器找到地址时，还没有自己的一份，要怎样安全地取得它？
 
 专题导航：[kref 引用计数机制章节大纲](大纲.md)。
 
