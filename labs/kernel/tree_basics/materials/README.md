@@ -108,3 +108,5 @@ domains: [c_language, data_structures]
 [job_compare.c](job_compare.c)配合[P09 比较契约](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_让同一个比较规则走两种调用路径)：同时间任务以稳定 id 再排序，直接与回调调用使用同一规则。C11 程序包含有符号键极值，不以键相减求比较结果，也不把语义一致当作性能证据。
 
 [indexed_lifetime.c](indexed_lifetime.c)配合[P09 双索引寿命模型](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个入口关闭之后谁还在使用对象)，用实际分配的对象追踪 S0～S5 的创建引用、两个入口引用和读者引用。普通整数只用于固定小规模串行过程，未实现树、锁或 RCU；空入口、分配失败与最后一次释放都有明确处理。
+
+[note_rbtree_owner.c](note_rbtree_owner.c)是[P37 的完整调用者框架](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md#37.16_运行完整的私有调用者框架)：初始化期间私有运行唯一键插入、复制值查询、摘除交还和整树清理，Makefile 已登记。ARM 前端检查通过；宿主按显式位宽/锁适配运行 36 组插入移除顺序与四个分配失败点。目标 Kbuild、MODPOST、装卸和日志未执行，不由宿主模型推导实际并发保证。

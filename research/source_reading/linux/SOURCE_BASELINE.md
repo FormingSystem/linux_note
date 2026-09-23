@@ -513,3 +513,9 @@ P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_str
 页表说明、fork.c 与 fair.c 只读固定 Git 内容，没有为简短职责比较复制整份文件。当前工作树身份仍为官方 NXP 来源、lf-6.12.y、三笔实验提交之后的 HEAD；证据只取 dfaf2136deb2af2e60b994421281ba42f1c087e0。配置为 ARM32、MMU、Tiny RCU、PREEMPT_NONE、非 SMP，未启用 CONFIG_PER_VMA_LOCK；不把该配置外推到发布标签或别的架构。
 
 旧组合另核对 torvalds/linux 的 v5.19 标签中 mm_types.h、sched.h 和 mm/vmacache.c：缓存属于任务，mm 保存失效代号；这是历史来源，不写成 NXP 当前结构。2020-12-10 RFC 及 2022-09 v14 说明仅承担演进与历史数据，早期未支持 32 位/非 RCU 的性能结果不外推到本机。C++ 范围模型不执行真实系统调用、Maple 核心或硬件页表遍历，本次未运行目标内核性能实验。
+
+## 1.29\_rbtree调用者接口与持有权示例
+
+[P37 完整框架](../../../knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md#37.16_运行完整的私有调用者框架)复用上表固定树操作，主例只在初始化中私有执行，按 U0～U5 管理根、计数、复制输出和对象交还。note_rbtree_owner 的 ARMv7 前端实际读取 354 份头，所读已跟踪头与固定提交的差量交集为空；生成头仍来自当前 ARM/TINY_RCU 配置。首次检查发现 current 与内核宏冲突，改为 entry 后通过。
+
+宿主复用固定树语句的位宽适配夹具，普通整数锁替身只检查串行临界区。36 组插入/删除顺序检查计数、复制值、重复键、已挂入状态和移除输出，四个申请失败点验证无剩余分配。目标 Kbuild、MODPOST、装卸、并发及真实日志未执行，未改外部树。

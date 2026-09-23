@@ -186,3 +186,5 @@ B03ai 冷读并修订 P09 的 9.1 与 9.2.1～9.2.4，以[双成员 C 实验](..
 B03aj 完成 P09 的 9.2.5～9.2.7 冷读与修订，补[比较契约 C 实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_让同一个比较规则走两种调用路径)，将无条件地址排序改为稳定业务 id，区分插入方向和旋转后等价区间，并展开间接调用与缓存地址依赖。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.46_B03aj比较政策与成本边界)记录验证和保留依据；下一项节点寿命，P09 仍 pending。
 
 B03ak 收束 P09 的 9.2.8～9.2.9，[双索引寿命 C 模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个入口关闭之后谁还在使用对象)以 S0～S5 连接入口槽、引用持有和最终回收，修正 RCU 片段的旧字段改写与锁/RCU/引用计数的混用。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.47_B03ak入口引用与回收条件)记录有限验证；下一项 9.3，整章仍 pending。
+
+B03al 将 P09 原使用者长单元独立为[P37 调用者框架](../../knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md#37.16_运行完整的私有调用者框架)，保留图解并修正重复键、比较、根槽、移除输出与并发边界；补完整内核 C 示例、U0～U5 和失败清理。P09 留有阅读桥接，原人工状态不变，P37 默认红色；[记录](../../governance/migration/repository_textbook_refactor.md#1.4.48_B03al调用者框架与完整示例)说明验证及未执行目标项。下一项 P12 工程扩展，全仓继续。

@@ -271,6 +271,7 @@ mindmap-plugin: basic
             - 🔴 **未校正** [P33 从多路删除到红黑缺口](../../knowledge/linux/data_structures/红黑树_rb-tree/P33_从多路删除到红黑缺口.md)
             - 🟢 [P08 Linux 6.12 内核 rbtree 基础结构与工程模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md)
             - 🟢 [P09 Linux 6.12 内核 rbtree 嵌入式节点与使用者接口](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md)
+            - 🔴 [P37 构建 rbtree 调用者接口](../../knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md)
             - 🟢 [P10 Linux 6.12 内核 rbtree 查找与返回边界](../../knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找与返回边界.md)
             - 🔴 **未校正** [P26 Linux 红叶接入与插入修复](../../knowledge/linux/data_structures/红黑树_rb-tree/P26_Linux红叶接入与插入修复.md)
             - 🟢 [P11 Linux 6.12 内核 rbtree 删除与缺黑修复](../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md)

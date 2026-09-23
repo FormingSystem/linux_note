@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md",
+      "baseline_sha256": "ea4743a6a7b24d8563ba1791b015f197af54e36ca4280793c04b30f8b5f19604",
+      "lines": 2732,
+      "state": "validated",
+      "reason": "B03al 原 P09 使用者单元逐段冷读后独立成章，保留图解、纠正边界并添加完整 C 模块与阶段流程；宿主行为和 ARM 前端通过，目标构建运行未执行，人工节点仍红色。"
+    },
+    {
       "path": "research/source_reading/rbtree/source_explanations/include/linux/container_of.h.md",
       "baseline_sha256": "15af6c0f0d3d764c3d2515d0cab2b484269f9281871d40b844b4788bf8a85fef",
       "lines": 63,
@@ -1622,8 +1629,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md",
       "baseline_sha256": "d23e9d86c4fa97c9e225b26f80e9325146d8e0988c10535f61c24258168aff5d",
       "lines": 4209,
-      "state": "pending",
-      "reason": "B03ai/aj/ak 已实际冷读并修订 9.1、完整 9.2，双成员、比较和持有权 C 实验及固定证据核对完成；9.3 使用者框架仍继续，保留 pending。"
+      "state": "validated",
+      "reason": "B03ai～al 已完整冷读全部单元，嵌入、比较、寿命实验及证据核对完成；调用者长单元移入 P37 独立重构，本章保留阅读桥接，人工状态不改。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找与返回边界.md",
