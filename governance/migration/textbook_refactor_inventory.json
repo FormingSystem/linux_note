@@ -2406,7 +2406,7 @@
       "baseline_sha256": "8780dc1f0781faa550994d96ccc6399692cb60b5c5f209f5dc6f6df91dbaec73",
       "lines": 2508,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04bs完成14.1～14.3准备与基础实验，P32完整模块六条宿主/ARM通过；14.4以后继续，pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04bs完成14.1～14.3准备与基础实验，P32完整模块六条宿主/ARM通过；14.4以后继续，pending。 B04bt完成14.4错误实验，P33十一条宿主轨迹通过，真实故障注入未执行；继续14.5，pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P15_最终验收标准.md",
@@ -4689,6 +4689,13 @@
       "lines": 235,
       "state": "validated",
       "reason": "B04bs基础一份/两份完整实验、固定源码身份、回调与返回值重构；六条宿主/ARM通过，未目标日志/装卸/并发验证，新人工节点红色。"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P33_缺失引用与未归还责任实验.md",
+      "baseline_sha256": "415954524e65e8cb37edf717572c01840a3c847fbad74f6a87d3e4cab45ef941",
+      "lines": 233,
+      "state": "validated",
+      "reason": "B04bt少get/少put完整实验重构，十一条C影子账本轨迹通过，区分真实内核与记录证据，未目标故障注入/动态检查验证，新人工节点红色。"
     }
   ]
 }

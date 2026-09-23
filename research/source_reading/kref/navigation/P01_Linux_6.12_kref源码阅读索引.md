@@ -18,6 +18,7 @@ source_version: "6.12.20"
 
 | 阅读问题 | 模块与唯一实现 |
 | --- | --- |
+| 少get或少put的轨迹是否就是内核故障报告 | [证据层次](P02_普通引用与归零回调导读.md#2.30_错误轨迹与实际引用的证据层次) → [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 基础模块的release日志为什么插在put结果以前 | [返回值与回调](P02_普通引用与归零回调导读.md#2.29_基础实验的返回值与回调位置) → [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 一次创建、共享、归还如何相接 | [普通引用模块](P02_普通引用与归零回调导读.md#2.2_把S0到S5落到状态地址) → [kref 普通接口](../source_explanations/include/linux/kref.h.md#1.2_建立初始引用) |
 | 状态真正存在哪里 | [计数成员](../source_explanations/include/linux/kref.h.md#1.1_计数成员) → [refcount 存储](../source_explanations/include/linux/refcount_types.h.md#1.1_原子存储字段) |

@@ -241,3 +241,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.40\_基础引用与源码对照
 
 [note_kref_basics.c](note_kref_basics.c)对应[P32实验](../../../../knowledge/linux/object_lifetime/kref/P32_基础引用与源码对照实验.md#32.1_先分清读哪份源码和运行哪个内核)，holders=1/2选择一份或两份顺序责任槽位，观察put返回值和同步release；不是两个线程。Makefile已登记。六条宿主与ARM前端通过，354/342头身份无差异；目标链接装卸和真实dmesg尚未执行。其他holders值应在分配以前返回EINVAL。
+
+## 1.41\_缺失引用与未归还责任
+
+[P33实验](../../../../knowledge/linux/object_lifetime/kref/P33_缺失引用与未归还责任实验.md#33.1_先确定删除的是哪一份)复用[ownership_audit.c](ownership_audit.c)的完整责任检查器与六条原轨迹，程序本身未改。另核对正确转交、提前使用/完成、候选回滚和记录不完整，合计十一条宿主检查通过；它不创建实际内核对象，不是UAF、泄漏或KASAN实测。真实分享/转交与借用分别回访既有note_kref_work_modes和note_kref_owned_work。
