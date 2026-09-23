@@ -278,3 +278,5 @@ B04ab 完成[P08 三类容器](../../knowledge/linux/object_lifetime/kref/P08_lo
 B04ac 收束[P08 返回责任与退出](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.6_lookup_API_契约_返回裸指针还是返回引用)的 8.6～8.9，修正持引用后字段写入、重复删除和普通 get 零值诊断边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.92_B04ac查找返回契约与关闭收束)记录保留与验证依据；P08 分批作者审查完成，下一项 P09，全仓继续。
 
 B04ad 冷读 P09 全篇，先重写[9.1～9.2 锁职责入口](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md#9.2.1_kref_和锁分别保护什么)，保留人工批注，用既有完整服务模块说明共享状态、非嵌套关闭与保证时点。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.93_B04ad锁职责与分步关闭)记录剩余问题，P09 仍 pending。
+
+B04ae 完成[P09 9.3.1～9.3.6](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md#9.3.2_remove_时_先_unlink_再_put_但必须匹配集合引用)，保留已讲清的成员移除推导与人工文字，只补有效参数前提和告警显式返回；重写取得、字段同步、借用期限及集合模型。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.94_B04ae成员责任与诊断控制流)记录具体保留依据；继续 9.3.7 双状态，P09 仍 pending。

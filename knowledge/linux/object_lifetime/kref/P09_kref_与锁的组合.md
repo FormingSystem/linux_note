@@ -252,78 +252,39 @@ id 若在发布前固定且之后不变，可以按发布/取得协议读取，�
 
 ## 9.3\_lookup\_remove\_和状态\_锁与\_kref\_的常规配合
 
-这一组内容讲最常见的组合路径。
+先把上一节完整服务模块的规则迁移到链表。这里选择拥有型集合：每个成功发布的成员有集合的一份，查找在同锁内追加读者的一份，删除只归还实际摘下成员的那一份。非拥有索引另有 P08 已讲清的回调摘链协议，不能把两套前提拼接起来。
 
-可以先记住这条主线：
-
-```text
-lookup：锁保护找到对象到 get 成功之前的窗口；
-remove：先用锁撤销可见性，再 put 集合引用；
-字段访问：持有引用只保证内存活着，不保证字段没人改；
-状态检查：状态、集合关系、get 要在同一套同步规则下闭合。
-```
+这一轮需要分别回答三个问题：查找怎样从入口锁交接到独立引用，删除怎样从成员关系交接到待归还份额，业务操作怎样在自己的份额有效期间使用对象锁。前两种交接改变责任方，第三种只改变业务状态，不自动改变引用数。
 
 ### 9.3.1\_lookup\_时\_锁保护\_get\_前窗口
 
-lookup 场景的标准模型是：
-
-```text
-集合锁保护 lookup；
-锁内找到对象；
-锁内 kref_get；
-释放锁后返回带引用对象。
-```
-
-示例：
+当 list_lock 保持持有且对象仍在拥有型链表中，删除者不能摘下并归还成员份额，因此计数仍正，普通 get 有依据。这把锁没有代替 kref 的原子增加；它保护的是从读取成员地址到新增责任成立的整段窗口。
 
 ```c
-struct my_obj *my_obj_lookup_get(int id)
+/* 配对片段：所有成员变化依同一list_lock，成员自己拥有一份。 */
+static struct my_obj *lookup_get(int id)
 {
-	struct my_obj *obj;
-
-	mutex_lock(&my_obj_list_lock);
-
-	list_for_each_entry(obj, &my_obj_list, node) {
-		if (obj->id == id) {
-			kref_get(&obj->ref);
-			mutex_unlock(&my_obj_list_lock);
-			return obj;
-		}
-	}
-
-	mutex_unlock(&my_obj_list_lock);
-	return NULL;
+    struct my_obj *obj, *found = NULL;
+    mutex_lock(&list_lock);
+    list_for_each_entry(obj, &object_list, node) {
+        if (obj->id != id)
+            continue;
+        kref_get(&obj->ref);
+        found = obj;
+        break;
+    }
+    mutex_unlock(&list_lock);
+    return found; /* 非空时交付一份，NULL时没有归还义务。 */
 }
 ```
 
-这里锁的作用不是保护 refcount 自增。
+函数返回后 list_lock 已不在，读者的份额接续对象存储期限。如果删除先完成，查找只会看见没有该成员；如果查找先完成，删除只会归还集合的一份，不能消耗读者的一份。只锁读指针、解锁后再 get，会破坏这次交接。
 
-`kref_get()` 内部的 refcount 自增本身是原子的。
-
-锁真正保护的是：
-
-```text
-obj 指针在 get 前仍然指向有效对象；
-obj 还在 list 中；
-list 持有的引用还没有释放；
-remove 路径不能同时 unlink + put 到 release。
-```
-
-所以本质是：
-
-```text
-锁保护的是 get 前的“对象有效性证明”。
-```
-
-不是：
-
-```text
-锁保护 kref 自增。
-```
-
-------
+对象锁并没有参与这次查询，原因是本接口没有读取由它保护的业务字段。若接口还要检查接纳状态，必须按该状态的实际保护规则增加相应窗口，而不是因为名为 lookup 就禁止取得另一把锁。后面双状态模型将具体说明这项选择。
 
 ### 9.3.2\_remove\_时\_先\_unlink\_再\_put\_但必须匹配集合引用
+
+以下讨论唯一拥有型链表的成员引用；按对象地址调用 remove 的路径须另有一份或等效期限保证，覆盖本次调用。所谓允许重复 remove，不允许重复使用已经释放的对象地址。已有讲清的逐步解释保留如下。
 
 对象从集合中删除时，常见顺序是：
 
@@ -568,7 +529,10 @@ void my_obj_remove(struct my_obj *obj)
 {
 	mutex_lock(&my_obj_list_lock);
 
-	WARN_ON_ONCE(list_empty(&obj->node));
+	if (WARN_ON_ONCE(list_empty(&obj->node))) {
+		mutex_unlock(&my_obj_list_lock);
+		return; /* 告警不会自动终止控制流，不能继续消耗不存在的成员份额。 */
+	}
 	list_del_init(&obj->node);
 
 	mutex_unlock(&my_obj_list_lock);
@@ -576,6 +540,8 @@ void my_obj_remove(struct my_obj *obj)
 	kref_put(&obj->ref, my_obj_release);
 }
 ```
+
+本版在告警条件成立时明确返回。WARN_ON_ONCE 自身只是诊断表达式，不会替调用者中止后面的 list_del_init 和 put；不能把诊断当成错误恢复。
 
 这个版本的含义是：
 
@@ -630,290 +596,77 @@ unlink once, put once.
 
 ### 9.3.3\_put\_前后访问字段的边界
 
-当前路径只要还持有引用，就可以保证：
-
-```text
-obj 内存没有释放。
-```
-
-但是访问字段是否需要锁，取决于字段并发规则。
-
-示例：
+继续使用自己查找得到的那一份，典型顺序是“持对象锁修改字段→解锁→归还自己的份额”。每一步都有不同的依据：引用保护锁和字段所在的分配块，锁保护这次字段变化，解锁完成以后才允许这条路径放弃存储保证。
 
 ```c
+/* 当前路径持有一份，state的全部读写都遵守obj->lock。 */
 mutex_lock(&obj->lock);
 obj->state = OBJ_DONE;
 mutex_unlock(&obj->lock);
-
-kref_put(&obj->ref, my_obj_release);
+object_put(obj);
 ```
 
-这是常见正确写法。
+若把 put 提到最前面，随后连 mutex_lock 所访问的锁地址都可能已释放；若 put 放到 unlock 之前，unlock 仍要访问嵌在对象里的锁。普通 put 可能同步执行 release，不能把调用返回以前视作对象当然还在。
 
-`put` 之前修改字段，是因为当前路径还持有引用。
-
-但是字段修改仍然需要对象锁。
-
-------
-
-错误写法：
-
-```c
-kref_put(&obj->ref, my_obj_release);
-
-mutex_lock(&obj->lock);
-obj->state = OBJ_DONE;
-mutex_unlock(&obj->lock);
-```
-
-问题：
-
-```text
-kref_put() 之后，当前路径可能已经触发 release；
-obj 可能已经被 kfree；
-再访问 obj->lock 或 obj->state 都可能 UAF。
-```
-
-所以规则是：
-
-```text
-put 后当前路径不能再访问 obj。
-```
-
-如果需要在释放引用之前更新状态，要写在 put 前。
-
-如果需要在 put 后继续使用对象，就说明当前路径还需要引用，不应该先 put。
-
-------
+“put 后不能访问”针对的是本次已经归还的保护依据，不是否认独立第二份或明确的外层借用窗口。若当前路径确实保留另一份，可以按那一份继续；评审必须指出它的来源，不能用“别人应该还持有”或一次计数快照代替。
 
 ### 9.3.4\_持有引用只保证生命周期\_不保证字段互斥
 
-示例：
+两个查找者各有一份，所以双方访问的对象都还在；但他们仍可以竞争同一个 state 或 value。对同一不变量的所有读者和写者都要使用约定的锁，不能只有写方加锁，读方凭“我只是看一眼”跳过。
 
 ```c
-obj = my_obj_lookup_get(id);
+/* 片段：lookup_get交付一份，业务决策和修改都在字段锁内完成。 */
+obj = lookup_get(id);
 if (!obj)
-	return -ENOENT;
-
-obj->state = OBJ_RUNNING;    /* 可能错误 */
-
-kref_put(&obj->ref, my_obj_release);
-```
-
-这里 lookup_get 成功后，当前路径确实持有引用。
-
-但是这只保证：
-
-```text
-obj 内存存在。
-```
-
-如果 `state` 会被其他线程同时读写，那么这仍然是数据竞争。
-
-正确写法：
-
-```c
-obj = my_obj_lookup_get(id);
-if (!obj)
-	return -ENOENT;
-
+    return -ENOENT;
 mutex_lock(&obj->lock);
-obj->state = OBJ_RUNNING;
+if (obj->state == OBJ_IDLE)
+    obj->state = OBJ_RUNNING;
+else
+    result = -EBUSY;
 mutex_unlock(&obj->lock);
-
-kref_put(&obj->ref, my_obj_release);
+object_put(obj);
 ```
 
-所以要分两步看：
+此处 result 由调用者预置为 0，片段仅展示状态许可；真实启动若包含硬件或异步任务，还须定义失败回滚与关闭流程。状态锁消除了这次检查与写入之间的竞争，不会把一个枚举赋值自动变成完整业务操作。
 
-```text
-访问 obj 指针前：是否持有引用？
-访问 obj 字段前：是否满足字段锁规则？
-```
-
-不是：
-
-```text
-有引用就什么字段都能随便改。
-```
-
-------
+发布后不再变化的 id 可以按发布协议读取，某些字段也可以采用独立的原子或其他同步方案。因此结论是“遵守字段同步协议”，不是无条件要求每一次读取都额外拿 mutex。
 
 ### 9.3.5\_锁内只能借用指针\_锁外必须持有引用
 
-持有集合锁时，通过 `lookup` 找到对象，通常只能说明：
-
-```text
-在当前临界区内，obj 暂时有效。
-```
-
-也就是说，锁内拿到的是一个临时借用指针。
-
-例如：
+原标题提醒读者不要把临时地址带出保护窗口，但“只能”和“必须”需要限定场景。在本章拥有型集合中，如果调用者原先没有别的保护，只依集合锁读到一个地址，那么锁内可以借用；要把对象交到锁外使用，就必须先取得自己的份额。
 
 ```c
-mutex_lock(&my_obj_list_lock);
-
-obj = my_obj_find_locked(id);
+/* find_locked只借出地址；锁内复制一个不可变编号，不带走对象。 */
+mutex_lock(&list_lock);
+obj = find_locked(id);
 if (obj)
-	do_something_locked(obj);   /* 锁内临时使用 */
-
-mutex_unlock(&my_obj_list_lock);
+    copied_id = obj->id;
+mutex_unlock(&list_lock);
+/* 后续仅使用copied_id，不能再凭这次借用访问obj。 */
 ```
 
-这类代码通常可以成立，前提是：
+锁内也可以已经持有独立引用，两者并不互斥；锁外也可能处于明确的外层借用协议，例如管理者保有一份并等待借用 worker 完成。P06 的完整管理者模块就属于后一种。把这些前提省略后写成“所有锁外指针都必须由当前线程 get”，会把 P07 合法借用和转交误判为错误。
 
-```text
-my_obj_list_lock 确实保护 lookup/remove；
-对象在 list 中时不会被释放；
-所有 remove 路径也遵守同一把集合锁。
-```
-
-但是，如果要在释放 `my_obj_list_lock` 之后继续使用 `obj`，就不能只保存裸指针。
-
-错误写法：
-
-```c
-mutex_lock(&my_obj_list_lock);
-
-obj = my_obj_find_locked(id);
-
-mutex_unlock(&my_obj_list_lock);
-
-if (!obj)
-	return -ENOENT;
-
-do_something(obj);    /* 错误：锁外没有引用 */
-```
-
-错误原因是：
-
-```text
-解锁之后，其他 CPU 可能把 obj 从 list 中删除；
-删除路径可能 kref_put；
-如果引用计数归零，release 会释放对象；
-此时当前路径手里的 obj 就变成悬空指针。
-```
-
-正确写法是在锁内完成引用获取：
-
-```c
-mutex_lock(&my_obj_list_lock);
-
-obj = my_obj_find_locked(id);
-if (obj)
-	kref_get(&obj->ref);
-
-mutex_unlock(&my_obj_list_lock);
-
-if (!obj)
-	return -ENOENT;
-
-do_something(obj);
-
-kref_put(&obj->ref, my_obj_release);
-```
-
-这里 `kref_get()` 的位置很关键。
-
-它必须发生在集合锁还没有释放之前。
-
-因为在锁内，对象仍然受集合保护；这时把临时借用指针转换成正式引用是安全的。
-
-一旦解锁之后再 `kref_get()`，就可能变成对已经释放对象加引用。
-
-可以压缩成一句：
-
-```text
-锁内可以借用指针；
-锁外必须持有引用。
-```
-
-------
+决定能否跨窗口的不是指针放在栈上还是结构体里，而是保护期限。准备把指针放到异步参数时，须指出新增份额、转交份额或覆盖执行全程的借用者；仅保存地址不产生期限。
 
 ### 9.3.6\_集合引用模型
 
-如果对象能被全局集合 lookup，建议让集合持有一份引用。
+拥有型集合适合需要独立发布/撤下的对象：成功发布交给集合一份；只要成员仍在，集合的一份就保证它不是零计数对象；查找锁内可普通 get。代价是退出必须有显式移除路径，否则最后一个外部使用者离开以后，集合的一份仍会保留对象。
 
-对象插入集合：
+完整槽程序、链表迁移片段和整数索引模块已经在[P08](P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.3_基础保护模型_锁保护容器_kref_保护生命周期)建立。本节沿同一模型检查三个决策点，而不再给一组与前文退出规则冲突的重复函数：
 
-```c
-int my_obj_publish(struct my_obj *obj)
-{
-	kref_get(&obj->ref);      /* 集合引用 */
+| 决策 | 成功后的责任 | 拒绝或重复调用 |
+| --- | --- | --- |
+| 追加式发布 | 集合新增一份，调用者保留原份额 | 拒绝退回预留，不消耗原份额 |
+| 接管式发布 | 原指定份额交给集合，计数可不变 | 按本例契约，失败不消费 |
+| 成员移除 | 本次取得成员份额，解锁后归还 | 没有实际移除就没有那份可归还 |
 
-	mutex_lock(&my_obj_list_lock);
-	list_add_tail(&obj->node, &my_obj_list);
-	mutex_unlock(&my_obj_list_lock);
+集合不会因调用 list_add 自动 get；表格写的是应用协议。一个对象若有多个索引，应分别登记每个拥有型索引的份额；若索引只借用，必须另外建立 8.4 的零计数与地址保护规则。
 
-	return 0;
-}
-```
+非拥有索引并非天然错误，它适合最后外部使用者离开后自动从索引退出的设计；代价是最后归还必须与查找串行，或者查找使用条件取得、回调在同锁下才能回收。选择两者要看发布/撤下职责，不能按“哪个少一次 get”孤立比较。
 
-对象从集合撤销：
-
-```c
-void my_obj_unpublish(struct my_obj *obj)
-{
-	mutex_lock(&my_obj_list_lock);
-
-	if (!list_empty(&obj->node))
-		list_del_init(&obj->node);
-
-	mutex_unlock(&my_obj_list_lock);
-
-	kref_put(&obj->ref, my_obj_release);
-}
-```
-
-lookup：
-
-```c
-struct my_obj *my_obj_lookup_get(int id)
-{
-	struct my_obj *obj;
-
-	mutex_lock(&my_obj_list_lock);
-
-	list_for_each_entry(obj, &my_obj_list, node) {
-		if (obj->id == id) {
-			kref_get(&obj->ref);
-			mutex_unlock(&my_obj_list_lock);
-			return obj;
-		}
-	}
-
-	mutex_unlock(&my_obj_list_lock);
-	return NULL;
-}
-```
-
-这个模型的关键是：
-
-```text
-只要对象在集合中，集合引用就存在；
-lookup 在集合锁内看到对象时，refcount 不可能为 0；
-因此锁内 kref_get 是安全的。
-```
-
-如果没有集合引用，lookup 就需要更复杂的状态和释放保护。
-
-否则可能出现：
-
-```text
-对象还在 list 中；
-但最后一个外部引用已经 put；
-release 正在执行；
-lookup 又从 list 中找到悬挂对象。
-```
-
-所以工程上建议：
-
-```text
-可被长期 lookup 的集合，应该持有对象引用。
-```
-
-------
+接下来给成员可见性与业务运行分别命名。两组状态可以处于不同保护范围，但跨组决策仍须有一条完整的同步路径。
 
 ### 9.3.7\_对象状态\_集合锁与对象锁组合
 
