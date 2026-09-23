@@ -40,7 +40,7 @@ domains: [linux, source_reading]
 | 为什么返回某个相等对象，而非唯一对象 | [一次查询](P02_查找路径与返回边界导读.md#2.2_按一次查找定位源码) | [rb_find](../source_explanations/include/linux/rbtree.h.md#1.1_rb_find的任意匹配) |
 | 为什么相等后还要向左 | [等价区间](P02_查找路径与返回边界导读.md#2.3_等价区间与后继协作) | [rb_find_first](../source_explanations/include/linux/rbtree.h.md#1.2_rb_find_first的候选保存) |
 | 遍历同键组何时停止 | [后继协作](P02_查找路径与返回边界导读.md#2.3_等价区间与后继协作) | [rb_next_match 与宏](../source_explanations/include/linux/rbtree.h.md#1.3_rb_next_match与匹配遍历宏) |
-| RCU 名称是否意味着自动取得保护 | [旋转交错](P02_查找路径与返回边界导读.md#2.4_旋转期间沿什么路径继续) | [rb_find_rcu](../source_explanations/include/linux/rbtree.h.md#1.4_rb_find_rcu的孩子读取与缺失边界) |
+| RCU 名称是否意味着自动取得保护 | [旋转交错](P02_查找路径与返回边界导读.md#2.4_旋转期间沿什么路径继续)、[锁内观察与结果寿命](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#12.4.2_使用者需要保护哪些操作) | [rb_find_rcu](../source_explanations/include/linux/rbtree.h.md#1.4_rb_find_rcu的孩子读取与缺失边界) |
 | 空槽与新红叶怎样相接 | [插入状态地址](P03_红叶接入与冲突修复导读.md#3.1_空槽与修复游标各归谁所有) | [link 与 add](../source_explanations/include/linux/rbtree.h.md#1.5_红叶挂接与发布) |
 | 叔红上推与叔黑旋转怎样协作 | [插入周期](P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进) | [完整修复](../source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支) |
 | 为什么回调时不能随意沿父链遍历 | [回调边界](P03_红叶接入与冲突修复导读.md#3.3_回调不等于整个操作完成) | [中间态与收尾](../source_explanations/lib/rbtree.c.md#1.2_父槽与颜色收尾) |

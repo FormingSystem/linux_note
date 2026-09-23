@@ -192,3 +192,5 @@ B03al 将 P09 原使用者长单元独立为[P37 调用者框架](../../knowledg
 B03am 完成 P12 引入与 cached 单元冷读，以[完整缓存模块](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行缓存一致性实验)演示缓存独立不变量、插入/删除返回和普通删除反例，新增固定模块导读及唯一实现入口。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.49_B03am最左缓存与一致性)记录验证边界；P12 增强树、并发和后续单元仍 pending。
 
 B03an 完成 P12 增强单元，以[闭区间模块](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行完整区间摘要实验)推导摘要的维护代价、三个回调和 A0～A5，补齐旋转继承前提、后继两段传播及偏大也会漏查的反例；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.50_B03an子树摘要与增强回调)区分宿主语义与目标运行。下一项 12.4 外部同步，P12 与全仓仍未完成。
+
+B03ao 完成 P12 并发单元冷读，以[双线程 C 实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_用两个线程观察复制值与删除)区分锁内副本与对象寿命，并核对查重事务、向下漏查、父链及 RCU 发布边界；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.51_B03ao并发观察与结果寿命)保留有限验证范围。下一项 12.5 完整示例的职责与调用关系，P12 和全仓继续。
