@@ -170,3 +170,5 @@ B03aa 完整冷读 P06 原 6.10 与 P14，将重复的 VMA 概念收拢至[P14 �
 B03ab 实际冷读 P07 的 7.1～7.3、7.4.1 和 7.6，补[静态性质检查器](../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md#7.3.9_让程序区分三种非法结构)、统一黑高/高度口径并完成节点数归纳证明。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.38_B03ab红黑性质与高度证明)保留其余长单元为 pending，下一项继续 7.4.2 插入冲突；本批不把完整图或有限枚举当成全章完成。
 
 B03ac 完整冷读 P07 原 7.4.2，将二十三张图与上下文提问组织为[P35 插入](../../knowledge/linux/data_structures/红黑树_rb-tree/P35_红黑插入与红红冲突上推.md#35.1_从检查一棵树走到增加一个键)，补完整 C++ 程序、黑贡献证明、根收尾与多层上推；P07 保留桥接。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.39_B03ac红黑插入与角色上推)区分算法验证与目标运行，下一项继续 P07 删除缺黑，整章及全仓仍未完成。
+
+B03ad 完整冷读 P07 原 7.4.3，组织为[P36 删除周期](../../knowledge/linux/data_structures/红黑树_rb-tree/P36_红黑删除与缺黑位置传播.md#36.1_移走对象为何不一定马上产生缺口)，保留三十七张原图与全部分支，补缺口父槽、黑贡献证明、完整 C++ 删除及身份练习。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.40_B03ad红黑删除与缺口父槽)记录边界；下一项继续 P07 其余概念、映射和回顾，整章与全仓尚未完成。

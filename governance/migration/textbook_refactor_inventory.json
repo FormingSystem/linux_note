@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P36_红黑删除与缺黑位置传播.md",
+      "baseline_sha256": "0a4c50ffc46d92e67730a6834bb184612e5c6592d969b349915f034913ffc88f",
+      "lines": 2974,
+      "state": "validated",
+      "reason": "B03ad 保留原删除三十七图与完整推演，修订缺口地址、黑贡献、后继身份并增加完整 C++ 删除；有限全部合法小形状和删除全排列检查通过，非目标内核/并发/性能验证。"
+    },
+    {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P35_红黑插入与红红冲突上推.md",
       "baseline_sha256": "a2097c6af50808b5b12eefe7824d018efdc280a0b20222ce03fa7603a5880d6d",
       "lines": 1421,
@@ -1581,7 +1588,7 @@
       "baseline_sha256": "e7ab4da73a107251bf517b1772d65510acdd2495fecb044bbc1761e890b214ee",
       "lines": 6588,
       "state": "pending",
-      "reason": "B03ab 已审性质与高度，B03ac 完整迁移并修订原 7.4.2 插入为 P35，保留桥接；7.4.3 删除、其余概念、7.5 映射和 7.7 回顾仍待审，整章 pending。"
+      "reason": "B03ab 已审性质与高度，B03ac/ad 已完整迁移修订插入/删除为 P35/P36，原章保留桥接；7.4.4～7.4.7、7.5 映射及 7.7 回顾仍待实际审查。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md",
