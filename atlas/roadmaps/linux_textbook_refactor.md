@@ -304,3 +304,5 @@ B04ao完成[P11 11.4.1～11.4.3设备引用](../../knowledge/linux/object_lifeti
 B04ap完成[P11 11.4.4～11.4.5分类与总线](../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.4.4_class_release_也不是_my_obj_release)，区分公共描述和内部对象、两类class回调及临时份额的归还。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.105_B04ap分类描述与内部引用)记录固定源码核对及未运行边界；下一项11.5私有引用协议，P11仍pending。
 
 B04aq完成[P11 11.5私有会话协议](../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.5.4_一个典型的分层结构)，用完整C模块验证独立会话持有设备份额，明确关闭门、统计读取和单一最终回收。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.106_B04aq独立会话与设备份额)列出十组宿主及ARM前端边界；下一项11.6～11.10章末收束，P11仍pending。
+
+B04ar收束[P11 11.6～11.10对象边界](../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.9_本章检查清单)，校正release前置退出与框架优先选型，加入三道推理题，P11进入作者validated，人工状态不变。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.107_B04ar对象层次章末收束)记录保留完整程序及验证边界；下一项P12错误模式。
