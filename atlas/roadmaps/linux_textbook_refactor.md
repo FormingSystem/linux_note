@@ -338,3 +338,5 @@ B04bf完成[P20工作交付与关闭模板](../../knowledge/linux/object_lifetim
 B04bg完成[P21定时器交付与同步关闭](../../knowledge/linux/object_lifetime/kref/P21_定时器交付与同步关闭模板.md#21.1_先把排队状态与对象责任分开)，以完整模块对照回调归还和取消者接管，保留原票据与周期借用边界；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.122_B04bg定时器交付与同步关闭)记录七组宿主、ARM前端及未运行项。清单647项：240 validated、389 pending、18 supporting_pending；继续P13完成事件，P13仍pending。
 
 B04bh完成[P22完成事件与等待者](../../knowledge/linux/object_lifetime/kref/P22_完成事件与等待者工程模板.md#22.1_等待之前先取得合法对象)，保留完整既有模块，补输入资格、事件与退出、广播与代次条件；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.123_B04bh完成事件与等待者模板)说明保留依据和验证边界。清单648项：241 validated、389 pending、18 supporting_pending；继续P13错误回滚，P13仍pending。
+
+B04bi完成[P23分阶段失败与回滚](../../knowledge/linux/object_lifetime/kref/P23_分阶段失败与资源回滚模板.md#23.1_先列出失败时已经成立的责任)，用完整C程序验证十二条阶段路径，按资源责任纠正清理风格的绝对化；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.124_B04bi分阶段失败与资源回滚)列出保留内容和验证边界。清单649项：242 validated、389 pending、18 supporting_pending；继续P13删除/排空，P13仍pending。

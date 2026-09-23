@@ -201,3 +201,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.30\_完成事件工程契约复核
 
 [P22完成事件与等待者](../../../../knowledge/linux/object_lifetime/kref/P22_完成事件与等待者工程模板.md#22.1_等待之前先取得合法对象)逐字复用[note_kref_completion.c](note_kref_completion.c)，材料与Makefile无需改变。它从输入资格、事件/退出分离和多等待者扩展解释同一完整实验；七组宿主和ARM为既有记录，本批复核夹具与程序一致性，不重复运行声明。
+
+## 1.31\_分阶段回滚责任模型
+
+[rollback_ownership.c](rollback_ownership.c)对应[P23完整回滚实验](../../../../knowledge/linux/object_lifetime/kref/P23_分阶段失败与资源回滚模板.md#23.1_先列出失败时已经成立的责任)。C11严格警告构建及十二条路径通过，比较显式结束子资源与最终清理两种安排，检查发布槽份额、重复撤下、清理依赖及分配归零。它是宿主顺序模型，不加入内核模块Makefile；非Linux kref、真实硬件或并发退出验证。

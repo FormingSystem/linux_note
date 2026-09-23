@@ -66,6 +66,7 @@ source_version: "6.12.20"
 | 查找与撤下谁先执行会怎样 | [拥有型窗口应用](../../../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.3.1_正确模型一_mutex/list_lookup_+_kref_get%28%29) → [容器与引用协作模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) |
 | 槽已撤下为何读者仍可用 | [容器状态模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [普通 get](../source_explanations/include/linux/kref.h.md#1.3_为独立使用追加引用) 与 [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 最后清理函数由谁选择 | [归零模块](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [put 的当次参数](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
+| 错误标签与release怎样避免重复释放 | [分阶段清理责任](P02_普通引用与归零回调导读.md#2.23_分阶段失败的清理责任) → [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 新对象的附属资源失败怎么办 | [发布前失败模块](P02_普通引用与归零回调导读.md#2.7_新对象在发布之前失败) → [init](../source_explanations/include/linux/kref.h.md#1.2_建立初始引用) 与 [put](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 计数快照为什么不是取得 | [观察模块](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [read 实现](../source_explanations/include/linux/kref.h.md#1.5_读取快照不新增责任)，结合[正文对照](../../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.17.1_运行快照与持有的对照程序) |
 | 定义时填值与归零如何对应 | [初始化模块](P02_普通引用与归零回调导读.md#2.6_初始化形式与存储寿命) → [KREF_INIT](../source_explanations/include/linux/kref.h.md#1.6_定义对象时建立计数) → [REFCOUNT_INIT](../source_explanations/include/linux/refcount.h.md#1.4_逐层构造初始值) → [ATOMIC_INIT](../source_explanations/include/linux/types.h.md#1.1_整数外还有一层结构) |
