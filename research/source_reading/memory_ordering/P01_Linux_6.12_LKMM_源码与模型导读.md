@@ -130,7 +130,7 @@ bell linux-kernel.bell
 model linux-kernel.cat
 ```
 
-因此从其他目录直接运行 herd7 时可能找不到 include。配套实验让 `cwd` 固定在模型目录，再传入 Litmus 的绝对路径：
+因此从其他目录直接运行herd7时可能找不到include。[Bash实验入口](../../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md#1.5_运行全部测试)将工作目录固定在模型目录，再传入Litmus绝对路径；清单为manifest.tsv，生成记录包含工具版本、模型/输入摘要、进程退出码与两路完整输出。静态检查和工具替身协议检查均不算herd7模型结果：
 
 ```bash
 cd research/source_reading/linux/tools/memory-model

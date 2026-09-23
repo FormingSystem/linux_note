@@ -1,0 +1,11 @@
+# schema_version: 1
+# linux_model: 6.12.20
+# file	expected
+MP+poonceonces.litmus	Sometimes
+MP+pooncerelease+poacquireonce.litmus	Never
+MP+fencewmbonceonce+fencermbonceonce.litmus	Never
+SB+poonceonces.litmus	Sometimes
+SB+fencembonceonces.litmus	Never
+IRIW+poonceonces+OnceOnce.litmus	Sometimes
+IRIW+fencembonceonces+OnceOnce.litmus	Never
+MP+onceassign+derefonce.litmus	Never

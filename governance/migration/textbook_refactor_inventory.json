@@ -2979,8 +2979,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P09_Litmus_形式验证与硬件实验.md",
       "baseline_sha256": "ac4ac74978fd9f3c250b904e9e99a71a5dc2f9dc8e66bb74ee7a7dbdbb51e89c",
       "lines": 219,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05j逐节冷读并重构模型/工具/输出证据链，Python驱动及JSON清单替换为Bash/TSV；八项预期不变，16项隔离驱动协议检查和材料静态检查通过，真实herd7与klitmus未执行，原人工评审状态保留。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P10_子系统边界_误用诊断与选型.md",
@@ -3517,8 +3517,8 @@
       "path": "labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md",
       "baseline_sha256": "db24d7fa1e06c37a4ff8be97c7d3b6c178da95dcc39efb32d94d67a2d760b220",
       "lines": 121,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05j逐节冷读并重构模型/工具/输出证据链，Python驱动及JSON清单替换为Bash/TSV；八项预期不变，16项隔离驱动协议检查和材料静态检查通过，真实herd7与klitmus未执行，原人工评审状态保留。"
     },
     {
       "path": "labs/kernel/rcu/P01_晚到读者与抢占读者/README.md",

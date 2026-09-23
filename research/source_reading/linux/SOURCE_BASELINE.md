@@ -1010,3 +1010,7 @@ B05h只读固定Documentation/memory-barriers.txt的隐式屏障部分及include
 ## 1.116\_MP候选关系与模型回边
 
 B05i按固定tools/memory-model/linux-kernel.cat核对po-rel/acq-po、ppo、prop、hb与pb及RCU/plain检查，原始副本对象adf3c4f412296269bb9f8127cd7e04f276479a57与固定提交一致。MP坏候选的fr不是直接hb边；经发布侧累积关系和flag读取来源合成同线程prop回边后进入hb。更新[版本导读的MP阅读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.9_沿_MP_测试追踪一次判定)并区分Never预期与实际Observation。完整C只求这份已推导子图的可达闭包，四种后缀组合仅双侧出现环，不解析cat/不调用herd7；宿主PATH未发现herd7，本批未运行完整模型或目标硬件。
+
+## 1.117\_模型工具与硬件生成器边界
+
+B05j只读固定tools/memory-model/README，保存副本Git对象dab38904206a0ba0fea7ccd10469443fec1f396c与固定提交一致。首段herd7/klitmus7最低7.52不能替代后续klitmus目标兼容表；固定表对Linux5.17及之后列出7.56.1及以上，并保留未来版本兼容性不保证说明。[实验入口](../../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md#1.5_运行全部测试)已由Python改为Bash，八项预期移入TSV且语义不变，输入和五模型逐项摘要可定位每次使用内容。宿主仅静态检查与16项隔离驱动协议检查，未执行真实herd7、klitmus生成/构建/加载或外部源码树修改。
