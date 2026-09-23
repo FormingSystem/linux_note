@@ -102,3 +102,5 @@ domains: [c_language, data_structures]
 [root_initializers.c](root_initializers.c)在[P08 根值实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#2%29_观察根值复制与对象存活)中直接包含固定源码的类型头，观察根值浅复制、缓存入口和块内匿名对象寿命。只验证赋值及地址关系，不模拟插入，不运行红黑更新或并发回收。
 
 [parent_color_word.c](parent_color_word.c)在[P08 父色编码实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#8.4.3_为什么颜色可以使用指针低位存储)中用明确位宽的整数观察对齐、红黑位、空父、游离自指与窄化丢高位；不会把这些数值转换成宿主指针，不是 ARM 或并发执行。
+
+[embedded_owner.c](embedded_owner.c)在[P09 双成员实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个嵌入成员还原同一个任务)中直接包含固定 container_of.h 与类型头。编译使用 `-std=gnu11 -I labs/kernel/tree_basics/materials/hosted_include`；[断言与类型适配](hosted_include/linux/build_bug.h)和[offsetof 适配](hosted_include/linux/stddef.h)只服务该宿主实验。它不运行树算法、父色编码或并发协议，不应把适配头用于内核构建。

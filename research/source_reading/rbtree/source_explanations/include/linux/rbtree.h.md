@@ -451,6 +451,6 @@ static inline void rb_replace_node_cached(struct rb_node *victim,
 #define	rb_entry(ptr, type, member) container_of(ptr, type, member)
 ```
 
-实现原理：取父读取父色字段，再在 unsigned long 宽度下屏蔽最低两位；取业务对象则调用通用 container_of，依靠编译时已知的成员偏移。宏不说明节点属于哪一棵树；游离时字段可能等于自身地址，误沿它回溯就可能得到自环。
+实现原理：取父读取父色字段，再在 unsigned long 宽度下屏蔽最低两位；取业务对象则调用通用 container_of，依靠编译时已知的成员偏移，具体[类型检查与 const 边界](container_of.h.md#1.1_一次还原中的求值与类型检查)在对应上游文件位置单独展开。宏不说明节点属于哪一棵树；游离时字段可能等于自身地址，误沿它回溯就可能得到自环。
 
 可修改性：不能把取父简化为直接转换黑节点打包值，不能把两个还原操作互换。若业务一个对象嵌入两个树成员，rb_entry 必须选实际返回的那个成员；选错不会由红黑树修复检测出来。关系与成员周期见[布局导读 T0～T4](../../../navigation/P07_节点布局与编码状态导读.md#7.2_沿一个节点的成员周期读写字段)，返回[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)。

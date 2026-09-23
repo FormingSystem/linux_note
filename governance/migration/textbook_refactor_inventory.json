@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/rbtree/source_explanations/include/linux/container_of.h.md",
+      "baseline_sha256": "15af6c0f0d3d764c3d2515d0cab2b484269f9281871d40b844b4788bf8a85fef",
+      "lines": 63,
+      "state": "validated",
+      "reason": "B03ai 固定 container_of 两宏按上游位置单一展开，核对原文、宿主编译、边界与精确入口；不等于目标执行或人工评审。"
+    },
+    {
       "path": "research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md",
       "baseline_sha256": "41a75d79c355845b7a6855d60d507c6f925515335268bfae01210c019994def7",
       "lines": 87,
@@ -1616,7 +1623,7 @@
       "baseline_sha256": "d23e9d86c4fa97c9e225b26f80e9325146d8e0988c10535f61c24258168aff5d",
       "lines": 4209,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B03ai 已实际冷读并修订 9.1、9.2 引入及 9.2.1～9.2.4，双成员 C 实验和固定宏核对完成；9.2.5 以后仍待完整审查，保留 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找与返回边界.md",

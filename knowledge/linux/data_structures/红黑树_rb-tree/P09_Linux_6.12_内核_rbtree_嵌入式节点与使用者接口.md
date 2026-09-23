@@ -12,9 +12,11 @@ domains:
 
 ## 9.1\_章节内容说明
 
+前一章能解释根与节点保存什么；这一章沿一个业务对象接入、使用、摘除的过程，补上这些存储关系由谁建立和保持。
+
 ### 9.1.1\_本章在\_Linux\_rbtree\_学习路线中的位置
 
-第 8 章已经把 Linux rbtree 的基础类型、源码文件和工程模型讲清楚。本章继续向使用者视角推进，重点回答一个问题：Linux rbtree 不是现成的泛型 map，使用者究竟要怎样把业务对象、排序规则、生命周期和 rbtree 底层接口组合起来。
+[第 8 章](P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#8.2.7_把排序契约变成可观察结果)已经用到期任务区分排序索引与对象，又说明根槽、嵌入节点与父色编码。本章继续向使用者视角推进，重点回答一个问题：Linux rbtree 不是现成的泛型 map，使用者究竟要怎样把业务对象、排序规则、生命周期和 rbtree 底层接口组合起来。
 
 ### 9.1.2\_本章要解决的核心问题
 
@@ -24,9 +26,9 @@ domains:
 
 ## 9.2\_嵌入式节点设计\_为什么内核不做泛型容器
 
-Linux 内核 rbtree 最核心的工程特点，不是“红黑树算法本身”，而是它采用了**嵌入式节点设计**。
+仍用上一章的任务：同一个任务有 id 和到期时间，既希望按时间取下一个任务，也希望按 id 找回它。若为每个索引另分配包装节点，两个包装都要保存指向任务的地址，并分别处理分配失败和撤销关系。嵌入式设计把每个索引需要的链接字段直接放进任务中：索引可以独立，业务对象仍只有一个。下面先建立成员地址与对象地址的关系，再讨论比较、释放和并发责任。
 
-普通用户态容器经常这样设计：
+先用一种外部包装设计作对照（这是教学模型，不概括所有用户态容器）：
 
 ```c
 struct tree_node {
@@ -42,15 +44,7 @@ struct tree_node {
 
 但是 Linux 内核 rbtree 不是这样。
 
-Linux 内核的 `struct rb_node` 只保存树结构需要的基础信息：
-
-```c
-struct rb_node {
-	unsigned long  __rb_parent_color;
-	struct rb_node *rb_right;
-	struct rb_node *rb_left;
-} __attribute__((aligned(sizeof(long))));
-```
+Linux 内核的 `struct rb_node` 只保存父色、右孩子与左孩子。固定版本从[源码总索引](../../../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)进入，完整类型定义见[节点与对齐](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md#1.1_rb_node的三个字段与对齐)。这一节只使用其“嵌入成员”身份，不重复推导父色编码。
 
 它不保存：
 
@@ -278,7 +272,7 @@ graph TD
 通过 kref 管理引用计数。
 ```
 
-如果 rbtree 自己包装业务对象，或者通过 `void *data` 反向指向业务对象，这种组合就会变得笨重。
+这里的 kref 是引用计数设施，只有调用者在取得和放弃引用时执行相应协议，才参与寿命管理；把字段放进去不会自动保护任何一次树查找。同样，同一个 rb 成员只有一组父子链接，不能同时挂入两棵独立树。按时间和按 id 建立两个树索引，应各有一个 rb_node 成员，搜索哪棵树就按哪个成员还原对象。
 
 对比两种设计。
 
@@ -331,7 +325,7 @@ graph TD
 内核 rbtree：业务对象内部直接包含 rb_node
 ```
 
-Linux 内核选择后者，是为了减少间接层、减少额外分配、增强类型清晰度，并把对象生命周期交还给业务代码控制。
+在上述“另分配包装、再读 data”的设计中，嵌入节点省去包装分配和这一次 data 读取，调用者直接管理对象与索引成员。但代价也具体：业务类型必须预留字段，挂树期间对象地址必须稳定，加入另一个索引需要另一个成员。不能修改第三方对象布局、索引数量运行时变化，或希望索引有独立寿命时，外部包装仍有价值。是否减少缓存未命中还取决于实际布局与访问负载，不能由这个箭头图直接证明。
 
 ------
 
@@ -473,14 +467,9 @@ graph TD
 	class backward_calc backward;
 ```
 
-`container_of()` 能工作，依赖两个前提：
+`container_of()` 能工作，需要成员地址确实来自一个仍然存活的外层对象，并且类型与成员名匹配。它不接受任意整数地址，也不是接收 NULL 的查询接口。若查询可能失败，先判断节点非空，再还原对象。对象被释放或搬走后，旧地址不会因再次执行这个宏而有效。
 
-```text
-第一，rb_node 必须真实嵌入在业务结构体中；
-第二，调用者必须提供正确的外层类型和成员名。
-```
-
-如果类型写错，结果就是错误地址。
+编译器知道成员偏移，包括为对齐加入的空隙，因此不能按前几个字段大小手算。固定宏会做成员类型检查，但不同成员或不同外围类型可能拥有相同的成员类型；检查通过并不能证明所有权正确。类型写错时可能算出不同地址，也可能碰巧偏移相同、数值未变，后一种同样不能合法访问一个并不存在的目标类型对象。
 
 例如，实际对象是：
 
@@ -501,7 +490,105 @@ bad = container_of(node, struct other_node, rb);
 
 那么 `bad` 得到的就是错误对象。
 
-所以 `container_of()` 很高效，但也要求调用者非常清楚当前 `rb_node` 属于哪种业务结构。
+因此调用者需要证明的是“这个地址确实是这个存活对象的这个成员”，而不只是“指针类型叫 rb_node”。固定 GNU C 实现、类型检查范围和 const 边界见[成员地址还原](../../../../research/source_reading/rbtree/source_explanations/include/linux/container_of.h.md#1.1_一次还原中的求值与类型检查)。下面用两个同类型成员亲自观察这个区别。
+
+#### (1)\_两个嵌入成员还原同一个任务
+
+本实验使用仓库保存的固定 container_of.h 与 rbtree_types.h。两个宿主适配头只把编译期断言、类型比较和 offsetof 接到 GCC；它们不是内核头文件的通用替代。完整程序保存为 [embedded_owner.c](../../../../labs/kernel/tree_basics/materials/embedded_owner.c)：
+
+```c
+/* GNU C 宿主实验：使用保存的固定宏；不调用树算法或父色指针编码。 */
+#include <assert.h>
+#include <stddef.h>
+#include <stdio.h>
+#include "../../../../research/source_reading/linux/include/linux/rbtree_types.h"
+#include "../../../../research/source_reading/linux/include/linux/container_of.h"
+
+struct job {
+    unsigned int id;
+    struct rb_node by_deadline;
+    unsigned long deadline;
+    struct rb_node by_id;
+};
+
+int main(void)
+{
+    struct job item = { .id = 7, .deadline = 40 };
+    struct rb_node *deadline_node = &item.by_deadline;
+    struct rb_node *id_node = &item.by_id;
+    struct job *from_deadline = container_of(deadline_node, struct job, by_deadline);
+    struct job *from_id = container_of(id_node, struct job, by_id);
+    const struct rb_node *read_node = &item.by_id;
+    const struct job *read_owner = container_of_const(read_node, struct job, by_id);
+    struct job copy = item;
+
+    /* 偏移由当前编译器布局决定，不能把某台机器的数值写死。 */
+    size_t deadline_offset = offsetof(struct job, by_deadline);
+    size_t id_offset = offsetof(struct job, by_id);
+    assert(deadline_offset > 0 && id_offset > deadline_offset);
+    assert(from_deadline == &item && from_id == &item && read_owner == &item);
+    printf("offsets: deadline=%zu id=%zu\n", deadline_offset, id_offset);
+    printf("same owner: %d; keys: %lu,%u\n",
+           from_deadline == from_id, from_deadline->deadline, from_id->id);
+
+    /* 成员类型相同不代表成员身份相同；这里只算整数，不构造错误指针。 */
+    _Static_assert(__same_type(item.by_deadline, item.by_id), "same member type");
+    printf("wrong member would shift origin by %zu bytes\n",
+           id_offset - deadline_offset);
+
+    /* 复制结构体不会让现有成员地址自动改指新对象。 */
+    copy.id = 8;
+    assert(container_of(id_node, struct job, by_id) == &item);
+    assert(container_of(&copy.by_id, struct job, by_id) == &copy);
+    printf("saved node owner id=%u; copied object id=%u\n", from_id->id, copy.id);
+
+    /* 普通宏会丢掉 const；本例仅检查类型，不借此修改只读对象。 */
+    _Static_assert(__same_type(container_of(read_node, struct job, by_id),
+                              (struct job *)0), "ordinary result");
+    _Static_assert(__same_type(container_of_const(read_node, struct job, by_id),
+                              (const struct job *)0), "const result");
+    puts("const owner preserved by container_of_const");
+    return 0;
+}
+```
+
+从仓库根目录在有 GCC 的 Bash 中执行；`-std=gnu11` 允许固定宏使用的 GNU C 扩展，`-I` 指定那两个实验适配头：
+
+```bash
+mkdir -p .cache/rb_owner
+gcc -std=gnu11 -Wall -Wextra -Werror \
+    -I labs/kernel/tree_basics/materials/hosted_include \
+    labs/kernel/tree_basics/materials/embedded_owner.c \
+    -o .cache/rb_owner/embedded_owner
+.cache/rb_owner/embedded_owner
+```
+
+当前宿主的一次输出是：
+
+```text
+offsets: deadline=8 id=40
+same owner: 1; keys: 40,7
+wrong member would shift origin by 32 bytes
+saved node owner id=7; copied object id=8
+const owner preserved by container_of_const
+```
+
+先预测前两行。两个成员地址不同，但各自减去自己的偏移，都回到 item。偏移 8 和 40 只描述这次宿主布局；另一 ABI 可以不同，正确往返不依赖这两个常数。这里没有调用父色打包、旋转或树插入，不能把宿主程序当成 ARM 内核运行。
+
+第三行只计算两个偏移的整数差：若拿 by_id 地址却减 by_deadline 的偏移，结果会落在对象首地址之后。程序刻意不构造或解引用这个错误对象指针。两个成员都是 rb_node，所以类型检查并不能发现成员名选错。
+
+第四行说明结构体复制建立了另一个对象，却不改变先前保存的成员地址。示例的两个对象都活到 main 返回，因此可以安全比较；如果原对象先结束寿命，旧入口就失效，复制并不能修复它。正在树中的对象更不能直接 memcpy 后销毁原件，因为树中其他节点仍保存旧地址。
+
+最后一行是 const 的边界。普通 container_of 明确丢失传入指针的 const 限定；`container_of_const` 依据指针类型保留它。只读类型不能代替寿命保护，反过来，普通宏给出了可写指针也不表示允许修改原本的只读对象。
+
+#### (2)\_预测与修改
+
+1. 在 id 前增加一个字符数组，再运行。哪些数值可能变化？偏移和对象大小可能变化，两个正确成员仍应回到同一个 item；不要预设没有填充。
+2. 只把 from_id 那行的成员名改成 by_deadline，编译器必定拒绝吗？不会，两者类型相同。不要运行错误解引用，应先画出“传入偏移减所选偏移”的差，检查实际传入成员与成员名是否匹配。
+3. 将 deadline_node 实参改为 `&item.id`，为什么应当编译失败？此时指向 unsigned int，却声明它是 rb_node，固定宏的静态断言能够检测这种类型不一致。
+4. 能把 by_deadline 同时交给两棵树吗？不能，两棵树会改写同一组父子字段。应分别嵌入成员，再分别建立排序与同步协议。
+
+到这里已经能找回对象，但还没有决定哪几个业务字段组成排序键。下一节的 rb_entry 只给这次还原命名，不替调用者回答排序问题。
 
 ------
 
@@ -521,11 +608,7 @@ rb_entry(node, struct my_node, rb)
 
 `rb_entry()` 本质上就是对 `container_of()` 的封装。
 
-可以近似理解为：
-
-```c
-#define rb_entry(ptr, type, member) container_of(ptr, type, member)
-```
+固定版本直接转发三个参数，唯一宏体见[rb_entry 实现](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.11_父地址与业务地址的两种还原)。它不补空指针检查，不取得引用，也不保留普通 container_of 丢失的 const。
 
 它的意义不是新增能力，而是增强语义。
 
@@ -623,7 +706,7 @@ for (node = rb_first(root); node; node = rb_next(node)) {
 }
 ```
 
-删除时：
+删除时，下面的两行只是“对象由 kmalloc 一类接口分配、已经撤掉其他索引、没有剩余使用者，且整个树修改受调用者保护”的简化情形；rb_erase 本身不能证明这些前提：
 
 ```c
 rb_erase(&item->rb, root);
@@ -649,7 +732,7 @@ rb_entry() 是二者之间的转换桥梁。
 为什么 struct rb_node 里没有 key？
 ```
 
-原因是：**内核里的 key 没有统一形态**。
+原因是：**内核里的 key 没有统一形态**。沿用任务例子，同一对象在到期索引中比较 deadline，在 id 索引中比较 id；若希望同一到期时间也有确定顺序，可以比较 `(deadline, id)`。两个树成员描述的是两种关系，不需要各复制一份业务数据。
 
 不同子系统对“排序键”的定义完全不同。
 
@@ -658,8 +741,8 @@ rb_entry() 是二者之间的转换桥梁。
 ```text
 定时器：key 可能是 expires 到期时间；
 调度器：key 可能是 vruntime；
-内存管理：key 可能是虚拟地址起点；
-I/O 调度：key 可能是磁盘扇区号；
+区间索引：key 可能是地址起点；
+输入输出调度：key 可能是磁盘扇区号；
 驱动资源管理：key 可能是 id、地址、句柄；
 区间管理：key 可能是 start/end 范围。
 ```
@@ -694,7 +777,7 @@ struct my_node {
 };
 ```
 
-排序逻辑：
+排序逻辑如下，`-EEXIST` 是“对象已存在”的错误返回，表示这个示例拒绝相同键。它只展示选孩子槽的片段，完整搜索与插入在 9.3 继续：
 
 ```c
 if (item->key < this->key)
@@ -747,14 +830,14 @@ graph TD
 	rb_3_01["major=3 minor=1"]
 
 	rb_2_20 -->|L| rb_1_50
-	rb_2_20 -->|L: same major, smaller minor| rb_2_10
+	rb_1_50 -->|R: larger major| rb_2_10
 	rb_2_20 -->|R| rb_3_01
 
 	classDef node fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
 	class rb_2_20,rb_1_50,rb_2_10,rb_3_01 node;
 ```
 
-这个图只是表达排序语义，不代表最终树一定长成这样。重点是：
+这是比较顺序允许的一种 BST 形状，不表达最终红黑颜色。`(2,10)` 小于根 `(2,20)`，但大于 `(1,50)`，所以它位于左子树中的右孩子槽；一个节点不能有两个左孩子。重点是：
 
 ```text
 major/minor 合起来才是完整排序 key。
@@ -794,7 +877,9 @@ graph TD
 子树内最大的 end 是多少。
 ```
 
-这就不是一个固定 `key` 字段能解决的问题了。
+按 start 排序只确定下行方向；“是否覆盖目标”还需检查 end，多区间重叠查询可能需要维护子树最大 end 等附加信息。排序索引不会自动知道这些聚合值，后面的增强树章节才负责解释其更新。
+
+再回到两个任务索引：改 deadline 会破坏按时间的排序位置，却未必改变按 id 的位置。应先从受影响索引摘除，再修改键并重新接入；对象存在不等于所有索引都仍有效。具体重复键政策与更新路径将在后文继续展开。
 
 所以内核 rbtree 不把 key/value 放进 `struct rb_node`，本质原因是：
 
