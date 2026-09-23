@@ -29,7 +29,7 @@ domains:
 | B01 基础入口：architecture 中的概貌、源码树及 Atlas 路线 | 能读变量、函数、数组与循环；尚不认识内核对象 | 从读文件区分应用、内核、硬件；按问题找源码，区分源文件与产物 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)；本批实施，验证结果见 1.5 |
 | B02 模块与设备节点：architecture 其余 3 篇、error_handling 初始 2 篇、驱动 fundamentals 与 misc | 用户与内核边界、源码身份 | 区分装入代码、注册服务和建立访问入口；能恢复一个失败的最小模块实验 | [模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes)、[错误处理](../../knowledge/linux/error_handling)、[驱动基础](../../knowledge/driver_model/fundamentals)；分批推进，已完成组与下一项见 1.5 |
 | B03 对象组织：data_structures 33 篇 | C 指针、对象与资源 | 从查找和更新需求选择链表、哈希表或树，解释节点与容器关系 | [数据结构](../../knowledge/linux/data_structures)；链表、哈希及子系统应用、综合模块、树原章节和依赖拆分单元已完成本轮逐篇审查与适用验证；教学语言复核已完成，目标未运行与研究算法边界逐批记录。继续 B04，不表示全仓完成 |
-| B04 生命周期：object_lifetime 20 篇 | 能辨别对象、入口和使用者 | 解释引用何时取得、由谁放弃、什么时候可销毁 | [对象生命周期](../../knowledge/linux/object_lifetime)；B04a/b 已完成 P01 全篇问题链、责任模型与一次工作交付，P02 2.1～2.14 的计数层次、嵌入地址与普通源码链已重构，固定索引和唯一实现已建立；静态初始化已配完整模块，后续机制继续逐篇审查 |
+| B04 生命周期：object_lifetime 20 篇 | 能辨别对象、入口和使用者 | 解释引用何时取得、由谁放弃、什么时候可销毁 | [对象生命周期](../../knowledge/linux/object_lifetime)；B04a/b 已完成 P01 全篇问题链、责任模型与一次工作交付，P02 2.1～2.18 的计数层次、嵌入地址与普通源码链已重构，固定索引和唯一实现已建立；静态初始化已配完整模块，后续机制继续逐篇审查 |
 | B05 并发与事件：synchronization_and_asynchrony 125 篇 | 单个操作及对象生命期 | 从两条交错路径推出同步、等待、通知、延迟执行与回收；以具体状态完成证明 | [同步与异步总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)；待进入，内部再按依赖拆批；kernel_subsystems/irq 当前无正式文件，不建立占位入口 |
 | B06 文件与观测：io_model 5 篇、kernel_subsystems/vfs 与 tracing | 读文件主线、等待与对象持有 | 串起路径、打开实例、数据、阻塞、缓存及日志证据 | [VFS](../../knowledge/kernel_subsystems/vfs/大纲.md)、[I/O 模型](../../knowledge/linux/io_model)、[观测](../../knowledge/kernel_subsystems/tracing)；待进入 |
 | B07 设备与驱动：device_model 17 篇，driver_model 中 character_device、device_tree、gpio、gpio_consumers、input、platform_bus | 内核公共机制、文件入口 | 区分硬件描述、注册、匹配、请求处理和拆除，完成一个有恢复路径的设备实例 | [设备模型](../../knowledge/linux/device_model/大纲.md)、[驱动路线](../tracks/linux_driver_track.md)；待进入，各设备家族单独校准 |
@@ -230,3 +230,5 @@ B04d 实际重写 P02 2.7～2.12，保留原阅读批注，沿[非首成员的�
 B04e 重构 P02 2.13 并建立[普通引用源码路线](../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)，将同版本普通函数/类型集中为唯一展开，保留 P02/P05/P11 的应用与概念职责，纠正 signed_wrap、must_check 与返回值边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.68_B04e普通引用链与编译边界)记录 21 个固定 helper 边界与编译诊断。下一项 P02 2.14 静态初始化及后续单元，相关整章与全仓仍未完成。
 
 B04f 完成[P02 静态初始化](../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.14.2_运行一个不释放静态内存的完整模块)及 P05 对应入口，补逐层宏证据、自动/静态存储区分与完整模块。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.69_B04f静态初始化与存储寿命)记录语法正反例和验证边界；下一项 P02 2.15 以后，整章与全仓继续。
+
+B04g 完成[P02 普通引用与观察](../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.17.1_运行快照与持有的对照程序)及 P05 5.5～5.6，补完整 C 对照、带动作的状态地址图和归还时序。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.70_B04g普通操作与计数快照)记录边界与验证；下一项 P02 2.19 以后的完整对象模板，整章与全仓仍未完成。

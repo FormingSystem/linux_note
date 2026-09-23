@@ -253,323 +253,111 @@ kref_init() 只用于新对象初始化，不用于旧对象 reset。
 
 ## 5.5\_观察类\_API\_kref\_read()
 
-观察类 API 只适合调试和诊断，不能拿来决定生命周期。
+观察不会新增归还责任。[P02 快照实验](P02_源码入口与结构定义.md#2.17.1_运行快照与持有的对照程序)已经显示：保存在局部变量里的正数可以与对象已回收同时成立。本节只检查调用点如何使用这条边界。
 
 ### 5.5.1\_kref\_read()
 
-观察接口接受 const struct kref 指针，返回下层当前无符号值，不修改计数也不取得引用。固定实现见[kref_read](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.5_读取快照不新增责任)；const 不排除其他路径更新，调用前的寿命前提仍由调用者证明。
+接口接受 const struct kref 指针，返回下层当前无符号值，不修改计数也不取得引用。固定实现见[kref_read](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.5_读取快照不新增责任)。const 限制通过这个参数的修改，不阻止别的 CPU 更新；读取前仍要证明成员地址可访问。
 
 ### 5.5.2\_kref\_read()\_的正确用途
 
-`kref_read()` 可以用于：
-
-```text
-debug
-trace
-统计
-WARN_ON 辅助判断
-打印当前引用计数
-排查泄漏
-```
-
-例如：
+可以在已有引用或明确保护窗口内，把 read 用于调试日志、trace、泄漏线索和辅助告警。下面两条是调用片段：执行它们时当前路径仍持合法份额，尚未 put。
 
 ```c
+/* 只记录瞬时计数，不改变当前持有责任。 */
 pr_debug("refobj ref=%u\n", kref_read(&refobj->ref));
-```
-
-或者：
-
-```c
 WARN_ON(kref_read(&refobj->ref) == 0);
 ```
 
-但它不适合做生命周期控制判断。
+告警只能辅助暴露协议被破坏的现象；如果地址本就悬空，WARN_ON 里的读取一样非法。两次读取也不构成同一份原子快照，日志值和随后的判断可能不同。
 
-错误写法：
-
-```c
-if (kref_read(&refobj->ref) > 0)
-	kref_get(&refobj->ref);
-```
-
-问题是：
-
-```text
-读到大于 0 和随后 get 不是一个原子过程。
-```
-
-在两者之间，其他 CPU 可能已经 put 到 0 并 release。
-
-所以 `kref_read()` 不能替代：
-
-```c
-kref_get_unless_zero()
-```
-
-也不能替代 lookup 保护。
+`if (kref_read(&refobj->ref) > 0) kref_get(&refobj->ref);` 把“观察大于零”和“增加”分成两步，中间可能有人完成最后归还。条件取得接口可在自己的原子操作里判定非零，但它仍要求计数地址有效，不能取代 lookup 保护。读到 1 也不自动获得业务字段独占权；同步借用者和允许新进入的容器都可能仍存在。
 
 ------
 
 ## 5.6\_普通引用\_API\_kref\_get()\_和\_kref\_put()
 
-普通路径只围绕两个动作：已有有效对象上增加引用，当前持有者退出时释放引用。
+普通路径的输入是已有存活保证与明确责任，输出是责任增加或归还。接口不能从一个地址推断调用者属于哪个持有者；这份账本由外层代码建立。
 
 ### 5.6.1\_kref\_get()
 
-普通 get 接受内部 kref 指针，转交引用增加且不返回成功标志。调用者先满足有效对象与正引用前提，再为独立使用追加份额；固定语句见[kref_get](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.3_为独立使用追加引用)，异常告警不是业务可依赖的失败分支。
+普通 get 接受内部 kref 指针，转交引用增加且不返回成功标志。调用者先满足有效地址与正引用前提，再为独立使用追加份额；固定语句见[kref_get](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.3_为独立使用追加引用)。异常告警不是业务可依赖的失败分支。
 
 ### 5.6.2\_kref\_get()\_的使用前提
 
-`kref_get()` 的前提是：
-
-```text
-调用者已经能证明对象当前有效。
-```
-
-常见情况是：
-
-```text
-当前路径已经持有一个引用；
-当前路径在对象集合锁保护下；
-对象尚未发布给并发路径；
-其他机制保证对象不会在 get 期间释放。
-```
-
-典型正确写法：
+最直接的情形是当前路径尚持一份，或者新对象已经初始化且尚未发布，创建者仍持初始份额。集合锁也可能支持普通 get，但必须同时有“容器在成员可查找期间持一份，撤下及归还受同一协议控制”的证明；锁名本身不能保证计数为正。静态存储或延迟回收只证明地址尚在时，也不能据此普通 get 一个零计数对象。
 
 ```c
+/* 调用者必须已证明地址与正引用；返回指针只是便于类型封装。 */
 static struct my_refobj *my_refobj_get(struct my_refobj *refobj)
 {
-	kref_get(&refobj->ref);
-	return refobj;
+    kref_get(&refobj->ref);
+    return refobj;
 }
 ```
 
-然后：
-
-```c
-kref_get(&refobj->ref);
-queue_work(system_wq, &refobj->work);
-```
-
-这里调用者已经持有 `refobj` 的有效引用，所以可以为 worker 增加一个引用。
-
-错误写法：
-
-```c
-refobj = lookup_without_lock(id);
-kref_get(&refobj->ref);        /* 错：refobj 可能已经无效 */
-```
-
-这个问题不在 `kref_get()`，而在调用者没有证明 `refobj` 有效。
-
-所以 `kref_get()` 可以总结为：
-
-```text
-它是“已有有效对象上的引用增加”，不是“从裸指针抢救对象”。
-```
-
+包装器不检查指针真假，也不自行保护查找。`lookup_without_lock(id)` 后直接调用它，仍可能在已结束的生命周期上增加。交付 worker 时要在发布之前预留，并按投递结果决定新增份额归谁；完整错误分支沿用[P01 工作模块](P01_kref_要解决什么问题.md#1.16.1_运行一次真实工作交付)，不能只复制 get 与 queue_work 两行并忽略重复投递或拒绝的返回值。
 
 ### 5.6.3\_kref\_get()\_为什么没有返回值
 
-`kref_get()` 没有返回值，因为它不是尝试性接口。
+它不是尝试性取得接口；调用者承诺前提成立，函数增加一份并返回。固定 refcount 层仍可能检测零值增加或溢出并进入异常处理，这不表示 get 会用返回码帮业务恢复。饱和可能保守地泄漏，不能因此把错误调用当作成功建立了可用对象。
 
-它的设计语义是：
-
-```text
-只要你调用 kref_get，就表示你已经保证对象有效；
-因此增加引用应该成功。
-```
-
-如果你不能保证对象有效，就不应该用普通 `kref_get()`。
-
-lookup 场景应该考虑：
-
-```c
-kref_get_unless_zero()
-```
-
-并且配合锁或 RCU。
-
-所以：
-
-```text
-kref_get() 没有失败分支；
-失败处理应该发生在调用 kref_get() 之前的查找/保护逻辑里。
-```
-
+查找时若只建立了计数地址的保护窗口，还需条件取得并检查结果；外层锁或 RCU 的职责不能因换了 API 消失。普通 get 的无返回值是在强调调用前证明，而不是声明任何非空地址都能成功使用。
 
 ### 5.6.4\_kref\_put()
 
-put 的两个参数是要归还的内部 kref 指针和对象类型选择的 release 回调。固定实现见[kref_put](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理)：下层减并检测返回真才调用回调并返回 1；否则返回 0。后者包含正常非归零及异常饱和情况，不能推成对象一定仍活着。下面继续从使用者角度审查回调签名、返回值和归还前提。
+参数是要归还的内部 kref 指针和对象类型选择的 release 回调。固定实现见[kref_put](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理)：下层减并检测返回真才同步调用回调并返回 1，否则返回 0。正常非归零和异常饱和都可能进入后一分支。
 
 ### 5.6.5\_kref\_put()\_的\_release\_参数
 
-`release` 的类型是：
+回调类型为 `void (*release)(struct kref *kref)`。对本例由动态分配器取得的 my_refobj 外壳，可以这样封装；若它还拥有其他资源，应先按所有权清理：
 
 ```c
-void (*release)(struct kref *kref)
-```
-
-所以 release 函数通常写成：
-
-```c
+/* 此封装仅适用于动态分配、且无其他待清理资源的 my_refobj。 */
 static void my_refobj_release(struct kref *ref)
 {
-	struct my_refobj *refobj;
-
-	refobj = container_of(ref, struct my_refobj, ref);
-
-	kfree(refobj);
+    struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
+    kfree(refobj);
 }
-```
 
-`kref_put()` 不能直接传 `kfree`：
-
-```c
-kref_put(&refobj->ref, kfree);      /* 错 */
-```
-
-原因前面讲过，这里只保留 API 层结论：
-
-```text
-kref_put 传给 release 的是 struct kref *；
-kfree 需要的是对象起始地址；
-必须先 container_of 找回外层对象。
-```
-
-工程上建议封装：
-
-```c
 static void my_refobj_put(struct my_refobj *refobj)
 {
-	kref_put(&refobj->ref, my_refobj_release);
+    kref_put(&refobj->ref, my_refobj_release);
 }
 ```
 
-这样可以避免调用点传错 release。
-
+不能直接把 kfree 作为回调。除了函数指针参数类型不同，kref 传入的是成员地址，而释放函数需要匹配分配器的对象起始地址；ref 位于首成员时地址偶合也不能成为普遍契约。静态外壳更不能照抄此清理方式，见[静态模块](P02_源码入口与结构定义.md#2.14.2_运行一个不释放静态内存的完整模块)。类型封装把正确回调与对象类型绑定，减少调用点选错清理策略的机会。
 
 ### 5.6.6\_kref\_put()\_的返回值
 
-`kref_put()` 返回值含义：
-
-```text
-返回 1：本次 put 释放了最后一个引用，release 已经被调用。
-返回 0：本次 put 没有释放最后一个引用。
-```
-
-它可以用于某些统计或特殊路径：
+返回 1 表示本次已调用 release；返回 0 表示本次未调用。它适合在对象外记录事件，例如：
 
 ```c
+/* 不在这个分支里读取已经归还责任的 refobj。 */
 if (kref_put(&refobj->ref, my_refobj_release))
-	pr_debug("refobj released\n");
+    pr_debug("release callback invoked\n");
 ```
 
-但不能这样用：
-
-```c
-if (!kref_put(&refobj->ref, my_refobj_release)) {
-	refobj->state = 0;      /* 错 */
-}
-```
-
-因为返回 0 只说明：
-
-```text
-本次 put 没有触发 release。
-```
-
-不说明：
-
-```text
-当前路径仍然持有引用；
-对象之后不会被其他路径释放。
-```
-
-`kref_put()` 的调用本身已经表示：
-
-```text
-当前路径释放了一个引用。
-```
-
-所以普通代码应遵守：
-
-```text
-put 后不再访问对象。
-```
-
+`if (!kref_put(...)) refobj->state = 0;` 不能从返回 0 推导安全：本 CPU 归还后，另一个持有者可以立即完成最后 put，甚至早于本 CPU 从函数返回。返回 1 也不必然等于立即物理回收，回调可以按另外的协议延迟释放。若还要访问对象，必须指出另一份未归还的责任或确实阻止清理的保护；并发字段更新另行同步。
 
 ### 5.6.7\_kref\_put()\_的使用前提
 
-`kref_put()` 的前提是：
+当前路径必须对这份归还负责，来源可以是初始化的初始份额、先前增加、成功 lookup_get，或一次明确 handoff。仅仅接到借用指针不产生 put 权限；把指针复制到局部变量也不会多出一份责任。
 
-```text
-当前路径确实持有一个引用。
-```
-
-不能因为手里有指针就 put。
-
-错误模型：
-
-```c
-void random_path(struct my_refobj *refobj)
-{
-	my_refobj_put(refobj);       /* 错：如果当前路径没有引用，就是多 put */
-}
-```
-
-正确判断是：
-
-```text
-这个路径的引用是从哪里来的？
-kref_init？
-kref_get？
-lookup_get？
-handoff 接收？
-```
-
-如果答不上来，就不能 put。
-
-每个 `put` 都必须对应一个实际归属。
-
+检查函数出口时，为每个 put 写下它消耗哪一份，以及拒绝、提前失败、成功交付各由谁归还。例如预留 worker 份额后投递失败，由创建者收回预留；成功后由 worker 消耗那份。每个出口总能对上责任，比只数源码里 get 和 put 的行数更可靠。
 
 ### 5.6.8\_kref\_put()\_和\_refcount\_dec\_and\_test()
 
-`kref_put()` 底层依赖：
+这里需要的是“本次原子减少是否完成最后一步”，不是“减少之后再观察某个时刻是不是零”。假设错误实现将原子减与独立读取拆开，两个 CPU 各持一份：
 
-```c
-refcount_dec_and_test()
-```
+| 顺序 | CPU A | CPU B | 共享计数 |
+| --- | --- | --- | --- |
+| 1 | 原子减一 | 尚未执行 | 2→1 |
+| 2 | 暂停 | 原子减一 | 1→0 |
+| 3 | 独立读取，看到 0 | 暂停 | 0 |
+| 4 | 准备清理 | 独立读取，也看到 0 | 0 |
 
-它完成两个动作：
-
-```text
-引用计数减 1；
-判断减完后是否为 0。
-```
-
-这两个动作必须是一个原子意义上的整体。
-
-否则会出现并发问题：
-
-```text
-两个 CPU 同时 put；
-都以为自己不是最后一个；
-或者都以为自己是最后一个；
-release 可能漏掉或重复。
-```
-
-`refcount_dec_and_test()` 的语义保证：
-
-```text
-只有真正把引用计数从 1 减到 0 的那个路径会得到 true。
-```
-
-所以只有一个路径会调用 release。
-
-这就是 `kref_put()` 能作为最后释放触发点的基础。
+两者都可能宣称“我是最后一个”，从而重复清理。若把判断放在减少之前，交错也可能使两者都错过最后清理资格。固定[减并检测实现](../../../../research/source_reading/kref/source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支)将结果绑定到自己的原子操作旧值：正常单份减少只有旧值为 1 的那次返回真，所以只由那条路径调用回调。此结论仍以责任合法、对象未被复用或随意重置为前提，不修复多 put 或悬空地址。
 
 ------
 
