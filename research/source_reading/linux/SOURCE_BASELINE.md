@@ -779,3 +779,16 @@ B04as使用官方固定提交dfaf2136deb2af2e60b994421281ba42f1c087e0的四份�
 | Documentation/locking/lockdep-design.rst | 56b90eea27312e0a438260eb10425e811f154c9a |
 
 本次只读工作树.config启用PROVE_LOCKING/LOCKDEP，KASAN/DEBUG_KMEMLEAK未启用，未见KCSAN启用；该快照不证明运行镜像及运行时检查器状态。离线C账本六条轨迹和两个练习变体通过，未运行KASAN、KCSAN、kmemleak或Lockdep故障场景，未改外部内核配置。
+
+## 1.73\_工作执行与文件最终清理的责任边界
+
+B04at只读核对固定提交的投递pending/禁用分支、执行前清pending、文件描述符复制及最终release调用位置；[模块入口](../kref/navigation/P02_普通引用与归零回调导读.md#2.17_工作与文件份额的诊断落点)区分应用对象引用和工作/文件框架状态。
+
+| 上游相对位置 | blob |
+| --- | --- |
+| include/linux/workqueue.h | 59c2695e12e7674d5bc4cdd1fb416074374f981c |
+| kernel/workqueue.c | a9d64e08dffc7c7aef2caae2f170268d83e99e23 |
+| fs/file_table.c | 18735dc8269a10d6e7085c9bb882a0788dd3e0ca |
+| fs/file.c | 4cb952541dd036a57177b3ce29587cdffa186aaa |
+
+正文文件回调片段的三组宿主夹具使用固定普通引用函数通过，file/inode和最终分配清理为替身；未执行VFS/dup/close、真实work调度、目标装卸或并发。既有完整工作模块保持原样。

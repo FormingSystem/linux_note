@@ -308,3 +308,5 @@ B04aq完成[P11 11.5私有会话协议](../../knowledge/linux/object_lifetime/kr
 B04ar收束[P11 11.6～11.10对象边界](../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.9_本章检查清单)，校正release前置退出与框架优先选型，加入三道推理题，P11进入作者validated，人工状态不变。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.107_B04ar对象层次章末收束)记录保留完整程序及验证边界；下一项P12错误模式。
 
 B04as冷读P12全文，完成[12.1～12.2诊断入口](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.2.1_调试工具先导)，以C离线账本和固定诊断文档区分责任错误、活动份额与证据缺失。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.108_B04as责任日志与诊断边界)记录六轨迹、两变体及未执行内核工具；下一项12.3基础引用错误，P12仍pending。
+
+B04at完成[P12 12.3.1～12.3.2](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.3.1_错误一_少_get_异步路径_UAF)，按共享/转交/借用排查少取得，按文件实例最终清理排查漏归还。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.109_B04at异步与文件份额排查)记录三组C片段验证和固定源码边界；下一项12.3.3多put，P12仍pending。
