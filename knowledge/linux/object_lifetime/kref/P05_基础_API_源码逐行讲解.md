@@ -12,7 +12,7 @@ domains:
 
 ## 5.1\_本章主线
 
-普通 init/get/put/read 的版本化函数体已集中到[源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)及其唯一实现；本章保留调用者的参数、前提和应用判断。条件取得与锁组合仍按后续批次独立核对。
+普通 init/get/put/read 及条件取得的版本化函数体已集中到[源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)及其唯一实现；本章保留调用者的参数、前提和应用判断。条件取得已核对比较重试与返回边界，锁组合仍按后续批次独立核对。
 
 前面几章已经讲过：
 
@@ -363,192 +363,118 @@ if (kref_put(&refobj->ref, my_refobj_release))
 
 ## 5.7\_条件取得引用\_kref\_get\_unless\_zero()
 
-`kref_get_unless_zero()` 是 lookup/RCU 等路径里的尝试性 get，它的重点是返回值和外部保护前提。
+前章已经指出一种关键窗口：非拥有索引的查找锁可以保住存储，却不一定阻止其他路径在锁外把计数减到零。我们不能在此窗口盲目普通 get，也不能先 read 判断再分开增加；需要让“仍为非零”与“取得一份”在同一次原子更新条件中成立。
 
 ### 5.7.1\_kref\_get\_unless\_zero()
 
-`kref_get_unless_zero()` 是尝试性 get。
+接口接受地址仍受保护的 struct kref 指针，返回尝试结果。正常计数非零时成功增加一份，零值时不增加并返回 0；不是先归零再把对象复活。唯一函数体见[kref 条件入口](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.7_有效地址上的条件取得)，函数协作见[条件模块](../../../../research/source_reading/kref/navigation/P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有)。
 
-源码形态可以理解为：
+取得过程中，最初读到的非零值只是尝试依据。固定下层使用比较交换：只有共享计数仍等于自己刚观察的值，才改成该值加一；否则取回新的值再判断。这使其他路径可以继续增减，不要求每次失败都重新从容器搜索，但对象的地址保护窗口必须始终存在。
 
-```c
-static inline __must_check int kref_get_unless_zero(struct kref *kref)
-{
-	return refcount_inc_not_zero(&kref->refcount);
-}
-```
-
-逐行看：
-
-```c
-static inline __must_check int kref_get_unless_zero(struct kref *kref)
-```
-
-返回值带 `__must_check`，表示调用者必须检查结果。
-
-然后：
-
-```c
-return refcount_inc_not_zero(&kref->refcount);
-```
-
-只有当引用计数不是 0 时，才增加引用。
-
-返回值含义：
-
-```text
-返回非 0：成功取得引用。
-返回 0：没有取得引用，对象不可再获得。
-```
-
+“返回非零就成功取得”是正常有效协议下的调用契约。固定 refcount 的异常负值或溢出路径可能先进入饱和告警再返回非零；不能把返回值当成计数器健康检查，更不能以饱和泄漏替代对象身份、地址和业务前提。
 
 ### 5.7.2\_kref\_get\_unless\_zero()\_的使用场景
 
-它主要用于这种场景：
+先不用内核对象，取一块始终有效的计数存储，观察四条路径：初始为零、正数不受干扰、观察后变零、观察后变成另一个正数。下面完整 [conditional_take.c](../../../../labs/kernel/object_lifetime/materials/conditional_take.c)使用 C11 原子比较交换；在第一次观察与更新之间显式安排另一个动作，便于稳定重现窗口。
 
-```text
-当前路径不是已经持有对象引用；
-而是从某个可见结构中查到对象；
-对象可能正在释放；
-需要尝试取得引用。
-```
-
-典型模型：
+NONE 表示无干扰，DROP_LAST 表示安排最后一份先归还到零，ADD_OWNER 表示安排其他路径把 1 增到 2。它们是测试选择，不是内核里的字段。atomic_uint 是 C11 原子无符号整数类型，UINT_MAX 是该整数的最大值；本模型只用小的正常数值，不实现 Linux 的有符号饱和算法。
 
 ```c
-if (!kref_get_unless_zero(&refobj->ref))
-	return NULL;
+#include <assert.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdatomic.h>
+#include <stdio.h>
+
+enum interference { NONE, DROP_LAST, ADD_OWNER };
+
+/* refs 本身始终在有效存储中；这里只模拟零/正数，不模拟内核饱和。 */
+static bool try_take(atomic_uint *refs, enum interference event,
+                     unsigned int *attempts)
+{
+    unsigned int old = atomic_load_explicit(refs, memory_order_relaxed);
+    *attempts = 0;
+    while (old != 0) {
+        assert(old < UINT_MAX);
+        if (*attempts == 0 && event != NONE) {
+            /* 在第一次观察与比较之间，显式安排另一条路径先改变计数。 */
+            atomic_store_explicit(refs, event == DROP_LAST ? 0u : 2u,
+                                  memory_order_relaxed);
+        }
+        ++*attempts;
+        if (atomic_compare_exchange_strong_explicit(refs, &old, old + 1,
+                memory_order_relaxed, memory_order_relaxed))
+            return true;
+        /* 比较失败已把 old 更新为当前值，下一轮必须重新检查它是否为零。 */
+    }
+    return false;
+}
+
+int main(void)
+{
+    const unsigned int initial[] = {0, 1, 1, 1};
+    const enum interference events[] = {NONE, NONE, DROP_LAST, ADD_OWNER};
+    const unsigned int expected_count[] = {0, 2, 0, 3};
+    const unsigned int expected_attempts[] = {0, 1, 1, 2};
+    const bool expected_result[] = {false, true, false, true};
+    for (unsigned int path = 0; path < 4; ++path) {
+        atomic_uint refs;
+        atomic_init(&refs, initial[path]);
+        unsigned int attempts;
+        bool taken = try_take(&refs, events[path], &attempts);
+        unsigned int count = atomic_load_explicit(&refs, memory_order_relaxed);
+        assert(taken == expected_result[path]);
+        assert(count == expected_count[path]);
+        assert(attempts == expected_attempts[path]);
+        printf("path=%u taken=%u count=%u attempts=%u\n",
+               path, taken ? 1u : 0u, count, attempts);
+    }
+    return 0;
+}
 ```
 
-成功后：
+在材料目录运行：
 
-```text
-当前路径获得一个引用，可以在随后使用对象。
+```bash
+cc -std=c11 -Wall -Wextra -Werror -O2 conditional_take.c -o conditional_take
+./conditional_take
 ```
 
-失败后：
+| path | 读出后安排什么 | taken | 最终 count | 比较次数 | 原因 |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 初始就是 0 | 0 | 0 | 0 | 零检查直接退出 |
+| 1 | 初始 1，无干扰 | 1 | 2 | 1 | 比较命中，建立新份额 |
+| 2 | 先读到 1，再变为 0 | 0 | 0 | 1 | 比较失败取回 0，下一轮退出 |
+| 3 | 先读到 1，再变为 2 | 1 | 3 | 2 | 第一次失败取回 2，第二次从 2 增到 3 |
 
-```text
-当前路径没有获得引用，不能使用对象。
-```
+path 2 解释为什么“读到过正数”不是取得；path 3 解释为什么一次比较失败不等于引用已归零。比较失败更新 old 是循环能继续前进的关键；若一直沿用第一次观察值，会在计数改变后不停失败。真实并发竞争还可能使重试次数更多，本模型没有证明时间上界。
 
-所以返回值不能忽略。
+程序使用 relaxed 顺序，因为这里只研究计数条件，不用成功取得去发布业务数据。对象没有被分配或回收，计数存储始终有效；四条确定性轨迹不证明 UAF 已被解决，也不证明内核的原子指令或内存序。回到真实 lookup，成功才交付新责任，失败没有这份责任可 put，必须按未取得返回并退出原保护窗口。
 
-错误写法：
-
-```c
-kref_get_unless_zero(&refobj->ref);
-
-/* 错：没有检查返回值 */
-use_refobj(refobj);
-```
-
-正确写法：
-
-```c
-if (!kref_get_unless_zero(&refobj->ref))
-	return NULL;
-
-use_refobj(refobj);
-my_refobj_put(refobj);
-```
-
+可以先预测两个修改：将 path 3 的干扰值设为 4，成功后应为 5，仍需两次比较；将 path 2 的初值改为 0，干扰钩子不会执行，因为程序根本不进入比较。不要通过真的释放 refs 存储来“扩展”实验，那会破坏正在验证的前提。
 
 ### 5.7.3\_kref\_get\_unless\_zero()\_不解决裸指针有效性
 
-本章只保留这个关键边界。
+上面的原子变量始终存在，因此比较交换可以合法访问它。内核对象中的 ref 不享有这种天然保证：如果 lookup 之后对象已经被回收，即使尝试“只在非零时增加”，第一步读取计数也已越界。
 
-`kref_get_unless_zero()` 能解决的是：
+因此要先判断容器协议。在容器持有正引用且同锁撤下的方案里，锁内普通 get 通常已经足够；条件取得主要处理存储有效但零值仍可能出现的方案。若采用 RCU，需要对应的存储保留与身份协议，不只是把调用放进一对读侧 API。[P04 查找比较](P04_kref_三条核心规则.md#4.12_mutex/list_lookup_的最小模型)可用于选择入口，[P08](P08_lookup_场景与_kref_get_unless_zero%28%29.md)继续展开场景。
 
-```text
-refcount 非 0 时才加引用。
-```
-
-它不能解决：
-
-```text
-refobj 指针本身是否还指向有效内存。
-```
-
-错误写法：
-
-```c
-refobj = lookup_without_lock(id);
-
-if (!kref_get_unless_zero(&refobj->ref))
-	return NULL;
-```
-
-如果 `lookup_without_lock()` 返回的是悬挂指针，那么访问：
-
-```c
-&refobj->ref
-```
-
-本身就已经不安全。
-
-所以正确模型仍然是：
-
-```text
-lookup + kref_get_unless_zero 必须处在锁或 RCU 等有效保护下。
-```
-
-这个 API 的详细使用会在第 8 章展开。
-
-本章只记住一句：
-
-```text
-get_unless_zero 是“尝试取得引用”的工具，不是“证明裸指针有效”的工具。
-```
-
+成功取得也不等于业务获准，前章 shutdown 后的旧读者已经展示这点。其后读取可变字段仍须遵守业务同步；固定条件链不是通用 acquire 发布读取接口，不能由“原子取得”推出所有初始化和字段变化都自动可见。
 
 ### 5.7.4\_must\_check\_的意义
 
-`kref_get_unless_zero()` 带有：
+__must_check 在受支持编译器中为忽略结果提供诊断，具体属性见[唯一讲解](../../../../research/source_reading/kref/source_explanations/include/linux/compiler_attributes.h.md#1.1_返回值诊断不是自动清理)。警告可能受工具链和构建选项影响；编译通过不等于调用者处理了失败，更不表示编译器会替你补 put。
+
+在已经建立存储保护的窗口里，调用点至少要区分成功和失败，同时退出原保护。本例采用容器 mutex，非空候选已经在锁内找到，且回收须经同一把锁：
 
 ```c
-__must_check
+/* 调用片段：持 refobj_list_lock 且已找到非空候选，锁内地址有效。 */
+int taken = kref_get_unless_zero(&refobj->ref);
+mutex_unlock(&refobj_list_lock);
+return taken ? refobj : NULL;
 ```
 
-这表示：
-
-```text
-调用者必须检查返回值。
-```
-
-因为它可能失败。
-
-如果忽略返回值：
-
-```c
-kref_get_unless_zero(&refobj->ref);
-```
-
-编译器可能给出警告。
-
-为什么这个返回值必须检查？
-
-因为失败意味着：
-
-```text
-当前路径没有获得引用。
-```
-
-如果没有获得引用还继续使用对象，就违反了生命周期规则。
-
-所以这类代码必须写成：
-
-```c
-if (!kref_get_unless_zero(&refobj->ref))
-	return NULL;
-```
-
-而不是：
-
-```c
-kref_get_unless_zero(&refobj->ref);
-return refobj;
-```
+成功由新份额覆盖解锁后的返回；失败没有取得责任，退出锁后只返回 NULL，不再解引用原候选。未命中的分支还须在外层函数中直接解锁返回空，RCU 包装器则按自己的读侧出口组织。类型、属性与返回值只是线索，最终必须看每条路径实际怎么结束。
 
 ------
 

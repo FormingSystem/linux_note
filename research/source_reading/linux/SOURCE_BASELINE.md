@@ -702,3 +702,7 @@ B04n 的[完整关闭模块](../../../knowledge/linux/object_lifetime/kref/P03_k
 ## 1.58\_三条规则的固定文档上下文
 
 B04o 只读核对固定 Documentation/core-api/kref.rst 全文（blob c61eea6f1bf2bd76490718430130fe3501e2f7e8），将三条规则、直接转交优化、同锁查找/归零及条件取得示例放回各自协议。入口见[调用者模块](../kref/navigation/P02_普通引用与归零回调导读.md#2.10_三条规则与两类查找协议)。未新增上游函数体展开，条件接口的精确实现仍待后续单元。重编运行现有责任槽 C 程序和六安排/两分配失败夹具，重跑容器及关闭控制夹具；没有新增目标装卸或并发证据。
+
+## 1.59\_条件取得链的固定分支
+
+B04p 核对本基线 include/linux/kref.h 与 include/linux/refcount.h 中 kref_get_unless_zero、refcount_inc_not_zero、__refcount_inc_not_zero、__refcount_add_not_zero 四函数，blob 沿前文固定值，首次唯一展开集中在[条件模块](../kref/navigation/P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有)关联的实现标题。宿主夹具复用既有普通函数及饱和处理，六类 helper 状态、oldp 和两类 kref 结果通过；异常饱和也可返回非零。条件模型仅验证 C11 确定性比较过程，不替代目标并发、发布读取或 ARM 内存序证据。

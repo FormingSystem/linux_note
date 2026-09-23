@@ -1,6 +1,6 @@
 ---
 id: research.kref.implementation.kref
-title: "kref.h普通引用与回调实现"
+title: "kref.h引用与回调实现"
 kind: source
 status: evolving
 domains: [linux, kernel, source_reading]
@@ -8,11 +8,11 @@ source_project: linux
 source_version: "6.12.20"
 ---
 
-# 第1章\_kref.h普通引用与回调实现
+# 第1章\_kref.h引用与回调实现
 
 固定来源为 NXP linux-imx，发布 lf-6.12.20-2.0.0，提交 dfaf2136deb2af2e60b994421281ba42f1c087e0（Linux 6.12.20）。以下中文 Doxygen 为仓库补充，函数或宏主体保持该提交内容。
 
-上游位置 include/linux/kref.h，blob d32e21a2538c292452db99b915b1bb6c3ab15e53。本页展开结构、普通 init/get/put/read 与定义时初始化宏；条件取得和锁组合尚未覆盖。
+上游位置 include/linux/kref.h，blob d32e21a2538c292452db99b915b1bb6c3ab15e53。本页展开结构、普通 init/get/put/read、定义时初始化宏与条件取得；锁组合尚未覆盖。
 
 ## 1.1\_计数成员
 
@@ -99,3 +99,15 @@ const 只限制此参数的写法，不阻止其他执行路径更新。调用�
 初始化值 1 应对应一份真实的初始责任；其他正值要求外层协议提前建立相同数量的责任。值 0 不提供普通 get 的存活前提。此宏也能初始化自动存储对象，宏名不决定存储期；自动对象离开作用域时不会因计数仍为正而保留内存。
 
 裸宏展开为花括号初始化器，不能作为普通赋值表达式右侧使用。C 复合字面量可以构成表达式，但这不使覆盖正在使用的计数成为合法生命周期操作。完整静态模块和归零后的边界见[正文实验](../../../../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.14.1_初始化器沿着成员层次填值)，模块状态映射见[初始化形式](../../../navigation/P02_普通引用与归零回调导读.md#2.6_初始化形式与存储寿命)。
+
+## 1.7\_有效地址上的条件取得
+
+```c
+/** @brief 仓库阅读说明：调用者先保护计数地址，S2 尝试新增独立份额并返回取得结果。 */
+static inline int __must_check kref_get_unless_zero(struct kref *kref)
+{
+	return refcount_inc_not_zero(&kref->refcount);
+}
+```
+
+该层没有查找、加锁、发布或回收动作，只把参数指向的 refcount 交给下层。返回类型是 int，下层布尔结果在正常状态下转换为 0/1；__must_check 的诊断能力见[属性](compiler_attributes.h.md#1.1_返回值诊断不是自动清理)。[条件取得模块](../../../navigation/P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有)解释 S2 内部的观察、重试与退出；具体比较循环见[refcount 条件链](refcount.h.md#1.5_条件增加与失败重试)。调用者不能由非零返回推出业务仍接受请求，也不能把异常饱和当成恢复协议。

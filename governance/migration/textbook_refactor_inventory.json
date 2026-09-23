@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/kref/navigation/P03_条件取得与查找窗口导读.md",
+      "baseline_sha256": "57c5710c1f558e8737c6bd9e1e426825ea44e9c6b20bad961ded037f93f05087",
+      "lines": 74,
+      "state": "validated",
+      "reason": "B04p 固定条件链逐字核对，S2a至S2d状态地址与重试/归零窗口、异常返回和内存序边界独立讲解；宿主适用检查通过，新人工节点红色，目标并发未执行。"
+    },
+    {
       "path": "research/source_reading/kref/source_explanations/include/linux/types.h.md",
       "baseline_sha256": "74016ded060b0d10a209f76478063ba02df3fc78f0f998b617908f0e16e45e02",
       "lines": 30,
@@ -2273,7 +2280,7 @@
       "baseline_sha256": "c89559c518e3e5a5f5d7b52c48e624f7417da6ae77ea2f9f8f72704c3cbd3ea1",
       "lines": 1652,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04e 仅对已冷读的普通函数/类型重复块链接到唯一实现，其余应用及条件/组合正文保留，整章仍 pending。 B04f 重写 5.4.1/5.4.2 初始化边界并回链完整模块，其余仍 pending。 B04g 重写5.5～5.6调用前提、回调及返回值，保留全部原标题，条件和组合后半仍 pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04e 仅对已冷读的普通函数/类型重复块链接到唯一实现，其余应用及条件/组合正文保留，整章仍 pending。 B04f 重写 5.4.1/5.4.2 初始化边界并回链完整模块，其余仍 pending。 B04g 重写5.5～5.6调用前提、回调及返回值，保留全部原标题，条件和组合后半仍 pending。 B04p 全章冷读但仅重构5.7条件取得，其他未处理单元继续pending；新增C11四路径模型及固定四函数条件链，六helper/两kref结果及忽略返回编译诊断通过，目标并发未执行。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md",

@@ -248,3 +248,5 @@ B04m 重构[P03 责任表与错误交付](../../knowledge/linux/object_lifetime/
 B04n 收束[P03 完整关闭周期](../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#3.16_一个完整的生命周期模板)，保留十八节及全部子标题职责，补入口转交、对象锁内停止、旧读者拒绝与最终清理的同一组阶段。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.77_B04n业务关闭与P03收束)列出八组控制检查和目标未执行项；P03 完成本轮适用审查，下一项 P04，人工评审状态未变，全仓继续。
 
 B04o 完成[P04 三条规则](../../knowledge/linux/object_lifetime/kref/P04_kref_三条核心规则.md#4.12_mutex/list_lookup_的最小模型)全篇冷读和改写，保留二十节阅读任务，明确直接转交、短借用、拒绝出口以及三种查找协议的保证与代价。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.78_B04o三条规则与协议前提)记录固定文档证据和复用实验重验；下一项 P05 后续接口，全仓继续。
+
+B04p 改写[P05 条件取得](../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.7.2_kref_get_unless_zero%28%29_的使用场景)，以完整 C11 模型解释比较失败为何重查，并建立[固定条件模块](../../research/source_reading/kref/navigation/P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有)与唯一实现。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.79_B04p条件取得与比较重试)记录正常和异常分支边界；下一项 P05 锁组合，P05 整章与全仓仍未完成。

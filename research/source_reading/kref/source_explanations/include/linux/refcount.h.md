@@ -1,6 +1,6 @@
 ---
 id: research.kref.implementation.refcount
-title: "refcount.h普通增减实现"
+title: "refcount.h引用增减实现"
 kind: source
 status: evolving
 domains: [linux, kernel, source_reading]
@@ -8,11 +8,11 @@ source_project: linux
 source_version: "6.12.20"
 ---
 
-# 第1章\_refcount.h普通增减实现
+# 第1章\_refcount.h引用增减实现
 
 固定来源为 NXP linux-imx，发布 lf-6.12.20-2.0.0，提交 dfaf2136deb2af2e60b994421281ba42f1c087e0（Linux 6.12.20）。以下中文 Doxygen 为仓库补充，函数或宏主体保持该提交内容。
 
-上游位置 include/linux/refcount.h，blob 35f039ecb2725618ca098e3515c6e19e2aece3ee。只覆盖普通单份 kref 路径及其 helper；原子底层采用明确契约，不在此推定目标指令。
+上游位置 include/linux/refcount.h，blob 35f039ecb2725618ca098e3515c6e19e2aece3ee。覆盖普通单份与条件取得 kref 路径及其 helper；原子底层采用明确契约，不在此推定目标指令。
 
 ## 1.1\_设置与观察
 
@@ -142,3 +142,57 @@ old<=0 包括零和已有饱和/异常值，不能仅凭这一项断言对象物
 该宏不验证 n 的所有权来源，也不检查它是否适合作为新生命周期的初值。自动对象可使用运行时整数初始化；静态存储对象的初始化还须满足 C 对常量表达式的要求。不能把定义时填值与运行中 refcount_set 混为一谈，更不能以覆盖计数来回避旧引用尚未归还的问题。
 
 返回[初始化模块](../../../navigation/P02_普通引用与归零回调导读.md#2.6_初始化形式与存储寿命)或[总索引](../../../navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)。
+
+## 1.5\_条件增加与失败重试
+
+以下按被调用顺序之外的定义依赖列出三个函数体；调用阅读顺序由[条件模块](../../../navigation/P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有)组织。上游相对路径、提交与 blob 与本页开头一致。
+
+```c
+/**
+ * @brief 仓库阅读说明：S2 观察非零后比较并更新，失败获取新旧值后重试。
+ * @param i 本链由上层传入 1，不在此讨论其他批量增加调用。
+ * @param r 调用者保证其存储在整个尝试期间有效的计数对象。
+ * @param oldp 非空时写回最终观察/比较所依据的旧值。
+ * @return 正常零值退出为 false；正常成功为 true，异常饱和也可能为 true。
+ */
+static inline __must_check __signed_wrap
+bool __refcount_add_not_zero(int i, refcount_t *r, int *oldp)
+{
+	int old = refcount_read(r);
+
+	do {
+		if (!old)
+			break;
+	} while (!atomic_try_cmpxchg_relaxed(&r->refs, &old, old + i));
+
+	if (oldp)
+		*oldp = old;
+
+	if (unlikely(old < 0 || old + i < 0))
+		refcount_warn_saturate(r, REFCOUNT_ADD_NOT_ZERO_OVF);
+
+	return old;
+}
+```
+
+初始 read 不是取得。atomic_try_cmpxchg_relaxed 比较失败时更新 old，循环再次检查新值：变为 0 就停止，仍为正数就以它为基准重试；成功使用的是本次比较的旧值。oldp 写回发生在异常检测前，便于内部调用者区分旧值，但 kref 这条链传 NULL。
+
+old 为负或 old+1 为负时进入[饱和告警](../../lib/refcount.c.md#1.1_告警之前先收敛到饱和)，然后 return old 转为 bool。因而非零返回不统一表示计数恰好增加一份：异常态会饱和并可能泄漏，不能当正常保活建立的替代方案。此处有符号运算的构建约束见[编译边界](compiler_types.h.md#1.1_检查器属性与构建选项分工)。
+
+```c
+/** @brief 仓库阅读说明：把增加量固定为一份，保留可选旧值出口。 */
+static inline __must_check bool __refcount_inc_not_zero(refcount_t *r, int *oldp)
+{
+	return __refcount_add_not_zero(1, r, oldp);
+}
+```
+
+```c
+/** @brief 仓库阅读说明：供 kref 使用的单份包装，不接收旧值。 */
+static inline __must_check bool refcount_inc_not_zero(refcount_t *r)
+{
+	return __refcount_inc_not_zero(r, NULL);
+}
+```
+
+上游注释明确该取得链不提供 acquire 式发布读取保证，依赖调用者已经稳定对象存储；条件控制依赖用于约束后续写入，不应推广成后续所有读写的通用屏障。宿主顺序夹具只验证分支、重试与旧值，不验证体系结构屏障或 Linux 内存模型。

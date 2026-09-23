@@ -21,6 +21,7 @@ source_version: "6.12.20"
 | 一次创建、共享、归还如何相接 | [普通引用模块](P02_普通引用与归零回调导读.md#2.2_把S0到S5落到状态地址) → [kref 普通接口](../source_explanations/include/linux/kref.h.md#1.2_建立初始引用) |
 | 状态真正存在哪里 | [计数成员](../source_explanations/include/linux/kref.h.md#1.1_计数成员) → [refcount 存储](../source_explanations/include/linux/refcount_types.h.md#1.1_原子存储字段) |
 | 正常归零与异常饱和怎样分流 | [模块边界](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [增减 helper](../source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支) → [告警收敛](../source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和) |
+| 观察非零后为何还会取得失败 | [条件取得模块](P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有) → [比较循环](../source_explanations/include/linux/refcount.h.md#1.5_条件增加与失败重试)与[kref 入口](../source_explanations/include/linux/kref.h.md#1.7_有效地址上的条件取得) |
 | 三条规则为何不能机械加减 | [固定文档调用协议](P02_普通引用与归零回调导读.md#2.10_三条规则与两类查找协议)，比较转交、容器持有与归零串行化 |
 | 已持引用为何仍被拒绝 | [业务关闭与引用状态模块](P02_普通引用与归零回调导读.md#2.9_停止业务的外层状态)，普通 kref 不检查 accepting |
 | 取消或拒绝后谁归还 | [外层责任模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [工作票据推演](../../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#%287%29_所有权表要补充失败路径和取消路径)，普通 put 只消耗调用者负责的一份 |
@@ -33,4 +34,4 @@ source_version: "6.12.20"
 | 定义时填值与归零如何对应 | [初始化模块](P02_普通引用与归零回调导读.md#2.6_初始化形式与存储寿命) → [KREF_INIT](../source_explanations/include/linux/kref.h.md#1.6_定义对象时建立计数) → [REFCOUNT_INIT](../source_explanations/include/linux/refcount.h.md#1.4_逐层构造初始值) → [ATOMIC_INIT](../source_explanations/include/linux/types.h.md#1.1_整数外还有一层结构) |
 | 编译属性到底保证什么 | [属性与构建](P02_普通引用与归零回调导读.md#2.5_编译语义与检查器边界) → [signed_wrap](../source_explanations/include/linux/compiler_types.h.md#1.1_检查器属性与构建选项分工)、[must_check](../source_explanations/include/linux/compiler_attributes.h.md#1.1_返回值诊断不是自动清理)、[构建选项](../source_explanations/Makefile.md#1.1_优化选项与函数属性分开核对) |
 
-当前落地普通引用链和定义时初始化。条件取得、锁组合及体系结构原子实现尚未在本研究目录展开；现有[P05](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md)对应单元仍须独立审查，不能把本索引当作所有 kref 变体已覆盖。
+当前落地普通引用链、定义时初始化与条件取得。锁组合及体系结构原子实现尚未在本研究目录展开；现有[P05](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md)对应单元仍须独立审查，不能把本索引当作所有 kref 变体已覆盖。
