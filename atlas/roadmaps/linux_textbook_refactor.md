@@ -296,3 +296,5 @@ B04ak 完成[P10 10.3～10.4 完整查找与撤下](../../knowledge/linux/object
 B04al 收束[P10 10.5～10.10](../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md#10.5.3_子资源释放不能早于_RCU_读者)，以访问者期限替代子资源必须和外壳同时释放的绝对化，章末回访统一到已验证模块。P10 进入作者 validated，人工状态不变。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.101_B04alRCU字段子资源与章末收束)记录保留程序与未执行验证；下一项 P11 对象框架边界。
 
 B04am 冷读 P11 全章，完成[11.1～11.2 需求与计数工具](../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.2.3_kref_对象生命周期引用计数封装)，复用已验证对象说明应用清理与引用原语的分工。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.102_B04am计数工具与对象层次入口)记录固定内存序文档核对；后续 kobject、设备注销、devm 与同一分配双引用退出继续，P11 pending。
+
+B04an 完成[P11 11.3 kobject完整周期](../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.3.1_kobject_不只是引用计数)，新增类型清理模块与固定实现，核对初始责任、主动撤下、父关系和延迟配置。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.103_B04ankobject身份与类型清理)记录七组宿主及ARM前端；下一项11.4设备框架，P11仍pending。

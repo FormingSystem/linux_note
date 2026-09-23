@@ -746,3 +746,9 @@ B04ai 的[完整服务模块](../kref/navigation/P02_普通引用与归零回调
 B04ak 核对固定 include/linux/rculist.h（blob 14dfa6008467e803d57f98cfa0275569f1c6a181）的 list_del_rcu，唯一函数体去注释规范化后与固定对象一致。[组合导读](../kref/navigation/P03_条件取得与查找窗口导读.md#3.7_从旧节点继续到最终回调)关联它与既有 Tiny rcu_barrier 实现；函数摘链保留 next，本身不归还引用或等待 GP。
 
 完整模块与可选查找过滤 ARM 前端通过，355 份头中 343 份非生成源码无固定提交差异；生成配置仍属工作环境。宿主八组验证应用控制、固定引用链及摘链函数；RCU/锁/原子等为显式顺序替身，未执行目标运行、真实 GP 或内存序。
+
+## 1.68\_kobject身份与类型清理证据
+
+B04an 核对固定 include/linux/kobject.h（blob c8219505a79f98bc370e52997efc8af51833cfda）、lib/kobject.c（72fa20f405f1520a63dd50d9aa37f6609306eb3e）及 Documentation/core-api/kobject.rst。[模块入口](../kref/navigation/P07_kobject身份与类型清理导读.md#7.2_从K0到K5连接状态与回调)关联两种结构定义与九个唯一函数，去注释规范化与固定Git对象一致。del撤下层次并归还父责任，不消费本对象初始份额；init_and_add失败仍须put；DEBUG_KOBJECT_RELEASE可能延迟类型清理。
+
+完整模块ARM前端通过，354份头中342份非生成源码无固定提交差异。宿主七组执行固定普通清理链，sysfs/命名添加等为替身；模块明确拒绝无SYSFS或启用延迟调试释放配置。未执行目标装卸、真实sysfs/事件、并发和延迟清理分支。

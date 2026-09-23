@@ -2385,7 +2385,7 @@
       "baseline_sha256": "7a7e48f6d46b649d6bc1e536e73513028552cdeb23d7f44c079300afb7847cba",
       "lines": 1880,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04e 仅对已冷读的普通函数/类型重复块链接到唯一实现，其余应用及条件/组合正文保留，整章仍 pending。 B04am 全文1880行冷读，完成11.1～11.2需求引入、统计/引用分工、refcount异常和内存序边界、kref完整对象S0～S5回访；固定refcount-vs-atomic文档核对，既有代码不变不重复行为测试。后续发现device注销/最终回收混同、devm替代引用、双计数同分配缺少统一销毁协议等，11.3以后继续，pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04e 仅对已冷读的普通函数/类型重复块链接到唯一实现，其余应用及条件/组合正文保留，整章仍 pending。 B04am 全文1880行冷读，完成11.1～11.2需求引入、统计/引用分工、refcount异常和内存序边界、kref完整对象S0～S5回访；固定refcount-vs-atomic文档核对，既有代码不变不重复行为测试。后续发现device注销/最终回收混同、devm替代引用、双计数同分配缺少统一销毁协议等，11.3以后继续，pending。 B04an 完成11.3完整kobject模块与K0～K5：添加失败仍持初始份额、del只撤下关系、类型回调/core清理分工及调试延迟边界。七组宿主和ARM前端通过；11.4以后继续，pending不变。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md",
@@ -4514,6 +4514,27 @@
       "lines": 8,
       "state": "pending",
       "reason": "按职责冷读并确定保留、修复或重写范围"
+    },
+    {
+      "path": "research/source_reading/kref/navigation/P07_kobject身份与类型清理导读.md",
+      "baseline_sha256": "4bd46fa7d6c2e8d0de9ec7db99b79075d3bc07fc58ca539e37883edd05702050",
+      "lines": 78,
+      "state": "validated",
+      "reason": "B04an 新增版本化kobject模块/唯一实现，固定类型与九函数规范化一致；七组宿主与ARM前端，身份和清理边界逐项核对。新人工节点红色；无目标/真实sysfs/调试延迟运行证明。"
+    },
+    {
+      "path": "research/source_reading/kref/source_explanations/include/linux/kobject.h.md",
+      "baseline_sha256": "5fd38a0a10e01a66f5114f64ac4f9325ff058089b1d431a2302572a22b1d6b3a",
+      "lines": 59,
+      "state": "validated",
+      "reason": "B04an 新增版本化kobject模块/唯一实现，固定类型与九函数规范化一致；七组宿主与ARM前端，身份和清理边界逐项核对。新人工节点红色；无目标/真实sysfs/调试延迟运行证明。"
+    },
+    {
+      "path": "research/source_reading/kref/source_explanations/lib/kobject.c.md",
+      "baseline_sha256": "ae9f1a521ee72907590d3e56b0aa01477b95b39c19eced0e1068c8010a8ccad5",
+      "lines": 230,
+      "state": "validated",
+      "reason": "B04an 新增版本化kobject模块/唯一实现，固定类型与九函数规范化一致；七组宿主与ARM前端，身份和清理边界逐项核对。新人工节点红色；无目标/真实sysfs/调试延迟运行证明。"
     }
   ]
 }

@@ -133,274 +133,172 @@ kref 并未增加一套与 refcount 并行的引用数，也不是两次 get 或
 
 ## 11.3\_kobject\_边界\_引用计数之外的对象模型
 
+已有的请求对象可以被正确共享，却还没有名字或目录。现在给一个简单对象增加名称，并观察“目录已经撤下、外壳仍被引用”这一新组合。先把它和裸 kref 的共同责任接起来，再看框架额外管理哪些状态。
+
 ### 11.3.1\_kobject\_不只是引用计数
 
-`kobject` 经常让人误解。
+对象名字、父节点和类型描述不能由一个引用数推导出来。kobject 把这些身份关系与内嵌 kref 放在一起，并提供配套的初始化、添加、撤下和最终清理接口。**kobj_type** 是类型级描述，提供最终 release 和可选属性等规则；每个实例通过指针关联它。**kset** 是 kobject 的集合组织之一，并可参与事件处理，它不等于业务链表，也不要求每个对象都加入一个。
 
-因为它里面也有引用计数，所以很多人会把它看成：
+对象添加到 sysfs 后，用户空间可能看到对应目录；**uevent** 则是内核对象事件通知。二者并非同一个动作：固定 kobject_add/init_and_add 的添加成功不会自动替调用者发送 ADD 事件。属性和事件要根据真实接口需求设计，不能把“用了 kobject”当作用户空间已经被通知。
 
-```text
-高级版 kref。
-```
+先从[kref 源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入新增的[kobject模块导读](../../../../research/source_reading/kref/navigation/P07_kobject身份与类型清理导读.md#7.2_从K0到K5连接状态与回调)。本章使用固定 NXP Linux 6.12.20 的 include/linux/kobject.h 与 lib/kobject.c，仍以官方不可变提交为证据，不从实验HEAD推断。
 
-这个理解不准确。
+这不是一个仅靠计数推进的状态机。初始化事实、sysfs登记、事件发送和父关系分别保存状态；下面用 K0～K5 说明它们怎样在一次操作周期中相接：
 
-内核文档对 `kobject` 的描述是：`kobject` 有名字和引用计数，也有父指针、类型，通常还会在 sysfs 中有表示；并且 `kobject` 通常嵌入到更大的结构中，而不是单独使用。([Linux Kernel 文档](https://docs.kernel.org/core-api/kobject.html))
+| 阶段 | 本对象责任 | 身份与框架动作 |
+| --- | --- | --- |
+| K0 初始化 | 初始一份归创建者 | 初始化内部状态、关联类型描述 |
+| K1 添加 | 成功不消费K0份额；失败也仍需归还 | 建立名称、父关系与目录，失败清理按框架规则 |
+| K2 追加观察者 | 自己已有正引用才用kobject_get | 返回同一个地址，不重新发布目录 |
+| K3 主动撤下 | 本对象份额不减少 | kobject_del撤下目录与关系，归还相应父引用 |
+| K4 各方归还 | 最后一份触发core的kobject_release | 普通配置同步清理；调试配置可能延迟 |
+| K5 类型清理 | 类型release可以销毁外壳 | core处理其负责的名字与关系收尾 |
 
-也就是说，`kobject` 至少包含这些维度：
-
-```text
-1. 名字。
-2. 引用计数。
-3. 父子层级。
-4. ktype 类型。
-5. sysfs 表示。
-6. kset 归属。
-7. uevent 相关行为。
-```
-
-所以 `kobject` 不是：
-
-```text
-struct kref 的增强版。
-```
-
-而是：
-
-```text
-Linux 内核对象模型的基础构件。
-```
-
-简化模型如下：
-
-```mermaid
-flowchart TD
-    KOBJ["struct kobject"] --> NAME["name<br/>对象名字"]
-    KOBJ --> REF["引用计数<br/>生命周期"]
-    KOBJ --> PARENT["parent<br/>层级关系"]
-    KOBJ --> KTYPE["ktype<br/>类型和 release"]
-    KOBJ --> KSET["kset<br/>集合归属"]
-    KOBJ --> SYSFS["sysfs<br/>用户空间可见表示"]
-    KOBJ --> UEVENT["uevent<br/>热插拔事件"]
-```
-
-裸 kref 对象通常只关心：
-
-```text
-对象什么时候释放？
-```
-
-kobject 还要关心：
-
-```text
-对象叫什么名字？
-对象挂在哪个父节点下面？
-对象属于哪个类型？
-对象是否出现在 sysfs？
-对象释放时用哪个 ktype->release？
-对象是否属于某个 kset？
-对象是否参与 uevent？
-```
-
-所以不要因为“我需要引用计数”，就直接引入 kobject。
-
-如果只是私有对象：
+完整 [note_kobject.c](../../../../labs/kernel/object_lifetime/materials/note_kobject.c) 只创建一个带固定值的对象，在 `/sys/kernel` 下短暂添加 `note_kref_lifetime` 目录，再在初始化期间撤下。它没有属性接口、外部用户或主动 ADD 事件，目的只是观察登记与存储期限的区别；不能用用户空间没来得及看见目录判断添加失败。
 
 ```c
-struct my_request {
-	struct kref ref;
-	struct list_head node;
-	...
+// SPDX-License-Identifier: GPL-2.0
+#include <linux/errno.h>
+#include <linux/kobject.h>
+#include <linux/module.h>
+#include <linux/slab.h>
+
+struct named_object {
+    struct kobject kobj;
+    int value; /* 发布前固定，本例不提供属性读写入口。 */
 };
+static unsigned int release_calls;
+
+static void named_release(struct kobject *kobj)
+{
+    struct named_object *obj = container_of(kobj, struct named_object, kobj);
+    ++release_calls;
+    kfree(obj); /* 名称和父引用由kobject core按自己的协议清理。 */
+}
+static const struct kobj_type named_type = { .release = named_release };
+
+static int __init note_kobject_init(void)
+{
+    struct named_object *creator, *reader;
+    struct kobject *held;
+    int result;
+
+    /* 此同步演示不实现延迟调试释放时模块代码的异步退出协议。 */
+    if (!IS_ENABLED(CONFIG_SYSFS) || IS_ENABLED(CONFIG_DEBUG_KOBJECT_RELEASE))
+        return -EOPNOTSUPP;
+    creator = kzalloc(sizeof(*creator), GFP_KERNEL);
+    if (!creator)
+        return -ENOMEM;
+    creator->value = 7;
+    result = kobject_init_and_add(&creator->kobj, &named_type,
+                                 kernel_kobj, "note_kref_lifetime");
+    if (result) {
+        kobject_put(&creator->kobj); /* 初始化已完成，失败也经类型回调。 */
+        return result;
+    }
+    held = kobject_get(&creator->kobj); /* 已拥有正引用，追加观察者的一份。 */
+    reader = container_of(held, struct named_object, kobj);
+    pr_info("note_kobject: added value=%d release=%u\n", reader->value, release_calls);
+    kobject_del(&creator->kobj); /* 撤下层次与sysfs入口，不归还本对象初始一份。 */
+    kobject_put(&creator->kobj);
+    creator = NULL;
+    pr_info("note_kobject: removed value=%d release=%u\n", reader->value, release_calls);
+    kobject_put(held); /* 最后观察者归还，core再调用named_type.release。 */
+    return 0;
+}
+
+static void __exit note_kobject_exit(void)
+{
+    /* 无外部入口、无异步持有者；支持配置下init已完成所有归还。 */
+    pr_info("note_kobject: release=%u\n", release_calls);
+}
+module_init(note_kobject_init);
+module_exit(note_kobject_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("kobject撤下与最后引用分离的同步演示");
 ```
 
-没有必要写成：
+本演示要求 CONFIG_SYSFS 开启且 CONFIG_DEBUG_KOBJECT_RELEASE 关闭，否则初始化直接返回 -EOPNOTSUPP，不建立对象。后一个选项会让框架延迟执行类型清理；演示没有实现那种情况下的模块代码退出协议，因此明确拒绝，而不是让模块先卸载再执行它的函数地址。
 
-```c
-struct my_request {
-	struct kobject kobj;
-	...
-};
+Linux 目标构建和观察步骤如下，KDIR 应指向与运行内核相匹配的构建环境：
+
+```bash
+make -C "$KDIR" M="$PWD/labs/kernel/object_lifetime/materials" modules
+sudo insmod labs/kernel/object_lifetime/materials/note_kobject.ko
+sudo rmmod note_kobject
+sudo dmesg | tail -n 20
 ```
 
-否则你会被迫面对：
+预计支持配置下的日志为：
 
 ```text
-kobject_init/add；
-kobject_put；
-kobj_type；
-sysfs_ops；
-default_groups；
-release；
-命名；
-父子层级；
-错误路径；
-sysfs 生命周期。
+note_kobject: added value=7 release=0
+note_kobject: removed value=7 release=0
+note_kobject: release=1
 ```
 
-这些都不是普通私有对象必须承担的成本。
+第二行中目录已经撤下，创建者也已归还，但观察者仍持一份，所以仍可读取发布前固定的 value。第三行说明最后观察者归还后才完成类型清理。对象可能在最后 put 内立即消失，程序没有再通过 reader 或 held 访问它。
 
-一句话：
-
-```text
-kref 是生命周期引用计数工具；
-kobject 是带引用计数的内核对象模型。
-```
-
-------
+本次 ARM 前端和七组宿主检查通过；宿主执行固定九个 kobject 函数与既有普通引用链，命名、sysfs、分配等为显式替身。两类不支持配置、分配失败、添加失败、正常周期、隐式/显式撤下和 NULL 包装均检查；目标链接、装卸、实际 sysfs/事件、并发及调试延迟释放分支未执行。日志是预期目标结果，不冒充实际内核运行。
 
 ### 11.3.2\_kobject\_的\_release\_和\_kref\_release\_的区别
 
-裸 kref 的 release 是这样：
+在裸 kref 程序里，每次 put 由应用传入 `void (*)(struct kref *)`。在本例里，应用调用 kobject_put，不再自行挑选内部 kref 回调；core 固定传入自己的 kobject_release，后者经过清理流程才分派到 `named_type.release`，其参数是 `struct kobject *`。
 
-```c
-static void my_obj_release(struct kref *ref)
-{
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
-
-	kfree(obj);
-}
+```mermaid
+flowchart LR
+    U[应用拥有者] -->|kobject_put，归还本对象一份| P[kobject core]
+    P -->|kref_put传入core回调| R[kobject.kref]
+    R -->|最后减少成立| C[kobject_release与cleanup]
+    C -->|读取实例ktype指针| T[named_type.release]
+    T -->|container_of恢复外壳并释放| O[named_object分配]
+    C -->|用预先保存的值处理| N[名称和父关系收尾]
 ```
 
-它的入口参数是：
+入口参数不同只是表面差别。真正多出来的是 core 在类型回调前后仍有自己的清理责任。固定[最后归还实现](../../../../research/source_reading/kref/source_explanations/lib/kobject.c.md#1.4_最后归还进入类型清理)先保存 name、parent 和类型，必要时补做撤下，再调用类型 release；因为外壳此时可能已经释放，之后不能再从旧 kobj 读取成员。
 
-```c
-struct kref *ref
+所以 named_release 只回收自己的外壳，不额外 free core 管理的名字，也不随意再 put 同一个父引用。`struct kobj_type` 和其中函数代码同样必须活到全部实例的最终清理；把类型描述放到早已返回的函数栈上，即使对象引用还在也会留下悬空指针。[类型描述定义](../../../../research/source_reading/kref/source_explanations/include/linux/kobject.h.md#1.2_类型回调不存放在内嵌kref里)展示的是这条实例到类型的地址关系。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as 创建者
+    participant B as 观察者
+    participant K as kobject core
+    participant T as named_release
+    A->>K: K0/K1 init_and_add
+    alt 添加失败
+        K-->>A: 返回错误，初始份额仍在
+        A->>K: put初始份额
+        K->>T: K4/K5按类型清理
+    else 添加成功
+        A->>K: K2 get追加观察者一份
+        A->>B: 交付地址及责任
+        A->>K: K3 del撤下目录和关系
+        A->>K: put初始份额，仍剩观察者1
+        B->>B: 读取固定value
+        B->>K: K4 put最后一份
+        K->>T: K5类型清理
+    end
+    T->>T: 释放外壳
+    K->>K: 用已保存的名字等完成core收尾
 ```
 
-它通过：
+图示采用模块支持的非调试延迟配置。固定实现的调试分支会安排延迟工作，不能从这张同步轨迹推断所有配置下最后 put 返回就已经完成类型 release。
 
-```c
-container_of(ref, struct my_obj, ref)
-```
-
-找回业务对象。
-
-而 kobject 的 release 通常来自 `struct kobj_type`：
-
-```c
-struct kobj_type {
-	void (*release)(struct kobject *kobj);
-	...
-};
-```
-
-内核 kobject 文档说明，`struct kobj_type` 里的 `release` 字段就是这个 kobject 类型的 release 方法；其他字段如 `sysfs_ops` 和 `default_groups` 控制它在 sysfs 中的表示。([Linux Kernel 文档](https://docs.kernel.org/core-api/kobject.html))
-
-所以 kobject release 的入口是：
-
-```c
-struct kobject *kobj
-```
-
-而不是：
-
-```c
-struct kref *ref
-```
-
-典型写法是：
-
-```c
-static void my_kobj_release(struct kobject *kobj)
-{
-	struct my_obj *obj = container_of(kobj, struct my_obj, kobj);
-
-	kfree(obj);
-}
-```
-
-二者对比：
-
-| 模型    | release 参数       | 找回对象方式                              | 表达层次             |
-| ------- | ------------------ | ----------------------------------------- | -------------------- |
-| 裸 kref | `struct kref *`    | `container_of(ref, struct my_obj, ref)`   | 生命周期引用计数     |
-| kobject | `struct kobject *` | `container_of(kobj, struct my_obj, kobj)` | 内核对象模型         |
-| device  | `struct device *`  | 通常 `container_of(dev, xxx_device, dev)` | driver core 设备对象 |
-
-所以不要把这几种 release 混成一种。
-
-错误理解：
-
-```text
-kobject 的 release 就是 kref release。
-```
-
-更准确说法：
-
-```text
-kobject 内部也管理引用；
-但是它的 release 属于 kobject 类型系统，不是裸 kref API 的 release。
-```
-
-------
+再核对两个容易误写的失败/撤下动作。其一，[初始化与添加包装](../../../../research/source_reading/kref/source_explanations/lib/kobject.c.md#1.1_初始化后失败仍有初始责任)已经先初始化一份，即使添加失败也应该 put，而非直接 kfree 外壳。其二，[kobject_del](../../../../research/source_reading/kref/source_explanations/lib/kobject.c.md#1.3_撤下层次不消费本对象引用)归还的是相应父关系责任，不消费本对象初始一份；不能少 put，也不能把 del 当作自动最后销毁。
 
 ### 11.3.3\_为什么不要为了引用计数强行引入\_kobject
 
-如果你的对象只是驱动内部对象：
+现在可以具体比较成本。私有 request 若只有创建者和消费者，kref 加类型封装已经能完成责任转移；引入 kobject 会让实例还要维持类型描述、名字/登记决策、失败清理与层次退出，新增的状态没有解决请求原本的业务问题。
 
-```c
-struct my_session {
-	struct kref ref;
-	struct list_head node;
-	int id;
-	void *priv;
-};
-```
+反过来，如果对象确实需要稳定身份和属性表示，就不能只在私有结构里加一个 name 字符串，便假定 sysfs 和用户空间访问已自动安全。应先查所在子系统是否已有适当的高层对象，再按该框架管理发布和退出。已经是设备时通常进入 device 层，不为了创建一个目录另造一套与设备并行的 kobject 身份。
 
-那么用 kref 就够了。
+也不必为了“用齐 kobject”给每个类型填满 sysfs_ops、default_groups、kset 和事件回调。本例只展示空目录与类型清理，因此只提供必要 release；具体需求增加以后，再补相应访问和退出规则。
 
-不要写成：
+做三项练习。先删去正常路径的观察者 get，说明为何后续不能继续保留 reader 别名；再保留观察者、去掉显式 del，沿固定 cleanup 的 state_in_sysfs 分支解释目录何时被清理；最后让添加返回名称冲突，证明为什么错误返回仍要消费K0那一份。宿主检查覆盖了后两类清理路径，第一项只作所有权推导，不运行悬空访问。
 
-```c
-struct my_session {
-	struct kobject kobj;
-	struct list_head node;
-	int id;
-	void *priv;
-};
-```
-
-除非你真的需要：
-
-```text
-1. 这个对象出现在 sysfs 中。
-2. 这个对象有 kobject 层级父子关系。
-3. 这个对象属于某个 kset。
-4. 这个对象需要 ktype 管理 release 和 sysfs 属性。
-5. 这个对象参与内核对象模型。
-6. 这个对象需要向用户空间暴露属性或 uevent。
-```
-
-否则引入 kobject 只会增加复杂度。
-
-对比：
-
-```mermaid
-flowchart TD
-    A["我只是要引用计数"] --> B["使用 kref"]
-    C["我要 sysfs 层级对象"] --> D["考虑 kobject"]
-    E["我要注册设备"] --> F["使用 struct device / device_register"]
-    G["我要分类展示设备"] --> H["使用 class"]
-    I["我要设备和驱动匹配"] --> J["使用 bus_type / driver core"]
-```
-
-所以本章给出明确规则：
-
-```text
-只要引用计数：
-    kref。
-
-需要内核对象模型：
-    kobject。
-
-需要 driver core 设备模型：
-    device/class/bus。
-
-不要从“需要引用计数”直接跳到 kobject。
-```
-
-------
+下一节把已有框架身份继续接到设备注册、解绑和资源管理。设备的引用、是否登记、驱动资源是否仍可用仍是不同问题，不能把本节的 kobject_del/put 名字直接替换成所有设备退出动作。
 
 ## 11.4\_driver\_core\_边界\_device\_class\_bus\_不是裸\_kref
 
