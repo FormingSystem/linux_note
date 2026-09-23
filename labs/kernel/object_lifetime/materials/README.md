@@ -221,3 +221,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.35\_父子桥接与最终摘链
 
 [note_kref_parent.c](note_kref_parent.c)对应[P27父子模板](../../../../knowledge/linux/object_lifetime/kref/P27_父子桥接与非拥有链表模板.md#27.1_一条关系对应几份引用)。每个child合计持父一份，父链表不拥有child；最终child清理先摘链，最后归还父桥接。Makefile已登记，八组宿主和ARM前端通过，354/342头身份核对无差异；实际并发、阻塞、目标装卸和硬件未验证。
+
+## 1.36\_文件实例与私有份额
+
+[note_kref_file.c](note_kref_file.c)、[共享命令头](note_kref_file_protocol.h)和[Linux用户探测](file_ownership_probe.c)对应[P28完整实验](../../../../knowledge/linux/object_lifetime/kref/P28_文件实例与私有对象持有模板.md#28.1_计数单位是文件实例)。两个独立open各持服务一份，dup共享file；回调失败自行put候选，最终release按file结算。Makefile已登记模块。八组宿主顺序协议与ARM前端通过，450/437头身份无差异；真实Linux用户程序、模块链接装卸与并发未验证。fail_open=1预期用户程序非零退出，模块日志应无文件release而服务最终释放一次。

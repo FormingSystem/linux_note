@@ -1,12 +1,12 @@
 ---
 id: research.character_device.source.open
-title: "Linux6.12文件关闭入口实现"
+title: "Linux6.12文件打开与关闭入口实现"
 kind: source
 status: evolving
 domains: [linux, kernel, source_reading]
 ---
 
-# 第1章\_Linux6.12文件关闭入口实现
+# 第1章\_Linux6.12文件打开与关闭入口实现
 
 上游相对位置为 `fs/open.c`，原文见[源码副本](../../../linux/fs/open.c)。版本采用[总索引](../../navigation/P01_Linux_6.12_字符设备源码阅读索引.md#1.1_版本和阅读边界)中的官方固定提交。先读[打开寿命模块导读](../../navigation/P03_文件操作与打开寿命导读.md#3.1_打开对象由谁持有)，下面 S3/S4 指该导读的文件寿命周期。中文 Doxygen 和行内注释是仓库补充，代码保留固定版本语句。
 
@@ -67,3 +67,45 @@ SYSCALL_DEFINE1(close, unsigned int, fd)
 __fput_sync 减少 f_count，仅当计数降到零才同步 __fput。若 VMA 或另一个描述符还持有 file，这次 close 依然不能触发 release。“同步”限定的是最后引用这一分支，不会把其他持有者强制清掉。
 
 该路径没有先调用 filp_close，也没有等待通用 fput 的任务工作。教材可以说明一般文件引用归还存在延迟，但在分析本版本一次实际 close 时必须保留这个分支差别。沿[模块导读](../../navigation/P03_文件操作与打开寿命导读.md#3.1_打开对象由谁持有)继续核对引用持有者与 fdinfo，再回到[总索引](../../navigation/P01_Linux_6.12_字符设备源码阅读索引.md)。
+
+## 1.3\_打开回调失败与交付边界
+
+固定提交dfaf2136的fs/open.c中，do_dentry_open把驱动回调的成功与后续打开步骤分开。以下裁剪只保留回调、成功标记、后续可能失败的一例与错误清理；省略的模式能力设置、预读初始化和大页缓存处理仍须在原文阅读。它不是可编译替代函数。中文Doxygen与注释是仓库补充。
+
+```c
+/**
+ * @brief 仓库阅读说明：驱动回调成功后才建立已打开标记。
+ * @param f 正在初始化的file，尚未保证返回给用户态。
+ * @param open 可选打开回调，为空时从f_op选择。
+ * @return 本片段分别展示回调失败和成功后的O_DIRECT拒绝。
+ * @note 对应模块导读S0到S1，教材F1/F2候选份额应在回调内结算。
+ */
+/* do_dentry_open函数内片段，前面已取得操作表并完成部分检查。 */
+if (!open)
+    open = f->f_op->open;
+if (open) {
+    error = open(inode, f);
+    if (error)
+        goto cleanup_all;      /* 尚未设置FMODE_OPENED，回调须自行回滚。 */
+}
+f->f_mode |= FMODE_OPENED;      /* 回调已经成功，随后失败也按已打开文件清理。 */
+/* 裁剪：设置能力、清理标志并初始化预读。 */
+if ((f->f_flags & O_DIRECT) && !(f->f_mode & FMODE_CAN_ODIRECT))
+    return -EINVAL;
+/* 裁剪：剩余成功路径及return 0。 */
+cleanup_all:
+if (WARN_ON_ONCE(error > 0))
+    error = -EINVAL;
+fops_put(f->f_op);              /* 回调失败时归还操作表代码引用。 */
+put_file_access(f);
+cleanup_file:
+path_put(&f->f_path);
+f->f_path.mnt = NULL;
+f->f_path.dentry = NULL;
+f->f_inode = NULL;
+return error;
+```
+
+cleanup_all没有调用驱动release。回调内已取得的私有对象份额必须由失败分支归还；VFS清理操作表和路径不会替驱动解释private_data。相反，设置FMODE_OPENED后再失败的路径，调用者仍须归还file，并由最终清理处理已成功建立的驱动上下文。
+
+在同一固定版本fs/file_table.c中，__fput发现没有FMODE_OPENED会直接转向文件存储清理；已打开分支才执行f_op->release并随后fops_put。故“用户open返回失败”不足以判定release是否发生，应先判断驱动回调是否已经交付成功。回到[模块导读](../../navigation/P03_文件操作与打开寿命导读.md#3.1_打开对象由谁持有)看框架责任，再用[P28完整实验](../../../../../knowledge/linux/object_lifetime/kref/P28_文件实例与私有对象持有模板.md#28.2.1_哪一种失败需要自己回滚)核对候选取得和回调失败回滚。

@@ -69,6 +69,7 @@ source_version: "6.12.20"
 | 查找与撤下谁先执行会怎样 | [拥有型窗口应用](../../../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.3.1_正确模型一_mutex/list_lookup_+_kref_get%28%29) → [容器与引用协作模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) |
 | 槽已撤下为何读者仍可用 | [容器状态模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [普通 get](../source_explanations/include/linux/kref.h.md#1.3_为独立使用追加引用) 与 [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 最后清理函数由谁选择 | [归零模块](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [put 的当次参数](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
+| dup为什么不增加私有对象份额 | [文件交付](P02_普通引用与归零回调导读.md#2.25_文件实例的候选与交付) → [普通取得](../source_explanations/include/linux/kref.h.md#1.3_为独立使用追加引用) |
 | child最终清理为什么还能访问parent | [父子桥接](P02_普通引用与归零回调导读.md#2.24_父子桥接与非拥有节点) → [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 错误标签与release怎样避免重复释放 | [分阶段清理责任](P02_普通引用与归零回调导读.md#2.23_分阶段失败的清理责任) → [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 新对象的附属资源失败怎么办 | [发布前失败模块](P02_普通引用与归零回调导读.md#2.7_新对象在发布之前失败) → [init](../source_explanations/include/linux/kref.h.md#1.2_建立初始引用) 与 [put](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
