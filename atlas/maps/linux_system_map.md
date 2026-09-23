@@ -83,4 +83,6 @@ Linux 内核结构、模块与数据结构
 - 版本化并发源码入口：[锁](../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)、[序列计数器](../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.5_建议阅读顺序)、[等待与完成量](../../research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)、[工作队列](../../research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.6_建议阅读顺序)、[Lockdep](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)、[RCU](../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)。
 - 跨职责聚焦阅读：[RCU MarkBook](../../markbook/topics/rcu/README.md#1.2_发行入口)把稳定正文、版本源码和实验编排进同一月度快照；它只改变阅读界面，不改变各层实现所有权。
 
+用户态设备管理从[事件与策略](../../knowledge/system_software/P01_设备事件与用户态策略.md#1.1_定义与分层位置)进入，跨层验证见[设备接口与应用访问](../../knowledge/linux/object_lifetime/devres/P03_驱动资源与用户态访问的协作.md#3.9_角色与接口边界)。
+
 学习时应先从通用文档形成模型，再用平台记录确认差异，用实验确认行为，最后以特定版本源码材料解释实现细节。

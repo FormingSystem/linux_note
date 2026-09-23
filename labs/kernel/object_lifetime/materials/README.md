@@ -300,4 +300,4 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 
 ## 1.55\_devres退出依赖与事件窗口
 
-[内核侧教材](../../../../knowledge/linux/object_lifetime/devres/devres_旧机制_udev_mdev的讨论.md#2.5_代码框架%28最小充分示例%29)展示[devres_shutdown.c](devres_shutdown.c)完整C11程序。七条显式事件轨迹包含四阶段失败、正常退出和两种非法访问窗口；非法情况只计数，不访问失效内存。GNU C11严格警告编译并运行通过，模型不模拟真实IRQ、锁、分配器或目标运行。
+[内核侧教材](../../../../knowledge/linux/object_lifetime/devres/P02_托管资源与使用者退出.md#2.5_代码框架%28最小充分示例%29)展示[devres_shutdown.c](devres_shutdown.c)完整C11程序。七条显式事件轨迹包含四阶段失败、正常退出和两种非法访问窗口；非法情况只计数，不访问失效内存。GNU C11严格警告编译并运行通过，模型不模拟真实IRQ、锁、分配器或目标运行。

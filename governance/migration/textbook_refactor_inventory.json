@@ -2290,11 +2290,11 @@
       "reason": "按职责冷读并确定保留、修复或重写范围 B04ch已冷读和重写来源、核心分组与全局边界；子系统条目2.2～2.13继续逐族核对，整页仍pending。 B04ci核对API2.2～2.5，旧附录5.2～5.5对应重复条目改为精确查询入口；仍有其余资源族和正文未审，保持pending。 B04cj完成2.6～2.13及总表全页回看，明确enabled与普通句柄、各optional配置，纠正DMA/thermal名称与返回；全页查询职责完整，作者validated，人工仍红。"
     },
     {
-      "path": "knowledge/linux/object_lifetime/devres/devres_旧机制_udev_mdev的讨论.md",
+      "path": "knowledge/linux/object_lifetime/devres/P03_驱动资源与用户态访问的协作.md",
       "baseline_sha256": "96e6dec97822ab6048c7e2951292cf603f096910df545f4e3f54a8a9bd63765a",
       "lines": 1276,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04ci核对API2.2～2.5，旧附录5.2～5.5对应重复条目改为精确查询入口；仍有其余资源族和正文未审，保持pending。 B04cj附录5.6～5.13归并当前版本查询，正文各层机制仍待冷读，未提前标为完成。 B04ck完成第1/2章内核侧实际冷读与重写，保留两组原始提问，七条C事件轨迹验证退出依赖；第3/4章及全篇收束仍pending。 B04cl完成第3章用户态策略重写，固定systemd v257手册与BusyBox 1.37.0源码核对；真实目标规则未执行，第4章及附录收束仍待审。"
+      "state": "validated",
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04ci核对API2.2～2.5，旧附录5.2～5.5对应重复条目改为精确查询入口；仍有其余资源族和正文未审，保持pending。 B04cj附录5.6～5.13归并当前版本查询，正文各层机制仍待冷读，未提前标为完成。 B04ck完成第1/2章内核侧实际冷读与重写，保留两组原始提问，七条C事件轨迹验证退出依赖；第3/4章及全篇收束仍pending。 B04cl完成第3章用户态策略重写，固定systemd v257手册与BusyBox 1.37.0源码核对；真实目标规则未执行，第4章及附录收束仍待审。 B04cm完成跨层案例与附录全篇收束，原ID保留于P03；完整退出和用户态章节守恒拆分，复用misc完整服务与C读取测试，未把目标未执行项算作通过。"
     },
     {
       "path": "knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md",
@@ -4829,6 +4829,20 @@
       "lines": 93,
       "state": "validated",
       "reason": "B04cj固定句柄/启停/注册导读及托管时钟实现逐项核对，六条宿主包装与21项ARM类型检查通过；不冒称硬件或注册运行，新人工状态红色。"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/devres/P02_托管资源与使用者退出.md",
+      "baseline_sha256": "d97fec611f3202cc6d9980291ac1372c8c123b4d359e4e185a74cfb4a848f6db",
+      "lines": 269,
+      "state": "validated",
+      "reason": "B04cm从已逐单元冷读、核对与重写的旧讨论完整拆分，保留程序、配置、练习与原提问，按职责修正入口与先修关系；人工评审新节点红色，真实目标运行边界未升级。"
+    },
+    {
+      "path": "knowledge/system_software/P01_设备事件与用户态策略.md",
+      "baseline_sha256": "19c522eca02052c2adbe903d28d7167e4eaa6161aefe999704bb11027679120e",
+      "lines": 262,
+      "state": "validated",
+      "reason": "B04cm从已逐单元冷读、核对与重写的旧讨论完整拆分，保留程序、配置、练习与原提问，按职责修正入口与先修关系；人工评审新节点红色，真实目标运行边界未升级。"
     }
   ]
 }

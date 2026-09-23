@@ -333,7 +333,8 @@ mindmap-plugin: basic
             - 🔴 [devres资源管理阅读大纲](../../knowledge/linux/object_lifetime/devres/大纲.md)
             - 🔴 [P01从失败回滚到设备资源账本](../../knowledge/linux/object_lifetime/devres/P01_从失败回滚到设备资源账本.md)
             - 🔴 [devm API接口文档说明](../../knowledge/linux/object_lifetime/devres/devres_API说明.md)
-            - 🔴 [内核资源管理与用户态设备管理的全景与对比](../../knowledge/linux/object_lifetime/devres/devres_旧机制_udev_mdev的讨论.md)
+            - 🔴 [P02 托管资源与使用者退出](../../knowledge/linux/object_lifetime/devres/P02_托管资源与使用者退出.md)
+            - 🔴 [P03 驱动资源与用户态访问的协作](../../knowledge/linux/object_lifetime/devres/P03_驱动资源与用户态访问的协作.md)
         - 🔴 [Linux 对象生命周期集成专题](../../knowledge/linux/object_lifetime/integration/大纲.md)
             - 章节评审：1 章未评审
             - 🔴 [P01 kobject device devres kref 生命周期集成](../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md)
@@ -529,6 +530,7 @@ mindmap-plugin: basic
                 - 🔴 [P12 fasync 与其他通知机制的对比与整合](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P12_fasync_与其他通知机制的对比与整合.md)
                 - 🔴 [P13 工程实践案例与编码核对表](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P13_工程实践案例与编码核对表.md)
 - 系统软件
+    - 🔴 [设备事件与用户态策略](../../knowledge/system_software/P01_设备事件与用户态策略.md)
     - 🔴 [Buildroot](../../knowledge/system_software/buildroot/P00_全书学习地图.md)
         - 章节评审：13 章未评审
         - 🔴 [P01 引言与基础](../../knowledge/system_software/buildroot/P01_引言与基础.md)

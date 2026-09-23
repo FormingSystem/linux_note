@@ -51,6 +51,7 @@ domains:
 
 | 领域 | 当前内容入口 |
 | --- | --- |
+| 用户态设备策略 | [事件、规则与访问结果](../../knowledge/system_software/P01_设备事件与用户态策略.md#1.1_定义与分层位置) |
 | Buildroot | [学习地图](../../knowledge/system_software/buildroot/P00_全书学习地图.md) |
 | Kconfig | [基础语法](../../knowledge/system_software/kconfig/基础语法.md) |
 | 链接脚本 | [LDS 基础语法](../../knowledge/system_software/linker/lds_基础语法.md) |

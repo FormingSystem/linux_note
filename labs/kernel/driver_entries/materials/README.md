@@ -25,3 +25,5 @@ domains:
 | [Makefile](Makefile) | 以 Kbuild 同时生成两个独立模块；执行命令见两篇正文 |
 
 材料接口以 NXP 官方 Linux 6.12.20 固定提交为准，身份见[源码基线](../../../../research/source_reading/linux/SOURCE_BASELINE.md)。目标须具有匹配构建树、MODULES 与 SYSFS 支持；节点自动出现还取决于 devtmpfs 和目标节点管理。没有进行硬件访问；不要把宿主模型或 ARM 语法检查称为目标装载成功。
+
+[跨层访问案例](../../../../knowledge/linux/object_lifetime/devres/P03_驱动资源与用户态访问的协作.md#3.16_用实际读取补齐策略检查)复用note_misc与misc_probe，分别检查接口发布、实际节点权限和读取位置；没有为了规则演示复制或改写驱动。本次只复核材料及既有契约，未新增目标加载、规则应用或卸载结论。
