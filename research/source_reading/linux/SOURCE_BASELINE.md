@@ -610,3 +610,9 @@ range/leaf 与 arange 的数组容量分别为 64 位条件分支 16/10、普通
 固定 maple_tree.c 与 mm.h 的 blob 沿 1.28。十二函数及一组资源标志按上游路径唯一展开，新增[资源模块](../maple_tree/navigation/P08_写入准备与资源清理.md#8.2_沿S0到S5追踪资源)。mas_preallocate 零需求可不设置 PREALLOC，失败保存 ret 后清理/reset；mas_nomem 只在允许睡眠且内部锁模式下放锁补分配，成功要求重试，不代表写入完成。mas_store_gfp 的 NULL 请求在重试时恢复原 index/last。mas_destroy 可涉及批量重平衡，与销毁整树分工不同；外部锁示例用 __mt_destroy。
 
 ARM 前端通过，348 个消费头文件的非生成部分与固定提交无差量。宿主三个固定控制函数配合显式资源与写入替身检查零需求、成功/失败清理、16 个补分配组合和清除请求范围恢复；错误载荷按宿主 intptr_t 适配，未模拟真实节点分配、回收和批量重平衡。目标 Kbuild/MODPOST/装卸与并发未运行。P15 两处 vma_find 重复函数体统一指向 mm.h 实现标题，半开边界与生命周期责任保留。
+
+## 1.42\_VMA游标初始化与边界适配证据
+
+固定 mm_types.h/mm.h 的 blob 沿 1.28；八个包装/初始化函数、一结构、一宏按上游位置唯一展开，既有 vma_find、vma_lookup 与 invalidate 沿已有标题。VMA_ITERATOR 省略 last，聚合初始化为零，vma_iter_init 经 mas_init 设置 last=addr；不把查询前字段当命中结果。clear/bulk 依据状态映射为 -ENOMEM，局部资源释放不等于销毁 VMA。
+
+[VMA 模块](../maple_tree/navigation/P09_VMA游标与边界适配.md#9.2_从地址空间到局部游标)按 S0～S4 区分外围保护、局部游标、窗口转发、对象使用和退出。C 整数实验实际比较 528 个合法区间、561 个拒绝输入与 17424 次成员关系；固定包装宿主检查只核对转发，Maple 后端为替身。未执行真实 VMA、锁竞争或页表更新。额外只读固定 mm/mmap.c 与 mm/vma.h 调用名定位，说明公共头包装不是完整 MM 写入主线，未展开未验证函数体。

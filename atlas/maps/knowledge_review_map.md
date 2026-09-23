@@ -628,6 +628,7 @@ mindmap-plugin: basic
         - 🔴 [Maple 查询源码路线](../../research/source_reading/maple_tree/大纲.md)
         - 🔴 [Linux 6.12 Maple 范围源码阅读索引](../../research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md)
         - 🔴 [范围契约与查询入口](../../research/source_reading/maple_tree/navigation/P02_范围契约与查询入口.md)
+        - 🔴 **未校正** [VMA 游标与边界适配](../../research/source_reading/maple_tree/navigation/P09_VMA游标与边界适配.md)
         - 🔴 **未校正** [写入准备与资源清理](../../research/source_reading/maple_tree/navigation/P08_写入准备与资源清理.md)
         - 🔴 **未校正** [普通接口与范围契约](../../research/source_reading/maple_tree/navigation/P07_普通接口与范围契约.md)
         - 🔴 **未校正** [操作游标与暂停继续](../../research/source_reading/maple_tree/navigation/P06_操作游标与暂停继续.md)

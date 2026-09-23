@@ -214,3 +214,5 @@ B03aw 完成 P15 15.6 的[P39 游标周期](../../knowledge/linux/data_structure
 B03ax 完成 P15 15.8 的[P40 普通接口](../../knowledge/linux/data_structures/红黑树_rb-tree/P40_Maple普通接口中的范围与查询.md#40.2_同一棵树中的覆盖与拒绝覆盖)拆分与实际改写，原三个小节保留桥接，八个普通函数改为唯一源码展开。完整 C 模块比较覆盖、拒绝覆盖、两种清除及终止游标；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.60_B03ax普通接口范围契约)区分前端/宿主和未执行的目标验证。下一项 P15 15.9 高级写入资源与锁协议，全仓继续。
 
 B03ay 完成 P15 15.9 的职责改写与[P41 写入准备](../../knowledge/linux/data_structures/红黑树_rb-tree/P41_Maple写入准备与锁边界.md#41.3_沿S0到S5区分位置与资源)完整单元，以外部锁私有模块串起准备、取消、兑现与清理；原 API 分组与分层图保留并纠正边界，两处 vma_find 函数体移为唯一实现入口。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.61_B03ay写入准备与资源协议)记录验证限制。下一项 P15 15.10/15.11 的 VMA 接入与包装契约，全仓继续。
+
+B03az 完成 P15 15.10/15.11 的 VMA 接入与边界改写，保留原两节入口和两张图的教学任务，补状态所有权、两种初始化、错误映射与完整[C 边界实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.11.4_运行边界等价性实验)。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.62_B03azVMA游标与边界适配)记录固定包装验证及真实目标限制。下一项 P15 15.12～15.17 查询场景与收束，全仓继续。
