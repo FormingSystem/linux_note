@@ -217,3 +217,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.34\_单槽弱缓存撤销
 
 [note_kref_weak_cache.c](note_kref_weak_cache.c)对应[P26弱缓存模板](../../../../knowledge/linux/object_lifetime/kref/P26_弱缓存撤销与RCU回收模板.md#26.1_新读区为什么救不了旧缓存)。槽不拥有引用，最后归还先按身份清槽再安排回收，旧对象退出不会抹掉替换值；Makefile已登记。九组宿主及ARM前端通过，354/342头身份核对无差异；真实RCU调度、并发、目标装卸、动态holder/多槽与硬件未验证。
+
+## 1.35\_父子桥接与最终摘链
+
+[note_kref_parent.c](note_kref_parent.c)对应[P27父子模板](../../../../knowledge/linux/object_lifetime/kref/P27_父子桥接与非拥有链表模板.md#27.1_一条关系对应几份引用)。每个child合计持父一份，父链表不拥有child；最终child清理先摘链，最后归还父桥接。Makefile已登记，八组宿主和ARM前端通过，354/342头身份核对无差异；实际并发、阻塞、目标装卸和硬件未验证。

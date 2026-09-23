@@ -18,3 +18,4 @@ obj-m += note_kref_hash.o
 obj-m += note_kref_work_modes.o
 obj-m += note_kref_timer.o
 obj-m += note_kref_weak_cache.o
+obj-m += note_kref_parent.o
