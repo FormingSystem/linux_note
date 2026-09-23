@@ -284,3 +284,5 @@ B04ae 完成[P09 9.3.1～9.3.6](../../knowledge/linux/object_lifetime/kref/P09_k
 B04af 完成[P09 9.3.7～9.3.9](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md#9.3.7_对象状态_集合锁与对象锁组合)，保留手工插锁与注释，解释成员/业务/引用三组状态及嵌套依赖，补编号冲突与创建失败退出，移除虚构异步收尾保证。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.95_B04af双状态与嵌套锁)记录 ARM 前端及保留依据；下一项 9.4，P09 仍 pending。
 
 B04ag 完成[P09 9.4 最后归还](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md#9.4.5_kref_put_mutex%28%29_的典型模式)，复用完整非拥有索引模块，按实际慢路径重查、回调接锁和上下文比较普通/特殊归还；保留原阅读旁注并校正边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.96_B04ag最后归还与回调接锁)记录证据及未执行项；继续 9.5，P09 仍 pending。
+
+B04ah 完成[P09 9.5 调用上下文](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md#9.5.5_对象锁内只做决定_实际_put_尽量放到锁外)，明确中断参数不自动拥有引用、关闭标志不产生份额，以及嵌入锁、等待环与业务停止的分别保证。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.97_B04ah归还上下文与关闭票据)记录验证边界；继续 9.6～9.8，P09 仍 pending。

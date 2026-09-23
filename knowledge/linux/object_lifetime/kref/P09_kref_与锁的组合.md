@@ -1680,684 +1680,132 @@ spinlock 版本沿同样的“先避免最后减少→取锁→重新减少→�
 
 ## 9.5\_put\_上下文和释放边界\_锁内\_锁外\_软中断和字段访问
 
-这一组内容从调用上下文角度整理。
+上一节已经知道归零回调会沿当前调用栈执行。本节把视角从“这段回调看起来简单”移到“哪些路径可能最后归还”：同一个对象可能在读者、关闭者或异步完成者手里结束，而最后者不是由创建者预先指定的。
 
-写 `kref_put()` 前要先问：
-
-```text
-这个 put 是否可能触发 release；
-当前位置是否持有 spinlock/mutex；
-release 是否可能睡眠；
-put 后是否还会访问对象字段；
-对象关闭业务和对象释放是不是被混成了一件事。
-```
+先为每条可能归还的路径写出当前份额来源、持锁集合和执行上下文，再检查它是否允许全部回调动作。检查的是完整路径，不是单独一行 kref_put。
 
 ### 9.5.1\_最后\_put\_可能发生在任意持有者路径
 
-一个对象可能有很多持有者：
+若没有额外协议限定，任何持有一份并调用 put 的路径都可能成为最后者。创建者、容器、lookup 读者和异步接收者谁先结束，取决于实际时序；因此回调若会拿 mutex，就不能只验证管理线程结束时的分支。
 
-```text
-创建者；
-全局 list；
-lookup 调用者；
-work；
-timer；
-callback；
-completion；
-硬件完成路径。
-```
+也可以有意限制最后者：例如 P06 的管理者借用模型保留自己的那一份，直到 worker 已退出，最后在允许的上下文归还。这里的保证来自管理者份额与等待顺序，不来自“worker 一般结束得早”。如果把 worker 改为独立持有一份，就要重新列出它最后归还时的回调上下文。
 
-最后一个 put 可能发生在任何一个路径。
-
-这意味着：
-
-```text
-release 可能在任意一个持有者调用 put 的上下文执行。
-```
-
-例如：
-
-```text
-workfn 最后 put -> release 在 workqueue 上下文执行；
-timer 最后 put -> release 在 timer/softirq 上下文执行；
-remove 最后 put -> release 在 remove 调用线程执行；
-lookup 调用者最后 put -> release 在普通系统调用路径执行。
-```
-
-所以设计 release 时不能只看一个路径。
-
-必须问：
-
-```text
-所有可能执行最后 put 的路径，是否都允许 release 做这些事情？
-```
-
-如果 release 里会睡眠，那么必须保证：
-
-```text
-最后 put 不会发生在不能睡眠的上下文。
-```
-
-如果无法保证，就需要改变设计：
-
-```text
-不要让该上下文成为最后 put；
-在该上下文 put 前转交到 work；
-release 只做非睡眠释放；
-使用 RCU 延迟释放；
-拆分资源释放。
-```
-
-------
+completion、timer 和 IRQ 这些名字本身不是份额来源。完成事件可以通知等待者但不消费任何引用；定时器改期不一定追加回调票据；中断注册参数也可能只是借用。先按 P07 的真实接收协议确认责任，再把它加入最后归还者列表。
 
 ### 9.5.2\_中断/软中断上下文中的\_put
 
-如果对象引用可能在中断或软中断上下文释放，就必须特别小心。
+硬中断或通常的非线程化软中断路径不能调用需要睡眠的回收步骤，如 mutex_lock、阻塞 I/O、GFP_KERNEL 分配或等待 completion。若普通 put 在这里归零，这些限制直接作用于 release。基线的非 PREEMPT_RT 假设应保留；不能从本页结论反推所有实时配置的执行线程和锁语义。
 
-示例：
+原来把 dev_id 直接转成 obj 后无条件 put 的 IRQ 片段缺少责任来源：若 dev_id 是注册期借用指针，每次中断都 put 就会连续消耗不属于这次中断的份额。正确协议必须说明这次完成事件对应哪个已预留的请求份额、为什么只会消费一次、撤销和迟到中断怎样分工，或者由注册管理者保有存储并同步注销后再归还。不要根据中断函数形参自动创造一份。
 
-```c
-irqreturn_t my_irq_handler(int irq, void *data)
-{
-	struct my_obj *obj = data;
-
-	/*
-	 * 如果这里可能是最后一个 put，
-	 * release 就会在中断上下文执行。
-	 */
-	kref_put(&obj->ref, my_obj_release);
-
-	return IRQ_HANDLED;
-}
-```
-
-这要求 `my_obj_release()` 不能：
-
-```text
-睡眠；
-拿 mutex；
-调用 cancel_work_sync；
-执行阻塞 I/O；
-使用 GFP_KERNEL 分配；
-等待 completion。
-```
-
-如果 release 需要这些操作，就不要让 IRQ 路径直接成为最后 put。
-
-可以设计成：
-
-```text
-IRQ 路径只标记完成；
-把释放动作交给 workqueue；
-workqueue 路径 put 最后一份引用。
-```
-
-或者让 release 只做最小释放，把复杂清理提前完成。
-
-------
+如果这个完成者已有合法份额但回收必须在可睡眠上下文进行，可以在它归零以前把指定份额交给进程上下文的工作，也可以提前完成所有可阻塞关闭，让 IRQ 最后回调只做适用的非睡眠清理。前者须处理投递拒绝、重复完成和模块退出，不能在 IRQ 先 put 最后一份、回收后才安排 work。
 
 ### 9.5.3\_锁内\_put\_的关键是\_release\_是否会在当前上下文执行
 
-锁内 put 不是绝对禁止。
+对普通 put，把两个正常分支分别展开：非最后只减少责任，最后则继续执行回调。若要允许锁内归还，必须证明两支都成立，或者有一个真实、覆盖当前时段的独立份额排除了最后分支。瞬间读取到计数大于一不是这样的证明，别的拥有者可能马上归还。
 
-但是要判断：
+对于拥有型队列，最容易审查的顺序仍是同锁摘下节点、保存取回的一份、解锁后归还。这样队列锁不再被这次归还带入回调。若回调只释放与外层全局锁无关的存储，锁内归还也可能正确，但不会因为这次测试计数未归零就自动得到这个结论。
 
-```text
-如果这个 put 不是最后一个引用，通常没事；
-如果这个 put 是最后一个引用，release 会在锁内执行。
-```
-
-所以锁内 put 的安全性取决于：
-
-```text
-release 能否在当前锁持有状态下执行。
-```
-
-安全场景：
-
-```c
-spin_lock(&q->lock);
-list_del_init(&req->node);
-spin_unlock(&q->lock);
-
-kref_put(&req->ref, req_release);
-```
-
-这是最推荐。
-
-谨慎场景：
-
-```c
-spin_lock(&q->lock);
-list_del_init(&req->node);
-kref_put(&req->ref, req_release);
-spin_unlock(&q->lock);
-```
-
-只有当你能证明：
-
-```text
-这个 put 不可能是最后一个引用；
-或者 release 可以在 q->lock 持有状态下安全执行；
-或者使用了专门设计的 locked release。
-```
-
-才可以这么写。
-
-否则应该默认避免。
-
-------
+特殊 locked 回调有专门的入口持锁和出口解锁契约，应按 9.4 的两类分支分别审查，不能把它当作普通回调来套用锁外模板。
 
 ### 9.5.4\_锁外\_put\_通常安全\_前提是后续不再访问对象
 
-有些人会担心：
+拥有型成员摘下后，原成员份额暂归撤销者，保护对象到锁外 put 为止。新查找已经没有这个入口；旧查找者若先取得自己的份额，则继续靠自己的责任使用。这解释了为什么不需要为了防止回收而在整个 put 期间继续持集合锁。
 
-```text
-我解锁后再 put，会不会被别人 lookup 到？
-```
+“锁外”只去掉了这把锁，不改变原调用上下文，也不取消其他锁或关闭协议。即使在锁外，IRQ 回调仍不能执行会睡眠的清理。归还以后还要打印字段、解锁对象锁或等待嵌入对象的 work，则都需要另外指出仍有效的保护，不能继续依靠已经归还的那一份。
 
-关键看 unlink 顺序。
-
-正确模式：
-
-```c
-mutex_lock(&my_obj_list_lock);
-list_del_init(&obj->node);
-mutex_unlock(&my_obj_list_lock);
-
-kref_put(&obj->ref, my_obj_release);
-```
-
-解锁后，对象已经不在 list 中。
-
-新的 lookup 持同一把锁，也找不到它。
-
-所以锁外 put 不会让新 lookup 重新获得对象。
-
-已有引用仍然可以继续使用对象。
-
-这正是 kref 的作用：
-
-```text
-撤销可见性后，禁止新用户进入；
-已有引用继续收尾；
-最后一个 put 才 release。
-```
-
-这比在锁内直接释放更安全、更清晰。
-
-------
+若只需记录日志，可以在最后使用窗口内复制不可变编号或结果值，之后仅打印副本。复制应满足字段自身的同步协议，不能无锁读取可变字段再把“只打印”当作例外。
 
 ### 9.5.5\_对象锁内只做决定\_实际\_put\_尽量放到锁外
 
-有些对象的释放需要根据状态决定。
+“只有第一次 close 才 put”必须先回答那一次 put 对应谁的份额。仅有 `state != CLOSED` 的条件，不会自动产生一个可归还的引用。若每个调用者各带自己的份额，重复 close 时跳过 put 反而可能漏掉各调用者的责任；若这次 put 消费的是对象专门持有的关闭票据，就应明确命名和初始化它。
 
-例如：
-
-```text
-如果 state == CLOSED，则释放；
-否则只减少引用。
-```
-
-不要把业务状态和 kref 计数混为一谈。
-
-可以写成：
+下面是后一种协议的片段：建立对象时已经为关闭流程额外预留一份，由 close_ticket=true 表示；每个调用者另外持有覆盖整个函数的独立份额。close_gate 只关闭同步业务门，不等待异步活动，也不消费调用者原份额。
 
 ```c
-void my_obj_close(struct my_obj *obj)
+static void close_gate(struct close_object *obj)
 {
-	bool do_put = false;
-
-	mutex_lock(&obj->lock);
-
-	if (obj->state != OBJ_CLOSED) {
-		obj->state = OBJ_CLOSED;
-		do_put = true;
-	}
-
-	mutex_unlock(&obj->lock);
-
-	if (do_put)
-		kref_put(&obj->ref, my_obj_release);
+    bool release_ticket = false;
+    mutex_lock(&obj->lock);
+    obj->accepting = false;
+    if (obj->close_ticket) {
+        obj->close_ticket = false;
+        release_ticket = true; /* 这次调用者接走唯一的关闭票据。 */
+    }
+    mutex_unlock(&obj->lock);
+    if (release_ticket)
+        close_object_put(obj); /* 只归还那份预留，调用者自己的份额还在。 */
 }
 ```
 
-这里锁保护：
+两个关闭者若各持独立份额，先取得锁者接走票据，后取得锁者看到 false，不会重复消费同一份；二者仍分别负责归还各自调用份额。这里 close_ticket 的写入通过同一 mutex 被后继调用者观察，bool 只是票据归属的外层记录，kref 计数本身没有这个名字。
 
-```text
-state 是否已经关闭；
-close 是否重复调用。
-```
-
-kref_put 处理：
-
-```text
-当前路径释放自己的引用。
-```
-
-不要写成：
-
-```c
-mutex_lock(&obj->lock);
-
-if (obj->state != OBJ_CLOSED) {
-	obj->state = OBJ_CLOSED;
-	kref_put(&obj->ref, my_obj_release);
-}
-
-mutex_unlock(&obj->lock);
-```
-
-除非你确认 release 不会反向拿 `obj->lock`，也不会释放后影响当前锁路径。
-
-更稳妥的模式是：
-
-```text
-锁内决定；
-锁外 put。
-```
-
-------
+该片段要求关闭流程最终确实被执行，否则专门预留的一份会一直保留对象。若应用不需要一份独立的关闭责任，通常可以像完整 service_shutdown 一样接管入口原有的份额，而不额外发明一张票据。选择取决于谁拥有关闭流程，不取决于想把 put 放在哪一行。
 
 ### 9.5.6\_对象锁和对象释放
 
-如果对象锁是嵌入在对象内部的：
+嵌入对象的锁是对象存储的一部分，不能在最后普通 put 回收外壳后再 unlock。即使 release 自己完全不拿锁，下面的路径也可能失效：
 
 ```c
-struct my_obj {
-	struct kref ref;
-	struct mutex lock;
-};
-```
-
-那么对象释放后，锁本身也没了。
-
-所以不能在释放对象后再 unlock。
-
-错误示例：
-
-```c
+/* 错误示意：没有其他保护，普通put可能直接回收整个obj。 */
 mutex_lock(&obj->lock);
-
-kref_put(&obj->ref, my_obj_release);
-
-mutex_unlock(&obj->lock);    /* 可能 UAF */
+object_put(obj);
+mutex_unlock(&obj->lock); /* 锁本身的存储可能已经无效。 */
 ```
 
-如果 `kref_put()` 触发 release，`obj` 被 kfree，那么 `obj->lock` 也已经释放。
+修复通常是先完成字段操作并解锁，再归还那份。若使用特别设计的回调接管解锁，则调用者和回调必须统一由谁完成 unlock，且保证锁的最后一次访问早于回收；不能让两边都以为另一方解锁了。
 
-后续 `mutex_unlock(&obj->lock)` 就可能访问释放内存。
-
-所以嵌入对象内部的锁有一个规则：
-
-```text
-不要在持有 obj->lock 时执行可能释放 obj 的最后 put。
-```
-
-除非能证明：
-
-```text
-当前 put 不可能是最后一个；
-或者 release 不会释放包含这把锁的内存；
-或者使用了特别设计的锁转移机制。
-```
-
-更推荐写法：
-
-```c
-mutex_lock(&obj->lock);
-obj->state = OBJ_DONE;
-mutex_unlock(&obj->lock);
-
-kref_put(&obj->ref, my_obj_release);
-```
-
-------
+外部全局锁不会随 obj 一起消失，因此“持全局锁回收 obj”不自动产生这种 unlock 地址失效，却仍要审查自等待、锁顺序和阻塞限制。存储期限与锁依赖是两个独立检查。
 
 ### 9.5.7\_release\_中检查锁保护对象已经脱链
 
-release 不应该承担主要 unlink 工作。
+在拥有型集合模型里，正常最后归零意味着成员那份已经被归还，因而成员应已摘下或从未发布。release 可以检查自链接节点是否为空，帮助发现调用者违反协议；它不负责替调用者补做漏掉的摘链。
 
-更好的设计是：
+这种检查也有前提：本来应由责任协议保证此时没有合法并发访问者。若协议已经损坏，锁外检查一眼 node 不会自动修好并发，更不能靠“未告警”证明所有路径正确。list_empty 只检查其约定的链接状态，不知道这个节点原来属于哪张表，也不能代替对象的身份或引用账本。
 
-```text
-remove/unpublish 路径负责从集合脱链；
-release 只检查对象已经不在集合中。
-```
-
-示例：
-
-```c
-static void my_obj_release(struct kref *ref)
-{
-	struct my_obj *obj;
-
-	obj = container_of(ref, struct my_obj, ref);
-
-	WARN_ON(!list_empty(&obj->node));
-
-	kfree(obj);
-}
-```
-
-这个 `WARN_ON()` 的意义是：
-
-```text
-如果 release 时对象仍然挂在 list 中，说明 remove/unpublish 路径有 bug。
-```
-
-它可以尽早发现：
-
-```text
-没有先 unlink；
-多路径重复插入；
-忘记 list_del_init；
-release 时全局结构还保存悬挂指针。
-```
-
-但是 release 里不建议直接：
-
-```c
-list_del_init(&obj->node);
-```
-
-除非有明确锁保护。
-
-否则 release 不知道当前是否持有 list 锁，也不知道是否和 lookup 并发。
-
-------
+非拥有索引的 locked release 则可以按已持锁契约真正摘链，普通条件取得模型的回调也可以先取同锁再摘链。是否由 release 摘链取决于整套协议，不能从拥有型例子推广为“回调永远不应摘链”。
 
 ### 9.5.8\_list\_del\_和\_kref\_put\_的常见组合
 
 #### (1)\_推荐组合
 
-```c
-mutex_lock(&list_lock);
-list_del_init(&obj->node);
-mutex_unlock(&list_lock);
-
-kref_put(&obj->ref, obj_release);
-```
-
-特点：
-
-```text
-先撤销可见性；
-再释放集合引用；
-release 不在 list_lock 下执行；
-简单安全。
-```
-
-------
+拥有型成员实际摘下以后，先解锁再归还成员那份。这个顺序把容器变更和可能执行复杂回调的阶段分开；重复调用要先判断这次是否确实接回一份，参数地址也须有效。9.3.2 已给出完整推导。
 
 #### (2)\_风险组合
 
-```c
-mutex_lock(&list_lock);
-list_del_init(&obj->node);
-kref_put(&obj->ref, obj_release);
-mutex_unlock(&list_lock);
-```
-
-风险：
-
-```text
-如果 put 是最后引用，release 在 list_lock 下执行；
-release 不能拿 list_lock；
-release 不能做可能需要 list_lock 的事情；
-release 释放对象后，当前路径不能再访问 obj。
-```
-
-除非你能证明它安全，否则不要这么写。
-
-------
+先摘下，仍持集合锁时普通 put，然后解锁：回调可能继承锁并阻塞、自等待或回收后续还要访问的对象。这种写法并非语法错误，但须对最后和非最后两支逐项证明；仅有“release 很短”不够。
 
 #### (3)\_错误组合
 
-```c
-kref_put(&obj->ref, obj_release);
-
-mutex_lock(&list_lock);
-list_del_init(&obj->node);
-mutex_unlock(&list_lock);
-```
-
-问题：
-
-```text
-put 可能已经释放对象；
-后续 list_del 访问释放内存；
-全局 list 可能短时间保存悬挂指针。
-```
-
-这通常是错误的。
-
-------
+先归还拥有型成员那份，再使用对象 node 去摘链，可能在最后归还后访问已释放存储，而且破坏成员仍在就持有一份的正计数依据。不要用非拥有回调摘链协议来为这段混合代码辩护，后者的地址保护和责任来源完全不同。
 
 ### 9.5.9\_spinlock\_场景下的特殊限制
 
-spinlock 下不能睡眠。
+按本仓库固定非 PREEMPT_RT 边界，持 spinlock 时不得执行可能睡眠的步骤。若最后回调调用同步取消或阻塞分配，即使它不反拿同一锁，也可能因上下文不允许而错误。
 
-所以如果 release 可能在 spinlock 下执行，release 就不能睡眠。
+解锁再 put 可去掉这一段持锁限制，但调用点若仍在硬中断、软中断或其他不可睡眠环境，回调并没有因此得到睡眠许可。需要把最后归还移到工作线程时，应先保留或转交一份，并配套关闭投递入口；不能先减到零再补上下文。
 
-错误示例：
-
-```c
-spin_lock(&obj_lock);
-
-list_del_init(&obj->node);
-kref_put(&obj->ref, my_obj_release);
-
-spin_unlock(&obj_lock);
-```
-
-如果 release 中有：
-
-```c
-static void my_obj_release(struct kref *ref)
-{
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
-
-	cancel_work_sync(&obj->work);  /* 可能睡眠 */
-	kfree(obj);
-}
-```
-
-那么这就不安全。
-
-推荐：
-
-```c
-spin_lock(&obj_lock);
-list_del_init(&obj->node);
-spin_unlock(&obj_lock);
-
-kref_put(&obj->ref, my_obj_release);
-```
-
-如果必须在最后 put 时和 spinlock 序列化，才考虑 `kref_put_lock()`，并且 release 必须是 spinlock-safe。
-
-------
+kref_put_lock 还会自行取得普通 spin_lock，不替调用者完成 irqsave。某些抢占/实时配置有不同锁实现时，应独立查配置与调用路径，不能把本节固定边界推广为全部 Linux 行为。
 
 ### 9.5.10\_mutex\_场景下的睡眠问题
 
-mutex 本身允许睡眠。
+mutex 允许合法等待取得，但不会替应用判断等待图是否有环。回调已经持 mutex，又等一个退出前要取得它的 worker，就形成依赖：回调等 worker，worker 等 mutex，mutex 的释放又要等回调完成。
 
-但是如果 release 在持有 mutex 时执行，仍然可能有问题。
-
-例如：
-
-```c
-mutex_lock(&global_lock);
-kref_put(&obj->ref, my_obj_release);
-mutex_unlock(&global_lock);
-```
-
-如果 release 里又要拿 `global_lock`，死锁。
-
-如果 release 里等待另一个线程，而那个线程需要 `global_lock`，也可能死锁。
-
-例如：
-
-```text
-CPU0:
-    mutex_lock(global_lock)
-    kref_put -> release
-    release 等待 worker 退出
-
-CPU1 worker:
-    退出前需要 mutex_lock(global_lock)
-```
-
-结果：
-
-```text
-CPU0 等 worker；
-worker 等 global_lock；
-global_lock 被 CPU0 持有。
-```
-
-所以即使 mutex 允许睡眠，也不代表可以随便在 mutex 内执行 release。
-
-更稳妥的规则仍然是：
-
-```text
-能在锁外 put，就在锁外 put。
-```
-
-------
+因此同步等待前要检查被等待者退出的最后几步，而不只检查当前函数里有没有第二次 mutex_lock。可以在门锁内禁止新操作，持有覆盖收尾的一份，解锁后等待，再按协议发布关闭结果；如果别的关闭者需要等待同一个完成结果，还须有单独的完成状态，不能只看到入口为空就返回“已经完成”。9.2 的单管理者前提正是为了不掩盖这个扩展。
 
 ### 9.5.11\_kref\_get\_unless\_zero()\_与锁组合
 
-有些场景需要同时使用锁和 `kref_get_unless_zero()`。
+先证明地址仍可访问，再问计数是否保证正。如果是拥有型成员，或最后减少也在同一查找锁内，普通 get 可以有完整依据；若最后减少在锁外、回调只能拿锁后回收，则窗口内可能见零，应使用条件取得。
 
-例如：
-
-```c
-struct my_obj *my_obj_lookup_get_live(int id)
-{
-	struct my_obj *obj = NULL;
-
-	mutex_lock(&my_obj_list_lock);
-
-	obj = my_obj_find_locked(id);
-	if (!obj)
-		goto out;
-
-	if (obj->state != OBJ_LIVE) {
-		obj = NULL;
-		goto out;
-	}
-
-	if (!kref_get_unless_zero(&obj->ref))
-		obj = NULL;
-
-out:
-	mutex_unlock(&my_obj_list_lock);
-	return obj;
-}
-```
-
-这里三层保护分别是：
-
-```text
-my_obj_list_lock：
-    保护 obj 指针和集合关系。
-
-state == OBJ_LIVE：
-    保护业务进入条件。
-
-kref_get_unless_zero：
-    防止从 0 复活对象。
-```
-
-不要以为用了 `kref_get_unless_zero()` 就可以去掉 `my_obj_list_lock`。
-
-因为它仍然要访问：
-
-```c
-obj->ref
-```
-
-而访问 `obj->ref` 的前提是：
-
-```text
-obj 内存仍然有效。
-```
-
-这个前提靠锁或 RCU 等机制保证。
-
-------
+业务状态检查是再独立的一层：条件 get 不读 LIVE/DYING，状态检查也不保证任意地址有效。将它们放到同一正确保护窗口可以组合保证，却不能相互替代。具体比较与完整 C 模型回到[P08 条件取得](P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.4.3_kref_get_unless_zero%28%29_仍然需要锁或_RCU)，本节不另引入一套缺少发布/回收配对的 lookup。
 
 ### 9.5.12\_对象销毁和业务关闭不是一回事
 
-锁通常还负责对象业务关闭。
+停止接纳、同步操作退出、异步活动排空、成员撤下与最后存储回收，可能是不同阶段。锁帮助各阶段完成一致的状态决定，引用覆盖仍需访问对象的时间；二者不能把缺失的阶段凭空补出来。
 
-例如：
+完整 service_shutdown 关闭一个同步操作门，旧读者仍可持引用、收到 ESHUTDOWN 并归还；它不假装还关闭了硬件。9.3.7 的 remove_by_id 只撤下成员，run_state 可能仍是 RUNNING；这是其已声明边界，若要销毁一个真实运行资源，必须先增加实际的停止与排空证明。
 
-```c
-void my_obj_stop(struct my_obj *obj)
-{
-	mutex_lock(&obj->lock);
-
-	if (obj->state == OBJ_STOPPED) {
-		mutex_unlock(&obj->lock);
-		return;
-	}
-
-	obj->state = OBJ_STOPPED;
-	stop_hw(obj);
-
-	mutex_unlock(&obj->lock);
-}
-```
-
-这只是业务状态关闭。
-
-不等于对象释放。
-
-对象释放仍然由：
-
-```c
-kref_put(&obj->ref, my_obj_release);
-```
-
-决定。
-
-所以不要把：
-
-```c
-state == STOPPED
-```
-
-等同于：
-
-```c
-refcount == 0
-```
-
-它们是两个维度：
-
-```text
-业务状态：
-    NEW / LIVE / STOPPING / STOPPED / DYING
-
-生命周期：
-    有多少引用持有者
-```
-
-对象可以是：
-
-```text
-STOPPED 但还有引用；
-DYING 但已有引用仍在收尾；
-LIVE 但某些字段被锁保护；
-refcount 非 0 但不允许新 lookup。
-```
-
-这就是为什么 kref 不能替代状态机，锁也不能替代 kref。
-
-------
+尝试评审一个新对象时，不妨把“关闭完成”具体写成可检查的条件：不能再从入口取得；已有同步操作已退出；不会再投递异步工作；已接收的工作全部归还或退出；最后仍存在哪一份。只有把这些条件与本对象真实活动对应，最后 put 才是完整流程的结束，而不只是把计数减到零的一行代码。
 
 ## 9.6\_完整模板\_锁\_+\_kref\_对象的组织方式
 
