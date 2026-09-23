@@ -12,236 +12,243 @@ domains:
 
 ## 9.1\_本章定位
 
-前面章节已经建立了几个前置结论：
+P08 已经证明查找者怎样在受保护窗口内取得自己的一份。现在查找返回以后，两个读者都还持有引用，都想执行“把服务计数加一”。对象肯定没有提前释放，可最终结果为什么仍可能不对？再往前一步：关闭者撤下入口以后，怎样阻止这些旧读者继续修改业务字段，而又允许它们安全归还引用？
 
-```text
-kref 保护对象内存生命周期；
-锁保护字段、状态和集合关系；
-lookup + get 必须被保护；
-handoff 要定义引用归属；
-release 是最后一个 put 之后的销毁点。
-```
+本章围绕这两个问题建立锁与 kref 的配合。先给状态划分保护范围，再看查找、业务操作与关闭怎样连成一轮；最后检查 put 同步进入 release 时继承了什么锁和上下文。P05 的最后归还锁接口、P06 的回调上下文以及 P08 的地址窗口仍作为先修，不从头重复引用计数原理。
 
-本章不再重复证明：
-
-```text
-kref 不是锁。
-```
-
-而是专门讨论工程代码里怎么把 kref 和锁组合起来。
-
-本章主线：
-
-```text
-kref 决定对象能不能活到你用完；
-锁决定对象内部状态和外部集合关系是否一致。
-```
-
-也就是说：
-
-```text
-kref 解决“对象会不会被释放”；
-锁解决“对象内容和集合关系会不会被并发改乱”。
-```
-
-两者缺一不可。
-
-------
+这里的“集合锁”和“对象锁”是 **设计分工的名称**，不是 Linux 两种固定的锁类型。一把 mutex 可以同时保护多个字段与集合；也可以把无关对象的业务分别交给各自的锁。正确性取决于所有访问者是否遵守相同协议，不取决于结构体里恰好有几把锁。
 
 ## 9.2\_基本分工\_kref\_管生命周期\_锁管一致性
 
-这一组内容先把边界收住。
-
-后面所有锁组合问题，本质上都要先回答：
-
-```text
-kref 保护的是对象内存是否还活着；
-集合锁保护对象是否还能被找到；
-对象锁保护对象字段和状态是否一致。
-```
-
-如果把这三件事混在一起，后面的 lookup、remove、release、put 路径都会变得难以审查。
+先保留一个服务对象：共享入口使它可被查找，value 记录已完成的同步操作次数，accepting 决定还接不接新操作。对象中还嵌入 access_lock 和 ref。计数存储与业务状态在同一个分配块内，并不意味着它们自动使用同一种同步规则。
 
 ### 9.2.1\_kref\_和锁分别保护什么
 
-假设有一个对象：
+假设两个使用者各持一份，却不保护 `++obj->value`。从一次读、计算、写回的逻辑看，可以出现以下交错；这是解释状态丢失的示意，并不是允许在 C 中执行数据竞争的程序：
+
+| 时刻 | 使用者 A | 使用者 B | value |
+| --- | --- | --- | --- |
+| T0 | 已持一份 | 已持一份 | 0 |
+| T1 | 读到 0，准备写 1 | 尚未读取 | 0 |
+| T2 | 尚未写回 | 也读到 0，准备写 1 | 0 |
+| T3 | 写入 1 | 尚未写回 | 1 |
+| T4 | 使用结束 | 写入 1 | 1 |
+
+两份引用保证分配块没被回收，却没有阻止两次修改互相覆盖。真实无同步 C 数据竞争还会带来语言层面的未定义行为，不能承诺它“最多只是丢一次加法”。修复必须让所有相关读写遵守同一字段协议，例如使用 access_lock 把检查 accepting 与增加 value 放在同一个临界区。
+
+另一方面，若只拿嵌在对象里的锁，却没有先证明对象存储有效，执行 mutex_lock 本身就可能访问失效地址。P08 的取得窗口先为调用者建立独立份额，随后才能安全访问对象内部的锁；本次份额应保留到最后一次 unlock 完成以后。
+
+下面复用 P03 的完整 [note_kref_shutdown.c](../../../../labs/kernel/object_lifetime/materials/note_kref_shutdown.c)，从两把锁的职责重新阅读。它只有一个服务槽，全部演示操作在模块初始化中顺序执行，没有外部调用者、异步 work 或实际设备；这样关闭保证能由代码本身说明，而不藏在未定义的 stop_hw 中。
 
 ```c
-struct my_obj {
-	struct kref ref;		// 生命周期引用计数
-	struct mutex lock;		// 对象字段互斥锁
-	struct list_head node;	// 挂入全局 list 的节点
-	int id;				   // 查找 key
-	int state;			   // 业务状态
-	bool dying;			   // 是否正在退出
+// SPDX-License-Identifier: GPL-2.0
+#include <linux/kref.h>
+#include <linux/module.h>
+#include <linux/mutex.h>
+#include <linux/slab.h>
+
+struct service_object {
+    int value;
+    bool accepting;
+    struct mutex access_lock;
+    struct kref ref;
 };
+
+static DEFINE_MUTEX(entry_lock);
+static struct service_object *service_entry;
+static unsigned int release_calls;
+
+static void service_release(struct kref *ref)
+{
+    struct service_object *obj = container_of(ref, struct service_object, ref);
+    ++release_calls; /* 本模块仅同步演示，外部计数不作为并发统计接口。 */
+    kfree(obj);
+}
+
+static void service_put(struct service_object *obj)
+{
+    if (obj)
+        kref_put(&obj->ref, service_release);
+}
+
+static struct service_object *service_create(void)
+{
+    struct service_object *obj = kzalloc(sizeof(*obj), GFP_KERNEL);
+    if (!obj)
+        return NULL;
+    obj->value = 0;
+    obj->accepting = true;
+    mutex_init(&obj->access_lock);
+    kref_init(&obj->ref);
+    return obj;
+}
+
+/* 成功接管调用者现有的一份，失败不接管；仅发布全新且未发布的对象。 */
+static int service_publish_take(struct service_object *obj)
+{
+    int result = 0;
+    mutex_lock(&entry_lock);
+    if (service_entry)
+        result = -EEXIST;
+    else
+        service_entry = obj;
+    mutex_unlock(&entry_lock);
+    return result;
+}
+
+static struct service_object *service_lookup(void)
+{
+    struct service_object *obj;
+    mutex_lock(&entry_lock);
+    obj = service_entry;
+    if (obj)
+        kref_get(&obj->ref); /* 可见期间入口拥有正引用。 */
+    mutex_unlock(&entry_lock);
+    return obj;
+}
+
+/* 调用者已有独立引用；检查与整个操作必须在同一保护窗口中。 */
+static int service_step(struct service_object *obj, int *result_value)
+{
+    int result = 0;
+    mutex_lock(&obj->access_lock);
+    if (!obj->accepting)
+        result = -ESHUTDOWN;
+    else
+        *result_value = ++obj->value;
+    mutex_unlock(&obj->access_lock);
+    return result;
+}
+
+/* 单一管理者负责关闭，关闭期间不重新发布；不支持并发关闭者充当屏障。 */
+static void service_shutdown(void)
+{
+    struct service_object *obj;
+    mutex_lock(&entry_lock);
+    obj = service_entry;
+    service_entry = NULL;
+    mutex_unlock(&entry_lock);
+    if (!obj)
+        return;
+    /* 原入口份额暂归管理者，保护下面访问对象内部的锁。 */
+    mutex_lock(&obj->access_lock);
+    obj->accepting = false;
+    mutex_unlock(&obj->access_lock);
+    service_put(obj); /* 锁已退出；最后回调不会销毁仍被本路径使用的锁。 */
+}
+
+static int __init note_shutdown_init(void)
+{
+    struct service_object *creator = service_create();
+    struct service_object *reader;
+    int result, before_value = -1, after_value = -1;
+    if (!creator)
+        return -ENOMEM;
+    result = service_publish_take(creator);
+    if (result) {
+        service_put(creator); /* 发布拒绝，初始份额仍在当前路径。 */
+        return result;
+    }
+    creator = NULL; /* 责任已转交，不再依初始份额访问。 */
+    reader = service_lookup();
+    if (!reader) {
+        service_shutdown();
+        return -ENOENT;
+    }
+    result = service_step(reader, &before_value);
+    pr_info("note_shutdown: before result=%d value=%d\n", result, before_value);
+    service_shutdown();
+    result = service_step(reader, &after_value);
+    pr_info("note_shutdown: after result=%d value=%d\n", result, after_value);
+    service_put(reader);
+    return 0;
+}
+
+static void __exit note_shutdown_exit(void)
+{
+    /* 没有导出入口、工作或外部读者，所有责任在 init 返回前结束。 */
+    pr_info("note_shutdown: release_calls=%u\n", release_calls);
+}
+
+module_init(note_shutdown_init);
+module_exit(note_shutdown_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("业务关闭与引用退出分层实验");
 ```
 
-里面有几类东西：
+service_step 的业务操作只是“检查是否接纳并增加一次整数值”。因为它全部在 access_lock 中完成，关闭者拿到同锁时，之前已进入的这次同步操作已经离开；关闭者写 false 后才进入的操作则返回 -ESHUTDOWN。不要把这个小结论推广成“只要关一个 bool，所有 DMA/work 都已退出”；异步对象还需要 P06 已讲过的排空或责任交付。
 
-```text
-ref      ：生命周期引用计数
-lock     ：对象字段互斥锁
-node     ：挂入全局 list 的节点
-id       ：查找 key
-state    ：业务状态
-dying    ：是否正在退出
+| 阶段 | 触发动作 | 状态地址、锁与责任 | 完成条件 |
+| --- | --- | --- | --- |
+| S0 私有创建 | 创建者分配初始化 | obj.value=0、accepting=true、初始化 access_lock 与 ref=1 | 发布前字段已准备好 |
+| S1 发布 | publish_take 持 entry_lock 写 service_entry | 成功把初始份额交给入口，计数不增加；拒绝仍由创建者持有 | 入口可见或明确拒绝 |
+| S2 取得 | lookup 持 entry_lock 读槽并 get | 入口仍拥有一份，读者得到另一份 | 解锁后读者可访问对象锁 |
+| S3 业务 | step 持 obj.access_lock 读 accepting、改 value | 读者的份额保护对象存储，同锁保护业务决策和写入 | 操作完成并解锁，或拒绝且不改 value |
+| S4 关闭 | shutdown 先清入口，再取对象锁写 false | 原入口份额暂由管理者持有，保障两个临界区之间的地址期限 | 业务门已关闭并解锁，再归还管理者份额 |
+| S5 回收 | 最后使用者归还 | ref 正常归零同步进入 release，外部 release_calls 记录后回收 | 无本协议内继续访问者 |
+
+```mermaid
+flowchart LR
+    E[service_entry与entry_lock] -->|非空槽拥有一份| R[obj.ref]
+    L[查找者] -->|S2锁内读槽并取得| E
+    L -->|自己的份额保护对象地址| R
+    L -->|S3持对象锁检查并修改| V[obj.accepting和value]
+    D[关闭者] -->|S4清槽并接管原入口份额| E
+    D -->|同对象锁写accepting=false| V
+    D -->|对象锁退出后归还| R
+    R -->|最后归还同步调用| F[release回收整个对象]
 ```
 
-kref 保护的是：
-
-```text
-struct my_obj 这块内存不会在引用持有期间被释放。
+```mermaid
+sequenceDiagram
+    participant L as 已取得引用的使用者
+    participant E as 入口锁与槽
+    participant D as 关闭者
+    participant A as 对象access_lock及业务字段
+    L->>A: S3获锁，检查true并增加value
+    D->>E: S4清槽并解锁，接管入口那份
+    D->>A: 请求对象锁，等待先进入的操作完成
+    L->>A: 完成同步操作并解锁
+    D->>A: 获锁写accepting=false，解锁
+    D->>D: put原入口份额，关闭返回
+    L->>A: 再次申请操作，持锁看到false
+    A-->>L: 返回-ESHUTDOWN，不修改value
+    L->>L: 最终put自己的份额，可进入S5
 ```
 
-锁保护的是：
+entry_lock 的解锁/取得传递发布状态，access_lock 的解锁/取得传递业务结果和关闭决定，ref 的原子存储结算总份数。读者没有因为 kref_get 自动收到“关闭了”的通知，而是在每次操作的门锁内读取 accepting。正常操作成本是取得对象锁和读写这组共享字段，关闭路径则有清入口、等待已进入同步操作和归还原入口份额的成本。
 
-```text
-state/dying/id 等字段的一致性；
-node 是否在 list 中；
-对象是否允许被 lookup；
-对象是否正在 remove；
-集合 add/del/遍历的一致性。
-```
+沿材料目录已有构建方法设置 KDIR，构建模块并在匹配目标装卸 note_kref_shutdown.ko。正常预期是关闭前 result=0、value=1；关闭后 result=-ESHUTDOWN（该 Linux 错误码为 108，所以日志为 -108）、输出参数仍为初始化的 -1；最终 release_calls=1。value 的真实内容没有因拒绝改成 -1，-1 是调用者输出变量保持不变。这一点也应从 service_step 的赋值分支读出来。
 
-所以不能写成：
-
-```text
-已经 kref_get 了，所以访问 state 不需要锁。
-```
-
-这是错的。
-
-`kref_get()` 只能说明：
-
-```text
-obj 内存还活着。
-```
-
-它不能说明：
-
-```text
-obj->state 没有人并发修改；
-obj->node 没有人并发 list_del；
-obj->dying 状态不会变化；
-obj 还允许被新用户使用。
-```
-
-------
+既有 ARM 前端和八组顺序替身证据保留，本次复用程序没有改变行为；目标链接、装卸和真实双线程竞争仍未执行。练习时先把第二次 service_step 移到 shutdown 之前，预测输出值会继续增加；再只在纸上把“检查 accepting”移到锁外，补出读到 true 后关闭者先写 false、旧请求却继续执行的交错，不运行这个有竞争的版本。
 
 ### 9.2.2\_两类锁\_集合锁和对象锁
 
-工程里经常至少有两类锁。
-
 #### (1)\_集合锁
 
-集合锁保护对象在哪些全局结构里可见。
+本例 entry_lock 保护 service_entry 以及从这个入口取得或撤下那份责任的窗口。若将槽换成链表，则对应表头、节点链接、成员状态和查找过程；哪些对象有几份引用仍由发布/撤下协议维护，不是 mutex 自带的功能。
 
-例如：
-
-```c
-static LIST_HEAD(my_obj_list);
-static DEFINE_MUTEX(my_obj_list_lock);
-```
-
-它保护：
-
-```text
-my_obj_list 的链表结构；
-对象是否在 list 中；
-lookup 和 remove 的并发关系；
-list 引用的归属。
-```
-
-典型操作：
-
-```c
-mutex_lock(&my_obj_list_lock);
-list_add_tail(&obj->node, &my_obj_list);
-mutex_unlock(&my_obj_list_lock);
-```
-
-或者：
-
-```c
-mutex_lock(&my_obj_list_lock);
-list_del_init(&obj->node);
-mutex_unlock(&my_obj_list_lock);
-```
-
-------
+查找时只需入口锁，不必拿业务锁：本接口承诺返回一份，并没有承诺本次业务一定获准。关闭者清槽后保留原入口那一份，才可以解除入口锁并安全地继续访问对象。这个中间份额是拆开两个临界区的依据，不能以“反正马上拿另一把锁”替代。
 
 #### (2)\_对象锁
 
-对象锁保护对象内部字段。
+access_lock 保护 accepting 与 value 的读写，以及“检查允许→实际同步操作”这一完整决策。它放在对象内部，所以每个独立对象可以有自己的业务门；对不同对象的业务操作不必为了改 value 一直占住同一个全局入口锁。
 
-例如：
-
-```c
-struct my_obj {
-	struct kref ref;
-	struct mutex lock;
-	int state;
-	bool enabled;
-	u32 flags;
-};
-```
-
-它保护：
-
-```text
-state；
-enabled；
-flags；
-对象内部业务状态；
-对象内部资源切换。
-```
-
-典型操作：
-
-```c
-mutex_lock(&obj->lock);
-obj->state = OBJ_RUNNING;
-mutex_unlock(&obj->lock);
-```
-
-------
+id 若在发布前固定且之后不变，可以按发布/取得协议读取，不必强行增加一把 id 锁。state、enabled、flags 等可变字段则应按真实不变量选择同锁：若几个字段必须一起变化，把它们拆给互不关联的锁反而会让观察者看见不一致组合。锁按状态关系分工，不按字段数量分配。
 
 #### (3)\_两者不能混用
 
-集合锁不一定保护对象所有字段。
-
-对象锁也不一定保护集合结构。
-
-**警告**
+**原有人工批注保留：**
 
 > <span style="color:red;">说实话，我完全不认同这个ai总结的小结。不过我又觉得这个标题是需要提醒做到对锁职权分离的。所以保留下来。</span>
 
-例如：
+这条批注指出了原标题容易造成的误解。应把“不能混用”理解为 **不能让不同访问者各自猜一把锁来保护同一不变量**，不能理解为“集合和字段永远必须分成两把锁”。若所有相关路径都采用一个全局锁，它完全可以同时保护集合与业务字段；其代价是本可独立的对象操作也会串行。是否拆锁，要由共享状态与负载决定。
 
-```c
-mutex_lock(&obj->lock);
-list_del_init(&obj->node);    /* 通常错误 */
-mutex_unlock(&obj->lock);
-```
+反例中的 `mutex_lock(&obj->lock); list_del_init(...);` 只有在其他链表操作采用另一把互不协调的全局锁时才违反协议；不是因为函数名叫对象锁就天然无权修改 node。同样，只拿集合锁写 state 是否正确，要看其他 state 访问者是否也遵守它。不要把位置或命名当成同步证明。
 
-如果 `node` 属于全局 list，那么它应该由全局 list 锁保护。
+本例选择两个互不嵌套的临界区，因此没有 entry_lock→access_lock 的同时持锁依赖。代价是“入口刚撤下、业务门还没关”之间存在窗口：旧引用使用者仍可能在关闭者获得 access_lock 前完成一次同步操作。接口保证的是 **shutdown 返回时门已关闭且先进入的同步操作已退出**，不承诺清槽瞬间就停止一切旧操作。单一管理者、关闭期间不重新发布也是该保证的前提；并发第二个 shutdown 看到空槽提前返回，不能被当成第一个关闭者已经完成的屏障。
 
-反过来：
-
-```c
-mutex_lock(&my_obj_list_lock);
-obj->state = OBJ_RUNNING;     /* 不一定正确 */
-mutex_unlock(&my_obj_list_lock);
-```
-
-如果 `state` 由 `obj->lock` 保护，那么这里也不应该只拿 list 锁。
-
-当然，工程里可以设计成一把锁同时保护集合和字段。
-
-但这必须明确写进设计里，不能靠猜。
-
-------
+若业务要求“撤下入口与禁止旧引用新操作必须作为一个原子决策”，就要使用共同的门锁或建立明确的嵌套锁顺序，并重新检查所有读写者。本章后续将比较这种组合及最后归还触发回调的路径，而不是从一开始规定所有对象必须采用同一套锁布局。
 
 ## 9.3\_lookup\_remove\_和状态\_锁与\_kref\_的常规配合
 
