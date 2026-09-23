@@ -634,3 +634,9 @@ B04a 重新逐字核对固定提交的 include/linux/kref.h（blob d32e21a2538c2
 B04b 按相同官方固定提交读取 include/linux/workqueue.h（blob 59c2695e12e7674d5bc4cdd1fb416074374f981c）与 kernel/workqueue.c（blob a9d64e08dffc7c7aef2caae2f170268d83e99e23）；与仓库既有副本 LF 归一后相同。核对 queue_work 的返回/发布契约、destroy_workqueue 的 drain 路径及 work 执行开始后允许释放工作项的实现边界，复用[工作队列生命周期导读](../workqueue/navigation/P04_Linux_6.12_flush取消与生命周期模块源码概念导读.md#4.5_destroy与对象生命期)，不复制另一套实现讲解。
 
 [P01 完整模块](../../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md#1.16.1_运行一次真实工作交付)使用一次私有工作交付与两份引用，无取消、重排或外部生产者；ARM 前端纳入 354 份头文件，非生成源码相对固定提交差异为空。生成配置不作为官方标签的一部分。宿主夹具仅以固定 kref 包装函数配合明确的下层替身验证五条清理顺序，不声称验证真实原子操作、调度、目标模块装卸或内存序。
+
+## 1.46\_引用原语与饱和契约
+
+B04c 只读核对固定提交 include/linux/refcount.h（blob 35f039ecb2725618ca098e3515c6e19e2aece3ee）、include/linux/refcount_types.h（blob 162004f06edf7c3049bac7c960e2e50a190595d6）、lib/refcount.c（blob a207a8f22b3ca35890671e51c480266d89e4d8d6），与仓库副本 LF 归一后相同。证据用于 P02 2.1～2.6 的层次和契约解释：异常原子操作后收敛到饱和，正常增加无额外发布排序，减少及归零路径有规定顺序。
+
+[八位教学模型](../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.5.1_用八位模型观察回绕的代价)只解释回绕造成假零和拒绝释放的代价，显式布尔状态与预先饱和不同于内核算法。1001 组串行模型检查不构成实际原子、竞态或告警覆盖证明。现有 P02 2.13/P05 的源码函数体仍待后续独立审查和唯一实现入口整理，本批不新增重复函数展开。
