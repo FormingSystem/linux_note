@@ -1665,7 +1665,7 @@
       "baseline_sha256": "5757b6505f3ff296e4ae6e15c6ef1a6be3d7d72dbb0120e241597c40a4e680f6",
       "lines": 1886,
       "state": "pending",
-      "reason": "B03am～ap 已实际冷读并重构 12.1～12.5；示例回访统一 P37/P27 权威材料并重验比较，12.6 起仍待处理，保持 pending。"
+      "reason": "B03am～aq 已冷读并重构 12.1～12.7，联合不变量与误区有完整 C 快照检查及交叉验证；12.8 场景和 12.9 收束仍待处理，保持 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md",

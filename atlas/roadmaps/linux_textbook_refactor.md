@@ -196,3 +196,5 @@ B03an 完成 P12 增强单元，以[闭区间模块](../../knowledge/linux/data_
 B03ao 完成 P12 并发单元冷读，以[双线程 C 实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_用两个线程观察复制值与删除)区分锁内副本与对象寿命，并核对查重事务、向下漏查、父链及 RCU 发布边界；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.51_B03ao并发观察与结果寿命)保留有限验证范围。下一项 12.5 完整示例的职责与调用关系，P12 和全仓继续。
 
 B03ap 冷读 P12 12.5，按九个原知识单元[回访完整调用者示例](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#12.5_Linux_内核_rbtree_示例代码)，统一 P37 程序的比较函数并收拢重复片段，保留遍历/销毁与寿命边界；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.52_B03ap调用者实例回访与比较收敛)逐项说明去向和重验。下一项 12.6 验证，P12 和全仓仍未完成。
+
+B03aq 完成 P12 12.6/12.7 冷读与改写，用[完整 C 检查器](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行有界快照检查器)建立已知对象、独立摘要、祖先界与错误返回，再以具体反例收束接口误区；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.53_B03aq联合不变量与有限证据)保留验证限制。下一项 12.8 固定内核场景与章末收束，P12/全仓继续。
