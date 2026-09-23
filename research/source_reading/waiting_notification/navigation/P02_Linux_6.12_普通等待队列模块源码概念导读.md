@@ -21,6 +21,8 @@ source_version: "6.12.20"
 
 ## 2.3\_等待侧调用链
 
+[登记空窗教材](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P07_锁_调度_中断与隐式顺序.md#7.7.2_用完整C模型找到登记空窗)以C解释器比较先检查与先登记；它不模拟弱内存。固定wait_event允许快速条件检查，但进入等待循环后仍在prepare之后重检，不能把“先登记再重检”理解为禁止快路径。
+
 ```text
 wait_event_interruptible(wq, condition)
   → ___wait_event(... TASK_INTERRUPTIBLE ... schedule())
@@ -50,7 +52,7 @@ wake_up_interruptible(wq)
 
 ## 2.5\_bookmark与长队列
 
-固定提交的 wake 实现还支持 bookmark 分段扫描路径，使超长队列可以在批次间释放锁。普通 `__wake_up_common()` 的核心循环仍按 flags、callback 返回和 exclusive 额度决定停止。bookmark 是锁持有时间优化，不改变业务条件必须重检的契约。
+本章固定提交的 `kernel/sched/wait.c` 中，`__wake_up_common_lock()` 持有队列锁调用 `__wake_up_common()`，后者按flags、回调返回值和exclusive额度决定何时停止；这条实现没有bookmark分段释放队列锁的路径。不能把其他版本的长队列优化移植成当前源码事实。队列长度和回调工作量仍会影响锁持有时间；是否需要改变扫描策略属于独立实现设计，不改变业务条件必须重检的契约。
 
 ## 2.6\_waitqueue\_active屏障边界
 

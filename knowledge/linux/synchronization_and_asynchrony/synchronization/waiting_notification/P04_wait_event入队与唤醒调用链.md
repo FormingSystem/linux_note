@@ -72,7 +72,7 @@ wait 宏、waiter 结构、`prepare_to_wait_event()`、`__wake_up_common()` 和 
 
 ## 4.8\_本章结论与下一问
 
-等待侧通过栈上 entry 与 `task_struct` 建立共享登记，唤醒侧在队列锁下调用回调并把任务送回 runqueue。高并发下扫描整个长队列和广播所有消费者会形成成本；下一章研究 exclusive waiter、唤醒批次与 bookmark。
+等待侧通过栈上entry与 `task_struct` 建立共享登记，唤醒侧在队列锁下调用回调并把任务送回runqueue。高并发下扫描整个长队列和广播所有消费者会形成成本；下一章研究exclusive waiter与唤醒额度，并将bookmark分段方案作为独立设计推演，与固定6.12.20没有该分段路径的事实分开。
 
 上一篇：[条件等待的统一状态机](P03_条件等待的统一状态机.md)。
 

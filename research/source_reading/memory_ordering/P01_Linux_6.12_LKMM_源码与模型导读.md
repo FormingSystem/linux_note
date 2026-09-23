@@ -202,6 +202,8 @@ ONCE/屏障源码定义
 
 ## 1.14\_配套入口
 
+[隐式顺序教材](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P07_锁_调度_中断与隐式顺序.md#7.7.1_把业务条件和任务状态分开)沿W0～W4区分业务条件、等待队列登记与任务可运行性；固定memory-barriers.txt支撑锁、失败加锁、中断、schedule和两种唤醒屏障的不同保证。C解释器十种动作排列只验证登记空窗，不是LKMM或调度器模拟；wait_event快速检查后的prepare重检与当前无bookmark路径，另见等待模块导读。
+
 [原子RMW教材](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P06_原子RMW_顺序后缀与条件成功.md#6.5_条件操作失败路径为什么最危险)按固定Documentation/atomic_t.txt区分无返回/有返回操作、条件失败、try_cmpxchg期望值回写和before/after_atomic加强范围；保存的原始文档Git对象与固定提交一致。完整C++材料选择成功acquire、失败relaxed，四工作者40,000次更新仅为宿主标准线程证据，不能代替Linux条件失败契约或herd7结果。
 
 [数据依赖教材](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P05_数据依赖_控制依赖与RCU取得.md#5.3.2_观察地址到底来自哪里)的五函数C仅观察编译器数据流：两编译器均消除抵消后的地址依赖，固定地址比较在本次Clang与GCC中选择不同代码。固定Documentation/RCU/rcu_dereference.rst及rcupdate.h支撑RCU取得、判空、已知地址比较和只增加不删除的特例，不将READ_ONCE写成必然丢失地址依赖。具体实现仍链接RCU唯一讲解，不在本导读复制函数体。

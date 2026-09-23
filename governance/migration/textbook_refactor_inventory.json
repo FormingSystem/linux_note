@@ -2965,8 +2965,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P07_锁_调度_中断与隐式顺序.md",
       "baseline_sha256": "20d476ebd5d17049b2bf62887db0686832e5817f61fdf746cd389b0ade376087",
       "lines": 168,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05h冷读固定隐式屏障与等待路径，明确锁先后、IRQ上下文、schedule/wake边界和登记重检；完整C模型十种排列验证空窗，不模拟弱内存或真实内核。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P08_LKMM事件_关系与一致性判定.md",
@@ -3260,7 +3260,7 @@
       "baseline_sha256": "5cd2e060b1050da954c52e295cf12fe5754bb95bd5d81d0e40e994fbf2180314",
       "lines": 86,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B05h局部校正固定wait.c无bookmark分段事实，尚未完成全篇教材审查。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P06_completion令牌状态与调用链.md",
@@ -4324,7 +4324,7 @@
       "baseline_sha256": "901646879b752dd5eb9c5c00426502855365ec87f726749895c38730f1de58a6",
       "lines": 70,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B05h局部校正固定wait.c无bookmark分段事实，尚未完成全篇教材审查。"
     },
     {
       "path": "research/source_reading/waiting_notification/navigation/P03_Linux_6.12_completion模块源码概念导读.md",

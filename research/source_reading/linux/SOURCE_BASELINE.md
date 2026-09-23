@@ -1002,3 +1002,7 @@ B05f只读固定Documentation/RCU/rcu_dereference.rst和include/linux/rcupdate.h
 ## 1.114\_原子更新与条件失败契约
 
 B05g只读固定Documentation/atomic_t.txt全篇，核对非RMW、返回值、显式顺序、条件失败、atomic_set与RMW不可分性、期望值回写、辅助屏障范围及前进性；[阅读入口](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.11_官方文档证据)关联原始副本，其Git对象bee3b1bca9a7b46bcf9911f036c3280e77b4405a与固定提交一致。工作树HEAD仍是本地实验提交，不作为证据；当前配置仍UP、TINY_RCU和PREEMPT_NONE。宿主C++17严格编译后四工作者完成40,000次更新、错误0，同时单线程反例显示期望值重用会使OWNED→OWNED也成功。不声称执行Linux/ARM原子或herd7，不以宿主原子替代目标实现。
+
+## 1.115\_隐式顺序与登记空窗
+
+B05h只读固定Documentation/memory-barriers.txt的隐式屏障部分及include/linux/wait.h、include/linux/sched.h、include/linux/rcupdate.h、kernel/sched/wait.c相关路径；原始屏障文档对象93d58d9a428b879194ff03ef1aa1ca7c9e01fa14与固定提交一致。核对锁顺序、schedule完整屏障、wake_up条件保证与wake_up_process无条件保证、wait_event快查及登记后重查、task.__state和finish清理。固定wait.c普通扫描没有bookmark分段，已校正[模块边界](../waiting_notification/navigation/P02_Linux_6.12_普通等待队列模块源码概念导读.md#2.5_bookmark与长队列)及知识侧对应引用；保留分段方案为独立概念推演。C模型10条排列中先检查登记丢1条、先登记重检丢0条，只证立即可见、单次持久事件模型，不代表ARM/Linux或herd7执行。
