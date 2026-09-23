@@ -45,6 +45,8 @@ __flush_workqueue(wq)
 
 `__cancel_work_sync()` 先以 DISABLE 标志调用 `__cancel_work()`，尝试从 timer/pool 队列抢走 pending 状态；然后在 workqueue online 后调用 `__flush_work(work, true)` 等待正在执行实例，最后按接口恢复 enable。返回时只有在“没有并发重新 enqueue”前提下才保证 work 不 pending/不执行。
 
+[P03 单实例票据模型](../../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#%287%29_所有权表要补充失败路径和取消路径)把本次 pending 实例的取消与其外层引用配对；仅在明确停止新提交且不重排的范围内推演。cancel 的返回值不自动归还 kref，也不能概括此前或另一个运行实例的责任。
+
 delayed work 必须用 delayed 专用 cancel，因为 timer 仍可能持有尚未进入 workqueue 的投递责任。
 
 ## 4.5\_destroy与对象生命期

@@ -2259,7 +2259,7 @@
       "baseline_sha256": "c266a9d36ff803e35d3cd79dfb99ba39a3ea4b902fd31b0e88f5118f4cb53421",
       "lines": 2879,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04k 冷读并重写3.1～3.4，建立入口/许可/存储/责任的分层模型与完整C实验，两种顺序及两个反例通过；修正init自动登记主人、零计数字节不能存在和裸发布等误导。3.5以后仍pending。 B04l 完成3.5～3.7普通get/put及release边界，保留所有标题与四种资源类型；固定链表六函数顺序观察校正list_empty告警前提，3.8以后仍pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04k 冷读并重写3.1～3.4，建立入口/许可/存储/责任的分层模型与完整C实验，两种顺序及两个反例通过；修正init自动登记主人、零计数字节不能存在和裸发布等误导。3.5以后仍pending。 B04l 完成3.5～3.7普通get/put及release边界，保留所有标题与四种资源类型；固定链表六函数顺序观察校正list_empty告警前提，3.8以后仍pending。 B04m 完成3.8～3.10责任表、错误handoff及退出边界，保留所有持有者和十项表单职责，完整工作票据C模型六路径通过；3.11以后仍pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P04_kref_三条核心规则.md",

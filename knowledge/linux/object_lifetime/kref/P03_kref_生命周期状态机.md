@@ -355,966 +355,320 @@ S5 把分散参与者的退出汇聚成一次类型清理。计数归零只是�
 
 ## 3.8\_生命周期中的所有权归属
 
-引用计数真正要管理的是所有权的扩散和收敛，所以这里把“谁持有引用、何时释放引用”放在一起看。
+前面把每次 get/put 的边界说清，仍不足以审查一个同时有队列、超时和用户等待的请求。现在要把“这份引用是谁的”写成可逐行核对的账本，使每个正常、失败和取消出口都有唯一归还者。
 
 ### 3.8.1\_生命周期中的所有权扩散
 
-假设对象创建后，初始引用属于创建者：
-
-```c
-refcount = 1
-owner = creator
-```
-
-然后创建者把对象交给两个异步路径：
-
-```c
-kref_get(&refobj->ref);
-queue_work(system_wq, &refobj->work_a);
-
-kref_get(&refobj->ref);
-queue_work(system_wq, &refobj->work_b);
-```
-
-此时引用关系是：
-
-```text
-refcount = 3
-
-creator 持有 1 个引用
-work_a 持有 1 个引用
-work_b 持有 1 个引用
-```
-
-可以画成：
+创建者已有一份，若 work_a 与 work_b 都需要独立使用，就分别在发布前预留。只有两次交付都成功、且三方尚未归还时，才是创建者加两个工作实例共 3 份；若 worker 提前运行，日志未必有机会看到 3。责任在逻辑上成立，不要求所有参与者恰好停在同一瞬间供人读取。
 
 ```mermaid
-graph TD
-	refobj["my_refobj<br/>refcount = 3"]
-	creator["creator 引用"]
-	worka["work_a 引用"]
-	workb["work_b 引用"]
-
-	creator --> refobj
-	worka --> refobj
-	workb --> refobj
+flowchart LR
+    C["创建者的初始份额"] -->|"独立使用结束时归还"| R["请求内的同一引用计数"]
+    A["成功接收的work_a份额"] -->|"完成时归还；未接收则提交者回收预留"| R
+    B["成功接收的work_b份额"] -->|"完成或明确取消该实例时归还"| R
+    R -->|"正常最后一份决定执行者"| F["类型清理"]
 ```
 
-当 creator 用完：
-
-```c
-my_refobj_put(refobj);
-```
-
-引用关系变成：
-
-```text
-refcount = 2
-
-work_a 持有 1 个引用
-work_b 持有 1 个引用
-```
-
-creator 不能再访问对象。
-
-当 work_a 完成：
-
-```c
-my_refobj_put(refobj);
-```
-
-变成：
-
-```text
-refcount = 1
-
-work_b 持有 1 个引用
-```
-
-当 work_b 完成：
-
-```c
-my_refobj_put(refobj);
-```
-
-变成：
-
-```text
-refcount = 0
-调用 release
-对象释放
-```
-
-这就是引用所有权从创建者扩散到多个路径，再逐步收敛到 0 的过程。
-
----
+创建者、A、B 以不同顺序退出，只改变最后清理者，不改变各自恰好归还一份的要求。用前章完整工作模块推演第二个工作实例时，必须把第二次预留与拒绝回滚一起补齐；不能只复制两行 get/queue 就认为所有错误路径已覆盖。
 
 ### 3.8.2\_生命周期中的所有权表
 
-实际工程里，不要只靠脑子记：
-
-```text
-哪里 kref_get？
-哪里 kref_put？
-```
-
-更可靠的方式是先画出**所有权表**。
-
-所谓所有权表，描述的不是“谁调用了函数”，而是：
-
-```text
-哪一条执行路径、哪一个容器、哪一个异步上下文，需要保证对象在一段时间内不能被释放。
-```
-
-例如一个请求对象：
-
-```c
-struct my_request {
-	struct kref ref;
-	struct work_struct timeout_work;
-	struct list_head node;
-	int status;
-};
-```
-
-它可能同时被这些路径使用：
-
-```text
-创建路径
-请求队列
-超时 work
-硬件完成中断/线程
-用户等待路径
-错误回滚路径
-```
-
-所以生命周期设计不能只写代码，而应该先写表。
-
-------
+设一个请求包含嵌入 ref、timeout_work、队列 node 和业务 status。创建路径、请求队列、超时处理、硬件完成、用户等待与错误回滚可能分别需要它。表中记录的是这些使用期的责任，不能从结构里有几个字段直接推导引用数。
 
 #### (1)\_所有权表要区分\_get\_put\_转移
 
-一个常见误区是：表里只写 `get/put`。
-
-但实际工程里还有一种情况叫：
-
-```text
-引用所有权转移。
-```
-
-也就是说：
-
-```text
-某个路径不是重新 kref_get，
-而是接管已有引用。
-```
-
-所以表格最好不要只写“什么时候 get”，而应该写成：
-
-| 持有者       | 如何获得引用                                             | 引用覆盖的生命周期                       | 什么时候释放引用                                             |
-| ------------ | -------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------ |
-| 创建者       | `kref_init()` 产生初始引用                               | 从对象分配成功，到提交成功或错误回滚结束 | 提交成功后不再需要时 put；错误路径 put                       |
-| 请求队列     | 入队时手动 `kref_get()`，或者接管创建者引用              | 从请求挂入队列，到请求从队列删除         | 出队时 put，或者把引用转交给完成路径                         |
-| 超时 work    | 驱动在成功投递 work 前手动 `kref_get()`                  | 从 `queue_work()` 成功，到 work 回调结束 | work 回调结束时 put；如果 work 被成功取消且回调不会执行，取消路径 put |
-| 硬件完成路径 | 在队列锁保护下找到请求后 `kref_get()`，或者接管队列引用  | 从确认请求完成，到完成处理结束           | 完成处理结束后 put                                           |
-| 用户等待路径 | lookup 成功，并在锁/RCU/`get_unless_zero` 保护下拿到引用 | 从用户开始等待，到 wait 返回             | wait 返回后 put                                              |
-| 错误回滚路径 | 使用当前路径已有引用，或者对异步清理路径单独 get         | 从错误处理开始，到清理动作完成           | 清理结束后 put                                               |
-
-这个表的重点不是机械地写 `get/put`，而是把每一份引用的**归属关系**说清楚。
-
-------
+先分清三种动作：新增一份、归还一份、转交已有一份。转交只改变负责人，不增加总数；借用则连负责人都不改变，只在已有保护期限内使用地址。每行至少写出取得方式、覆盖区间以及失败/取消出口，而不只写一个 API 名。
 
 #### (2)\_创建者引用
 
-对象创建时：
+创建接口成功交付初始份额，创建者负责完成提交或回滚。成功时可以直接将这份责任交给队列，也可以先新增队列份额，再结束自己的使用。提交失败时不要凭“已经调用过入队函数”就认为责任转出，必须遵循其成功/失败契约。
 
-```c
-req = kzalloc(sizeof(*req), GFP_KERNEL);
-if (!req)
-	return NULL;
-
-kref_init(&req->ref);
-```
-
-这时引用计数是：
-
-```c
-ref = 1
-```
-
-这 1 个引用属于创建者。
-
-它的含义是：
-
-```text
-对象刚创建出来，还没有交给别人；
-创建路径负责保证它最终要么提交出去，要么错误回滚释放。
-```
-
-所以创建者引用必须有明确去向：
-
-```text
-提交失败：
-    创建者 put，可能直接释放对象。
-
-提交成功：
-    创建者要么把引用转移给队列；
-    要么队列额外 get，创建者随后 put 自己的引用。
-```
-
-这两种模型都可以，但必须选清楚。
-
-------
+若多个准备步骤可能失败，应按已取得的资源和责任逆序退出；已有完整对象模板展示了初始引用建立前后不同的清理方式。没有成功获得的资源不应盲目释放，已经获得的份额也不能随一个 return 被遗忘。
 
 #### (3)\_请求队列引用
 
-如果请求对象会挂入队列：
+队列持有模型保证请求仍在可查找队列中时有一份保活。链表的 list_add/list_del 不自动操作 kref；队列份额由调用者显式新增或接管。摘除后可以归还队列份额，也可以把它转给完成路径，二者只能选定一致协议。
 
-```c
-list_add_tail(&req->node, &request_queue);
-```
-
-那么队列本身通常就是一个持有者。
-
-因为只要请求还在队列里，队列遍历、取消、完成路径都可能通过 `node` 找到它。
-
-所以队列必须保证：
-
-```text
-请求挂在队列期间，req 不能被释放。
-```
-
-一种写法是队列额外拿引用：
-
-```c
-kref_get(&req->ref);
-
-spin_lock(&queue_lock);
-list_add_tail(&req->node, &request_queue);
-spin_unlock(&queue_lock);
-```
-
-出队时释放：
-
-```c
-spin_lock(&queue_lock);
-list_del(&req->node);
-spin_unlock(&queue_lock);
-
-kref_put(&req->ref, my_request_release);
-```
-
-另一种写法是：
-
-```text
-创建者把初始引用转移给队列。
-```
-
-这种情况下，入队时不需要额外 `kref_get()`，但表里必须写清楚：
-
-```text
-队列持有的是创建者转移过来的初始引用。
-```
-
-否则读代码的人会误以为漏了 `kref_get()`。
-
-------
+如果完成路径另加了一份，摘除时还要有人归还队列那份；如果直接接管，则不能在摘除后由队列和完成者各 put 一次。前章单槽模型就是“容器持有、查找另取”的完整例子，可以先用它核对自己的队列协议，再增加多个节点。
 
 #### (4)\_超时\_work\_引用
 
-workqueue 不会自动管理外层对象的 `kref`。
+workqueue 管理工作执行，不认识外层请求的引用责任。若回调使用嵌入 work 还原请求，请求必须从提交前就被保活到工作使用结束；等回调入口才 get 太晚，队列此前已经持有嵌入成员地址。
 
-它只知道：
+常规策略是提交前预留，成功接受后由对应工作实例归还，拒绝时由提交者收回本次预留。若同一个 work 已在排队，本次 queue_work 返回 false，并不使先前成功投递的那份责任消失；只能收回本次没有交出去的份额。
 
-```c
-struct work_struct timeout_work;
-```
-
-它不知道外层对象是：
-
-```c
-struct my_request
-```
-
-也不知道里面有：
-
-```c
-struct kref ref;
-```
-
-所以如果 work 回调里要这样取外层对象：
-
-```c
-static void my_request_timeout_work(struct work_struct *work)
-{
-	struct my_request *req;
-
-	req = container_of(work, struct my_request, timeout_work);
-
-	/* 使用 req */
-}
-```
-
-那么驱动必须保证：
-
-```text
-从 queue_work 成功开始，到 work 回调结束，req 都不能被释放。
-```
-
-因此引用应该在投递 work 前拿，而不是在 work 函数开头拿：
-
-```c
-kref_get(&req->ref);
-
-if (!queue_work(system_wq, &req->timeout_work)) {
-	kref_put(&req->ref, my_request_release);
-	return false;
-}
-```
-
-work 回调结束时归还：
-
-```c
-static void my_request_timeout_work(struct work_struct *work)
-{
-	struct my_request *req;
-
-	req = container_of(work, struct my_request, timeout_work);
-
-	/*
-	 * 能执行到这里，说明投递 work 前已经给 work 路径拿过引用。
-	 */
-
-	/* timeout 处理 */
-
-	kref_put(&req->ref, my_request_release);
-}
-```
-
-不能写成：
-
-```c
-static void my_request_timeout_work(struct work_struct *work)
-{
-	struct my_request *req;
-
-	req = container_of(work, struct my_request, timeout_work);
-
-	kref_get(&req->ref);   /* 错误：太晚了 */
-
-	/* 使用 req */
-
-	kref_put(&req->ref, my_request_release);
-}
-```
-
-因为在进入 work 函数之前，内核已经要通过 `work_struct *` 找到这个 work。
-
-如果外层 `req` 已经释放，那么连：
-
-```c
-container_of(work, struct my_request, timeout_work)
-```
-
-这一步都已经是在释放后的内存上操作。
-
-所以这条规则要写清楚：
-
-```text
-workqueue 只负责异步执行 work 函数；
-驱动自己负责保证外层对象在 work 执行期间有效。
-```
-
-------
+另一种合法设计可由管理者始终持有对象，并在放弃那份之前严格停止投递、等待所有工作退出，但它需要完整外部期限保证。不能一面没有工作引用，一面又在创建者退出时省掉等待。
 
 #### (5)\_硬件完成路径引用
 
-硬件完成路径通常来自：
+完成可能由硬中断、线程化中断、下半部或轮询线程报告。它们允许的操作上下文不同，但对请求责任有同一个问题：从队列找到并摘除对象以后，凭哪份引用继续处理？
 
-```text
-中断
-tasklet
-threaded irq
-bottom half
-polling thread
-```
+| 完成处理策略 | 锁内动作与责任变化 | 锁外清理 |
+| --- | --- | --- |
+| 另取完成份额 | 在队列正引用保证下 get，再摘除 | 分别归还队列份额和完成份额，不能只写一次 put 就遗忘其中之一 |
+| 接管队列份额 | 摘除并把原队列责任转给完成路径 | 完成者最后归还一次，队列不再另 put |
 
-它可能会从请求队列中找到某个请求：
-
-```c
-spin_lock(&queue_lock);
-
-req = find_completed_request_locked(...);
-if (req)
-	list_del(&req->node);
-
-spin_unlock(&queue_lock);
-```
-
-这里有两种生命周期设计。
-
-第一种：完成路径额外拿引用。
-
-```c
-spin_lock(&queue_lock);
-
-req = find_completed_request_locked(...);
-if (req) {
-	kref_get(&req->ref);
-	list_del(&req->node);
-}
-
-spin_unlock(&queue_lock);
-
-/* 完成处理 */
-
-kref_put(&req->ref, my_request_release);
-```
-
-这种写法的含义是：
-
-```text
-队列引用仍然按队列规则释放；
-完成路径另外持有自己的处理引用。
-```
-
-第二种：完成路径接管队列引用。
-
-```c
-spin_lock(&queue_lock);
-
-req = find_completed_request_locked(...);
-if (req)
-	list_del(&req->node);
-
-spin_unlock(&queue_lock);
-
-/*
- * 完成路径现在接管原来的队列引用。
- * 所以这里不再额外 kref_get。
- */
-
-/* 完成处理 */
-
-kref_put(&req->ref, my_request_release);
-```
-
-这种写法的含义是：
-
-```text
-请求从队列中删除后，队列不再持有它；
-完成路径接管队列原来的那份引用；
-完成处理结束后由完成路径 put。
-```
-
-这两种都可以，但所有权表里必须写清楚。
-
-否则很容易出现两类错误：
-
-```text
-队列 put 了，完成路径也 put 了：
-    重复 put，可能提前释放。
-
-完成路径接管了队列引用，但最后没 put：
-    引用泄漏。
-```
-
-------
+找不到请求时没有份额可处理，退出路径必须区分这个分支。若最后 put 可发生在中断环境，类型回调还要满足对应上下文；引用取得方式不自动使可睡眠清理合法。
 
 #### (6)\_用户等待路径引用
 
-如果用户路径可以通过 id、句柄、队列或者文件上下文找到请求对象，例如：
+用户路径经句柄、id 或文件/session 找到请求时，要先明确返回的是独立份额还是短借用。等待可能越过查找保护窗口，因此通常需要自己的引用，或者有其他足够长且明确的外层保活。容器锁普通 get 要有正引用保证，RCU 条件取得也有存储和身份前提。
 
-```c
-req = my_request_lookup(id);
-```
-
-那么 lookup 返回的不能只是裸指针。
-
-用户等待路径必须在某种保护下拿到引用：
-
-```text
-在请求表锁内找到对象并 kref_get；
-或者在 RCU 读侧临界区内使用 kref_get_unless_zero；
-或者当前 file/session 本身已经持有对象引用。
-```
-
-典型形式：
-
-```c
-mutex_lock(&request_table_lock);
-
-req = request_lookup_locked(id);
-if (req)
-	kref_get(&req->ref);
-
-mutex_unlock(&request_table_lock);
-```
-
-然后用户等待结束：
-
-```c
-wait_event(req->wait, req->status != REQ_PENDING);
-
-kref_put(&req->ref, my_request_release);
-```
-
-这条引用覆盖的是：
-
-```text
-用户等待期间，req 不能被释放。
-```
-
-它不保证请求一定成功，也不保证硬件一定完成。
-
-它只保证：
-
-```text
-wait 路径访问 req->status、req->wait 等字段时，对象内存还活着。
-```
-
-------
+这份责任覆盖等待、读取结果及必要收尾，不证明请求成功，也不证明硬件会完成。业务 status 的写读与唤醒还须遵守等待协议；给请求加引用不会自动消除 status 数据竞争或漏唤醒。等待结束、超时或用户主动放弃，都要处置已经取得的份额。
 
 #### (7)\_所有权表要补充失败路径和取消路径
 
-生命周期表不能只写正常路径。
+取消最容易造成重复归还，因为“没有运行”“已经运行完”“正在运行且取消者等它结束”都可能出现在表面相近的出口。先限定一个可完整推演的协议：仅提交一个工作实例，不自重排，取消前停止新提交，管理者在取消过程中持有自己的份额。
 
-因为 kref 最容易出问题的地方不是主流程，而是：
+在此范围内，成功取消 pending 实例后，它不会再负责执行和归还，由取消者接管那一份；取消返回 false 时，实例可能已经完成、正在执行并随后完成，也可能提交从未成功，不能因此额外 put。真实接口还可能涉及一个正在执行实例及另一个已排队实例，不能把“取消了某个 pending 实例”说成这个回调从未运行过。
 
-```text
-queue_work 失败
-入队失败
-提交失败
-硬件超时
-用户取消
-remove 发生
-work 被 cancel
-完成和超时竞态
+下面的完整 [work_ticket.c](../../../../labs/kernel/object_lifetime/materials/work_ticket.c)使用外部账本模拟这份协议。ticket 表示本次提交预留或被接收的一份，state 表示它处于预留、排队、执行、完成或取消哪个阶段；它不是 Linux work_struct 的实现。模型取消函数若遇到 RUNNING，会显式安排执行者结束来代表等待结果，没有真实线程或内核等待。
+
+```c
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+
+enum work_state {
+    IDLE,       /* 尚未预留 */
+    RESERVED,   /* 已预留，尚未交付 */
+    PENDING,    /* 接收成功，等待执行 */
+    RUNNING,    /* 执行者正在使用 */
+    DONE,       /* 执行结束，已归还工作份额 */
+    CANCELED,   /* 待执行实例被取消，取消者接管归还 */
+    REJECTED   /* 提交拒绝，预留已经收回 */
+};
+struct ledger {
+    unsigned int refs;
+    bool creator;
+    bool ticket;
+    enum work_state state;
+    unsigned int runs;
+    unsigned int releases;
+};
+
+/* 外部观察账本，不是真实 work_struct，也不分配或释放业务对象。 */
+static void check(const struct ledger *book)
+{
+    assert(book->refs == (book->creator ? 1u : 0u) + (book->ticket ? 1u : 0u));
+    assert(book->releases == (book->refs ? 0u : 1u));
+}
+
+static void put_one(struct ledger *book, bool *owner)
+{
+    assert(*owner && book->refs);
+    *owner = false;
+    if (--book->refs == 0)
+        ++book->releases;
+    check(book);
+}
+
+static void reserve(struct ledger *book)
+{
+    assert(book->creator && !book->ticket && book->state == IDLE);
+    book->ticket = true;
+    ++book->refs;
+    book->state = RESERVED;
+    check(book);
+}
+
+static void submit(struct ledger *book, bool accept)
+{
+    assert(book->state == RESERVED && book->ticket);
+    book->state = accept ? PENDING : REJECTED;
+    if (!accept)
+        put_one(book, &book->ticket); /* 提交者收回本次未交出的预留。 */
+}
+
+static void start_work(struct ledger *book)
+{
+    assert(book->state == PENDING && book->ticket);
+    book->state = RUNNING;
+    ++book->runs;
+}
+
+static void finish_work(struct ledger *book)
+{
+    assert(book->state == RUNNING);
+    book->state = DONE;
+    put_one(book, &book->ticket); /* 执行者归还这一实例的责任。 */
+}
+
+static bool cancel_sync_model(struct ledger *book)
+{
+    assert(book->creator); /* 管理者在取消过程中保留自己的份额。 */
+    if (book->state == PENDING) {
+        book->state = CANCELED;
+        return true; /* 待执行实例被取消；函数本身不代替调用者 put。 */
+    }
+    if (book->state == RUNNING)
+        finish_work(book); /* 显式安排执行者结束，代替真实等待。 */
+    return false;
+}
+
+int main(void)
+{
+    for (unsigned int path = 0; path < 6; ++path) {
+        struct ledger book = { .refs = 1, .creator = true, .state = IDLE };
+        reserve(&book);
+        submit(&book, path != 0);
+        bool canceled = false;
+        if (path == 4) {
+            put_one(&book, &book.creator); /* 创建者先退出，之后不再取消。 */
+            start_work(&book);
+            finish_work(&book);
+        } else if (path == 5) {
+            start_work(&book);
+            finish_work(&book);
+            put_one(&book, &book.creator);
+        } else {
+            if (path == 2 || path == 3)
+                start_work(&book);
+            if (path == 2)
+                finish_work(&book);
+            canceled = cancel_sync_model(&book);
+            if (canceled)
+                put_one(&book, &book.ticket); /* 只接管明确取消的那一实例。 */
+            put_one(&book, &book.creator);
+        }
+        assert(canceled == (path == 1));
+        assert(book.runs == (path >= 2 ? 1u : 0u));
+        assert(book.releases == 1 && book.refs == 0);
+        printf("path=%u canceled=%u runs=%u releases=%u\n",
+               path, canceled ? 1u : 0u, book.runs, book.releases);
+    }
+    return 0;
+}
 ```
 
-所以所有权表应该额外检查：
+进入材料目录运行：
 
-```text
-get 成功之后，如果后续步骤失败，谁 put？
-对象被取消时，哪条路径负责 put？
-work 没有执行时，谁 put？
-请求已经完成时，超时路径如何退出？
-超时已经触发时，完成路径如何退出？
+```bash
+cc -std=c11 -Wall -Wextra -Werror -O2 work_ticket.c -o work_ticket
+./work_ticket
 ```
 
-例如超时 work：
+每条输出最后都是 releases=1；各路径应与下表对应，而不能只检查程序没有崩溃：
 
-```text
-成功 queue_work：
-    work 回调结束 put。
+| path | 安排的执行顺序 | canceled | runs | ticket 最后由谁归还 |
+| --- | --- | --- | --- | --- |
+| 0 | 提交拒绝，再检查取消 | 0 | 0 | 提交者收回预留 |
+| 1 | 已排队，执行前取消 | 1 | 0 | 取消者接管被取消实例 |
+| 2 | 工作先完成，再取消 | 0 | 1 | 工作执行者已经归还 |
+| 3 | 工作开始，取消时等待它结束 | 0 | 1 | 工作执行者在完成时归还 |
+| 4 | 创建者先退出，工作后完成 | 0 | 1 | 工作执行者成为最后归还者 |
+| 5 | 工作先完成，创建者后退出 | 0 | 1 | 工作归还 ticket，创建者归还最后的原份额 |
 
-queue_work 返回 false：
-    本次没有成功排入队列；
-    投递路径必须立即 put。
+路径 4/5 没有调用取消，表中的 0 只是模型记录的“未取消”。路径 0 与 2/3 都出现取消结果 false，背后的工作执行和责任去向却不同。这正是不能只看布尔值补一个 put 的原因。模型中的 check 核对责任总数，不模拟真实原子、分配器或工作队列；六条轨迹通过，不等于内核竞态已经实测。
 
-cancel_work_sync 返回 true：
-    work 被取消，回调不会执行；
-    取消路径必须 put work 引用。
-
-cancel_work_sync 返回 false：
-    不能盲目 put；
-    因为 work 可能已经执行并 put 过，
-    或者根本没有成功排队。
-```
-
-所以工作队列这一行不能写得太粗。
-
-更准确的表述是：
-
-| 持有者    | 如何获得引用                            | 什么时候 put                                                 |
-| --------- | --------------------------------------- | ------------------------------------------------------------ |
-| 超时 work | 驱动在成功投递 work 前手动 `kref_get()` | work 回调结束时 put；如果 work 被成功取消且回调不会执行，取消路径 put；如果投递失败，投递路径立即 put |
-
-------
+将本模型推广到延迟工作、重新投递或多个生产者时，要先增加实例身份及对应份额的账本，并遵循各自取消接口。具体内核等待路径见[工作队列总索引](../../../../research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md)与[cancel 模块](../../../../research/source_reading/workqueue/navigation/P04_Linux_6.12_flush取消与生命周期模块源码概念导读.md#4.4_cancel调用链)。
 
 #### (8)\_重构后的所有权表
 
-这个请求对象的生命周期表可以写成：
-
-| 持有者        | 如何获得引用                                            | 引用覆盖范围                             | 什么时候释放                                                 |
-| ------------- | ------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------ |
-| 创建者        | `kref_init()`                                           | 对象创建成功后，到提交成功或错误回滚结束 | 提交后不再持有时 put；错误路径 put                           |
-| 请求队列      | 入队时 `kref_get()`，或者接管创建者引用                 | 请求挂在队列期间                         | 出队时 put；或者把队列引用转交给完成/取消路径                |
-| 超时 work     | 成功投递 work 前由驱动手动 `kref_get()`                 | 从 work 成功排队，到 work 回调结束       | work 回调结束 put；投递失败立即 put；成功取消且回调不执行时由取消路径 put |
-| 硬件完成路径  | 在队列锁保护下找到请求后 `kref_get()`，或者接管队列引用 | 从确认完成，到完成处理结束               | 完成处理结束 put                                             |
-| 用户等待路径  | lookup 成功后，在锁/RCU/`get_unless_zero` 保护下拿引用  | 用户等待和读取结果期间                   | wait 返回或用户放弃等待后 put                                |
-| 错误/取消路径 | 使用当前已有引用，必要时为异步清理路径单独 get          | 从错误处理开始，到清理完成               | 清理完成后 put                                               |
-
-------
+| 持有者或阶段 | 取得与覆盖区间 | 正常退出 | 拒绝、失败或取消 |
+| --- | --- | --- | --- |
+| 创建者 | 接收初始一份，覆盖准备到交付或回滚 | 结束使用后归还，或明确转交 | 仍未转出的责任由自己收尾 |
+| 请求队列 | 新增或接管一份，覆盖可查找期 | 摘除后归还或转给完成者 | 入队拒绝不冒充已接收；撤销需决定谁接管 |
+| 超时工作实例 | 提交前预留，成功后覆盖排队和执行 | 该实例完成时归还 | 拒绝收回本次预留；明确取消的实例由取消者接管 |
+| 硬件完成路径 | 锁内合法取得或接管队列份额 | 完成处理后归还 | 未找到对象就没有处理份额；错误处理中仍只归还自己的责任 |
+| 用户等待路径 | 受保护查找取得，或明确外层保活 | 等待与结果读取结束 | 超时、放弃也归还已取得份额 |
+| 错误/取消管理者 | 使用已有份额，异步转交时另建责任 | 清理完成后退出 | 区分待执行、已执行与正在执行，避免和回调归还同一份 |
 
 #### (9)\_所有权表的检查规则
 
-每一行都必须回答四个问题：
+每行都要回答为什么需要保活、取得时凭什么安全、覆盖哪段时间、正常和异常由谁归还。只有 get 没有退出会泄漏；只有 put 没有初始取得或转交来源会偷走别人的份额；异步路径没有独立责任也没有完整外层等待保证，会留下使用已回收对象的窗口。
 
-```text
-第一，这个持有者为什么需要对象继续活着？
-
-第二，它是在对象仍然有效的前提下获得引用的吗？
-
-第三，这份引用覆盖哪一段执行区间？
-
-第四，正常路径、失败路径、取消路径分别由谁 put？
-```
-
-如果表里某个持有者：
-
-```text
-只有 get，没有 put
-```
-
-就是引用泄漏。
-
-如果某个路径：
-
-```text
-只有 put，没有 get 或引用转移
-```
-
-就是提前释放风险。
-
-如果某个异步路径：
-
-```text
-既没有自己的引用，
-也没有 cancel/flush/synchronize 之类的外部保证
-```
-
-就是 use-after-free 风险。
-
-------
+再给每个交付边界问一句：接收方能否在提交返回前运行？若能，责任和需要的状态必须先准备好。最后检查失败是否真正没有接收，取消是否只取消了其中某个实例，而不是用函数名猜测对象已经完全停止。
 
 #### (10)\_本节总结
 
-所有权表的目的不是为了把代码写复杂，而是为了把生命周期关系说清楚：
+责任表描述的是对象被保活的时间区间与归还者。代码中的 list_add、queue_work、等待和取消只是可能改变负责人或退出条件的事件，不会自动生成外层对象的 kref 规则。
 
-```text
-谁让对象继续活着？
-从什么时候开始？
-到什么时候结束？
-失败和取消时谁负责收尾？
-```
-
-对于嵌入 `work_struct` 的对象，尤其要记住：
-
-```text
-workqueue 不会自动管理外层对象的 kref。
-
-如果 work 回调需要通过 container_of() 访问外层对象，
-那么外层对象必须从 queue_work 成功开始就保持有效。
-
-因此 work 的引用不能等到 work 函数开头再 get；
-必须在成功投递 work 前由驱动手动 get，
-并在 work 回调结束、投递失败或成功取消时配套 put。
-```
-
-一句话总结：
-
-```text
-所有权表不是记录“哪里调用了 kref_get/kref_put”，
-而是记录“哪条执行路径在什么时间段拥有对象的生命权”。
-```
+先把六条工作票据路径推演通，再回到真实驱动，把重排、多个生产者、硬件完成与业务关闭加入同一张表。每新增一个参与者，都补它的状态地址、接收条件和退出责任，而不是只在表里加一个名字。
 
 ------
 
 ## 3.9\_错误路径与\_handoff
 
-错误路径和 handoff 都是在“引用交出去了吗”这个问题上出错最多的地方，适合合在一个主题下看。
+错误返回和转交都要回答一个问题：函数离开时，原来属于调用者的责任是否已经交出去？返回错误码本身不决定所有权，必须由接口契约说明。
 
 ### 3.9.1\_生命周期和错误路径
 
-`kref` 最容易出错的地方之一是错误路径。
-
-例如：
+创建成功后 step1 或 step2 失败，初始一份不会因 return 自动归还。可以把尚未转出的责任汇集到一个清理出口：
 
 ```c
+/* 调用片段：两个步骤都只借用对象，不接管引用。 */
 refobj = my_refobj_create();
 if (!refobj)
-	return -ENOMEM;
-
+    return -ENOMEM;
 ret = step1(refobj);
-if (ret)
-	return ret;          /* 错：初始引用泄漏 */
-
-ret = step2(refobj);
-if (ret)
-	return ret;          /* 错：初始引用泄漏 */
-
+if (!ret)
+    ret = step2(refobj);
 my_refobj_put(refobj);
-return 0;
+return ret;
 ```
 
-正确写法：
-
-```c
-refobj = my_refobj_create();
-if (!refobj)
-	return -ENOMEM;
-
-ret = step1(refobj);
-if (ret)
-	goto err_put;
-
-ret = step2(refobj);
-if (ret)
-	goto err_put;
-
-my_refobj_put(refobj);
-return 0;
-
-err_put:
-	my_refobj_put(refobj);
-	return ret;
-```
-
-错误路径也必须遵守：
-
-```text
-获得了引用，就必须释放。
-```
-
-否则对象不会释放。
-
+这是对步骤契约明确后的共同出口。若 step1 成功时已经把责任转出，就不能照抄；若两个步骤另有子资源，也须处理各自的回滚。goto err_put 与共同尾部都是组织方式，正确性来自每条路径恰好处置自己仍拥有的份额。
 
 ### 3.9.2\_get\_成功后\_后续失败必须\_put
 
-看下面模型：
+为接收者预留一份后，若接口明确拒绝接收，就由提交者归还预留。不要把“失败了”理解成需要把对象所有引用都清零：当前路径的初始份额、前一次已成功的工作份额、其他读者份额都可能仍合法存在。
 
-```c
-kref_get(&refobj->ref);
-
-ret = queue_refobj(refobj);
-if (ret)
-	return ret;          /* 错：刚才 get 的引用泄漏 */
-```
-
-如果 `queue_refobj()` 失败，新引用没有交出去。
-
-所以必须回滚：
-
-```c
-kref_get(&refobj->ref);
-
-ret = queue_refobj(refobj);
-if (ret) {
-	my_refobj_put(refobj);
-	return ret;
-}
-```
-
-这里的生命周期语义是：
-
-```text
-kref_get 创建了一个新引用。
-如果这个引用没有成功交给队列，就必须由当前路径释放。
-```
-
-这也是为什么错误路径要围绕引用所有权设计，而不是围绕代码行机械处理。
-
+work_ticket 的拒绝路径恰好展示这一点：预留使总数从 1 到 2，拒绝只收回 ticket 回到 1，随后创建者结束才到 0。把拒绝分支多加一次 put，会提前消耗创建者后续仍要归还的责任。
 
 ### 3.9.3\_handoff\_成功与失败的引用语义
 
-handoff 场景尤其容易出错。
-
-假设：
-
-```c
-ret = enqueue_refobj(refobj);
-```
-
-必须明确 `enqueue_refobj()` 的语义。
+同样一行 enqueue 调用可以设计出不同所有权协议，调用者必须先读契约，再写清理分支。
 
 #### (1)\_设计一\_调用者先\_get\_enqueue\_成功后队列持有新引用
 
-```c
-kref_get(&refobj->ref);
-
-ret = enqueue_refobj(refobj);
-if (ret) {
-	my_refobj_put(refobj);
-	return ret;
-}
-```
-
-语义：
-
-```text
-get 出来的引用准备交给队列。
-enqueue 成功：队列拥有这个引用。
-enqueue 失败：当前路径回收这个引用。
-```
-
+提交者保留原份额，另增一份作为候选。成功后队列接收候选；拒绝后提交者收回候选，原份额继续覆盖自己的后续代码。前章完整工作模块与本节 ticket 模型采用这个方向。
 
 #### (2)\_设计二\_enqueue\_接管当前引用
 
-```c
-ret = enqueue_refobj_take_ref(refobj);
-if (ret) {
-	/* 失败时是否仍然归调用者？必须定义清楚 */
-	return ret;
-}
-
-/* 成功后当前路径不再访问 refobj */
-```
-
-这种模型必须定义：
-
-```text
-成功时是否接管引用？
-失败时是否接管引用？
-失败时调用者是否还需要 put？
-```
-
-如果不定义清楚，调用点就很容易出现双 put 或漏 put。
-
-建议函数名或注释明确写出来：
+可以明确约定“成功接管，失败仍归调用者”。调用点应把这项契约写成中文注释并兑现所有出口：
 
 ```c
-/*
- * On success, enqueue_refobj_take_ref() takes ownership of caller's reference.
- * On failure, caller still owns the reference.
- */
+/* 成功接管当前这一份；失败不接管，仍由当前路径归还。 */
 ret = enqueue_refobj_take_ref(refobj);
+if (ret)
+    my_refobj_put(refobj);
+/* 成功后不能再依被转出的份额访问，失败后也已经归还。 */
+return ret;
 ```
 
-这种注释非常重要。
+这是一份责任的完整分支示意，不假定所有 enqueue 都采用同样约定。也有接口无论成功失败都消费输入责任；若使用那类接口，调用方再按上例失败 put 就会重复归还。名字和注释要能让读者确定边界，仍须以实际实现与契约为准。
 
 ------
 
 ## 3.10\_put/release\_后的安全边界
 
-这一组小节强调生命周期结束边界：put 之后、release 期间、refcount 归零之后，都不能再按普通可用对象使用。
+归还与清理是责任边界，不是“业务代码已经差不多结束”的模糊位置。最后几行日志、取消和状态更新也必须位于合法的存储与同步窗口内。
 
 ### 3.10.1\_put\_后继续访问是生命周期大忌
 
-典型错误：
+若日志需要不可变 id，可以在仍持引用时复制数值，put 后只使用这份局部值：
 
 ```c
-my_refobj_put(refobj);
-
-pr_info("refobj id = %d\n", refobj->id);     /* 错 */
-```
-
-很多人会觉得：
-
-```text
-我只是打印一下字段，应该没事。
-```
-
-但这是错的。
-
-因为 `my_refobj_put(refobj)` 可能已经触发：
-
-```text
-release
-kfree
-内存被复用
-```
-
-所以后面的 `refobj->id` 可能已经是 UAF。
-
-正确方式是：
-
-```c
+/* id 在本对象发布后不再改变；可变字段还需要其同步协议。 */
 int id = refobj->id;
-
 my_refobj_put(refobj);
-
-pr_info("refobj id = %d\n", id);
+pr_info("refobj id=%d\n", id);
 ```
 
-也就是：
-
-```text
-需要的信息必须在 put 前取出。
-```
-
-更严格地说：
-
-```text
-put 是当前引用的结束边界。
-put 之后不能再依赖 refobj 指针。
-```
-
+不能在 put 后再求值 refobj->id。即使返回 0，其他持有者也可能已经完成最后清理；调试日志同样是一次对象访问，不因“不修改内容”就获得例外。若复制的是另一个指针，还必须分别证明它指向的数据寿命，复制地址不等于复制所需内容。
 
 ### 3.10.2\_release\_内部不能假设外部锁状态
 
-普通 `kref_put()` 调用 release 时，不会自动帮你持有业务锁。
+普通 put 不自动取得业务锁，release 中的锁状态取决于每个调用者实际持有什么。调用点已经持有同一把非递归锁时，回调再取它可能自锁；调用者没有持锁时，回调又不能假定锁已保护字段。
 
-例如：
-
-```c
-kref_put(&refobj->ref, my_refobj_release);
-```
-
-如果归零，release 会被调用。
-
-但是 release 被调用时是否持有锁，取决于调用路径。
-
-所以普通 release 里不能随便假设：
-
-```text
-refobj_list_lock 已经持有
-refobj->lock 已经持有
-RCU grace period 已经结束
-work 已经取消
-timer 已经停止
-```
-
-这些都必须由对象生命周期协议明确保证。
-
-如果需要“最后一个 put + 持锁 release”，后面会讲：
-
-```c
-kref_put_mutex()
-kref_put_lock()
-```
-
-它们就是为特殊组合场景准备的。
-
+同理，计数归零不自动证明工作停止、timer 退出或 RCU 宽限期完成。引用协议可以把这些事件安排在最终 put 前，也可以让回调采用合适的延迟清理；必须写出具体先后。后续 put_mutex/put_lock 有明确的锁交接规则，不能只从名字推成“随便带锁释放”。
 
 ### 3.10.3\_refcount\_归零之后对象处于什么状态
 
-当 `kref_put()` 让计数归零时，对象进入：
+正常归零结束本轮可用的引用责任，随后由类型清理决定资源与存储如何退出。字节可能暂存，不能据此普通 get、重新发布或当成正常业务对象使用；kref_read==0 再 init 会绕过旧入口、旧读者和清理过程的全部协调。
 
-```text
-releasing
-```
-
-这个状态有几个特点：
-
-```text
-不能再 kref_get
-不能再发布给其他路径
-不能再作为正常对象使用
-只能执行销毁流程
-```
-
-从语义上看：
-
-```text
-refcount == 0 不是“没人暂时使用”
-refcount == 0 是“对象生命周期结束”
-```
-
-这是引用计数和普通计数器的重要区别。
-
-普通计数器归零后可能还可以重新加。
-
-但引用计数归零后，不应该复活。
-
-所以不能设计成：
-
-```c
-if (kref_read(&refobj->ref) == 0)
-	kref_init(&refobj->ref);     /* 错 */
-```
-
-这破坏了生命周期模型。
+若需复用存储，应另行证明旧周期已完全结束并建立新身份与状态。对本章的普通使用者，可靠的做法是把最后归还当成当前责任的终点，随后只观察对象外的完成结果。
 
 ------
 

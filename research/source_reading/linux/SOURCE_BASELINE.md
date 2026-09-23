@@ -690,3 +690,7 @@ B04k 的[P03 C 模型](../../../knowledge/linux/object_lifetime/kref/P03_kref_�
 B04l 为 P03 的 release 诊断核对固定 NXP 提交 include/linux/list.h（blob 5f4b0a39cf46a3784a22e0319aa213551d7f4b2c）：list_empty 比较 next 与本节点，list_del 摘除后写入毒化，list_del_init 摘除后恢复自环。这里是类型回调的前置状态解释，不增加一套链表实现讲解，也不改变既有 kref 函数。
 
 C 夹具使用六个固定函数体：INIT_LIST_HEAD、__list_del、__list_del_entry、list_del、list_del_init、list_empty。合法单节点拓扑手动建立，READ/WRITE、有效性检查和毒化地址为显式顺序替身；观察初始化、挂入、普通摘除毒化、摘除后初始化四态符合预期。未验证真实并发、内核毒化陷阱、CONFIG_LIST_HARDENED 或完整链表算法。
+
+## 1.56\_工作实例与归还责任的观察边界
+
+B04m 将已有固定 workqueue 的取消/等待契约与普通 kref 归还分层，实际源码仍沿前述官方提交。正文[工作票据](../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#%287%29_所有权表要补充失败路径和取消路径)不是取消实现镜像：仅模拟单次实例、无重新投递、管理者取消期间仍持份额的协议。严格 C11 六条轨迹均归还完整；pending 取消由调用者接管那一实例的责任，已完成或执行中等待完成不盲目增加一次 put。未执行真实取消、重排竞态、目标模块、原子或分配器验证。
