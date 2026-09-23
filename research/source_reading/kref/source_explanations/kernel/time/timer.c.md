@@ -189,3 +189,5 @@ int timer_shutdown_sync(struct timer_list *timer)
 固定注释给出 timer 与 work 相互启动时先 shutdown timer、再退出 workqueue 的顺序；实际 API 名称是 destroy_workqueue。外层必须保留对象到两者退出，保证剩余清理不再依赖一个能触发的 timer，并停止其他外部生产者。shutdown 的返回值仍只描述最终删除观察到的 pending 状态，不是对已执行次数的汇总。
 
 返回[模块导读](../../../navigation/P05_定时器重启与退出导读.md#5.2_从排队到最终关闭)或[总索引](../../../navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)。
+
+[单次请求的票据组合](../../../navigation/P05_定时器重启与退出导读.md#5.4_一次请求的独立份额与最终关闭)把T1改期与T4关闭返回值接回应用责任；内核helper不替应用增加或归还kref。

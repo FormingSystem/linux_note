@@ -334,3 +334,5 @@ B04bd完成[P13 13.4.3 XArray模板](../../knowledge/linux/object_lifetime/kref/
 B04be将成熟创建与集合单元完整拆为[P16～P19模板分支](../../knowledge/linux/object_lifetime/kref/大纲.md#1.14_工程模板)，P13保留入口和后续单元，深链及评审新节点已同步；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.120_B04be工程模板结构分拆)记录守恒核对与无运行变更。清单645项：238 validated、389 pending、18 supporting_pending；继续P13 13.5异步责任。
 
 B04bf完成[P20工作交付与关闭模板](../../knowledge/linux/object_lifetime/kref/P20_工作交付与关闭工程模板.md#20.1_先选择分享还是转交)，P13 13.5.1保留导航，完整模块十例宿主及ARM前端通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.121_B04bf工作交付与关闭模板)说明状态时序和未运行项。清单646项：239 validated、389 pending、18 supporting_pending；继续P13定时器及完成事件。
+
+B04bg完成[P21定时器交付与同步关闭](../../knowledge/linux/object_lifetime/kref/P21_定时器交付与同步关闭模板.md#21.1_先把排队状态与对象责任分开)，以完整模块对照回调归还和取消者接管，保留原票据与周期借用边界；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.122_B04bg定时器交付与同步关闭)记录七组宿主、ARM前端及未运行项。清单647项：240 validated、389 pending、18 supporting_pending；继续P13完成事件，P13仍pending。

@@ -16,3 +16,4 @@ obj-m += note_session.o
 obj-m += note_kref_create.o
 obj-m += note_kref_hash.o
 obj-m += note_kref_work_modes.o
+obj-m += note_kref_timer.o
