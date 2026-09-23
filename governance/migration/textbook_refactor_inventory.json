@@ -1713,8 +1713,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md",
       "baseline_sha256": "3b0c2b8a2eea8432166123d6f8c13d136be09052330a0860597b93d4200dc591",
       "lines": 1214,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B03as 全篇冷读并重构：保留二十键和七图，区分 B 树上移与 B+ 分隔复制、等值路由、页成本和范围契约；完整 C++ 有限页模型通过 5040 种顺序与集合 oracle、失败不改状态及整数极值检查。不含任意高度、删除、并发和持久化，人工状态未变。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md",

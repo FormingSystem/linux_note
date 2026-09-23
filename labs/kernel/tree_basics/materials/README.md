@@ -120,3 +120,5 @@ domains: [c_language, data_structures]
 [P12 示例回访](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#12.5_Linux_内核_rbtree_示例代码)继续使用 note_rbtree_owner.c 和 P27 的遍历材料。owner 的搜索与插入已收敛到 compare_key；重新通过 36 组顺序、四处分配失败、极值键接入/查找/重复/移除及 ARM 前端检查。用户态锁、缓存和增强实验仍分别维护各自契约，不将删除末尾的释放操作机械替换成另一种寿命协议。
 
 [rb_snapshot_check.c](rb_snapshot_check.c)配合[P12 有界验证](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行有界快照检查器)：C11 整数槽号模型验证已知对象池，依次检查重复访问、父链、祖先界、颜色、黑计数、独立摘要、总数和首身份。完整十二类样例及 120960 个固定算法夹具稳定快照交叉检查通过；不采集或解引用任意内核地址，不进入模块 Makefile。
+
+[bplus_leaf_pages.cpp](bplus_leaf_pages.cpp)配合[P13 页布局](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md#%281%29_运行等值路由与叶分裂模型)：C++17 固定一层根与九叶容量，运行二十键实例的等值路由、叶分裂和范围扫描。宿主 5040 种次序、35280 个操作状态与 std::set 对照，容量拒绝、重复和整数极值已查；不实现任意高度、删除、设备 I/O、并发或持久化，不加入内核模块 Makefile。
