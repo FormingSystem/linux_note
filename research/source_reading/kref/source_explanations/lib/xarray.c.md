@@ -63,3 +63,4 @@ void *xa_erase(struct xarray *xa, unsigned long index)
 应用已有 xa_lock 时应调用 __xa_erase；调用 xa_erase 则由它自行加锁。本例直接用后者，返回后只对非空旧对象归还成员份额。底层 xas_store/xas_result 负责索引结构和标记结果，本页不扩展为节点分配算法。
 
 返回[整数索引模块](../../navigation/P06_整数索引与拥有型查找导读.md#6.2_把容器动作接到引用周期)或[总阅读索引](../../navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)。
+[期待对象删除](../../navigation/P06_整数索引与拥有型查找导读.md#6.4_删除当前条目与删除期待对象)在同一外层xa_lock窗口比较身份再进入__xa_erase，不重复套xa_erase公开锁包装。

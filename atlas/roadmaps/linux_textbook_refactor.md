@@ -328,3 +328,5 @@ B04ba全量冷读P13原材料，完成[13.1～13.3模板入口、命名与创建
 B04bb完成[P13 13.4.1拥有型链表模板](../../knowledge/linux/object_lifetime/kref/P13_工程模板.md#13.4.1_模板三_list_+_mutex_+_kref_lookup_模板)，复用完整服务，明确发布新增、撤下配对、调用者资格和关闭后拒绝；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.117_B04bb链表模板责任闭环)记录既有验证复核。下一项13.4.2哈希与执行上下文，P13仍pending。
 
 B04bc完成[P13 13.4.2哈希模板](../../knowledge/linux/object_lifetime/kref/P13_工程模板.md#13.4.2_模板四_hash/list_+_spinlock_+_kref_lookup_模板)，新增完整拥有型哈希服务与七组宿主协议检查；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.118_B04bc哈希模板与IRQ边界)记录配置与未运行项。下一项13.4.3 XArray，P13仍pending。
+
+B04bd完成[P13 13.4.3 XArray模板](../../knowledge/linux/object_lifetime/kref/P13_工程模板.md#13.4.3_模板五_xarray_+_kref_lookup_模板)，明确内部锁与对象保护窗口、成员份额及编号复用后的期待对象删除；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.119_B04bd索引模板与身份删除)记录三项新增及六项既有检查。下一项模板单元结构分拆与13.5异步责任，P13仍pending。

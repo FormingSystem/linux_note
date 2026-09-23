@@ -804,3 +804,9 @@ B04ba复核NXP官方来源、lf-6.12.y、发布标签解引用dfaf2136及Linux6.
 B04bc的[note_kref_hash模板](../kref/navigation/P03_条件取得与查找窗口导读.md#3.11_哈希索引与IRQ上下文的独立边界)使用本次ARM、CPU_V7、非SMP、非PREEMPT_RT配置；DEBUG_SPINLOCK、DEBUG_LOCK_ALLOC和TRACE_IRQFLAGS启用。只读核对固定dfaf2136的include/linux/spinlock.h包装、arch/arm/include/asm/irqflags.h中ARMv6及以上保存/屏蔽/恢复普通IRQ路径，不外推到Cortex-M、FIQ/NMI或锁专题另行研究的SMP运行配置。
 
 ARM前端通过，354份头中342份非生成源码与固定提交无差异。七组宿主应用检查保留固定普通引用函数，哈希、链表、IRQ状态、锁与分配环境为顺序替身；没有目标链接装卸、真实中断、并发、实时性测量或硬件验证。上游函数体仍沿既有锁实现页和源码副本，不新增重复展开。
+
+## 1.76\_期待对象删除的锁窗口验证
+
+B04bd沿固定dfaf2136既有lib/xarray.c的xa_load、xa_erase、__xa_erase实现，复核[同锁身份比较与移除](../kref/navigation/P06_整数索引与拥有型查找导读.md#6.4_删除当前条目与删除期待对象)。正式note_kref_xarray未改，可选应用包装不引入新上游源码体。
+
+包含包装的模块变体ARM前端通过，354头中342非生成源码相对固定提交无差异；三项新增及六项既有宿主组通过。宿主普通引用和公开包装固定，下层节点、删除、锁及RCU为替身，不证明真实算法、编号复用的并发压力、目标链接装卸或多次发布代际。
