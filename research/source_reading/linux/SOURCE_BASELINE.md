@@ -998,3 +998,7 @@ B05e沿固定通用release/acquire回退的类型和先后关系核对正文边�
 ## 1.113\_依赖数据流与RCU取得边界
 
 B05f只读固定Documentation/RCU/rcu_dereference.rst和include/linux/rcupdate.h，核对地址/数据依赖、普通判空与已知地址比较、READ_ONCE特例及check/protected前提；[RCU模块导读](../rcu/navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md#2.9_唯一实现讲解入口)保留唯一实现入口。五函数C在GCC14.2和Clang18.1 x86-64 O2严格编译并观察：Clang替换固定地址比较后的访问来源，GCC本次仍保留指针寄存器；不以特定汇编替代Linux或ARM语义。未执行RCU、herd7或回收路径。
+
+## 1.114\_原子更新与条件失败契约
+
+B05g只读固定Documentation/atomic_t.txt全篇，核对非RMW、返回值、显式顺序、条件失败、atomic_set与RMW不可分性、期望值回写、辅助屏障范围及前进性；[阅读入口](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.11_官方文档证据)关联原始副本，其Git对象bee3b1bca9a7b46bcf9911f036c3280e77b4405a与固定提交一致。工作树HEAD仍是本地实验提交，不作为证据；当前配置仍UP、TINY_RCU和PREEMPT_NONE。宿主C++17严格编译后四工作者完成40,000次更新、错误0，同时单线程反例显示期望值重用会使OWNED→OWNED也成功。不声称执行Linux/ARM原子或herd7，不以宿主原子替代目标实现。

@@ -2958,8 +2958,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P06_原子RMW_顺序后缀与条件成功.md",
       "baseline_sha256": "bde95259f239240020be4d1baf8abf63dd9501d6c72be9dda4a2f93784a09a37",
       "lines": 143,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05g冷读十一节及固定atomic_t全文，展开条件失败与期望值回写、S0至S3交接、辅助屏障及热点因果；完整C++严格编译并实际40,000次更新错误0，无Linux/ARM/LKMM运行。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P07_锁_调度_中断与隐式顺序.md",
