@@ -299,367 +299,117 @@ release 可以选择延迟最终存储回收，也可以按已证明的协议完
 
 ## 6.5\_外部可见性\_脱链应该由谁负责
 
-对象如果还能从全局结构或外部子系统找到，release 就很容易变成悬挂指针制造点。这里先讲可见性撤销的责任边界。
+完整工作模块只有持引用的调用者，没有全局索引。现在加入一个查询入口：读者先在表中找到地址，再取得自己的引用。多出的难题并非“在哪里写 list_del”这么简单，而是 **从发现地址到取得份额之间，谁保证对象还活着？** 撤下入口与最终回调的先后必须围绕这个窗口安排。
 
 ### 6.5.1\_release\_前必须明确对象是否已经脱链
 
-如果对象挂在全局结构里，例如：
+先在纸上执行一个错误顺序：表中保存对象地址；最后持有者 put 后直接释放外壳；查找者随后从表中读出原地址，访问其中的 kref。此时即使用条件取得也太迟，因为它首先要读一个已经失效的计数成员。问题发生在“能否访问计数地址”这一层，不能由“计数为零就不增加”补救。
 
-```c
-struct my_refobj {
-	struct kref ref;
-	struct list_head node;
-	int id;
-};
-```
+但“表里有地址”也不自动表示表拥有引用。需要查清两个独立约定：表是否保留一份，查找与最终撤下是否使用同一项保护。上一章已有两个完整程序可作对照：拥有一份的 `registry_entry`，以及不拥有一份的 `index_entry`。本节比较它们关闭同一个查找窗口的不同方法，不另造一份没有创建、失败和归还路径的链表片段。
 
-那么 release 时必须回答：
-
-```text
-对象是否还挂在 list/hash/xarray/idr 中？
-```
-
-如果对象已经释放，但全局结构里还留着指针，就会产生悬挂指针。
-
-错误模型：
-
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	kfree(refobj);
-}
-```
-
-如果 `refobj->node` 还在链表里，那么链表中留下的节点就指向已经释放的内存。
-
-后续 lookup 可能拿到一个已经释放的对象。
-
-这类 bug 非常危险。
-
+对于 list、hash、xarray 或 idr，容器名称本身不回答所有权问题。应先确定“谁拥有这一份”，再决定具体摘除接口；换用更方便的容器不会自动修好回收协议。还有第三种情况是 RCU 读者已经取到旧地址，即便索引被撤下，它仍可能在保护区间内访问，存储回收还需等待对应读侧结束。
 
 ### 6.5.2\_release\_前脱链模型
 
-一种常见设计是：
+先回访[P02 完整容器模块](P02_源码入口与结构定义.md#2.30.1_设计_A_容器持有引用)。`registry_entry` 非空时拥有一份；`registry_lock` 保护槽的读、发布和清空。查找者在该锁内见到非空槽，凭容器那一份保证普通 get 时仍为正数，取得自己的份额后才离开锁。
 
-```text
-release 之前必须已经从全局结构删除。
+撤下者执行反向交接：锁内清槽，同时把槽原有的责任接到自己手里；解锁后归还这一份。这样，即使这次 put 最终回收，也已经没有新查找者能通过该槽取得旧对象。此前取得份额的读者继续持有，最后由它们自行归还；“入口消失”与“已有使用者消失”因此可以发生在不同时间。
+
+这个设计适合注册关系本身就应使对象存活的场景。代价是必须有明确的移除动作；如果管理者永远不移除，容器那一份也不会凭空消失。release 不能承担首次移除并归还同一容器份额，否则要等零才能移除、又要移除才能到零，形成责任循环。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant L as 查找者
+    participant T as registry_entry 与 registry_lock
+    participant M as 撤下者
+    participant O as 对象引用与回调
+    L->>T: 加锁，读非空入口
+    L->>O: 普通 get，容器份额保证正数
+    L->>T: 解锁
+    M->>T: 加锁清槽，接管槽的一份
+    M->>T: 解锁
+    M->>O: put 原槽份额
+    L->>T: 后续查找见空，不再取得旧地址
+    L->>O: 旧调用者结束后归还自己的一份
+    O-->>L: 最后归还才触发回调
 ```
 
-release 里只做检查：
-
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	WARN_ON(!list_empty(&refobj->node));
-
-	kfree(refobj);
-}
-```
-
-删除路径负责脱链：
-
-```c
-static void my_refobj_remove(struct my_refobj *refobj)
-{
-	mutex_lock(&refobj_list_lock);
-	list_del_init(&refobj->node);
-	mutex_unlock(&refobj_list_lock);
-
-	my_refobj_put(refobj);
-}
-```
-
-这个模型的优点是：
-
-```text
-全局可见性撤销和最终释放分开；
-release 只验证对象已经不可被 lookup；
-代码边界清晰。
-```
-
-这里的生命周期顺序是：
-
-```text
-从全局结构删除
-禁止新 lookup
-释放管理者引用
-等待已有引用自然归零
-最后 release
-```
-
-这也是很多对象管理场景的常见模型。
-
+若用链表而非单槽，清理时的 `list_empty()` 只是一项约定检查。它检查节点是否自环，不是通用“已不在任何容器”的证明。只有节点先正确初始化，且摘除使用恢复自环的 `list_del_init()` 等约定时，这个断言才与“已摘下”对应；普通 `list_del()` 的毒化状态不能这样判读。具体表示已在[P03 清理诊断](P03_kref_生命周期状态机.md#3.7.1_release_阶段_对象销毁点)建立，检查不替代锁和所有权。
 
 ### 6.5.3\_release\_内脱链模型
 
-另一种设计是：
+再回访[P05 非拥有索引模块](P05_基础_API_源码逐行讲解.md#5.8.2_kref_put_mutex%28%29_的典型用途)。`index_entry` 不保留引用，对象可以因为真实使用者都退出而自动到达最终回调。为使锁内普通查找仍有正数保证，所有最终减少都通过同一 `index_lock` 的组合接口：可能只剩一份时先保留它，取锁后再减少判断；真正到零时回调已经接到锁，清槽、解锁、释放外壳。
 
-```text
-最后一个 put 时，在 release 里完成脱链。
-```
+这不是“先在锁外归零，然后回调再取锁”。如果改成后一种顺序，查找者可能已经持索引锁，看见还没被撤下但计数已零的对象；普通 get 就没有正引用依据。该顺序可以另行设计成条件取得协议：回调等索引锁期间保留存储，查找者在锁内尝试 `kref_get_unless_zero()`，失败则解锁并拒绝。它与普通查找协议有不同的前提，不能只替换最后 put 那一行。
 
-例如：
+| 关系 | 查找窗口的正数/地址依据 | 撤下由谁完成 | 不能省略的代价 |
+| --- | --- | --- | --- |
+| 容器拥有一份 | 非空入口自己的份额，查找与清槽同锁 | 管理者先清槽，再归还容器份额 | 必须有主动移除者 |
+| 非拥有索引，最终减少与查找同锁 | 锁内见到未撤入口时，最终减少尚未越过同锁 | 归零回调在接到的锁下撤下 | 所有归还路径遵守同一最终减少协议 |
+| 非拥有索引，普通 put 可在锁外归零 | 锁阻止回调释放存储，但不保证计数为正 | 回调取锁撤下 | 查找必须条件取得并处理失败 |
 
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
+表中最后一项的地址保护只覆盖索引锁窗口；失败后不能解锁再访问对象，也不能把它推广成任意无锁查找。对应的[条件模块](../../../../research/source_reading/kref/navigation/P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有)与[最终减少模块](../../../../research/source_reading/kref/navigation/P04_最后归还与锁交接导读.md#4.2_把最后减少留在锁内)分别保存固定版本的状态与函数协作，后续查找和锁组合章节再扩大场景。
 
-	list_del_init(&refobj->node);
-	kfree(refobj);
-}
-```
-
-这个模型必须满足额外条件：
-
-```text
-release 执行时必须持有保护 list 的锁；
-不会有并发 lookup 正在无保护遍历；
-不会出现重复 list_del；
-锁状态必须明确。
-```
-
-所以它通常要配合：
-
-```c
-kref_put_mutex()
-kref_put_lock()
-```
-
-或者调用者在最后 put 前已经持锁。
-
-这种模型难度更高，因为 release 不再只是释放资源，还参与集合关系修改。
-
-本章只建立边界：
-
-```text
-release 可以脱链，但必须有锁语义保证。
-```
-
-具体模板放到第 9 章展开。
-
-------
+练习：一个非拥有索引原来全部使用锁组合 put，后来某条错误出口改用普通 put。为什么回调中仍然执行“加锁、清槽”也不能保持原有普通 lookup 正确？尝试安排查找者先拿到锁，再由另一持有者在锁外归零；你会发现被破坏的是查找的正数依据，而不是清槽这个动作是否存在。
 
 ## 6.6\_release\_的执行上下文和锁语义
 
-release 在哪里执行，取决于最后一个 put 发生在哪里。上下文不清楚，复杂 release 就没有安全基础。
+目前知道该清理什么、入口怎样撤下，还欠一项证明：这些清理动作在 **最后归还者当时的执行条件** 下能否运行。进程/中断属于执行环境，spinlock/mutex 属于此刻的持锁状态，两组约束会叠加；不能只看到“驱动函数”或“worker”这个名字就批准睡眠。
 
 ### 6.6.1\_release\_能否睡眠取决于最后\_put\_上下文
 
-release 是否能睡眠，取决于它被什么上下文调用。
+本章完整工作模块刻意把关闭安排在初始化函数的可睡眠过程，且退出 `gate` 后才等待普通工作队列。若把同一个等待动作搬到硬中断、软中断、持普通自旋锁或禁止调度的临界区，就破坏了执行条件。这里的普通自旋锁按当前非 PREEMPT_RT 基线理解，不把其实现细节直接外推到 RT 配置。
 
-普通 `kref_put()` 可能出现在多种上下文：
+可睡眠也不表示一定能等到结果。例如管理者拿着 `gate` 调用同步取消，worker 必须取得 `gate` 才能返回，即使管理者是普通进程，也会形成锁等待循环。分析需要先过两个独立问题：当前环境是否允许阻塞；被等待者能否在我们保留的锁和责任条件下继续前进。
 
-```text
-进程上下文
-workqueue 上下文
-中断上下文
-软中断上下文
-spinlock 持有状态
-mutex 持有状态
-RCU 读侧或更新侧路径
-```
+| 最后归还可能来自 | release 继承的主要约束 | 本章如何安排 |
+| --- | --- | --- |
+| 普通可睡眠路径且无冲突锁 | 可以选择睡眠操作，但仍须排除等待循环 | 关闭者在 S4 等待，S5 回调只回收剩余存储 |
+| 同一对象的 worker 尾部 | 尚未从这个 work 的函数返回 | 回调不能同步取消或等待这个 work 自己 |
+| 硬中断、软中断、禁调度区间 | 不允许任意阻塞 | 回调必须适配，或把清理责任交给已证明可用的执行者 |
+| 持锁的最终归还 | 锁与其他上下文限制同时存在 | 明确回调是否负责解锁，以及之后仍有哪些限制 |
+| RCU 保护或回调路径 | 必须遵守对应 RCU 类型/回调的执行契约 | 不能把“延迟”当成自动获得睡眠资格 |
 
-如果 release 里调用可能睡眠的函数，例如：
-
-```c
-cancel_work_sync(&refobj->work);
-mutex_lock(&refobj->lock);
-flush_workqueue(wq);
-wait_for_completion(&refobj->done);
-msleep(10);
-```
-
-那就必须保证：
-
-```text
-最后一个 kref_put() 不会发生在不能睡眠的上下文。
-```
-
-否则就可能出现：
-
-```text
-sleeping function called from invalid context
-死锁
-调度错误
-锁依赖告警
-```
-
-所以 release 设计前必须先问：
-
-```text
-最后一个 put 可能在哪里发生？
-```
-
-这比 release 代码本身更重要。
-
+不要用 `kref_read()==1` 猜本次是否最后一次，再只给“看起来会最后”的调用者检查上下文；快照会变化。设计时应覆盖所有可以归还最后一份的路径。否则一次平常总是非最后的错误出口，也可能在另一参与者先退出时突然执行整个 release。
 
 ### 6.6.2\_普通\_kref\_put\_下的\_release\_上下文
 
-普通 `kref_put()` 不改变当前上下文。
+普通 `kref_put()` 没有启动清理线程，也没有替调用者释放外部锁。回调就在这一次 put 的调用栈中发生；归还以后调用者不再凭已经交还的份额访问对象。[普通实现](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理)中直接调用回调的语句体现了这个边界。
 
-也就是说：
+以第 1 章的持票工作为例：worker 在最后一行 put，可能立即进入 release。即使这时计数已经为零，work function 仍未返回；若 release 同步等待该 work，必须等到自己的调用栈先退出，而调用栈又等 release 返回。**“引用已归还”和“执行函数已返回”不是同一个事件。** 本章管理者模型通过保持初始份额到同步等待以后，避免把排空工作留给归零回调。
 
-```c
-kref_put(&refobj->ref, my_refobj_release);
+```mermaid
+flowchart LR
+    W["worker 尾部 put"] -->|"普通 put 直接调用"| R["release 尚在 worker 调用栈上"]
+    R -->|"错误：同步等待本 work"| C["等待 work function 返回"]
+    C -->|"返回必须先等 release 完成"| R
 ```
 
-如果最后引用在进程上下文释放，那么 release 在进程上下文执行。
+若确实只有非睡眠路径可能最后归还，而资源必须在可睡眠路径退出，需要设计一次 **清理责任转交**：归零回调保持外壳有效，将退休对象交给已就绪的清理执行者，后者完成资源退出再回收。这个新协议要处理接收失败、执行者自身寿命、重复投递和模块卸载；不能在回调里再次 get 旧计数，也不能以“放进某个 workqueue”几个字省略责任。
 
-如果最后引用在中断上下文释放，那么 release 就在中断上下文执行。
-
-如果最后引用在 spinlock 持有期间释放，那么 release 就在 spinlock 持有期间执行。
-
-所以普通 `kref_put()` 的 release 不能假设：
-
-```text
-一定可以睡眠
-一定没有锁持有
-一定在进程上下文
-一定可以调用复杂清理函数
-```
-
-release 是否能做复杂清理，取决于对象设计是否保证：
-
-```text
-最后一个 put 只会在允许该 release 行为的上下文发生。
-```
-
-如果不能保证，就要改变设计。
-
-常见做法包括：
-
-```text
-把最后 put 限制在进程上下文
-把复杂释放转移到 workqueue
-把内存释放改成 RCU 延迟释放
-避免 release 中调用可能睡眠的函数
-```
-
+RCU 延迟回收解决的则是旧读者可能仍在访问存储的问题。它不与工作队列等价，也不保证 RCU 回调可以阻塞。若既有读者宽限期要求又有睡眠清理要求，就有两项独立的完成条件，必须安排先后或责任交接；[RCU 复合对象的回调边界](../../synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md#21.1_先按分配与所有权拓扑选模板)给出相关拓扑，而非给所有 release 统一套 `kfree_rcu`。
 
 ### 6.6.3\_release\_在持\_mutex\_状态下执行
 
-如果使用：
+`kref_put_mutex()` 正常归零进入回调时，指定 mutex 已持有，回调接管解锁责任；返回后包装器不会再帮它 unlock。相反，没有触发回调的路径可能根本未取锁，也可能取锁重查发现别人加入后已经自行解锁。因此调用者不能不分返回分支再补一次解锁。
 
-```c
-kref_put_mutex(&refobj->ref, my_refobj_release, &refobj_lock);
-```
+P05 完整程序中的 `indexed_release_locked()` 正好表达这个契约：它在持 `index_lock` 时清理属于当前对象的槽，随后解锁，再释放外壳；拒绝发布的新对象不能误清另一个对象占据的槽。这里的名称和注释都告诉维护者“已经持锁进入”，所以不要在函数开头再次锁同一把 mutex。
 
-那么最后一个 put 时，release 会在持有 `refobj_lock` 的状态下执行。
+把 mutex 成员放在即将释放的对象里还会多出存储问题：必须先结束对该 mutex 的使用，再释放承载它的外壳。完整索引程序选择对象外的锁，让锁的寿命不依赖某一个被索引对象，但它仍要保证模块中的锁在所有调用结束前存在。
 
-这意味着 release 必须知道：
-
-```text
-进入 release 时 mutex 已经被持有。
-```
-
-所以 release 里不能再无脑：
-
-```c
-mutex_lock(&refobj_lock);
-```
-
-否则可能死锁。
-
-示例：
-
-```c
-static void my_refobj_release_locked(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	/* 这里假设 refobj_list_lock 已经持有 */
-	list_del_init(&refobj->node);
-
-	mutex_unlock(&refobj_list_lock);
-
-	kfree(refobj);
-}
-```
-
-这种模式非常敏感。
-
-它有几个风险：
-
-```text
-release 负责解锁，调用点不直观；
-锁平衡容易被后续维护破坏；
-release 名字必须体现 locked 语义；
-release 中不能随便调用会再次拿同一把锁的函数。
-```
-
-所以工程上建议：
-
-```text
-如果 release 依赖锁状态，函数名和注释必须明确。
-```
-
-例如：
-
-```c
-/*
- * Called with refobj_list_lock held.
- * Drops refobj_list_lock before returning.
- */
-static void my_refobj_release_locked(struct kref *ref)
-{
-	...
-}
-```
-
+用三个问题检查这一调用点：回调接的是哪一把锁，谁负责解锁，解锁以后其他路径还能通过什么入口接触对象？名字中有 `_locked` 只是提示，不能替代这三项约定。固定调用链见[归零锁交接](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.8_归零时把锁交给回调)。
 
 ### 6.6.4\_release\_在持\_spinlock\_状态下执行
 
-如果使用：
+`kref_put_lock()` 同样在归零时把指定 spinlock 交给回调。当前普通非 RT 语境下，持该锁不能调用可能睡眠的清理动作；回调通常先完成受锁保护的短小撤下操作，再按调用协议解锁。它还要避免任何会再次取得同一锁的间接函数。
 
-```c
-kref_put_lock(&refobj->ref, my_refobj_release, &refobj_lock);
-```
+但“先 unlock，再做复杂清理”仍不是通用修复。如果最后归还来自中断，释放 spinlock 后仍在那个中断里；如果调用者事先关闭本地中断，普通 `spin_unlock()` 也不会替它恢复原状态。`kref_put_lock()` 的固定实现使用普通 spin lock 组合，不包含 irqsave/irqrestore 配对，调用者必须另证中断重入和状态恢复。
 
-最后一个 put 时，release 会在持有 spinlock 的状态下执行。
+因此，为 spinlock 版本选择 release 时，应先列清所有最终归还来源，再选择这些来源共同允许的动作；需要阻塞的资源退出通常前移到仍持管理责任的可睡眠关闭阶段，或走完整的清理责任转交协议。不能把 mutex 版本的等待代码原样搬来，也不能凭一次无告警测试就认为 IRQ 或 RT 分支得到验证。
 
-这比 mutex 版本更严格。
+至此可回答开篇实例为什么把 `cancel_work_sync()` 放在 S4：那里管理者有一份、无 `gate` 锁、允许睡眠且不是该 work 自身。将它放进 release 会丢失这些由调用协议建立的前提。下一节继续增加异步来源，重点检查反复启动、重新排队和注册解除会怎样改变退出责任。
 
-release 中不能调用可能睡眠的函数。
-
-错误示例：
-
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	cancel_work_sync(&refobj->work);   /* 错：可能睡眠 */
-	kfree(refobj);
-}
-```
-
-如果这个 release 被 `kref_put_lock()` 调用，就可能出问题。
-
-spinlock 下 release 更适合做短小动作：
-
-```text
-从链表删除
-标记状态
-解除简单集合关系
-释放不睡眠的资源
-```
-
-如果销毁流程复杂，常见做法是：
-
-```text
-持 spinlock 完成脱链；
-释放 spinlock；
-再在安全上下文中释放复杂资源。
-```
-
-或者把对象放到延迟释放队列，由 workqueue 执行真正释放。
-
-------
 
 ## 6.7\_异步路径\_work\_timer\_callback\_的引用闭环
 

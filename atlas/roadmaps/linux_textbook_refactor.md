@@ -256,3 +256,5 @@ B04q 完成[P05 锁交接](../../knowledge/linux/object_lifetime/kref/P05_基础
 B04r 收束[P05 类型契约与章末应用](../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.10_API_封装模板)，修正初始化形式与存储期混同、告警后继续解引用、查找封装与内存序的过度保证；已验证完整程序保留。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.81_B04r类型契约与P05收束)说明保留依据和验证范围；P05 本轮作者审查完成，下一项 P06，人工状态不变，全仓继续。
 
 B04s 重构[P06 关闭与资源边界](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.2.2_运行一个由管理者等待借用退出的模块)的 6.1～6.4，以完整内核模块串起关闭提交、等待借用、管理者归还和最后清理。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.82_B04s管理者等待与资源归属)记录九组控制检查和未执行目标项；P06 仍 pending，下一项可见性、上下文与异步重启边界，全仓继续。
+
+B04t 完成[P06 可见性与上下文](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.5_外部可见性_脱链应该由谁负责)的 6.5～6.6，保留全部阅读任务，用既有完整程序比较三种查找协议、回调锁交接和自等待。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.83_B04t入口撤下与回调上下文)记录保留与未执行验证；下一项 6.7 异步启动，P06 仍 pending。
