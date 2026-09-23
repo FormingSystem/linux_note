@@ -53,6 +53,8 @@ delayed work 必须用 delayed 专用 cancel，因为 timer 仍可能持有尚�
 
 [kref 一次交付实验](../../../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md#1.16.1_运行一次真实工作交付)给出这个边界的最小调用场景：创建者只提交一次，worker 不重排；私有队列销毁等待回调退出，业务对象则由最后的 kref_put 清理。该实例尚未在目标上运行，不能作为通用 cancel/requeue 协议或动态验证证据。
 
+[kref 清理上下文](../../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.31_kref_和_release_的关系)进一步限定这类组合：最后 put 可由 worker 自身执行，不能在它触发的 release 中无条件同步等待同一个 work；需要等待的关闭阶段与类型最后清理分开安排。
+
 ## 4.6\_依赖检查
 
 workqueue Lockdep map 和 `check_flush_dependency()` 能发现部分 reclaim/flush 依赖；barrier work 使用独立 key 避免 BH 与线程队列假阳性。检查配置关闭、路径未执行或跨对象业务锁未接入时，未告警不构成完整死锁证明。

@@ -674,3 +674,9 @@ B04h 沿固定 NXP 提交核对 mm/slub.c 的 kfree(NULL) 路径（blob b9447a95
 B04i 使用同一固定 kref.h 普通 put 与已核对 kfree(const void *) 参数，顺序 C 夹具的两种结束顺序均只选择最后一次调用的回调；直接传 kfree 的负例按预期得到 incompatible-pointer-types，未执行错误调用。唯一实现保持不重复，静态宏已经落地的范围说明一并校正。
 
 [C++ 对照程序](../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.23.1_用完整程序观察自动归还)属于宿主教材实验，不是 Linux 源码证据：GCC/libstdc++ 14.2.0 以 C++17 严格编译，拷贝、移动、reset、异常退出检查通过。实现布局只读核对 libstdc++ bits/shared_ptr_base.h 的 _Sp_counted_ptr_inplace 内置存储，SHA-256 为 17895f579b5f9e5f4837ce2a23a20b00ab6cfe27ffc24bab024853ba0a900c88；不复制上游库实现，不外推所有标准库布局。接口语义参考 [C++ 工作草案 shared_ptr](https://eel.is/c++draft/util.smartptr.shared)（2026-09-23 查阅），只使用 C++17 已有功能。未作性能基准、真实并发、目标模块或控制块分配次数测量。
+
+## 1.53\_容器责任与清理上下文证据
+
+B04j 的[单槽模块](../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.30.1_设计_A_容器持有引用)沿固定 kref 普通实现，用 mutex 配合容器持有责任建立锁内 get 的正引用保证。重新只读核对同一 kernel/workqueue.c 的 __cancel_work_sync、__flush_work 及 cancel_work_sync 注释（blob 沿 1.45），确认等待执行结束与无竞态重新投递前提；正文通过调用依赖说明 worker 在自己的最后回调里等待自己不能闭合。RCU 清理按既有三种对象拓扑入口分流，不追加通用无条件等待模板。
+
+ARM 前端通过，354 份头文件中 342 份非生成源码与固定提交无差异；生成配置另界定。实际模块配显式顺序锁/分配/原子替身通过六组控制路径，包括分配失败、正常入口、满槽拒绝、先撤下后查找及两种双读者退出。验证责任、锁外清理和无剩余分配，不证明真实竞争、内存序、目标构建链接或装卸。
