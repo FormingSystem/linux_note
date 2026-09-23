@@ -21,6 +21,7 @@ domains: [linux, source_reading]
 | 责任保存在哪里，何时离开设备链 | [S0至S4与状态所有者](P02_记录与分组清理导读.md#2.1_从记录地址追踪S0到S4) | [整体清理](../source_explanations/drivers/base/devres.c.md#1.6_devres_release_all交出待清理记录)、[逆序回调](../source_explanations/drivers/base/devres.c.md#1.7_release_nodes执行实际清理) |
 | 关闭、移除、释放组为何不同 | [范围比较](P02_记录与分组清理导读.md#2.2_同一周期内比较分组范围) | [open](../source_explanations/drivers/base/devres.c.md#1.2_devres_open_group登记开始标记)、[close](../source_explanations/drivers/base/devres.c.md#1.3_devres_close_group限定范围)、[remove](../source_explanations/drivers/base/devres.c.md#1.4_devres_remove_group只拿走标记)、[release](../source_explanations/drivers/base/devres.c.md#1.5_devres_release_group摘取后回调) |
 | 登记失败后资源归谁 | [责任选择](P02_记录与分组清理导读.md#2.3_选择接口先确定责任是否保留) | [普通登记](../source_explanations/drivers/base/devres.c.md#1.1_普通action登记成功才转交责任)、[即时回滚](../source_explanations/include/linux/device.h.md#1.1_reset包装失败直接执行) |
+| 内存、映射、GPIO与IRQ的失败能否同样处理 | [资源族导读](P03_内存映射与中断资源导读.md#3.1_内存失败与零大小) | [基础映射](../source_explanations/lib/devres.c.md#1.1_基础映射失败保持NULL)、[resource包装](../source_explanations/lib/devres.c.md#1.2_资源包装将失败编码并撤回区域) |
 | probe失败与正常解绑怎样进入清理 | [已有错误路径导读](../../error_pointer/navigation/P02_返回值与清理路径导读.md#2.3_跟随驱动失败而不混用返回类型) | [固定dd.c](../../linux/drivers/base/dd.c)中的`really_probe`、`device_unbind_cleanup`与`__device_release_driver` |
 
 ## 1.3\_配置与验证边界

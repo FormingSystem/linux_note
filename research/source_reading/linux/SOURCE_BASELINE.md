@@ -958,3 +958,7 @@ B04cf复用固定dfaf2136已有引用与表协议证据，六组当前note_kref_
 ## 1.103\_devres核心分组与回滚
 
 B04ch重新只读核对官方来源、标签dfaf2136、6.12.20与ARM配置；本地HEAD实验提交不作证据。既有drivers/base/devres.c、dd.c和include/linux/device.h与固定对象规范换行后相同，Documentation/driver-api/driver-model/devres.rst只读核对。新增[devres固定索引](../devres/navigation/P01_Linux_6.12_devres源码阅读索引.md#1.2_按问题进入实现)连接分组、登记及reset包装的唯一实现。六条宿主C平面模型不替代真实锁、嵌套或目标解绑；未新增硬件运行结论。
+
+## 1.104\_devres内存映射与IRQ资源契约
+
+B04ci按固定dfaf2136核对内存、映射、platform、GPIO和IRQ声明/包装/配置桩；新增[lib/devres.c原文](lib/devres.c)及[资源族导读](../devres/navigation/P03_内存映射与中断资源导读.md#3.1_内存失败与零大小)。kernel/irq/devres.c、manage.c，drivers/base/platform.c，drivers/gpio/gpiolib.h及相关声明头仅只读核对，已有GPIO与device头副本复用。两个映射包装11条宿主路径通过，14项公开接口ARM类型断言通过；397份包含头中384份非生成头与固定对象一致，13份生成头体现工作树配置。无Kbuild/MODPOST、真实映射、GPIO、中断或目标解绑验证。

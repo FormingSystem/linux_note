@@ -392,3 +392,5 @@ B04cf完成P15最后问答、实际表模板、总图与六级自测，六组表
 B04cg完成[kref大纲](../../knowledge/linux/object_lifetime/kref/大纲.md#1.1_重构原则)全篇冷读与真实依赖导航，保留40章入口并纠正过时边界概括；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.148_B04cg专题阅读路线收束)记录逐层核对。清单667项：264 validated、385 pending、18 supporting_pending；继续devres与生命周期集成，非全仓完成。
 
 B04ch建立[devres资源账本](../../knowledge/linux/object_lifetime/devres/P01_从失败回滚到设备资源账本.md#1.1_从两条退出路径提取同一份责任)、核心API和固定源码分组/action证据；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.149_B04ch资源账本与分组回滚)记录六条C路径及边界。新增七项后清单674项：271 validated、385 pending、18 supporting_pending；API子系统条目和旧机制讨论尚待逐单元审查，不算整个devres完成。
+
+B04ci核对[内存、映射、GPIO和IRQ参考](../../knowledge/linux/object_lifetime/devres/devres_API说明.md#2.2_内存与字符串)，修正NULL/错误指针、零大小、可选缺席及清理责任；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.150_B04ci资源族返回与退出契约)保留11条包装与14项类型证据。清单676项：273 validated、385 pending、18 supporting_pending；API与旧讨论仍pending，继续2.6时钟等资源族。

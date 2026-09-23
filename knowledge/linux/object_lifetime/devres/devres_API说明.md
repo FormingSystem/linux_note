@@ -86,119 +86,100 @@ action可封装资源释放，也可封装符合依赖的关停动作。正常�
 
 ## 2.2\_内存与字符串
 
+这组接口管理绑定期内存，声明位于`include/linux/device.h`，主要实现位于`drivers/base/devres.c`。非零分配失败用NULL表示；它不是错误指针接口。内存复制也不自动取得结构体内部指针所指对象的引用。源码顺序见[资源族导读](../../../../research/source_reading/devres/navigation/P03_内存映射与中断资源导读.md#3.1_内存失败与零大小)。
+
 ### 2.2.1\_devm\_kzalloc
 
-**功能**：分配零清内存，绑定设备生命周期。
- **原型**：`void *devm_kzalloc(struct device *dev, size_t size, gfp_t gfp);`
- **返回**：成功返回指针，失败 `NULL`。
- **释放**：解绑/失败时自动释放。
- **要点**：仅用于**随设备生命周期**存在的内存；跨设备/全局内存不要使用。
+原型：`void *devm_kzalloc(struct device *dev, size_t size, gfp_t gfp)`。它对devm_kmalloc加入清零标志。申请非零大小时成功返回可用内存，失败返回NULL；清理设备记录时回收，不因外部还有device引用而延长。
+
+零大小在本版本返回`ZERO_SIZE_PTR`，没有提供可读写字节，不能用“非NULL”证明至少有一个有效元素。私有状态仍须在回调可能访问以前完成初始化；零清不会自动把mutex、list_head等对象初始化成合法机制状态。
 
 ### 2.2.2\_devm\_kcalloc
 
-**功能**：分配 `n * size` 零清数组，带溢出检查。
- **原型**：`void *devm_kcalloc(struct device *dev, size_t n, size_t size, gfp_t gfp);`
- **返回/释放**：同上。
- **要点**：用于数组元素计数明确的场景；避免整数溢出。
+原型：`void *devm_kcalloc(struct device *dev, size_t n, size_t size, gfp_t gfp)`。先检查`n * size`是否溢出，再按总字节数分配并清零；溢出返回NULL。总大小为零时沿相同零大小约定，不允许访问元素。
+
+它保护的是分配长度计算，不替调用者校验索引、外部长度或元素内部资源。提前回收必须使用对应托管接口，不能直接kfree留下旧登记。
 
 ### 2.2.3\_devm\_kmemdup
 
-**功能**：分配并拷贝指定大小的缓冲区。
- **原型**：`void *devm_kmemdup(struct device *dev, const void *src, size_t size, gfp_t gfp);`
- **返回/释放**：同上。
+原型：`void *devm_kmemdup(struct device *dev, const void *src, size_t size, gfp_t gfp)`。分配后复制指定字节，非零大小失败返回NULL。调用者须保证src在复制期间有效、长度正确且所需字段一致；复制只是字节级浅拷贝，不为内部指针追加引用，也不自动添加字符串终止字节。
 
 ### 2.2.4\_devm\_kstrdup
 
-**功能**：复制以 `\0` 结尾字符串。
- **原型**：`char *devm_kstrdup(struct device *dev, const char *s, gfp_t gfp);`
- **返回/释放**：同上。
- **误用**：对非 `\0` 终止数据使用，应改用 `kmemdup`。
+原型：`char *devm_kstrdup(struct device *dev, const char *s, gfp_t gfp)`。对有效、以零字节终止的字符串分配`strlen(s) + 1`字节并复制；分配失败返回NULL，本版本输入s为NULL也返回NULL。调用者若把NULL输入作为业务错误，须自行区分，不能仅凭结果判定内存不足。
 
-------
+非终止字节序列应按明确长度选择kmemdup；字符串源的读期限和并发写入也必须由调用者保障。
 
 ## 2.3\_I/O\_资源与寄存器映射
 
+映射给出的是内核访问设备地址空间的入口，类型`__iomem`用来标注I/O地址，不应当作普通RAM指针随意解引用。基础映射和resource包装的失败表示 **不同**：前者NULL，后者错误指针。固定实现见[映射返回值导读](../../../../research/source_reading/devres/navigation/P03_内存映射与中断资源导读.md#3.2_映射与区域占用是两条责任)。
+
 ### 2.3.1\_devm\_ioremap
 
-**功能**：将物理地址映射为内核虚拟地址。
- **原型**：`void __iomem *devm_ioremap(struct device *dev, resource_size_t offset, size_t size);`
- **返回**：`__iomem` 指针或 `ERR_PTR(-Exxx)`。
- **释放**：解绑/失败时自动 `iounmap()`。
- **要点**：**不**做资源冲突检查；通常更推荐使用 `_resource` 族。
+原型：`void __iomem *devm_ioremap(struct device *dev, resource_size_t offset, resource_size_t size)`。注意size也是resource_size_t。头文件为`include/linux/io.h`，实现为`lib/devres.c`；成功登记映射的iounmap责任，分配记录或底层映射失败均返回NULL，使用空指针判断。
+
+它不同时申请该物理资源区间的独占使用权。适用于区间所有权已由其他正确协议建立的情况；不是只要获得映射就能安全访问任意设备地址。具体记录失败与映射失败分支见[基础映射实现](../../../../research/source_reading/devres/source_explanations/lib/devres.c.md#1.1_基础映射失败保持NULL)。
 
 ### 2.3.2\_devm\_ioremap\_resource
 
-**功能**：对 `struct resource` 指定的区域进行**冲突检查**后映射。
- **原型**：`void __iomem *devm_ioremap_resource(struct device *dev, const struct resource *res);`
- **返回**：同上。
- **区别**：比 `devm_ioremap` 多了资源有效性/冲突检测；**优先使用**。
+原型：`void __iomem *devm_ioremap_resource(struct device *dev, const struct resource *res)`，声明位于`include/linux/device.h`。检查非空内存资源、申请区间后再映射；成功返回I/O地址，失败返回编码错误，包括无效资源`-EINVAL`、申请区间失败`-EBUSY`、记录或映射失败`-ENOMEM`等，使用IS_ERR/PTR_ERR。
+
+区间申请和映射分别留下责任；映射失败时会撤回已经申请的区间。资源名字等更早的托管分配仍由账本后续清理，因此“本次返回失败”不等于“设备链和调用前逐字相同”。有合适struct resource且需要申请其使用权时通常选择此族；不要在已经独占申请相同区域后再次申请造成自冲突。见[resource包装实现](../../../../research/source_reading/devres/source_explanations/lib/devres.c.md#1.2_资源包装将失败编码并撤回区域)。
 
 ### 2.3.3\_devm\_platform\_ioremap\_resource
 
-**功能**：对 `platform_device` 的第 `index` 个内存资源进行检查并映射（简写）。
- **原型**：`void __iomem *devm_platform_ioremap_resource(struct platform_device *pdev, unsigned int index);`
- **返回/释放**：同上。
- **要点**：适用于平台驱动；`index` 自 0 起。
+原型：`void __iomem *devm_platform_ioremap_resource(struct platform_device *pdev, unsigned int index)`。声明位于`include/linux/platform_device.h`；获取编号index的内存资源后进入resource包装，沿同一错误指针契约检查。index从0开始，查找不到资源也不是成功的NULL映射。
 
 ### 2.3.4\_devm\_platform\_ioremap\_resource\_byname
 
-**功能**：按资源名进行检查并映射。
- **原型**：`void __iomem *devm_platform_ioremap_resource_byname(struct platform_device *pdev, const char *name);`
- **要点**：与设备树/板文件中命名一致时使用；便于可读性。
+原型：`void __iomem *devm_platform_ioremap_resource_byname(struct platform_device *pdev, const char *name)`。按资源名查找后进入同一包装，适合已经定义稳定命名的资源。名称要与最终platform资源表一致，不能只凭任意设备树字符串猜测。
 
-------
+两种platform入口在无HAS_IOMEM配置下有返回错误的头文件桩，不能从编译通过推断硬件映射存在。主动提前iounmap只处理映射；区间占用是另一条责任，应按实际需要使用对应托管区间释放接口。解绑前仍须阻止IRQ、工作或用户继续使用该I/O地址。
 
 ## 2.4\_GPIO(gpiod\_消费者)
 
+GPIO描述符代表设备请求的信号线及相关状态。这里使用消费者接口，不用旧整数编号表达归属；方向与输出值是逻辑语义，需结合active-low极性理解真实电平。完整消费者机制由[GPIO专题](../../../driver_model/gpio/大纲.md)组织，返回与登记边界见[资源族导读](../../../../research/source_reading/devres/navigation/P03_内存映射与中断资源导读.md#3.3_GPIO可选缺席与记录失败)。
+
 ### 2.4.1\_devm\_gpiod\_get
 
-**功能**：按连接 ID 获取一个 GPIO 描述符，并可指定初始方向/电平。
- **原型**：`struct gpio_desc *devm_gpiod_get(struct device *dev, const char *con_id, enum gpiod_flags flags);`
- **返回**：`gpio_desc *` 或 `ERR_PTR(-Exxx)`。
- **释放**：解绑/失败时自动 `gpiod_put()`。
- **要点**：`flags` 常用 `GPIOD_OUT_LOW/HIGH`、`GPIOD_IN`；与 DT 的 `*-gpios` 属性匹配。
- **误用**：使用旧整数 GPIO 接口；未考虑极性导致上电瞬态错误。
+原型：`struct gpio_desc *devm_gpiod_get(struct device *dev, const char *con_id, enum gpiod_flags flags)`，头文件`include/linux/gpio/consumer.h`。按连接标识con_id取得第0个描述符，可由GPIOD_IN或GPIOD_OUT_LOW/HIGH等指定初始方向和逻辑输出。
+
+启用GPIOLIB时，成功返回描述符，未分配指定GPIO返回`ERR_PTR(-ENOENT)`，其他失败保持对应错误指针。先判IS_ERR再使用；devm成功路径登记gpiod_put责任，不保证驱动自己遗漏的工作退出或板级安全电平策略。
 
 ### 2.4.2\_devm\_gpiod\_get\_optional
 
-**功能**：同 3.1，但**资源可缺省**。
- **原型**：`struct gpio_desc *devm_gpiod_get_optional(struct device *dev, const char *con_id, enum gpiod_flags flags);`
- **区别**：资源不存在时可能返回 `NULL`（具体取决于解析路径），需在调用者做 `NULL` 判定。
- **适用**：硬件版本差异导致 GPIO 可有可无。
+原型参数与普通get相同。启用实现只把“未分配该GPIO”的`-ENOENT`转换为NULL，资源存在时仍返回描述符，其他失败（包括适用的延迟探测）仍是错误指针。顺序应是先IS_ERR处理真实失败，再按NULL选择无此功能的业务分支。
+
+未启用GPIOLIB时，optional桩返回NULL，而非可选get桩返回`-ENOSYS`。因此NULL不能单独证明实际电路板没有这根线；可选策略还须与驱动配置依赖及硬件要求一致。
 
 ### 2.4.3\_devm\_gpiod\_get\_index
 
-**功能**：获取同一连接 ID 下第 `index` 个 GPIO。
- **原型**：`struct gpio_desc *devm_gpiod_get_index(struct device *dev, const char *con_id, unsigned int index, enum gpiod_flags flags);`
- **适用**：多 GPIO（如 `reset-gpios` 多路）。
+原型：`struct gpio_desc *devm_gpiod_get_index(struct device *dev, const char *con_id, unsigned int index, enum gpiod_flags flags)`。选择同一连接中的第index项；普通get是index为0的入口，成功/错误和自动put契约相同。
 
-------
+固定实现先取得GPIO，再分配管理记录；后者失败会先gpiod_put，再返回`-ENOMEM`。非独占标志还有复用已有登记的分支，不能把每次get都假定成新建一条记录。提前释放应使用匹配的devm_gpiod_put，并停止其他使用者，不能直接gpiod_put却保留托管记录。
 
 ## 2.5\_IRQ
 
+中断请求接口登记处理函数；注册成功以后处理路径就可能开始使用dev_id及其指向的状态。申请前必须完成处理函数所需初始化，清理时必须使IRQ及其派生工作先于相关内存或映射退出。源码配合见[IRQ登记导读](../../../../research/source_reading/devres/navigation/P03_内存映射与中断资源导读.md#3.4_IRQ记录不替代使用者退出)。
+
 ### 2.5.1\_devm\_request\_irq
 
-**功能**：申请中断线并注册**顶半部**处理函数。
- **原型**：`int devm_request_irq(struct device *dev, unsigned int irq, irq_handler_t handler, unsigned long flags, const char *name, void *dev_id);`
- **返回**：`0` 或 `-Exxx`（如 `-EINVAL/-EBUSY/-ENXIO/-ENOMEM`）。
- **释放**：解绑/失败时自动 `free_irq()`。
- **要点**：`handler` 中不得执行可睡眠操作。
+原型：`int devm_request_irq(struct device *dev, unsigned int irq, irq_handler_t handler, unsigned long flags, const char *name, void *dev_id)`，头文件`include/linux/interrupt.h`。本版本是传thread_fn为NULL的内联包装。成功返回0，失败返回负错误；硬中断handler不得调用可睡眠接口。
+
+dev_id是交回处理函数的身份参数，共享IRQ还依它区分申请者。它不是自动被devres保活的引用；资源和结构体存储必须由调用者安排好期限。
 
 ### 2.5.2\_devm\_request\_threaded\_irq
 
-**功能**：申请中断线，注册**顶半部**与**线程化底半部**。
- **原型**：`int devm_request_threaded_irq(struct device *dev, unsigned int irq, irq_handler_t handler, irq_handler_t thread_fn, unsigned long flags, const char *name, void *dev_id);`
- **返回/释放**：同 4.1。
- **要点**：`thread_fn` 可睡眠；常配合 `IRQF_ONESHOT`。
- **误用**：在 `handler` 执行可睡眠 API；未正确设置触发类型导致抖动。
+原型：`int devm_request_threaded_irq(struct device *dev, unsigned int irq, irq_handler_t handler, irq_handler_t thread_fn, unsigned long flags, const char *name, void *dev_id)`。成功0，失败负错误。handler承担必要的硬中断判断，thread_fn在线程化上下文执行，可使用相应允许睡眠的操作；IRQF_ONESHOT等标志按底层request_threaded_irq契约选择，不意味着任何共享线都能不作来源判断。
+
+管理包装先分配irq_devres，再调用底层申请；失败释放尚未登记的记录，成功才保存irq/dev_id并登记free_irq回调。若底层申请已经允许中断执行，驱动不得等函数返回后才初始化处理函数所需字段。
 
 ### 2.5.3\_devm\_free\_irq
 
-**功能**：**提前**释放由 `devm_request_*_irq` 申请的中断。
- **原型**：`void devm_free_irq(struct device *dev, unsigned int irq, void *dev_id);`
- **适用**：需要在解绑前停止中断服务的场合。
+原型：`void devm_free_irq(struct device *dev, unsigned int irq, void *dev_id)`。用相同设备、IRQ号和身份参数移除对应记录，再执行free_irq，适合必须在默认账本顺序之前结束IRQ责任的情况。不能用普通free_irq留下记录，也不能将同一份IRQ反复释放当作幂等接口。
 
-------
+IRQ处理退出不等于它排出的work或其他异步活动也退出。需要关闭硬件来源并按依赖排空这些活动；devm管理包装没有因此接管所有后续使用者。真实硬件顺序须在匹配平台和配置验证，本页的类型检查不作该证明。
+
 
 ## 2.6\_时钟(Common\_Clock\_Framework)
 

@@ -884,3 +884,5 @@ mindmap-plugin: basic
     - 🔴 [记录与分组清理导读](../../research/source_reading/devres/navigation/P02_记录与分组清理导读.md)
     - 🔴 [核心登记与分组实现](../../research/source_reading/devres/source_explanations/drivers/base/devres.c.md)
     - 🔴 [action失败回滚包装](../../research/source_reading/devres/source_explanations/include/linux/device.h.md)
+    - 🔴 [内存映射与中断资源导读](../../research/source_reading/devres/navigation/P03_内存映射与中断资源导读.md)
+    - 🔴 [映射包装与返回值实现](../../research/source_reading/devres/source_explanations/lib/devres.c.md)

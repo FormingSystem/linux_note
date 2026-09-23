@@ -2287,14 +2287,14 @@
       "baseline_sha256": "1deaa8c3a0eb0f3a8ad4e360d724950628facfd75a705abaaf780c5ffcf4fda9",
       "lines": 436,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04ch已冷读和重写来源、核心分组与全局边界；子系统条目2.2～2.13继续逐族核对，整页仍pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04ch已冷读和重写来源、核心分组与全局边界；子系统条目2.2～2.13继续逐族核对，整页仍pending。 B04ci核对API2.2～2.5，旧附录5.2～5.5对应重复条目改为精确查询入口；仍有其余资源族和正文未审，保持pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/devres/devres_旧机制_udev_mdev的讨论.md",
       "baseline_sha256": "96e6dec97822ab6048c7e2951292cf603f096910df545f4e3f54a8a9bd63765a",
       "lines": 1276,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04ci核对API2.2～2.5，旧附录5.2～5.5对应重复条目改为精确查询入口；仍有其余资源族和正文未审，保持pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md",
@@ -4801,6 +4801,20 @@
       "lines": 41,
       "state": "validated",
       "reason": "B04ch新建资源账本完整单元、六条C路径与固定源码分组/action证据；逐篇冷读并核对原文、导航职责、返回值与状态期限；模型和编译检查不冒称目标运行，新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/devres/navigation/P03_内存映射与中断资源导读.md",
+      "baseline_sha256": "16ca11ed26701f0f130c1bd4f08512295332a2166ed075f82df6d163986d0022",
+      "lines": 59,
+      "state": "validated",
+      "reason": "B04ci固定资源族导读和两映射包装逐函数核对；11条宿主包装路径与14项ARM接口类型通过，底层资源替身和真实运行边界明确；新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/devres/source_explanations/lib/devres.c.md",
+      "baseline_sha256": "d858857355557fc242ff0f94e1a80dc5587105b49069f9044a5c73140d1ddf19",
+      "lines": 122,
+      "state": "validated",
+      "reason": "B04ci固定资源族导读和两映射包装逐函数核对；11条宿主包装路径与14项ARM接口类型通过，底层资源替身和真实运行边界明确；新人工节点红色。"
     }
   ]
 }

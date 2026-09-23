@@ -1026,108 +1026,65 @@ assert_dev /dev/gpiochip0 660 gpio
 
 ### 5.2.1\_devm\_kzalloc
 
-- 功能：零清内存，随设备生命周期释放。
-- 头文件：`<linux/device.h>`, `<linux/slab.h>`
-- 原型：`void *devm_kzalloc(struct device *dev, size_t size, gfp_t gfp);`
-- 返回/错误：指针或 `NULL`。
-- 释放语义：解绑/失败自动释放。
-- 要点：仅用于与该 `device` 同生命周期的数据。
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.2.1_devm_kzalloc)。这里不再维护第二份同义接口表。
 
 ### 5.2.2\_devm\_kcalloc
 
-- 功能：`n * size` 数组分配（含溢出检查）。
-- 原型：`void *devm_kcalloc(struct device *dev, size_t n, size_t size, gfp_t gfp);`
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.2.2_devm_kcalloc)。这里不再维护第二份同义接口表。
 
 ### 5.2.3\_devm\_kmemdup
 
-- 功能：按大小复制缓冲区。
-- 原型：`void *devm_kmemdup(struct device *dev, const void *src, size_t size, gfp_t gfp);`
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.2.3_devm_kmemdup)。这里不再维护第二份同义接口表。
 
 ### 5.2.4\_devm\_kstrdup
 
-- 功能：复制以 `\0` 结尾字符串。
-- 原型：`char *devm_kstrdup(struct device *dev, const char *s, gfp_t gfp);`
-- 要点：非 `\0` 终止数据使用 `kmemdup` 版本。
-
-------
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.2.4_devm_kstrdup)。这里不再维护第二份同义接口表。
 
 ## 5.3\_I/O\_资源与寄存器映射
 
 ### 5.3.1\_devm\_ioremap
 
-- 功能：将物理地址映射为内核虚拟地址。
-- 头文件：`<linux/io.h>`
-- 原型：`void __iomem *devm_ioremap(struct device *dev, resource_size_t offset, size_t size);`
-- 返回/错误：`__iomem` 指针或 `ERR_PTR(-Exxx)`。
-- 释放语义：解绑/失败自动 `iounmap()`。
-- 要点：不做资源冲突检查。
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.3.1_devm_ioremap)。这里不再维护第二份同义接口表。
 
 ### 5.3.2\_devm\_ioremap\_resource
 
-- 功能：基于 `struct resource` 映射并检查冲突。
-- 原型：`void __iomem *devm_ioremap_resource(struct device *dev, const struct resource *res);`
-- 要点：优先使用，避免冲突。
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.3.2_devm_ioremap_resource)。这里不再维护第二份同义接口表。
 
 ### 5.3.3\_devm\_platform\_ioremap\_resource
 
-- 功能：对 `platform_device` 的第 `index` 个内存资源映射（含检查）。
-- 头文件：`<linux/platform_device.h>`
-- 原型：`void __iomem *devm_platform_ioremap_resource(struct platform_device *pdev, unsigned int index);`
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.3.3_devm_platform_ioremap_resource)。这里不再维护第二份同义接口表。
 
 ### 5.3.4\_devm\_platform\_ioremap\_resource\_byname
 
-- 功能：按资源名映射（含检查）。
-- 原型：`void __iomem *devm_platform_ioremap_resource_byname(struct platform_device *pdev, const char *name);`
-
-------
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.3.4_devm_platform_ioremap_resource_byname)。这里不再维护第二份同义接口表。
 
 ## 5.4\_GPIO(消费者\_gpiod)
 
 ### 5.4.1\_devm\_gpiod\_get
 
-- 功能：按连接 ID 获取 GPIO 描述符（可设置方向/初值）。
-- 头文件：`<linux/gpio/consumer.h>`
-- 原型：`struct gpio_desc *devm_gpiod_get(struct device *dev, const char *con_id, enum gpiod_flags flags);`
-- 返回/错误：`gpio_desc *` 或 `ERR_PTR(-Exxx)`。
-- 释放语义：解绑/失败自动 `gpiod_put()`。
-- 要点：`flags` 常用 `GPIOD_OUT_LOW/HIGH`、`GPIOD_IN`；与 `*-gpios` 匹配。
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.4.1_devm_gpiod_get)。这里不再维护第二份同义接口表。
 
 ### 5.4.2\_devm\_gpiod\_get\_optional
 
-- 功能：资源可缺省。
-- 原型：`struct gpio_desc *devm_gpiod_get_optional(struct device *dev, const char *con_id, enum gpiod_flags flags);`
-- 要点：需对 `NULL` 进行判定。
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.4.2_devm_gpiod_get_optional)。这里不再维护第二份同义接口表。
 
 ### 5.4.3\_devm\_gpiod\_get\_index
 
-- 功能：同一连接 ID 下按下标获取第 `index` 个 GPIO。
-- 原型：`struct gpio_desc *devm_gpiod_get_index(struct device *dev, const char *con_id, unsigned int index, enum gpiod_flags flags);`
-
-------
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.4.3_devm_gpiod_get_index)。这里不再维护第二份同义接口表。
 
 ## 5.5\_IRQ
 
 ### 5.5.1\_devm\_request\_irq
 
-- 功能：申请中断线并注册顶半部处理函数。
-- 头文件：`<linux/interrupt.h>`
-- 原型：`int devm_request_irq(struct device *dev, unsigned int irq, irq_handler_t handler, unsigned long flags, const char *name, void *dev_id);`
-- 返回/错误：`0` 或 `-Exxx`（如 `-EINVAL/-EBUSY/-ENXIO/-ENOMEM`）。
-- 释放语义：解绑/失败自动 `free_irq()`。
-- 要点：顶半部不可调用可睡眠 API。
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.5.1_devm_request_irq)。这里不再维护第二份同义接口表。
 
 ### 5.5.2\_devm\_request\_threaded\_irq
 
-- 功能：申请中断线并注册顶半部与线程化底半部。
-- 原型：`int devm_request_threaded_irq(struct device *dev, unsigned int irq, irq_handler_t handler, irq_handler_t thread_fn, unsigned long flags, const char *name, void *dev_id);`
-- 要点：`thread_fn` 可睡眠；常配 `IRQF_ONESHOT`。
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.5.2_devm_request_threaded_irq)。这里不再维护第二份同义接口表。
 
 ### 5.5.3\_devm\_free\_irq
 
-- 功能：在解绑前**提前**释放由 `devm_request_*_irq` 申请的中断。
-- 原型：`void devm_free_irq(struct device *dev, unsigned int irq, void *dev_id);`
-
-------
+本接口的功能、原型、返回值、管理责任和误用边界统一查[对应API条目](devres_API说明.md#2.5.3_devm_free_irq)。这里不再维护第二份同义接口表。
 
 ## 5.6\_时钟(Common\_Clock\_Framework)
 
