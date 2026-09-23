@@ -96,6 +96,13 @@
       "reason": "B04e 普通引用固定13函数、类型与属性证据，状态模块和唯一实现分离；顺序替身21边界及编译属性诊断通过，目标并发/告警未执行，新人工节点红色。"
     },
     {
+      "path": "research/source_reading/kref/source_explanations/include/linux/rculist.h.md",
+      "baseline_sha256": "2dd7bd74ed2b71199855b7a88c695f6e344380f0f519ae0dd978cf4110bcd4aa",
+      "lines": 40,
+      "state": "validated",
+      "reason": "B04ak 新增固定list_del_rcu唯一实现，函数体规范化相同，解释旧next与独立登记状态；对应宿主八组与ARM前端通过，正式入口/人工红色节点同步。无目标或并发验证。"
+    },
+    {
       "path": "research/source_reading/kref/source_explanations/include/linux/compiler_types.h.md",
       "baseline_sha256": "9807a47fc711fb337ce67f6b8b6830cfc2c40d4afb15630b1b5b0d7bb8f8f03d",
       "lines": 33,
@@ -2371,7 +2378,7 @@
       "baseline_sha256": "9353a98dfa3f4f581613d2db8d66f1cf9ab83eb702fbfa0df94a4e94fd801e60",
       "lines": 1773,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04aj 全文冷读，完成10.1～10.2：明确地址与正计数的独立保证、入口份额两种退休排序和条件失败；完整C账本四轨迹严格编译运行。10.3以后待重构，发布责任缺口、重复移除、状态检查时点及子资源绝对化留待继续，仍pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04aj 全文冷读，完成10.1～10.2：明确地址与正计数的独立保证、入口份额两种退休排序和条件失败；完整C账本四轨迹严格编译运行。10.3以后待重构，发布责任缺口、重复移除、状态检查时点及子资源绝对化留待继续，仍pending。 B04ak 完成10.3～10.4完整RCU模块，明确发布新增表份额、条件取得后读区外业务锁、重复摘链门控、保留next、模块回调退出；八组宿主与ARM前端通过，343非生成头无固定提交差异。10.5以后继续，pending不变。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md",

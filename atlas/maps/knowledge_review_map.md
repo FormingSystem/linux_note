@@ -638,6 +638,7 @@ mindmap-plugin: basic
         - 🔴 **未校正** [timer.c重启与同步退出实现](../../research/source_reading/kref/source_explanations/kernel/time/timer.c.md)
         - 🔴 **未校正** [xarray.h插入锁包装](../../research/source_reading/kref/source_explanations/include/linux/xarray.h.md)
         - 🔴 **未校正** [xarray.c查询与删除锁边界](../../research/source_reading/kref/source_explanations/lib/xarray.c.md)
+        - 🔴 **未校正** [rculist.h摘链与旧路径保留](../../research/source_reading/kref/source_explanations/include/linux/rculist.h.md)
         - 🔴 **未校正** [idr.c编号发布与查找边界](../../research/source_reading/kref/source_explanations/lib/idr.c.md)
         - 🔴 **未校正** [整数索引与拥有型查找导读](../../research/source_reading/kref/navigation/P06_整数索引与拥有型查找导读.md)
         - 🔴 **未校正** [Makefile有符号运算构建边界](../../research/source_reading/kref/source_explanations/Makefile.md)
