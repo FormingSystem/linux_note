@@ -372,3 +372,5 @@ B04bv完成P14的14.5.3，新增[P35工作交付与关闭窗口](../../knowledge
 B04bw完成P14的14.6.1，新增[P36RCU退休顺序实验](../../knowledge/linux/object_lifetime/kref/P36_RCU查找与退休顺序实验.md#36.1_归零与旧读者退出是两份证据)，四模型与八组宿主检查比较归零和旧读者退出；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.138_B04bwRCU退休顺序实验)保留固定来源与未运行边界。清单662项：256 validated、388 pending、18 supporting_pending；P14继续14.6.2动态工具，仍pending。
 
 B04bx完成P14的14.6.2，新增[P37完整KASAN实验](../../knowledge/linux/object_lifetime/kref/P37_KASAN释放后访问实验.md#37.1_先建立检查器证据的前提)与固定配置导读，宿主正确/失败/拒绝五路径和非KASAN ARM前端通过，实际UAF未执行；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.139_B04bxKASAN释放后访问实验)记录证据。清单664项：258 validated、388 pending、18 supporting_pending；P14继续字段竞争实验，仍pending。
+
+B04by完成P14的14.6.3，新增[P38字段更新与KCSAN](../../knowledge/linux/object_lifetime/kref/P38_字段更新与KCSAN实验.md#38.1_两个有效使用者怎样丢掉一次更新)，三条真实C++并发对照与十二组内核宿主协议通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.140_B04by字段更新与KCSAN实验)保留动态检测未执行边界。清单665项：259 validated、388 pending、18 supporting_pending；P14继续Lockdep实验，仍pending。

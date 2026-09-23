@@ -261,3 +261,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.45\_最后归还后的KASAN对照
 
 [P37实验](../../../../knowledge/linux/object_lifetime/kref/P37_KASAN释放后访问实验.md#37.1_先建立检查器证据的前提)新增[note_kref_kasan.c](note_kref_kasan.c)，默认fault=0在put前保存独立整数；fault=1仅允许Generic构建，故意读取已释放对象。Makefile已登记模块。宿主五条组合验证正确/分配失败/禁用时拒绝，故障分支未执行；当前非KASAN ARM前端354头/342非生成源码固定差异为空。没有目标装卸、启用检测后的构建链接或真实报告。
+
+## 1.46\_对象保活与字段更新
+
+[P38](../../../../knowledge/linux/object_lifetime/kref/P38_字段更新与KCSAN实验.md#38.1_两个有效使用者怎样丢掉一次更新)新增[counter_updates.cpp](counter_updates.cpp)与[note_kref_counter.c](note_kref_counter.c)，Makefile登记后者。C++20三种真实双线程结果为2000/2000/1000，第三种是安全原子访问组成的更新丢失，不是数据竞争或KCSAN报告。内核十二组宿主协议及无KCSAN ARM前端通过，故意竞争mode=2未执行；新模块在不支持配置时拒绝该模式。

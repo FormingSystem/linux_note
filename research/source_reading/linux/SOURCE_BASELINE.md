@@ -920,3 +920,9 @@ B04bx新增[P37诊断导读](../kref/navigation/P07_引用错误的动态诊断�
 工作树HAVE_ARCH_KASAN、CC_HAS_KASAN_GENERIC、CC_HAS_WORKING_NOSANITIZE_ADDRESS、SYSFS、STACKTRACE为y，SLUB_TINY与KASAN未启用。新note_kref_kasan默认正确路径，故障参数要求构建Generic；宿主两个配置组合合计五条正确/失败/拒绝路径通过，没有执行故意UAF。当前未启用KASAN配置的ARM前端354头/342非生成源码与固定提交无差异，不证明启用插桩后的编译链接或运行。
 
 未修改外部树、配置或运行镜像；目标故障装卸、实际报告、检查覆盖与硬件未执行。默认首错和panic策略按固定文档解释，不把预期报告当作验证记录。
+
+## 1.95\_字段竞争实验与KCSAN配置
+
+B04by保存固定dfaf2136的[lib/Kconfig.kcsan](lib/Kconfig.kcsan)（blob 609ddfc73de5d47a31060420ecb5a810610664b3）和[Documentation/dev-tools/kcsan.rst](Documentation/dev-tools/kcsan.rst)（blob d81c42d1063eab5db0cba1786de287406ca3ebe7）。[诊断导读](../kref/navigation/P07_引用错误的动态诊断导读.md#7.5_KCSAN配置互斥与字段证据)记录HAVE_ARCH/编译器前提及!KASAN互斥，固定arch/arm未选择HAVE_ARCH_KCSAN，当前ARM配置不是检测环境。
+
+新增counter_updates.cpp三个真实宿主双线程对照通过；note_kref_counter十二组顺序夹具覆盖两正确模式及清理，故意竞争分支未执行。当前ARM前端354头/342非生成源码固定差异为空，不证明KCSAN启用构建、目标链接装卸、实际报告或内存序结论。线程创建失败清理已冷读，未注入C++线程创建失败。

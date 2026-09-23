@@ -23,3 +23,4 @@ obj-m += note_kref_file.o
 obj-m += note_kref_api.o
 obj-m += note_kref_basics.o
 obj-m += note_kref_kasan.o
+obj-m += note_kref_counter.o
