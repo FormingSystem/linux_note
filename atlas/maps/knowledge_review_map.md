@@ -282,6 +282,7 @@ mindmap-plugin: basic
             - 🔴 **未校正** [P34 从多路节点到页级索引](../../knowledge/linux/data_structures/红黑树_rb-tree/P34_从多路节点到页级索引.md)
             - 🟢 [P13 再扩展到 B 树与 B+ 树](../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md)
             - 🟢 [P14 Maple Tree 与 VMA 管理](../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md)
+            - 🔴 **未校正** [P38 Maple 节点中的范围与空洞](../../knowledge/linux/data_structures/红黑树_rb-tree/P38_Maple节点中的范围与空洞.md)
             - 🟢 [P15 Linux 6.12 Maple Tree 源码结构与 API 分层](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md)
     - 🔴 [Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)
         - 章节评审：16 章未评审
@@ -624,6 +625,7 @@ mindmap-plugin: basic
         - 🔴 [Maple 查询源码路线](../../research/source_reading/maple_tree/大纲.md)
         - 🔴 [Linux 6.12 Maple 范围源码阅读索引](../../research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md)
         - 🔴 [范围契约与查询入口](../../research/source_reading/maple_tree/navigation/P02_范围契约与查询入口.md)
+        - 🔴 **未校正** [节点布局与范围分区](../../research/source_reading/maple_tree/navigation/P04_节点布局与范围分区.md)
         - 🔴 **未校正** [树对象与模式选择](../../research/source_reading/maple_tree/navigation/P03_树对象与模式选择.md)
         - 🔴 **未校正** [include/linux/maple_tree.h 树根与模式](../../research/source_reading/maple_tree/source_explanations/include/linux/maple_tree.h.md)
         - 🔴 **未校正** [include/linux/mm_types.h VMA 树模式](../../research/source_reading/maple_tree/source_explanations/include/linux/mm_types.h.md)

@@ -576,3 +576,11 @@ P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_str
 [树模式模块](../maple_tree/navigation/P03_树对象与模式选择.md#3.2_从未发布到受保护使用)核对共享根、index 0 直存条件、锁选择、外部 lockdep 描述和 MM_MT_FLAGS。七个唯一函数体为 mt_external_lock、mt_init_flags、mt_init、mt_in_rcu、mt_clear_in_rcu、mt_set_in_rcu 与 mas_free，连同字段、标志及 CONFIG_LOCKDEP 分支按上游位置展开。mas_free 在 RCU 模式交给 ma_free_rcu，在非 RCU 模式推回操作池；模式切换函数没有 synchronize_rcu，不把 exit_mmap 的特定退出背景推广为活跃树的通用许可。
 
 当前配置仍为 ARM32、Tiny RCU、PREEMPT_NONE、非 SMP；未启用 CONFIG_PER_VMA_LOCK，头文件中的 CONFIG_MAPLE_RCU_DISABLED 是独立条件分支。只做静态源码与文档核对，未运行 Maple 核心、真实 VMA 系统调用、目标并发或性能测试，完整节点回收尚未据此宣称完成。
+
+## 1.37\_Maple节点布局与范围分区证据
+
+沿 1.28 和 1.36 的固定 include/linux/maple_tree.h（c2c11004085e5a98702a2aa8b1671d7a0f5bfe25）与 lib/maple_tree.c（8d73ccf66f3aa0588d5ee00a6e7dad3258110d83）核对容量分支、五个布局结构、节点类型及 maple_tree_init 完整函数。唯一展开位于[节点导读](../maple_tree/navigation/P04_节点布局与范围分区.md#4.2_按问题读取布局)关联的原有实现文件，未修改原始副本或外部树。
+
+range/leaf 与 arange 的数组容量分别为 64 位条件分支 16/10、普通 32 位分支 32/21；名字 _64 不替代 unsigned long 与配置，容量不等于有效孩子数。叶包含 entry/NULL，非叶指向孩子；range 的 slot 末端与 metadata 共用 union，arange 另有 gap 数组。容量旁 240 字节注释不能代替完整结构 sizeof。
+
+使用提取的固定结构、明确 __rcu/rcu_head 适配，Clang ARM32 与 x86_64 freestanding 前端断言确认 node/range 均 256 字节、arange 分别 256/248；没有完整 Kbuild 或分配器运行。另以原创 C++ 分区程序验证 NULL 槽、包含式上界和裁剪窗口，未执行内核 Maple 核心、RCU、重平衡或性能测量。

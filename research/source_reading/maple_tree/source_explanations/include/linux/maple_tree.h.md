@@ -190,3 +190,134 @@ static inline void mt_set_in_rcu(struct maple_tree *mt)
 检查当前状态后可提前返回；需要修改时，外部模式检查持锁约定，内部模式取得并释放树锁。WARN_ON 不是取得锁，也不是失败后自动阻止后续清位的控制流。三个函数都没有 synchronize_rcu，设置与清除的许可来自更大的生命周期协议。
 
 R2 受保护使用期间，更新算法读取模式选择内部节点的处理方式；R3 退休路径见[mas_free](../../../source_explanations/lib/maple_tree.c.md#1.2_退休节点根据模式选择去向)。固定 mm/mmap.c 的 exit_mmap 在最后用户退出及相应外部同步下清位，是特定调用背景，不是可以忽略旧读者的通用捷径。CONFIG_MAPLE_RCU_DISABLED 分支也使 mt_in_rcu 的结果不能只由裸标志位推断。
+
+## 1.6\_构建条件决定数组容量
+
+```c
+/**
+ * @brief 仓库补充阅读说明：先按构建条件选择数组容量，不能由类型名字推断平台位宽。
+ * @note 以下定义或语句保持官方固定版本；不自动构成完整算法保证。
+ */
+#if defined(CONFIG_64BIT) || defined(BUILD_VDSO32_64)
+/* 64bit sizes */
+#define MAPLE_NODE_SLOTS	31	/* 256 bytes including ->parent */
+#define MAPLE_RANGE64_SLOTS	16	/* 256 bytes */
+#define MAPLE_ARANGE64_SLOTS	10	/* 240 bytes */
+#define MAPLE_ALLOC_SLOTS	(MAPLE_NODE_SLOTS - 1)
+#else
+/* 32bit sizes */
+#define MAPLE_NODE_SLOTS	63	/* 256 bytes including ->parent */
+#define MAPLE_RANGE64_SLOTS	32	/* 256 bytes */
+#define MAPLE_ARANGE64_SLOTS	21	/* 240 bytes */
+#define MAPLE_ALLOC_SLOTS	(MAPLE_NODE_SLOTS - 2)
+#endif /* defined(CONFIG_64BIT) || defined(BUILD_VDSO32_64) */
+
+```
+
+CONFIG_64BIT 或 BUILD_VDSO32_64 选择 31/16/10，否则选择 63/32/21。这里仅定义数组容量；有效槽的终点与当前节点类型另行决定。arange 宏旁 240 bytes 是原注释，不能忽略 metadata 与 ABI 填充后将它当作当前完整结构的 sizeof。
+
+## 1.7\_范围布局与元数据
+
+```c
+/**
+ * @brief 仓库补充阅读说明：枚举选择节点解释；leaf 槽与非叶槽承载不同对象。
+ * @note 以下定义或语句保持官方固定版本；不自动构成完整算法保证。
+ */
+enum maple_type {
+	maple_dense,
+	maple_leaf_64,
+	maple_range_64,
+	maple_arange_64,
+};
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：两个字节分别参与有效终点与空洞位置的维护。
+ * @note 以下定义或语句保持官方固定版本；不自动构成完整算法保证。
+ */
+struct maple_metadata {
+	unsigned char end;
+	unsigned char gap;
+};
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：pivot 为包含式上界，slot 末端与 metadata 在 union 中复用存储。
+ * @note 以下定义或语句保持官方固定版本；不自动构成完整算法保证。
+ */
+struct maple_range_64 {
+	struct maple_pnode *parent;
+	unsigned long pivot[MAPLE_RANGE64_SLOTS - 1];
+	union {
+		void __rcu *slot[MAPLE_RANGE64_SLOTS];
+		struct {
+			void __rcu *pad[MAPLE_RANGE64_SLOTS - 1];
+			struct maple_metadata meta;
+		};
+	};
+};
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：在范围索引以外为孩子范围增加 gap 数组。
+ * @note 以下定义或语句保持官方固定版本；不自动构成完整算法保证。
+ */
+struct maple_arange_64 {
+	struct maple_pnode *parent;
+	unsigned long pivot[MAPLE_ARANGE64_SLOTS - 1];
+	void __rcu *slot[MAPLE_ARANGE64_SLOTS];
+	unsigned long gap[MAPLE_ARANGE64_SLOTS];
+	struct maple_metadata meta;
+};
+```
+
+pivot 字段类型是 unsigned long，并非固定 uint64_t。range 中 slot 与 pad/meta 是同一 union 的两种视角，不应把 metadata 当成所有槽以外又多出的存储。arange 独立保存 gap 和 meta，更多信息降低相应槽数。实际槽内容由节点类型决定：叶是 entry，非叶是孩子节点的编码入口。内核节点的完整状态与有效槽检测还需读具体算法，不能对容量数组做无条件遍历。
+
+## 1.8\_容器复用与节点资源
+
+```c
+/**
+ * @brief 仓库补充阅读说明：操作预分配节点的资源管理布局。
+ * @note 以下定义或语句保持官方固定版本；不自动构成完整算法保证。
+ */
+struct maple_alloc {
+	unsigned long total;
+	unsigned char node_count;
+	unsigned int request_count;
+	struct maple_alloc *slot[MAPLE_ALLOC_SLOTS];
+};
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：同一容器根据节点类型与生命周期解释为不同成员。
+ * @note 以下定义或语句保持官方固定版本；不自动构成完整算法保证。
+ */
+struct maple_node {
+	union {
+		struct {
+			struct maple_pnode *parent;
+			void __rcu *slot[MAPLE_NODE_SLOTS];
+		};
+		struct {
+			void *pad;
+			struct rcu_head rcu;
+			struct maple_enode *piv_parent;
+			unsigned char parent_slot;
+			enum maple_type type;
+			unsigned char slot_len;
+			unsigned int ma_flags;
+		};
+		struct maple_range_64 mr64;
+		struct maple_arange_64 ma64;
+		struct maple_alloc alloc;
+	};
+};
+```
+
+parent/slot、mr64、ma64、alloc 和 rcu 相关成员重叠，不能同时当作有效独立状态。节点类型在树中保持其约定，退出与 RCU 保护完成前不能任意换类型；此处不展开完整节点退休算法。外层 ma_flags 与这里退休视图的 ma_flags 也属于不同存储，不能凭相同字段名混为一份全局状态。
+
+布局的教学入口见[P38](../../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P38_Maple节点中的范围与空洞.md#38.3_同一块节点存储有几种解释)，固定容量与容器对应关系由[节点导读](../../../navigation/P04_节点布局与范围分区.md#4.2_按问题读取布局)组织。这里的定义仍以本文件 1.1 的固定头文件为证据。

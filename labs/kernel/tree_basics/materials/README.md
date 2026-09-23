@@ -122,3 +122,5 @@ domains: [c_language, data_structures]
 [rb_snapshot_check.c](rb_snapshot_check.c)配合[P12 有界验证](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行有界快照检查器)：C11 整数槽号模型验证已知对象池，依次检查重复访问、父链、祖先界、颜色、黑计数、独立摘要、总数和首身份。完整十二类样例及 120960 个固定算法夹具稳定快照交叉检查通过；不采集或解引用任意内核地址，不进入模块 Makefile。
 
 [bplus_leaf_pages.cpp](bplus_leaf_pages.cpp)配合[P13 页布局](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md#%281%29_运行等值路由与叶分裂模型)：C++17 固定一层根与九叶容量，运行二十键实例的等值路由、叶分裂和范围扫描。宿主 5040 种次序、35280 个操作状态与 std::set 对照，容量拒绝、重复和整数极值已查；不实现任意高度、删除、设备 I/O、并发或持久化，不加入内核模块 Makefile。
+
+[maple_pivot_slots.cpp](maple_pivot_slots.cpp)配合[P38 分区实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P38_Maple节点中的范围与空洞.md#38.5_运行包含空槽的分区程序)，由七个 VMA 构造包含 NULL 空洞的闭区间分区，验证包含式上界、最大连续空洞和窗口内 first-fit。256 种小地址占用图、207360 组窗口/长度与独立逐地址扫描一致，另查排除终点极值；模型没有真实 Maple 节点、更新、对齐筛选、RCU 或内核运行。

@@ -5,6 +5,20 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/maple_tree/navigation/P04_节点布局与范围分区.md",
+      "baseline_sha256": "a1a3664f15c3b20afa115d04ba9eca88da26b1b87ba67fad9c1c7d595f68e787",
+      "lines": 51,
+      "state": "validated",
+      "reason": "B03au 完整节点/范围分区单元：冷读原布局与七 VMA，固定定义、双目标适配布局和 C++ 256 占用图验证通过；未进行内核目标算法、RCU 或性能验证，新人工节点红色。"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P38_Maple节点中的范围与空洞.md",
+      "baseline_sha256": "e79ea79b3121e85497834cca19579b5ddfad82188c229bb6540df5938be1bccd",
+      "lines": 259,
+      "state": "validated",
+      "reason": "B03au 完整节点/范围分区单元：冷读原布局与七 VMA，固定定义、双目标适配布局和 C++ 256 占用图验证通过；未进行内核目标算法、RCU 或性能验证，新人工节点红色。"
+    },
+    {
       "path": "research/source_reading/maple_tree/source_explanations/lib/maple_tree.c.md",
       "baseline_sha256": "a4a69bbd432922d44dabdc45751e85b31adca41c9991eab282c80c03100a30d4",
       "lines": 39,
@@ -1756,7 +1770,7 @@
       "baseline_sha256": "2de6e1b8f40fadcc9f3e5294a114f8902a20aed4c1a35cccc6ad8d7e0875baec",
       "lines": 1804,
       "state": "pending",
-      "reason": "B03at 实际冷读并重构开篇与 15.1～15.3，唯一展开树字段、模式、七个函数及宏；15.10 仅去重同一 MM_MT_FLAGS 定义并精确回链，15.4/15.5 已冷读待修，其他正文仍待按单元审查，不升级整章状态。"
+      "reason": "B03at 实际冷读并重构开篇与 15.1～15.3，唯一展开树字段、模式、七个函数及宏；15.10 仅去重同一 MM_MT_FLAGS 定义并精确回链，15.4/15.5 已冷读待修，其他正文仍待按单元审查，不升级整章状态。 B03au 完成 15.4 实际冷读并拆出完整 P38 节点/空洞单元，原标题保留桥接；15.5 以后仍待继续。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/大纲.md",
