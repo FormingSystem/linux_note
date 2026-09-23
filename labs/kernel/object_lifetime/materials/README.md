@@ -249,3 +249,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.42\_查找窗口的两类实验
 
 [P34实验](../../../../knowledge/linux/object_lifetime/kref/P34_查找窗口与条件取得实验.md#34.1_先确定表是否拥有引用)复用[note_kref_table.c](note_kref_table.c)的完整拥有型表与[conditional_take.c](conditional_take.c)的四路径C11模型，材料不改。六组表夹具及四模型路径本批重跑通过；固定条件函数另核对六分支与包装两结果。前者证明给定顺序下责任配平，后者观察有效地址上的条件比较，均未进行本次目标装卸、真实并发或故障注入。
+
+## 1.43\_交付与关闭实验
+
+[P35](../../../../knowledge/linux/object_lifetime/kref/P35_工作交付与关闭窗口实验.md#35.1_候选份额不等于已经交付)复用[work_ticket.c](work_ticket.c)、[note_kref_work_modes.c](note_kref_work_modes.c)和[note_kref_owned_work.c](note_kref_owned_work.c)。六条C账本、十例分享/转交夹具、九组管理者夹具本批重跑通过；材料未改，前者不执行free，后两者不执行真实Linux队列调度。目标装卸、真实取消竞争与本次ARM未执行。

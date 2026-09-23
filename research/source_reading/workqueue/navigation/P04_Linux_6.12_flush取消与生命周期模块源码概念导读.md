@@ -75,3 +75,4 @@ workqueue Lockdep map 和 `check_flush_dependency()` 能发现部分 reclaim/flu
 [P07 完成事件模块](../../../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.3.5_completion_场景里的引用归属)给出只有一次投递、无重排时的责任结算：取消了 pending 实例由取消者接管预留，否则执行路径归还。wait_for_completion_timeout 返回与 work 退出分别取证，不能把等待超时当作自动撤销。
 
 对象组合应用见[P24删除与排空](../../../../knowledge/linux/object_lifetime/kref/P24_删除入口与活动排空工程模板.md#24.1_关闭业务不等于回收所有对象)：关门覆盖全部实际投递后，借用worker的退出由同步取消保证，队列销毁与对象最后归还分别发生。该完整模块不改变本页工作队列原语契约，也未提供真实硬件退出证据。
+[P35工作实验](../../../../knowledge/linux/object_lifetime/kref/P35_工作交付与关闭窗口实验.md#35.1_候选份额不等于已经交付)沿六条单实例账本轨迹及分享/转交、管理者借用两个完整模块，区分取消者接管与worker消费，并用提前解锁反例检验关门覆盖实际投递。该实验只新增宿主重跑记录，不改本模块的cancel契约或上游实现，也不把顺序替身称为真实调度证据。
