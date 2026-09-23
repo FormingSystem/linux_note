@@ -336,7 +336,7 @@ mindmap-plugin: basic
             - 章节评审：1 章未评审
             - 🔴 [P01 kobject device devres kref 生命周期集成](../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md)
         - 🟢 [kref 引用计数机制](../../knowledge/linux/object_lifetime/kref/大纲.md)
-            - 章节评审：原15章评审完成；新增21章未校正
+            - 章节评审：原15章评审完成；新增22章未校正
             - 🟢 [P01 kref 要解决什么问题](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)
             - 🟢 [P02 源码入口与结构定义](../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md)
             - 🟢 [P03 kref 生命周期状态机](../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md)
@@ -372,6 +372,7 @@ mindmap-plugin: basic
             - 🔴 **未校正** [P34 查找窗口与条件取得实验](../../knowledge/linux/object_lifetime/kref/P34_查找窗口与条件取得实验.md)
             - 🔴 **未校正** [P35 工作交付与关闭窗口实验](../../knowledge/linux/object_lifetime/kref/P35_工作交付与关闭窗口实验.md)
             - 🔴 **未校正** [P36 RCU查找与退休顺序实验](../../knowledge/linux/object_lifetime/kref/P36_RCU查找与退休顺序实验.md)
+            - 🔴 **未校正** [P37 KASAN释放后访问实验](../../knowledge/linux/object_lifetime/kref/P37_KASAN释放后访问实验.md)
             - 🟢 [P15 最终验收标准](../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md)
     - 🔴 [Linux 同步和异步机制](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)
         - 🔴 [同步机制](../../knowledge/linux/synchronization_and_asynchrony/synchronization/大纲.md)
@@ -670,6 +671,7 @@ mindmap-plugin: basic
         - 🔴 **未校正** [rculist.h摘链与旧路径保留](../../research/source_reading/kref/source_explanations/include/linux/rculist.h.md)
         - 🔴 **未校正** [idr.c编号发布与查找边界](../../research/source_reading/kref/source_explanations/lib/idr.c.md)
         - 🔴 **未校正** [整数索引与拥有型查找导读](../../research/source_reading/kref/navigation/P06_整数索引与拥有型查找导读.md)
+        - 🔴 **未校正** [引用错误的动态诊断导读](../../research/source_reading/kref/navigation/P07_引用错误的动态诊断导读.md)
         - 🔴 **未校正** [Makefile有符号运算构建边界](../../research/source_reading/kref/source_explanations/Makefile.md)
         - 🔴 **未校正** [refcount.c异常与归零锁实现](../../research/source_reading/kref/source_explanations/lib/refcount.c.md)
         - 🔴 **未校正** [compiler_attributes.h返回值检查属性](../../research/source_reading/kref/source_explanations/include/linux/compiler_attributes.h.md)

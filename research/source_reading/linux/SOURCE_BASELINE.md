@@ -912,3 +912,11 @@ B04bv新增[P35工作实验导读](../kref/navigation/P02_普通引用与归零�
 B04bw新增[P36退休实验导读](../kref/navigation/P03_条件取得与查找窗口导读.md#3.14_退休实验中的归零和回收完成)，四条C模型和八组实际模块宿主夹具重新通过，源码材料未改。重新只读核对官方远端身份、lf-6.12.y及实验HEAD 7b60e547，发布标签仍解引用dfaf2136，版本6.12.20；kref.rst工作树、仓库副本与固定对象同为blob c61eea6f1bf2bd76490718430130fe3501e2f7e8。
 
 配置仍ARM、TINY_RCU、PREEMPT_NONE，未启用SMP与KASAN，PROVE_LOCKING开启；这些是构建工作树，不是运行内核证据。夹具显式安排交错与回调成熟，不证明真实RCU后端、内存序或模块卸载。本批未新ARM、目标装卸和动态检查，不能将模型finish_gp合并回收的简化推广为真实回调完成契约。
+
+## 1.94\_GenericKASAN实验配置证据
+
+B04bx新增[P37诊断导读](../kref/navigation/P07_引用错误的动态诊断导读.md#7.1_固定来源与阅读任务)，保存固定dfaf2136的[lib/Kconfig.kasan](lib/Kconfig.kasan)（blob 98016e137b7f09f82b168f840565e8121b28ce87）与[Documentation/dev-tools/kasan.rst](Documentation/dev-tools/kasan.rst)（blob d7de44f5339d43aee128091930ead29511060925），原文不改。三种模式为choice，标签模式属于ARM64，当前ARM实验选择Generic。
+
+工作树HAVE_ARCH_KASAN、CC_HAS_KASAN_GENERIC、CC_HAS_WORKING_NOSANITIZE_ADDRESS、SYSFS、STACKTRACE为y，SLUB_TINY与KASAN未启用。新note_kref_kasan默认正确路径，故障参数要求构建Generic；宿主两个配置组合合计五条正确/失败/拒绝路径通过，没有执行故意UAF。当前未启用KASAN配置的ARM前端354头/342非生成源码与固定提交无差异，不证明启用插桩后的编译链接或运行。
+
+未修改外部树、配置或运行镜像；目标故障装卸、实际报告、检查覆盖与硬件未执行。默认首错和panic策略按固定文档解释，不把预期报告当作验证记录。

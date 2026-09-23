@@ -18,6 +18,7 @@ source_version: "6.12.20"
 
 | 阅读问题 | 模块与唯一实现 |
 | --- | --- |
+| 最后归还后的UAF报告需要哪些前提 | [动态诊断模块](P07_引用错误的动态诊断导读.md#7.2_Generic模式的配置路径) → [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理)及固定KASAN配置/文档 |
 | 归零后存储为什么还在，退休份额能否晚归还 | [退休实验的两份证据](P03_条件取得与查找窗口导读.md#3.14_退休实验中的归零和回收完成) → [旧前向路径](../source_explanations/include/linux/rculist.h.md#1.1_摘链后保留旧读者的前向路径) |
 | 工作先执行或取消时由谁归还 | [工作实验与投递边界](P02_普通引用与归零回调导读.md#2.31_工作实验的责任和实际投递) → [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 为什么换成条件get却观察不到失败 | [表责任与零值窗口](P03_条件取得与查找窗口导读.md#3.13_查找实验必须先区分两种表责任) → [条件入口](../source_explanations/include/linux/kref.h.md#1.7_有效地址上的条件取得) |

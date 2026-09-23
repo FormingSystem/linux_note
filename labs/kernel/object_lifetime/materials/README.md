@@ -257,3 +257,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.44\_RCU退休顺序实验
 
 [P36](../../../../knowledge/linux/object_lifetime/kref/P36_RCU查找与退休顺序实验.md#36.1_归零与旧读者退出是两份证据)复用[rcu_take_window.c](rcu_take_window.c)四条顺序模型和[note_kref_rcu.c](note_kref_rcu.c)完整模块。四模型及八组模块宿主检查本批重跑通过，两个程序未改；模型不free真实对象，夹具不运行真实RCU调度，未新增目标装卸或ARM结果。相关GP完成与已登记回调实际返回仍分别取证。
+
+## 1.45\_最后归还后的KASAN对照
+
+[P37实验](../../../../knowledge/linux/object_lifetime/kref/P37_KASAN释放后访问实验.md#37.1_先建立检查器证据的前提)新增[note_kref_kasan.c](note_kref_kasan.c)，默认fault=0在put前保存独立整数；fault=1仅允许Generic构建，故意读取已释放对象。Makefile已登记模块。宿主五条组合验证正确/分配失败/禁用时拒绝，故障分支未执行；当前非KASAN ARM前端354头/342非生成源码固定差异为空。没有目标装卸、启用检测后的构建链接或真实报告。

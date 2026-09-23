@@ -2406,7 +2406,7 @@
       "baseline_sha256": "8780dc1f0781faa550994d96ccc6399692cb60b5c5f209f5dc6f6df91dbaec73",
       "lines": 2508,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04bs完成14.1～14.3准备与基础实验，P32完整模块六条宿主/ARM通过；14.4以后继续，pending。 B04bt完成14.4错误实验，P33十一条宿主轨迹通过，真实故障注入未执行；继续14.5，pending。 B04bu完成14.5.1/14.5.2查找实验，P34分开拥有型表与零值窗口，既有C/固定函数重跑通过；继续14.5.3，pending。 B04bv完成14.5.3工作交付实验，25条/组宿主检查重跑通过；继续14.6，pending。 B04bw完成14.6.1退休顺序实验，P36四模型/八组模块重跑通过，继续14.6.2动态检查，pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04bs完成14.1～14.3准备与基础实验，P32完整模块六条宿主/ARM通过；14.4以后继续，pending。 B04bt完成14.4错误实验，P33十一条宿主轨迹通过，真实故障注入未执行；继续14.5，pending。 B04bu完成14.5.1/14.5.2查找实验，P34分开拥有型表与零值窗口，既有C/固定函数重跑通过；继续14.5.3，pending。 B04bv完成14.5.3工作交付实验，25条/组宿主检查重跑通过；继续14.6，pending。 B04bw完成14.6.1退休顺序实验，P36四模型/八组模块重跑通过，继续14.6.2动态检查，pending。 B04bx完成14.6.2，P37完整KASAN对照与固定配置导读，正确/失败/拒绝五路径及非KASAN ARM通过，故障未执行；继续14.6.3，pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P15_最终验收标准.md",
@@ -4717,6 +4717,20 @@
       "lines": 262,
       "state": "validated",
       "reason": "B04bw两种退休顺序、旧读者与长期份额、业务过滤及回调代码边界冷读；四C轨迹/八模块组重跑，未目标RCU运行，新人工节点红色。"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P37_KASAN释放后访问实验.md",
+      "baseline_sha256": "e865ed315ef0922bba3df2b8145dc0def45ad594953b32492e06e4f355f7d2b3",
+      "lines": 178,
+      "state": "validated",
+      "reason": "B04bx固定Generic KASAN配置/报告前提及完整模块冷读，五宿主路径与非KASAN ARM前端通过；故意UAF与目标启用检测未执行，新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/kref/navigation/P07_引用错误的动态诊断导读.md",
+      "baseline_sha256": "90b57ab8df09e9364acb97b47d5df7c0f00a14884a07ce9d1f75adb723eb853d",
+      "lines": 65,
+      "state": "validated",
+      "reason": "B04bx固定Generic KASAN配置/报告前提及完整模块冷读，五宿主路径与非KASAN ARM前端通过；故意UAF与目标启用检测未执行，新人工节点红色。"
     }
   ]
 }
