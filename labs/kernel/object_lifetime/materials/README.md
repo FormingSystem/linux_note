@@ -152,3 +152,9 @@ ARM 前端通过，355 份头中的 343 份非生成源码与固定提交无差�
 [note_kobject.c](note_kobject.c)对应[P11 完整kobject周期](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.3.1_kobject_不只是引用计数)。启用SYSFS且关闭DEBUG_KOBJECT_RELEASE时，添加一个无属性目录、追加观察者、撤下并归还初始份额，最后观察者归还才触发类型回调；其他配置直接拒绝。Makefile已登记。名称短暂出现，不主动发ADD事件，没有外部用户或设备注册。
 
 ARM前端通过，354份头中342份非生成源码相对固定提交无差异。宿主使用固定九个kobject函数与普通引用链，七组包含两类配置拒绝、分配失败、添加失败、完整周期、隐式/显式撤下和NULL包装，检查对象/名字/目录与父引用收束。命名添加、sysfs、分配及诊断为顺序替身，未执行真实sysfs、事件、并发、目标装卸或调试延迟释放分支。
+
+## 1.23\_设备注销与独立观察者
+
+[note_device.c](note_device.c)对应[P11 设备模块](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.4.1_device_driver_core_已经封装好的对象模型)，初始化后分别处理命名/添加失败，成功时追加观察者，device_unregister消费初始化份额，观察者最后put才清理外壳。模块不绑定硬件驱动，要求SYSFS开启且DEBUG_KOBJECT_RELEASE关闭。Makefile已登记。
+
+ARM前端通过，372份头中360份非生成源码相对固定提交无差异；八组宿主运行固定五个device函数与既有九个kobject函数，覆盖配置/分配/命名/添加失败、正常注销、三个release优先级、register与NULL包装。初始化/设备添加删除/命名/sysfs/devres为顺序替身，未验证完整driver core、真实解绑/事件、并发、目标链接或装卸。

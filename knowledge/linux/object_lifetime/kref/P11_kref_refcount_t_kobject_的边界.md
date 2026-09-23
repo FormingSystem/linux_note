@@ -302,264 +302,161 @@ sequenceDiagram
 
 ## 11.4\_driver\_core\_边界\_device\_class\_bus\_不是裸\_kref
 
+kobject 已经建立名字、层次和类型回调；设备模型又规定设备怎样登记、怎样与驱动及其他设备关联。进入这一层以后，不能只看到内嵌 kref 就绕过框架接口。
+
 ### 11.4.1\_device\_driver\_core\_已经封装好的对象模型
 
-`struct device` 是 driver core 的设备对象。
+struct device 表示一个设备模型对象。**驱动绑定** 表示由某个驱动接管这个设备的操作，而 **设备登记** 表示对象进入核心框架的设备关系与可见体系。二者不同：一个设备可以已经登记但尚未找到驱动，也可以在驱动解绑以后仍保留设备对象。
 
-它不是普通裸 kref 示例里的 `my_obj`。
+父设备关系描述设备模型层次，bus 参与设备与驱动匹配，class 提供功能分类。电源管理、DMA配置、设备链接等也可能与设备对象关联，但这些关联各有建立和退出步骤；不能仅从结构体里有相应指针，就声称每一条都拥有相同的引用。
 
-它承担的职责远超过引用计数：
-
-```text
-1. 设备名字。
-2. 父子设备关系。
-3. 所属 bus。
-4. 所属 class。
-5. 绑定 driver。
-6. sysfs 节点。
-7. 设备属性。
-8. 电源管理。
-9. DMA / IOMMU 相关信息。
-10. 设备 release。
-11. driver core 注册和注销流程。
-```
-
-driver model 文档说明，发现设备的 bus driver 用 `device_register()` 把设备注册到 core；设备从 core 中移除发生在引用计数归零时，并且设备引用通过 `get_device()` 和 `put_device()` 调整。([Linux Kernel 文档](https://docs.kernel.org/driver-api/driver-model/device.html))
-
-所以对 `struct device`，普通驱动代码通常不应该写：
+先运行一个不绑定真实驱动的最小观察程序，专门回答“注销返回后，另一个拥有者还能保留什么”。完整 [note_device.c](../../../../labs/kernel/object_lifetime/materials/note_device.c) 动态创建包含 struct device 的外壳，初始化、命名并添加，追加观察者份额，再注销和最终归还。它没有定义硬件I/O或驱动私有资源，因此注销后只读外壳中发布前固定的 value，不借此声称设备仍可操作。
 
 ```c
-kref_get(&dev->kobj.kref);
-kref_put(&dev->kobj.kref, ...);
+// SPDX-License-Identifier: GPL-2.0
+#include <linux/device.h>
+#include <linux/errno.h>
+#include <linux/module.h>
+#include <linux/slab.h>
+
+struct note_device {
+    struct device dev;
+    int value; /* 本例发布前固定，不表示硬件仍可操作。 */
+};
+static unsigned int release_calls;
+
+static void note_device_release(struct device *dev)
+{
+    struct note_device *obj = container_of(dev, struct note_device, dev);
+    ++release_calls;
+    kfree(obj);
+}
+
+static int __init note_device_init(void)
+{
+    struct note_device *creator, *reader;
+    struct device *held;
+    int result;
+    if (!IS_ENABLED(CONFIG_SYSFS) || IS_ENABLED(CONFIG_DEBUG_KOBJECT_RELEASE))
+        return -EOPNOTSUPP; /* 同步演示不实现调试延迟释放的代码退出。 */
+    creator = kzalloc(sizeof(*creator), GFP_KERNEL);
+    if (!creator)
+        return -ENOMEM;
+    creator->value = 7;
+    device_initialize(&creator->dev);
+    creator->dev.release = note_device_release;
+    result = dev_set_name(&creator->dev, "note_device_lifetime");
+    if (result)
+        goto put_creator;
+    result = device_add(&creator->dev);
+    if (result)
+        goto put_creator;
+    held = get_device(&creator->dev); /* 已有正引用，取得观察者一份。 */
+    reader = container_of(held, struct note_device, dev);
+    pr_info("note_device: added value=%d release=%u\n", reader->value, release_calls);
+    device_unregister(&creator->dev); /* 已包含归还初始化份额，不再额外put它。 */
+    creator = NULL;
+    pr_info("note_device: removed value=%d release=%u\n", reader->value, release_calls);
+    put_device(held);
+    return 0;
+put_creator:
+    put_device(&creator->dev); /* 初始化后，即使命名或添加失败也由框架清理。 */
+    return result;
+}
+
+static void __exit note_device_exit(void)
+{
+    pr_info("note_device: release=%u\n", release_calls);
+}
+module_init(note_device_init);
+module_exit(note_device_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("设备注销与最终引用回收的同步演示");
 ```
 
-而应该使用 driver core 给你的接口：
+模块沿前节的同步限制：CONFIG_SYSFS开启、CONFIG_DEBUG_KOBJECT_RELEASE关闭，否则提前拒绝。它在初始化内短暂添加并注销名为note_device_lifetime的设备；device层可能按框架条件处理目录、属性与事件，例子不提供外部业务入口。完整driver core发布过程不能由三个日志概括成已经验证。
 
-```c
-get_device(dev);
-put_device(dev);
+```bash
+make -C "$KDIR" M="$PWD/labs/kernel/object_lifetime/materials" modules
+sudo insmod labs/kernel/object_lifetime/materials/note_device.ko
+sudo rmmod note_device
+sudo dmesg | tail -n 20
 ```
 
-或者在 managed resource 场景下使用：
-
-```c
-devm_kzalloc(dev, ...);
-devm_request_irq(dev, ...);
-devm_...
-```
-
-这背后的原因是：
+KDIR应与目标运行内核匹配；预计支持配置下的日志是：
 
 ```text
-device 的生命周期不只是 refcount++ / refcount--；
-它还绑定了 driver core 的注册、注销、父子关系、sysfs、class、bus、uevent 和 release 约定。
+note_device: added value=7 release=0
+note_device: removed value=7 release=0
+note_device: release=1
 ```
 
-裸 kref 对象的模型是：
+这里的第二行和kobject例子看似相同，归还动作却不同：kobject_del不归还本对象初始份额；device_unregister内部已经在device_del之后调用put_device。因此程序在unregister之后不能再为同一份初始责任额外put；它只在观察者结束时归还独立取得的held。
 
-```text
-我自己定义对象；
-我自己决定谁 get；
-我自己决定谁 put；
-我自己写 release。
-```
+本次ARM前端与八组宿主检查通过。宿主运行实际应用、五个固定device函数、前节九个固定kobject函数和普通引用链；初始化/命名/设备添加删除/sysfs/devres等是显式替身。检查覆盖配置拒绝、分配/命名/添加失败、正常周期、三个release选择优先级、register包装和NULL接口。未执行目标链接装卸、真实设备事件、绑定解绑、完整资源清理或并发；以上日志为预计目标输出。
 
-device 模型是：
-
-```text
-driver core 管理设备对象；
-驱动通过 device_register/device_unregister/get_device/put_device 等接口参与生命周期；
-release 必须符合 driver core 约定。
-```
-
-对比图：
-
-```mermaid
-flowchart TD
-    A["裸 kref 对象"] --> A1["kref_init"]
-    A --> A2["kref_get"]
-    A --> A3["kref_put"]
-    A --> A4["my_obj_release"]
-
-    B["struct device"] --> B1["device_initialize / device_register"]
-    B --> B2["get_device"]
-    B --> B3["put_device"]
-    B --> B4["device_unregister"]
-    B --> B5["dev->release / type/class/bus 相关 release"]
-    B --> B6["sysfs / driver core / PM / parent-child"]
-```
-
-一句话：
-
-```text
-device 不是“带 kref 的 my_obj”；
-device 是 driver core 的类型化对象。
-```
-
-------
+版本化证据从[kref源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入[device模块导读](../../../../research/source_reading/kref/navigation/P08_device引用与资源退出导读.md#8.2_从D0到D5区分登记与存储)。以下结论按固定NXP Linux6.12.20的drivers/base/core.c和dd.c核对。
 
 ### 11.4.2\_get\_device/put\_device\_和\_kref\_get/kref\_put\_的区别
 
-从表面看：
+固定[get_device与put_device包装](../../../../research/source_reading/kref/source_explanations/drivers/base/core.c.md#1.2_设备取得与归还进入kobject)把设备地址转到内嵌kobject接口。get_device返回同一个设备地址，并非复制设备，也不是探测任意裸指针是否仍有效；要在已有有效正引用或其他约定窗口里追加一份。NULL输入有包装处理，悬空非NULL地址没有这样的保护。
 
-```c
-kref_get(&obj->ref);
-kref_put(&obj->ref, obj_release);
+put_device不接受应用临时挑选的release参数。core的device类型描述已经把kobject最终清理接到了设备清理链；若直接kref_put(dev->kobj.kref, 自选回调)，就可能跳过名称、父关系、设备资源与类型分派。底层增加最终也经过kref，不表示调用层次可以随意绕开。
+
+再看初始化的失败责任。[device_register](../../../../research/source_reading/kref/source_explanations/drivers/base/core.c.md#1.1_注册包装建立初始份额)组合device_initialize和device_add；无论整体注册是否成功，初始化建立的份额都已经需要结算。本例为了观察命名失败，拆成initialize、dev_set_name、add三步；初始化以后失败统一put_device，不能直接kfree外壳。只有最初kzalloc失败、尚无设备初始化时，才没有这一份。
+
+**devm资源管理不是设备引用接口的替代。** devm_kzalloc等把资源登记到设备关联的受管清理体系，使框架能在相应失败或驱动解绑阶段释放它；它们不会给每个资源使用者自动发一张长期持有票据。固定[解绑清理](../../../../research/source_reading/kref/source_explanations/drivers/base/dd.c.md#1.1_解绑清理不等待设备引用归零)会调用devres_release_all，不等待额外get_device的使用者都退出。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S as 长期会话
+    participant D as 设备对象
+    participant U as 驱动解绑路径
+    participant B as devm缓冲区
+    S->>D: get_device保留设备份额
+    S->>B: 之前保存了缓冲区地址
+    U->>U: 完成驱动规定的停止与解绑流程
+    U->>B: devres清理释放资源
+    Note over S,D: 设备引用仍在，不意味着缓冲区仍在
+    S->>S: 必须已停止访问旧缓冲区
+    S->>D: 会话结束后put_device
 ```
 
-和：
-
-```c
-get_device(dev);
-put_device(dev);
-```
-
-都像是在做引用计数。
-
-但它们的层次不同。
-
-| API             | 对象类型                     | 所属层次       | 调用者关心什么                     |
-| --------------- | ---------------------------- | -------------- | ---------------------------------- |
-| `kref_get()`    | 自定义对象内的 `struct kref` | 裸生命周期工具 | 引用归属                           |
-| `kref_put()`    | 自定义对象内的 `struct kref` | 裸生命周期工具 | 最后 put 调 release                |
-| `get_device()`  | `struct device *`            | driver core    | 设备对象引用                       |
-| `put_device()`  | `struct device *`            | driver core    | 释放设备引用，可能触发设备 release |
-| `kobject_get()` | `struct kobject *`           | kobject core   | kobject 引用                       |
-| `kobject_put()` | `struct kobject *`           | kobject core   | 释放 kobject 引用                  |
-
-所以如果你拿到的是：
-
-```c
-struct device *dev;
-```
-
-你应该想：
-
-```text
-这是 driver core 对象；
-用 get_device/put_device。
-```
-
-而不是想：
-
-```text
-我去找它内部 kref 字段手动操作。
-```
-
-类似地，如果你拿到的是：
-
-```c
-struct kobject *kobj;
-```
-
-你应该想：
-
-```text
-这是 kobject；
-用 kobject_get/kobject_put。
-```
-
-如果你拿到的是：
-
-```c
-struct my_obj *obj;
-```
-
-并且对象内部是：
-
-```c
-struct kref ref;
-```
-
-你才使用：
-
-```c
-kref_get(&obj->ref);
-kref_put(&obj->ref, my_obj_release);
-```
-
-这个边界非常关键。
-
-------
+图中的“必须已停止”是驱动需要建立的条件，不是get_device自动做到的事。需要会话活过解绑时，可以让会话只保留独立寿命的数据，或让停止协议拒绝新操作并排空正在进行的访问；不能继续使用已失效的devm指针。设备引用也不保证硬件仍在、驱动仍绑定或业务队列仍接纳。
 
 ### 11.4.3\_device\_release\_不是\_my\_obj\_release
 
-裸 kref release：
+普通kref回调接收struct kref，kobject类型回调接收struct kobject，设备应用回调则接收struct device。这里不仅参数不同，还多了一层类型分派：设备内嵌kobject的类型是core规定的device_ktype，它先进入device_release，再选择最终设备回调。
 
-```c
-static void my_obj_release(struct kref *ref)
-{
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
+固定[device_release唯一实现](../../../../research/source_reading/kref/source_explanations/drivers/base/core.c.md#1.4_最终release按对象类型选择)的优先级为：先dev->release，其次dev->type->release，再次dev->class->dev_release；只选择第一个可用项，不把三者都调用，也没有泛化的bus release兜底。class自身的class_release又是另一个对象的清理，下一节继续区分。
 
-	kfree(obj);
-}
+core在应用回调前先保存内部私有指针p，进行devres兜底与DMA范围存储清理；应用回调可能释放整个外壳，之后core才用保存的p完成内部收尾。因此应用不能因为都名叫release就任意重做这些框架清理。最终devres兜底也不表示所有受管资源都一定活到了最终release，解绑路径可能早已清理过。
+
+将完整模块按D0～D5复盘：
+
+| 阶段 | 实际函数与责任 | 此时不能推出的结论 |
+| --- | --- | --- |
+| D0 初始化 | 创建者获得设备初始份额 | 还未登记，不表示驱动可操作 |
+| D1 添加 | device_add进入设备模型 | 不等于已经绑定驱动 |
+| D2 共享 | get_device追加观察者 | 不保留所有devm资源或业务许可 |
+| D3 注销 | device_del撤下，put_device归还初始份额 | 其他引用可能仍在，不能马上free |
+| D4 最后归还 | 观察者put后进入kobject清理 | 调试配置可能延迟类型清理 |
+| D5 设备清理 | core选择release，应用释放外壳 | 不能再读取已释放设备成员 |
+
+```mermaid
+flowchart LR
+    A[设备拥有者] -->|put_device| K[内嵌kobject清理链]
+    K -->|device_ktype.release| C[core device_release]
+    C -->|优先级1| R[dev.release]
+    C -->|没有1才检查2| T[dev.type.release]
+    C -->|没有1和2才检查3| L[dev.class.dev_release]
+    R -->|本例回收外壳| F[note_device分配]
 ```
 
-device release 通常是：
+device_unregister不是“等待所有人归还然后才返回”的同步回收屏障。它包含撤下和一次归还，是否触发最终回收取决于剩余引用；如果最后引用仍在观察者手中，调用者不能因注销已返回而手动释放设备。反过来，如果它恰好归还最后一份，设备可能已在函数内消失，之后也不能再随手读取成员。
 
-```c
-static void my_dev_release(struct device *dev)
-{
-	struct my_dev *mdev = container_of(dev, struct my_dev, dev);
-
-	kfree(mdev);
-}
-```
-
-这两个函数虽然都可能最终 `kfree()`，但意义不同。
-
-裸 kref release 表示：
-
-```text
-自定义对象最后一个引用释放；
-进入对象私有销毁路径。
-```
-
-device release 表示：
-
-```text
-driver core 设备对象最后一个引用释放；
-设备模型允许最终销毁这个设备对象。
-```
-
-device release 的重要性更高，因为 `struct device` 一旦注册到 driver core，就可能被多个 core 路径持有引用：
-
-```text
-sysfs；
-bus；
-class；
-driver；
-parent/child；
-device links；
-PM；
-用户空间打开的属性访问；
-异步 probe/remove 路径。
-```
-
-所以不能用裸 kref 的思维写：
-
-```text
-我 unregister 了，所以马上 kfree device。
-```
-
-更准确的模型是：
-
-```text
-device_unregister() 取消发布设备；
-put_device() 释放引用；
-最后一个引用归零时，driver core 调用 release；
-release 才能释放包含 struct device 的外层对象。
-```
-
-这里和前面 RCU 一样，要区分：
-
-```text
-取消发布 != 没有引用；
-没有引用 != 所有框架关系都已经清理；
-release 才是最终释放点。
-```
-
-------
+做两个检查练习。把观察者get去掉以后，注销后的日志为何不再合法？因为unregister可能已触发最终回收。把初始化份额误当仍未归还，再额外put一次，会消耗谁的责任？它将错误地消费观察者唯一剩余份额，造成提前清理；修复应回到份额账本，而不是靠多加一次get掩盖。
 
 ### 11.4.4\_class\_release\_也不是\_my\_obj\_release
 

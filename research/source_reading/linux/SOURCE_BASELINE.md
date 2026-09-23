@@ -752,3 +752,9 @@ B04ak 核对固定 include/linux/rculist.h（blob 14dfa6008467e803d57f98cfa02755
 B04an 核对固定 include/linux/kobject.h（blob c8219505a79f98bc370e52997efc8af51833cfda）、lib/kobject.c（72fa20f405f1520a63dd50d9aa37f6609306eb3e）及 Documentation/core-api/kobject.rst。[模块入口](../kref/navigation/P07_kobject身份与类型清理导读.md#7.2_从K0到K5连接状态与回调)关联两种结构定义与九个唯一函数，去注释规范化与固定Git对象一致。del撤下层次并归还父责任，不消费本对象初始份额；init_and_add失败仍须put；DEBUG_KOBJECT_RELEASE可能延迟类型清理。
 
 完整模块ARM前端通过，354份头中342份非生成源码无固定提交差异。宿主七组执行固定普通清理链，sysfs/命名添加等为替身；模块明确拒绝无SYSFS或启用延迟调试释放配置。未执行目标装卸、真实sysfs/事件、并发和延迟清理分支。
+
+## 1.69\_设备引用与解绑资源的不同边界
+
+B04ao核对固定drivers/base/core.c（blob ec0ef6a0de942742215862206ea2aee8a65199b7）和drivers/base/dd.c（bcc1f28b71f4f554ec8cf279934d13bdc6acce9c）。[模块入口](../kref/navigation/P08_device引用与资源退出导读.md#8.2_从D0到D5区分登记与存储)关联五个core函数与device_unbind_cleanup，主体规范化相同。unregister先删除再put初始份额；最终release按dev/type/class选择一个；解绑受管资源不以设备引用归零为前提。
+
+ARM前端通过，372份头中360份非生成源码无固定提交差异。宿主八组使用固定引用/分派包装，初始化/添加删除/devres等为显式替身；device_unbind_cleanup仅源码核对。未执行目标装卸、实际解绑、完整资源框架、事件或并发。
