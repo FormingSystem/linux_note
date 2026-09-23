@@ -36,19 +36,19 @@ topics:
 
 ## 1.3\_环境
 
-- Python 3.10 或更新版本；
+- Bash（Windows使用MSYS2 Bash）；
 - GCC 和/或 Clang；
 - 支持 GNU `__typeof__` 扩展；
 - Windows、Linux 均可运行，结果需记录目标三元组。
 
-当前仓库验证环境记录在 `expected/2026-08-02_windows_x86_64.md`。
+本轮结果见[2026-09-24编译器访问与屏障观察](expected/2026-09-24_compiler_access.md)；[2026-08-02历史结果](expected/2026-08-02_windows_x86_64.md)保持原样。两个目标三元组不同，不能用相同宿主操作系统代替目标身份。
 
 ## 1.4\_运行步骤
 
 ```bash
 cd labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验
-python run.py --clean
-python run.py
+bash run.sh --clean
+bash run.sh
 ```
 
 脚本会为可用的 GCC/Clang 分别生成 `-O0` 和 `-O2` 汇编：
@@ -61,16 +61,16 @@ generated/
 └── clang_O2.s
 ```
 
-可只运行一个编译器：
+默认跳过缺少的编译器并明确打印，两个都没有则失败；显式指定的编译器缺失也失败。gcc.txt/clang.txt保存完整版本、目标和各次参数。可只运行一个编译器：
 
 ```bash
-python run.py --compiler gcc
-python run.py --compiler clang
+bash run.sh --compiler gcc
+bash run.sh --compiler clang
 ```
 
 ## 1.5\_观察方法
 
-依次定位四个函数：
+依次定位七个函数：
 
 | 函数 | 重点观察 |
 | --- | --- |
@@ -78,8 +78,11 @@ python run.py --compiler clang
 | `once_sum()` | `-O2` 是否保留两次读取 `shared` |
 | `plain_poll()` | 循环中是否还会重新读取 `shared` |
 | `once_poll()` | 循环回边是否重新读取 `shared` |
+| `barrier_poll()` | 空asm的memory约束是否让普通读取留在循环内 |
+| `plain_stores()` | 第一个普通写是否被删除 |
+| `once_stores()` | 是否保留两次写入动作 |
 
-不要只数源码行；必须从目标函数汇编中的内存操作判断。
+不要只数源码行或mov指令；Clang可以把第二次读取放在add的内存操作数中。沿跳转标签检查循环回边，区分“循环内重新读”与“退出后为了返回值再读”。barrier_poll用于说明循环体的编译器约束会改变外提条件：固定ARM cpu_relax本来就包含这种约束，不能把它当纯空循环。完整C与逐步练习在[正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md#2.3.1_完整编译材料)。
 
 ## 1.6\_预期结果
 
@@ -102,12 +105,12 @@ python run.py --compiler clang
 
 ## 1.8\_实际结果记录规则
 
-每次正式记录必须包含：编译器完整版本、目标三元组、命令、四个函数的关键汇编和结论边界。实验只证明生成访问形态，不得写成“ONCE 已让其他 CPU 看见最新值”。
+每次正式记录必须包含：编译器完整版本、目标三元组、命令、七个函数的关键汇编和结论边界。实验只证明生成访问形态，不得写成“ONCE 已让其他 CPU 看见最新值”。
 
 ## 1.9\_清理
 
 ```bash
-python run.py --clean
+bash run.sh --clean
 ```
 
-只删除本实验目录下固定的 `generated/`，源码和预期记录保留。
+只删除本实验generated目录下两组已知汇编和工具链记录；目录为空才删除目录，其他手工文件保留。驱动拒绝符号链接输出目录，不递归删除；源码和历史记录保留。

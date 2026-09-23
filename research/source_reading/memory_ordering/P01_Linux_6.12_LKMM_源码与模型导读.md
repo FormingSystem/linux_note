@@ -202,6 +202,8 @@ ONCE/屏障源码定义
 
 ## 1.14\_配套入口
 
+[编译器访问正文](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md#2.3.1_完整编译材料)新增空循环、屏障循环和双写对照。固定arch/arm/include/asm/vdso/processor.h的cpu_relax通常映射barrier，ARMv6或相应勘误分支使用smp_mb与nop；不能把包含cpu_relax的循环当作没有编译器约束的外提反例。该文件按固定Git对象只读核对，当前GCC/Clang汇编实验是x86-64编译观察，不是ARM运行。
+
 [消息发布入门](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P01_READ_WRITE_ONCE_与_SMP_内存顺序原语.md#1.2.1_从准备到使用的四个阶段)用M0～M3说明发布地址、取得来源、单写者与寿命。其C++17材料只验证标准原子示例在宿主运行；本导读的Linux关系与模型判定仍来自固定提交，不能用100轮标准线程实验替代herd7。本轮核对的Documentation/memory-barriers.txt中ACQUIRE/RELEASE、编译器屏障与ONCE说明支持边界划分；实现入口仍为1.3，不新增函数展开。
 
 - [READ_ONCE 编译器访问实验](../../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)

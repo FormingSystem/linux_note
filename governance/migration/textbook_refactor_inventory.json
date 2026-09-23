@@ -2930,8 +2930,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md",
       "baseline_sha256": "7b4816029621844f5bef598d0465e14d295ba39a2afc3b1c102e0baf35b15733",
       "lines": 170,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05c冷读保留访问与检查器边界，纠正cpu_relax反例，完整七函数C配Bash驱动经两种工具链O0/O2汇编核对；历史结果和人工状态保留。无Linux宏或硬件运行。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P03_Linux_SMP屏障与顺序域.md",
@@ -3503,8 +3503,8 @@
       "path": "labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md",
       "baseline_sha256": "d37c20cdbe3c95545174b51e06b008e7ead38d9be59c19618678090a26e0ada0",
       "lines": 113,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05c冷读保留访问与检查器边界，纠正cpu_relax反例，完整七函数C配Bash驱动经两种工具链O0/O2汇编核对；历史结果和人工状态保留。无Linux宏或硬件运行。"
     },
     {
       "path": "labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-08-02_windows_x86_64.md",
@@ -4850,6 +4850,13 @@
       "lines": 215,
       "state": "validated",
       "reason": "B05a新增先修教材：八条C抽象交错、单CPU与上下文、等待成本、本地重入及同步异步边界；未进行真实并发和内核运行。新人工评审节点红色。"
+    },
+    {
+      "path": "labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-09-24_compiler_access.md",
+      "baseline_sha256": null,
+      "lines": 96,
+      "state": "validated",
+      "reason": "B05c新编译观察：两工具链真实版本/目标、关键汇编及边界；七函数实际冷读，非目标运行。人工节点红色。"
     }
   ]
 }

@@ -626,6 +626,7 @@ mindmap-plugin: basic
         - 🟢 [READ ONCE 编译器访问实验](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)
             - 观测结果
                 - 🟢 [2026-08-02 Windows x86-64 READ ONCE 编译器实验结果](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-08-02_windows_x86_64.md)
+                - 🔴 **未校正** [2026-09-24 编译器访问与屏障观察](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-09-24_compiler_access.md)
         - 🟢 [LKMM Litmus 消息传递与屏障实验](../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md)
     - RCU
         - 🟢 [晚到读者与抢占读者的对象回收实验](../../labs/kernel/rcu/P01_晚到读者与抢占读者/README.md)

@@ -982,3 +982,7 @@ B05a以固定dfaf2136的Documentation/locking/locktypes.rst核对锁类别、可
 ## 1.109\_消息发布入门证据
 
 B05b只读固定dfaf2136的Documentation/memory-barriers.txt，并核对已保存rwonce、通用屏障与ARM屏障原文；[内存顺序导读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.14_配套入口)关联M0～M3阅读任务。宿主C++17实验完成100轮独立发布，依据标准原子契约，不代表Linux内核宏、LKMM、SMP、目标ARM或实时分支运行；当前UP配置不变。
+
+## 1.110\_编译器轮询反例校正
+
+B05c只读固定dfaf2136的arch/arm/include/asm/vdso/processor.h，确认cpu_relax通常含barrier，特定架构/勘误分支更强；修复正文错误的无约束循环前提。已有rwonce与compiler证据继续使用固定源码；[七函数编译记录](../../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-09-24_compiler_access.md)仅覆盖两种x86-64目标的GCC/Clang O0/O2，不覆盖ARM执行、真实内核宏或KCSAN。

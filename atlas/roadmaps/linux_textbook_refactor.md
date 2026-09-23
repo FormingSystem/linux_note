@@ -408,3 +408,5 @@ B04cn完成[生命周期集成](../../knowledge/linux/object_lifetime/integratio
 B05a新增[执行路径先修](../../knowledge/linux/synchronization_and_asynchrony/P01_同一对象的多条执行路径.md#1.1_先把一次加一拆开)，完成总纲的因果阅读地图；纠正锁资料四处当前配置断言。清单681项：283 validated、380 pending、18 supporting_pending；新增材料不代表原125篇机制正文已经完成，下一项内存顺序入门。验证与未执行项见[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.156_B05a执行路径与上下文先修)。
 
 B05b完成[内存顺序入门](../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P01_READ_WRITE_ONCE_与_SMP_内存顺序原语.md#1.2.1_从准备到使用的四个阶段)，保留原九节责任，以完整C++17一次发布补齐状态、顺序和寿命推导；100轮宿主运行不作Linux模型或硬件证明。清单681项284 validated、379 pending、18 supporting_pending；下一项P02编译器访问及其既有实验Python驱动替换，记录见[B05b](../../governance/migration/repository_textbook_refactor.md#1.4.157_B05b消息发布与原语边界)。
+
+B05c完成[P02编译器访问](../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md#2.3.1_完整编译材料)及实验入口，七函数C材料配Bash编译驱动，删除该实验非必要Python依赖；新记录保留真实GCC/Clang目标，历史结果未改。清单682项287 validated、377 pending、18 supporting_pending；下一项P03屏障方向与配置边界，见[B05c](../../governance/migration/repository_textbook_refactor.md#1.4.158_B05c编译器访问与实验驱动)。

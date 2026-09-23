@@ -33,10 +33,12 @@ Linux 使用 ONCE、编译器屏障、原子和子系统 API 向编译器表达�
 
 ```c
 while (dev->state != READY)
-    cpu_relax();
+    ; /* 本反例刻意没有屏障、外部调用或其他限制优化的动作。 */
 ```
 
 如果当前执行流中没有编译器可见的写入，优化器可能把 `dev->state` 读到寄存器后反复测试。另一个 CPU 或中断处理程序修改内存，不在普通单线程 as-if 推理中自动构成约束。
+
+这里的READY只是应用定义的就绪值，不能直接把这个片段当用户空间线程同步程序运行。特别要检查循环体：固定ARM版本中cpu_relax的通常分支本身就是barrier，另有架构/勘误分支使用更强动作。因此不能拿“已经包含cpu_relax”的循环证明读取必然会外提；屏障或未知函数调用都可能改变优化前提。
 
 ```c
 while (READ_ONCE(dev->state) != READY)
@@ -63,20 +65,94 @@ int once_sum(void)
 }
 ```
 
-两个 ONCE 表达式要求两个访问实例。配套[编译器访问实验](../../../../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)同时用 GCC 和 Clang 的 `-O0/-O2` 生成汇编，要求读者亲自定位 Load 数量，而不是只记结论。
+两个ONCE表达式要求两个访问实例，但`+`两边不是按源码左到右建立的跨CPU顺序协议。我们现在只检查生成了几次内存读取，不据此宣称读到了同一版值或建立了发布关系。
+
+### 2.3.1\_完整编译材料
+
+下面的文件没有main，实验只生成汇编，不启动会无限轮询的程序。__typeof__(x)取得x的类型，&(x)取得它的地址，转换只在这次解引用上添加volatile访问约束，不把整个对象类型改掉。局部volatile转换只模拟ONCE的编译器访问形态；LAB_BARRIER则声明普通内存可能受影响，使优化器必须在它周围重新考虑读取。两者不能代替真实内核宏的类型检查、架构条件和检查器接入。
+
+```c
+#if defined(__GNUC__) || defined(__clang__)
+#define LAB_READ_ONCE(x) (*(volatile __typeof__(x) *)&(x))
+#define LAB_WRITE_ONCE(x, value) (*(volatile __typeof__(x) *)&(x) = (value))
+#define LAB_BARRIER() __asm__ __volatile__("" : : : "memory")
+#else
+#error "本实验需要 GCC 或 Clang 的 __typeof__ 扩展"
+#endif
+
+int shared;
+
+/* 普通表达式允许编译器合并两次读取。 */
+int plain_sum(void)
+{
+    return shared + shared;
+}
+
+/* 两个 ONCE 表达式要求保留两个访问实例。 */
+int once_sum(void)
+{
+    return LAB_READ_ONCE(shared) + LAB_READ_ONCE(shared);
+}
+
+/* 普通轮询可能只在进入循环前读取一次。 */
+int plain_poll(void)
+{
+    while (shared == 0)
+        ;
+
+    return shared;
+}
+
+/* ONCE 轮询要求循环中重新读取共享值。 */
+int once_poll(void)
+{
+    while (LAB_READ_ONCE(shared) == 0)
+        ;
+
+    return LAB_READ_ONCE(shared);
+}
+
+/* 编译器屏障也会改变普通轮询的优化条件，不等于CPU屏障。 */
+int barrier_poll(void)
+{
+    while (shared == 0)
+        LAB_BARRIER();
+    return shared;
+}
+
+/* 前一个普通写可能被后一个覆盖，外部只留下最终值。 */
+void plain_stores(void)
+{
+    shared = 1;
+    shared = 2;
+}
+
+/* 两次局部volatile访问保留写入动作，不意味着读者必定观察到1。 */
+void once_stores(void)
+{
+    LAB_WRITE_ONCE(shared, 1);
+    LAB_WRITE_ONCE(shared, 2);
+}
+```
+
+### 2.3.2\_生成并阅读汇编
+
+在仓库根目录先进入[配套实验](../../../../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)目录，再运行Bash驱动。需要GCC和Clang以及支持GNU扩展的C模式；Windows使用MSYS2 Bash，把两种编译器加入该终端PATH。只装了一种时可以先观察该工具链，不能把另一个跳过项记作通过。
+
+```bash
+cd labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验
+bash run.sh
+```
+
+脚本把两种优化级别的汇编和版本、目标三元组、完整命令写入本目录generated。它不运行目标程序，Bash只组织编译器调用；教学材料是上面的完整C文件。先定位plain_sum和once_sum的函数边界：在本批x86-64的GCC与Clang O2结果中，前者一次读后加倍，后者保留两次读；Clang的第二次读可以嵌在add的内存操作数里，所以不能只数mov指令。
+
+再沿跳转标签找到循环回边：plain_poll在循环前读一次，零值分支空转；once_poll回边包含重新读取。barrier_poll也保留循环内的读取，因为本实验显式告诉编译器屏障会影响内存判断。这个第三组正是对上面cpu_relax反例的校正，不是说普通读从此获得了Linux ONCE完整契约。
+
+最后比较plain_stores和once_stores：本批O2前者只留下写2，后者有写1和写2。生成两次写仍不保证另一CPU能够捕捉到中间值1，更不是消息队列。O0用于对照源代码形状，O2用于观察优化后的合法变换；若换版本后结果不同，记录完整输出和优化条件，不能修改汇编来迎合预期。
 
 ## 2.4\_宏实现承担什么
 
-Linux 6.12.20 的 [`include/asm-generic/rwonce.h`](../../../../../research/source_reading/linux/include/asm-generic/rwonce.h) 中：
-
-```c
-#define __READ_ONCE(x) (*(const volatile __unqual_scalar_typeof(x) *)&(x))
-
-#define READ_ONCE(x) ({
-    compiletime_assert_rwonce_type(x);
-    __READ_ONCE(x);
-})
-```
+Linux 6.12.20的版本入口从[源码与模型导读](../../../../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.1_READ_ONCE_WRITE_ONCE)进入。保存的include/asm-generic/rwonce.h中，公开READ_ONCE先做compiletime_assert_rwonce_type检查，再由__READ_ONCE把目标地址转换为适当的const volatile标量指针并读取。这里描述其职责顺序，不把省略续行符的多行宏伪装成可编译上游代码。
 
 `WRITE_ONCE()` 使用对应的 volatile 类型访问。这里的 volatile cast 是内核实现手段，不等于“把整个共享对象类型声明为 volatile 就完成同步”。宏还组合了类型/大小检查，并与 KASAN/KCSAN 等内核工具约定配合。
 
@@ -91,7 +167,7 @@ Linux 6.12.20 的 [`include/asm-generic/rwonce.h`](../../../../../research/sourc
 - 从内存重新取值或省略本应存在的取值；
 - 把写入认定为不可观察而删除；
 - 在轮询中把共享值永久缓存于寄存器；
-- 让相邻 ONCE 访问脱离内核原语所表达的顺序关系。
+- 破坏内核原语及表达式求值规则已经要求的访问关系；不能只凭两个ONCE的文本相邻推导完整编译器或CPU屏障。
 
 但 ONCE 不禁止所有普通指令调度，也不是通用编译器全栅栏。需要阻止相关普通访问跨越某点时使用 `barrier()` 或携带相应 compiler semantics 的更高层原语。
 
@@ -159,6 +235,10 @@ use(p->field);
 实验必须保存两个维度：普通/ONCE 代码差异，以及 `-O0/-O2`、GCC/Clang 差异。只展示一种编译器的一段汇编，不足以理解 ONCE 是防御编译器变换的契约。
 
 ## 2.11\_本章验收
+
+先在七个函数旁标出“预期读取次数、写入次数、回边是否再次触及shared”，再和两种O2输出比对。把barrier_poll的屏障去掉后重新生成，哪一个函数可以作为参照？把once_sum改为先读取一次到局部变量，再返回局部变量加自身，为什么只有一次共享读取仍符合你的新源码？
+
+第一题应该回到plain_poll的控制流；第二题把契约改成了一次读取和两次使用局部值，编译器不欠你第二次共享读取。最后给once_stores增加一个读者，要求它一定消费到1和2：仅有两个WRITE_ONCE不能满足，必须另建确认或队列协议。不要把“生成动作存在”和“远端必然观察每个中间状态”混为一谈。
 
 1. 能解释轮询值为什么可能被寄存器化。
 2. 能从反汇编识别两次普通读取被合并、ONCE 保留两次访问。
