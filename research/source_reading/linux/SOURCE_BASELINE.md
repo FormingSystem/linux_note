@@ -616,3 +616,9 @@ ARM 前端通过，348 个消费头文件的非生成部分与固定提交无差
 固定 mm_types.h/mm.h 的 blob 沿 1.28；八个包装/初始化函数、一结构、一宏按上游位置唯一展开，既有 vma_find、vma_lookup 与 invalidate 沿已有标题。VMA_ITERATOR 省略 last，聚合初始化为零，vma_iter_init 经 mas_init 设置 last=addr；不把查询前字段当命中结果。clear/bulk 依据状态映射为 -ENOMEM，局部资源释放不等于销毁 VMA。
 
 [VMA 模块](../maple_tree/navigation/P09_VMA游标与边界适配.md#9.2_从地址空间到局部游标)按 S0～S4 区分外围保护、局部游标、窗口转发、对象使用和退出。C 整数实验实际比较 528 个合法区间、561 个拒绝输入与 17424 次成员关系；固定包装宿主检查只核对转发，Maple 后端为替身。未执行真实 VMA、锁竞争或页表更新。额外只读固定 mm/mmap.c 与 mm/vma.h 调用名定位，说明公共头包装不是完整 MM 写入主线，未展开未验证函数体。
+
+## 1.43\_撤销范围与临时序号树证据
+
+新增只读固定对象 mm/vma.c（blob c9ddc06b672a5235eb7365d2197856537ce6d143）与 mm/vma.h（blob d58068c0ff2eaa38161c5bac2f27ee145ec1a2f6）；mm/memory.c 沿 1.28。官方仓库和固定提交不变。八函数按[撤销模块](../maple_tree/navigation/P10_撤销范围与临时索引.md#10.2_两棵树沿S0到S5分工)在三份实现文档完整展开，init_vma_munmap 的 CONFIG_MMU 条件说明保留。
+
+对齐撤销以地址主树与序号临时树分工；gather 标记与清主树不是同一步，reattach 不逆转全部 split。clear_ptes 两次从序号一继续，首项由参数交付；free_pgtables 明确允许 ceiling=0 哨兵，不能推广到普通空 VMA 范围。对照 mm/mmap.c 的 exit_mmap 使用地址树状态，避免反向泛化。C++ 分区实际检验 E/F/G 与小域归属，固定 clear_ptes 的下层替身夹具验证控制顺序；未运行目标 munmap、通知、页表、TLB、失败回滚或并发。

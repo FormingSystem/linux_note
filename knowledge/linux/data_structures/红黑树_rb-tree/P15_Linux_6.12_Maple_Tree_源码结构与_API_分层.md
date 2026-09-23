@@ -725,7 +725,7 @@ find_vma()
 find_vma_intersection()
 ```
 
-它们不是同义词。
+它们不是同义词。上一节已经证明半开上界如何转换；现在保持同一组 A～D，只改变查询问题。返回的是完整候选 VMA，不把对象边界裁剪成查询窗口，也不由非空返回自动取得对象引用。
 
 ### 15.12.1\_vma\_lookup()\_只查这个地址有没有\_VMA
 
@@ -753,7 +753,7 @@ addr 必须落在某个 VMA 范围内，才返回这个 VMA。
 否则返回 addr 之后的第一个 VMA。
 ```
 
-这和很多页表或内存布局检查有关，因为内核经常需要知道“当前位置附近的 VMA 顺序”。
+这适合需要继续遍历或查看后续布局的调用方。若用于判断故障地址是否已映射，还必须核对候选起点不大于 addr；“后面存在一个 VMA”并不使当前空洞变成有效映射。
 
 ### 15.12.3\_find\_vma\_intersection()\_查范围是否与\_VMA\_相交
 
@@ -886,17 +886,13 @@ flowchart LR
     GAP --> V["return = rodata"]
 ```
 
-这类“同时拿到当前位置和前驱”的需求，就是 `vma_iterator` 封装存在的原因之一。
+这类“同时拿到当前位置和前驱”的需求，就是 `vma_iterator` 封装存在的原因之一。若 addr 在第一项之前，返回第一项但 pprev 为 NULL；若 addr 在最后一项之后，返回 NULL 而 pprev 仍可能是最后一项。两个输出独立表达两个问题，不能只检查其中一个。
 
 ------
 
 ## 15.14\_page\_fault\_unmap\_free\_pgtables\_为什么也会碰\_Maple\_Tree
 
-不要把 Maple Tree 只理解成 `mmap()` 时用的数据结构。
-
-只要内核需要从虚拟地址找到 VMA，就会碰到它。
-
-几个典型路径：
+查到对象只是工作的入口。缺页、权限变更、撤销映射和页表清理分别需要哪些 VMA 信息，仍按下表区分；这些是场景职责，不表示所有路径都直接调用同一个短包装。
 
 | 路径 | 为什么需要 VMA |
 | --- | --- |
@@ -906,89 +902,17 @@ flowchart LR
 | `free_pgtables()` | 释放页表时需要按 VMA 边界遍历 |
 | `unmap_vmas()` | 解除映射时要逐段处理 VMA |
 
-[mm/memory.c](../../../../research/source_reading/linux/mm/memory.c) 里可以看到 `free_pgtables()` 和 `unmap_vmas()` 都接收 `struct ma_state *mas`：
+完整 E/F/G 部分撤销场景已进入[P42 两棵树](P42_撤销映射中的两棵Maple树.md#42.2_保留原来的E与F与G场景)，原全部地址边界和保留结果不丢失。关键增量是：主树 mm_mt 按地址索引，临时 mt_detach 按处理序号保存待撤销对象，清主树后还要完成页表、对象与临时索引的退出。
 
-```c
-void free_pgtables(struct mmu_gather *tlb, struct ma_state *mas,
-		   struct vm_area_struct *vma, unsigned long floor,
-		   unsigned long ceiling, bool mm_wr_locked)
-```
+free_pgtables 与 unmap_vmas 的完整固定签名和函数分别见[页表释放](../../../../research/source_reading/maple_tree/source_explanations/mm/memory.c.md#1.3_释放页表与上界哨兵)及[映射清除](../../../../research/source_reading/maple_tree/source_explanations/mm/memory.c.md#1.2_解除映射与继续遍历)，通过[撤销模块](../../../../research/source_reading/maple_tree/navigation/P10_撤销范围与临时索引.md#10.2_两棵树沿S0到S5分工)关联调用方。ma_state 的 tree、索引单位、首项参数与搜索上界必须一起看；exit_mmap 与对齐 munmap 传入的树并不相同。
 
-以及：
-
-```c
-void unmap_vmas(struct mmu_gather *tlb, struct ma_state *mas,
-		struct vm_area_struct *vma, unsigned long start_addr,
-		unsigned long end_addr, unsigned long tree_end,
-		bool mm_wr_locked)
-```
-
-这说明 memory 管理路径不是只拿一个 `vma` 就完事，而是经常拿着 `ma_state` 继续往后遍历。
-
-一个典型的 unmap 场景：
-
-```text
-用户调用：
-munmap(0x00007f1000100000, 0x00600000)
-
-覆盖范围：
-[0x00007f1000100000, 0x00007f1000700000)
-
-已有 VMA：
-E: [0x00007f1000000000, 0x00007f1000200000)
-F: [0x00007f1000200000, 0x00007f1000240000)
-G: [0x00007f1000600000, 0x00007f1000800000)
-```
-
-这不是简单删除三个节点，而是：
-
-```text
-E 左半段保留，右半段被删；
-F 整段被删；
-G 左半段被删，右半段保留。
-```
-
-也就是说，VM 子系统需要：
-
-```text
-1. 找到第一个相交 VMA；
-2. 沿 Maple Tree 继续遍历相交范围；
-3. 必要时拆分边界 VMA；
-4. 把删除范围从 mm_mt 中清掉；
-5. 继续处理页表、反向映射、TLB gather 等工作。
-```
-
-图示：
-
-```mermaid
-flowchart TD
-    U["munmap<br/>[0x7f1000100000,0x7f1000700000)"]
-
-    E["E 原始<br/>[0x7f1000000000,0x7f1000200000)"]
-    F["F 原始<br/>[0x7f1000200000,0x7f1000240000)"]
-    G["G 原始<br/>[0x7f1000600000,0x7f1000800000)"]
-
-    E1["E 左侧保留<br/>[0x7f1000000000,0x7f1000100000)"]
-    F1["F 删除"]
-    G1["G 右侧保留<br/>[0x7f1000700000,0x7f1000800000)"]
-
-    U --> E
-    U --> F
-    U --> G
-    E --> E1
-    F --> F1
-    G --> G1
-
-    U --> MAS["ma_state / vma_iterator<br/>贯穿查找、删除、继续遍历"]
-```
-
-这就是后续读 `do_vmi_munmap()`、`do_vmi_align_munmap()` 时必须带着 `ma_state` 视角的原因。
+P42 的 S0～S5 还解释失败恢复为何不承诺逆转所有拆分、页表 ceiling=0 为什么有该接口明确允许的哨兵含义，以及普通半开请求不能照搬该约定。读完后回到下一节，把局部协议放进职责总图。
 
 ------
 
 ## 15.15\_ma\_state\_和\_VMA\_iterator\_的一张总图
 
-把前面的内容合并，可以得到下面这张源码调用地图。
+把前面的内容合并，可以得到下面的职责地图。场景到接口的箭头表示需要哪类能力，不声明每条边都是当前版本的一次直接 C 调用；真实调用点和条件分支以关联模块为准。
 
 ```mermaid
 flowchart TD
@@ -1013,7 +937,7 @@ flowchart TD
         MF["mt_find"]
         MAS["ma_state"]
         MASF["mas_find / mas_prev / mas_next"]
-        MASS["mas_store / mas_erase"]
+        MASS["mas_store / mas_store_gfp / mas_erase"]
         GAP["mas_empty_area / mas_empty_area_rev"]
     end
 
@@ -1022,13 +946,15 @@ flowchart TD
         NODE["struct maple_node<br/>pivot / slot / gap"]
     end
 
-    PF --> VL
-    PF --> FV
-    MMAP --> GAP
-    MMAP --> VIS
-    MUNMAP --> FVI
-    MUNMAP --> VMI
-    MPROTECT --> VMI
+    PF -->|点查候选能力| VL
+    PF -->|向后查询后仍需边界检查| FV
+    MMAP -->|空洞选择能力| GAP
+    MMAP -->|范围更新能力| VIS
+    MUNMAP -->|找相交范围| FVI
+    MUNMAP -->|主树地址游标| VMI
+    MUNMAP -->|收集后按序号处理| DET["临时mt_detach与mas_detach"]
+    DET -->|后续处理仍使用状态| MAS
+    MPROTECT -->|连续范围变更| VMI
 
     VL --> ML
     FV --> MF
@@ -1044,8 +970,8 @@ flowchart TD
     MASS --> MAS
     GAP --> MAS
 
-    MAS --> TREE
-    TREE --> NODE
+    MAS -->|tree明确当前关联树| TREE
+    TREE -->|根和节点指向| NODE
 ```
 
 这张图里最重要的关系是：
@@ -1060,55 +986,32 @@ VMA 主要通过 vma_iterator / vma_iter_* 把 VMA 半开区间翻译成 Maple T
 
 ## 15.16\_这一章没有展开的内容
 
-本章只是源码结构和 API 分层，不展开这些细节：
+现在已经有真实存在的节点布局、字段编码、游标、普通接口、写入资源和撤销场景单元。完整内部算法仍有边界，不能因为所有接口都能定位，就宣称动态实现已讲完。
 
-```text
-1. mas_store() 如何判断写入类型；
-2. 节点满了之后如何 split；
-3. 删除后如何合并或再平衡；
-4. gap[] 如何更新；
-5. RCU 模式下删除节点如何延迟释放；
-6. 预分配节点链 maple_alloc 如何服务复杂写路径；
-7. do_vmi_munmap() 如何拆 VMA、清 Maple Tree、释放页表；
-8. mmap 找空洞时 bottom-up / top-down 分别如何调用 mas_empty_area。
-```
-
-这些内容如果塞进同一章，文件会再次膨胀，而且阅读顺序会变差。
-
-更合理的拆法是：
-
-| 后续章节 | 建议主题 | 核心问题 |
+| 继续研究的问题 | 本轮已有基础 | 仍未由本章证明的部分 |
 | --- | --- | --- |
-| 第 16 章 | Maple Tree 查找路径：`mtree_load()`、`mt_find()`、`mas_find()` | 点查找、后继查找、范围遍历到底怎么走节点 |
-| 第 17 章 | Maple Tree 写入路径：`mas_store()`、节点分裂与范围覆盖 | 插入、替换、覆盖、删除 NULL entry 如何影响树结构 |
-| 第 18 章 | Maple Tree gap search：`mas_empty_area()` 与 mmap 地址选择 | mmap 如何找空洞，`gap[]` 如何避免线性扫描 |
-| 第 19 章 | VMA 修改源码：`mmap()`、`munmap()`、`mprotect()` | VM 子系统如何用 iterator 串起查找、拆分、合并、删除 |
+| 节点搜索 | [P38 pivot 与范围](P38_Maple节点中的范围与空洞.md)、[P39 游标](P39_Maple操作游标的暂停与继续.md) | 内层搜索完整分支与失效节点重试证明 |
+| 写入与删除 | [P40 契约](P40_Maple普通接口中的范围与查询.md)、[P41 资源](P41_Maple写入准备与锁边界.md) | store_type 分类、split、合并/再平衡与跨节点覆盖 |
+| 空洞选择 | P38 的 gap 分区与窗口模型 | gap[] 动态更新、mmap 的 bottom-up/top-down 选择及对齐规则 |
+| 资源与并发 | P41 的准备/重试/清理与已核对 RCU 模式 | maple_alloc 完整资源链及 RCU 删除节点的全部延迟释放过程 |
+| MM 完整修改 | [P42 两棵树](P42_撤销映射中的两棵Maple树.md) | mmap/munmap/mprotect 的全部拆分、合并、通知和页表底层 |
 
-这样拆的好处是：
-
-```text
-第 15 章先让你知道“有哪些门”；
-第 16 章专门讲“怎么查”；
-第 17 章专门讲“怎么写”；
-第 18 章专门讲“怎么找空洞”；
-第 19 章再回到 VMA 场景，看 mmap/munmap/mprotect 如何组合这些能力。
-```
+旧文为这些未落地主题预留的“第16～19章”与本专题现有章节冲突，现以问题边界和真实链接表达，不再把未来设想伪装成可读章节。继续阅读从[源码总索引](../../../../research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)选择已经落地的模块；未展开内容保留为研究任务，不用不存在的链接填空。
 
 ------
 
 ## 15.17\_本章小结
 
-本章先把 Maple Tree 源码阅读的入口搭起来了。
+本章沿树根、节点、编码、操作状态、接口与 VMA 建立了源码位置感，完整单元分别在 P38～P42 中兑现。共享 maple_tree 保存根与模式；节点用 pivot/slot 表达包含式范围，容量依类型和构建条件；ma_state 由范围、位置、状态和资源等正交信息组成，不能看一个枚举就猜完所有结果。
 
-几个结论要记住：
+普通接口常创建临时状态，高级接口把连续位置和更多协议交给调用者。VMA 适配层把半开边界转成闭区间，但不代替有效输入、外围锁和对象寿命。点查、向后查、相交和前驱分别回答不同问题；进入撤销场景后，还必须区分地址主树与序号临时树。
 
-1. `struct maple_tree` 是树对象，核心字段是 `ma_root`、`ma_flags` 和锁语义。
-2. `struct maple_node` 是多路节点，不是二叉节点；64 位下 range 节点和 allocation range 节点容量不同。
-3. `pivot[]` 是范围边界，不是普通 B-Tree 里“唯一 key”的完全等价物；同下标 pivot 是 slot 的包含式上界。
-4. `ma_state` 是高级 API 的状态机，保存当前树、操作范围、节点位置、隐含边界、状态和预分配节点。
-5. `mtree_*()` / `mt_*()` 是普通接口，常常内部创建 `ma_state` 再转给 `mas_*()`。
-6. VMA 层主要通过 `vma_iterator` 包装 `ma_state`，把 `[vm_start, vm_end)` 翻译成 `[vm_start, vm_end - 1]`。
-7. `vma_lookup()` 是精确点查找，`find_vma()` 是“当前或后继”查找，`find_vma_intersection()` 是范围相交查找。
-8. 后面继续读源码时，不要把 Maple Tree 当成“带更多孩子的红黑树”；它的核心是范围、状态机、gap 信息和工程并发语义。
+回顾时先尝试解释这些变化：
 
-到这里，源码地图已经有了。下一章就可以开始专门拆查找路径：从 `mtree_load()` 到 `mas_walk()`，再到节点里的 `pivot[]` / `slot[]` 如何决定下降方向。
+1. 为什么节点数组里必须表示空洞，pivot 不能被当成普通 B-Tree 的唯一记录键？
+2. 一个指针的低位属于节点编码、父关系还是业务 entry，应该先看哪个字段？
+3. pause 与 reset 都可能清 node，为什么下一次 find 仍可能得到不同结果？
+4. 预分配成功、补分配要求重试、范围已经发布，分别属于哪个阶段？
+5. 主树清除后还要处理哪棵树？这时 index=1 是地址还是序号？
+
+核对方向分别是 P38 的范围分区、15.5 的字段归属、P39 的继续规则、P41 的资源阶段和 P42 的待处理集合。能够沿这些状态解释行为，才比记住函数名多走了一步；本章的源码地图也不等于已经运行目标内核中的全部并发、分裂和回收路径。

@@ -134,3 +134,5 @@ domains: [c_language, data_structures]
 [note_maple_prealloc.c](note_maple_prealloc.c)配合[P41 写入准备](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P41_Maple写入准备与锁边界.md#41.6_运行外部锁下的完整私有模块)，在连续外部互斥锁保护下先准备并取消，再准备写入，最后按 gfp 接口覆盖；销毁使用由调用者保护的 __mt_destroy。ARM 前端通过。宿主固定三个控制函数配合明确资源/写入替身覆盖零需求、准备失败清理、16 种补分配分支及 NULL 请求范围恢复，不是目标模块运行。目标 Kbuild/MODPOST/装卸、真实节点分配与批量重平衡未执行。
 
 [vma_boundary_contract.c](vma_boundary_contract.c)配合[P15 VMA 边界](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.11.4_运行边界等价性实验)，主动检查半开输入并转换闭区间；528 组合法输入、561 组拒绝和 17424 次成员比较已实际运行。整数模型没有操作真实 VMA，输入检查也不冒充内核短包装自带保证。固定包装另以显式 Maple 替身核对两种初始化、查询方向和错误映射。
+
+[unmap_partition.cpp](unmap_partition.cpp)配合[P42 两棵树](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P42_撤销映射中的两棵Maple树.md#42.6_运行分区与序号模型)，以值对象分区原 E/F/G 请求，区分处理序号与地址。严格 C++17 编译与 9216 种小域分区、82944 次点归属、最大值/非法输入及原五项查询例子通过。此模型不表示真实 VMA 拆分回滚或页表清理；固定 clear_ptes 的显式下层替身检查另验证两次序号重置、地址/计数边界和锁标志转发。

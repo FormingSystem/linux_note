@@ -286,6 +286,7 @@ mindmap-plugin: basic
             - 🔴 **未校正** [P39 Maple 操作游标的暂停与继续](../../knowledge/linux/data_structures/红黑树_rb-tree/P39_Maple操作游标的暂停与继续.md)
             - 🔴 **未校正** [P40 Maple 普通接口中的范围与查询](../../knowledge/linux/data_structures/红黑树_rb-tree/P40_Maple普通接口中的范围与查询.md)
             - 🔴 **未校正** [P41 Maple 写入准备与锁边界](../../knowledge/linux/data_structures/红黑树_rb-tree/P41_Maple写入准备与锁边界.md)
+            - 🔴 **未校正** [P42 撤销映射中的两棵 Maple 树](../../knowledge/linux/data_structures/红黑树_rb-tree/P42_撤销映射中的两棵Maple树.md)
             - 🟢 [P15 Linux 6.12 Maple Tree 源码结构与 API 分层](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md)
     - 🔴 [Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)
         - 章节评审：16 章未评审
@@ -628,6 +629,10 @@ mindmap-plugin: basic
         - 🔴 [Maple 查询源码路线](../../research/source_reading/maple_tree/大纲.md)
         - 🔴 [Linux 6.12 Maple 范围源码阅读索引](../../research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md)
         - 🔴 [范围契约与查询入口](../../research/source_reading/maple_tree/navigation/P02_范围契约与查询入口.md)
+        - 🔴 **未校正** [撤销范围与临时索引](../../research/source_reading/maple_tree/navigation/P10_撤销范围与临时索引.md)
+        - 🔴 **未校正** [mm/vma.c 撤销控制](../../research/source_reading/maple_tree/source_explanations/mm/vma.c.md)
+        - 🔴 **未校正** [mm/vma.h 初始化与恢复](../../research/source_reading/maple_tree/source_explanations/mm/vma.h.md)
+        - 🔴 **未校正** [mm/memory.c 页表清理](../../research/source_reading/maple_tree/source_explanations/mm/memory.c.md)
         - 🔴 **未校正** [VMA 游标与边界适配](../../research/source_reading/maple_tree/navigation/P09_VMA游标与边界适配.md)
         - 🔴 **未校正** [写入准备与资源清理](../../research/source_reading/maple_tree/navigation/P08_写入准备与资源清理.md)
         - 🔴 **未校正** [普通接口与范围契约](../../research/source_reading/maple_tree/navigation/P07_普通接口与范围契约.md)

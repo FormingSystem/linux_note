@@ -28,7 +28,7 @@ domains:
 | --- | --- | --- | --- |
 | B01 基础入口：architecture 中的概貌、源码树及 Atlas 路线 | 能读变量、函数、数组与循环；尚不认识内核对象 | 从读文件区分应用、内核、硬件；按问题找源码，区分源文件与产物 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)；本批实施，验证结果见 1.5 |
 | B02 模块与设备节点：architecture 其余 3 篇、error_handling 初始 2 篇、驱动 fundamentals 与 misc | 用户与内核边界、源码身份 | 区分装入代码、注册服务和建立访问入口；能恢复一个失败的最小模块实验 | [模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes)、[错误处理](../../knowledge/linux/error_handling)、[驱动基础](../../knowledge/driver_model/fundamentals)；分批推进，已完成组与下一项见 1.5 |
-| B03 对象组织：data_structures 33 篇 | C 指针、对象与资源 | 从查找和更新需求选择链表、哈希表或树，解释节点与容器关系 | [数据结构](../../knowledge/linux/data_structures)；链表十篇已完成本轮作者审查和适用验证，哈希桶、计算、hlist、RCU 旧路径及动态表机制已重构，新增动态接口实验；此前十六项教学语言复核已完成，子系统应用、综合模块与树仍待逐篇审查 |
+| B03 对象组织：data_structures 33 篇 | C 指针、对象与资源 | 从查找和更新需求选择链表、哈希表或树，解释节点与容器关系 | [数据结构](../../knowledge/linux/data_structures)；链表、哈希及子系统应用、综合模块、树原章节和依赖拆分单元已完成本轮逐篇审查与适用验证；教学语言复核已完成，目标未运行与研究算法边界逐批记录。继续 B04，不表示全仓完成 |
 | B04 生命周期：object_lifetime 20 篇 | 能辨别对象、入口和使用者 | 解释引用何时取得、由谁放弃、什么时候可销毁 | [对象生命周期](../../knowledge/linux/object_lifetime)；待进入 |
 | B05 并发与事件：synchronization_and_asynchrony 125 篇 | 单个操作及对象生命期 | 从两条交错路径推出同步、等待、通知、延迟执行与回收；以具体状态完成证明 | [同步与异步总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)；待进入，内部再按依赖拆批；kernel_subsystems/irq 当前无正式文件，不建立占位入口 |
 | B06 文件与观测：io_model 5 篇、kernel_subsystems/vfs 与 tracing | 读文件主线、等待与对象持有 | 串起路径、打开实例、数据、阻塞、缓存及日志证据 | [VFS](../../knowledge/kernel_subsystems/vfs/大纲.md)、[I/O 模型](../../knowledge/linux/io_model)、[观测](../../knowledge/kernel_subsystems/tracing)；待进入 |
@@ -216,3 +216,5 @@ B03ax 完成 P15 15.8 的[P40 普通接口](../../knowledge/linux/data_structure
 B03ay 完成 P15 15.9 的职责改写与[P41 写入准备](../../knowledge/linux/data_structures/红黑树_rb-tree/P41_Maple写入准备与锁边界.md#41.3_沿S0到S5区分位置与资源)完整单元，以外部锁私有模块串起准备、取消、兑现与清理；原 API 分组与分层图保留并纠正边界，两处 vma_find 函数体移为唯一实现入口。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.61_B03ay写入准备与资源协议)记录验证限制。下一项 P15 15.10/15.11 的 VMA 接入与包装契约，全仓继续。
 
 B03az 完成 P15 15.10/15.11 的 VMA 接入与边界改写，保留原两节入口和两张图的教学任务，补状态所有权、两种初始化、错误映射与完整[C 边界实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.11.4_运行边界等价性实验)。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.62_B03azVMA游标与边界适配)记录固定包装验证及真实目标限制。下一项 P15 15.12～15.17 查询场景与收束，全仓继续。
+
+B03ba 冷读并收束 P15 15.12～15.17：查询/前驱例子按固定契约保留，补两个输出与返回范围边界；原 E/F/G 撤销进入[P42 两棵树](../../knowledge/linux/data_structures/红黑树_rb-tree/P42_撤销映射中的两棵Maple树.md#42.3_沿S0到S5观察职责转移)，总图纠正为职责图，未落地的旧第16～19章安排替换为真实模块与研究边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.63_B03ba查询收束与撤销两棵树)记录八函数、分区模型和未执行项。P15 及 B03 数据结构正文完成本轮逐篇审查；下一项 B04 kref 问题入口与生命周期路线，全仓继续。

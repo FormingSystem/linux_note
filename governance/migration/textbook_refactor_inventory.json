@@ -5,6 +5,41 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/maple_tree/source_explanations/mm/memory.c.md",
+      "baseline_sha256": "06461b1c4e458e5a8f0e75c450916e124ae4e489dfe8cac6d6823a570a785df4",
+      "lines": 119,
+      "state": "validated",
+      "reason": "B03ba 撤销两棵树完整周期、固定八函数和失败边界；C++ 分区和明确下层替身的控制夹具通过，目标页表/通知/并发未执行，新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/maple_tree/source_explanations/mm/vma.h.md",
+      "baseline_sha256": "6ea52272cf6f56a31dd1290dca103893c731bdad5efecc8a63eb4924f33b6554",
+      "lines": 72,
+      "state": "validated",
+      "reason": "B03ba 撤销两棵树完整周期、固定八函数和失败边界；C++ 分区和明确下层替身的控制夹具通过，目标页表/通知/并发未执行，新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/maple_tree/source_explanations/mm/vma.c.md",
+      "baseline_sha256": "7df53e8ba2e753f3f9646f838370de6b6be38b8ff6be1dece627fee611c0b1c1",
+      "lines": 293,
+      "state": "validated",
+      "reason": "B03ba 撤销两棵树完整周期、固定八函数和失败边界；C++ 分区和明确下层替身的控制夹具通过，目标页表/通知/并发未执行，新人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/maple_tree/navigation/P10_撤销范围与临时索引.md",
+      "baseline_sha256": "b181a389d2806b0d3e955f48ed906a73ab72e9b1839cb4844ca28fd7ad66181e",
+      "lines": 33,
+      "state": "validated",
+      "reason": "B03ba 撤销两棵树完整周期、固定八函数和失败边界；C++ 分区和明确下层替身的控制夹具通过，目标页表/通知/并发未执行，新人工节点红色。"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P42_撤销映射中的两棵Maple树.md",
+      "baseline_sha256": "b37b8c269396700caea1124e07a4173e5eb37630827f2cf564d656e00b3138d6",
+      "lines": 220,
+      "state": "validated",
+      "reason": "B03ba 撤销两棵树完整周期、固定八函数和失败边界；C++ 分区和明确下层替身的控制夹具通过，目标页表/通知/并发未执行，新人工节点红色。"
+    },
+    {
       "path": "research/source_reading/maple_tree/navigation/P09_VMA游标与边界适配.md",
       "baseline_sha256": "2f86d16cb933618555e4a7540c47bb850bd7aab3830df95d30ceb8a77606935b",
       "lines": 34,
@@ -1832,8 +1867,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md",
       "baseline_sha256": "2de6e1b8f40fadcc9f3e5294a114f8902a20aed4c1a35cccc6ad8d7e0875baec",
       "lines": 1804,
-      "state": "pending",
-      "reason": "B03at 实际冷读并重构开篇与 15.1～15.3，唯一展开树字段、模式、七个函数及宏；15.10 仅去重同一 MM_MT_FLAGS 定义并精确回链，15.4/15.5 已冷读待修，其他正文仍待按单元审查，不升级整章状态。 B03au 完成 15.4 实际冷读并拆出完整 P38 节点/空洞单元，原标题保留桥接；15.5 以后仍待继续。 B03av 完成 15.5 编码单元与模型，15.6 以后仍待按状态周期继续。 B03aw 完成 15.6 游标周期并拆 P39，15.7 八段查询已冷读、保留正确比较并修正快速点查临时状态承诺；15.8 以后仍 pending。 B03ax 完成 15.8 并拆 P40：覆盖/条件插入、点查/向后查、整段擦除/局部清空、内部锁与回绕；15.9 以后仍 pending。 B03ay 完成 15.9 分层职责并新增 P41 写入资源协议，两处 vma_find body 统一源码入口；15.10/15.11 及后续仍 pending。 B03az 完成 15.10/15.11，共享地址空间与局部游标、初始化差异、包装边界及错误映射实际核对并新增 C 整数实验；15.12～15.17 仍 pending。"
+      "state": "validated",
+      "reason": "B03at 实际冷读并重构开篇与 15.1～15.3，唯一展开树字段、模式、七个函数及宏；15.10 仅去重同一 MM_MT_FLAGS 定义并精确回链，15.4/15.5 已冷读待修，其他正文仍待按单元审查，不升级整章状态。 B03au 完成 15.4 实际冷读并拆出完整 P38 节点/空洞单元，原标题保留桥接；15.5 以后仍待继续。 B03av 完成 15.5 编码单元与模型，15.6 以后仍待按状态周期继续。 B03aw 完成 15.6 游标周期并拆 P39，15.7 八段查询已冷读、保留正确比较并修正快速点查临时状态承诺；15.8 以后仍 pending。 B03ax 完成 15.8 并拆 P40：覆盖/条件插入、点查/向后查、整段擦除/局部清空、内部锁与回绕；15.9 以后仍 pending。 B03ay 完成 15.9 分层职责并新增 P41 写入资源协议，两处 vma_find body 统一源码入口；15.10/15.11 及后续仍 pending。 B03az 完成 15.10/15.11，共享地址空间与局部游标、初始化差异、包装边界及错误映射实际核对并新增 C 整数实验；15.12～15.17 仍 pending。 B03ba 完成 15.12～15.17 最后单元：五查询例子和前驱双输出冷读保留，撤销两树移 P42，职责总图与未展开边界真实收束；至此全章本轮审查完成，既有人工状态不升级，目标内核运行未执行。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/大纲.md",

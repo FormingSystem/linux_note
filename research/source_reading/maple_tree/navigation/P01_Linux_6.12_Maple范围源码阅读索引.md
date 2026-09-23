@@ -25,6 +25,7 @@ domains:
 | --- | --- |
 | 容量、叶/非叶槽、union 与空洞怎样连接 | [节点布局导读](P04_节点布局与范围分区.md#4.2_按问题读取布局)，进入[固定布局](../source_explanations/include/linux/maple_tree.h.md#1.6_构建条件决定数组容量)和[缓存初始化](../source_explanations/lib/maple_tree.c.md#1.3_节点缓存按实际结构大小申请对齐) |
 | 同样低位在不同字段中如何解释 | [字段编码导读](P05_字段编码与状态分工.md#5.2_同一数值先按存储位置解读)与[节点编码](../source_explanations/lib/maple_tree.c.md#1.4_编码节点保存类型而不是父槽) |
+| 撤销主索引之后如何继续处理对象 | [撤销范围模块](P10_撤销范围与临时索引.md#10.2_两棵树沿S0到S5分工)，关联[对齐入口](../source_explanations/mm/vma.c.md#1.2_对齐撤销建立临时树)、[恢复](../source_explanations/mm/vma.h.md#1.3_恢复分离标记而非逆转全部拆分)与[页表清理](../source_explanations/mm/memory.c.md#1.3_释放页表与上界哨兵) |
 | VMA 游标怎样适配地址空间 | [VMA 适配模块](P09_VMA游标与边界适配.md#9.2_从地址空间到局部游标)，进入[初始化](../source_explanations/include/linux/mm_types.h.md#1.3_VMA游标与两种初始化)、[方向](../source_explanations/include/linux/mm.h.md#1.5_VMA方向与范围遍历)与[写入包装](../source_explanations/include/linux/mm.h.md#1.6_VMA写入请求与资源退出) |
 | 写入资源与锁怎样衔接 | [资源模块](P08_写入准备与资源清理.md#8.2_沿S0到S5追踪资源)，进入[准备与兑现](../source_explanations/lib/maple_tree.c.md#1.13_高级写入与准备兑现)、[补分配](../source_explanations/lib/maple_tree.c.md#1.14_节点准备与补分配锁边界)与[清理](../source_explanations/lib/maple_tree.c.md#1.15_资源清理与批量准备) |
 | 普通接口怎样处理范围与返回值 | [普通接口模块](P07_普通接口与范围契约.md#7.2_沿一次调用划分责任)，对应[点查](../source_explanations/lib/maple_tree.c.md#1.10_普通点查与读侧边界)、[写入](../source_explanations/lib/maple_tree.c.md#1.11_普通写入与整段擦除)及[find](../source_explanations/lib/maple_tree.c.md#1.12_向后查找与回绕终止) |
