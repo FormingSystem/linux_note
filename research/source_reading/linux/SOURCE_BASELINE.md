@@ -622,3 +622,9 @@ ARM 前端通过，348 个消费头文件的非生成部分与固定提交无差
 新增只读固定对象 mm/vma.c（blob c9ddc06b672a5235eb7365d2197856537ce6d143）与 mm/vma.h（blob d58068c0ff2eaa38161c5bac2f27ee145ec1a2f6）；mm/memory.c 沿 1.28。官方仓库和固定提交不变。八函数按[撤销模块](../maple_tree/navigation/P10_撤销范围与临时索引.md#10.2_两棵树沿S0到S5分工)在三份实现文档完整展开，init_vma_munmap 的 CONFIG_MMU 条件说明保留。
 
 对齐撤销以地址主树与序号临时树分工；gather 标记与清主树不是同一步，reattach 不逆转全部 split。clear_ptes 两次从序号一继续，首项由参数交付；free_pgtables 明确允许 ceiling=0 哨兵，不能推广到普通空 VMA 范围。对照 mm/mmap.c 的 exit_mmap 使用地址树状态，避免反向泛化。C++ 分区实际检验 E/F/G 与小域归属，固定 clear_ptes 的下层替身夹具验证控制顺序；未运行目标 munmap、通知、页表、TLB、失败回滚或并发。
+
+## 1.44\_引用责任的契约核对
+
+B04a 重新逐字核对固定提交的 include/linux/kref.h（blob d32e21a2538c292452db99b915b1bb6c3ab15e53）和 Documentation/core-api/kref.rst（blob c61eea6f1bf2bd76490718430130fe3501e2f7e8），本仓库副本按 LF 归一后相同。证据支持初始一份、已有有效引用下增加、交付前建立接收方责任、最后归还调用 release，以及 lookup 需要另行保护的契约；未使用本地实验提交。
+
+本批[P01 的责任模型](../../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md#1.6.1_运行完整的责任交接模型)不展开源码函数体，具体结构及唯一实现讲解仍由后续源码批次独立审查。完整 C 模型只验证串行责任闭合，不是 kref/refcount_t 的并发、内存序或饱和实现测试；不改变既有源码配置结论。

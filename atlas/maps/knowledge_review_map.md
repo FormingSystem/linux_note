@@ -580,6 +580,7 @@ mindmap-plugin: basic
     - 哈希表
         - 🔴 [哈希桶与位宽实验材料](../../labs/kernel/hash_table/materials/README.md)
     - 普通树
+        - 🔴 **未校正** [对象生命周期实验材料](../../labs/kernel/object_lifetime/materials/README.md)
         - 🔴 [树结构实验材料](../../labs/kernel/tree_basics/materials/README.md)
     - 链表
         - 🔴 [链表教材实验材料](../../labs/kernel/linked_list/materials/README.md)

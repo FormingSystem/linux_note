@@ -12,364 +12,279 @@ domains:
 
 ## 1.1\_本章主线
 
-学习 `kref` 不能从“计数器怎么加一、减一”开始。
+前面的数据结构让我们能够把对象放入链表、哈希表或树，再找到它。现在留下一个问题：**从容器中找到一个地址之后，谁保证那块内存仍属于这个对象？** 本章从 C 指针和 `malloc/free` 的基础出发，先建立使用期限与归还责任，再讨论 Linux 的 `kref`；不用记住后面所有接口才能理解这里的问题。
 
-如果只把 `kref` 理解成：
+设创建者分配一个请求，先在当前函数中计算，再交给一个稍后运行的处理者。同步调用时，创建者等函数返回后才释放请求，调用栈已经给出了明确的先后关系。改成异步处理后，提交函数返回并不表示处理结束：创建者可能先退出，处理者以后才访问请求。原先“返回以后就能释放”的规则因此失效。
 
-```c
-ref++;
-ref--;
-if (ref == 0)
-	kfree(refobj);
-```
+可以让创建者一直等待处理完成。这在必须同步取得结果的场景中很合适，但会把创建者的结束时间绑在处理者身上；有多个独立使用者时，等待协议还要准确收集每一方的结束。引用计数选择另一种分工：每一份独立使用权都承担一份归还责任，最后归还者触发回收。`kref` 是 Linux 给自定义内核对象使用的这类生命周期工具。
 
-那就已经偏了。
-
-`kref` 真正解决的问题是：
-
-> **一个内核对象被多个执行路径共享时，如何保证对象在最后一个使用者退出之前不会被释放。**
-
-也就是说，`kref` 解决的是 **对象生命周期问题**。
-
-它不负责：
-
-```text
-字段是否被并发修改
-链表是否被并发破坏
-状态机是否一致
-回调是否重入
-锁顺序是否正确
-```
-
-这些仍然要靠：
-
-```text
-mutex
-spinlock
-RCU
-seqlock
-atomic
-状态机设计
-```
-
-来处理。
-
-本章要先建立一个核心判断：
-
-```text
-只要对象会被多个地方保存、传递、排队、回调或异步使用，
-就必须明确：谁持有引用，谁释放引用。
-```
-
-这就是 `kref` 的问题域。
+这个工具不替我们决定字段怎样互斥、容器怎样更新、设备是否在线，也不自动阻止回调重入或锁顺序错误。后半章继续划清这些边界；眼前先解决一件事：**对象何时可以结束，而不是谁可以同时修改它。**
 
 ------
 
 ## 1.2\_裸指针共享为什么危险
 
-在 C 语言里，指针本身不带所有权语义。
+`struct my_refobj *refobj` 保存一个地址。复制这个变量不会通知分配器“又多了一个使用者”，也不会使 `free()` 或 `kfree()` 自动推迟。所谓裸指针，是指仅有地址、没有随之兑现的所有权保证；并不是说 C 指针天生不可共享。
 
-例如：
+先把原来正确的同步过程和异步变化放在一起看：
 
-```c
-struct my_refobj *refobj;
-```
+| 时刻 | 同步调用，有外层保活 | 只复制地址，未建立独立保活 |
+| --- | --- | --- |
+| T0 | 创建者分配对象 | 创建者分配对象 |
+| T1 | 被调用函数借用对象，创建者尚未返回 | 创建者把地址放入待处理槽 |
+| T2 | 被调用函数结束，停止访问 | 创建者释放对象，处理者尚未读取 |
+| T3 | 创建者释放对象 | 处理者读出旧地址并访问字段 |
 
-这个变量只能说明：
+左边的指针传递没有问题，因为最后一次使用先于释放。右边失败的原因不是“调用了另一个函数”，而是 **原来的保护期限已经结束，新的使用期限却没有被任何协议覆盖**。
 
-```text
-refobj 指向某个对象地址
-```
-
-但它不能说明：
-
-```text
-这个对象现在是否还活着
-当前代码是否拥有使用它的权利
-别的线程是否可能马上释放它
-这个对象是否已经进入销毁流程
-```
-
-所以，在内核里共享裸指针非常危险。
-
-看一个简化模型：
-
-```c
-struct my_refobj {
-	int state;
-};
-
-void thread_a(struct my_refobj *refobj)
-{
-	refobj->state = 1;
-}
-
-void thread_b(struct my_refobj *refobj)
-{
-	kfree(refobj);
-}
-```
-
-如果两个线程同时运行：
-
-```text
-线程 A 正准备访问 refobj->state
-线程 B 释放了 refobj
-线程 A 继续访问 refobj->state
-```
-
-那么线程 A 就会访问已经释放的内存。
-
-这就是典型的：
-
-```text
-use-after-free
-```
-
-也就是 UAF。
+在内核中，如果执行路径 A 正要写 `refobj->state`，执行路径 B 同时 `kfree(refobj)`，仅给字段写操作加一个与 B 无关的锁也不够：B 没有参与这把锁的协议，仍可先释放整块对象。我们要协调的是释放与所有有效使用者，而不只是两个字段访问。
 
 ------
 
 ## 1.3\_use-after-free\_的本质
 
-UAF 不是“指针变量消失了”。
+释放后使用称为 **use-after-free（UAF）**。它不是指保存地址的变量消失了，而是原对象已经结束，代码仍试图通过旧地址访问它。在 C 语言中，这类访问没有合法语义，不能把一次“似乎还读到了原值”当作安全证据。
 
-指针变量还在。
-
-真正的问题是：
-
-```text
-指针指向的对象生命周期已经结束，
-但仍然有人继续通过旧指针访问它。
-```
-
-也就是说：
-
-```c
-refobj
-```
-
-这个变量本身仍然有值。
-
-但是这个值指向的内存已经不再属于原对象。
-
-它可能已经被：
-
-```text
-释放给 slab
-重新分配给别的对象
-写入 poison 值
-被 KASAN 标记为不可访问
-```
-
-所以 UAF 的危险不是单纯崩溃，而是：
-
-```text
-读到错误数据
-写坏别的对象
-触发随机崩溃
-造成安全漏洞
-破坏内核状态
-```
-
-可以用下面的时序理解：
+内核释放后的内存可能回到 slab 对象分配器，也可能再次分配给其他对象；调试配置可能填充用于发现误用的 poison 标记，或者由内核地址检查器 KASAN 标记访问非法。这些情况解释了为什么错误可能表现为立即告警、随机崩溃，也可能表现为悄悄写坏另一对象的数据。是否出现某一种表现取决于分配与调试配置，错误本身不以告警为成立条件。
 
 ```mermaid
 sequenceDiagram
-	participant A as 执行路径 A
-	participant B as 执行路径 B
-	participant O as my_refobj
-
-	A->>O: 保存裸指针 refobj
-	B->>O: kfree(refobj)
-	Note over O: 对象生命周期结束
-	A->>O: refobj->state = 1
-	Note over A,O: use-after-free
+    autonumber
+    participant A as 执行路径 A
+    participant B as 执行路径 B
+    participant O as my_refobj
+    A->>O: 保存裸指针 refobj
+    B->>O: kfree(refobj)
+    Note over O: 对象生命周期结束
+    A->>O: refobj->state = 1
+    Note over A,O: use-after-free
 ```
 
-这里的问题不是 A 没有指针。
-
-A 有指针。
-
-问题是 A 没有 **有效引用**。
+这是一条错误时序的说明图，本章实验不会故意执行这次非法访问。要消除它，A 必须在原有保活保证消失之前获得独立引用，或者始终在另一个有效持有者提供的借用期限内完成访问。
 
 ------
 
 ## 1.4\_kref\_解决的不是\_有没有指针\_而是\_有没有引用
 
-这是理解 `kref` 的第一道门槛。
+这里的“持有一个引用”是一份协议责任：当前路径可以在约定的范围内继续使用对象，并且必须在结束时恰好归还这一份责任。对象内部的计数汇总尚未归还的份额；它不知道保存了多少个地址变量，也不知道这些变量属于哪个线程。
 
-裸指针表示：
+| 动作 | 是否新增归还责任 | 原因 |
+| --- | --- | --- |
+| 在同一持有者内令 `alias = refobj` | 否 | 只是另一种访问已有对象的写法 |
+| 同步调用 helper，返回前不保留地址 | 通常否 | 调用者的有效引用覆盖整段借用 |
+| 交给可在调用者退出后运行的 worker | 需要独立责任，或转交原责任 | 使用期限已经脱离原调用栈 |
+| 放入全局表或队列 | 由容器协议明确 | 有的容器拥有引用，有的只索引由其他机制保活的对象 |
+| 同一路径分别持有两项需要独立归还的权利 | 是，两份 | 计数不等于线程数量 |
 
-```text
-我知道对象地址
-```
+“长期使用”因此不是某个毫秒门槛，而是 **使用权能否跨越现有保护期限**。一次很快的异步回调也需要闭合责任；一个持续很久但严格处于持有者保护内的同步调用，可以只借用。借用者不能把地址悄悄保存到全局变量，然后在借用结束后继续访问。
 
-引用表示：
-
-```text
-我有权保证对象在我使用期间不会被释放
-```
-
-这两个概念完全不同。
-
-错误理解：
-
-```text
-我手里有 refobj 指针，所以对象一定还在。
-```
-
-正确理解：
-
-```text
-我手里有 refobj 指针，并且我持有一个引用，所以对象在我 put 之前不能被释放。
-```
-
-所以 `kref` 的核心语义是：
-
-```text
-每一个长期使用对象的执行路径，都必须持有一个引用。
-```
-
-这里的“长期使用”不是指时间很长，而是指：
-
-```text
-对象指针被保存下来
-对象指针跨函数边界传递
-对象指针交给线程
-对象指针交给 workqueue
-对象指针放入队列
-对象指针放入全局容器
-对象指针等待异步回调使用
-```
-
-只要存在这种情况，就不能只靠裸指针。
+已有有效引用时，持有者可以在自己归还之前为另一方增加一份；只捡到一个可能已经失效的地址时，却不能先去增加其内部计数再试图证明它有效。后者连计数所在的内存都未获保护，是后文 lookup（按入口查找对象）必须解决的窗口。
 
 ------
 
 ## 1.5\_为什么引用计数可以解决生命周期问题
 
-引用计数的模型很简单：
+先在抽象模型中规定：对象创建时有一份责任；增加独立持有会增加一份；结束持有会归还一份；责任转交只换持有者，不增加总数。只要所有真实使用期限都被覆盖，计数归零就表示没有合法持有者仍需使用它。最后一方于是可以触发销毁。
 
-```text
-还有多少个执行路径正在持有这个对象？
+这不是单一的“计数状态机”。至少有两组相互约束的状态：对象中的计数，以及创建者、候选交付槽、待处理槽和处理者各自持有哪些责任。队列是否接收又是另一项状态。Linux 的 `kref` 不替我们保存持有者名单，**名单与计数一致** 是使用者协议要维持的不变量。
+
+```mermaid
+flowchart LR
+    P["创建者 producer.ptr"] -->|"已有一份；预留时增加 refs"| O["对象地址：refs 与 value"]
+    C["候选 candidate.ptr"] -->|"代表预留的一份"| O
+    C -->|"接收成功：清空候选并转交"| Q["待处理 pending.ptr"]
+    Q -->|"取出后清空槽；责任不增加"| W["处理者 worker.ptr"]
+    W -->|"读 value；完成后归还一份"| O
+    C -->|"接收失败：仍由提交方归还"| O
+    O -->|"最后归还：记录后释放"| R["对象外的 released 观察量"]
 ```
 
-如果计数大于 0：
+在同一个周期中，谁写什么状态可以逐项说明：
 
-```text
-说明至少还有一个持有者，对象不能释放。
+| 阶段 | 触发与写入者 | 状态变化与后续读取者 |
+| --- | --- | --- |
+| S0 创建 | 创建者成功分配 | 对象 `refs=1`，`producer.ptr` 指向它；创建者可同步借用 |
+| S1 预留 | 创建者尚持有效引用 | `refs:1→2`，候选槽取得新责任；原有引用仍有效 |
+| S2 交付 | 接收方接受或拒绝 | 接受时候选槽清空、待处理槽接收，计数仍为 2；拒绝时提交者归还候选，计数回到 1 |
+| S3 创建者结束 | 创建者清空自身槽并归还 | 成功分支剩 1；拒绝分支降到 0 并直接进入 S5 |
+| S4 处理 | worker 取走待处理槽责任 | 待处理槽清空，worker 读对象，完成后归还最后一份 |
+| S5 回收 | 使计数降到 0 的路径 | 执行最终清理；任何路径都不能继续通过旧地址取引用 |
+
+S3 与 S4 也可以交换：处理者很快结束时，创建者仍持有最后一份。重要的是引用先于交付成立，而不是强制谁最后运行。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant P as 创建者
+    participant Q as 接收槽
+    participant W as 处理者
+    participant O as 对象与计数
+    P->>O: S0 创建，refs=1
+    P->>O: S1 为候选增加一份，refs=2
+    P->>Q: S2 尝试交付候选责任
+    alt 接收成功
+        Q-->>P: 接收完成，候选清空
+        P->>O: S3 归还创建者引用，refs=1
+        Q->>W: S4 移出待处理责任，清空槽
+        W->>O: 访问后归还，refs=0
+        Note over W,O: S5 处理者触发最终清理
+    else 接收失败
+        Q-->>P: 不接收，候选仍归创建者
+        P->>O: S2 归还候选，refs=1
+        P->>O: S3 归还原引用，refs=0
+        Note over P,O: S5 创建者触发最终清理
+    end
 ```
 
-如果计数减到 0：
+真实并发实现还必须使队列发布和读取有同步保证；给计数加一并不会自动把对象字段、槽内容和通知一起安全地发布。这里先把责任顺序建立起来，再在后续锁与 RCU 章节落实通信机制。RCU 是读侧临界区与延迟回收协议，不是随意读写共享字段的通行证。
 
-```text
-说明没有任何持有者了，对象可以销毁。
-```
-
-所以 `kref` 的基本生命周期模型是：
-
-```text
-对象创建时：refcount = 1
-
-有人长期持有对象：refcount++
-
-有人不再使用对象：refcount--
-
-最后一个人释放对象：refcount 变成 0，调用 release
-```
-
-例如：
-
-```c
-struct my_refobj {
-	struct kref ref;
-	int state;
-};
-```
-
-对象创建时：
-
-```c
-refobj = kzalloc(sizeof(*refobj), GFP_KERNEL);
-kref_init(&refobj->ref);
-```
-
-此时：
-
-```c
-refcount = 1
-```
-
-这一个引用通常属于创建者。
-
-如果要把对象交给另一个执行路径长期使用：
-
-```c
-kref_get(&refobj->ref);
-pass_to_worker(refobj);
-```
-
-worker 用完以后：
-
-```c
-kref_put(&refobj->ref, my_refobj_release);
-```
-
-创建者自己不用了，也要：
-
-```c
-kref_put(&refobj->ref, my_refobj_release);
-```
-
-当最后一个 `kref_put()` 让计数归零时：
-
-```c
-my_refobj_release()
-```
-
-被调用，对象才真正释放。
+对应 Linux 时，`kref_init()` 建立初始引用，`kref_get()` 从已有有效持有增加一份，`kref_put()` 归还一份并在归零时调用 `release` 回调。`kref_init()` 必须在分配成功后调用。`release` 是最终清理的入口；简单对象可以在里面 `kfree()`，复杂对象可能继续安排延迟销毁，不能把所有回调都等同于立即释放内存。结构与源码关系留给[下一章](P02_源码入口与结构定义.md)。
 
 ------
 
 ## 1.6\_kref\_的核心问题不是加减\_而是所有权
 
-`kref_get()` 和 `kref_put()` 本身很简单。
+下面用同一组责任槽运行 S0～S5，再改变交付与结束顺序，检查计数能否始终对应尚未归还的份额。
 
-真正难的是判断：
+### 1.6.1\_运行完整的责任交接模型
 
-```text
-谁应该 get？
-谁应该 put？
-什么时候 get？
-什么时候 put？
-对象放入队列时引用归谁？
-对象从全局表查出来时是否已经有引用？
-release 回调里能不能继续访问全局结构？
+下面的 C11 程序把上面的周期落实为可执行步骤，文件为[reference_ownership.c](../../../../labs/kernel/object_lifetime/materials/reference_ownership.c)。`owner.ptr` 非空代表一份归还责任；只有 `share()` 可以复制一份责任，`move()` 只转交，`drop()` 清空槽并归还。普通结构赋值不能用来复制 `owner`，C 的类型系统不会替我们执行这条限制。
+
+这个程序是 **串行所有权模型**：没有内核工作队列，也没有原子操作；`submit()` 的布尔参数控制接收与拒绝。它验证责任如何闭合，不验证并发内存序、真实调度或 `refcount_t` 的饱和保护。为便于观察，两条主路径都按创建者先退出、处理者后执行的顺序运行。标准库宏 `UINT_MAX` 表示无符号整数上限，用于拒绝计数溢出；`EXIT_FAILURE` 和 `EXIT_SUCCESS` 分别表示进程失败和成功退出。
+
+```c
+#include <assert.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+struct object {
+    unsigned int refs;
+    int value;
+};
+
+/* 一个非空槽代表一份归还责任，禁止用结构赋值复制持有者。 */
+struct owner { struct object *ptr; };
+static unsigned int released;
+
+static bool create(struct owner *dst)
+{
+    assert(!dst->ptr);
+    struct object *obj = malloc(sizeof(*obj));
+    if (!obj)
+        return false;
+    *obj = (struct object){ .refs = 1, .value = 42 };
+    dst->ptr = obj;
+    return true;
+}
+
+static void share(struct owner *dst, const struct owner *src)
+{
+    assert(!dst->ptr && src->ptr);
+    assert(src->ptr->refs > 0 && src->ptr->refs < UINT_MAX);
+    ++src->ptr->refs;
+    dst->ptr = src->ptr;
+}
+
+static void move(struct owner *dst, struct owner *src)
+{
+    assert(!dst->ptr && src->ptr);
+    dst->ptr = src->ptr;
+    src->ptr = NULL; /* 责任转交，计数不变。 */
+}
+
+static void drop(struct owner *slot)
+{
+    assert(slot->ptr && slot->ptr->refs > 0);
+    struct object *obj = slot->ptr;
+    slot->ptr = NULL; /* 先结束本槽使用权，再执行可能的释放。 */
+    if (--obj->refs == 0) {
+        ++released; /* 观察量位于对象外，释放后不再读取对象。 */
+        free(obj);
+    }
+}
+
+static int borrow(const struct object *obj)
+{
+    return obj->value; /* 调用期间由调用者的现有引用保活。 */
+}
+
+/* 成功才接收候选引用；拒绝时候选仍归调用者。没有真实工作队列。 */
+static bool submit(struct owner *pending, struct owner *candidate,
+                   bool accept)
+{
+    assert(!pending->ptr && candidate->ptr);
+    if (!accept)
+        return false;
+    move(pending, candidate);
+    return true;
+}
+
+static void consume(struct owner *pending)
+{
+    struct owner worker = {0};
+    move(&worker, pending);
+    assert(borrow(worker.ptr) == 42);
+    drop(&worker);
+}
+
+int main(void)
+{
+    /* 两次运行分别观察提交成功与失败，均须恰好释放一次。 */
+    for (unsigned int accept = 0; accept < 2; ++accept) {
+        struct owner producer = {0}, candidate = {0}, pending = {0};
+        if (!create(&producer)) {
+            fputs("allocation failed\n", stderr);
+            return EXIT_FAILURE;
+        }
+        assert(borrow(producer.ptr) == 42 && producer.ptr->refs == 1);
+        share(&candidate, &producer);
+        assert(producer.ptr->refs == 2);
+        bool queued = submit(&pending, &candidate, accept != 0);
+        if (!queued)
+            drop(&candidate); /* 发布失败，归还预留的那一份。 */
+        drop(&producer);
+        if (queued) {
+            assert(pending.ptr->refs == 1);
+            consume(&pending);
+        }
+        assert(!producer.ptr && !candidate.ptr && !pending.ptr);
+        assert(released == accept + 1);
+        printf("accept=%u released=%u\n", accept, released);
+    }
+    return EXIT_SUCCESS;
+}
 ```
 
-所以学习 `kref` 时，重点不是背 API，而是画清楚所有权关系。
+在程序所在目录运行，保持断言开启：
 
-例如：
-
-```text
-创建者持有 1 个引用
-workqueue 持有 1 个引用
-异步回调持有 1 个引用
-全局容器是否持有引用，需要设计明确
+```bash
+cc -std=c11 -Wall -Wextra -Werror -O2 reference_ownership.c -o reference_ownership
+./reference_ownership
 ```
 
-只要所有权不清楚，即使代码里到处都是 `kref_get()` 和 `kref_put()`，仍然可能出错。
-
-常见错误包括：
+预期输出：
 
 ```text
-多 get 少 put：对象泄漏
-少 get 多 put：提前释放
-put 后继续访问：use-after-free
-handoff 后再 get：已经晚了
-lookup 后无保护 get：拿到的是悬挂指针
+accept=0 released=1
+accept=1 released=2
 ```
+
+`released` 是累计值，且放在对象之外。第一行说明拒绝时由创建者回收；第二行说明成功时由最后的处理者回收。我们没有在 `free()` 后读取对象计数，也没有用“这次没崩溃”证明安全。
+
+对照代码观察三处动作：`borrow()` 只读取值，调用前后责任数仍为 1；`share()` 把总数变为 2；成功 `submit()` 和 `consume()` 内的 `move()` 只更换责任所在槽。失败分支不会把责任交给任何 worker，因此必须由提交方归还预留份额。
+
+### 1.6.2\_改变交付方式再检查不变量
+
+1. 成功提交以后，先 `consume(&pending)`，再 `drop(&producer)`，最后回收者是谁？计数是否还能闭合？
+2. 如果创建者提交后不再需要对象，能否直接把 `producer` 交给 `submit()`，省掉 `share()`？拒绝时又由谁负责？
+3. 把成功交付后的 `candidate` 当作仍持有责任再 `drop()`，模型会怎样？如果漏掉拒绝时的 `drop(&candidate)`，又会怎样？
+4. 同步 helper 返回前不保存地址，却为每个指针别名都 `share()`，这是必要保证还是额外成本？
+
+第一题仍然正确：worker 把 2 减到 1，创建者最后归还触发回收；但是不能把只适用于原顺序的“待处理槽此时剩 1”断言照搬。第二题可以，成功时创建者槽已清空，不能再归还；失败时槽仍归创建者，必须自行结束使用并归还。第三题的重复归还会在本模型被空槽断言拒绝，遗漏归还则使计数无法到零；真实裸指针程序未必能在错误发生处立即告警。第四题只要借用期限可靠便不需要新增责任，额外 get/put 会增加计数更新成本，并扩大必须逐路径配对的范围。
+
+现在可以审查最初那组问题：谁应该 get、谁应该 put，队列或全局表是否拥有一份，交付失败由谁清理，lookup 期间谁保护地址，release 调用时哪些外部结构还活着。**多 get 少 put 会泄漏，少 get 多 put 会提前结束对象，归还后继续访问会 UAF；交付后才给接收者补引用以及无保护 lookup 后直接 get，都不能补回已经失去的寿命保证。** 这些错误不是多写几处加减就能修复，需要把每条路径的归还责任画清楚。
 
 ------
 

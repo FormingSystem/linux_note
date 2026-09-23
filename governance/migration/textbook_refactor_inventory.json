@@ -5,6 +5,13 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "labs/kernel/object_lifetime/materials/README.md",
+      "baseline_sha256": "00364a3ac179b85efaa83cc5a988945b6ff61cde02a85109d00c7d6d659411db",
+      "lines": 21,
+      "state": "validated",
+      "reason": "B04a 完整 C 责任模型及材料入口；六调度与两分配失败检查通过，明确未验证并发与目标内核，新人工节点红色。"
+    },
+    {
       "path": "research/source_reading/maple_tree/source_explanations/mm/memory.c.md",
       "baseline_sha256": "06461b1c4e458e5a8f0e75c450916e124ae4e489dfe8cac6d6823a570a785df4",
       "lines": 119,
@@ -2161,7 +2168,7 @@
       "baseline_sha256": "a0889e89114a07e8693e11118b3d2220f0215c42f50356cba86900fd2f3cc9fb",
       "lines": 1313,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04a 已冷读全篇并改写 1.1～1.6：同步借用、独立责任、交付失败与完整串行 C 模型；固定两份证据及六调度/两分配失败通过。1.7～1.20 访问边界和异步片段仍待修正，保持 pending 及原人工状态。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md",
