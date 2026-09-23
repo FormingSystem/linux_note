@@ -185,3 +185,9 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 [note_kref_hash.c](note_kref_hash.c)对应[P13哈希模板](../../../../knowledge/linux/object_lifetime/kref/P18_拥有型哈希与IRQ工程模板.md#18.1_拥有型哈希与IRQ上下文)，四桶hlist在同一spin_lock_irqsave范围内维护成员、状态与短统计。发布另取表份额，重复撤下不多消费，关闭后旧拥有者请求拒绝。Makefile已登记，无外部IRQ入口。
 
 七组顺序宿主检查与ARM前端通过；354头中342非生成头无固定提交差异。宿主锁/IRQ保存只是状态替身，不能作为真实中断或SMP证据；目标链接装卸、硬件和并发未执行。
+
+## 1.28\_工作分享与转交对照
+
+[note_kref_work_modes.c](note_kref_work_modes.c)对应[P20工作工程模板](../../../../knowledge/linux/object_lifetime/kref/P20_工作交付与关闭工程模板.md#20.1_先选择分享还是转交)。transfer=0为worker另取候选，transfer=1只在投递成功时交出创建者份额；同一worker仅put一次，模块退出等待唯一工作返回。Makefile已登记，无重复投递或外部生产者。
+
+十例宿主检查和ARM前端通过，354头中342非生成源码无固定提交差异；工作调度为顺序替身，包含回调在提交返回前完成的安排。目标装卸、真实并发与模块退出竞争未执行。
