@@ -978,3 +978,7 @@ B04cn沿固定device/kobject公开引用、device_unbind_cleanup与devres逆序�
 ## 1.108\_并发先修与锁配置重核
 
 B05a以固定dfaf2136的Documentation/locking/locktypes.rst核对锁类别、可睡任务上下文、本地约束与实时映射；入口见[锁规则导读](../locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.8_执行路径先修与锁类别规则)。本轮只读.config确认为PREEMPT_NONE/TINY_RCU、非SMP，未启用owner spinning；纠正锁总索引、两篇模块导读和正文P04此前的当前SMP配置表述，不因此把其余正文标为整篇验收。交错程序是单线程抽象枚举，不是Linux锁、调度、中断或RT运行证据。
+
+## 1.109\_消息发布入门证据
+
+B05b只读固定dfaf2136的Documentation/memory-barriers.txt，并核对已保存rwonce、通用屏障与ARM屏障原文；[内存顺序导读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.14_配套入口)关联M0～M3阅读任务。宿主C++17实验完成100轮独立发布，依据标准原子契约，不代表Linux内核宏、LKMM、SMP、目标ARM或实时分支运行；当前UP配置不变。

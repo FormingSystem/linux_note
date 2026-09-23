@@ -202,6 +202,8 @@ ONCE/屏障源码定义
 
 ## 1.14\_配套入口
 
+[消息发布入门](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P01_READ_WRITE_ONCE_与_SMP_内存顺序原语.md#1.2.1_从准备到使用的四个阶段)用M0～M3说明发布地址、取得来源、单写者与寿命。其C++17材料只验证标准原子示例在宿主运行；本导读的Linux关系与模型判定仍来自固定提交，不能用100轮标准线程实验替代herd7。本轮核对的Documentation/memory-barriers.txt中ACQUIRE/RELEASE、编译器屏障与ONCE说明支持边界划分；实现入口仍为1.3，不新增函数展开。
+
 - [READ_ONCE 编译器访问实验](../../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)
 - [访问宽度、对齐与 ARM 反汇编实验](../../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md)
 - [LKMM Litmus 消息传递与屏障实验](../../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md)

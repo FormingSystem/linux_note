@@ -2923,8 +2923,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P01_READ_WRITE_ONCE_与_SMP_内存顺序原语.md",
       "baseline_sha256": "9092c6a7fa4dcc76940fd03e48ea458ae60fe9c2f4cbae89d8c60de702fc9cee",
       "lines": 159,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05b冷读保留九节知识边界，以M0到M3和完整C++17发布实验补足因果推导；100轮宿主执行通过，不代表Linux、LKMM或硬件验证，人工状态不变。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md",
