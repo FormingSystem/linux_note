@@ -2392,7 +2392,7 @@
       "baseline_sha256": "9329122f628aa14ae1bf5f4a7121e0151059ebaac2c1f3656beca77d95bf43eb",
       "lines": 2164,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04as冷读全2164行，完成12.1～12.2诊断入口，六轨迹两变体C模型与四份固定工具文档核对；区分责任错误、活动份额、日志缺失及检查器覆盖。12.3以后继续，pending。 B04at完成12.3.1～12.3.2共享/转交/借用与文件最终release，校正pending/running、close与file实例、辅助计数和观察终点；三组正文回调C夹具通过，固定四文件核对。12.3.3以后继续，pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04as冷读全2164行，完成12.1～12.2诊断入口，六轨迹两变体C模型与四份固定工具文档核对；区分责任错误、活动份额、日志缺失及检查器覆盖。12.3以后继续，pending。 B04at完成12.3.1～12.3.2共享/转交/借用与文件最终release，校正pending/running、close与file实例、辅助计数和观察终点；三组正文回调C夹具通过，固定四文件核对。12.3.3以后继续，pending。 B04au完成12.3.3～12.3.4候选失败回滚、成功交付、转交后多put及put后访问，四组固定引用C夹具验证错误例无告警却提前release。12.4以后继续，pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P13_工程模板.md",

@@ -23,6 +23,7 @@ source_version: "6.12.20"
 | 正常归零与异常饱和怎样分流 | [模块边界](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [增减 helper](../source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支) → [告警收敛](../source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和) |
 | 最后减少与容器锁怎样交接 | [锁交接模块](P04_最后归还与锁交接导读.md#4.2_把最后减少留在锁内) → [快路径与重查](../source_explanations/lib/refcount.c.md#1.2_快路径保留最后一份) → [kref 回调入口](../source_explanations/include/linux/kref.h.md#1.8_归零时把锁交给回调) |
 | 容器接口自己的锁覆盖到哪里 | [整数索引模块](P06_整数索引与拥有型查找导读.md#6.2_把容器动作接到引用周期) → XArray 查询/删除包装与 IDR 编号初始化 |
+| 两次普通put无告警能否证明责任正确 | [候选与原份额模块](P02_普通引用与归零回调导读.md#2.18_正确减法也可能消费错误份额) → [归零与异常条件](../source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支) |
 | 异步路径都要get或每次close都要put吗 | [工作与文件责任模块](P02_普通引用与归零回调导读.md#2.17_工作与文件份额的诊断落点) → [普通归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | refcount没有告警是否说明交接正确 | [异常诊断模块](P02_普通引用与归零回调导读.md#2.16_异常报告与检查覆盖) → [异常饱和实现](../source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和) |
 | 私有会话怎样延长设备存储而不保留硬件业务 | [会话桥接模块](P08_device引用与资源退出导读.md#8.6_私有会话连接设备份额) → [取得归还入口](../source_explanations/drivers/base/core.c.md#1.2_设备取得与归还进入kobject)、[最终清理](../source_explanations/drivers/base/core.c.md#1.4_最终release按对象类型选择) |
