@@ -288,3 +288,5 @@ B04ag 完成[P09 9.4 最后归还](../../knowledge/linux/object_lifetime/kref/P0
 B04ah 完成[P09 9.5 调用上下文](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md#9.5.5_对象锁内只做决定_实际_put_尽量放到锁外)，明确中断参数不自动拥有引用、关闭标志不产生份额，以及嵌入锁、等待环与业务停止的分别保证。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.97_B04ah归还上下文与关闭票据)记录验证边界；继续 9.6～9.8，P09 仍 pending。
 
 B04ai 完成[P09 完整链表服务与章末收束](../../knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md#9.6.1_一个完整的锁_+_kref_对象模板)，全章进入作者 validated，人工状态不变。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.98_B04ai完整链表服务与锁组合收束)记录六组宿主检查和 ARM 前端边界；下一项 P10 RCU 组合。
+
+B04aj 冷读 P10 全文，完成[10.1～10.2 地址窗口与退休顺序](../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md#10.2.1_RCU_和_kref_分别保护什么)，以四条 C 轨迹纠正所有 RCU 查找都只能条件 get 的绝对化。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.99_B04ajRCU取得窗口与退休顺序)保留未收束项：实际模板的发布责任、重复移除、业务检查时点和子资源规则。P10 pending，下一项 10.3～10.4。

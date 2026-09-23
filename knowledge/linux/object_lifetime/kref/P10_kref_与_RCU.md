@@ -12,291 +12,272 @@ domains:
 
 ## 10.1\_本章导读\_RCU\_负责看到\_kref\_负责带走
 
-本章专门讲一种组合场景：
+上一章让查找者持集合锁，完成定位和取得引用后才解锁。只要成员拥有的那份引用也在这把锁下撤销，查找者就能证明地址有效且计数为正。这套协议简单可靠；对象少、查找不频繁，或集合锁没有成为等待点时，可以继续使用。
 
-```text
-对象挂在 RCU 保护的可查找结构中；
-读侧通过 RCU 无锁查找对象；
-查到对象后，用 kref_get_unless_zero() 尝试取得长期引用；
-成功后离开 RCU 读侧临界区；
-后续使用对象依赖 kref，而不是继续依赖 RCU。
-```
+现在考虑读多写少的配置表：每次请求都要按编号查找，更新者偶尔撤下一项。集合锁仍会把不同读者的定位阶段串起来；读者 A 占着锁时，B 即使只读取另一个编号，也必须等待。把读侧锁直接删掉又不行：A 刚读到节点地址，更新者就可能摘链并释放，A 随后的 get 将访问已经失效的计数器。
 
-本章不展开 RCU 全体系，只讲 kref 需要理解的交界面。RCU 的问题推导、硬件基础、CPU／任务通知机制、宽限期实现和通用 API 统一以[RCU 专题](../../synchronization_and_asynchrony/synchronization/rcu/大纲.md)为准；这里保留的是“如何在 RCU lookup 窗口内安全取得第一份长期引用”这一对象生命期专题独有的问题。
+**RCU（Read-Copy Update，读—复制—更新）** 用另一套发布、读取与回收协议覆盖这个临时地址窗口。这里先回顾它的公共保证：更新者撤销入口后，延迟回收必须跨过相关旧读侧临界区；这个等待边界称为 **宽限期（grace period，GP）**。`rcu_read_lock()` 不会为随便一个裸指针施加魔法保护。对象必须沿匹配的 RCU 入口读取，更新者必须按约定保留旧存储，保证才成立。
 
-本章固定讨论 **RCU 查找入口直接指向同一个 kref 对象** 的模型。若一代旧照由版本根和多个独立 kref 数据块组成，版本根通常要保持全部块引用直到自己的 GP 完成，再逐块 put；该所有权拓扑与代码模板统一见[RCU、kref 与复合对象生命周期](../../synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md)，不能把本章的单对象顺序直接套到复合快照。
+本章只解决配置对象被查到后，还要离开读区继续使用的情况。RCU 不会因这个读者退出而自动新增一份引用，因此要在地址仍受保护时接到 kref。完整 RCU 的宽限期通信、CPU/任务状态与实现差异仍沿[RCU 专题](../../synchronization_and_asynchrony/synchronization/rcu/大纲.md)阅读；这里不把后台实现假装成对象自身一个等待计数。
 
-本章主线是：
+先选定所有权：入口直接指向同一个内嵌 kref 的对象，发布成功后入口拥有一份；撤下立即归还入口份额；最后归还触发 release，由 release 安排 RCU 延迟回收。下文把它称为 **先归零、再过 GP** 协议。它允许旧读者看到计数已经归零但存储尚在的对象，所以取得时要处理失败。
 
-```text
-RCU 保护 lookup 窗口；
-kref 保护 lookup 成功之后的对象生命周期；
-状态机/锁保护对象是否逻辑可用和字段一致性；
-kfree_rcu()/call_rcu()/synchronize_rcu() 保护最终内存回收。
-```
+还存在另一种合法协议：入口撤下后，那一份引用继续保留到 GP 完成，随后才 put；此时相关旧读者在读区内可以由这份引用证明正计数。两者的差异来自 **谁把哪一份保留到何时**，不能概括为“凡 RCU 都只能使用条件 get”。本章先建立第一种，第二种只用于边界比较；完整替代及复合版本根的责任见[所有权拓扑选择](../../synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md#21.1_先按分配与所有权拓扑选模板)。
 
-Linux kref 文档明确把 `kref_get_unless_zero()` 放到 RCU lookup 场景里使用，并强调它必须和查找动作处在同一个受保护临界区内，否则可能访问已经释放的内存；同时，`kref_get_unless_zero()` 的返回值必须检查。([Linux Kernel 文档](https://docs.kernel.org/core-api/kref.html?utm_source=chatgpt.com))
+读者、更新者与回收者操作的不是同一个状态机字段，而是几组相互约束的状态：
 
-整体关系可以先看成下面这张图：
+| 阶段 | 状态落点、写入者和读取者 | 退出条件 |
+| --- | --- | --- |
+| S0 私有创建 | 创建者初始化 id、node、ref，尚无共享入口 | 字段和初始责任准备好 |
+| S1 发布 | 更新者在更新锁下接入链；入口取得约定份额，读者按 RCU 遍历读取节点 | 读者可能保存旧地址 |
+| S2 取得 | 读者仍在读区，条件原子增加对象 ref；更新者可并发推进 S3 | 成功带走一份，失败不带走 |
+| S3 撤下 | 更新者在更新锁下摘链，再归还入口份额；旧读者本地地址不会被远程清空 | 后续按引用数进入 S4，或等旧持有者归还 |
+| S4 归零 | 最后一份 put 同步调用 release，模块安排对象 rcu_head 的延迟回收 | 对象仍须供旧临时读者完成受允许访问 |
+| S5 回收 | RCU 后端完成所需宽限期，回收路径释放存储 | 此后没有旧读区或拥有者可访问 |
+
+S2 与 S3/S4 可以交错；表格不表示所有线程依次经过一条线性状态机。业务许可又是单独一组状态，后文才增加，不能由 ref 或成员关系代替。
 
 ```mermaid
-flowchart TD
-    A["RCU 可见集合<br/>list / hlist / hash / xarray"] --> B["rcu_read_lock"]
-    B --> C["lookup 得到临时 obj 指针"]
-    C --> D{"kref_get_unless_zero<br/>是否成功"}
-    D -- "失败" --> E["不能使用 obj<br/>返回 NULL"]
-    D -- "成功" --> F["取得长期引用"]
-    F --> G["rcu_read_unlock"]
-    G --> H["锁外 / RCU 外继续使用对象"]
-    H --> I["kref_put"]
-    I --> J{"是否最后一个引用"}
-    J -- "否" --> K["对象继续存在"]
-    J -- "是" --> L["release"]
-    L --> M["kfree_rcu / call_rcu<br/>延迟释放内存"]
+flowchart LR
+    U[更新者] -->|S1与S3写入，更新锁串行化| N[共享链头与对象node]
+    R[查找读者] -->|S1按RCU遍历读取| N
+    N -->|得到临时地址，仍在读区| R
+    R -->|S2条件增加| C[对象ref.refcount.refs]
+    U -->|S3归还入口份额| C
+    C -->|S4最后减少者同步进入release| H[对象rcu_head与延迟回收队列]
+    R -->|结束旧读区，参与后端规定的进度证明| B[RCU后端的宽限期状态]
+    B -->|S5满足回收边界后执行| H
+    H -->|模块选择的回收动作| F[释放对象存储]
 ```
 
-一句话：
+这里的读区退出箭头不表示每次 unlock 都发送消息。当前固定基线是 Tiny RCU，其他配置可能使用 Tree；具体状态地址、静止态报告和回调调度先从[RCU 源码总索引](../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.2_先建立源码分类坐标)选择后端。本章仅依赖公共保护边界，不把双 CPU 示意当作当前单核配置的实测。
 
-```text
-RCU 让你安全地“看到对象”；
-kref 让你安全地“带走对象”。
-```
-
-------
+条件引用的固定证据先从[kref 源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入，再看[条件窗口模块](../../../../research/source_reading/kref/navigation/P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有)。NXP 官方固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0 的 Documentation/core-api/kref.rst 要求条件取得与查找处于同一保护区，也要求包含 kref 的内存跨过相应宽限期；本地实验提交不作证据。
 
 ## 10.2\_边界\_先分清谁保护什么
 
 ### 10.2.1\_RCU\_和\_kref\_分别保护什么
 
-先把边界写死。
+先沿一次查询划出两段重叠窗口。读者从链中拿到地址时，尚未拥有引用；从条件取得成功开始，到最终 put 之前，才有自己的份额。取得动作必须落在第一段以内，两个窗口才不会断开。
 
-| 机制               | 保护内容                                       | 不保护内容                     |
-| ------------------ | ---------------------------------------------- | ------------------------------ |
-| RCU                | 读侧临界区内，旧对象内存不会被立即释放         | 不自动增加对象引用             |
-| kref               | 成功 get 之后，对象生命周期不会结束            | 不保护 lookup 指针本身是否有效 |
-| 锁                 | 集合修改、字段互斥、状态切换                   | 不自动延迟内存释放             |
-| 状态机             | 对象是否可用、是否正在删除、是否允许新用户进入 | 不自动管理引用计数             |
-| kfree_rcu/call_rcu | 对象内存延迟到 grace period 后释放             | 不表示对象逻辑上仍然可用       |
+| 机制及前提 | 提供的保证 | 仍需另外证明 |
+| --- | --- | --- |
+| 匹配的 RCU 读取与延迟回收协议 | 本次临时观察所需存储未被回收 | 计数是否正、字段是否允许访问 |
+| 正确取得且尚未归还的 kref 份额 | 本对象尚不能完成最终回收 | 当前仍在表中、业务仍接纳、字段同步 |
+| 更新锁 | 遵循它的写入者不会同时破坏链关系 | 无锁读者所需的节点发布及退休规则 |
+| 对象锁与业务检查 | 锁内检查和操作按应用协议一致 | 解锁以后状态不再变化并无保证 |
+| 延迟回收请求 | 回收动作受 GP 边界约束 | 请求排出不等于已经执行，也不自动等待长期引用 |
 
-RCU 文档把 RCU 描述为适合 read-mostly 场景的同步机制，读侧和更新侧可以并发；更新侧通常先移除旧指针，再等待旧读者结束后回收旧对象。([Linux Kernel 文档](https://docs.kernel.org/RCU/whatisRCU.html?utm_source=chatgpt.com))
+RCU 并不与 kref 自动互相通知。第一种协议是应用的 release 接到延迟回收；第二种协议是应用的 GP 回调归还保留份额。若两段代码各以为另一段负责保活，就会出现回收空隙；若各自安排一次独立 free，又会重复释放。
 
-所以不能写成：
+先比较三个关键瞬间，再运行一个完整 C 模型：
 
-```text
-RCU 已经保护了，所以不需要 kref。
-```
+| 同一个旧读者的观察点 | 先归零再过 GP | 发布份额跨 GP |
+| --- | --- | --- |
+| 保存地址后，更新者撤下入口 | 入口立即 put，可能归零 | 入口份额转为退休责任，暂不 put |
+| 旧读者仍在读区中取得 | 条件增加可能失败，存储仍在 | 保留份额保证正计数；仍须保护发布与地址 |
+| GP 后是否可以直接 free | 还须遵循最后归还排出的回收协议 | 先 put 保留份额；若有长期读者，仍不能 free |
 
-也不能写成：
-
-```text
-kref 已经保护了，所以不需要 RCU。
-```
-
-正确理解是：
-
-```text
-RCU 保护 get 之前的临时指针窗口；
-kref 保护 get 成功之后的长期使用窗口。
-```
-
-对应关系：
-
-```mermaid
-flowchart LR
-    A["从集合中查找 obj"] --> B["需要 RCU 或锁保护"]
-    B --> C["临时指针可解引用"]
-    C --> D["kref_get_unless_zero"]
-    D --> E["成功取得引用"]
-    E --> F["离开 RCU 后继续使用"]
-    F --> G["使用完成 kref_put"]
-```
-
-也可以压缩成一句工程规则：
-
-```text
-get 前靠 RCU/锁证明指针有效；
-get 后靠 kref 证明对象活着。
-```
-
-------
-
-### 10.2.2\_为什么\_RCU\_lookup\_不能直接\_kref\_get()
-
-先看错误写法：
+完整 [rcu_take_window.c](../../../../labs/kernel/object_lifetime/materials/rcu_take_window.c) 用观察者账本安排两种先后顺序。它既不实现 RCU，也不模拟原子指令；alive 只是账本状态，程序从未实际分配或解引用已释放内存。
 
 ```c
-static struct my_obj *my_obj_get_rcu_bad(int id)
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+
+/* 观察者账本；字段不是 Linux RCU 或 kref 的内部实现。 */
+enum retire_order { ZERO_THEN_GP, GP_THEN_PUT };
+struct object_model {
+    enum retire_order order;
+    unsigned int refs;
+    bool published, in_read, reader_owns, publish_owns;
+    bool gp_done, free_pending, alive;
+    unsigned int release_calls, free_calls;
+};
+
+static void reclaim(struct object_model *obj)
 {
-	struct my_obj *obj;
+    assert(obj->alive && obj->refs == 0 && obj->gp_done && !obj->in_read);
+    obj->alive = false;
+    ++obj->free_calls;
+}
 
-	rcu_read_lock();
+static void drop_ref(struct object_model *obj)
+{
+    assert(obj->alive && obj->refs > 0);
+    if (--obj->refs != 0)
+        return;
+    ++obj->release_calls;
+    if (obj->order == ZERO_THEN_GP)
+        obj->free_pending = true; /* 最后归还只提出延迟回收请求。 */
+    else
+        reclaim(obj); /* 发布份额跨过 GP，因此现在允许直接回收。 */
+}
 
-	list_for_each_entry_rcu(obj, &my_obj_list, node) {
-		if (obj->id == id) {
-			kref_get(&obj->ref);   /* 错误 */
-			rcu_read_unlock();
-			return obj;
-		}
-	}
+static void unpublish(struct object_model *obj)
+{
+    assert(obj->published && obj->publish_owns);
+    obj->published = false;
+    if (obj->order == ZERO_THEN_GP) {
+        obj->publish_owns = false;
+        drop_ref(obj);
+    }
+}
 
-	rcu_read_unlock();
-	return NULL;
+static bool try_take(struct object_model *obj)
+{
+    assert(obj->alive && obj->in_read && !obj->reader_owns);
+    if (obj->refs == 0)
+        return false;
+    ++obj->refs;
+    obj->reader_owns = true;
+    return true;
+}
+
+static bool finish_gp(struct object_model *obj)
+{
+    assert(!obj->published);
+    if (obj->in_read)
+        return false; /* 旧读者尚在，模拟器不能宣布本次 GP 完成。 */
+    if (obj->order == ZERO_THEN_GP && !obj->free_pending)
+        return false; /* 本模型此时尚未由 release 排出回收请求。 */
+    obj->gp_done = true;
+    if (obj->order == GP_THEN_PUT) {
+        assert(obj->publish_owns);
+        obj->publish_owns = false;
+        drop_ref(obj);
+    } else {
+        obj->free_pending = false;
+        reclaim(obj);
+    }
+    return true;
+}
+
+static void reader_put(struct object_model *obj)
+{
+    assert(obj->reader_owns && !obj->in_read);
+    obj->reader_owns = false;
+    drop_ref(obj);
+}
+
+static void run_case(enum retire_order order, bool reader_first)
+{
+    struct object_model obj = {
+        .order = order, .refs = 1, .published = true,
+        .in_read = true, .publish_owns = true, .alive = true
+    }; /* S1：入口已有一份，读者已在读区中保存旧地址。 */
+    bool taken;
+    if (reader_first) {
+        taken = try_take(&obj);
+        unpublish(&obj);
+    } else {
+        unpublish(&obj);
+        taken = try_take(&obj);
+    }
+    assert(taken == (reader_first || order == GP_THEN_PUT));
+    assert(obj.alive && !finish_gp(&obj));
+    printf("%s %s: taken=%d refs=%u alive=%d\n",
+           order == ZERO_THEN_GP ? "zero_then_gp" : "gp_then_put",
+           reader_first ? "reader_first" : "remove_first", taken, obj.refs, obj.alive);
+    obj.in_read = false; /* 模拟旧读者退出，不会自动归还长期份额。 */
+    if (order == GP_THEN_PUT) {
+        assert(finish_gp(&obj));
+        assert(obj.alive && obj.reader_owns && obj.refs == 1);
+        reader_put(&obj); /* GP 已完，长期使用者现在才退出。 */
+    } else {
+        if (taken)
+            reader_put(&obj);
+        assert(finish_gp(&obj));
+    }
+    assert(!obj.alive && !obj.publish_owns && !obj.reader_owns);
+    assert(obj.release_calls == 1 && obj.free_calls == 1);
+}
+
+int main(void)
+{
+    run_case(ZERO_THEN_GP, true);
+    run_case(ZERO_THEN_GP, false);
+    run_case(GP_THEN_PUT, true);
+    run_case(GP_THEN_PUT, false);
+    puts("four ownership orders passed");
+    return 0;
 }
 ```
 
-这个错误不在于：
+在仓库根目录编译运行，不定义 NDEBUG，因为断言参与轨迹执行：
 
-```text
-obj 内存一定已经被 kfree。
+```bash
+cc -std=c11 -Wall -Wextra -Werror -O2 \
+  labs/kernel/object_lifetime/materials/rcu_take_window.c -o /tmp/rcu_take_window
+/tmp/rcu_take_window
 ```
 
-RCU 下，内存可能还没被真正释放。
-
-真正的问题是：
+预测后再对照输出：
 
 ```text
-obj 的 refcount 可能已经变成 0；
-对象已经进入最后释放流程；
-此时不能用 kref_get() 把它从 0 加回 1。
+zero_then_gp reader_first: taken=1 refs=1 alive=1
+zero_then_gp remove_first: taken=0 refs=0 alive=1
+gp_then_put reader_first: taken=1 refs=2 alive=1
+gp_then_put remove_first: taken=1 refs=2 alive=1
+four ownership orders passed
 ```
 
-这叫对象复活。
+第二行最关键：refs 已为零，alive 仍为真，取得失败。第四行中入口已经撤下，refs 却仍有退休份额和读者份额共两份。随后模型先完成 GP、归还退休份额，再让长期读者归还，证明“GP 完成”也不是“所有引用结束”。四条轨迹最终各触发一次 release 和一次回收。
 
-并发时序如下：
+finish_gp 被旧读区挡住时返回 false，是模型显式安排的检查结果，不是实际 RCU API，也不是用一个全局读者计数解释内核实现。严格 C11 编译运行已通过；没有真实线程、内存序、内核 GP 调度、目标模块装卸或运行时间测量。
+
+### 10.2.2\_为什么\_RCU\_lookup\_不能直接\_kref\_get()
+
+本节标题限定在已经选定的“撤下立即 put、归零后延迟回收”协议。错误不在于地址必然失效，而在于地址有效与计数为正不再同时成立。
 
 ```mermaid
 sequenceDiagram
-    participant CPU0 as CPU0 reader
-    participant CPU1 as CPU1 remover
-
-    CPU0->>CPU0: rcu_read_lock()
-    CPU0->>CPU0: 从 RCU 链表看到 obj
-
-    CPU1->>CPU1: kref_put()
-    CPU1->>CPU1: refcount 变成 0
-    CPU1->>CPU1: 进入 release
-    CPU1->>CPU1: list_del_rcu / kfree_rcu
-
-    CPU0->>CPU0: kref_get(&obj->ref)
-    Note over CPU0: 错误：可能把 0 引用对象重新加引用
-
-    CPU0->>CPU0: rcu_read_unlock()
+    autonumber
+    participant R as 旧读者
+    participant U as 更新者
+    participant O as 对象计数与存储
+    participant Q as RCU回收路径
+    R->>O: S1 在读区内取得旧地址
+    alt 读者先取得
+        R->>O: S2 条件增加 1→2，获得一份
+        U->>O: S3 摘链并归还入口份额 2→1
+        R->>R: 退出读区，继续长期使用
+        R->>O: S4 最后归还 1→0
+        O->>Q: release 排出延迟回收
+    else 更新者先归零
+        U->>O: S3 摘链，入口归还 1→0
+        O->>Q: S4 release 排出延迟回收
+        R->>O: S2 条件取得看到0，返回失败
+        R->>R: 不带走对象，退出读区
+    end
+    Q->>O: S5 所需GP完成后回收
 ```
 
-这里 RCU 只能保证：
+读者若在第二条分支调用普通 get，就违反“已有正引用保护”的前提。固定 refcount 实现会检测从零增加并进入异常处理，不能把这写成一次合法的“0→1复活”；详见[普通增加与异常检测](../../../../research/source_reading/kref/source_explanations/include/linux/refcount.h.md#1.2_普通增加与异常检测)。诊断和饱和不是取得成功协议，也不能撤销已进入 release 的动作。
 
-```text
-CPU0 在 rcu_read_lock() 内临时看到的 obj 内存不会被立即释放。
-```
+如果改用发布份额跨 GP 的完整协议，相关旧读者始终受那一份保护，普通 get 可以成立；代价是退休份额与回调必须正确交接，而且查找成功仍不意味着业务许可。不能只替换一个 get 调用就宣称切换协议。继续使用条件 get 也不能修复错误的发布/回收顺序。
 
-它不能保证：
-
-```text
-obj->ref 仍然大于 0。
-```
-
-所以 RCU lookup 中不能裸 `kref_get()`。
-
-应该使用：
-
-```c
-if (!kref_get_unless_zero(&obj->ref))
-	return NULL;
-```
-
-并且必须检查返回值。Linux kref 文档也明确说明：不检查 `kref_get_unless_zero()` 的返回值是非法用法。([Linux Kernel 文档](https://docs.kernel.org/core-api/kref.html?utm_source=chatgpt.com))
-
-------
+相比上一章，读者不再为定位取得同一把集合锁，但仍要原子写共享计数；高频 get/put 仍可能使计数所在缓存行在 CPU 间迁移。更新侧又要保留退休内存并处理回收进度。只有读写比例、临界区内容及这些成本适合时，组合才有价值，不能从“读侧无集合锁”直接推出整体更快。
 
 ### 10.2.3\_kref\_get\_unless\_zero()\_解决什么\_不解决什么
 
-`kref_get_unless_zero()` 解决的是：
+条件取得回答“地址已经有效时，本次能否从尚未归零的计数取得一份”。精确实现见[kref 条件入口](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.7_有效地址上的条件取得)。它不检查对象是否仍登记、不建立字段发布可见性，也不替调用者检查业务门。异常饱和值下的非零返回更不能作为系统健康证明。
 
-```text
-如果 refcount 不是 0，就尝试加 1；
-如果 refcount 已经是 0，就失败。
-```
-
-它不解决：
-
-```text
-obj 指针本身是不是有效内存；
-obj 是否还在集合里；
-obj 是否正在 remove；
-obj 是否 dying；
-obj 的业务字段是否可以并发访问；
-obj 是否还能接受新的业务操作。
-```
-
-所以这个写法仍然是错的：
-
-```c
-obj = global_cached_obj;
-
-if (!kref_get_unless_zero(&obj->ref))
-	return NULL;
-```
-
-除非你能证明：
-
-```text
-global_cached_obj 指向的对象内存，在 get_unless_zero 执行期间不会被释放。
-```
-
-在 RCU lookup 中，这个证明来自：
+下面是接口片段，lookup_obj_rcu 表示后文才实现的匹配 RCU 查找，不是可直接编译的完整函数：
 
 ```c
 rcu_read_lock();
-
-/* 在 RCU 保护下拿到 obj 指针 */
 obj = lookup_obj_rcu(id);
-
-/* 仍然在 RCU 保护下尝试取得引用 */
 if (obj && kref_get_unless_zero(&obj->ref))
-	found = obj;
-
+    found = obj; /* 成功取得自己的份额，之后才允许带出读区。 */
 rcu_read_unlock();
 ```
 
-不能这样写：
+把条件取得移到 unlock 之后，会留下没有任何保护的空隙。更新者可能在这个空隙完成 GP 并回收，随后访问 obj->ref 本身就已非法；“除非为零”无法在访问无效地址之前替你探测。
 
-```c
-rcu_read_lock();
-obj = lookup_obj_rcu(id);
-rcu_read_unlock();
+失败也要分清期限：没有取得长期引用，因此不能把这个地址带出读区继续使用。它不意味着仍在正确读区内连遍历所需的链接都不能读取；这种临时读取能否成立取决于 RCU 链表保留旧路径的协议。业务字段或子资源则未必保留到同一时刻，不能由外壳仍在推出任意字段都可用。
 
-if (obj && kref_get_unless_zero(&obj->ref))   /* 错误 */
-	return obj;
-```
-
-原因是：
-
-```text
-rcu_read_unlock() 之后，obj 指针本身已经失去 RCU 存在性保护；
-此时再访问 obj->ref，可能已经是在访问释放后的内存。
-```
-
-流程边界如下：
-
-```mermaid
-flowchart TD
-    A["rcu_read_lock"] --> B["lookup 得到 obj"]
-    B --> C{"仍在 RCU 临界区内？"}
-    C -- "是" --> D["可以尝试 kref_get_unless_zero"]
-    C -- "否" --> E["不能访问 obj->ref"]
-    D --> F{"返回 true？"}
-    F -- "true" --> G["取得长期引用"]
-    F -- "false" --> H["对象不可用<br/>不能访问 obj"]
-```
-
-这一节的核心句：
-
-```text
-kref_get_unless_zero() 不是指针有效性证明；
-它只能在指针已经被 RCU/锁证明暂时有效之后使用。
-```
-
-------
+先完成两项练习。把模型中第二种协议的 GP 之后 reader_put 提前到 GP 之前，预测最终由谁触发 release；再尝试把第一种协议的 reclaim 提前到旧读区结束前，解释是哪条断言阻止它。只在账本上构造反例，不用真实释放后解引用演示错误。下一节把这些责任映射到对象字段、查找循环和业务检查。
 
 ## 10.3\_查找路径\_从对象模型到\_get\_模板
 

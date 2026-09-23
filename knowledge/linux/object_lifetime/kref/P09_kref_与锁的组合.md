@@ -2135,4 +2135,4 @@ put 都在本路径的对象锁和集合锁解除后执行。release 不再拿�
 
 上一篇：[lookup 场景与 kref_get_unless_zero()](P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.9_本章小结)。
 
-下一篇：[kref 与 RCU](P10_kref_与_RCU.md)。
+下一篇：[kref 与 RCU](P10_kref_与_RCU.md#10.1_本章导读_RCU_负责看到_kref_负责带走)。
