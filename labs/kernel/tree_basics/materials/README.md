@@ -124,3 +124,5 @@ domains: [c_language, data_structures]
 [bplus_leaf_pages.cpp](bplus_leaf_pages.cpp)配合[P13 页布局](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md#%281%29_运行等值路由与叶分裂模型)：C++17 固定一层根与九叶容量，运行二十键实例的等值路由、叶分裂和范围扫描。宿主 5040 种次序、35280 个操作状态与 std::set 对照，容量拒绝、重复和整数极值已查；不实现任意高度、删除、设备 I/O、并发或持久化，不加入内核模块 Makefile。
 
 [maple_pivot_slots.cpp](maple_pivot_slots.cpp)配合[P38 分区实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P38_Maple节点中的范围与空洞.md#38.5_运行包含空槽的分区程序)，由七个 VMA 构造包含 NULL 空洞的闭区间分区，验证包含式上界、最大连续空洞和窗口内 first-fit。256 种小地址占用图、207360 组窗口/长度与独立逐地址扫描一致，另查排除终点极值；模型没有真实 Maple 节点、更新、对齐筛选、RCU 或内核运行。
+
+[maple_encoded_words.c](maple_encoded_words.c)配合[P15 编码实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.5.4_用定宽整数观察错误掩码)，只用定宽整数区分 enode、非根父槽、根树对象关联与错误载荷，严格 C11 编译及 18432 次节点/父槽往返通过。不会把模型整数转成宿主指针，未验证真实 Maple 对象、操作状态转换或 RCU。

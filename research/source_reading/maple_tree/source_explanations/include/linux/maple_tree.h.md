@@ -321,3 +321,39 @@ struct maple_node {
 parent/slot、mr64、ma64、alloc 和 rcu 相关成员重叠，不能同时当作有效独立状态。节点类型在树中保持其约定，退出与 RCU 保护完成前不能任意换类型；此处不展开完整节点退休算法。外层 ma_flags 与这里退休视图的 ma_flags 也属于不同存储，不能凭相同字段名混为一份全局状态。
 
 布局的教学入口见[P38](../../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P38_Maple节点中的范围与空洞.md#38.3_同一块节点存储有几种解释)，固定容量与容器对应关系由[节点导读](../../../navigation/P04_节点布局与范围分区.md#4.2_按问题读取布局)组织。这里的定义仍以本文件 1.1 的固定头文件为证据。
+
+## 1.9\_错误载荷与独立状态
+
+```c
+/**
+ * @brief 仓库补充阅读说明：节点地址、类型掩码和小值保留范围分别使用。
+ * @note 下列固定语句不验证任意指针的有效性；应先满足所属字段的契约。
+ */
+#define MAPLE_NODE_MASK		255UL
+#define MAPLE_NODE_TYPE_MASK	0x0F
+#define MAPLE_NODE_TYPE_SHIFT	0x03
+
+#define MAPLE_RESERVED_RANGE	4096
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：先转换为 unsigned long，再移位编码错误号。
+ * @note 下列固定语句不验证任意指针的有效性；应先满足所属字段的契约。
+ */
+#define MA_ERROR(err) \
+		((struct maple_enode *)(((unsigned long)err << 2) | 2UL))
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：当前固定实现只比较 status 是否等于 ma_error。
+ * @note 下列固定语句不验证任意指针的有效性；应先满足所属字段的契约。
+ */
+static inline bool mas_is_err(struct ma_state *mas)
+{
+	return mas->status == ma_error;
+}
+```
+
+错误写入者是[mas_set_err](../../../source_explanations/lib/maple_tree.c.md#1.6_保留entry与操作错误分别判断)，它同时写 node 与 status；查询者不能只取一个字段就假设状态一致。头文件早期文字中的右移说法不替代当前宏的左移语句；原始文件保留原注释，本说明明确区分注释与执行代码。start/none/pause 等状态由 maple_status 表达，不能作为同一种 node 指针编码列表背诵。

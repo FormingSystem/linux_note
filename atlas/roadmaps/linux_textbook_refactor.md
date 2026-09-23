@@ -206,3 +206,5 @@ B03as 完成 P13 全篇冷读与改写，保留二十键贯穿实例和七张机
 B03at 完成 P15 开篇及 15.1～15.3，按固定实现纠正树根直存、外部锁声明与 RCU 节点复用的混同；[树模式导读](../../research/source_reading/maple_tree/navigation/P03_树对象与模式选择.md#3.2_从未发布到受保护使用)连接七个唯一函数和字段定义。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.56_B03at共享树与模式责任)记录范围与未运行项。下一项 15.4 节点布局及 15.5 编码，P15 与全仓仍未完成。
 
 B03au 将 P15 15.4 落实为[P38 节点与空洞](../../knowledge/linux/data_structures/红黑树_rb-tree/P38_Maple节点中的范围与空洞.md#38.1_从一个共享根继续向下)，保留七 VMA 地址图并修正 NULL 分区、叶/非叶职责、构建容量及 union 解释；完整 C++ 模型与固定布局分别验证语义和字节边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.57_B03au节点分区与空洞成本)记录证据和局限。下一项 P15 15.5 编码，全仓继续。
+
+B03av 完成 P15 15.5 [字段编码](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.5.4_用定宽整数观察错误掩码)，区分节点类型、父槽、两种根标记、保留 entry 与独立错误状态，补齐完整 C11 整数模型及固定 helper。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.58_B03av字段编码与状态边界)列出静态证据和模型限度。下一项 15.6/15.7 游标状态周期，P15 与全仓仍未完成。

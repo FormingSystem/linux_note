@@ -584,3 +584,11 @@ P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_str
 range/leaf 与 arange 的数组容量分别为 64 位条件分支 16/10、普通 32 位分支 32/21；名字 _64 不替代 unsigned long 与配置，容量不等于有效孩子数。叶包含 entry/NULL，非叶指向孩子；range 的 slot 末端与 metadata 共用 union，arange 另有 gap 数组。容量旁 240 字节注释不能代替完整结构 sizeof。
 
 使用提取的固定结构、明确 __rcu/rcu_head 适配，Clang ARM32 与 x86_64 freestanding 前端断言确认 node/range 均 256 字节、arange 分别 256/248；没有完整 Kbuild 或分配器运行。另以原创 C++ 分区程序验证 NULL 槽、包含式上界和裁剪窗口，未执行内核 Maple 核心、RCU、重平衡或性能测量。
+
+## 1.38\_Maple字段编码证据
+
+固定提交仍为 dfaf2136deb2af2e60b994421281ba42f1c087e0，原 maple_tree.h/c 的 blob 不变；另只读取得 include/linux/xarray.h，blob 0b618ec04115fc3993bf33a7c358632bef170fc9。新增[字段编码导读](../maple_tree/navigation/P05_字段编码与状态分工.md#5.2_同一数值先按存储位置解读)与 xarray 值标记实现页，十六函数和五组常量/宏按上游相对路径唯一展开。
+
+实际父槽掩码为 0xF8，根 parent 的 bit 0 与 ma_root 节点入口的 bit 1 分属不同字段。MA_ERROR 先转 unsigned long 再左移，mas_set_err 同时写 node/status，mas_is_err 检查独立 status；保留原始注释而在正文说明与执行表达式的差异。xa_mk_value 的有效整数宽度少一位，WARN_ON 不代替输入拒绝。
+
+原创 C11 定宽整数模型通过 18432 次节点/父槽往返及边界反例；没有真实指针解码、Maple 核心运行、RCU 或对象有效性验证。原始 xarray 只保存在忽略缓存，正式实现页记录固定 blob；外部树未修改。
