@@ -23,6 +23,7 @@ source_version: "6.12.20"
 | 正常归零与异常饱和怎样分流 | [模块边界](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [增减 helper](../source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支) → [告警收敛](../source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和) |
 | 最后减少与容器锁怎样交接 | [锁交接模块](P04_最后归还与锁交接导读.md#4.2_把最后减少留在锁内) → [快路径与重查](../source_explanations/lib/refcount.c.md#1.2_快路径保留最后一份) → [kref 回调入口](../source_explanations/include/linux/kref.h.md#1.8_归零时把锁交给回调) |
 | 容器接口自己的锁覆盖到哪里 | [整数索引模块](P06_整数索引与拥有型查找导读.md#6.2_把容器动作接到引用周期) → XArray 查询/删除包装与 IDR 编号初始化 |
+| 为什么外壳保活不等于子资源可访问 | [正文访问期限](../../../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md#10.5.3_子资源释放不能早于_RCU_读者) → [取得链的外层边界](P03_条件取得与查找窗口导读.md#3.7_从旧节点继续到最终回调) |
 | 旧节点为何仍需保留next | [应用周期模块](P03_条件取得与查找窗口导读.md#3.7_从旧节点继续到最终回调) → [list_del_rcu 唯一实现](../source_explanations/include/linux/rculist.h.md#1.1_摘链后保留旧读者的前向路径) |
 | RCU 临时地址怎样接到长期份额 | [RCU 文档边界](P03_条件取得与查找窗口导读.md#3.6_RCU保护区与退休份额) → [两种退休顺序模型](../../../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md#10.2.1_RCU_和_kref_分别保护什么) |
 | 地址有效却可能归零时怎样接续 | [协议与正文窗口](P03_条件取得与查找窗口导读.md#3.5_把版本协议回接到完整取得过程) → 两种最后归还排序的区别 |

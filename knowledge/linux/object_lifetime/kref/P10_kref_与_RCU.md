@@ -56,6 +56,8 @@ flowchart LR
 
 ## 10.2\_边界\_先分清谁保护什么
 
+临时地址有效与计数仍为正，在允许读者和撤下并行以后就不再是同一个保证。先比较退休份额的两种保存方式，才能决定取得接口。
+
 ### 10.2.1\_RCU\_和\_kref\_分别保护什么
 
 先沿一次查询划出两段重叠窗口。读者从链中拿到地址时，尚未拥有引用；从条件取得成功开始，到最终 put 之前，才有自己的份额。取得动作必须落在第一段以内，两个窗口才不会断开。
@@ -280,6 +282,8 @@ rcu_read_unlock();
 先完成两项练习。把模型中第二种协议的 GP 之后 reader_put 提前到 GP 之前，预测最终由谁触发 release；再尝试把第一种协议的 reclaim 提前到旧读区结束前，解释是哪条断言阻止它。只在账本上构造反例，不用真实释放后解引用演示错误。下一节把这些责任映射到对象字段、查找循环和业务检查。
 
 ## 10.3\_查找路径\_从对象模型到\_get\_模板
+
+账本已经证明了两类取得结果，接下来需要把它们落实到真实节点、引用成员和回调头；先运行一个完整对象，再审查返回值承诺。
 
 ### 10.3.1\_基础对象模型
 
@@ -564,6 +568,8 @@ static struct rcu_object *object_lookup_open(int id)
 
 ## 10.4\_删除路径\_取消发布\_引用归零与延迟释放
 
+查找者取得以后能够带走一份，更新者就不能再把“摘下节点”当作“所有人都退出”。下面沿同一模块分清入口责任的归还与最终回调。
+
 ### 10.4.1\_remove\_路径\_先取消发布\_再释放引用
 
 object_unpublish 接收的是调用者已经拥有的地址；它不是任意裸指针都能使用的全局删除器。先取得 update_lock，再取得对象锁；如果 linked 仍为真，本次操作写 dying、摘链、清 linked，并记下 removed。退出两把锁后，只有 removed 为真才归还表份额。
@@ -619,821 +625,187 @@ object_unpublish 接收的是调用者已经拥有的地址；它不是任意裸
 
 ## 10.5\_读侧约束\_临界区\_字段一致性和子资源
 
+前面的周期只闭合了对象存储责任。要把它用于实际请求，还要逐一检查执行上下文、字段一致性以及不在同一分配中的资源。
+
 ### 10.5.1\_RCU\_读侧临界区内应该做什么
 
-RCU 读侧临界区应该尽量短。
+完整模块的读区只承担三个动作：沿匹配的 RCU 链表找到节点，比较不可变编号，在同一窗口内取得长期份额。退出读区以后，调用者才等待对象 mutex 并处理同步请求。这样分段不是排版习惯，而是让每段依赖的保证能够单独核对。
 
-适合做：
+普通 RCU 读侧不允许任意阻塞。不要在这里等待 completion、mutex、阻塞 I/O 或一个可能睡眠的业务回调；也不要因为当前 Tiny 配置的读侧实现很短，就把它当成忽略公共契约的许可。允许读者睡眠的另一保护域应按 SRCU 的独立接口、回收与退出规则设计，不能只把函数名替换一半。
 
-```text
-1. 遍历 RCU 保护的集合。
-2. 比较 key/id。
-3. 临时读取用于判断的字段。
-4. 调用 kref_get_unless_zero()。
-5. 成功后保存 obj。
-6. 尽快 rcu_read_unlock()。
-```
+即使读区内没有睡眠，也不应把无关长计算都包进去。更新者的回收边界要覆盖旧读者，延长读区会延后旧对象可回收的时刻，退休对象积压时会占用更多内存。这里的代价不是“锁住了更新者不能摘链”，而是更新可以推进、释放却必须继续等。
 
-不适合做：
-
-```text
-1. 长时间业务处理。
-2. 等待 completion。
-3. 睡眠。
-4. 复杂 IO。
-5. 阻塞式回调。
-6. 整个业务流程都包在 rcu_read_lock() 内。
-```
-
-推荐形态：
-
-```c
-obj = my_obj_get_by_id(id);
-if (!obj)
-	return -ENOENT;
-
-/*
- * 业务处理放在 RCU 临界区之外。
- * 此时依靠 kref 保护对象生命周期。
- */
-ret = my_obj_do_work(obj);
-
-kref_put(&obj->ref, my_obj_release);
-return ret;
-```
-
-不推荐：
-
-```c
-rcu_read_lock();
-
-obj = lookup_obj_rcu(id);
-if (obj)
-	my_obj_do_long_work(obj);   /* 不推荐 */
-
-rcu_read_unlock();
-```
-
-本质是：
-
-```text
-RCU 读侧只做查找和引用获取；
-业务处理靠 kref 保护生命周期。
-```
-
-------
+长期使用也不是越早 get 越好。如果操作完全在读区中完成、只读取协议允许的不变数据，而且不会带出裸指针，纯借用可能已足够。每次追加再归还引用会写共享计数；只有确实需要逃出短读区或交付独立责任时，才引入长期份额。复合快照短读者与逃逸读者的差别见[RCU 与复合所有权](../../synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md#21.4_模型_C_一个_RCU_版本根拥有多个_kref_数据块)。
 
 ### 10.5.2\_RCU\_不保护对象字段一致性
 
-这是本章最容易出错的点。
+用完整模块的 completed 再推一次：两个拥有者都持有引用，所以对象不会归零；两者若同时执行普通的“读旧值、加一、写回”，仍可能都读取 0、都写回 1，丢失一次请求。RCU 或 kref 已经保住地址，却没有把这三个步骤变成互斥操作。
 
-错误理解：
+object_request 因而把 dying 检查和 completed 更新放在同一对象锁内。如果只在锁内检查、解锁后增加，更新者可以在中间关门，本次操作就可能越过关闭决定。如果业务只需要独立原子计数，可以重新设计相应协议；但一个字段能原子增加，不代表“门仍打开才计数”这个复合条件也已原子化。
 
-```text
-我在 rcu_read_lock() 里面，所以 obj->state 一定不会并发变化。
-```
+READ_ONCE 也不是给结构体拍一致快照。它约束某次访问的编译器行为，不自动提供多字段事务、对象保活或新数据发布的完整顺序。读取一个标志后再无保护地访问另一个指针，不能只靠加上 READ_ONCE 就建立两者的因果关系。写侧、读侧和发布协议必须成对说明。
 
-这是错的。
-
-RCU 保护的是：
-
-```text
-对象内存在读侧临界区内暂时不会被释放。
-```
-
-它不保证：
-
-```text
-对象字段不会被并发修改。
-```
-
-错误示例：
-
-```c
-rcu_read_lock();
-
-obj = lookup_obj_rcu(id);
-if (obj)
-	obj->state++;     /* 错误：RCU 不是字段互斥锁 */
-
-rcu_read_unlock();
-```
-
-如果 `state` 会并发修改，仍然需要：
-
-```c
-spin_lock(&obj->lock);
-obj->state++;
-spin_unlock(&obj->lock);
-```
-
-如果只是简单状态读取，可能需要：
-
-```c
-state = READ_ONCE(obj->state);
-```
-
-如果是状态切换，可能需要：
-
-```text
-对象锁；
-原子变量；
-seqlock；
-copy-update；
-状态机约束；
-子系统自己的同步规则。
-```
-
-所以本章边界句是：
-
-```text
-RCU 保护对象存在性；
-kref 保护长期生命周期；
-锁/原子/状态机保护字段一致性。
-```
-
-对应图：
-
-```mermaid
-flowchart LR
-    A["obj 指针是否能临时解引用"] --> B["RCU"]
-    C["obj 离开 RCU 后是否还存在"] --> D["kref"]
-    E["obj 字段是否一致"] --> F["lock / atomic / READ_ONCE"]
-    G["obj 是否允许新业务进入"] --> H["state / dying"]
-```
-
-------
+选择同步方式时先列状态是否可变、需要维护几个字段的不变量、读者是否允许重试或取得旧版本，再决定对象锁、原子操作、序列计数或替换整个不变对象。本章沿对象锁完成同步服务，不在一个模板里混入所有方案。引用成功只是允许你安全进入这些协议，不能代替它们。
 
 ### 10.5.3\_子资源释放不能早于\_RCU\_读者
 
-假设对象里有子资源：
+给对象增加 `char *buf`，它指向另一次分配。即使 obj 的存储保留到 GP，buf 也不会因此自动保留。关键要看读者在哪个阶段可以沿这个指针访问字节。
+
+| 访问协议 | 最后 kref 归零时能否释放buf | 还必须成立的条件 |
+| --- | --- | --- |
+| 未取得引用的 RCU 读者会访问buf | 通常不能立即释放 | 先切断新访问，并让相关旧借用者越过保护边界 |
+| 读区只读node/id/ref；必须取得引用后才能访问buf | 可以由最终release清理 | 所有buf使用者均受那份引用覆盖，无另外逃逸借用或硬件访问 |
+| buf独立计数、独立RCU入口或独立版本 | 依buf自己的完整协议决定 | 外壳指针读取、buf取得及回收之间没有保护空隙 |
+
+第一种情况可以让同一次 RCU 回调先释放 buf、再释放 obj。以下只展示回收端片段，前提是 buf 由对象独占、借用者在同一匹配读区内使用且没有额外硬件访问；发布和取得仍须遵守前文协议：
 
 ```c
-struct my_obj {
-	struct kref ref;
-	struct rcu_head rcu;
-	char *buf;
-};
-```
-
-错误 release：
-
-```c
-static void my_obj_release(struct kref *ref)
+static void object_with_buf_free(struct rcu_head *head)
 {
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
-
-	kfree(obj->buf);
-	kfree_rcu(obj, rcu);
+    struct object_with_buf *obj;
+    obj = container_of(head, struct object_with_buf, rcu);
+    kfree(obj->buf); /* 相关旧借用者已经结束，且没有长期拥有者。 */
+    kfree(obj);
 }
 ```
 
-这个写法不一定错，但有前提：
+第二种情况则可以在普通 release 中先 kfree(buf)，再延迟回收外壳。理由要完整说出：计数归零说明没有合法的长期 buf 使用者；尚在 RCU 读区的临时读者只允许碰 node/id/ref，条件取得失败后不会再读 buf。因此保留外壳足以让这些读者退出，不必替不存在的 buf 访问者继续保留资源。
 
-```text
-RCU 读者不能通过 obj 访问 obj->buf。
-```
+所以准确规则是 **某块资源必须覆盖所有被授权的访问窗口**，不是“所有子资源一律不能早于外壳释放”。若先取消 buf 的独立入口、等完相关旧访问者，它也可能早于仍被其他用途引用的外壳回收；反之，buf 若还被设备 DMA 使用，即使本章的读区和引用都结束，也不代表硬件访问已经停止。
 
-如果 RCU 读者可能这样访问：
-
-```c
-rcu_read_lock();
-
-obj = lookup_obj_rcu(id);
-if (obj)
-	use(obj->buf);
-
-rcu_read_unlock();
-```
-
-那么 release 中提前 `kfree(obj->buf)` 就可能造成 UAF。
-
-因为：
-
-```text
-obj 本体延迟释放了；
-但 obj->buf 已经提前释放；
-旧 RCU 读者仍然可能通过 obj 访问 buf。
-```
-
-正确方式之一：
-
-```c
-static void my_obj_rcu_free(struct rcu_head *rcu)
-{
-	struct my_obj *obj = container_of(rcu, struct my_obj, rcu);
-
-	kfree(obj->buf);
-	kfree(obj);
-}
-
-static void my_obj_release(struct kref *ref)
-{
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
-
-	call_rcu(&obj->rcu, my_obj_rcu_free);
-}
-```
-
-也可以设计成：
-
-```text
-1. RCU 读者不访问 buf；
-2. 删除前先切断 buf 可见性；
-3. 等待 grace period 后再释放 buf；
-4. buf 本身也使用独立引用计数；
-5. buf 使用 RCU 指针并单独 call_rcu 释放。
-```
-
-核心规则：
-
-```text
-凡是 RCU 读者可能通过 obj 访问到的内存，
-都不能比 obj 本体更早释放。
-```
-
-------
+没有明确独立协议时，不要随手在 remove 中清空 buf 指针并立即 free。旧读者可能已经把原指针保存到本地变量，清空共享字段不会撤销那个地址。多块共享数据的版本根应沿[复合快照协议](../../synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md#21.1_先按分配与所有权拓扑选模板)核对每块的份额；不能让某个外壳回调替其他拥有者擅自销毁共享块。
 
 ## 10.6\_完整工程模板
 
+本节回访 [10.3 的完整模块](#10.3.1_基础对象模型)，按接口职责审查同一份程序，不再维护另一套缺少入口份额和退出路径的 my_obj 片段。源文件仍是 [note_kref_rcu.c](../../../../labs/kernel/object_lifetime/materials/note_kref_rcu.c)；接下来每个决定都可以回到实际函数核对。
+
 ### 10.6.1\_对象定义
 
-```c
-struct my_obj {
-	struct kref ref;
-	struct rcu_head rcu;
-	struct list_head node;
+struct rcu_object 把 node/ref/rcu 放在同一分配中，因而旧读者所需的节点、编号和计数都随同一外壳延迟回收。linked 与 ever_published 属更新锁；dying 与 completed 属对象锁；id 发布前固定。不要因为字段都在同一个结构体里，就认为它们天然共享一个同步协议。
 
-	spinlock_t lock;
-	bool dying;
-
-	int id;
-	int state;
-};
-
-static LIST_HEAD(my_obj_list);
-static DEFINE_SPINLOCK(my_obj_list_lock);
-```
-
-------
+两种 bool 不可互换：linked 防重复成员操作，dying 决定业务接纳。当前更新函数在同一嵌套阶段把它们一起推进，但旧读者不看 linked，业务函数也不靠链表状态猜测接纳结果。
 
 ### 10.6.2\_release
 
-release 需要提前声明，因为 lookup 失败回滚时可能要调用 `kref_put()`。
+object_release 只在最后引用归零时执行，检查正常协议已经撤下，然后 call_rcu；object_rcu_free 才回收。WARN_ON 是诊断，不会修复仍挂在表中的错误对象。初始私有对象即使发布失败，也走相同出口，调用方必须在初始化错误返回前等待自己的回调。
 
-```c
-static void my_obj_release(struct kref *ref)
-{
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
-
-	kfree_rcu(obj, rcu);
-}
-```
-
-语义：
-
-```text
-最后一个长期引用已经释放；
-对象逻辑生命周期结束；
-对象内存仍然延迟到 RCU grace period 后释放。
-```
-
-------
+release 的执行次数与回调的完成次数不是同一时刻的统计。模块选择在退出 barrier 后读取 free_calls，才有本演示中全部回收已完成的依据。
 
 ### 10.6.3\_alloc
 
-```c
-static struct my_obj *my_obj_alloc(int id)
-{
-	struct my_obj *obj;
+object_create 建立一份初始引用，节点初始化、对象锁初始化、id 固定、dying 初始为真，尚未发布也不接纳请求。kzalloc 失败时没有对象和份额，无须 put；成功以后不论后续发布是否成功，创建者都要结算这一份。
 
-	obj = kzalloc(sizeof(*obj), GFP_KERNEL);
-	if (!obj)
-		return NULL;
-
-	kref_init(&obj->ref);
-	INIT_LIST_HEAD(&obj->node);
-	spin_lock_init(&obj->lock);
-
-	obj->id = id;
-	obj->state = 0;
-	obj->dying = false;
-
-	return obj;
-}
-```
-
-语义：
-
-```text
-kref_init 给创建者一个初始引用；
-对象还没有发布到全局集合；
-其他路径还不能 lookup 到它。
-```
-
-------
+当前对象没有另一次子资源申请。如果扩展 buf，必须增加部分初始化失败的配对清理，并明确 release 是否允许 buf 尚未建立；不能只在成功路径加 malloc/kzalloc 而把失败责任留白。
 
 ### 10.6.4\_publish
 
-```c
-static void my_obj_publish(struct my_obj *obj)
-{
-	spin_lock(&my_obj_list_lock);
-	list_add_rcu(&obj->node, &my_obj_list);
-	spin_unlock(&my_obj_list_lock);
-}
-```
+object_publish 在更新锁内先检查 ever_published 和当前表的编号冲突，失败不消费创建者份额。成功追加表份额、设接纳状态、标记登记，再通过 RCU 链表接口发布；返回后创建者仍可保留或归还自己的一份。
 
-语义：
-
-```text
-对象加入 RCU 可见集合；
-之后 RCU lookup 可能看到它；
-发布前必须完成对象初始化。
-```
-
-------
+普通 list_add 与 RCU 发布接口不是名称可互换的便利函数。无锁读者需要匹配的初始化可见性与链路更新规则；更新 mutex 只能串行化遵循它的写入者，不能自动让没有取得该 mutex 的读者获得同样保证。
 
 ### 10.6.5\_get\_by\_id
 
-```c
-static struct my_obj *my_obj_get_by_id(int id)
-{
-	struct my_obj *obj;
-	struct my_obj *found = NULL;
+object_lookup 返回 NULL 或一份拥有型引用。条件失败不需要 put，成功者每份都要归还。它不保证对象仍是当前编号对应的最新一代，也不保证下一次请求成功。可选 object_lookup_open 只是提前过滤，业务执行点仍要检查。
 
-	rcu_read_lock();
-
-	list_for_each_entry_rcu(obj, &my_obj_list, node) {
-		if (obj->id != id)
-			continue;
-
-		if (!kref_get_unless_zero(&obj->ref))
-			break;
-
-		spin_lock(&obj->lock);
-		if (obj->dying) {
-			spin_unlock(&obj->lock);
-			rcu_read_unlock();
-
-			kref_put(&obj->ref, my_obj_release);
-			return NULL;
-		}
-		spin_unlock(&obj->lock);
-
-		found = obj;
-		break;
-	}
-
-	rcu_read_unlock();
-
-	return found;
-}
-```
-
-成功返回时：
-
-```text
-调用者持有一个 kref 引用。
-```
-
-失败返回时：
-
-```text
-调用者没有引用；
-不能访问 obj。
-```
-
-------
+查找不得把原始 obj 直接交给异步队列而忘了取得长期份额；也不得在条件失败后，用“只打印一下”作为继续访问任意业务字段的理由。每次访问都要落在其实际许可窗口里。
 
 ### 10.6.6\_use
 
-```c
-static int my_obj_use(int id)
-{
-	struct my_obj *obj;
-	int ret;
+object_request 的参数由调用者引用保活，因此退出 RCU 后仍能等待嵌入对象的 mutex。锁内门检查与 completed 增加一起决定本次同步操作，失败保留调用者份额与原输出值；调用者处理结果后仍统一 object_put。
 
-	obj = my_obj_get_by_id(id);
-	if (!obj)
-		return -ENOENT;
-
-	ret = do_work_with_obj(obj);
-
-	kref_put(&obj->ref, my_obj_release);
-	return ret;
-}
-```
-
-语义：
-
-```text
-lookup 和 get 在 RCU 临界区内完成；
-业务处理在 RCU 临界区外完成；
-业务处理期间依靠 kref 保证生命周期。
-```
-
-------
+要改成真正异步请求，必须另外说明排队成功后的责任、失败回滚、关闭来源、等待退出和完成回调。现有 completed++ 的同步完成不能代表 work 或硬件已经退出；这个模板没有提供那些保证。
 
 ### 10.6.7\_remove
 
-```c
-static void my_obj_remove(struct my_obj *obj)
-{
-	spin_lock(&obj->lock);
-	obj->dying = true;
-	spin_unlock(&obj->lock);
+object_unpublish 只有真正摘下者才接走表份额，退出两锁后归还；普通长期份额最后归还再进入 release。旧读者的 node.next 继续保留，同一对象不允许重新发布。模块退出先确认没有外部来源和遗留拥有者，随后 rcu_barrier，不能先 barrier 再让旧持有者登记新回调。
 
-	spin_lock(&my_obj_list_lock);
-	list_del_rcu(&obj->node);
-	spin_unlock(&my_obj_list_lock);
-
-	kref_put(&obj->ref, my_obj_release);
-}
-```
-
-语义：
-
-```text
-dying：
-    阻止新的业务用户进入。
-
-list_del_rcu：
-    从 RCU 可见集合中取消发布。
-
-kref_put：
-    释放发布者/集合持有的引用。
-
-release：
-    最后引用归零后的销毁入口。
-
-kfree_rcu：
-    延迟到 grace period 后释放内存。
-```
-
-完整生命周期：
-
-```mermaid
-sequenceDiagram
-    participant Creator as creator
-    participant Reader as reader
-    participant Remover as remover
-    participant RCU as RCU
-
-    Creator->>Creator: my_obj_alloc()
-    Creator->>Creator: kref_init = 1
-    Creator->>Creator: list_add_rcu()
-
-    Reader->>Reader: rcu_read_lock()
-    Reader->>Reader: lookup obj
-    Reader->>Reader: kref_get_unless_zero()
-    Reader->>Reader: rcu_read_unlock()
-    Reader->>Reader: 使用 obj
-
-    Remover->>Remover: dying = true
-    Remover->>Remover: list_del_rcu()
-    Remover->>Remover: kref_put()
-
-    Reader->>Reader: kref_put()
-    Reader->>RCU: 最后 put -> release -> kfree_rcu
-    RCU->>RCU: grace period 后 kfree
-```
-
-------
+按正常日志复盘引用数：创建1，发布2，lookup3，创建者退出2，撤下表份额1，重复撤下仍1，旧读者被业务拒绝仍1，读者退出0并登记回调，barrier 以后回收完成。这个账本比“remove 后释放”更能定位遗漏或重复归还。
 
 ## 10.7\_常见错误模式
 
+这些错误应放回选定协议判断：同一句“可以直接释放”在两种退休顺序中可能得到不同答案。以下每项先限定缺失的证明，再指出修复位置。
+
 ### 10.7.1\_错误一\_RCU\_lookup\_后裸\_kref\_get
 
-```c
-rcu_read_lock();
-
-obj = lookup_obj_rcu(id);
-if (obj)
-	kref_get(&obj->ref);   /* 错误 */
-
-rcu_read_unlock();
-```
-
-错因：
-
-```text
-RCU 不保证 refcount 非 0；
-kref_get 可能复活已经归零的对象。
-```
-
-正确写法：
-
-```c
-if (obj && kref_get_unless_zero(&obj->ref))
-	found = obj;
-```
-
-------
+在本章主协议中，RCU 保留地址却不保正计数，普通 get 可能碰到已经归零的对象，触发引用协议错误。修正是保持匹配读区并检查条件取得结果。若采用另一套发布份额跨 GP 协议，普通 get 可以由该份额证明；不能把“只要是 RCU 就绝不允许普通 get”写成通用规则。
 
 ### 10.7.2\_错误二\_离开\_RCU\_后才\_get\_unless\_zero
 
-```c
-rcu_read_lock();
-obj = lookup_obj_rcu(id);
-rcu_read_unlock();
-
-if (obj && kref_get_unless_zero(&obj->ref))   /* 错误 */
-	return obj;
-```
-
-错因：
-
-```text
-rcu_read_unlock() 之后，obj 指针本身已经不受 RCU 保护。
-```
-
-正确写法：
-
-```c
-rcu_read_lock();
-
-obj = lookup_obj_rcu(id);
-if (obj && kref_get_unless_zero(&obj->ref))
-	found = obj;
-
-rcu_read_unlock();
-```
-
-------
+读者保存地址、退出保护、然后条件增加，这三个动作之间出现了空隙。GP 和最终回收可能在空隙完成，计数访问本身已经非法。把条件尝试移回匹配读区，成功以后才带出地址；若有另一份独立引用覆盖全程，应说明那份引用，而不是依赖过期 RCU 窗口。
 
 ### 10.7.3\_错误三\_list\_del\_rcu\_后直接\_kfree
 
-```c
-list_del_rcu(&obj->node);
-kfree(obj);     /* 错误 */
-```
-
-错因：
-
-```text
-旧 RCU 读者可能仍然持有 obj 指针。
-```
-
-正确写法：
-
-```c
-list_del_rcu(&obj->node);
-kref_put(&obj->ref, my_obj_release);
-
-/* release 中 */
-kfree_rcu(obj, rcu);
-```
-
-------
+摘链只改变共享拓扑，旧读者可能已经拿到节点，长期持有者也可能尚未退出。当前协议必须归还表份额、等待最后引用触发延迟回收；不能用一次直接 free 跳过这两类访问者。若其他完整协议已经等待旧借用者并排除所有拥有者，直接 free 才能另行证明。
 
 ### 10.7.4\_错误四\_以为\_list\_del\_rcu\_后所有读者都看不到对象
 
-错误理解：
-
-```text
-我已经 list_del_rcu() 了，所以没有任何读者能看到 obj。
-```
-
-正确理解：
-
-```text
-新的 lookup 不应该再稳定找到它；
-但已经进入 RCU 读侧临界区的旧读者，仍然可能看到它。
-```
-
-所以如果删除后不允许业务使用，需要：
-
-```text
-dying 标志；
-状态机；
-对象锁；
-get 成功后的二次检查。
-```
-
-------
+旧读者的局部地址不会随共享链路更新而消失，它甚至可能仍成功取得引用。摘链不是广播撤销。若不准继续业务，要在实际业务接纳点以对象锁和状态落实；如果允许旧操作完成，应规定其责任和关闭等待范围，不能靠一个 dying bool 猜测它们已经结束。
 
 ### 10.7.5\_错误五\_把\_RCU\_当字段锁
 
-```c
-rcu_read_lock();
-
-obj = lookup_obj_rcu(id);
-if (obj)
-	obj->state++;
-
-rcu_read_unlock();
-```
-
-错因：
-
-```text
-RCU 不保护字段互斥。
-```
-
-正确写法可能是：
-
-```c
-spin_lock(&obj->lock);
-obj->state++;
-spin_unlock(&obj->lock);
-```
-
-------
+地址有效不使 completed++ 原子化，也不使“检查门—执行操作”成为一致事务。按字段与不变量选择同步方式，发布后固定的 id 不必和可变 completed 一样处理。加 READ_ONCE 不会把多个字段变成一份一致快照。
 
 ### 10.7.6\_错误六\_get\_成功后不检查\_dying
 
-```c
-if (kref_get_unless_zero(&obj->ref))
-	return obj;
-```
+此错误取决于接口承诺。纯拥有型 lookup 只返回存储份额，不在内部检查 dying 可以完全正确；完整模块就在 object_request 中决定接纳。真正错误的是把取得成功当成业务永久许可，或只在早先 lookup 时检查一次、之后无保护执行。
 
-这个写法只证明：
-
-```text
-对象生命周期还没结束。
-```
-
-它不能证明：
-
-```text
-对象业务上仍然允许新用户进入。
-```
-
-如果 remove 后禁止新用户进入，需要：
-
-```c
-if (!kref_get_unless_zero(&obj->ref))
-	return NULL;
-
-spin_lock(&obj->lock);
-if (obj->dying) {
-	spin_unlock(&obj->lock);
-	kref_put(&obj->ref, my_obj_release);
-	return NULL;
-}
-spin_unlock(&obj->lock);
-```
-
-------
+若过滤发现关闭，应归还刚取得的份额；但 put 必须处于对象规定的合法上下文。本例先退出普通 RCU 读区再等待 mutex 和处理回滚，不把可能阻塞的最终路径随意塞回读区。
 
 ### 10.7.7\_错误七\_release\_中提前释放\_RCU\_子资源
 
-```c
-static void my_obj_release(struct kref *ref)
-{
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
+先画访问边：谁能够在尚未取得引用时沿 obj→buf 读取，谁只有成功持有后才可访问，谁可能把 buf 单独交给硬件或其他任务。只延迟外壳却提前释放仍被借用的 buf 会造成悬空访问；反过来，如果所有 buf 使用都由已归零的引用保护，提前于外壳清理也可以成立。
 
-	kfree(obj->buf);       /* 可能错误 */
-	kfree_rcu(obj, rcu);
-}
-```
-
-如果 RCU 读者可能访问 `obj->buf`，那么 `buf` 也必须延迟释放。
-
-正确写法之一：
-
-```c
-static void my_obj_rcu_free(struct rcu_head *rcu)
-{
-	struct my_obj *obj = container_of(rcu, struct my_obj, rcu);
-
-	kfree(obj->buf);
-	kfree(obj);
-}
-
-static void my_obj_release(struct kref *ref)
-{
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
-
-	call_rcu(&obj->rcu, my_obj_rcu_free);
-}
-```
-
-------
+回调中同时清理两者是一种方案，不是对所有分配拓扑的唯一答案。独立共享块应由自己的最后责任者销毁，不由任意一个父对象强行 free。
 
 ## 10.8\_与第\_8\_9\_章的关系
 
-第 8 章讲的是：
+三章都在接续“暂时能看到”与“以后仍可使用”，区别是外围协议怎样提供地址和正计数依据：
 
-```text
-lookup 场景为什么不能裸 get；
-kref_get_unless_zero() 解决什么；
-lookup 成功和失败怎么判断。
-```
+| 协议 | get以前的地址依据 | 正计数依据或失败处理 | 长期字段访问 |
+| --- | --- | --- | --- |
+| P08 拥有型表、同锁撤下份额 | 集合锁排除摘除回收 | 表份额保持为正，可以普通get | 依字段协议，引用本身不互斥 |
+| P08 非拥有索引、release取同锁回收 | 查找锁挡住最终回收 | 可能已归零，条件取得并判结果 | 同上 |
+| P09 最后减少与索引锁交接 | 最后候选先取同一锁 | 同协议内，查找窗口不越过归零 | 回调负责约定的解锁 |
+| P10 撤下立即put、最终RCU回收 | 匹配读区与回收协议 | 可能已归零，条件取得 | 取得后离开读区，再按业务锁处理 |
+| 发布份额跨GP | 读区与保留的退休份额 | 那一份保证相关旧读者取得期间为正 | 仍须字段/业务协议 |
 
-第 9 章讲的是：
-
-```text
-kref 和锁怎么组合；
-锁如何保护集合关系和字段互斥；
-remove/unlink 和 put 的顺序。
-```
-
-本章讲的是：
-
-```text
-把 lookup 保护从 mutex 扩展到 RCU；
-用 RCU 保护读侧查找窗口；
-用 kref_get_unless_zero() 把临时指针转换成长期引用；
-用 kfree_rcu/call_rcu/synchronize_rcu 处理最后内存释放。
-```
-
-三章关系：
-
-```mermaid
-flowchart TD
-    A["第 8 章 lookup"] --> D["get 前必须证明 obj 有效"]
-    B["第 9 章 锁组合"] --> D
-    C["第 10 章 RCU 组合"] --> D
-
-    D --> E["mutex/list 模型"]
-    D --> F["RCU/list 模型"]
-
-    E --> G["锁内 lookup + kref_get"]
-    F --> H["RCU 内 lookup + kref_get_unless_zero"]
-
-    G --> I["成功后锁外使用依赖 kref"]
-    H --> I
-```
-
-一句话区别：
-
-```text
-mutex lookup 中，锁保护“查找 + get”窗口；
-RCU lookup 中，RCU 保护“查找 + get_unless_zero”窗口。
-```
-
-------
+选择时先看谁拥有入口份额，再看什么时候可能归零和回收，最后决定 API。不能把“mutex 就普通 get、RCU 就条件 get”当作选择算法；同一种锁或保护域可以承载不同的所有权协议。
 
 ## 10.9\_本章检查清单
 
-写 RCU + kref 代码时，至少检查下面这些问题：
+审查自己的实现时，逐项把答案写到具体函数、字段或失败分支：
 
-```text
-1. 对象是否真的挂在 RCU 保护的结构中？
-2. 读侧 lookup 是否包在 rcu_read_lock()/rcu_read_unlock() 内？
-3. 遍历是否使用 list_for_each_entry_rcu/hlist_for_each_entry_rcu/rcu_dereference 等 RCU 接口？
-4. lookup 找到对象后，是否在 RCU 临界区内调用 kref_get_unless_zero()？
-5. 是否检查了 kref_get_unless_zero() 的返回值？
-6. 成功 get 后，是否允许离开 RCU 再使用对象？
-7. 失败 get 后，是否完全不再访问对象？
-8. 如果 remove 后不允许新用户进入，是否有 dying/state 检查？
-9. dying/state 检查失败时，是否 put 掉刚取得的引用？
-10. remove 路径是否先设置 dying，再从 RCU 集合脱链？
-11. list_del_rcu 后是否避免直接 kfree？
-12. release 中是否使用 kfree_rcu/call_rcu/synchronize_rcu？
-13. struct kref 所在对象内存是否撑过 RCU grace period？
-14. RCU 读者可能访问的子资源是否也延迟释放？
-15. 对象字段是否另有锁、原子或状态机保护？
-16. RCU 读侧临界区是否足够短？
-17. 是否把 list_del_rcu、kref_put、release、kfree_rcu 的职责分清？
-```
+1. RCU 入口直接指向哪个分配，kref 和回调头是否在同一块？
+2. 初始份额属于谁，发布转交它还是另建表份额？
+3. 查找是否按匹配 RCU 接口访问，地址保护是否覆盖整个取得？
+4. 哪份责任证明正计数；如果不能证明，条件失败怎样退出？
+5. 成功返回的每一份在正常、拒绝和取消路径由谁归还？
+6. 编号和其他读区字段是否发布后固定，变化时由什么协议同步？
+7. 业务许可在实际执行点如何检查，是否错误依赖早先状态快照？
+8. 普通 RCU 读区里是否调用可能睡眠的函数？
+9. 更新者是否串行化，重复发布、重复编号和重复移除怎样处理？
+10. 摘链是否保留旧路径，同一节点是否可能过早初始化或重用？
+11. 谁停止新入口，谁处理长期引用，谁发起最终延迟回收？
+12. 每个子资源是否覆盖全部借用者、拥有者与外部硬件的访问期限？
+13. 回调需要的函数代码、上下文和资源是否一直有效？
+14. 模块退出是否先停止未来回调来源，再等已有回调执行完毕？
+15. 验证是否区分顺序模型、固定 helper、ARM 前端和目标实跑？
 
-------
+回答“用了 RCU”或“有个引用计数”不足以覆盖这些问题。反过来，如果对象从不离开读区、不需要单独长期持有，也不应为了清单而无条件加入 kref。
 
 ## 10.10\_本章小结
 
-本章核心可以压缩成下面几句话：
+本章从集合锁保护的查找出发，允许读者与撤下并行，再用两段重叠期限接到长期持有。主协议中，入口归还可以使计数先归零，RCU 则让旧读者完成条件失败与遍历退出；最后回收因此是引用责任和旧读区两套证明的共同结果。
 
-```text
-RCU 不是引用计数。
+完整模块进一步说明：发布份额必须真的建立，旧 next 必须保留，业务门检查要与同步操作合在一起，私有回调的代码也有退出期限。替代协议可以让入口份额跨 GP，但必须整套切换，不能只替换 get 或 free。
 
-RCU 只能保证读侧临界区内，临时看到的旧对象内存不会被立即释放；
-它不会自动给对象增加长期引用。
+完成三个渐进练习，再核对推导。
 
-kref 不是 lookup 保护。
+1. 在 C 账本中让长期读者先于 GP 归还。发布份额跨 GP 的协议为什么仍不提前回收？因为退休份额还在，最后归还转移到 GP 后的责任结算；读者退出本身不允许跳过该份额。
+2. 在完整模块里加入一个不同编号对象，再令旧读者沿被删节点 next 走到它。应保留什么？被删节点和前向链接必须撑过读区，目标对象仍需在同一窗口取得自己的份额；持有 B 不自动拥有 A。宿主检查覆盖了这一顺序，真实并发仍待目标验证。
+3. 增加只由拥有者访问的 buf，然后改为允许未取得引用的短读者也访问。回收设计为什么必须改变？第一种可在普通 release 清理 buf；第二种必须覆盖旧借用者，不能只延迟外壳。再增加跨版本共享时，还要转到独立块所有权，而不是让一个父回调直接 free。
 
-kref 只有在 get 成功之后，才保护对象生命周期；
-在 get 之前，必须先由 RCU 或锁证明对象指针本身暂时有效。
-
-RCU lookup 中不能裸 kref_get()。
-
-因为对象可能已经进入 refcount 为 0 的释放流程；
-必须使用 kref_get_unless_zero()，并检查返回值。
-
-list_del_rcu() 不是 kfree。
-
-它只是把对象从 RCU 可见结构中取消发布；
-真正释放对象内存必须等待 RCU grace period。
-
-最终模型是：
-
-RCU 保护查找窗口；
-kref 保护长期持有；
-dying/state 保护逻辑可用性；
-锁/原子保护字段一致性；
-kfree_rcu/call_rcu/synchronize_rcu 保护最终内存回收。
-```
-
-最重要的一句话：
-
-```text
-RCU 让你安全地看到对象；
-kref 让你安全地带走对象。
-```
-
-------
+下一章比较 kref、refcount_t 与 kobject：已经建立的份额责任不会因为引入更高层框架消失，但谁建立入口、谁调用最终回调、谁管理名称与层次，需要重新按框架契约定位。
 
 专题导航：[kref 引用计数机制章节大纲](大纲.md)。
 

@@ -1867,6 +1867,6 @@ device/class/bus 讲的是 driver core 已经封装好的分层对象模型。
 
 专题导航：[kref 引用计数机制章节大纲](大纲.md)。
 
-上一篇：[kref 与 RCU](P10_kref_与_RCU.md)。
+上一篇：[kref 与 RCU](P10_kref_与_RCU.md#10.10_本章小结)。
 
 下一篇：[典型错误模式与调试线索](P12_典型错误模式与调试线索.md)。

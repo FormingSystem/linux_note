@@ -292,3 +292,5 @@ B04ai 完成[P09 完整链表服务与章末收束](../../knowledge/linux/object
 B04aj 冷读 P10 全文，完成[10.1～10.2 地址窗口与退休顺序](../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md#10.2.1_RCU_和_kref_分别保护什么)，以四条 C 轨迹纠正所有 RCU 查找都只能条件 get 的绝对化。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.99_B04ajRCU取得窗口与退休顺序)保留未收束项：实际模板的发布责任、重复移除、业务检查时点和子资源规则。P10 pending，下一项 10.3～10.4。
 
 B04ak 完成[P10 10.3～10.4 完整查找与撤下](../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md#10.3.1_基础对象模型)，新增 RCU 模块、唯一摘链实现与回调退出证据。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.100_B04akRCU完整查找与回调退出)记录八组宿主和 ARM 前端边界；下一项 10.5～10.10，P10 仍 pending。
+
+B04al 收束[P10 10.5～10.10](../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md#10.5.3_子资源释放不能早于_RCU_读者)，以访问者期限替代子资源必须和外壳同时释放的绝对化，章末回访统一到已验证模块。P10 进入作者 validated，人工状态不变。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.101_B04alRCU字段子资源与章末收束)记录保留程序与未执行验证；下一项 P11 对象框架边界。
