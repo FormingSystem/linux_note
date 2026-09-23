@@ -273,3 +273,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.48\_多归还与失效窗口
 
 [P40](../../../../knowledge/linux/object_lifetime/kref/P40_多归还与失效窗口实验.md#40.1_计数为正仍可能归还了别人的份额)完整展示[misuse_windows.c](misuse_windows.c)，C11五场景已执行；shares是模型额外拥有表，alive=false只标记逻辑退休，不执行真实free。另三条固定引用对照与六组既有表模块宿主检查通过，无目标UAF或refcount报告。该程序不注册到内核Makefile。
+
+## 1.49\_实验收束与真实材料选择
+
+[P14后半实验](../../../../knowledge/linux/object_lifetime/kref/P14_源码阅读实验.md#14.8_状态和父子关系实验_生命周期不等于业务可用)直接复用[state_ownership.c](state_ownership.c)十路径和[note_kref_parent.c](note_kref_parent.c)八组宿主检查，完整教学程序分别保留在P30/P27。材料不新增想象中的kref_lab.ko总调度器；各模块使用自身已定义参数，实际故障结果与预期分开填写，本次无新增目标运行。
