@@ -312,3 +312,5 @@ B04as冷读P12全文，完成[12.1～12.2诊断入口](../../knowledge/linux/obj
 B04at完成[P12 12.3.1～12.3.2](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.3.1_错误一_少_get_异步路径_UAF)，按共享/转交/借用排查少取得，按文件实例最终清理排查漏归还。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.109_B04at异步与文件份额排查)记录三组C片段验证和固定源码边界；下一项12.3.3多put，P12仍pending。
 
 B04au完成[P12 12.3.3～12.3.4](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.3.3_错误三_多_put_提前_release_或_underflow)，明确候选引用的失败回滚与成功交付，以及put后仍需哪项保护。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.110_B04au失败出口与归还后访问)记录四组固定引用C夹具；下一项12.4查找与交付错误，P12仍pending。
+
+B04av完成[P12 12.4查找与交付](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.4.1_错误五_lookup_后无保护_get)，按地址期限和正计数选择取得，补齐始终消费包装及调用方影响。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.111_B04av查找窗口与交付返回)记录两新增加十既有宿主检查；下一项12.5退出错误，P12仍pending。
