@@ -607,696 +607,198 @@ sequenceDiagram
 
 ## 6.8\_RCU\_边界\_生命周期结束不等于内存立刻回收
 
-RCU 场景下，kref 生命周期可以结束，但对象内存可能还要撑过 grace period。
+前面的管理者通过等待让借用者先退出，再允许计数归零。RCU 组合还允许另一种排序：先结束业务引用，但把存储保留到相关旧读者都跨过读侧保护区间。这里的宽限期（grace period，GP）用于确认此前可能取得旧地址的相关读者已经结束保护；它不是一个按毫秒猜测的固定延时。
+
+本节只讨论怎样安排回收责任，不在 kref 章节重新建立 RCU 的全套实现。第一次采用这类组合前，应先阅读[RCU 与复合对象的三种拓扑](../../synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md#21.1_先按分配与所有权拓扑选模板)。当前要带走的边界是：**引用数和宽限期是两项独立条件，模块必须明确谁等待哪一项、谁最后释放。**
 
 ### 6.8.1\_release\_和\_RCU\_的边界
 
-如果对象可以被 RCU 读侧看到，那么 release 里不能简单：
+设共享入口指向一个配置对象，一名旧读者已经在 RCU 读区内取到地址，更新者随后撤下入口。旧读者并不会因为入口被改掉就自动丢失自己手里的地址；如果还要读取字段或尝试取得独立引用，存储必须继续有效。条件取得可以拒绝零计数，但执行这个尝试本身仍需要一块能安全读取的计数器。
 
-```c
-kfree(refobj);
+由此得到两种不同且都能成立的排序。第一种在撤下时立即归还发布份额；如果这是最后一份，release 安排 RCU 延迟回收，存储继续保护旧读者。第二种把发布份额保留到宽限期之后才归还；那时相关旧读者已经退出，release 可以按剩余独立引用的情况直接回收，不必机械再等一次同样目的的宽限期。
+
+| 同一分配对象的协议 | 撤下入口以后 | 最后 release 的存储动作 | 地址保护从哪里来 |
+| --- | --- | --- | --- |
+| 发布份额立即归还 | 可能先归零，再等待旧读者 | 安排合适的 RCU 延迟回收 | 已安排的读侧存储保护，计数可能已零 |
+| 发布份额跨过 GP | 先等待旧读者，再 put 发布份额 | 无其他借用要求时可以直接回收 | GP 以前保留的发布引用，此后是剩余独立引用 |
+
+两种模型都要求先正确撤下旧入口，并且只有一个最终释放协议。不能一条退出路径立即归还并直接 free，另一条路径又独立安排同一块内存的 RCU 回调；也不能在有些路径提前放掉发布引用后，仍使用“它跨 GP 保证正数”的普通 get 论证。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant R as 已进入读区的旧读者
+    participant U as 更新者
+    participant O as 旧对象与发布份额
+    participant G as 相关读侧的宽限期
+    R->>O: 在保护区间取得旧地址
+    U->>O: 撤下共享入口
+    alt 发布份额立即归还且导致归零
+        U->>O: put，release 安排延迟回收
+        R->>O: 计数地址仍有效，条件取得见零失败
+        R->>G: 退出读侧保护区间
+        G->>O: GP 条件完成，允许回收存储
+    else 发布份额保留到 GP 以后
+        R->>G: 结束借用并退出保护区间
+        G->>O: 回调按协议 put 发布份额
+        O->>O: 若为最后一份，release 可直接回收
+    end
 ```
 
-因为 RCU 读侧可能仍然持有旧裸指针。
-
-典型模型是：
-
-```text
-更新侧先从 RCU 可见结构中删除对象；
-禁止新读者找到它；
-已有 RCU 读者可能仍在临界区中；
-等 grace period 后才能释放内存。
-```
-
-所以 release 里可能需要：
-
-```c
-kfree_rcu(refobj, rcu);
-```
-
-而不是：
-
-```c
-kfree(refobj);
-```
-
-示例结构：
-
-```c
-struct my_refobj {
-	struct kref ref;
-	struct rcu_head rcu;
-	struct hlist_node node;
-};
-```
-
-release：
-
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	kfree_rcu(refobj, rcu);
-}
-```
-
-这里含义是：
-
-```text
-kref 生命周期已经结束；
-但对象内存要等 RCU grace period 后再真正释放。
-```
-
+图中为突出排序，选取“旧读者没有取得额外长期引用”的分支。若读者成功取得独立份额，两种模型都还要等那一份归还；它可以把对象带出读区，但必须遵守业务许可、字段并发和自己的退出责任。RCU 没有读取 kref 等待它归零，kref 也没有暗中通知 RCU；连接两者的是更新者和类型回调的协议。
 
 ### 6.8.2\_kref\_归零和内存真正释放不是永远同一时刻
 
-普通裸 kref 对象：
+现在可以准确改写“归零后不能使用”这句话：归零后不能把旧身份重新取得为活的业务引用；但已经有独立存储保护依据的旧读者、清理回调或退休执行者，仍可能按各自契约访问允许的部分。正因如此，归零与 free 才会分离。保护地址也不自动允许读者使用已经提前退出的子资源。
 
-```text
-last put -> release -> kfree -> 内存释放
-```
+对独立分配的复合对象，还不能只在根上放一个 rcu_head 就认为所有叶子都能一起释放。例如旧配置根和新配置根共享一个数据块，两代根各拥有该块的一份，后台任务又持一份。旧根跨过自己的 GP 后只归还自己拥有的那一份；新根和后台任务仍能保留数据块，最后数据块按自己的 release 回收。根的 GP 不是所有分配块的一键销毁信号。
 
-RCU 对象：
+因此，选择 `kfree`、`kmem_cache_free` 或 `kfree_rcu` 以前，先画清每块分配及其拥有关系：哪些旧读者借用这块地址，哪些独立引用保留它，哪个阶段结束哪项保护。分配器配对和延迟时机都要正确，不能按“代码中出现 RCU”统一替换所有 free。
 
-```text
-last put -> release -> kfree_rcu -> grace period 后内存释放
-```
-
-所以要区分两个概念：
-
-```text
-对象生命周期结束
-对象内存真正归还
-```
-
-对于普通裸 kref 对象，这两者几乎连在一起。
-
-对于 RCU 对象，它们中间隔着 grace period。
-
-这不是说对象还能被使用。
-
-对象生命周期已经结束。
-
-只是为了保护 RCU 读侧旧指针，内存暂时不能回收。
-
-所以 RCU 场景下要记住：
-
-```text
-refcount 到 0 后，对象不能再被 get 或重新发布；
-但 struct kref 所在内存必须撑过 RCU grace period。
-```
-
-这个细节会在第 10 章专门展开。
-
-------
+后续[第 10 章](P10_kref_与_RCU.md)会把单对象查找窗口展开；[复合快照](../../synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md#21.4_模型_C_一个_RCU_版本根拥有多个_kref_数据块)负责根与块的独立责任。这里的比较已经足够说明：release 可能安排下一阶段，但它仍必须明确交给谁以及存储何时真正结束。
 
 ## 6.9\_release\_的禁区\_检查和状态边界
 
-这一组内容不是孤立错误清单，而是在说明 release 作为生命周期终点时，哪些动作已经太晚，哪些检查适合留下。
+有了完整退出过程，再检查回调才有依据。诊断要指出“哪项已建立的协议被破坏”，而不是在末尾堆几个布尔值就宣布对象安全。
 
 ### 6.9.1\_release\_里不能重新发布对象
 
-release 中最危险的错误之一是试图“复活对象”。
+假设回调把 kref 重新 init 为 1，再把同一个对象插回索引。计数看起来重新为正，但原退出协议可能已经安排了一个延迟 free，旧读者也可能仍在结束自己的借用。新的查找者会把旧身份当作新对象使用，随后却被原先的退休路径释放。问题不是数值不够大，而是两套生命周期同时控制同一块存储。
 
-错误示例：
+对象池可以复用内存，但要先完成旧身份的全部引用、借用和退休动作，然后把存储交回池管理；再次分配时建立新身份、初始化成员并重新发布。两次对象生命周期碰巧使用同一地址，不代表可以跳过前一次退出。具体池若另有允许原地复用的严格协议，需要单独证明，不能从裸 kref 推出。
 
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	kref_init(&refobj->ref);
-	list_add(&refobj->node, &refobj_list);
-}
-```
-
-这是错误的生命周期模型。
-
-进入 release 说明：
-
-```text
-refcount 已经归零；
-对象已经没有合法持有者；
-对象正在销毁。
-```
-
-此时不能再：
-
-```text
-重新初始化 kref
-重新加入 list/hash/xarray
-重新注册 callback
-重新投递 work
-重新暴露给 lookup
-```
-
-如果需要对象池复用，也应该把“对象生命周期结束”和“内存块复用”分开。
-
-例如：
-
-```text
-kref release 结束对象生命周期；
-对象池管理内存块；
-重新分配时创建一个新的对象生命周期。
-```
-
-不能在 release 里把同一个对象原地复活。
-
+清理责任转交与业务重新发布也不同。前者只让退休执行者完成已经决定的退出，不能对外恢复旧对象的业务许可；后者重新允许任意读者取得身份，会破坏先前的关闭证明。
 
 ### 6.9.2\_release\_中的调试检查
 
-复杂对象的 release 里适合放一些调试检查。
+回到完整工作模块：真正证明 worker 已退出的是 S3 封闭投递和 S4 的同步返回。即使在 release 增加 `WARN_ON(job->queue != NULL)`，它也只是检查程序是否按约定清空成员；单独提前把 queue 写为 NULL，不会销毁队列或让 worker 退出。
 
-例如：
+| 常见检查 | 在什么前提下有用 | 不能由“未告警”推出什么 |
+| --- | --- | --- |
+| `list_empty(node)` | 节点初始化/摘除都使用约定的自环表示，检查时地址有效 | 不能证明任意毒化节点已正确脱链，也不能代替容器锁 |
+| `timer_pending(timer)` | 调用者满足 timer 状态观察的串行化要求 | 为假仍可能有运行中的回调，未来也可能被重启 |
+| `registered == false` | 注册状态与实际注销操作按同一协议维护 | 不能证明旧 callback 已退出 |
+| `running == false` | 明确写入者、保护方式和“运行”的定义 | 不能把无保护读取当作线程完成同步 |
+| 某资源成员为 NULL | 清理动作与置空严格配对，没有隐藏拥有者 | 不能证明只改了字段而未真正归还的资源已退出 |
 
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	WARN_ON(!list_empty(&refobj->node));
-	WARN_ON(timer_pending(&refobj->timer));
-	WARN_ON(refobj->registered);
-	WARN_ON(refobj->running);
-
-	kfree(refobj->buf);
-	kfree(refobj);
-}
-```
-
-这些检查的意义是：
-
-```text
-release 发生时，对象应该已经完成撤销和收尾。
-```
-
-常见检查项：
-
-```text
-是否已经从链表删除
-是否已经从 hash/xarray 删除
-timer 是否还 pending
-work 是否还可能运行
-callback 是否已经 unregister
-状态是否已经进入 stopped/dead
-子资源是否仍然持有
-```
-
-这些 WARN 不是为了替代正确逻辑，而是为了尽早暴露生命周期协议错误。
-
+`WARN_ON` 不是等待接口，也不会自动修复错误；触发后继续走原代码可能仍会访问无效存储。它未触发也只说明这次执行到了该检查并得到一个值，不能证明所有生命周期交错。对于调试配置、执行覆盖和检查器有效性，还要按实际设施分别判断，不能把几次无告警作为销毁协议的主要依据。
 
 ### 6.9.3\_release\_和对象状态
 
-有些对象会有状态字段：
+如果类型使用 INIT、RUNNING、STOPPING、DEAD 等业务枚举，应先给每次写入一个具体完成条件。例如本章 S3 的 stopping=true 只表示不再接受新投递，S4 等待返回才表示异步借用已经退出。若都压成一个 DEAD 值，并在写值时尚未等待，就会把“已经要求停下”误认为“真的停下了”。
 
-```c
-enum my_refobj_state {
-	my_refobj_INIT,
-	my_refobj_RUNNING,
-	my_refobj_STOPPING,
-	my_refobj_DEAD,
-};
+引用数、业务许可、排队状态和存储退休可以组成多组正交状态；无需为了形式让一个枚举包办全部状态。确实需要汇总状态时，也应说明谁在什么锁下把各项完成证据汇聚成它，以及等待者怎样得知变化。enum 常量的名称不能代替通信路径。
 
-struct my_refobj {
-	struct kref ref;
-	struct mutex lock;
-	enum my_refobj_state state;
-};
-```
-
-release 可以检查状态是否已经进入终态：
-
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	WARN_ON(refobj->state != my_refobj_DEAD);
-
-	kfree(refobj);
-}
-```
-
-但是 release 不应该依赖复杂状态迁移。
-
-例如不要把主要 stop 流程放进 release：
-
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	my_refobj_stop_hardware(refobj);       /* 可能太晚，也可能上下文不对 */
-	kfree(refobj);
-}
-```
-
-更清晰的模型是：
-
-```text
-remove/stop 路径负责让对象停止工作；
-release 只验证对象已经停止，并释放内存和剩余资源。
-```
-
-因为 release 发生的时机取决于最后一个引用，不一定是适合停硬件、关中断、等待线程的时机。
-
+release 可以核对某个终态与本类型前提一致，但不应第一次在这里请求关硬件、关中断或停止线程，然后假设这些动作同步完成。最后引用消失不表示设备已经不再 DMA、不表示 IRQ 不再进入；实际驱动还要按对应硬件/子系统协议完成这些退出，本章纯软件模块没有验证它们。
 
 ### 6.9.4\_release\_不应承担过多业务逻辑
 
-release 的职责应该尽量收敛：
+“短回调”是便于审查的设计结果，不是按行数判断正确性的规范。一段短代码若等待自身照样错误，一段长清理若拥有完整的上下文、资源配对和依赖证明也不因长度自动错误。
 
-```text
-释放对象拥有的资源；
-执行最终一致性检查；
-释放对象内存。
-```
+实用的拆分方法是把会决定业务如何停止、需要向其他参与者发送关闭请求、可能等待远端或硬件响应的动作，交给仍持管理责任的关闭阶段；把所有责任结束以后才能做的资源回收留在 release。若关闭动作可能失败，还需要在放掉管理责任以前明确保留什么状态、由谁继续处理，不能失败后照常 free。
 
-不建议在 release 里做大量业务动作，例如：
-
-```text
-重新配置硬件
-发送复杂消息
-等待远端响应
-启动新任务
-重新注册对象
-执行复杂状态机迁移
-```
-
-原因是：
-
-```text
-release 的触发点由最后一个 put 决定；
-最后一个 put 可能出现在你不期望的上下文；
-release 越复杂，越难保证上下文、锁和错误路径正确。
-```
-
-更好的分层是：
-
-```text
-stop/remove 阶段处理业务停止；
-unregister/unlink 阶段撤销外部可见性；
-drain 阶段等待异步路径退出；
-release 阶段做最终资源释放。
-```
-
-------
+本章 `owned_close()` 之所以清楚，是它只有一个管理者、一个提交入口、一项 work，没有未知注销语义或外部设备；扩展系统时必须逐项增加相应退出证明。函数名叫 close/remove/destroy 并不会使其自动拥有这些保证。
 
 ## 6.10\_推荐销毁阶段和完整示例
 
-回到本章开头的完整模板：复杂对象应该把销毁拆成阶段，而不是把所有动作塞进 release。
+现在用全章结论回看 6.2 的完整程序。资源退出的先后来自依赖关系，不能把 stop、unregister、unlink、drain、put、release 当作所有对象一律照抄的固定列表。
 
 ### 6.10.1\_复杂对象销毁的推荐阶段
 
-对于复杂对象，推荐把销毁拆成多个阶段，而不是全塞进 release。
+对于本章管理者模式，沿 S0～S5 可得到清晰顺序：S0 准备资源，S1 建立调用者责任，S2 允许活动；S3 封闭所有生产入口；S4 在仍保留管理者份额时等待借用退出；S5 归还管理者并由最后持有者清理。新增入口、注册或硬件活动时，应插入它实际依赖的阶段，而不是只多写一个停止标志。
 
-典型阶段：
+例如容器拥有一份时，撤下入口要先于归还那一份；非拥有索引的锁组合允许最终回调撤下；timer/work 相互启动时，最终关闭 timer 要先于工作队列完全退出；RCU 发布份额是否跨 GP 则由选定的分配拓扑决定。它们都在回答同一个问题：下一步执行以前，哪些访问者已经失去进入机会，哪些已经取得地址的参与者仍有保护？
 
-```text
-1. stop：阻止对象继续产生新动作。
-2. unregister：从外部子系统撤销注册。
-3. unlink：从 list/hash/xarray 等全局结构删除。
-4. drain：等待或取消 work/timer/callback。
-5. put：释放管理者引用。
-6. release：最后一个引用归零后释放对象资源。
-```
-
-示意流程：
-
-```text
-my_refobj_destroy()
-   |
-   +-- 设置 stopping 状态
-   +-- unregister callback
-   +-- del_timer_sync / cancel_work_sync
-   +-- 从全局结构 unlink
-   +-- my_refobj_put(manager ref)
-          |
-          +-- 若还有用户引用：等待后续 put
-          |
-          +-- 若最后引用：release
-```
-
-这个模型的优点是：
-
-```text
-对象先不可见；
-异步路径先收敛；
-已有引用自然退出；
-最后 release 只做最终释放。
-```
-
+若一个关闭函数只保证 S3 返回，接口文档就不能承诺 S4 已完成。调用者若需要“返回后没有旧回调”，必须有明确的等待结果；靠函数叫 unregister_sync 或 destroy 也要回到实际 API 契约核对。
 
 ### 6.10.2\_一个复杂\_release\_示例
 
-下面给一个相对合理的复杂对象模型。
+本章的完整实现是[管理者等待借用退出模块](#6.2.2_运行一个由管理者等待借用退出的模块)，不再追加一份缺少创建、注册和失败路径的“综合模板”。它已经覆盖真正影响清理次序的几项资源：名称、私有队列、嵌入 work、管理者与独立调用者份额。
 
-对象：
+先不改代码，按两次实验各写一份结果预测：工作被取消时 `completed=0`，抢先执行时 `completed=1`，两者关闭后都返回 ESHUTDOWN，调用者结束后都清理一次。再解释为何名称尚可读取：S4 只销毁活动所需的队列，名称仍由最后一份对象引用保护，直到 S5 的 release。
 
-```c
-struct my_refobj {
-	struct kref ref;
-	struct mutex lock;
-	struct list_head node;
+然后做三个小修改练习：
 
-	char *name;
-	void *buffer;
+1. 将创建时的名称换成另一段私有字符串。预测所有成功/失败清理路径是否仍配对，再运行完整模块。
+2. 让调用者在调用 close 以前先归还自己的份额，并删掉 close 以后对 job 的全部访问。此时管理者可能成为最后一份，release 可在 close 的最后 put 内同步发生；关闭者仍不能在 put 以后读取 job。
+3. 保留独立调用者，在关闭后再申请一次业务操作。应沿 gate 内 stopping 检查得到拒绝，而不是因为仍持引用就允许重新创建队列或再次投递。
 
-	bool registered;
-	bool stopping;
-};
-```
-
-销毁前撤销：
-
-```c
-static void my_refobj_unregister(struct my_refobj *refobj)
-{
-	mutex_lock(&refobj->lock);
-	refobj->stopping = true;
-	mutex_unlock(&refobj->lock);
-
-	if (refobj->registered) {
-		unregister_callback(refobj);
-		refobj->registered = false;
-	}
-
-	mutex_lock(&refobj_list_lock);
-	if (!list_empty(&refobj->node))
-		list_del_init(&refobj->node);
-	mutex_unlock(&refobj_list_lock);
-
-	my_refobj_put(refobj);
-}
-```
-
-release：
-
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	WARN_ON(refobj->registered);
-	WARN_ON(!list_empty(&refobj->node));
-
-	kfree(refobj->buffer);
-	kfree(refobj->name);
-	kfree(refobj);
-}
-```
-
-这里 release 没有负责：
-
-```text
-unregister
-unlink
-stop
-```
-
-它只是检查这些动作已经完成，然后释放资源。
-
-这是一种更容易维护的模型。
-
+原始程序与控制路径已完成此前声明的适用检查，这些修改是读者练习，未把练习版本另称为已运行。测试时应记录修改点、返回值和执行环境；真实调度下的两种结果不能要求每次按固定顺序出现。
 
 ### 6.10.3\_release\_过度复杂的反例
 
-反例：
+设某次重构把所有动作搬进 release：取得对象锁写 stopping，调用未知注销函数，同步删除 timer，同步取消 work，取得索引锁脱链，再释放内存。不要只评价它“复杂”，应给出能具体发生的失败路径。
 
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
+- 若注册关系仍拥有一份，根本进不了 release，注销永远不会开始。
+- 若 worker 的最后 put 进入该回调，同步取消同一个 work 会等待自己的调用栈。
+- 若最后归还在中断或持自旋锁的区间里，mutex/同步等待没有所需上下文。
+- 若注销只阻止新进入而未等待旧 callback，后面的 free 仍可能越过旧借用者。
+- 若查找者和回调以相反顺序取得对象锁/索引锁，还可能形成另一个锁等待环。
 
-	mutex_lock(&refobj->lock);
-	refobj->stopping = true;
-	mutex_unlock(&refobj->lock);
-
-	unregister_callback(refobj);
-	del_timer_sync(&refobj->timer);
-	cancel_work_sync(&refobj->work);
-
-	mutex_lock(&refobj_list_lock);
-	list_del_init(&refobj->node);
-	mutex_unlock(&refobj_list_lock);
-
-	kfree(refobj->buffer);
-	kfree(refobj);
-}
-```
-
-这段代码看起来“完整清理”，但问题很多：
-
-```text
-release 可能在不能睡眠的上下文执行；
-unregister_callback 是否可能等待未知；
-del_timer_sync 是否可能和 timer 回调互等；
-cancel_work_sync 是否可能和 work 引用互等；
-release 中拿多个锁，锁顺序复杂；
-对象到 release 时还 registered/linked，说明前面撤销阶段不清晰。
-```
-
-这种 release 不是绝对不能写，但必须有非常严格的上下文和锁证明。
-
-普通工程中更建议把这些动作前移到 destroy/remove 阶段。
-
-------
+修复顺序应先确定本类型的引用、入口和借用关系，再选择哪个持有者负责关闭及等待；只把几个调用挪进另一个叫 destroy 的函数，不会自动建立这些前提。原回调的某个动作也可能在特定协议下合法，应按证据分析，不能按函数名做绝对禁令。
 
 ## 6.11\_命名\_注释和检查清单
 
-最后把 release 的上下文要求写进函数名、注释和检查清单，方便以后代码审查。
+最后把已经证明的协议写进接口附近，帮助以后修改代码的人保留前提。注释应陈述实际保证，不能替实现许愿。
 
 ### 6.11.1\_release\_函数命名建议
 
-release 函数名最好表达对象类型和上下文。
+`owned_release` 表明类型和最终清理职责；`indexed_release_locked` 进一步提醒调用者按持锁契约进入。若名称使用 `_rcu`，还应说明它是“kref 回调安排 RCU 退休”还是“已经由 RCU 调用的回调”，二者参数和执行阶段不同。`_atomic` 最多提示预期的非睡眠约束，不能让里面的等待代码自动合法。
 
-普通 release：
-
-```c
-static void my_refobj_release(struct kref *ref)
-```
-
-如果 release 依赖锁状态：
-
-```c
-static void my_refobj_release_locked(struct kref *ref)
-```
-
-如果 release 使用 RCU 延迟释放：
-
-```c
-static void my_refobj_release_rcu(struct kref *ref)
-```
-
-如果 release 不能睡眠：
-
-```c
-static void my_refobj_release_atomic(struct kref *ref)
-```
-
-名字不是语义保证，但能提醒维护者：
-
-```text
-这个 release 不是普通 kfree 路径；
-它有特殊上下文要求。
-```
-
-配合注释更清晰：
-
-```c
-/*
- * Called when the last reference is dropped.
- * The object must already be unlinked from refobj_list.
- * May sleep.
- */
-static void my_refobj_release(struct kref *ref)
-{
-	...
-}
-```
-
-或者：
-
-```c
-/*
- * Called with refobj_list_lock held.
- * Must drop refobj_list_lock before returning.
- * Must not sleep before dropping the lock.
- */
-static void my_refobj_release_locked(struct kref *ref)
-{
-	...
-}
-```
-
+命名保持类型一致，普通 put 包装器集中选择适配的 release。锁组合回调要写清哪把锁、由谁解锁；普通回调不能因为名字相似就与它交换使用。这样阅读调用点时，维护者可以先看见契约，再检查其实现。
 
 ### 6.11.2\_release\_注释应该写什么
 
-复杂对象建议在 release 附近写清楚：
-
-```text
-1. release 是否可能睡眠。
-2. release 是否要求对象已经脱链。
-3. release 是否要求 callback 已经 unregister。
-4. release 是否要求 work/timer 已经停止。
-5. release 是否在持锁状态下调用。
-6. release 是否释放锁。
-7. release 最终是 kfree、kmem_cache_free 还是 kfree_rcu。
-```
-
-示例：
+为当前 `owned_release` 写一段有效注释，应像下面这样回指真实动作，而不是写“对象已经完全安全”：
 
 ```c
 /*
- * Lifetime:
- * - refobj_list holds the initial manager reference while linked.
- * - lookup obtains references under refobj_list_lock.
- * - work users take their own references before queue_work().
- * - remove unlinks the object, stops external callbacks, and drops
- *   the manager reference.
- *
- * Release:
- * - Called when the last reference is dropped.
- * - object must already be unlinked.
- * - No work or timer may still own a reference.
- * - May sleep.
+ * 类型协议：管理者拥有初始份额，worker 只借用，不单独 put。
+ * owned_close 先在 gate 下关闭投递，再在锁外等待 work 返回并销毁队列。
+ * 管理者此后归还初始份额；其他调用者仍须自行归还。
+ * 本回调清理 name 和外壳，不负责排空工作，也不接管任何外部锁。
  */
-static void my_refobj_release(struct kref *ref)
-{
-	...
-}
 ```
 
-这类注释可以直接服务代码审查。
-
+其他类型按自己的事实补充：进入时是否持某把锁、回调是否必须解锁、需要哪些上下文、哪些成员是借用或引用、存储立即回收还是交给下一阶段、此前退出动作失败时由谁处理。不要把本例“没有全局入口”的事实改写成所有对象“必须已脱链”的通用断言。
 
 ### 6.11.3\_release\_的最小检查清单
 
-写 release 前，先回答下面问题。
+以下五组问题用于回访本章实例或审查自己的类型。每个回答都应能落到一段路径和一个明确的责任人，不能只写“已处理”。
 
 #### (1)\_资源归属
 
-```text
-哪些字段由对象分配？
-哪些字段只是借用？
-哪些字段需要 put，而不是 kfree？
-哪些字段是静态内存？
-```
+列出每块分配、每份外部对象引用和每个借用地址。创建失败时哪些已经取得，哪些尚未取得？退出动作与取得方式是否配对？独立调用者是否还允许在关闭后访问某个成员，因而不能提前释放它？
 
 #### (2)\_外部可见性
 
-```text
-对象是否还在 list/hash/xarray/idr？
-对象是否还注册在外部子系统？
-对象是否还能被 callback 找到？
-对象是否还能被 RCU 读侧看到？
-```
+容器或注册关系是否拥有一份？查找从读地址到取得份额由什么保护？撤下以后已经拿到地址的旧读者是否仍有有效窗口？如果最终回调负责清槽，所有归还路径是否保持查找所依赖的归零协议？
 
 #### (3)\_异步路径
 
-```text
-work 是否可能还在运行？
-timer 是否可能还 pending？
-callback 是否可能并发进入？
-中断路径是否可能使用对象？
-```
+每次 work 接收、timer 改期和 callback 进入对应哪份责任或借用？谁封闭重新进入，谁等待已经开始的执行？取消返回值能证明哪一项状态，不能证明哪一项？关闭者是否可能等待自己，或持有被等待者需要的锁？
 
 #### (4)\_上下文
 
-```text
-最后一个 put 可能发生在哪里？
-release 是否可能睡眠？
-release 是否可能在 spinlock 下执行？
-release 是否会拿 mutex？
-release 是否会调用等待函数？
-```
+把所有可能最后 put 的路径列出来，包含失败出口、中断、worker 尾部和 RCU 回调。release 在这些路径下是否都合法？若接管锁，是否确实解锁，解锁以后还剩哪些中断/调度限制？若转交清理责任，执行者和对象存储怎样保留到完成？
 
 #### (5)\_最终释放
 
-```text
-使用 kfree？
-使用 kmem_cache_free？
-使用 kfree_rcu？
-是否需要先释放子资源？
-是否有 WARN_ON 检查？
-```
-
-------
+每块内存是否只有一个最终出口，且配对正确的分配器？相关旧借用结束与独立引用归零如何汇合？检查本身是否在有效地址和正确同步下执行？未告警是否被错误地当成所有路径都安全的证明？
 
 ## 6.12\_本章小结
 
-本章讲的是复杂 release 模式。
+本章从一个 manager 保留对象、worker 借用的完整实例出发，把销毁拆成可解释的因果链：先封闭投递，保持管理责任等待旧执行者退出，再归还引用，最后清理拥有资源。拿掉封闭窗口会重新产生工作，提早归还可能让旧 worker 访问失效对象，持锁等待则可能让 worker 永远无法退出。每一项限制都有对应的失败路径。
 
-核心结论：
+随后增加索引、锁组合、timer、注册关系和 RCU，看到“入口撤下”“活动结束”“引用归零”“存储回收”可以是不同事件。它们的顺序由所有权和借用拓扑决定；有的索引在 release 内撤下，有的对象在 GP 后才归还发布份额，有的归零后还必须等待旧读者。release 的主要职责是完成已选定的最终清理协议，而不是猜测所有子系统已经停止。
 
-```text
-release 是对象生命周期的最终收口点，不只是 kfree 包装函数。
-```
+用三个问题检查理解：
 
-release 里可以做：
+1. timer_pending 为假，为什么仍不能直接 free？因为 callback 可能正在运行，或另一路尚可重启；必须获得实际退出和封闭证据。
+2. 最后 put 调用了 release，为什么不能从这点推出内存已回收？因为回调可能合法地交付延迟清理；归还者仍不得凭已交还的份额继续访问。
+3. 管理者能否代替关闭后仍持有对象的调用者 put？不能，除非接口明确转交那一份；关闭业务不等于接管别人的责任。
 
-```text
-释放对象拥有的子资源；
-检查对象是否已经脱链；
-检查 work/timer/callback 是否已经收敛；
-释放对象本体；
-必要时使用 kfree_rcu 延迟释放内存。
-```
-
-release 里不应该做：
-
-```text
-重新发布对象；
-重新初始化 kref；
-盲目 unregister 外部关系；
-无证明地等待 work/timer；
-在 spinlock 下调用可能睡眠的函数；
-释放并不属于对象的资源；
-承载复杂业务状态机。
-```
-
-复杂对象更推荐把销毁拆成阶段：
-
-```text
-stop
-unregister
-unlink
-drain
-put
-release
-```
-
-责任域可以压缩成这张表：
-
-| 阶段 | 主要责任 | 不应该混进去的事 |
-| --- | --- | --- |
-| destroy/remove | 停止业务、撤销注册、脱链、收敛异步入口 | 不应该假装对象已经没有旧引用 |
-| kref 引用计数 | 等所有持有者 put，找到最后一个引用释放点 | 不负责设备状态机和字段互斥 |
-| release | 最终检查、释放对象拥有的资源、释放对象本体 | 不应该重新发布对象或承担复杂业务停止流程 |
-
-本章最关键的一句话：
-
-```text
-release 应该发生在对象已经不可见、异步路径已经有明确引用归属、最后一个引用已经消失之后。
-```
-
-下一章进入：
-
-```text
-第 7 章：handoff 所有权转移模型
-```
-
-重点会从 release 转向另一类高频错误：
-
-```text
-对象指针交给 workqueue、timer、队列、callback 后，
-这个引用到底归谁？
-成功路径谁 put？
-失败路径谁 put？
-handoff 后当前路径还能不能访问？
-```
-
-------
+下一章把焦点放回第三个问题：[handoff 所有权转移模型](P07_handoff_所有权转移模型.md)将逐条说明成功、拒绝和交付以后由谁负责归还，避免把指针传递误当成责任已经自动转移。
 
 专题导航：[kref 引用计数机制章节大纲](大纲.md)。
 

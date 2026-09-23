@@ -2248,6 +2248,6 @@ obj 指针传给了谁
 
 专题导航：[kref 引用计数机制章节大纲](大纲.md)。
 
-上一篇：[release 回调与复杂销毁模式](P06_release_回调与复杂销毁模式.md)。
+上一篇：[release 回调与复杂销毁模式](P06_release_回调与复杂销毁模式.md#6.12_本章小结)。
 
 下一篇：[lookup 场景与 kref_get_unless_zero()](P08_lookup_场景与_kref_get_unless_zero%28%29.md)。
