@@ -65,7 +65,7 @@ flowchart TD
 
 ## 3.5\_共同配置边界
 
-当前 `.config` 开启 mutex/rwsem owner spinning，因此源代码优化可运行；是否实际自旋取决于 owner 是否运行、need_resched、队列和调用上下文。PREEMPT_RT 分支使用不同类型/实现，只能作为源码替代路径阅读，本次没有 RT 运行验证。
+本轮标准工作树为UP配置，未启用mutex/rwsem owner spinning；本章对乐观自旋的分析来自固定提交中相应条件分支，不代表当前构建或目标已执行。在启用该优化的构建中，是否实际自旋还取决于owner是否运行、need_resched、队列和调用上下文。PREEMPT_RT 分支使用不同类型/实现，只能作为源码替代路径阅读，本次没有 RT 运行验证。
 
 ## 3.6\_复核问题
 

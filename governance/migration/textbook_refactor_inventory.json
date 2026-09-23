@@ -3294,8 +3294,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/大纲.md",
       "baseline_sha256": "f4d8550aed4edab7ba53be835abe15d87374ded9879efeda4a6054e734e641d9",
       "lines": 38,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05a实际冷读总纲，保留两条主线与归属边界，改以更新交错、执行上下文和具体保证组织阅读地图；全部现有子专题可达，不计其正文完成。"
     },
     {
       "path": "knowledge/system_software/buildroot/P00_全书学习地图.md",
@@ -4843,6 +4843,13 @@
       "lines": 262,
       "state": "validated",
       "reason": "B04cm从已逐单元冷读、核对与重写的旧讨论完整拆分，保留程序、配置、练习与原提问，按职责修正入口与先修关系；人工评审新节点红色，真实目标运行边界未升级。"
+    },
+    {
+      "path": "knowledge/linux/synchronization_and_asynchrony/P01_同一对象的多条执行路径.md",
+      "baseline_sha256": null,
+      "lines": 215,
+      "state": "validated",
+      "reason": "B05a新增先修教材：八条C抽象交错、单CPU与上下文、等待成本、本地重入及同步异步边界；未进行真实并发和内核运行。新人工评审节点红色。"
     }
   ]
 }

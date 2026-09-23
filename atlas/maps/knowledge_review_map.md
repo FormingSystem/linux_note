@@ -381,6 +381,7 @@ mindmap-plugin: basic
             - 🔴 **未校正** [P40 多归还与失效窗口实验](../../knowledge/linux/object_lifetime/kref/P40_多归还与失效窗口实验.md)
             - 🟢 [P15 最终验收标准](../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md)
     - 🔴 [Linux 同步和异步机制](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)
+        - 🔴 **未校正** [P01 同一对象的多条执行路径](../../knowledge/linux/synchronization_and_asynchrony/P01_同一对象的多条执行路径.md)
         - 🔴 [同步机制](../../knowledge/linux/synchronization_and_asynchrony/synchronization/大纲.md)
             - 🔴 [Linux 内存顺序专题](../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/大纲.md)
                 - 章节评审：10 章未评审

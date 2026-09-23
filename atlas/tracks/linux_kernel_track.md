@@ -15,7 +15,7 @@ domains:
 
 本路线面向能读懂 C 的变量、函数、数组和循环，但还没有内核整体模型的读者。先运行一个读取文本的程序，再追问数据从哪里来、请求由谁执行、状态放在哪里。等这条路径成立以后，再加入多个使用者、异步事件和设备拆除。你不需要先背完整的内核目录与接口表。
 
-路线中的文件保持各自的权威位置，顺序体现学习依赖。当前已按新教材写法重写的是第一阶段的两篇基础正文；后续材料仍需按 [全量重构蓝图](../roadmaps/linux_textbook_refactor.md#1.2_全量阅读依赖与批次)分批校准，不能把进入路线理解为全书重构已经完成。
+路线中的文件保持各自的权威位置，顺序体现学习依赖。各阶段的实际作者审查与重构进度见[全量重构蓝图](../roadmaps/linux_textbook_refactor.md#1.2_全量阅读依赖与批次)，不能把进入路线理解为全书重构已经完成。
 
 开始前建议先在[知识库专题阅读与评审地图](../maps/knowledge_review_map.md)查看各专题和章节的人工确认程度；路线中的顺序表示认知依赖，不表示对应内容已经完成评审。
 
@@ -49,7 +49,7 @@ domains:
 
 上一阶段的一个对象，现在可能同时被两个任务使用：一个正在读取，另一个准备更新或销毁。沿着这条变化学习本阶段，先画具体交错，再选择同步或等待方式。下列源码入口用于模型成立后的核对，不要求初读时同时打开所有实现。
 
-1. 从[同步和异步机制总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)先区分“约束并发状态”和“让事件继续推进”两类问题。
+1. 先运行[同一对象的多条执行路径](../../knowledge/linux/synchronization_and_asynchrony/P01_同一对象的多条执行路径.md#1.2_运行所有允许的交错)，比较丢失更新、互斥范围、单CPU交错与上下文限制；再从[总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md#1.4_按问题推进的阅读地图)区分同步保证和异步推进。
 2. 阅读[内存顺序](../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/大纲.md)，再进入[锁机制](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/大纲.md)，先区分可睡与不可睡上下文，再沿[锁源码总阅读索引](../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)核对 spinlock、mutex 与 rwsem；随后用 [Lockdep 专题](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md#1.1_专题定位)和[源码索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)把锁序、IRQ 上下文和持锁前置条件转成动态验证证据。
 3. 对照学习[seqcount/seqlock](../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/大纲.md)与[RCU](../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md)，理解读重试和延迟回收解决的是不同问题；版本化实现分别从[序列计数器源码总阅读索引](../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.5_建议阅读顺序)和 [RCU 源码总阅读索引](../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)进入。
    希望在同一阅读界面连续完成 RCU 稳定机制、源码导读、唯一实现讲解与实验时，可改走 [RCU MarkBook 当前月刊](../../markbook/topics/rcu/latest.html)；月刊是派生快照，不替代上述权威入口和评审状态。

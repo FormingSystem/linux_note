@@ -15,7 +15,7 @@ source_version: "6.12.20"
 
 本专题固定到 NXP `linux-imx` 发布标签 `lf-6.12.20-2.0.0` 解引用后的提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，顶层版本为 Linux 6.12.20。当前开发工作树位于同一 `lf-6.12.y` 分支且比该标签提交前进 3 个提交；本文所有函数和行号仍以固定发布提交为准，不静默混用分支头。
 
-当前核对的 `.config` 启用了 `CONFIG_SMP=y`、`CONFIG_MUTEX_SPIN_ON_OWNER=y` 与 `CONFIG_RWSEM_SPIN_ON_OWNER=y`，未启用普通抢占；它只用于说明当前可运行分支，不把 `CONFIG_PREEMPT_RT` 替代实现写成已运行事实。
+本轮重新读取标准工作树配置：`CONFIG_SMP`未启用，`CONFIG_PREEMPT_NONE=y`、`CONFIG_TINY_RCU=y`，未启用mutex/rwsem owner spinning。先前“当前配置为SMP并开启owner spinning”的表述已纠正；正文介绍这些分支依据固定提交的源码条件，不代表当前构建选择它们，更不代表已在目标运行。
 
 跨版本因果模型先读[锁机制专题](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/大纲.md#1.1_专题定位)。本目录只回答 Linux 6.12.20 把锁状态放在哪里、哪些函数读写、慢路径怎样通信。
 
@@ -82,3 +82,7 @@ flowchart TD
 - 当前配置能验证哪些分支，PREEMPT_RT 结论又来自哪层证据？
 
 下一篇：[spinlock 模块源码概念导读](P02_Linux_6.12_spinlock模块源码概念导读.md)。
+
+## 1.8\_执行路径先修与锁类别规则
+
+[执行路径先修](../../../../knowledge/linux/synchronization_and_asynchrony/P01_同一对象的多条执行路径.md#1.5_先辨认当前路径再选择接口)先区分访问协议和等待方式。固定提交[Documentation/locking/locktypes.rst](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/locking/locktypes.rst)的Lock categories、CPU local locks和raw_spinlock_t and spinlock_t章节用于核对可睡上下文、本地约束不能排除远端、实时配置改变普通锁语义。kernel/Kconfig.locks中两种owner spinning都依赖SMP与ARCH_SUPPORTS_ATOMIC_RMW；当前配置不满足前者。这里引用文档及配置契约，不新增宏体或函数体展开；具体实现仍从1.3中的唯一入口进入。

@@ -974,3 +974,7 @@ B04ck重新只读核对官方远端、lf-6.12.y、固定标签dfaf2136和6.12.20
 ## 1.107\_组合退出与私有桥接
 
 B04cn沿固定device/kobject公开引用、device_unbind_cleanup与devres逆序记录证据组合T0～T6，具体入口见[设备导读](../kref/navigation/P08_device引用与资源退出导读.md#8.9_组合退出中的设备桥接与私有份额)。未新增函数展开或原文副本，私有ctx的门、活动与桥接属于应用设计。六条C宿主轨迹不等于Linux实现、真实同步、映射撤销或目标设备通过；继续保持固定dfaf2136而非本地实验HEAD为源码身份。
+
+## 1.108\_并发先修与锁配置重核
+
+B05a以固定dfaf2136的Documentation/locking/locktypes.rst核对锁类别、可睡任务上下文、本地约束与实时映射；入口见[锁规则导读](../locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.8_执行路径先修与锁类别规则)。本轮只读.config确认为PREEMPT_NONE/TINY_RCU、非SMP，未启用owner spinning；纠正锁总索引、两篇模块导读和正文P04此前的当前SMP配置表述，不因此把其余正文标为整篇验收。交错程序是单线程抽象枚举，不是Linux锁、调度、中断或RT运行证据。
