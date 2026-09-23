@@ -336,7 +336,7 @@ mindmap-plugin: basic
             - 章节评审：1 章未评审
             - 🔴 [P01 kobject device devres kref 生命周期集成](../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md)
         - 🟢 [kref 引用计数机制](../../knowledge/linux/object_lifetime/kref/大纲.md)
-            - 章节评审：原15章评审完成；新增9章未校正
+            - 章节评审：原15章评审完成；新增10章未校正
             - 🟢 [P01 kref 要解决什么问题](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)
             - 🟢 [P02 源码入口与结构定义](../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md)
             - 🟢 [P03 kref 生命周期状态机](../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md)
@@ -359,6 +359,7 @@ mindmap-plugin: basic
             - 🔴 **未校正** [P22 完成事件与等待者工程模板](../../knowledge/linux/object_lifetime/kref/P22_完成事件与等待者工程模板.md)
             - 🔴 **未校正** [P23 分阶段失败与资源回滚模板](../../knowledge/linux/object_lifetime/kref/P23_分阶段失败与资源回滚模板.md)
             - 🔴 **未校正** [P24 删除入口与活动排空工程模板](../../knowledge/linux/object_lifetime/kref/P24_删除入口与活动排空工程模板.md)
+            - 🔴 **未校正** [P25 RCU查找与业务关闭工程模板](../../knowledge/linux/object_lifetime/kref/P25_RCU查找与业务关闭工程模板.md)
             - 🟢 [P14 源码阅读实验](../../knowledge/linux/object_lifetime/kref/P14_源码阅读实验.md)
             - 🟢 [P15 最终验收标准](../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md)
     - 🔴 [Linux 同步和异步机制](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)

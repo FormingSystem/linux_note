@@ -209,3 +209,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.32\_删除与排空工程复核
 
 [P24删除入口与排空](../../../../knowledge/linux/object_lifetime/kref/P24_删除入口与活动排空工程模板.md#24.1_关闭业务不等于回收所有对象)逐字复用[note_kref_owned_work.c](note_kref_owned_work.c)，重点解释管理者、队列、name和旧用户的不同退出期限；材料/Makefile不变。既有九组宿主与ARM前端边界保持，本批核对夹具并完成文档检查，不重复宣称目标装卸或真实并发验证。
+
+## 1.33\_RCU查找工程复核
+
+[P25 RCU查找与业务关闭](../../../../knowledge/linux/object_lifetime/kref/P25_RCU查找与业务关闭工程模板.md#25.1_同一对象上有三组独立状态)逐字复用[note_kref_rcu.c](note_kref_rcu.c)，材料和Makefile不变；核对既有八组夹具与355/343 ARM头证据。本批无运行行为改变，未重跑或执行目标装卸；表份额、旧节点、业务门、子资源和模块回调分别解释。
