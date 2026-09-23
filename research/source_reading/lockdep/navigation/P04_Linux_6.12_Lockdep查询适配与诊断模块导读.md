@@ -36,7 +36,7 @@ lockdep_is_held(&lock)
 
 查询只读 current 状态，不读取 mutex owner，也不扫描其他任务。具体实现见 [`lock_is_held_type()` 当前持锁查询](../source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.2_lock_is_held_type当前持锁查询)。
 
-## 4.3\_断言与pin怎样消费held record
+## 4.3\_断言与pin怎样消费held\_record
 
 `lockdep_assert_held()` 只有在结果明确为 NOT_HELD 时才告警，避免检查器失效时误报“未持锁”；pin 则在已经匹配的 held record 上增加 `pin_count`，使中途 release 可以被发现。
 
@@ -90,3 +90,5 @@ proc 创建条件和字段见 [`lockdep_proc_init()` 与 `/proc/lockdep*`](../so
 4. RCU 功能读侧与虚拟 map 检查状态；
 5. 编译了 Lockdep 与当前 `debug_locks` 仍有效；
 6. 正确性图 `/proc/lockdep*` 与性能统计 `/proc/lock_stat`。
+
+跨专题实例见[kref最后归还实验](../../../../knowledge/linux/object_lifetime/kref/P39_最后归还与Lockdep实验.md#39.1_先把一条隐含依赖画出来)：一个任务先后走两种锁顺序也可留下潜在环证据；报告后的检查器状态与功能锁释放必须分别判断。此入口不改变本模块的查询、容量和诊断实现职责。
