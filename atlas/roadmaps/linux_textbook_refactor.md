@@ -380,3 +380,5 @@ B04bz完成P14的14.6.4，新增[P39最后归还与Lockdep](../../knowledge/linu
 B04ca完成P14的14.7，新增[P40多归还与失效窗口](../../knowledge/linux/object_lifetime/kref/P40_多归还与失效窗口实验.md#40.1_计数为正仍可能归还了别人的份额)，五条C模型、三条固定引用对照和六组表协议通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.142_B04ca误用窗口与引用异常实验)保留真实故障未执行边界。清单667项：261 validated、388 pending、18 supporting_pending；P14继续14.8旧用户与父子关系，仍pending。
 
 B04cb完成P14的14.8至14.12并冷读全章桥接，复用P27/P30完整程序，重跑十八条或组适用检查，纠正虚构观测与过度概括；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.143_B04cb实验路线收束)记录未运行边界。清单667项：262 validated、387 pending、18 supporting_pending；P14作者审查完成，继续P15，人工评审状态未变。
+
+B04cc重构P15的15.1至15.3基础六题，补齐地址/正计数、借用/独立拥有及最后归还边界，六组既有基础模块宿主检查通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.144_B04cc基础验收与接口前提)记录范围。清单仍667项：262 validated、387 pending、18 supporting_pending；P15继续15.4场景验收，仍pending。

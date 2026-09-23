@@ -277,3 +277,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.49\_实验收束与真实材料选择
 
 [P14后半实验](../../../../knowledge/linux/object_lifetime/kref/P14_源码阅读实验.md#14.8_状态和父子关系实验_生命周期不等于业务可用)直接复用[state_ownership.c](state_ownership.c)十路径和[note_kref_parent.c](note_kref_parent.c)八组宿主检查，完整教学程序分别保留在P30/P27。材料不新增想象中的kref_lab.ko总调度器；各模块使用自身已定义参数，实际故障结果与预期分开填写，本次无新增目标运行。
+
+## 1.50\_基础模块作为验收题
+
+[P15基础六题](../../../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md#15.3_核心概念验收_生命周期_指针和引用)使用既有[note_kref_basics.c](note_kref_basics.c)而非新增同义模块。先解释holders=1/2的两槽责任与回调位置，再对照P32完整代码；六组宿主协议本批重编通过，没有目标装卸或并发证明。
