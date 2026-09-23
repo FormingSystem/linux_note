@@ -344,3 +344,5 @@ B04bi完成[P23分阶段失败与回滚](../../knowledge/linux/object_lifetime/k
 B04bj完成[P24删除入口与活动排空](../../knowledge/linux/object_lifetime/kref/P24_删除入口与活动排空工程模板.md#24.1_关闭业务不等于回收所有对象)，保留完整管理者模块，核对业务门、队列等待、集合与管理者份额及旧用户资源期限；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.125_B04bj删除入口与活动排空)保留证据边界。清单650项：243 validated、389 pending、18 supporting_pending；继续P13 RCU与弱缓存，P13仍pending。
 
 B04bk完成[P25 RCU查找与业务关闭](../../knowledge/linux/object_lifetime/kref/P25_RCU查找与业务关闭工程模板.md#25.1_同一对象上有三组独立状态)，保留完整RCU模块与既有八组验证边界，明确表份额、重复撤下和回调退出；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.126_B04bkRCU查找与业务关闭)记录证据复核。清单651项：244 validated、389 pending、18 supporting_pending；继续P13弱缓存，P13仍pending。
+
+B04bl完成[P26弱缓存撤销与RCU回收](../../knowledge/linux/object_lifetime/kref/P26_弱缓存撤销与RCU回收模板.md#26.1_新读区为什么救不了旧缓存)，新增完整单槽模块，修正缓存残留旧地址与新读区无法补救的缺口；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.127_B04bl弱缓存撤销与RCU回收)记录九组宿主、ARM及边界。清单652项：245 validated、389 pending、18 supporting_pending；继续P13父子对象，P13仍pending。

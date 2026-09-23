@@ -42,6 +42,7 @@ source_version: "6.12.20"
 | kobject撤下为什么不等于最后归还 | [身份与类型清理模块](P07_kobject身份与类型清理导读.md#7.2_从K0到K5连接状态与回调) → [kobject字段](../source_explanations/include/linux/kobject.h.md#1.1_对象身份与独立状态)及[清理链](../source_explanations/lib/kobject.c.md#1.4_最后归还进入类型清理) |
 | atomic、refcount与kref分别接续哪一步 | [计数与清理模块边界](P02_普通引用与归零回调导读.md#2.15_计数原语与调用者清理的边界) → [完整对象回访](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.2.3_kref_对象生命周期引用计数封装) |
 | 为什么外壳保活不等于子资源可访问 | [正文访问期限](../../../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md#10.5.3_子资源释放不能早于_RCU_读者) → [取得链的外层边界](P03_条件取得与查找窗口导读.md#3.7_从旧节点继续到最终回调) |
+| 弱槽不拥有对象为何仍须先清除 | [弱入口撤销](P03_条件取得与查找窗口导读.md#3.12_单个弱缓存槽的撤销与回收) → [条件取得地址前提](../source_explanations/include/linux/kref.h.md#1.7_有效地址上的条件取得) |
 | RCU模板的表份额和业务门怎样配合 | [旧节点到回调](P03_条件取得与查找窗口导读.md#3.7_从旧节点继续到最终回调) → [工程模板](../../../../knowledge/linux/object_lifetime/kref/P25_RCU查找与业务关闭工程模板.md#25.1_同一对象上有三组独立状态) |
 | 旧节点为何仍需保留next | [应用周期模块](P03_条件取得与查找窗口导读.md#3.7_从旧节点继续到最终回调) → [list_del_rcu 唯一实现](../source_explanations/include/linux/rculist.h.md#1.1_摘链后保留旧读者的前向路径) |
 | RCU 临时地址怎样接到长期份额 | [RCU 文档边界](P03_条件取得与查找窗口导读.md#3.6_RCU保护区与退休份额) → [两种退休顺序模型](../../../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md#10.2.1_RCU_和_kref_分别保护什么) |

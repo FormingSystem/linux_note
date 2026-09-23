@@ -213,3 +213,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.33\_RCU查找工程复核
 
 [P25 RCU查找与业务关闭](../../../../knowledge/linux/object_lifetime/kref/P25_RCU查找与业务关闭工程模板.md#25.1_同一对象上有三组独立状态)逐字复用[note_kref_rcu.c](note_kref_rcu.c)，材料和Makefile不变；核对既有八组夹具与355/343 ARM头证据。本批无运行行为改变，未重跑或执行目标装卸；表份额、旧节点、业务门、子资源和模块回调分别解释。
+
+## 1.34\_单槽弱缓存撤销
+
+[note_kref_weak_cache.c](note_kref_weak_cache.c)对应[P26弱缓存模板](../../../../knowledge/linux/object_lifetime/kref/P26_弱缓存撤销与RCU回收模板.md#26.1_新读区为什么救不了旧缓存)。槽不拥有引用，最后归还先按身份清槽再安排回收，旧对象退出不会抹掉替换值；Makefile已登记。九组宿主及ARM前端通过，354/342头身份核对无差异；真实RCU调度、并发、目标装卸、动态holder/多槽与硬件未验证。
