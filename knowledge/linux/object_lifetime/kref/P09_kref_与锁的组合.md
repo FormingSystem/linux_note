@@ -670,7 +670,7 @@ mutex_unlock(&list_lock);
 
 ### 9.3.7\_对象状态\_集合锁与对象锁组合
 
-很多 `kref` 对象除了引用计数之外，还会有状态字段。
+上一节把查找交给独立引用，把业务读写交给字段锁。现在给状态命名：这不是一个枚举从头走到尾的单一状态机，而是成员可见性、业务运行与引用责任三组正交状态共同组成的协议。必须先说明每组状态的地址和写入者，再看一次完整周期。
 
 但是状态字段不能随便设计。
 
@@ -735,6 +735,8 @@ struct my_obj {
 };
 ```
 
+这里采用的 life_state 只表示成员发布/撤下阶段，不能单独证明业务已停止；run_state 只表示本例同步业务状态，不能证明对象还在表中。id 在发布前写入并保持不变。本节是配对接口模型，完整可构建起点仍为 9.2 的服务模块；以下 start/stop 只演示同步状态转换，不冒充真实 DMA 或 work 关闭。
+
 这里有三条分工：
 
 | 机制               | 保护内容                       |
@@ -752,6 +754,19 @@ kref 决定对象内存能不能活到使用结束。
 ```
 
 ------
+
+沿同一 S0～S5 阅读这组接口，注意本模型的 S4 只撤下成员，是否还要业务关闭由外层流程决定：
+
+| 阶段 | 触发与写入者 | 状态地址和变化 | 同步及退出 |
+| --- | --- | --- | --- |
+| S0 | alloc 私有初始化 | life_state=NEW，run_state=IDLE，ref=1，node自链接 | 尚未发布，无共享读者 |
+| S1 | publish | list_lock内追加集合一份，NEW→LIVE并挂链 | 后续lookup依同锁观察，拒绝不追加 |
+| S2 | lookup | list_lock内比较id与LIVE，再get | 调用者独立份额接续到锁外 |
+| S3 | start/stop | obj.lock内检查并改变run_state | 本节仅同步状态模型，不创建异步活动 |
+| S4 | remove_by_id | list_lock内LIVE→DYING并摘链，记录待归还份额 | 本页保留双锁写段，顺序为集合锁→对象锁；解除两锁后put |
+| S5 | 最后put触发release | 最后责任退出，检查节点、写DEAD并回收 | 此时正常协议下无其他读写者；创建未发布也可直接走此阶段 |
+
+因而 LIVE+IDLE、LIVE+RUNNING、DYING+RUNNING 都可能有意义。最后一种说明入口已撤下，但本节并没有宣称业务停止；若产品要求撤下以后旧用户也不能启动，必须补业务门，不能靠 life_state 的名字猜保证。
 
 #### (1)\_生命周期状态必须和集合动作绑定
 
@@ -773,6 +788,7 @@ stateDiagram-v2
     [*] --> MY_OBJ_NEW: alloc + kref_init
 
     MY_OBJ_NEW --> MY_OBJ_LIVE: publish
+    MY_OBJ_NEW --> MY_OBJ_DEAD: 未发布就归还初始份额
     note right of MY_OBJ_LIVE
         life_state = MY_OBJ_LIVE
         list_add()
@@ -854,6 +870,7 @@ life_state == MY_OBJ_NEW。
 ```c
 int my_obj_publish(struct my_obj *obj)
 {
+	struct my_obj *candidate;
 	int ret = 0;
 
 	/*
@@ -870,6 +887,14 @@ int my_obj_publish(struct my_obj *obj)
 	if (!list_empty(&obj->node)) {
 		ret = -EINVAL;
 		goto out;
+	}
+
+	/* 编号是本索引的唯一键，重复编号不得形成含糊查找结果。 */
+	list_for_each_entry(candidate, &my_obj_list, node) {
+		if (candidate->id == obj->id) {
+			ret = -EEXIST;
+			goto out;
+		}
 	}
 
 	/*
@@ -1031,9 +1056,9 @@ int my_obj_remove_by_id(int id)
 }
 ```
 
-这里没有拿 `obj->lock`。
+当前保留的代码实际上在 list_lock 内又取得了 obj->lock，原文“这里没有拿对象锁”与代码不符。原有插锁和中文注释保留，按它们的实际行为解释：这是集合锁→对象锁的嵌套写段，两把锁都不保护独立的 put；归还在全部解锁后发生。
 
-原因是 remove 只处理集合可见性：
+本节的既定字段表仍把这些状态归集合锁保护：
 
 ```text
 life_state；
@@ -1041,7 +1066,7 @@ node；
 list 持有的引用。
 ```
 
-这些都归 `my_obj_list_lock` 管，不归 `obj->lock` 管。
+这些写入已有 my_obj_list_lock 排斥所有成员读写者，因此在本节协议下，额外对象锁并非保护 node/life_state 所必需。它增加了锁依赖，却不会自动让只拿对象锁的其他路径获得遍历全局链表的资格。若额外锁的实际目的是阻止业务启动，还必须让 start 检查同一关闭状态；当前代码只看 run_state，所以不能宣称它已经做到业务关闭。
 
 流程如下：
 
@@ -1053,9 +1078,11 @@ flowchart TD
     D -- 否 --> C
     D -- 是 --> E{life_state == MY_OBJ_LIVE?}
     E -- 否 --> F[返回错误]
-    E -- 是 --> G[life_state = MY_OBJ_DYING]
+    E -- 是 --> N[按顺序取得 obj.lock]
+    N --> G[life_state = MY_OBJ_DYING]
     G --> H[list_del_init 撤销集合可见性]
-    H --> I[记录 obj_to_put]
+    H --> U[释放 obj.lock]
+    U --> I[记录 obj_to_put]
     I --> J[释放 my_obj_list_lock]
     F --> J
     J --> K{obj_to_put != NULL?}
@@ -1095,8 +1122,10 @@ sequenceDiagram
     L->>Lock: mutex_unlock
 
     R->>Lock: mutex_lock
+    R->>Obj: mutex_lock对象锁
     R->>Obj: life_state = MY_OBJ_DYING
     R->>Obj: list_del_init
+    R->>Obj: mutex_unlock对象锁
     R->>Lock: mutex_unlock
     R->>Obj: kref_put 释放 list 引用
 ```
@@ -1140,7 +1169,7 @@ sequenceDiagram
 ```text
 remove 已经撤销集合可见性；
 新的 lookup 找不到对象；
-不会再产生新的外部引用。
+不会再由这个已经撤下的入口产生新引用；已有拥有者仍可能按自己的协议追加独立份额。
 ```
 
 ------
@@ -1171,15 +1200,7 @@ int my_obj_start(struct my_obj *obj)
 
 	obj->run_state = MY_OBJ_RUNNING;
 
-	/*
-	 * 这里执行真实启动动作，例如：
-	 *
-	 *     初始化硬件；
-	 *     启动队列；
-	 *     提交 work；
-	 *     打开 DMA；
-	 *     等等。
-	 */
+	/* 本节只演示同步状态转换，没有启动硬件或异步任务。 */
 
 out:
 	mutex_unlock(&obj->lock);
@@ -1207,15 +1228,7 @@ int my_obj_stop(struct my_obj *obj)
 
 	obj->run_state = MY_OBJ_STOPPING;
 
-	/*
-	 * 这里执行真实停止动作，例如：
-	 *
-	 *     停止提交新请求；
-	 *     停 DMA；
-	 *     flush work；
-	 *     清理内部队列；
-	 *     等等。
-	 */
+	/* 本节没有异步执行者；这里只演示同步收尾再回到IDLE。 */
 
 	obj->run_state = MY_OBJ_IDLE;
 
@@ -1227,7 +1240,7 @@ out:
 
 这里修改 `run_state` 是合理的。
 
-因为它不是孤立改状态，而是和真实业务动作绑定：
+本模型把这些枚举赋值作为同步业务动作本身。真实工程必须另行把状态转换与成功、失败、排空条件对应：
 
 ```text
 IDLE -> RUNNING：
@@ -1238,6 +1251,8 @@ RUNNING -> STOPPING -> IDLE：
 ```
 
 ------
+
+若把 work 或 DMA 加入模型，不能直接把 flush/cancel 塞进持 obj.lock 的 stop 中：被等待者也许需要同锁才能退出。应先在锁内关闭新请求和登记停止阶段，保留覆盖整个收尾的一份，解除锁后等待，再按锁协议发布停止结果。P06 已有借用退出实例；本段没有实现这个扩展。
 
 #### (8)\_release\_最后引用释放后的销毁点
 
@@ -1276,6 +1291,8 @@ static void my_obj_release(struct kref *ref)
 	kfree(obj);
 }
 ```
+
+正常拥有型协议下，最后归零意味着没有合法共享访问者，节点已摘下或从未发布，回调可以检查状态并写最终标记。DEAD 只在回收前写入，不允许别的线程在释放后读取它。WARN 是诊断，不会修复损坏链表；它没有告警也不能证明所有并发路径已经被测试。
 
 这里的分工是：
 
@@ -1334,7 +1351,7 @@ flowchart TD
     remove -> list 不可见 -> put list 引用 -> release
 ```
 
-三条线不要混。
+这三条线使用的是成员、业务和引用三组状态，而不是一条单独的生命周期枚举。请用图和阶段表解释：创建后发布失败可以从 S0 直接退出；查找先取得一份后，S4 撤下不妨碍它归还；S4 已发生却仍为 RUNNING，说明业务关闭尚未由本模型证明。
 
 ------
 
@@ -1371,145 +1388,67 @@ kref 保护“对象内存是否仍然存在”。
 
 ### 9.3.8\_锁顺序问题
 
-假设两个线程：
+刚才保留的 remove 写段同时持集合锁和对象锁，因此已经建立一条真实的锁依赖：先拿 my_obj_list_lock，再拿 obj->lock。若另一路径反过来，就可能各持一把并互等：
 
-```c
-CPU0:
-    mutex_lock(&my_obj_list_lock);
-    mutex_lock(&obj->lock);
-
-CPU1:
-    mutex_lock(&obj->lock);
-    mutex_lock(&my_obj_list_lock);
+```mermaid
+sequenceDiagram
+    participant A as 路径A
+    participant G as 集合锁
+    participant O as 对象锁
+    participant B as 路径B
+    A->>G: 取得集合锁
+    B->>O: 取得对象锁
+    A->>O: 等待对象锁，集合锁未释放
+    B->>G: 等待集合锁，对象锁未释放
+    Note over A,B: 两者等待的释放动作都要对方先继续，形成环
 ```
 
-就可能死锁：
-
-```text
-CPU0 持有 list_lock，等待 obj->lock；
-CPU1 持有 obj->lock，等待 list_lock。
-```
-
-所以需要定义锁顺序。
-
-例如：
-
-```text
-全局规则：
-    先拿 my_obj_list_lock；
-    再拿 obj->lock；
-    禁止反向加锁。
-```
-
-这个规则应该写进对象设计中。
-
-例如：
+引用不会打破这个等待环；它只让对象和锁所在内存仍在。应把锁依赖写进所有可能嵌套的路径，而不是只在 remove 注释中声明顺序。
 
 ```c
 /*
- * Locking:
- *   my_obj_list_lock protects my_obj_list and obj->node.
- *   obj->lock protects obj->state and obj->flags.
- *
- * Lock order:
- *   my_obj_list_lock -> obj->lock
+ * my_obj_list_lock保护成员关系与life_state。
+ * obj->lock保护run_state与业务字段。
+ * 需要同时取得时，顺序固定为my_obj_list_lock -> obj->lock。
+ * 只持对象锁的业务路径不得反向取得集合锁。
  */
 ```
 
-如果某条路径必须先拿 `obj->lock`，那它就不能再拿 `my_obj_list_lock`，或者要重构为：
+若业务路径先持对象锁，又发现需要查集合，一种改造是保留已有独立引用，解除对象锁，再按全局顺序取得所需锁。这里多出一个必须面对的窗口：解锁期间业务和成员状态都可能变化，所以重新加锁后必须重新验证条件，不能继续使用此前判断。独立引用只保护地址，不能冻结决策依据。
 
-```text
-先 get 对象；
-释放 obj->lock；
-再按全局顺序重新加锁；
-或者拆分状态。
-```
-
-锁顺序是 kref 章节里容易被忽视的问题。
-
-因为 kref 本身不会死锁，但 kref 周围的锁组合会。
-
-------
+另一种改造是像 9.2 那样把操作拆成不嵌套的阶段，由份额覆盖中间时间，并明确接口保证在何时成立。若业务真的要求两个状态同时变化，则不能仅为避免嵌套随意拆开；要重新设计共同保护范围或锁顺序。这是保证与代价的选择，不是“越少拿锁越正确”。
 
 ### 9.3.9\_remove\_路径中的锁组合
 
-remove 路径通常要做几件事：
+remove 可能只撤下成员，也可能承担停止接纳甚至等待异步执行者退出。先给它确定任务，再决定锁组合；函数名本身不说明它已经完成哪些事。
 
-```text
-阻止新的 lookup；
-标记对象正在退出；
-从集合中 unlink；
-释放集合引用；
-等待异步路径收尾；
-释放当前路径引用。
-```
-
-一个常见模板：
+若关闭标志由对象锁保护，且要求标记关闭与撤下入口作为同一排他阶段，可以采用下面的配对片段。调用者持有独立引用，node 只属于这一个拥有型集合；全部状态读取遵守对象锁，所有成员操作遵守集合锁，嵌套顺序与上节一致。
 
 ```c
-void my_obj_remove(struct my_obj *obj)
+static void my_obj_unpublish(struct my_obj *obj)
 {
-	mutex_lock(&my_obj_list_lock);
-
-	mutex_lock(&obj->lock);
-	obj->state = OBJ_DYING;
-	mutex_unlock(&obj->lock);
-
-	if (!list_empty(&obj->node))
-		list_del_init(&obj->node);
-
-	mutex_unlock(&my_obj_list_lock);
-
-	kref_put(&obj->ref, my_obj_release);
+    bool removed = false;
+    mutex_lock(&my_obj_list_lock);
+    mutex_lock(&obj->lock);
+    obj->state = OBJ_DYING;
+    if (!list_empty(&obj->node)) {
+        list_del_init(&obj->node);
+        removed = true;
+    }
+    mutex_unlock(&obj->lock);
+    mutex_unlock(&my_obj_list_lock);
+    if (removed)
+        object_put(obj); /* 只归还本次摘下的成员份额；调用者原份额保留。 */
 }
 ```
 
-含义：
+这里 state 是本片段定义的业务门字段，不是把 9.3.7 的 life_state 偷换成对象锁字段。若决定由集合锁同时保护 state，就让所有相应读写者一起改用集合锁，再取消多余对象锁；不能只改写一处 remove。重复调用虽不再次归还成员份额，却仍需要有效对象参数，也不能在与重新发布并发的情况下默认它会操作最早那次成员关系。
 
-```text
-持 list_lock：
-    防止 lookup 和 remove 并发破坏集合。
+同一临界区内的关闭决定能够排斥按相同对象锁检查的 **新操作**，却不意味着此前启动的异步操作已经结束。需要等待 work、回调或硬件停止时，必须持有覆盖等待期的责任，按实际协议阻止重新提交，释放等待者需要的锁以后再同步退出。不能在未证明的情况下把“等待异步路径收尾”添在任何 put 之后；那时可能连等待对象都已回收。
 
-持 obj->lock：
-    修改对象状态为 DYING。
+9.3.7 的 remove_by_id 是另一种明确入口：它在集合锁内查到并摘下节点，暂接原成员份额，然后解锁归还。它不依赖一个调用者传入的对象地址，也不承诺业务停止；按 id 操作还须考虑编号重用。两种接口都能正确，但不能把它们的参数期限和完成保证混成一个模板。
 
-list_del_init：
-    新 lookup 不再能找到对象。
-
-kref_put：
-    释放集合持有的引用。
-```
-
-如果状态由 `my_obj_list_lock` 保护，也可以简化：
-
-```c
-void my_obj_remove(struct my_obj *obj)
-{
-	mutex_lock(&my_obj_list_lock);
-
-	obj->state = OBJ_DYING;
-
-	if (!list_empty(&obj->node))
-		list_del_init(&obj->node);
-
-	mutex_unlock(&my_obj_list_lock);
-
-	kref_put(&obj->ref, my_obj_release);
-}
-```
-
-这两种都可以。
-
-关键是设计必须明确：
-
-```text
-state 由哪把锁保护；
-node 由哪把锁保护；
-lookup 检查 state 和 get 是否在同一保护机制下完成；
-remove 是否先阻止新 lookup，再释放集合引用。
-```
-
-------
+至此可以检查查找、业务决策和成员移除的责任。剩下的危险点在最后一个 put：它会同步进入回调，而回调可能再次取锁、等待或释放锁所在对象。下一节把这条调用路径接到现有锁顺序上。
 
 ## 9.4\_release\_与锁\_最后一个\_put\_发生在哪里
 
