@@ -324,3 +324,5 @@ B04ay完成[P12 12.7～12.8退出与设备诊断](../../knowledge/linux/object_l
 B04az完成[P12诊断方法、练习与章末回顾](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.10.2_最小审查流程)，P12全章作者审查收束，验证边界见[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.115_B04az诊断章末收束)。清单为641项：234 validated、389 pending、18 supporting_pending；下一项P13工程模板，不表示全仓完成。
 
 B04ba全量冷读P13原材料，完成[13.1～13.3模板入口、命名与创建](../../knowledge/linux/object_lifetime/kref/P13_工程模板.md#13.3.2_模板二_alloc/init/get/put/release_分层模板)，提供三阶段失败的完整模块与八例宿主检查。问题盘点和未执行项见[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.116_B04ba创建契约与失败模板)。P13仍pending，下一项13.4集合发布与撤下。
+
+B04bb完成[P13 13.4.1拥有型链表模板](../../knowledge/linux/object_lifetime/kref/P13_工程模板.md#13.4.1_模板三_list_+_mutex_+_kref_lookup_模板)，复用完整服务，明确发布新增、撤下配对、调用者资格和关闭后拒绝；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.117_B04bb链表模板责任闭环)记录既有验证复核。下一项13.4.2哈希与执行上下文，P13仍pending。

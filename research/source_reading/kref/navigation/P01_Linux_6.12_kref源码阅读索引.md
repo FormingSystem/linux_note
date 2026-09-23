@@ -23,6 +23,7 @@ source_version: "6.12.20"
 | 正常归零与异常饱和怎样分流 | [模块边界](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [增减 helper](../source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支) → [告警收敛](../source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和) |
 | 最后减少与容器锁怎样交接 | [锁交接模块](P04_最后归还与锁交接导读.md#4.2_把最后减少留在锁内) → [快路径与重查](../source_explanations/lib/refcount.c.md#1.2_快路径保留最后一份) → [kref 回调入口](../source_explanations/include/linux/kref.h.md#1.8_归零时把锁交给回调) |
 | 容器接口自己的锁覆盖到哪里 | [整数索引模块](P06_整数索引与拥有型查找导读.md#6.2_把容器动作接到引用周期) → XArray 查询/删除包装与 IDR 编号初始化 |
+| 链表模板为何可普通get并重复撤下 | [集合份额与取得保证](P03_条件取得与查找窗口导读.md#3.10_拥有型链表模板的正计数来源) → [普通取得](../source_explanations/include/linux/kref.h.md#1.3_为独立使用追加引用) |
 | 半初始化失败应由谁归还初始份额 | [创建阶段与清理入口](P02_普通引用与归零回调导读.md#2.21_创建阶段与单一清理入口) → [初始份额](../source_explanations/include/linux/kref.h.md#1.2_建立初始引用)、[最后清理](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 最终计数配平能否证明每次访问合法 | [诊断轨迹与真实责任](P02_普通引用与归零回调导读.md#2.20_从诊断轨迹回到真实责任) → [最终归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | release能否等待，设备私有引用怎样接续 | [回调上下文](P04_最后归还与锁交接导读.md#4.6_回调上下文与清理责任)；[设备错误定位](P08_device引用与资源退出导读.md#8.7_设备与私有引用的错误定位) |
