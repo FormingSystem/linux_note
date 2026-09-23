@@ -798,3 +798,9 @@ B04at只读核对固定提交的投递pending/禁用分支、执行前清pending
 B04ba复核NXP官方来源、lf-6.12.y、发布标签解引用dfaf2136及Linux6.12.20；访问工作树HEAD仍为7b60e547，三个本地实验提交不作证据。当前ARM/Tiny RCU/PREEMPT_NONE非SMP配置用于前端检查，不外推到运行镜像。
 
 [note_kref_create创建模块](../kref/navigation/P02_普通引用与归零回调导读.md#2.21_创建阶段与单一清理入口)ARM前端通过，354份使用头文件中的342份非生成源码相对固定提交无差异。宿主保留既有普通引用函数，八例核对阶段失败、分配失败和成功清理；分配器、模块注册、错误指针及原子操作为宿主替身，未执行目标链接装卸、实际并发或内存耗尽。本批不新增或搬移上游函数体。
+
+## 1.75\_拥有型哈希模板的上下文边界
+
+B04bc的[note_kref_hash模板](../kref/navigation/P03_条件取得与查找窗口导读.md#3.11_哈希索引与IRQ上下文的独立边界)使用本次ARM、CPU_V7、非SMP、非PREEMPT_RT配置；DEBUG_SPINLOCK、DEBUG_LOCK_ALLOC和TRACE_IRQFLAGS启用。只读核对固定dfaf2136的include/linux/spinlock.h包装、arch/arm/include/asm/irqflags.h中ARMv6及以上保存/屏蔽/恢复普通IRQ路径，不外推到Cortex-M、FIQ/NMI或锁专题另行研究的SMP运行配置。
+
+ARM前端通过，354份头中342份非生成源码与固定提交无差异。七组宿主应用检查保留固定普通引用函数，哈希、链表、IRQ状态、锁与分配环境为顺序替身；没有目标链接装卸、真实中断、并发、实时性测量或硬件验证。上游函数体仍沿既有锁实现页和源码副本，不新增重复展开。

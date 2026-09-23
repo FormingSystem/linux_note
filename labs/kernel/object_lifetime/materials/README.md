@@ -177,3 +177,9 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 [note_kref_create.c](note_kref_create.c)对应[P13分层模板](../../../../knowledge/linux/object_lifetime/kref/P13_工程模板.md#13.3.2_模板二_alloc/init/get/put/release_分层模板)。外壳初始化、缓冲区准备和业务校验在发布前完成；fail_stage=0～3分别走正常、外壳失败、缓冲区失败和已有缓冲区后的失败，release统一清理可到达的部分状态。Makefile已登记，成功模式在init内完成所有使用，无外部入口。
 
 八个宿主用例与ARM前端通过，354份头中342份非生成源码与固定提交无差异。宿主使用固定普通引用函数，模拟分配、错误指针和模块环境；未执行目标链接装卸或并发。失败装入不会留下可卸载模块，目标命令与预期在正文完整说明。
+
+## 1.27\_拥有型哈希与IRQ保存
+
+[note_kref_hash.c](note_kref_hash.c)对应[P13哈希模板](../../../../knowledge/linux/object_lifetime/kref/P13_工程模板.md#13.4.2_模板四_hash/list_+_spinlock_+_kref_lookup_模板)，四桶hlist在同一spin_lock_irqsave范围内维护成员、状态与短统计。发布另取表份额，重复撤下不多消费，关闭后旧拥有者请求拒绝。Makefile已登记，无外部IRQ入口。
+
+七组顺序宿主检查与ARM前端通过；354头中342非生成头无固定提交差异。宿主锁/IRQ保存只是状态替身，不能作为真实中断或SMP证据；目标链接装卸、硬件和并发未执行。
