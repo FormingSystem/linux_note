@@ -253,3 +253,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.43\_交付与关闭实验
 
 [P35](../../../../knowledge/linux/object_lifetime/kref/P35_工作交付与关闭窗口实验.md#35.1_候选份额不等于已经交付)复用[work_ticket.c](work_ticket.c)、[note_kref_work_modes.c](note_kref_work_modes.c)和[note_kref_owned_work.c](note_kref_owned_work.c)。六条C账本、十例分享/转交夹具、九组管理者夹具本批重跑通过；材料未改，前者不执行free，后两者不执行真实Linux队列调度。目标装卸、真实取消竞争与本次ARM未执行。
+
+## 1.44\_RCU退休顺序实验
+
+[P36](../../../../knowledge/linux/object_lifetime/kref/P36_RCU查找与退休顺序实验.md#36.1_归零与旧读者退出是两份证据)复用[rcu_take_window.c](rcu_take_window.c)四条顺序模型和[note_kref_rcu.c](note_kref_rcu.c)完整模块。四模型及八组模块宿主检查本批重跑通过，两个程序未改；模型不free真实对象，夹具不运行真实RCU调度，未新增目标装卸或ARM结果。相关GP完成与已登记回调实际返回仍分别取证。
