@@ -2937,8 +2937,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P03_Linux_SMP屏障与顺序域.md",
       "baseline_sha256": "224f3d59ef5a2f920bf4b9fa2afa9fa976f77f750baad8febcb488ebb10769e2",
       "lines": 165,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05d冷读保留十一节与版本边界，新增完整待写C模型、单边练习及顺序证明；严格编译执行，不冒充LKMM、ARM或设备验证，人工状态不变。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P04_release_acquire_发布协议.md",

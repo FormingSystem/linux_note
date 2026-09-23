@@ -986,3 +986,7 @@ B05b只读固定dfaf2136的Documentation/memory-barriers.txt，并核对已保�
 ## 1.110\_编译器轮询反例校正
 
 B05c只读固定dfaf2136的arch/arm/include/asm/vdso/processor.h，确认cpu_relax通常含barrier，特定架构/勘误分支更强；修复正文错误的无约束循环前提。已有rwonce与compiler证据继续使用固定源码；[七函数编译记录](../../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-09-24_compiler_access.md)仅覆盖两种x86-64目标的GCC/Clang O0/O2，不覆盖ARM执行、真实内核宏或KCSAN。
+
+## 1.111\_屏障方向与UP配置边界
+
+B05d核对固定include/asm-generic/barrier.h的CONFIG_SMP分支和ARM屏障映射，公共UP回退与底层__smp宏存在分开说明；[原语导读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)继续承担入口。C单槽待写模型及单边约束变体严格编译执行，只说明教学规则下的结果，未执行herd7、Linux屏障、ARM SMP或设备协议。
