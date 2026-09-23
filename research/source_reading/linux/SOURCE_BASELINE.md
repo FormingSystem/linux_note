@@ -722,3 +722,7 @@ B04s 再核对固定 kernel/workqueue.c 中 cancel_work_sync 的注释及既有�
 B04u 核对固定 kernel/time/timer.c（blob 7835f9b376e76a010926c3c2036c9a458b1f553c）与 include/linux/timer.h（blob e67ecd1cbc97d6b92994c15b688cdde5ec3c998f）。[模块入口](../kref/navigation/P05_定时器重启与退出导读.md#5.2_从排队到最终关闭)关联八个唯一函数展开，函数体去注释规范化一致。mod_timer 对既有 pending 的改期不追加一次接收票据；shutdown 清空 function，与普通同步删除的再启动保证不同。
 
 宿主实际六函数配合显式 base/锁/运行退出替身，八种删除/关闭 × pending × running 组合及旧名包装通过；无真实计时、中断、SMP/RT、LOCKDEP、调度或内存序验证。独立 C 模型四条轨迹通过，只展示外层责任，不充当定时轮实现。未编造目标运行或修改外部工作树。
+
+## 1.63\_完成通知与引用退出的组合边界
+
+B04x 核对固定 kernel/sched/completion.c（blob 3561ab533dd4e33ddb5284bcab51736f9b9ab6bf）的 complete 与等待主干、以及既有 workqueue 排队/取消契约。[组合导读](../kref/navigation/P02_普通引用与归零回调导读.md#2.13_完成事件不消费引用)连接已有唯一实现，不新展开同一函数。新模块 ARM 前端通过，354 份头中 342 份非生成源码与固定提交一致；生成头仍沿工作配置。宿主七组仅验证实际模块控制和普通引用结算，完成量/队列为显式顺序替身，未执行真实计时等待、目标运行或内存序。

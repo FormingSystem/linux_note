@@ -264,3 +264,5 @@ B04u 重构[P06 异步退出](../../knowledge/linux/object_lifetime/kref/P06_rel
 B04v 收束[P06 回收排序与诊断](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.8.1_release_和_RCU_的边界)的 6.8～6.12，保留两份完整程序及固定实现，修正把 RCU 对象一律延迟 release、把未告警当退出证明等概括。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.85_B04v回收排序与P06收束)记录无须改写的依据和验证边界；P06 本轮作者审查完成，下一项 P07，全仓继续。
 
 B04w 冷读 P07 全篇，先完成[交付责任入口](../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.2.1_指针传递不等于引用转移)的 7.1～7.2：用完整 C 程序区分地址复制、独立份额、指定份额转交和借用窗口。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.86_B04w交付责任与借用窗口)记录适用检查；下一项 7.3 真实异步接收，P07 仍 pending。
+
+B04x 完成[P07 异步交付场景](../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.3.5_completion_场景里的引用归属)的 7.3，以完整模块比较事件、超时、工作退出和引用归还；修正 running/pending、timer 改期、集合并非自动持有等旧概括。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.87_B04x完成事件与异步交付)记录七组替身检查及目标未执行项。下一项 7.4 契约与后续模型，P07 仍 pending。

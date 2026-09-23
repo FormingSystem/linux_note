@@ -71,3 +71,5 @@ workqueue Lockdep map 和 `check_flush_dependency()` 能发现部分 reclaim/flu
 总索引：[工作队列源码总阅读索引](P01_Linux_6.12_工作队列源码总阅读索引.md#1.6_建议阅读顺序)。
 
 上一篇：[worker 管理模块源码概念导读](P03_Linux_6.12_worker管理模块源码概念导读.md)。
+
+[P07 完成事件模块](../../../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.3.5_completion_场景里的引用归属)给出只有一次投递、无重排时的责任结算：取消了 pending 实例由取消者接管预留，否则执行路径归还。wait_for_completion_timeout 返回与 work 退出分别取证，不能把等待超时当作自动撤销。

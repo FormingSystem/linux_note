@@ -56,6 +56,8 @@ sequenceDiagram
 
 `init_completion()` 同时把 done 清零和初始化 swait 头，只用于首次初始化；`reinit_completion()` 只写 `done=0`。后者没有队列锁，也不检查旧 waiter，调用者必须用外部生命周期协议证明可安全开启新一轮。
 
+对象寿命的完整应用见[P07 完成与引用模块](../../../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.3.5_completion_场景里的引用归属)：等待者保留独立份额到工作同步退出，超时不自动归还完成方责任。该示例验证的是组合协议，本页的 done 与 swait 状态职责保持独立。
+
 ## 3.6\_源码阅读核对
 
 - done 为何不是布尔值，`UINT_MAX` 又为何不被 wait 递减？

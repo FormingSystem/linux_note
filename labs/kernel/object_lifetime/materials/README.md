@@ -110,3 +110,9 @@ P06 的[入口和上下文回访](../../../../knowledge/linux/object_lifetime/kr
 [P06 章末回访](../../../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.10.2_一个复杂_release_示例)继续使用 owned_work 原程序比较取消和执行路径，修改题与原始验证范围分开。RCU、诊断和资源拓扑收束未修改材料程序，不新增目标运行结论。
 
 [P07 交付入口](../../../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.2.1_指针传递不等于引用转移)完整复用 reference_ownership.c，重新编译运行接收/拒绝两条路径通过；正文重新解释 share 与 move、异步借用窗口及接收者提前结束的契约。纸面直接转交变体不是已执行的新程序，顺序模型也没有创建并发消费者。
+
+## 1.16\_完成事件与异步引用退出
+
+[note_kref_completion.c](note_kref_completion.c)对应[P07 完整模块](../../../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.3.5_completion_场景里的引用归属)；Makefile 已登记，等待者初始份额跨越等待和取消，worker 预留由实际执行者或取消接管者归还。一次投递、无重排，无论事件及时与否都同步收尾后才读取结果和归还等待者。
+
+ARM 前端通过，354 份依赖头中 342 份非生成源码与固定提交无差异。宿主实际模块/固定普通引用 helper 配合显式顺序替身通过七组：两处分配失败、拒绝发布、早完成、等待中完成、超时取消、超时后完成；最终回收一次且无遗留分配。替身未实现真实 completion 锁/等待和工作调度，没有目标链接/装卸、并发或内存序验证。
