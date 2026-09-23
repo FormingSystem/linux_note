@@ -627,6 +627,7 @@ mindmap-plugin: basic
         - 🔴 [设备模型 34 章原始总稿迁移核对源](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
 - 源码阅读
     - 🔴 **未校正** kref 普通引用
+        - 🔴 **未校正** [types.h原子成员初始化](../../research/source_reading/kref/source_explanations/include/linux/types.h.md)
         - 🔴 **未校正** [kref普通引用源码阅读大纲](../../research/source_reading/kref/大纲.md)
         - 🔴 **未校正** [Linux_6.12_kref源码阅读索引](../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md)
         - 🔴 **未校正** [普通引用与归零回调导读](../../research/source_reading/kref/navigation/P02_普通引用与归零回调导读.md)

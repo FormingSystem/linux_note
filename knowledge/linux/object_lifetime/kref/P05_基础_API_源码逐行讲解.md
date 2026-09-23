@@ -162,103 +162,24 @@ refcount_t 层提供引用计数安全原语；
 
 ### 5.4.1\_KREF\_INIT(n)
 
-`KREF_INIT(n)` 用于静态初始化。
-
-源码形态可以理解为：
+定义对象时使用 KREF_INIT 提供初始计数；固定宏体及三层展开见[唯一实现](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.6_定义对象时建立计数)。这里关注调用者应建立的责任。
 
 ```c
-#define KREF_INIT(n)	{ .refcount = REFCOUNT_INIT(n), }
-```
-
-它的作用是：
-
-```text
-在定义对象时，直接给 kref 一个初始引用计数值。
-```
-
-例如：
-
-```c
+/* 静态对象的初始一份由模块持有，最终归还时不能 kfree 静态外壳。 */
 static struct my_refobj global_refobj = {
-	.ref = KREF_INIT(1),
+    .ref = KREF_INIT(1),
 };
 ```
 
-或者：
-
-```c
-struct kref ref = KREF_INIT(1);
-```
-
-这里的 `n` 不是随便填的。
-
-如果填 1：
-
-```text
-表示这个静态对象一开始就有 1 个引用。
-```
-
-如果填其他值，就必须能解释：
-
-```text
-这 n 个引用分别属于谁。
-```
-
-否则引用计数没有所有权含义。
-
+示意中的 my_refobj 沿用本专题外层对象类型；可构建的完整定义见[P02 静态模块](P02_源码入口与结构定义.md#2.14.2_运行一个不释放静态内存的完整模块)。n 为 1 时要能指出初始持有者；其他正数也须逐份说明责任，不能把较大的初值当作“多留一点比较安全”。零不能成为普通 get 的活引用来源。
 
 ### 5.4.2\_KREF\_INIT(n)\_的使用前提
 
-`KREF_INIT(n)` 适合：
+初始化形式和存储寿命分开判断。宏也可以用于函数内自动对象的定义，但不会让它越过作用域继续存在。静态存储要求符合常量初始化规则；函数内自动对象可在定义时用运行时整数填值。裸宏不是赋值右侧表达式，也不是已经发布对象的复活操作。
 
-```text
-静态对象
-全局对象
-编译期初始化对象
-不需要 kzalloc 后再 kref_init 的对象
-```
+静态对象的最后 put 仍会同步调用 release。回调可以关闭资源、释放外壳所拥有的动态缓冲区或记录结束，但不能 `kfree(&global_refobj)`：这块存储并非动态分配器交给调用者的块。静态对象本身由其所属存储机制管理；例如模块静态数据在安全卸载模块时回收。
 
-但要注意：
-
-```text
-静态对象是否真的需要 kfree？
-refcount 归零后 release 做什么？
-静态对象是否允许归零？
-```
-
-例如：
-
-```c
-static struct my_refobj global_refobj = {
-	.ref = KREF_INIT(1),
-};
-```
-
-如果 release 写成：
-
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	kfree(refobj);        /* 对静态对象是错的 */
-}
-```
-
-这就会出问题。
-
-所以静态初始化时要特别明确：
-
-```text
-对象是不是动态分配的？
-release 是否真的释放内存？
-```
-
-动态对象一般不用 `KREF_INIT()`，而是用：
-
-```c
-kref_init(&refobj->ref);
-```
+动态对象通常先成功分配、初始化业务字段，再用 `kref_init(&refobj->ref)` 建立初始一份，最后按外层同步协议发布。静态对象也要在归零前关闭入口并保证全部使用结束；计数为零后字节仍在，不等于可以再次取得引用。完整状态与归零观察见[P02 实验](P02_源码入口与结构定义.md#2.14.2_运行一个不释放静态内存的完整模块)。
 
 
 ### 5.4.3\_kref\_init()

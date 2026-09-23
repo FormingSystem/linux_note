@@ -123,3 +123,22 @@ static inline __must_check bool refcount_dec_and_test(refcount_t *r)
 old<=0 包括零和已有饱和/异常值，不能仅凭这一项断言对象物理内存早已释放；old-i<0 则包含过量归还。异常处理后返回 false，真实责任不再能由数值可靠还原，不能擅自 reset 或仍走正常回收。[must_check 属性](compiler_attributes.h.md#1.1_返回值诊断不是自动清理)提示调用者不要丢弃这个判断；它不是运行时的自动释放机制。
 
 返回[普通引用模块](../../../navigation/P02_普通引用与归零回调导读.md#2.2_把S0到S5落到状态地址)或[源码总索引](../../../navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)。
+
+## 1.4\_逐层构造初始值
+
+```c
+/** @brief 仓库阅读说明：为 refcount_t 的 refs 原子成员提供初始化器。 */
+#define REFCOUNT_INIT(n)	{ .refs = ATOMIC_INIT(n), }
+```
+
+下层的 [atomic_t 与 ATOMIC_INIT](types.h.md#1.1_整数外还有一层结构) 还有一层结构。把三层实际宏代换进去，KREF_INIT(n) 得到如下初始化器；这是展开结果，不是第二份宏定义：
+
+```c
+{ .refcount = { .refs = { (n) }, }, }
+```
+
+从外到内分别对应 kref、refcount_t、atomic_t，最内层的 n 初始化 counter。写成 `.refcount.refs = n` 不是这些宏的实际展开。C 在部分聚合初始化位置允许省略内层花括号，所以仅凭“它还能编译”不能确认抄写忠于源码；严格启用 missing-braces 诊断可帮助看见被省略的层次。
+
+该宏不验证 n 的所有权来源，也不检查它是否适合作为新生命周期的初值。自动对象可使用运行时整数初始化；静态存储对象的初始化还须满足 C 对常量表达式的要求。不能把定义时填值与运行中 refcount_set 混为一谈，更不能以覆盖计数来回避旧引用尚未归还的问题。
+
+返回[初始化模块](../../../navigation/P02_普通引用与归零回调导读.md#2.6_初始化形式与存储寿命)或[总索引](../../../navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)。

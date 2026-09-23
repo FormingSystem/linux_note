@@ -652,3 +652,9 @@ B04d 重新只读核对固定 include/linux/container_of.h（blob 713890c867bea7
 B04e 建立[kref 总索引](../kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)、状态模块与按上游相对位置组织的唯一实现。kref/refcount 文件沿 1.44/1.46 同一固定提交；另核对 compiler_types.h（blob 639be0f30b455d7b42adc26701fb47093012a1b8）、compiler_attributes.h（blob c16d4199bf9231b8aa8e08d6c8174247b11da82c）和顶层 Makefile（blob ca000bd227be66540185c450b749a5d5258f87eb）。后两份只裁剪本任务相关固定语句，不建立整份源码镜像。
 
 十三个函数体、两项类型、告警宏、signed_wrap 条件、must_check 和构建选项明确分层。__signed_wrap 仅按 CONFIG_UBSAN_SIGNED_WRAP 抑制特定插桩，不能替代 -fno-strict-overflow 等构建前提；GCC 宿主选项查询与属性预处理分别验证。固定函数体配合顺序原子/屏障/告警替身运行正常周期及 21 个边界，另以实际编译目标文件验证丢弃/消费底层结果与直接 put 的诊断差异。未执行真实原子竞争、内核 WARN、目标编译链接或装卸；条件引用及锁组合仍未在本研究目录展开。
+
+## 1.49\_定义时初始化与静态存储证据
+
+B04f 沿同一 NXP 固定提交核对 KREF_INIT、REFCOUNT_INIT、ATOMIC_INIT 及 atomic_t，types.h blob 为 2bc8766ba20cab014a380f02e5644bd0d772ec67；前三层初始化器分别归入[kref 初始化路线](../kref/navigation/P02_普通引用与归零回调导读.md#2.6_初始化形式与存储寿命)的唯一实现。原始宏与裁剪定义逐字匹配，初值规则与 C 存储期分开解释。
+
+完整静态模块 ARM 前端通过，348 份头文件中 336 份非生成文件与固定提交无差异；生成头仍属于当前配置。宿主固定宏、类型及普通引用函数配合顺序替身通过一次归零周期；严格 C11 接受自动运行时初值和静态常量，按预期诊断省略花括号、裸宏赋值及非恒定静态初值。未执行目标构建链接、装卸和真实并发，不以宿主结果代替目标日志。
