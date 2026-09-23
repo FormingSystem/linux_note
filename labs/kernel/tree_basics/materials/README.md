@@ -94,3 +94,5 @@ domains: [c_language, data_structures]
 [rbtree_insert.cpp](rbtree_insert.cpp)在[P35 插入实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P35_红黑插入与红红冲突上推.md#35.3_运行完整插入程序)中完整实现唯一键的自底向上插入，以稳定地址容器拥有节点，观察左右镜像、内侧角色更新和多层染色上推。它是单线程教学树，不实现删除或 Linux 接口；重复键不改结构，分配成功后才写树槽。
 
 [rbtree_erase.cpp](rbtree_erase.cpp)在[P36 删除实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P36_红黑删除与缺黑位置传播.md#36.3_用完整程序删除图中的对象)中从合法颜色夹具运行完整唯一键删除，区分退出目标与后继旧位置，保存空缺口父槽并覆盖左右分支。固定对象池仅撤销 alive，整树销毁才统一释放；无重新插入、槽重用或并发回收。
+
+[rbtree_collapse.cpp](rbtree_collapse.cpp)在[P07 映射实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md#7.5.12_保持键区间的折叠实验)中把合法稳定的普通红黑树折叠为多路组，保留键区间与空孩子槽，比较左右红的同一语义。它只转换，不验证任意损坏输入，也不实现左倾更新。

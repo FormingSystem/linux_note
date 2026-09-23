@@ -1587,8 +1587,8 @@
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md",
       "baseline_sha256": "e7ab4da73a107251bf517b1772d65510acdd2495fecb044bbc1761e890b214ee",
       "lines": 6588,
-      "state": "pending",
-      "reason": "B03ab 已审性质与高度，B03ac/ad 已完整迁移修订插入/删除为 P35/P36，原章保留桥接；7.4.4～7.4.7、7.5 映射及 7.7 回顾仍待实际审查。"
+      "state": "validated",
+      "reason": "B03ab 性质与高度、B03ac/ad 插入删除迁入 P35/P36、B03ae 剩余概念/映射/回顾全部实际冷读完成；保留三十一图和三处批注，补完整 C++ 折叠与有限区间/层数检查，核对两类左倾约束；不等于人工评审或目标验证。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md",
