@@ -418,6 +418,8 @@ P08 字段单元继续按同一固定提交核对 rbtree_types.h、rbtree.h、rb
 
 P09 嵌入成员单元再次核对固定 `include/linux/container_of.h`，已有原文与固定对象一致。两个宏的唯一语句讲解进入[成员地址实现](../rbtree/source_explanations/include/linux/container_of.h.md#1.1_一次还原中的求值与类型检查)，由[所有者导读](../rbtree/navigation/P07_节点布局与编码状态导读.md#7.4_从嵌入成员回到所有者)连接。GNU C 宿主实验直接包含该宏，宿主依赖适配不属于上游证据；普通宏丢失 const、同类型错误成员不被静态检查发现，均与固定正文及实际编译结果对应。
 
+P09 比较单元继续核对固定 rbtree.h、rbtree_types.h 与 rbtree.rst：根不保存比较器，但 rb_add 接收布尔 less，rb_find_add/rb_find 接收各自签名的三态 cmp。传统说明的手写建议不覆盖掉固定头文件已有的辅助接口；比较模型不宣称内核调用次数、缓存命中或目标性能已验证。
+
 ## 1.20\_rbtree插入与父槽证据
 
 沿同一 NXP 固定提交继续核对 include/linux/rbtree.h、rbtree_augmented.h 与 lib/rbtree.c。[插入模块](../rbtree/navigation/P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进)用 I0～I5 对应空槽、红叶、上推与旋转；[修复实现](../rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支)恢复实际分支、变量与 WRITE_ONCE，保留教材原中文推导。新增十五个函数与已有四个查询函数逐语句核对，共十九个函数；父槽助手只在一个实现标题展开，知识正文仍保留机制任务。

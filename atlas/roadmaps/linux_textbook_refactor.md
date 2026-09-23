@@ -182,3 +182,5 @@ B03ag 保留 P08 已讲清的根初始化推导，补[根值与对象寿命实�
 B03ah 收束 P08 剩余表示单元，补[父色整数实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#8.4.3_为什么颜色可以使用指针低位存储)及[布局状态导读](../../research/source_reading/rbtree/navigation/P07_节点布局与编码状态导读.md#7.2_沿一个节点的成员周期读写字段)，集中十八处固定定义片段，纠正第二低位、位宽、重复键、缓存取舍和无锁查询的前提。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.44_B03ah父色编码与表示收束)列出保存依据与验证边界；P08 各单元已实际冷读和适用检查，下一项 P09，全仓继续。
 
 B03ai 冷读并修订 P09 的 9.1 与 9.2.1～9.2.4，以[双成员 C 实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个嵌入成员还原同一个任务)区分偏移、成员身份、const 和对象复制；保留原布局图，修复复合键图的双左孩子错误。新增固定 container_of 实现讲解，细节见[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.45_B03ai嵌入成员与对象还原)。P09 后续比较、性能、寿命及接口单元继续，整章仍 pending。
+
+B03aj 完成 P09 的 9.2.5～9.2.7 冷读与修订，补[比较契约 C 实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_让同一个比较规则走两种调用路径)，将无条件地址排序改为稳定业务 id，区分插入方向和旋转后等价区间，并展开间接调用与缓存地址依赖。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.46_B03aj比较政策与成本边界)记录验证和保留依据；下一项节点寿命，P09 仍 pending。

@@ -31,6 +31,7 @@ domains: [linux, source_reading]
 | 要回答的问题 | 模块导读 | 唯一实现标题 |
 | --- | --- | --- |
 | 节点、根和编码值由谁读写 | [布局状态 T0～T4](P07_节点布局与编码状态导读.md#7.2_沿一个节点的成员周期读写字段) | [类型与对齐](../source_explanations/include/linux/rbtree_types.h.md#1.1_rb_node的三个字段与对齐)、[父与业务地址](../source_explanations/include/linux/rbtree.h.md#1.11_父地址与业务地址的两种还原)、[颜色掩码](../source_explanations/include/linux/rbtree_augmented.h.md#1.6_颜色位与父地址掩码) |
+| 比较回调是否决定重复政策 | [教材比较契约](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_让同一个比较规则走两种调用路径)；[插入模块](P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进) | [布尔 less](../source_explanations/include/linux/rbtree.h.md#1.6_不查重的rb_add)、[三态 cmp](../source_explanations/include/linux/rbtree.h.md#1.7_查重后插入与RCU发布变体) |
 | 同类型成员为什么不能互换 | [所有者还原](P07_节点布局与编码状态导读.md#7.4_从嵌入成员回到所有者) | [偏移与类型检查](../source_explanations/include/linux/container_of.h.md#1.1_一次还原中的求值与类型检查)、[const 入口](../source_explanations/include/linux/container_of.h.md#1.2_只读限定由哪个入口保留) |
 | 根为空与节点带游离标记有何不同 | [根值实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#2%29_观察根值复制与对象存活)；[删除后观察](P04_对象摘除与缺黑修复导读.md#4.4_怎样观察地址身份与退出条件) | [根读取与游离标记](../source_explanations/include/linux/rbtree.h.md#1.8_游离标记不等于成员搜索) |
 | 为什么返回某个相等对象，而非唯一对象 | [一次查询](P02_查找路径与返回边界导读.md#2.2_按一次查找定位源码) | [rb_find](../source_explanations/include/linux/rbtree.h.md#1.1_rb_find的任意匹配) |

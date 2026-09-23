@@ -891,9 +891,9 @@ key/value 是业务语义；
 
 ------
 
-### 9.2.5\_内核为什么不提供统一比较回调
+### 9.2.5\_比较规则与重复键由谁决定
 
-很多用户态容器会提供统一比较回调：
+上一节已经能从两个索引成员回到同一个任务，现在还差一条规则：到期时间相同的两个任务，是同一个键，还是仍按 id 区分？规则属于业务；写成回调还是展开在搜索循环里，是另一个选择。先看一种把比较函数指针 cmp 保存在容器里的设计：
 
 ```c
 struct tree {
@@ -908,7 +908,7 @@ struct tree {
 tree->cmp(new_obj, current_obj);
 ```
 
-Linux rbtree 没有把这种比较回调作为核心模型。
+Linux rbtree 不要求把比较函数保存在根对象内；固定版本也允许通过参数传入比较函数。这里区分的是“根保存什么”和“调用时怎样比较”，不能据此说内核没有比较辅助接口。
 
 它不会在 `struct rb_root` 里保存 `cmp`，也不会要求所有插入都走统一的：
 
@@ -916,13 +916,7 @@ Linux rbtree 没有把这种比较回调作为核心模型。
 rb_insert(root, node, cmp);
 ```
 
-主要原因有三个：
-
-```text
-第一，比较逻辑经常强绑定业务语义；
-第二，函数指针回调会带来额外间接调用；
-第三，手写比较路径更容易让编译器优化。
-```
+根不绑定一种全局比较方式，让调用者可以在同一组对象上构造不同索引，也可以按自己的重复键契约选择帮助器或手写搜索。回调同样能表达业务语义；是否留下间接调用、是否内联，取决于编译器看到的目标与优化条件，下一节单独比较。
 
 重复 key 策略就是最典型例子。
 
@@ -937,7 +931,7 @@ else
 	return -EEXIST;
 ```
 
-策略二：允许重复 key，重复 key 统一插到右侧。
+策略二：允许重复 key，**本次插入搜索** 遇到相等键时继续向右。
 
 ```c
 if (item->key < this->key)
@@ -946,31 +940,37 @@ else
 	link = &parent->rb_right;
 ```
 
-策略三：key 相同后继续比较地址，形成严格全序。
+这只是选空槽时的规则。三个相等键连续接到右侧，修复旋转后可以成为一个根和左右两个相等孩子；中序仍非递减。因此查找相等组不能假定相等对象永远只在右侧，应使用[最左匹配与后继](P10_Linux_6.12_内核_rbtree_查找与返回边界.md#10.2_rbtree_查找逻辑_手写_search_与内核辅助接口)的契约。
+
+策略三：key 相同后继续比较稳定的业务 id，把 `(key, id)` 作为完整键。这里假定 id 在目标对象集合中唯一，且挂树期间不改变；若完整键也相同，就按本示例拒绝。
 
 ```c
 if (item->key < this->key)
 	link = &parent->rb_left;
 else if (item->key > this->key)
 	link = &parent->rb_right;
-else if (item < this)
+else if (item->id < this->id)
 	link = &parent->rb_left;
-else
+else if (item->id > this->id)
 	link = &parent->rb_right;
+else
+	return -EEXIST;
 ```
 
-这三种从红黑树结构上都可以成立，但业务语义完全不同。
+不要用两个独立分配对象指针的 `<` 关系直接代替业务 id：ISO C 对这类无共同数组/规定对象关系的指针不提供这里需要的通用顺序保证。即使某个平台约定可按地址整数排序，地址复用也未必满足业务身份的含义。稳定 id 明确了顺序来自哪里，但其唯一性仍须业务保证。
+
+这三种键政策都可与红黑平衡共存，却给“相等”赋予不同含义。
 
 ```mermaid
 graph TD
 	cmp_rule["比较规则"]
 	no_dup["不允许重复 key"]
 	dup_right["重复 key 插右侧"]
-	key_addr["key 相同再比较地址"]
+	key_addr["key 相同再比较稳定 id"]
 
 	no_dup_text["相等返回 -EEXIST"]
 	dup_right_text["相等仍然插入"]
-	key_addr_text["形成严格全序"]
+	key_addr_text["完整键相同则拒绝"]
 
 	cmp_rule --> no_dup
 	cmp_rule --> dup_right
@@ -997,7 +997,7 @@ graph TD
 rbtree 只负责挂接后的颜色修复和结构维护。
 ```
 
-另外，手写比较路径也更清楚。
+当比较只服务一个短搜索循环时，就地写出方向和重复返回，容易把政策与控制流一起读清楚。
 
 例如：
 
@@ -1024,9 +1024,92 @@ while (*link) {
 相等认为重复。
 ```
 
-如果封装成泛型比较回调，比较语义就被藏到另一个函数里了。
+若多个查询和插入都必须使用同一顺序，把规则集中成命名函数反而更便于保持一致。固定版本 [rb_find](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.1_rb_find的任意匹配)接收查询键与节点的比较器，[rb_find_add](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.7_查重后插入与RCU发布变体)接收节点间的三态比较器；[rb_add](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.6_不查重的rb_add)使用“是否小于”的布尔谓词。这些接口的签名和相等处理不同，不应只因为都叫比较就互换。
 
-当然，Linux 6.12 的 rbtree 也提供了 `rb_find()`、`rb_find_add()` 这类辅助接口，它们可以基于比较函数工作。但这些是辅助接口，不是 rbtree 的唯一使用模型。
+#### (1)\_让同一个比较规则走两种调用路径
+
+任务到期时间相等时，id 是否参与比较，决定了它们是等价对象还是不同完整键。下面的完整 [job_compare.c](../../../../labs/kernel/tree_basics/materials/job_compare.c)只验证比较契约，不实现树，也不测速度：
+
+```c
+/* C11：比较规则与调用方式分开；不是 rbtree 实现或性能基准。 */
+#include <assert.h>
+#include <limits.h>
+#include <stddef.h>
+#include <stdio.h>
+
+struct job_key {
+    int deadline;
+    unsigned int id;
+};
+
+static int compare_deadline(const struct job_key *a, const struct job_key *b)
+{
+    /* 先比较再相减布尔值，避免直接相减两个有符号键时溢出。 */
+    return (a->deadline > b->deadline) - (a->deadline < b->deadline);
+}
+
+static int compare_job(const struct job_key *a, const struct job_key *b)
+{
+    int first = compare_deadline(a, b);
+    if (first != 0)
+        return first;
+    return (a->id > b->id) - (a->id < b->id);
+}
+
+static int compare_through_callback(const struct job_key *a,
+                                    const struct job_key *b,
+                                    int (*compare)(const struct job_key *,
+                                                   const struct job_key *))
+{
+    return compare(a, b);
+}
+
+int main(void)
+{
+    const struct job_key keys[] = {
+        {INT_MIN, 0}, {40, 2}, {40, 4}, {INT_MAX, UINT_MAX}
+    };
+    size_t count = sizeof keys / sizeof keys[0];
+    printf("same deadline: %d; full key: %d\n",
+           compare_deadline(&keys[1], &keys[2]), compare_job(&keys[1], &keys[2]));
+    printf("extreme signed keys: %d\n", compare_job(&keys[0], &keys[3]));
+    for (size_t i = 0; i < count; ++i) {
+        for (size_t j = 0; j < count; ++j) {
+            int direct = compare_job(&keys[i], &keys[j]);
+            int callback = compare_through_callback(&keys[i], &keys[j], compare_job);
+            /* 表中完整键严格递增，数组下标给出独立的预期符号。 */
+            int expected = (i > j) - (i < j);
+            assert(direct == expected && callback == expected);
+        }
+    }
+    puts("16 pairs: direct and callback agree; no timing claim");
+    return 0;
+}
+```
+
+从仓库根目录编译运行：
+
+```bash
+mkdir -p .cache/rb_compare
+cc -std=c11 -Wall -Wextra -Werror -pedantic \
+    labs/kernel/tree_basics/materials/job_compare.c \
+    -o .cache/rb_compare/job_compare
+.cache/rb_compare/job_compare
+```
+
+输出为：
+
+```text
+same deadline: 0; full key: -1
+extreme signed keys: -1
+16 pairs: direct and callback agree; no timing claim
+```
+
+第一行中 `(40,2)` 与 `(40,4)` 按时间比较相等，按完整键比较则前者小。比较函数的返回值只要求负、零、正的含义，不能随手写成两个 int 键相减；`INT_MIN` 和 `INT_MAX` 是 int 类型两端的可表示值，直接相减可能溢出。这里先做关系比较，再用取值为零或一的结果相减。
+
+表中完整键已排序，所以两层循环用下标关系独立预测每次比较的符号。直接调用与经过函数指针参数的写法得到相同结果，只说明语义一致；优化器可能把后者也展开，运行输出不能证明机器码还存在间接调用。`UINT_MAX` 是 unsigned int 最大值，不是某个固定的十进制常数。
+
+试着把 `(40,4)` 改成 `(40,2)`：现在两个不同数组元素的完整键相等，原来“下标严格递增对应严格键序”的断言会失败。先修正测试预期并决定重复政策，而不是偷偷让地址打破平局。再把 id 的比较方向反转，预测同时间任务的顺序；插入和查找必须一起采用新规则，不能只改其中一边。
 
 ------
 
@@ -1048,7 +1131,7 @@ int rb_insert_generic(struct rb_root *root,
 cmp(node, current);
 ```
 
-红黑树高度是 `O(log n)`，所以一次查找或插入大概要比较 `log n` 次。
+沿一条含 h 个实际节点的搜索路径，最多执行 h 次节点比较，可能在中途找到匹配就返回。红黑性质给出 h 的对数上界，并不是所有操作都恰好比较 log n 次；复杂字符串键的一次比较本身也不一定是常量成本。
 
 如果每次比较都是函数指针间接调用，路径大概是：
 
@@ -1078,15 +1161,9 @@ graph TD
 	class callback_1,callback_2,callback_3 cost;
 ```
 
-函数指针调用有几个问题：
+假设编译阶段无法确定 cmp 的目标，机器执行到某一层时先取得函数地址，再按调用约定交接参数与返回值，最后根据结果选孩子。处理器对间接分支的目标预测、调用约定的寄存器使用，以及跨调用优化受限，都可能增加成本；是否发生预测失败不能由源码断言。函数指针仍有声明的参数和结果类型，不是“用了指针就丢失 C 类型”。
 
-```text
-调用目标不如普通函数直接；
-编译器通常难以内联；
-类型信息容易丢失；
-调试路径不如手写比较直观；
-在高频路径中会累积成本。
-```
+同一层直接比较若被内联，编译器可以把取键、判断与选孩子一起优化。但若回调目标在此调用点已知，编译器也可能把它变成直接调用甚至内联。反过来，一个复杂比较即使写在循环里，也未必便宜；最终要观察实际编译配置下的机器码和目标负载。
 
 而手写比较是这样：
 
@@ -1108,41 +1185,37 @@ graph TD
 	direct_cmp_1["直接字段比较"]
 	level_2["读取下一层 this->key"]
 	direct_cmp_2["直接字段比较"]
+	level_3["读取第三层 this->key"]
+	direct_cmp_3["直接字段比较"]
 	search_end["找到节点或找到插入位置"]
 
 	search_start --> level_1
 	level_1 --> direct_cmp_1
 	direct_cmp_1 --> level_2
 	level_2 --> direct_cmp_2
-	direct_cmp_2 --> search_end
+	direct_cmp_2 --> level_3
+	level_3 --> direct_cmp_3
+	direct_cmp_3 --> search_end
 
 	classDef good fill:#e8f5e9,stroke:#2e7d32,color:#000,stroke-width:2px;
-	class search_start,level_1,direct_cmp_1,level_2,direct_cmp_2,search_end good;
+	class search_start,level_1,direct_cmp_1,level_2,direct_cmp_2,level_3,direct_cmp_3,search_end good;
 ```
 
-这就是内核常见的设计倾向：
-
-```text
-少抽象；
-少间接调用；
-让类型和字段尽量暴露给编译器；
-让高频路径尽量直接。
-```
+两张图都画三次节点比较：调用方式本身不会让树少走一层。只有实际保留下来的指令路径不同，才有需要测量的调用成本差异；它不改变搜索的树高上界。
 
 这并不是说函数指针比较一定不能用，而是说内核 rbtree 不把它作为强制模型。
 
 总结一下：
 
-```text
-需要极致清晰和高频性能时，手写 search/insert；
-需要复用和封装时，可以使用 rb_find* / rb_add* 辅助接口。
-```
+- 先按所需返回值、重复政策和读写协议选择辅助接口；短规则需要跨多条路径一致时，集中比较函数有利于维护。
+- 辅助接口无法表达特定搜索状态时，可以手写搜索，但仍应复用同一排序依据。
+- 怀疑高频比较成为瓶颈时，在相同键序、树形、查询分布、编译配置和缓存条件下比较；先查实际机器码是否还保留间接调用，再测时间与事件。上面的语义程序不提供这个性能结论。
 
 ------
 
 ### 9.2.7\_节点嵌入式设计对缓存局部性的影响
 
-嵌入式节点设计还有一个实际好处：缓存局部性通常更好。
+上一节讨论执行比较的控制流，这一节追踪比较所读的数据。缓存局部性指近期或相邻访问能复用已进入缓存的数据；关键不是“属于同一个结构体”这句话，而是需要的字段实际落在哪些缓存行。缓存行是硬件以固定块维护的一段内存，具体大小和布局要按目标核对。
 
 如果采用泛型容器设计，树节点和业务对象可能是两块内存。
 
@@ -1236,14 +1309,11 @@ graph TD
 
 这里不能绝对说 `key` 和 `rb` 一定在同一条 cache line 里，因为这取决于结构体布局、字段顺序、对象大小、分配器和对齐方式。
 
-但相比“树节点一块内存、业务对象另一块内存”，嵌入式节点至少减少了：
+在上图指定的“包装和对象分别分配，键只在业务对象里”的方案中，程序必须先读取 data，取得业务地址后才能读取键。这条地址依赖会限制后一次读取能提前多少；如果对象所在缓存行未驻留，还需等待该行取得。嵌入方案从节点地址减去已知偏移，不需要先读 data 才知道键地址；若键和所需链接恰在同一条已驻留缓存行，读取键便能复用它。这里消除的是一次指针取值及其地址依赖，缓存命中仍有条件。
 
-```text
-一次额外对象分配；
-一次 void * 间接访问；
-一层节点到对象的跳转；
-一部分缓存不命中的可能性。
-```
+例如仅作布局模型，假定缓存行 64 字节、一个对象按 64 字节对齐、键位于偏移 0、此次需要的链接位于偏移 16，那么两处在同一行。把两者之间放进 128 字节冷数据，或改变对象起始对齐，结论就可能改变。64 是这个算例的参数，不是对所有 ARM 或其他处理器的统一声明。
+
+反例也有用：若外部索引把比较需要的小键与链接一起紧凑保存，只有命中后才访问大业务对象，它可能少读许多冷字段；嵌入一个很大的对象反而可能降低索引密度。包装也可以成批分配，不能认定每个节点必然多做一次独立分配。因此选择时应先画实际地址与字段访问，再看目标测量，不能把“同一对象”当成命中率保证。
 
 在内核中，这种设计很常见。
 
@@ -1263,7 +1333,7 @@ struct kref ref;
 基础设施节点嵌入业务对象。
 ```
 
-这样业务对象既可以挂链表，也可以挂红黑树，还可以加入工作队列或者引用计数系统。
+这些字段分别为链表、树、延迟工作或引用协议提供状态位置，但各自的加入、退出与寿命条件并不相同。布局解决了状态放在哪里，下一节继续解决谁能在什么时刻销毁这个对象。
 
 ------
 

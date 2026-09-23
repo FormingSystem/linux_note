@@ -104,3 +104,5 @@ domains: [c_language, data_structures]
 [parent_color_word.c](parent_color_word.c)在[P08 父色编码实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#8.4.3_为什么颜色可以使用指针低位存储)中用明确位宽的整数观察对齐、红黑位、空父、游离自指与窄化丢高位；不会把这些数值转换成宿主指针，不是 ARM 或并发执行。
 
 [embedded_owner.c](embedded_owner.c)在[P09 双成员实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个嵌入成员还原同一个任务)中直接包含固定 container_of.h 与类型头。编译使用 `-std=gnu11 -I labs/kernel/tree_basics/materials/hosted_include`；[断言与类型适配](hosted_include/linux/build_bug.h)和[offsetof 适配](hosted_include/linux/stddef.h)只服务该宿主实验。它不运行树算法、父色编码或并发协议，不应把适配头用于内核构建。
+
+[job_compare.c](job_compare.c)配合[P09 比较契约](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_让同一个比较规则走两种调用路径)：同时间任务以稳定 id 再排序，直接与回调调用使用同一规则。C11 程序包含有符号键极值，不以键相减求比较结果，也不把语义一致当作性能证据。
