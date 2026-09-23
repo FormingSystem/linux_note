@@ -281,3 +281,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.50\_基础模块作为验收题
 
 [P15基础六题](../../../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md#15.3_核心概念验收_生命周期_指针和引用)使用既有[note_kref_basics.c](note_kref_basics.c)而非新增同义模块。先解释holders=1/2的两槽责任与回调位置，再对照P32完整代码；六组宿主协议本批重编通过，没有目标装卸或并发证明。
+
+## 1.51\_组合场景验收材料
+
+[P15场景四题](../../../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md#15.4_使用场景验收_handoff_lookup_锁和_RCU)继续使用note_kref_work_modes、note_kref_table和note_kref_rcu完整模块，二十四组宿主协议重编通过；分享/转交、重复撤下和RCU回收需分别说明责任。夹具并非真实队列、锁或RCU引擎，无新目标运行。
