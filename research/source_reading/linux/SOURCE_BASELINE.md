@@ -646,3 +646,9 @@ B04c 只读核对固定提交 include/linux/refcount.h（blob 35f039ecb2725618ca
 B04d 重新只读核对固定 include/linux/container_of.h（blob 713890c867bea78804defe1a015e3c362f40f85d），与仓库副本 LF 归一后相同。实现继续使用[既有唯一标题](../rbtree/source_explanations/include/linux/container_of.h.md#1.1_一次还原中的求值与类型检查)，新增的是 kref/work 两种回调的调用上下文，不是另一份宏展开。
 
 一次工作模块将 ref 移到非首成员，重新通过 ARM 前端与五路径宿主控制检查；固定宏的双成员 GNU C 宿主实验也重新运行通过。未把宿主偏移数字当作 ARM 布局，未将类型检查等同于对象身份或寿命验证；目标装卸仍未执行。
+
+## 1.48\_普通引用链与编译属性证据
+
+B04e 建立[kref 总索引](../kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)、状态模块与按上游相对位置组织的唯一实现。kref/refcount 文件沿 1.44/1.46 同一固定提交；另核对 compiler_types.h（blob 639be0f30b455d7b42adc26701fb47093012a1b8）、compiler_attributes.h（blob c16d4199bf9231b8aa8e08d6c8174247b11da82c）和顶层 Makefile（blob ca000bd227be66540185c450b749a5d5258f87eb）。后两份只裁剪本任务相关固定语句，不建立整份源码镜像。
+
+十三个函数体、两项类型、告警宏、signed_wrap 条件、must_check 和构建选项明确分层。__signed_wrap 仅按 CONFIG_UBSAN_SIGNED_WRAP 抑制特定插桩，不能替代 -fno-strict-overflow 等构建前提；GCC 宿主选项查询与属性预处理分别验证。固定函数体配合顺序原子/屏障/告警替身运行正常周期及 21 个边界，另以实际编译目标文件验证丢弃/消费底层结果与直接 put 的诊断差异。未执行真实原子竞争、内核 WARN、目标编译链接或装卸；条件引用及锁组合仍未在本研究目录展开。

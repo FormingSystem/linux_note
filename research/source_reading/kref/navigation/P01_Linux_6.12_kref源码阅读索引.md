@@ -1,0 +1,26 @@
+---
+id: research.kref.navigation.index
+title: "Linux_6.12_kref源码阅读索引"
+kind: source
+status: evolving
+domains: [linux, kernel, source_reading]
+source_project: linux
+source_version: "6.12.20"
+---
+
+# 第1章\_Linux\_6.12\_kref源码阅读索引
+
+## 1.1\_版本与读者任务
+
+固定 NXP linux-imx 提交 dfaf2136deb2af2e60b994421281ba42f1c087e0、Linux 6.12.20，身份见[基线](../../linux/SOURCE_BASELINE.md#1.1_当前来源)。知识正文先建立使用期限与责任；这里回答该版本如何保存计数、函数如何协作，以及从什么位置逐层看实现。
+
+## 1.2\_按问题进入已落地证据
+
+| 阅读问题 | 模块与唯一实现 |
+| --- | --- |
+| 一次创建、共享、归还如何相接 | [普通引用模块](P02_普通引用与归零回调导读.md#2.2_把S0到S5落到状态地址) → [kref 普通接口](../source_explanations/include/linux/kref.h.md#1.2_建立初始引用) |
+| 状态真正存在哪里 | [计数成员](../source_explanations/include/linux/kref.h.md#1.1_计数成员) → [refcount 存储](../source_explanations/include/linux/refcount_types.h.md#1.1_原子存储字段) |
+| 正常归零与异常饱和怎样分流 | [模块边界](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [增减 helper](../source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支) → [告警收敛](../source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和) |
+| 编译属性到底保证什么 | [属性与构建](P02_普通引用与归零回调导读.md#2.5_编译语义与检查器边界) → [signed_wrap](../source_explanations/include/linux/compiler_types.h.md#1.1_检查器属性与构建选项分工)、[must_check](../source_explanations/include/linux/compiler_attributes.h.md#1.1_返回值诊断不是自动清理)、[构建选项](../source_explanations/Makefile.md#1.1_优化选项与函数属性分开核对) |
+
+本批只落地普通引用链。条件取得、锁组合、静态初始化及体系结构原子实现尚未在本研究目录展开；现有[P05](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md)对应单元仍须独立审查，不能把本索引当作所有 kref 变体已覆盖。

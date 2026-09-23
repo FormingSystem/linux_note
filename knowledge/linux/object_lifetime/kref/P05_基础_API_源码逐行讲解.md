@@ -12,6 +12,8 @@ domains:
 
 ## 5.1\_本章主线
 
+普通 init/get/put/read 的版本化函数体已集中到[源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)及其唯一实现；本章保留调用者的参数、前提和应用判断。条件取得与锁组合仍按后续批次独立核对。
+
 前面几章已经讲过：
 
 ```text
@@ -118,11 +120,7 @@ kref_put_lock()
 
 源码形态可以理解为：
 
-```c
-struct kref {
-	refcount_t refcount;
-};
-```
+固定[计数成员定义](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.1_计数成员)仅保存 refcount_t，不保存回调或业务类型。
 
 也就是说，`kref` 的 API 本质上是对 `refcount_t` 的封装：
 
@@ -265,39 +263,7 @@ kref_init(&refobj->ref);
 
 ### 5.4.3\_kref\_init()
 
-`kref_init()` 用于动态对象初始化。
-
-源码形态可以理解为：
-
-```c
-static inline void kref_init(struct kref *kref)
-{
-	refcount_set(&kref->refcount, 1);
-}
-```
-
-逐行看：
-
-```c
-static inline void kref_init(struct kref *kref)
-```
-
-说明它是内联函数，参数是对象内部的 `struct kref *`。
-
-```c
-refcount_set(&kref->refcount, 1);
-```
-
-把内部的 `refcount_t` 设置为 1。
-
-这里不是加 1，而是直接设置为 1。
-
-语义是：
-
-```text
-对象刚初始化完成，创建者获得初始引用。
-```
-
+普通初始化参数是对象内部的 struct kref 指针，把内部值设置为 1，创建者承担初始责任；不是向已有计数加一。固定函数签名、实现语句及调用上下文集中在[kref_init](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.2_建立初始引用)，下一小节从调用者角度检查初始化阶段。
 
 ### 5.4.4\_kref\_init()\_的使用前提
 
@@ -370,31 +336,7 @@ kref_init() 只用于新对象初始化，不用于旧对象 reset。
 
 ### 5.5.1\_kref\_read()
 
-`kref_read()` 用于读取当前引用计数。
-
-源码形态可以理解为：
-
-```c
-static inline unsigned int kref_read(const struct kref *kref)
-{
-	return refcount_read(&kref->refcount);
-}
-```
-
-逐行看：
-
-```c
-static inline unsigned int kref_read(const struct kref *kref)
-```
-
-参数是 `const struct kref *`，说明它不会修改引用计数。
-
-```c
-return refcount_read(&kref->refcount);
-```
-
-返回底层 `refcount_t` 当前值。
-
+观察接口接受 const struct kref 指针，返回下层当前无符号值，不修改计数也不取得引用。固定实现见[kref_read](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.5_读取快照不新增责任)；const 不排除其他路径更新，调用前的寿命前提仍由调用者证明。
 
 ### 5.5.2\_kref\_read()\_的正确用途
 
@@ -454,41 +396,7 @@ kref_get_unless_zero()
 
 ### 5.6.1\_kref\_get()
 
-`kref_get()` 用于增加引用。
-
-源码形态可以理解为：
-
-```c
-static inline void kref_get(struct kref *kref)
-{
-	refcount_inc(&kref->refcount);
-}
-```
-
-逐行看：
-
-```c
-static inline void kref_get(struct kref *kref)
-```
-
-参数是要增加引用的 `struct kref *`。
-
-```c
-refcount_inc(&kref->refcount);
-```
-
-调用 `refcount_inc()` 增加底层引用计数。
-
-这里没有返回值。
-
-也就是说：
-
-```text
-普通 kref_get() 默认调用者已经满足使用前提。
-```
-
-它不负责告诉你“取得引用是否成功”。
-
+普通 get 接受内部 kref 指针，转交引用增加且不返回成功标志。调用者先满足有效对象与正引用前提，再为独立使用追加份额；固定语句见[kref_get](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.3_为独立使用追加引用)，异常告警不是业务可依赖的失败分支。
 
 ### 5.6.2\_kref\_get()\_的使用前提
 
@@ -573,64 +481,7 @@ kref_get() 没有失败分支；
 
 ### 5.6.4\_kref\_put()
 
-`kref_put()` 用于释放引用。
-
-源码形态可以理解为：
-
-```c
-static inline int kref_put(struct kref *kref,
-			   void (*release)(struct kref *kref))
-{
-	if (refcount_dec_and_test(&kref->refcount)) {
-		release(kref);
-		return 1;
-	}
-
-	return 0;
-}
-```
-
-逐行看。
-
-函数签名：
-
-```c
-static inline int kref_put(struct kref *kref,
-			   void (*release)(struct kref *kref))
-```
-
-它需要两个参数：
-
-```text
-kref：要释放的引用计数对象
-release：引用归零时调用的销毁函数
-```
-
-然后：
-
-```c
-if (refcount_dec_and_test(&kref->refcount)) {
-```
-
-底层引用计数减 1，并测试是否归零。
-
-如果归零：
-
-```c
-release(kref);
-return 1;
-```
-
-调用 release，并返回 1。
-
-如果没有归零：
-
-```c
-return 0;
-```
-
-说明本次 put 不是最后一个引用。
-
+put 的两个参数是要归还的内部 kref 指针和对象类型选择的 release 回调。固定实现见[kref_put](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理)：下层减并检测返回真才调用回调并返回 1；否则返回 0。后者包含正常非归零及异常饱和情况，不能推成对象一定仍活着。下面继续从使用者角度审查回调签名、返回值和归还前提。
 
 ### 5.6.5\_kref\_put()\_的\_release\_参数
 

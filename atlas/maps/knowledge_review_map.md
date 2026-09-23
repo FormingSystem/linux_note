@@ -626,6 +626,17 @@ mindmap-plugin: basic
     - Linux 设备模型
         - 🔴 [设备模型 34 章原始总稿迁移核对源](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
 - 源码阅读
+    - 🔴 **未校正** kref 普通引用
+        - 🔴 **未校正** [kref普通引用源码阅读大纲](../../research/source_reading/kref/大纲.md)
+        - 🔴 **未校正** [Linux_6.12_kref源码阅读索引](../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md)
+        - 🔴 **未校正** [普通引用与归零回调导读](../../research/source_reading/kref/navigation/P02_普通引用与归零回调导读.md)
+        - 🔴 **未校正** [Makefile有符号运算构建边界](../../research/source_reading/kref/source_explanations/Makefile.md)
+        - 🔴 **未校正** [refcount.c异常收敛实现](../../research/source_reading/kref/source_explanations/lib/refcount.c.md)
+        - 🔴 **未校正** [compiler_attributes.h返回值检查属性](../../research/source_reading/kref/source_explanations/include/linux/compiler_attributes.h.md)
+        - 🔴 **未校正** [compiler_types.h有符号回绕插桩属性](../../research/source_reading/kref/source_explanations/include/linux/compiler_types.h.md)
+        - 🔴 **未校正** [kref.h普通引用与回调实现](../../research/source_reading/kref/source_explanations/include/linux/kref.h.md)
+        - 🔴 **未校正** [refcount.h普通增减实现](../../research/source_reading/kref/source_explanations/include/linux/refcount.h.md)
+        - 🔴 **未校正** [refcount_types.h引用存储定义](../../research/source_reading/kref/source_explanations/include/linux/refcount_types.h.md)
     - 🔴 Maple 范围查询
         - 🔴 [Maple 查询源码路线](../../research/source_reading/maple_tree/大纲.md)
         - 🔴 [Linux 6.12 Maple 范围源码阅读索引](../../research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md)

@@ -39,23 +39,13 @@ flowchart LR
 
 所以不存在“kref 自动通知 RCU”或“RCU 自动等待 kref”的隐藏接口。二者是独立机制，但同一块内存仍然只有一个最终销毁协议；模块用 RCU callback、发布引用和 `kref_put(release)` 把两套状态机按所有权顺序接起来。
 
-以下模板以仓库保存的 Linux 6.12.20 [`kref.h`](../../../../../research/source_reading/linux/include/linux/kref.h)、[`refcount.h`](../../../../../research/source_reading/linux/include/linux/refcount.h) 和 [`kref.rst`](../../../../../research/source_reading/linux/Documentation/core-api/kref.rst) 为接口边界：`struct kref` 本身只内嵌 `refcount_t`，release 由每次 `kref_put()` 的调用者传入；`kref_get_unless_zero()` 只解决“非零才增加”，其计数器所在内存仍必须先由 RCU 或其他协议保持有效。
+普通引用链的版本证据先从[kref 源码总索引](../../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入。以下模板以仓库保存的 Linux 6.12.20 [`kref.h`](../../../../../research/source_reading/linux/include/linux/kref.h)、[`refcount.h`](../../../../../research/source_reading/linux/include/linux/refcount.h) 和 [`kref.rst`](../../../../../research/source_reading/linux/Documentation/core-api/kref.rst) 为接口边界：`struct kref` 本身只内嵌 `refcount_t`，release 由每次 `kref_put()` 的调用者传入；`kref_get_unless_zero()` 只解决“非零才增加”，其计数器所在内存仍必须先由 RCU 或其他协议保持有效。
 
 ## 21.1\_先按分配与所有权拓扑选模板
 
 先纠正一个会直接影响回收设计的认识：`struct kref` **不保存 release 函数，也不存在内核提供的默认空 release**。Linux 6.12.20 的 `include/linux/kref.h::kref_put()` 接收本次调用者传入的函数指针，计数减到零时就在当前执行路径调用它：
 
-```c
-static inline int kref_put(struct kref *kref,
-			   void (*release)(struct kref *kref))
-{
-	if (refcount_dec_and_test(&kref->refcount)) {
-		release(kref);
-		return 1;
-	}
-	return 0;
-}
-```
+固定[kref_put 的唯一实现](../../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理)保留函数体和逐步解释；当前章只据其接口组织下面三种所有权拓扑。
 
 因此，某个模块若传入空函数，空的是 **该模块选择的回调实现**，不是 kref 的默认行为。计数归零后 kref 会认为生命期已经终结；空回调既不会让 RCU 知道这件事，也不会为稍后的“手动查询并释放”保留一个可靠机会。并发代码也不能靠读取计数为零来获得独占销毁权，因为读到的数值与后续动作之间没有原子所有权转移。
 

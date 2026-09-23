@@ -193,13 +193,9 @@ atomic_t 可以实现计数；
 
 内核文档明确说明，`refcount_t` API 的目标是为对象引用计数器提供最小 API，虽然通用实现底层使用原子操作，但它和 `atomic_t` 在内存序保证等方面存在差异。([Linux Kernel 文档](https://docs.kernel.org/core-api/refcount-vs-atomic.html))
 
-典型定义可以理解成：
+本版本的存储层次先由[源码索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)定位，类型定义保持单一展开：
 
-```c
-typedef struct refcount_struct {
-	atomic_t refs;
-} refcount_t;
-```
+固定[refcount_t 存储定义](../../../../research/source_reading/kref/source_explanations/include/linux/refcount_types.h.md#1.1_原子存储字段)包含 atomic_t refs，安全规则由对应引用操作实现。
 
 也就是说：
 
@@ -267,11 +263,7 @@ kref 负责“对象生命周期引用计数模板”。
 
 它的典型结构是：
 
-```c
-struct kref {
-	refcount_t refcount;
-};
-```
+固定[计数成员定义](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.1_计数成员)仅保存 refcount_t，不保存回调或业务类型。
 
 也就是说：
 
