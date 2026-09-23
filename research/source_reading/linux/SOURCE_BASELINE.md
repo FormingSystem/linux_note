@@ -966,3 +966,7 @@ B04ci按固定dfaf2136核对内存、映射、platform、GPIO和IRQ声明/包装
 ## 1.105\_句柄启停与注册接口核对
 
 B04cj新增[drivers/clk/clk-devres.c固定原文](drivers/clk/clk-devres.c)与[句柄启停导读](../devres/navigation/P04_句柄启停与注册契约导读.md#4.1_时钟把退出动作放进同一记录)。其余clk/regulator/reset/DMAengine/PHY/pinctrl/platform/LED/thermal相关头和实现按固定dfaf2136只读核对；thermal采用实际定义名称与指针返回，DMA不虚构devm公共入口。时钟六条宿主包装路径及21项ARM接口类型断言通过，558份头中544份非生成头与固定对象一致，14份生成配置；无硬件启停、PM、DMA、复位或实际注册/注销运行。
+
+## 1.106\_devres退出依赖与设备发布顺序
+
+B04ck重新只读核对官方远端、lf-6.12.y、固定标签dfaf2136和6.12.20；当前HEAD为三个本地实验提交后的7b60e547，不作证据。固定drivers/base/core.c、devtmpfs.c、dd.c与include/linux/platform_device.h用于核对add/探测、节点请求、清理入口及void remove类型，既有原文保留。[模块导读](../devres/navigation/P02_记录与分组清理导读.md#2.4_退出依赖与设备发布的不同证据)记录范围。当前ARM配置启用COMMON_CLK与DEVTMPFS，只说明配置存在，不证明目标时钟或/dev挂载运行；七条宿主C模型不作硬件结论。

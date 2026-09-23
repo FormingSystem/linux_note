@@ -297,3 +297,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.54\_devres平面分组与登记失败
 
 [完整教材](../../../../knowledge/linux/object_lifetime/devres/P01_从失败回滚到设备资源账本.md#1.5_运行完整C模型观察六条路径)展示devres_groups.c全部代码及六条输出，比较未关闭/已关闭组、移除标记、全量清理、普通登记失败与reset失败。它是C11单线程数组模型，不是内核devres实现，不验证真实锁、嵌套或目标装卸。
+
+## 1.55\_devres退出依赖与事件窗口
+
+[内核侧教材](../../../../knowledge/linux/object_lifetime/devres/devres_旧机制_udev_mdev的讨论.md#2.5_代码框架%28最小充分示例%29)展示[devres_shutdown.c](devres_shutdown.c)完整C11程序。七条显式事件轨迹包含四阶段失败、正常退出和两种非法访问窗口；非法情况只计数，不访问失效内存。GNU C11严格警告编译并运行通过，模型不模拟真实IRQ、锁、分配器或目标运行。

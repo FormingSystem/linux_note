@@ -8,513 +8,374 @@ domains:
   - kernel
 ---
 
-我是 **GPT-5**。
-
 # 第1章\_内核资源管理与用户态设备管理的全景与对比
 
-> 读者画像：嵌入式 Linux 驱动/系统工程师（内核 6.1 及相近版本）。
->  目标：用一章建立“大地图”，把 `devm`、旧机制（非 `devm`）、`udev`、`mdev` 四个关键词放在同一条软硬件链路里，明确边界、接口与协作方式；为后续各分章的深入做准备。
+在[资源账本](P01_从失败回滚到设备资源账本.md#1.1_从两条退出路径提取同一份责任)中，我们已经知道：成功登记一条清理记录，才能把对应的退出责任交给设备核心。现在把视野扩大到整条访问路径。驱动已经能访问寄存器，为什么应用仍可能打不开设备？`/dev` 下已经有名字，为什么又不能据此断言驱动准备完成？
 
-------
+本章先建立这些对象所在的层次；第2章用一条中断访问路径检验内核清理顺序。内核接口以仓库固定NXP Linux 6.12.20为边界，首次进入版本证据请读[源码索引](../../../../research/source_reading/devres/navigation/P01_Linux_6.12_devres源码阅读索引.md#1.1_固定版本与阅读任务)。用户态管理器另有版本和配置，不能从内核版本推定其规则语法。
 
 ## 1.1\_为什么要同时理解这四个概念
 
-在一个完整的设备启用路径上，你会同时遇到**内核侧**与**用户态侧**两类问题：
+假设驱动要为一颗外设准备寄存器映射、时钟和中断处理函数，再向应用提供字符设备接口。这里有两个相互关联、却不能互相代办的问题。
 
-- **内核侧（驱动资源管理）**：`probe()` 里分配/获取的句柄与映射如何管理？失败路径如何回滚？卸载如何不留“脏资源”？
-  - 两条线：**`devm`（device-managed）** 与 **旧机制（非 `devm`，手动申请/手动释放）**。
-- **用户态侧（设备节点与策略）**：`/dev` 下面的设备文件如何出现、叫什么名、权限如何、是否触发脚本？
-  - 两条线：**`udev`（systemd-udevd/eudev）** 与 **`mdev`（BusyBox）**。
+第一个问题发生在内核：如果申请中断失败，先前取得的时钟由谁归还？如果应用还在请求数据，资源清理能否马上开始？显式申请/释放与devm接口属于这条线。第二个问题发生在访问入口：设备发布了什么身份，系统如何把它组织成路径，哪个用户有权限打开？udev和mdev属于用户态设备策略这条线。
 
-一句话记忆：
- **`devm`/旧机制解决“驱动里资源的生死”，`udev`/`mdev`解决“/dev 下设备的出现方式”。**
-
-------
+“旧机制”只是旧笔记对非devm接口的称呼，并不表示显式资源管理已经淘汰。一个驱动可以同时使用托管资源与独立拥有的对象。真正的比较依据是 **谁持有责任、责任何时结束**，而不是接口名字是否带有devm。
 
 ## 1.2\_一张图看全链路(从硬件到\_/dev)
 
+先分清两个可能不同的device：被总线枚举、等待驱动绑定的设备，以及驱动为应用注册的接口设备。驱动可能在probe中创建后者，但不能把所有设备的add事件都画成probe成功后的产物。
+
 ```mermaid
 flowchart TD
-  HW["硬件/总线事件"] --> Pro["驱动 probe()"]
-  Pro -->|devm_* 获取| Devres["devres 栈（内核托管）"]
-  Pro -->|非 devm 获取| Manual["手动资源（需手动释放）"]
-  Pro --> KOBJ["kobject → uevent(add/change/remove)"]
-  KOBJ --> U["用户态设备管理器：udev 或 mdev"]
-  U --> RULE["规则匹配：rules.d / mdev.conf"]
-  RULE --> DEV["/dev 节点：mknod/权限/命名/符号链接/脚本"]
-  DEV --> APP["应用 open/ioctl/read/write"]
-  Pro --> Rem["remove()/unbind：状态回退（clk/regulator/pinctrl）"]
-  Rem --> Devres
-  Rem --> Manual
+    bus["总线或平台代码"] -->|"注册被驱动设备"| device["内核device对象"]
+    device -->|"匹配后尝试probe"| driver["驱动：取得资源、初始化状态"]
+    driver -->|"登记具体清理责任"| records["该设备的devres_head"]
+    driver -->|"准备服务后按子系统协议发布"| api["面向应用的接口对象"]
+    api -->|"有设备号等条件时请求基础节点"| devtmpfs["devtmpfs内核文件系统"]
+    api -->|"发布身份与变化事件"| policy["用户态udev或mdev策略"]
+    devtmpfs -->|"承载基础节点"| path["应用可见的/dev路径"]
+    policy -->|"按配置设置权限、别名等"| path
+    app["应用"] -->|"open/read等请求"| path
+    path -->|"经设备号等机制分派"| api
+    driver -->|"撤销入口并停止使用后进入清理"| records
 ```
 
-------
+图中的devtmpfs是内核用于承载设备节点的文件系统；它与保存驱动资源记录的devres不是同一机制。是否配置、是否挂载到应用看到的`/dev`、注册对象是否有设备号，都会影响节点的可见性。用户态策略与基础节点创建也不是同一个完成点。
+
+固定版本`device_add`在适用的设备号条件下调用devtmpfs建节点入口，发出add事件，然后才走到总线探测入口。因此“看到了设备add事件”不能普遍证明该设备的驱动已probe成功。反过来，不提供字符或块接口的设备也不必拥有`/dev`节点。完整对象发布路线见[从发布到设备节点](../../device_model/class_sysfs/P03_从发布到设备节点.md)。
 
 ## 1.3\_四个关键词的最小定义
 
+沿图中的位置读下面四个名字：前两个改变内核清理责任的归属，后两个处理用户空间的设备策略。名字相近并不意味着它们共享同一份状态。
+
 ### 1.3.1\_devm(内核)
 
-- **是什么**：device-managed 资源管理；将“释放动作”挂在 `struct device` 的 **devres 栈**，设备解绑/注销时按 **LIFO** 自动调用释放回调。
-- **解决什么**：把 `probe()` 的**失败回滚**与卸载清理变成“自动”，极简错误路径。
-- **不做什么**：不负责 `/dev` 节点；不托管“状态”（时钟启停、电源上/下电、pinctrl 状态切换仍需手动配对回退）。
+devm是device-managed接口家族的惯用前缀，devres是保存、选择和执行资源清理记录的机制。成功的具体接口可能登记内存释放、句柄归还、状态关闭或接口注销。它不是一个“把所有资源都变成安全”的开关：失败返回值、提前退出方法和真正清理的内容，要查[相应接口](devres_API说明.md#第2章_devm_接口_作用与区别%28按子系统%29)。
 
 ### 1.3.2\_旧机制(非\_devm)
 
-- **是什么**：传统“谁申请谁释放”的模式：`kzalloc`/`ioremap`/`gpiod_get`/`request_irq`… + 在错误路径与 `remove()` 中**显式** `kfree`/`iounmap`/`gpiod_put`/`free_irq`…
-- **优缺点**：自由度高、可精确控制时点，但错误路径冗长、易漏导致泄漏/悬挂。
+显式管理把清理责任留在调用者或另一个明确的拥有者手里。例如成功`kzalloc`后，最终需要某条路径执行`kfree`；这条路径可以是失败回滚、独立对象的最后引用回调，也可以是某个阶段的退出。集中编写逆序清理通常比在每个分支复制一遍更容易审查，但责任不会因为采用了`goto`就自动正确。
 
 ### 1.3.3\_udev(用户态)
 
-- **是什么**：systemd-udevd（或 eudev）守护进程，监听内核 **uevent**，按 **rules** 创建/删除 `/dev/*` 节点、设置权限/属主/组、创建符号链接、执行脚本。
-- **典型命令**：`udevadm monitor/info/trigger/settle`。
+udev在用户空间处理设备事件和规则策略。常见实现为systemd-udevd；eudev是另一实现，不能把两者的所有版本当成同一个程序。sysfs是把内核对象关系与属性呈现给用户空间的文件系统，通常挂载在`/sys`；这些属性、已发布的身份与事件是策略输入，权限、属主和稳定别名等是常见输出。它不能替驱动停止一个仍在使用寄存器的中断处理函数。
 
 ### 1.3.4\_mdev(用户态\_BusyBox)
 
-- **是什么**：轻量设备管理器；通过 `/proc/sys/kernel/hotplug`（热插拔）或 `mdev -s`（冷插拔）工作；规则在 `/etc/mdev.conf`，语法简洁、体积极小。
-- **适用**：极简 rootfs、启动时间敏感场景。
-
-------
+mdev是BusyBox提供的设备管理程序。它可用于精简系统的设备扫描与事件处理；实际运行方式取决于BusyBox功能配置和系统启动脚本。`mdev -s`的扫描与热插拔事件的持续接收是不同工作，执行过一次扫描不证明以后插入设备会得到处理。具体规则和接入方式留到第3章，不能仅凭“占用小”推断本机已经部署好。
 
 ## 1.4\_两组核心对比(先给结论)
 
+现在可以把同一层的选择并列起来。先比较同一条退出责任由谁保存，再比较同一类用户态策略由谁执行；跨层的机制不放进一张性能排名表。
+
 ### 1.4.1\_devm\_vs\_旧机制(内核资源管理)
 
-| 维度     | `devm`                                     | 旧机制（非 `devm`）                          |
-| -------- | ------------------------------------------ | -------------------------------------------- |
-| 生命周期 | 绑定 `struct device`，解绑自动释放（LIFO） | 驱动自行管理，错误路径与 `remove()` 手工回滚 |
-| 失败回滚 | 简洁：失败就 `return`                      | 复杂：每个失败分支都写清理                   |
-| 维护性   | 高（模板化）                               | 难（易漏释放/顺序错误）                      |
-| 适用     | 常规平台驱动                               | 精确控制释放时点/跨设备共享/早期阶段         |
+| 比较问题 | 托管责任 | 显式责任 |
+| --- | --- | --- |
+| 成功后把清理信息留在哪里 | 具体接口写入设备资源记录 | 驱动或独立对象保存拥有关系 |
+| 后续步骤失败 | 核心处理已登记部分；驱动仍收束未登记与活动部分 | 驱动沿已成功阶段逐项回滚 |
+| 正常退出 | 满足停止使用条件后，由对应清理路径消费记录 | 拥有者按实际依赖执行清理 |
+| 代价 | 记录分配与管理成本，清理期限受拥有设备约束 | 更多责任追踪代码，需要覆盖每条出口 |
+| 选择前提 | 资源期限与设备清理周期相容 | 资源独立存活或明确采用另一套拥有协议 |
 
-> 牢记：**句柄托管 ≠ 状态托管**（clk/regulator/pinctrl 的启停/切换必须手动配对）。
+这不是“托管默认安全、手动默认危险”的排名。托管减少重复出口，却不减少资源之间真实存在的先后依赖；显式管理保留独立控制权，也就保留证明每条出口正确的义务。
 
 ### 1.4.2\_udev\_vs\_mdev(用户态设备管理)
 
-| 维度   | `udev`                           | `mdev`                              |
-| ------ | -------------------------------- | ----------------------------------- |
-| 依赖   | systemd（或 eudev）              | BusyBox                             |
-| 功能   | 强：复杂规则、丰富匹配、RUN 脚本 | 轻：正则 + 简单动作，启动快、体积小 |
-| 冷插拔 | `udevadm trigger/settle`         | `mdev -s`                           |
-| 调试   | `udevadm monitor/info`           | `dmesg` + wrapper 打 ENV            |
-| 适配   | 服务器/桌面/完整发行版           | 极简嵌入式/Initramfs                |
-
-------
+两者是同一层上的策略实现选择。选型要核对现有根文件系统、规则表达能力、事件接收方式、启动组织和诊断工具，而不是预设“桌面一定udev、嵌入式一定mdev”。也不要让两个管理器同时争改同一组设备的权限、名字或脚本动作；系统应明确这些输出由谁负责。
 
 ## 1.5\_跨层职责边界\_devm\_vs(udev/mdev)
 
-- **`devm`**：只管**内核里**资源（句柄/映射/对象）的分配与释放，帮助你写出**简洁安全**的 `probe()/remove()`。
-- **`udev/mdev`**：只管**用户态** `/dev` 的出现方式（名称、权限、链接、脚本），以及冷/热插拔策略。
-- **相互独立、互不替代、协同工作**：同一设备从“能工作”到“应用能访问”，需要**两端都正确**。
+一次`open`失败至少可能来自三个位置：路径还不存在、访问权限不满足、请求到达驱动后被拒绝。第一种要看对象发布与节点可见性，第二种看实际权限及访问身份，第三种看驱动状态和具体返回错误。把驱动中的普通分配改成devm，并不能直接修复前两类问题；把节点改成全员可写，也不能使一个已经停止的设备重新具备服务能力。
 
-------
+反方向也一样：删除一个路径只限制从该路径发起的新查找，不替已经打开的文件实例完成关闭。旧使用者与绑定期资源怎样分离，继续读[生命周期集成](../integration/大纲.md)。
 
 ## 1.6\_一页速用模板(实操起点)
 
-### 1.6.1\_devm\_风格的\_probe()/remove()(缩略版)
+本节用退出顺序代替一个省略错误检查的“大而全probe”。先把handler会读取的东西列出来：私有内存、寄存器映射、让这些寄存器可访问的运行条件。它们必须在允许handler执行之前成立，且必须保持到handler不再使用它们之后。
 
-```c
-static int foo_probe(struct platform_device *pdev)
-{
-    struct device *dev = &pdev->dev;
-    int irq, ret;
+这里IRQ（Interrupt Request，中断请求）对应设备通知CPU处理事件的路径，handler就是该路径调用的处理函数。对“中断处理需要时钟开启”的本章设备，可以先建立内存和映射，再准备时钟，随后注册IRQ，最后允许本设备产生事件。清理时停止新事件源，按协议处理活动，再撤销IRQ，最后关时钟、结束映射与内存。共享IRQ、排队worker和DMA会增加额外退出条件，不能只套这几个名字。
 
-    /* 句柄/映射：devm_*，失败直接 return */
-    priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
-    priv->base = devm_platform_ioremap_resource(pdev, 0);
-    priv->led  = devm_gpiod_get(dev, "led", GPIOD_OUT_LOW);
+原有问题保留如下：
 
-    irq = platform_get_irq(pdev, 0);
-    ret = devm_request_threaded_irq(dev, irq, foo_isr, foo_thread,
-                                    IRQF_ONESHOT, dev_name(dev), priv);
+> 在讲解“1.6.1 `devm` 风格的 `probe()/remove()`”中，这里的回滚和资源清除是通过remove接口完成的，而你上文提到的会自动管理和清除资源是指：在没有remove接口的时候或者remove清除不完整的时候，devm机制也会自动接手隐式清除操作吗？
 
-    /* 状态：启用（注意 remove() 里要关闭） */
-    priv->clk = devm_clk_get(dev, NULL);
-    clk_prepare_enable(priv->clk);
+正常解绑的核心路径会处理已登记记录，这不以驱动逐项手写释放为前提。但“接手”容易让人误以为核心会检查remove漏掉什么，再智能补齐。它实际只执行记录里已经写好的动作；漏登记的关闭、仍在运行的任务以及错误的依赖顺序不会被推理出来。第2章把这几个时间点放进同一轮流程。
 
-    priv->vdd = devm_regulator_get(dev, "vdd");
-    regulator_enable(priv->vdd);
-
-    return 0;
-}
-
-static int foo_remove(struct platform_device *pdev)
-{
-    struct foo_priv *priv = platform_get_drvdata(pdev);
-    regulator_disable(priv->vdd);
-    clk_disable_unprepare(priv->clk);
-    return 0;  /* 其它由 devm 自动释放 */
-}
-```
-
-#### (1)\_devm回滚机制说明
-
-**提问：**
-
-* 在讲解“1.6.1 `devm` 风格的 `probe()/remove()`”中，这里的回滚和资源清除是通过remove接口完成的，而你上文提到的会自动管理和清除资源是指：在没有remove接口的时候或者remove清除不完整的时候，devm机制也会自动接手隐式清除操作吗？
-
-结论先说：**是的**。
- `devm` 的“自动回收”与 `remove()` 是否存在、是否把资源清理完整**无关**——它会在 **驱动解绑/设备释放** 的时机统一触发回收。`remove()` 只是给你一个机会去**回退“状态”**（如关时钟、掉电、切回休眠 pinctrl），而**不是**去释放那些已经由 `devm_*` 申请的“句柄/映射/对象”。
-
-**具体怎么回事？**
-
-##### 1)\_回收触发时机与顺序(关键点)
-
-当设备解绑（driver unbind）或被注销（device unregister）、模块卸载等发生时，内核 driver core 会按如下顺序处理：
-
-1. **调用驱动的 `remove()`**（如果提供了）。
-   - 这里做的应该是**状态性回退**：`clk_disable_unprepare()`、`regulator_disable()`、`pinctrl_select_state(sleep)` 等。
-   - 不要在这里 `kfree/iounmap/gpiod_put/free_irq` 那些已经用 `devm_*` 申请的资源（否则会双重释放）。
-2. **在 `remove()` 返回后，统一执行 devres 回收**（`devm_*` 资源自动释放，LIFO 顺序）。
-   - 这一步与是否实现了 `remove()`、`remove()` 是否清理完整**无关**——都会执行。
-   - 也就是说，即便 `remove()` 为 `NULL`，或者只做了部分状态回退，**`devm` 仍会把由 `devm_\*` 获取的句柄/映射/对象全部释放干净**。
-3. **特殊情况：`probe()` 失败早退**
-   - 如果在 `probe()` 过程中已经用了一些 `devm_*` 接口，然后中途 `return -Exxx`，**这些已登记的 devm 资源同样会被自动回滚释放**。
-   - 如果使用了 `devres_open_group()/devres_release_group()` 做阶段化初始化，也会得到相同的“一键回滚”效果。
-
-##### 2)\_你需要在\_remove()\_里做什么(而\_devm\_不会做的)
-
-- **时钟启停**：`clk_prepare_enable()` ↔ `clk_disable_unprepare()`
-- **电源上/下电**：`regulator_enable()` ↔ `regulator_disable()`
-- **pinctrl 状态切换**：`default/active` ↔ `sleep/idle`
-- **运行时的工作队列/定时器/任务**：若不是用 devm 管理（或没有对应 devm 版），应在 `remove()` 停止/销毁
-- **导出到其他设备/全局的资源**：如果资源生命周期跨越当前 `struct device`，就不适合用 `devm`，需要你自己管理
-
-> 核心记忆：**devm 托管“句柄/映射/对象”，不托管“状态”**。
->  状态一定要在 `remove()`（或 runtime PM 的 suspend/resume 路径）里**显式配对回退**。
-
-##### 3)\_Do\_/\_Don\_t\_清单
-
-- ✅ 在 `probe()` 中尽量用 `devm_*` 获取句柄/映射（失败即可直接 `return`）。
-- ✅ 在 `remove()` 中**只**做状态回退（关时钟、掉电、切回休眠 pinctrl），**不要**手动释放 `devm_*` 资源。
-- ✅ 允许 `remove()` 为空（在确实没有任何需要回退的“状态”时）。
-- ❌ 不要依赖 `devm` 去帮你“关电/关时钟/切 pinctrl”——它不会做。
-- ❌ 不要把需要跨设备/跨生命周期共享的资源交给 `devm`（会被提前释放）。
-
-##### 4)\_一个迷你时序对照
-
-```text
-probe():
-  devm_kzalloc()
-  devm_ioremap_resource()
-  devm_gpiod_get()
-  devm_request_threaded_irq()
-  clk_prepare_enable()        <-- 状态（你管）
-  regulator_enable()          <-- 状态（你管）
-  [probe 返回 0]
-
-unbind/remove:
-  -> driver->remove()         <-- 你在这里关时钟/掉电/切sleep
-  <- return
-  devres_release_all(dev)     <-- devm 自动释放所有句柄/映射（LIFO）
-```
-
-##### 5)\_小结一句
-
-- 你理解得对：**即使没有 `remove()`，或 `remove()` 没有把 `devm_\*` 资源逐一释放，`devm` 也会在解绑/注销时自动把它们清掉**。
-- 但这并不等于“什么都不用做”，因为**设备的运行状态**（时钟、电源、pinctrl 等）**仍需要你在 `remove()`/PM 路径里亲手复位**。
-
-
-
-### 1.6.2\_udev\_规则(示例)
-
-```bash
-# /etc/udev/rules.d/99-foo.rules
-SUBSYSTEM=="gpio", KERNEL=="gpiochip*", MODE="0660", GROUP="gpio"
-SUBSYSTEM=="char", KERNEL=="foo*", MODE="0660", GROUP="users", SYMLINK+="leaf/foo0"
-```
-
-### 1.6.3\_mdev\_规则(示例)
-
-```text
-# /etc/mdev.conf
-^gpiochip[0-9]+$   root:gpio  0660
-^foo[0-9]+$        root:users 0660   @/usr/bin/foo-post $MDEV
-```
-
-------
+用户态规则示例集中在第3章查询。规则中的子系统名必须来自真实设备身份，“字符设备”这一访问类型不等于一个通用的`SUBSYSTEM=="char"`匹配值。
 
 ## 1.7\_调试与评审\_Checklist
 
-- **驱动侧**
-  - `probe()` 失败路径是否“直接 return”（而不是手写释放）？
-  - 所有句柄/映射是否用 `devm_*`？
-  - **状态**（clk/regulator/pinctrl）是否在 `remove()`/PM **对称回退**？
-  - 连续 `rmmod/insmod` 是否稳定、无泄漏/悬挂 IRQ？
-- **用户态侧**
-  - 仅启用 `udev` **或** `mdev`（二选一，避免竞态）。
-  - 规则能匹配到（`udevadm info -a -n /dev/…` 或 `mdev -s` + 日志）？
-  - 目标用户组存在，应用用户被加入组？
-  - 冷插拔流程：`udevadm trigger/settle` 或 `mdev -s` 是否按预期生效？
+先核对同一张责任表：每个成功步骤写出取得了什么、谁清理、何时清理，以及哪些执行者还可能使用。对失败分支问“哪些步骤已经成功”，对正常退出问“哪些使用者还没退出”，对用户态问题问“实际失败停在路径、权限还是驱动”。
 
-------
+模块反复装卸和故障注入只应在可恢复的实验环境中开展；检查器没有报告，还需要配置、覆盖路径和检查器有效性的证据。不要为了证明时钟需要关闭，就在真实设备上删掉清理步骤再把硬件异常当作必然输出。先用下一章不会触碰硬件的C模型建立反例。
 
 ## 1.8\_本书使用方式与约定
 
-- **内核版本**：以 6.1 为参照，接口在 5.x/6.x 间普遍适用；GPIO 统一使用 **gpiod 描述符** 风格。
-- **代码风格**：以 `platform_driver` 为主，示例涵盖 GPIO/IRQ/CLK/Regulator/Pinctrl。
-- **图示**：使用 Mermaid 过程/时序图帮助建立直觉。
-- **术语**：
-  - “句柄/映射/对象” → `devm` 托管的内容；
-  - “状态” → 需手动配对的启停/上下电/状态切换。
+先读第2章的退出依赖，再读第3章的用户态事件与策略，最后把两层合起来定位问题。本篇沿用S0取得、S1登记、S2停止使用、S3摘出记录、S4执行清理的阶段名；它们组织的是同一轮责任转移，不代表真实驱动只有一个状态变量。
 
-------
-
-### 1.8.1\_本章小结
-
-- 你现在应已建立“同一条链路上的两对概念”：
-  - **内核侧**：`devm` vs 旧机制；
-  - **用户态侧**：`udev` vs `mdev`；
-  - **跨层**：`devm` 与（`udev/mdev`）分治协作。
-- 接下来每个分章将**逐一深挖**：
-  - 第2章：`devm` vs 旧机制（原理、接口、模板、实战、回归）。
-  - 第3章：`udev` vs `mdev`（规则语言、工具链、范式与排障）。
-  - 第4章：跨层协作与故障定位（端到端范例与思维导图）。
-
-
-
-------
+“状态”也不是devm能否处理的分界线。`devm_clk_get`只取得句柄，而`devm_clk_get_enabled`还准备使能并登记对应逆操作；自定义action也可以关闭状态。正确问题始终是：**这个具体接口成功登记了什么？**
 
 # 第2章\_devm\_与旧机制(非\_devm)\_定义\_流程\_边界\_示例
 
-> 目标：给出明确的技术定义与操作流程，阐明 `devm` 的职责与非职责，与旧机制的差异，以及在 `probe()`、失败回滚、`remove()`/解绑各阶段的行为。示例基于 Linux 6.1。
-
-------
-
 ## 2.1\_定义
 
-### 2.1.1\_devm(device-managed\_resources)
+内存还活着、时钟已经启用、中断入口已经注册、硬件正在产生事件，是四个可分别变化的事实。devres链保存清理记录，不把这四件事合成一个“设备可用”布尔值。我们需要同时跟踪功能状态、谁可以进入访问路径，以及记录现在归谁处理。
 
-- 机制：对某些资源的**申请**与**释放**建立严格的一对一关系；资源的释放动作与 `struct device` 的生命周期绑定。
-- 实现要点：每次调用 `devm_…` 接口，都会在该 `device` 的 **devres** 列表中登记一个“释放回调 + 资源指针/参数”的记录；在设备解绑/释放时，核心层按**后进先出（LIFO）**顺序调用这些回调。
-- 触发时机：
-  1. `probe()` 中途失败返回；
-  2. 驱动解绑（unbound）或设备注销（unregister）；
-  3. 模块卸载导致的设备释放。
-- 目标：在上述时机**自动**执行已登记的释放动作，避免手写回滚与遗漏释放。
+原有关于执行者的问题保留如下：
 
-#### (1)\_回滚机制
+> 也就是说，每次采用devm接口申请的资源，都会被挂到对应的资源回滚处理任务队列。然后当probe()失败的时候，就讲对应的资源回滚处理任务队列将资源释放。也就是说devm机制有一个守护进程，专门处理devm管理的资源。
+>
+> 但是由于只是资源回收，并不涉及资源复位操作，所以remove()接口还需要手动复位资源的状态为默认状态。
 
-**提问：**
+这里有两处需要修正。第一，devres是内核记录链，不是用户态守护进程，也不是自动提交的工作队列。调用清理函数的当前执行路径取得待清理记录，然后逐个调用回调；回调自身是否等待其他活动，要看其契约。第二，回调可以承担关闭运行状态的工作，不能从“托管”这个分类直接断言它绝不关时钟或电源。
 
-* 也就是说，每次采用devm接口申请的资源，都会被挂到对应的资源回滚处理任务队列。然后当probe()失败的时候，就讲对应的资源回滚处理任务队列将资源释放。也就是说devm机制有一个守护进程，专门处理devm管理的资源。
-* 但是由于只是资源回收，并不涉及资源复位操作，所以remove()接口还需要手动复位资源的状态为默认状态。
-
-**回答：**
-
-你的理解里有两点需要更正和明确：
-
-##### 1)\_结论(精确表述)
-
-1. **没有“守护进程”**、也没有异步“任务队列”。`devm` 在内核中通过 `struct device` 里的 **devres 链表/栈** 记录“释放回调 + 资源指针”。释放是在**当前调用路径内同步执行**，不是后台线程。
-2. **`devm` 只负责对象/句柄/映射的释放**，**不负责运行状态复位**。因此 `remove()`（以及必要的 PM 路径）必须手动关闭时钟、电源、切回 pinctrl 等。
-
-##### 2)\_精确流程
-
-- **probe() 阶段：**
-   每次调用 `devm_*`，都会向该 `device` 的 devres 栈登记一个释放记录。
-  - 若 `probe()` 中途 `return -Exxx`，核心层会**同步**按 LIFO 调用这些释放回调，回滚已登记的资源。
-- **解绑/卸载阶段：**
-  1. 如实现了 `remove()`：先调用 `remove()`，驱动在此**显式回退状态**（`clk_disable_unprepare()`、`regulator_disable()`、`pinctrl_select_state(sleep)` 等）。
-  2. `remove()` 返回后，核心层**同步**按 LIFO 执行 devres 回收，释放所有 `devm_*` 管理的对象/句柄/映射。
-  3. 即使没有 `remove()`，devres 回收仍会执行；但**状态**不会被自动复位，这会留下错误的硬件工作状态或功耗问题。
-
-##### 3)\_术语校正
-
-- 不是“资源回滚处理任务队列”。建议使用：**“`struct device` 的 devres 链表（按 LIFO 释放）”**。
-- 不是“守护进程接手”。正确表述：**驱动核心在解绑/失败路径中调用 devres 回收函数，同步执行释放回调**。
-
-##### 4)\_使用要求(避免误用)
-
-- **不要**在 `remove()` 再手动释放 `devm_*` 获取的对象（避免二次释放）；
-- **必须**在 `remove()`/PM 中回退**状态**（时钟、电源、pinctrl、工作队列/定时器等无 devm 版本的实体）；
-- **不要**将生命周期跨设备/全局共享的资源交给 `devm`；
-- 需要在 `probe()` 内“某一步立即释放”的精确时点控制时，使用非 `devm` 或 `devres_open_group()`/`devres_release_group()` 实现阶段化回滚。
-
-
-
-### 2.1.2\_旧机制(非\_devm)
-
-- 机制：开发者使用传统接口（如 `kzalloc`、`ioremap`、`gpiod_get`、`request_irq` 等）自行申请资源，并在所有失败路径与 `remove()` 中**显式**调用对应释放接口（`kfree`、`iounmap`、`gpiod_put`、`free_irq` 等）。
-- 特点：释放时机与顺序完全由驱动作者控制；需要在所有早退点与卸载路径中保持释放逻辑完备且有序。
-
-
-
-------
+失败的获取并不总会留下记录；optional接口还可能合法返回空值。普通action登记失败时，责任尚在调用者；`_or_reset`失败时则立即执行传入动作。相关固定实现分别见[普通登记](../../../../research/source_reading/devres/source_explanations/drivers/base/devres.c.md#1.1_普通action登记成功才转交责任)与[失败即时执行](../../../../research/source_reading/devres/source_explanations/include/linux/device.h.md#1.1_reset包装失败直接执行)。
 
 ## 2.2\_职责边界(必须区分的两类操作)
 
-1. **可由 `devm` 托管的“对象/句柄/映射”**
+先沿“取得与最终清理”这一轴分类，再沿“日常运行与暂停恢复”这一轴分类。两轴彼此独立：句柄可以由devm取得，运行状态可以由驱动反复改变，也可以由某个带enabled后缀的包装在单个绑定周期内取得并最终撤销。
 
-   - 典型：
+| 具体动作 | 成功后成立的责任 | 没有由此自动成立的保证 |
+| --- | --- | --- |
+| `devm_kzalloc` | 最终释放这块内存 | 所有持有其地址的任务已经退出 |
+| `devm_clk_get` | 最终归还时钟句柄 | 时钟已准备、使能或将在退出时disable |
+| `devm_clk_get_enabled` | 准备使能成功，并登记关闭和归还 | 每次运行时电源管理转换都自动配对 |
+| `devm_request_threaded_irq` | 注册成功后登记IRQ释放 | 本设备事件源、DMA与handler派生worker全部停止 |
+| 自定义action | 成功登记后执行指定函数和数据 | 任意清理函数都能用于当前上下文，或数据自动得到保活 |
 
-     - 内存：`devm_kzalloc`/`devm_kcalloc`/`devm_kstrdup`/`devm_kmemdup`
-     - 寄存器映射：`devm_ioremap(_resource)`、`devm_platform_ioremap_resource(_byname)`
-     - GPIO 描述符：`devm_gpiod_get(_optional/_index)`
-     - IRQ：`devm_request_irq`、`devm_request_threaded_irq`
-     - 时钟/电源**句柄**：`devm_clk_get(_bulk)`、`devm_regulator_get(_optional/_bulk)`
-     - 其他：`devm_reset_control_get(_bulk)`、`dma_request_chan`及其显式退出协议、`devm_phy_get`、部分 `devm_*register`
+PM指Power Management（电源管理）。反复的suspend/resume与最终解绑不是同一周期；最终关闭记录不能未经协调地再消费一次已经由暂停路径消费的责任。时钟包装怎样把exit和clk保存在同一条记录，见[实现说明](../../../../research/source_reading/devres/source_explanations/drivers/clk/clk-devres.c.md#1.2_退出动作先于句柄归还)。
 
-   - 行为：上述对象在解绑/失败时由 `devm` 自动调用对应释放回调。**不要**在 `remove()` 中重复释放这类对象。
-
-
-
-2. **`devm` 不托管的“运行状态”**（必须由驱动显式配对）
-
-   - 典型：
-     - 时钟启停：`clk_prepare_enable()` ↔ `clk_disable_unprepare()`
-     - 电源上/下电：`regulator_enable()` ↔ `regulator_disable()`
-     - pinctrl 状态切换：`pinctrl_select_state(active/default)` ↔ `pinctrl_select_state(sleep/idle)`
-     - 未有 `devm` 版本的线程、定时器、工作队列（需要在 `remove()`/PM 路径停止/销毁）
-   - 行为：这类“状态”必须在 `remove()` 或 runtime PM 的 suspend 路径**显式**回退；`devm` 不会代替。
-
-------
+供电、pinctrl、复位、PHY也要这样逐项核对，接口细节统一查[API参考](devres_API说明.md#2.6_时钟%28Common_Clock_Framework%29)。`dma_request_chan`本身不是devm接口，不能列入“调用即自动登记”的集合。
 
 ## 2.3\_时序与控制流
 
-### 2.3.1\_probe()\_成功路径
+在本章场景中，登记顺序为内存M、带启用责任的时钟C、IRQ入口I。成功期间handler使用M和C，所以退出顺序必须允许I先结束。本表回到同一组S0～S4。
 
-1. 调用若干 `devm_*` 接口登记可托管对象；
-2. 执行必要的“状态启用”（如 `clk_prepare_enable()`、`regulator_enable()`、`pinctrl_select_state(default)`）；
-3. 返回 0。
+| 阶段 | 状态位置、写入者与后续读取者 | 进入或退出条件 |
+| --- | --- | --- |
+| S0取得 | 驱动/包装取得资源，尚未登记的责任在调用者 | 每一步成功后才可建立对应责任 |
+| S1登记 | 包装写记录的release与data，持设备链锁追加到devres_head | 记录成功交付；handler可能在IRQ注册后立即进入 |
+| S2停止使用 | 驱动关闭业务来源，处理硬件事件源与派生活动；状态位于驱动和子系统各自结构 | 满足各项资源退出所需前提，不能只看一个stopping标志 |
+| S3摘出 | 清理执行者持devres_lock把记录转移到本次调用的todo链 | 账本锁释放，取得本次清理列表 |
+| S4清理 | 当前执行者逆序调用I、C、M回调，各子系统消费自己的责任 | I完成所承诺的撤销/同步后才继续C和M |
 
-### 2.3.2\_probe()\_失败路径(早退)
+```mermaid
+sequenceDiagram
+    autonumber
+    participant D as 驱动/当前探测者
+    participant H as IRQ及其派生活动
+    participant R as device.devres_head
+    participant K as 核心清理执行者
+    D->>R: S0/S1 建立并登记M、C
+    D->>R: S1 注册并登记I
+    H->>H: 可能立即读取M与C
+    alt 后续启动失败
+        D->>H: S2 收束已启动部分和派生活动
+        D->>K: 返回探测错误
+    else 正常退出
+        D->>H: S2 停止新来源并按协议等待活动
+        D->>K: remove返回
+    end
+    K->>R: S3 持链锁摘出到本次todo
+    R-->>K: 交付I、C、M，释放链锁
+    K->>H: S4 IRQ释放完成接口承诺的同步
+    H-->>K: 该IRQ活动不再使用M、C
+    K->>K: S4 关闭/归还C，再释放M
+```
 
-- 驱动直接 `return -Exxx`；
-- 核心层对**已登记**的 `devm_*` 资源按 LIFO 顺序**自动回滚**；
-- 驱动不需要手写对应对象的释放代码。
+正常解绑可以经过驱动remove再到devres清理；probe失败不会因为需要回滚就自动调用该驱动的remove。因此，若失败前已经启动了不由记录覆盖的活动，失败分支必须自行收束。固定版本路径见[记录与清理导读](../../../../research/source_reading/devres/navigation/P02_记录与分组清理导读.md#2.1_从记录地址追踪S0到S4)。该版本platform_driver的remove为void返回值，也不应继续复制旧的int模板。
 
-### 2.3.3\_解绑/卸载路径
-
-1. 若驱动提供 `remove()`：核心层先调用 `remove()`，驱动在此**回退“状态”**（时钟、电源、pinctrl 等），**不**释放已托管对象；
-2. `remove()` 返回后，核心层调用 devres 回收流程，按 LIFO 顺序对所有登记的 `devm_*` 对象执行释放回调；
-3. 即便 `remove()` 未实现或未完整清理对象，devres 回收仍会执行；但**状态**若未回退，将保持不正确的硬件工作状态或功耗异常（这是驱动自身错误）。
-
-------
+还有一个容易遗漏的窗口：停止本设备产生新中断，不等于所有处理函数已经退出。共享线、已开始的处理函数或另一路排队任务可能仍在执行。要在关闭它们依赖的时钟以前，通过相应同步建立“以后不再使用”的证据；devres链锁不会保护每一次寄存器访问。
 
 ## 2.4\_与旧机制的差异要点
 
-| 维度          | `devm`                                          | 旧机制（非 `devm`）                           |
-| ------------- | ----------------------------------------------- | --------------------------------------------- |
-| 对象/句柄释放 | 自动触发（绑定 `device` 生命周期；LIFO）        | 手动释放（所有早退和卸载路径需完整实现）      |
-| 失败路径实现  | 直接 `return`，由内核回滚                       | 每个分支手写回滚                              |
-| 卸载时序      | `remove()`（回退状态）→ devres 自动释放对象     | `remove()` 里全部释放对象+回退状态            |
-| 复杂度/风险   | 低（默认安全）                                  | 高（易遗漏或顺序错误）                        |
-| 适用边界      | 有 `struct device` 上下文；对象生命周期不跨设备 | 需要跨设备/跨生命周期共享；或要求精确释放时点 |
+显式实现把I、C、M的清理写在失败标签和退出函数中；托管实现把同样的依赖顺序编码为记录登记顺序和回调。两者都得证明I结束前C与M有效。把`clk_disable_unprepare`移进remove，却留下托管IRQ稍后才释放，会破坏这个证明：晚到的handler可以在“时钟已停、IRQ未撤”的窗口进入。
 
-------
+反之，也不能宣称“全部留给devres就一定安全”。如果I的处理函数排队了worker，释放IRQ并不自动取消那项worker；若worker需要先关业务门再同步取消，这仍是驱动退出协议的一部分。选择托管减少的是重复记录清理步骤的代码，增加的是每条记录及其管理成本，并没有取消业务协议。
 
 ## 2.5\_代码框架(最小充分示例)
 
-> 说明：仅展示关键位置与必须的回退点；省略无关细节。
+下面用完整C程序枚举退出轨迹。它是教学状态模型：布尔值代表资源与运行状态，数组代表三条清理责任，`deliver_interrupt`由主线程主动调用，表示我们刻意把事件放进某个窗口。它不创建真实IRQ、不模拟Linux锁，也不会故意访问失效内存。无效访问只增加计数，便于安全地检查反例。
+
+场景0～3分别在内存、时钟、IRQ、启动阶段失败；场景4正常工作后退出。场景5在时钟准备前放入一次handler，场景6在时钟提前关闭后、IRQ撤销前放入一次handler。先预测两条反例会在哪个条件上失败，再运行程序。
 
 ```c
-// probe()
-priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
-if (!priv) return -ENOMEM;
-platform_set_drvdata(pdev, priv);
+/* 教学状态模型：显式插入事件，不模拟Linux IRQ、锁或真实分配器。 */
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
 
-/* 可托管对象 */
-priv->base = devm_platform_ioremap_resource(pdev, 0);
-if (IS_ERR(priv->base)) return PTR_ERR(priv->base);
+enum resource_kind { memory_record, clock_record, irq_record };
 
-priv->led = devm_gpiod_get(dev, "led", GPIOD_OUT_LOW);
-if (IS_ERR(priv->led)) return PTR_ERR(priv->led);
+struct model {
+    enum resource_kind records[3];
+    unsigned int count;
+    bool memory_live;
+    bool clock_on;
+    bool irq_registered;
+    bool source_running;
+    unsigned int invalid_access;
+    unsigned int order_errors;
+    unsigned int accepted;
+};
 
-priv->irq = platform_get_irq(pdev, 0);
-if (priv->irq < 0) return priv->irq;
-ret = devm_request_threaded_irq(dev, priv->irq, isr, isr_thread,
-                                IRQF_ONESHOT, dev_name(dev), priv);
-if (ret) return ret;
-
-/* 状态启用（必须在 remove() 关闭） */
-priv->clk = devm_clk_get(dev, NULL);
-if (IS_ERR(priv->clk)) return PTR_ERR(priv->clk);
-ret = clk_prepare_enable(priv->clk);
-if (ret) return ret;
-
-priv->vdd = devm_regulator_get(dev, "vdd");
-if (IS_ERR(priv->vdd)) { ret = PTR_ERR(priv->vdd); goto err_clk; }
-ret = regulator_enable(priv->vdd);
-if (ret) goto err_clk;
-
-return 0;
-
-err_clk:
-clk_disable_unprepare(priv->clk);
-return ret;
-
-// remove()
-static int foo_remove(struct platform_device *pdev)
+static void record_resource(struct model *state, enum resource_kind resource)
 {
-    struct foo_priv *priv = platform_get_drvdata(pdev);
+    assert(state->count < 3);
+    state->records[state->count++] = resource;
+}
 
-    /* 仅回退状态；已托管对象的释放由 devm 自动完成 */
-    regulator_disable(priv->vdd);
-    clk_disable_unprepare(priv->clk);
-    /* 如有 pinctrl sleep 状态：pinctrl_select_state(priv->pct, priv->st_sleep); */
-    /* 如有工作队列/定时器且无 devm 版本：此处停止/销毁 */
+static void deliver_interrupt(struct model *state)
+{
+    /* 已撤销的入口不再接受调用；已登记不意味着所需状态已准备好。 */
+    if (!state->irq_registered)
+        return;
+    if (!state->memory_live || !state->clock_on) {
+        ++state->invalid_access;
+        return; /* 只记录反例，不真的访问失效内存或硬件。 */
+    }
+    ++state->accepted;
+}
 
+static void release_records(struct model *state)
+{
+    while (state->count != 0) {
+        switch (state->records[--state->count]) {
+        case irq_record:
+            /* 本模型要求先停止本设备事件源；不声称free_irq会替代该动作。 */
+            if (state->source_running)
+                ++state->order_errors;
+            state->irq_registered = false;
+            putchar('I');
+            break;
+        case clock_record:
+            if (state->irq_registered)
+                ++state->order_errors;
+            state->clock_on = false;
+            putchar('C');
+            break;
+        case memory_record:
+            if (state->irq_registered)
+                ++state->order_errors;
+            state->memory_live = false;
+            putchar('M');
+            break;
+        }
+    }
+}
+
+static void run_case(unsigned int scenario)
+{
+    struct model state = {0};
+    printf("case %u release=", scenario);
+    if (scenario == 0) /* 内存取得失败，尚无已登记责任。 */
+        goto finish;
+    state.memory_live = true;
+    record_resource(&state, memory_record);
+    if (scenario == 1) /* 时钟取得或准备失败。 */
+        goto finish;
+
+    if (scenario == 5) {
+        /* 反例一：时钟尚未准备，就允许handler被调用。 */
+        state.irq_registered = true;
+        deliver_interrupt(&state);
+        state.irq_registered = false;
+    }
+    state.clock_on = true;
+    record_resource(&state, clock_record);
+    if (scenario == 2) /* IRQ登记失败，时钟责任仍已成立。 */
+        goto finish;
+    state.irq_registered = true;
+    record_resource(&state, irq_record);
+    deliver_interrupt(&state); /* 允许登记后立即到来的事件。 */
+    if (scenario == 3) /* 启动失败的本模型保证事件源没有运行。 */
+        goto finish;
+    state.source_running = true;
+    deliver_interrupt(&state);
+    state.source_running = false; /* 先停止本设备源；实际驱动还要排空活动。 */
+    if (scenario == 6) {
+        /* 反例二：入口尚在就关时钟，已有或迟到的handler仍可能进入。 */
+        state.clock_on = false;
+        deliver_interrupt(&state);
+        state.clock_on = true; /* 恢复模型，随后按正确顺序收束。 */
+    }
+
+finish:
+    release_records(&state);
+    deliver_interrupt(&state); /* 入口撤销后应拒绝，不读取已结束的资源。 */
+    assert(!state.memory_live && !state.clock_on && !state.irq_registered);
+    assert(!state.source_running && state.count == 0);
+    assert(state.order_errors == 0);
+    assert(state.invalid_access == (scenario >= 5 ? 1U : 0U));
+    assert(state.accepted == (scenario < 3 ? 0U : scenario == 3 ? 1U : 2U));
+    printf(" accepted=%u invalid=%u\n", state.accepted, state.invalid_access);
+}
+
+int main(void)
+{
+    for (unsigned int scenario = 0; scenario < 7; ++scenario)
+        run_case(scenario);
+    puts("7 explicit event traces passed; no kernel or hardware execution");
     return 0;
 }
 ```
 
-要点复核：
+源码可直接取用[devres_shutdown.c](../../../../labs/kernel/object_lifetime/materials/devres_shutdown.c)。在仓库根目录的C开发环境中执行：
 
-- 不在 `remove()` 里释放 `devm_*` 获取的对象（避免重复释放）；
-- 任何启用型操作（时钟、电源、pinctrl）都要在 `remove()` 关闭或切回；
-- `probe()` 任意点失败可直接返回，`devm` 自动回滚此前登记的对象释放。
+```bash
+cc -std=c11 -Wall -Wextra -Werror -O2 \
+  labs/kernel/object_lifetime/materials/devres_shutdown.c -o /tmp/devres_shutdown
+/tmp/devres_shutdown
+```
 
-------
+预期输出如下；M表示结束内存责任，C表示结束时钟责任，I表示撤销中断入口责任。
+
+```text
+case 0 release= accepted=0 invalid=0
+case 1 release=M accepted=0 invalid=0
+case 2 release=CM accepted=0 invalid=0
+case 3 release=ICM accepted=1 invalid=0
+case 4 release=ICM accepted=2 invalid=0
+case 5 release=ICM accepted=2 invalid=1
+case 6 release=ICM accepted=2 invalid=1
+7 explicit event traces passed; no kernel or hardware execution
+```
+
+第一行没有清理字符，因为没有成功取得的资源。第二、三行的不同前缀来自成功阶段不同，不是“所有失败都做同样清理”。最后两行虽然最终清理顺序也是ICM，却已经在生命周期中间发生了非法使用窗口：最终没有泄漏不能证明运行过程正确。
+
+本模型故意限定“启动失败不留下运行中的事件源”。真实启动函数如果部分成功后失败，应在错误返回前撤销已启动部分，或把该责任可靠地交给后续回滚路径。不能拿模型的这个前提替真实硬件作保证。
 
 ## 2.6\_分阶段初始化的回滚(可选增强)
 
-当 `probe()` 很长且分阶段初始化时，可使用 devres 分组接口控制某一阶段的批量回滚：
+假如M属于整个绑定期，而C与I属于可以尝试后撤销的阶段，可以在取得M后open组，把C与I放入该范围。阶段失败时release组真正清理I、C；保留阶段成果但不再需要组标记时remove组只拿走标记。close只是限定结束位置，不表示从此无法回滚。
 
-```c
-void *g = devres_open_group(dev, NULL, GFP_KERNEL);
-if (!g)
-    return -ENOMEM;
-/* 阶段 A：多个 devm_* */
-...
-if (err) {
-    devres_release_group(dev, g); /* 回滚阶段A，实际执行资源回调。 */
-    return err;
-}
-devres_close_group(dev, g); /* 划定阶段A的末端，不阻止以后release。 */
-```
-
-- 这是阶段边界示意，省略号不构成可编译程序。关闭组只使后来登记的资源位于组外；若不再需要阶段标记而要保留资源，使用remove_group。完整机制与C实验见[资源账本](P01_从失败回滚到设备资源账本.md#1.4_阶段失败为什么需要分组)。
-
-------
+分组改变的是“本次选哪些记录”，不改变使用者退出要求。即使只释放一个阶段，也要先让使用C与I的路径停止。完整分组程序已经在[资源账本实验](P01_从失败回滚到设备资源账本.md#1.5_运行完整C模型观察六条路径)中给出，本节沿用其结果，不另写一份省略错误出口的驱动。
 
 ## 2.7\_何时不使用\_devm
 
-- 资源生命周期**跨越当前 `device`**（如导出给其他设备或全局持有）；
-- 需要在 `probe()` 内某个特定时点**立即释放**对象（早于解绑时机）；
-- 没有 `struct device` 的上下文（早期引导路径或非设备对象）。
+先画实际使用终点。若旧文件实例必须在解绑后保留私有外壳，外壳就需要独立拥有协议；它可以保存“硬件已移除”的状态，但不能继续借用已随解绑结束的寄存器映射。跨设备共享也须明确实际拥有者，不能仅把一个托管地址复制给别人就认为寿命自动延长。
 
-这类场景使用传统接口，并设计**集中释放函数**以保证所有失败路径与卸载路径的释放一致性。
-
-------
+只有“想提前释放”并不必然排除devm：许多资源族有配套托管释放接口，action和分组也能按契约提前结束。应比较该接口是否覆盖真实需求、记录是否同时撤销以及使用者是否已退出。没有适当设备拥有者，或者资源本身遵循另一套独立生命期时，再选择显式管理。
 
 ## 2.8\_验证与排查
 
-1. **失败注入**：在 `probe()` 中故意返回错误；观察对象是否被完整回滚（结合 KASAN/kmemleak）。
-2. **卸载/重载压力**：循环 `rmmod/insmod` 若干次，确认无重复映射、无悬挂 IRQ、无内存/资源泄漏。
-3. **状态配对检查**：临时注释 `remove()` 中的 `clk_disable_unprepare()` 或 `regulator_disable()`，再次加载驱动应暴露异常（功耗、访问失败等），以确认状态回退确实必要。
-4. **边界检查**：确认未将跨设备共享资源交由 `devm` 管理。
+按三个递进问题修改上面的程序：
 
-------
+1. 只把IRQ记录放到时钟记录之前，保持handler依赖不变。退出时哪个断言应先报错？这检验你是否理解“登记顺序编码退出依赖”。
+2. 新增一个由handler启动、仍需时钟的worker状态。应在哪个退出阶段等待它？仅把irq_registered置false能否证明worker退出？先画时间线，再增添断言。
+3. 让启动失败时source_running仍为true。需要给失败出口增加什么步骤，才能继续保证最终状态？这检验部分成功后的回滚责任。
+
+第一题的预期是先处理C时仍看到IRQ已注册，order_errors增加；第二题要为worker的存储、创建入口与完成证据建立独立协议，模型目前没有实现；第三题需在交出清理责任前停止部分启动的来源，不能仅把断言删掉。
+
+七条顺序轨迹是对因果模型的检验，不是并发压力测试。真实驱动仍需在适用配置下构建，并在可恢复的目标上核对探测失败、解绑、回调同步及硬件状态。本批没有执行这些目标运行验证，也不能根据VM已开启就把它们记为通过。
 
 ## 2.9\_结论
 
-- `devm` 负责“对象/句柄/映射”的**自动释放**，与 `device` 生命周期绑定；与 `remove()` 的存在与否**无关**。
-- “运行状态”（时钟、电源、pinctrl 等）**不在 `devm` 范围内**，**必须**由驱动在 `remove()`/PM 路径显式回退。
-- 对于常规平台驱动，应优先采用 `devm`；对于跨设备/精确时点/无 `device` 上下文等场景，使用旧机制并保证释放逻辑集中、可验证。
+到这里可以证明的是：每条成功登记的责任有明确的消费路径，回滚集合由已成功阶段决定，而释放顺序必须服从仍在运行的使用者。尚不能从这些结论推导应用路径、权限和设备策略已经准备好。
 
-——以上为本章的完整技术说明。下一章将进入用户态设备管理：`udev` 与 `mdev` 的事件通路、规则、工具与差异。
-
-
+下一章转向用户态。进入之前保留两个问题：事件到达管理器与规则处理结束是否相同？节点已经存在与应用可以成功使用设备是否相同？回答它们需要继续追踪发布、事件与用户态策略，而不是再换一种资源分配API。
 
 # 第3章\_用户态设备管理\_udev\_与\_mdev\_的通路\_规则与差异
 
