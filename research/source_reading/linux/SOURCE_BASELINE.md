@@ -568,3 +568,11 @@ P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_str
 [场景导读](../rbtree/navigation/P10_内核调用场景与选择边界导读.md#10.2_按排序键和业务问题逐项阅读)串联十八个唯一函数：timerqueue 依 expires 排序，add 的布尔值表示新成最早、del 则表示余队列非空；fair 的 entity_before 按 deadline，资格另由 vruntime 与加权状态判断，pick_eevdf 还处理当前实体及特性分支；elv 按逻辑扇区建索引，mq-deadline 另有 FIFO/批次/方向条件；epoll 注册树用 file/fd 复合键，就绪列表另有状态。interval_tree 使用闭区间相交与最大终点，不能套用 VMA 半开非重叠映射。
 
 十八个函数逐字比较固定文件，定义无重复；只是静态源码证据，没有这些完整子系统的 Kbuild、运行、并发压力或性能测量，外部树未修改。VMA 当前 mm_mt 证据继续沿已有 Maple 基线和 P14，不复制完整范围教程。
+
+## 1.36\_Maple共享树与模式证据
+
+沿 1.28 的官方固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，再读 Documentation/core-api/maple_tree.rst、include/linux/maple_tree.h、include/linux/mm_types.h、lib/maple_tree.c、mm/mmap.c 与 kernel/fork.c，六份 blob 仍与 1.28 表一致，前五份已保存副本规范化后逐字相同。外部 HEAD 仍含三笔实验提交，本批只用固定对象，未修改外部树。
+
+[树模式模块](../maple_tree/navigation/P03_树对象与模式选择.md#3.2_从未发布到受保护使用)核对共享根、index 0 直存条件、锁选择、外部 lockdep 描述和 MM_MT_FLAGS。七个唯一函数体为 mt_external_lock、mt_init_flags、mt_init、mt_in_rcu、mt_clear_in_rcu、mt_set_in_rcu 与 mas_free，连同字段、标志及 CONFIG_LOCKDEP 分支按上游位置展开。mas_free 在 RCU 模式交给 ma_free_rcu，在非 RCU 模式推回操作池；模式切换函数没有 synchronize_rcu，不把 exit_mmap 的特定退出背景推广为活跃树的通用许可。
+
+当前配置仍为 ARM32、Tiny RCU、PREEMPT_NONE、非 SMP；未启用 CONFIG_PER_VMA_LOCK，头文件中的 CONFIG_MAPLE_RCU_DISABLED 是独立条件分支。只做静态源码与文档核对，未运行 Maple 核心、真实 VMA 系统调用、目标并发或性能测试，完整节点回收尚未据此宣称完成。

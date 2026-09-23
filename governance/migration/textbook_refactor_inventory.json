@@ -5,6 +5,34 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/maple_tree/source_explanations/lib/maple_tree.c.md",
+      "baseline_sha256": "a4a69bbd432922d44dabdc45751e85b31adca41c9991eab282c80c03100a30d4",
+      "lines": 39,
+      "state": "validated",
+      "reason": "B03at 新增树对象/模式导读和固定实现，静态核对字段、条件分支及资源去向；未进行目标并发或完整 Maple 算法验证，人工状态为新红色。"
+    },
+    {
+      "path": "research/source_reading/maple_tree/source_explanations/include/linux/mm_types.h.md",
+      "baseline_sha256": "c2efc44e7b10d67bfe65549381fad202e6eac83b04a529b18d3f6d921c9a1a18",
+      "lines": 29,
+      "state": "validated",
+      "reason": "B03at 新增树对象/模式导读和固定实现，静态核对字段、条件分支及资源去向；未进行目标并发或完整 Maple 算法验证，人工状态为新红色。"
+    },
+    {
+      "path": "research/source_reading/maple_tree/source_explanations/include/linux/maple_tree.h.md",
+      "baseline_sha256": "523206b3fef598e1feea69cc2784d392dbf84a58d9ea6c12979891487bc6ec66",
+      "lines": 193,
+      "state": "validated",
+      "reason": "B03at 新增树对象/模式导读和固定实现，静态核对字段、条件分支及资源去向；未进行目标并发或完整 Maple 算法验证，人工状态为新红色。"
+    },
+    {
+      "path": "research/source_reading/maple_tree/navigation/P03_树对象与模式选择.md",
+      "baseline_sha256": "f0d55f563127d7784997fe1ac92a76bb1ed84ff94bce6626d15347a14043cf20",
+      "lines": 75,
+      "state": "validated",
+      "reason": "B03at 新增树对象/模式导读和固定实现，静态核对字段、条件分支及资源去向；未进行目标并发或完整 Maple 算法验证，人工状态为新红色。"
+    },
+    {
       "path": "research/source_reading/rbtree/source_explanations/fs/eventpoll.c.md",
       "baseline_sha256": "e970683a14709349be4121e7b8af0f23e4cce72ed0eae44228ab3f164adb88b8",
       "lines": 111,
@@ -1728,7 +1756,7 @@
       "baseline_sha256": "2de6e1b8f40fadcc9f3e5294a114f8902a20aed4c1a35cccc6ad8d7e0875baec",
       "lines": 1804,
       "state": "pending",
-      "reason": "B03aa 只冷读 15.12/15.13 四个查询封装并移入唯一实现，保留结果推演；其余源码与状态章节待完整冷读，仍 pending。"
+      "reason": "B03at 实际冷读并重构开篇与 15.1～15.3，唯一展开树字段、模式、七个函数及宏；15.10 仅去重同一 MM_MT_FLAGS 定义并精确回链，15.4/15.5 已冷读待修，其他正文仍待按单元审查，不升级整章状态。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/大纲.md",

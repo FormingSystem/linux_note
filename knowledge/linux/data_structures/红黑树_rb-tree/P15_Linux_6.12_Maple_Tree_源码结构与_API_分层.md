@@ -10,49 +10,26 @@ domains:
 
 # 第15章\_Linux\_6.12\_Maple\_Tree\_源码结构与\_API\_分层
 
-第 14 章已经把 Maple Tree 放回了正确的位置：它主要是 Linux 新内核里 VMA 管理从 `rbtree + linked list + vmacache` 迁移出来后的核心索引结构，不是所有红黑树的替代品，也不是调度器从 CFS 走到 EEVDF 的原因。
+P14 用 G、H 两段 VMA 说明：地址命中、向后找对象和查找相交范围是不同的问题。P13 又说明多路节点只是承载方式，不能由树名推断对象位置和并发保证。现在进入固定版本，追问这些范围在哪里保存、调用者维护什么状态、返回对象能用多久。
 
-这一章开始进入 Linux 6.12 源码。
+本章有三层参与者：地址空间拥有共享 mm_mt，Maple 管理内部节点，调用方用 ma_state 或 vma_iterator 保存一次操作的游标。VMA 是被索引的独立对象。先区分这些所有者，再阅读普通接口、高级接口和 VMA 封装，才能判断某个字段属于树、当前操作，还是业务对象。
 
-但是这里不要一上来就从 `lib/maple_tree.c` 第 1 行开始硬读。Maple Tree 的工程实现有几个容易把人绕晕的点：
-
-1. 它不是“普通 B 树源码”那么直白，很多信息压进了指针低位、节点类型、树标志和状态机里。
-2. 它有两层 API：`mtree_*()` 是普通接口，`mas_*()` 是高级接口。
-3. VMA 并不直接把所有操作都写成 `mtree_store()` / `mtree_load()`，而是包了一层 `vma_iterator`。
-4. 它支持范围存储、空洞搜索、RCU 读侧、预分配节点、删除后的延迟释放，所以源码里有大量“为了工程语义而存在”的结构。
-
-所以本章先做一件事：建立源码阅读地图。
-
-读完本章，至少要能回答下面几个问题：
-
-```text
-1. Maple Tree 的核心源码文件分别负责什么？
-2. struct maple_tree、struct maple_node、struct ma_state 各自代表什么？
-3. 为什么 VMA 使用的是 mm->mm_mt，而不是每个 VMA 自己带 rb_node？
-4. mtree_*()、mas_*()、vma_iter_*() 三层接口是什么关系？
-5. vma_lookup()、find_vma()、find_vma_intersection() 到底分别走哪条路径？
-6. 后面继续深读 mas_store()、mas_find()、gap search 时，应该从哪里切进去？
-```
-
-本章的源码片段会保留内核标识符原名，但把片段里的英文注释译成中文。这样既能对照源码，又不会让阅读节奏被英文注释打断。
-
-------
+证据统一进入[Maple 源码阅读索引](../../../../research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)：NXP 官方 linux-imx，Linux 6.12.20，标签 lf-6.12.20-2.0.0，固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0。本文不以本地实验提交解释内核行为。正文建立职责和因果关系，具体宏、字段与函数体沿上游路径进入唯一实现标题；仓库补充的中文说明与上游原文分别标识。
 
 ## 15.1\_本章涉及的源码文件
 
-本章主要对照这些 Linux 6.12 源码文件：
+面对“查一个地址”的任务，先不从几千行算法开头顺读。由调用者一路向内追踪：VMA 封装选择查询契约，普通或高级 API 进入共享树，节点编码与游标决定如何下行。遇到初始化或释放问题时，再回到树建立与退出的调用环境。
 
-| 文件 | 本章关注点 |
+| 上游位置 | 带着什么问题阅读 |
 | --- | --- |
-| [Documentation/core-api/maple_tree.rst](../../../../research/source_reading/linux/Documentation/core-api/maple_tree.rst) | 官方文档，说明 Maple Tree 的目标、普通 API、高级 API、锁规则 |
-| [include/linux/maple_tree.h](../../../../research/source_reading/linux/include/linux/maple_tree.h) | 核心结构体、宏、状态机、API 声明 |
-| [lib/maple_tree.c](../../../../research/source_reading/linux/lib/maple_tree.c) | Maple Tree 的核心算法实现 |
-| [include/linux/mm_types.h](../../../../research/source_reading/linux/include/linux/mm_types.h) | `mm_struct` 里的 `mm_mt`，以及 `vma_iterator` 定义 |
-| [include/linux/mm.h](../../../../research/source_reading/linux/include/linux/mm.h) | `vma_lookup()`、`vma_find()`、`vma_next()`、`vma_iter_*()` 这类 VMA 访问封装 |
-| [mm/mmap.c](../../../../research/source_reading/linux/mm/mmap.c) | `find_vma()`、`find_vma_prev()`、`find_vma_intersection()`、mmap/munmap 相关路径 |
-| [mm/memory.c](../../../../research/source_reading/linux/mm/memory.c) | page fault、页表释放、unmap 路径里对 VMA 迭代器的使用 |
-
-如果把它们画成一张图，结构大概是这样：
+| [Documentation/core-api/maple_tree.rst](../../../../research/source_reading/linux/Documentation/core-api/maple_tree.rst) | 存储的范围、空洞模式、普通/高级 API 和调用者锁责任是什么 |
+| [include/linux/maple_tree.h](../../../../research/source_reading/linux/include/linux/maple_tree.h) | 共享根、节点类型、操作状态和模式位保存在哪里 |
+| [lib/maple_tree.c](../../../../research/source_reading/linux/lib/maple_tree.c) | 怎样读取、写入、查空洞，以及管理节点资源 |
+| [include/linux/mm_types.h](../../../../research/source_reading/linux/include/linux/mm_types.h) | mm_mt 属于哪个 mm，vma_iterator 封装什么 |
+| [include/linux/mm.h](../../../../research/source_reading/linux/include/linux/mm.h) | VMA 封装怎样选择查询语义、翻译半开端点 |
+| [mm/mmap.c](../../../../research/source_reading/linux/mm/mmap.c) | 查找、映射和退出过程怎样组织范围容器与锁 |
+| [mm/memory.c](../../../../research/source_reading/linux/mm/memory.c) | 缺页、解除映射和页表释放为什么需要定位 VMA |
+| kernel/fork.c | mm_init 怎样初始化 mm_mt 并登记外部 mmap_lock；固定 blob 见源码基线 |
 
 ```mermaid
 flowchart TD
@@ -65,13 +42,13 @@ flowchart TD
     MMAP["mm/mmap.c<br/>mmap / munmap / <br/>find_vma 路径"]
     MEM["mm/memory.c<br/>page fault / unmap / <br/>free_pgtables 路径"]
 
-    DOC --> H
-    H --> C
-    H --> MMT
-    MMT --> MMH
-    MMH --> MMAP
-    MMH --> MEM
-    C --> MMH
+    DOC -->|解释约定| H
+    H -->|定义实现所用状态| C
+    H -->|提供嵌入类型| MMT
+    MMT -->|提供树与游标| MMH
+    MMH -->|供调用| MMAP
+    MMH -->|供调用| MEM
+    C -->|提供核心操作| MMH
 
     classDef core fill:#e8f2ff,stroke:#2563eb,color:#111827;
     classDef mm fill:#ecfdf5,stroke:#059669,color:#111827;
@@ -79,67 +56,17 @@ flowchart TD
     class MMT,MMH,MMAP,MEM mm;
 ```
 
-注意这张图里有两条阅读路线：
+这张文件图中的连线表示阅读和使用关系，不代表这些文件中的所有函数都在一次查找中执行。算法路线先读官方契约，再读头文件状态与核心算法；VMA 路线先看 mm 的所有权和封装，再追具体调用点。两条路线在 Maple API 汇合，而不是彼此独立的两套范围树。
 
-```text
-Maple Tree 自身实现路线：
-Documentation → maple_tree.h → maple_tree.c
-
-VMA 工程接入路线：
-mm_types.h → mm.h → mmap.c / memory.c → maple_tree.c
-```
-
-如果目标是理解算法，应该走第一条。
-
-如果目标是理解“为什么缺页异常、mmap、munmap 都会碰到 Maple Tree”，应该走第二条。
-
-本系列后面会把两条路线合并起来读，但本章先把边界立住。
-
-------
+本章随后将依次回答根、节点、编码、游标、接口与 VMA 调用的问题。当前前三节的对应实现入口是[树模式与初始化导读](../../../../research/source_reading/maple_tree/navigation/P03_树对象与模式选择.md#3.2_从未发布到受保护使用)，先把外层的读写责任建立起来。
 
 ## 15.2\_从官方文档先抓住\_Maple\_Tree\_的语义
 
-官方文档对 Maple Tree 的定位很明确：它是一种 B-Tree 风格的数据结构，面向“非重叠范围”的索引。范围可以大到一段地址区间，也可以小到只有一个 index。
+Maple Tree 为非重叠范围提供索引。这里的“非重叠”约束的是同一位置最终对应的映射，**不表示所有重叠写入都会失败**。普通 store 可以覆盖已有映射；要求目标全为空再接入时，应选择 insert 类接口并处理其失败。具体更新分支稍后再读，本节先限定数据模型。
 
-这句话非常重要。
+红黑树通常由调用方比较业务键，从一条键找到一个对象；Maple 则把索引范围直接纳入接口，可以用 `[start,last] → entry` 表示。一个 entry 可以是 VMA 指针，也可以是其他允许的值，Maple 不是只为 VMA 定义的结构。查询得到 VMA 仍不等于已经找到物理页，也不等于已获准访问相应内存。
 
-普通红黑树存的是“一个节点一个 key”：
-
-```text
-key -> object
-```
-
-Maple Tree 存的经常是：
-
-```text
-[start, last] -> object
-```
-
-在 VMA 场景里，这个 object 就是 `struct vm_area_struct *`：
-
-```text
-[vm_start, vm_end - 1] -> struct vm_area_struct *
-```
-
-为什么是 `vm_end - 1`？
-
-因为 Linux VMA 自己习惯用半开区间：
-
-```text
-[vm_start, vm_end)
-```
-
-也就是 `vm_start` 包含在 VMA 内，`vm_end` 不包含在 VMA 内。
-
-而 <span style="color:red;">Maple Tree 内部使用的是闭区间</span>：
-
-```text
-[index, last]
-```
-
-所以 VMA 放进 Maple Tree 时，经常要把 `vm_end` 转成 `vm_end - 1`。
-
-这一点后面读 `vma_iter_bulk_store()`、`vma_iter_clear_gfp()`、`mas_set_range()` 时会反复出现。
+VMA 使用半开范围 `[vm_start,vm_end)`；<span style="color:red;">Maple Tree 内部使用的是闭区间</span>。对于已确认非空且端点合法的 VMA，写入范围是 `[vm_start,vm_end-1]`。例如 `[0x400000,0x452000)` 对应 `[0x400000,0x451fff]`：0x451fff 属于这段，0x452000 不属于。
 
 ```mermaid
 flowchart LR
@@ -153,132 +80,75 @@ flowchart LR
         D["last = 0x451fff<br/>包含"]
     end
 
-    A --> C
-    B --> D
+    A -->|保留起点| C
+    B -->|合法非空范围减一| D
 ```
 
-官方文档还把 API 分成两层：
+减一的前提必须放在动作之前。空半开范围没有最后一个元素，end 为 0 时无符号减一会回绕；反过来，Maple 允许的闭上界 ULONG_MAX 也不能无条件加一转换。VMA 封装依赖调用方提供合法边界，不能把接口中的 end−1 当成输入合法性检查。
 
-| API 层 | 典型函数 | 适合谁用 |
+| 层次 | 典型入口 | 谁负责什么 |
 | --- | --- | --- |
-| 普通 API | `mtree_load()`、`mtree_store()`、`mtree_store_range()`、`mtree_erase()`、`mt_find()` | 不想管理状态机，只想查、插、删、遍历 |
-| 高级 API | `MA_STATE()`、`mas_walk()`、`mas_store()`、`mas_find()`、`mas_empty_area()`、`mas_pause()` | 需要跨多次操作复用状态、预分配节点、做范围修改、和 VM 子系统深度配合 |
+| 普通接口 | mtree_load、mtree_store_range、mtree_erase、mt_find | 封装常见查询和修改，按约定管理内部操作状态及相应同步；返回对象的后续保护仍属调用者 |
+| 高级接口 | MA_STATE、mas_walk、mas_store、mas_find、mas_empty_area、mas_pause | 调用者持有 ma_state、选择有效锁或 RCU 读侧条件、处理状态和资源边界 |
+| VMA 接入 | vma_lookup、vma_find、vma_next、vma_iter_* | 选择地址空间的树，把 VMA 问题和半开范围翻译为 Maple 操作 |
 
-VMA 管理大量使用高级 API，因为它经常需要：
+高级接口需要承担更多责任，不是默认“越高级越应该用”。一次简单点查可以使用普通接口；要在同一保护范围内连续走多个对象、预分配节点，或在批量修改之间保留游标时，显式状态才有价值。普通与高级操作可以组合，但锁契约必须相容，不能把普通修改函数再套进同一把不可重入内部锁而不查它是否自行加锁。
 
-```text
-1. 查找某个地址命中的 VMA；
-2. 查找某个地址之后的第一个 VMA；
-3. 查找一段范围是否和已有 VMA 相交；
-4. mmap 时找空洞；
-5. munmap / mprotect 时拆分、删除、替换 VMA；
-6. 在持有 mmap_lock 的情况下做批量修改；
-7. 在 RCU 读侧做快速查找。
-```
+P14 的 mmap 空洞、mprotect 切分、munmap 删除以及缺页定位，使 VMA 接入需要这些不同能力。RCU 模式允许树在特定条件下支持读写并发，写者仍须串行化；游标、内部节点寿命和 VMA 属性保护各自有责任。普通查询内部的一段 RCU 读侧不会给返回对象自动增加长期引用，相关说明见[返回指针期限](../../../../research/source_reading/maple_tree/navigation/P02_范围契约与查询入口.md#2.4_返回指针的使用期限)。
 
-这些操作如果只靠一个“普通 map”接口，会很别扭。
-
-------
+可以回到[P14 完整 C++ 区间程序](P14_Maple_Tree_与_VMA_管理.md#14.9.3_运行G与H的区间模型)，先预测查询 G 的末地址、排除终点和 G 前空洞各自得到什么，再运行对照。该程序验证范围契约，不运行 Maple API，也不测试 RCU；下一步要把已经明确的契约落到树对象，而不是用宿主容器替换源码证据。
 
 ## 15.3\_struct\_maple\_tree\_树对象本身
 
-先看 Maple Tree 最外层对象。
+如果一个查询者临时建立游标就拥有一整棵新树，另一个查询者便看不到同一个地址空间的变化。实际设计把共享索引放在 mm_struct.mm_mt 中，把当前操作的位置留在调用方状态里。多个线程可以共享同一个 mm；因此这里是每个地址空间的索引，不能按线程数量数树。
 
-源码位置：[include/linux/maple_tree.h](../../../../research/source_reading/linux/include/linux/maple_tree.h)
+固定[maple_tree 定义](../../../../research/source_reading/maple_tree/source_explanations/include/linux/maple_tree.h.md#1.2_共享树字段与模式位)有三组职责：
 
-下面是简化后的源码骨架，注释已经译成中文：
+| 位置 | 保存的状态 | 写入和使用责任 |
+| --- | --- | --- |
+| ma_root | 空、index 0 的直接 entry 或编码节点入口 | 初始化建立空根，树操作更新；查询按表示分支读取，不能总是强转节点 |
+| ma_flags | 创建模式、锁选择、高度和 RCU 模式等位域 | 初始化确定基础模式，适当保护下的专用路径更新动态状态；不同读写路径读取相应掩码 |
+| ma_lock / ma_external_lock | 内部自旋锁或外部锁的 lockdep 描述 | 内部锁由树使用；外部锁由调用者真正持有，描述信息只供锁依赖检查 |
 
-```c
-struct maple_tree {
-	union {
-		spinlock_t		ma_lock;
-		lockdep_map_p	ma_external_lock;
-	};
-	unsigned int	ma_flags;
-	void __rcu      *ma_root;
-};
-```
+先看根的小树优化。只在 **索引 0 上的一项** 可直接保存在根的条件下，才省去节点；不是“任意地方只存一个对象都可直接放根”。固定头说明低两位为 10 的 entry 不使用这种根直存，而允许的其他形式可直存。更大范围或其他布局需要节点。根中的编码不等于业务指针，稍后的编码节会分别讨论根、父指针与操作状态。
 
-三个字段分别对应三件事：
+再看锁。ma_lock 和 ma_external_lock 是 union 的不同使用方式；选择外部锁后，不能继续把该存储当作已经初始化的内部自旋锁。[mt_init_flags](../../../../research/source_reading/maple_tree/source_explanations/include/linux/maple_tree.h.md#1.3_初始化先选择锁模式再建立空根)先写模式，只在内部锁模式下初始化自旋锁，然后建立空根。它不会分配 Maple 节点，不会建立 VMA，也不是清理活跃树后重新开始的销毁函数。
 
-| 字段 | 含义 |
-| --- | --- |
-| `ma_lock` / `ma_external_lock` | Maple Tree 自己的锁，或者外部锁的 lockdep 表示 |
-| `ma_flags` | 树的模式、锁模式、高度等标志 |
-| `ma_root` | 根指针，可能是空、直接 entry、或者指向 Maple 节点 |
+MM_MT_FLAGS 选择的三项能力见[唯一宏定义](../../../../research/source_reading/maple_tree/source_explanations/include/linux/mm_types.h.md#1.2_VMA树的三项模式)。下表为便于比较省略共同的 MT_FLAGS_ 前缀；三者都是 ma_flags 中的模式常量，回答不同问题：
 
-不要把 `ma_root` 简单理解成“永远指向根节点”。Maple Tree 为了优化小树，会让根指针直接存储 entry；只有复杂到一定程度，才需要真正的节点。
-
-源码附近有这样一段语义，译成中文就是：
-
-```c
-/*
- * 如果树里只有 index 0 上的单个 entry，通常直接存进 tree->ma_root。
- * 为了优化 page cache，低两位为 00、01、11 的 entry 可以存在根指针里；
- * 低两位为 10 的 entry 会被放进节点。
- *
- * flags 既保存树创建时确定的不变信息，也保存持锁修改的动态信息。
- *
- * 另一个用途是表示树的全局状态。例如 MT_FLAGS_USE_RCU 表示树当前处于
- * RCU 模式。这个模式允许单用户场景复用节点，避免反复分配节点和通过
- * RCU 释放节点。
- */
-```
-
-`ma_flags` 里本章先记住这几个宏：
-
-```c
-#define MT_FLAGS_ALLOC_RANGE	0x01
-#define MT_FLAGS_USE_RCU		0x02
-#define MT_FLAGS_LOCK_EXTERN	0x300
-```
-
-它们在 VMA 场景里会被组合成：
-
-```c
-#define MM_MT_FLAGS	(MT_FLAGS_ALLOC_RANGE | MT_FLAGS_LOCK_EXTERN | \
-			 MT_FLAGS_USE_RCU)
-```
-
-这说明 `mm_struct` 里的 Maple Tree 不是默认配置，而是专门服务 VMA 的配置：
-
-| 标志 | 对 VMA 的意义 |
-| --- | --- |
-| `MT_FLAGS_ALLOC_RANGE` | 这棵树需要支持范围分配 / 空洞搜索，适合 mmap 找地址空间 |
-| `MT_FLAGS_LOCK_EXTERN` | 不主要依赖 Maple Tree 自己的 `ma_lock`，而是由外层 VM 锁语义保护 |
-| `MT_FLAGS_USE_RCU` | 支持 RCU 读侧访问，配合 VMA 查找优化 |
-
-用图表示就是：
+| 模式 | 为什么需要 | 额外责任或成本 |
+| --- | --- | --- |
+| ALLOC_RANGE | mmap 等路径需要寻找足够大的空洞 | 节点增加空洞汇总信息，相应减少部分布局容量，并在更新时维护摘要 |
+| LOCK_EXTERN | 地址空间操作还需统筹 VMA 属性和其他状态 | 调用者持有相应 mmap 锁；仅声明外部锁不会自动串行化写者 |
+| USE_RCU | 内部树节点须满足允许的并发读侧访问 | 更新和退休节点路径遵守 RCU 模式；业务对象期限还需自己的协议 |
 
 ```mermaid
 flowchart TD
     MM["struct mm_struct"]
     MT["struct maple_tree mm_mt"]
-    FLAGS["ma_flags<br/>ALLOC_RANGE | \<br/>LOCK_EXTERN | USE_RCU"]
+    FLAGS["ma_flags<br/>ALLOC_RANGE |<br/>LOCK_EXTERN | USE_RCU"]
     ROOT["ma_root<br/>空 / 直接 entry / 根节点"]
-    LOCK["ma_lock 或 ma_external_lock<br/>锁语义入口"]
+    LOCK["ma_lock 或 ma_external_lock<br/>内部锁 / 外部锁依赖描述"]
 
-    MM --> MT
-    MT --> FLAGS
-    MT --> ROOT
-    MT --> LOCK
+    MM -->|拥有共享索引| MT
+    MT -->|持有模式| FLAGS
+    MT -->|保存入口| ROOT
+    MT -->|选择锁职责| LOCK
 
-    ROOT --> N0["maple_node<br/>真正节点"]
-    ROOT --> E0["单个 entry<br/>小树优化"]
-    ROOT --> NULL["NULL<br/>空树"]
+    ROOT -->|编码指向| N0["maple_node<br/>真正节点"]
+    ROOT -->|符合直存条件| E0["index 0 的单项 entry<br/>还需满足编码限制"]
+    ROOT -->|初始化为空| NULL["NULL<br/>空树"]
 ```
 
-这里和红黑树的差别非常明显：
+图中的 ma_external_lock 是锁依赖描述，不是锁定动作。固定 kernel/fork.c 的 mm_init 先用 MM_MT_FLAGS 初始化 mm_mt，再关联 mmap_lock 的描述；[mt_set_external_lock](../../../../research/source_reading/maple_tree/source_explanations/include/linux/maple_tree.h.md#1.4_外部锁登记不是取得锁)在锁依赖检查配置 CONFIG_LOCKDEP 关闭时没有这项登记工作，也不会因此取消实际的外部持锁要求。
 
-| 对比点 | Linux rbtree | Maple Tree |
-| --- | --- | --- |
-| 树根 | `struct rb_root` / `struct rb_root_cached` | `struct maple_tree` |
-| 节点归属 | 使用者结构体内嵌 `struct rb_node` | Maple Tree 节点由数据结构内部管理，使用者存 entry 指针 |
-| key 存在哪里 | 使用者结构体字段里，比较逻辑由使用者写 | index / range 由 Maple Tree API 状态传入 |
-| 查找逻辑 | 使用者自己写 while 比较 | Maple Tree 提供 `mtree_load()` / `mt_find()` / `mas_find()` |
-| 范围语义 | 不是原生范围树，需要使用者自己维护 | 原生支持 `[index, last]` 范围 |
+最后看容易混淆的 RCU 模式。头文件的历史注释提到了为单用户复用节点而引入模式选择；不能把它缩写成“开 USE_RCU 就可立即复用”。固定[mas_free 分支](../../../../research/source_reading/maple_tree/source_explanations/lib/maple_tree.c.md#1.2_退休节点根据模式选择去向)实际是：RCU 模式交给 ma_free_rcu，非 RCU 模式推回当前 ma_state 的节点资源池。内部节点可复用与某个 VMA 对象可释放仍是两个问题。
 
-这也是为什么 VMA 从 rbtree 切换到 Maple Tree 后，`struct vm_area_struct` 不再需要为“按地址索引”嵌入一个 `rb_node`。
+[mt_clear_in_rcu 与 mt_set_in_rcu](../../../../research/source_reading/maple_tree/source_explanations/include/linux/maple_tree.h.md#1.5_RCU模式读写不代替生命周期协议)维护模式位及相应锁约定，没有调用 synchronize_rcu。持有写锁只排除了由这把锁串行化的参与者，不能单凭它证明所有无锁读者都已离开。固定 exit_mmap 在地址空间退出这一更大生命周期下清除模式；不能把那一行拿到仍可被并发访问的树上当作通用优化。
+
+回到与 rbtree 的比较：后者通常把 rb_node 嵌入业务对象，比较键由调用者定义；Maple 管理内部范围节点，entry 指向独立对象，index/range 由接口传入。两者都需要清楚的对象保护，但不能把 rbtree 的“摘节点”直接套成 Maple 的“对象立刻死亡”。VMA 按地址索引无需为这项职责继续内嵌 rb_node，也不代表 VMA 的所有其他索引关系都消失。
+
+到这里可以回答三个检查题：一个非零索引上的单项为什么不能直接按根 entry 读取；登记外部锁后，哪个参与者实际取得它；模式清零为什么不等于完成宽限期。答案分别来自根表示条件、调用者同步责任和模式函数没有等待动作。下一节继续看节点如何装下多个范围，以及为了记录空洞付出了多少槽位空间。
 
 ------
 
@@ -1123,10 +993,7 @@ struct maple_tree mm_mt;
 
 同一个文件里还有：
 
-```c
-#define MM_MT_FLAGS	(MT_FLAGS_ALLOC_RANGE | MT_FLAGS_LOCK_EXTERN | \
-			 MT_FLAGS_USE_RCU)
-```
+MM_MT_FLAGS 的组合值见[唯一实现定义](../../../../research/source_reading/maple_tree/source_explanations/include/linux/mm_types.h.md#1.2_VMA树的三项模式)，这里继续观察调用者如何使用它。
 
 这三个标志连起来看，VMA 这棵树的工程语义就很清楚：
 

@@ -202,3 +202,5 @@ B03aq 完成 P12 12.6/12.7 冷读与改写，用[完整 C 检查器](../../knowl
 B03ar 完成 P12 剩余[固定内核场景](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#12.8_Linux_rbtree_在内核中的典型使用场景)和章末收束，核对十份官方固定文件与十八个函数，纠正调度排序、timerqueue 返回、epoll 注册/就绪及范围端点的混同；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.54_B03ar真实调用场景与P12收束)记录版本和未执行项。P12 经连续批次完成实际审查，下一项 P13，树专题与全仓仍未完成。
 
 B03as 完成 P13 全篇冷读与改写，保留二十键贯穿实例和七张机制图，纠正 B 树记录重复、B+ 相等路由与分裂分隔混用；[完整页模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md#%281%29_运行等值路由与叶分裂模型)验证固定高度下的插入、查询及失败不改状态。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.55_B03as页记录归属与叶分裂)列出检查和边界。下一项 P15；树专题和全仓继续。
+
+B03at 完成 P15 开篇及 15.1～15.3，按固定实现纠正树根直存、外部锁声明与 RCU 节点复用的混同；[树模式导读](../../research/source_reading/maple_tree/navigation/P03_树对象与模式选择.md#3.2_从未发布到受保护使用)连接七个唯一函数和字段定义。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.56_B03at共享树与模式责任)记录范围与未运行项。下一项 15.4 节点布局及 15.5 编码，P15 与全仓仍未完成。

@@ -624,6 +624,10 @@ mindmap-plugin: basic
         - 🔴 [Maple 查询源码路线](../../research/source_reading/maple_tree/大纲.md)
         - 🔴 [Linux 6.12 Maple 范围源码阅读索引](../../research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md)
         - 🔴 [范围契约与查询入口](../../research/source_reading/maple_tree/navigation/P02_范围契约与查询入口.md)
+        - 🔴 **未校正** [树对象与模式选择](../../research/source_reading/maple_tree/navigation/P03_树对象与模式选择.md)
+        - 🔴 **未校正** [include/linux/maple_tree.h 树根与模式](../../research/source_reading/maple_tree/source_explanations/include/linux/maple_tree.h.md)
+        - 🔴 **未校正** [include/linux/mm_types.h VMA 树模式](../../research/source_reading/maple_tree/source_explanations/include/linux/mm_types.h.md)
+        - 🔴 **未校正** [lib/maple_tree.c 内部节点资源去向](../../research/source_reading/maple_tree/source_explanations/lib/maple_tree.c.md)
         - 🔴 [mm.h VMA 点查询](../../research/source_reading/maple_tree/source_explanations/include/linux/mm.h.md)
         - 🔴 [mmap.c VMA 范围查询](../../research/source_reading/maple_tree/source_explanations/mm/mmap.c.md)
     - 🔴 **未校正** rbtree 查询与插入
