@@ -994,3 +994,7 @@ B05d核对固定include/asm-generic/barrier.h的CONFIG_SMP分支和ARM屏障映�
 ## 1.112\_发布取得与反向归还
 
 B05e沿固定通用release/acquire回退的类型和先后关系核对正文边界，删去说明性冒号伪C而保留职责表及[源码导读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)。单槽一万轮宿主C++17发布/归还通过，标准原子一致性和严格单生产/单消费协议不冒充Linux实现；未运行herd7、目标ARM、取消、故障恢复或多参与者队列。
+
+## 1.113\_依赖数据流与RCU取得边界
+
+B05f只读固定Documentation/RCU/rcu_dereference.rst和include/linux/rcupdate.h，核对地址/数据依赖、普通判空与已知地址比较、READ_ONCE特例及check/protected前提；[RCU模块导读](../rcu/navigation/P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md#2.9_唯一实现讲解入口)保留唯一实现入口。五函数C在GCC14.2和Clang18.1 x86-64 O2严格编译并观察：Clang替换固定地址比较后的访问来源，GCC本次仍保留指针寄存器；不以特定汇编替代Linux或ARM语义。未执行RCU、herd7或回收路径。

@@ -2951,8 +2951,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P05_数据依赖_控制依赖与RCU取得.md",
       "baseline_sha256": "4bbaa68e53e10aadcf551871e0b235565b2137c4004e861402d4f3ba039aebca",
       "lines": 169,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05f冷读固定依赖文档与接口，纠正裸ONCE及指针比较的绝对化结论；完整五函数C经两工具链O2编译追踪且保留差异，无RCU/ARM/LKMM运行。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P06_原子RMW_顺序后缀与条件成功.md",

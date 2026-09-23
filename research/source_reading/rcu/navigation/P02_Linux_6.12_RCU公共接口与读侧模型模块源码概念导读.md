@@ -197,6 +197,8 @@ sequenceDiagram
 
 ## 2.9\_唯一实现讲解入口
 
+需要区分“机器地址依赖仍在”与“RCU读侧和检查契约完整”时，先读[五函数编译观察](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P05_数据依赖_控制依赖与RCU取得.md#5.3.2_观察地址到底来自哪里)。它不运行RCU；固定rcu_dereference文档允许的转换和判空边界不等于任意指针计算都可用。实现归属继续保持下面各标题唯一展开。
+
 | 实现问题 | 唯一展开位置 |
 | --- | --- |
 | 公共发布、取得、同步等待入口与检查分支 | [RCU 公共接口与检查机制源码详解](../source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.2_接口与源码索引) |

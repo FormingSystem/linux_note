@@ -202,6 +202,8 @@ ONCE/屏障源码定义
 
 ## 1.14\_配套入口
 
+[数据依赖教材](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P05_数据依赖_控制依赖与RCU取得.md#5.3.2_观察地址到底来自哪里)的五函数C仅观察编译器数据流：两编译器均消除抵消后的地址依赖，固定地址比较在本次Clang与GCC中选择不同代码。固定Documentation/RCU/rcu_dereference.rst及rcupdate.h支撑RCU取得、判空、已知地址比较和只增加不删除的特例，不将READ_ONCE写成必然丢失地址依赖。具体实现仍链接RCU唯一讲解，不在本导读复制函数体。
+
 [发布与单槽交还](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P04_release_acquire_发布协议.md#4.6.1_让消费者也成为一次发布者)区分正向发布和消费结束后的反向归还；其C++17一万轮运行只验证该标准线程材料，不是Linux单槽队列或LKMM结果。固定内部回退职责沿1.3.2查阅，一次MP测试也不能替多写者、取消和回收协议证明。
 
 [屏障方向教材](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P03_Linux_SMP屏障与顺序域.md#3.5.1_先用单槽待写模型重建坏结果)的C解释器只展示单槽待写所产生的SB反例及加入写后读条件的变化，不执行linux-kernel.cat。其74/20条轨迹和单边约束练习不能替代本导读的模型结果；实际原语条件继续从1.3.2/1.3.3进入，LKMM配套材料仍由herd7独立验证。
