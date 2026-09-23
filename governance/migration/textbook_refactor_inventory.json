@@ -2419,8 +2419,8 @@
       "path": "knowledge/linux/object_lifetime/kref/大纲.md",
       "baseline_sha256": "4a8f3c3a46fb864d60a60c0ffeb8c4f81ade362c3ef7830789e6686e828ed822",
       "lines": 502,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04br仅整理kref读者导航长链，完整31章入口和既有状态保留；批次历史归工作记录。"
+      "state": "validated",
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04br仅整理kref读者导航长链，完整31章入口和既有状态保留；批次历史归工作记录。 B04cg全篇冷读大纲，将旧写作建议改为实际40章依赖路线，保留模板/实验表和有效细粒度入口；纠正release立即销毁、按锁名选get、框架继承和检查器绝对化概括，明确正文与版本导读独立职责；人工状态不变。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P01_异步通知全景与知识地图.md",
