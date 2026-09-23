@@ -354,3 +354,5 @@ B04bn完成[P28文件实例持有](../../knowledge/linux/object_lifetime/kref/P2
 B04bo完成[P29引用封装](../../knowledge/linux/object_lifetime/kref/P29_引用封装与调试责任模板.md#29.1_接口先交代谁拥有哪一份)，完整模块核对输入契约、单次求值、槽位转交与日志边界，六组宿主和ARM通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.130_B04bo引用封装与调试责任)记录未验证并发边界。清单655项：248 validated、389 pending、18 supporting_pending；继续P13状态机，P13仍pending。
 
 B04bp完成[P30状态接纳](../../knowledge/linux/object_lifetime/kref/P30_状态观察与活动接纳模板.md#30.1_LIVE不是一张永久通行证)，十条C顺序路径分离存储、索引、业务、活动和排空事件；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.131_B04bp状态观察与活动接纳)记录模型及真实同步边界。清单656项：249 validated、389 pending、18 supporting_pending；继续P13收尾约定，P13仍pending。
+
+B04bq完成[P31工程契约](../../knowledge/linux/object_lifetime/kref/P31_接口契约与退出审查模板.md#31.1_把成功和失败分别写进注释)及P13全部模板和章末审查，按实际前提纠正RCU、异步、文件、状态、回收与退出总表；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.132_B04bq工程契约与P13收束)记录复用证据边界。清单657项：251 validated、388 pending、18 supporting_pending；继续P14源码阅读实验与P15章末单元，全仓仍未完成。
