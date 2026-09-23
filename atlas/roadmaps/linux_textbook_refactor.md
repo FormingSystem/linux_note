@@ -360,3 +360,5 @@ B04bp完成[P30状态接纳](../../knowledge/linux/object_lifetime/kref/P30_状�
 B04bq完成[P31工程契约](../../knowledge/linux/object_lifetime/kref/P31_接口契约与退出审查模板.md#31.1_把成功和失败分别写进注释)及P13全部模板和章末审查，按实际前提纠正RCU、异步、文件、状态、回收与退出总表；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.132_B04bq工程契约与P13收束)记录复用证据边界。清单657项：251 validated、388 pending、18 supporting_pending；继续P14源码阅读实验与P15章末单元，全仓仍未完成。
 
 B04br整理kref首页、Atlas及专题交付段的累计长链，31篇章节仍由大纲直接链接，P16～P31依赖表保留；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.133_B04br读者导航与批次记录分工)保存核对范围。清单仍为657项、251 validated、388 pending、18 supporting_pending；下一批继续P14。
+
+B04bs完成P14准备及前两组实验，新增[P32基础引用与源码对照](../../knowledge/linux/object_lifetime/kref/P32_基础引用与源码对照实验.md#32.1_先分清读哪份源码和运行哪个内核)，完整模块六条宿主与ARM通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.134_B04bs基础引用与源码对照)明确顺序/并发和源码/运行身份。清单658项：252 validated、388 pending、18 supporting_pending；P14仍pending，继续引用错误实验。

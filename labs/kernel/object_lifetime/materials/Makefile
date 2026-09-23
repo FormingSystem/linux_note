@@ -21,3 +21,4 @@ obj-m += note_kref_weak_cache.o
 obj-m += note_kref_parent.o
 obj-m += note_kref_file.o
 obj-m += note_kref_api.o
+obj-m += note_kref_basics.o

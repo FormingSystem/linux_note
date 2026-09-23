@@ -2406,7 +2406,7 @@
       "baseline_sha256": "8780dc1f0781faa550994d96ccc6399692cb60b5c5f209f5dc6f6df91dbaec73",
       "lines": 2508,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04bs完成14.1～14.3准备与基础实验，P32完整模块六条宿主/ARM通过；14.4以后继续，pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P15_最终验收标准.md",
@@ -4682,6 +4682,13 @@
       "lines": 182,
       "state": "validated",
       "reason": "B04bq工程查询页完整复核中文契约、借用、释放依赖、批量退出和断言边界；复用既有完整程序不新增运行声明，新人工节点红色。"
+    },
+    {
+      "path": "knowledge/linux/object_lifetime/kref/P32_基础引用与源码对照实验.md",
+      "baseline_sha256": "cb8c4a9ea1ad7ef47c62d2b1031a27b6e9f53a9747e740e8a79b1602135b71c1",
+      "lines": 235,
+      "state": "validated",
+      "reason": "B04bs基础一份/两份完整实验、固定源码身份、回调与返回值重构；六条宿主/ARM通过，未目标日志/装卸/并发验证，新人工节点红色。"
     }
   ]
 }
