@@ -807,7 +807,7 @@
       "baseline_sha256": "151359b2aa9e66cb69cad5e2463ef09051c5995b926bcc54023afae9b38ed793",
       "lines": 257,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04br仅整理kref读者导航长链，完整31章入口和既有状态保留；批次历史归工作记录。"
     },
     {
       "path": "atlas/home.md",
@@ -821,7 +821,7 @@
       "baseline_sha256": "d0bb9b43de99f3b42a308d14bc226115bf041c57f12810f673df671219446ce1",
       "lines": 91,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04br仅整理kref读者导航长链，完整31章入口和既有状态保留；批次历史归工作记录。"
     },
     {
       "path": "atlas/maps/knowledge_review_map.md",
@@ -835,7 +835,7 @@
       "baseline_sha256": "7209a44e094322427ffd4c39deaccf3ae1431838e0b060f24bd7a998897884bc",
       "lines": 84,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04br仅整理kref读者导航长链，完整31章入口和既有状态保留；批次历史归工作记录。"
     },
     {
       "path": "atlas/roadmaps/content_roadmap.md",
@@ -877,7 +877,7 @@
       "baseline_sha256": "9ea73a334fa11a42afa43a52709cee1195f5a6c66e61f0410ae9de96c588e40b",
       "lines": 80,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04br仅整理kref读者导航长链，完整31章入口和既有状态保留；批次历史归工作记录。"
     },
     {
       "path": "engineering/build/kernel_modules/P01_从C文件到匹配目标内核的模块.md",
@@ -2420,7 +2420,7 @@
       "baseline_sha256": "4a8f3c3a46fb864d60a60c0ffeb8c4f81ade362c3ef7830789e6686e828ed822",
       "lines": 502,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04br仅整理kref读者导航长链，完整31章入口和既有状态保留；批次历史归工作记录。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P01_异步通知全景与知识地图.md",

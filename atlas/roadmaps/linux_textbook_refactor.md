@@ -56,6 +56,8 @@ flowchart LR
 
 章末回顾应回答本章问题，练习按“预测 → 小修改 → 排错 → 迁移”选择合适梯度。答案给出判断过程与边界，不能只贴标准代码。参考页仍以查询为主，不要求每个条目编故事。规则和校准方法统一使用 [讲解写法与读者理解验收](../../tools/ai/codex/skills/build-linux-note-topic/references/explanation-quality.md)。
 
+读者入口按职责维护：首页提供开始位置，Atlas提供领域入口和先修顺序，专题大纲维护全部已落地章节，工作记录保存逐批完成史。后续批次不能把每次交付的新链接不断追加到同一个首页句子、索引单元格或其他章节段落；应更新对应阅读阶段或场景表，并确认完整章节仍可达。
+
 每批完成条件是正文已经兑现章节契约、示例经过适用验证、入口同步且局限如实记录。作者自查不等于真实读者试读；自动检查也不能升级人工评审状态。
 
 ## 1.4\_首批章节契约与内容去向
@@ -356,3 +358,5 @@ B04bo完成[P29引用封装](../../knowledge/linux/object_lifetime/kref/P29_引�
 B04bp完成[P30状态接纳](../../knowledge/linux/object_lifetime/kref/P30_状态观察与活动接纳模板.md#30.1_LIVE不是一张永久通行证)，十条C顺序路径分离存储、索引、业务、活动和排空事件；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.131_B04bp状态观察与活动接纳)记录模型及真实同步边界。清单656项：249 validated、389 pending、18 supporting_pending；继续P13收尾约定，P13仍pending。
 
 B04bq完成[P31工程契约](../../knowledge/linux/object_lifetime/kref/P31_接口契约与退出审查模板.md#31.1_把成功和失败分别写进注释)及P13全部模板和章末审查，按实际前提纠正RCU、异步、文件、状态、回收与退出总表；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.132_B04bq工程契约与P13收束)记录复用证据边界。清单657项：251 validated、388 pending、18 supporting_pending；继续P14源码阅读实验与P15章末单元，全仓仍未完成。
+
+B04br整理kref首页、Atlas及专题交付段的累计长链，31篇章节仍由大纲直接链接，P16～P31依赖表保留；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.133_B04br读者导航与批次记录分工)保存核对范围。清单仍为657项、251 validated、388 pending、18 supporting_pending；下一批继续P14。
