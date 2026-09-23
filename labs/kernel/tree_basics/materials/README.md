@@ -116,3 +116,5 @@ domains: [c_language, data_structures]
 [note_rbtree_augmented.c](note_rbtree_augmented.c)配合[P12 区间摘要](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行完整区间摘要实验)，完整运行六个闭区间的插入、点查询、末端缩短和删除；按原始载荷独立核对子树最大值。Makefile 已登记；宿主 8640 组次序及逐点对照通过，ARM 前端通过；目标构建、装卸和并发验证未执行。
 
 [copy_under_lock.c](copy_under_lock.c)配合[P12 锁内复制](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_用两个线程观察复制值与删除)，以 POSIX pthread 互斥锁、条件变量和一个入口槽控制两种真实线程次序；没有实现树、内核自旋或 RCU。编译使用 `cc -std=c11 -Wall -Wextra -Werror -pthread`，作为用户态材料不加入内核模块 Makefile。宿主重复 512 次有序读/删实验并检查两个分配失败点；不能外推成目标内核并发验证。
+
+[P12 示例回访](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#12.5_Linux_内核_rbtree_示例代码)继续使用 note_rbtree_owner.c 和 P27 的遍历材料。owner 的搜索与插入已收敛到 compare_key；重新通过 36 组顺序、四处分配失败、极值键接入/查找/重复/移除及 ARM 前端检查。用户态锁、缓存和增强实验仍分别维护各自契约，不将删除末尾的释放操作机械替换成另一种寿命协议。

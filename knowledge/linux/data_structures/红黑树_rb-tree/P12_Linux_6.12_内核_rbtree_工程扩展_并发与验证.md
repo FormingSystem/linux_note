@@ -841,308 +841,72 @@ RCU（Read-Copy Update，读—复制—更新）的读侧保护与发布/回收
 
 ## 12.5\_Linux\_内核\_rbtree\_示例代码
 
+现在回到[P37 的完整调用者模块](P37_构建rbtree调用者接口.md#37.16_运行完整的私有调用者框架)。此前它让我们把一次操作写完整；经过缓存、增强和并发单元，现在应能解释为什么接口边界要这样划分。本节沿同一份可运行程序复查比较、持有权与退出过程，遍历再接到 P27 的专门实验，不另外维护一套只有片段、没有初始化与失败清理的框架。
+
 ### 12.5.1\_示例目标与约束
 
-下面构造一个最小示例：
+实例仍按 int key 管理业务对象，拒绝重复 key，使用同一把锁保护完整操作。成功插入把对象交给树，失败仍由调用者负责；查询只复制 value，删除交还独占对象。程序所有入口在模块初始化期间私有使用，没有外借指针或 RCU 读者，这才使示例中的删除后释放成立。
 
-```text
-按 int key 管理 demo_rb_item；
-不允许重复 key；
-使用 spinlock 保护树；
-插入、查找、删除都使用同一套比较规则；
-删除后返回对象，由调用者释放。
-```
-
-这不是完整内核模块，只是展示 rbtree 使用骨架。
-
-------
+完整材料是[note_rbtree_owner.c](../../../../labs/kernel/tree_basics/materials/note_rbtree_owner.c)。先预测四次输入 `20,10,30,20` 后的 count、key=20 的查询值、第四个对象归谁释放，再对照原完整程序与本节各步。目标构建和装卸命令保留在 P37，不能把宿主检查输出当作目标内核已经运行。
 
 ### 12.5.2\_定义业务结构体与树对象
 
-```c
-struct demo_rb_item {
-	int key;
-	int value;
-	struct rb_node rb;
-};
+demo_item 拥有 key、value 与嵌入的 rb；demo_tree 拥有 root、lock、count。rb_node 不知道 key 放在哪，也不会替容器计数或取锁。初始化将 root 设为 RB_ROOT、count 设为 0，并初始化业务锁；单个新对象还要按本例采用的成员协议建立游离标记。
 
-struct demo_rb_tree {
-	struct rb_root root;
-	spinlock_t lock;
-	unsigned int count;
-};
-```
-
-初始化：
-
-```c
-static void demo_tree_init(struct demo_rb_tree *tree)
-{
-	tree->root = RB_ROOT;
-	spin_lock_init(&tree->lock);
-	tree->count = 0;
-}
-```
-
-这里 `struct rb_root` 只保存根节点。
-
-锁和计数都是业务层自己加的。
-
-------
+这些定义的推导分别见[P37 业务对象](P37_构建rbtree调用者接口.md#37.2_定义业务结构体)与[根对象](P37_构建rbtree调用者接口.md#37.4_定义_struct_rb_root_根节点)。把 root 重新赋空只改变入口值，不会遍历并释放此前的业务对象；初始化和销毁不是互逆的一条赋值语句。
 
 ### 12.5.3\_实现统一比较函数
 
-```c
-static int demo_cmp_key(int key, const struct demo_rb_item *item)
-{
-	if (key < item->key)
-		return -1;
-	if (key > item->key)
-		return 1;
-	return 0;
-}
+完整模块现在让搜索和插入共同调用 compare_key。它返回两个关系判断结果的差，结果只能是 -1、0、1；相减的是布尔判断结果，不是两个任意 int 键，因此不因 INT_MIN 与 INT_MAX 之差溢出。
 
-static int demo_cmp_item(const struct demo_rb_item *a,
-			 const struct demo_rb_item *b)
-{
-	return demo_cmp_key(a->key, b);
-}
-```
-
-这样查找和插入都能使用同一套 key 规则。
-
-这比到处手写 `<`、`>` 更不容易写偏。
-
-------
+搜索把查询键交给比较器，插入把新对象的 key 交给同一比较器。若业务需要对象对对象的接口，它应委托这一规则而不是维护第二份略有差别的次序。原三态比较的完整推导见[P37 同一套比较规则](P37_构建rbtree调用者接口.md#37.13_插入_查找_删除为什么必须使用同一套比较规则)；复合键还须在所有调用点保持相同字段顺序，不能只改插入。
 
 ### 12.5.4\_实现查找
 
-```c
-static struct demo_rb_item *
-demo_search_locked(struct demo_rb_tree *tree, int key)
-{
-	struct rb_node *node = tree->root.rb_node;
+search_locked 从根出发，根据同一比较器向左、向右或命中；名字中的 locked 是调用前置条件，函数名本身不会加锁。它是内部助手，其返回指针只在相应保护与寿命条件内使用。
 
-	while (node) {
-		struct demo_rb_item *item;
-		int cmp;
-
-		item = rb_entry(node, struct demo_rb_item, rb);
-		cmp = demo_cmp_key(key, item);
-
-		if (cmp < 0)
-			node = node->rb_left;
-		else if (cmp > 0)
-			node = node->rb_right;
-		else
-			return item;
-	}
-
-	return NULL;
-}
-```
-
-函数名里带 `_locked`，表示调用者必须已经持有 `tree->lock`。
-
-这是内核代码中常见的命名习惯：
-
-```text
-把锁语义写进函数名，避免误用。
-```
-
-------
+对外的 read_value 在锁内找到对象并复制值，然后才解锁。查询失败返回 ENOENT 且保持输出变量原值；传入空输出地址返回 EINVAL。这样调用者通过返回码判定是否取得结果，而不是把某个业务值当作“没找到”的特殊标志。完整查找与危险裸指针反例见[P37 查找单元](P37_构建rbtree调用者接口.md#37.7_编写查找函数)，真实线程的值副本交接由上一节实验解释。
 
 ### 12.5.5\_实现插入
 
-```c
-static int demo_insert(struct demo_rb_tree *tree,
-		       struct demo_rb_item *item)
-{
-	struct rb_node **link = &tree->root.rb_node;
-	struct rb_node *parent = NULL;
+insert_item 先取得树锁，验证成员符合本例的游离约定，再从根查重并保存空槽。发现重复键时返回 EEXIST，不挂接、不修复、不增加 count；对象还归调用者。找到允许的空槽才依次 rb_link_node、rb_insert_color、count 加一，最后解锁。
 
-	spin_lock(&tree->lock);
+这段先后关系保证其他遵守同锁协议的访问者不会观察到“计数已经增加却还不可查”的半次操作。成员自指标记只是调用者遵守的约定，不是全局树成员数据库；必须先初始化成员，而且不能通过随意 RB_CLEAR_NODE 把仍挂在别处的成员伪装成可插入。具体空槽与节点初始化见[P37 插入搜索](P37_构建rbtree调用者接口.md#37.8_编写插入搜索函数)。
 
-	while (*link) {
-		struct demo_rb_item *this;
-		int cmp;
-
-		parent = *link;
-		this = rb_entry(parent, struct demo_rb_item, rb);
-		cmp = demo_cmp_item(item, this);
-
-		if (cmp < 0)
-			link = &parent->rb_left;
-		else if (cmp > 0)
-			link = &parent->rb_right;
-		else {
-			spin_unlock(&tree->lock);
-			return -EEXIST;
-		}
-	}
-
-	rb_link_node(&item->rb, parent, link);
-	rb_insert_color(&item->rb, &tree->root);
-	tree->count++;
-
-	spin_unlock(&tree->lock);
-	return 0;
-}
-```
-
-这里有几个关键点：
-
-```text
-发现重复 key 时，不调用 rb_link_node()；
-只有成功找到空 link 后才挂接；
-rb_link_node() 后立刻 rb_insert_color()；
-count 在修复完成后增加；
-整个修改路径在锁内完成。
-```
-
-------
+再检查失败后的对象：程序在锁外分配新对象，插入成功由整树管理，失败则释放本次未移交的对象。不能因为发现了重复 key 就释放树中原有的那个对象。把分配放到允许睡眠的锁外，并不自动免除再次查重的责任；本例在接入锁内完成最终判定。
 
 ### 12.5.6\_实现删除
 
-```c
-static int demo_remove(struct demo_rb_tree *tree, int key,
-		       struct demo_rb_item **removed)
-{
-	struct demo_rb_item *item;
+remove_item 先检查输出地址并把它置空，锁内搜索；缺失时返回 ENOENT，调用者不会收到上次留下的旧指针。命中后 rb_erase、按本例协议标为游离、递减 count，再通过输出参数交还对象。这些接口约定与[删除单元](P37_构建rbtree调用者接口.md#37.11_调用_rb_erase%28%29_删除节点)对应。
 
-	if (!removed)
-		return -EINVAL;
+此模块没有外借对象地址，所以删除成功后可以在锁外 kfree。若换成引用计数设计，删除只撤销树的持有权，实际释放须等相应引用协议；若换成 RCU 读者，旧字段及对象须保留到相关读者退出；若两者同时存在，两个条件都要满足。**这些是不同的完整容器协议，不能只把最后一行 kfree 换成 put 或 call_rcu 就宣布改造完成。**
 
-	*removed = NULL;
-
-	spin_lock(&tree->lock);
-
-	item = demo_search_locked(tree, key);
-	if (!item) {
-		spin_unlock(&tree->lock);
-		return -ENOENT;
-	}
-
-	rb_erase(&item->rb, &tree->root);
-	RB_CLEAR_NODE(&item->rb);
-	tree->count--;
-	*removed = item;
-
-	spin_unlock(&tree->lock);
-	return 0;
-}
-```
-
-这个函数只从树中摘除节点，不释放对象。
-
-调用者可以根据生命周期选择：
-
-```c
-kfree(item);
-demo_item_put(item);
-call_rcu(&item->rcu, demo_item_free_rcu);
-```
-
-这正是 Linux rbtree 的对象生命周期边界。
-
-------
+尤其在旧读者可能继续使用节点字段时，不能照搬本例立即 RB_CLEAR_NODE 的动作。标记写入、键修改、再次入树与内存释放各有前提，沿[P09 对象退出](P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#9.2.8_节点生命周期为什么由调用者管理)和 P28 替换周期继续判断。
 
 ### 12.5.7\_实现中序遍历
 
-```c
-static void demo_dump_locked(struct demo_rb_tree *tree)
-{
-	struct rb_node *node;
+遍历仍是 rb_first 取得首节点，rb_next 沿孩子或父链推进，rb_entry 还原业务对象，再读取 key/value。若比较规则是唯一整数键，完整稳定遍历应按 key 严格递增；允许等价键时不能再套用这一唯一性断言。
 
-	for (node = rb_first(&tree->root); node; node = rb_next(node)) {
-		struct demo_rb_item *item;
-
-		item = rb_entry(node, struct demo_rb_item, rb);
-		pr_info("key=%d value=%d\n", item->key, item->value);
-	}
-}
-```
-
-中序遍历输出顺序就是 key 从小到大。
-
-如果遍历期间可能有并发修改，应按协议稳定遍历依赖的拓扑并保护对象寿命。仅延迟释放不能稳定父链；中序循环的条件见[有序推进](P27_Linux有序遍历与整树销毁.md#27.2.8_为什么一个保存的地址仍会漏访)。
-
-------
+此任务的完整可运行实验集中在[P27 遍历与销毁模块](P27_Linux有序遍历与整树销毁.md#27.2.9_运行完整遍历与销毁模块)。调用者须在整个遍历范围稳定所依赖的拓扑并保护对象；只让节点暂时不释放，不能稳定父链。若要把 key/value 带到锁外慢慢打印，应在受保护范围复制有限数据，再处理输出；不能把长期打印的成本和上下文要求隐藏在一个名叫 dump_locked 的助手里。
 
 ### 12.5.8\_实现整棵树清理
 
-一种简单清理方式是反复取最小节点：
+完整 owner 模块的 destroy_tree 每轮重新取 rb_first、摘除并递减 count，然后解锁释放；下一轮重新从根定位，不携带上一轮可能被旋转改变关系的遍历游标。这正是原反复取最小节点方案的有效部分，已由[P27 有序推进与销毁](P27_Linux有序遍历与整树销毁.md#27.2.8_为什么一个保存的地址仍会漏访)解释。
 
-```c
-static void demo_clear(struct demo_rb_tree *tree)
-{
-	struct rb_node *node;
+但“每轮正确”还不等于“整个清理原子完成”：如果另外的写者可以在两轮之间不停插入，循环可能迟迟无法结束，退出时刻的业务关闭承诺也没有建立。因此完整销毁需要先关闭或约束新入口，再保证没有外部使用者；私有初始化示例天然满足这个前提。
 
-	spin_lock(&tree->lock);
-	while ((node = rb_first(&tree->root))) {
-		struct demo_rb_item *item;
-
-		item = rb_entry(node, struct demo_rb_item, rb);
-		rb_erase(node, &tree->root);
-		RB_CLEAR_NODE(node);
-		tree->count--;
-		spin_unlock(&tree->lock);
-
-		kfree(item);
-
-		spin_lock(&tree->lock);
-	}
-	spin_unlock(&tree->lock);
-}
-```
-
-也可以使用后序遍历做销毁，但要注意第 11 章讲过的限制：
-
-```text
-postorder safe 不适合循环体中随意 rb_erase() 导致重平衡后继续依赖原遍历关系。
-```
-
-最保守的写法是：
-
-```text
-每次 rb_first()；
-每次 rb_erase()；
-直到树空。
-```
-
-每次重新取最左可以避开上一次游标因旋转失效的问题，但上面每轮释放锁，整个清理不是原子事务。要保证最终清空，还须停止或约束其他写者继续插入；kfree 也要求没有外部持有者。后序整树回收需要更强的排他销毁前提，完整对照见[遍历与销毁模块](P27_Linux有序遍历与整树销毁.md#27.2.9_运行完整遍历与销毁模块)。
-
-------
+后序整树销毁是另一套更强的排他协议。postorder safe 只保存约定的下一对象，不能在循环体任意 rb_erase 重平衡后继续依赖旧关系。不要把“safe”解释成并发、任意修改或任意释放都安全。初始化失败同样要在返回前清理已接入对象，不能指望失败的模块以后再调用退出函数替我们收尾。
 
 ### 12.5.9\_示例代码的边界
 
-这个示例没有覆盖：
+通过这次回访，定义对象、嵌入节点、初始化根、统一比较、查询、插入、删除、遍历和清理已经各有完整程序与职责。普通框架不声称实现 RCU、引用计数、重复键容纳、cached 或 augmented；这些扩展需要前面分别建立的附加不变量，不能把片段机械拼接。
 
-```text
-RCU 读侧；
-引用计数；
-重复 key；
-cached rbtree；
-augmented rbtree；
-错误注入；
-模块参数；
-调试断言。
-```
+先做三项修改预测：把第二个 20 改成 40 后 count 应怎样变化；传空的移除输出参数时能否改变树；把一个 int 键换成极值时比较符号是否还正确。现有宿主夹具重新检查了插入/删除排列、重复与成员状态、输出约定、分配失败和极值比较；目标 Kbuild、MODPOST、模块装卸与实际内核日志仍未执行。
 
-但它覆盖了普通 rbtree 使用的核心闭环：
-
-```text
-定义对象；
-嵌入 rb_node；
-统一比较；
-查找；
-插入；
-删除；
-遍历；
-生命周期交给调用者。
-```
+剩下的问题是“我怎样知道这一轮做对了”。只看到有序输出，无法排除父链、黑高或附加状态损坏。下一节把验证拆成彼此独立的证据，而不把一次模块成功加载当成所有正确性条件都已满足。
 
 ------
+
 
 ## 12.6\_Linux\_rbtree\_调试与验证
 

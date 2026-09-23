@@ -19,14 +19,21 @@ struct demo_tree {
     unsigned int count;
 };
 
+/* 查找与插入共享同一排序规则，避免键相减的溢出问题。 */
+static int compare_key(int key, const struct demo_item *item)
+{
+    return (key > item->key) - (key < item->key);
+}
+
 static struct demo_item *search_locked(struct demo_tree *tree, int key)
 {
     struct rb_node *node = tree->root.rb_node;
     while (node) {
         struct demo_item *item = rb_entry(node, struct demo_item, rb);
-        if (key < item->key)
+        int cmp = compare_key(key, item);
+        if (cmp < 0)
             node = node->rb_left;
-        else if (key > item->key)
+        else if (cmp > 0)
             node = node->rb_right;
         else
             return item;
@@ -47,10 +54,11 @@ static int insert_item(struct demo_tree *tree, struct demo_item *item)
     }
     while (*link) {
         struct demo_item *entry = rb_entry(*link, struct demo_item, rb);
+        int cmp = compare_key(item->key, entry);
         parent = *link;
-        if (item->key < entry->key)
+        if (cmp < 0)
             link = &parent->rb_left;
-        else if (item->key > entry->key)
+        else if (cmp > 0)
             link = &parent->rb_right;
         else {
             ret = -EEXIST;
