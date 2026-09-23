@@ -640,3 +640,9 @@ B04b 按相同官方固定提交读取 include/linux/workqueue.h（blob 59c2695e
 B04c 只读核对固定提交 include/linux/refcount.h（blob 35f039ecb2725618ca098e3515c6e19e2aece3ee）、include/linux/refcount_types.h（blob 162004f06edf7c3049bac7c960e2e50a190595d6）、lib/refcount.c（blob a207a8f22b3ca35890671e51c480266d89e4d8d6），与仓库副本 LF 归一后相同。证据用于 P02 2.1～2.6 的层次和契约解释：异常原子操作后收敛到饱和，正常增加无额外发布排序，减少及归零路径有规定顺序。
 
 [八位教学模型](../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.5.1_用八位模型观察回绕的代价)只解释回绕造成假零和拒绝释放的代价，显式布尔状态与预先饱和不同于内核算法。1001 组串行模型检查不构成实际原子、竞态或告警覆盖证明。现有 P02 2.13/P05 的源码函数体仍待后续独立审查和唯一实现入口整理，本批不新增重复函数展开。
+
+## 1.47\_引用成员与回调地址
+
+B04d 重新只读核对固定 include/linux/container_of.h（blob 713890c867bea78804defe1a015e3c362f40f85d），与仓库副本 LF 归一后相同。实现继续使用[既有唯一标题](../rbtree/source_explanations/include/linux/container_of.h.md#1.1_一次还原中的求值与类型检查)，新增的是 kref/work 两种回调的调用上下文，不是另一份宏展开。
+
+一次工作模块将 ref 移到非首成员，重新通过 ARM 前端与五路径宿主控制检查；固定宏的双成员 GNU C 宿主实验也重新运行通过。未把宿主偏移数字当作 ARM 布局，未将类型检查等同于对象身份或寿命验证；目标装卸仍未执行。

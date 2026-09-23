@@ -518,9 +518,9 @@ RCU 查找还要分两件事：读侧窗口保证访问的内存尚未被回收�
 #include <linux/workqueue.h>
 
 struct note_request {
+    int value; /* 将 ref 放在非首成员位置，回调必须按成员偏移还原。 */
     struct kref ref;
     struct work_struct work;
-    int value;
 };
 
 static struct workqueue_struct *note_wq;

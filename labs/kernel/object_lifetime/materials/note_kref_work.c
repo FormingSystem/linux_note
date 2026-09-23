@@ -6,9 +6,9 @@
 #include <linux/workqueue.h>
 
 struct note_request {
+    int value; /* 将 ref 放在非首成员位置，回调必须按成员偏移还原。 */
     struct kref ref;
     struct work_struct work;
-    int value;
 };
 
 static struct workqueue_struct *note_wq;
