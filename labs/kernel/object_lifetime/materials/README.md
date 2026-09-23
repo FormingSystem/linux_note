@@ -229,3 +229,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.37\_引用封装与日志开关
 
 [note_kref_api.c](note_kref_api.c)对应[P29封装模板](../../../../knowledge/linux/object_lifetime/kref/P29_引用封装与调试责任模板.md#29.1_接口先交代谁拥有哪一份)，统一get/put回调和局部槽位清理，trace_events开关只控制请求日志。六组宿主与ARM前端通过，354/342头身份核对无差异；目标装卸、并发槽位与真实跟踪器未执行。普通两种日志设置均预期get=1、put=2、release=1、argument_calls=1，工厂失败不交付对象。
+
+## 1.38\_状态接纳与活动汇聚
+
+[state_ownership.c](state_ownership.c)对应[P30完整模型](../../../../knowledge/linux/object_lifetime/kref/P30_状态观察与活动接纳模板.md#30.1_LIVE不是一张永久通行证)，是独立C11程序，不登记内核Makefile。十条顺序路径检查NEW直接回收、普通引用与活动票据、关闭前登记、排空通知及最后活动回收；宿主严格编译运行通过。没有实现线程、Linux锁、kref或完成通知，不作为目标运行证据。
