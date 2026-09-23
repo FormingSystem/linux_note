@@ -468,7 +468,9 @@ flowchart TD
 
 ## 15.9\_高级\_API\_mas\_*()\_是真正的状态机接口
 
-高级 API 的入口集中在 [include/linux/maple_tree.h](../../../../research/source_reading/linux/include/linux/maple_tree.h)：
+[P40](P40_Maple普通接口中的范围与查询.md#40.5_内部封装在哪里结束)已经区分普通封装与调用者责任。高级接口把 ma_state 保留在调用者手中，用于连续查询，也允许将可失败的资源准备与真正写入分开；它不自动建立外围同步。先进入[P41 写入准备与锁边界](P41_Maple写入准备与锁边界.md#41.1_为什么一次写入还需要准备阶段)，沿 S0～S5 和完整外部锁模块观察准备、取消、兑现与清理。
+
+以下保留常用入口声明，作为已理解职责后的查询表；声明来自固定[maple_tree.h](../../../../research/source_reading/linux/include/linux/maple_tree.h)，不把函数名目录当作学习起点。
 
 ```c
 void *mas_walk(struct ma_state *mas);
@@ -486,49 +488,28 @@ int mas_empty_area_rev(struct ma_state *mas, unsigned long min,
 		       unsigned long max, unsigned long size);
 ```
 
-这些函数可以按用途分成几组：
-
-| 分组 | 函数 | 作用 |
+| 任务 | 接口 | 选择前应明确的问题 |
 | --- | --- | --- |
-| 定位 | `mas_walk()` | 按 `mas->index` / `mas->last` 定位 entry |
-| 查找 | `mas_find()`、`mas_find_range()` | 从当前状态向后找 |
-| 反向查找 | `mas_find_rev()`、`mas_prev()` | 从当前状态向前找 |
-| 写入 | `mas_store()`、`mas_store_gfp()`、`mas_store_prealloc()` | 写入 entry 或范围 |
-| 删除 | `mas_erase()` | 删除当前范围 |
-| 空洞搜索 | `mas_empty_area()`、`mas_empty_area_rev()` | 找满足 size 的空洞 |
-| 预分配 | `mas_preallocate()`、`mas_expected_entries()` | 写入前先准备节点 |
-| 状态处理 | `mas_pause()`、`mas_reset()`、`mas_destroy()` | 暂停、重置、释放预分配 |
-
-普通 API 和高级 API 的关系可以画成这样：
+| 当前定位 | mas_walk | 由输入 index 定位，返回时范围字段按命中结果改变；见 P39 |
+| 向后找值或走范围 | mas_find、mas_find_range | 第一次是否包含当前位置；range 变体后续可访问空范围，不能把任意 NULL 当遍历结束 |
+| 反向遍历 | mas_find_rev、mas_prev | 包含当前项还是前一个，以及下界；后续源码单元分别处理 |
+| 写入 | mas_store、mas_store_gfp、mas_store_prealloc | 返回旧 entry、整数结果还是依赖预先准备；详见 P41 |
+| 擦除 | mas_erase | 删除的是命中整段，业务对象寿命另行负责 |
+| 空洞搜索 | mas_empty_area、mas_empty_area_rev | allocation tree 中按哪个方向、窗口和 size 找空洞 |
+| 资源准备 | mas_preallocate、mas_expected_entries | 单次写入准备与有序批量填充是不同任务 |
+| 状态与资源 | mas_pause、mas_reset、mas_destroy | 暂停、重新定位与资源清理不可互换；分别见 P39/P41 |
 
 ```mermaid
 flowchart TD
-    USER["普通使用者"]
-    VMA["VMA 子系统"]
-
-    MTREE["mtree_* / mt_*<br/>普通 API"]
-    VMI["vma_iterator / vma_iter_*<br/>VMA 适配层"]
-    MAS["ma_state + mas_*<br/>高级状态机 API"]
-    CORE["lib/maple_tree.c 内部 helper<br/>节点查找 / 分裂 / 合并 / gap 更新"]
-
-    USER --> MTREE --> MAS --> CORE
-    VMA --> VMI --> MAS
-    VMA --> MTREE
+    USER["普通使用者"] -->|范围请求与返回值| MTREE["mtree_* / mt_* 普通接口"]
+    MTREE -->|临时状态与封装协议| MAS["ma_state + mas_* 高级接口"]
+    VMA["VMA 子系统及外围锁"] -->|连续操作| VMI["vma_iterator / vma_iter_* 适配层"]
+    VMI -->|持有状态并转换地址边界| MAS
+    VMA -->|单次点查等适用读取| MTREE
+    MAS -->|位置与资源请求| CORE["内部查找、写入与节点管理"]
 ```
 
-这里最容易误解的是：`mas_*()` 不是“比 `mtree_*()` 更底层所以普通人别看”。对于 VMA 来说，`mas_*()` 反而是主线，因为 VMA 修改常常是连续的、范围化的、需要复用 iterator 的。
-
-例如 `vma_find()` 就不是直接调用 `mt_find()`，而是调用：
-
-```c
-static inline
-struct vm_area_struct *vma_find(struct vma_iterator *vmi, unsigned long max)
-{
-	return mas_find(&vmi->mas, max - 1);
-}
-```
-
-因为 `vma_iterator` 本身已经持有 `ma_state`，没必要每次都重新构造。
+保留这张分层图是为了区分谁构造状态、谁持有锁、谁转换地址语义；不能把 VMA 到普通接口的箭头理解为任意普通写入都适用于外部锁树。vma_find 复用 vmi->mas 调用 mas_find，并转换半开上界，固定函数只在[mm.h 唯一标题](../../../../research/source_reading/maple_tree/source_explanations/include/linux/mm.h.md#1.4_VMA查找复用高级游标)展开。读完 P41 后继续下一节，将请求、状态和锁放回真实 mm/VMA 调用者。
 
 ------
 
@@ -630,13 +611,7 @@ flowchart LR
 
 这一组函数是读 VMA 源码的必备入口。
 
-```c
-static inline
-struct vm_area_struct *vma_find(struct vma_iterator *vmi, unsigned long max)
-{
-	return mas_find(&vmi->mas, max - 1);
-}
-```
+vma_find 的固定函数体见[唯一实现](../../../../research/source_reading/maple_tree/source_explanations/include/linux/mm.h.md#1.4_VMA查找复用高级游标)，这里继续解释区间转换。
 
 注意 `max - 1`。
 

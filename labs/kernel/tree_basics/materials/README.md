@@ -130,3 +130,5 @@ domains: [c_language, data_structures]
 [note_maple_state.c](note_maple_state.c)配合[P39 游标周期](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P39_Maple操作游标的暂停与继续.md#39.5_运行完整私有模块)，使用真实 Maple API 的私有树比较暂停后继续、重置重复、改起点与 NULL/active 边界。Makefile 已登记，ARM 前端通过；宿主使用固定控制函数和明确树行走替身检查顺序及四个 store 失败出口。目标 Kbuild/MODPOST/装卸、RCU 与并发未执行，预期日志不是实际目标记录。
 
 [note_maple_basic.c](note_maple_basic.c)配合[P40 普通接口](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P40_Maple普通接口中的范围与查询.md#40.6_运行完整私有模块)，在私有树中比较覆盖、部分重叠拒绝、范围清除、查询上界与 ULONG_MAX 回绕。ARM 前端通过；宿主固定普通封装配合明确范围替身核对五个分配失败出口和 zero/retry、整轮迭代，指针编码转换按宿主宽度显式适配。目标 Kbuild/MODPOST/装卸和真实节点算法未运行，预期日志不是目标记录。
+
+[note_maple_prealloc.c](note_maple_prealloc.c)配合[P41 写入准备](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P41_Maple写入准备与锁边界.md#41.6_运行外部锁下的完整私有模块)，在连续外部互斥锁保护下先准备并取消，再准备写入，最后按 gfp 接口覆盖；销毁使用由调用者保护的 __mt_destroy。ARM 前端通过。宿主固定三个控制函数配合明确资源/写入替身覆盖零需求、准备失败清理、16 种补分配分支及 NULL 请求范围恢复，不是目标模块运行。目标 Kbuild/MODPOST/装卸、真实节点分配与批量重平衡未执行。

@@ -25,6 +25,7 @@ domains:
 | --- | --- |
 | 容量、叶/非叶槽、union 与空洞怎样连接 | [节点布局导读](P04_节点布局与范围分区.md#4.2_按问题读取布局)，进入[固定布局](../source_explanations/include/linux/maple_tree.h.md#1.6_构建条件决定数组容量)和[缓存初始化](../source_explanations/lib/maple_tree.c.md#1.3_节点缓存按实际结构大小申请对齐) |
 | 同样低位在不同字段中如何解释 | [字段编码导读](P05_字段编码与状态分工.md#5.2_同一数值先按存储位置解读)与[节点编码](../source_explanations/lib/maple_tree.c.md#1.4_编码节点保存类型而不是父槽) |
+| 写入资源与锁怎样衔接 | [资源模块](P08_写入准备与资源清理.md#8.2_沿S0到S5追踪资源)，进入[准备与兑现](../source_explanations/lib/maple_tree.c.md#1.13_高级写入与准备兑现)、[补分配](../source_explanations/lib/maple_tree.c.md#1.14_节点准备与补分配锁边界)与[清理](../source_explanations/lib/maple_tree.c.md#1.15_资源清理与批量准备) |
 | 普通接口怎样处理范围与返回值 | [普通接口模块](P07_普通接口与范围契约.md#7.2_沿一次调用划分责任)，对应[点查](../source_explanations/lib/maple_tree.c.md#1.10_普通点查与读侧边界)、[写入](../source_explanations/lib/maple_tree.c.md#1.11_普通写入与整段擦除)及[find](../source_explanations/lib/maple_tree.c.md#1.12_向后查找与回绕终止) |
 | pause/reset 怎样影响下一次查询 | [游标模块](P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)，进入[状态初始化](../source_explanations/include/linux/maple_tree.h.md#1.10_操作状态与初始化)和[暂停继续](../source_explanations/lib/maple_tree.c.md#1.9_暂停继续与有界find) |
 | 共享树如何初始化、外部锁登记是否加锁 | [树根、模式与初始化](../source_explanations/include/linux/maple_tree.h.md#1.3_初始化先选择锁模式再建立空根)及[VMA 模式](../source_explanations/include/linux/mm_types.h.md#1.2_VMA树的三项模式) |

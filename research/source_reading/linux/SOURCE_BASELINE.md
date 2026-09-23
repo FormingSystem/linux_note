@@ -604,3 +604,9 @@ range/leaf 与 arange 的数组容量分别为 64 位条件分支 16/10、普通
 同一官方固定 maple_tree.h/c 与 xarray.h，blob 沿 1.28 与 1.38；不采用实验 HEAD。新增[普通接口模块](../maple_tree/navigation/P07_普通接口与范围契约.md#7.2_沿一次调用划分责任)，八个普通函数、三个编码 helper、锁/迭代/内部常量三组宏按固定语句唯一展开。额外只读 mas_insert 冲突出口确认 -EEXIST，保留对上游 EEXISTS 拼写的纠正；不将尚未展开的动态写入算法宣称已验证。
 
 普通锁宏直接操作 ma_lock；load/find 返回前退出 RCU 读侧，业务对象不自动取得引用。max 不裁剪命中范围，last+1 的最大值回绕由 mt_find_after 处理；erase 擦除整段，而 NULL store 可局部清空。模块 ARM 前端通过，消费头文件按固定提交比较；宿主执行固定外围封装、范围后端为模型，internal 值转指针按 LLP64 宿主显式适配。核对五处分配失败、特殊 entry 与迭代终止，未执行目标 Kbuild、MODPOST、装卸、真实节点算法或并发。
+
+## 1.41\_Maple写入准备与资源清理证据
+
+固定 maple_tree.c 与 mm.h 的 blob 沿 1.28。十二函数及一组资源标志按上游路径唯一展开，新增[资源模块](../maple_tree/navigation/P08_写入准备与资源清理.md#8.2_沿S0到S5追踪资源)。mas_preallocate 零需求可不设置 PREALLOC，失败保存 ret 后清理/reset；mas_nomem 只在允许睡眠且内部锁模式下放锁补分配，成功要求重试，不代表写入完成。mas_store_gfp 的 NULL 请求在重试时恢复原 index/last。mas_destroy 可涉及批量重平衡，与销毁整树分工不同；外部锁示例用 __mt_destroy。
+
+ARM 前端通过，348 个消费头文件的非生成部分与固定提交无差量。宿主三个固定控制函数配合显式资源与写入替身检查零需求、成功/失败清理、16 个补分配组合和清除请求范围恢复；错误载荷按宿主 intptr_t 适配，未模拟真实节点分配、回收和批量重平衡。目标 Kbuild/MODPOST/装卸与并发未运行。P15 两处 vma_find 重复函数体统一指向 mm.h 实现标题，半开边界与生命周期责任保留。

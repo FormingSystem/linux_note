@@ -5,6 +5,20 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/maple_tree/navigation/P08_写入准备与资源清理.md",
+      "baseline_sha256": "0825b589f340682952b2735ee89ae0377570c4546ba336870896a83912b7a256",
+      "lines": 38,
+      "state": "validated",
+      "reason": "B03ay 写入准备/取消/兑现/清理教材与固定源码模块，ARM 前端及三个控制函数的显式后端夹具通过；零需求和错误状态、16 个补分配分支、NULL 重试范围恢复已核对，目标与实际节点算法未运行，新人工节点红色。"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P41_Maple写入准备与锁边界.md",
+      "baseline_sha256": "a3ddb3b575b03293df65c537a53207d6e1da41833d9f2bd4e42640e7f7f4e9cd",
+      "lines": 217,
+      "state": "validated",
+      "reason": "B03ay 写入准备/取消/兑现/清理教材与固定源码模块，ARM 前端及三个控制函数的显式后端夹具通过；零需求和错误状态、16 个补分配分支、NULL 重试范围恢复已核对，目标与实际节点算法未运行，新人工节点红色。"
+    },
+    {
       "path": "research/source_reading/maple_tree/navigation/P07_普通接口与范围契约.md",
       "baseline_sha256": "ff6128aec204a82c50eeed738438acdaf1bd0e72c5a043088a79e355333aab1f",
       "lines": 36,
@@ -1812,7 +1826,7 @@
       "baseline_sha256": "2de6e1b8f40fadcc9f3e5294a114f8902a20aed4c1a35cccc6ad8d7e0875baec",
       "lines": 1804,
       "state": "pending",
-      "reason": "B03at 实际冷读并重构开篇与 15.1～15.3，唯一展开树字段、模式、七个函数及宏；15.10 仅去重同一 MM_MT_FLAGS 定义并精确回链，15.4/15.5 已冷读待修，其他正文仍待按单元审查，不升级整章状态。 B03au 完成 15.4 实际冷读并拆出完整 P38 节点/空洞单元，原标题保留桥接；15.5 以后仍待继续。 B03av 完成 15.5 编码单元与模型，15.6 以后仍待按状态周期继续。 B03aw 完成 15.6 游标周期并拆 P39，15.7 八段查询已冷读、保留正确比较并修正快速点查临时状态承诺；15.8 以后仍 pending。 B03ax 完成 15.8 并拆 P40：覆盖/条件插入、点查/向后查、整段擦除/局部清空、内部锁与回绕；15.9 以后仍 pending。"
+      "reason": "B03at 实际冷读并重构开篇与 15.1～15.3，唯一展开树字段、模式、七个函数及宏；15.10 仅去重同一 MM_MT_FLAGS 定义并精确回链，15.4/15.5 已冷读待修，其他正文仍待按单元审查，不升级整章状态。 B03au 完成 15.4 实际冷读并拆出完整 P38 节点/空洞单元，原标题保留桥接；15.5 以后仍待继续。 B03av 完成 15.5 编码单元与模型，15.6 以后仍待按状态周期继续。 B03aw 完成 15.6 游标周期并拆 P39，15.7 八段查询已冷读、保留正确比较并修正快速点查临时状态承诺；15.8 以后仍 pending。 B03ax 完成 15.8 并拆 P40：覆盖/条件插入、点查/向后查、整段擦除/局部清空、内部锁与回绕；15.9 以后仍 pending。 B03ay 完成 15.9 分层职责并新增 P41 写入资源协议，两处 vma_find body 统一源码入口；15.10/15.11 及后续仍 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/大纲.md",

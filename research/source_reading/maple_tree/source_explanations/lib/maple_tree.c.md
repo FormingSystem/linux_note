@@ -741,3 +741,359 @@ void *mt_find_after(struct maple_tree *mt, unsigned long *index,
 ```
 
 index>max 直接返回且不改游标；其他 NULL 返回也不写回。max 限制搜索，而命中范围可以延伸过 max。若 last=ULONG_MAX，成功后 index 回绕零，DEBUG 分支也显式允许这个零值。zero-entry 不作为普通可见对象返回。函数返回时内部 RCU 读侧已经退出，不替载荷取得引用。见[普通接口模块](../../navigation/P07_普通接口与范围契约.md#7.3_结果与证明边界)。
+
+## 1.13\_高级写入与准备兑现
+
+```c
+/**
+ * @brief 仓库补充阅读说明：返回第一个旧 entry，NULL 必须结合错误状态；范围诊断受 DEBUG 配置约束。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+void *mas_store(struct ma_state *mas, void *entry)
+{
+	int request;
+	MA_WR_STATE(wr_mas, mas, entry);
+
+	trace_ma_write(__func__, mas, 0, entry);
+#ifdef CONFIG_DEBUG_MAPLE_TREE
+	if (MAS_WARN_ON(mas, mas->index > mas->last))
+		pr_err("Error %lX > %lX %p\n", mas->index, mas->last, entry);
+
+	if (mas->index > mas->last) {
+		mas_set_err(mas, -EINVAL);
+		return NULL;
+	}
+
+#endif
+
+	/*
+	 * Storing is the same operation as insert with the added caveat that it
+	 * can overwrite entries.  Although this seems simple enough, one may
+	 * want to examine what happens if a single store operation was to
+	 * overwrite multiple entries within a self-balancing B-Tree.
+	 */
+	mas_wr_prealloc_setup(&wr_mas);
+	mas_wr_store_type(&wr_mas);
+	if (mas->mas_flags & MA_STATE_PREALLOC) {
+		mas_wr_store_entry(&wr_mas);
+		MAS_WR_BUG_ON(&wr_mas, mas_is_err(mas));
+		return wr_mas.content;
+	}
+
+	request = mas_prealloc_calc(mas, entry);
+	if (!request)
+		goto store;
+
+	mas_node_count(mas, request);
+	if (mas_is_err(mas))
+		return NULL;
+
+store:
+	mas_wr_store_entry(&wr_mas);
+	mas_destroy(mas);
+	return wr_mas.content;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：保存原请求，准备失败后按补分配协议重试，所有出口清理操作资源。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+int mas_store_gfp(struct ma_state *mas, void *entry, gfp_t gfp)
+{
+	unsigned long index = mas->index;
+	unsigned long last = mas->last;
+	MA_WR_STATE(wr_mas, mas, entry);
+	int ret = 0;
+
+retry:
+	mas_wr_preallocate(&wr_mas, entry);
+	if (unlikely(mas_nomem(mas, gfp))) {
+		if (!entry)
+			__mas_set_range(mas, index, last);
+		goto retry;
+	}
+
+	if (mas_is_err(mas)) {
+		ret = xa_err(mas->node);
+		goto out;
+	}
+
+	mas_wr_store_entry(&wr_mas);
+out:
+	mas_destroy(mas);
+	return ret;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：针对当前写入计算资源，零需求直接成功；失败先保存 ret，再清理并重置状态。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+int mas_preallocate(struct ma_state *mas, void *entry, gfp_t gfp)
+{
+	MA_WR_STATE(wr_mas, mas, entry);
+	int ret = 0;
+	int request;
+
+	mas_wr_prealloc_setup(&wr_mas);
+	mas_wr_store_type(&wr_mas);
+	request = mas_prealloc_calc(mas, entry);
+	if (!request)
+		return ret;
+
+	mas_node_count_gfp(mas, request, gfp);
+	if (mas_is_err(mas)) {
+		mas_set_alloc_req(mas, 0);
+		ret = xa_err(mas->node);
+		mas_destroy(mas);
+		mas_reset(mas);
+		return ret;
+	}
+
+	mas->mas_flags |= MA_STATE_PREALLOC;
+	return ret;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：兑现既有准备，消费节点后清理资源；不提供一般可恢复失败返回。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+void mas_store_prealloc(struct ma_state *mas, void *entry)
+{
+	MA_WR_STATE(wr_mas, mas, entry);
+
+	if (mas->store_type == wr_store_root) {
+		mas_wr_prealloc_setup(&wr_mas);
+		goto store;
+	}
+
+	mas_wr_walk_descend(&wr_mas);
+	if (mas->store_type != wr_spanning_store) {
+		/* set wr_mas->content to current slot */
+		wr_mas.content = mas_slot_locked(mas, wr_mas.slots, mas->offset);
+		mas_wr_end_piv(&wr_mas);
+	}
+
+store:
+	trace_ma_write(__func__, mas, 0, entry);
+	mas_wr_store_entry(&wr_mas);
+	MAS_WR_BUG_ON(&wr_mas, mas_is_err(mas));
+	mas_destroy(mas);
+}
+```
+
+S0/S1 建立请求与写入类型，S2 准备节点，S3 保持请求与保护条件，S4 写入，S5 清理。mas_preallocate 的零 request 分支不会设置 PREALLOC，不能用标志代替返回值；失败清理后也不能用 mas_is_err 代替已返回的 ret。mas_store_prealloc 依赖既有 store_type 和位置条件，准备后随意改变树或请求不属于本例契约。见[资源模块](../../navigation/P08_写入准备与资源清理.md#8.2_沿S0到S5追踪资源)。
+
+## 1.14\_节点准备与补分配锁边界
+
+```c
+/**
+ * @brief 仓库补充阅读说明：检查已准备数量，不足时直接按 gfp 申请；本函数不替调用者放锁。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+static void mas_node_count_gfp(struct ma_state *mas, int count, gfp_t gfp)
+{
+	unsigned long allocated = mas_allocated(mas);
+
+	if (allocated < count) {
+		mas_set_alloc_req(mas, count - allocated);
+		mas_alloc_nodes(mas, gfp);
+	}
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：内部首轮采用不等待且不告警的分配标志。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+static void mas_node_count(struct ma_state *mas, int count)
+{
+	return mas_node_count_gfp(mas, count, GFP_NOWAIT | __GFP_NOWARN);
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：仅处理 ENOMEM 载荷；内部锁且允许阻塞时放锁分配，重获锁后以 start 请求重试。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+bool mas_nomem(struct ma_state *mas, gfp_t gfp)
+	__must_hold(mas->tree->ma_lock)
+{
+	if (likely(mas->node != MA_ERROR(-ENOMEM)))
+		return false;
+
+	if (gfpflags_allow_blocking(gfp) && !mt_external_lock(mas->tree)) {
+		mtree_unlock(mas->tree);
+		mas_alloc_nodes(mas, gfp);
+		mtree_lock(mas->tree);
+	} else {
+		mas_alloc_nodes(mas, gfp);
+	}
+
+	if (!mas_allocated(mas))
+		return false;
+
+	mas->status = ma_start;
+	return true;
+}
+```
+
+mas_nomem 返回 true 只要求上层重新尝试，不表示写入已完成。外部锁模式没有代为解锁，非阻塞标志也不走放锁分支；调用者必须选择相容的上下文。mas_store_gfp 的 NULL entry 重试另恢复原 index/last，以免内部定位改变清除请求。实际节点分配器和写入分类在本单元只追踪调用职责，不将其全部算法视为已展开或运行。
+
+## 1.15\_资源清理与批量准备
+
+```c
+/**
+ * @brief 仓库补充阅读说明：资源标志与 status、store_type 是不同状态轴。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+#define MA_STATE_BULK		1
+#define MA_STATE_REBALANCE	2
+#define MA_STATE_PREALLOC	4
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：可执行批量尾部重平衡，释放本状态剩余节点并清 alloc；不是销毁整个业务索引。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+void mas_destroy(struct ma_state *mas)
+{
+	struct maple_alloc *node;
+	unsigned long total;
+
+	/*
+	 * When using mas_for_each() to insert an expected number of elements,
+	 * it is possible that the number inserted is less than the expected
+	 * number.  To fix an invalid final node, a check is performed here to
+	 * rebalance the previous node with the final node.
+	 */
+	if (mas->mas_flags & MA_STATE_REBALANCE) {
+		unsigned char end;
+		if (mas_is_err(mas))
+			mas_reset(mas);
+		mas_start(mas);
+		mtree_range_walk(mas);
+		end = mas->end + 1;
+		if (end < mt_min_slot_count(mas->node) - 1)
+			mas_destroy_rebalance(mas, end);
+
+		mas->mas_flags &= ~MA_STATE_REBALANCE;
+	}
+	mas->mas_flags &= ~(MA_STATE_BULK|MA_STATE_PREALLOC);
+
+	total = mas_allocated(mas);
+	while (total) {
+		node = mas->alloc;
+		mas->alloc = node->slot[0];
+		if (node->node_count > 1) {
+			size_t count = node->node_count - 1;
+
+			mt_free_bulk(count, (void __rcu **)&node->slot[1]);
+			total -= count;
+		}
+		mt_free_one(ma_mnode_ptr(node));
+		total--;
+	}
+
+	mas->alloc = NULL;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：面向有序批量填充估算资源并开启批量状态，结束需清理。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+int mas_expected_entries(struct ma_state *mas, unsigned long nr_entries)
+{
+	int nonleaf_cap = MAPLE_ARANGE64_SLOTS - 2;
+	struct maple_enode *enode = mas->node;
+	int nr_nodes;
+	int ret;
+
+	/*
+	 * Sometimes it is necessary to duplicate a tree to a new tree, such as
+	 * forking a process and duplicating the VMAs from one tree to a new
+	 * tree.  When such a situation arises, it is known that the new tree is
+	 * not going to be used until the entire tree is populated.  For
+	 * performance reasons, it is best to use a bulk load with RCU disabled.
+	 * This allows for optimistic splitting that favours the left and reuse
+	 * of nodes during the operation.
+	 */
+
+	/* Optimize splitting for bulk insert in-order */
+	mas->mas_flags |= MA_STATE_BULK;
+
+	/*
+	 * Avoid overflow, assume a gap between each entry and a trailing null.
+	 * If this is wrong, it just means allocation can happen during
+	 * insertion of entries.
+	 */
+	nr_nodes = max(nr_entries, nr_entries * 2 + 1);
+	if (!mt_is_alloc(mas->tree))
+		nonleaf_cap = MAPLE_RANGE64_SLOTS - 2;
+
+	/* Leaves; reduce slots to keep space for expansion */
+	nr_nodes = DIV_ROUND_UP(nr_nodes, MAPLE_RANGE64_SLOTS - 2);
+	/* Internal nodes */
+	nr_nodes += DIV_ROUND_UP(nr_nodes, nonleaf_cap);
+	/* Add working room for split (2 nodes) + new parents */
+	mas_node_count_gfp(mas, nr_nodes + 3, GFP_KERNEL);
+
+	/* Detect if allocations run out */
+	mas->mas_flags |= MA_STATE_PREALLOC;
+
+	if (!mas_is_err(mas))
+		return 0;
+
+	ret = xa_err(mas->node);
+	mas->node = enode;
+	mas_destroy(mas);
+	return ret;
+
+}
+```
+
+S5 清理不能简单等同 free：REBALANCE 分支会回到树中定位并可能修正尾节点。expected_entries 依据条目数量和布局估算，不能作为任意写入序列的永久免分配保证；固定实现使用 GFP_KERNEL，调用上下文要允许相应分配。本批私有模块不启用 BULK，不把批量重平衡当作已运行验证。
+
+## 1.16\_树销毁的锁责任
+
+```c
+/**
+ * @brief 仓库补充阅读说明：调用者已经建立保护后撤下根并释放节点，不自行取锁。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+void __mt_destroy(struct maple_tree *mt)
+{
+	void *root = mt_root_locked(mt);
+
+	rcu_assign_pointer(mt->ma_root, NULL);
+	if (xa_is_node(root))
+		mte_destroy_walk(root, mt);
+
+	mt->ma_flags = mt_attr(mt);
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：普通销毁封装直接取得内部 ma_lock。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+void mtree_destroy(struct maple_tree *mt)
+{
+	mtree_lock(mt);
+	__mt_destroy(mt);
+	mtree_unlock(mt);
+}
+```
+
+外部锁模式示例在持有互斥锁时调用 __mt_destroy；业务对象为静态载荷，不由这两个函数释放。该边界与 mas_destroy 清理操作资源不同。回到[资源模块](../../navigation/P08_写入准备与资源清理.md#8.3_资源与树的退出)。

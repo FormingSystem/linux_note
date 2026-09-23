@@ -52,3 +52,19 @@ static inline void vma_iter_invalidate(struct vma_iterator *vmi)
 ```
 
 本封装没有获取或释放 mmap 锁，没有销毁游标或取得 VMA 引用。后续使用 mas_find 时，pause 状态会影响继续起点，不能只解释成保留原地址从根重找。见[暂停与继续](../../../source_explanations/lib/maple_tree.c.md#1.9_暂停继续与有界find)及[游标导读](../../../navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)。
+
+## 1.4\_VMA查找复用高级游标
+
+```c
+/**
+ * @brief 仓库补充阅读说明：把 VMA 半开上界转换为 Maple 包含式上界，复用 vmi 中的状态。
+ * @note 保留固定语句，调用者仍负责输入、上下文和保护协议。
+ */
+static inline
+struct vm_area_struct *vma_find(struct vma_iterator *vmi, unsigned long max)
+{
+	return mas_find(&vmi->mas, max - 1);
+}
+```
+
+调用者须提供有效非零的半开上界；无符号 max=0 再减一会变成 ULONG_MAX，函数没有在此拒绝。复用状态不等于建立 VMA 生命周期保护。与高级接口分工见[资源导读](../../../navigation/P08_写入准备与资源清理.md#8.1_先决定由谁持有请求与锁)。
