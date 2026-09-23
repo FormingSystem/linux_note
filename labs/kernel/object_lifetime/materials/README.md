@@ -205,3 +205,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.31\_分阶段回滚责任模型
 
 [rollback_ownership.c](rollback_ownership.c)对应[P23完整回滚实验](../../../../knowledge/linux/object_lifetime/kref/P23_分阶段失败与资源回滚模板.md#23.1_先列出失败时已经成立的责任)。C11严格警告构建及十二条路径通过，比较显式结束子资源与最终清理两种安排，检查发布槽份额、重复撤下、清理依赖及分配归零。它是宿主顺序模型，不加入内核模块Makefile；非Linux kref、真实硬件或并发退出验证。
+
+## 1.32\_删除与排空工程复核
+
+[P24删除入口与排空](../../../../knowledge/linux/object_lifetime/kref/P24_删除入口与活动排空工程模板.md#24.1_关闭业务不等于回收所有对象)逐字复用[note_kref_owned_work.c](note_kref_owned_work.c)，重点解释管理者、队列、name和旧用户的不同退出期限；材料/Makefile不变。既有九组宿主与ARM前端边界保持，本批核对夹具并完成文档检查，不重复宣称目标装卸或真实并发验证。
