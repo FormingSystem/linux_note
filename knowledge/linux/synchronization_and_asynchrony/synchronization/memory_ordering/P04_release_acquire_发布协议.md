@@ -74,7 +74,7 @@ sequenceDiagram
 
 ## 4.4\_Linux\_公共回退怎样表达最小契约
 
-固定版本从[源码侧屏障定义](../../../../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)进入。Linux 6.12.20的include/asm-generic/barrier.h在架构未覆盖的内部回退中，用以下顺序表达最低要求：
+固定版本从[源码侧屏障定义](../../../../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)进入。Linux 6.12.20的include/asm-generic/barrier.h在架构未覆盖的内部回退中，用以下顺序表达最低要求：
 
 | 方向 | 类型约束与动作关系 |
 | --- | --- |

@@ -36,7 +36,7 @@ topics:
 
 ## 3.2\_barrier\_只约束编译器
 
-Linux 6.12.20的barrier定义位于include/linux/compiler.h，它把带memory clobber的空GNU内联汇编封装为编译器屏障，具体入口见[固定源码导读](../../../../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.1_READ_ONCE_WRITE_ONCE)。上一章的完整C材料已经用同类空汇编观察过循环读取变化。
+Linux 6.12.20的barrier定义位于include/linux/compiler.h，它把带memory clobber的空GNU内联汇编封装为编译器屏障，具体入口见[固定源码导读](../../../../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.1_READ_ONCE_WRITE_ONCE)。上一章的完整C材料已经用同类空汇编观察过循环读取变化。
 
 空内联汇编通常不生成硬件屏障指令。memory clobber是给编译器的约束，表示汇编可能影响内存，限制相关访问跨过此点；它不是“刷新所有寄存器或缓存”的运行时操作。它适合保护编译器层顺序，例如某些低层状态转换。单独用于两个CPU的消息传递时，机器仍按自己的内存顺序规则执行，编译器约束不能替代处理器需要的顺序约束。
 
@@ -248,7 +248,7 @@ Linux 6.12.20的arch/arm/include/asm/barrier.h在ARMv7分支提供下面的内�
 | __smp_rmb | 复用__smp_mb |
 | __smp_wmb | DMB，ishst域 |
 
-这里dmb是ARM的数据内存屏障指令；ish选择内部可共享域（Inner Shareable），ishst在该域只针对写方向。域由体系结构与系统配置规定，不能仅从缩写猜成“全部芯片外设”。固定版本入口见[源码侧屏障定义](../../../../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)。该ARMv7分支把读屏障映射得与全屏障一样强；调用方仍应写所需的最小Linux契约，不能把这一实现强度外推到其他架构。
+这里dmb是ARM的数据内存屏障指令；ish选择内部可共享域（Inner Shareable），ishst在该域只针对写方向。域由体系结构与系统配置规定，不能仅从缩写猜成“全部芯片外设”。固定版本入口见[源码侧屏障定义](../../../../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)。该ARMv7分支把读屏障映射得与全屏障一样强；调用方仍应写所需的最小Linux契约，不能把这一实现强度外推到其他架构。
 
 当前标准工作树是UP配置，公共smp_*包装按该配置选择退化路径；看到头文件里存在dmb宏定义，不等于当前内核已实际发出或执行该指令。本节比较固定提交中的分支，不作SMP运行声明。
 

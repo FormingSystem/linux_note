@@ -808,7 +808,11 @@ mindmap-plugin: basic
             - 🔴 [P02 Linux 6.12 mutex 慢路径源码实现](../../research/source_reading/locking/source_explanations/P02_Linux_6.12_mutex慢路径源码实现.md)
             - 🔴 [P03 Linux 6.12 rwsem 慢路径源码实现](../../research/source_reading/locking/source_explanations/P03_Linux_6.12_rwsem慢路径源码实现.md)
     - 内存顺序
-        - 🔴 [P01 Linux 6.12 LKMM 源码与模型导读](../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md)
+        - 模块概念导读
+            - 🔴 [P01 Linux 6.12 LKMM 源码与模型导读](../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md)
+            - 🔴 [P02 单次访问与类型边界导读](../../research/source_reading/memory_ordering/navigation/P02_单次访问与类型边界导读.md#2.1_从一个读取现场进入头文件)
+        - 具体实现讲解
+            - 🔴 [rwonce.h 单次访问源码实现](../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/rwonce.h.md#1.1_沿读取现场核对实现)
     - 序列计数器
         - 模块概念导读
             - 🔴 [P01 Linux 6.12 序列计数器源码总阅读索引](../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md)

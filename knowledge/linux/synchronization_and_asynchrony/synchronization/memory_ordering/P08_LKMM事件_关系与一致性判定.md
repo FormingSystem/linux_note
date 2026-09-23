@@ -29,7 +29,7 @@ flowchart LR
     C --> R[Allowed／Forbidden 结果]
 ```
 
-版本化文件职责和源码路径见 [Linux 6.12 LKMM 导读](../../../../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md)。
+版本化文件职责和源码路径见 [Linux 6.12 LKMM 导读](../../../../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md)。
 
 我们已经能用P04的消息发布说明“准备载荷、发布条件、取得条件、读取载荷”。现在反过来问：假如读者看见条件为真，却仍读到旧载荷，要给每次读取安排怎样的来源？这些安排能否同时满足模型？这就是 **候选执行**：先描述一个可能的结果及其事件关系，再用规则筛掉自相矛盾的候选。图上的事件是被分析程序的访问；`.cat`关系是验证工具中的数学对象，不是CPU内存里另有一张同名表。
 
@@ -104,7 +104,7 @@ LKMM将访问标签、依赖、屏障与传播规则组合为happens-before（hb
 
 ### 8.4.1\_为MP坏结果找到真实的回边
 
-先沿固定[模型公理入口](../../../../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.6_linux_kernel_cat_怎样组织公理)核对定义，再按本例一步一步归类。这里四个运行时访问都是Marked，即由ONCE或带顺序原语标记的访问；没有plain访问混入。
+先沿固定[模型公理入口](../../../../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.6_linux_kernel_cat_怎样组织公理)核对定义，再按本例一步一步归类。这里四个运行时访问都是Marked，即由ONCE或带顺序原语标记的访问；没有plain访问混入。
 
 1. A→B在release之前形成 `po-rel` 边，C→D从acquire之后形成 `acq-po` 边。二者在本例属于 `ppo`（preserved program order，保留的程序顺序），继而属于hb。
 2. B→C是跨参与者rf，在模型中称 `rfe`；它也属于hb。下标式后缀e表示external，即两个端点来自不同参与者；i表示internal，即同一参与者。

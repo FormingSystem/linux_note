@@ -257,7 +257,7 @@ domains:
 | `tools/memory-model/Documentation/simple.txt` | 优先使用封装同步原语的工程路线 |
 | `tools/memory-model/Documentation/litmus-tests.txt` | Litmus 语法、运行方法和模型限制 |
 
-版本化导读见 [`../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md`](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md)。
+版本化导读见 [`../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md`](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md)。
 
 ## 1.8\_编译器与\_Sparse\_注解证据
 
@@ -981,7 +981,7 @@ B05a以固定dfaf2136的Documentation/locking/locktypes.rst核对锁类别、可
 
 ## 1.109\_消息发布入门证据
 
-B05b只读固定dfaf2136的Documentation/memory-barriers.txt，并核对已保存rwonce、通用屏障与ARM屏障原文；[内存顺序导读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.14_配套入口)关联M0～M3阅读任务。宿主C++17实验完成100轮独立发布，依据标准原子契约，不代表Linux内核宏、LKMM、SMP、目标ARM或实时分支运行；当前UP配置不变。
+B05b只读固定dfaf2136的Documentation/memory-barriers.txt，并核对已保存rwonce、通用屏障与ARM屏障原文；[内存顺序导读](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.14_配套入口)关联M0～M3阅读任务。宿主C++17实验完成100轮独立发布，依据标准原子契约，不代表Linux内核宏、LKMM、SMP、目标ARM或实时分支运行；当前UP配置不变。
 
 ## 1.110\_编译器轮询反例校正
 
@@ -989,11 +989,11 @@ B05c只读固定dfaf2136的arch/arm/include/asm/vdso/processor.h，确认cpu_rel
 
 ## 1.111\_屏障方向与UP配置边界
 
-B05d核对固定include/asm-generic/barrier.h的CONFIG_SMP分支和ARM屏障映射，公共UP回退与底层__smp宏存在分开说明；[原语导读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)继续承担入口。C单槽待写模型及单边约束变体严格编译执行，只说明教学规则下的结果，未执行herd7、Linux屏障、ARM SMP或设备协议。
+B05d核对固定include/asm-generic/barrier.h的CONFIG_SMP分支和ARM屏障映射，公共UP回退与底层__smp宏存在分开说明；[原语导读](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)继续承担入口。C单槽待写模型及单边约束变体严格编译执行，只说明教学规则下的结果，未执行herd7、Linux屏障、ARM SMP或设备协议。
 
 ## 1.112\_发布取得与反向归还
 
-B05e沿固定通用release/acquire回退的类型和先后关系核对正文边界，删去说明性冒号伪C而保留职责表及[源码导读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)。单槽一万轮宿主C++17发布/归还通过，标准原子一致性和严格单生产/单消费协议不冒充Linux实现；未运行herd7、目标ARM、取消、故障恢复或多参与者队列。
+B05e沿固定通用release/acquire回退的类型和先后关系核对正文边界，删去说明性冒号伪C而保留职责表及[源码导读](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)。单槽一万轮宿主C++17发布/归还通过，标准原子一致性和严格单生产/单消费协议不冒充Linux实现；未运行herd7、目标ARM、取消、故障恢复或多参与者队列。
 
 ## 1.113\_依赖数据流与RCU取得边界
 
@@ -1001,7 +1001,7 @@ B05f只读固定Documentation/RCU/rcu_dereference.rst和include/linux/rcupdate.h
 
 ## 1.114\_原子更新与条件失败契约
 
-B05g只读固定Documentation/atomic_t.txt全篇，核对非RMW、返回值、显式顺序、条件失败、atomic_set与RMW不可分性、期望值回写、辅助屏障范围及前进性；[阅读入口](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.11_官方文档证据)关联原始副本，其Git对象bee3b1bca9a7b46bcf9911f036c3280e77b4405a与固定提交一致。工作树HEAD仍是本地实验提交，不作为证据；当前配置仍UP、TINY_RCU和PREEMPT_NONE。宿主C++17严格编译后四工作者完成40,000次更新、错误0，同时单线程反例显示期望值重用会使OWNED→OWNED也成功。不声称执行Linux/ARM原子或herd7，不以宿主原子替代目标实现。
+B05g只读固定Documentation/atomic_t.txt全篇，核对非RMW、返回值、显式顺序、条件失败、atomic_set与RMW不可分性、期望值回写、辅助屏障范围及前进性；[阅读入口](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.11_官方文档证据)关联原始副本，其Git对象bee3b1bca9a7b46bcf9911f036c3280e77b4405a与固定提交一致。工作树HEAD仍是本地实验提交，不作为证据；当前配置仍UP、TINY_RCU和PREEMPT_NONE。宿主C++17严格编译后四工作者完成40,000次更新、错误0，同时单线程反例显示期望值重用会使OWNED→OWNED也成功。不声称执行Linux/ARM原子或herd7，不以宿主原子替代目标实现。
 
 ## 1.115\_隐式顺序与登记空窗
 
@@ -1009,7 +1009,7 @@ B05h只读固定Documentation/memory-barriers.txt的隐式屏障部分及include
 
 ## 1.116\_MP候选关系与模型回边
 
-B05i按固定tools/memory-model/linux-kernel.cat核对po-rel/acq-po、ppo、prop、hb与pb及RCU/plain检查，原始副本对象adf3c4f412296269bb9f8127cd7e04f276479a57与固定提交一致。MP坏候选的fr不是直接hb边；经发布侧累积关系和flag读取来源合成同线程prop回边后进入hb。更新[版本导读的MP阅读](../memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.9_沿_MP_测试追踪一次判定)并区分Never预期与实际Observation。完整C只求这份已推导子图的可达闭包，四种后缀组合仅双侧出现环，不解析cat/不调用herd7；宿主PATH未发现herd7，本批未运行完整模型或目标硬件。
+B05i按固定tools/memory-model/linux-kernel.cat核对po-rel/acq-po、ppo、prop、hb与pb及RCU/plain检查，原始副本对象adf3c4f412296269bb9f8127cd7e04f276479a57与固定提交一致。MP坏候选的fr不是直接hb边；经发布侧累积关系和flag读取来源合成同线程prop回边后进入hb。更新[版本导读的MP阅读](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.9_沿_MP_测试追踪一次判定)并区分Never预期与实际Observation。完整C只求这份已推导子图的可达闭包，四种后缀组合仅双侧出现环，不解析cat/不调用herd7；宿主PATH未发现herd7，本批未运行完整模型或目标硬件。
 
 ## 1.117\_模型工具与硬件生成器边界
 
@@ -1018,3 +1018,7 @@ B05j只读固定tools/memory-model/README，保存副本Git对象dab38904206a0ba
 ## 1.118\_跨轮复用与设备访问域
 
 B05k冷读固定Documentation/memory-barriers.txt的dma屏障、一致性描述符、默认I/O映射readX/writeX及relaxed规则，并只读Documentation/driver-api/device-io.rst核对posted write与同设备读回边界。正文区分字段发布、下一轮覆盖资格、映射/缓存维护、门铃到达和设备使用完成；[诊断参考](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P10_子系统边界_误用诊断与选型.md#10.2_普通内存_MMIO_DMA_三种域)不规定未核对的具体设备寄存器或ARM指令。未执行MMIO/DMA、内核模块或herd7；共享槽位引用既有完整C++正例及其原验证，不运行有数据竞争的反例。
+
+## 1.119\_单次访问与检测边界
+
+B05l按固定dfaf2136的include/asm-generic/rwonce.h全文件与compiler_types.h类型/检测属性部分核对，rwonce原始副本对象8d0a6280e98247dc96450ed6a9e78fcb2e4fa555与官方固定提交一致。总索引迁入navigation并保持ID及标题锚点，新增[单次访问模块](../memory_ordering/navigation/P02_单次访问与类型边界导读.md#2.3_一条访问怎样闭合)和按上游路径保存的[唯一实现](../memory_ordering/source_explanations/include/asm-generic/rwonce.h.md#1.1_沿读取现场核对实现)。只读核对ARM无专属rwonce头及通用必选清单，不修改外部树；类型门槛、机器访问原子性、插桩配置与寿命分别说明。宿主检查采用固定宏/函数与受控依赖替身，仅验证尺寸、求值和访问值，不冒充真实KASAN/KCSAN、ARM或SMP验证；LKMM模型部分仍待审。

@@ -152,7 +152,7 @@ bash run.sh
 
 ## 2.4\_宏实现承担什么
 
-Linux 6.12.20的版本入口从[源码与模型导读](../../../../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.1_READ_ONCE_WRITE_ONCE)进入。保存的include/asm-generic/rwonce.h中，公开READ_ONCE先做compiletime_assert_rwonce_type检查，再由__READ_ONCE把目标地址转换为适当的const volatile标量指针并读取。这里描述其职责顺序，不把省略续行符的多行宏伪装成可编译上游代码。
+Linux 6.12.20的版本入口从[源码与模型导读](../../../../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.1_READ_ONCE_WRITE_ONCE)进入。保存的include/asm-generic/rwonce.h中，公开READ_ONCE先做compiletime_assert_rwonce_type检查，再由__READ_ONCE把目标地址转换为适当的const volatile标量指针并读取。这里描述其职责顺序，不把省略续行符的多行宏伪装成可编译上游代码。沿[单次访问模块导读](../../../../../research/source_reading/memory_ordering/navigation/P02_单次访问与类型边界导读.md#2.3_一条访问怎样闭合)定位编译期与运行期，再在[唯一READ_ONCE实现](../../../../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/rwonce.h.md#1.3_READ_ONCE与内部读取)逐行核对公共入口和内部表达式。
 
 `WRITE_ONCE()` 使用对应的 volatile 类型访问。这里的 volatile cast 是内核实现手段，不等于“把整个共享对象类型声明为 volatile 就完成同步”。宏还组合了类型/大小检查，并与 KASAN/KCSAN 等内核工具约定配合。
 

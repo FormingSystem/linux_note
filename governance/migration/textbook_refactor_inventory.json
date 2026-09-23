@@ -4110,7 +4110,7 @@
       "reason": "按职责冷读并确定保留、修复或重写范围"
     },
     {
-      "path": "research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md",
+      "path": "research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md",
       "baseline_sha256": "0ea2d7d36fe6c57226b4e348dd5bb6351795a7fa0030c5dcd4d5af514d24babe",
       "lines": 216,
       "state": "pending",
@@ -4857,6 +4857,20 @@
       "lines": 96,
       "state": "validated",
       "reason": "B05c新编译观察：两工具链真实版本/目标、关键汇编及边界；七函数实际冷读，非目标运行。人工节点红色。"
+    },
+    {
+      "path": "research/source_reading/memory_ordering/navigation/P02_单次访问与类型边界导读.md",
+      "baseline_sha256": "20d2f4d8bcc0c4e37e80b689c1a91ee5faab6c009778e1fb1ce99947ef3a6bcd",
+      "lines": 98,
+      "state": "validated",
+      "reason": "B05l按固定rwonce全文件和类型/检测属性核对，分开模块协作与唯一宏/函数实现；解释尺寸门槛、求值、NOCHECK与按字读取，宿主受控依赖检查不当作ARM或检测器执行。新人工评审节点红色。"
+    },
+    {
+      "path": "research/source_reading/memory_ordering/source_explanations/include/asm-generic/rwonce.h.md",
+      "baseline_sha256": "a878ce54db154311966a45fedbc45a0a0701f5c755fe29d8a84bc1739ee0c6ab",
+      "lines": 185,
+      "state": "validated",
+      "reason": "B05l按固定rwonce全文件和类型/检测属性核对，分开模块协作与唯一宏/函数实现；解释尺寸门槛、求值、NOCHECK与按字读取，宿主受控依赖检查不当作ARM或检测器执行。新人工评审节点红色。"
     }
   ]
 }

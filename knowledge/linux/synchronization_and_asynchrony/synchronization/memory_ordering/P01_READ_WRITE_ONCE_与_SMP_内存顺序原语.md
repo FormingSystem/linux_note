@@ -221,7 +221,7 @@ ONCE适合表达“这个位置会并发变化，这里需要一次受约束访�
 - 任意宽度和任意对齐都不撕裂；
 - 对象取消发布后的存活保证。
 
-固定Linux证据从[源码与模型导读](../../../../../research/source_reading/memory_ordering/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3_源码侧访问和屏障定义)进入，使用NXP官方dfaf2136对应6.12.20，不以本地实验提交为证据。宏实现、反汇编和KCSAN边界见下一章；硬件撕裂的完整推导见[访问粒度、对齐与撕裂](../../../../foundations/computer_architecture/memory_ordering/P02_访问粒度_对齐与撕裂.md)。这里“不提供acquire”不排除特定架构为ONCE携带额外约束，不能反过来依赖偶然更强的实现。
+固定Linux证据从[源码与模型导读](../../../../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3_源码侧访问和屏障定义)进入，使用NXP官方dfaf2136对应6.12.20，不以本地实验提交为证据。宏实现、反汇编和KCSAN边界见下一章；硬件撕裂的完整推导见[访问粒度、对齐与撕裂](../../../../foundations/computer_architecture/memory_ordering/P02_访问粒度_对齐与撕裂.md)。这里“不提供acquire”不排除特定架构为ONCE携带额外约束，不能反过来依赖偶然更强的实现。
 
 ## 1.6\_从需求选择第一候选
 
