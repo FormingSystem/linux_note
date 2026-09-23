@@ -752,1252 +752,266 @@ idr_alloc 的范围下界包含 0，上界参数 0 在该接口中表示可用�
 
 ## 8.6\_lookup\_API\_契约\_返回裸指针还是返回引用
 
-这一组内容把 lookup 的接口语义收住。
-
-lookup API 最怕名字含糊：
-
-```text
-返回的是裸指针，还是带引用对象？
-调用者能否在锁外保存？
-调用者是否必须 put？
-失败是没找到，还是对象正在退出？
-```
-
-因此建议把 `find_locked()`、`lookup_get()`、`tryget()` 这几类接口明确拆开。
+前面三个容器可以使用相同的拥有型协议，却使用不同的锁接口。调用者不应再把这些内部差别重新猜一遍：一个查询函数必须把 **返回值的访问期限与归还责任** 作为契约交付。可以返回编号副本，可以借出锁内地址，也可以交付独立引用；选哪一种取决于调用者接下来要做什么。
 
 ### 8.6.1\_lookup\_raw()\_和\_lookup\_get()\_必须分开
 
-建议工程里明确区分两类函数。
-
 #### (1)\_lookup\_raw()\_只返回临时裸指针
 
-```c
-static struct my_obj *my_obj_lookup_raw_locked(int id)
-{
-	struct my_obj *obj;
+若调用者已经持有表锁，只想检查一个字段或决定是否继续取得，就可以由 `find_locked(id)` 返回临时地址。函数名中的 locked 提醒它依赖调用者锁，但名称不执行加锁。实现中可以加 `lockdep_assert_held` 辅助检查；动态检查未告警也不能替代所有调用路径遵守契约的证据。
 
-	lockdep_assert_held(&my_obj_lock);
-
-	list_for_each_entry(obj, &my_obj_list, node) {
-		if (obj->id == id)
-			return obj;
-	}
-
-	return NULL;
-}
-```
-
-这个函数的语义是：
-
-```text
-只能在 my_obj_lock 持有期间调用；
-返回值不能逃出临界区；
-调用者不能保存；
-调用者不能 put；
-调用者不能异步传递。
-```
-
-适合命名：
-
-```c
-my_obj_lookup_raw_locked()
-my_obj_find_locked()
-my_obj_peek_locked()
-```
-
-------
+借出的指针可在这段受保护窗口内使用，不因返回本身产生一份可 put 的责任。若要让它越过窗口，必须在窗口结束前另行取得，或证明另有覆盖全程的独立保护。把地址抄进一个局部变量、全局数组或 work 参数，都不会延长借用期限。
 
 #### (2)\_lookup\_get()\_返回带引用对象
 
-```c
-struct my_obj *my_obj_lookup_get(int id)
-{
-	struct my_obj *obj;
+8.3 的 registry_lookup 和 8.5 的 indexed_lookup 已在实现内部完成查找与 get。它们非空返回时把新增的一份交给调用者；NULL 则没有交付份额。采用 lookup_get 命名能直接提示这一点，但既有接口名称不同也不自动错误，应以实现与明确注释为准。
 
-	mutex_lock(&my_obj_lock);
-
-	obj = my_obj_lookup_raw_locked(id);
-	if (obj)
-		kref_get(&obj->ref);
-
-	mutex_unlock(&my_obj_lock);
-
-	return obj;
-}
-```
-
-这个函数的语义是：
-
-```text
-返回 NULL：没有获得引用；
-返回非 NULL：调用者获得引用，必须 put。
-```
-
-适合命名：
-
-```c
-my_obj_lookup_get()
-my_obj_find_get()
-my_obj_get_by_id()
-```
-
-这类函数必须在注释里写清楚：
-
-```text
-Return object with a reference held.
-Caller must drop it with my_obj_put().
-```
-
-中文就是：
-
-```text
-返回成功时，调用者持有对象引用；
-使用结束必须 put。
-```
-
-------
+调用者取得一份以后可以解耦于容器锁的生命周期，稍后归还或按 P07 转交。它仍不能仅凭这份引用推断对象在表中、业务可用或可变字段无需同步。下面所有“可在锁外用”都只表示存储寿命已经有自己的保证。
 
 ### 8.6.2\_lookup\_get()\_的标准注释
 
-建议写成：
+注释应交代正常返回、失败、同步以及业务许可的边界。下面是本章拥有型 IDR 查询片段的中文接口说明，语义与前面的实现对应：
 
 ```c
 /**
- * my_obj_lookup_get - find object by id and take a reference
- * @id: object id
+ * id_lookup_get - 按编号取得一份对象引用
+ * @id: 要查找的编号
  *
- * Returns the object with a reference held on success.
- * The caller must drop the reference with my_obj_put().
- *
- * Returns NULL if no live object is found.
+ * 内部持有 id_lock，命中时在解锁前追加一份引用。
+ * 本索引条目本身拥有一份，所以找到条目时计数为正。
+ * 返回非 NULL 时调用者负责 id_put，或按明确协议转交该份额。
+ * 返回 NULL 时没有取得引用，不应为本次失败调用 id_put。
+ * 本接口不承诺对象一直登记，也不自动授予业务请求许可。
  */
-struct my_obj *my_obj_lookup_get(int id);
+static struct id_object *id_lookup_get(int id);
 ```
 
-如果使用 `kref_get_unless_zero()`，可以写得更明确：
+若接口使用条件取得，还要说明什么机制保证计数地址有效、什么时候可以见到零，以及零值失败没有交付责任。不要只把注释中的 get 换成 unless_zero 就认为协议完整。
 
-```c
-/**
- * my_obj_lookup_get - find live object by id and take a reference
- * @id: object id
- *
- * The lookup is protected by my_obj_lock.
- * If a matching object is found and its reference count is non-zero,
- * this function returns it with a reference held.
- *
- * Returns NULL if the object is not found or is no longer live.
- */
-struct my_obj *my_obj_lookup_get(int id);
-```
-
-中文说明：
-
-```text
-查找成功并不只是找到指针；
-查找成功表示当前路径已经获得一份引用。
-```
-
-------
+若需要区分“编号不存在”和“业务已关闭”，可设计明确的错误返回或状态输出；那是接口需求，不是 kref 替你区分的状态。当前两个完整实验仅返回对象或 NULL，保留这一简单契约即可。
 
 ### 8.6.3\_lookup\_后的调用者规则
 
-如果函数名是：
+先把最普通的同步使用走通：
 
 ```c
-obj = my_obj_lookup_get(id);
-```
-
-调用者必须按“持有引用”处理：
-
-```c
-obj = my_obj_lookup_get(id);
+/* 应用片段：lookup_get 成功交付一份，process 使用期间只借用。 */
+obj = lookup_get(id);
 if (!obj)
-	return -ENOENT;
-
-ret = do_something(obj);
-
-kref_put(&obj->ref, my_obj_release);
-return ret;
-```
-
-如果中间有多个错误路径，要保证每条路径都 put：
-
-```c
-obj = my_obj_lookup_get(id);
-if (!obj)
-	return -ENOENT;
-
-ret = prepare(obj);
-if (ret)
-	goto out_put;
-
-ret = run(obj);
-if (ret)
-	goto out_put;
-
+    return -ENOENT;
+result = prepare(obj);
+if (result)
+    goto out_put;
+result = process(obj);
 out_put:
-	kref_put(&obj->ref, my_obj_release);
-	return ret;
+object_put(obj);
+return result;
 ```
 
-如果要 handoff 给异步路径，有两种选择。
+prepare/process 是业务占位，不是内核通用 API。这里约定它们不会消费调用者份额；所有成功取得后的出口汇聚到一次归还。若某个函数实际上接管责任，就必须改写协议，不能继续沿这个模板无条件 put。
 
 #### (1)\_给异步路径新引用
 
+沿 P07 的追加式接口，调用者保留查找所得那一份，接收者在成功时另持一份。发送函数失败时退回自己的预留，所以调用者无论发送成功或失败，都只归还原来的查找份额：
+
 ```c
-obj = my_obj_lookup_get(id);
-if (!obj)
-	return -ENOENT;
-
-ret = my_obj_schedule_work_ref(obj);
-
-kref_put(&obj->ref, my_obj_release);
-return ret;
+/* request_ref 成功另建异步份额，失败内部退回预留，两种都不消费obj这份。 */
+result = request_ref(obj);
+object_put(obj);
+return result;
 ```
 
-这里：
-
-```text
-lookup_get 给当前路径一份引用；
-schedule_work_ref 给 work 一份引用；
-当前路径最后 put 自己的引用。
-```
-
-------
+好处是调用者在自己的 put 之前仍有存储保证；代价是一次额外增减。它并不自动说明可与异步执行者同时读写哪些业务字段。
 
 #### (2)\_把\_lookup\_得到的引用直接转移给异步路径
 
+若调用者随后不再需要对象，可直接交付查找得到的那一份。本段明确使用“成功消费、失败保留”的接管式契约：
+
 ```c
-obj = my_obj_lookup_get(id);
-if (!obj)
-	return -ENOENT;
-
-ret = my_obj_schedule_work_take(obj);
-if (ret) {
-	kref_put(&obj->ref, my_obj_release);
-	return ret;
-}
-
-/*
- * 成功后 work 接管 lookup 得到的引用。
- * 当前路径不能再访问 obj。
- */
-return 0;
+result = request_take(obj);
+if (result)
+    object_put(obj); /* 接收拒绝，本次查找者仍负责原份额。 */
+return result; /* 成功后不再凭已转交的份额访问对象。 */
 ```
 
-这里：
-
-```text
-lookup_get 得到的引用没有在当前路径 put；
-而是成功转移给 work；
-失败时当前路径仍负责 put。
-```
-
-这就是第 7 章 handoff 模型和本章 lookup 模型的组合。
-
-------
+成功接收与 worker 完成并不是同一时刻，接收者甚至可能在发送函数返回前归还最后一份。调用者成功后不能再打印 obj->id 来证明“交付完成”；需要日志就提前保存不可变编号副本。若调用者另有第二份，当然仍可依据第二份访问，不应把“这次指定份额转交”写成“这个线程永远不能再碰对象”。
 
 ### 8.6.4\_lookup\_函数不要返回\_可能要\_put\_的对象
 
-最差的接口是这种：
+真正危险的是同一种非空返回有时借用、有时交付一份，却没有让调用者区分。调用者统一 put 会错误消耗别人的份额；统一不 put 又会漏掉真正交付的份额。
 
-```c
-struct my_obj *my_obj_lookup(int id);
-```
-
-但它没有说明：
-
-```text
-返回对象是否带引用？
-调用者是否要 put？
-调用者能否保存？
-是否只能持锁使用？
-失败路径怎么处理？
-```
-
-这种接口很容易导致两类 bug。
-
-第一类：调用者以为返回带引用，结果其实没有。
-
-```c
-obj = my_obj_lookup(id);
-queue_work_with_obj(obj);     /* 可能 UAF */
-```
-
-第二类：调用者以为需要 put，结果其实只是借用。
-
-```c
-obj = my_obj_lookup(id);
-kref_put(&obj->ref, my_obj_release);   /* 可能提前释放 */
-```
-
-所以建议把接口拆开：
-
-```c
-my_obj_find_locked();     /* 裸指针，只能锁内用 */
-my_obj_lookup_get();      /* 返回带引用对象 */
-my_obj_put();             /* 释放引用 */
-```
-
-不要写一个语义含糊的 `lookup()` 让调用者猜。
-
-------
+优先让一个接口只有一种责任语义：find_locked 返回临时地址，lookup_get 返回一份，复制查询返回一个值。确有多结果需求时，返回类型或输出状态必须清楚编码责任，而不是要求调用者从编号范围、偶然路径或计数快照猜测。C 函数名只是提示，中文注释与实现分支才构成可审查的契约。
 
 ## 8.7\_退出\_状态和\_RCU\_边界
 
-这一组内容处理 lookup 和对象退出阶段的关系。
-
-对象“还没释放”和“允许新用户进入”不是一回事：
-
-```text
-对象可能仍有旧引用，但已经不允许新的 lookup 成功；
-对象可能仍被 RCU 读侧看到，但不能被重新复活；
-对象从容器撤销可见性，必须和最后 put、延迟释放配套。
-```
+成功取得以后对象还在，但系统可能开始关闭它。现在加入一个具体业务约束：登记的设备会停止接收新请求，已经取得引用的读者仍需返回错误并归还，而不能继续假定硬件可用。这要求同时处理可发现性、业务状态和引用，三个状态不能由一个计数替代。
 
 ### 8.7.1\_释放路径必须和\_lookup\_路径配套
 
-lookup 正确性不是 lookup 函数自己能单独保证的。
-
-它还依赖释放路径是否配套。
-
 #### (1)\_正确释放路径
 
-```c
-void my_obj_destroy(struct my_obj *obj)
-{
-	mutex_lock(&my_obj_lock);
+拥有型容器沿 8.3/8.5：同锁摘除成员，取得本次成员份额，解锁后归还。查找若先在锁内完成 get，就有独立的一份；删除若先摘下，后来的查找看不到对象。重复删除必须先确认这次确实取到了旧条目。
 
-	if (!list_empty(&obj->node))
-		list_del_init(&obj->node);
-
-	mutex_unlock(&my_obj_lock);
-
-	kref_put(&obj->ref, my_obj_release);
-}
-```
-
-lookup：
-
-```c
-struct my_obj *my_obj_lookup_get(int id)
-{
-	struct my_obj *obj;
-
-	mutex_lock(&my_obj_lock);
-
-	obj = my_obj_find_locked(id);
-	if (obj)
-		kref_get(&obj->ref);
-
-	mutex_unlock(&my_obj_lock);
-
-	return obj;
-}
-```
-
-这两个路径配套的原因是：
-
-```text
-lookup 和 unlink 都被同一把锁序列化；
-lookup 在锁内看到 obj 时，unlink 不可能同时完成；
-obj 仍然有集合引用；
-所以 kref_get 安全。
-```
-
-------
+非拥有索引则沿 8.4：最后归零后回调取查找锁、摘链并回收，查找用条件取得处理可能见到零的窗口。这不是“先归零再摘链也总可以”的例外口号，而是另一套完整协议，其锁、上下文和唯一摘链者都必须成立。
 
 #### (2)\_错误释放路径
 
-```c
-void my_obj_destroy_bad(struct my_obj *obj)
-{
-	kref_put(&obj->ref, my_obj_release);
+对拥有型集合先 put 成员份额再去访问 node 摘链，最后 put 可能已经释放节点，后面的访问失效；即使还有别的份额暂时撑住，也已破坏“成员在集合中就拥有一份”的约定。某次测试恰好没归零不能证明顺序正确。
 
-	mutex_lock(&my_obj_lock);
-	list_del_init(&obj->node);
-	mutex_unlock(&my_obj_lock);
-}
-```
-
-这个释放路径会破坏 lookup 假设。
-
-因为 lookup 可能在 list 中看到一个已经 release 的对象。
-
-所以 lookup 的正确性要问：
-
-```text
-所有删除路径是否都先 unlink，再 put？
-所有 lookup 是否都在同一保护机制下完成？
-所有能释放对象的路径是否都遵守这个顺序？
-```
-
-只要有一条路径破坏规则，lookup 就不安全。
-
-------
+还要检查退出的所有入口：错误恢复、超时、取消、正常关闭有没有某条路径绕过同锁、重复归还或直接 kfree。只检查名为 remove 的函数不够，真正需要覆盖的是所有会结束对象存储的路径。
 
 ### 8.7.2\_对象状态和\_lookup\_的关系
 
-有时候对象虽然还没释放，但已经不应该被新的 lookup 获得。
+让对象增加由 table_lock 保护的 `state`。LIVE 表示允许新业务进入，DYING 表示关闭中，DEAD 只用于仍有有效存储时的收尾描述；对象实际释放以后不能再读 state 来判断自己是否有权访问。
 
-例如状态机：
-
-```c
-enum my_obj_state {
-	OBJ_LIVE,
-	OBJ_DYING,
-	OBJ_DEAD,
-};
-```
-
-这时 lookup 不只要判断：
-
-```text
-对象是否在集合中；
-refcount 是否非 0。
-```
-
-还要判断：
-
-```text
-对象状态是否允许新用户进入。
-```
-
-示例：
+如果接口承诺“仅返回在本次取得时允许新用户的对象”，则找到成员、检查 LIVE 和 get 必须在同一业务门内决定。例如拥有型链表的锁内片段：
 
 ```c
-struct my_obj *my_obj_lookup_get_live(int id)
-{
-	struct my_obj *obj = NULL;
-
-	mutex_lock(&my_obj_lock);
-
-	obj = my_obj_find_locked(id);
-	if (!obj)
-		goto out;
-
-	if (obj->state != OBJ_LIVE) {
-		obj = NULL;
-		goto out;
-	}
-
-	kref_get(&obj->ref);
-
-out:
-	mutex_unlock(&my_obj_lock);
-	return obj;
+/* table_lock 同时保护成员关系和 state；found 初始为 NULL。 */
+if (obj && obj->state == OBJ_LIVE) {
+    kref_get(&obj->ref);
+    found = obj;
 }
 ```
 
-这里状态检查必须和 lookup 保护在同一个临界区里。
-
-否则可能出现：
-
-```text
-CPU0: 查到 obj 状态是 LIVE
-CPU1: 把 obj 改成 DYING 并删除
-CPU0: get
-```
-
-如果状态和集合都由 `my_obj_lock` 保护，则可以保证状态判断和 get 是一致的。
-
-规则：
-
-```text
-如果 lookup 需要检查状态，那么状态检查、集合查找、get 必须被同一套机制保护。
-```
-
-------
+即使这个片段正确，解锁以后 state 仍可能变成 DYING。该接口证明的是 **取得决策那个时刻允许进入**，不是永久许可证。若后续每次提交新请求也需要接纳判断，应在提交路径重新持相应门锁检查，或由关闭协议等待所有已经获准的请求完成。P03 的业务关闭模块已经区分过“有引用”与“仍接受请求”。
 
 ### 8.7.3\_DYING\_状态通常拒绝新的\_lookup\_引用
 
-有些对象进入 `DYING` 后，仍然允许已有路径继续使用，但不允许新 lookup 进入。
+本例把停止接纳和摘下入口放在同一个 table_lock 临界区：先设 DYING，再撤下成员关系，解锁后只归还实际取回的那一份。已有引用不会被强制撤销，它们仍使存储存在；已有业务能否继续运行，则由关闭协议单独决定。
 
-这很常见。
+| 查找和关闭的顺序 | 查找结果 | 旧使用者的下一步 |
+| --- | --- | --- |
+| 关闭先取得锁并摘下 | 新查找无结果 | 未取得者不 put |
+| 查找先检查 LIVE 并取得 | 返回一份；随后可能关闭 | 使用前遵守业务门，结束归还 |
+| 设计允许 DYING 成员暂时留在表中 | 业务条件拒绝，虽然计数仍正 | 状态检查必须与写状态同锁 |
 
-语义可以定义为：
-
-```text
-LIVE：
-    新 lookup 可以成功；
-    已有引用可以继续使用。
-
-DYING：
-    新 lookup 失败；
-    已有引用可以继续收尾；
-    最后一个 put 后 release。
-
-DEAD：
-    不可 lookup；
-    不可使用；
-    内存即将或已经释放。
-```
-
-lookup 函数：
-
-```c
-struct my_obj *my_obj_lookup_get_live(int id)
-{
-	struct my_obj *obj;
-
-	mutex_lock(&my_obj_lock);
-
-	obj = my_obj_find_locked(id);
-	if (!obj)
-		goto out_null;
-
-	if (obj->state != OBJ_LIVE)
-		goto out_null;
-
-	kref_get(&obj->ref);
-	mutex_unlock(&my_obj_lock);
-	return obj;
-
-out_null:
-	mutex_unlock(&my_obj_lock);
-	return NULL;
-}
-```
-
-remove 路径：
-
-```c
-void my_obj_mark_dying_and_remove(struct my_obj *obj)
-{
-	mutex_lock(&my_obj_lock);
-
-	obj->state = OBJ_DYING;
-
-	if (!list_empty(&obj->node))
-		list_del_init(&obj->node);
-
-	mutex_unlock(&my_obj_lock);
-
-	kref_put(&obj->ref, my_obj_release);
-}
-```
-
-这样做的结果是：
-
-```text
-新的 lookup 找不到或因为 DYING 失败；
-已有引用不受影响，可以继续 put 收敛；
-最后一个 put 后 release。
-```
-
-这体现了第 3 章的结论：
-
-```text
-撤销发布不等于立即销毁对象。
-```
-
-------
+若 DYING 与摘链总在同一临界区完成，后来的普通查找根本看不到 DYING 成员；此时状态字段仍可服务于已有使用者，而不必在正文虚构它总会成为 lookup 拒绝原因。先说明实际协议，再解释状态表，读者才不会把枚举每一项都当作必经可观察阶段。
 
 ### 8.7.4\_kref\_get\_unless\_zero()\_和对象状态不能互相替代
 
-`kref_get_unless_zero()` 只能判断：
+一个 DYING 对象可能仍由十个旧用户持有，条件 get 当然可以在健康计数上成功；它不读 state，也不读设备电源或请求队列。反过来，读到一个 LIVE 字段也不能证明计数字段的存储仍安全，尤其不能无保护地先检查 LIVE 再取得引用。
 
-```text
-引用计数是否非 0。
-```
-
-它不能判断：
-
-```text
-对象是否还允许新用户进入；
-对象是否处于 DYING；
-对象是否已经从业务上关闭；
-设备是否可用；
-请求是否已经完成。
-```
-
-所以不能写成：
-
-```c
-if (!kref_get_unless_zero(&obj->ref))
-	return NULL;
-
-return obj;
-```
-
-然后认为这就表示对象可用。
-
-更完整的 lookup 可能需要：
-
-```c
-mutex_lock(&my_obj_lock);
-
-obj = my_obj_find_locked(id);
-if (!obj)
-	goto out_null;
-
-if (obj->state != OBJ_LIVE)
-	goto out_null;
-
-if (!kref_get_unless_zero(&obj->ref))
-	goto out_null;
-
-mutex_unlock(&my_obj_lock);
-return obj;
-
-out_null:
-	mutex_unlock(&my_obj_lock);
-	return NULL;
-```
-
-这里三件事各自负责不同问题：
-
-```text
-find_locked：
-    找对象。
-
-state == OBJ_LIVE：
-    判断业务状态是否允许新用户进入。
-
-kref_get_unless_zero：
-    判断生命周期引用是否还能加入。
-```
-
-不要把其中任何一个当成全部安全模型。
-
-------
+因此判断顺序应从外向内：先进入地址保护窗口，再按同一业务协议检查是否允许接纳，再根据正计数是否已经得到保证选择普通或条件 get。失败退出只归还已经实际取得的责任。引用保护存储的时间范围，门锁保护业务决策的瞬间，两者配合才能说明一次操作为什么成立。
 
 ### 8.7.5\_RCU\_lookup\_的提前预告
 
-RCU lookup 是更复杂的 lookup 场景，本章只先给出核心边界。
+如果读请求非常密集，大家都围绕同一索引锁串行可能成为代价；RCU 型发布与读取允许读者在约定窗口内观察旧版本，但回收者必须等旧读者不再使用相应存储。这改变的是取得前的地址保护方法，不会自动交付一份长期引用。
 
-RCU 保护的是：
-
-```text
-读侧遍历期间，指针指向的内存不会立刻释放。
-```
-
-但 RCU 不自动给你对象引用。
-
-所以 RCU lookup 常见结构是：
+对于“摘除后立即归还发布份额、零计数回调延迟真正回收”的一种配套设计，读者在 RCU 窗口内可能看到零，必须条件取得：
 
 ```c
+/* 协议片段：find_rcu 的拓扑读取、发布及对象延迟回收已配套。 */
 rcu_read_lock();
-
-obj = my_obj_lookup_rcu(id);
-if (obj && kref_get_unless_zero(&obj->ref)) {
-	rcu_read_unlock();
-	return obj;
-}
-
+obj = find_rcu(id);
+if (obj && !kref_get_unless_zero(&obj->ref))
+    obj = NULL;
 rcu_read_unlock();
-return NULL;
+return obj; /* 非空才交付取得的一份。 */
 ```
 
-这个模型成立必须满足：
+这里不能让零计数回调直接 kfree 旧读者仍可能触达的存储。可以由回调安排延迟回收，也存在让发布份额保留到宽限期以后才归还的其他排序；不同排序会改变“读窗口内是否可能见零”的证明。具体选择回到[P06 的 RCU 边界](P06_release_回调与复杂销毁模式.md#6.8.1_release_和_RCU_的边界)与[P10 专章](P10_kref_与_RCU.md)，不能把所有 RCU 用法都限定为同一种 put 顺序。
 
-```text
-对象从 RCU 可见结构删除后，不能立即 kfree；
-对象内存必须撑过 RCU grace period；
-release 要用 kfree_rcu() 或 call_rcu() 之类的延迟释放方式；
-或者释放路径用 synchronize_rcu() 等方式等待读侧结束。
-```
-
-否则即使用了 `kref_get_unless_zero()`，也可能访问已经释放的 `obj->ref`。
-
-所以 RCU 场景的规则是：
-
-```text
-RCU 保证 get_unless_zero 时 obj 内存还在；
-get_unless_zero 成功后，kref 保证离开 RCU 后对象继续活着。
-```
-
-第 10 章会专门展开。
-
-------
+本段还没有给出完整 RCU 容器、发布/删除 API、身份验证和模块卸载流程，不能直接复制成一个可运行模块。特殊的地址复用协议也不由这个短模板覆盖。它只说明交接点：读窗口先保地址，正常条件取得成功以后自己的一份接续存储寿命。
 
 ### 8.7.6\_lookup\_与对象\_复活\_问题
 
-对象复活指的是：
+最后一份合法归还已经决定进入清理，随后再做普通 get 不能取消这个决定。以固定版本为例，普通 refcount 增加会在原子修改后检查旧值零并进入饱和诊断；所以“普通 get 不检查零”是不准确的。但诊断也不会回滚一个已经进入的 release，更不会使已经发生的资源清理自动恢复。
 
-```text
-refcount 已经归零；
-release 已经开始；
-另一个路径又把 refcount 加回去。
-```
-
-错误模型：
-
-```text
-CPU0                                CPU1
---------------------------------    -------------------------------
-kref_put(&obj->ref, release);
-refcount 变成 0;
-进入 release(obj);
-
-                                    obj = find_obj(id);
-                                    kref_get(&obj->ref);
-                                    // 以为对象又活了
-
-release(obj) 继续执行;
-kfree(obj);
-
-                                    使用 obj;
-                                    // UAF：使用了已经释放或正在释放的对象
-```
-
-这就是复活。
-
-普通 `kref_get()` 不会检查“原来是不是 0”。
-
-所以在可能遇到 0 的场景，要用：
-
-```c
-kref_get_unless_zero()
-```
-
-它的语义是：
-
-```text
-0 就不加；
-非 0 才加。
-```
-
-也就是说：
-
-```text
-已经走到最后释放点的对象，不能被重新拉回生命周期。
-```
-
-但是再次强调：
-
-```text
-防复活不等于防悬挂指针。
-```
-
-防悬挂指针靠：
-
-```text
-锁；
-RCU；
-延迟释放；
-集合引用；
-严格 remove 顺序。
-```
-
-防复活靠：
-
-```text
-kref_get_unless_zero()。
-```
-
-这两个问题不能混。
-
-------
+条件取得在有效地址上见零就正常失败，避免把这条失败路径伪装成成功的持有。它解决的是合法生命周期内的取得竞态；悬挂地址、重复初始化、异常计数与已复用存储是另外的协议错误，不能靠它恢复。具体旧值检查仍见[普通增加实现](../../../../research/source_reading/kref/source_explanations/include/linux/refcount.h.md#1.2_普通增加与异常检测)，不在此重复函数体。
 
 ## 8.8\_错误清单\_模板和检查项
 
-这一组内容作为本章最后的落地部分。
-
-先看错误清单，再看模板，最后用检查清单收尾：
-
-```text
-错误清单：识别常见 bug 形态。
-设计模板：把正确写法固定下来。
-检查清单：写代码或 review 时逐项确认。
-```
+前面的完整程序已经建立正例。最后反过来检查几个容易写出、也容易在评审中漏掉的错误，定位每一处缺失的保证。
 
 ### 8.8.1\_lookup\_的错误清单
 
 #### (1)\_无保护\_lookup\_后\_get
 
-错误：
-
-```c
-obj = my_obj_lookup_raw(id);
-if (obj)
-	kref_get(&obj->ref);
-```
-
-问题：
-
-```text
-obj 可能已经被删除和释放。
-```
-
-正确：
-
-```c
-mutex_lock(&my_obj_lock);
-obj = my_obj_find_locked(id);
-if (obj)
-	kref_get(&obj->ref);
-mutex_unlock(&my_obj_lock);
-```
-
-------
+错误在取得前的间隙。应把查找和 get 纳入同一保护窗口，或由明确持锁的调用者完成两步；只在查找函数内部短暂加锁仍会留下返回后的窗口。
 
 #### (2)\_以为\_kref\_get\_unless\_zero()\_可以替代锁
 
-错误：
-
-```c
-obj = my_obj_lookup_raw(id);
-if (obj && kref_get_unless_zero(&obj->ref))
-	return obj;
-```
-
-问题：
-
-```text
-obj 指针本身可能已经悬挂。
-```
-
-正确：
-
-```c
-mutex_lock(&my_obj_lock);
-obj = my_obj_find_locked(id);
-if (obj && !kref_get_unless_zero(&obj->ref))
-	obj = NULL;
-mutex_unlock(&my_obj_lock);
-return obj;
-```
-
-或者 RCU 配套延迟释放。
-
-------
+条件操作同样需要读计数地址。它只在存储已经被保护的前提下决定能否加入引用者；没有地址证明时，两种 get 都不能调用。
 
 #### (3)\_lookup\_返回裸指针给锁外使用
 
-错误：
-
-```c
-mutex_lock(&my_obj_lock);
-obj = my_obj_find_locked(id);
-mutex_unlock(&my_obj_lock);
-
-obj->state = OBJ_BUSY;      /* 错误 */
-```
-
-问题：
-
-```text
-离开锁后，没有引用保护；
-obj 可能已经被释放。
-```
-
-正确：
-
-```c
-mutex_lock(&my_obj_lock);
-obj = my_obj_find_locked(id);
-if (obj)
-	kref_get(&obj->ref);
-mutex_unlock(&my_obj_lock);
-
-if (!obj)
-	return -ENOENT;
-
-obj->state = OBJ_BUSY;
-
-kref_put(&obj->ref, my_obj_release);
-```
-
-------
+若需要对象身份跨越临界区，锁内取得后再返回；若只需要某个值，锁内复制这个值即可。即使已经取得引用，锁外 `obj->state = OBJ_BUSY` 也不自动正确：state 若与其他路径共享，仍要持其规定的锁。不要把存储寿命修复误当作字段竞争也已消失。
 
 #### (4)\_remove\_时先\_put\_后\_unlink
 
-错误：
-
-```c
-kref_put(&obj->ref, my_obj_release);
-
-mutex_lock(&my_obj_lock);
-list_del_init(&obj->node);
-mutex_unlock(&my_obj_lock);
-```
-
-问题：
-
-```text
-put 可能释放 obj；
-后续 list_del 访问释放内存；
-其他 lookup 可能看到悬挂节点。
-```
-
-正确：
-
-```c
-mutex_lock(&my_obj_lock);
-list_del_init(&obj->node);
-mutex_unlock(&my_obj_lock);
-
-kref_put(&obj->ref, my_obj_release);
-```
-
-------
+拥有型容器必须先撤下，再归还本次成员份额；否则 get 的正计数依据和节点本身都可能失效。非拥有型回调摘链须按 8.4 的独立协议证明，不能截取这个顺序当成无条件规则。对允许重复调用的 remove，还要确认“本次确实摘下”才 put。
 
 #### (5)\_lookup\_成功后忘记\_put
 
-错误：
-
-```c
-obj = my_obj_lookup_get(id);
-if (!obj)
-	return -ENOENT;
-
-do_something(obj);
-return 0;
-```
-
-问题：
-
-```text
-lookup_get 返回带引用对象；
-调用者忘记 put；
-对象泄漏。
-```
-
-正确：
-
-```c
-obj = my_obj_lookup_get(id);
-if (!obj)
-	return -ENOENT;
-
-do_something(obj);
-
-kref_put(&obj->ref, my_obj_release);
-return 0;
-```
-
-------
+所有成功取得的出口都应对应一次最终归还或一次明确的责任交付。把 prepare 和 process 的失败出口汇聚到 out_put 可以降低遗漏机会；但先核对这两个函数是否消费引用，不能用统一标签掩盖双重归还。
 
 #### (6)\_lookup\_得到引用后\_handoff\_失败忘记回滚
 
-错误：
-
-```c
-obj = my_obj_lookup_get(id);
-if (!obj)
-	return -ENOENT;
-
-ret = my_obj_schedule_work_take(obj);
-if (ret)
-	return ret;     /* 错误：lookup 引用泄漏 */
-```
-
-正确：
-
-```c
-obj = my_obj_lookup_get(id);
-if (!obj)
-	return -ENOENT;
-
-ret = my_obj_schedule_work_take(obj);
-if (ret) {
-	kref_put(&obj->ref, my_obj_release);
-	return ret;
-}
-
-return 0;
-```
-
-------
+对“成功消费、失败保留”的 take 接口，失败后责任仍在查找者，必须归还；对 ref 接口，发送者保留原份额，接收者内部负责预留的成败。要按契约画责任箭头，不能仅凭错误码分支就机械加一个 put。
 
 ### 8.8.2\_lookup\_函数设计模板
 
+这些模板是前面完整模型的选择入口，不再复制一组容易单独漂移的函数。每项都指出取得前、窗口内、返回后三个时点的保证。
+
 #### (1)\_list\_+\_mutex\_模板
 
-```c
-struct my_obj *my_obj_lookup_get(int id)
-{
-	struct my_obj *obj;
-
-	mutex_lock(&my_obj_lock);
-
-	list_for_each_entry(obj, &my_obj_list, node) {
-		if (obj->id == id) {
-			kref_get(&obj->ref);
-			mutex_unlock(&my_obj_lock);
-			return obj;
-		}
-	}
-
-	mutex_unlock(&my_obj_lock);
-	return NULL;
-}
-```
-
-------
+使用 [8.3 完整登记模型](#8.3.1_正确模型一_mutex/list_lookup_+_kref_get%28%29)及其链表扩展：成员拥有一份，同锁遍历、比较键和普通 get，解锁后交付一份。重复删除只归还实际摘下的成员责任。
 
 #### (2)\_list\_+\_mutex\_+\_state\_模板
 
-```c
-struct my_obj *my_obj_lookup_get_live(int id)
-{
-	struct my_obj *obj;
-
-	mutex_lock(&my_obj_lock);
-
-	list_for_each_entry(obj, &my_obj_list, node) {
-		if (obj->id != id)
-			continue;
-
-		if (obj->state != OBJ_LIVE)
-			break;
-
-		kref_get(&obj->ref);
-		mutex_unlock(&my_obj_lock);
-		return obj;
-	}
-
-	mutex_unlock(&my_obj_lock);
-	return NULL;
-}
-```
-
-------
+在上一项的同锁窗口内增加 state 判断，并让关闭者依同锁写状态。成功只证明取得决策时的许可，后续操作是否允许仍由业务门或排空协议规定。不能以加了 enum 就宣称整个关闭状态机完成。
 
 #### (3)\_hash\_+\_spinlock\_模板
 
-```c
-struct my_obj *my_obj_hash_lookup_get(u32 id)
-{
-	struct my_obj *obj;
-
-	spin_lock(&my_obj_ht_lock);
-
-	hash_for_each_possible(my_obj_ht, obj, hnode, id) {
-		if (obj->id == id) {
-			kref_get(&obj->ref);
-			spin_unlock(&my_obj_ht_lock);
-			return obj;
-		}
-	}
-
-	spin_unlock(&my_obj_ht_lock);
-	return NULL;
-}
-```
-
-------
+使用 [8.5 哈希配对函数](#8.5.1_hash_table_lookup_的引用规则)：桶候选仍须比较键，锁内取得，成员删除后解锁归还。全局锁、唯一表成员、无中断侧调用是本例前提；扩展锁粒度或上下文时重审所有入口。
 
 #### (4)\_xarray\_+\_lock\_模板
 
-```c
-struct my_obj *my_obj_xa_lookup_get(unsigned long index)
-{
-	struct my_obj *obj;
-
-	xa_lock(&my_obj_xa);
-
-	obj = xa_load(&my_obj_xa, index);
-	if (obj)
-		kref_get(&obj->ref);
-
-	xa_unlock(&my_obj_xa);
-
-	return obj;
-}
-```
-
-------
+使用 [8.5 完整 XArray 模块](#8.5.2_xarray_lookup_的引用规则)：外层 xa_lock 覆盖 load/get，插入和删除采用各自自行加锁的包装，删除的旧条目在锁外归还。不要把所有 API 统一外包同一锁；普通对象指针假设也不能忘掉。
 
 #### (5)\_RCU\_+\_kref\_get\_unless\_zero()\_模板预告
 
-```c
-struct my_obj *my_obj_lookup_get_rcu(int id)
-{
-	struct my_obj *obj;
-
-	rcu_read_lock();
-
-	obj = my_obj_lookup_rcu(id);
-	if (obj && !kref_get_unless_zero(&obj->ref))
-		obj = NULL;
-
-	rcu_read_unlock();
-
-	return obj;
-}
-```
-
-这个模板不能单独复制使用。
-
-它依赖释放路径：
-
-```text
-删除时先从 RCU 可见结构 unlink；
-对象内存延迟释放到 grace period 之后；
-release 不能直接 kfree 给 RCU 读侧制造悬挂指针。
-```
-
-第 10 章再详细展开。
-
-------
+只在 [8.7 的配套回收前提](#8.7.5_RCU_lookup_的提前预告)下成立：读窗口保护取引用时的地址，条件取得成功后才可跨出窗口；失败不 put。完整实现还须补齐发布、摘除、延迟回收与卸载，不能独立取走几行代码。
 
 ### 8.8.3\_lookup\_API\_的命名建议
 
-推荐命名：
+| 名称形式 | 提示的语义 | 必须在注释中补充 |
+| --- | --- | --- |
+| find_locked / peek_locked | 借出调用者持锁期间的地址 | 哪把锁、字段权限、不得凭本次返回 put |
+| lookup_get / get_by_id | 成功交付一份 | 失败结果、对应 put、是否检查业务状态 |
+| tryget | 从已有地址尝试取得 | 谁保证地址有效，零值失败没有责任 |
+| lookup / find / get / search | 单靠名称不能区分 | 必须明确借用、交付或值复制 |
 
-```c
-my_obj_find_locked()
-```
-
-语义：
-
-```text
-调用者必须持锁；
-返回裸指针；
-不能在锁外使用；
-不增加引用。
-```
-
-推荐命名：
-
-```c
-my_obj_lookup_get()
-```
-
-语义：
-
-```text
-内部完成 lookup + get；
-返回成功时调用者持有引用；
-调用者必须 put。
-```
-
-推荐命名：
-
-```c
-my_obj_get_by_id()
-```
-
-语义：
-
-```text
-按 ID 查找对象；
-成功返回带引用对象。
-```
-
-推荐命名：
-
-```c
-my_obj_tryget()
-```
-
-语义：
-
-```text
-尝试从已有对象指针获得引用；
-通常基于 kref_get_unless_zero；
-但调用者仍要保证 obj 指针内存有效。
-```
-
-不推荐含糊命名：
-
-```c
-my_obj_lookup()
-my_obj_find()
-my_obj_get()
-my_obj_search()
-```
-
-除非注释明确说明：
-
-```text
-是否返回引用；
-调用者是否要 put；
-是否只能锁内使用；
-失败时是否可能是对象正在退出。
-```
-
-------
+名称统一有助于评审，但不是修改既有外部 API 名称的理由。本章示例中 registry_lookup 的实际契约已经明确，不因少了 get 后缀就成为另一种返回语义。
 
 ### 8.8.4\_本章检查清单
 
-写 lookup 代码时，逐项检查：
+评审一条完整路径时，按时间顺序回答：
 
-```text
-1. lookup 返回的是裸指针，还是带引用对象？
-2. 如果是裸指针，是否只在锁内使用？
-3. 如果要锁外使用，是否在锁内完成 kref_get？
-4. kref_get 前由什么机制证明 obj 有效？
-5. 集合是否持有对象引用？
-6. 对象插入集合时是否 get？
-7. 对象从集合删除时是否先 unlink 再 put？
-8. 所有 add/del/lookup 是否使用同一把锁或同一套同步机制？
-9. lookup 是否需要检查对象状态？
-10. 状态检查和 get 是否在同一临界区完成？
-11. 是否错误地用 kref_get_unless_zero 替代锁？
-12. RCU lookup 是否配套延迟释放？
-13. lookup_get 成功后调用者是否所有路径都 put？
-14. lookup 后 handoff 失败路径是否回滚 put？
-15. 函数名是否说明 find_locked / lookup_get / tryget 语义？
-```
+1. 发布以前哪些字段已经初始化，容器的一份来自预留还是转交？失败怎样归还？
+2. 查找读的是哪个共享入口，哪把锁或哪段窗口覆盖了成员访问到取得完成？
+3. 当前窗口只保证地址，还是也保证计数正？普通/条件取得的选择据此成立吗？
+4. 是否还需要业务状态与身份检查，其写入路径和读取路径如何同步？
+5. 返回值交付几份，所有同步出口和异步交付分支由谁最终归还？
+6. 删除取得的是哪次成员关系的一份，重复调用、编号复用和重新发布是否会改变对象身份？
+7. 最后归还在哪个上下文触发清理，锁、RCU 与外部异步来源是否满足相应退出前提？
+8. 验证覆盖了哪些具体分支，哪些仅是顺序替身、静态推演或尚未执行的目标步骤？
 
-最关键的是这几个问题：
-
-```text
-我拿到的是指针，还是引用？
-get 前对象由谁保护？
-返回后谁负责 put？
-对象从哪里撤销可见性？
-最后释放是否可能和 lookup 并发？
-```
-
-------
+本章没有要求每种容器都改用条件 get，也没有要求所有查询都返回引用。能在锁内完成的值查询保持简单；需要跨窗口持有对象时再建立独立份额；只有地址稳定却不再保证正计数时才需要正常失败的条件取得。
 
 ## 8.9\_本章小结
 
-lookup 是 kref 使用里最容易误判的场景。
+现在应能解释同一对象为什么可以“已经从表中撤下，但旧读者仍安全”，也能指出“还挂在非拥有索引中，却已经是零计数”的具体窗口。两者并不矛盾：成员关系、地址期限和独立引用是不同状态，必须沿相同的发布、取得和退出协议连接起来。
 
-因为 lookup 不是简单地从容器中拿一个地址，而是要完成下面的转换：
+用三个小任务检验理解：画出查找与撤下的两种先后顺序，标出自己的一份在哪里出现；在条件 C 程序中解释同样一次比较失败为什么既可能返回失败也可能重试成功；对完整 XArray 程序说明为什么查询要外层加锁、删除反而不能重复套锁。答案分别来自窗口内 get、失败更新的 old，以及具体 API 的锁覆盖范围。
 
-```text
-共享结构中的裸指针
-    -> 保护机制证明对象仍然有效
-        -> kref_get / kref_get_unless_zero
-            -> 当前路径持有有效引用
-```
+最后做一道接口修改练习：让查询只返回不可变编号副本。若复制发生在拥有型查找锁内，且返回后不再访问对象，就可以省掉新增引用；若改为返回对象并异步执行，就重新需要份额或完整借用协议。请先说明责任变化，再改代码，而不要从“哪一种 get 更安全”开始碰运气。
 
-本章核心结论：
-
-```text
-1. 有指针不等于有引用。
-2. lookup 后不能无保护 kref_get。
-3. kref_get 前必须证明对象有效。
-4. kref_get_unless_zero 只防止从 0 复活，不防止悬挂指针。
-5. 锁保护集合关系，kref 保护对象生命周期。
-6. RCU 保护读侧内存可见性，kref 保护拿到引用后的生命周期。
-7. remove 路径必须先 unlink，再 put。
-8. lookup_get 成功返回时，调用者必须 put。
-```
-
-再压缩成一句话：
-
-```text
-lookup 的目标不是找到对象，而是在对象仍然活着的时候拿到一份引用。
-```
-
-不要把代码写成：
-
-```text
-find pointer
-then maybe get
-```
-
-而要写成：
-
-```text
-protected lookup
-then get
-then return referenced object
-```
-
-这才是 kref lookup 场景的正确工程模型。
-
-------
+取得引用以后，业务字段仍需要同步；最后归还又可能立刻执行回调。下一章继续讨论 kref 与锁的组合，把字段锁、集合锁和回调取得锁的顺序放在同一条路径上检查。
 
 专题导航：[kref 引用计数机制章节大纲](大纲.md)。
 
 上一篇：[handoff 所有权转移模型](P07_handoff_所有权转移模型.md#7.8_本章小结)。
 
-下一篇：[kref 与锁的组合](P09_kref_与锁的组合.md)。
+下一篇：[kref 与锁的组合](P09_kref_与锁的组合.md#9.1_本章定位)。

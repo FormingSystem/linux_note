@@ -274,3 +274,5 @@ B04z 冷读 P08 全篇，先重写[8.1～8.3 查找取得窗口](../../knowledge
 B04aa 完成[P08 条件取得单元](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.4.3_kref_get_unless_zero%28%29_仍然需要锁或_RCU)，按同一非拥有索引解释地址保护、锁外归零、回调等待与比较重试，复用完整 C11 模型。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.90_B04aa条件取得与回调等待)保留验证边界；继续 8.5 容器，P08 未标完成。
 
 B04ab 完成[P08 三类容器](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.5.2_xarray_lookup_的引用规则)，新增完整 XArray 模块及固定整数索引源码导读，纠正重复加锁、重复撤下与 IDR 字段发布顺序。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.91_B04ab容器锁与编号发布)列出六组替身检查与目标边界；继续 8.6～8.9，P08 仍 pending。
+
+B04ac 收束[P08 返回责任与退出](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.6_lookup_API_契约_返回裸指针还是返回引用)的 8.6～8.9，修正持引用后字段写入、重复删除和普通 get 零值诊断边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.92_B04ac查找返回契约与关闭收束)记录保留与验证依据；P08 分批作者审查完成，下一项 P09，全仓继续。
