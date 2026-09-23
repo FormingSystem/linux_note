@@ -1339,7 +1339,7 @@ struct kref ref;
 
 ### 9.2.8\_节点生命周期为什么由调用者管理
 
-Linux rbtree 不负责分配节点，也不负责释放节点。
+上一节解决了怎样比较以及数据从哪里读，现在设想取消 id=7 的任务：已经从按时间索引摘掉它，但按 id 索引仍能找到它，另一个使用者还保存着先前取得的指针。这时只有一条入口变化了，不能据此销毁对象。Linux rbtree 不负责分配或释放业务对象，原因首先是它不知道这些入口与持有者。
 
 也就是说，rbtree 不会帮你做：
 
@@ -1357,7 +1357,7 @@ kfree();
 维护删除后的颜色和平衡。
 ```
 
-但是，业务对象什么时候分配、什么时候初始化、什么时候可以释放、是否还有并发读者、是否需要引用计数、是否需要 RCU 延迟释放，这些都不属于 rbtree 的职责范围。
+对象的 **树成员关系、外部入口、持有引用和存储寿命** 是几组正交状态，不是一个“在树/已释放”二态开关。删除只改变其中一部分。引用计数记录已经取得的持有权；RCU（Read-Copy Update，读侧保护与延迟回收机制）可让指定旧读侧继续访问被撤下的对象。这些都需要调用者完整接入，不能仅在删除末尾补一条函数调用。
 
 所以必须先建立一个清晰边界：
 
@@ -1380,7 +1380,7 @@ rb_erase() 只表示“节点离开树结构”；
 graph TD
 	alloc_obj["调用者分配业务对象"]
 	init_obj["初始化业务字段"]
-	clear_before["初始化 rb 状态<br/> RB_CLEAR_NODE"]
+	clear_before["采用游离协议时<br/>初始化私有节点标记"]
 	lock_insert["进入插入临界区"]
 	search_pos["按统一比较规则搜索插入位置"]
 	link_obj["rb_link_node 挂入 BST 位置"]
@@ -1388,8 +1388,8 @@ graph TD
 	in_tree["对象处于 rbtree 中"]
 	lock_delete["进入删除临界区"]
 	erase_obj["rb_erase 从树中摘除"]
-	clear_after["可选 RB_CLEAR_NODE"]
-	check_refs["确认无并发读者 / <br/>引用归零 / RCU 宽限期结束"]
+	clear_after["仅在旧路径不再需要字段时<br/>可选清游离标记"]
+	check_refs["满足本协议全部回收条件<br/>其他入口、持有引用与旧读者"]
 	free_obj["调用者释放业务对象"]
 
 	alloc_obj --> init_obj
@@ -1420,9 +1420,9 @@ graph TD
 ```text
 rb_erase()
     ↓
-可选 RB_CLEAR_NODE()
+在字段可修改时记录游离（并非必须）
     ↓
-确认无访问者
+确认全部入口与持有者满足回收条件
     ↓
 释放对象
 ```
@@ -1436,19 +1436,19 @@ kfree(item);
 
 然后默认认为这就是安全流程。
 
-这段代码只有在非常受限的场景下才成立：
+这段简化代码成立的关键是对象确由匹配 kfree 的分配方式创建，并且调用者已经排除了所有仍可能访问它的路径。下面列出一种足够条件，不是说所有实现都必须没有引用计数：
 
 ```text
 没有并发读者；
 没有 RCU 查找；
 没有引用计数；
 对象没有挂在其他结构中；
-没有 timer / workqueue / 中断 / DMA / 回调路径仍可能访问对象；
+没有定时器、工作队列、中断、硬件直接内存访问或回调仍可能访问对象；
 调用者已经持有正确的锁；
-树是该对象的唯一所有者。
+树外没有未交还的持有权。
 ```
 
-如果这些条件不满足，`rb_erase()` 后立即 `kfree()` 就可能变成 use-after-free。
+如果这些条件不满足，`rb_erase()` 后立即 `kfree()` 就可能变成释放后使用（use-after-free）：旧指针数值未消失，指向的存储却已经归还分配器，甚至分给了另一个对象。
 
 ------
 
@@ -1471,13 +1471,11 @@ RB_CLEAR_NODE(&item->rb);
 kfree(item);
 ```
 
-这里的 `RB_CLEAR_NODE()` 不是释放动作，它只是把节点标记成“不在树中”。
-
-如果对象马上释放，`RB_CLEAR_NODE()` 不是绝对必要；但是在模板代码或可复用对象场景中，保留它更安全，能够避免后续误判节点仍然挂在树中。
+这里的 `RB_CLEAR_NODE()` 把父色字段写成自身地址，只是调用者约定的游离标记；它不搜索树，也不会自动摘除节点。若对象马上释放且没有后续标记检查，清标记没有必要。复用对象时是否执行它，要先确认旧路径不再读取该字段，再按同一成员协议初始化；不能把“多写一次总更安全”当作规则。具体语句见[游离标记实现](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.8_游离标记不等于成员搜索)。
 
 ------
 
-更严谨的删除接口通常应该拆成两步。
+拆开摘除和销毁，可以显式表达所有权交接，但拆成两个函数本身不增加安全性。下面是 **受同一锁保护、查找者不在解锁后保留裸指针、没有额外引用或延迟读者** 的片段；移除成功后把唯一持有权交给调用者。`-EINVAL` 表示参数无效，`-ENOENT` 表示没有该对象。
 
 第一步，只负责从树中摘除对象：
 
@@ -1507,8 +1505,8 @@ static int my_tree_remove(struct my_tree *tree, int key,
 	rb_erase(&item->rb, &tree->root);
 
 	/*
-	 * 如果对象后续可能复用，或者代码需要判断节点是否仍在树中，
-	 * 可以清理 rb_node 状态。
+	 * 本例没有保留旧节点字段的读者，并采用游离标记协议。
+	 * 其他并发协议不能照搬这个写入时机。
 	 */
 	RB_CLEAR_NODE(&item->rb);
 
@@ -1530,7 +1528,7 @@ if (!ret)
 	kfree(item);
 ```
 
-这种写法比直接在删除函数内部 `kfree()` 更清晰，因为它把两个动作分开了：
+这里的返回值不仅传出地址，还按上述约定移交持有权。如果真实对象还有引用或异步访问者，第二步就必须变为其 put/延迟回收操作，不能原样 kfree。两个动作分别是：
 
 ```text
 从树中摘除；
@@ -1541,7 +1539,9 @@ if (!ret)
 
 ------
 
-如果存在 RCU 读侧查找，那么删除后不能立即释放对象。
+若读者在 RCU 读侧范围内保存对象地址，写者的锁只串行化更新者，不会自动等这些读者退出。已经持有旧地址的人仍需要原存储。RCU 宽限期用于确认与本次回收相关的旧读侧已结束，它不自动等待逃出读侧范围的裸指针，也不抵消额外引用。
+
+下面只展示一个已经满足 rbtree 读写兼容、发布取得、写者串行化和所有引用不逃逸前提的 **回收片段**，不是任意树查找加上 rcu_read_lock 就能安全的完整实现。具体下行与漏查边界从[查找模块](../../../../research/source_reading/rbtree/navigation/P02_查找路径与返回边界导读.md#2.4_旋转期间沿什么路径继续)进入。
 
 错误示例：
 
@@ -1553,18 +1553,19 @@ spin_unlock(&tree->lock);
 kfree(item);	/* 错误：RCU 读者可能仍然持有 item */
 ```
 
-更合理的模型是：
+在上述前提下，把最终回收排到旧读侧退出之后：
 
 ```c
 spin_lock(&tree->lock);
 
 rb_erase(&item->rb, &tree->root);
-RB_CLEAR_NODE(&item->rb);
+/* 此处不清旧节点字段；也不立即复用或重新挂入它。 */
 
 spin_unlock(&tree->lock);
 
 /*
- * 等待 RCU 读侧临界区结束后再释放对象。
+ * 排队回收回调；call_rcu 本身不等待宽限期完成。
+ * 此后当前写者也不再使用 item；本片段没有额外持有引用。
  */
 call_rcu(&item->rcu, my_node_rcu_free);
 ```
@@ -1589,7 +1590,7 @@ graph TD
 	rcu_reader["RCU 读者可能查到对象"]
 	writer_lock["写侧加锁"]
 	erase_obj["rb_erase 摘除节点"]
-	clear_obj["RB_CLEAR_NODE"]
+	clear_obj["保留旧节点字段<br/>不清标记或复用"]
 	unlock_writer["写侧解锁"]
 	call_rcu_node["call_rcu 延迟释放"]
 	grace_period["等待 RCU grace period"]
@@ -1617,8 +1618,9 @@ graph TD
 这张图的核心是：
 
 ```text
-rb_erase() 只是让后续新查找不能再从树中找到该对象；
-但已经开始的 RCU 读者，可能仍然持有旧对象指针。
+摘除撤掉当前树中的成员入口，不会撤销旧读者已取得的地址；
+已经在旧路径中的查询仍可能取得或使用旧对象；
+其他索引和读侧外持有引用也必须按各自协议关闭。
 ```
 
 所以 RCU 场景下，删除和释放必须分离。
@@ -1633,18 +1635,18 @@ rb_erase() 只是让后续新查找不能再从树中找到该对象；
 这个对象不再能通过树查到。
 ```
 
-但对象是否释放，要看引用计数是否归零。
+在纯引用计数协议下，每个持有者取得引用后才可越过保护窗口继续使用；每次放弃只撤销自己的一份持有权。计数归零时调用匹配的释放操作。若另有 RCU 旧读者等未计入该计数的访问者，还要同时满足它们的退出条件。
 
 示意流程如下：
 
 ```mermaid
 graph TD
 	in_tree["对象在 rbtree 中"]
-	lookup_get["查找路径获取引用"]
-	other_user["其他路径持有引用"]
+	lookup_get["在入口保护范围内<br/>查找并获取引用"]
+	other_user["已合法取得引用的其他路径"]
 	remove_tree["rb_erase 从树中摘除"]
 	not_find["后续不能再从树中查到"]
-	put_ref["释放一个引用"]
+	put_ref["各持有者放弃自己的一份引用"]
 	ref_zero{"引用计数为 0?"}
 	keep_alive["对象继续存活"]
 	free_obj["释放对象"]
@@ -1676,15 +1678,169 @@ rb_erase(&item->rb, root);
 kfree(item);
 ```
 
-而应该是：
+例如树成员关系拥有一份引用，并且旧字段已可修改时，摘除者放弃的就是这份引用：
 
 ```c
+/* 已持有保护，采用纯引用计数与游离标记协议。 */
 rb_erase(&item->rb, root);
 RB_CLEAR_NODE(&item->rb);
 my_node_put(item);
 ```
 
-至于 `my_node_put()` 里面是否真正释放对象，要看引用计数。
+`my_node_put()` 放弃的引用必须有来源，不能因为刚调用过 rb_erase 就凭空 put。查找者若先解锁，再对刚才的裸指针加引用，中间可能已被另一个线程摘除并归还；因此“找到地址”和“取得引用”的窗口必须有保护。引用保护对象存在，不自动保护红黑树多字段更新。下面的单线程模型把这些持有权逐个记出来。
+
+#### (1)\_两个入口关闭之后谁还在使用对象
+
+仍是 id=7 的任务，两个索引各持有一份引用，读者在查到对象时再取得一份。这里采用入口关闭后才放弃对应引用的协议；为只观察寿命，索引简化为两个指针槽，没有树算法或真实并发。阶段与状态如下：
+
+| 阶段 | 写入者与状态地址 | 谁随后读取，何时能继续 |
+| --- | --- | --- |
+| S0 私有准备 | 创建者分配 job，写 references=1、id=7 | 只有创建者访问，尚无共享入口 |
+| S1 建立入口 | 创建者给 by_time、by_id 两槽赋地址，各增加一份引用，再交出自己的引用 | 两槽可供查找，计数为 2；真实版本须先初始化后按协议发布 |
+| S2 借出 | 查找路径在保护窗口内读取 by_time，并对 job.references 加一 | reader 保存地址并持有引用，计数为 3 |
+| S3 撤主入口 | 摘除者将 by_time 清空，放弃它的引用 | by_id 仍可达，reader 仍可用，计数为 2 |
+| S4 关其余入口 | 摘除者将 by_id 清空，放弃它的引用 | 新查询为空，但 reader 的一份引用仍保持存储，计数为 1 |
+| S5 最后退出 | reader 最后使用后 put，计数变 0，释放函数归还存储 | 不得再读旧对象；示例只读取对象外 destroyed 计数 |
+
+```mermaid
+flowchart LR
+    creator[创建者] -->|S0 分配并初始化| obj[job：id 与 references]
+    time[by_time 入口槽] -->|S1 持有一份引用并保存地址| obj
+    ids[by_id 入口槽] -->|S1 持有另一份引用并保存地址| obj
+    lookup[受保护的查找路径] -->|S2 读取入口并加引用| obj
+    lookup -->|返回持有地址| reader[读者 reader]
+    remover[摘除者] -->|S3 清槽再 put| time
+    remover -->|S4 清槽再 put| ids
+    reader -->|S5 最后 put| obj
+    obj -->|仅最后引用归零| allocator[分配器回收存储]
+```
+
+```mermaid
+sequenceDiagram
+    participant W as 入口拥有者
+    participant I as 两个索引槽
+    participant O as job.references与载荷
+    participant R as 持有引用的读者
+    W->>O: S0 创建引用为1
+    W->>I: S1 建立两入口，各拥有一份引用
+    W->>O: S1 放弃创建引用，余2
+    R->>I: S2 在保护窗口内查找
+    R->>O: S2 加引用到3后才离开保护窗口
+    W->>I: S3 关闭主入口
+    W->>O: 放弃主入口引用，余2
+    W->>I: S4 关闭其余入口
+    W->>O: 放弃第二入口引用，余1
+    alt 读者延迟退出
+        R->>O: S4 仍可使用id，不能提前回收
+    end
+    R->>O: S5 最后put到0并回收
+```
+
+完整 [indexed_lifetime.c](../../../../labs/kernel/tree_basics/materials/indexed_lifetime.c) 如下。引用数使用普通整数，只适用于这个串行模型；真实并发不能把它直接替代内核引用计数设施。
+
+```c
+/* C11 单线程所有权模型：两个索引入口、一个借出者，不实现树或 RCU。 */
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+struct job {
+    unsigned int id;
+    unsigned int references;
+};
+
+static unsigned int destroyed;
+
+static void job_get(struct job *item)
+{
+    assert(item && item->references > 0);
+    ++item->references;
+}
+
+static void job_put(struct job *item)
+{
+    assert(item && item->references > 0);
+    if (--item->references == 0) {
+        ++destroyed;
+        free(item);
+    }
+}
+
+static struct job *lookup_get(struct job *index)
+{
+    /* 真实并发版本必须保护“找到入口至取得引用”的整个窗口。 */
+    if (index)
+        job_get(index);
+    return index;
+}
+
+static void withdraw(struct job **index)
+{
+    struct job *old = *index;
+    *index = NULL;                 /* 先撤入口，再放弃该入口持有的引用。 */
+    if (old)
+        job_put(old);
+}
+
+int main(void)
+{
+    struct job *item = malloc(sizeof *item);
+    if (!item)
+        return EXIT_FAILURE;
+    *item = (struct job){ .id = 7, .references = 1 };
+    puts("S0 private: creator owns 1 reference");
+
+    job_get(item);
+    struct job *by_time = item;
+    job_get(item);
+    struct job *by_id = item;
+    job_put(item);                 /* 交出创建者引用，两个索引各保留一个。 */
+    item = NULL;
+    printf("S1 published: references=%u\n", by_time->references);
+
+    struct job *reader = lookup_get(by_time);
+    assert(reader && reader->id == 7);
+    printf("S2 reader holds: references=%u\n", reader->references);
+    withdraw(&by_time);
+    assert(!by_time && by_id && destroyed == 0);
+    printf("S3 first index closed: references=%u\n", reader->references);
+
+    withdraw(&by_id);
+    assert(!by_time && !by_id && lookup_get(by_time) == NULL);
+    assert(reader->references == 1 && destroyed == 0);
+    printf("S4 all entries closed: reader still uses id=%u\n", reader->id);
+    job_put(reader);
+    reader = NULL;                /* 最后放弃后不再读取已销毁对象。 */
+    assert(destroyed == 1);
+    printf("S5 final put: destroyed=%u\n", destroyed);
+    return EXIT_SUCCESS;
+}
+```
+
+从仓库根目录运行：
+
+```bash
+mkdir -p .cache/rb_lifetime
+cc -std=c11 -Wall -Wextra -Werror -pedantic \
+    labs/kernel/tree_basics/materials/indexed_lifetime.c \
+    -o .cache/rb_lifetime/indexed_lifetime
+.cache/rb_lifetime/indexed_lifetime
+```
+
+```text
+S0 private: creator owns 1 reference
+S1 published: references=2
+S2 reader holds: references=3
+S3 first index closed: references=2
+S4 all entries closed: reader still uses id=7
+S5 final put: destroyed=1
+```
+
+把 S4 与 S5 对照：在 S4 通过任意索引都找不到任务，却仍能合法读取 reader->id；S5 交还最后引用后，只能读对象外的统计，不能“为了确认释放”再访问 reader。分配失败时程序直接返回失败，没有已发布入口需要撤销。
+
+试着交换两个 withdraw 的顺序，最终结果应相同；再让读者在关闭索引之前就 put，预测对象会在哪次 withdraw 中释放。两种顺序都必须保持每份引用恰好交还一次，不能用同一裸地址再伪造一个持有者。重复关闭已为 NULL 的入口应无动作，这与对仍然持有旧地址的对象重复 put 不同。
+
+若改用不加引用的 RCU 读者，S2～S4 的计数表就不再适用：S4 还需要等待相关旧读侧退出，S5 才能销毁；若同时允许长期引用，则这两个条件都要满足。这个模型没有实现 RCU、锁或内存顺序，不能据其输出宣称并发安全。
 
 ------
 
@@ -1742,7 +1898,7 @@ graph TD
 	obj_alloc["对象分配"]
 	obj_init["业务初始化"]
 	obj_cmp["比较规则"]
-	obj_lock["锁 / RCU / 引用计数"]
+	obj_lock["结构保护、旧读者退出<br/>与合法引用持有分别设计"]
 	obj_clear["节点状态清理"]
 	obj_free["对象释放"]
 
@@ -1776,7 +1932,7 @@ graph TD
 `RB_EMPTY_NODE()` 的意义是：
 
 ```text
-检查 rb_node 是否处于这种“未挂树 / 已清理”状态。
+检查父色字段是否等于自身地址这一约定标记。
 ```
 
 但是它们不是同步机制。
@@ -1790,7 +1946,7 @@ if (!RB_EMPTY_NODE(&item->rb)) {
 }
 ```
 
-这段代码在没有并发的情况下可以表达节点状态检查；但在并发场景下，两个线程可能同时判断、同时删除，仍然会出问题。
+只有对象始终存活、标记协议一直成立且 root 确为所属树时，这段代码才可据标记判断是否摘除；但在并发场景下，两个线程可能同时判断、同时删除，仍然会出问题。
 
 所以必须记住：
 
@@ -1801,16 +1957,7 @@ rb_erase() 不是锁；
 rbtree 本身不提供并发保护。
 ```
 
-并发场景必须由调用者使用：
-
-```text
-spinlock；
-mutex；
-rwlock；
-RCU；
-引用计数；
-或者其他业务同步机制。
-```
+并发设计要分别回答三件事：用符合执行上下文的锁等方式串行化树更新并保护所需观察范围；读者从入口取得对象时怎样确保地址与内容有效；最后一条可达或持有路径退出后怎样回收。自旋锁、互斥锁或读写锁能提供的等待/排他条件不同；RCU 和引用计数也不能互相替代，更不自动串行化更新。详细机制在后续同步与寿命专题展开，本节先把责任分开。
 
 本小节的结论是：
 
@@ -1828,7 +1975,7 @@ rb_erase() 只表示节点离开 rbtree；
 
 本节的核心是理解 Linux rbtree 的嵌入式节点设计。
 
-Linux rbtree 和普通泛型容器最大的区别是：
+与本节用来对照的外部包装设计相比：
 
 ```text
 普通泛型容器：容器拥有节点，节点再指向业务对象；
@@ -1894,14 +2041,9 @@ item = rb_entry(node, struct my_node, rb);
 
 第三，Linux rbtree 不把 key 放进 `struct rb_node`，因为内核对象的 key 形态没有统一标准。
 
-第四，Linux rbtree 不强制统一比较回调，因为比较规则往往就是业务语义的一部分。
+第四，Linux rbtree 不强制一种比较调用方式；业务先定义键序与重复政策，再选择匹配的辅助接口或手写搜索。
 
-第五，`rb_erase()` 只负责从树中摘除节点，不负责释放业务对象。
-
-```c
-rb_erase(&item->rb, root);
-kfree(item);
-```
+第五，`rb_erase()` 只负责从树中摘除节点，不负责释放业务对象。S3 到 S5 可能隔着其他入口、引用与旧读者；只有相应条件全部满足才可交还存储。
 
 第六，`RB_CLEAR_NODE()` 只是节点状态标记，不是并发保护机制。
 

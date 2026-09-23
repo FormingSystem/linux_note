@@ -106,3 +106,5 @@ domains: [c_language, data_structures]
 [embedded_owner.c](embedded_owner.c)在[P09 双成员实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个嵌入成员还原同一个任务)中直接包含固定 container_of.h 与类型头。编译使用 `-std=gnu11 -I labs/kernel/tree_basics/materials/hosted_include`；[断言与类型适配](hosted_include/linux/build_bug.h)和[offsetof 适配](hosted_include/linux/stddef.h)只服务该宿主实验。它不运行树算法、父色编码或并发协议，不应把适配头用于内核构建。
 
 [job_compare.c](job_compare.c)配合[P09 比较契约](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_让同一个比较规则走两种调用路径)：同时间任务以稳定 id 再排序，直接与回调调用使用同一规则。C11 程序包含有符号键极值，不以键相减求比较结果，也不把语义一致当作性能证据。
+
+[indexed_lifetime.c](indexed_lifetime.c)配合[P09 双索引寿命模型](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个入口关闭之后谁还在使用对象)，用实际分配的对象追踪 S0～S5 的创建引用、两个入口引用和读者引用。普通整数只用于固定小规模串行过程，未实现树、锁或 RCU；空入口、分配失败与最后一次释放都有明确处理。

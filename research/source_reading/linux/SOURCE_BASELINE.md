@@ -442,6 +442,8 @@ C 检查使用固定核心语句，仅在忽略缓存中适配 Windows uintptr_t
 实际 note_rbtree_erase 材料通过 ARMv7 语法检查，使用 351 份头，已跟踪头与固定提交差量交集为空，生成头来自当前配置。另以明确的宿主接口适配直接包含材料，执行两组取消及空输入、重复键、错误下标和重复删除保护；这不是实际内核执行。目标 Kbuild、MODPOST、装卸、真实日志、RCU/SMP 和弱内存序均未验证，没有改动外部树。
 
 
+P09 寿命单元再次核对固定 lib/rbtree.c 与 rbtree.h：摘除与游离标记不是引用取得、等待旧读者或释放操作。教材用[S0～S5 串行持有权模型](../../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个入口关闭之后谁还在使用对象)区分状态；RCU 片段不在摘除后立即改写旧字段，call_rcu 只登记延迟回收。没有将该模型或片段作为并发可运行内核验证。
+
 ## 1.23\_rbtree遍历与整树销毁证据
 
 同一固定对象中，lib/rbtree.c 的七个中序/后序函数及 rbtree.h 的 rb_entry_safe、后序 safe 宏补入[唯一遍历实现](../rbtree/source_explanations/lib/rbtree.c.md#1.7_中序端点与父链推进)与[模块导读](../rbtree/navigation/P05_有序推进与整树销毁导读.md#5.1_拓扑与游标分别保存在哪)。孩子下行和父链上行、NULL 输入差异、左优先叶子及循环体前保存 n 均按实际语句核对，不将向下 RCU 查询的边界推广到父链。

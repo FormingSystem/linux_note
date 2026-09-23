@@ -184,3 +184,5 @@ B03ah 收束 P08 剩余表示单元，补[父色整数实验](../../knowledge/li
 B03ai 冷读并修订 P09 的 9.1 与 9.2.1～9.2.4，以[双成员 C 实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个嵌入成员还原同一个任务)区分偏移、成员身份、const 和对象复制；保留原布局图，修复复合键图的双左孩子错误。新增固定 container_of 实现讲解，细节见[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.45_B03ai嵌入成员与对象还原)。P09 后续比较、性能、寿命及接口单元继续，整章仍 pending。
 
 B03aj 完成 P09 的 9.2.5～9.2.7 冷读与修订，补[比较契约 C 实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_让同一个比较规则走两种调用路径)，将无条件地址排序改为稳定业务 id，区分插入方向和旋转后等价区间，并展开间接调用与缓存地址依赖。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.46_B03aj比较政策与成本边界)记录验证和保留依据；下一项节点寿命，P09 仍 pending。
+
+B03ak 收束 P09 的 9.2.8～9.2.9，[双索引寿命 C 模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个入口关闭之后谁还在使用对象)以 S0～S5 连接入口槽、引用持有和最终回收，修正 RCU 片段的旧字段改写与锁/RCU/引用计数的混用。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.47_B03ak入口引用与回收条件)记录有限验证；下一项 9.3，整章仍 pending。

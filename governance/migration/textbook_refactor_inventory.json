@@ -1623,7 +1623,7 @@
       "baseline_sha256": "d23e9d86c4fa97c9e225b26f80e9325146d8e0988c10535f61c24258168aff5d",
       "lines": 4209,
       "state": "pending",
-      "reason": "B03ai/aj 已实际冷读并修订 9.1、9.2 引入及 9.2.1～9.2.7，双成员与比较 C 实验、固定宏和比较接口核对完成；9.2.8 及接口部分继续，保留 pending。"
+      "reason": "B03ai/aj/ak 已实际冷读并修订 9.1、完整 9.2，双成员、比较和持有权 C 实验及固定证据核对完成；9.3 使用者框架仍继续，保留 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找与返回边界.md",
