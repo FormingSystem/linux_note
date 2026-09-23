@@ -812,7 +812,7 @@ struct rb_root root = (struct rb_root) { NULL, };
 它可以理解为：
 
 ```text
-临时构造一个 struct rb_root 类型的匿名对象；
+构造一个 struct rb_root 类型的匿名对象（C 中的存储期取决于所在作用域）；
 用 { NULL, } 初始化它；
 然后用这个对象初始化 root。
 ```
@@ -1120,6 +1120,99 @@ RB_ROOT 是 Linux rbtree 用对象式宏封装出来的“空树根默认值”�
 ```
 
 ------
+
+##### 2)\_观察根值复制与对象存活
+
+前面的宏展开已经说明 `root = RB_ROOT` 是一次结构体赋值。现在区分三件容易混在一起的事：根值是否为空、另一个入口是否仍指向对象、对象本身是否还活着。
+
+下面直接包含仓库按固定提交保存的 `rbtree_types.h`，不复制初始化宏。程序手动保存一个成员地址，只观察赋值，不调用树算法，也不把这组地址关系宣称为已经正确插入的红黑树。运行前预测：重置 `root` 后，`copied` 会一起变空吗？只重置缓存根内的 `rb_root`，`rb_leftmost` 会自动跟着变吗？
+
+```c
+#include <assert.h>
+#include <stddef.h>
+#include <stdio.h>
+
+/* 使用仓库按固定提交保存的类型头；不包含或运行树更新算法。 */
+#include "../../../../research/source_reading/linux/include/linux/rbtree_types.h"
+
+struct job {
+    int id;
+    struct rb_node link;
+};
+
+int main(void)
+{
+    struct job item = { .id = 7 };
+    struct rb_root root = RB_ROOT;
+    struct rb_root_cached cached = RB_ROOT_CACHED;
+
+    printf("initial: root_empty=%d cached_empty=%d\n",
+           root.rb_node == NULL,
+           cached.rb_root.rb_node == NULL && cached.rb_leftmost == NULL);
+
+    /* 只构造地址关系以观察赋值；不是建立合法红黑树的插入方法。 */
+    root.rb_node = &item.link;
+    cached.rb_root.rb_node = &item.link;
+    cached.rb_leftmost = &item.link;
+    struct rb_root copied = root;
+
+    root = RB_ROOT;
+    assert(copied.rb_node == &item.link);
+    printf("reset: root_empty=%d copy_kept=%d object_id=%d\n",
+           root.rb_node == NULL, copied.rb_node == &item.link, item.id);
+
+    /* 根是独立的值，复制并未复制节点，也没有建立回收规则。 */
+    item.id = 9;
+    assert(copied.rb_node == &item.link && item.id == 9);
+
+    /* 仅重置内部普通根，会留下另一个尚未重置的入口。 */
+    cached.rb_root = RB_ROOT;
+    printf("partial reset: root_empty=%d leftmost_empty=%d\n",
+           cached.rb_root.rb_node == NULL, cached.rb_leftmost == NULL);
+    cached = RB_ROOT_CACHED;
+    printf("full reset: root_empty=%d leftmost_empty=%d object_id=%d\n",
+           cached.rb_root.rb_node == NULL, cached.rb_leftmost == NULL, item.id);
+
+    /* 此处复合字面量的对象在当前块内仍然存在。 */
+    struct rb_root *block_value = &(struct rb_root) { NULL, };
+    block_value->rb_node = &item.link;
+    assert(block_value->rb_node == copied.rb_node);
+    copied = RB_ROOT;
+    assert(block_value->rb_node == &item.link);
+    printf("independent values: copy_empty=%d block_kept=%d\n",
+           copied.rb_node == NULL, block_value->rb_node == &item.link);
+
+    /* 返回前所有观察结束；外部不能继续使用这些自动对象的地址。 */
+    return 0;
+}
+```
+
+在仓库根目录编译运行；只有类型头被包含，不需要配置或构建 Linux：
+
+```bash
+gcc -std=c11 -Wall -Wextra -Werror -pedantic \
+    labs/kernel/tree_basics/materials/root_initializers.c -o root_initializers
+./root_initializers
+```
+
+Windows 原生工具链可输出 `root_initializers.exe` 并在 PowerShell 运行它。材料见 [root_initializers.c](../../../../labs/kernel/tree_basics/materials/root_initializers.c)。结果如下：
+
+```text
+initial: root_empty=1 cached_empty=1
+reset: root_empty=1 copy_kept=1 object_id=7
+partial reset: root_empty=1 leftmost_empty=0
+full reset: root_empty=1 leftmost_empty=1 object_id=9
+independent values: copy_empty=1 block_kept=1
+```
+
+`copied = root` 复制一个指针值，未复制节点，更未取得一个由 rbtree 管理的引用。此后两个根值位于不同地址，重置其中一个不会修改另一个。业务对象仍由 `main` 的作用域拥有，编号从 7 改成 9 以后，所有仍然有效的入口指向的都是同一块对象，而不是两个版本。
+
+缓存根有两个入口槽，写内部根不会触发自动联动。因此第三行正是“不一致的缓存入口”反例：普通入口已空，最左缓存还指向旧对象。整体赋 `RB_ROOT_CACHED` 会清两个槽，却仍不释放对象。真实树不能用这个过程代替摘除、缓存维护和回收；本例没有并发读者，也没有把根复制当作合法共享树的更新协议。
+
+复合字面量在 C 中是一个有存储期的匿名对象，不能一概按 C++ 临时对象理解。这里的 `block_value` 在当前块执行期间有效，离开其所属块后不能把保存的地址继续交给调用者使用；复制出来的结构体值与匿名对象则是两个独立对象。语言边界可对照 [GCC 的复合字面量说明](https://gcc.gnu.org/onlinedocs/gcc/Compound-Literals.html)，本例按 C11 编译，不借用 G++ 的扩展语义。
+
+继续尝试：删除 `cached = RB_ROOT_CACHED` 后预测下一行；在清根前后分别读取 `item.id`；再把 `copied = RB_ROOT` 改成只读取它的指针值。你应能分别指出被写的是哪个根槽，哪些节点字段根本没有被写。不要通过释放后访问来“验证”对象寿命，那会让实验本身失去合法前提。
+
 
 #### (6)\_struct\_rb\_root\_cached\_缓存最左节点的红黑树根
 
@@ -2046,8 +2139,8 @@ rotate：
 	rb_replace_node()
 	rb_replace_node_rcu()
 
-增强树删除：
-	rb_erase_augmented()
+增强树删除的对外内联入口 rb_erase_augmented() 位于
+include/linux/rbtree_augmented.h；它可继续调用这里的缺黑修复。
 ```
 
 Linux 6.12 的 `lib/rbtree.c` 是普通 rbtree 的核心实现文件，源码中包含插入、删除、旋转、遍历、替换和 augmented rbtree 相关实现。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
@@ -2584,11 +2677,11 @@ struct demo_rb_tree {
 struct rb_node *node;
 
 node = root->rb_node;
-while (node->rb_left)
+while (node && node->rb_left)
 	node = node->rb_left;
 ```
 
-这个过程复杂度是：
+空树时 node 保持 NULL，不解引用空地址。对非空合法红黑树，这个过程的路径长度上界是：
 
 ```text
 O(log n)
@@ -2673,7 +2766,7 @@ RB_ROOT_CACHED：
 
 Linux 6.12 的 `rbtree_types.h` 中，`RB_ROOT` 初始化为 `{ NULL, }`，`RB_ROOT_CACHED` 初始化为 `{ {NULL, }, NULL }`。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree_types.h))
 
-这两个宏只初始化树根，不初始化业务节点。
+这两个宏只初始化树根，不初始化业务节点。[根值实验](#2%29_观察根值复制与对象存活)还表明：根的复制是浅复制；普通入口和最左缓存是不同地址上的槽，局部清根不会同步清缓存，也不会释放对象。
 
 业务节点是否已经在树中，需要由节点状态和调用者逻辑共同管理。
 
@@ -2689,7 +2782,7 @@ Linux 6.12 的 `rbtree_types.h` 中，`RB_ROOT` 初始化为 `{ NULL, }`，`RB_R
 root->rb_node == NULL
 ```
 
-如果返回真，说明树中没有节点。
+在调用者已经保护好树的入口与生命周期、树结构自洽的前提下，返回真表示这次读取的根槽为空；它不是全树检查，也不保证下一时刻仍为空。READ_ONCE 约束这次读取，不自动取得锁或对象寿命。
 
 它只判断树根，不判断某个业务节点是否已经插入。
 
@@ -2703,20 +2796,7 @@ RB_EMPTY_NODE()
 	判断某个节点是否处于游离状态。
 ```
 
-kernel源码：
-
-```c
-// tools/include/linux/rbtree.h
-
-#define RB_EMPTY_ROOT(root)  (READ_ONCE((root)->rb_node) == NULL)
-
-/* 'empty' nodes are nodes that are known not to be inserted in an rbtree */
-#define RB_EMPTY_NODE(node)  \
-	((node)->__rb_parent_color == (unsigned long)(node))
-
-#define RB_CLEAR_NODE(node)  \
-	((node)->__rb_parent_color = (unsigned long)(node))
-```
+三个宏分别读取树入口、读取节点游离约定、写入节点游离约定，具体语句只在 [rbtree.h 唯一讲解](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.8_游离标记不等于成员搜索)展开。原位置是 `include/linux/rbtree.h`，不要与 `tools/include/linux/rbtree.h` 的工具侧副本混同。
 
 这两个接口语义不同，不能混用。
 
@@ -2726,7 +2806,7 @@ Linux 6.12 的 `rbtree.h` 中，`RB_EMPTY_ROOT(root)` 使用 `READ_ONCE((root)->
 
 ### 8.4.9\_RB\_EMPTY\_NODE()\_与节点游离状态判断
 
-`RB_EMPTY_NODE(node)` 用于判断一个 `rb_node` 是否处于空节点状态。
+`RB_EMPTY_NODE(node)` 只判断一个仍存活的 `rb_node` 是否带有调用者约定的游离标记。它不接收 root，因而不能沿某棵树搜索成员，也不能回答节点属于哪棵树。
 
 Linux rbtree 使用特殊编码表示空节点：
 
@@ -2747,7 +2827,8 @@ RB_CLEAR_NODE(node);
 它的作用是：
 
 ```text
-把 node 标记为未链接状态。
+在已确认 node 不再属于树之后，把它标记为已知未链接状态；
+标记本身不执行摘除。
 ```
 
 Linux 6.12 的 `rbtree.h` 中，`RB_EMPTY_NODE(node)` 和 `RB_CLEAR_NODE(node)` 都基于 `node->__rb_parent_color == (unsigned long)(node)` 这类自指编码。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree.h))
@@ -2785,7 +2866,7 @@ RB_CLEAR_NODE() 只是删除后的节点状态标记。
 
 ### 8.4.10\_RB\_CLEAR\_NODE()\_的工程意义
 
-`RB_CLEAR_NODE()` 的意义在于管理节点生命周期状态。
+`RB_CLEAR_NODE()` 用于调用者维护成员标记，不负责对象引用计数或内存回收。从首次使用前清标记、成功接入覆盖标记，到摘除后再次清标记，必须始终遵守同一协议；未初始化、仅清零分配或删除后未清标记，都不能据此推断真实成员关系。
 
 它常用于解决这些问题：
 
@@ -2825,8 +2906,8 @@ if (RB_EMPTY_NODE(&item->node))
 表示：
 
 ```text
-如果节点为空，说明它不在树中；
-此时不能删除。
+在初始化与每次摘除都遵守标记协议的前提下，节点带游离标记；
+此时不应把它作为树成员再次删除。
 ```
 
 但是它不能替代并发保护：
@@ -2836,7 +2917,9 @@ RB_EMPTY_NODE() 不是锁；
 
 RB_CLEAR_NODE() 不是同步机制；
 
-多个线程同时插入、删除、检查同一个节点时，仍然需要锁或 RCU 规则。
+多个线程同时插入、删除、检查同一个节点时，必须保护整个检查与动作周期；
+RCU 读者存在并不自动串行化多个写者，
+摘除后仍有旧读者时，也不能未经路径核对就清写旧节点字段。
 ```
 
 ------

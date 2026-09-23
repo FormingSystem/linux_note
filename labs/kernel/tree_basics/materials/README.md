@@ -98,3 +98,5 @@ domains: [c_language, data_structures]
 [rbtree_collapse.cpp](rbtree_collapse.cpp)在[P07 映射实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md#7.5.12_保持键区间的折叠实验)中把合法稳定的普通红黑树折叠为多路组，保留键区间与空孩子槽，比较左右红的同一语义。它只转换，不验证任意损坏输入，也不实现左倾更新。
 
 [ordered_jobs.cpp](ordered_jobs.cpp)在[P08 业务契约实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#8.2.7_把排序契约变成可观察结果)中用 C++17 有序集合保存任务指针，观察复合键、下界、同时间组与改期摘接；标准库不作为 Linux rbtree 实现替身，不验证分配失败回滚或性能。
+
+[root_initializers.c](root_initializers.c)在[P08 根值实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#2%29_观察根值复制与对象存活)中直接包含固定源码的类型头，观察根值浅复制、缓存入口和块内匿名对象寿命。只验证赋值及地址关系，不模拟插入，不运行红黑更新或并发回收。

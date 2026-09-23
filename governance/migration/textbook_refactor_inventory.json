@@ -1595,7 +1595,7 @@
       "baseline_sha256": "8a5ee2865aeae37229bb67500910ea4c1fab50ea0c5fc9d2ccdc0221df4b8e60",
       "lines": 3355,
       "state": "pending",
-      "reason": "B03af 完整冷读并重构 8.1/8.2 入口和选型，新增 C++ 任务排序契约实验，核对固定比较辅助接口与历史应用边界；8.3/8.4 节点表示仍待逐项审查，整章保持 pending。"
+      "reason": "B03af 完成 8.1/8.2；B03ag 已完整冷读后半，保留根初始化推导并补 C 实验，修正空树/游离契约；父色布局、重复实现片段和其余结构单元仍待整改，整章保持 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md",

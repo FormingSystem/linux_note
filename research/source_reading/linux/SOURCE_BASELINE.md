@@ -412,6 +412,8 @@ C11 程序串行重放相等键旋转、旧入口漏查与错误写序成环，�
 
 2026-09-23 重构 P08 入口时，再次只读核对工作树身份并通过固定对象读取 rbtree.h 与 rbtree.rst；rb_add、rb_find、rb_find_add 的比较函数参数不能被文档中传统手写模型的说明掩盖。业务比较由调用者提供，不等于头文件没有比较辅助接口；树根不保存比较策略。2007 年使用文档的场景列表按历史背景引用，不冒充当前所有子系统的数据结构。宿主 ordered_jobs.cpp 仅观察业务排序契约，不作为 Linux 实现或性能证据。
 
+同日补核 P08 根值和游离边界：类型头的两个初始化宏只构造空根值，rbtree.h 的 RB_EMPTY_ROOT 使用 READ_ONCE 读根，RB_EMPTY_NODE/RB_CLEAR_NODE 读写约定标记。三宏在[rbtree.h 对应标题](../rbtree/source_explanations/include/linux/rbtree.h.md#1.8_游离标记不等于成员搜索)展开。root_initializers.c 直接包含保存的类型头，只运行宿主赋值与地址观察；另以 Clang armv7a-none-eabi 前端检查类型大小、对齐和块内初始化，不等于内核配置构建或 ARM 执行。rb_erase_augmented 的内联入口位于 rbtree_augmented.h，正文已纠正文件归属。
+
 ## 1.20\_rbtree插入与父槽证据
 
 沿同一 NXP 固定提交继续核对 include/linux/rbtree.h、rbtree_augmented.h 与 lib/rbtree.c。[插入模块](../rbtree/navigation/P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进)用 I0～I5 对应空槽、红叶、上推与旋转；[修复实现](../rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支)恢复实际分支、变量与 WRITE_ONCE，保留教材原中文推导。新增十五个函数与已有四个查询函数逐语句核对，共十九个函数；父槽助手只在一个实现标题展开，知识正文仍保留机制任务。
