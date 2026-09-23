@@ -336,7 +336,7 @@ mindmap-plugin: basic
             - 章节评审：1 章未评审
             - 🔴 [P01 kobject device devres kref 生命周期集成](../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md)
         - 🟢 [kref 引用计数机制](../../knowledge/linux/object_lifetime/kref/大纲.md)
-            - 章节评审：原15章评审完成；新增18章未校正
+            - 章节评审：原15章评审完成；新增19章未校正
             - 🟢 [P01 kref 要解决什么问题](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)
             - 🟢 [P02 源码入口与结构定义](../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md)
             - 🟢 [P03 kref 生命周期状态机](../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md)
@@ -369,6 +369,7 @@ mindmap-plugin: basic
             - 🟢 [P14 源码阅读实验](../../knowledge/linux/object_lifetime/kref/P14_源码阅读实验.md)
             - 🔴 **未校正** [P32 基础引用与源码对照实验](../../knowledge/linux/object_lifetime/kref/P32_基础引用与源码对照实验.md)
             - 🔴 **未校正** [P33 缺失引用与未归还责任实验](../../knowledge/linux/object_lifetime/kref/P33_缺失引用与未归还责任实验.md)
+            - 🔴 **未校正** [P34 查找窗口与条件取得实验](../../knowledge/linux/object_lifetime/kref/P34_查找窗口与条件取得实验.md)
             - 🟢 [P15 最终验收标准](../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md)
     - 🔴 [Linux 同步和异步机制](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)
         - 🔴 [同步机制](../../knowledge/linux/synchronization_and_asynchrony/synchronization/大纲.md)

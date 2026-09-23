@@ -245,3 +245,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.41\_缺失引用与未归还责任
 
 [P33实验](../../../../knowledge/linux/object_lifetime/kref/P33_缺失引用与未归还责任实验.md#33.1_先确定删除的是哪一份)复用[ownership_audit.c](ownership_audit.c)的完整责任检查器与六条原轨迹，程序本身未改。另核对正确转交、提前使用/完成、候选回滚和记录不完整，合计十一条宿主检查通过；它不创建实际内核对象，不是UAF、泄漏或KASAN实测。真实分享/转交与借用分别回访既有note_kref_work_modes和note_kref_owned_work。
+
+## 1.42\_查找窗口的两类实验
+
+[P34实验](../../../../knowledge/linux/object_lifetime/kref/P34_查找窗口与条件取得实验.md#34.1_先确定表是否拥有引用)复用[note_kref_table.c](note_kref_table.c)的完整拥有型表与[conditional_take.c](conditional_take.c)的四路径C11模型，材料不改。六组表夹具及四模型路径本批重跑通过；固定条件函数另核对六分支与包装两结果。前者证明给定顺序下责任配平，后者观察有效地址上的条件比较，均未进行本次目标装卸、真实并发或故障注入。

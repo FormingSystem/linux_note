@@ -364,3 +364,5 @@ B04br整理kref首页、Atlas及专题交付段的累计长链，31篇章节仍�
 B04bs完成P14准备及前两组实验，新增[P32基础引用与源码对照](../../knowledge/linux/object_lifetime/kref/P32_基础引用与源码对照实验.md#32.1_先分清读哪份源码和运行哪个内核)，完整模块六条宿主与ARM通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.134_B04bs基础引用与源码对照)明确顺序/并发和源码/运行身份。清单658项：252 validated、388 pending、18 supporting_pending；P14仍pending，继续引用错误实验。
 
 B04bt完成P14的14.4错误实验，新增[P33缺失与未归还责任](../../knowledge/linux/object_lifetime/kref/P33_缺失引用与未归还责任实验.md#33.1_先确定删除的是哪一份)，十一条宿主C轨迹区分责任错误、剩余份额与证据不足；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.135_B04bt缺失引用与未归还责任)保留真实内核未执行边界。清单659项：253 validated、388 pending、18 supporting_pending；P14继续14.5查找与交付，仍pending。
+
+B04bu完成P14的14.5.1/14.5.2，新增[P34查找窗口与条件取得](../../knowledge/linux/object_lifetime/kref/P34_查找窗口与条件取得实验.md#34.1_先确定表是否拥有引用)，区分表份额、临时地址保护与业务状态；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.136_B04bu查找窗口与条件取得)记录重跑证据。清单660项：254 validated、388 pending、18 supporting_pending；P14仍pending，下一项14.5.3工作交付。

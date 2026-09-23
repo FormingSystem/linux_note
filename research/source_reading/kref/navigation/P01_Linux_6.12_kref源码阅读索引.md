@@ -18,6 +18,7 @@ source_version: "6.12.20"
 
 | 阅读问题 | 模块与唯一实现 |
 | --- | --- |
+| 为什么换成条件get却观察不到失败 | [表责任与零值窗口](P03_条件取得与查找窗口导读.md#3.13_查找实验必须先区分两种表责任) → [条件入口](../source_explanations/include/linux/kref.h.md#1.7_有效地址上的条件取得) |
 | 少get或少put的轨迹是否就是内核故障报告 | [证据层次](P02_普通引用与归零回调导读.md#2.30_错误轨迹与实际引用的证据层次) → [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 基础模块的release日志为什么插在put结果以前 | [返回值与回调](P02_普通引用与归零回调导读.md#2.29_基础实验的返回值与回调位置) → [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 一次创建、共享、归还如何相接 | [普通引用模块](P02_普通引用与归零回调导读.md#2.2_把S0到S5落到状态地址) → [kref 普通接口](../source_explanations/include/linux/kref.h.md#1.2_建立初始引用) |
