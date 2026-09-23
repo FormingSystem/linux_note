@@ -21,6 +21,7 @@ source_version: "6.12.20"
 | 一次创建、共享、归还如何相接 | [普通引用模块](P02_普通引用与归零回调导读.md#2.2_把S0到S5落到状态地址) → [kref 普通接口](../source_explanations/include/linux/kref.h.md#1.2_建立初始引用) |
 | 状态真正存在哪里 | [计数成员](../source_explanations/include/linux/kref.h.md#1.1_计数成员) → [refcount 存储](../source_explanations/include/linux/refcount_types.h.md#1.1_原子存储字段) |
 | 正常归零与异常饱和怎样分流 | [模块边界](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [增减 helper](../source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支) → [告警收敛](../source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和) |
+| 回调里的告警能证明什么 | [外层状态模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [类型清理前提](../../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#3.7.1_release_阶段_对象销毁点)，引用原语不维护节点状态 |
 | 初始份额与业务许可由谁定义 | [状态模块边界](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [init 实现](../source_explanations/include/linux/kref.h.md#1.2_建立初始引用)，与[P03 模型](../../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#3.3.1_用C模型观察仍持有却被拒绝)分层阅读 |
 | 槽已撤下为何读者仍可用 | [容器状态模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [普通 get](../source_explanations/include/linux/kref.h.md#1.3_为独立使用追加引用) 与 [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 最后清理函数由谁选择 | [归零模块](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [put 的当次参数](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |

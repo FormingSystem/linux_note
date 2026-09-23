@@ -684,3 +684,9 @@ ARM 前端通过，354 份头文件中 342 份非生成源码与固定提交无�
 ## 1.54\_生命周期观察模型与固定实现分层
 
 B04k 的[P03 C 模型](../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#3.3.1_用C模型观察仍持有却被拒绝)用于观察入口、业务许可、存储和角色责任，没有新增 Linux 字段或版本事实。模型的持有者位图位于观察者账本，不能当成 kref.h 布局；固定 init 仍沿前述官方提交与唯一实现，只写入初始计数，初始份额归属由创建接口约定。两种操作/关闭顺序及两个状态分离反例通过严格 C11 编译运行，不包含真实分配、原子并发、锁或硬件可用性验证。
+
+## 1.55\_清理诊断与链表状态表示
+
+B04l 为 P03 的 release 诊断核对固定 NXP 提交 include/linux/list.h（blob 5f4b0a39cf46a3784a22e0319aa213551d7f4b2c）：list_empty 比较 next 与本节点，list_del 摘除后写入毒化，list_del_init 摘除后恢复自环。这里是类型回调的前置状态解释，不增加一套链表实现讲解，也不改变既有 kref 函数。
+
+C 夹具使用六个固定函数体：INIT_LIST_HEAD、__list_del、__list_del_entry、list_del、list_del_init、list_empty。合法单节点拓扑手动建立，READ/WRITE、有效性检查和毒化地址为显式顺序替身；观察初始化、挂入、普通摘除毒化、摘除后初始化四态符合预期。未验证真实并发、内核毒化陷阱、CONFIG_LIST_HARDENED 或完整链表算法。

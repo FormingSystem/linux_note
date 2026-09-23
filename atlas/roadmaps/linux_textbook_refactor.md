@@ -29,7 +29,7 @@ domains:
 | B01 基础入口：architecture 中的概貌、源码树及 Atlas 路线 | 能读变量、函数、数组与循环；尚不认识内核对象 | 从读文件区分应用、内核、硬件；按问题找源码，区分源文件与产物 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)；本批实施，验证结果见 1.5 |
 | B02 模块与设备节点：architecture 其余 3 篇、error_handling 初始 2 篇、驱动 fundamentals 与 misc | 用户与内核边界、源码身份 | 区分装入代码、注册服务和建立访问入口；能恢复一个失败的最小模块实验 | [模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes)、[错误处理](../../knowledge/linux/error_handling)、[驱动基础](../../knowledge/driver_model/fundamentals)；分批推进，已完成组与下一项见 1.5 |
 | B03 对象组织：data_structures 33 篇 | C 指针、对象与资源 | 从查找和更新需求选择链表、哈希表或树，解释节点与容器关系 | [数据结构](../../knowledge/linux/data_structures)；链表、哈希及子系统应用、综合模块、树原章节和依赖拆分单元已完成本轮逐篇审查与适用验证；教学语言复核已完成，目标未运行与研究算法边界逐批记录。继续 B04，不表示全仓完成 |
-| B04 生命周期：object_lifetime 20 篇 | 能辨别对象、入口和使用者 | 解释引用何时取得、由谁放弃、什么时候可销毁 | [对象生命周期](../../knowledge/linux/object_lifetime)；B04a/b 已完成 P01 全篇问题链、责任模型与一次工作交付，P02 全章已按单元冷读并完成计数、布局、普通接口、类型模板和容器发布重构，固定源码、C/C++ 实验与导航已同步；P03 3.1～3.4 已建立业务与存储状态模型，继续其余生命周期及后续机制逐篇审查 |
+| B04 生命周期：object_lifetime 20 篇 | 能辨别对象、入口和使用者 | 解释引用何时取得、由谁放弃、什么时候可销毁 | [对象生命周期](../../knowledge/linux/object_lifetime)；B04a/b 已完成 P01 全篇问题链、责任模型与一次工作交付，P02 全章已按单元冷读并完成计数、布局、普通接口、类型模板和容器发布重构，固定源码、C/C++ 实验与导航已同步；P03 3.1～3.7 已建立业务与存储状态模型，继续其余生命周期及后续机制逐篇审查 |
 | B05 并发与事件：synchronization_and_asynchrony 125 篇 | 单个操作及对象生命期 | 从两条交错路径推出同步、等待、通知、延迟执行与回收；以具体状态完成证明 | [同步与异步总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)；待进入，内部再按依赖拆批；kernel_subsystems/irq 当前无正式文件，不建立占位入口 |
 | B06 文件与观测：io_model 5 篇、kernel_subsystems/vfs 与 tracing | 读文件主线、等待与对象持有 | 串起路径、打开实例、数据、阻塞、缓存及日志证据 | [VFS](../../knowledge/kernel_subsystems/vfs/大纲.md)、[I/O 模型](../../knowledge/linux/io_model)、[观测](../../knowledge/kernel_subsystems/tracing)；待进入 |
 | B07 设备与驱动：device_model 17 篇，driver_model 中 character_device、device_tree、gpio、gpio_consumers、input、platform_bus | 内核公共机制、文件入口 | 区分硬件描述、注册、匹配、请求处理和拆除，完成一个有恢复路径的设备实例 | [设备模型](../../knowledge/linux/device_model/大纲.md)、[驱动路线](../tracks/linux_driver_track.md)；待进入，各设备家族单独校准 |
@@ -240,3 +240,5 @@ B04i 完成[P02 C++ 对照](../../knowledge/linux/object_lifetime/kref/P02_源�
 B04j 完成[P02 发布与容器责任](../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.30.1_设计_A_容器持有引用)及章末收束；本轮整章审查完成，人工评审状态不因此升级。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.73_B04j容器发布与P02收束)记录控制路径及未执行项。下一项 P03 生命周期状态机，P05/P11 局部修复后仍待后续完整审查。
 
 B04k 重构[P03 开篇与初始责任](../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#3.3.1_用C模型观察仍持有却被拒绝)，以完整 C 模型区分入口、业务许可和存储保留，修复直接发布和初始份额的绝对化解释。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.74_B04k生命周期状态轴与初始责任)记录模型边界；下一项 P03 3.5～3.10，整章仍 pending。
+
+B04l 重构[P03 普通引用与清理](../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#3.7.1_release_阶段_对象销毁点)，以已有完整实验回访前提、返回值和资源退出，补链表诊断的具体状态前提。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.75_B04l普通归还与清理诊断)记录固定函数观察；下一项 P03 3.8～3.10 责任表及错误交付。
