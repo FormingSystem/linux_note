@@ -521,3 +521,223 @@ void *mas_find(struct ma_state *mas, unsigned long max)
 S2 pause 由调用者在放锁前执行，S4 重获保护后 find 的 pause 分支先检查 last<max，再推进 index=++last；S5 reset 则保持当前 index。active 且 last 已到 max 时 setup 直接结束，返回 NULL 不改变 active。进入下一槽分支后，本函数也明确覆盖状态为 active，不把任意 NULL 推断为 overflow。ma_error 分支只早退，不帮调用者恢复或释放资源。
 
 本批私有模块和模型化树行走的宿主夹具只核对这些控制路径；mas_next_slot/mtree_range_walk 的完整动态算法、RCU 重试与回收仍未运行。模块导读见[一次遍历周期](../../navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)。
+
+## 1.10\_普通点查与读侧边界
+
+```c
+/**
+ * @brief 仓库补充阅读说明：点查临时状态只服务当前索引，返回前退出内部 RCU 读侧。
+ * @note 以下保留官方固定版本语句，省略外围未展开的实现。
+ */
+void *mtree_load(struct maple_tree *mt, unsigned long index)
+{
+	MA_STATE(mas, mt, index, index);
+	void *entry;
+
+	trace_ma_read(__func__, &mas);
+	rcu_read_lock();
+retry:
+	entry = mas_start(&mas);
+	if (unlikely(mas_is_none(&mas)))
+		goto unlock;
+
+	if (unlikely(mas_is_ptr(&mas))) {
+		if (index)
+			entry = NULL;
+
+		goto unlock;
+	}
+
+	entry = mtree_lookup_walk(&mas);
+	if (!entry && unlikely(mas_is_start(&mas)))
+		goto retry;
+unlock:
+	rcu_read_unlock();
+	if (xa_is_zero(entry))
+		return NULL;
+
+	return entry;
+}
+```
+
+从 S4 看本函数：mas_start 处理空根、根直接 entry 和节点根，普通快速 walk 不承诺维护完整游标，失效入口会重试。最后把 XA_ZERO_ENTRY 归为 NULL。业务对象的引用与返回后寿命不由这里建立，见[普通接口导读](../../navigation/P07_普通接口与范围契约.md#7.2_沿一次调用划分责任)。
+
+## 1.11\_普通写入与整段擦除
+
+```c
+/**
+ * @brief 仓库补充阅读说明：S0 参数检查后取得内部锁，交给存储协议，释放锁并返回结果。
+ * @note 以下保留官方固定版本语句，省略外围未展开的实现。
+ */
+int mtree_store_range(struct maple_tree *mt, unsigned long index,
+		unsigned long last, void *entry, gfp_t gfp)
+{
+	MA_STATE(mas, mt, index, last);
+	int ret = 0;
+
+	trace_ma_write(__func__, &mas, 0, entry);
+	if (WARN_ON_ONCE(xa_is_advanced(entry)))
+		return -EINVAL;
+
+	if (index > last)
+		return -EINVAL;
+
+	mtree_lock(mt);
+	ret = mas_store_gfp(&mas, entry, gfp);
+	mtree_unlock(mt);
+
+	return ret;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：点写入只是起止相同的范围请求。
+ * @note 以下保留官方固定版本语句，省略外围未展开的实现。
+ */
+int mtree_store(struct maple_tree *mt, unsigned long index, void *entry,
+		 gfp_t gfp)
+{
+	return mtree_store_range(mt, index, index, entry, gfp);
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：只有请求范围未被占用时插入；保留分配重试及资源销毁路径。
+ * @note 以下保留官方固定版本语句，省略外围未展开的实现。
+ */
+int mtree_insert_range(struct maple_tree *mt, unsigned long first,
+		unsigned long last, void *entry, gfp_t gfp)
+{
+	MA_STATE(ms, mt, first, last);
+	int ret = 0;
+
+	if (WARN_ON_ONCE(xa_is_advanced(entry)))
+		return -EINVAL;
+
+	if (first > last)
+		return -EINVAL;
+
+	mtree_lock(mt);
+retry:
+	mas_insert(&ms, entry);
+	if (mas_nomem(&ms, gfp))
+		goto retry;
+
+	mtree_unlock(mt);
+	if (mas_is_err(&ms))
+		ret = xa_err(ms.node);
+
+	mas_destroy(&ms);
+	return ret;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：点插入沿用范围插入的条件。
+ * @note 以下保留官方固定版本语句，省略外围未展开的实现。
+ */
+int mtree_insert(struct maple_tree *mt, unsigned long index, void *entry,
+		 gfp_t gfp)
+{
+	return mtree_insert_range(mt, index, index, entry, gfp);
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：定位 index 后擦除整个命中范围，返回旧 entry 而不释放业务对象。
+ * @note 以下保留官方固定版本语句，省略外围未展开的实现。
+ */
+void *mtree_erase(struct maple_tree *mt, unsigned long index)
+{
+	void *entry = NULL;
+
+	MA_STATE(mas, mt, index, index);
+	trace_ma_op(__func__, &mas);
+
+	mtree_lock(mt);
+	entry = mas_erase(&mas);
+	mtree_unlock(mt);
+
+	return entry;
+}
+```
+
+store 的范围覆盖与 insert 的拒绝覆盖是两种业务契约。固定 mas_insert 的冲突路径调用 mas_set_err(mas, -EEXIST)，因此错误名是 EEXIST；上游 insert 文档中的 EEXISTS 拼写不能照抄为有效常量。普通参数检查用 xa_is_advanced，不等于 mt_is_reserved。
+
+mtree_lock 宏直接取 ma_lock，本封装没有外部锁自动分派；已持有该内部锁时也不能再套一层普通写接口。S2 内部 mas_store_gfp/mas_nomem 的资源与重试协议尚未在此完整展开，不能把这个外围锁对理解成整个分配过程绝不放锁。erase 的完整内部算法也仍在后续范围内，此处契约由固定函数文档及调用路径确定。
+
+## 1.12\_向后查找与回绕终止
+
+```c
+/**
+ * @brief 仓库补充阅读说明：搜索起点或其后可见 entry；成功写回整个命中范围的 last+1。
+ * @note 以下保留官方固定版本语句，省略外围未展开的实现。
+ */
+void *mt_find(struct maple_tree *mt, unsigned long *index, unsigned long max)
+{
+	MA_STATE(mas, mt, *index, *index);
+	void *entry;
+#ifdef CONFIG_DEBUG_MAPLE_TREE
+	unsigned long copy = *index;
+#endif
+
+	trace_ma_read(__func__, &mas);
+
+	if ((*index) > max)
+		return NULL;
+
+	rcu_read_lock();
+retry:
+	entry = mas_state_walk(&mas);
+	if (mas_is_start(&mas))
+		goto retry;
+
+	if (unlikely(xa_is_zero(entry)))
+		entry = NULL;
+
+	if (entry)
+		goto unlock;
+
+	while (mas_is_active(&mas) && (mas.last < max)) {
+		entry = mas_next_entry(&mas, max);
+		if (likely(entry && !xa_is_zero(entry)))
+			break;
+	}
+
+	if (unlikely(xa_is_zero(entry)))
+		entry = NULL;
+unlock:
+	rcu_read_unlock();
+	if (likely(entry)) {
+		*index = mas.last + 1;
+#ifdef CONFIG_DEBUG_MAPLE_TREE
+		if (MT_WARN_ON(mt, (*index) && ((*index) <= copy)))
+			pr_err("index not increased! %lx <= %lx\n",
+			       *index, copy);
+#endif
+	}
+
+	return entry;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：后续迭代遇到回绕零直接结束，第一次从零查询应使用 mt_find。
+ * @note 以下保留官方固定版本语句，省略外围未展开的实现。
+ */
+void *mt_find_after(struct maple_tree *mt, unsigned long *index,
+		    unsigned long max)
+{
+	if (!(*index))
+		return NULL;
+
+	return mt_find(mt, index, max);
+}
+```
+
+index>max 直接返回且不改游标；其他 NULL 返回也不写回。max 限制搜索，而命中范围可以延伸过 max。若 last=ULONG_MAX，成功后 index 回绕零，DEBUG 分支也显式允许这个零值。zero-entry 不作为普通可见对象返回。函数返回时内部 RCU 读侧已经退出，不替载荷取得引用。见[普通接口模块](../../navigation/P07_普通接口与范围契约.md#7.3_结果与证明边界)。

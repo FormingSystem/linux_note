@@ -524,3 +524,26 @@ static inline void mas_set(struct ma_state *mas, unsigned long index)
 ```
 
 S5 的 reset 保留当前位置，可能再次找到同一对象；S6 的 set 则同时改变请求索引。__mas_set_range 的诊断只检查当前 active 时新 start 是否落在原 slot 区间，不替调用者证明全部输入和资源前置条件。回到[游标导读](../../../navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)。
+
+## 1.12\_普通接口的锁与迭代宏
+
+```c
+/**
+ * @brief 仓库补充阅读说明：普通写封装直接操作树内自旋锁，并不检查外部锁登记。
+ * @note 以下保留官方固定版本语句，省略外围未展开的实现。
+ */
+#define mtree_lock(mt)		spin_lock((&(mt)->ma_lock))
+#define mtree_unlock(mt)	spin_unlock((&(mt)->ma_lock))
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：首次允许从零搜索，后续由 find_after 识别回绕终止。
+ * @note 以下保留官方固定版本语句，省略外围未展开的实现。
+ */
+#define mt_for_each(__tree, __entry, __index, __max) \
+	for (__entry = mt_find(__tree, &(__index), __max); \
+		__entry; __entry = mt_find_after(__tree, &(__index), __max))
+```
+
+与外部锁模式登记是不同职责；不能在 VMA 外围协议里盲目替换为普通写入。迭代宏不建立跨全部迭代的一致快照或业务对象生命周期，见[普通接口模块](../../../navigation/P07_普通接口与范围契约.md#7.2_沿一次调用划分责任)。

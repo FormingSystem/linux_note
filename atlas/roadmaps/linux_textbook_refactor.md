@@ -210,3 +210,5 @@ B03au 将 P15 15.4 落实为[P38 节点与空洞](../../knowledge/linux/data_str
 B03av 完成 P15 15.5 [字段编码](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.5.4_用定宽整数观察错误掩码)，区分节点类型、父槽、两种根标记、保留 entry 与独立错误状态，补齐完整 C11 整数模型及固定 helper。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.58_B03av字段编码与状态边界)列出静态证据和模型限度。下一项 15.6/15.7 游标状态周期，P15 与全仓仍未完成。
 
 B03aw 完成 P15 15.6 的[P39 游标周期](../../knowledge/linux/data_structures/红黑树_rb-tree/P39_Maple操作游标的暂停与继续.md#39.3_沿S0到S6比较暂停与重置)拆分与实际改写，核对 15.7 八段查询场景并修正快速点查状态承诺；完整私有模块和源码模块按 S0～S6 比较 pause/reset 与边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.59_B03aw游标暂停与查询状态)保留目标未运行限制。下一项 P15 15.8 普通 API，全仓继续。
+
+B03ax 完成 P15 15.8 的[P40 普通接口](../../knowledge/linux/data_structures/红黑树_rb-tree/P40_Maple普通接口中的范围与查询.md#40.2_同一棵树中的覆盖与拒绝覆盖)拆分与实际改写，原三个小节保留桥接，八个普通函数改为唯一源码展开。完整 C 模块比较覆盖、拒绝覆盖、两种清除及终止游标；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.60_B03ax普通接口范围契约)区分前端/宿主和未执行的目标验证。下一项 P15 15.9 高级写入资源与锁协议，全仓继续。

@@ -598,3 +598,9 @@ range/leaf 与 arange 的数组容量分别为 64 位条件分支 16/10、普通
 使用同一官方固定 maple_tree.h/c 与 mm.h，blob 沿 1.28，不采用实验 HEAD。新增[游标模块](../maple_tree/navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)，十三函数及状态/写入类型枚举、ma_state 和 MA_STATE 宏分别按上游路径唯一展开。mas_pause 保留 index/last 并清 node，find/setup 的暂停分支检查 max 后推进 last；reset 则保留索引。mas_walk 的实际或条件会先置 start，mas_find 的部分 NULL 分支保持/恢复 active，不能靠泛化状态图替代代码。
 
 另核对 mtree_lookup_walk 的快速点查契约，不承诺维护完整游标字段；P15 八段 VMA 查询结果对照保留，其临时状态说明按此修正。note_maple_state.c 通过 ARM 前端，消费 348 份头文件的非生成部分与固定对象无差量；生成头仍是当前配置证据。宿主夹具只用真实控制函数并明确替代树行走，核对私有顺序及四个 store 失败退出。目标 Kbuild、MODPOST、装卸、RCU/并发和性能未执行，外部树未改。
+
+## 1.40\_Maple普通接口与范围契约证据
+
+同一官方固定 maple_tree.h/c 与 xarray.h，blob 沿 1.28 与 1.38；不采用实验 HEAD。新增[普通接口模块](../maple_tree/navigation/P07_普通接口与范围契约.md#7.2_沿一次调用划分责任)，八个普通函数、三个编码 helper、锁/迭代/内部常量三组宏按固定语句唯一展开。额外只读 mas_insert 冲突出口确认 -EEXIST，保留对上游 EEXISTS 拼写的纠正；不将尚未展开的动态写入算法宣称已验证。
+
+普通锁宏直接操作 ma_lock；load/find 返回前退出 RCU 读侧，业务对象不自动取得引用。max 不裁剪命中范围，last+1 的最大值回绕由 mt_find_after 处理；erase 擦除整段，而 NULL store 可局部清空。模块 ARM 前端通过，消费头文件按固定提交比较；宿主执行固定外围封装、范围后端为模型，internal 值转指针按 LLP64 宿主显式适配。核对五处分配失败、特殊 entry 与迭代终止，未执行目标 Kbuild、MODPOST、装卸、真实节点算法或并发。

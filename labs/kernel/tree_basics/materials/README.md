@@ -128,3 +128,5 @@ domains: [c_language, data_structures]
 [maple_encoded_words.c](maple_encoded_words.c)配合[P15 编码实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.5.4_用定宽整数观察错误掩码)，只用定宽整数区分 enode、非根父槽、根树对象关联与错误载荷，严格 C11 编译及 18432 次节点/父槽往返通过。不会把模型整数转成宿主指针，未验证真实 Maple 对象、操作状态转换或 RCU。
 
 [note_maple_state.c](note_maple_state.c)配合[P39 游标周期](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P39_Maple操作游标的暂停与继续.md#39.5_运行完整私有模块)，使用真实 Maple API 的私有树比较暂停后继续、重置重复、改起点与 NULL/active 边界。Makefile 已登记，ARM 前端通过；宿主使用固定控制函数和明确树行走替身检查顺序及四个 store 失败出口。目标 Kbuild/MODPOST/装卸、RCU 与并发未执行，预期日志不是实际目标记录。
+
+[note_maple_basic.c](note_maple_basic.c)配合[P40 普通接口](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P40_Maple普通接口中的范围与查询.md#40.6_运行完整私有模块)，在私有树中比较覆盖、部分重叠拒绝、范围清除、查询上界与 ULONG_MAX 回绕。ARM 前端通过；宿主固定普通封装配合明确范围替身核对五个分配失败出口和 zero/retry、整轮迭代，指针编码转换按宿主宽度显式适配。目标 Kbuild/MODPOST/装卸和真实节点算法未运行，预期日志不是目标记录。

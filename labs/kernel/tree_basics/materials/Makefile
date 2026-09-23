@@ -6,3 +6,4 @@ obj-m += note_rbtree_owner.o
 obj-m += note_rbtree_cached.o
 obj-m += note_rbtree_augmented.o
 obj-m += note_maple_state.o
+obj-m += note_maple_basic.o
