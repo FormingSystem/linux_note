@@ -2385,7 +2385,7 @@
       "baseline_sha256": "7a7e48f6d46b649d6bc1e536e73513028552cdeb23d7f44c079300afb7847cba",
       "lines": 1880,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04e 仅对已冷读的普通函数/类型重复块链接到唯一实现，其余应用及条件/组合正文保留，整章仍 pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04e 仅对已冷读的普通函数/类型重复块链接到唯一实现，其余应用及条件/组合正文保留，整章仍 pending。 B04am 全文1880行冷读，完成11.1～11.2需求引入、统计/引用分工、refcount异常和内存序边界、kref完整对象S0～S5回访；固定refcount-vs-atomic文档核对，既有代码不变不重复行为测试。后续发现device注销/最终回收混同、devm替代引用、双计数同分配缺少统一销毁协议等，11.3以后继续，pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md",

@@ -12,432 +12,124 @@ domains:
 
 ## 11.1\_本章导读\_先分清对象层次
 
-前面章节一直在讲裸 `kref`：
+前十章已经能为一个私有对象回答：谁持有、怎样取得、谁归还、最后归还怎样清理。现在把同一个驱动放进更完整的系统：它有请求完成次数，要把请求对象交给异步使用者，还要向用户空间展示设备。三个需求都可能出现“计数”，却不能靠选一个更大的结构体一起解决。
 
-```c
-struct my_obj {
-	struct kref ref;
-	...
-};
-```
+先只看驱动内部的一次 request。它没有名字目录，没有设备匹配任务；创建者和消费者需要共享使用期限，kref 已足够组织这份责任。如果驱动还要统计一共完成多少次请求，这个统计值达到零没有销毁含义，可以使用适当的普通或原子统计工具。若把统计值误当引用，值归零就释放；若把引用误当普通统计，越界或重复归还又可能破坏回收决定。
 
-这种模型适合描述：
+接着增加另一种需求：用户空间希望通过 **sysfs** 中的目录和属性查看对象。sysfs 是内核把部分对象关系与属性呈现给用户空间的文件系统，常挂载在 `/sys`。现在不仅要保活，还要决定名字、父子关系、属性访问和类型清理。**kobject** 是组织这类内核对象身份与层次的基础构件；名字不是额外加一份引用就能解决的。
 
-```text
-自定义内核对象；
-子系统私有对象；
-驱动内部对象；
-需要自己管理引用归属和 release 的对象。
-```
+如果被管理的已经是设备，通常还要设备与驱动的匹配、绑定、解绑和电源管理。**driver core** 是 Linux 组织这些设备模型关系的核心框架，`struct device` 表示其中一个设备对象。**bus_type** 描述一类设备和驱动如何匹配及参与相关回调；**class** 则提供按功能组织设备的视图，例如同类输入设备。总线归属和功能分类是不同关系，不能画成“class 持大引用、bus 持小引用”的单一计数树。
 
-但是 Linux 内核里还有一些更高层对象：
-
-```text
-struct kobject
-struct device
-struct class
-struct bus_type
-```
-
-它们也和引用计数有关，但它们不是裸 `kref` 的简单换皮。
-
-本章目的就是把几个层次分开：
-
-```text
-atomic_t      是通用原子计数工具；
-refcount_t   是引用计数安全原语；
-kref         是对象生命周期引用计数封装；
-kobject      是内核对象模型和 sysfs 层级对象；
-device       是 driver core 的设备对象；
-class/bus    是 driver core 的分类、匹配、组织结构。
-```
-
-本章不展开完整 kobject 体系，也不展开 driver core 全体系。
-
-本章只解决一个问题：
-
-```text
-什么时候该用裸 kref？
-什么时候不应该把裸 kref 模型强行套到 device/class/bus 上？
-```
-
-核心结论先写在前面：
-
-```text
-如果你只是想给自定义对象做生命周期引用计数，用 kref。
-
-如果你要接入 sysfs、uevent、层级对象模型、driver core，用 kobject/device/class/bus。
-
-不要为了“引用计数”强行引入 kobject。
-
-也不要把 device/class/bus 的 release 当成裸 kref 示例里的 my_obj_release。
-```
-
-整体层次关系：
+本章不重讲整套 sysfs 或设备模型，而是回答：已经知道私有 kref 协议后，什么时候应该继续使用它，什么时候必须进入框架规定的接口。先看需求，再看对象中实际嵌入什么；不要从 atomic_t 一路“升级”到 device，仿佛它们只是性能或功能档次不同的计数器。
 
 ```mermaid
-flowchart TD
-    A["atomic_t<br/>通用原子变量"] --> B["refcount_t<br/>引用计数安全原语"]
-    B --> C["kref<br/>生命周期引用计数封装"]
-    C --> D["kobject<br/>内核对象模型 / sysfs / 层级"]
-    D --> E["device<br/>driver core 设备对象"]
-    D --> F["class<br/>设备分类视图"]
-    D --> G["bus<br/>设备和驱动匹配组织"]
-
-    C --> H["裸 kref 私有对象<br/>my_obj / request / session / context"]
+flowchart LR
+    R[私有请求] -->|共享使用期限| K[kref或已有私有引用封装]
+    S[完成次数统计] -->|按并发与统计要求更新| A[通用计数工具]
+    N[需要命名与属性表示] -->|建立对象身份和层次| O[kobject与sysfs协议]
+    D[已经参与设备模型的设备] -->|按框架注册并持有| V[struct device]
+    B[bus_type] -->|规定设备与驱动匹配等规则| V
+    C[class] -->|按功能组织设备视图| V
 ```
 
-注意这张图不是说：
-
-```text
-所有 device/class/bus 都是你手写 kref 管理。
-```
-
-而是说：
-
-```text
-它们内部或底层会用到引用计数思想；
-但暴露给驱动作者的管理接口已经被 driver core 封装了。
-```
-
-------
+图中箭头表示需求或关系，不表示这些对象自动持有哪份引用。具体的保活与销毁路径必须继续查接口契约；一个对象与另一个对象有关联，并不意味着前者已经为后者持有引用。
 
 ## 11.2\_底层计数工具\_atomic\_t\_refcount\_t\_kref
 
+先把范围缩回私有请求。其存储、引用安全检查和最后清理调用分别位于哪一层？这几个工具的区别要从一次完整创建—共享—退出观察，不能只比较结构体成员数。
+
 ### 11.2.1\_atomic\_t\_通用原子计数工具
 
-`atomic_t` 是底层原子变量。
+atomic_t 是内核的通用原子整数类型。它让相应操作不可被其他并发更新拆开观察，但不会知道这个整数表示完成次数、状态还是对象份额。若统计两个线程各完成一次，可以按统计协议原子增加；这个用途通常不需要“从1减到0后释放对象”。
 
-它可以做很多事：
+引用计数则把数值变化接到了存储回收。假设一个错误的额外归还把零减成负值，或反复增加触及表示范围，普通整数更新本身不等于安全的所有权判断。即使用 atomic_dec_and_test 检查零，也仍要证明初始份额、有效地址、不能从零重新取得、异常处理和每个失败分支的责任。
 
-```text
-计数；
-状态位；
-统计；
-标志；
-序号；
-并发递增递减。
-```
+所以问题不在于 atomic_t 无法用于实现引用计数，而在于通用原子更新没有替应用提供完整引用纪律。直接手写时，这些约束会散落在多个调用点，后续维护者很容易只看到一个可随意加减的整数。
 
-但是 `atomic_t` 本身不知道你在实现引用计数。
-
-例如：
-
-```c
-struct my_obj {
-	atomic_t count;
-};
-```
-
-你当然可以写：
-
-```c
-atomic_inc(&obj->count);
-atomic_dec(&obj->count);
-```
-
-但是 `atomic_t` 不会替你表达：
-
-```text
-什么时候对象活着；
-什么时候对象该释放；
-什么时候禁止从 0 加回 1；
-什么时候 underflow；
-什么时候 overflow；
-什么时候触发 release。
-```
-
-所以裸 `atomic_t` 的问题是：
-
-```text
-它只是“原子操作工具”；
-不是“引用计数语义工具”。
-```
-
-如果用 `atomic_t` 手写引用计数，你必须自己处理大量规则：
-
-```text
-1. 不能从 0 复活对象。
-2. 不能 underflow。
-3. 不能 overflow。
-4. 最后一个 put 要触发 release。
-5. get 前必须证明对象有效。
-6. put 后不能访问对象。
-7. 并发路径必须有明确所有权。
-```
-
-这会把生命周期规则分散到业务代码里。
-
-所以现代内核里，如果你要表达“引用计数”，优先考虑 `refcount_t` 或 `kref`，而不是直接用 `atomic_t`。
-
-一句话：
-
-```text
-atomic_t 可以实现计数；
-但它不表达引用计数纪律。
-```
-
-------
+原子也不等于任意字段间都有完整顺序。不同函数及其 relaxed、acquire、release 形式有不同内存序契约。把某个 atomic 接口改成名字相似的 refcount 接口，必须重新审查原程序依赖的发布与清理顺序，不能以“都原子”代替核对。
 
 ### 11.2.2\_refcount\_t\_引用计数安全原语
 
-`refcount_t` 是比 `atomic_t` 更接近引用计数语义的底层工具。
+refcount_t 为对象引用提供专用操作和异常处理。先从[kref 源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入固定版本，再看[refcount_t 的存储定义](../../../../research/source_reading/kref/source_explanations/include/linux/refcount_types.h.md#1.1_原子存储字段)：它内含 atomic_t refs。专用语义来自围绕这个存储实现的操作，不是 C 类型名字本身能阻止错误赋值。
 
-它的定位是：
+普通增加要求已经有正引用保护；条件增加允许在有效地址上处理零值失败；最后减少以返回值交付归零结果。固定实现还检测特定的下溢、从零增加及溢出异常，并采用[告警与饱和处理](../../../../research/source_reading/kref/source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和)。这降低引用错误转成错误回收的风险，却不会让已经错误的所有权协议恢复健康；饱和可能使对象不再正常回收。
 
-```text
-为对象引用计数提供最小 API；
-在底层仍然使用原子操作；
-但加入引用计数相关的安全约束和内存序语义。
-```
-
-内核文档明确说明，`refcount_t` API 的目标是为对象引用计数器提供最小 API，虽然通用实现底层使用原子操作，但它和 `atomic_t` 在内存序保证等方面存在差异。([Linux Kernel 文档](https://docs.kernel.org/core-api/refcount-vs-atomic.html))
-
-本版本的存储层次先由[源码索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)定位，类型定义保持单一展开：
-
-固定[refcount_t 存储定义](../../../../research/source_reading/kref/source_explanations/include/linux/refcount_types.h.md#1.1_原子存储字段)包含 atomic_t refs，安全规则由对应引用操作实现。
-
-也就是说：
-
-```text
-refcount_t 不是脱离 atomic 的神秘机制；
-它是在 atomic 基础上封装出引用计数专用语义。
-```
-
-`refcount_t` 更关注这些问题：
-
-```text
-1. 引用计数不能随便从 0 加回 1。
-2. 引用计数不能 underflow。
-3. 引用计数不能 overflow。
-4. 某些错误路径需要 WARN 或饱和处理。
-5. 引用计数递减到 0 时需要配合释放语义。
-```
-
-但是 `refcount_t` 仍然只是底层引用计数原语。
-
-如果你直接用它，代码通常是这种风格：
+直接用 refcount_t 的对象通常在自己的 put 封装中处理最后减少，例如下面的接口片段。它假设调用者确有一份，且 sample_release 是该类型约定的最终清理函数：
 
 ```c
-struct my_obj {
-	refcount_t refs;
-};
-
-refcount_set(&obj->refs, 1);
-
-if (refcount_inc_not_zero(&obj->refs)) {
-	...
-}
-
-if (refcount_dec_and_test(&obj->refs)) {
-	release_obj(obj);
+static void sample_put(struct sample_object *obj)
+{
+    if (refcount_dec_and_test(&obj->refs))
+        sample_release(obj); /* 最后减少的结果由本类型封装接到清理。 */
 }
 ```
 
-这当然可以。
+这本身是合法设计，不因没有采用 container_of 或字段名叫 refs 就成为缺陷。如果现有子系统已经提供成熟的 sample_get/sample_put，继续遵循它的接口；仅为了统一拼写而转换 kref，会增加审查范围且不自动改善正确性。
 
-但它还有几个问题：
+真正需要核对的是内存序和外层协议。固定 NXP Linux 6.12.20 的 Documentation/core-api/refcount-vs-atomic.rst 对比指出：普通 refcount 增加不替代发布读取；refcount_dec_and_test 提供 release，并在归零成功路径建立相应 acquire；从部分原子条件增加迁移到 refcount 条件增加时，原有的完全有序保证也不能照搬。精确函数链见[普通减少](../../../../research/source_reading/kref/source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支)和[条件比较](../../../../research/source_reading/kref/source_explanations/include/linux/refcount.h.md#1.5_条件增加与失败重试)。
 
-```text
-1. 每个对象都要自己约定字段名。
-2. 每个释放路径都要自己组织 dec_and_test + release。
-3. release 函数的参数通常是业务对象指针。
-4. 不形成统一的 kref_init/kref_get/kref_put 写法。
-5. 不天然形成 container_of(ref, struct my_obj, ref) 的模式。
-```
-
-所以 `refcount_t` 是更底层的引用计数工具。
-
-一句话：
-
-```text
-refcount_t 负责“引用计数安全原语”；
-kref 负责“对象生命周期引用计数模板”。
-```
-
-------
+不必在这一节背诵全部屏障规则，但要记住审查顺序：先找到原来是谁发布对象、谁取得可见地址，再核对引用 API 是否改变了原来依赖的顺序。引用操作不是所有字段的 acquire/release 万用包装。
 
 ### 11.2.3\_kref\_对象生命周期引用计数封装
 
-`kref` 是对 `refcount_t` 的再封装。
+kref 进一步把“最后减少成功，就调用本次传入的清理函数”组织成常用接口。固定[计数成员定义](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.1_计数成员)只保存 refcount_t；对象地址、锁、状态以及清理回调都不存放在这个成员里。回调作为参数传给[kref_put](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理)，由最后归还的那条路径同步调用。
 
-它的典型结构是：
+回到 P02 的完整 [note_kref_object.c](../../../../labs/kernel/object_lifetime/materials/note_kref_object.c)。本章复用原程序观察接口分工，不增加另一套只差字段名的对象；完整源码与构建步骤见[P02 对象模板](P02_源码入口与结构定义.md#2.19_标准自定义引用对象模板)。沿同一程序逐个预测：
 
-固定[计数成员定义](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.1_计数成员)仅保存 refcount_t，不保存回调或业务类型。
+| 阶段 | 应用函数与实际责任 | kref/refcount层的动作 |
+| --- | --- | --- |
+| S0 创建 | my_refobj_alloc 申请外壳，随后申请data | kref_init 建立初始一份；不自动分配data |
+| S1 交付 | 完整初始化成功后才把地址返回创建者 | 单纯返回不自动增加份额 |
+| S2 共享 | my_refobj_get 以已有正引用为前提，为consumer追加一份 | 普通增加1→2；不验证任意裸地址 |
+| S3 使用 | creator归还后，consumer打印固定id/state/data | 2→1保留存储；字段正确性仍来自本例同步初始化与使用 |
+| S4 最后归还 | consumer调用my_refobj_put | 1→0后kref_put调用指定release |
+| S5 清理 | my_refobj_release回收data，再回收外壳 | container_of恢复地址；清理步骤由应用定义 |
 
-也就是说：
-
-```text
-kref 本身不保存对象指针；
-kref 本身不保存 release 函数；
-kref 本身不保存对象状态；
-kref 本身不保存锁；
-kref 本身只封装一个 refcount_t。
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as 创建者
+    participant B as 消费者
+    participant K as 对象中的kref和refcount
+    participant F as 应用release
+    A->>K: S0 初始化为1
+    A->>A: 完成data初始化
+    A->>K: S2 为消费者增加到2
+    A->>B: 交付地址及新增责任
+    A->>K: S3 归还到1
+    B->>B: 读取本例不再变化的数据
+    B->>K: S4 归还到0
+    K->>F: 用本次put传入的函数执行清理
+    F->>F: S5 释放data与外壳
 ```
 
-但它形成了一套固定生命周期 API：
+再看 data 申请失败。外壳已经建立初始份额，所以失败路径通过同一个 put 进入 release；kzalloc 使 data 尚为空，应用清理允许这一部分初始化状态。kref 不替你判断“构造到第几步”，更不自动回收子资源，正确性来自应用回调支持这一状态。
 
-```c
-kref_init(&obj->ref);
-kref_get(&obj->ref);
-kref_put(&obj->ref, my_obj_release);
-```
-
-这套 API 把对象生命周期压缩成一个模板：
-
-```text
-创建对象：
-    kref_init()
-
-增加长期持有者：
-    kref_get()
-
-释放当前持有者：
-    kref_put()
-
-最后一个持有者释放：
-    release(ref)
-
-从 ref 找回业务对象：
-    container_of(ref, struct my_obj, ref)
-```
-
-例如：
-
-```c
-struct my_obj {
-	struct kref ref;
-	int id;
-	void *priv;
-};
-
-static void my_obj_release(struct kref *ref)
-{
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
-
-	kfree(obj);
-}
-```
-
-这就是裸 kref 最小模型。
-
-它解决的是：
-
-```text
-自定义对象的生命周期引用计数；
-谁持有引用；
-谁释放引用；
-最后一个 put 时怎么销毁对象。
-```
-
-它不解决：
-
-```text
-对象是否在 list 中；
-对象字段是否需要锁；
-对象是否已经 dying；
-对象是否接入 sysfs；
-对象是否属于某个 bus/class；
-对象是否和 driver core 绑定。
-```
-
-所以裸 kref 的边界是：
-
-```text
-kref 是生命周期工具；
-不是对象模型；
-不是设备模型；
-不是 sysfs 模型；
-不是 driver core。
-```
-
-------
+原程序及其已有验证记录保持不变，本批没有重新运行目标模块或增加行为覆盖。阅读练习是给每个调用标出“地址来自谁、归还哪份、是否可能最后一次”，而不是把所有出现 get 的地方都当成同一种查找。
 
 ### 11.2.4\_kref\_和\_refcount\_t\_的关系
 
-可以这样理解：
+这三个名字现在可以放在同一张关系图里，因为它们各自解决的问题已经出现：
 
 ```mermaid
-flowchart TD
-    A["atomic_t"] --> B["refcount_t"]
-    B --> C["kref"]
-
-    A1["通用原子操作"] --> A
-    B1["引用计数安全语义"] --> B
-    C1["对象生命周期模板"] --> C
+flowchart LR
+    O[自定义对象] -->|内嵌成员并规定清理| K[struct kref]
+    K -->|内嵌计数成员| R[refcount_t]
+    R -->|内嵌原子存储| A[atomic_t]
+    P[kref_put调用者] -->|本次传入release参数| K
+    K -->|最后减少成立后调用| F[应用清理函数]
 ```
 
-更具体一点：
+| 当前任务 | 可选工具或接口 | 选择依据 |
+| --- | --- | --- |
+| 普通并发统计或状态 | 按具体并发需求选原子或锁 | 不把零值解释为对象最后责任 |
+| 已有类型封装需要引用原语 | refcount_t及该类型get/put | 类型已规定最后减少与清理的衔接 |
+| 新的简单私有共享对象 | kref加类型封装 | 使用现成的初始化、取得、归还与回调形态 |
+| 已经拿到框架对象 | 后文的kobject/device等接口 | 框架拥有额外身份、发布和销毁契约 |
 
-| 层次         | 示例                      | 解决什么                  | 不解决什么                   |
-| ------------ | ------------------------- | ------------------------- | ---------------------------- |
-| `atomic_t`   | `atomic_inc()`            | 通用原子计数              | 引用计数语义                 |
-| `refcount_t` | `refcount_inc_not_zero()` | 安全引用计数原语          | 对象 release 模板            |
-| `kref`       | `kref_put(ref, release)`  | 对象生命周期引用模板      | sysfs / driver core / 字段锁 |
-| `kobject`    | `kobject_get/put`         | 内核对象模型和 sysfs 层级 | 业务对象全部语义             |
-| `device`     | `get_device/put_device`   | driver core 设备生命周期  | 私有对象所有权协议           |
+kref 并未增加一套与 refcount 并行的引用数，也不是两次 get 或两次 put。选择它不会解决链表登记、业务关门、RCU 窗口或字段锁；直接使用 refcount_t 也不表示对象必然更危险、更快或更高级。
 
-关系不是：
-
-```text
-atomic_t、refcount_t、kref、kobject、device 是同一级 API。
-```
-
-而是：
-
-```text
-它们从底层原子工具逐步上升到对象模型和 driver core 模型。
-```
-
-所以写代码时不要问：
-
-```text
-atomic_t、refcount_t、kref、kobject，我随便选哪个？
-```
-
-应该问：
-
-```text
-我现在要解决的是哪一层问题？
-```
-
-如果只是：
-
-```text
-我有一个自定义对象，需要引用计数生命周期。
-```
-
-答案通常是：
-
-```text
-kref。
-```
-
-如果是：
-
-```text
-我有一个 struct device，需要增加设备引用。
-```
-
-答案通常是：
-
-```text
-get_device() / put_device()。
-```
-
-如果是：
-
-```text
-我要接入 sysfs 层级对象模型。
-```
-
-答案才可能是：
-
-```text
-kobject。
-```
-
-------
+做一个迁移练习：若把原程序的 ref 成员改成 refcount_t，除了改名，还要在哪里接回 release，回调参数怎样调整，data 失败时由谁归还初始份额？答案应覆盖 S0、S2、S4 和部分初始化失败，且仍保持同一个清理出口。只有数值路径相同还不够，原子 API 的内存序差异也要按前节检查。下一节再增加“对象需要名字与属性表示”这一新约束，进入 kobject。
 
 ## 11.3\_kobject\_边界\_引用计数之外的对象模型
 

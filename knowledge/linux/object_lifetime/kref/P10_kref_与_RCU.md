@@ -811,4 +811,4 @@ object_unpublish 只有真正摘下者才接走表份额，退出两锁后归还
 
 上一篇：[kref 与锁的组合](P09_kref_与锁的组合.md#9.8_本章小结)。
 
-下一篇：[kref、refcount_t 与 kobject 的边界](P11_kref_refcount_t_kobject_的边界.md)。
+下一篇：[kref、refcount_t 与 kobject 的边界](P11_kref_refcount_t_kobject_的边界.md#11.1_本章导读_先分清对象层次)。
