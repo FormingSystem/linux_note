@@ -23,6 +23,7 @@ source_version: "6.12.20"
 | 正常归零与异常饱和怎样分流 | [模块边界](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [增减 helper](../source_explanations/include/linux/refcount.h.md#1.3_旧值决定归零与异常分支) → [告警收敛](../source_explanations/lib/refcount.c.md#1.1_告警之前先收敛到饱和) |
 | 最后减少与容器锁怎样交接 | [锁交接模块](P04_最后归还与锁交接导读.md#4.2_把最后减少留在锁内) → [快路径与重查](../source_explanations/lib/refcount.c.md#1.2_快路径保留最后一份) → [kref 回调入口](../source_explanations/include/linux/kref.h.md#1.8_归零时把锁交给回调) |
 | 容器接口自己的锁覆盖到哪里 | [整数索引模块](P06_整数索引与拥有型查找导读.md#6.2_把容器动作接到引用周期) → XArray 查询/删除包装与 IDR 编号初始化 |
+| 分类、总线描述和内部引用是否同一分配 | [分类与总线模块](P08_device引用与资源退出导读.md#8.5_分类与总线的公共描述及内部份额) → [class动态描述清理](../source_explanations/drivers/base/class.c.md#1.3_动态描述与内部外壳各有清理者)、[bus内部清理](../source_explanations/drivers/base/bus.c.md#1.2_内部release不释放公共bus_type描述) |
 | 设备注销和devm清理为何不等于最后引用 | [设备引用模块](P08_device引用与资源退出导读.md#8.2_从D0到D5区分登记与存储) → [core注销与清理](../source_explanations/drivers/base/core.c.md#1.3_注销同时归还初始化份额)、[解绑资源边界](../source_explanations/drivers/base/dd.c.md#1.1_解绑清理不等待设备引用归零) |
 | kobject撤下为什么不等于最后归还 | [身份与类型清理模块](P07_kobject身份与类型清理导读.md#7.2_从K0到K5连接状态与回调) → [kobject字段](../source_explanations/include/linux/kobject.h.md#1.1_对象身份与独立状态)及[清理链](../source_explanations/lib/kobject.c.md#1.4_最后归还进入类型清理) |
 | atomic、refcount与kref分别接续哪一步 | [计数与清理模块边界](P02_普通引用与归零回调导读.md#2.15_计数原语与调用者清理的边界) → [完整对象回访](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.2.3_kref_对象生命周期引用计数封装) |

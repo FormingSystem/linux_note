@@ -758,3 +758,7 @@ B04an 核对固定 include/linux/kobject.h（blob c8219505a79f98bc370e52997efc8a
 B04ao核对固定drivers/base/core.c（blob ec0ef6a0de942742215862206ea2aee8a65199b7）和drivers/base/dd.c（bcc1f28b71f4f554ec8cf279934d13bdc6acce9c）。[模块入口](../kref/navigation/P08_device引用与资源退出导读.md#8.2_从D0到D5区分登记与存储)关联五个core函数与device_unbind_cleanup，主体规范化相同。unregister先删除再put初始份额；最终release按dev/type/class选择一个；解绑受管资源不以设备引用归零为前提。
 
 ARM前端通过，372份头中360份非生成源码无固定提交差异。宿主八组使用固定引用/分派包装，初始化/添加删除/devres等为显式替身；device_unbind_cleanup仅源码核对。未执行目标装卸、实际解绑、完整资源框架、事件或并发。
+
+## 1.70\_分类与总线的公共描述及内部引用
+
+B04ap核对固定drivers/base/class.c（blob ce460e1ab1376d785d5386477ae3c91e47df4686）六个函数及drivers/base/bus.c（657c93c38b0dc2a2247e5f482fadd3a9376a58e8）两个函数，并对照base.h/class.h/bus.h声明。[模块入口](../kref/navigation/P08_device引用与资源退出导读.md#8.5_分类与总线的公共描述及内部份额)区分公共class/bus_type与内部subsys_private，配对临时查找与登记份额。源码主体规范化核对，不是class/bus运行验证；未执行注册、sysfs、事件、实际退出或并发。

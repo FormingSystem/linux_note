@@ -460,147 +460,75 @@ device_unregister不是“等待所有人归还然后才返回”的同步回收
 
 ### 11.4.4\_class\_release\_也不是\_my\_obj\_release
 
-`struct class` 也是 driver core 的分类对象。
+前面的观察者保留了一台设备的存储。若系统有多台提供同类功能的设备，应用还需要回答“哪些设备提供这种功能”，而不必先知道每台设备接在哪种总线上。`class` 就提供这样的分类视图：input、net、block、tty、gpio、leds、hwmon 等名称表达不同功能类别。这里的分类不是新分配一个业务对象，更不表示所有同类设备共用一份引用。
 
-它用于把设备按功能类别组织起来，例如：
+用同一台设备来比较：设备实例描述“这一台”，`dev->class` 表达它归入哪种功能分类，`dev->bus` 表达它按哪套规则和驱动匹配，`dev->parent` 表达设备层次关系。分类相同的两台设备可以使用不同的连接方式。因此这些关系不能压成一条“class 拥有 device，device 拥有所有私有数据”的释放链。
 
-```text
-input
-net
-block
-tty
-gpio
-leds
-hwmon
+```mermaid
+flowchart LR
+    D[设备实例 dev] -->|dev.class 指向功能分类| C[公共 struct class 描述]
+    D -->|dev.bus 指向匹配规则| B[公共 struct bus_type 描述]
+    D -->|dev.parent 表达层次关系| P[父设备]
+    I[class 内部 subsys_private] -->|class 指针识别公共描述| C
+    I -->|subsys.kobj 保存内部引用与登记状态| K[内部 kset / kobject]
 ```
 
-class 也会涉及 kobject/sysfs 层级和引用管理。
+**先确定是哪块分配，才有可能讨论最后一次释放。** 固定 Linux 6.12.20 中，公共 `struct class` 描述保存名称和回调；driver core 另行分配 `subsys_private`，其 `subsys` 内嵌 kset/kobject，承载内部登记与引用。公共描述没有把这份内部 kref 直接公开给普通驱动。内部查找通过公共描述地址找到对应项，在列表锁内取得一份内部引用，然后才解除列表锁；这样查找者用完时有明确的 `subsys_put` 责任。具体阅读从[设备与分类模块](../../../../research/source_reading/kref/navigation/P08_device引用与资源退出导读.md#8.5_分类与总线的公共描述及内部份额)进入。
 
-但是它不是你的业务对象。
+同一个 class 描述有两个容易读混的回调：
 
-所以不要把：
+| 回调 | 清理对象 | 触发边界 |
+| --- | --- | --- |
+| `class->class_release` | 公共 class 描述所属的存储 | 内部分类对象最终清理时调用 |
+| `class->dev_release` | 属于该类的一个设备实例 | 设备最终 release 选择分支之一；更高优先级的 dev/type 回调存在时不会选择它 |
 
-```text
-class_release
+`class_create()` 动态分配公共描述，设置专门的 `class_create_release()`，再注册。这个回调释放公共描述；随后内部 `class_release()` 释放它自己的 `subsys_private`。两次 `kfree` 对应两块分配，不是对一个设备释放两次。手工注册的静态描述必须根据自己的存储期限设计清理，不能套用动态分配描述的释放策略。参见[创建与双分配清理](../../../../research/source_reading/kref/source_explanations/drivers/base/class.c.md#1.3_动态描述与内部外壳各有清理者)。
+
+下面把分类退出分成 C0～C3。它与某个设备的 D0～D5 周期是两组相关但独立的状态，不是一个大计数器。这里假定所属子系统已停止新使用并按其协议撤下使用者；图中没有替子系统补做这一步。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant M as 分类管理者
+    participant C as class core
+    participant I as 内部 subsys_private
+    participant R as 公共描述清理回调
+    M->>C: C0 已停止使用者后 class_destroy / class_unregister
+    C->>I: C1 class_to_subsys 在列表锁内 subsys_get
+    Note over C,I: 返回临时份额，内部对象尚有效
+    C->>I: C2 移除属性，kset_unregister 结束登记份额
+    C->>I: subsys_put 归还查找临时份额
+    alt 此时最后一份已归还
+        I->>R: C3 内部 class_release 调用 class.class_release
+        R->>R: 动态创建情形释放公共 class 描述
+        I->>I: 释放内部私有分配
+    else 仍有内部使用者
+        Note over I,R: 延后至最后归还，不能把注销返回当作全部清理完成
+    end
 ```
 
-理解成：
-
-```text
-释放某个业务 obj。
-```
-
-更准确地说：
-
-```text
-class_release 释放的是 class 这个 driver core 分类对象本身。
-```
-
-如果你有一个设备：
-
-```c
-struct my_dev {
-	struct device dev;
-	struct kref ref;
-	...
-};
-```
-
-这时一定要分清：
-
-```text
-dev 的引用：
-    由 driver core 管理，用 get_device/put_device。
-
-my_dev 私有业务引用：
-    如果确实需要，才由你自己的 kref 管理。
-
-class 的引用：
-    属于 class 对象，不是某个设备实例的私有引用。
-```
-
-很多混乱来自下面这种误解：
-
-```text
-class 管 device；
-device 管 obj；
-所以 class_release/device_release/my_obj_release 是一条链。
-```
-
-这个理解太粗糙。
-
-更准确的关系是：
-
-```text
-class 是分类视图；
-bus 是匹配和组织机制；
-device 是设备实例；
-driver 是驱动实例；
-私有 obj 是驱动自己的业务对象。
-```
-
-它们可以有关联，但不是简单总分 kref 链。
+[查找实现](../../../../research/source_reading/kref/source_explanations/drivers/base/class.c.md#1.1_查找内部对象会取得临时份额)解释 C1 的引用从哪里来；[注销实现](../../../../research/source_reading/kref/source_explanations/drivers/base/class.c.md#1.2_注销配对登记与临时查找份额)解释 C2 为什么既有 unregister 又有 put。`class_destroy()` 用于 `class_create()` 产生的分类描述，并不替调用者逐一销毁仍在使用的全部设备。把它提前调用，再希望分类引用自动解决设备和驱动退出顺序，会把“引用保障存储”错误地扩大成“自动完成整个子系统关闭”。
 
 ------
 
 ### 11.4.5\_bus\_type\_不是引用计数对象模板
 
-`struct bus_type` 是 driver core 中描述一类总线的结构。
+分类能让使用者找到同类功能，却没有回答“某台设备该由哪个驱动接管”。设备和驱动必须按同一规则比较身份，匹配成功后才可能建立绑定；设备加入、移除、电源状态变化时，还需要按照所属总线或子系统的约定执行回调。`struct bus_type` 描述这组规则。此处的 bus 不限于物理导线，关键是它组织哪一组设备、驱动和匹配行为。
 
-它关心的是：
+固定版本的公共描述包含 `match`、`uevent`、`probe`、`remove`、`shutdown`、`suspend`、`resume` 等入口，还涉及默认属性、父锁需求和 DMA 配置/清理。列出这些成员是为了辨认责任；本章并不展开完整匹配、电源管理或 DMA 教程。与 class 一样，core 内部的 `subsys_private` 才承载登记所需的 kset/kobject、集合和同步状态，公共描述中的回调并不是一组引用计数操作。
 
-```text
-设备和驱动如何匹配；
-设备添加/删除时如何产生 uevent；
-probe/remove/shutdown/suspend/resume 怎么走；
-bus/device/driver 的默认属性；
-父锁需求；
-DMA/IOMMU 等总线相关行为。
-```
+| 同一设备面对的问题 | 对应对象或协议 | 它不能单独证明什么 |
+| --- | --- | --- |
+| 哪些设备提供同类功能 | class 分类关系 | 不能据此决定某台设备匹配哪个驱动 |
+| 哪组设备和驱动按哪些规则协作 | bus_type 与绑定流程 | 不能据此证明当前仍绑定、硬件仍可用 |
+| 这台设备的存储何时可回收 | device 的取得/归还与 release | 不延长已解绑驱动的 devm 资源期限 |
+| 一次业务会话何时结束 | 私有对象自己的所有权协议 | 不自动继承 class/bus/device 的全部保证 |
 
-内核 driver infrastructure 文档中，`struct bus_type` 包含 `match`、`uevent`、`probe`、`remove`、`shutdown`、`suspend`、`resume` 等成员，用于组织设备和驱动之间的关系。([Linux Kernel 文档](https://docs.kernel.org/driver-api/infrastructure.html))
+总线注销也要配对两类内部份额：`bus_to_subsys()` 在内部列表锁下取得临时份额；`bus_unregister()` 清理可选根设备、属性及内部 devices/drivers kset，注销内部 subsys，再归还临时份额。最终 `bus_release()` 清理的是内部 `subsys_private`，没有顺便 `kfree` 公共 `bus_type`。如果描述及回调属于将退出的代码，该代码仍须完成所属子系统的使用者退出协议，不能由此推断描述可以提前消失。参见[注销内部登记](../../../../research/source_reading/kref/source_explanations/drivers/base/bus.c.md#1.1_注销内部目录与登记份额)和[内部清理对象](../../../../research/source_reading/kref/source_explanations/drivers/base/bus.c.md#1.2_内部release不释放公共bus_type描述)。
 
-所以 bus 不是：
+现在回看选择：只有私有数据共享时，继续用已有 kref 对象即可；需要设备实例时使用 device 框架及其公开引用接口；需要提供功能分类或定义设备/驱动匹配体系时，再进入 class 或 bus 的管理责任。普通设备驱动不应为了“多一层引用保护”自建 class/bus，也不应直接操作 core 的私有 kset。
 
-```text
-一个大的 kref 管理器。
-```
-
-也不是：
-
-```text
-bus 持有 device 的 kref，然后 device 持有 obj 的 kref。
-```
-
-这种说法过度简化。
-
-更准确的是：
-
-```text
-bus_type 是 driver core 的匹配和组织层；
-device 是挂在某个 bus/class/parent 关系里的设备实例；
-引用计数只是这些对象生命周期管理的一部分。
-```
-
-bus 的核心不是：
-
-```text
-refcount++ / refcount--
-```
-
-而是：
-
-```text
-match；
-probe；
-remove；
-uevent；
-device-driver 绑定关系；
-sysfs 组织；
-PM 回调。
-```
-
-所以不要把 bus 当成 kref 教材里的“大对象”。
+**停下来检验一次。** 设备仍有观察者引用时，能否提前注销分类、卸载描述所在代码，并继续使用观察者访问硬件？不能。设备引用只回答存储寿命，既没有完成分类/总线使用者退出，也没有保存驱动绑定和硬件资源。若只需在硬件退出后保留一次会话的统计结果，应考虑独立的业务存储和明确的关闭协议；下一节具体讨论这种私有引用怎样连接设备引用，而不是在同一块内存里随意加第二个计数器。
 
 ------
 

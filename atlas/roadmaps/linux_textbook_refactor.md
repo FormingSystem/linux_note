@@ -300,3 +300,5 @@ B04am 冷读 P11 全章，完成[11.1～11.2 需求与计数工具](../../knowle
 B04an 完成[P11 11.3 kobject完整周期](../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.3.1_kobject_不只是引用计数)，新增类型清理模块与固定实现，核对初始责任、主动撤下、父关系和延迟配置。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.103_B04ankobject身份与类型清理)记录七组宿主及ARM前端；下一项11.4设备框架，P11仍pending。
 
 B04ao完成[P11 11.4.1～11.4.3设备引用](../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.4.1_device_driver_core_已经封装好的对象模型)，加入完整设备模块并纠正注销/最终回收、devm/引用以及回调优先级。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.104_B04ao设备注销与资源退出)记录八组宿主与ARM前端边界；下一项class、bus及私有引用协议，P11仍pending。
+
+B04ap完成[P11 11.4.4～11.4.5分类与总线](../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.4.4_class_release_也不是_my_obj_release)，区分公共描述和内部对象、两类class回调及临时份额的归还。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.105_B04ap分类描述与内部引用)记录固定源码核对及未运行边界；下一项11.5私有引用协议，P11仍pending。

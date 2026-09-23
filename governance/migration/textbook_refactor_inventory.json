@@ -2385,7 +2385,7 @@
       "baseline_sha256": "7a7e48f6d46b649d6bc1e536e73513028552cdeb23d7f44c079300afb7847cba",
       "lines": 1880,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04e 仅对已冷读的普通函数/类型重复块链接到唯一实现，其余应用及条件/组合正文保留，整章仍 pending。 B04am 全文1880行冷读，完成11.1～11.2需求引入、统计/引用分工、refcount异常和内存序边界、kref完整对象S0～S5回访；固定refcount-vs-atomic文档核对，既有代码不变不重复行为测试。后续发现device注销/最终回收混同、devm替代引用、双计数同分配缺少统一销毁协议等，11.3以后继续，pending。 B04an 完成11.3完整kobject模块与K0～K5：添加失败仍持初始份额、del只撤下关系、类型回调/core清理分工及调试延迟边界。七组宿主和ARM前端通过；11.4以后继续，pending不变。 B04ao完成11.4.1～11.4.3完整设备模块，明确注销内已put初始化份额、设备引用不延长devm资源及dev/type/class release优先级；八组宿主与ARM前端通过，360非生成头相同。11.4.4以后继续，pending。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04e 仅对已冷读的普通函数/类型重复块链接到唯一实现，其余应用及条件/组合正文保留，整章仍 pending。 B04am 全文1880行冷读，完成11.1～11.2需求引入、统计/引用分工、refcount异常和内存序边界、kref完整对象S0～S5回访；固定refcount-vs-atomic文档核对，既有代码不变不重复行为测试。后续发现device注销/最终回收混同、devm替代引用、双计数同分配缺少统一销毁协议等，11.3以后继续，pending。 B04an 完成11.3完整kobject模块与K0～K5：添加失败仍持初始份额、del只撤下关系、类型回调/core清理分工及调试延迟边界。七组宿主和ARM前端通过；11.4以后继续，pending不变。 B04ao完成11.4.1～11.4.3完整设备模块，明确注销内已put初始化份额、设备引用不延长devm资源及dev/type/class release优先级；八组宿主与ARM前端通过，360非生成头相同。11.4.4以后继续，pending。 B04ap完成11.4.4～11.4.5分类/总线公共描述与内部引用，配对查找和登记份额，区分class两类回调；八个固定函数核对，未运行class/bus。11.5以后继续，pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md",
@@ -4556,6 +4556,20 @@
       "lines": 39,
       "state": "validated",
       "reason": "B04ao新增device概念模块与core/dd唯一实现；固定五包装与解绑函数主体核对，八组宿主验证包装/应用，解绑仅源码核对。ARM前端及导航检查完成；新人工节点红色，无目标实际运行。"
+    },
+    {
+      "path": "research/source_reading/kref/source_explanations/drivers/base/class.c.md",
+      "baseline_sha256": "571358117e436c8e362ff1d6e0c782f93263bf4d56f9c809dbc0b093fbb7739c",
+      "lines": 145,
+      "state": "validated",
+      "reason": "B04ap新增class/bus唯一实现；八个固定函数主体核对，说明公共描述与内部状态分配、临时份额和清理对象。导航与文档检查完成；新人工节点红色，未执行注册/sysfs/事件/并发。"
+    },
+    {
+      "path": "research/source_reading/kref/source_explanations/drivers/base/bus.c.md",
+      "baseline_sha256": "885bd1fcae99be82e3c0b91cedb4d2553c4ed3a4ccf663aa5d474c1b4566dbe7",
+      "lines": 63,
+      "state": "validated",
+      "reason": "B04ap新增class/bus唯一实现；八个固定函数主体核对，说明公共描述与内部状态分配、临时份额和清理对象。导航与文档检查完成；新人工节点红色，未执行注册/sysfs/事件/并发。"
     }
   ]
 }

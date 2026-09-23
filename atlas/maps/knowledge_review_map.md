@@ -638,6 +638,8 @@ mindmap-plugin: basic
         - 🔴 **未校正** [timer.c重启与同步退出实现](../../research/source_reading/kref/source_explanations/kernel/time/timer.c.md)
         - 🔴 **未校正** [xarray.h插入锁包装](../../research/source_reading/kref/source_explanations/include/linux/xarray.h.md)
         - 🔴 **未校正** [xarray.c查询与删除锁边界](../../research/source_reading/kref/source_explanations/lib/xarray.c.md)
+        - 🔴 **未校正** [class.c分类描述与内部引用](../../research/source_reading/kref/source_explanations/drivers/base/class.c.md)
+        - 🔴 **未校正** [bus.c注册描述与内部退出](../../research/source_reading/kref/source_explanations/drivers/base/bus.c.md)
         - 🔴 **未校正** [device引用与资源退出导读](../../research/source_reading/kref/navigation/P08_device引用与资源退出导读.md)
         - 🔴 **未校正** [core.c设备引用与最终清理](../../research/source_reading/kref/source_explanations/drivers/base/core.c.md)
         - 🔴 **未校正** [dd.c解绑资源与设备存储边界](../../research/source_reading/kref/source_explanations/drivers/base/dd.c.md)

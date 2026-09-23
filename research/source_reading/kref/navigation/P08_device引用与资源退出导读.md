@@ -12,7 +12,7 @@ source_version: "6.12.20"
 
 ## 8.1\_读者任务与版本
 
-固定NXP linux-imx提交dfaf2136deb2af2e60b994421281ba42f1c087e0、Linux6.12.20，身份见[基线](../../linux/SOURCE_BASELINE.md#1.1_当前来源)。已知[kobject类型清理](P07_kobject身份与类型清理导读.md#7.2_从K0到K5连接状态与回调)以后，本模块说明device的引用包装、注销和最终分派怎样接在其上；完整应用见[P11设备模块](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.4.1_device_driver_core_已经封装好的对象模型)。不展开完整probe匹配或总线注册。
+固定NXP linux-imx提交dfaf2136deb2af2e60b994421281ba42f1c087e0、Linux6.12.20，身份见[基线](../../linux/SOURCE_BASELINE.md#1.1_当前来源)。已知[kobject类型清理](P07_kobject身份与类型清理导读.md#7.2_从K0到K5连接状态与回调)以后，本模块说明device的引用包装、注销和最终分派怎样接在其上；完整应用见[P11设备模块](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.4.1_device_driver_core_已经封装好的对象模型)。8.5继续区分公共分类/总线描述与内部引用，不展开完整probe匹配或总线注册。
 
 ## 8.2\_从D0到D5区分登记与存储
 
@@ -67,3 +67,18 @@ sequenceDiagram
 完整模块ARM前端通过，372份头中360份非生成源码与固定提交无差异。宿主保留五个device函数、既有九个kobject函数和普通引用链，八组检查覆盖配置/分配/命名/添加失败、正常注销、三类release优先级、register包装与NULL取得/归还。设备初始化、添加、删除、命名、sysfs与devres等为显式替身，未执行完整driver core、真实解绑、设备事件、并发或目标装卸。delayed kobject release仍不在该同步模块支持范围。
 
 回到[总阅读索引](P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)，再区分类别自身release与设备实例release，以及私有对象如何连接设备份额。
+
+## 8.5\_分类与总线的公共描述及内部份额
+
+沿D0～D5看过设备实例后，改问分类和匹配规则由谁保存。公共class/bus_type描述与core内部subsys_private是不同对象：内部subsys的kset/kobject保存登记和引用状态，class或bus指针标识对应公共描述。驱动不能把此内部计数当成自己的私有对象引用。
+
+| 阶段 | 分类退出中的状态与动作 | 对应源码入口 |
+| --- | --- | --- |
+| C0 准备退出 | 所属子系统停止新使用并撤下使用者；单个unregister不替代完整退出协议 | [正文的分类与总线选择](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.4.4_class_release_也不是_my_obj_release) |
+| C1 临时取得 | class_to_subsys持class_kset列表锁定位，通过subsys_get保证返回内部对象有效 | [查找与取得](../source_explanations/drivers/base/class.c.md#1.1_查找内部对象会取得临时份额) |
+| C2 结束登记 | class_unregister移除属性、注销内部kset，再subsys_put临时份额 | [注销配对](../source_explanations/drivers/base/class.c.md#1.2_注销配对登记与临时查找份额) |
+| C3 最终清理 | 内部class_release调用公共class_release，再释放内部私有对象；动态公共描述由create_release释放 | [两块分配的清理](../source_explanations/drivers/base/class.c.md#1.3_动态描述与内部外壳各有清理者) |
+
+同轴读bus：[bus_unregister](../source_explanations/drivers/base/bus.c.md#1.1_注销内部目录与登记份额)通过bus_to_subsys取得临时内部份额，清理登记后归还；[bus_release](../source_explanations/drivers/base/bus.c.md#1.2_内部release不释放公共bus_type描述)只释放内部subsys_private。它不释放公共bus_type，也不是设备实例的release回调。class.class_release与class.dev_release分别属于分类描述和设备实例，不能凭同名release混为一条链。
+
+本单元核对固定class.c六个函数、bus.c两个函数及base.h/class.h/bus.h状态声明；未运行class/bus注册、实际sysfs、事件、模块退出或并发测试。概念阅读在此组织阶段和入口，八个函数体仅在实现页单一展开。
