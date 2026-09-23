@@ -342,142 +342,17 @@ node/parent round trips: 18432
 
 ## 15.6\_struct\_ma\_state\_Maple\_Tree\_高级\_API\_的状态机
 
-如果说 `struct maple_tree` 是树对象，`struct maple_node` 是节点对象，那么 `struct ma_state` 就是“拿着地图在树里走的人”。
+字段编码分清以后，还需要把一次操作串起来：谁拥有 index/last，暂停前后哪些字段保留，下一次调用从哪里继续？完整单元进入[P39 暂停与继续](P39_Maple操作游标的暂停与继续.md#39.1_从查一个对象走到继续遍历)，保留原结构、初始化和状态名称的教学责任，并用 S0～S6 与私有模块观察差别。
 
-高级 API 几乎都围绕 `ma_state` 工作。
+ma_state 是多组正交状态，不能由一个 status 名称推断所有字段；pause 与 reset 不等价，NULL 返回也不唯一对应 overflow。原状态图已经按固定入口修正到 P39，具体字段、宏与函数只在[游标源码模块](../../../../research/source_reading/maple_tree/navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)关联的实现标题展开。
 
-源码位置：[include/linux/maple_tree.h](../../../../research/source_reading/linux/include/linux/maple_tree.h)
-
-简化骨架如下，注释译成中文：
-
-```c
-struct ma_state {
-	struct maple_tree *tree;		/* 当前操作的树 */
-	unsigned long index;		/* 当前操作的 index，也就是范围起点 */
-	unsigned long last;		/* 当前操作的最后一个 index，也就是范围终点 */
-	struct maple_enode *node;	/* 包含当前 entry 的节点 */
-	unsigned long min;		/* 当前节点隐含的最小 index */
-	unsigned long max;		/* 当前节点隐含的最大 index */
-	struct maple_alloc *alloc;	/* 本次操作预分配出来的节点 */
-	enum maple_status status;	/* 状态：active、start、none 等 */
-	unsigned char depth;		/* 写操作期间下降到树中的深度 */
-	unsigned char offset;		/* 当前关注的 slot / pivot 下标 */
-	unsigned char mas_flags;
-	unsigned char end;		/* 当前节点的末尾 slot */
-	enum store_type store_type;	/* 本次 store 需要的写入类型 */
-};
-```
-
-`ma_state` 里有三组字段最重要。
-
-第一组是“我要操作哪个范围”：
-
-```text
-index
-last
-```
-
-第二组是“我现在在树的哪里”：
-
-```text
-node
-min
-max
-depth
-offset
-end
-```
-
-第三组是“我现在处于什么状态”：
-
-```text
-status
-alloc
-store_type
-```
-
-`MA_STATE()` 宏就是最常见的初始化方式：
-
-```c
-#define MA_STATE(name, mt, first, end)					\
-	struct ma_state name = {					\
-		.tree = mt,						\
-		.index = first,						\
-		.last = end,						\
-		.node = NULL,						\
-		.status = ma_start,					\
-		.min = 0,						\
-		.max = ULONG_MAX,					\
-		.alloc = NULL,						\
-		.mas_flags = 0,						\
-		.store_type = wr_invalid,				\
-	}
-```
-
-这段代码可以翻译成一句话：
-
-```text
-我要在 mt 这棵树里，从 first 到 end 这个闭区间开始一次 Maple Tree 操作；
-当前还没走进树，所以 node = NULL，status = ma_start；
-根节点隐含范围先认为是 [0, ULONG_MAX]。
-```
-
-`ma_state` 的状态值大致是：
-
-```text
-ma_start     还没开始，下一次操作要从根往下走
-ma_active    已经定位到树中某个有效位置
-ma_root      当前状态指向根位置
-ma_none      没有找到 entry
-ma_pause     暂停，之前缓存的节点可能已经过期，下次要重新走
-ma_overflow  上一次操作撞到了上界
-ma_underflow 上一次操作撞到了下界
-ma_error     当前状态编码了错误
-```
-
-画成状态机：
-
-```mermaid
-stateDiagram-v2
-    [*] --> ma_start
-    ma_start --> ma_active: mas_walk / mas_find / mas_store
-    ma_start --> ma_none: 空树或未找到
-    ma_start --> ma_root: 根直接保存 entry
-    ma_active --> ma_active: mas_next / mas_prev / mas_store
-    ma_active --> ma_pause: mas_pause / vma_iter_invalidate
-    ma_pause --> ma_start: 下次重新从根查找
-    ma_active --> ma_overflow: 超过 max
-    ma_active --> ma_underflow: 低于 min
-    ma_active --> ma_error: 分配失败或写入错误
-    ma_none --> ma_start: reset / 下一次重新查找
-    ma_error --> ma_start: 调用者处理错误后重新开始
-```
-
-这里要特别注意 `ma_pause`。
-
-VMA 修改路径里，树可能发生拆分、合并、删除、替换。如果某个 iterator 手里还缓存着旧节点位置，那么继续用旧位置可能不安全。所以 VMA 封装里有：
-
-```c
-static inline void vma_iter_invalidate(struct vma_iterator *vmi)
-{
-	mas_pause(&vmi->mas);
-}
-```
-
-它不是“删除 iterator”，而是告诉 `ma_state`：
-
-```text
-你之前记住的 node / offset 可能过期了；
-下次操作不要相信旧位置，重新从树根定位。
-```
-
-这就是高级 API 比普通 API 复杂的地方：它既保存位置以提高连续操作效率，又必须在结构变化后能失效重走。
+读完 P39 后继续下一节，以八段地址图区分普通点查和向后查询；不要把高级游标的完整字段契约外推给普通查询的内部临时状态。
 
 ------
 
 ## 15.7\_用一个复杂\_VMA\_场景理解\_ma\_state
 
-假设某进程地址空间里有下面这些 VMA：
+下面保留八段 VMA 的 64 位抽象地址图，用于比较查询任务，不表示当前 ARM32 目标可使用这些高地址：
 
 ```text
 A: [0x0000000000400000, 0x0000000000452000)  text
@@ -521,16 +396,7 @@ vma_lookup()
        -> mtree_lookup_walk()
 ```
 
-此时 `ma_state` 的语义大概是：
-
-```text
-tree  = &mm->mm_mt
-index = 0x00007f1000212345
-last  = 0x00007f1000212345
-min/max = 当前节点隐含范围
-node/offset = 查找过程中逐步定位出来
-status = 从 ma_start 走向 ma_active
-```
+MA_STATE 初始化时 tree 关联 mm_mt，index 与 last 都是输入地址。上述调用链描述普通节点树的主要分支，根直接 entry 和空树会提前返回。尤其要注意：mtree_lookup_walk 的固定注释明确说明快速点查不维护完整状态，不能承诺返回时 node/offset 或 index/last 已更新为 F 的完整范围，也不能把高级遍历的 S0～S6 状态图套在这里。
 
 如果查到了 F，返回的是 `struct vm_area_struct *F`。
 

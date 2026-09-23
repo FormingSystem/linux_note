@@ -37,3 +37,18 @@ struct vm_area_struct *vma_lookup(struct mm_struct *mm, unsigned long addr)
 这里只有一层封装：mm_mt 选择地址空间的索引，addr 是索引值，mtree_load 决定当前位置的 entry。它不会自行转到后面的非空 VMA，也不修改索引。G 的右端排除，所以查其终点时若 H 正好从此开始，结果为 H；若后面是空洞，则为空。
 
 调用者尚未因此证明读、写或执行访问被允许。函数返回后继续读 vm_flags 等属性，需要相应的对象和字段保护。不能因为没有显式 mmap 锁断言，就推导出“任意无锁访问均合法”。
+
+## 1.3\_VMA游标失效调用暂停
+
+```c
+/**
+ * @brief 仓库补充阅读说明：将 VMA 包装中的 mas 交给暂停接口。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+static inline void vma_iter_invalidate(struct vma_iterator *vmi)
+{
+	mas_pause(&vmi->mas);
+}
+```
+
+本封装没有获取或释放 mmap 锁，没有销毁游标或取得 VMA 引用。后续使用 mas_find 时，pause 状态会影响继续起点，不能只解释成保留原地址从根重找。见[暂停与继续](../../../source_explanations/lib/maple_tree.c.md#1.9_暂停继续与有界find)及[游标导读](../../../navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)。

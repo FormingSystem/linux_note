@@ -285,3 +285,239 @@ static __always_inline void mas_set_err(struct ma_state *mas, long err)
 ```
 
 xa_is_internal 的具体低位判断见[xarray 辅助](../include/linux/xarray.h.md#1.2_整数值使用低位标记并限制有效位宽)；MA_ERROR 与 mas_is_err 见[独立状态](../include/linux/maple_tree.h.md#1.9_错误载荷与独立状态)。不要把 mt_is_reserved 返回假当成对象地址有效，也不要由叶 entry 位形推断 ma_state.status。回到[编码导读](../../navigation/P05_字段编码与状态分工.md#5.2_同一数值先按存储位置解读)。
+
+## 1.7\_从操作状态选择树入口
+
+```c
+/**
+ * @brief 仓库补充阅读说明：只在 start 状态建立根范围，并区分节点树、空树和根直存。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+static inline struct maple_enode *mas_start(struct ma_state *mas)
+{
+	if (likely(mas_is_start(mas))) {
+		struct maple_enode *root;
+
+		mas->min = 0;
+		mas->max = ULONG_MAX;
+
+retry:
+		mas->depth = 0;
+		root = mas_root(mas);
+		/* Tree with nodes */
+		if (likely(xa_is_node(root))) {
+			mas->depth = 1;
+			mas->status = ma_active;
+			mas->node = mte_safe_root(root);
+			mas->offset = 0;
+			if (mte_dead_node(mas->node))
+				goto retry;
+
+			return NULL;
+		}
+
+		mas->node = NULL;
+		/* empty tree */
+		if (unlikely(!root)) {
+			mas->status = ma_none;
+			mas->offset = MAPLE_NODE_SLOTS;
+			return NULL;
+		}
+
+		/* Single entry tree */
+		mas->status = ma_root;
+		mas->offset = MAPLE_NODE_SLOTS;
+
+		/* Single entry tree. */
+		if (mas->index > 0)
+			return NULL;
+
+		return root;
+	}
+
+	return NULL;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：先处理根分支，再进入维护范围状态的树行走。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+static inline void *mas_state_walk(struct ma_state *mas)
+{
+	void *entry;
+
+	entry = mas_start(mas);
+	if (mas_is_none(mas))
+		return NULL;
+
+	if (mas_is_ptr(mas))
+		return entry;
+
+	return mtree_range_walk(mas);
+}
+```
+
+节点树设置 active 与节点入口，发现死节点时重取根；空根设置 none；直接 entry 的根先设 root，但输入 index 大于零时仍可返回 NULL。因此 root 不等于本次必然命中。mtree_range_walk 的完整内部算法未在此展开，不将短分派函数当作完整搜索证明。
+
+## 1.8\_从根定位与walk重走
+
+```c
+/**
+ * @brief 仓库补充阅读说明：当前固定表达式会将入口状态设置为 start，再处理重试与根边界。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+void *mas_walk(struct ma_state *mas)
+{
+	void *entry;
+
+	if (!mas_is_active(mas) || !mas_is_start(mas))
+		mas->status = ma_start;
+retry:
+	entry = mas_state_walk(mas);
+	if (mas_is_start(mas)) {
+		goto retry;
+	} else if (mas_is_none(mas)) {
+		mas->index = 0;
+		mas->last = ULONG_MAX;
+	} else if (mas_is_ptr(mas)) {
+		if (!mas->index) {
+			mas->last = 0;
+			return entry;
+		}
+
+		mas->index = 1;
+		mas->last = ULONG_MAX;
+		mas->status = ma_none;
+		return NULL;
+	}
+
+	return entry;
+}
+```
+
+条件是 !mas_is_active || !mas_is_start，同一枚举不可能同时等于 active 与 start，所以此版本进入函数时会设为 start。之后可能因并发读到失效节点而重试，none/root 分支调整结果范围；这是固定代码的行为，不用注释或函数名替它猜测缓存复用。这里没有改动外部源码，也没有证明整个重试协议的并发正确性。
+
+## 1.9\_暂停继续与有界find
+
+```c
+/**
+ * @brief 仓库补充阅读说明：仅设置 pause 并清 node，不解锁且保留范围。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+void mas_pause(struct ma_state *mas)
+{
+	mas->status = ma_pause;
+	mas->node = NULL;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：根据先前状态决定继续起点、边界早退或重新行走。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+static __always_inline bool mas_find_setup(struct ma_state *mas, unsigned long max, void **entry)
+{
+	switch (mas->status) {
+	case ma_active:
+		if (mas->last < max)
+			return false;
+		return true;
+	case ma_start:
+		break;
+	case ma_pause:
+		if (unlikely(mas->last >= max))
+			return true;
+
+		mas->index = ++mas->last;
+		mas->status = ma_start;
+		break;
+	case ma_none:
+		if (unlikely(mas->last >= max))
+			return true;
+
+		mas->index = mas->last;
+		mas->status = ma_start;
+		break;
+	case ma_underflow:
+		/* mas is pointing at entry before unable to go lower */
+		if (unlikely(mas->index >= max)) {
+			mas->status = ma_overflow;
+			return true;
+		}
+
+		mas->status = ma_active;
+		*entry = mas_walk(mas);
+		if (*entry)
+			return true;
+		break;
+	case ma_overflow:
+		if (unlikely(mas->last >= max))
+			return true;
+
+		mas->status = ma_active;
+		*entry = mas_walk(mas);
+		if (*entry)
+			return true;
+		break;
+	case ma_root:
+		break;
+	case ma_error:
+		return true;
+	}
+
+	if (mas_is_start(mas)) {
+		/* First run or continue */
+		if (mas->index > max)
+			return true;
+
+		*entry = mas_walk(mas);
+		if (*entry)
+			return true;
+
+	}
+
+	if (unlikely(mas_is_ptr(mas)))
+		goto ptr_out_of_range;
+
+	if (unlikely(mas_is_none(mas)))
+		return true;
+
+	if (mas->index == max)
+		return true;
+
+	return false;
+
+ptr_out_of_range:
+	mas->status = ma_none;
+	mas->index = 1;
+	mas->last = ULONG_MAX;
+	return true;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：先运行 setup，必要时走下一槽；该分支结束将状态置回 active。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+void *mas_find(struct ma_state *mas, unsigned long max)
+{
+	void *entry = NULL;
+
+	if (mas_find_setup(mas, max, &entry))
+		return entry;
+
+	/* Retries on dead nodes handled by mas_next_slot */
+	entry = mas_next_slot(mas, max, false);
+	/* Ignore overflow */
+	mas->status = ma_active;
+	return entry;
+}
+```
+
+S2 pause 由调用者在放锁前执行，S4 重获保护后 find 的 pause 分支先检查 last<max，再推进 index=++last；S5 reset 则保持当前 index。active 且 last 已到 max 时 setup 直接结束，返回 NULL 不改变 active。进入下一槽分支后，本函数也明确覆盖状态为 active，不把任意 NULL 推断为 overflow。ma_error 分支只早退，不帮调用者恢复或释放资源。
+
+本批私有模块和模型化树行走的宿主夹具只核对这些控制路径；mas_next_slot/mtree_range_walk 的完整动态算法、RCU 重试与回收仍未运行。模块导读见[一次遍历周期](../../navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)。

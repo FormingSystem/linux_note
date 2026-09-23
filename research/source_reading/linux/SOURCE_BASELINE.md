@@ -592,3 +592,9 @@ range/leaf 与 arange 的数组容量分别为 64 位条件分支 16/10、普通
 实际父槽掩码为 0xF8，根 parent 的 bit 0 与 ma_root 节点入口的 bit 1 分属不同字段。MA_ERROR 先转 unsigned long 再左移，mas_set_err 同时写 node/status，mas_is_err 检查独立 status；保留原始注释而在正文说明与执行表达式的差异。xa_mk_value 的有效整数宽度少一位，WARN_ON 不代替输入拒绝。
 
 原创 C11 定宽整数模型通过 18432 次节点/父槽往返及边界反例；没有真实指针解码、Maple 核心运行、RCU 或对象有效性验证。原始 xarray 只保存在忽略缓存，正式实现页记录固定 blob；外部树未修改。
+
+## 1.39\_Maple游标周期与暂停继续证据
+
+使用同一官方固定 maple_tree.h/c 与 mm.h，blob 沿 1.28，不采用实验 HEAD。新增[游标模块](../maple_tree/navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)，十三函数及状态/写入类型枚举、ma_state 和 MA_STATE 宏分别按上游路径唯一展开。mas_pause 保留 index/last 并清 node，find/setup 的暂停分支检查 max 后推进 last；reset 则保留索引。mas_walk 的实际或条件会先置 start，mas_find 的部分 NULL 分支保持/恢复 active，不能靠泛化状态图替代代码。
+
+另核对 mtree_lookup_walk 的快速点查契约，不承诺维护完整游标字段；P15 八段 VMA 查询结果对照保留，其临时状态说明按此修正。note_maple_state.c 通过 ARM 前端，消费 348 份头文件的非生成部分与固定对象无差量；生成头仍是当前配置证据。宿主夹具只用真实控制函数并明确替代树行走，核对私有顺序及四个 store 失败退出。目标 Kbuild、MODPOST、装卸、RCU/并发和性能未执行，外部树未改。

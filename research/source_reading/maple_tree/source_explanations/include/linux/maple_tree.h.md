@@ -357,3 +357,170 @@ static inline bool mas_is_err(struct ma_state *mas)
 ```
 
 错误写入者是[mas_set_err](../../../source_explanations/lib/maple_tree.c.md#1.6_保留entry与操作错误分别判断)，它同时写 node 与 status；查询者不能只取一个字段就假设状态一致。头文件早期文字中的右移说法不替代当前宏的左移语句；原始文件保留原注释，本说明明确区分注释与执行代码。start/none/pause 等状态由 maple_status 表达，不能作为同一种 node 指针编码列表背诵。
+
+## 1.10\_操作状态与初始化
+
+```c
+/**
+ * @brief 仓库补充阅读说明：状态枚举独立于 node 载荷，不能由返回 NULL 推断唯一状态。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+enum maple_status {
+	ma_active,
+	ma_start,
+	ma_root,
+	ma_none,
+	ma_pause,
+	ma_overflow,
+	ma_underflow,
+	ma_error,
+};
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：写入路径分类是另一状态轴，不是游标 status 的别名。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+enum store_type {
+	wr_invalid,
+	wr_new_root,
+	wr_store_root,
+	wr_exact_fit,
+	wr_spanning_store,
+	wr_split_store,
+	wr_rebalance,
+	wr_append,
+	wr_node_store,
+	wr_slot_store,
+};
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：请求范围、节点位置、状态与资源分别存放。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+struct ma_state {
+	struct maple_tree *tree;	/* The tree we're operating in */
+	unsigned long index;		/* The index we're operating on - range start */
+	unsigned long last;		/* The last index we're operating on - range end */
+	struct maple_enode *node;	/* The node containing this entry */
+	unsigned long min;		/* The minimum index of this node - implied pivot min */
+	unsigned long max;		/* The maximum index of this node - implied pivot max */
+	struct maple_alloc *alloc;	/* Allocated nodes for this operation */
+	enum maple_status status;	/* The status of the state (active, start, none, etc) */
+	unsigned char depth;		/* depth of tree descent during write */
+	unsigned char offset;
+	unsigned char mas_flags;
+	unsigned char end;		/* The end of the node */
+	enum store_type store_type;	/* The type of store needed for this operation */
+};
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：为新变量初始化状态，未指定聚合成员按 C 规则归零。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+#define MA_STATE(name, mt, first, end)					\
+	struct ma_state name = {					\
+		.tree = mt,						\
+		.index = first,						\
+		.last = end,						\
+		.node = NULL,						\
+		.status = ma_start,					\
+		.min = 0,						\
+		.max = ULONG_MAX,					\
+		.alloc = NULL,						\
+		.mas_flags = 0,						\
+		.store_type = wr_invalid,				\
+	}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：清零整份操作存储再设初值，不负责释放其此前可能拥有的资源。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+static inline void mas_init(struct ma_state *mas, struct maple_tree *tree,
+			    unsigned long addr)
+{
+	memset(mas, 0, sizeof(struct ma_state));
+	mas->tree = tree;
+	mas->index = mas->last = addr;
+	mas->max = ULONG_MAX;
+	mas->status = ma_start;
+	mas->node = NULL;
+}
+```
+
+MA_STATE 建立 S0 输入范围，普通与高级 API 对后续字段的维护并不相同。alloc 可能表示资源请求或分配管理，不是一个 status 枚举；store_type 的选择属于写入路径，本节不展开完整写入分类。
+
+## 1.11\_重置与重新指定范围
+
+```c
+/**
+ * @brief 仓库补充阅读说明：读取独立 status。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+static inline bool mas_is_active(struct ma_state *mas)
+{
+	return mas->status == ma_active;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：只写 status 与 node，保留 index/last 和资源字段。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+static __always_inline void mas_reset(struct ma_state *mas)
+{
+	mas->status = ma_start;
+	mas->node = NULL;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：当前已定位范围的局部修改，警告不等于拒绝。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+static inline void __mas_set_range(struct ma_state *mas, unsigned long start,
+		unsigned long last)
+{
+	/* Ensure the range starts within the current slot */
+	MAS_WARN_ON(mas, mas_is_active(mas) &&
+		   (mas->index > start || mas->last < start));
+	mas->index = start;
+	mas->last = last;
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：先 reset 再设置输入区间，下一次需要重走。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+static inline
+void mas_set_range(struct ma_state *mas, unsigned long start, unsigned long last)
+{
+	mas_reset(mas);
+	__mas_set_range(mas, start, last);
+}
+```
+
+```c
+/**
+ * @brief 仓库补充阅读说明：把点查询转换为起止相同的范围。
+ * @note 保留固定版本语句；同步、业务对象和资源期限按调用契约建立。
+ */
+static inline void mas_set(struct ma_state *mas, unsigned long index)
+{
+
+	mas_set_range(mas, index, index);
+}
+```
+
+S5 的 reset 保留当前位置，可能再次找到同一对象；S6 的 set 则同时改变请求索引。__mas_set_range 的诊断只检查当前 active 时新 start 是否落在原 slot 区间，不替调用者证明全部输入和资源前置条件。回到[游标导读](../../../navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)。

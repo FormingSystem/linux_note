@@ -5,6 +5,20 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/maple_tree/navigation/P06_操作游标与暂停继续.md",
+      "baseline_sha256": "ce4ed017b1335e5dd8940098f0e006c0c3868140d464c5293633bd34d319fbae",
+      "lines": 57,
+      "state": "validated",
+      "reason": "B03aw 游标完整周期及固定源码模块：pause/reset、find 上界与状态独立核对，私有模块 ARM 前端及明确范围行走替身通过；无目标装卸或并发结论，新人工节点红色。"
+    },
+    {
+      "path": "knowledge/linux/data_structures/红黑树_rb-tree/P39_Maple操作游标的暂停与继续.md",
+      "baseline_sha256": "8714cb11435a87cf1916eca985ad887d164f20167144b4bf97cb679867ae74e3",
+      "lines": 248,
+      "state": "validated",
+      "reason": "B03aw 游标完整周期及固定源码模块：pause/reset、find 上界与状态独立核对，私有模块 ARM 前端及明确范围行走替身通过；无目标装卸或并发结论，新人工节点红色。"
+    },
+    {
       "path": "research/source_reading/maple_tree/source_explanations/include/linux/xarray.h.md",
       "baseline_sha256": "67a707dc7ad6b82dfabd42a96215c1cfb77455ca9260e631c3ed7da56ff5e2c4",
       "lines": 54,
@@ -1784,7 +1798,7 @@
       "baseline_sha256": "2de6e1b8f40fadcc9f3e5294a114f8902a20aed4c1a35cccc6ad8d7e0875baec",
       "lines": 1804,
       "state": "pending",
-      "reason": "B03at 实际冷读并重构开篇与 15.1～15.3，唯一展开树字段、模式、七个函数及宏；15.10 仅去重同一 MM_MT_FLAGS 定义并精确回链，15.4/15.5 已冷读待修，其他正文仍待按单元审查，不升级整章状态。 B03au 完成 15.4 实际冷读并拆出完整 P38 节点/空洞单元，原标题保留桥接；15.5 以后仍待继续。 B03av 完成 15.5 编码单元与模型，15.6 以后仍待按状态周期继续。"
+      "reason": "B03at 实际冷读并重构开篇与 15.1～15.3，唯一展开树字段、模式、七个函数及宏；15.10 仅去重同一 MM_MT_FLAGS 定义并精确回链，15.4/15.5 已冷读待修，其他正文仍待按单元审查，不升级整章状态。 B03au 完成 15.4 实际冷读并拆出完整 P38 节点/空洞单元，原标题保留桥接；15.5 以后仍待继续。 B03av 完成 15.5 编码单元与模型，15.6 以后仍待按状态周期继续。 B03aw 完成 15.6 游标周期并拆 P39，15.7 八段查询已冷读、保留正确比较并修正快速点查临时状态承诺；15.8 以后仍 pending。"
     },
     {
       "path": "knowledge/linux/data_structures/红黑树_rb-tree/大纲.md",

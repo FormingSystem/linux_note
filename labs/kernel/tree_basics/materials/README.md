@@ -126,3 +126,5 @@ domains: [c_language, data_structures]
 [maple_pivot_slots.cpp](maple_pivot_slots.cpp)配合[P38 分区实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P38_Maple节点中的范围与空洞.md#38.5_运行包含空槽的分区程序)，由七个 VMA 构造包含 NULL 空洞的闭区间分区，验证包含式上界、最大连续空洞和窗口内 first-fit。256 种小地址占用图、207360 组窗口/长度与独立逐地址扫描一致，另查排除终点极值；模型没有真实 Maple 节点、更新、对齐筛选、RCU 或内核运行。
 
 [maple_encoded_words.c](maple_encoded_words.c)配合[P15 编码实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.5.4_用定宽整数观察错误掩码)，只用定宽整数区分 enode、非根父槽、根树对象关联与错误载荷，严格 C11 编译及 18432 次节点/父槽往返通过。不会把模型整数转成宿主指针，未验证真实 Maple 对象、操作状态转换或 RCU。
+
+[note_maple_state.c](note_maple_state.c)配合[P39 游标周期](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P39_Maple操作游标的暂停与继续.md#39.5_运行完整私有模块)，使用真实 Maple API 的私有树比较暂停后继续、重置重复、改起点与 NULL/active 边界。Makefile 已登记，ARM 前端通过；宿主使用固定控制函数和明确树行走替身检查顺序及四个 store 失败出口。目标 Kbuild/MODPOST/装卸、RCU 与并发未执行，预期日志不是实际目标记录。
