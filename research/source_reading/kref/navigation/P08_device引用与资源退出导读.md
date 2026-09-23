@@ -82,3 +82,13 @@ sequenceDiagram
 同轴读bus：[bus_unregister](../source_explanations/drivers/base/bus.c.md#1.1_注销内部目录与登记份额)通过bus_to_subsys取得临时内部份额，清理登记后归还；[bus_release](../source_explanations/drivers/base/bus.c.md#1.2_内部release不释放公共bus_type描述)只释放内部subsys_private。它不释放公共bus_type，也不是设备实例的release回调。class.class_release与class.dev_release分别属于分类描述和设备实例，不能凭同名release混为一条链。
 
 本单元核对固定class.c六个函数、bus.c两个函数及base.h/class.h/bus.h状态声明；未运行class/bus注册、实际sysfs、事件、模块退出或并发测试。概念阅读在此组织阶段和入口，八个函数体仅在实现页单一展开。
+
+## 8.6\_私有会话连接设备份额
+
+[完整会话应用](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.5.4_一个典型的分层结构)不改写driver core：独立note_session的每个实例在S1通过get_device拥有设备一份，多个私有拥有者共享这一桥接份额；S4私有kref归零先释放会话，再put_device。设备外壳的唯一回收者仍是S5设备release。S3注销结束初始化份额，不结束仍存会话的桥接份额。
+
+按调用者阶段读已有实现：S1进入[设备取得](../source_explanations/drivers/base/core.c.md#1.2_设备取得与归还进入kobject)；S3进入[注销并归还初始化份额](../source_explanations/drivers/base/core.c.md#1.3_注销同时归还初始化份额)；S4私有最后归还调用应用session_release，再走同一put_device；S5进入[最终分派](../source_explanations/drivers/base/core.c.md#1.4_最终release按对象类型选择)。无需再复制这些函数体。
+
+owner.lock保护closing和completed；同一锁把open/request与关闭排序，owner不可变且由桥接引用维持有效。该例只完成同步统计，没有硬件或异步在途操作，不能外推出关闭后任意I/O已经排空。若同一分配内放两个计数，必须另证唯一最终释放入口；两张引用表不足以防止其中一方提前free。
+
+十组宿主检查覆盖配置、分配、命名、添加及会话分配失败，完整周期，关闭先于open，open先于关闭，两个独立会话，和会话先于设备注销结束。使用原有固定device/kobject/普通引用函数；锁、原子操作、登记和sysfs等为顺序替身。ARM前端通过，372份头中360份非生成源码与固定提交无差异。没有目标链接、装卸、真实并发或硬件测试。

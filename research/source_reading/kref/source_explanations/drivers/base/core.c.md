@@ -101,3 +101,5 @@ static void device_release(struct kobject *kobj)
 宿主保留这五个主体与既有九个kobject函数，设备初始化/添加/撤下以及devres等底层行为是明确替身，验证应用分支、引用结算和三个release优先级；未执行完整driver core、真实资源释放、并发或目标装卸。
 
 回到[设备模块](../../../navigation/P08_device引用与资源退出导读.md#8.2_从D0到D5区分登记与存储)和[总阅读索引](../../../navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)。
+
+同一组取得、归还与最终分派在[独立会话桥接导读](../../../navigation/P08_device引用与资源退出导读.md#8.6_私有会话连接设备份额)中由S1、S3～S5串起；私有kref只调用公开device接口，不直接接管内部计数。

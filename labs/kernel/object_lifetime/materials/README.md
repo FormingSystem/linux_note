@@ -158,3 +158,9 @@ ARM前端通过，354份头中342份非生成源码相对固定提交无差异�
 [note_device.c](note_device.c)对应[P11 设备模块](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.4.1_device_driver_core_已经封装好的对象模型)，初始化后分别处理命名/添加失败，成功时追加观察者，device_unregister消费初始化份额，观察者最后put才清理外壳。模块不绑定硬件驱动，要求SYSFS开启且DEBUG_KOBJECT_RELEASE关闭。Makefile已登记。
 
 ARM前端通过，372份头中360份非生成源码相对固定提交无差异；八组宿主运行固定五个device函数与既有九个kobject函数，覆盖配置/分配/命名/添加失败、正常注销、三个release优先级、register与NULL包装。初始化/设备添加删除/命名/sysfs/devres为顺序替身，未验证完整driver core、真实解绑/事件、并发、目标链接或装卸。
+
+## 1.24\_独立会话与设备份额
+
+[note_session.c](note_session.c)对应[P11完整分层结构](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.5.4_一个典型的分层结构)：每个会话取得设备一份，多个会话拥有者只增加私有kref；注销关闭业务，已有会话可读取统计，最后会话归还桥接份额。Makefile已登记，要求SYSFS开启、DEBUG_KOBJECT_RELEASE关闭，模块没有硬件和外部入口。
+
+十组宿主控制路径与ARM前端通过；372份头中360份非生成源码无固定提交差异。固定device/kobject/引用函数保留，锁、原子操作、登记/sysfs为顺序替身；未执行目标链接装卸、真实并发、驱动解绑或硬件。

@@ -12,3 +12,4 @@ obj-m += note_kref_table.o
 obj-m += note_kref_rcu.o
 obj-m += note_kobject.o
 obj-m += note_device.o
+obj-m += note_session.o

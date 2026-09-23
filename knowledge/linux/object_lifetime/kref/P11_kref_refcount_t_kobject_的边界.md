@@ -534,446 +534,285 @@ sequenceDiagram
 
 ## 11.5\_分层对照\_裸\_kref\_driver\_core\_和私有引用
 
+现在已经能区分计数、设备存储和分类登记。再增加一个实际需求：设备退出后，已经打开的会话还要读取之前完成的请求数。继续使用硬件应当失败，读取独立保存的统计却应当成功。这要求我们连接两种存储寿命，同时把“仍能做业务”留给关闭协议判断。
+
 ### 11.5.1\_裸\_kref\_对象和\_driver\_core\_对象的对比
 
-这一节把边界集中放到一张表里。
+先沿已建立的实例回顾。普通原子变量可以计数，但没有引用专用的误用约束；refcount 提供引用原语，kref 在其上统一调用者的清理入口。到 kobject、device 这一层，名称、登记、关联和框架清理也成为协议的一部分。
 
-| 对象              | 是否只是引用计数 | 典型 API                     | release 类型                       | 主要职责             |
-| ----------------- | ---------------- | ---------------------------- | ---------------------------------- | -------------------- |
-| `atomic_t`        | 不是             | `atomic_inc/dec`             | 无                                 | 通用原子操作         |
-| `refcount_t`      | 接近             | `refcount_inc/dec_and_test`  | 调用者自己组织                     | 安全引用计数原语     |
-| `struct kref`     | 是生命周期封装   | `kref_get/put`               | `void (*)(struct kref *)`          | 自定义对象生命周期   |
-| `struct kobject`  | 不是             | `kobject_get/put`            | `ktype->release(struct kobject *)` | 内核对象模型/sysfs   |
-| `struct device`   | 不是             | `get_device/put_device`      | `release(struct device *)`         | driver core 设备对象 |
-| `struct class`    | 不是             | `class_create/destroy` 等    | class release                      | 设备分类             |
-| `struct bus_type` | 不是             | `bus_register/unregister` 等 | bus/core 管理                      | 设备-驱动匹配组织    |
+| 操作对象 | 正常接口与清理入口 | 必须另外回答的问题 |
+| --- | --- | --- |
+| `atomic_t` 通用原子值 | 原子读改写；不自带释放入口 | 此整数表示什么状态，是否适合引用计数 |
+| `refcount_t` 引用原语 | 专用增减与归零结果，由调用者清理 | 谁能取得第一份，最后归还怎样释放 |
+| 自定义 kref 对象 | `kref_get/put`，调用指定 release | 发布、业务状态、资源和调用上下文 |
+| kobject | `kobject_get/put`，类型的 release | 名称和层次登记何时撤下 |
+| device | `get_device/put_device`，设备清理分派 | 绑定、硬件、受管资源何时停止使用 |
+| class / bus_type 描述 | 按所属框架注册/注销及清理规则 | 公共描述、内部对象、成员使用者的退出顺序 |
 
-重点是：
-
-```text
-kref 是“工具”；
-kobject/device/class/bus 是“对象模型”。
-```
-
-工具可以嵌入对象模型。
-
-但是不能反过来把对象模型降级理解成工具。
-
-图示：
-
-```mermaid
-flowchart TD
-    A["底层工具层"] --> A1["atomic_t"]
-    A --> A2["refcount_t"]
-    A --> A3["kref"]
-
-    B["对象模型层"] --> B1["kobject"]
-    B --> B2["kset"]
-    B --> B3["sysfs"]
-
-    C["driver core 层"] --> C1["device"]
-    C --> C2["driver"]
-    C --> C3["class"]
-    C --> C4["bus_type"]
-
-    A3 --> B1
-    B1 --> C1
-    B1 --> C3
-    B1 --> C4
-
-    D["驱动私有对象"] --> D1["request"]
-    D --> D2["session"]
-    D --> D3["context"]
-    D1 --> A3
-    D2 --> A3
-    D3 --> A3
-```
+这个表不是从低级到高级的推荐排行榜。只有引用计数需求时，独立 kref 对象已经足够；若需要设备模型的登记和关系，就必须履行设备框架责任，不能把内部计数当成公共接口。增加框架对象会增加登记、失败恢复和退出责任，不会自动补全业务协议。
 
 ------
 
 ### 11.5.2\_为什么裸\_kref\_示例不能直接套到\_device/class/bus
 
-前面章节里经常用这种对象：
+前面链表对象的发布者决定集合引用从何取得，最后归还进入自己编写的 release。设备实例则已经交给 driver core：它可能有父设备、分类、总线和驱动绑定，还参与 sysfs、电源管理等流程。这些路径依据各自契约使用对象，最终清理要经过设备框架选定的入口。
 
-```c
-struct my_obj {
-	struct kref ref;
-	struct list_head node;
-	int id;
-};
-```
+因此，设备注销时先归还哪一份、初始化失败时是否仍须 put，都应从设备接口契约出发。不能把教学对象的“摘链、put集合、put创建者”机械复制到 `device_unregister()` 后：该接口本身已经归还初始化份额，再把它当作只摘链就会多 put 一次。另一方面，保留一个 device 引用不会替代驱动停止硬件、排空工作和清理资源的步骤。
 
-这是教学模型。
-
-它的假设是：
-
-```text
-对象是你自己定义的；
-对象由你自己发布到集合；
-对象由你自己 lookup；
-对象由你自己 get/put；
-对象由你自己的 release 销毁。
-```
-
-但是 `struct device` 的假设完全不同：
-
-```text
-对象被 driver core 注册；
-对象可能出现在 sysfs；
-对象可能属于 bus；
-对象可能属于 class；
-对象可能有 parent；
-对象可能绑定 driver；
-对象可能被 core、driver、sysfs、PM、device link 等路径持有引用；
-对象释放必须走 driver core 的 release 约定。
-```
-
-所以你不能把第 1-10 章里的 `my_obj` 模型直接替换成：
-
-```c
-struct device
-```
-
-然后得出：
-
-```text
-device 里面也有 kref，所以我照着 my_obj_release 写就行。
-```
-
-这是错误的。
-
-正确理解是：
-
-```text
-my_obj 是裸生命周期对象；
-device 是 driver core 对象；
-两者都涉及引用计数，但生命周期协议不在同一层。
-```
-
-对比图：
-
-```mermaid
-flowchart LR
-    A["裸 kref my_obj"] --> A1["自己维护集合"]
-    A --> A2["自己定义 get/put"]
-    A --> A3["自己写 release"]
-    A --> A4["自己决定状态机"]
-
-    B["struct device"] --> B1["driver core 注册/注销"]
-    B --> B2["get_device/put_device"]
-    B --> B3["sysfs / bus / class"]
-    B --> B4["dev->release"]
-    B --> B5["PM / probe / remove"]
-```
-
-一句话：
-
-```text
-裸 kref 讲的是自定义对象生命周期；
-device/class/bus 讲的是 driver core 已经封装好的分层对象模型。
-```
+把框架已有保证接入自己的设计，通常比绕开它更容易验证。下一例仅添加会话统计对象，保留设备框架的清理入口，不另行接管 `dev.kobj.kref`。
 
 ------
 
 ### 11.5.3\_kobject\_和\_device\_中仍然可以有私有\_kref\_吗
 
-可以，但要非常谨慎。
+可以有，但“两个字段分别表示两个生命周期”还不是安全协议。假设一块 `my_dev` 分配同时内嵌 device 和私有 kref，设备观察者还在使用它时，私有计数先归零；如果私有 release 直接 `kfree(my_dev)`，设备观察者就悬空。反过来，若 device 的 release 先释放同一分配，尚未归还的私有 kref 本身也位于已经失效的内存。写出两张引用表并不能消除这个交错。
 
-有些驱动对象可能长这样：
+最容易检查的设计是 **不同寿命的数据使用不同分配，并建立单向持有关系**：会话拥有设备一份，会话的 kref 只控制会话分配；会话最后释放时归还它拥有的设备份额。设备不再拥有会话份额，就没有“双方都等对方归零”的引用环。设备的最后清理始终只由设备 release 完成。
 
-```c
-struct my_dev {
-	struct device dev;
+如果确有理由把两种计数放在同一分配，也必须指定唯一的最终释放入口。例如在私有引用开始可见以前取得一份独立设备引用，由整个私有引用域共同拥有；私有计数归零时只归还这份设备引用，绝不直接释放外壳；外壳统一在设备 release 中回收。这样，私有计数非零能够推出桥接设备份额仍存在。设备发布的初始份额与这份桥接份额必须独立结算，还要说明失败恢复、重新开启是否允许以及关闭后怎样阻止重新取得。该方案增加了一套协议，没有独立业务引用域时就继续使用 device 引用，不必默认加第二个计数器。
 
-	struct kref ref;
-	struct mutex lock;
-
-	struct list_head sessions;
-};
-```
-
-这里有两个生命周期层次：
-
-```text
-struct device dev：
-    driver core 设备对象生命周期。
-
-struct kref ref：
-    驱动私有业务对象生命周期。
-```
-
-这时必须明确：
-
-```text
-dev 的引用由 get_device/put_device 管；
-my_dev 私有业务引用由 kref_get/kref_put 管；
-两者不能混用。
-```
-
-错误写法：
-
-```c
-kref_get(&mdev->ref);
-/* 以为这能保护 mdev->dev 在 driver core 中有效 */
-```
-
-这不一定成立。
-
-因为：
-
-```text
-私有 kref 只能保护你定义的私有生命周期；
-不能替代 driver core 对 struct device 的引用规则。
-```
-
-反过来也一样：
-
-```c
-get_device(&mdev->dev);
-/* 以为这能保护所有私有业务状态可用 */
-```
-
-这也不一定成立。
-
-因为：
-
-```text
-get_device 保护 device 对象生命周期；
-不代表你的私有 session、队列、硬件状态、业务状态仍然可用。
-```
-
-所以如果一个结构里同时存在 `struct device` 和私有 `struct kref`，需要明确两张表。
-
-#### (1)\_device\_引用表
-
-```text
-引用对象：
-    struct device dev
-
-引用 API：
-    get_device()
-    put_device()
-
-release：
-    dev->release
-
-保护内容：
-    driver core 设备对象生命周期
-```
-
-#### (2)\_私有\_kref\_引用表
-
-```text
-引用对象：
-    struct my_dev / my_session / my_request
-
-引用 API：
-    kref_get()
-    kref_put()
-
-release：
-    my_xxx_release(struct kref *ref)
-
-保护内容：
-    私有业务对象生命周期
-```
-
-不要把两张表合成一张。
+下一例采用两块分配。我们不需要同一分配双计数的复杂度，也不引入会话集合；若以后增加列表、异步任务或用户入口，需要分别规定它们的引用来源和排空步骤，不能只在结构里添一个链表节点。
 
 ------
 
 ### 11.5.4\_一个典型的分层结构
 
-假设你写一个驱动，里面有设备对象和用户会话对象：
-
-```c
-struct my_device {
-	struct device dev;
-	struct mutex lock;
-	bool dying;
-
-	struct list_head session_list;
-};
-
-struct my_session {
-	struct kref ref;
-	struct my_device *mdev;
-	struct list_head node;
-	int id;
-};
-```
-
-这里的生命周期层次是：
+设备外壳 `session_device` 保存内嵌 device、互斥锁和关闭门 `closing`；独立的 `note_session` 保存私有 kref、不可变的 `owner` 指针和完成数。这里有三组正交状态：设备的登记/引用、会话的引用，以及业务开关/统计。`owner` 的有效性由会话拥有的一份设备引用证明，而不是因为字段名叫 owner。
 
 ```mermaid
-flowchart TD
-    A["driver core"] --> B["struct device dev"]
-    B --> C["struct my_device"]
-    C --> D["session_list"]
-    D --> E["struct my_session"]
-    E --> F["struct kref ref"]
+flowchart LR
+    M[唯一设备管理者] -->|持有并最终归还初始化份额| D[session_device.dev]
+    U[一个或多个会话拥有者] -->|取得和归还私有份额| S[note_session.ref]
+    S -->|每个会话合计持有设备一份| D
+    S -->|最后release归还桥接份额| R[put_device]
+    R -->|设备最后归还时| F[session_device_release]
+    U -->|请求及读取统计时持锁| L[owner.lock]
+    M -->|持同一锁设置closing| L
 ```
 
-但是注意：
+先预测退出时的计数：一个会话有两个拥有者，设备却只有初始化份额加会话桥接份额共两份。注销消费初始化份额，设备剩一份。第一个会话拥有者退出只改变会话计数；第二个退出才销毁会话并归还设备份额，设备最终清理。
 
-```text
-my_session 的 kref 不等于 my_device 的 device 引用；
-my_device 的 dev 引用不等于 my_session 的引用；
-session_list 的锁不等于 session 的生命周期；
-dying 状态不等于引用计数。
+| 阶段 | 修改者、状态地址与动作 | 后续读取者及退出条件 |
+| --- | --- | --- |
+| S0 设备就绪 | 管理者初始化dev与lock，closing初值false，再添加设备 | open调用者必须已有设备份额，才可访问owner.lock |
+| S1 会话建立 | open在owner.lock内检查closing，get_device后初始化session.ref与owner | 成功返回交付一份会话；关闭或分配失败不交付 |
+| S2 业务执行 | 请求者持会话份额，在owner.lock内检查closing并更新completed | 读取统计也持该锁；owner指针发布后不变 |
+| S3 关闭 | 管理者在同一锁内设closing，解锁后unregister归还初始化份额 | open与request以后读到关闭并拒绝；已完成统计可读 |
+| S4 会话归零 | 最后拥有者的put同步进入session_release | 保存设备地址，释放会话，然后put_device桥接份额 |
+| S5 设备归零 | 最后设备份额经框架进入session_device_release | 释放设备外壳；调用者此后不再访问它 |
+
+`closing` 的传播通过共享地址和同一互斥锁完成，没有额外通知。它只拒绝后续进入临界区的操作：若请求先持锁，本例会先完成计数更新，关闭者等它解锁；若关闭先持锁，请求返回错误。这里没有把 I/O 留在锁外继续执行，所以不需要另设“在途硬件请求”计数。一旦改为异步操作，就必须补上在途责任、取消/等待和资源退出，这个短锁本身不能代替排空。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant M as 设备管理者
+    participant O as open路径
+    participant U as 会话拥有者
+    participant S as 会话清理
+    participant D as 设备框架
+    M->>D: S0 initialize和add，持初始化1
+    alt open先取得owner.lock
+        O->>D: S1检查未关闭，get_device桥接1
+        O->>U: 交付会话初始1，owner固定
+        U->>U: 可get私有份额；S2请求在锁内更新
+        M->>M: S3持锁关闭新open与request
+        M->>D: unregister，设备2→1
+        U->>U: 请求拒绝，仍可持锁读取统计
+        U->>S: S4最后私有put
+        S->>S: 保存设备地址并释放会话
+        S->>D: put桥接份额，触发S5最终设备清理
+    else 关闭先取得owner.lock
+        M->>M: S3设置closing
+        O->>O: S1发现关闭，释放未交付会话并返回错误
+        Note over M,O: open调用者自己的设备份额保证参数存储有效
+        M->>D: unregister；最后设备拥有者随后归还
+    end
 ```
 
-可能的规则是：
+程序用错误常量 `ENODEV` 表示设备服务已经不可用，函数返回它的负值；正常请求返回0，分配失败仍用前文的 `-ENOMEM`。
 
-```text
-my_device：
-    由 driver core 管理注册和注销；
-    用 get_device/put_device 保护 device 对象；
-    remove 时设置 dying，阻止新 session 创建。
+下面是完整模块；[note_session.c](../../../../labs/kernel/object_lifetime/materials/note_session.c)和材料 Makefile 提供可直接取用的版本。它沿用上一例的配置限制：启用 sysfs，关闭延迟 kobject 清理调试选项；所有会话均在初始化函数返回前结束，模块没有外部入口、真实驱动绑定或硬件资源。统计 release 的全局变量仅用于这个同步演示，不是并发驱动的统计实现。
 
-my_session：
-    由驱动自己管理；
-    创建时 kref_init；
-    加入 session_list 前持有一个引用；
-    异步任务或用户上下文使用时 kref_get；
-    最后 put 时 my_session_release。
+```c
+// SPDX-License-Identifier: GPL-2.0
+#include <linux/device.h>
+#include <linux/errno.h>
+#include <linux/kref.h>
+#include <linux/module.h>
+#include <linux/mutex.h>
+#include <linux/slab.h>
+
+struct session_device {
+    struct device dev;
+    struct mutex lock; /* 同时保护关闭门和会话的完成数。 */
+    bool closing;
+};
+struct note_session {
+    struct kref ref;
+    struct session_device *owner; /* 每个会话合计拥有设备的一份。 */
+    unsigned int completed;
+};
+static unsigned int device_releases, session_releases;
+
+static void session_device_release(struct device *dev)
+{
+    struct session_device *obj = container_of(dev, struct session_device, dev);
+    ++device_releases;
+    kfree(obj);
+}
+
+static void session_release(struct kref *ref)
+{
+    struct note_session *session = container_of(ref, struct note_session, ref);
+    struct device *held = &session->owner->dev;
+    ++session_releases;
+    kfree(session);
+    put_device(held); /* 会话消失后归还桥接份额；此后不再访问owner。 */
+}
+
+/* 调用者已有设备份额；成功交付会话初始份额，失败不交付任何引用。 */
+static int session_open(struct session_device *owner, struct note_session **out)
+{
+    struct note_session *session;
+    *out = NULL;
+    session = kzalloc(sizeof(*session), GFP_KERNEL);
+    if (!session)
+        return -ENOMEM;
+    mutex_lock(&owner->lock);
+    if (owner->closing) {
+        mutex_unlock(&owner->lock);
+        kfree(session);
+        return -ENODEV;
+    }
+    get_device(&owner->dev);
+    session->owner = owner;
+    kref_init(&session->ref);
+    mutex_unlock(&owner->lock);
+    *out = session;
+    return 0;
+}
+
+/* 已持会话份额；本例只同步更新统计，不启动任何硬件或异步工作。 */
+static int session_request(struct note_session *session)
+{
+    struct session_device *owner = session->owner;
+    int result = 0;
+    mutex_lock(&owner->lock);
+    if (owner->closing)
+        result = -ENODEV;
+    else
+        ++session->completed;
+    mutex_unlock(&owner->lock);
+    return result;
+}
+
+static unsigned int session_completed(struct note_session *session)
+{
+    struct session_device *owner = session->owner;
+    unsigned int result;
+    mutex_lock(&owner->lock);
+    result = session->completed;
+    mutex_unlock(&owner->lock);
+    return result;
+}
+
+/* 唯一管理者只调用一次，并消费设备初始化份额。 */
+static void session_device_stop(struct session_device *owner)
+{
+    mutex_lock(&owner->lock);
+    owner->closing = true;
+    mutex_unlock(&owner->lock);
+    device_unregister(&owner->dev);
+}
+
+static int __init note_session_init(void)
+{
+    struct session_device *owner;
+    struct note_session *session;
+    int result;
+    if (!IS_ENABLED(CONFIG_SYSFS) || IS_ENABLED(CONFIG_DEBUG_KOBJECT_RELEASE))
+        return -EOPNOTSUPP; /* 同步示例不实现延迟设备清理的模块退出。 */
+    owner = kzalloc(sizeof(*owner), GFP_KERNEL);
+    if (!owner)
+        return -ENOMEM;
+    mutex_init(&owner->lock);
+    device_initialize(&owner->dev);
+    owner->dev.release = session_device_release;
+    result = dev_set_name(&owner->dev, "note_session_lifetime");
+    if (result)
+        goto put_owner;
+    result = device_add(&owner->dev);
+    if (result)
+        goto put_owner;
+    result = session_open(owner, &session);
+    if (result) {
+        session_device_stop(owner);
+        return result;
+    }
+    kref_get(&session->ref); /* 第二个会话拥有者，不额外取得设备份额。 */
+    result = session_request(session);
+    pr_info("note_session: before=%d completed=%u\n", result, session_completed(session));
+    session_device_stop(owner);
+    owner = NULL; /* 初始份额已被unregister消费。 */
+    result = session_request(session);
+    pr_info("note_session: after=%d completed=%u device_release=%u\n",
+            result, session_completed(session), device_releases);
+    kref_put(&session->ref, session_release);
+    kref_put(&session->ref, session_release);
+    return 0;
+put_owner:
+    put_device(&owner->dev);
+    return result;
+}
+
+static void __exit note_session_exit(void)
+{
+    pr_info("note_session: session_release=%u device_release=%u\n",
+            session_releases, device_releases);
+}
+module_init(note_session_init);
+module_exit(note_session_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("独立会话引用与设备份额的单向连接");
 ```
 
-这比简单说：
+在与运行内核匹配的 Linux 构建环境中，在材料目录执行：
 
-```text
-device 管 session
+```bash
+make -C /lib/modules/"$(uname -r)"/build M="$PWD" modules
+sudo insmod ./note_session.ko
+sudo rmmod note_session
+sudo dmesg | tail -n 12
 ```
 
-准确得多。
+第一行构建材料目录中的模块；加载时初始化函数执行整个周期，卸载时打印最终清理次数。构建需要该运行内核的开发头和构建树；错误应先按返回值与内核日志定位，不可把宿主编译前端结果当作已经生成可加载模块。若加载返回不支持，先检查上述两个配置限制。本例不是长期保持的设备服务，短暂登记的设备在初始化返回前已经撤下。
 
-因为真正要回答的是：
+正常预期是 `before=0 completed=1`，关闭后 `after=-19 completed=1 device_release=0`，最后 `session_release=1 device_release=1`。这里 `-19` 是本版本 Linux 的 `-ENODEV`：本例用它报告服务已经关闭。设备清理暂未发生，不表示关闭失败，而是会话桥接引用仍在履行责任。最后一个会话拥有者归还后才完成两块存储的回收。
 
-```text
-session 是否持有 mdev？
-mdev remove 时如何阻止新 session？
-已有 session 如何退出？
-session 是否需要 get_device(&mdev->dev)？
-mdev release 前是否必须 drain 所有 session？
-session release 是否能访问 mdev？
-```
+检查重点是两条失败线：设备初始化以后命名或添加失败，统一 put 初始化份额；设备已添加但会话分配失败，则执行关闭和 unregister。会话在锁内发现关闭时还没有取得桥接份额，释放尚未交付的会话即可，不能多 put_device。正式调用者即使与关闭竞争，也必须先拥有有效设备份额；互斥锁无法修复传入悬空 owner 的错误。
 
-这些都不是 `kref` 或 `device` 自动帮你决定的。
+本批完成十组宿主控制路径检查，并通过 ARM 编译前端；372份头中360份非生成源码与固定提交无差异。宿主使用固定引用及设备包装函数，原子操作、锁、设备登记和sysfs等是顺序替身，不能证明多CPU同步、真实驱动退出或模块装卸。上面的目标步骤本批未执行。
+
+练习先从预测开始：删去第二个 `kref_get` 却保留两次 put，会在哪一步失去合法访问资格？第一次 put 已可能销毁会话和设备，第二次连 ref 地址都不能读取。再改为创建两个独立会话：两次 open 各取得一份设备引用，注销后还有两份；第一个会话最后退出不会销毁第二个所需的设备。最后解释为何不能用 devm 分配这里希望跨解绑存在的会话：受管清理的触发时点不由会话 kref 决定，会把尚有拥有者的会话提前回收。
 
 ------
 
 ### 11.5.5\_container\_of\_在不同层次中的作用
 
-裸 kref：
+现在看两个真实回调：`session_release` 收到私有 kref 地址，恢复的是 `note_session`；`session_device_release` 收到 device 地址，恢复的是 `session_device`。前面的 kobject 示例则由 kobj 地址恢复命名对象。三者都用 `container_of` 做成员偏移换算，却依据不同协议进入。
 
-```c
-static void my_obj_release(struct kref *ref)
-{
-	struct my_obj *obj = container_of(ref, struct my_obj, ref);
-}
-```
-
-kobject：
-
-```c
-static void my_kobj_release(struct kobject *kobj)
-{
-	struct my_obj *obj = container_of(kobj, struct my_obj, kobj);
-}
-```
-
-device：
-
-```c
-static void my_dev_release(struct device *dev)
-{
-	struct my_device *mdev = container_of(dev, struct my_device, dev);
-}
-```
-
-这三种写法都使用 `container_of()`。
-
-但是不要因为都用了 `container_of()`，就认为它们是同一层机制。
-
-`container_of()` 只是：
-
-```text
-通过内嵌成员指针找回外层对象。
-```
-
-它不决定：
-
-```text
-引用计数语义；
-release 语义；
-sysfs 语义；
-driver core 语义；
-对象是否可 lookup；
-对象是否 dying。
-```
-
-对比：
-
-```mermaid
-flowchart TD
-    A["struct kref *ref"] --> A1["container_of -> my_obj"]
-    B["struct kobject *kobj"] --> B1["container_of -> outer object"]
-    C["struct device *dev"] --> C1["container_of -> my_device"]
-
-    A1 --> D["裸 kref release"]
-    B1 --> E["kobject ktype release"]
-    C1 --> F["driver core device release"]
-```
-
-同一个 C 技巧，不代表同一种生命周期协议。
+换算没有取得引用、检查关闭门或证明对象仍有效。只有框架按照正确类型和有效寿命调用 release，转换才有前提。在本例中，私有 release 使用自己仍有效的 owner 关系保存设备地址，然后释放会话、归还设备；不能在 `kfree(session)` 后再从 session 读取 owner，也不能在可能触发最后清理的 `put_device` 后再访问设备字段。
 
 ------
 
 ### 11.5.6\_不同层次的\_get/put\_命名规律
 
-可以把命名规律记成下面这样：
+接口选择从手里的对象及取得契约出发。自定义会话用自己的 kref 封装，kobject 用 kobject_get/put，device 用 get_device/put_device；内核模块还有 try_module_get/module_put，打开文件有 get_file/fput。后两类对象另有取得失败、代码寿命和文件清理契约，这里只用来说明引用接口不止一种，不把它们展开成同一个可互换模板。
 
-```text
-你操作什么对象，就用那个对象层次的 get/put。
-```
+例如本例的 `kref_get(&session->ref)` 只增加会话拥有者数；会话已经整体持有设备一份，所以无需每次私有 get 再给设备 get。最后私有 put 统一归还桥接份额，构成可审查的配对。若为了“每一层都加一份”随意额外 get_device，却没有对应归还点，反而会泄漏设备。
 
-具体：
-
-```c
-struct my_obj *obj;
-kref_get(&obj->ref);
-kref_put(&obj->ref, my_obj_release);
-struct kobject *kobj;
-kobject_get(kobj);
-kobject_put(kobj);
-struct device *dev;
-get_device(dev);
-put_device(dev);
-struct module *mod;
-try_module_get(mod);
-module_put(mod);
-struct file *file;
-get_file(file);
-fput(file);
-```
-
-这说明 Linux 内核里引用计数不是只有一个 API。
-
-原因是：
-
-```text
-不同对象层次有不同生命周期协议。
-```
-
-不要看到引用计数就统一替换成 `kref_get/kref_put`。
-
-`kref_get/kref_put` 只适合：
-
-```text
-你自己在对象里嵌入 struct kref；
-你自己定义 release；
-你自己管理引用归属。
-```
+本节已经把独立业务对象与设备外壳连接起来，也保留了关闭后只读统计的需求。下一节回到常见误解，检查我们是否又把计数、状态、框架和硬件可用性混成了一件事。
 
 ------
 
