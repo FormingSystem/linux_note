@@ -100,3 +100,9 @@ owner.lock保护closing和completed；同一锁把open/request与关闭排序，
 [P12设备层次诊断](../../../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.8_driver_core_层次错误_device_引用和私有_kref)将两类故障分开：直接替换dev.kobj.kref的release会破坏框架清理链；私有会话未保留设备桥接份额，则可能在设备外壳释放后继续使用owner。应沿[公开取得与归还](../source_explanations/drivers/base/core.c.md#1.2_设备取得与归还进入kobject)、[注销消费初始化份额](../source_explanations/drivers/base/core.c.md#1.3_注销同时归还初始化份额)和[唯一最终分派](../source_explanations/drivers/base/core.c.md#1.4_最终release按对象类型选择)核对各自责任。
 
 get_device对非空输入进入普通取得，不能检验悬空地址。设备引用维持外壳也不保留已退出的受管资源；先按8.3检查解绑，再沿8.6画出每个会话一份桥接和失败回滚。合法设备属性操作使用dev->kobj不属于引用层次误用。本次复核既有device/session完整程序及固定实现，程序与源码函数体未改，不新增真实driver core或并发测试声明。
+
+## 8.8\_最终验收中的框架责任
+
+[P15框架与工程题](../../../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md#15.5_边界和错误验收_框架对象_错误模式和所有权表)复核device与kobject撤下不同、设备持有不保活驱动受管资源、class/bus公共描述与内部对象区别。已有P11及本导读的固定实现承担版本证据，未把对象关系画成class/bus直接继承kobject的树。
+
+当前设备八组和kobject七组宿主夹具比对材料后重编通过，另重跑责任账本六条C轨迹。init/add/delete、sysfs、devres等为既有明确替身，没有真实driver core绑定或目标诊断结论。P15将十类错误作为带前提的审查题，保留取得/归还对应体系，不重复实现框架回调。

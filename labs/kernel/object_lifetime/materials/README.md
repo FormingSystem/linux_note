@@ -285,3 +285,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.51\_组合场景验收材料
 
 [P15场景四题](../../../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md#15.4_使用场景验收_handoff_lookup_锁和_RCU)继续使用note_kref_work_modes、note_kref_table和note_kref_rcu完整模块，二十四组宿主协议重编通过；分享/转交、重复撤下和RCU回收需分别说明责任。夹具并非真实队列、锁或RCU引擎，无新目标运行。
+
+## 1.52\_框架与工程验收材料
+
+[P15](../../../../knowledge/linux/object_lifetime/kref/P15_最终验收标准.md#15.5_边界和错误验收_框架对象_错误模式和所有权表)复用note_device、note_kobject及ownership_audit；八组设备、七组kobject宿主协议和六责任轨迹重编通过。框架适配替身与真实内核行为分开记录，没有新增实际目标运行。
