@@ -12,406 +12,221 @@ domains:
 
 ## 7.1\_本章定位
 
-前面章节已经讲过：
+上一章已经知道：release 是否能正确清理，取决于此前哪些访问者退出、哪些责任被归还。现在把观察点往前移到交付瞬间。请求对象已经创建，生产者要把它交给队列；若接收者很快完成并归还，生产者还能在提交函数返回后读取结果吗？若队列拒绝，又由谁归还？
 
-```text
-kref_init() 创建初始引用；
-kref_get() 获得一个新的引用所有权；
-kref_put() 释放当前持有的引用；
-最后一个 put 触发 release。
-```
+这个问题称为 handoff，即把使用机会及相应责任交给另一条路径。**地址传过去了，不等于归还责任已经定义。** 接收者可能只借用，可能取得新的一份，也可能接管生产者手里原有的一份。三种设计都能正确，错在两边各自采用了不同的理解。
 
-本章不再重复完整生命周期，而是专门讨论一个工程里最容易写错的问题：
+本章沿同一个请求经过“创建者 → 候选交付 → 队列 → 消费者”的过程，先用可运行的 C 账本看清责任，再映射到 work、timer、completion 和注册接口。前章的查找窗口、对象资源与执行上下文作为先修保留；handoff 不替代它们，只回答这一份从谁手里交给谁、失败时还在谁手里。
 
-```text
-对象指针交给别人以后，到底谁负责 put？
-```
-
-这就是 handoff。
-
-handoff 的核心不是“传指针”，而是“引用所有权转移”。
-
-它必须回答：
-
-```text
-当前路径是否还持有引用？
-接收方是否获得引用？
-接收方什么时候 put？
-投递失败时引用归谁？
-投递成功后当前路径还能不能访问对象？
-```
-
-如果这些问题没有定义清楚，代码表面上只是少了一行 `kref_get()` 或 `kref_put()`，实际可能变成：
-
-```text
-少 get  -> 异步路径 use-after-free
-少 put  -> 对象泄漏
-多 put  -> 提前 release / refcount underflow
-handoff 后继续访问 -> use-after-free
-失败路径归属不清 -> 成功没问题，失败路径泄漏
-```
-
-本章主线：
-
-```text
-handoff 不是 API 技巧，而是对象引用归属协议。
-```
-
-------
+读完应能为一个具体接口写出成功、拒绝、取消和完成各路径的责任变化，并解释接收者在提交函数返回以前就结束时，发送者凭什么还能访问或为什么必须停止访问。
 
 ## 7.2\_所有权语义\_先分清\_borrow\_ref\_take
 
-这一组内容先把 handoff 的语义边界收住。
-
-后面不管是 workqueue、timer、队列还是 callback，本质上都只是这三种语义的组合：
-
-```text
-borrow：临时借用，不改变引用归属。
-ref/get：给接收方新引用，双方各自负责 put。
-take/consume：把当前引用交出去，成功后当前路径不再拥有对象。
-```
-
-所以本章不要先记场景，而要先记住：
-
-```text
-每一次传递对象指针，都要归类到 borrow、ref/get、take/consume 之一。
-```
+先暂时去掉线程、硬件和队列锁，只保留地址与责任。这样能发现许多并非原子操作问题的错误：同一份由两边各归还一次，或者双方都以为另一边会归还。程序里的计数不会记录每一份属于谁，归属必须由接口和状态保存方式表达。
 
 ### 7.2.1\_指针传递不等于引用转移
 
-很多 kref bug 的根源，是把下面两件事混为一谈：
+在 C 中，把 `obj` 赋给接收者字段，只复制一个地址。若它原来代表生产者的一份，复制以后不会自动变成两份；把变量名换成 `worker_obj` 也不会让生产者失去那一份。要么明确接收者借用生产者保护的存储，要么增加一份，要么让生产者把现有责任交出去。
 
-```text
-复制指针
-转移引用
-```
-
-复制指针只是复制地址值：
+先复用前章已经建立的完整 [reference_ownership.c](../../../../labs/kernel/object_lifetime/materials/reference_ownership.c)，这次观察每个 owner 槽的移动。`owner.ptr` 非空表示该槽有一份须归还，空表示没有；真实 kref 不保存这些槽，下面是让责任可见的顺序教学程序。
 
 ```c
-worker->obj = obj;
+#include <assert.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+struct object {
+    unsigned int refs;
+    int value;
+};
+
+/* 一个非空槽代表一份归还责任，禁止用结构赋值复制持有者。 */
+struct owner { struct object *ptr; };
+static unsigned int released;
+
+static bool create(struct owner *dst)
+{
+    assert(!dst->ptr);
+    struct object *obj = malloc(sizeof(*obj));
+    if (!obj)
+        return false;
+    *obj = (struct object){ .refs = 1, .value = 42 };
+    dst->ptr = obj;
+    return true;
+}
+
+static void share(struct owner *dst, const struct owner *src)
+{
+    assert(!dst->ptr && src->ptr);
+    assert(src->ptr->refs > 0 && src->ptr->refs < UINT_MAX);
+    ++src->ptr->refs;
+    dst->ptr = src->ptr;
+}
+
+static void move(struct owner *dst, struct owner *src)
+{
+    assert(!dst->ptr && src->ptr);
+    dst->ptr = src->ptr;
+    src->ptr = NULL; /* 责任转交，计数不变。 */
+}
+
+static void drop(struct owner *slot)
+{
+    assert(slot->ptr && slot->ptr->refs > 0);
+    struct object *obj = slot->ptr;
+    slot->ptr = NULL; /* 先结束本槽使用权，再执行可能的释放。 */
+    if (--obj->refs == 0) {
+        ++released; /* 观察量位于对象外，释放后不再读取对象。 */
+        free(obj);
+    }
+}
+
+static int borrow(const struct object *obj)
+{
+    return obj->value; /* 调用期间由调用者的现有引用保活。 */
+}
+
+/* 成功才接收候选引用；拒绝时候选仍归调用者。没有真实工作队列。 */
+static bool submit(struct owner *pending, struct owner *candidate,
+                   bool accept)
+{
+    assert(!pending->ptr && candidate->ptr);
+    if (!accept)
+        return false;
+    move(pending, candidate);
+    return true;
+}
+
+static void consume(struct owner *pending)
+{
+    struct owner worker = {0};
+    move(&worker, pending);
+    assert(borrow(worker.ptr) == 42);
+    drop(&worker);
+}
+
+int main(void)
+{
+    /* 两次运行分别观察提交成功与失败，均须恰好释放一次。 */
+    for (unsigned int accept = 0; accept < 2; ++accept) {
+        struct owner producer = {0}, candidate = {0}, pending = {0};
+        if (!create(&producer)) {
+            fputs("allocation failed\n", stderr);
+            return EXIT_FAILURE;
+        }
+        assert(borrow(producer.ptr) == 42 && producer.ptr->refs == 1);
+        share(&candidate, &producer);
+        assert(producer.ptr->refs == 2);
+        bool queued = submit(&pending, &candidate, accept != 0);
+        if (!queued)
+            drop(&candidate); /* 发布失败，归还预留的那一份。 */
+        drop(&producer);
+        if (queued) {
+            assert(pending.ptr->refs == 1);
+            consume(&pending);
+        }
+        assert(!producer.ptr && !candidate.ptr && !pending.ptr);
+        assert(released == accept + 1);
+        printf("accept=%u released=%u\n", accept, released);
+    }
+    return EXIT_SUCCESS;
+}
 ```
 
-这不代表 `worker` 拥有引用。
+在材料目录编译运行：
 
-引用所有权必须通过明确协议获得。
-
-例如：
-
-```c
-kref_get(&obj->ref);
-worker->obj = obj;
+```bash
+cc -std=c11 -Wall -Wextra -Werror -O2 reference_ownership.c -o reference_ownership
+./reference_ownership
 ```
 
-或者：
+两次分别输出 `accept=0 released=1`、`accept=1 released=2`。`released` 是两次试验累计的对象外观察量，每次都只回收一个对象；不要在已 free 的对象里读取一个标志来“检查它已经释放”。本模型没有真实线程、原子计数或 Linux 饱和机制，assert 只检查这个受控账本，不证明任意并发程序正确。
 
-```c
-queue_push(q, obj);
+从 `share` 与 `move` 的区别开始读：share 增加计数，并把地址写入一个原本为空的独立槽；move 只把地址换到新槽并清空旧槽，计数不变。若使用结构赋值复制一个非空 owner，两个槽都会看似有权 drop，实际却只对应一份；模型明确禁止这样复制。
 
-/*
- * 当前路径把自己手里的引用交给队列。
- * 当前路径从这里开始不再拥有 obj。
- */
+```mermaid
+flowchart LR
+    P["producer.ptr：创建者的一份"] -->|"share：计数加一，原槽保留"| C["candidate.ptr：预留的一份"]
+    C -->|"接收成功：move，清空 candidate"| Q["pending.ptr：队列接管同一份"]
+    C -->|"拒绝：candidate 仍非空，由发送者 drop"| R["对象外 released：只观察最终回收"]
+    Q -->|"consume 内 move，清空 pending"| W["worker.ptr：消费者接管同一份"]
+    W -->|"结束时 drop"| R
+    P -->|"结束自己的使用后 drop"| R
 ```
 
-这两种模型完全不同。
-
-第一种是：
-
-```text
-复制指针 + 新增引用
-```
-
-第二种是：
-
-```text
-移动当前引用
-```
-
-所以 handoff 首先要分清：
-
-```text
-我是给对方一份新的引用？
-还是把自己这份引用直接交出去？
-```
-
-------
+图中的箭头不是内核消息。它表示程序对具体槽地址的写入与责任变化；真正接入并发队列时，还要用队列锁或既定发布协议保护这些地址转交。
 
 ### 7.2.2\_handoff\_的三种语义\_borrow\_get\_take
 
-工程里建议把对象传递语义固定成三类：
+现在给刚才的动作命名。borrow 是借用：使用者没有接管一份，存储由另一个仍有效的保护窗口提供。get/ref 表示新增独立份额：接收者与原持有者之后各自退出。take/consume 表示转交已有份额：变的是责任人，不一定改变计数。
 
-```text
-borrow：借用，不获得引用
-get/ref：获得一份新引用
-take/consume：接管调用者当前引用
-```
+| 当前接口选择 | 接收者得到什么 | 发送者原来的一份 | 接收者退出时 |
+| --- | --- | --- | --- |
+| 借用 borrow | 指定窗口内的访问许可，没有独立引用 | 仍由原持有者负责，或由外层借用协议保活 | 结束借用，不代还别人的一份 |
+| 追加 get/ref | 一份新建立的独立责任 | 仍由发送者负责 | 归还接收者的份额 |
+| 接管 take/consume | 指定的一份既有责任 | 对这一份而言已经交出 | 继续转交或最终归还它 |
 
-这三种语义最好在函数命名、注释和错误路径里明确表达。
+表描述成功接收时的语义，**失败是否也消耗引用需要另写契约**。本程序 submit 选择“成功接管、拒绝保持 candidate 不变”；另一个 API 可以约定无论成功失败都消费参数，但调用者必须据此不再归还。名字里有 take 并不能替代失败行为说明。
 
-------
+一个系统也可以把这些动作组合：当前完整程序先 share 得到候选，再把候选 take 给队列，队列又 take 给消费者。整个过程没有矛盾，因为每个接口对哪一份做什么都确定。所谓不能混用，指不能让同一调用的两端对它采用不同解释，而不是禁止系统同时存在多种所有权操作。
 
 ### 7.2.3\_borrow\_只借用\_不长期保存
 
-borrow 表示接收方只是临时使用对象。
+最容易证明的借用是一次同步函数调用：`borrow(obj)` 只读 value，调用者在它返回以前保留自己的份额，函数不保存指针，也不 put。回到调用者时，归还责任从未离开 producer 槽。
 
-它不保存指针，不跨线程，不异步，不负责 put。
+但借用并不在定义上禁止跨线程或异步。上一章的[管理者等待 worker](P06_release_回调与复杂销毁模式.md#6.2.2_运行一个由管理者等待借用退出的模块)就是异步借用：管理者封闭入口并等 worker 返回以后才归还，所以借用窗口可以跨越两条执行路径。代价是更强的进入/退出协议，不能像独立持票 worker 那样让管理者随意先退出。
 
-示例：
-
-```c
-static void my_obj_dump(struct my_obj *obj)
-{
-	pr_info("state=%d\n", obj->state);
-}
-```
-
-调用者必须保证：
-
-```text
-调用期间 obj 有效。
-```
-
-被调用者不能：
-
-```text
-保存 obj；
-异步使用 obj；
-调用 kref_put()；
-把 obj 交给别的长期持有者。
-```
-
-调用示例：
-
-```c
-static void caller(struct my_obj *obj)
-{
-	/*
-	 * caller 当前已经持有 obj 的引用。
-	 * my_obj_dump() 只是借用 obj。
-	 */
-	my_obj_dump(obj);
-
-	/*
-	 * caller 仍然持有引用。
-	 */
-}
-```
-
-borrow 的所有权关系：
-
-```text
-调用前：调用者持有引用
-调用中：被调用者临时借用指针
-调用后：引用仍然归调用者
-```
-
-borrow 适合简单同步函数。
-
-例如：
-
-```c
-my_obj_dump(obj);
-my_obj_format(obj, buf);
-my_obj_check_state(obj);
-```
-
-这些函数名不要暗示它会保存引用。
-
-------
+因此“不要长期保存”应理解为 **不能把指针保留到已承诺的借用窗口以外**。若一个同步打印函数私下把地址存进全局变量留待以后使用，它就擅自扩大了窗口；若一个异步接口明确由上层保证并等待全部借用退出，保存到该期限内则可以成立。需要脱离原窗口长期使用时，必须在窗口仍有效且满足取得前提时另取自己的引用。
 
 ### 7.2.4\_get/ref\_给接收方一份新引用
 
-get/ref 表示接收方要长期保存对象，或者要跨线程、跨回调、跨异步路径使用对象。
+生产者还要观察请求，而消费者也要独立执行，这是追加引用的典型理由。完整程序中的 share 把计数从 1 改为 2，使生产者和候选各有一份；成功接收只移动候选那一份，失败则由生产者归还候选。生产者原来的份额始终要单独处理。
 
-这种情况下必须：
+预留必须早于允许接收者使用并归还。若先发布，再 get，接收者可能先把它以为已经收到的那一份 put 掉；这会消耗生产者实际仅有的份额并回收，随后生产者再对旧地址 get 就已经太晚。不是只有“生产者自己先 put”才会出问题，错误的接收者退出也能抢先发生。
 
-```text
-先 get，再交出去。
-```
+接口必须明确 get 在哪一层完成。若 `queue_ref` 内部已经追加并在拒绝时回滚，外面再盲目 get 就多造一份；若接口只接管传入的候选，外层才需要先准备。把函数名字和一行 get 并排看不够，要检查真实接收契约。
 
-典型场景：
-
-```text
-投递 work；
-启动 timer；
-注册 callback；
-加入异步请求；
-挂到等待队列；
-交给 completion 路径；
-交给硬件完成路径。
-```
-
-基本写法：
-
-```c
-kref_get(&obj->ref);       /* 给接收方准备一份引用 */
-worker->obj = obj;         /* 复制指针 */
-queue_work(wq, &worker->work);
-```
-
-引用归属：
-
-```text
-当前路径：仍然持有自己的引用
-worker：持有新 get 出来的引用
-```
-
-所以当前路径后续仍然可以访问对象，但前提是：
-
-```text
-当前路径还没有 put 掉自己的引用。
-```
-
-worker 使用结束后必须：
-
-```c
-kref_put(&obj->ref, my_obj_release);
-```
-
-当前路径使用结束后也必须：
-
-```c
-kref_put(&obj->ref, my_obj_release);
-```
-
-所以共享引用模型下，通常会看到：
-
-```text
-kref_init() 产生初始引用；
-kref_get() 产生异步路径引用；
-当前路径 put 一次；
-异步路径 put 一次。
-```
-
-------
+独立引用使两边可以分别结束，代价是计数更新与两份责任的退出记录；它只保活对象，不保证两边可以无锁写同一个字段，也不保证关闭以后业务仍被许可。
 
 ### 7.2.5\_take/consume\_接管调用者当前引用
 
-take/consume 表示接收方不再额外 `kref_get()`，而是直接接管调用者当前持有的引用。
+若生产者创建请求以后不再需要它，已有初始份额就足以交给队列，不必为了“交付”机械追加一次再归还一次。模型中的 move 表达这个动作：源槽清空，目标槽接住，计数保持原值。出队也可把队列这一份直接交给消费者，之后由消费者归还。
 
-这是一种“移动引用”的写法。
+为该协议画出一次拒绝与一次接收。交付点是接收者获准使用的那个发布动作，不是提交函数最后执行 return 的时刻；真实消费者可能在发送者返回以前就处理完并释放对象。
 
-示例：
-
-```c
-ret = my_queue_take_obj(q, obj);
-if (ret)
-	return ret;
-
-/*
- * 成功后，obj 的当前引用已经转移给队列。
- * 当前路径不再拥有 obj。
- */
-return 0;
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S as 发送者与 candidate 槽
+    participant Q as pending 队列槽
+    participant C as 消费者
+    participant O as 对象计数与清理
+    S->>S: 持有候选的一份
+    alt 接口拒绝
+        Q-->>S: 返回未接收，源槽保持
+        S->>O: 发送者继续使用、重试或 drop 该份
+    else 接口接收
+        S->>Q: move 同一份，源槽清空
+        Q->>C: 出队 move，队列槽清空
+        C->>O: 最后访问后 drop，可能已经回收
+        Q-->>S: 提交成功返回不提供额外存活期
+    end
 ```
 
-引用归属：
+当前顺序 C 程序把 consume 安排在提交之后；图中的提前消费是并发接口必须额外考虑的顺序，不声称该程序创建了线程。发送者若只有这一个 candidate，成功后就没有自己的引用可据以访问。失败时则仍可在自己的份额上重试或归还，而不是一律“失败立即 put”；具体选择属于调用者的后续用途。
 
-```text
-调用前：当前路径持有 obj 引用
-调用成功后：队列持有 obj 引用
-当前路径：不再持有 obj 引用
-```
-
-因此成功后当前路径不能再：
-
-```text
-访问 obj 字段；
-再次 kref_put(obj)；
-再次把 obj 交给别人；
-调用依赖 obj 有效性的函数。
-```
-
-错误写法：
-
-```c
-ret = my_queue_take_obj(q, obj);
-if (ret)
-	return ret;
-
-obj->state = MY_OBJ_QUEUED;        /* 错误：当前路径已经不拥有 obj */
-kref_put(&obj->ref, my_obj_release); /* 错误：队列已经接管引用 */
-```
-
-正确写法是：
-
-```c
-obj->state = MY_OBJ_QUEUED;
-
-ret = my_queue_take_obj(q, obj);
-if (ret)
-	return ret;
-
-/*
- * 成功 handoff 后不再访问 obj。
- */
-return 0;
-```
-
-take/consume 模型适合：
-
-```text
-对象创建后直接交给管理队列；
-请求对象提交后由完成路径释放；
-错误路径由当前路径释放，成功路径由接收方释放；
-单生产者把对象交给单消费者。
-```
-
-------
+状态或参数需要提交给消费者时，应在发布以前按协议准备好，或者由接收函数在其保护的状态切换中完成。成功以后再写“已排队”可能同时破坏存活期和字段顺序，不能靠一条内存屏障补回已经交出的责任。
 
 ### 7.2.6\_handoff\_后能否访问\_取决于当前路径是否仍持有引用
 
-这一点要特别注意。
+判断时先问“凭哪项仍有效的保护访问”，不要只问“刚才是不是 take”。例如当前程序成功转交的是 candidate，而 producer 仍有自己的独立份额；生产者在归还 producer 以前仍可按字段同步协议使用对象。相反，若直接把 producer 唯一的一份转走，即使局部变量仍存着同一个地址，也不再提供保护。
 
-“handoff 后不能访问对象”只适用于：
+借用者则靠被证明的借用窗口，而非自己持有引用。窗口可以由同步调用、管理者等待或其他明确机制提供，超过窗口就不能继续用；这与“只要全局计数似乎仍大于零就能访问”完全不同。计数不是查询谁还替你保活的接口。
 
-```text
-当前路径把自己唯一持有的引用交出去了。
-```
+在完整程序中做一次纸面变化：去掉 share，将 submit 的源槽直接换成 producer，且成功后删掉对 producer 的 drop；拒绝分支仍保留并归还它，接收分支由队列/消费者最终归还。这会少一次增加和减少，但也失去生产者同时观察的那一份。下一节把这些明确的语义接到真实异步接口，重点检查它们的接收、重排和完成规则是否与我们的假设一致。
 
-也就是 take/consume 模型。
-
-例如：
-
-```c
-ret = my_queue_take_obj(q, obj);
-if (ret)
-	return ret;
-
-/* 这里不能再访问 obj */
-```
-
-但是如果是 get/ref 模型，当前路径仍然保留自己的引用：
-
-```c
-kref_get(&obj->ref);
-ret = my_queue_ref_obj(q, obj);
-if (ret) {
-	kref_put(&obj->ref, my_obj_release);
-	return ret;
-}
-
-/*
- * 当前路径仍然持有自己的引用。
- * 只要当前路径还没 put，就可以继续访问 obj。
- */
-obj->flags |= MY_OBJ_SUBMITTED;
-```
-
-所以判断标准不是“有没有发生 handoff”，而是：
-
-```text
-当前路径手里是否还持有有效引用。
-```
-
-可以写成一句工程规则：
-
-```text
-handoff 成功后，只有仍然持有引用的一方才有资格继续访问对象。
-```
-
-------
 
 ## 7.3\_典型\_handoff\_场景\_异步路径\_队列和回调
 

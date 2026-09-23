@@ -262,3 +262,5 @@ B04t 完成[P06 可见性与上下文](../../knowledge/linux/object_lifetime/kre
 B04u 重构[P06 异步退出](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.7.3_release_和_timer_的收尾关系)全单元，加入 timer 改期/关闭的 C 模型及[固定源码模块](../../research/source_reading/kref/navigation/P05_定时器重启与退出导读.md#5.2_从排队到最终关闭)，修正把启动次数、回调次数和引用数直接对应的错误。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.84_B04u异步票据与定时器重启)记录分支证据和目标未验证项；下一项 6.8～6.12，P06/P13 与全仓仍未完成。
 
 B04v 收束[P06 回收排序与诊断](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.8.1_release_和_RCU_的边界)的 6.8～6.12，保留两份完整程序及固定实现，修正把 RCU 对象一律延迟 release、把未告警当退出证明等概括。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.85_B04v回收排序与P06收束)记录无须改写的依据和验证边界；P06 本轮作者审查完成，下一项 P07，全仓继续。
+
+B04w 冷读 P07 全篇，先完成[交付责任入口](../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.2.1_指针传递不等于引用转移)的 7.1～7.2：用完整 C 程序区分地址复制、独立份额、指定份额转交和借用窗口。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.86_B04w交付责任与借用窗口)记录适用检查；下一项 7.3 真实异步接收，P07 仍 pending。

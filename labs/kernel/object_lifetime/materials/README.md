@@ -108,3 +108,5 @@ P06 的[入口和上下文回访](../../../../knowledge/linux/object_lifetime/kr
 固定六个 timer helper 另以 C11 夹具覆盖八种删除/关闭 × pending × running 组合及旧名包装，检查返回值、清空 function 与等待先后；base 锁、队列摘除和运行者退出均为显式顺序替身，未覆盖 RT/LOCKDEP、实际阻塞或定时轮算法。八个唯一实现函数体去注释规范化后与固定源码一致；本批没有新增 ARM 模块或目标运行结论。
 
 [P06 章末回访](../../../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.10.2_一个复杂_release_示例)继续使用 owned_work 原程序比较取消和执行路径，修改题与原始验证范围分开。RCU、诊断和资源拓扑收束未修改材料程序，不新增目标运行结论。
+
+[P07 交付入口](../../../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.2.1_指针传递不等于引用转移)完整复用 reference_ownership.c，重新编译运行接收/拒绝两条路径通过；正文重新解释 share 与 move、异步借用窗口及接收者提前结束的契约。纸面直接转交变体不是已执行的新程序，顺序模型也没有创建并发消费者。
