@@ -94,3 +94,9 @@ owner.lock保护closing和completed；同一锁把open/request与关闭排序，
 十组宿主检查覆盖配置、分配、命名、添加及会话分配失败，完整周期，关闭先于open，open先于关闭，两个独立会话，和会话先于设备注销结束。使用原有固定device/kobject/普通引用函数；锁、原子操作、登记和sysfs等为顺序替身。ARM前端通过，372份头中360份非生成源码与固定提交无差异。没有目标链接、装卸、真实并发或硬件测试。
 
 回到[P11章末选择与练习](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.9_本章检查清单)，检查初始化份额重复归还、桥接清理先后及统计寿命解耦。题目复用上述固定证据，没有新增driver core运行结论。
+
+## 8.7\_设备与私有引用的错误定位
+
+[P12设备层次诊断](../../../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.8_driver_core_层次错误_device_引用和私有_kref)将两类故障分开：直接替换dev.kobj.kref的release会破坏框架清理链；私有会话未保留设备桥接份额，则可能在设备外壳释放后继续使用owner。应沿[公开取得与归还](../source_explanations/drivers/base/core.c.md#1.2_设备取得与归还进入kobject)、[注销消费初始化份额](../source_explanations/drivers/base/core.c.md#1.3_注销同时归还初始化份额)和[唯一最终分派](../source_explanations/drivers/base/core.c.md#1.4_最终release按对象类型选择)核对各自责任。
+
+get_device对非空输入进入普通取得，不能检验悬空地址。设备引用维持外壳也不保留已退出的受管资源；先按8.3检查解绑，再沿8.6画出每个会话一份桥接和失败回滚。合法设备属性操作使用dev->kobj不属于引用层次误用。本次复核既有device/session完整程序及固定实现，程序与源码函数体未改，不新增真实driver core或并发测试声明。

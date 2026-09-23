@@ -318,3 +318,5 @@ B04av完成[P12 12.4查找与交付](../../knowledge/linux/object_lifetime/kref/
 B04aw完成[P12 12.5最后清理与摘链](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.5.2_错误八_release_时对象仍挂在全局结构中)，区分延迟清理和业务复活、拥有型集合与非拥有索引，补慢路径重查时序。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.112_B04aw最后清理与索引退出)记录保持既有程序与未执行项；下一项12.6并发/API误用，P12仍pending。
 
 B04ax完成[P12 12.6并发与API误用](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.6_并发与_API_误用_kref_不是锁_也不是状态判断)，分开字段同步、计数重置、快照和条件返回，并把可能睡眠的业务过滤移出普通RCU读区。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.113_B04ax字段与引用资格)记录四组固定函数检查；下一项12.7退出上下文，P12仍pending。
+
+B04ay完成[P12 12.7～12.8退出与设备诊断](../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.7_remove_上下文和辅助_API_引用之外还有收尾协议)，区分资源排空与外壳归还、回调上下文与独占清理责任、设备公开接口与私有桥接。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.114_B04ay退出上下文与设备边界)记录复核范围；下一项12.9～12.10，P12仍pending。
