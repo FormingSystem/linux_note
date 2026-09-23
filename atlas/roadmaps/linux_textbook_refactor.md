@@ -350,3 +350,5 @@ B04bl完成[P26弱缓存撤销与RCU回收](../../knowledge/linux/object_lifetim
 B04bm完成[P27父子桥接与非拥有链表](../../knowledge/linux/object_lifetime/kref/P27_父子桥接与非拥有链表模板.md#27.1_一条关系对应几份引用)，完整模块核对创建关门、最终摘链、用户份额及父桥接，八组宿主与ARM通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.128_B04bm父子桥接与最终摘链)保留边界。清单653项：246 validated、389 pending、18 supporting_pending；继续P13文件持有，P13仍pending。
 
 B04bn完成[P28文件实例持有](../../knowledge/linux/object_lifetime/kref/P28_文件实例与私有对象持有模板.md#28.1_计数单位是文件实例)，完整misc模块与C用户程序核对dup、独立open、关闭与失败回滚，八组宿主和ARM通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.129_B04bn文件持有与打开交付)记录真实VFS未执行边界。清单654项：247 validated、389 pending、18 supporting_pending；继续P13引用封装，P13仍pending。
+
+B04bo完成[P29引用封装](../../knowledge/linux/object_lifetime/kref/P29_引用封装与调试责任模板.md#29.1_接口先交代谁拥有哪一份)，完整模块核对输入契约、单次求值、槽位转交与日志边界，六组宿主和ARM通过；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.130_B04bo引用封装与调试责任)记录未验证并发边界。清单655项：248 validated、389 pending、18 supporting_pending；继续P13状态机，P13仍pending。

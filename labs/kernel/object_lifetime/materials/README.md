@@ -225,3 +225,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 ## 1.36\_文件实例与私有份额
 
 [note_kref_file.c](note_kref_file.c)、[共享命令头](note_kref_file_protocol.h)和[Linux用户探测](file_ownership_probe.c)对应[P28完整实验](../../../../knowledge/linux/object_lifetime/kref/P28_文件实例与私有对象持有模板.md#28.1_计数单位是文件实例)。两个独立open各持服务一份，dup共享file；回调失败自行put候选，最终release按file结算。Makefile已登记模块。八组宿主顺序协议与ARM前端通过，450/437头身份无差异；真实Linux用户程序、模块链接装卸与并发未验证。fail_open=1预期用户程序非零退出，模块日志应无文件release而服务最终释放一次。
+
+## 1.37\_引用封装与日志开关
+
+[note_kref_api.c](note_kref_api.c)对应[P29封装模板](../../../../knowledge/linux/object_lifetime/kref/P29_引用封装与调试责任模板.md#29.1_接口先交代谁拥有哪一份)，统一get/put回调和局部槽位清理，trace_events开关只控制请求日志。六组宿主与ARM前端通过，354/342头身份核对无差异；目标装卸、并发槽位与真实跟踪器未执行。普通两种日志设置均预期get=1、put=2、release=1、argument_calls=1，工厂失败不交付对象。
