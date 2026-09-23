@@ -12,7 +12,7 @@ source_version: "6.12.20"
 
 固定来源为 NXP linux-imx，发布 lf-6.12.20-2.0.0，提交 dfaf2136deb2af2e60b994421281ba42f1c087e0（Linux 6.12.20）。以下中文 Doxygen 为仓库补充，函数或宏主体保持该提交内容。
 
-上游位置 include/linux/kref.h，blob d32e21a2538c292452db99b915b1bb6c3ab15e53。本页展开结构、普通 init/get/put/read、定义时初始化宏与条件取得；锁组合尚未覆盖。
+上游位置 include/linux/kref.h，blob d32e21a2538c292452db99b915b1bb6c3ab15e53。本页展开结构、普通 init/get/put/read、定义时初始化宏、条件取得与两种归零锁组合；底层体系结构原子实现另按边界核对。
 
 ## 1.1\_计数成员
 
@@ -111,3 +111,35 @@ static inline int __must_check kref_get_unless_zero(struct kref *kref)
 ```
 
 该层没有查找、加锁、发布或回收动作，只把参数指向的 refcount 交给下层。返回类型是 int，下层布尔结果在正常状态下转换为 0/1；__must_check 的诊断能力见[属性](compiler_attributes.h.md#1.1_返回值诊断不是自动清理)。[条件取得模块](../../../navigation/P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有)解释 S2 内部的观察、重试与退出；具体比较循环见[refcount 条件链](refcount.h.md#1.5_条件增加与失败重试)。调用者不能由非零返回推出业务仍接受请求，也不能把异常饱和当成恢复协议。
+
+## 1.8\_归零时把锁交给回调
+
+```c
+/** @brief 仓库阅读说明：下层返回真时锁已持有，release 接管清理与解锁，本函数不自动解锁。 */
+static inline int kref_put_mutex(struct kref *kref,
+				 void (*release)(struct kref *kref),
+				 struct mutex *lock)
+{
+	if (refcount_dec_and_mutex_lock(&kref->refcount, lock)) {
+		release(kref);
+		return 1;
+	}
+	return 0;
+}
+```
+
+```c
+/** @brief 仓库阅读说明：spinlock 对应入口；普通锁不承担 irqsave，回调必须遵守持锁上下文。 */
+static inline int kref_put_lock(struct kref *kref,
+				void (*release)(struct kref *kref),
+				spinlock_t *lock)
+{
+	if (refcount_dec_and_lock(&kref->refcount, lock)) {
+		release(kref);
+		return 1;
+	}
+	return 0;
+}
+```
+
+二者只在下层返回真时调用 release 并返回 1，不会在回调返回后再补 unlock。返回 0 不推出“从未获取锁”，因为可能走取锁后非最后的分支，已由下层解锁。下层实际顺序见[归零重查](../../lib/refcount.c.md#1.3_取得锁后再次减少判断)，外层状态与正常/被查找者插入的时序见[锁交接模块](../../../navigation/P04_最后归还与锁交接导读.md#4.2_把最后减少留在锁内)。

@@ -1924,25 +1924,23 @@ flush_work；
 
 ### 9.4.4\_kref\_put\_mutex()\_的用途
 
-`kref_put_mutex()` 是 kref 提供的特殊组合接口。
+`kref_put_mutex()` 是 kref 提供的特殊组合接口。固定实现与等待期间新增引用的分支见[锁交接导读](../../../../research/source_reading/kref/navigation/P04_最后归还与锁交接导读.md#4.2_把最后减少留在锁内)，完整可构建示例见[P05](P05_基础_API_源码逐行讲解.md#5.8.2_kref_put_mutex%28%29_的典型用途)。
 
 它的作用是：
 
 ```text
-减少引用计数；
-如果这次 put 是最后一个引用，则在调用 release 前获取 mutex；
-然后在持有 mutex 的状态下执行 release。
+正常非最后引用走无锁减少；
+观察为最后候选时暂不减少，先获取 mutex；
+锁内再次减少判断，只有归零才持锁调用 release，否则由 helper 解锁。
 ```
 
 语义可以理解为：
 
 ```text
-if refcount 减到 0:
-    lock mutex
-    release(kref)
-    return true
-else:
-    return false
+如果能完成非最后减少：返回 false
+否则保留最后候选份额，获取 mutex
+锁内减少后如果仍非零：解锁并返回 false
+如果归零：持锁调用 release，由回调按契约解锁，返回 true
 ```
 
 典型用途是：
@@ -2018,7 +2016,7 @@ void my_obj_put_locked_final(struct my_obj *obj)
 
 ```text
 如果 release 是在 kref_put_mutex() 获得的 mutex 下执行，
-那么 release 里通常要负责 unlock。
+那么本节协议由 release 接管并负责 unlock，kref 不会自动补解锁。
 ```
 
 因为 `kref_put_mutex()` 获得锁后直接调用 release。
@@ -2031,7 +2029,8 @@ release 返回后，kref 框架不会替你自动知道你的业务锁该怎么�
 release_locked() 以锁已持有为前提；
 release_locked() 负责释放锁；
 普通路径不能直接调用 release_locked()；
-普通 kref_put() 不能搭配 release_locked() 使用。
+未显式持同一锁的普通 kref_put() 不能搭配 release_locked() 使用；
+若另设调用者持锁的普通 put 协议，必须独立处理归零/非归零两支的解锁。
 ```
 
 如果你不想让 release 解锁，就不要用这种模式。
@@ -2053,9 +2052,9 @@ release_locked() 负责释放锁；
 它的作用是：
 
 ```text
-减少引用计数；
-如果这次 put 是最后一个引用，则在调用 release 前获取 spinlock；
-然后在持有 spinlock 的状态下执行 release。
+正常非最后引用先完成无锁减少；
+可能最后时先获取 spinlock，再减少并判断；
+归零才持锁调用 release，否则 helper 自行解锁。
 ```
 
 适用场景：
@@ -2102,7 +2101,8 @@ release 在 spinlock 下执行；
 release 不能调用可能睡眠的函数；
 release 不能拿 mutex；
 release 不能做阻塞等待；
-release 通常需要负责 spin_unlock。
+本节 release 接管并负责 spin_unlock；
+该 helper 使用普通 spin_lock，不自动关闭或保存中断状态。
 ```
 
 这类写法对 release 约束很强。

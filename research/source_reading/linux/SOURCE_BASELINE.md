@@ -706,3 +706,9 @@ B04o 只读核对固定 Documentation/core-api/kref.rst 全文（blob c61eea6f1b
 ## 1.59\_条件取得链的固定分支
 
 B04p 核对本基线 include/linux/kref.h 与 include/linux/refcount.h 中 kref_get_unless_zero、refcount_inc_not_zero、__refcount_inc_not_zero、__refcount_add_not_zero 四函数，blob 沿前文固定值，首次唯一展开集中在[条件模块](../kref/navigation/P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有)关联的实现标题。宿主夹具复用既有普通函数及饱和处理，六类 helper 状态、oldp 和两类 kref 结果通过；异常饱和也可返回非零。条件模型仅验证 C11 确定性比较过程，不替代目标并发、发布读取或 ARM 内存序证据。
+
+## 1.60\_最后归还锁的固定顺序
+
+B04q 核对固定 lib/refcount.c 的 refcount_dec_not_one、refcount_dec_and_mutex_lock、refcount_dec_and_lock，以及 kref.h 两个包装，沿既有固定 blob；[模块入口](../kref/navigation/P04_最后归还与锁交接导读.md#4.2_把最后减少留在锁内)连接唯一实现。不是锁外归零后补锁，而是保留最后候选份额、取锁再减少判断。宿主六模块组及十分支通过，ARM 前端及 342 份非生成头差异核验通过；未执行目标装卸、IRQ/RT 或实际等待。
+
+辅助构建核对 scripts/Makefile.extrawarn，blob dc081cf46d211c86c1eb725368e04129befd7a9c：W=3 分支启用 sign-compare，其他分支关闭由 Wextra 引入的该告警。本夹具明确使用 Wno-sign-compare 和既有 fno-strict-overflow，不以修改固定函数主体规避诊断；这不是完整 Kbuild 运行结果。

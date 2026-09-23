@@ -250,3 +250,5 @@ B04n 收束[P03 完整关闭周期](../../knowledge/linux/object_lifetime/kref/P
 B04o 完成[P04 三条规则](../../knowledge/linux/object_lifetime/kref/P04_kref_三条核心规则.md#4.12_mutex/list_lookup_的最小模型)全篇冷读和改写，保留二十节阅读任务，明确直接转交、短借用、拒绝出口以及三种查找协议的保证与代价。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.78_B04o三条规则与协议前提)记录固定文档证据和复用实验重验；下一项 P05 后续接口，全仓继续。
 
 B04p 改写[P05 条件取得](../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.7.2_kref_get_unless_zero%28%29_的使用场景)，以完整 C11 模型解释比较失败为何重查，并建立[固定条件模块](../../research/source_reading/kref/navigation/P03_条件取得与查找窗口导读.md#3.2_从观察到自己持有)与唯一实现。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.79_B04p条件取得与比较重试)记录正常和异常分支边界；下一项 P05 锁组合，P05 整章与全仓仍未完成。
+
+B04q 完成[P05 锁交接](../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.8.2_kref_put_mutex%28%29_的典型用途)和固定实现，纠正先归零后加锁的旧顺序，完整模块串起非拥有索引、慢路径重查与回调解锁；同步修正 P09 对应事实入口。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.80_B04q最后减少与锁交接)记录六模块组、十分支与未执行目标项。下一项 P05 剩余初始化、封装和章末收束，P09 全篇仍待后续重构。
