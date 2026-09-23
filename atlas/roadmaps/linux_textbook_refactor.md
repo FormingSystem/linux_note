@@ -268,3 +268,5 @@ B04w 冷读 P07 全篇，先完成[交付责任入口](../../knowledge/linux/obj
 B04x 完成[P07 异步交付场景](../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.3.5_completion_场景里的引用归属)的 7.3，以完整模块比较事件、超时、工作退出和引用归还；修正 running/pending、timer 改期、集合并非自动持有等旧概括。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.87_B04x完成事件与异步交付)记录七组替身检查及目标未执行项。下一项 7.4 契约与后续模型，P07 仍 pending。
 
 B04y 收束[P07 契约与完整请求](../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.6.1_一个完整请求对象_handoff_示例)的 7.4～7.8，新增同一请求的转交/共享模块，以十组宿主控制路径和 ARM 前端核对入队、出队、执行及拒绝。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.88_B04y请求双协议与P07收束)记录前提与未执行目标项；P07 本轮作者审查完成，下一项 P08，全仓继续。
+
+B04z 冷读 P08 全篇，先重写[8.1～8.3 查找取得窗口](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.3.1_正确模型一_mutex/list_lookup_+_kref_get%28%29)，用既有完整登记模块区分地址期限、正计数和独立份额，补齐两种交错及重复撤下规则。后续条件取得与各容器错误已记入[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.89_B04z拥有型查找与首次取得)，P08 仍 pending。
