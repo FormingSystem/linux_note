@@ -38,6 +38,8 @@ static inline void kref_init(struct kref *kref)
 
 它调用[设置原语](refcount.h.md#1.1_设置与观察)，不分配内存、不初始化业务字段、不发布对象；不能用来把已有责任重置为一份。
 
+[P03 初始责任](../../../../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#3.4.2_kref_init_阶段_创建初始引用)把写入 1 与接口交付谁来归还分开：本函数不记录创建者身份，也不设置业务许可。
+
 ## 1.3\_为独立使用追加引用
 
 ```c

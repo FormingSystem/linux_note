@@ -12,473 +12,220 @@ domains:
 
 ## 3.1\_本章主线
 
-前两章已经建立了两个基础结论：
+上一章的单槽容器已经给出一个重要现象：入口撤下后，旧读者仍可依自己的引用使用对象。现在再增加一个问题：设备或服务已经开始关闭时，这位仍持有引用的读者，还能继续发起新的业务操作吗？
 
-```text
-第 1 章：kref 解决的是对象生命周期问题。
-第 2 章：kref 是嵌入自定义引用对象内部的生命周期字段。
-```
+存储不消失，只是使用对象字段的必要条件。业务是否接纳操作、入口是否还允许查找、各方是否仍负有归还责任，都可能独立变化。本章用这些状态组织生命周期，随后再检查失败、转交和最后清理的不同顺序。前章已经讲明普通 API 的参数与源码，这里不重新用接口名称代替运行过程。
 
-第 3 章要把 `kref` 的生命周期完整串起来。
-
-不要把 `kref` 看成几个孤立 API：
-
-```c
-kref_init();
-kref_get();
-kref_put();
-```
-
-而要看成一个完整状态机：
-
-```text
-对象分配
-  -> 初始化引用计数
-  -> 被多个路径持有
-  -> 每个持有者释放引用
-  -> 最后一个引用归零
-  -> release 回调销毁对象
-```
-
-本章核心问题是：
-
-```text
-对象什么时候开始存在？
-初始引用属于谁？
-外部代码必须先满足什么访问前提？
-谁可以增加引用？
-谁必须释放引用？
-最后一个 put 到底发生了什么？
-release 之后对象还能不能访问？
-```
-
-一句话概括：
-
-```text
-kref 的生命周期不是 refcount 从 1 变到 0，而是对象所有权从创建者扩散到多个持有者，再最终收敛到 release。
-```
+默认沿用“容器持一份、查找取得独立引用”的模型，并明确在哪些地方改变假设。首先回答对象何时存在、初始引用归谁；接着看持有、业务关闭与存储退出怎样协作；最后用错误路径检验这些规则。只要能为每个状态找到存储位置、写入者和后续读者，就能把图落回代码。
 
 ------
 
 ## 3.2\_最小生命周期状态机
 
-一个最小的 `kref` 生命周期可以画成：
+先限定普通正确路径：新对象建立初始一份，各方按协议增加或转交责任，最后正常归还触发类型清理。计数本身不保存发布状态和业务状态，因此这不是一个整数就能描述的完整对象状态机，而是几组状态共同组成的协议。
+
+| 状态轴 | 上一章具体落点 | 本章先要分清什么 |
+| --- | --- | --- |
+| 存储与资源 | 分配的对象外壳及拥有的 data 等资源 | 地址是否仍可访问，哪些资源已经清理 |
+| 引用责任 | 对象内的 ref，外部各路径的责任约定 | 谁仍负责归还一份，而非简单数指针 |
+| 入口可见性 | registry_entry 或容器节点，受容器锁保护 | 新查找能否到达对象 |
+| 业务可用性 | 由业务协议维护的 online/stopping 等状态 | 已拿引用的使用者是否仍获准执行某项操作 |
+
+沿用前章 S0～S5：S0 创建并建立初始责任，S1 为新的独立使用预留份额，S2 交付或发布，S3 创建者结束，S4 容器与使用者依各自条件退出，S5 最后归还触发清理。S3 与部分 S4 可以换序；没有发布成功的对象也能直接从创建失败进入清理。后文的数据结构和错误路径都回到这些阶段，而不是各讲一张互不相关的图。
 
 ```mermaid
 stateDiagram-v2
-	[*] --> Allocated: kzalloc
-	Allocated --> Initialized: kref_init(ref=1)
-	Initialized --> Shared: kref_get
-	Shared --> Shared: kref_get / kref_put(ref>0)
-	Shared --> Releasing: last kref_put(ref==0)
-	Initialized --> Releasing: last kref_put(ref==0)
-	Releasing --> Freed: release
-	Freed --> [*]
+    [*] --> Preparing: S0存储与初始责任已建立
+    Preparing --> Available: S1/S2责任就绪并按协议发布
+    Preparing --> Cleaning: 创建失败后归还已有责任
+    Available --> Available: S3或S4部分持有者退出
+    Available --> Closing: S4关闭业务并撤下入口
+    Closing --> Closing: 已有持有者收尾并归还
+    Closing --> Cleaning: S5最后正常归还
+    Cleaning --> Ended: 本例直接回收外壳
+    Ended --> [*]
 ```
 
-用普通文本描述就是：
-
-```text
-allocated
-   |
-   v
-kref_init() -> refcount = 1
-   |
-   +-- kref_get() -> refcount++
-   |
-   +-- kref_put() -> refcount--
-              |
-              +-- refcount != 0 : object still alive
-              |
-              +-- refcount == 0 : release(kref) -> free object
-```
-
-这张图里最重要的是：
-
-```text
-release 不是普通函数调用点，而是对象生命周期终点。
-```
-
-进入 release 之后，说明：
-
-```text
-没有任何合法持有者了。
-```
-
-release 执行完之后，说明：
-
-```text
-对象内存已经不能再被访问。
-```
+这张图是本章先研究的直接回收协议，并非 kref 里的一个枚举字段。Closing 可以仍有引用和存储；Cleaning 也不必在所有设计中立即进入 Ended，例如静态外壳与延迟回收就有不同安排。release 在最后归还者的上下文被调用，是清理协议入口；不能不看类型回调就断言“函数一返回所有存储必定消失”。
 
 ------
 
 ## 3.3\_先立边界\_kref\_不是设备锁\_也不是完整安全模型
 
-在进入 `kref_get()`、`kref_put()` 之前，必须先把边界说清楚：
+设读者在服务仍开放时查找对象并取得一份。随后管理者关闭入口、把业务改成不再接纳请求，再归还容器份额。旧读者的计数保护仍有效，但它下一次业务调用应该被拒绝。此时继续保留外壳，是为了让旧读者能读取必要状态、完成错误返回并归还引用，不是承诺硬件永远可访问。
 
-```text
-kref 只管理对象内存生命周期，不管理设备访问互斥，也不替业务判断设备是否可用。
-```
+在真实实现中，要把状态检查和被允许的操作放在适当的业务同步范围内。否则读者刚看见 online，管理者就能在它实际操作前关闭服务。业务锁可使“检查并使用”与软件关闭有规定的先后关系；它不能阻止设备物理消失，也不能替具体总线或驱动处理所有硬件故障。引用、业务同步和硬件状态各有边界。
 
-也就是说，`kref` 不能单独回答这些问题：
-
-```text
-这个设备当前能不能访问？
-这个对象字段是否正在被其他路径修改？
-这个 lookup 拿到的指针是否仍然有效？
-当前路径是否有权限继续操作设备？
-这个对象是否已经进入 remove/stopping/dead 状态？
-多个线程是否可以同时操作这个对象？
-```
-
-这些问题要由业务自己的机制解决，例如：
-
-```text
-设备锁
-对象锁
-容器锁
-RCU 读侧保护
-业务状态机
-设备模型自己的引用规则
-```
-
-`kref` 只在这些外部规则已经建立之后，负责延长或结束一个生命周期引用。
-
-可以把关系画成这样：
+角色和状态流为：
 
 ```mermaid
-flowchart TD
-	ptr["裸指针 / lookup 结果"]
-	guard["外部访问保护<br/>锁 / RCU / 已有引用 <br/>/ 容器规则 / 状态机"]
-	valid["证明对象仍然有效<br/>并且当前路径允许访问"]
-	get["kref_get()<br/>增加生命周期引用"]
-	use["业务访问<br/>读写字段 / 操作设备"]
-	lock["业务同步<br/>mutex / spinlock / 状态检查"]
-	put["kref_put()<br/>释放生命周期引用"]
-	release["last put -> release<br/>销毁对象"]
-
-	ptr --> guard
-	guard --> valid
-	valid --> get
-	get --> use
-	lock --> use
-	use --> put
-	put --> release
-
-	kref_note["kref 负责：<br/>对象内存什么时候能释放"]
-	biz_note["业务负责：对象能不能访问、<br/>字段是否互斥、设备是否可用"]
-
-	get -.-> kref_note
-	put -.-> kref_note
-	release -.-> kref_note
-	guard -.-> biz_note
-	lock -.-> biz_note
+flowchart LR
+    M["管理者"] -->|"持容器锁关闭入口"| E["容器指针或节点"]
+    M -->|"按业务同步协议停止接纳"| B["对象业务状态"]
+    R["旧读者"] -->|"已有引用保活，业务锁内检查"| B
+    R -->|"获准才操作，收尾后归还"| C["对象内引用计数"]
+    M -->|"退出时归还容器或管理者份额"| C
+    C -->|"正常归零决定最后清理者"| D["类型release及存储退出"]
 ```
 
-这里最容易误解的是：
+### 3.3.1\_用C模型观察仍持有却被拒绝
 
-```text
-不是“我有 refobj 指针，所以 kref_get 后就安全”。
-而是“我已经通过外部机制证明 refobj 有效，所以才能 kref_get”。
+下面程序把外部观察者的账本单独保存为 model。storage_exists、visible、accepting 分别表示存储存在、入口可见与业务接纳；owners 的三个比特各代表本例创建者、容器、单个读者的一份责任。真实 kref 不保存这张持有者位图，本例也没有真实分配/free、内核锁或原子并发。
+
+每个函数在指定顺序中完成一个协议步骤。这样可以先预测两种先后：旧读者在关闭之前执行一次操作，或者关闭先发生；两者最后都应完成一次清理。完整材料为 [lifetime_protocol.c](../../../../labs/kernel/object_lifetime/materials/lifetime_protocol.c)：
+
+```c
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+
+enum owner {
+    OWNER_CREATOR = 1u,
+    OWNER_CONTAINER = 2u,
+    OWNER_READER = 4u
+};
+
+/* 观察者保存的协议模型，不是业务对象，更不是内核 kref 的字段。 */
+struct model {
+    bool storage_exists;
+    bool visible;
+    bool accepting;
+    unsigned int owners;
+    unsigned int releases;
+};
+
+static void take(struct model *m, unsigned int owner)
+{
+    assert(m->storage_exists && m->owners && !(m->owners & owner));
+    m->owners |= owner; /* 外部账本记录新增的一份责任。 */
+}
+
+static void drop(struct model *m, unsigned int owner)
+{
+    assert(m->storage_exists && (m->owners & owner));
+    m->owners &= ~owner;
+    if (!m->owners) {
+        assert(!m->visible && !m->accepting);
+        m->storage_exists = false;
+        ++m->releases; /* 模型记录直接回收，没有真实 free。 */
+    }
+}
+
+static bool lookup(struct model *m)
+{
+    if (!m->visible)
+        return false;
+    assert(m->owners & OWNER_CONTAINER);
+    take(m, OWNER_READER);
+    return true;
+}
+
+static bool read_value(const struct model *m, int *value)
+{
+    assert(m->storage_exists && (m->owners & OWNER_READER));
+    if (!m->accepting)
+        return false;
+    *value = 42;
+    return true;
+}
+
+static void close_entry(struct model *m)
+{
+    assert(m->visible && (m->owners & OWNER_CONTAINER));
+    m->visible = false;
+    m->accepting = false;
+    drop(m, OWNER_CONTAINER);
+}
+
+int main(void)
+{
+    for (unsigned int close_first = 0; close_first < 2; ++close_first) {
+        /* 从已完成初始引用建立的 S0 开始，模型不模拟分配器。 */
+        struct model m = { .storage_exists = true, .owners = OWNER_CREATOR };
+        take(&m, OWNER_CONTAINER);
+        m.visible = m.accepting = true;
+        drop(&m, OWNER_CREATOR);
+        assert(lookup(&m));
+        int value = -1;
+        if (!close_first)
+            assert(read_value(&m, &value) && value == 42);
+        close_entry(&m);
+        assert(!lookup(&m));
+        assert(m.storage_exists && m.owners == OWNER_READER);
+        assert(!read_value(&m, &value)); /* 有引用仍可能被业务拒绝。 */
+        drop(&m, OWNER_READER);
+        assert(!m.storage_exists && m.releases == 1);
+        printf("close_first=%u releases=%u\n", close_first, m.releases);
+    }
+    return 0;
+}
 ```
 
-例如驱动内部私有对象即使和硬件设备相关，也不是让 `kref` 自己解决所有安全问题，而是这样分工：
+进入材料目录编译运行：
 
-```text
-设备锁/状态机：
-    判断设备是否还在、是否可读写、字段访问是否互斥。
-
-kref：
-    保证只要当前路径持有引用，对象内存不会被 release/free。
+```bash
+cc -std=c11 -Wall -Wextra -Werror -O2 lifetime_protocol.c -o lifetime_protocol
+./lifetime_protocol
 ```
 
-所以 `kref` 不是设备的完整委托管理器。
+输出为 `close_first=0 releases=1` 和 `close_first=1 releases=1`。第一轮在关闭前读取成功，关闭后再读被拒绝；第二轮从未获准执行读取。两轮的旧读者在关闭之后都仍持一份，因此模型里的 storage_exists 保持真，直到它最后 drop 才转为假。最终检查读取的是观察模型的元数据，不是在真实 free 后读对象。
 
-它不负责独占访问，不负责业务状态切换，不负责阻止并发字段修改，也不负责决定对象能不能被新路径找到。
+程序中的 close_entry 把多个变化按顺序执行，不能由此证明真实系统里这些写入天然不可分割。映射回内核时，必须依据具体锁顺序或发布协议，把入口撤下、业务状态转换与读者检查接起来；上一章完整单槽模块已经给出入口与引用的实际锁窗口，本模型新增的是业务轴。
 
-一句话总结：
+### 3.3.2\_把反例转换成设计问题
 
-```text
-业务机制先证明“可以拿引用”，kref 才负责“拿到引用后对象不会消失”。
-```
+先预测将 accepting 置为 false、暂不撤下 visible 的效果：新 lookup 仍可能成功取得引用，但业务调用会被拒绝。这不一定立即造成内存错误，却可能违背“关闭后不再接纳新句柄”的产品要求。只有明确区别查找入口与业务许可，才能判断需关闭哪条路径。
+
+再预测撤下 visible、却忘记把 accepting 关闭：新查找失败，旧持有者仍可操作。对于允许旧请求做完的协议，这可能正是需求；对于立即拒绝后续操作的协议，就缺了业务关闭步骤。引用计数无法替你选择这两种语义。
+
+最后解释为什么本例不能先 drop 读者，再依旧指针检查业务是否关闭。那会把“判断该不该用”放到自己的存储保护之外。正确顺序是仍持引用时检查与处理，最后归还；模型只是让这个依赖可见，不是用断言替代真实保护。
 
 ------
 
 ## 3.4\_创建与初始引用阶段
 
-这一组小节先回答对象生命周期从哪里开始，以及 `kref_init()` 创建的第一个引用到底属于谁。
+知道状态轴以后，回到最早的 S0。我们需要依次建立可访问存储、可清理初态与初始归还责任；这三项在代码中相邻，却不是同一个动作。
 
 ### 3.4.1\_对象分配阶段\_allocated
 
-生命周期从对象分配开始。
+动态外壳分配成功，只表示获得一块存储。清零分配不会自动初始化 mutex、链表、工作项或引用协议；使用了哪些机制，就要分别准备哪些状态。失败返回则连计数地址都不存在，不能继续调用 init。
 
-典型代码：
-
-```c
-struct my_refobj *refobj;
-
-refobj = kzalloc(sizeof(*refobj), GFP_KERNEL);
-if (!refobj)
-	return NULL;
-```
-
-此时对象内存已经分配出来，但还不能算完整可用。
-
-因为：
-
-```text
-kref 还没有初始化
-锁还没有初始化
-链表节点还没有初始化
-业务字段还没有初始化
-对象还不能发布给其他路径
-```
-
-此时对象处于：
-
-```text
-allocated but not initialized
-```
-
-也就是：
-
-```text
-内存存在，但对象生命周期协议还没有建立。
-```
-
-这个阶段不能让其他路径看到对象。
-
-错误模型：
-
-```c
-refobj = kzalloc(sizeof(*refobj), GFP_KERNEL);
-global_refobj = refobj;              /* 错：对象还没初始化就发布 */
-kref_init(&refobj->ref);
-```
-
-如果 `global_refobj` 发布后，其他 CPU 或其他线程马上访问它，就可能看到一个半初始化对象。
-
-正确方向是：
-
-```c
-refobj = kzalloc(sizeof(*refobj), GFP_KERNEL);
-if (!refobj)
-	return NULL;
-
-kref_init(&refobj->ref);
-mutex_init(&refobj->lock);
-INIT_LIST_HEAD(&refobj->node);
-refobj->state = my_refobj_INIT;
-
-/* 初始化完成后再发布 */
-global_refobj = refobj;
-```
-
+前章[完整对象模块](P02_源码入口与结构定义.md#2.19_标准自定义引用对象模板)示范外壳与 data 的两次申请及不同失败出口，[单槽模块](P02_源码入口与结构定义.md#2.30.1_设计_A_容器持有引用)给出完成准备后的锁内发布。不要把 `global_refobj = refobj` 单独当成跨 CPU 的正确交付：初始化在源码里写在前面，还需要匹配接收方的可见性与查找同步协议。
 
 ### 3.4.2\_kref\_init\_阶段\_创建初始引用
 
-对象分配后，要调用：
+从[固定源码索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)定位初始化实现。固定 [kref_init](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.2_建立初始引用)把计数设置为 1，不会登记创建者的身份。初始一份归创建者，是外层创建接口的契约：成功返回对象时把这份责任交给调用者，失败时按已经建立的资源和责任清理。
 
-```c
-kref_init(&refobj->ref);
-```
-
-它的语义是：
-
-```text
-把引用计数初始化为 1。
-```
-
-但是这句话不能只理解成“计数器等于 1”。
-
-更准确的理解是：
-
-```text
-创建者获得了对象的第一个引用。
-```
-
-也就是说：
-
-```text
-kref_init() 不是单纯初始化字段；
-kref_init() 建立了对象的第一个生命周期所有者。
-```
-
-例如：
-
-```c
-static struct my_refobj *my_refobj_create(void)
-{
-	struct my_refobj *refobj;
-
-	refobj = kzalloc(sizeof(*refobj), GFP_KERNEL);
-	if (!refobj)
-		return NULL;
-
-	kref_init(&refobj->ref);
-
-	return refobj;
-}
-```
-
-返回后的所有权关系是：
-
-```text
-调用 my_refobj_create() 的路径持有 1 个引用。
-```
-
-所以调用者最终必须：
-
-```c
-my_refobj_put(refobj);
-```
-
-否则这个初始引用永远不释放，对象就泄漏。
-
+因此不能只检查“分配函数里有没有 init”。还要追踪成功返回之后由谁消费初始份额，以及后续申请失败发生在 init 之前还是之后。创建接口若成功交付一份，调用者要最终 put 或明确转交；计数器不会发现它被遗忘。
 
 ### 3.4.3\_为什么初始值是\_1\_不是\_0
 
-`kref_init()` 初始化为 1，而不是 0。
+对本章普通新对象协议，创建者从构造到交付需要一段确定的保活期限，初始一份正好表达这个责任。若先设零再调用普通 get，就已经违背普通增加需要正引用的前提；“内存刚申请所以一定能加”混淆了存储存在与引用状态。
 
-原因是：
-
-```text
-对象刚创建成功时，创建者已经拥有它。
-```
-
-如果初始化为 0，就会出现语义问题：
-
-```text
-对象已经存在，但没有任何持有者。
-```
-
-这在生命周期模型里是不合理的。
-
-因为没有持有者意味着：
-
-```text
-对象可以被释放。
-```
-
-而刚创建出来的对象显然应该由创建者负责管理。
-
-所以标准模型是：
-
-```text
-创建对象成功
-  -> refcount = 1
-  -> 这个引用属于创建者
-```
-
-如果创建者要把对象交给别人，它可以：
-
-```text
-增加引用后共享出去
-或者直接 handoff 当前引用
-```
-
-但不应该让对象处于“无引用但还存在”的状态。
-
+这不表示世界上不能存在“零计数但字节尚在”的对象。前章静态与延迟回收已经说明这种组合可能出现；只是该组合不能作为普通 get 的新生命周期起点。init 建立新对象协议，不能用于复活仍有旧入口或旧观察者的状态。
 
 ### 3.4.4\_初始化引用属于谁
 
-这是很多 `kref` bug 的来源。
-
-代码里看到：
-
-```c
-kref_init(&refobj->ref);
-```
-
-必须立刻追问：
-
-```text
-这个初始引用属于谁？
-```
-
-通常有几种情况。
+下面三个情形都从创建者先获得初始一份开始，差别在随后是否转交。转交不增加份额总数，但必须改变谁有权归还及继续使用。
 
 #### (1)\_情况一\_属于创建者
 
-最常见：
-
-```c
-refobj = my_refobj_create();
-
-/* 当前函数持有 refobj 初始引用 */
-
-do_something(refobj);
-
-my_refobj_put(refobj);
-```
-
-生命周期清晰：
-
-```text
-create 获得引用
-put 释放引用
-```
-
+创建成功后当前路径处理业务，最后 put；中途失败也由它清理已经接收的份额。若给别人追加了独立责任，它仍要归还自己的初始一份，不能误以为“已经交出去一个指针，创建者就不用管了”。前章完整动态对象里的 creator 与 consumer 正好形成对照。
 
 #### (2)\_情况二\_创建后立即交给容器
 
-例如对象创建后加入全局链表，链表持有引用：
+可以约定发布成功时把初始一份直接转交容器，创建者从此不再持有；失败时责任仍留给创建者处理。也可以采用前章单槽模块的做法：先 get 为容器预留独立份额，成功后创建者另行 put。两种路径都能成立，不能同时把同一初始份额记在两个人名下。
 
-```c
-refobj = my_refobj_create();
-
-mutex_lock(&refobj_list_lock);
-list_add(&refobj->node, &refobj_list);
-mutex_unlock(&refobj_list_lock);
-
-/*
- * 初始引用从创建者转移给 refobj_list。
- * 当前路径不再单独持有 refobj。
- */
-```
-
-这里可以设计成：
-
-```text
-kref_init() 的初始引用直接属于全局链表。
-```
-
-但是必须注释清楚。
-
-否则别人会误以为：
-
-```text
-创建者还有一个引用
-链表也有一个引用
-```
-
-从而导致漏 put 或多 put。
-
+| 发布结果 | 直接转交初始份额 | 另增容器份额 |
+| --- | --- | --- |
+| 成功 | 容器接收初始一份，创建者不再使用 | 容器接收预留一份，创建者仍须处置原份额 |
+| 拒绝 | 初始责任仍归创建者 | 收回预留，原份额仍归创建者 |
 
 #### (3)\_情况三\_创建后立即\_handoff\_给异步路径
 
-例如：
+同样可以把初始一份交给 worker，但转交成功后创建者不得再依这份责任访问对象；worker 负责最终归还。必须说明提交失败或重复投递时谁持有责任，不能只写 queue_work 后就声称工作队列已经接收。前章一次工作模块选择先预留再投递，并完整处理返回结果；专门 handoff 章节会比较直接转交与新增份额。
 
-```c
-refobj = my_refobj_create();
-
-queue_work(system_wq, &refobj->work);
-
-/*
- * 初始引用转移给 workqueue。
- * 当前路径不再访问 refobj。
- */
-```
-
-这种模型也可以成立，但要求非常严格：
-
-```text
-queue_work 成功之后，当前路径不能再碰 refobj。
-worker 执行完后必须 put。
-```
-
-如果当前路径后面还要访问对象，那就不能直接 handoff，而应该先 `kref_get()`。
+实际交付还要满足“接收方可能在提交函数返回前运行”的时序。若要在成功返回后继续访问，创建者应提前保留自己的独立份额；不能等 worker 已运行才补 get。这里讨论的是责任与交付契约，workqueue API 不自动替每个嵌入对象增加引用。
 
 ------
 
