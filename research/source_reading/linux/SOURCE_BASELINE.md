@@ -712,3 +712,7 @@ B04p 核对本基线 include/linux/kref.h 与 include/linux/refcount.h 中 kref_
 B04q 核对固定 lib/refcount.c 的 refcount_dec_not_one、refcount_dec_and_mutex_lock、refcount_dec_and_lock，以及 kref.h 两个包装，沿既有固定 blob；[模块入口](../kref/navigation/P04_最后归还与锁交接导读.md#4.2_把最后减少留在锁内)连接唯一实现。不是锁外归零后补锁，而是保留最后候选份额、取锁再减少判断。宿主六模块组及十分支通过，ARM 前端及 342 份非生成头差异核验通过；未执行目标装卸、IRQ/RT 或实际等待。
 
 辅助构建核对 scripts/Makefile.extrawarn，blob dc081cf46d211c86c1eb725368e04129befd7a9c：W=3 分支启用 sign-compare，其他分支关闭由 Wextra 引入的该告警。本夹具明确使用 Wno-sign-compare 和既有 fno-strict-overflow，不以修改固定函数主体规避诊断；这不是完整 Kbuild 运行结果。
+
+## 1.61\_管理者等待借用退出的组合边界
+
+B04s 再核对固定 kernel/workqueue.c 中 cancel_work_sync 的注释及既有唯一实现，blob a9d64e08dffc7c7aef2caae2f170268d83e99e23；无竞争投递是返回后不再 pending/执行的前提。[P06 组合模块](../kref/navigation/P02_普通引用与归零回调导读.md#2.11_借用退出与最后归还)不新增上游函数展开。新完整模块 ARM 前端通过，354 份头中 342 份非生成源码相对本基线无差异，生成头仍来自工作配置。宿主九组顺序替身检查验证分配退出、管理者保留和拒绝路径，未验证目标装卸、真实阻塞与硬件内存序。

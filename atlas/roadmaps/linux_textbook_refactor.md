@@ -254,3 +254,5 @@ B04p 改写[P05 条件取得](../../knowledge/linux/object_lifetime/kref/P05_基
 B04q 完成[P05 锁交接](../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.8.2_kref_put_mutex%28%29_的典型用途)和固定实现，纠正先归零后加锁的旧顺序，完整模块串起非拥有索引、慢路径重查与回调解锁；同步修正 P09 对应事实入口。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.80_B04q最后减少与锁交接)记录六模块组、十分支与未执行目标项。下一项 P05 剩余初始化、封装和章末收束，P09 全篇仍待后续重构。
 
 B04r 收束[P05 类型契约与章末应用](../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.10_API_封装模板)，修正初始化形式与存储期混同、告警后继续解引用、查找封装与内存序的过度保证；已验证完整程序保留。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.81_B04r类型契约与P05收束)说明保留依据和验证范围；P05 本轮作者审查完成，下一项 P06，人工状态不变，全仓继续。
+
+B04s 重构[P06 关闭与资源边界](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.2.2_运行一个由管理者等待借用退出的模块)的 6.1～6.4，以完整内核模块串起关闭提交、等待借用、管理者归还和最后清理。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.82_B04s管理者等待与资源归属)记录九组控制检查和未执行目标项；P06 仍 pending，下一项可见性、上下文与异步重启边界，全仓继续。

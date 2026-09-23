@@ -2294,7 +2294,7 @@
       "baseline_sha256": "d96f8c1c1ed6c57f2b6dff2b15c1db52b41825de97f8f9164bd4d49d54bb0148",
       "lines": 1833,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04s 冷读全章并实际重构6.1～6.4，补完整管理者借用工作模块、关闭周期及资源归属；九组宿主替身与ARM前端通过，目标运行未执行。6.5以后待后续批次，保持pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md",

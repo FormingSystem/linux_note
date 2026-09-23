@@ -12,425 +12,290 @@ domains:
 
 ## 6.1\_本章主线
 
-前面已经讲过：
+上一章已经能判断一次 get 是否成立、一次 put 是否触发回调，以及回调是否接过调用者的锁。现在给对象加上一项实际工作：它接受请求，把一项计算交给 worker，关闭时取消尚未开始的工作，等待已经开始的工作退出。此时只有一句“最后 put 后 kfree”还不够：**谁让 worker 停下来，等待期间又由谁保留对象？**
 
-```text
-release 是最后一个引用释放后的对象销毁点。
-```
+先保留一个有用的最小结论：普通 kref 的正常最后归还，在当前调用栈上调用类型指定的 release。然后补它未负责的部分。kref 不知道对象里的 work、timer、注册关系和子资源；若这些访问者没有纳入引用或借用协议，计数归零不会自动让它们消失。
 
-本章不再停留在最小模板：
+本章讨论 **内嵌裸 kref 的私有对象**。后面的 `owned_job` 有自己的名称、工作和关闭协议，不是 `struct device`、`struct class` 或 `struct bus_type`。私有对象持有一个 device 引用时，应按该框架的接口归还；不能把私有对象的 release 当作 driver core 的 release 分发，也不能直接释放 device 的外壳。框架边界留给后续专章。
 
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	kfree(refobj);
-}
-```
-
-先把适用范围说清楚：
-
-```text
-本章讨论的是裸 kref 或子系统内部私有对象的 release。
-示例里的 my_refobj 不是 struct device、struct class、struct bus_type。
-```
-
-如果讨论 driver core，就不能把这里的 `my_refobj_release()` 直接套到 `device_release()`、`class_release()` 或 bus/class/device 的生命周期上。
-
-这两层要分开：
-
-```text
-裸 kref 私有对象：
-    struct my_refobj 内嵌 struct kref
-    my_refobj_put() 调 kref_put()
-    最后一个 put 调 my_refobj_release()
-
-driver core 框架对象：
-    struct device 内嵌 struct kobject
-    get_device()/put_device() 管 device 引用
-    kobject 归零后进入 device model 的 release 分发
-    device_release()/class/type release 再决定最终销毁路径
-```
-
-所以本章的 `release` 主线是“自定义引用对象如何收尾”，不是“device/class/bus 这类框架对象如何释放”。后者应该放到 `kref、refcount_t、kobject` 边界章节里单独讲。
-
-真实工程里，`release()` 往往不是简单 `kfree()`。
-
-它可能要处理：
-
-```text
-子资源释放
-链表脱链检查
-workqueue 收尾
-timer 收尾
-callback 断开
-RCU 延迟释放
-锁状态约束
-睡眠上下文限制
-调试检查
-```
-
-所以本章主线是：
-
-```text
-release 不是“释放内存函数”，而是对象生命周期的最终收口点。
-```
-
-它回答的问题不是：
-
-```text
-怎么 kfree？
-```
-
-而是：
-
-```text
-对象最后一个引用消失时，还有哪些资源必须被安全收尾？
-```
-
-
-------
+我们先完成一个没有全局查找入口、没有硬件、只有一个关闭管理者的实例，再逐项加入可见性、执行上下文、timer、注册回调和 RCU 的约束。读完本章，应能沿一次关闭过程指出：哪个动作禁止新访问，哪个动作等待旧访问，哪个动作归还责任，哪个动作最终回收存储。它们可能相邻，但不是同一件事。
 
 ## 6.2\_先看完整模板\_release\_只是最后一站
 
-复杂对象销毁不能从 release 开始理解。
+第 1 章已经用“每次成功交付拥有一份”的方式保留工作对象。现在换一个确有用途的设计：一个管理者长期拥有对象，worker 只在管理者规定的活动期里借用它。关闭者可以睡眠，也负责等待所有借用结束。这样不用给每次工作都追加引用，但管理者不能提早退出，也不能在自己的 worker 里同步等待自己。
 
-更合理的入口是先看完整流程：
+先预测下面两种顺序。若关闭时工作还在队列中，它被取消，计算次数为 0；若 worker 已经抢先执行，关闭者等它完成，计算次数为 1。**两种结果都可以正确关闭**，因为本例约定关闭可以丢弃尚未开始的工作，并没有保证每个已接受请求都必须完成。若业务要求请求必达，应另选等待完成而不丢弃请求的协议。
 
-```text
-业务停止
-  -> 撤销外部注册
-  -> 从全局容器脱链
-  -> 收敛 work/timer/callback
-  -> 释放管理者引用
-  -> 等已有引用自然 put
-  -> 最后一个 put 触发 release
-  -> release 释放对象拥有的剩余资源和对象本体
-```
+### 6.2.1\_状态保存在谁那里
 
-也就是说，release 不是“把所有清理工作都塞进去”的地方。
+这里有三组相互约束的状态，不是一个计数就能表达的单一状态机：
 
-它更像是：
-
-```text
-对象已经不可见；
-异步路径已经有明确引用归属；
-已有持有者都已经退出；
-最后剩下的对象自有资源在这里收尾。
-```
-
-一个推荐模板可以先写成这样：
-
-```c
-struct my_refobj {
-	struct kref ref;
-	struct mutex lock;
-	struct list_head node;
-	struct work_struct work;
-	struct timer_list timer;
-
-	char *name;
-	void *buffer;
-
-	bool registered;
-	bool stopping;
-};
-
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	/* release 只验证前面阶段已经完成，不重新做业务撤销 */
-	WARN_ON(refobj->registered);
-	WARN_ON(!list_empty(&refobj->node));
-	WARN_ON(timer_pending(&refobj->timer));
-
-	kfree(refobj->buffer);
-	kfree(refobj->name);
-	kfree(refobj);
-}
-
-static void my_refobj_destroy(struct my_refobj *refobj)
-{
-	mutex_lock(&refobj->lock);
-	refobj->stopping = true;
-	mutex_unlock(&refobj->lock);
-
-	if (refobj->registered) {
-		unregister_callback(refobj);
-		refobj->registered = false;
-	}
-
-	del_timer_sync(&refobj->timer);
-	cancel_work_sync(&refobj->work);
-
-	mutex_lock(&refobj_list_lock);
-	if (!list_empty(&refobj->node))
-		list_del_init(&refobj->node);
-	mutex_unlock(&refobj_list_lock);
-
-	/* 释放管理者引用。真正释放可能在这里，也可能等其他持有者 put。 */
-	my_refobj_put(refobj);
-}
-```
-
-这段模板的重点不是每一行都适用于所有对象，而是职责边界：
-
-```text
-my_refobj_destroy/remove 路径负责：停止、撤销、脱链、收敛异步路径、释放管理者引用。
-my_refobj_release 路径负责：最后检查、释放对象拥有的剩余资源、释放对象本体。
-```
-
-可以画成：
+- `job->ref.refcount.refs.counter` 保存管理者和独立调用者的份额；worker 不占其中一份。
+- `job->stopping` 由关闭者在 `job->gate` 下写入，提交者在同一锁下读取。检查通过与 `queue_work()` 必须位于同一个锁窗口，否则关闭者可能在二者之间排空队列，提交者随后又排入旧对象。
+- `job->work` 的排队/执行状态由 workqueue 管理；`job->completed` 是本例业务结果，由 worker 在 `gate` 下修改，关闭等待完成后才由仍持引用的观察者读取。结果字段不是“work 已经退出”的同步标志。
 
 ```mermaid
-flowchart TD
-	user["remove / destroy 路径"]
-	stop["stop<br/>禁止新业务动作"]
-	unreg["unregister<br/>撤销外部回调/注册"]
-	unlink["unlink<br/>从 list/hash/xarray 删除"]
-	drain["drain<br/>取消或等待 work/timer/callback"]
-	put["put manager ref<br/>释放管理者引用"]
-	old["已有引用继续存在<br/>用户/worker/timer/callback"]
-	last["last put"]
-	rel["release"]
-	free["释放子资源和对象本体"]
-
-	user --> stop --> unreg --> unlink --> drain --> put
-	put --> old --> last --> rel --> free
-	put --> last
-
-	biz["业务责任域：停止、撤销可见性、收敛异步入口"]
-	life["kref 责任域：等待所有引用归零，触发 release"]
-	final["release 责任域：最终检查和释放自有资源"]
-
-	stop -.-> biz
-	unreg -.-> biz
-	unlink -.-> biz
-	drain -.-> biz
-	put -.-> life
-	last -.-> life
-	rel -.-> final
+flowchart LR
+    M["管理者：持初始份额"] -->|"gate 内设置 stopping"| G["job 内：gate 与 stopping"]
+    U["调用者：持独立份额"] -->|"gate 内检查并提交"| G
+    G -->|"仍开放时 queue_work"| Q["队列管理 job.work 的排队和执行"]
+    Q -->|"调用 work.fn，传递嵌入成员地址"| W["worker：借用 job"]
+    W -->|"gate 内增加 completed"| V["job 内：业务结果"]
+    M -->|"锁外 cancel_work_sync 等待退出"| Q
+    M -->|"等待完成后归还初始份额"| R["job.ref：普通引用状态"]
+    U -->|"结束观察后归还独立份额"| R
+    R -->|"最后 put 直接调用"| F["release：清理 name 与外壳"]
 ```
 
-后面的小节所有“错误”都要放回这个模板里理解：
+这张图中，停止状态通过共享字段和 mutex 传播，执行结束通过 workqueue 的同步取消返回传给管理者。kref 没有轮询 `completed`，也不会发送“请停止工作”的通知。同步取消内部的等待协议可沿[工作队列源码总索引](../../../../research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.6_建议阅读顺序)进入；本章只组合它已提供的接口保证。
 
-```text
-不是为了讲错误而讲错误，
-而是某个清理动作被放错了阶段，或者责任域没有定义清楚。
+### 6.2.2\_运行一个由管理者等待借用退出的模块
+
+下面是完整的 [note_kref_owned_work.c](../../../../labs/kernel/object_lifetime/materials/note_kref_owned_work.c)。成功创建才建立初始引用；三个资源申请中的任何一步失败，都沿已经取得的资源逆序清理，不对尚未初始化的 kref 执行 put。`kzalloc` 取得清零的外壳，`kstrdup` 复制并拥有名称，`INIT_WORK` 将嵌入工作项连接到回调；`GFP_KERNEL` 沿用前章可睡眠创建路径的分配约束。错误常量中，ENOMEM 表示资源申请失败，EBUSY 表示本次未追加工作，ESHUTDOWN 表示入口关闭，EIO 用于报告本例预期之外的结果。
+
+```c
+// SPDX-License-Identifier: GPL-2.0
+#include <linux/errno.h>
+#include <linux/kref.h>
+#include <linux/module.h>
+#include <linux/mutex.h>
+#include <linux/slab.h>
+#include <linux/workqueue.h>
+
+struct owned_job {
+    char *name;
+    struct kref ref;
+    struct mutex gate;
+    struct work_struct work;
+    struct workqueue_struct *queue;
+    bool stopping;
+    unsigned int completed;
+};
+
+static unsigned int release_calls; /* 本模块的初始化过程串行读取统计。 */
+
+static void owned_release(struct kref *ref)
+{
+    struct owned_job *job = container_of(ref, struct owned_job, ref);
+    ++release_calls;
+    kfree(job->name);
+    kfree(job);
+}
+
+static void owned_put(struct owned_job *job)
+{
+    kref_put(&job->ref, owned_release);
+}
+
+static void owned_worker(struct work_struct *work)
+{
+    struct owned_job *job = container_of(work, struct owned_job, work);
+    /* 借用由管理者保持到 cancel 返回；worker 没有自己的一份可 put。 */
+    mutex_lock(&job->gate);
+    ++job->completed;
+    mutex_unlock(&job->gate);
+}
+
+static struct owned_job *owned_create(void)
+{
+    struct owned_job *job = kzalloc(sizeof(*job), GFP_KERNEL);
+    if (!job)
+        return NULL;
+    job->name = kstrdup("managed-work", GFP_KERNEL);
+    if (!job->name)
+        goto free_job;
+    job->queue = alloc_ordered_workqueue("note_owned", 0);
+    if (!job->queue)
+        goto free_name;
+    mutex_init(&job->gate);
+    INIT_WORK(&job->work, owned_worker);
+    kref_init(&job->ref); /* 所有资源就绪后，才建立管理者的初始份额。 */
+    return job;
+
+free_name:
+    kfree(job->name);
+free_job:
+    kfree(job);
+    return NULL;
+}
+
+/* 调用者持独立引用。停止检查与实际排队必须处于同一个锁窗口。 */
+static int owned_request(struct owned_job *job)
+{
+    int result;
+    mutex_lock(&job->gate);
+    if (job->stopping)
+        result = -ESHUTDOWN;
+    else
+        result = queue_work(job->queue, &job->work) ? 0 : -EBUSY;
+    mutex_unlock(&job->gate);
+    return result;
+}
+
+/* 仅管理者调用一次；消耗初始份额。必须可睡眠且不能从本 work 调用。 */
+static void owned_close(struct owned_job *job)
+{
+    struct workqueue_struct *queue;
+    mutex_lock(&job->gate);
+    job->stopping = true;
+    queue = job->queue;
+    mutex_unlock(&job->gate);
+
+    /* 先关入口，再在锁外等 worker；无重排和其他生产者。 */
+    cancel_work_sync(&job->work);
+    destroy_workqueue(queue);
+    mutex_lock(&job->gate);
+    job->queue = NULL;
+    mutex_unlock(&job->gate);
+    owned_put(job); /* 此后关闭者不再访问 job。 */
+}
+
+static int __init note_owned_init(void)
+{
+    struct owned_job *job = owned_create();
+    int submitted, after_close;
+    if (!job)
+        return -ENOMEM;
+
+    kref_get(&job->ref); /* 模拟一个调用者，关闭后仍须归还这一份。 */
+    submitted = owned_request(job);
+    owned_close(job); /* 此后只凭调用者份额保留对象。 */
+    after_close = owned_request(job);
+    /* 已无 worker 写 completed；调用者的一份保护 name 和外壳。 */
+    pr_info("note_owned: %s submit=%d closed=%d completed=%u\n",
+            job->name, submitted, after_close, job->completed);
+    owned_put(job);
+    return submitted ? submitted : after_close == -ESHUTDOWN ? 0 : -EIO;
+}
+
+static void __exit note_owned_exit(void)
+{
+    pr_info("note_owned: release=%u\n", release_calls);
+}
+
+module_init(note_owned_init);
+module_exit(note_owned_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("管理者保活并等待借用工作退出的完整实验");
 ```
 
-------
+`owned_request()` 的调用者必须已经有引用。它返回 0 只表示本次排队被接收，`-EBUSY` 表示这次没有追加一次执行，`-ESHUTDOWN` 表示已关闭；三者都不转交调用者自己的份额。worker 始终借用管理者保护的存储，所以没有“取消成功需要补 put”的票据。本例不能与每次工作持一份的模型混用。
+
+`owned_close()` 只由初始份额的管理者调用一次。它先关闭提交窗口，再退出 `gate`，随后同步取消工作、销毁私有队列，最后归还管理者份额。如果仍持 `gate` 等待，worker 正需要该锁来结束计算，就会形成“关闭者等 worker，worker 等关闭者解锁”的循环；把等待放在锁外正是为了解开这条依赖。
+
+模块中没有导出接口或其他生产者；worker 不重新投递。它的完整关闭发生在初始化返回前，卸载时只输出对象外的统计。把这些函数接到实际驱动时，还要建立外部调用者和模块代码的进入/退出协议，不能只复制这个 `module_exit()`。
+
+在与运行内核匹配、已经准备好的可写构建环境中执行：
+
+```bash
+# KDIR 由当前构建环境设置，指向匹配目标内核的构建目录。
+make -C "$KDIR" M="$PWD/labs/kernel/object_lifetime/materials" modules
+sudo insmod labs/kernel/object_lifetime/materials/note_kref_owned_work.ko
+sudo rmmod note_kref_owned_work
+dmesg | tail -n 12
+```
+
+观察 `note_owned` 日志：`submit=0`，`closed=-108`（该固定内核的 `ESHUTDOWN`），`completed` 为 0 或 1，卸载输出 `release=1`。前两项说明提交与关闭后的入口行为，最后一项说明这个同步演示只回收一次；一次日志没有覆盖所有实际竞态。若编译或装载失败，先保留错误并核对构建目录、架构和运行版本，不能把宿主检查当作已成功装载。
+
+本轮已完成 ARM 前端语法检查和宿主九组控制路径检查，含三处分配失败、两种模块顺序、关闭窗口中的再提交拒绝、重复工作及管理者最后退出。宿主的锁、原子和队列是显式顺序替身，没有真实线程；目标构建链接、装卸、调度竞争和内存序未验证。命令是读者复现实验的步骤，不是本轮执行报告。
+
+### 6.2.3\_沿一轮关闭追踪到最后清理
+
+本章用 S0～S5 标记这个具体对象的一轮过程；它细化的是本例的管理协议，不是内核字段中另存的一套枚举。
+
+| 阶段 | 触发与写入 | 谁继续持有或读取 | 退出条件 |
+| --- | --- | --- | --- |
+| S0 准备 | 创建者取得外壳、name、queue，初始化 gate/work/ref | 管理者持初始一份 | 成功返回；失败只清理已取得资源 |
+| S1 取得调用者份额 | 管理者在有效正引用保护下 get | 调用者取得第二份 | 责任交付完成 |
+| S2 接受工作 | 调用者在 gate 下检查 stopping，向队列发布 work | worker 借用对象；管理者仍持初始一份 | 拒绝，或一次工作进入队列 |
+| S3 关闭提交 | 管理者在 gate 下写 stopping=true | 后来的提交者在同锁下读到关闭并拒绝 | 退出 gate，此后无新的成功提交 |
+| S4 排空借用 | 管理者在锁外 cancel；必要时等 worker 返回；销毁 queue 并置空 | worker 在等待完成前仍由管理者保活 | 已无排队或执行，私有队列退出 |
+| S5 归还与清理 | 管理者 put，独立调用者结束后也 put | 最后归还者直接进入 release | name 和外壳各释放一次 |
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as 调用者
+    participant M as 管理者
+    participant J as job 状态
+    participant W as workqueue 与 worker
+    U->>J: S1 已取得独立份额
+    U->>J: S2 gate 内检查开放
+    U->>W: gate 内提交 job.work
+    M->>J: S3 gate 内写 stopping=true 后解锁
+    U->>J: 再提交读取 stopping，返回 ESHUTDOWN
+    M->>W: S4 锁外 cancel_work_sync
+    alt 工作尚未开始且被取消
+        W-->>M: 移除 pending，返回 true
+    else 工作抢先执行或已经完成
+        W->>J: gate 内增加 completed 后退出
+        W-->>M: 确认执行结束，返回 false
+    end
+    M->>W: 销毁已排空的私有队列
+    M->>J: S5 put 管理者份额，仍有调用者一份
+    U->>J: 读结果后 put 最后一份
+    J-->>U: 同步调用 release，回收资源
+```
+
+在这个单次投递演示里，取消返回 true/false 可对应图中两支；一般 work 重排场景不能只凭这个布尔值重建整段执行历史。真正承担对象安全保证的是 **先封闭全部生产者，再等待没有旧执行者**，不是把 true 读成“安全”、false 读成“失败”。固定版本的[同步取消实现](../../../../research/source_reading/workqueue/source_explanations/P03_Linux_6.12_worker_flush与取消源码实现.md#3.5_cancel_work_sync撤销与等待)明确写出不存在竞争投递这一前提。
+
+试着在纸上改两处代码：第一，把 `owned_put(job)` 从 S5 移到 S4 等待之前，且让管理者成为唯一持有者；此时尚在执行的 worker 会拿到已回收对象。第二，让 `owned_request()` 解锁后才排队；此时它可能在 S4 返回后重新发布 work。前者缺的是存储保留，后者缺的是关闭和发布的串行化，单独增加一个停止标志不能同时修复两者。
 
 ## 6.3\_release\_的责任域和非责任域
 
-进入 release 时，最理想的状态是：
+回到完整程序，release 只有三件事：从嵌入成员找回对象、释放拥有的名称、释放外壳。简短是前面协议成立的结果，而不是把复杂问题藏在“都已经停了”这句话后面：S3 给出不再接受工作的证据，S4 给出借用者已经退出的证据，S5 才让管理者离开。若省掉任一证明，回调再短也可能释放得太早。
 
-```text
-对象已经不再被新路径找到；
-对象不再注册给外部子系统；
-work/timer/callback 要么已经停止，要么它们自己的引用已经闭环；
-最后一个引用已经消失；
-release 只需要释放对象拥有的剩余资源。
-```
+它与第 1 章的持票 worker 有意不同。持票模型允许创建者在交付后先退出，代价是接收、拒绝、完成、取消都要明确归还对应份额；本章模型让 worker 不做 get/put，代价是单一管理者必须活到排空结束且能合法等待。需要独立异步活动继续存在时选择前者；明确由上层关闭者统一收敛的活动可以选择后者。不要为了减少一对原子操作，就删除上层并不存在的等待保证。
 
-release 的责任域：
+也不能把本例扩成“所有对象进入 release 以前一定已经不可见”的定理。上一章的非拥有索引由[最后回调接锁撤下入口](P05_基础_API_源码逐行讲解.md#5.8.2_kref_put_mutex%28%29_的典型用途)，它同样正确；本例则根本没有全局查找入口。哪些动作放在 release，取决于入口与计数的连接方式、执行上下文以及谁等待谁。
 
-```text
-1. 用 container_of 找回外层对象。
-2. 检查对象已经脱链、注销、停止。
-3. 释放对象拥有的内存、引用、子资源。
-4. 选择 kfree、kmem_cache_free 或 kfree_rcu 等最终释放方式。
-```
+一般应把必须主动启动的业务关闭交给仍持有效责任的管理者，把最后资源归还交给 release。若一个注册关系自己拥有一份，却期望 release 先注销它，计数就会因为那一份始终不能归零；反过来，若注册回调没有任何保活依据，归零后仍能进来的回调会访问已释放存储。两种错误一边造成无法退出，一边造成过早退出，不能用同一条“在 release 加 unregister”同时修好。
 
-release 通常不应该承担：
-
-```text
-1. 决定设备是否还能访问。
-2. 执行主要 stop/remove 状态机。
-3. 重新从外部子系统 unregister 一切东西。
-4. 等待复杂异步路径，除非上下文和引用关系已经严格证明。
-5. 重新发布对象或重新初始化 kref。
-```
-
-这不是说 release 永远不能做 unregister、unlink、cancel 之类动作。
-
-而是说：
-
-```text
-如果 release 要做这些动作，就必须同时证明上下文、锁、引用归属和外部子系统语义都成立。
-```
-
-裸 kref 私有对象更推荐把这些动作前移到 destroy/remove 阶段，让 release 保持短小、确定、可审查。
-
-------
+release 可以选择延迟最终存储回收，也可以按已证明的协议完成脱链；它不能把归零对象重新当作有业务引用的对象发布。诊断能帮助发现违约，不能建立原来没有的同步。后续小节按这三个问题展开：外部入口怎样撤销、最后回调处于什么上下文、延迟访问者怎样退出。
 
 ## 6.4\_release\_的触发条件和基本释放范围
 
-这一组小节只回答 release 最基础的问题：它什么时候被调用，以及它到底释放哪些资源。
+现在区分触发条件和清理清单。触发由引用协议提供；清单由对象的资源取得方式提供。两者都需要正确，但不能互相替代。
 
 ### 6.4.1\_release\_的触发条件
 
-`release()` 只在一种情况下被调用：
+在正常、未损坏且每份责任恰好归还一次的 kref 周期里，最终归还将计数从 1 减到 0，随后调用本次 put 指定的回调。锁组合还会按上一章的协议交出锁。计数异常进入饱和告警等分支时，不能继续套用这条正常结论；[普通源码导读](../../../../research/source_reading/kref/navigation/P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛)将两种情况分开。
 
-```text
-某次 kref_put() 让引用计数从 1 变成 0。
-```
+“没有剩余引用”不等于“世界上没有任何裸指针”。本例依 S4 证明 worker 已不再借用；RCU 对象则可能仍有旧读者处于受保护的借用区间，因而还不能回收其存储。release 自己也正通过裸地址做清理。正确要求是：**不能再把零计数身份当作活的业务引用继续取得；仍可能访问的地址必须有另一项尚未结束的存储保护依据。**
 
-也就是说：
-
-```text
-进入 release 时，已经没有任何合法持有者。
-```
-
-这里的“没有合法持有者”有两个含义：
-
-```text
-1. 不应该再有路径持有引用。
-2. 不应该再有路径通过裸指针继续访问对象。
-```
-
-所以 release 的定位非常明确：
-
-```text
-release 是生命周期终点，不是普通清理阶段。
-```
-
-进入 release 后，对象不应该再被：
-
-```text
-重新 get
-重新加入全局容器
-重新投递给 workqueue
-重新注册给其他子系统
-重新暴露给 lookup 路径
-```
-
-这些都属于“复活对象”的错误倾向。
-
+因此，禁止在普通 release 中用 get 或重新 init 把同一个已归零身份“救活”。如果释放策略需要把清理工作交给另一个执行者，传递的是明确保留存储的清理责任，要另行证明交付、失败和执行上下文；不是悄悄恢复旧业务对象的引用。对象池重新构造一个新身份也需要旧访问者已退出的独立前提。
 
 ### 6.4.2\_release\_负责释放什么
 
-最简单的对象只需要释放本体：
+`owned_job` 的资源不是同时退出的。私有队列会执行借用对象的代码，必须先在 S4 停止和销毁；名称仍可被独立调用者观察，所以保留到 S5。外壳最后回收，因为前面所有成员地址都落在它里面。
 
-```c
-kfree(refobj);
-```
+这也说明“先释放子资源，再释放外壳”只有在依赖关系允许时才完整。若子资源的退出会回调父对象，就要把父对象保留到该回调结束；若独立调用者在关闭后仍允许读取某个缓冲区，就不能提前释放它。不能把所有指针放进一个统一的 kfree 列表，也不能把依赖关系全凭字段声明顺序决定。
 
-但复杂对象通常还有子资源。
+| 本例资源 | 取得点 | 使用窗口 | 对应退出动作 |
+| --- | --- | --- | --- |
+| job 外壳 | `kzalloc` 成功 | 创建、提交、worker、关闭及独立调用者 | release 最后 `kfree(job)` |
+| name | `kstrdup` 成功 | 对象创建后直到最后观察者退出 | release 先 `kfree(job->name)` |
+| queue | 创建私有有序队列成功 | 允许提交直到同步取消返回 | S4 `destroy_workqueue`，随后成员置空 |
+| 调用者份额 | 正常 get | 关闭后的拒绝与结果观察仍有效 | 调用者自行 put，不由关闭者代还 |
 
-例如：
-
-```c
-struct my_refobj {
-	struct kref ref;
-	char *name;
-	void *buffer;
-	struct file *file;
-	struct device *dev;
-};
-```
-
-这里的 `dev` 只是 `my_refobj` 持有的另一个框架对象引用，不表示 `my_refobj_release()` 可以替代 `device_release()`。
-
-release 可能需要：
-
-```c
-static void my_refobj_release(struct kref *ref)
-{
-	struct my_refobj *refobj = container_of(ref, struct my_refobj, ref);
-
-	kfree(refobj->buffer);
-	kfree(refobj->name);
-	fput(refobj->file);
-	put_device(refobj->dev);
-	kfree(refobj);
-}
-```
-
-这里要注意顺序：
-
-```text
-先释放对象拥有的子资源；
-最后释放对象本体。
-```
-
-因为一旦执行：
-
-```c
-kfree(refobj);
-```
-
-后面就不能再访问：
-
-```c
-refobj->buffer
-refobj->name
-refobj->file
-refobj->dev
-```
-
-所以 release 的基本顺序是：
-
-```text
-释放子资源
-解除外部联系
-执行调试检查
-释放对象本体
-```
-
+创建失败发生在 S0，尚未取得的资源没有退出动作；成功创建后的关闭发生在 S3～S5，管理者不能跳过等待直接执行与失败标签相同的 kfree。两个路径都“释放内存”，成立前提却不同。
 
 ### 6.4.3\_release\_只释放对象\_拥有\_的资源
 
-release 不应该盲目释放所有字段指向的东西。
+字段类型本身不足以决定归属。`const char *name` 可能指向静态字符串，也可能指向另一个拥有者管理的内存；`char *name` 也不会自动宣布对象获得释放权。把它写进结构，只保存了一个地址。
 
-关键问题是：
+| 取得与保存方式 | 对象实际承担的责任 | 退出时的方向 |
+| --- | --- | --- |
+| 借用静态字符串 | 不拥有该字符串存储 | 不对字符串 kfree |
+| 私有 `kstrdup` / `kmalloc` 成功 | 拥有这一块分配 | 无使用者后按分配配对 kfree |
+| 明确取得 file 的一份引用 | 归还当前对象持有的文件引用 | 按 file 契约执行 fput，不直接 kfree file |
+| 明确取得 device 的一份引用 | 归还当前对象持有的设备引用 | 按 device 契约执行 put_device，不替换设备最终回调 |
+| 只借用另一对象的成员地址 | 在对方承诺的有效窗口内使用 | 结束借用；不能凭地址擅自 put 或 free 对方 |
 
-```text
-这个资源是否由当前对象拥有？
-```
+表中的“归还引用”不承诺被引用对象立即销毁，也不承诺任何上下文都能执行整个清理链。应分别核对该类型的空值约定、最后归还行为、回调与睡眠约束，不能把它们套用本例只清理 kmalloc 内存的回调。
 
-例如：
+练习：把完整程序的 `name` 改为借用字符串常量，要一起改变哪些地方？至少要改创建时的取得方式、申请失败出口和 release 的资源清单；若只改赋值却保留 `kfree(job->name)`，就把原本不拥有的存储当成了私有分配。再把名称改为借用另一个动态对象的成员：这一次除了清理清单，还必须增加对那个拥有者寿命的证明。
 
-```c
-struct my_refobj {
-	struct kref ref;
-	struct device *dev;
-	u8 *rx_buf;
-	const char *name;
-};
-```
-
-这里每个字段的释放规则可能不同：
-
-| 字段     | 可能语义                     | release 中是否释放     |
-| -------- | ---------------------------- | ---------------------- |
-| `rx_buf` | 对象分配并拥有               | 通常 `kfree(rx_buf)`   |
-| `dev`    | 通过 `get_device()` 持有引用 | 通常 `put_device(dev)` |
-| `name`   | 指向静态字符串               | 不能 `kfree(name)`     |
-| `name`   | `kstrdup()` 分配             | 需要 `kfree(name)`     |
-
-这里的 `put_device(dev)` 只是释放当前私有对象持有的 device 引用。至于 `struct device` 最终如何释放，仍然由 driver core 的 `put_device()`、`kobject` 和 device model release 分发规则决定。
-
-所以 release 里不能机械写：
-
-```c
-kfree(refobj->name);
-```
-
-必须先确认：
-
-```text
-name 是对象分配的吗？
-name 是静态字符串吗？
-name 是别的对象管理的吗？
-name 是否需要 put，而不是 kfree？
-```
-
-release 的职责是释放对象拥有的生命周期资源，而不是释放对象能看到的一切指针。
-
-------
 
 ## 6.5\_外部可见性\_脱链应该由谁负责
 
