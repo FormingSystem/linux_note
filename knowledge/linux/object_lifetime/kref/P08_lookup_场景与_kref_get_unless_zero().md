@@ -500,350 +500,255 @@ static void indexed_release(struct kref *ref)
 
 ## 8.5\_常见容器\_lookup\_模板
 
-这一组内容按容器类型归类。
+查找协议已经成立，为什么还要逐个看容器？因为“锁内查找并 get”只说出了应用需要的窗口，具体函数是否自行加锁、是否暂时解锁分配、何时发布字段，都要按接口兑现。本节继续使用 **容器拥有一份** 的设计，不把 8.4 的非拥有回调摘链协议混进来。
 
-不要把这些模板理解成新的生命周期规则，它们只是把同一条规则套到不同容器上：
-
-```text
-容器查找必须被对应同步机制保护；
-返回给锁外调用者之前必须获得引用；
-容器删除路径必须和 lookup 路径配套。
-```
+链表要逐个比较编号；哈希表先按编号分桶，再在候选中比较键；XArray 用整数索引定位条目；IDR 在整数范围内分配可用编号并关联指针。它们解决查找或编号问题，均不会自动知道对象里有没有 kref。以下仅讨论普通对象指针、单一登记关系和进程上下文，不把值编码条目、IRQ 使用方式或多索引关系隐含加入示例。
 
 ### 8.5.1\_hash\_table\_lookup\_的引用规则
 
-hash table 和 list 本质一样：
+哈希表的桶可能有多个候选，所以命中桶以后仍要比较 id。沿前面单槽协议，把全局入口改成 `DEFINE_HASHTABLE(object_table, 8)`，对象增加初始化好的 `struct hlist_node hnode`；这里 8 是桶索引位数，即 256 个桶。用一把 `table_lock` 保护所有桶，便于先审查整个协议；这不是每桶锁的并发扩展实现。
 
-```text
-hash bucket 是可查找结构；
-bucket lock 保护链表结构；
-hash 表通常持有对象引用；
-lookup 成功后给调用者新引用。
-```
-
-示例：
+下面三个函数构成配对片段。`hash_object` 具有 id、hnode、ref，创建时初始化 hnode，编号发布后不变；`hash_put` 归还一份，release 只清理已经摘下的对象。调用 publish/remove 的路径都必须另持独立引用。plain spinlock 只适用于本例没有中断侧操作同一表的约定。
 
 ```c
-struct my_obj {
-	struct kref ref;
-	struct hlist_node hnode;
-	u32 id;
-};
-```
-
-全局 hash：
-
-```c
-static DEFINE_HASHTABLE(my_obj_ht, 8);
-static DEFINE_SPINLOCK(my_obj_ht_lock);
-```
-
-插入：
-
-```c
-int my_obj_hash_add(struct my_obj *obj)
+/* 成功让表持有新的一份；拒绝重复节点或编号时退回预留。 */
+static int hash_publish(struct hash_object *obj)
 {
-	kref_get(&obj->ref);     /* hash 表持有引用 */
+    struct hash_object *candidate;
+    int result = -EEXIST;
+    kref_get(&obj->ref);
+    spin_lock(&table_lock);
+    if (!hlist_unhashed(&obj->hnode))
+        goto out_unlock;
+    hash_for_each_possible(object_table, candidate, hnode, obj->id) {
+        if (candidate->id == obj->id)
+            goto out_unlock;
+    }
+    hash_add(object_table, &obj->hnode, obj->id);
+    result = 0;
+out_unlock:
+    spin_unlock(&table_lock);
+    if (result)
+        hash_put(obj);
+    return result;
+}
 
-	spin_lock(&my_obj_ht_lock);
-	hash_add(my_obj_ht, &obj->hnode, obj->id);
-	spin_unlock(&my_obj_ht_lock);
+static struct hash_object *hash_lookup_get(u32 id)
+{
+    struct hash_object *obj, *found = NULL;
+    spin_lock(&table_lock);
+    hash_for_each_possible(object_table, obj, hnode, id) {
+        if (obj->id == id) {
+            kref_get(&obj->ref);
+            found = obj;
+            break;
+        }
+    }
+    spin_unlock(&table_lock);
+    return found;
+}
 
-	return 0;
+static void hash_remove(struct hash_object *obj)
+{
+    bool removed = false;
+    spin_lock(&table_lock);
+    if (!hlist_unhashed(&obj->hnode)) {
+        hash_del(&obj->hnode);
+        removed = true;
+    }
+    spin_unlock(&table_lock);
+    if (removed)
+        hash_put(obj); /* 仅归还本次实际撤下的成员份额。 */
 }
 ```
 
-lookup：
+同一节点只能属于本例这一张表；unhashed 不是跨表身份检查。这里的删除会恢复未挂接状态，因此重复 remove 不再消耗表引用；但参数有效性仍由调用者的独立份额保证。插入拒绝也不能在持 spinlock 时随意执行复杂回调，示例把预留归还放到解锁后。
 
-```c
-struct my_obj *my_obj_hash_lookup_get(u32 id)
-{
-	struct my_obj *obj;
-
-	spin_lock(&my_obj_ht_lock);
-
-	hash_for_each_possible(my_obj_ht, obj, hnode, id) {
-		if (obj->id == id) {
-			kref_get(&obj->ref);
-			spin_unlock(&my_obj_ht_lock);
-			return obj;
-		}
-	}
-
-	spin_unlock(&my_obj_ht_lock);
-	return NULL;
-}
-```
-
-删除：
-
-```c
-void my_obj_hash_remove(struct my_obj *obj)
-{
-	spin_lock(&my_obj_ht_lock);
-	hash_del(&obj->hnode);
-	spin_unlock(&my_obj_ht_lock);
-
-	kref_put(&obj->ref, my_obj_release);
-}
-```
-
-这个模型仍然是：
-
-```text
-hash 表持有引用；
-lookup 在锁内找到对象；
-lookup 在锁内 get；
-remove 先 hash_del，再 put hash 引用。
-```
-
-注意：
-
-```text
-spinlock 保护 hash 结构；
-kref 保护对象生命周期；
-两者不能互相替代。
-```
-
-------
+桶和节点机制沿[哈希表专题](../../data_structures/哈希表_Hash_Table/大纲.md)继续阅读。本节新增的是成员引用和查找窗口，而不是另一套哈希算法。全局锁的代价是所有桶的增删查找都串行；只有实测表明该锁成为瓶颈、且能维护相同寿命和编号规则时，才进一步考虑按桶拆锁。
 
 ### 8.5.2\_xarray\_lookup\_的引用规则
 
-xarray 常用于通过整数 ID 查找对象。
+XArray 可以按整数索引保存指针。它有内部锁，但不同 API 的锁覆盖范围不一样：`xa_insert` 和 `xa_erase` 自己取得/释放 xa_lock；`xa_load` 的内部读侧窗口在返回前结束，并没有交付对象引用。因此本例 **查找必须在外层 xa_lock 内把 load 和 get 连起来，删除却直接调用自行加锁的 xa_erase**。
 
-典型模型：
-
-```text
-xarray 保存对象指针；
-xarray 持有对象引用；
-lookup 时在 xa_lock 下查找并 get；
-erase 时先从 xarray 删除，再 put xarray 引用。
-```
-
-对象：
+下面是完整 [note_kref_xarray.c](../../../../labs/kernel/object_lifetime/materials/note_kref_xarray.c)。它把上一节单槽实验换成整数索引 7，并故意撤下两次。XArray 中只放非空普通对象地址，不放编码值或保留条目；所有对象字段在发布前完成初始化。
 
 ```c
-struct my_obj {
-	struct kref ref;
-	u32 id;
+// SPDX-License-Identifier: GPL-2.0
+#include <linux/errno.h>
+#include <linux/kref.h>
+#include <linux/module.h>
+#include <linux/slab.h>
+#include <linux/xarray.h>
+
+struct indexed_object {
+    unsigned long id; /* 发布前写入，之后不再改变。 */
+    struct kref ref;
 };
-```
+static DEFINE_XARRAY(object_index);
+static unsigned int release_calls; /* 本实验初始化内顺序完成全部操作。 */
 
-xarray：
-
-```c
-static DEFINE_XARRAY(my_obj_xa);
-```
-
-插入：
-
-```c
-int my_obj_xa_insert(struct my_obj *obj)
+static void indexed_release(struct kref *ref)
 {
-	int ret;
-
-	kref_get(&obj->ref);       /* xarray 持有引用 */
-
-	xa_lock(&my_obj_xa);
-	ret = __xa_insert(&my_obj_xa, obj->id, obj, GFP_KERNEL);
-	xa_unlock(&my_obj_xa);
-
-	if (ret)
-		kref_put(&obj->ref, my_obj_release);
-
-	return ret;
+    struct indexed_object *obj = container_of(ref, struct indexed_object, ref);
+    ++release_calls;
+    kfree(obj);
 }
-```
 
-lookup：
-
-```c
-struct my_obj *my_obj_xa_lookup_get(u32 id)
+static void indexed_put(struct indexed_object *obj)
 {
-	struct my_obj *obj;
-
-	xa_lock(&my_obj_xa);
-
-	obj = xa_load(&my_obj_xa, id);
-	if (obj)
-		kref_get(&obj->ref);
-
-	xa_unlock(&my_obj_xa);
-
-	return obj;
+    if (obj)
+        kref_put(&obj->ref, indexed_release);
 }
-```
 
-删除：
-
-```c
-void my_obj_xa_remove(u32 id)
+static struct indexed_object *indexed_create(unsigned long id)
 {
-	struct my_obj *obj;
-
-	xa_lock(&my_obj_xa);
-	obj = xa_erase(&my_obj_xa, id);
-	xa_unlock(&my_obj_xa);
-
-	if (obj)
-		kref_put(&obj->ref, my_obj_release);
+    struct indexed_object *obj = kzalloc(sizeof(*obj), GFP_KERNEL);
+    if (!obj)
+        return NULL;
+    obj->id = id;
+    kref_init(&obj->ref);
+    return obj;
 }
+
+/* 调用者持有一份；成功让映射拥有新增份额，失败退回预留。 */
+static int indexed_publish(struct indexed_object *obj)
+{
+    int result;
+    kref_get(&obj->ref);
+    result = xa_insert(&object_index, obj->id, obj, GFP_KERNEL);
+    if (result)
+        indexed_put(obj);
+    return result;
+}
+
+static struct indexed_object *indexed_lookup(unsigned long id)
+{
+    struct indexed_object *obj;
+    xa_lock(&object_index);
+    obj = xa_load(&object_index, id);
+    if (obj)
+        kref_get(&obj->ref); /* 映射尚在，同一 xa_lock 排斥删除。 */
+    xa_unlock(&object_index);
+    return obj;
+}
+
+static void indexed_remove(unsigned long id)
+{
+    /* xa_erase 自行加锁；返回被摘下条目的份额，不再套一层 xa_lock。 */
+    struct indexed_object *obj = xa_erase(&object_index, id);
+    indexed_put(obj); /* 解锁以后归还；空映射不产生第二次归还。 */
+}
+
+static int __init note_index_init(void)
+{
+    struct indexed_object *creator = indexed_create(7), *reader;
+    int result;
+    if (!creator)
+        return -ENOMEM;
+    result = indexed_publish(creator);
+    indexed_put(creator);
+    if (result) {
+        xa_destroy(&object_index); /* 清理索引内部节点，不代替对象 put。 */
+        return result;
+    }
+    reader = indexed_lookup(7);
+    indexed_remove(7);
+    indexed_remove(7); /* 第二次查无条目，不再消耗引用。 */
+    xa_destroy(&object_index); /* 本例映射已空，且没有外部入口。 */
+    if (!reader)
+        return -ENOENT;
+    pr_info("note_index: detached reader id=%lu\n", reader->id);
+    indexed_put(reader);
+    return 0;
+}
+
+static void __exit note_index_exit(void)
+{
+    pr_info("note_index: release=%u\n", release_calls);
+}
+
+module_init(note_index_init);
+module_exit(note_index_exit);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("XArray拥有型查找与重复撤下实验");
 ```
 
-这里要注意：
+沿 S0～S5 数一次责任：创建为 1；发布前预留后为 2；成功发布让新增一份归映射所有；创建者归还后为 1；查找锁内 get 后为 2；第一次删除交回成员份额，锁外 put 后为 1；第二次返回 NULL，没有份额可归还；reader 最后 put 才回收。`xa_destroy` 只清理索引内部资源，不会替应用逐个调用 indexed_put，所以调用它前已经把本例唯一映射摘下。
 
-```text
-xa_load() 返回的只是指针；
-只有在锁内 get 成功后，调用者才真正持有引用。
-```
+为什么不能照旧写 `xa_lock; xa_erase; xa_unlock`？外层已经持锁，xa_erase 又尝试取得同一锁，会造成重复加锁。若调用者确实需要一个更大的临界区，固定版本另有要求已持锁的 `__xa_erase`；不能靠函数名前有下划线就猜所有 API 的行为，必须核对契约。
 
-不要写成：
+插入可能因相同索引已占用返回 -EBUSY，也可能因内部节点分配失败返回 -ENOMEM。两种失败都退回预留、保留调用者原份额。允许分配的底层插入可暂时释放再取得 xa_lock，这不是随意修改已发布对象字段的窗口；本例发布前字段就已固定，不依赖整个分配过程始终持锁来掩护半成品。
 
-```c
-obj = xa_load(&my_obj_xa, id);
-if (obj)
-	kref_get(&obj->ref);
-```
+从材料目录按 8.3 的 KDIR 构建模块，在匹配目标加载 `note_kref_xarray.ko`，正常初始化预期打印 `detached reader id=7`，卸载预期 `release=1`。本轮 ARM 前端及宿主六组路径已通过；宿主执行实际应用和固定 xa_insert/xa_load/xa_erase 包装，存储节点、锁、RCU、分配及原子是显式顺序替身。目标构建链接、装卸、真实 XArray 节点分配与并发未执行，预期日志不作为设备实测。
 
-除非你明确知道当前 xarray 使用方式允许无锁 RCU 查找，并且对象释放路径也配套 RCU 延迟释放。
-
-否则裸 `xa_load()` 后再 `kref_get()` 仍然可能踩悬挂指针。
-
-------
+源码阅读先从[总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入[整数索引模块](../../../../research/source_reading/kref/navigation/P06_整数索引与拥有型查找导读.md#6.2_把容器动作接到引用周期)，再分别核对[插入包装](../../../../research/source_reading/kref/source_explanations/include/linux/xarray.h.md#1.1_插入包装自行管理锁)、[查询窗口](../../../../research/source_reading/kref/source_explanations/lib/xarray.c.md#1.1_查询内部读侧窗口在返回前结束)与[删除包装](../../../../research/source_reading/kref/source_explanations/lib/xarray.c.md#1.2_删除包装与已持锁入口)。这些结论限于记录的固定 NXP Linux 6.12.20。
 
 ### 8.5.3\_idr\_lookup\_的引用规则
 
-idr 也是常见的 ID 到对象指针映射结构。
+IDR 除了关联指针，还能从指定范围分配一个未使用的编号。这多出一个初始化问题：只有分配成功才知道编号，但把对象挂入索引以后其他路径就可能查到它。本例选择一把外层 mutex 保护所有分配、查找和移除，**在分配成功后、解除这把锁之前写完 obj->id**。
 
-模型和 xarray 类似：
-
-```text
-idr 保存对象指针；
-idr 持有对象引用；
-lookup 在锁内完成；
-remove 先删除映射，再 put。
-```
-
-定义：
+以下是从完整登记协议迁移的配对片段。`id_object` 包含 int id 和 kref ref，创建时其他字段初始化完成；`id_put` 归还引用，release 回收已经撤下的对象。`DEFINE_IDR(object_ids)` 与 `DEFINE_MUTEX(id_lock)` 为唯一索引和锁。publish 只接受尚未发布的私有对象且每个对象仅成功发布一次；所有读写方都遵守该 mutex，不混用无锁 RCU 读者。
 
 ```c
-static DEFINE_IDR(my_obj_idr);
-static DEFINE_MUTEX(my_obj_idr_lock);
-```
-
-插入：
-
-```c
-int my_obj_idr_alloc(struct my_obj *obj)
+/* 返回新编号或负错误；调用者原份额始终保留。 */
+static int id_publish(struct id_object *obj)
 {
-	int id;
+    int id;
+    kref_get(&obj->ref);
+    mutex_lock(&id_lock);
+    id = idr_alloc(&object_ids, obj, 0, 0, GFP_KERNEL);
+    if (id >= 0)
+        obj->id = id; /* 必须在解锁以前完成，查找者才不会先看到半成品。 */
+    mutex_unlock(&id_lock);
+    if (id < 0)
+        id_put(obj);
+    return id;
+}
 
-	kref_get(&obj->ref);      /* idr 持有引用 */
+static struct id_object *id_lookup_get(int id)
+{
+    struct id_object *obj;
+    mutex_lock(&id_lock);
+    obj = idr_find(&object_ids, id);
+    if (obj)
+        kref_get(&obj->ref);
+    mutex_unlock(&id_lock);
+    return obj;
+}
 
-	mutex_lock(&my_obj_idr_lock);
-	id = idr_alloc(&my_obj_idr, obj, 0, 0, GFP_KERNEL);
-	mutex_unlock(&my_obj_idr_lock);
-
-	if (id < 0) {
-		kref_put(&obj->ref, my_obj_release);
-		return id;
-	}
-
-	obj->id = id;
-	return 0;
+static void id_remove(int id)
+{
+    struct id_object *obj;
+    mutex_lock(&id_lock);
+    obj = idr_remove(&object_ids, id);
+    mutex_unlock(&id_lock);
+    if (obj)
+        id_put(obj); /* 只有返回了旧映射才有成员份额。 */
 }
 ```
 
-lookup：
+idr_alloc 的范围下界包含 0，上界参数 0 在该接口中表示可用至 INT_MAX；不是“只能分配编号零”。0 是成功编号，判断必须用 `id < 0`，不能写成 `if (id)`。内存不足和编号耗尽分别可能返回 -ENOMEM、-ENOSPC。
 
-```c
-struct my_obj *my_obj_idr_lookup_get(int id)
-{
-	struct my_obj *obj;
+固定实现的 idr_alloc 将新编号写进自己的局部变量，并不会找到应用的 obj->id 字段。`idr_alloc_u32` 则允许传入一个 u32 编号地址，并在发布指针前写它；若使用该接口须重新约定类型与范围。两种做法都可建立完整协议，不能把其中一个的保证套在另一个函数上。实现见[编号发布](../../../../research/source_reading/kref/source_explanations/lib/idr.c.md#1.1_返回编号与对象字段初始化)及[查询/移除](../../../../research/source_reading/kref/source_explanations/lib/idr.c.md#1.2_查询与移除不管理对象引用)。
 
-	mutex_lock(&my_obj_idr_lock);
-
-	obj = idr_find(&my_obj_idr, id);
-	if (obj)
-		kref_get(&obj->ref);
-
-	mutex_unlock(&my_obj_idr_lock);
-
-	return obj;
-}
-```
-
-remove：
-
-```c
-void my_obj_idr_remove(int id)
-{
-	struct my_obj *obj;
-
-	mutex_lock(&my_obj_idr_lock);
-	obj = idr_remove(&my_obj_idr, id);
-	mutex_unlock(&my_obj_idr_lock);
-
-	if (obj)
-		kref_put(&obj->ref, my_obj_release);
-}
-```
-
-核心仍然是：
-
-```text
-idr_find() 返回裸指针；
-锁内 kref_get() 才把裸指针变成当前路径引用。
-```
-
-------
+编号也会复用。如果另一个对象后来得到同一 id，按 id 删除会作用于当时的映射，不保证还是最早那个对象；需要防止旧请求误操作新对象时，须增加代际或验证映射身份。该问题与普通 get、条件 get 的选择不同。退出时先阻止新操作、撤下并归还所有成员份额，再销毁索引内部资源；不能用 idr_destroy 代替对象回收。本节 IDR 片段已作源码契约核对，不声称运行过完整 IDR 模块。
 
 ### 8.5.4\_lookup\_成功\_失败\_正在释放的状态表
 
-lookup 不是只有“找到”和“没找到”两种状态。
+先确定本次接口承诺返回一份，再看返回结果。下表的成功指 lookup_get 的正常成功，不适用于只借出指针的 find_locked。
 
-更完整的状态表如下：
+| 场景 | 可见性与计数依据 | 本次结果和责任 |
+| --- | --- | --- |
+| 拥有型映射仍在，同锁查找 | 条目持有一份，地址有效且计数正 | 追加一份，返回者最终归还 |
+| 没有该编号 | 未得到对象地址 | 返回 NULL，不 put |
+| 已摘下但旧用户仍持有 | 新查找无入口，计数可以仍正 | 新查找失败，旧用户继续按其协议使用 |
+| 非拥有索引仍在，回调等查找锁 | 地址有效，计数可能已零 | 条件取得成功才带走；失败没有份额 |
+| RCU 读者保留了被摘除的旧指针 | 依赖完整延迟回收协议，计数可能为零 | 依协议条件取得；不能把逻辑摘除等同旧指针立刻消失 |
+| 容器损坏或寿命协议已被破坏 | 地址与引用均无可信保证 | 不把某次返回值当作修复或验证手段 |
 
-| 状态                 | 容器中是否可见 | refcount 是否非 0 | lookup 结果            | 当前路径是否获得引用 |
-| -------------------- | -------------- | ----------------- | ---------------------- | -------------------- |
-| 对象正常存在         | 是             | 是                | 成功                   | 是                   |
-| 对象不存在           | 否             | 无                | 失败                   | 否                   |
-| 对象已经 unlink      | 否             | 可能非 0          | 失败                   | 否                   |
-| 对象正在释放         | 不应再可见     | 可能为 0          | 失败                   | 否                   |
-| RCU 读侧仍可见旧指针 | 逻辑上已删除   | 可能为 0          | 取决于 get_unless_zero | 成功才有             |
-| 数据结构损坏         | 不确定         | 不确定            | 不可信                 | 不可信               |
+请对照完整 XArray 程序预测三件事：把 lookup 移到第一次 remove 后，会得到 NULL；保留原 lookup，再移除两次，reader 的一份仍在；让第二个对象使用相同编号发布，失败者只退预留，不影响表里原对象。前两者检验窗口，第三者检验失败责任，不需要靠制造 UAF 来证明它们。
 
-这个表想说明：
-
-```text
-lookup 成功不只是“容器里有指针”；
-lookup 成功应该意味着“当前路径已经获得引用”。
-```
-
-所以函数名最好写成：
-
-```c
-my_obj_lookup_get()
-```
-
-而不是：
-
-```c
-my_obj_lookup()
-```
-
-如果函数只是返回裸指针，要明确限制：
-
-```text
-只能在持锁期间使用；
-不能跨越锁；
-不能保存；
-不能异步传递；
-不能 put；
-不能在锁外访问。
-```
-
-------
+如果接口只想在锁内读一个不可变编号，也可以直接返回编号副本而不追加引用。若要把对象带到锁外、保存或交给异步路径，才需要明确的一份或另一种完整借用协议。下一节把这些区别写进函数契约，让调用者无需猜测返回值的责任。
 
 ## 8.6\_lookup\_API\_契约\_返回裸指针还是返回引用
 

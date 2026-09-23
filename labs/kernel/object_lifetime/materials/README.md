@@ -124,3 +124,9 @@ ARM 前端通过，354 份依赖头中 342 份非生成源码与固定提交无�
 ARM 前端通过，354 份头中 342 份非生成源码与固定提交无差异。宿主实际模块及固定普通引用 helper、显式顺序锁/队列/分配/原子替身通过十组：三处分配失败、两轮执行拒绝、提前/稍后执行、两种满槽拒绝、重复入队与已消费阶段。检查无遗留分配、槽为空、引用/阶段保留、无持锁回收。未执行目标链接/装卸、实际多线程、多队列争用或内存序；程序接口前提不能由替身测试自动推广。
 
 [P08 首次查找窗口](../../../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.3.1_正确模型一_mutex/list_lookup_+_kref_get%28%29)复用 note_kref_registry.c，新增 S0～S5、两种先后顺序和重复撤下责任讲解；程序没有改动，继续采用原来的验证范围及目标未执行边界。
+
+## 1.18\_整数索引的取得与撤下
+
+[note_kref_xarray.c](note_kref_xarray.c)对应[P08 完整实验](../../../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.5.2_xarray_lookup_的引用规则)，Makefile 已登记。发布预留映射份额，xa_lock 内 load/get，xa_erase 自行加锁后交回旧条目，重复撤下无第二次归还；xa_destroy 不代替对象 put。
+
+模块和哈希/IDR 配对片段的 ARM 前端通过，合并 356 份头中的 344 份非生成源码与固定提交无差异。宿主实际模块与固定 xa_insert/xa_load/xa_erase 外层函数通过六组：对象分配失败、两类插入拒绝、正常 init、重复节点/编号与重复移除、移除先完成后查找。底层索引存储、锁、RCU、分配和原子为顺序替身，不包含真实 XArray 节点实现。IDR/哈希片段只做前端与源码契约核对。未执行目标链接/装卸、真实竞争或内存序。

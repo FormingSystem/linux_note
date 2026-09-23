@@ -7,3 +7,4 @@ obj-m += note_kref_locked.o
 obj-m += note_kref_owned_work.o
 obj-m += note_kref_completion.o
 obj-m += note_kref_queue.o
+obj-m += note_kref_xarray.o

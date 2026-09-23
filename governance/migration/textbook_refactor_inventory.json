@@ -5,6 +5,34 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "entries": [
     {
+      "path": "research/source_reading/kref/navigation/P06_整数索引与拥有型查找导读.md",
+      "baseline_sha256": "60680cd2955822bbce955ac0e07975ea496da28608c5a24a606e3f6be4816f97",
+      "lines": 65,
+      "state": "validated",
+      "reason": "B04ab 固定整数索引八函数展开与模块状态/锁/发布职责分别冷读核对；三包装配合实际应用及顺序替身验证，不声称底层索引节点或真实并发通过。新人工评审节点红色。"
+    },
+    {
+      "path": "research/source_reading/kref/source_explanations/lib/idr.c.md",
+      "baseline_sha256": "6a77fcbf9375904576d801ec7751f7e313bb3218715b79dd3a102153734d90a2",
+      "lines": 86,
+      "state": "validated",
+      "reason": "B04ab 固定整数索引八函数展开与模块状态/锁/发布职责分别冷读核对；三包装配合实际应用及顺序替身验证，不声称底层索引节点或真实并发通过。新人工评审节点红色。"
+    },
+    {
+      "path": "research/source_reading/kref/source_explanations/lib/xarray.c.md",
+      "baseline_sha256": "04c8e6bc5ec3887b30dc716621ff8a40d9bdbde9ba8d1246d374d7aa97699707",
+      "lines": 66,
+      "state": "validated",
+      "reason": "B04ab 固定整数索引八函数展开与模块状态/锁/发布职责分别冷读核对；三包装配合实际应用及顺序替身验证，不声称底层索引节点或真实并发通过。新人工评审节点红色。"
+    },
+    {
+      "path": "research/source_reading/kref/source_explanations/include/linux/xarray.h.md",
+      "baseline_sha256": "066b251340326517e58ab16f575954c646c2238c1ba7c2ebc52956a1ae4f02d0",
+      "lines": 36,
+      "state": "validated",
+      "reason": "B04ab 固定整数索引八函数展开与模块状态/锁/发布职责分别冷读核对；三包装配合实际应用及顺序替身验证，不声称底层索引节点或真实并发通过。新人工评审节点红色。"
+    },
+    {
       "path": "research/source_reading/kref/source_explanations/kernel/time/timer.c.md",
       "baseline_sha256": "2cfee0132ac1db698127dc6ef6d1d964233e6500ea87547e302a45c32f625575",
       "lines": 192,
@@ -2329,7 +2357,7 @@
       "baseline_sha256": "1813e9e594cb1d7c6dcca13024886c0d0e5e682bca3ddad29f31a0f8c32688db",
       "lines": 2834,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B04z 全篇冷读，先完成8.1～8.3拥有型查找窗口重写；保留完整登记程序并核对S0～S5、两种交错和重复撤下责任。8.4以后仍待重构，发现XArray重复加锁、IDR发布字段时序及普通get零值诊断等待核对，保持pending。 B04aa 完成8.4五单元与判断表，复用完整条件C模型，比较非拥有索引锁外归零和回调取锁、异常非零与业务状态边界；8.5以后继续，pending不变。"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04z 全篇冷读，先完成8.1～8.3拥有型查找窗口重写；保留完整登记程序并核对S0～S5、两种交错和重复撤下责任。8.4以后仍待重构，发现XArray重复加锁、IDR发布字段时序及普通get零值诊断等待核对，保持pending。 B04aa 完成8.4五单元与判断表，复用完整条件C模型，比较非拥有索引锁外归零和回调取锁、异常非零与业务状态边界；8.5以后继续，pending不变。 B04ab 完成8.5四单元，新增完整XArray模块，修正重复加锁、重复撤下和IDR编号发布时序；模块及哈希/IDR片段ARM前端通过，XArray六组宿主路径通过，8.6以后待收束。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md",

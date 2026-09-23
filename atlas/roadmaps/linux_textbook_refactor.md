@@ -272,3 +272,5 @@ B04y 收束[P07 契约与完整请求](../../knowledge/linux/object_lifetime/kre
 B04z 冷读 P08 全篇，先重写[8.1～8.3 查找取得窗口](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.3.1_正确模型一_mutex/list_lookup_+_kref_get%28%29)，用既有完整登记模块区分地址期限、正计数和独立份额，补齐两种交错及重复撤下规则。后续条件取得与各容器错误已记入[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.89_B04z拥有型查找与首次取得)，P08 仍 pending。
 
 B04aa 完成[P08 条件取得单元](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.4.3_kref_get_unless_zero%28%29_仍然需要锁或_RCU)，按同一非拥有索引解释地址保护、锁外归零、回调等待与比较重试，复用完整 C11 模型。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.90_B04aa条件取得与回调等待)保留验证边界；继续 8.5 容器，P08 未标完成。
+
+B04ab 完成[P08 三类容器](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.5.2_xarray_lookup_的引用规则)，新增完整 XArray 模块及固定整数索引源码导读，纠正重复加锁、重复撤下与 IDR 字段发布顺序。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.91_B04ab容器锁与编号发布)列出六组替身检查与目标边界；继续 8.6～8.9，P08 仍 pending。
