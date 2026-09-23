@@ -131,3 +131,5 @@ bool refcount_dec_and_lock(refcount_t *r, spinlock_t *lock)
 这条 spinlock 链不是同文件中的 irqsave 变体；不能因变量叫 lock 就推断中断已关闭。当前基线的非 PREEMPT_RT 配置下，持普通 spinlock 的回调区间不能睡眠。平台或实时配置改变时须重审锁及上下文契约，不把本段推广为所有配置的锁实现。
 
 两函数的最终减少复用[普通减并检测](../include/linux/refcount.h.md#1.3_旧值决定归零与异常分支)，kref 回调层见[两种锁入口](../include/linux/kref.h.md#1.8_归零时把锁交给回调)。锁生命周期必须覆盖取锁、回调和解锁；教材完整例子使用对象外的索引锁，不在回收后触碰对象内的锁。
+
+[异常诊断与覆盖导读](../../navigation/P02_普通引用与归零回调导读.md#2.16_异常报告与检查覆盖)区分这里的数值条件与应用拥有者责任；不告警不等于交付协议正确。

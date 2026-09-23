@@ -2392,7 +2392,7 @@
       "baseline_sha256": "9329122f628aa14ae1bf5f4a7121e0151059ebaac2c1f3656beca77d95bf43eb",
       "lines": 2164,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围 B04as冷读全2164行，完成12.1～12.2诊断入口，六轨迹两变体C模型与四份固定工具文档核对；区分责任错误、活动份额、日志缺失及检查器覆盖。12.3以后继续，pending。"
     },
     {
       "path": "knowledge/linux/object_lifetime/kref/P13_工程模板.md",

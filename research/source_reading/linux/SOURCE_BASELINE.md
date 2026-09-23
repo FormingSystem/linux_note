@@ -766,3 +766,16 @@ B04ap核对固定drivers/base/class.c（blob ce460e1ab1376d785d5386477ae3c91e47d
 ## 1.71\_会话桥接使用既有设备引用实现
 
 B04aq的[会话模块](../kref/navigation/P08_device引用与资源退出导读.md#8.6_私有会话连接设备份额)复用固定device/kobject/普通引用函数，不新增上游实现副本。十组宿主检查采用明确的锁、原子操作、分配和设备环境替身；ARM编译前端通过，372份头中360份非生成源码相对固定提交无差异。生成配置不作为不可变源码证据，未执行目标链接、模块装卸、实际设备解绑或并发。
+
+## 1.72\_责任日志与动态诊断的证据边界
+
+B04as使用官方固定提交dfaf2136deb2af2e60b994421281ba42f1c087e0的四份文档，关联[诊断证据模块](../kref/navigation/P02_普通引用与归零回调导读.md#2.16_异常报告与检查覆盖)：
+
+| 上游相对位置 | blob |
+| --- | --- |
+| Documentation/dev-tools/kasan.rst | d7de44f5339d43aee128091930ead29511060925 |
+| Documentation/dev-tools/kcsan.rst | d81c42d1063eab5db0cba1786de287406ca3ebe7 |
+| Documentation/dev-tools/kmemleak.rst | 2cb00b53339fe9830a41867becc9beb4650f216a |
+| Documentation/locking/lockdep-design.rst | 56b90eea27312e0a438260eb10425e811f154c9a |
+
+本次只读工作树.config启用PROVE_LOCKING/LOCKDEP，KASAN/DEBUG_KMEMLEAK未启用，未见KCSAN启用；该快照不证明运行镜像及运行时检查器状态。离线C账本六条轨迹和两个练习变体通过，未运行KASAN、KCSAN、kmemleak或Lockdep故障场景，未改外部内核配置。

@@ -164,3 +164,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 [note_session.c](note_session.c)对应[P11完整分层结构](../../../../knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md#11.5.4_一个典型的分层结构)：每个会话取得设备一份，多个会话拥有者只增加私有kref；注销关闭业务，已有会话可读取统计，最后会话归还桥接份额。Makefile已登记，要求SYSFS开启、DEBUG_KOBJECT_RELEASE关闭，模块没有硬件和外部入口。
 
 十组宿主控制路径与ARM前端通过；372份头中360份非生成源码无固定提交差异。固定device/kobject/引用函数保留，锁、原子操作、登记/sysfs为顺序替身；未执行目标链接装卸、真实并发、驱动解绑或硬件。
+
+## 1.25\_离线责任账本
+
+[ownership_audit.c](ownership_audit.c)对应[P12诊断入口](../../../../knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.2.1_调试工具先导)，按单对象显式有序事件检查创建者与工作者份额，区分balanced、invalid_owner、leftover、incomplete和still_open。C11严格编译运行六条轨迹及两个练习变体；不执行真实get/put/free，不模拟内核计数实现，不证明日志完整度、多CPU顺序或诊断器实际覆盖。
