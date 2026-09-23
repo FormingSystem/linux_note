@@ -668,3 +668,9 @@ B04g 重读同一固定提交 Documentation/core-api/kref.rst 的引用规则，
 B04h 沿固定 NXP 提交核对 mm/slub.c 的 kfree(NULL) 路径（blob b9447a955f61128806d980734a02b7762aacebfa）与 mm/util.c 的 kstrdup 申请/复制/失败返回（blob 4f1275023eb7317973c061da950ef582f1660c28），只读固定对象，未修改外部树或复制完整分配器教程。kref 普通函数和 container_of 沿既有唯一实现。
 
 [对象模板](../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.19_标准自定义引用对象模板)使用外壳与字符串两块存储，验证初始引用之后的失败也能走类型清理出口。ARM 前端通过，354 份头文件中 342 份非生成源码与固定提交无差异；生成头属于当前配置。实际模块代码配顺序计数及分配替身验证成功、两个申请失败点、NULL put、释放顺序和一次回调；未验证目标链接、装卸、真实分配器故障或并发。
+
+## 1.52\_回调契约与C++对照边界
+
+B04i 使用同一固定 kref.h 普通 put 与已核对 kfree(const void *) 参数，顺序 C 夹具的两种结束顺序均只选择最后一次调用的回调；直接传 kfree 的负例按预期得到 incompatible-pointer-types，未执行错误调用。唯一实现保持不重复，静态宏已经落地的范围说明一并校正。
+
+[C++ 对照程序](../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.23.1_用完整程序观察自动归还)属于宿主教材实验，不是 Linux 源码证据：GCC/libstdc++ 14.2.0 以 C++17 严格编译，拷贝、移动、reset、异常退出检查通过。实现布局只读核对 libstdc++ bits/shared_ptr_base.h 的 _Sp_counted_ptr_inplace 内置存储，SHA-256 为 17895f579b5f9e5f4837ce2a23a20b00ab6cfe27ffc24bab024853ba0a900c88；不复制上游库实现，不外推所有标准库布局。接口语义参考 [C++ 工作草案 shared_ptr](https://eel.is/c++draft/util.smartptr.shared)（2026-09-23 查阅），只使用 C++17 已有功能。未作性能基准、真实并发、目标模块或控制块分配次数测量。
