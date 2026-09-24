@@ -1,6 +1,6 @@
 ---
 id: research.source_reading.memory_ordering.smp_fence_impl
-title: "barrier.h SMP 屏障与发布取得源码实现"
+title: "barrier.h SMP 屏障与顺序访问源码实现"
 kind: source
 status: evolving
 domains:
@@ -9,11 +9,11 @@ domains:
   - source_reading
 ---
 
-# 第1章\_barrier.hSMP屏障与发布取得源码实现
+# 第1章\_barrier.hSMP屏障与顺序访问源码实现
 
 ## 1.1\_从公共调用找到真正执行的分支
 
-[屏障模块导读](../../../navigation/P03_SMP屏障的配置与调用层次.md#3.3_一次公共屏障的路径)已经建立F0～F3：架构先提供定义，配置选择包装，检测与功能路径分别执行，调用方继续。本页先沿这条路径解释实现原理，再结合[发布取得模块](../../../navigation/P04_发布取得的访问与配置导读.md#4.3_让实现回到同一组S阶段)把顺序绑定到一次访问。范围包括三种公共SMP屏障与发布取得回退，不声称覆盖整个barrier.h。
+[屏障模块导读](../../../navigation/P03_SMP屏障的配置与调用层次.md#3.3_一次公共屏障的路径)已经建立F0～F3：架构先提供定义，配置选择包装，检测与功能路径分别执行，调用方继续。本页先沿这条路径解释实现原理，再结合[发布取得模块](../../../navigation/P04_发布取得的访问与配置导读.md#4.3_让实现回到同一组S阶段)把顺序绑定到一次访问。范围包括三种公共SMP屏障、发布取得、存储后屏障与atomic辅助回退；后者沿[辅助模块](../../../navigation/P05_存储后屏障与原子强化导读.md#5.3_按一条原子操作周期阅读)的T0～T4组织，仍不声称覆盖整个barrier.h。
 
 上游位置为 `include/asm-generic/barrier.h`，编译器barrier定义来自 `include/linux/compiler.h`；版本为NXP官方linux-imx、lf-6.12.20-2.0.0、dfaf2136deb2af2e60b994421281ba42f1c087e0、Linux 6.12.20。[总索引](../../../navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)定位相关模块，[原始通用头](../../../../linux/include/asm-generic/barrier.h)和[compiler.h](../../../../linux/include/linux/compiler.h)用于逐项核对。以下Doxygen与中文行注均为仓库补充阅读说明；剪裁掉文件外壳和其他API，没有改变条件分支。
 
@@ -210,3 +210,82 @@ UP路径保留读写方向，但不执行内部回退中的compiletime_assert_at
 对S1，检查屏障是否在发布写前、发布位置是否就是消费者读取的地址；对S2，检查保存值、屏障与返回的顺序，并确认只有取得协议认可的发布才进入S3。读到0仍会正常返回，没有自动登记等待者或请求生产者重试。
 
 这套实现不增加缓冲区复用资格。消费者取得发布后，生产者若立刻写下一轮payload，仍可能覆盖消费者正在使用的数据；应回到[发布取得模块](../../../navigation/P04_发布取得的访问与配置导读.md#4.5_检查调用现场而非只背宏体)及完整单槽交还教材建立反向协议。类型通过、检测未告警、宿主替身轨迹通过都不能代替这份责任。
+
+## 1.9\_存储后屏障与atomic辅助的内部回退
+
+[辅助模块](../../../navigation/P05_存储后屏障与原子强化导读.md#5.3_按一条原子操作周期阅读)把一次调用周期分为T0～T4，真正原子RMW位于T2。以下三个内部宏仍来自同一固定generic barrier头；前者包含一次写，后两者不接受也不访问业务对象。
+
+```c
+/**
+ * __smp_store_mb - 指定存储之后执行内部全屏障
+ * @var: 要写入的对象左值，不是指针参数
+ * @value: 待写值
+ * 仓库阅读说明：方向是写后屏障，不是发布回退的屏障后写。
+ */
+#ifndef __smp_store_mb
+#define __smp_store_mb(var, value) do { WRITE_ONCE(var, value); __smp_mb(); } while (0)
+#endif
+
+/**
+ * __smp_mb__before_atomic - 原子RMW前侧强化的缺省回退
+ * __smp_mb__after_atomic - 原子RMW后侧强化的缺省回退
+ * 仓库阅读说明：此处采用全屏障，架构可依据原子实现覆盖。
+ */
+#ifndef __smp_mb__before_atomic
+#define __smp_mb__before_atomic() __smp_mb()
+#endif
+#ifndef __smp_mb__after_atomic
+#define __smp_mb__after_atomic() __smp_mb()
+#endif
+```
+
+store_mb的var直接作为WRITE_ONCE目标左值，发布取得的p则先解引用，两个调用形态不可混用。该存储本身仍受ONCE尺寸规则限制，不会变成一个返回旧值的原子交换；需要读—改—写时，调用者应选相应原子接口。
+
+两个辅助在通用回退中相同，不代表接口位置可以交换。它们的作用范围由固定atomic_t契约决定：before作用于其前侧访问，after作用于其后侧访问，并与邻近的RMW组合。把宏拿到没有适用RMW的位置，不能用当前回退恰好是全屏障来证明跨架构正确性。
+
+## 1.10\_存储后屏障与atomic辅助的公共路径
+
+公共入口仍由CONFIG_SMP决定是否进入内部实现。下面裁出同一条件块中的三个接口，保留原来的ifndef覆盖边界。
+
+```c
+/**
+ * smp_store_mb / smp_mb__before_atomic / smp_mb__after_atomic
+ * 仓库阅读说明：SMP路径先告知检查器全屏障事件，再执行内部实现；
+ * UP路径保留编译器顺序，store_mb仍然先写目标。
+ */
+#ifdef CONFIG_SMP
+
+#ifndef smp_store_mb
+#define smp_store_mb(var, value) do { kcsan_mb(); __smp_store_mb(var, value); } while (0)
+#endif
+#ifndef smp_mb__before_atomic
+#define smp_mb__before_atomic() do { kcsan_mb(); __smp_mb__before_atomic(); } while (0)
+#endif
+#ifndef smp_mb__after_atomic
+#define smp_mb__after_atomic() do { kcsan_mb(); __smp_mb__after_atomic(); } while (0)
+#endif
+
+#else
+
+#ifndef smp_store_mb
+#define smp_store_mb(var, value) do { WRITE_ONCE(var, value); barrier(); } while (0)
+#endif
+#ifndef smp_mb__before_atomic
+#define smp_mb__before_atomic() barrier()
+#endif
+#ifndef smp_mb__after_atomic
+#define smp_mb__after_atomic() barrier()
+#endif
+
+#endif
+```
+
+在默认SMP路径里，store_mb依次进入检测入口、目标写和内部屏障；原子前后辅助则依次进入检测入口和对应内部原语。T2的原子操作不包含在任何一个辅助宏体里，仍由调用者控制流执行；有条件跳过T2时，不能仅凭辅助宏被调用就宣称发生了原子更新。
+
+默认UP路径分别是“写→编译器屏障”和独立编译器屏障，不经过SMP内部原语。架构若预定义公共宏，通用头不会再次包检测接口；若只覆盖内部辅助，SMP公共包装仍保留检测入口。核对时应比较这两层，不能把“内部为空”写成“公共调用完全没有动作”。
+
+## 1.11\_用契约限制对回退的推断
+
+本段新增九项定义，保留了ONCE写、内部屏障、检测入口及配置分支的相对位置。可用顺序记录替身检查这些宏的调用路径，却不能用它模拟真实RMW指令的不可分性或硬件排序。
+
+具体适用边界以[固定atomic_t文档](../../../../linux/Documentation/atomic_t.txt)为准：辅助只适用于RMW，与操作之间夹入的访问不获相应保证，且前后强化的范围比简单release/acquire模式更强。完成选择后回到[模块的三个反例](../../../navigation/P05_存储后屏障与原子强化导读.md#5.5_用三个反例检查边界)验证自己的理由，再进入条件加载等尚未展开的部分。

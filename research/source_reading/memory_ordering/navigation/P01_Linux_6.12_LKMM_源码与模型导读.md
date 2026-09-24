@@ -72,6 +72,8 @@ flowchart LR
 
 公共回退用 `__smp_mb() + WRITE_ONCE()` 表达 store-release，用 `READ_ONCE() + __smp_mb()` 表达 load-acquire；架构可以覆盖为更精确实现。[发布取得模块](P04_发布取得的访问与配置导读.md#4.3_让实现回到同一组S阶段)沿同一S0～S3追踪共享位置与局部保存值；[内部回退](../source_explanations/include/asm-generic/barrier.h.md#1.6_发布取得的内部回退)和[公共分支](../source_explanations/include/asm-generic/barrier.h.md#1.7_发布取得的公共配置分支)分别解释类型、求值、检测入口与UP差异。
 
+[存储后屏障与原子强化模块](P05_存储后屏障与原子强化导读.md#5.1_屏障位于写前还是写后)比较写前/写后方向及T0～T4配对范围；[内部回退](../source_explanations/include/asm-generic/barrier.h.md#1.9_存储后屏障与atomic辅助的内部回退)和[公共包装](../source_explanations/include/asm-generic/barrier.h.md#1.10_存储后屏障与atomic辅助的公共路径)唯一展开三种入口。
+
 ### 1.3.3\_ARMv7\_映射
 
 [`arch/arm/include/asm/barrier.h`](../../linux/arch/arm/include/asm/barrier.h) 提供以下内部映射；它们的定义存在本身不要求CONFIG_SMP，公共smp调用是否使用它们还要经过通用配置分支。在ARMv7目标上对应：

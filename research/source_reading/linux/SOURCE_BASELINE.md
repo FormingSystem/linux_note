@@ -1030,3 +1030,7 @@ B05m按固定dfaf2136核对include/asm-generic/barrier.h三种公共SMP屏障及
 ## 1.121\_发布取得的类型与求值边界
 
 B05n重新只读核对官方远端、lf-6.12.y分支、固定标签dfaf2136、6.12.20及UP/TINY_RCU/PREEMPT_NONE配置；HEAD仍是本地实验提交7b60e547，不纳入证据。按固定generic barrier与compiler_types核对七项发布取得定义，[模块](../memory_ordering/navigation/P04_发布取得的访问与配置导读.md#4.3_让实现回到同一组S阶段)保持知识正文S0～S3，唯一实现区分内部与公共路径。节选和固定完整头在同一依赖替身下，八组合均得到相同事件；另核对保存读值、读0返回、值参数在内部屏障后求值，以及long为4字节宿主的UP接纳/SMP拒绝8字节分支。结果只证明宏展开与受控调用语义，不是ARM、真实检测器、并发或LKMM执行。
+
+## 1.122\_存储后屏障与RMW配对范围
+
+B05o继续按固定dfaf2136的generic barrier核对九项存储后屏障和atomic辅助定义；atomic_t.txt的辅助契约明确限定RMW及夹入访问的范围。新增[模块](../memory_ordering/navigation/P05_存储后屏障与原子强化导读.md#5.3_按一条原子操作周期阅读)和[唯一实现](../memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.9_存储后屏障与atomic辅助的内部回退)。节选与固定完整头十组UP/SMP/公共与内部覆盖/空内部辅助得到相同调用记录，含一次左值和值副作用检查；RMW替身只是单线程加一，不具备也不声称原子性。未执行真实内核、ARM、并发、检测器或LKMM，当前UP配置和固定来源边界保持。

@@ -283,7 +283,7 @@ atomic event → after_atomic → 此后普通访问
 
 若原子操作已是 fully ordered，再机械叠加可能重复；若目标根本不是原子 RMW，使用这些接口则表达错域。调用前必须核对该 atomic 变体的现有保证和 LKMM 模式。
 
-“一侧”不能误读成只给原子读或原子写贴标签。固定文档规定，before屏障把之前的访问排列到RMW及其后访问之前；after屏障把之后的访问排列到RMW及其前访问之后。它们可强于单纯release/acquire，不能任意互换。屏障与RMW之间夹入的普通访问不获得该辅助屏障的排序保证，因此尽可能紧挨对应RMW，别把它当成可以远距离摆放的装饰。
+“一侧”不能误读成只给原子读或原子写贴标签。固定文档规定，before屏障把之前的访问排列到RMW及其后访问之前；after屏障把之后的访问排列到RMW及其前访问之后。它们可强于单纯release/acquire，不能任意互换。屏障与RMW之间夹入的普通访问不获得该辅助屏障的排序保证，因此尽可能紧挨对应RMW，别把它当成可以远距离摆放的装饰。沿[版本模块](../../../../../research/source_reading/memory_ordering/navigation/P05_存储后屏障与原子强化导读.md#5.3_按一条原子操作周期阅读)核对T0～T4与适用范围，再从[唯一公共实现](../../../../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.10_存储后屏障与atomic辅助的公共路径)查看SMP检测包装和UP回退；辅助宏本身不执行原子更新。
 
 ## 6.9\_原子变量也会形成缓存行热点
 

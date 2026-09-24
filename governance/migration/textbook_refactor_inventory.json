@@ -4884,7 +4884,7 @@
       "baseline_sha256": "86906f6dd646f7d2d69ff5199cbc57306619152341e4de3f6cf536a1b7e18fd8",
       "lines": 111,
       "state": "validated",
-      "reason": "B05m按固定通用SMP三屏障、内部回退与compiler barrier核对，配置和检测/功能路径分层；十项定义匹配、八组受控路径及两编译器验证，不作为ARM、KCSAN或LKMM执行。 B05n扩展七项发布取得定义及类型辅助，核对保存读值、参数求值和UP/SMP门槛，沿独立模块精确回链。"
+      "reason": "B05m按固定通用SMP三屏障、内部回退与compiler barrier核对，配置和检测/功能路径分层；十项定义匹配、八组受控路径及两编译器验证，不作为ARM、KCSAN或LKMM执行。 B05n扩展七项发布取得定义及类型辅助，核对保存读值、参数求值和UP/SMP门槛，沿独立模块精确回链。 B05o扩展九项store_mb/atomic辅助定义，明确T0～T4及间隙访问边界，十组节选/完整头对照通过。"
     },
     {
       "path": "research/source_reading/memory_ordering/navigation/P04_发布取得的访问与配置导读.md",
@@ -4892,6 +4892,13 @@
       "lines": 85,
       "state": "validated",
       "reason": "B05n固定发布取得回退及公共分支逐项核对，以S0～S3说明共享位置、局部读值和配置门槛；节选/固定头八组合与求值等受控检查一致，未执行ARM/并发/LKMM。"
+    },
+    {
+      "path": "research/source_reading/memory_ordering/navigation/P05_存储后屏障与原子强化导读.md",
+      "baseline_sha256": "2490b6e4a3fd3f51225d3e617d8840dee094679f6e9ce6a9638cea05b9b1b50b",
+      "lines": 85,
+      "state": "validated",
+      "reason": "B05o固定存储后屏障、RMW辅助及atomic文档核对，解释方向/配对/配置和检测边界；节选与固定头十组受控路径一致，不模拟原子性或硬件排序。"
     }
   ]
 }
