@@ -38,6 +38,8 @@ wait_event_interruptible(wq, condition)
 
 这里先判断condition，再处理prepare返回的信号结果；不能画成每次醒来都执行finish，也不能把信号出口遗漏的finish当成漏清理。prepare信号分支已经摘链，普通退出的finish则恢复任务状态并处理仍在队列中的项。知识侧的[S0～S7四个窗口](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P03_条件等待的统一状态机.md#3.5_逐个关闭检查睡眠窗口)用于对照阶段，源码仍按本页版本和分支阅读。
 
+这三条出口由[___wait_event宏体](../source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.6_wait_event宏循环与出口)统一组织；prepare函数只负责其中的队列与任务状态步骤。
+
 ## 2.4\_唤醒侧调用链
 
 ```text

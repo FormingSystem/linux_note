@@ -9,70 +9,101 @@ topics: [synchronization, waitqueue, scheduler]
 
 # 第4章\_wait\_event入队与唤醒调用链
 
-## 4.1\_宏不是一次函数调用
+## 4.1\_把上一章的阶段接到真实入口
 
-`wait_event_interruptible(wq, condition)` 会展开为一个循环：初始化等待项、调用 `prepare_to_wait_event()`、检查 condition/信号、执行调度动作，最后 `finish_wait()`。条件表达式可能执行多次，必须无不可回滚副作用，并且每次读取都遵守业务状态的同步协议。
+上一章用S0～S7解释四个到达窗口，现在固定到NXP Linux 6.12.20，检查标准宏究竟怎样实现它们。首先分开两个入口：wait_event_interruptible可以先做S0快速条件检查；只有条件为假，才进入内部___wait_event循环。不能说每次调用都必然登记或睡眠，也不能因为外层有快查就认为它存在第三章的空窗。
+
+条件表达式在快查、prepare以后和再次循环时都可能执行。它应按业务同步协议观察状态；如果写成一次性取走资源的动作，就必须另外证明所有求值路径的消费语义。第一章的box_readable只观察full/stopping，消费发生在另外的锁内，所以读者可以分别证明两件事。
+
+版本化阅读从[源码总索引](../../../../../research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.1_版本边界与阅读任务)进入，本章只把机制阶段映射到接口协作，不复制上游宏体。具体宏体和函数体在唯一实现讲解处阅读。
 
 ## 4.2\_等待侧状态落点
 
+固定宏声明栈上wait_queue_entry，并用init_wait_entry初始化；不是凭空出现一个永久的每设备任务节点。默认private指向current，func为autoremove_wake_function，flags记录独占与否。此时entry仍是局部对象，S2将它连接到共享队列后，远端生产者才有路径找到它。
+
 ```mermaid
 flowchart TD
-    A["wait_event*宏"] --> B["DEFINE_WAIT_FUNC创建栈上entry"]
-    B --> C["prepare_to_wait_event()"]
-    C --> D["wq_head.lock下把entry加入链表"]
-    C --> E["set_current_state(state)"]
-    D --> F["再次求值condition"]
-    E --> F
-    F -->|"false"| G["schedule/schedule_timeout"]
-    F -->|"true或错误"| H["finish_wait()"]
-    G --> C
+    A[S0 外层快速检查] -->|条件假| B[S1 栈上entry与init_wait_entry]
+    A -->|条件真| Z[直接返回成功]
+    B --> C[S2 prepare在队列锁下处理登记与信号]
+    C --> D[S3 再次求值condition]
+    D -->|条件真| E[S7 finish_wait后成功退出]
+    D -->|条件假| F{prepare返回可中断错误吗}
+    F -->|是| G[S7 沿错误出口返回 已在prepare摘链]
+    F -->|否| H[S4 schedule或超时调度]
+    H -->|恢复或继续执行| C
 ```
 
-entry 通常位于等待任务栈上，`private` 指向该任务，默认唤醒回调最终进入调度器 try-to-wake 路径。`finish_wait()` 必须在栈上 entry 失效前恢复任务状态并把它从共享链表移除。
+登记与设态在prepare里受队列锁协调，但队列锁不保护box.full等业务字段。S3仍须遵守调用者的业务同步协议。栈上entry在退出前必须脱离共享链表，否则函数返回以后生产者还可能经队列访问这块已经复用的栈内存。
 
-## 4.3\_prepare\_to\_wait\_event处理信号竞态
+## 4.3\_prepare与信号不是相互独立的判断
 
-Linux 6.12.20 的 `prepare_to_wait_event()` 在队列锁下处理 entry 登记和可中断等待的信号竞态。如果已有信号，它要确保 waiter 不残留在队列中再返回错误；否则先登记再设置任务状态。调用者随后重检条件，决定调度还是退出。
+prepare_to_wait_event持有wq_head.lock时检查当前任务的信号状态。若需要返回可中断错误，它先把entry摘除，避免后续唤醒仍把额度花在已选择离开的等待者上；否则在需要时入队，并设置任务等待状态。
 
-这说明 interruptible 失败不是宏外围的附加判断，而是等待状态机的一条正式退出分支；返回负值时业务条件未必成立，调用者不能继续当作成功消费数据。
+prepare返回之后，宏先检查condition，再处理prepare返回的信号错误。这一先后很重要：通知、业务条件与信号可以相邻发生，不能画成“见到信号一律跳过条件并失败”。如果条件已成立，走正常成功与finish路径；条件仍假且错误有效，走错误出口。成功等待仍只是让调用者继续业务协议，不替它取得第一章那把消费锁。
 
-## 4.4\_唤醒侧调用链
+这里也解释了为什么不是所有退出都调用finish_wait：信号分支已经承担摘链责任，标准宏按其契约返回。手写等待不能只复制goto而省掉配套的prepare行为。精确分支见[prepare登记与信号实现](../../../../../research/source_reading/waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.3_prepare_to_wait_event登记与信号分支)。
+
+## 4.4\_唤醒侧怎样到达等待任务
+
+以wake_up_interruptible为例，它传递可中断任务的状态模式和独占额度，普通调用不带poll键；wake_up_interruptible_poll等接口才会携带事件掩码作为键。键是传给回调的信息，不是__wake_up_common替所有对象统一解释的业务条件。
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant P as 生产者
-    participant H as wait_queue_head
-    participant C as __wake_up_common
-    participant E as wait_queue_entry
+    participant H as wq_head与队列锁
+    participant E as 等待项回调
     participant S as 调度器
     participant W as 等待任务
-
-    P->>P: 先发布业务条件
-    P->>H: wake_up_interruptible(key)
-    H->>C: 持wq_head.lock扫描
-    C->>E: 调用匹配entry.func
-    E->>S: try_to_wake_up类路径
-    S->>W: 任务进入runnable队列
-    W->>H: finish_wait并重检条件
+    P->>P: S5 业务锁内发布条件
+    P->>H: S6 调用匹配状态的wake接口
+    H->>H: __wake_up_common_lock取得队列锁
+    H->>E: __wake_up_common传递mode和key
+    E->>S: 默认回调尝试唤醒关联任务
+    S-->>E: 返回是否成功改变唤醒状态
+    E->>H: 默认autoremove成功时摘链并返回结果
+    H->>H: 按回调结果和独占额度继续或停止
+    H->>H: 释放队列锁
+    S->>W: 稍后选择可运行任务
+    W->>H: S2 再次prepare 必要时重新登记
+    W->>W: S3 重检条件和错误
+    alt 条件成立
+        W->>H: S7 finish清理后返回
+    else 仍需等待
+        W->>W: S4 再次调度
+    end
 ```
 
-`__wake_up_common()` 按 mode、key 与 entry flags 扫描；回调返回值参与独占 waiter 计数。它不直接运行等待任务，只改变其可调度状态。
+__wake_up_common本身遍历entry并调用func，回调负责判断是否匹配并执行自己的动作；回调返回值和flags再决定额度与扫描是否继续。它不会直接调用读者的消费函数，也不保证读者马上运行。poll回调可能只是记录候选或触发标志，所以不能把所有成功回调都解释成直接把某个普通等待线程唤醒。
 
-## 4.5\_finish\_wait为何还要再次加队列锁
+## 4.5\_finish为何还需要队列同步
 
-等待任务醒来时，entry 可能仍在链表，也可能已由特殊回调移除。`finish_wait()` 先把 current 恢复为 `TASK_RUNNING`，再安全检查和删除 entry。删除要与并发 wake 扫描同步；不能因为“任务已经醒了”就省略队列清理。
+默认autoremove_wake_function在成功唤醒时可以摘除节点，并非只有某种罕见特殊回调才会移除entry。因此任务继续执行时既可能已不在队列，也可能仍在；再次prepare会按实际链表状态决定是否重加。
+
+正常退出的finish_wait先恢复TASK_RUNNING，再通过安全的空链判断决定是否加队列锁摘链。这个判断配合并发摘链协议使用，不是任意无锁遍历链表的许可证。退出同步确保生产者不能再通过共享队列回调访问已失效的栈节点。具体实现见[finish清理](../../../../../research/source_reading/waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.5_finish_wait恢复任务并移除栈上entry)。
 
 ## 4.6\_超时与条件同时到达
 
-超时宏要区分三类结果：负值信号、0 超时、正值表示条件成立并携带剩余时间语义。边界 jiffy 上条件与 timeout 同时发生时，具体宏的注释决定返回规则。正确调用者应先解释返回值，再在业务锁下重检条件，不能把非零统一理解为错误或成功。
+可中断超时宏区分负值信号、0表示超时且条件仍假、正值表示条件成立。普通非可中断超时宏没有负信号结果，不能把同一张三分表不加条件地套到全部宏上。参数使用jiffies，成功结果至少为1，即使剩余等待时间已经到0但条件检查为真，也按成功返回。
 
-## 4.7\_源码入口
+设生产者在最后一个节拍附近置full，等待者恢复后先求值条件。如果结果为真，宏保留成功语义；若返回0，生产者以后仍可能再来。因此超时不是撤销通知源或回收对象的证明。第一章的消费阶段还会再次加业务锁，应继续处理另一个消费者已经先取走记录的情况。
 
-wait 宏、waiter 结构、`prepare_to_wait_event()`、`__wake_up_common()` 和 `finish_wait()` 的模块协作见[普通等待队列模块源码概念导读](../../../../../research/source_reading/waiting_notification/navigation/P02_Linux_6.12_普通等待队列模块源码概念导读.md#2.3_等待侧调用链)。唯一裁剪实现见[`wait.c` 入队与唤醒源码实现](../../../../../research/source_reading/waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.2_源码符号覆盖账本)。
+## 4.7\_沿同一阶段核对源码
 
-## 4.8\_本章结论与下一问
+wait宏、waiter结构与函数合作见[普通等待队列模块导读](../../../../../research/source_reading/waiting_notification/navigation/P02_Linux_6.12_普通等待队列模块源码概念导读.md#2.3_等待侧调用链)。阅读时给每一处动作标上S0～S7：快查属于S0，初始化属于S1，prepare登记/设态属于S2，condition和信号决策属于S3，调度属于S4，生产者更新属于S5，wake传播属于S6，最终正常或错误清理属于S7。
 
-等待侧通过栈上entry与 `task_struct` 建立共享登记，唤醒侧在队列锁下调用回调并把任务送回runqueue。高并发下扫描整个长队列和广播所有消费者会形成成本；下一章研究exclusive waiter与唤醒额度，并将bookmark分段方案作为独立设计推演，与固定6.12.20没有该分段路径的事实分开。
+宏体逐支对照见[wait_event宏循环与出口](../../../../../research/source_reading/waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.6_wait_event宏循环与出口)，不要把prepare的函数体误当成整个等待宏。
+
+再用[四窗口推演](P03_条件等待的统一状态机.md#3.5_逐个关闭检查睡眠窗口)逐条走一遍：哪个窗口由S3看到持久状态补偿，哪个窗口由已登记的通知关系补偿？如果画出的调用链每次schedule回来都直接finish，就会跳过条件仍假的循环分支，应回到宏体修正。
+
+## 4.8\_回顾与下一问
+
+现在可以区分三个容易混淆的事实：entry已登记、任务可被匹配唤醒、业务资源已经取得。标准宏协调前两者与条件重检，第三个事实仍属于调用者协议。
+
+试着解释：prepare已返回信号错误，为什么宏还要先判断condition？默认回调已经摘链，为什么finish仍要处理可能留下的节点？不带key的wake和带poll键的wake，究竟由谁解释差异？答案应落在具体分支和状态地址，而不是“内核会处理好”。
+
+下一章改变负载：同一个资源面对许多等待者，广播会使多少任务白跑一趟？沿同一条wake扫描学习独占额度和公平性，再把概念上的分段扫描与固定版本的实际实现分开。
 
 上一篇：[条件等待的统一状态机](P03_条件等待的统一状态机.md)。
 

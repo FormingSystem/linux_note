@@ -1088,3 +1088,9 @@ B05z只读固定dfaf2136的include/linux/wait.h（blob 2b322a9b88a2bd122d30e70a3
 B05aa按固定dfaf2136核对include/linux/completion.h（fb291567657432083162031ddb949a7e581e2848）、kernel/sched/completion.c（3561ab533dd4e33ddb5284bcab51736f9b9ab6bf）、include/linux/swait.h（d324419482a0f5282ceb9174d091ff4204a49022）、kernel/sched/swait.c（72505cd3b60a3e16c093d07da38eab6093155b2e）。区分done普通计数与UINT_MAX、成功超时边界至少1、finish swait后消费、reinit无锁清零、complete_all的实时上下文检查，以及通用swake_up_all分段与完成量专用swake_up_all_locked持锁广播。
 
 [完成量C模型](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P02_completion_完成量.md#2.7_用完整C模型观察令牌与广播)在GCC14.2/Clang18.1.8严格C11 O2下验证提前保存、两个观察一个令牌、累计两次与广播不消耗；无真实睡眠或内存顺序模拟。内核请求协议只静态核对，未编译加载。模块导读纠正锁释放与finish/消费时序，实现裁剪补回实际存在的RT断言。未将这两处同步称为整个源码专题完成。
+
+## 1.135\_等待宏出口与独占扫描范围
+
+B05ab继续只读固定dfaf2136的wait.h与wait.c（对象身份同1.133），逐支对齐___wait_event的init_wait_entry、condition优先、信号错误出口、正常finish与循环；补回原实现文档声称覆盖但未实际展示的[宏体](../waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.6_wait_event宏循环与出口)。未修改外部树，宏中文说明明确为仓库补充。
+
+[独占扫描C模型](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P05_独占等待批量唤醒与公平性.md#5.3.1_用C观察额度怎样截断扫描)在GCC14.2/Clang18.1.8严格C11 O2下确认额度1/2/不限时访问3/5/6项；成功非独占回调不扣额度，失败不扣额度，额度终止会跳过后续观察者。模型使用固定回调结果，不运行内核唤醒、调度或资源领取；bookmark仍为独立概念方案，固定代码无该分段路径。

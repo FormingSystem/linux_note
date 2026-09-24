@@ -19,7 +19,7 @@ source_version: "6.12.20"
 
 | 标题 | 上游位置 | 原理 |
 | --- | --- | --- |
-| [wait宏骨架](#1.3_prepare_to_wait_event登记与信号分支) | `include/linux/wait.h:300-322` | 循环 prepare、重检、调度、finish |
+| [wait宏骨架](#1.6_wait_event宏循环与出口) | `include/linux/wait.h:300-322` | 循环 prepare、重检、调度、finish |
 | [prepare](#1.3_prepare_to_wait_event登记与信号分支) | `kernel/sched/wait.c:270-304` | 队列锁下登记/信号竞态 |
 | [wake扫描](#1.4_wake_up_common按回调与exclusive额度扫描) | `kernel/sched/wait.c:73-110` | mode/key/callback/独占数量 |
 | [finish](#1.5_finish_wait恢复任务并移除栈上entry) | `kernel/sched/wait.c:347-380` | TASK_RUNNING 与安全删除 |
@@ -105,7 +105,51 @@ void finish_wait(struct wait_queue_head *wq_head,
 
 entry 常在当前栈上；只有 finish 与并发 wake 完成同步后，函数返回和栈内存失效才安全。
 
-## 1.6\_复核问题
+## 1.6\_wait\_event宏循环与出口
+
+上游位置为include/linux/wait.h的___wait_event；以下中文Doxygen与行内说明由仓库补充，宏控制流按固定提交保留。外层wait_event_interruptible先做条件快查，本节展示真正进入等待后的循环。
+
+```c
+/**
+ * @brief 仓库阅读说明：登记以后重检条件，再决定信号退出或调度。
+ * @param wq_head 队列对象，宏内部取地址。
+ * @param condition 按业务同步协议反复求值的条件表达式。
+ * @param state 等待任务状态。
+ * @param exclusive 是否使用独占等待项。
+ * @param ret 初始返回状态或超时预算。
+ * @param cmd 调度动作，可更新局部返回值。
+ * @return 正常或错误路径的局部返回状态，由外层宏解释。
+ */
+#define ___wait_event(wq_head, condition, state, exclusive, ret, cmd)		\
+({										\
+	__label__ __out;							\
+	struct wait_queue_entry __wq_entry;					\
+	long __ret = ret;	/* 局部返回状态 */				\
+										\
+	init_wait_entry(&__wq_entry, exclusive ? WQ_FLAG_EXCLUSIVE : 0);	\
+	for (;;) {								\
+		long __int = prepare_to_wait_event(&wq_head, &__wq_entry, state);\
+										\
+		if (condition)							\
+			break;							\
+										\
+		if (___wait_is_interruptible(state) && __int) {			\
+			__ret = __int;						\
+			goto __out;						\
+		}								\
+										\
+		cmd;								\
+	}									\
+	finish_wait(&wq_head, &__wq_entry);					\
+__out:	__ret;									\
+})
+```
+
+prepare先处理登记/信号，condition随后求值且优先于信号返回判断。条件成立走break和finish；条件假且__int有效走__out，摘链已由prepare信号分支完成。其余情况执行cmd后重新prepare，不是每次调度返回就finish。宏使用局部标签与显式局部返回变量，避免把一次等待的出口混到外层调用者的控制流。
+
+这段宏不检查业务字段的锁是否一致，不给请求分配资源，也不取消超时后的生产者。知识侧阶段对应见[P04等待侧状态落点](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P04_wait_event入队与唤醒调用链.md#4.2_等待侧状态落点)。
+
+## 1.7\_复核问题
 
 - signal 分支为什么要在同一队列锁下删除 exclusive waiter？
 - condition 在 prepare 后求值关闭了哪一个交错窗口？

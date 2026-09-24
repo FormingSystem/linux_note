@@ -3252,15 +3252,15 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P04_wait_event入队与唤醒调用链.md",
       "baseline_sha256": "f48dc12ad0db6fffa812a2ba63b517781d9b1c0c981973fda14c03b71e77b77b",
       "lines": 79,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ab冷读宏调用链、独占扫描和全专题大纲，按固定wait.h/wait.c纠正初始化、三条出口、自动摘链及额度范围；补完整C扫描模型双编译器验证，7篇知识阅读链审查闭合，源码文档继续单独审查。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P05_独占等待批量唤醒与公平性.md",
       "baseline_sha256": "5cd2e060b1050da954c52e295cf12fe5754bb95bd5d81d0e40e994fbf2180314",
       "lines": 86,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B05h局部校正固定wait.c无bookmark分段事实，尚未完成全篇教材审查。"
+      "state": "validated",
+      "reason": "B05ab冷读宏调用链、独占扫描和全专题大纲，按固定wait.h/wait.c纠正初始化、三条出口、自动摘链及额度范围；补完整C扫描模型双编译器验证，7篇知识阅读链审查闭合，源码文档继续单独审查。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P06_completion令牌状态与调用链.md",
@@ -3280,8 +3280,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/大纲.md",
       "baseline_sha256": "f0e12dfe978be798d1d1398cb611aada1916acfee041722fd40fb7d9e892e02f",
       "lines": 48,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ab冷读宏调用链、独占扫描和全专题大纲，按固定wait.h/wait.c纠正初始化、三条出口、自动摘链及额度范围；补完整C扫描模型双编译器验证，7篇知识阅读链审查闭合，源码文档继续单独审查。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/大纲.md",
