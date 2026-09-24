@@ -4044,7 +4044,7 @@
       "baseline_sha256": "31ee21a97314194688d56403aff1557b64b6801d1c34cb739f6de8d992e71506",
       "lines": 208,
       "state": "pending",
-      "reason": "B05bk修复register_lock_class，B05bl恢复lockdep_init_map_type停检/统计分支，两完整函数匹配固定源码；仍待上游路径拆分、类型与辅助符号全量审查，不计完成。"
+      "reason": "B05bk/bl修复两完整函数，B05bm补子键地址、缓存布局与类型关系；仍待上游路径拆分和辅助符号全量审查，不计完成。"
     },
     {
       "path": "research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md",
