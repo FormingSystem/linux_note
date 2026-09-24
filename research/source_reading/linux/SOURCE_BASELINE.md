@@ -1204,3 +1204,7 @@ B05az核对同一固定lockdep.c的match_held_lock与当前查询路径，确认
 ## 1.159\_当前记录回退与重建
 
 B05ba复核固定dfaf2136的lockdep.c中__lock_release，确认引用减少、prev_chain_key恢复和reacquire_held_locks重建只作用于检查状态，支持[非栈顶回退](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md#4.7_release怎样回退当前链)。沿用blob 536bd471557f5b4412d6babc480d0832b4ee9d51，未进行目标运行验证。
+
+## 1.160\_读写阻塞与强路径
+
+B05bb核对固定dfaf2136的Documentation/locking/lockdep-design.rst（blob 56b90eea27312e0a438260eb10425e811f154c9a）的递归读、阻塞矩阵与strong path说明，用于[读写类型反例](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.7_为何图边必须携带读写类型)。区别抽象阻塞契约与具体read_lock API；未进行目标竞争实测。

@@ -510,3 +510,5 @@ B05ay完成[检查抽象模型](../../knowledge/linux/synchronization_and_asynch
 B05az完成[身份与层级](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md)，补可执行C身份实验、查询边界和两层拓扑的寿命前提。705项366 validated、321 pending、18 supporting_pending，剩余339项；继续持锁账本周期。见[B05az记录](../../governance/migration/repository_textbook_refactor.md#1.4.207_B05az身份实验与层级前提)。
 
 B05ba完成[持锁账本闭环](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md)，修正正式记录回退与双提交顺序，补非栈顶重建边界。705项367 validated、320 pending、18 supporting_pending，剩余338项；继续规则模型，未执行目标测试。见[B05ba记录](../../governance/migration/repository_textbook_refactor.md#1.4.208_B05ba当前账本提交与回退)。
+
+B05bb完成[依赖环与IRQ规则](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md)，补间接中断闭包和递归读不阻塞反例。705项368 validated、319 pending、18 supporting_pending，剩余337项；继续查询接入，未执行目标实验。见[B05bb记录](../../governance/migration/repository_textbook_refactor.md#1.4.209_B05bb强路径与IRQ闭包)。

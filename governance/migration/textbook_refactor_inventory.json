@@ -2825,8 +2825,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md",
       "baseline_sha256": "f00ca908c5fa5447b67cba98abf56afe25096c1c8bfac80f908ed476b7e30ec3",
       "lines": 169,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05bb 保留规则推导，补间接IRQ闭包的参与者时间线、独占/递归读边界与有环不阻塞反例；消除抽象read_lock与具体API混淆，固定文档核对，未执行目标。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md",
