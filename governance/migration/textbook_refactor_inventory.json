@@ -2867,8 +2867,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P01_自旋锁.md",
       "baseline_sha256": "9968e19bb4ae8231dbf64d57b11a43dd2d3212afd2d49de35ce3af159146951c",
       "lines": 165,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05aj 全文冷读，以采样复合状态和完整内核辅助代码推导互斥及本地IRQ重入，补角色/时序/预测练习，固定locktypes核对RT后缀与rwlock边界。文档静态检查通过，未编译或运行内核示例，人工评审状态不变。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P02_互斥锁与读写信号量.md",

@@ -1136,3 +1136,7 @@ B05ah按1.138与1.140固定对象，分别组织[seqlock_types.h类型配置](..
 B05ai重新核对工作树身份后只读固定dfaf2136的arch/arm/include/asm/spinlock.h（blob f610a773f2be527dde14415a61fab4c7250d9447）和kernel/locking/mutex.c（blob cbae8c0b89ab2b8074a387ebf1cca86951362cc2）。ARM SMP票号、事件等待/发送，与mutex等待任务、wake队列和handoff/pickup属于不同推进路径；[统一周期](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P03_锁的统一状态与通信周期.md#3.5_端到端竞争时序)分别表达，不再把调度唤醒套到所有自旋分支。
 
 本地配置未启用SMP，HEAD为实验提交，不作为上述证据。没有进行目标锁竞争、真实调度、RT或ARM SMP运行验证，抽象A/B/C交错只说明资格区别，不承诺所有实现的插队或公平策略。
+
+## 1.143\_自旋接口的配置契约
+
+B05aj只读固定dfaf2136的Documentation/locking/locktypes.rst（blob 80c914f6eae7ab07476491c4eba96c004508e28d），核对非RT的自旋/后缀语义与RT普通spinlock、rwlock的替换。RT普通irqsave不屏蔽硬中断，允许抢占但限制迁移；raw仍严格自旋。用于[入门实例边界](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P01_自旋锁.md#1.6_spinlock_与_raw_spinlock)，不是从当前非SMP配置推断全部实现。辅助代码未在目标编译或执行，中断重入图为机制推理。
