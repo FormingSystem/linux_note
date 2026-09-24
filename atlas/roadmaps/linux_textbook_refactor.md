@@ -478,3 +478,5 @@ B05ai完成[锁统一周期](../../knowledge/linux/synchronization_and_asynchron
 B05aj完成[自旋入门](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P01_自旋锁.md)，以完整采样辅助代码推导互斥、本地IRQ重入与RT差异。701项347 validated、336 pending、18 supporting_pending，剩余354项；内核实例未编译运行，继续P04实现边界。见[B05aj记录](../../governance/migration/repository_textbook_refactor.md#1.4.191_B05aj自旋入门与中断重入)。
 
 B05ak完成[自旋实现边界](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P04_spinlock实现与上下文边界.md)，领号推导、ARM状态地址与事件复查落实到统一阶段，C模型双编译器通过。701项348 validated、335 pending、18 supporting_pending，剩余353项；继续互斥与读写信号量。见[B05ak记录](../../governance/migration/repository_textbook_refactor.md#1.4.192_B05ak票号自旋与事件通信)。
+
+B05al完成[可睡锁入门](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P02_互斥锁与读写信号量.md)，以完整配置辅助代码建立获取失败、重新验证、拆锁状态与解锁寿命。701项349 validated、334 pending、18 supporting_pending，剩余352项；目标实例未运行，继续mutex/rwsem慢路径。见[B05al记录](../../governance/migration/repository_textbook_refactor.md#1.4.193_B05al可睡互斥与读改写窗口)。

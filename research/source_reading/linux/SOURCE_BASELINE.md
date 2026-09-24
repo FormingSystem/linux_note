@@ -1144,3 +1144,7 @@ B05aj只读固定dfaf2136的Documentation/locking/locktypes.rst（blob 80c914f6e
 ## 1.144\_ARM票号与事件的静态边界
 
 B05ak核对固定dfaf2136的arch/arm/include/asm/spinlock.h（blob f610a773f2be527dde14415a61fab4c7250d9447）及spinlock_types.h（blob 0c14b36ef10131b2a1fc95d91ccc76871e8ba4d4）：16位owner/next、整字领号、wfe后读取owner、释放推进owner与dsb_sev。用于[领号过程与阶段](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P04_spinlock实现与上下文边界.md#4.3.1_从反复抢夺改为领号等待)。正文不复制函数体；C模型仅验证顺序资格，工作配置非SMP且HEAD为实验提交，未证明该架构分支目标执行。
+
+## 1.145\_可睡锁应用契约
+
+B05al核对固定dfaf2136的include/linux/rwsem.h（blob c8b543d428b0a8d4662183f3342e88ec61d10189）与Documentation/locking/mutex-design.rst（blob 7c30b4aa5e28fc32afd29ef9d9ebc873bed19c9a），确认rwsem可中断/try/降级入口和非递归契约、mutex所有者与unlock仍在执行时的对象寿命。[应用层章节](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P02_互斥锁与读写信号量.md#2.8_生命周期与停机)不把解锁发布时点当成调用结束；配置辅助C代码未做目标编译运行，工作树实验HEAD不作证据。

@@ -2874,8 +2874,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P02_互斥锁与读写信号量.md",
       "baseline_sha256": "e52eb2645ae42f0c88208742f5d482745716d3fa957055ce9feeae3920318ebc",
       "lines": 164,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05al 全文冷读，配置条件提交完整C辅助代码串起获取/错误/读改写，补角色时序、拆锁中间状态、rwsem递归与降级和unlock返回前寿命。固定rwsem头文件及mutex设计核对，文档静态检查；内核示例未编译运行，人工状态不变。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P03_锁的统一状态与通信周期.md",
