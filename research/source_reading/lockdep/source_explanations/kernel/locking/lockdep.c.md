@@ -850,4 +850,143 @@ sequenceDiagram
 
 **修改边界：** 同时检查空批次、回调已安排时新增删除、回调期间另一批非空及容量再利用；禁止在宽限期前归还封闭槽，禁止翻转index后把新删除继续写旧槽。测试需要真实并发与RCU推进，本仓库本次只核对源码和状态推演。
 
+## 1.10\_摘除依赖与撤销相关链
+
+前一节的延迟槽位归还以“类已经退出可查询历史”为前提。下面的四函数完成该前半程：按地址范围定位类，删除与它相连的依赖，把类移入待回收批次，并撤销包含它的链缓存。这里不是普通解锁，不能在每次release时调用，否则会抹去跨时间证据。
+
+```c
+/**
+ * @brief 若链包含目标类，则撤销整条链并登记待回收链槽。
+ * 仓库补充，非上游原文。
+ */
+static void remove_class_from_lock_chain(struct pending_free *pf,
+					 struct lock_chain *chain,
+					 struct lock_class *class)
+{
+#ifdef CONFIG_PROVE_LOCKING
+	int i;
+
+	for (i = chain->base; i < chain->base + chain->depth; i++) {
+		if (chain_hlock_class_idx(chain_hlocks[i]) != class - lock_classes)
+			continue;
+		/*
+		 * Each lock class occurs at most once in a lock chain so once
+		 * we found a match we can break out of this loop.
+		 */
+		goto free_lock_chain;
+	}
+	/* Since the chain has not been modified, return. */
+	return;
+
+free_lock_chain:
+	free_chain_hlocks(chain->base, chain->depth);
+	/* Overwrite the chain key for concurrent RCU readers. */
+	WRITE_ONCE(chain->chain_key, INITIAL_CHAIN_KEY);
+	dec_chains(chain->irq_context);
+
+	/*
+	 * Note: calling hlist_del_rcu() from inside a
+	 * hlist_for_each_entry_rcu() loop is safe.
+	 */
+	hlist_del_rcu(&chain->entry);
+	__set_bit(chain - lock_chains, pf->lock_chains_being_freed);
+	nr_zapped_lock_chains++;
+#endif
+}
+
+/**
+ * @brief 遍历链哈希，把目标类的所有链引用交给单链处理。
+ * 仓库补充，非上游原文。
+ */
+static void remove_class_from_lock_chains(struct pending_free *pf,
+					  struct lock_class *class)
+{
+	struct lock_chain *chain;
+	struct hlist_head *head;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(chainhash_table); i++) {
+		head = chainhash_table + i;
+		hlist_for_each_entry_rcu(chain, head, entry) {
+			remove_class_from_lock_chain(pf, chain, class);
+		}
+	}
+}
+
+/**
+ * @brief 摘除类相关依赖与哈希身份，加入待回收批次。
+ * 仓库补充，非上游原文。
+ */
+static void zap_class(struct pending_free *pf, struct lock_class *class)
+{
+	struct lock_list *entry;
+	int i;
+
+	WARN_ON_ONCE(!class->key);
+
+	/*
+	 * Remove all dependencies this lock is
+	 * involved in:
+	 */
+	for_each_set_bit(i, list_entries_in_use, ARRAY_SIZE(list_entries)) {
+		entry = list_entries + i;
+		if (entry->class != class && entry->links_to != class)
+			continue;
+		__clear_bit(i, list_entries_in_use);
+		nr_list_entries--;
+		list_del_rcu(&entry->entry);
+	}
+	if (list_empty(&class->locks_after) &&
+	    list_empty(&class->locks_before)) {
+		list_move_tail(&class->lock_entry, &pf->zapped);
+		hlist_del_rcu(&class->hash_entry);
+		WRITE_ONCE(class->key, NULL);
+		WRITE_ONCE(class->name, NULL);
+		nr_lock_classes--;
+		__clear_bit(class - lock_classes, lock_classes_in_use);
+		if (class - lock_classes == max_lock_class_idx)
+			max_lock_class_idx--;
+	} else {
+		WARN_ONCE(true, "%s() failed for class %s\n", __func__,
+			  class->name);
+	}
+
+	remove_class_from_lock_chains(pf, class);
+	nr_zapped_classes++;
+}
+
+/**
+ * @brief 按key或名称地址范围查找并摘除类；调用者持有图锁。
+ * 仓库补充，非上游原文。
+ */
+static void __lockdep_free_key_range(struct pending_free *pf, void *start,
+				     unsigned long size)
+{
+	struct lock_class *class;
+	struct hlist_head *head;
+	int i;
+
+	/* Unhash all classes that were created by a module. */
+	for (i = 0; i < CLASSHASH_SIZE; i++) {
+		head = classhash_table + i;
+		hlist_for_each_entry_rcu(class, head, hash_entry) {
+			if (!within(class->key, start, size) &&
+			    !within(class->name, start, size))
+				continue;
+			zap_class(pf, class);
+		}
+	}
+}
+```
+
+按Z0至Z3读一次注销。Z0的范围函数扫描classhash_table，只有key或name位于半开区间`[start,start+size)`才进入zap；`within()`只是这个地址范围判断。它不是用名称字符串内容决定归属。动态key注销给出相应地址范围，模块清理则有自己的范围输入，不能把两类调用者混成同一种对象销毁。
+
+Z1在图锁内遍历依赖池占用位，凡是`entry->class`或`entry->links_to`指向目标类，就清占用位、减计数并用RCU链表删除。Z2只有确认前后依赖列表均为空，才把类移到`pf->zapped`，从类哈希摘除，并将key/name置NULL；这一步清类占用统计，却还没把类槽接回free_lock_classes。若列表未清空会报告内部不一致，不能默认为已完成正常摘除。
+
+Z3扫描所有链，每条链通过其base/depth区间中的类索引判断是否引用目标类。命中后撤销整条缓存链，不能把中间元素简单删除后沿用旧chain_key。先释放链元素存储，再用WRITE_ONCE把chain_key改为INITIAL_CHAIN_KEY，使并发读取能观察到失效标志；随后撤销链哈希节点并在本批位图登记链槽。真正清除链槽占用位发生在上一节宽限期后的批次回收。
+
+这里存在不同回收时点：依赖池占用位、链元素区间、类空闲列表与链槽占用位不是同一个池，不能把“RCU延迟回收”粗略解释成所有资源同时归还。`free_chain_hlocks()`处理链元素分配器，`dec_chains()`更新相应IRQ上下文计数；这两个内部管理操作不销毁业务锁。结构修改必须分别核对每种读者使用哪些字段，不能把类槽延迟保证套用到所有辅助数组。
+
+**修改约束：** 保留图锁前提、双端依赖匹配、哈希删除和失效标记顺序，以及链槽先进入待回收位图再归还的关系。复核三个输入：没有匹配类、目标类关联多条链、多个待回收类共享同一条链。最后一种情形中，已经从链哈希摘除的链不应再次由后续扫描重复回收。此处仍是源码推演，不是已执行的并发测试。
+
 下一篇：[Lockdep 取得释放与持锁账本源码实现](../../P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)。

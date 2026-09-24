@@ -546,3 +546,5 @@ B05bq补齐静态对象识别、类查找与key兜底三个完整函数，说明
 B05br补动态key登记、查询与注销三函数，区分停检退化、RCU等待和业务排空。整页仍pending，全仓剩余328项；继续回收边界和符号账本。见[B05br记录](../../governance/migration/repository_textbook_refactor.md#1.4.225_B05br动态key撤销与等待边界)。
 
 B05bs补回收双缓冲批次、五个回调辅助函数和F0至F4周期；边摘除前提仍待审查，剩余328项。见[B05bs记录](../../governance/migration/repository_textbook_refactor.md#1.4.226_B05bs回收批次与槽位归还)。
+
+B05bt补依赖摘除与链缓存撤销四函数，明确不同存储池的归还时点。整页尚未收束，剩余328项不变。见[B05bt记录](../../governance/migration/repository_textbook_refactor.md#1.4.227_B05bt依赖摘除与链失效)。
