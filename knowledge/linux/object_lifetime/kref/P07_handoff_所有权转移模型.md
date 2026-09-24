@@ -422,7 +422,7 @@ dmesg | tail -n 12
 
 本轮 ARM 前端及宿主七组控制检查通过：队列/对象分配失败、拒绝发布、早完成、等待中完成、超时取消和超时后工作完成。宿主完成量、队列、锁/原子和分配是显式替身，未执行目标装卸、实际等待或硬件内存序；上面的命令是目标复现步骤，不是已运行记录。
 
-固定[等待与完成量总索引](../../../../research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)进入[完成量模块](../../../../research/source_reading/waiting_notification/navigation/P03_Linux_6.12_completion模块源码概念导读.md#3.2_状态所有权)，再到[等待与令牌消费](../../../../research/source_reading/waiting_notification/source_explanations/P02_Linux_6.12_completion_c令牌与等待源码实现.md#2.4_do_wait_for_common等待与消费)：timeout 返回路径没有替你取消完成者。状态同步与对象保活必须分别设计。
+固定[等待与完成量总索引](../../../../research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)进入[完成量模块](../../../../research/source_reading/waiting_notification/navigation/P03_Linux_6.12_completion模块源码概念导读.md#3.2_状态所有权)，再到[等待与令牌消费](../../../../research/source_reading/waiting_notification/source_explanations/kernel/sched/completion.c.md#1.4_do_wait_for_common等待与消费)：timeout 返回路径没有替你取消完成者。状态同步与对象保活必须分别设计。
 
 ### 7.3.6\_callback\_场景里的引用归属
 

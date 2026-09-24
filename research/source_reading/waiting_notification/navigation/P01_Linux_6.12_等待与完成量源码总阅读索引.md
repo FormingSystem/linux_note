@@ -29,6 +29,8 @@ source_version: "6.12.20"
 
 ## 1.3\_两条状态机不能合并
 
+这里的“两条”指两种机制的阅读路径，每条内部仍有多组正交状态。普通等待的业务条件、登记链与任务状态不能合为一位；完成量的done、swait登记与外围生命期也不能合并。模块导读分别把它们映射到状态地址和统一阶段，再由实现页展开函数体。
+
 ```mermaid
 flowchart TD
     A["调用者要等待什么？"] --> B{"任意业务条件？"}
@@ -45,7 +47,7 @@ flowchart TD
 | 阅读目标 | 模块导读 | 唯一实现 |
 | --- | --- | --- |
 | wait_event、prepare、wake、finish | [普通等待队列模块导读](P02_Linux_6.12_普通等待队列模块源码概念导读.md#2.1_模块问题与状态地址) | [`wait.h` 结构与宏](../source_explanations/include/linux/wait.h.md#1.2_队列头与等待项)、[`wait.c` 入队与唤醒实现](../source_explanations/kernel/sched/wait.c.md#1.2_源码符号覆盖账本) |
-| completion 的 done、swait、complete/wait | [completion 模块导读](P03_Linux_6.12_completion模块源码概念导读.md#3.1_模块问题) | [`completion.c` 令牌与等待实现](../source_explanations/P02_Linux_6.12_completion_c令牌与等待源码实现.md#2.2_源码符号覆盖账本) |
+| completion 的 done、swait、complete/wait | [completion 模块导读](P03_Linux_6.12_completion模块源码概念导读.md#3.1_模块问题) | [`completion.h` 对象与初始化](../source_explanations/include/linux/completion.h.md#1.2_completion对象与初始化)、[`completion.c` 令牌与等待实现](../source_explanations/kernel/sched/completion.c.md#1.2_源码符号覆盖账本) |
 
 ## 1.5\_建议阅读顺序
 
@@ -58,6 +60,8 @@ flowchart TD
 ## 1.6\_证明边界
 
 调度器 wake 让任务 runnable，不证明业务条件仍成立；waitqueue 锁保护 entry 链表，不保护业务对象；completion 的 done 保存完成令牌，却不停止晚到完成者或保活对象。三种边界在源码阅读中必须始终分开。
+
+实现页按上游头文件和C文件组织，所选结构、宏与函数保持唯一展开。simple waitqueue在此作为completion依赖：模块解释其任务节点和持锁通知，原始文件地图供继续阅读，不表示所有swait、调度器和体系结构函数都已经逐句讲解。当前静态源码对照及知识侧C模型，也不等于目标内核的睡眠、信号、实时配置和超时竞态已经运行验证。
 
 ## 1.7\_复核问题
 

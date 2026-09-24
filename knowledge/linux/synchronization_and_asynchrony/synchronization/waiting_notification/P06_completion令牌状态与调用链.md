@@ -93,7 +93,7 @@ S2返回后先在锁内重新检查done，才决定返回超时还是走S4。若
 
 ## 6.7\_源码入口
 
-`struct completion`、swait、complete/wait 调用链见[completion 模块源码概念导读](../../../../../research/source_reading/waiting_notification/navigation/P03_Linux_6.12_completion模块源码概念导读.md#3.2_状态所有权)。唯一裁剪实现见[`completion.c` 令牌与等待源码实现](../../../../../research/source_reading/waiting_notification/source_explanations/P02_Linux_6.12_completion_c令牌与等待源码实现.md#2.2_源码符号覆盖账本)。
+`struct completion`、swait、complete/wait 调用链见[completion 模块源码概念导读](../../../../../research/source_reading/waiting_notification/navigation/P03_Linux_6.12_completion模块源码概念导读.md#3.2_状态所有权)。唯一裁剪实现见[`completion.c` 令牌与等待源码实现](../../../../../research/source_reading/waiting_notification/source_explanations/kernel/sched/completion.c.md#1.2_源码符号覆盖账本)。
 
 ## 6.8\_本章结论与下一问
 

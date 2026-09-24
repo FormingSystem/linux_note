@@ -1100,3 +1100,9 @@ B05ab继续只读固定dfaf2136的wait.h与wait.c（对象身份同1.133），�
 B05ac依据1.133的固定wait.h/wait.c对象，把[结构与宏](../waiting_notification/source_explanations/include/linux/wait.h.md#1.2_队列头与等待项)和[登记扫描清理函数](../waiting_notification/source_explanations/kernel/sched/wait.c.md#1.2_源码符号覆盖账本)按上游位置组织。所选9块结构、宏和函数去除仓库中文注释与空白后，与固定源码一致；补足扫描的锁断言、空链、safe_from及自动摘链路径。中文Doxygen为仓库阅读说明。普通模块的关系和端到端时序与这些分支相互对应。
 
 本次静态核对不表示真实信号、调度、弱内存或目标驱动已运行；未改动外部源码。头文件宏的非恒定state保守保留prepare错误检查，实际信号资格由prepare中的signal_pending_state判断，不把辅助宏解释成业务条件判断。
+
+## 1.137\_完成量源码与非阻塞观察
+
+B05ad按1.134的固定completion.h/completion.c对象分别组织[对象初始化](../waiting_notification/source_explanations/include/linux/completion.h.md#1.2_completion对象与初始化)与[发布等待及观察](../waiting_notification/source_explanations/kernel/sched/completion.c.md#1.2_源码符号覆盖账本)。11块结构/函数去注释及空白后与固定对象一致，保留__sched属性及完整控制分支；中文Doxygen为仓库补充。
+
+特别核对complete_acquire/release在此版本为空、等待包装使用lock_irq、try锁内重检消费、completion_done只经过锁区间而不锁内重检；后者不预留计数或证明旧访问者退出。模块S0～S6映射这些动作，目标内核、实时配置、信号和超时竞态仍未运行，不能把静态一致性称作运行验证。

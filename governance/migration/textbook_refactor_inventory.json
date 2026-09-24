@@ -4316,8 +4316,8 @@
       "path": "research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md",
       "baseline_sha256": "71088beb65daf0ca368431e935f688247a5ebaec076e9817377117613f93f931",
       "lines": 69,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ad 冷读完成量源码与总阅读索引，按上游头文件/实现分离，补足计数发布、等待包装、try消费与done观察的真实控制流；模块以S0至S6统一状态所有权及两类到达交错。11块源码静态一致，未进行内核运行或真实竞态验证，人工评审状态保留。"
     },
     {
       "path": "research/source_reading/waiting_notification/navigation/P02_Linux_6.12_普通等待队列模块源码概念导读.md",
@@ -4330,8 +4330,8 @@
       "path": "research/source_reading/waiting_notification/navigation/P03_Linux_6.12_completion模块源码概念导读.md",
       "baseline_sha256": "5c4b54750a33a0ae2fea016e8df721dd4b3d9b19cde7dfb7583908e664e851fe",
       "lines": 68,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ad 冷读完成量源码与总阅读索引，按上游头文件/实现分离，补足计数发布、等待包装、try消费与done观察的真实控制流；模块以S0至S6统一状态所有权及两类到达交错。11块源码静态一致，未进行内核运行或真实竞态验证，人工评审状态保留。"
     },
     {
       "path": "research/source_reading/waiting_notification/source_explanations/kernel/sched/wait.c.md",
@@ -4341,11 +4341,11 @@
       "reason": "B05ac 按固定dfaf2136源码冷读普通等待状态链；头文件结构/宏与wait.c函数按上游位置分离，9个代码块去注释空白后与固定对象一致。模块图说明状态所有权和正常/信号出口，具体实现回链同一阶段；静态验证不代替内核运行，人工评审状态不变。"
     },
     {
-      "path": "research/source_reading/waiting_notification/source_explanations/P02_Linux_6.12_completion_c令牌与等待源码实现.md",
+      "path": "research/source_reading/waiting_notification/source_explanations/kernel/sched/completion.c.md",
       "baseline_sha256": "08fbd3b88ee8f14793f2cadca34393c164c4e3b4848cf529f93f6f9e97a8090f",
       "lines": 112,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ad 冷读完成量源码与总阅读索引，按上游头文件/实现分离，补足计数发布、等待包装、try消费与done观察的真实控制流；模块以S0至S6统一状态所有权及两类到达交错。11块源码静态一致，未进行内核运行或真实竞态验证，人工评审状态保留。"
     },
     {
       "path": "research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md",
@@ -4976,6 +4976,13 @@
       "lines": 133,
       "state": "validated",
       "reason": "B05ac 按固定dfaf2136源码冷读普通等待状态链；头文件结构/宏与wait.c函数按上游位置分离，9个代码块去注释空白后与固定对象一致。模块图说明状态所有权和正常/信号出口，具体实现回链同一阶段；静态验证不代替内核运行，人工评审状态不变。"
+    },
+    {
+      "path": "research/source_reading/waiting_notification/source_explanations/include/linux/completion.h.md",
+      "baseline_sha256": "2a945ae44cecc4b23d9e09bb4c3d4cd82cf3e4585e52de276535c1936ab65236",
+      "lines": 72,
+      "state": "validated",
+      "reason": "B05ad 冷读完成量源码与总阅读索引，按上游头文件/实现分离，补足计数发布、等待包装、try消费与done观察的真实控制流；模块以S0至S6统一状态所有权及两类到达交错。11块源码静态一致，未进行内核运行或真实竞态验证，人工评审状态保留。"
     }
   ]
 }
