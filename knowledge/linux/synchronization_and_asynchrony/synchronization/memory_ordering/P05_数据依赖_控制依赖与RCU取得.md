@@ -204,7 +204,7 @@ if (r0)
 
 源码中 `r1` 只在分支成立时执行，但处理器可能推测 Load，编译器也可能把两条分支中的相同读取提升到分支之前。Linux 的控制依赖规则有严格方向和访问类型边界，不能把普通 `if` 当成 acquire。
 
-Linux对满足条件的“读取→保留的条件→受该条件控制的写”提供相应控制依赖规则，不能把这种保证推广成“读取→if→任意后续读取”。还需核对分支是否被常量传播、公共尾部提取等变换消除，以及访问是否被正确标记。需要acquire语义时，优先直接使用smp_load_acquire；在已经严格证明的控制依赖路径中，内核也提供smp_acquire__after_ctrl_dep等补强接口。
+Linux对满足条件的“读取→保留的条件→受该条件控制的写”提供相应控制依赖规则，不能把这种保证推广成“读取→if→任意后续读取”。还需核对分支是否被常量传播、公共尾部提取等变换消除，以及访问是否被正确标记。需要acquire语义时，优先直接使用smp_load_acquire；在已经严格证明的控制依赖路径中，内核也提供smp_acquire__after_ctrl_dep等补强接口。[条件加载模块](../../../../../research/source_reading/memory_ordering/navigation/P06_条件加载与控制依赖导读.md#6.4_为何退出后还需要补强)把循环退出与补强分别定位，具体宏见[唯一实现](../../../../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.12_条件加载与控制依赖补强)；该辅助不凭空产生控制依赖，也不负责等待、超时或对象存活。
 
 ```c
 r0 = READ_ONCE(flag);

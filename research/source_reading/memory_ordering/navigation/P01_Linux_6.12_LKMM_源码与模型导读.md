@@ -74,6 +74,8 @@ flowchart LR
 
 [存储后屏障与原子强化模块](P05_存储后屏障与原子强化导读.md#5.1_屏障位于写前还是写后)比较写前/写后方向及T0～T4配对范围；[内部回退](../source_explanations/include/asm-generic/barrier.h.md#1.9_存储后屏障与atomic辅助的内部回退)和[公共包装](../source_explanations/include/asm-generic/barrier.h.md#1.10_存储后屏障与atomic辅助的公共路径)唯一展开三种入口。
 
+[条件加载模块](P06_条件加载与控制依赖导读.md#6.1_一次取得还不能等待条件成立)沿L0～L4区分保存地址、轮询样本、退出条件与取得补强；[唯一条件加载实现](../source_explanations/include/asm-generic/barrier.h.md#1.12_条件加载与控制依赖补强)保留VAL、__PTR和_val的不同职责，不把cpu_relax解释成睡眠或超时。
+
 ### 1.3.3\_ARMv7\_映射
 
 [`arch/arm/include/asm/barrier.h`](../../linux/arch/arm/include/asm/barrier.h) 提供以下内部映射；它们的定义存在本身不要求CONFIG_SMP，公共smp调用是否使用它们还要经过通用配置分支。在ARMv7目标上对应：

@@ -13,7 +13,7 @@ domains:
 
 ## 1.1\_从公共调用找到真正执行的分支
 
-[屏障模块导读](../../../navigation/P03_SMP屏障的配置与调用层次.md#3.3_一次公共屏障的路径)已经建立F0～F3：架构先提供定义，配置选择包装，检测与功能路径分别执行，调用方继续。本页先沿这条路径解释实现原理，再结合[发布取得模块](../../../navigation/P04_发布取得的访问与配置导读.md#4.3_让实现回到同一组S阶段)把顺序绑定到一次访问。范围包括三种公共SMP屏障、发布取得、存储后屏障与atomic辅助回退；后者沿[辅助模块](../../../navigation/P05_存储后屏障与原子强化导读.md#5.3_按一条原子操作周期阅读)的T0～T4组织，仍不声称覆盖整个barrier.h。
+[屏障模块导读](../../../navigation/P03_SMP屏障的配置与调用层次.md#3.3_一次公共屏障的路径)已经建立F0～F3：架构先提供定义，配置选择包装，检测与功能路径分别执行，调用方继续。本页先沿这条路径解释实现原理，再结合[发布取得模块](../../../navigation/P04_发布取得的访问与配置导读.md#4.3_让实现回到同一组S阶段)把顺序绑定到一次访问。范围包括三种公共SMP屏障、发布取得、存储后屏障与atomic辅助回退；后者沿[辅助模块](../../../navigation/P05_存储后屏障与原子强化导读.md#5.3_按一条原子操作周期阅读)的T0～T4组织，并沿[条件加载模块](../../../navigation/P06_条件加载与控制依赖导读.md#6.3_一轮轮询与一次成功退出)解释L0～L4的循环退出，仍不声称覆盖整个barrier.h。
 
 上游位置为 `include/asm-generic/barrier.h`，编译器barrier定义来自 `include/linux/compiler.h`；版本为NXP官方linux-imx、lf-6.12.20-2.0.0、dfaf2136deb2af2e60b994421281ba42f1c087e0、Linux 6.12.20。[总索引](../../../navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)定位相关模块，[原始通用头](../../../../linux/include/asm-generic/barrier.h)和[compiler.h](../../../../linux/include/linux/compiler.h)用于逐项核对。以下Doxygen与中文行注均为仓库补充阅读说明；剪裁掉文件外壳和其他API，没有改变条件分支。
 
@@ -288,4 +288,67 @@ store_mb的var直接作为WRITE_ONCE目标左值，发布取得的p则先解引�
 
 本段新增九项定义，保留了ONCE写、内部屏障、检测入口及配置分支的相对位置。可用顺序记录替身检查这些宏的调用路径，却不能用它模拟真实RMW指令的不可分性或硬件排序。
 
-具体适用边界以[固定atomic_t文档](../../../../linux/Documentation/atomic_t.txt)为准：辅助只适用于RMW，与操作之间夹入的访问不获相应保证，且前后强化的范围比简单release/acquire模式更强。完成选择后回到[模块的三个反例](../../../navigation/P05_存储后屏障与原子强化导读.md#5.5_用三个反例检查边界)验证自己的理由，再进入条件加载等尚未展开的部分。
+具体适用边界以[固定atomic_t文档](../../../../linux/Documentation/atomic_t.txt)为准：辅助只适用于RMW，与操作之间夹入的访问不获相应保证，且前后强化的范围比简单release/acquire模式更强。完成选择后回到[模块的三个反例](../../../navigation/P05_存储后屏障与原子强化导读.md#5.5_用三个反例检查边界)验证自己的理由，再进入下面的条件加载。
+
+## 1.12\_条件加载与控制依赖补强
+
+[条件加载模块](../../../navigation/P06_条件加载与控制依赖导读.md#6.3_一轮轮询与一次成功退出)把过程划为L0～L4：保存地址、读取样本、判定循环、按接口补强、返回接受值。先看L3所需的辅助，固定通用定义用读屏障补上控制依赖不能单独提供的后续读顺序。
+
+```c
+/**
+ * smp_acquire__after_ctrl_dep - 在已成立的控制依赖后补强取得顺序
+ * 仓库阅读说明：本宏不生成控制依赖；通用回退补上读方向。
+ */
+#ifndef smp_acquire__after_ctrl_dep
+#define smp_acquire__after_ctrl_dep() smp_rmb()
+#endif
+```
+
+它依赖前面确实存在的控制依赖，不是任意位置可独立使用的完整acquire操作。架构可以覆盖该定义；默认smp_rmb的SMP/UP选择仍见本页1.3，不额外发明一套配置规则。
+
+```c
+/**
+ * smp_cond_load_relaxed - 从同一地址反复读取，直到条件满足
+ * @ptr: 等待对象的有效指针；普通指针表达式在L0保存一次
+ * @cond_expr: 使用宏提供的VAL判定本轮读值
+ * 仓库阅读说明：没有超时、取消、睡眠或退出后acquire补强。
+ */
+#ifndef smp_cond_load_relaxed
+#define smp_cond_load_relaxed(ptr, cond_expr) ({ \
+    typeof(ptr) __PTR = (ptr); \
+    __unqual_scalar_typeof(*ptr) VAL; \
+    for (;;) { \
+        VAL = READ_ONCE(*__PTR); \
+        if (cond_expr) \
+            break; \
+        cpu_relax(); \
+    } \
+    (typeof(*ptr))VAL; \
+})
+#endif
+```
+
+L0把ptr保存在__PTR，循环体读取的是*__PTR，不会每轮重新执行普通指针实参的求值。类型表达式与实际访问须分开；这不授予任意可变长度类型或复杂副作用表达式额外保证。L1覆盖本轮VAL，L2每轮执行条件，真时直接break，所以最后一轮不调用cpu_relax。返回值就是使条件成立的那个样本。
+
+如果把条件写成再次读取目标而不用VAL，条件判断与返回值可能来自两次不同访问，原来的证明就变了。条件还应让退出确实依赖目标读值；恒真条件不能凭一次空循环形态获得控制依赖。反复求值的附加副作用由调用者承担，不是宏保证的一次性动作。
+
+```c
+/**
+ * smp_cond_load_acquire - 条件加载成功退出后补强取得顺序
+ * @ptr: 等待对象指针
+ * @cond_expr: 对每轮VAL的条件
+ * 仓库阅读说明：L3仅在循环退出后发生，L4返回保存值而不重读。
+ */
+#ifndef smp_cond_load_acquire
+#define smp_cond_load_acquire(ptr, cond_expr) ({ \
+    __unqual_scalar_typeof(*ptr) _val; \
+    _val = smp_cond_load_relaxed(ptr, cond_expr); \
+    smp_acquire__after_ctrl_dep(); \
+    (typeof(*ptr))_val; \
+})
+#endif
+```
+
+_val保存内层循环返回的样本，补强后再次返回这个值。将返回表达式改成重新读取*ptr，会把被顺序关系约束的退出样本与调用者实际得到的值分开，不能当作等价改写。辅助只在循环成功退出后调用；循环永远不退出时，没有内部超时会跳过它并报告失败。
+
+本节三项定义仍只覆盖通用回退。cpu_relax的目标实现、架构覆盖及外层持锁条件都影响适用性；用顺序替身可验证读取次数、条件次数和调用顺序，不能据此证明跨CPU可见性、调度公平或无饥饿。返回[模块边界](../../../navigation/P06_条件加载与控制依赖导读.md#6.5_进展与退出仍由调用者负责)核对生产者能前进、等待对象仍存活，再选择是否真的应该主动轮询。

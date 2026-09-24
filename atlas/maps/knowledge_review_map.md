@@ -814,6 +814,7 @@ mindmap-plugin: basic
             - 🔴 [P03 SMP屏障的配置与调用层次](../../research/source_reading/memory_ordering/navigation/P03_SMP屏障的配置与调用层次.md#3.1_同一个调用为什么走两条路径)
             - 🔴 [P04 发布取得的访问与配置导读](../../research/source_reading/memory_ordering/navigation/P04_发布取得的访问与配置导读.md#4.1_把屏障绑定到一次访问)
             - 🔴 [P05 存储后屏障与原子强化导读](../../research/source_reading/memory_ordering/navigation/P05_存储后屏障与原子强化导读.md#5.1_屏障位于写前还是写后)
+            - 🔴 [P06 条件加载与控制依赖导读](../../research/source_reading/memory_ordering/navigation/P06_条件加载与控制依赖导读.md#6.1_一次取得还不能等待条件成立)
         - 具体实现讲解
             - 🔴 [rwonce.h 单次访问源码实现](../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/rwonce.h.md#1.1_沿读取现场核对实现)
             - 🔴 [barrier.h SMP屏障与顺序访问源码实现](../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.1_从公共调用找到真正执行的分支)
