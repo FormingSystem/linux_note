@@ -1180,3 +1180,7 @@ B05as以固定dfaf2136的arch/arm/include/asm/spinlock.h（blob f610a773f2be527d
 ## 1.153\_mutex交接与取消的真实分支
 
 B05at从固定dfaf2136的kernel/locking/mutex.c（blob cbae8c0b89ab2b8074a387ebf1cca86951362cc2）展开[owner取得与等待](../locking/source_explanations/kernel/locking/mutex.c.md#1.3_owner指针与三个位标志)及[释放交接](../locking/source_explanations/kernel/locking/mutex.c.md#1.5_mutex_unlock_slowpath的交接)，11个完整函数静态比对通过。替换概念骨架，明确HANDOFF直接退出释放循环、选当前队首、release发布PICKUP、目标acquire接收先于错误退出。范围为非RT普通mutex，共同函数中的WW分支保留但未展开其算法；当前非SMP工作配置未启用owner自旋，未做目标编译运行。
+
+## 1.154\_rwsem对象布局与观察契约
+
+B05au核对固定dfaf2136的include/linux/rwsem.h（blob c8b543d428b0a8d4662183f3342e88ec61d10189），展开[两种对象布局](../locking/source_explanations/include/linux/rwsem.h.md#1.2_非RT对象的状态落点)及六个观察/断言函数。非RT的is_locked比较整个count，降级写断言只看写位；不把共享状态解释为当前任务已取得。RT仅核对类型替换，未展开rwbase内部，未进行目标配置编译或运行。

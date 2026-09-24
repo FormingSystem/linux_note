@@ -25,22 +25,7 @@ source_version: "6.12.20"
 
 ## 3.3\_rw\_semaphore对象布局
 
-```c
-/**
- * @brief 非 RT rwsem 的功能状态与慢路径队列。
- * @note 中文说明由仓库补充；裁剪自 include/linux/rwsem.h。
- */
-struct rw_semaphore {
-    atomic_long_t count;      /* 读份额、写锁与等待标志的编码。 */
-    atomic_long_t owner;      /* 写 owner 或读 owner 提示及标志。 */
-#ifdef CONFIG_RWSEM_SPIN_ON_OWNER
-    struct optimistic_spin_queue osq;
-#endif
-    raw_spinlock_t wait_lock; /* 只保护慢路径 wait_list 修改。 */
-    struct list_head wait_list;
-    /* 省略：debug 与 Lockdep 字段。 */
-};
-```
+完整对象布局已按上游头文件组织到 [rwsem.h 的非RT状态落点](include/linux/rwsem.h.md#1.2_非RT对象的状态落点)，RT 替代布局及观察接口边界也在该页说明。此处继续跟踪等待请求，不重复类型实现。
 
 count 决定功能占有，owner 辅助自旋/诊断，wait_list 保存调度等待者。任意单一字段都不足以还原完整状态。
 

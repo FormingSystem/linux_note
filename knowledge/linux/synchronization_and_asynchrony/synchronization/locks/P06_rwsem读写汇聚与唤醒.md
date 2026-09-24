@@ -112,7 +112,7 @@ rwsem 的队列策略需要在吞吐与等待上界之间折中：过度偏向�
 
 ## 6.8\_源码入口
 
-先由[锁源码总阅读索引](../../../../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.1_版本边界与阅读任务)确认固定版本，再读 `struct rw_semaphore`、`struct rwsem_waiter`、读写慢路径和 `rwsem_mark_wake()` 的[模块关系](../../../../../research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md#3.4_rwsem完整调用链)。裁剪实现入口见[rwsem 慢路径源码实现](../../../../../research/source_reading/locking/source_explanations/P03_Linux_6.12_rwsem慢路径源码实现.md#3.2_源码符号覆盖账本)，完整分支依据固定提交的 `kernel/locking/rwsem.c`，不把裁剪提纲视为全部源码覆盖。
+先由[锁源码总阅读索引](../../../../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.1_版本边界与阅读任务)确认固定版本，再读 `struct rw_semaphore`、`struct rwsem_waiter`、读写慢路径和 `rwsem_mark_wake()` 的[模块关系](../../../../../research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md#3.4_rwsem完整调用链)。完整类型见[rwsem.h 对象布局](../../../../../research/source_reading/locking/source_explanations/include/linux/rwsem.h.md#1.2_非RT对象的状态落点)；慢路径裁剪入口见[rwsem 慢路径源码实现](../../../../../research/source_reading/locking/source_explanations/P03_Linux_6.12_rwsem慢路径源码实现.md#3.2_源码符号覆盖账本)，完整分支依据固定提交的 `kernel/locking/rwsem.c`，不把裁剪提纲视为全部源码覆盖。
 
 ## 6.9\_本章结论与下一问
 

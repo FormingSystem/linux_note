@@ -5011,6 +5011,13 @@
       "lines": 108,
       "state": "validated",
       "reason": "B05as 三个ARM票号/事件函数与固定源码一致，解释汇编操作数、领号重试、owner复查及事件发布；静态检查，未做目标汇编或SMP运行。"
+    },
+    {
+      "path": "research/source_reading/locking/source_explanations/include/linux/rwsem.h.md",
+      "baseline_sha256": "d0a39dabf668725b01a5faf38729fceacea3b0bf88cb8d8d60291c6edab5b431",
+      "lines": 147,
+      "state": "validated",
+      "reason": "B05au 完整核对非RT与RT类型及六个观察断言函数，解释共享状态不等于当前持锁、缓存行代价和配置边界；静态比对，未执行目标编译运行。"
     }
   ]
 }

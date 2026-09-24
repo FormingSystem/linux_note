@@ -813,6 +813,7 @@ mindmap-plugin: basic
             - 🔴 [Linux 6.12 spinlock_api_smp.h 上下文与获取释放](../../research/source_reading/locking/source_explanations/include/linux/spinlock_api_smp.h.md)
             - 🔴 [Linux 6.12 ARM spinlock.h 票号与事件](../../research/source_reading/locking/source_explanations/arch/arm/include/asm/spinlock.h.md)
             - 🔴 [kernel/locking/mutex.c 实现](../../research/source_reading/locking/source_explanations/kernel/locking/mutex.c.md)
+            - 🔴 [include/linux/rwsem.h 对象与观察](../../research/source_reading/locking/source_explanations/include/linux/rwsem.h.md)
             - 🔴 [P03 Linux 6.12 rwsem 慢路径源码实现](../../research/source_reading/locking/source_explanations/P03_Linux_6.12_rwsem慢路径源码实现.md)
     - 内存顺序
         - 模块概念导读

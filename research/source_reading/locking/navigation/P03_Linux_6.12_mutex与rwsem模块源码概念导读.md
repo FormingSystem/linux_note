@@ -49,6 +49,8 @@ owner 的低三位记录 WAITERS/HANDOFF/PICKUP；wait_list 由 wait_lock 保护
 
 ## 3.4\_rwsem完整调用链
 
+进入调用链前，先按配置选择 [rwsem.h 对象布局](../source_explanations/include/linux/rwsem.h.md#1.2_非RT对象的状态落点)。count 的非零观察与当前任务取得锁并不等价，相关观察和断言函数见同页后续实现。
+
 ```mermaid
 flowchart TD
     R["down_read"] --> RF{"count快速取读份额？"}
