@@ -5004,6 +5004,13 @@
       "lines": 124,
       "state": "validated",
       "reason": "B05ar 五个常规raw API函数与固定源码一致，解释检查事件、功能获取、本地状态和try失败恢复；文档静态检查，未编译或运行目标。"
+    },
+    {
+      "path": "research/source_reading/locking/source_explanations/arch/arm/include/asm/spinlock.h.md",
+      "baseline_sha256": "1156fbe13aca671e214ca3cf3929e8556370176c0c648a37745358ae3e16a5fd",
+      "lines": 108,
+      "state": "validated",
+      "reason": "B05as 三个ARM票号/事件函数与固定源码一致，解释汇编操作数、领号重试、owner复查及事件发布；静态检查，未做目标汇编或SMP运行。"
     }
   ]
 }

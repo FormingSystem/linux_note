@@ -492,3 +492,5 @@ B05ap完成[自旋模块导读](../../research/source_reading/locking/navigation
 B05aq完成[普通锁包装](../../research/source_reading/locking/source_explanations/include/linux/spinlock.h.md)与[类型配置](../../research/source_reading/locking/source_explanations/include/linux/spinlock_types.h.md)分层，18个真实源码单元静态匹配。新增一项后702项356 validated、328 pending、18 supporting_pending，剩余346项；继续深层API与其余锁实现。见[B05aq记录](../../governance/migration/repository_textbook_refactor.md#1.4.198_B05aq自旋类型与包装分层)。
 
 B05ar补齐[常规raw API](../../research/source_reading/locking/source_explanations/include/linux/spinlock_api_smp.h.md)，五个完整函数静态匹配，解释功能与检查事件及try失败恢复。新增一项后703项357 validated、328 pending、18 supporting_pending，剩余346项；继续架构与其余锁实现。见[B05ar记录](../../governance/migration/repository_textbook_refactor.md#1.4.199_B05ar通用raw获取与恢复)。
+
+B05as补齐[ARM票号与事件实现](../../research/source_reading/locking/source_explanations/arch/arm/include/asm/spinlock.h.md)，三个完整函数静态匹配并解释操作数与等待复查。704项358 validated、328 pending、18 supporting_pending，剩余346项；继续mutex实现。见[B05as记录](../../governance/migration/repository_textbook_refactor.md#1.4.200_B05as架构票号与事件实现)。

@@ -1172,3 +1172,7 @@ B05aq按固定dfaf2136的include/linux/spinlock_types.h（blob 2dfa35ffec761f933
 ## 1.151\_raw上下文配对
 
 B05ar对固定dfaf2136的include/linux/spinlock_api_smp.h五个完整函数做静态比对，见[普通获取释放](../locking/source_explanations/include/linux/spinlock_api_smp.h.md#1.2_普通获取和释放的顺序)及其后irqsave/trylock。采用非lockbreak常规获取分支，说明检查获取先于功能获取而try检查仅在成功后登记；失败撤销本层约束。当前配置非SMP，未进行目标编译或实际竞争验证。
+
+## 1.152\_ARM阻塞获取与事件发布
+
+B05as以固定dfaf2136的arch/arm/include/asm/spinlock.h（blob f610a773f2be527dde14415a61fab4c7250d9447）展开[三个真实函数](../locking/source_explanations/arch/arm/include/asm/spinlock.h.md#1.2_取得票号不等于已经进入)，静态内容比对通过。说明ldrex/strex领号、wfe后owner复查、smp_mb与dsb_sev顺序，限定SMP分支且未展开事件替换宏体；当前工作配置非SMP，不构成架构执行证据。

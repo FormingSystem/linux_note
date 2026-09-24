@@ -100,7 +100,7 @@ flags 属于调用栈和当前 CPU，不能跨 CPU 或错误配对。锁字属�
 4. `include/linux/spinlock_api_smp.h` 与 `kernel/locking/spinlock.c`：内联/非内联通用入口、本地状态和配置例外；UP另查对应up头文件。
 5. `arch/arm/include/asm/spinlock_types.h` 与 `spinlock.h`：票号布局与原子操作；仅在所选SMP分支进入，不代表当前配置。
 
-现有[类型讲解](../source_explanations/include/linux/spinlock_types.h.md#1.2_spinlock_t的配置映射)和[raw到架构边界](../source_explanations/include/linux/spinlock.h.md#1.5_do_raw_spin_lock到架构边界)承担具体裁剪阅读。架构函数体与完整API配置分支仍须对照上述固定源码，不把当前入口的覆盖范围扩大成已经逐句讲完全部spinlock实现。
+现有[类型讲解](../source_explanations/include/linux/spinlock_types.h.md#1.2_spinlock_t的配置映射)和[raw到架构边界](../source_explanations/include/linux/spinlock.h.md#1.5_do_raw_spin_lock到架构边界)承担具体裁剪阅读。ARM阻塞获取见[领号与等待](../source_explanations/arch/arm/include/asm/spinlock.h.md#1.2_取得票号不等于已经进入)，释放与事件见[服务号推进](../source_explanations/arch/arm/include/asm/spinlock.h.md#1.3_事件通知为何仍须复查)。未展开的trylock、事件替换宏和其他配置仍对照固定源码，不把有限函数覆盖扩大成全部spinlock实现。
 
 ## 2.7\_复核问题
 
