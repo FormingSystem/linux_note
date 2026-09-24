@@ -91,6 +91,10 @@ void lockdep_init_map_type(struct lockdep_map *lock, const char *name,
 	for (i = 0; i < NR_LOCKDEP_CACHING_CLASSES; i++)
 		lock->class_cache[i] = NULL; /* 重新初始化必须清除旧类缓存。 */
 
+#ifdef CONFIG_LOCK_STAT
+	lock->cpu = raw_smp_processor_id(); /* 统计配置记录初始化CPU。 */
+#endif
+
 	if (DEBUG_LOCKS_WARN_ON(!name)) {
 		lock->name = "NULL";
 		return;
@@ -110,8 +114,14 @@ void lockdep_init_map_type(struct lockdep_map *lock, const char *name,
 	}
 	lock->key = key;
 
+	if (unlikely(!debug_locks))
+		return; /* 写入map不等于全局检查器仍能继续登记。 */
+
 	if (subclass) {
 		unsigned long flags;
+
+		if (DEBUG_LOCKS_WARN_ON(!lockdep_enabled()))
+			return;
 
 		raw_local_irq_save(flags);
 		lockdep_recursion_inc();
@@ -122,7 +132,11 @@ void lockdep_init_map_type(struct lockdep_map *lock, const char *name,
 }
 ```
 
-**状态副作用：** map 的类缓存被清空，名称、key、等待类型和锁类型被写入；非零 subclass 还会进入锁类登记。函数不会取得功能锁，也不会给 current 增加 held record。
+**状态副作用：** map 的类缓存被清空，名称、key、等待类型和锁类型被写入；启用统计时还记录初始化CPU。非零 subclass 只有通过检查器有效性与入口检查后才进入锁类登记。函数不会取得功能锁，也不会给 current 增加 held record。
+
+初始化不是事务式提交。先清缓存，再处理名称和类型，再验证key；某个后续检查失败并不会自动恢复前面已写字段。尤其在写入key以后，`debug_locks` 已关闭会直接返回，不能看到map字段有值就断言锁类已经登记。`subclass=0` 的通常路径不在这里强制注册；非零子类路径先要求 `lockdep_enabled()`，随后保存并关闭本地IRQ，增加检查递归计数，注册，再结束递归并恢复原IRQ状态。递归计数约束检查器自身的重入，不是功能mutex的嵌套次数。
+
+修改这里的次序时，应同时检查名称为空、key为空、动态key未登记、检查器已停检、非零子类入口受抑制和正常初始化这些出口。`void`返回值不提供业务可用性判据；诊断失败也不能用来替代功能锁初始化协议。本段已恢复固定版本的全部可执行语句，省略的只是上游英文说明注释。
 
 `CONFIG_LOCKDEP=n` 时，同名宏只保留对 `name`/`key` 的无害引用以避免编译告警，不创建任何锁类。关闭分支见 [`include/linux/lockdep.h`](../../linux/include/linux/lockdep.h) 的 `!CONFIG_LOCKDEP` 区域。
 
