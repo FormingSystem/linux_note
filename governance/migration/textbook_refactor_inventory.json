@@ -4040,11 +4040,18 @@
       "reason": "B05bi 补查询合并边界、三态与pin周期，区分全局检查有效和当前查询资格，限定RCU适配；固定源码核对，两图静态检查，未执行目标实验。"
     },
     {
-      "path": "research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md",
+      "path": "research/source_reading/lockdep/source_explanations/kernel/locking/lockdep.c.md",
       "baseline_sha256": "31ee21a97314194688d56403aff1557b64b6801d1c34cb739f6de8d992e71506",
       "lines": 208,
       "state": "pending",
-      "reason": "B05bk/bl修复两完整函数，B05bm补子键地址、缓存布局与类型关系；仍待上游路径拆分和辅助符号全量审查，不计完成。"
+      "reason": "B05bn已按上游路径拆开类型与实现并保留原ID；两函数已匹配固定源码，辅助符号仍待全量审查，不计完成。"
+    },
+    {
+      "path": "research/source_reading/lockdep/source_explanations/include/linux/lockdep_types.h.md",
+      "baseline_sha256": "",
+      "lines": 0,
+      "state": "pending",
+      "reason": "B05bn从原身份实现完整拆出子键与map类型，新增独立ID及红色评审节点；仍待类型与辅助符号最终验收。"
     },
     {
       "path": "research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md",

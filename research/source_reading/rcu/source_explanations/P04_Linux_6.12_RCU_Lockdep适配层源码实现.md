@@ -24,7 +24,7 @@ source_version: "6.12.20"
 
 | 实现问题 | 权威位置 |
 | --- | --- |
-| `lockdep_map`、key、lock class 和 class cache 的通用含义 | [`lock_class_key` 与 `lockdep_map` 身份结构](../../lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.2_lock_class_key与lockdep_map身份结构) |
+| `lockdep_map`、key、lock class 和 class cache 的通用含义 | [`lock_class_key` 与 `lockdep_map` 身份结构](../../lockdep/source_explanations/include/linux/lockdep_types.h.md#1.2_lock_class_key与lockdep_map身份结构) |
 | acquire 怎样写入 `current->held_locks[]`，release 怎样撤销当前记录 | [`lock_acquire()` 事件入口](../../lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.3_lock_acquire事件入口)与 [`__lock_acquire()` 取得状态提交](../../lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4___lock_acquire取得状态提交) |
 | `lock_is_held()` 怎样查询当前任务的影子持有记录 | [`lock_is_held_type()` 当前持锁查询](../../lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.2_lock_is_held_type当前持锁查询) |
 | RCU Lockdep适配模块的参与者、状态和三条调用链 | [Linux 6.12 RCU Lockdep适配模块源码概念导读](../navigation/P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#12.1_模块问题与实现所有权) |
@@ -130,7 +130,7 @@ EXPORT_SYMBOL_GPL(rcu_callback_map);
 
 ### 4.3.3\_wait\_type\_outer和wait\_type\_inner为何不同
 
-Lockdep 的 `wait_type_outer` 表示“这个 map 可以在哪种等待上下文中取得”，`wait_type_inner` 表示“持有它以后向内层代码呈现什么等待上下文”。通用枚举和检查算法归 [`lockdep_map` 身份结构](../../lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.2_lock_class_key与lockdep_map身份结构) 与 Lockdep 核心所有；RCU 在这里负责选择符合自身执行约束的参数。
+Lockdep 的 `wait_type_outer` 表示“这个 map 可以在哪种等待上下文中取得”，`wait_type_inner` 表示“持有它以后向内层代码呈现什么等待上下文”。通用枚举和检查算法归 [`lockdep_map` 身份结构](../../lockdep/source_explanations/include/linux/lockdep_types.h.md#1.2_lock_class_key与lockdep_map身份结构) 与 Lockdep 核心所有；RCU 在这里负责选择符合自身执行约束的参数。
 
 | map | outer | inner | RCU 侧理由 |
 | --- | --- | --- | --- |

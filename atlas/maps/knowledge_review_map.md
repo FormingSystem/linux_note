@@ -798,7 +798,8 @@ mindmap-plugin: basic
             - 🔴 [P03 Linux 6.12 Lockdep 依赖图与规则引擎模块导读](../../research/source_reading/lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.1_模块问题)
             - 🔴 [P04 Linux 6.12 Lockdep 查询适配与诊断模块导读](../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.1_模块问题)
         - 具体实现讲解
-            - 🔴 [P01 Linux 6.12 Lockdep 身份与锁类源码实现](../../research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.1_关联入口)
+            - 🔴 [Lockdep 初始化与锁类登记实现](../../research/source_reading/lockdep/source_explanations/kernel/locking/lockdep.c.md#1.1_关联入口)
+            - 🔴 [Lockdep 子键与实例映射类型](../../research/source_reading/lockdep/source_explanations/include/linux/lockdep_types.h.md#1.2_lock_class_key与lockdep_map身份结构)
             - 🔴 [P02 Linux 6.12 Lockdep 取得释放与持锁账本源码实现](../../research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)
             - 🔴 [P03 Linux 6.12 Lockdep 依赖图与规则引擎源码实现](../../research/source_reading/lockdep/source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.1_关联入口)
             - 🔴 [P04 Linux 6.12 Lockdep 查询注解与配置源码实现](../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.1_关联入口)

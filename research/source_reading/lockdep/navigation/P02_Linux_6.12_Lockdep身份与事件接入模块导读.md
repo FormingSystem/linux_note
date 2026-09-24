@@ -50,9 +50,9 @@ flowchart LR
 
 具体结构和初始化代码见：
 
-- [`lock_class_key` 与 `lockdep_map` 身份结构](../source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.2_lock_class_key与lockdep_map身份结构)
-- [`lockdep_init_map_type()` 与关闭配置分支](../source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.3_lockdep_init_map_type与关闭配置分支)
-- [`register_lock_class()` 锁类注册](../source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.4_register_lock_class锁类注册)
+- [`lock_class_key` 与 `lockdep_map` 身份结构](../source_explanations/include/linux/lockdep_types.h.md#1.2_lock_class_key与lockdep_map身份结构)
+- [`lockdep_init_map_type()` 与关闭配置分支](../source_explanations/kernel/locking/lockdep.c.md#1.3_lockdep_init_map_type与关闭配置分支)
+- [`register_lock_class()` 锁类注册](../source_explanations/kernel/locking/lockdep.c.md#1.4_register_lock_class锁类注册)
 
 模块层结论是：key 需要表达 **逻辑同类** 并具有足够生命期，不能用修改 key 当作压制依赖告警的快捷方式。
 

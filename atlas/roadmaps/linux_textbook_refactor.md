@@ -529,8 +529,10 @@ B05bi完成[查询与诊断模块](../../research/source_reading/lockdep/navigat
 
 B05bj完成[源码总索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md)审查，收束缓存、提交、失败回退与配置证据边界。705项377 validated、310 pending、18 supporting_pending，剩余328项；继续具体实现，导航完成不代表实现与实验已完成。见[B05bj记录](../../governance/migration/repository_textbook_refactor.md#1.4.217_B05bj源码总索引收束)。
 
-B05bk先修复[锁类登记函数](../../research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.4_register_lock_class锁类注册)缺失解锁、缓存和返回的控制流，完整函数匹配固定源码。该文件仍pending，剩余328项不变；继续上游路径与其他符号审查。见[B05bk记录](../../governance/migration/repository_textbook_refactor.md#1.4.218_B05bk锁类登记控制流修复)。
+B05bk先修复[锁类登记函数](../../research/source_reading/lockdep/source_explanations/kernel/locking/lockdep.c.md#1.4_register_lock_class锁类注册)缺失解锁、缓存和返回的控制流，完整函数匹配固定源码。该文件仍pending，剩余328项不变；继续上游路径与其他符号审查。见[B05bk记录](../../governance/migration/repository_textbook_refactor.md#1.4.218_B05bk锁类登记控制流修复)。
 
 B05bl恢复身份实现中初始化函数遗漏的统计和停检分支，完整语句匹配固定源码，并说明部分写入与提前返回。文件仍pending，全仓剩余328项不变；继续类型与上游路径整理。见[B05bl记录](../../governance/migration/repository_textbook_refactor.md#1.4.219_B05bl初始化停检分支修复)。
 
 B05bm补齐子键地址身份、两槽缓存与实例/类关系，修正缓存“最近使用”的描述；类型证据与取得端核对。文件仍pending，全仓剩余328项不变，继续上游路径拆分。见[B05bm记录](../../governance/migration/repository_textbook_refactor.md#1.4.220_B05bm子键地址与类缓存布局)。
+
+B05bn按上游路径拆分[身份类型](../../research/source_reading/lockdep/source_explanations/include/linux/lockdep_types.h.md)与[登记实现](../../research/source_reading/lockdep/source_explanations/kernel/locking/lockdep.c.md)，同步真实调用方和评审节点。两份仍pending；拆分后706项377 validated，剩余329项，计数增加来自新增类型文件。见[B05bn记录](../../governance/migration/repository_textbook_refactor.md#1.4.221_B05bn身份类型与登记路径拆分)。

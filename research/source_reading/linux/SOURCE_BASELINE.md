@@ -192,7 +192,7 @@ domains:
 - [Lockdep 身份与事件接入模块导读](../lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题)
 - [Lockdep 依赖图与规则引擎模块导读](../lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.1_模块问题)
 - [Lockdep 查询适配与诊断模块导读](../lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.1_模块问题)
-- [Lockdep 身份与锁类源码实现](../lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.1_关联入口)
+- [Lockdep 身份与锁类源码实现](../lockdep/source_explanations/kernel/locking/lockdep.c.md#1.1_关联入口)
 - [Lockdep 取得释放与持锁账本源码实现](../lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)
 - [Lockdep 依赖图与规则引擎源码实现](../lockdep/source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.1_关联入口)
 - [Lockdep 查询注解与配置源码实现](../lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.1_关联入口)
@@ -1239,7 +1239,7 @@ B05bi复核固定dfaf2136的include/linux/lockdep.h，blob 67964dc4db952ea11d4b8
 
 ## 1.168\_锁类登记完整控制流
 
-B05bk核对固定dfaf2136的kernel/locking/lockdep.c，blob 536bd471557f5b4412d6babc480d0832b4ee9d51。[register_lock_class讲解](../lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.4_register_lock_class锁类注册)改为完整函数，去注释空白后匹配固定源码，保留初始化、verbose重新加锁、解锁标签、force缓存选择及最终返回。未执行目标竞争或容量测试。
+B05bk核对固定dfaf2136的kernel/locking/lockdep.c，blob 536bd471557f5b4412d6babc480d0832b4ee9d51。[register_lock_class讲解](../lockdep/source_explanations/kernel/locking/lockdep.c.md#1.4_register_lock_class锁类注册)改为完整函数，去注释空白后匹配固定源码，保留初始化、verbose重新加锁、解锁标签、force缓存选择及最终返回。未执行目标竞争或容量测试。
 
 ## 1.169\_map初始化提前返回
 

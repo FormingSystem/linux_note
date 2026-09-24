@@ -58,7 +58,7 @@ flowchart LR
 
 运行时只需让目标路径真正执行，然后从内核日志和 `/proc/lockdep*` 读取结果。`dmesg`、`grep` 等只是查看输出的普通工具，不负责生成 `dep_map` 或完成图搜索。配置和运行态的完整核对留到 P08。
 
-版本化证据见 [`lock_class_key` 与 `lockdep_map` 身份结构](../../../../../research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.2_lock_class_key与lockdep_map身份结构)、[`lockdep_init_map_type()` 与关闭配置分支](../../../../../research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.3_lockdep_init_map_type与关闭配置分支)，以及 [`PROVE_LOCKING`、`DEBUG_LOCK_ALLOC` 与 `LOCKDEP`](../../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.5_PROVE_LOCKING_DEBUG_LOCK_ALLOC与LOCKDEP)。
+版本化证据见 [`lock_class_key` 与 `lockdep_map` 身份结构](../../../../../research/source_reading/lockdep/source_explanations/include/linux/lockdep_types.h.md#1.2_lock_class_key与lockdep_map身份结构)、[`lockdep_init_map_type()` 与关闭配置分支](../../../../../research/source_reading/lockdep/source_explanations/kernel/locking/lockdep.c.md#1.3_lockdep_init_map_type与关闭配置分支)，以及 [`PROVE_LOCKING`、`DEBUG_LOCK_ALLOC` 与 `LOCKDEP`](../../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.5_PROVE_LOCKING_DEBUG_LOCK_ALLOC与LOCKDEP)。
 
 ## 3.4\_初始化调用点怎样共享key
 
@@ -142,7 +142,7 @@ int main(void)
 - 不能用函数栈变量或寿命短于全局图引用的临时地址冒充 key；
 - 锁对象自身是动态地址时，也不能仅凭“地址现在唯一”推出它适合做长期类身份。
 
-Linux 6.12.20 首次查找或登记锁类的双检和容量失败路径见 [`register_lock_class()` 锁类注册](../../../../../research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.4_register_lock_class锁类注册)。
+Linux 6.12.20 首次查找或登记锁类的双检和容量失败路径见 [`register_lock_class()` 锁类注册](../../../../../research/source_reading/lockdep/source_explanations/kernel/locking/lockdep.c.md#1.4_register_lock_class锁类注册)。
 
 ## 3.6\_错误归类如何制造误报与漏报
 
