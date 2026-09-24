@@ -1192,3 +1192,7 @@ B05av依据固定dfaf2136的kernel/locking/rwsem.c（blob 2bbb6eca51445bdf434ba5
 ## 1.156\_可睡锁模块配置与协作
 
 B05aw重新核对固定dfaf2136的include/linux/mutex_types.h（blob fdf7f515fde8e3e06c4dd7204bcd7a469e2a76eb）和mutex.h（blob 2bf91b57591b49e4668752e773419ae945f124da），确认RT载体与配置入口。[模块导读](../locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md#3.3_mutex完整调用链)组织已核对mutex.c/rwsem.c的状态协作，不新增重复函数体；目标编译运行及RT仍未验证。
+
+## 1.157\_Lockdep候选与功能回退边界
+
+B05ay核对固定dfaf2136的kernel/locking/lockdep.c（blob 536bd471557f5b4412d6babc480d0832b4ee9d51）与保存文件一致，阅读validate_chain及__lock_acquire的候选、usage、链键和有效深度提交，用于[四轴与阶段](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md#2.4_S0到S6的端到端周期)。当前工作配置LOCKDEP/PROVE_LOCKING开启不代表运行检查有效或路径已覆盖；未做目标实验。

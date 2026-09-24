@@ -2804,8 +2804,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md",
       "baseline_sha256": "10aca3f352e352ee197446a6c369bb20b76c438476f0621d30586bb38656181c",
       "lines": 154,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ay 保留四轴与缓存证明边界，修正共同mutex注解名称和链键阶段，补具体状态地址、同步成本及检查失败/功能失败练习；固定源码核对，未运行目标。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md",

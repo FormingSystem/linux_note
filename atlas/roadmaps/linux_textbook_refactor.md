@@ -504,3 +504,5 @@ B05av完成[rwsem慢路径实现](../../research/source_reading/locking/source_e
 B05aw完成[可睡锁模块](../../research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md)与[总索引](../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md)，补状态地址、完整阶段和两类授予阅读链。705项363 validated、324 pending、18 supporting_pending，剩余342项；现有锁知识/源码单元完成作者审查，继续全仓其他机制。见[B05aw记录](../../governance/migration/repository_textbook_refactor.md#1.4.204_B05aw可睡锁模块与索引收束)。
 
 B05ax完成[Lockdep问题入口](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P01_为什么需要_Lockdep.md)的冷读修复，保留已有因果链，补初始化、统一锁序修复与交错练习。705项364 validated、323 pending、18 supporting_pending，剩余341项；继续抽象模型，未执行内核实验。见[B05ax记录](../../governance/migration/repository_textbook_refactor.md#1.4.205_B05ax锁验证问题入口)。
+
+B05ay完成[检查抽象模型](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md)，补具体状态地址、阶段先后与两类失败的账本练习。705项365 validated、322 pending、18 supporting_pending，剩余340项；继续身份与锁类，未执行目标实验。见[B05ay记录](../../governance/migration/repository_textbook_refactor.md#1.4.206_B05ay检查与功能失败分层)。
