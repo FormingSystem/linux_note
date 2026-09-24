@@ -58,6 +58,8 @@ spin_lock(lock)
 
 这是一条明确选择的阅读路径，不能声称所有构建都逐层产生函数调用：`_raw_*`可以被内联映射，`kernel/locking/spinlock.c`也提供非内联入口；GENERIC_LOCKBREAK与调试配置会改变所用包装分支。`LOCK_CONTENDED`可先尝试再进入竞争路径，不是额外业务锁。此处只组织调用职责，宏体留给实现讲解。
 
+常规分支的完整函数见[普通获取与释放](../source_explanations/include/linux/spinlock_api_smp.h.md#1.2_普通获取和释放的顺序)、[IRQ保存恢复](../source_explanations/include/linux/spinlock_api_smp.h.md#1.3_irqsave把哪份状态带回调用者)及[trylock失败恢复](../source_explanations/include/linux/spinlock_api_smp.h.md#1.4_trylock失败为什么不能留下约束)，这里不重复函数体。
+
 沿P03的阶段检查该调用链：S0先初始化并保证对象有效；S1包装建立本地约束、尝试架构取得；有竞争时S3/S4/S5由架构算法落实，ARM领号把尝试与排队位置合并；S2才是业务持有；S6先释放架构锁，S7再恢复本地上下文。`spin_acquire`位于功能获取前的检查事件，不能用它代替S2成功证据；trylock成功与失败的检查/恢复路径还需单独阅读。
 
 ## 2.4\_irqsave分支的通信顺序

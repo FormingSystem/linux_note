@@ -490,3 +490,5 @@ B05ao完成[实时与寿命收束](../../knowledge/linux/synchronization_and_asy
 B05ap完成[自旋模块导读](../../research/source_reading/locking/navigation/P02_Linux_6.12_spinlock模块源码概念导读.md)，补地址链、中间包装和配置选择，具体实现层继续推进。701项354 validated、329 pending、18 supporting_pending，剩余347项。见[B05ap记录](../../governance/migration/repository_textbook_refactor.md#1.4.197_B05ap自旋模块的配置阅读)。
 
 B05aq完成[普通锁包装](../../research/source_reading/locking/source_explanations/include/linux/spinlock.h.md)与[类型配置](../../research/source_reading/locking/source_explanations/include/linux/spinlock_types.h.md)分层，18个真实源码单元静态匹配。新增一项后702项356 validated、328 pending、18 supporting_pending，剩余346项；继续深层API与其余锁实现。见[B05aq记录](../../governance/migration/repository_textbook_refactor.md#1.4.198_B05aq自旋类型与包装分层)。
+
+B05ar补齐[常规raw API](../../research/source_reading/locking/source_explanations/include/linux/spinlock_api_smp.h.md)，五个完整函数静态匹配，解释功能与检查事件及try失败恢复。新增一项后703项357 validated、328 pending、18 supporting_pending，剩余346项；继续架构与其余锁实现。见[B05ar记录](../../governance/migration/repository_textbook_refactor.md#1.4.199_B05ar通用raw获取与恢复)。

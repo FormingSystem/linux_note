@@ -4997,6 +4997,13 @@
       "lines": 86,
       "state": "validated",
       "reason": "B05aq 独立类型页展开非RT/RT完整typedef与非RT初始化宏，解释union检查视图；固定源码静态核对，未运行目标。"
+    },
+    {
+      "path": "research/source_reading/locking/source_explanations/include/linux/spinlock_api_smp.h.md",
+      "baseline_sha256": "d93845c08158e0783217f200bee73844934efc7ed35771d4d199360967cb7192",
+      "lines": 124,
+      "state": "validated",
+      "reason": "B05ar 五个常规raw API函数与固定源码一致，解释检查事件、功能获取、本地状态和try失败恢复；文档静态检查，未编译或运行目标。"
     }
   ]
 }

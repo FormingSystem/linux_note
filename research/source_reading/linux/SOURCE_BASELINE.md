@@ -1168,3 +1168,7 @@ B05ap核对固定dfaf2136的include/linux/spinlock_api_smp.h（blob 89eb6f4c659c
 ## 1.150\_普通锁类型与包装单元
 
 B05aq按固定dfaf2136的include/linux/spinlock_types.h（blob 2dfa35ffec761f933e0f38d38be756d78b4b1669）及spinlock.h整理[类型配置](../locking/source_explanations/include/linux/spinlock_types.h.md#1.2_spinlock_t的配置映射)与[初始化/操作包装](../locking/source_explanations/include/linux/spinlock.h.md#1.3_初始化与对象地址)。18个实际单元规范化比较通过，保留真实声明属性，中文Doxygen为仓库补充；不包含ARM汇编、完整通用API或调试实现，未做目标编译运行。
+
+## 1.151\_raw上下文配对
+
+B05ar对固定dfaf2136的include/linux/spinlock_api_smp.h五个完整函数做静态比对，见[普通获取释放](../locking/source_explanations/include/linux/spinlock_api_smp.h.md#1.2_普通获取和释放的顺序)及其后irqsave/trylock。采用非lockbreak常规获取分支，说明检查获取先于功能获取而try检查仅在成功后登记；失败撤销本层约束。当前配置非SMP，未进行目标编译或实际竞争验证。
