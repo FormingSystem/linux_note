@@ -2881,8 +2881,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P03_锁的统一状态与通信周期.md",
       "baseline_sha256": "0190777e5accaec6f5a13596e78e89c6bd1ccb1e00e4770feef80012c6c38528",
       "lines": 121,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ai 冷读并修正统一周期把自旋也画成任务唤醒的问题，按可选阶段区分票号/排队和睡眠登记，以A/B/C交错解释唤醒与所有权不同；固定ARM与mutex静态核对，文档和图语法通过，未运行目标SMP或调度竞态，人工状态不变。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P04_spinlock实现与上下文边界.md",

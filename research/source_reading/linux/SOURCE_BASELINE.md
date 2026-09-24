@@ -1130,3 +1130,9 @@ B05ag只读固定dfaf2136的include/linux/seqlock_types.h（blob dfdf43e3fa3de3a
 B05ah按1.138与1.140固定对象，分别组织[seqlock_types.h类型配置](../sequence_counters/source_explanations/include/linux/seqlock_types.h.md#1.2_plain计数与条件检查字段)与[seqlock.h操作实现](../sequence_counters/source_explanations/include/linux/seqlock.h.md#1.2_源码符号覆盖账本)。42块实际文档代码去注释空白后与固定对象一致，真实属性生成宏替换概念占位；中文Doxygen为仓库补充。
 
 模块与总索引指向唯一实现，说明普通读写、关联锁慢路径、latch和基础seqlock封装的不同状态。未扩展成所有包装或底层锁/调度器源码覆盖；静态一致性不代表配置矩阵编译、PREEMPT_RT、NMI、弱内存或目标内核运行已经通过。
+
+## 1.142\_锁周期中的自旋事件与任务唤醒
+
+B05ai重新核对工作树身份后只读固定dfaf2136的arch/arm/include/asm/spinlock.h（blob f610a773f2be527dde14415a61fab4c7250d9447）和kernel/locking/mutex.c（blob cbae8c0b89ab2b8074a387ebf1cca86951362cc2）。ARM SMP票号、事件等待/发送，与mutex等待任务、wake队列和handoff/pickup属于不同推进路径；[统一周期](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P03_锁的统一状态与通信周期.md#3.5_端到端竞争时序)分别表达，不再把调度唤醒套到所有自旋分支。
+
+本地配置未启用SMP，HEAD为实验提交，不作为上述证据。没有进行目标锁竞争、真实调度、RT或ARM SMP运行验证，抽象A/B/C交错只说明资格区别，不承诺所有实现的插队或公平策略。

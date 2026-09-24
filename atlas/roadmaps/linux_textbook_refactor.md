@@ -472,3 +472,5 @@ B05af完成[读写顺序及raw差异](../../knowledge/linux/synchronization_and_
 B05ag完成[关联锁进展](../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P05_关联锁变体与实时性边界.md)、[寿命与回绕选择](../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P06_生命周期误用诊断与选型.md)及六章大纲，双编译器运行8位完整回绕反例。700项341 validated、341 pending、18 supporting_pending，剩余359项；继续三篇版本化源码的独立审查。见[B05ag记录](../../governance/migration/repository_textbook_refactor.md#1.4.188_B05ag关联锁进展与快照选型)。
 
 B05ah完成[序列计数源码阅读链](../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.4_阅读入口)，按两份上游头文件补齐42块真实实现及模块状态协作。701项345 validated、338 pending、18 supporting_pending，剩余356项；继续锁专题，目标配置及运行仍未验证。见[B05ah记录](../../governance/migration/repository_textbook_refactor.md#1.4.189_B05ah序列计数源码兑现)。
+
+B05ai完成[锁统一周期](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P03_锁的统一状态与通信周期.md)，分开架构自旋事件与任务唤醒，用具体交错解释可运行不等于取得锁。701项346 validated、337 pending、18 supporting_pending，剩余355项；继续自旋入口和实现边界。见[B05ai记录](../../governance/migration/repository_textbook_refactor.md#1.4.190_B05ai锁周期与两类等待通信)。
