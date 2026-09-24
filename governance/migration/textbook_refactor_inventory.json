@@ -4036,8 +4036,8 @@
       "path": "research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md",
       "baseline_sha256": "281ef4912567ed4d493a1b22c989e17c24dc623970042e53a69900815f35b4c7",
       "lines": 92,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05bi 补查询合并边界、三态与pin周期，区分全局检查有效和当前查询资格，限定RCU适配；固定源码核对，两图静态检查，未执行目标实验。"
     },
     {
       "path": "research/source_reading/lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md",

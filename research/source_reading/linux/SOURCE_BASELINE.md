@@ -1232,3 +1232,7 @@ B05bg核对固定dfaf2136的kernel/locking/mutex.c，blob cbae8c0b89ab2b8074a387
 ## 1.166\_新链登记与图验证顺序
 
 B05bh核对固定dfaf2136的kernel/locking/lockdep.c，blob 536bd471557f5b4412d6babc480d0832b4ee9d51。lookup_chain_cache_add锁内复查并登记新链后才继续validate_chain规则，支持[规则模块](../lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.2_规则链而不是一个环检测函数)修正缓存登记晚于验证的旧图示。缓存存在不单独证明检查器有效；未执行目标多CPU实验。
+
+## 1.167\_查询返回与pin诊断周期
+
+B05bi复核固定dfaf2136的include/linux/lockdep.h，blob 67964dc4db952ea11d4b88554383ea0ec5946ef9，以及lockdep.c的__lock_is_held、__lock_pin_lock。[查询模块](../lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.3_断言与pin怎样消费held_record)区分三态返回、pin_count配对与功能同步，未执行目标回调测试。
