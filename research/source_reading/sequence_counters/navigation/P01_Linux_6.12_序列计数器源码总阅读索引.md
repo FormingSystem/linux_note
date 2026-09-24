@@ -50,7 +50,7 @@ sequence 是功能状态；关联锁本身完成 writer 串行；检查器只验
 
 ## 1.5\_建议阅读顺序
 
-1. 先用[一致快照证明模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P02_一致快照的证明模型.md#2.4_S0到S6的完整读写周期)写出 writer 串行与 reader 可回滚前提。
+1. 先用[一致快照证明模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P02_一致快照的证明模型.md#2.4_S0到S6的完整读写周期)写出writer串行与reader可回滚前提；[完整C交错枚举](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P02_一致快照的证明模型.md#2.6.1_用完整C程序枚举有序交错)只验证有序动作下的一次更新，不替代弱内存和进展证明。
 2. 读 P02 普通分支，跟随 begin → 数据复制 → retry 和 write begin → 字段更新 → end。
 3. writer 使用 mutex/spinlock 时进入关联锁分支，区分功能锁与 Lockdep 关联状态。
 4. NMI 等 reader 可中断 writer 时进入 latch 分支，画出两次重定向和双副本更新。

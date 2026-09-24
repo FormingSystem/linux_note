@@ -1106,3 +1106,9 @@ B05ac依据1.133的固定wait.h/wait.c对象，把[结构与宏](../waiting_noti
 B05ad按1.134的固定completion.h/completion.c对象分别组织[对象初始化](../waiting_notification/source_explanations/include/linux/completion.h.md#1.2_completion对象与初始化)与[发布等待及观察](../waiting_notification/source_explanations/kernel/sched/completion.c.md#1.2_源码符号覆盖账本)。11块结构/函数去注释及空白后与固定对象一致，保留__sched属性及完整控制分支；中文Doxygen为仓库补充。
 
 特别核对complete_acquire/release在此版本为空、等待包装使用lock_irq、try锁内重检消费、completion_done只经过锁区间而不锁内重检；后者不预留计数或证明旧访问者退出。模块S0～S6映射这些动作，目标内核、实时配置、信号和超时竞态仍未运行，不能把静态一致性称作运行验证。
+
+## 1.138\_一致快照有序证明与入门边界
+
+B05ae只读固定dfaf2136的Documentation/locking/seqlock.rst（blob ec6411d02ac8f55aee92b375071c8b2e7b840e59）及include/linux/seqlock.h（blob 5298765d6ca4827eb7bf8a9dca020f1383d3b901），核对串行写者、不可被读侧抢占的奇数窗口、指针限制及关联锁抢占属性。[入门示例](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P01_seqcount_seqlock_读重试快照机制.md#1.3_基本读写模式)限定任务上下文、原始锁短写区和返回局部副本，未在内核编译加载。
+
+[完整C枚举](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P02_一致快照的证明模型.md#2.6.1_用完整C程序枚举有序交错)在宿主GCC14.2/Clang18.1.8严格C11 O2运行，35条尾部版本交错接受5条混合值、70条奇偶交错接受0条。只证明既定动作顺序和一次更新，不验证Linux读写屏障、ARM弱内存、真实自旋、回绕或对象回收。

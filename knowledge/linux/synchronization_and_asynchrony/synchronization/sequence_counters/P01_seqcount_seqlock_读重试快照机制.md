@@ -12,10 +12,23 @@ domains:
 
 ## 1.1\_问题模型
 
-有些共享状态由几个标量字段组成，读者只要求取得某一次完整更新之前或之后的快照，不要求阻止写者。seqcount 让读者先读版本、复制数据、再验证版本；写入期间或版本发生变化就重试。
+一个计时换算参数包含基准base_ns与比例mult。更新线程必须成对修改它们，监控线程只需取得某个完整版本来计算显示值；若基准来自新版本、比例来自旧版本，计算可能错误。用锁包住复制可以直接解决，但读者很多、每次只复制几个字段时，可以考虑把读侧成本转移给最后验证和偶尔重做。不是所有读操作都适合这种转移：若读者必须阻止更新或执行不可撤回的动作，应继续使用锁。
+
+序列计数器seqcount为这种可重复的短快照提供版本证据。它位于内核同步接口层，使用一个共享序号和调用者自己的数据，不保存每个读者的登记。读者先取序号、复制数据、再验证；遇到写入或版本变化就丢弃副本并重试。下面先建立使用边界，下一章再从失败反例证明为什么需要奇偶两次变化。
+
+```mermaid
+flowchart LR
+    W[更新线程] -->|取得写者锁| L[writer_lock]
+    W -->|开窗与关窗| S[seq.sequence]
+    W -->|成对修改| D[base_ns与mult]
+    R[监控线程] -->|读取版本证据| S
+    D -->|复制到局部变量| T[读者临时快照]
+    S -->|前后相同偶数才允许使用| T
+```
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant R as 读者
     participant S as sequence
     participant W as 写者
@@ -41,37 +54,62 @@ sequenceDiagram
 
 ## 1.3\_基本读写模式
 
+下面是一组可集成到内核代码中的初始化、更新和读取函数。限定所有读写都来自普通任务上下文，不允许中断、软中断或NMI读取；对象必须在发布前初始化，并由外围生命期协议保证所有调用期间有效。这里用原始自旋锁raw_spinlock_t使这个短写窗口的不可抢占性明确，包括实时配置；这不是建议所有业务都换成原始锁。窗口中只有固定标量赋值，不能分配、等待或调用未知回调。
+
 ```c
-struct clock_snapshot {
-    seqcount_t seq;
-    spinlock_t writer_lock;
+#include <linux/compiler.h>
+#include <linux/seqlock.h>
+#include <linux/spinlock.h>
+#include <linux/types.h>
+
+struct clock_values {
     u64 base_ns;
     u32 mult;
 };
 
-static void update_clock(struct clock_snapshot *c, u64 ns, u32 mult)
+struct clock_snapshot {
+    seqcount_t seq;
+    raw_spinlock_t writer_lock;
+    u64 base_ns;
+    u32 mult;
+};
+
+static void init_clock(struct clock_snapshot *c, u64 ns, u32 mult)
 {
-    spin_lock(&c->writer_lock);       /* 串行化写者并禁止写窗口被抢占 */
-    write_seqcount_begin(&c->seq);
+    /* 对象尚未共享，先构造锁、序号和完整初值。 */
+    raw_spin_lock_init(&c->writer_lock);
+    seqcount_init(&c->seq);
     c->base_ns = ns;
     c->mult = mult;
-    write_seqcount_end(&c->seq);
-    spin_unlock(&c->writer_lock);
 }
 
-static void read_clock(struct clock_snapshot *c, u64 *ns, u32 *mult)
+static void update_clock(struct clock_snapshot *c, u64 ns, u32 mult)
 {
+    raw_spin_lock(&c->writer_lock); /* 串行化写者并禁止抢占。 */
+    write_seqcount_begin(&c->seq);
+    WRITE_ONCE(c->base_ns, ns);
+    WRITE_ONCE(c->mult, mult);
+    write_seqcount_end(&c->seq);
+    raw_spin_unlock(&c->writer_lock);
+}
+
+static struct clock_values read_clock(struct clock_snapshot *c)
+{
+    struct clock_values value;
     unsigned int start;
 
     do {
         start = read_seqcount_begin(&c->seq);
-        *ns = c->base_ns;
-        *mult = c->mult;
+        value.base_ns = READ_ONCE(c->base_ns);
+        value.mult = READ_ONCE(c->mult);
     } while (read_seqcount_retry(&c->seq, start));
+    return value; /* 验证以后才把局部副本交给调用者。 */
 }
 ```
 
-应使用官方接口，不要手写序号加一和屏障。接口内部的准确屏障实现会随体系结构和 seqcount 变体变化，不能固定背成“两次 `smp_wmb()` 加两次 `smp_rmb()`”。
+读者不在循环里写调用者提供的输出地址，避免把失败候选提前发布到未知共享位置。READ_ONCE/WRITE_ONCE标记字段访问，不把两个字段变成一个原子事务，也不替代seqcount顺序协议；在32位机器上不能据此假设任意宽度字段都是单指令原子访问。这里允许候选读到中间组合，依靠最后验证拒绝它，前提是每次读取本身安全。
+
+应使用官方接口，不要手写序号加一和屏障。接口内部的准确实现随体系结构和seqcount变体变化，不能固定背成“两次smp_wmb加两次smp_rmb”。本组内核函数已静态对照固定版本接口，尚未编译加载；下一章提供能独立编译运行的C交错模型。模型不使用真实共享并发，不应把这些内核用法直接翻译成普通C变量的多线程读写。
 
 ## 1.4\_写者为什么不能在奇数状态下睡眠
 
@@ -84,7 +122,7 @@ static void read_clock(struct clock_snapshot *c, u64 *ns, u32 *mult)
 3. 若读者可在 hardirq/softirq 运行，还要防止相应中断上下文打断写者并开始读取；
 4. 保持写窗口短小，不调用睡眠函数。
 
-使用 spinlock 串行化写者通常天然满足不可抢占要求。若外部用 mutex 串行写者，还必须在 seqcount 写窗口周围显式处理抢占；不要因为 mutex 能串行化就忽略这一点。
+非实时配置的普通spinlock与raw_spinlock在这里不能无条件混称：PREEMPT_RT下普通spinlock的实现及抢占属性不同。上例选择raw_spinlock并限制读者上下文，使前提清楚；若使用普通spinlock或mutex，必须按所选seqcount变体和配置检查不可抢占保护，不能仅凭“有锁”推导。外部mutex只串行写者时，plain seqcount仍需额外保护奇数窗口，关联锁变体的具体处理放到第5章。
 
 ## 1.5\_关联锁的\_seqcount\_类型
 
@@ -121,7 +159,7 @@ do {
 } while (read_seqretry(&lock, seq));
 ```
 
-`seqlock_t` 解决写写互斥和序号窗口，但仍不保护指针生命周期，也不允许写侧睡眠。
+以上只展示把第一组示例的显式写者锁与seqcount换成封装后的调用位置，state、new_a/new_b和读者局部变量代表外围业务字段，并非另一份可独立编译的程序。`seqlock_t`组合写写互斥和序号窗口，读者仍复制后验证；它不保护指针生命周期，也不允许写侧任意睡眠。实时配置、关联锁和可中断读者的区别在后续章节分别展开。
 
 ## 1.7\_指针为什么危险
 
@@ -129,6 +167,7 @@ do {
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant R as 读者
     participant W as 写者
     R->>R: 读取旧指针 p
@@ -155,8 +194,8 @@ sequenceDiagram
 | 机制 | 读者策略 | 写者策略 | 生命周期 |
 | --- | --- | --- | --- |
 | seqcount/seqlock | 复制后验证，失败重试 | 原地更新，写者串行 | 不提供对象保活 |
-| rwlock/rwsem | 持读锁阻止写者 | 写锁独占 | 锁覆盖期间保活 |
-| RCU | 允许读取旧版本 | 发布新版本、延迟回收 | GP 保护旧引用临时生命期 |
+| rwlock/rwsem | 持读锁阻止写者 | 写锁独占 | 回收者也遵守同一锁协议时，锁覆盖的访问才有效 |
+| RCU | 允许读取旧版本 | 发布新版本、延迟回收 | 匹配读侧范围与回收协议保住旧引用，不自动生成多字段一致快照 |
 
 RCU 的硬件基础、CPU/任务状态通知和宽限期统一参见 [RCU 专题](../rcu/大纲.md)。
 
@@ -181,3 +220,5 @@ RCU 的硬件基础、CPU/任务状态通知和宽限期统一参见 [RCU 专题
 - 最坏写入频率下，读者重试是否可接受？
 
 下一篇：[一致快照的证明模型](P02_一致快照的证明模型.md)。
+
+固定版本源码从[序列计数器源码总阅读索引](../../../../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.1_版本边界与阅读任务)进入。本章建立调用协议，证明、内存顺序、latch和实时配置分别沿后续章节展开，不把接口用法当成全部正确性证明。

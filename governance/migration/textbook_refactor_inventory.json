@@ -3182,15 +3182,15 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P01_seqcount_seqlock_读重试快照机制.md",
       "baseline_sha256": "7749ab9feaf222ed1bb3f5bf8d1dff569f9c0d3560a1f07ce990c9e0531271d1",
       "lines": 183,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ae 冷读入门与证明两章，补齐初始化/局部副本发布/实时配置边界及共享读锁成本因果链；固定seqlock文档和头文件核对。完整C枚举35/70种有序交错，双编译器确认错误方案接受5种混合快照、奇偶方案0种；不证明真实内核、弱内存或进展。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P02_一致快照的证明模型.md",
       "baseline_sha256": "0659e91242514df3632e785609c4c18cc3780e1ca7f492b0b64f209c1d90e3d9",
       "lines": 98,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ae 冷读入门与证明两章，补齐初始化/局部副本发布/实时配置边界及共享读锁成本因果链；固定seqlock文档和头文件核对。完整C枚举35/70种有序交错，双编译器确认错误方案接受5种混合快照、奇偶方案0种；不证明真实内核、弱内存或进展。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P03_seqcount读写路径与内存顺序.md",
