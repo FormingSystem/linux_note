@@ -81,7 +81,7 @@ sequenceDiagram
 | 发布 | 检查发布位置类型；在写入新值之前执行内部屏障，再做ONCE写 |
 | 取得 | 先保存ONCE读取值，核对类型，在返回取得结果前执行内部屏障 |
 
-这是一张职责表，不是可以编译的冒号式C函数。公共包装还要结合SMP配置及检查器接入；当前UP配置不能被写成已经运行上述SMP硬件序列。
+这是一张职责表，不是可以编译的冒号式C函数。类型断言发生于编译期，不是在运行时先读取再检查地址。公共包装还要结合SMP配置及检查器接入；当前UP配置不能被写成已经运行上述SMP硬件序列。沿[发布取得模块](../../../../../research/source_reading/memory_ordering/navigation/P04_发布取得的访问与配置导读.md#4.3_让实现回到同一组S阶段)对照S0～S3，在[唯一内部实现](../../../../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.6_发布取得的内部回退)核对保存读值与屏障的位置；[公共分支](../../../../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.7_发布取得的公共配置分支)另有SMP/UP尺寸门槛差异。调用者先完成载荷准备，再传入已确定的发布值；不要把需要被发布覆盖的副作用藏在宏的值参数中，误以为它一定先于内部屏障求值。
 
 具体架构可以使用更精确的 release/acquire 指令或序列。公共定义还要求发布位置适合原子访问，避免把 release/acquire 误用于任意大结构体。
 

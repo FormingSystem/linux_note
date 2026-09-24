@@ -70,7 +70,7 @@ flowchart LR
 
 [SMP屏障模块导读](P03_SMP屏障的配置与调用层次.md#3.1_同一个调用为什么走两条路径)先闭合公共三屏障的F0～F3配置与调用路径；[唯一实现](../source_explanations/include/asm-generic/barrier.h.md#1.3_三种公共SMP屏障的配置分支)区分SMP检测入口、底层功能原语与UP编译器屏障，已定义的公共接口不会被再次包装。
 
-公共回退用 `__smp_mb() + WRITE_ONCE()` 表达 store-release，用 `READ_ONCE() + __smp_mb()` 表达 load-acquire；架构可以覆盖为更精确实现。
+公共回退用 `__smp_mb() + WRITE_ONCE()` 表达 store-release，用 `READ_ONCE() + __smp_mb()` 表达 load-acquire；架构可以覆盖为更精确实现。[发布取得模块](P04_发布取得的访问与配置导读.md#4.3_让实现回到同一组S阶段)沿同一S0～S3追踪共享位置与局部保存值；[内部回退](../source_explanations/include/asm-generic/barrier.h.md#1.6_发布取得的内部回退)和[公共分支](../source_explanations/include/asm-generic/barrier.h.md#1.7_发布取得的公共配置分支)分别解释类型、求值、检测入口与UP差异。
 
 ### 1.3.3\_ARMv7\_映射
 
