@@ -697,4 +697,157 @@ sequenceDiagram
 
 **修改约束与练习：** 为何注销不用graph_lock？停检后仍需清理登记，不能被普通新事件的生命状态门控直接拒绝。为何不能删掉末尾等待后马上释放key？已有RCU读者可能仍访问key内嵌的hash_entry。为何调用注销前还要排空业务？该函数不会替驱动停止新请求、取消工作或销毁功能锁。类池与回调回收的内部算法继续作为独立源码审查范围，本节不宣称已证明整个模块卸载协议。
 
+## 1.9\_双缓冲待回收批次与槽位归还
+
+注销把身份从查询入口摘除以后，旧RCU读者仍可能拿着类或链地址。不能马上把固定数组槽交给新类，否则旧读者看到的同一地址会突然变成另一身份。这里用两份pending_free把“正在收集待回收对象”和“已经封闭、正在等宽限期”分开。
+
+```c
+/* 仓库补充：zapped记录类，位图记录待归还的链槽。 */
+struct pending_free {
+	struct list_head zapped;
+	DECLARE_BITMAP(lock_chains_being_freed, MAX_LOCKDEP_CHAINS);
+};
+
+static struct delayed_free {
+	struct rcu_head		rcu_head;
+	int			index;
+	int			scheduled;
+	struct pending_free	pf[2];
+} delayed_free;
+
+/**
+ * @brief 清除类的身份及后续字段，同时保留列表骨架。
+ * 仓库补充，非上游原文。
+ */
+static void reinit_class(struct lock_class *class)
+{
+	WARN_ON_ONCE(!class->lock_entry.next);
+	WARN_ON_ONCE(!list_empty(&class->locks_after));
+	WARN_ON_ONCE(!list_empty(&class->locks_before));
+	memset_startat(class, 0, key);
+	WARN_ON_ONCE(!class->lock_entry.next);
+	WARN_ON_ONCE(!list_empty(&class->locks_after));
+	WARN_ON_ONCE(!list_empty(&class->locks_before));
+}
+
+/**
+ * @brief 取得当前仍开放的待回收批次；调用者持有图锁。
+ * 仓库补充，非上游原文。
+ */
+static struct pending_free *get_pending_free(void)
+{
+	return delayed_free.pf + delayed_free.index;
+}
+
+/**
+ * @brief 封闭当前批次并切换收集槽，决定是否安排回调。
+ * 仓库补充，非上游原文。
+ */
+static bool prepare_call_rcu_zapped(struct pending_free *pf)
+{
+	WARN_ON_ONCE(inside_selftest());
+
+	if (list_empty(&pf->zapped))
+		return false;
+
+	if (delayed_free.scheduled)
+		return false;
+
+	delayed_free.scheduled = true;
+
+	WARN_ON_ONCE(delayed_free.pf + delayed_free.index != pf);
+	delayed_free.index ^= 1;
+
+	return true;
+}
+
+/**
+ * @brief 回调安全点归还类槽和链槽；调用者持有图锁。
+ * 仓库补充，非上游原文。
+ */
+static void __free_zapped_classes(struct pending_free *pf)
+{
+	struct lock_class *class;
+
+	check_data_structures();
+
+	list_for_each_entry(class, &pf->zapped, lock_entry)
+		reinit_class(class);
+
+	list_splice_init(&pf->zapped, &free_lock_classes);
+
+#ifdef CONFIG_PROVE_LOCKING
+	bitmap_andnot(lock_chains_in_use, lock_chains_in_use,
+		      pf->lock_chains_being_freed, ARRAY_SIZE(lock_chains));
+	bitmap_clear(pf->lock_chains_being_freed, 0, ARRAY_SIZE(lock_chains));
+#endif
+}
+
+/**
+ * @brief 回收封闭批次，检查新批次并按需继续排队。
+ * 仓库补充，非上游原文。
+ */
+static void free_zapped_rcu(struct rcu_head *ch)
+{
+	struct pending_free *pf;
+	unsigned long flags;
+	bool need_callback;
+
+	if (WARN_ON_ONCE(ch != &delayed_free.rcu_head))
+		return;
+
+	raw_local_irq_save(flags);
+	lockdep_lock();
+
+	/* closed head */
+	pf = delayed_free.pf + (delayed_free.index ^ 1);
+	__free_zapped_classes(pf);
+	delayed_free.scheduled = false;
+	need_callback =
+		prepare_call_rcu_zapped(delayed_free.pf + delayed_free.index);
+	lockdep_unlock();
+	raw_local_irq_restore(flags);
+
+	/*
+	* If there's pending free and its callback has not been scheduled,
+	* queue an RCU callback.
+	*/
+	if (need_callback)
+		call_rcu(&delayed_free.rcu_head, free_zapped_rcu);
+
+}
+```
+
+批次F0由`delayed_free.index`指向开放的`pf[index]`，删除路径在图锁内把类放进它的zapped链表。F1中prepare函数发现非空且没有已安排回调，置scheduled并翻转index；旧批次随即封闭，新删除项进入另一槽。返回true的调用者必须在退出共享锁后真正调用call_rcu，不能只置位而漏掉排队。
+
+F2回调进入时先验证rcu_head地址，再关IRQ并取得底层图锁。`index ^ 1`选中封闭批次；F3逐类重置，并把链表整体接回free_lock_classes。在完整证明配置下，位图同时释放本批的链槽占用位，再清空待回收位图。memset_startat从key字段开始清零，因此lock_class字段次序是回收不变量，不能任意重排；前面的链表骨架需保留，前后依赖应已移除。
+
+F4清scheduled后查看目前开放的批次。如果其中又积累了类，prepare再次翻转index，解锁恢复IRQ以后再排队下一轮。两槽不是最多只能回收两次，而是每次复用一个已经越过RCU边界的槽。scheduled是全局共享批次状态，只有在图锁保护下才能把收集方与回调方的操作串起来。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant D as 删除路径
+    participant A as pf[index]开放批次
+    participant B as pf[index^1]封闭批次
+    participant R as RCU回调
+    participant F as 空闲类与链槽
+    D->>A: F0 追加待回收类和链槽位
+    D->>A: F1 scheduled置位并翻转index
+    Note over A,B: 原开放槽成为封闭槽，后续删除写另一槽
+    D->>R: 解锁后call_rcu
+    R->>B: F2 宽限期后图锁内取封闭批次
+    R->>F: F3 重置类并归还槽位
+    R->>A: F4 清scheduled，检查下一批
+    alt 下一批非空
+        R->>R: 翻转index，解锁后再次call_rcu
+    else 下一批为空
+        Note over R: 不排队，等待以后删除触发
+    end
+```
+
+`inside_selftest()`比较current与专用自测任务，本段WARN用于排除不适用的自测调用；`check_data_structures()`是内部一致性审计，不代替RCU寿命协议。链表拼接和位图运算只回收检查器存储，不释放业务对象。批次进入前的zap_class负责摘图与标记，仍需独立核对其边清理；本节证明的是“已加入批次的槽何时可以再用”。
+
+**修改边界：** 同时检查空批次、回调已安排时新增删除、回调期间另一批非空及容量再利用；禁止在宽限期前归还封闭槽，禁止翻转index后把新删除继续写旧槽。测试需要真实并发与RCU推进，本仓库本次只核对源码和状态推演。
+
 下一篇：[Lockdep 取得释放与持锁账本源码实现](../../P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)。
