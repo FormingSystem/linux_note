@@ -1216,3 +1216,7 @@ B05bc核对固定dfaf2136的include/linux/lockdep.h（blob 67964dc4db952ea11d4b8
 ## 1.162\_RCU查询退化与告警条件
 
 B05bd核对固定dfaf2136的include/linux/rcupdate.h，blob 48e5c03df1dd83c246a61d0fcc8aa638adcd7654。未启用DEBUG_LOCK_ALLOC时普通rcu_read_lock_held返回1；PROVE_RCU告警宏包含有效性复查和调用点__warned状态。证据支持[RCU检查边界](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md#7.5_从通用Lockdep到RCU实现的证据边界)，不能作为功能保护或运行时测试结果。
+
+## 1.163\_循环报告与实验路径标记
+
+B05be复查固定dfaf2136的kernel/locking/lockdep.c，blob 536bd471557f5b4412d6babc480d0832b4ee9d51。print_circular_bug先调用debug_locks_off_graph_unlock，再保存与打印报告；[实验章节](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.4_把运行过程记成状态接力)据此区分检查停检与功能mutex继续执行。S0/S1/S2为教学模块的预期日志，不是已取得的目标运行证据。

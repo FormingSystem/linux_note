@@ -2846,8 +2846,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md",
       "baseline_sha256": "287d06e9928b326d328df7e77538b58d9a26d80dc8ae29d23bde6b9efa536f03",
       "lines": 231,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05be 保留完整配置与报告教学，补模块配置拒绝和路径标记、账本局部范围、单线程历史时序、保留操作的修复对照；静态检查通过，未编译加载目标模块。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md",
