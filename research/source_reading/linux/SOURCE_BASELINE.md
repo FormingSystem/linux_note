@@ -1076,3 +1076,9 @@ B05x继续核对固定dfaf2136的dma-api-howto和Documentation/driver-api/dmaeng
 B05y按固定dfaf2136提交核对include/linux/poll.h、fs/select.c、fs/eventpoll.c；文件blob与阶段入口见[poll与epoll源码阅读索引](../io_polling/navigation/P01_poll与epoll源码阅读索引.md#1.1_固定提交与文件位置)。普通poll区分临时登记、triggered与再次查询；epoll区分持久兴趣、目标队列回调、rdllist/ovflist和交付前复查，并核对LT重排、ET不自动重排、ONESHOT禁用与MOD重启。使用官方固定对象，不使用本地实验HEAD作为证据，不修改外部树。
 
 [就绪C模型](../../../knowledge/linux/io_model/blocking_io/P01_poll登记与就绪复查.md#1.7_用完整C模型观察就绪失效)在宿主双编译器严格C11 O2运行；[Linux管道实验](../../../knowledge/linux/io_model/blocking_io/P02_epoll持久登记与交付.md#2.6_完整Linux实验_留下一个字节)未在Linux运行，正文输出明确为预期。未验证真实驱动、多线程、ARM、信号与并发关闭；不把模型通过等同于系统调用或性能验证。
+
+## 1.133\_等待条件与退出分支
+
+B05z只读固定dfaf2136的include/linux/wait.h（blob 2b322a9b88a2bd122d30e70a3d6eaa12c5cec244）和kernel/sched/wait.c（blob 51e38f5f47018c953e31c834dc6385c182359359），核对初始快查、prepare后condition优先、信号摘链错误出口、正常finish、独占额度及超时边界返回1。知识侧[单槽记录协议](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P01_等待队列.md#1.3_标准条件等待)是仓库应用示例，不是上游摘录；未编译或加载目标驱动。模块导读同步区分循环与退出，未因相同术语删减源码层。
+
+[四窗口证明](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P03_条件等待的统一状态机.md#3.5_逐个关闭检查睡眠窗口)明确持久条件、同步协议、通知匹配和寿命前提。复用既有C枚举模型，GCC14.2/Clang18.1.8严格C11 O2输出均为check_first十种排列丢1条、register_first十种丢0条；不证明ARM弱内存、实际睡眠、信号或设备退出已经运行通过。

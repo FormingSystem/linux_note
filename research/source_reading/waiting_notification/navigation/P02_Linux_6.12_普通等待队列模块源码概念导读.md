@@ -29,12 +29,14 @@ wait_event_interruptible(wq, condition)
     → init_wait_entry(entry, flags)
     → 循环 prepare_to_wait_event(wq, entry, state)
     → 重新求值 condition
-    → 检查信号返回
-    → schedule()
-    → finish_wait(wq, entry)
+      → 条件真：finish_wait后正常退出
+      → 条件假且prepare返回信号错误：沿错误出口返回
+      → 仍需等待：schedule后继续prepare与条件重检
 ```
 
 `prepare_to_wait_event()` 在同一 `wq_head.lock` 下处理“信号退出时删除 entry”与“正常时入队并 set_current_state”，使 wake 与可中断失败不会各自消费同一 exclusive 事件。具体实现见[`prepare_to_wait_event()`](../source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.3_prepare_to_wait_event登记与信号分支)。
+
+这里先判断condition，再处理prepare返回的信号结果；不能画成每次醒来都执行finish，也不能把信号出口遗漏的finish当成漏清理。prepare信号分支已经摘链，普通退出的finish则恢复任务状态并处理仍在队列中的项。知识侧的[S0～S7四个窗口](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P03_条件等待的统一状态机.md#3.5_逐个关闭检查睡眠窗口)用于对照阶段，源码仍按本页版本和分支阅读。
 
 ## 2.4\_唤醒侧调用链
 

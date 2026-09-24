@@ -3231,8 +3231,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P01_等待队列.md",
       "baseline_sha256": "ff47c8f8d5e788aa7005eb397aa4049eb7dd4bc321726760d47d06d442831671",
       "lines": 226,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05z冷读并重构单槽记录的统一锁/队列协议、S0～S7四窗口与清理分支，固定wait.h/wait.c核对；C交错模型双编译器重验1对0条丢失，内核应用片段未编译加载。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P02_completion_完成量.md",
@@ -3245,8 +3245,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P03_条件等待的统一状态机.md",
       "baseline_sha256": "d47b0b6cb47f8e4a63491a61131c21a07763684382cf16ee2ade1889f74d9d9d",
       "lines": 99,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05z冷读并重构单槽记录的统一锁/队列协议、S0～S7四窗口与清理分支，固定wait.h/wait.c核对；C交错模型双编译器重验1对0条丢失，内核应用片段未编译加载。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P04_wait_event入队与唤醒调用链.md",

@@ -454,3 +454,5 @@ B05w完成[DMA交接单元](../../knowledge/linux/io_model/dma/P01_DMA_映射同
 B05x完成[DMA正文及SG模型](../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md#1.7.1_用C核对两套计数)和[阅读大纲](../../knowledge/linux/io_model/dma/大纲.md)，按固定文档补足地址、分配与终止边界。清单694项314 validated、362 pending、18 supporting_pending，剩余380项；继续其他I/O与通知专题。见[B05x记录](../../governance/migration/repository_textbook_refactor.md#1.4.179_B05xDMA地址SG与终止边界)。
 
 B05y完成[poll与epoll三章及大纲](../../knowledge/linux/io_model/blocking_io/大纲.md)，把临时登记、持久候选、触发模式与负载选择分开；新增固定源码阅读索引。清单698项319 validated、361 pending、18 supporting_pending，剩余379项。Linux管道实验未运行，下一批继续等待与通知依赖。见[B05y记录](../../governance/migration/repository_textbook_refactor.md#1.4.180_B05ypoll与epoll状态和选择)。
+
+B05z完成[等待队列应用协议](../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P01_等待队列.md)与[条件等待状态机](../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P03_条件等待的统一状态机.md)，统一条件和消费的同步，区分循环与退出清理；相关大纲与源码导航同步。清单698项321 validated、359 pending、18 supporting_pending，剩余377项，继续完成量与等待源码批次。见[B05z记录](../../governance/migration/repository_textbook_refactor.md#1.4.181_B05z等待协议与四个窗口)。
