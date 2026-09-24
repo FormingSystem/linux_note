@@ -17,15 +17,30 @@ topics:
 
 ## 1.1\_从两条局部正确路径得到全局矛盾
 
-先只讨论进程上下文中的两个 mutex。设备有两类必须分别保护的状态：配置由 `config_lock` 保护，运行状态由 `state_lock` 保护。两条业务路径分别从自己的主状态出发，再读取另一类状态：
+先只讨论进程上下文中的两个 mutex。设备有两类必须分别保护的状态：配置由 `config_lock` 保护，运行状态由 `state_lock` 保护。两条业务路径分别从自己的主状态出发，再读取另一类状态。下面是供阅读交错的内核辅助代码，故意保留锁序错误，不是可以直接加载的测试模块；不要在工作机器上并发触发它来等待死锁。对象须在发布给任务或注册中断以前初始化，后文的中断路径也使用这同一个对象：
 
 ```c
+#include <linux/interrupt.h>
+#include <linux/mutex.h>
+#include <linux/spinlock.h>
+
 struct demo_device {
 	struct mutex config_lock;
 	struct mutex state_lock;
+	spinlock_t queue_lock; /* 后文进程与中断共同使用的短队列锁。 */
 	int requested_mode;
 	int active_mode;
 };
+
+static void demo_device_init(struct demo_device *dev)
+{
+	/* 必须在任何并发访问开始前完成，不能对在用对象重新初始化。 */
+	mutex_init(&dev->config_lock);
+	mutex_init(&dev->state_lock);
+	spin_lock_init(&dev->queue_lock);
+	dev->requested_mode = 0;
+	dev->active_mode = 0;
+}
 
 static void demo_apply_config(struct demo_device *dev)
 {
@@ -52,6 +67,7 @@ static void demo_restore_state(struct demo_device *dev)
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant A as "任务A：应用配置"
     participant C as "config_lock"
     participant S as "state_lock"
@@ -78,6 +94,22 @@ demo_restore_state() 建立 state_lock  → config_lock
 沿时间线推进一次就会得到矛盾：A 不能释放 `config_lock`，因为它还没取得 `state_lock`；B 不能释放 `state_lock`，因为它还没取得 `config_lock`。两边的 unlock 都写在源码里，却都没有机会执行。由此得到第一个可迁移结论：
 
 > 锁正确性不仅是单次取得/释放配对，还包括所有可并发路径共同遵守的等待顺序协议。
+
+先把业务代码修到可以解释正确，再考虑验证器怎样自动发现问题。这里两个字段没有必须反向加锁的外部约束，可以约定一律先取得配置锁，再取得状态锁；恢复路径的数据流方向仍是“运行状态回填配置”，不必因此颠倒锁序：
+
+```c
+static void demo_restore_state_ordered(struct demo_device *dev)
+{
+	/* 修复版本替换原恢复路径；与应用配置路径遵守同一个顺序。 */
+	mutex_lock(&dev->config_lock);
+	mutex_lock(&dev->state_lock);
+	dev->requested_mode = dev->active_mode;
+	mutex_unlock(&dev->state_lock);
+	mutex_unlock(&dev->config_lock);
+}
+```
+
+重新安排交错：A 持有配置锁时，B 先等配置锁，尚未取得状态锁，因此不能再用状态锁挡住 A。这才是修复成立的原因。它要求所有会同时持有这两把锁的路径遵守该顺序；只改当前看到的一条路径，不能证明仓库里没有第三条反向路径。如果改为释放第一把再取第二把，则要另外证明两次访问之间状态变化不会破坏业务，不能把失去原子性的修改当成同一种修复。
 
 至此，问题已经从“某一把 mutex 有没有坏”推进为“多条路径能否共同遵守同一套顺序”。下一步不能立刻跳到 Lockdep 的字段和算法，而要先决定 **怎样观察这套跨路径协议**：等两个任务真的互相卡住再抓现场，还是收集更早出现、又能跨时间组合的证据？
 
@@ -213,5 +245,13 @@ Lockdep 不会替任务打破已经发生的等待环，也不会自动选择正
 由此得到三条结论：mutex ABBA 是跨路径锁序错误，不是“单锁自己锁自己”；中断不能睡眠等待，但可以在适用内核配置下用自旋锁保护短共享状态；只看功能锁当前状态既看不到 current 的完整等待前缀，也保留不了跨时间历史。
 
 现在真正的问题变成：若从零设计一个验证器，哪些状态必须属于当前执行流，哪些状态必须全局保存，一次取得失败又该回滚哪一层？下一章从这些问题推导 Lockdep 的抽象模型。
+
+### 1.7.1\_用三个交错检查本章结论
+
+1. 只交换原恢复路径两个 unlock 的顺序，能不能消除 ABBA？写出两个任务各停在哪个 lock，检查它们是否有机会执行任何 unlock。
+2. 单线程先完整执行应用配置，再执行原恢复路径，程序都返回了。当前持锁记录为空以后，验证器必须保留什么，才能指出第二条路径的问题？若历史被清空，会漏掉哪条证据？
+3. 把进程侧改成 irqsave 后，远端 CPU 是否也不能进入中断？说明本地中断屏蔽与跨 CPU 互斥分别由哪个动作承担。
+
+对照要点：第 1 题不行，死锁发生在释放以前；第 2 题必须保留第一条锁序，当前账本清空不能顺便清掉跨时间历史；第 3 题远端仍能执行，中断屏蔽解决本地重入，锁字竞争解决其他参与者的互斥。以上是代码与时间线推演，不是已经运行的 Lockdep 测试；真实内核的配置检查和可恢复实验放在 P08。
 
 下一篇：[Lockdep 抽象模型与证明边界](P02_Lockdep_抽象模型与证明边界.md)。

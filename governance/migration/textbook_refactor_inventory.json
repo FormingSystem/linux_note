@@ -2797,8 +2797,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P01_为什么需要_Lockdep.md",
       "baseline_sha256": "648fd76623af223b266d6da703be843012a821e498eb37b1597ba67d3faf447e",
       "lines": 217,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ax 冷读保留ABBA到历史账本再到IRQ的完整问题链，补缺失队列锁与初始化、统一锁序修复和三个交错练习；文档检查，内核辅助代码未编译运行。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md",
