@@ -1224,3 +1224,7 @@ B05be复查固定dfaf2136的kernel/locking/lockdep.c，blob 536bd471557f5b4412d6
 ## 1.164\_链缓存与容量边界
 
 B05bf核对固定dfaf2136的include/linux/lockdep_types.h，blob 9f361d3ab9d95d98428dbc9b25361c3ffe9e4e10，确认MAX_LOCKDEP_KEYS_BITS为13。复查kernel/locking/lockdep.c中validate_chain只在非trylock且check有效的新链上执行完整依赖分支；[成本章节](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.2_链缓存消除了哪部分成本)不再把全部IRQ使用检查归入首次新链成本。未测量性能或注入容量故障。
+
+## 1.165\_mutex事件与功能失败配对
+
+B05bg核对固定dfaf2136的kernel/locking/mutex.c，blob cbae8c0b89ab2b8074a387ebf1cca86951362cc2。mutex_acquire_nest位于功能尝试前，错误出口通过mutex_release配对撤销已提交检查记录，支持[身份与事件模块](../lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.4_取得与释放调用链)的S0至S6周期。未执行信号中断的目标运行验证。

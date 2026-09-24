@@ -4022,8 +4022,8 @@
       "path": "research/source_reading/lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md",
       "baseline_sha256": "110fe7a4f445880f6b0e5f06f916fbc1d08b3d8f4f2587a36767f86c8508e0d2",
       "lines": 81,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05bg 修正功能失败撤销候选的错误，补具体状态地址、角色图、S0至S6周期与非栈顶重建边界；保留模块入口职责，核对固定mutex调用顺序。"
     },
     {
       "path": "research/source_reading/lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md",

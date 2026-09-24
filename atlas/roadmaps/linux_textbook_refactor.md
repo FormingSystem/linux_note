@@ -520,3 +520,5 @@ B05bd完成[RCU检查适配](../../knowledge/linux/synchronization_and_asynchron
 B05be完成[配置与实验章节](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md)，补运行标记、局部账本时序与保留操作的修复对照。705项371 validated、316 pending、18 supporting_pending，剩余334项；继续成本与工程边界，未编译或加载目标模块。见[B05be记录](../../governance/migration/repository_textbook_refactor.md#1.4.212_B05be实验路径与修复对照)。
 
 B05bf完成[成本与工程边界](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md)及[大纲](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md)审查，补缓存成本与容量反例。705项373 validated、314 pending、18 supporting_pending，剩余332项；Lockdep九章与大纲完成作者审查，继续源码模块与实验。见[B05bf记录](../../governance/migration/repository_textbook_refactor.md#1.4.213_B05bf缓存成本与证据收束)。
+
+B05bg完成[身份与事件模块](../../research/source_reading/lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md)，修正功能失败回退对象并补状态地址与完整周期。705项374 validated、313 pending、18 supporting_pending，剩余331项；继续规则引擎模块，未执行目标内核实验。见[B05bg记录](../../governance/migration/repository_textbook_refactor.md#1.4.214_B05bg身份事件模块周期)。
