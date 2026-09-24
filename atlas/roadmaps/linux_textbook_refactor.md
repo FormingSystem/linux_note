@@ -498,3 +498,5 @@ B05as补齐[ARM票号与事件实现](../../research/source_reading/locking/sour
 B05at完成[mutex真实实现](../../research/source_reading/locking/source_explanations/kernel/locking/mutex.c.md)，替换错误骨架，11个完整函数匹配固定源码，补交接/取消周期和寿命边界。704项359 validated、327 pending、18 supporting_pending，剩余345项；继续rwsem实现及模块独立审查。见[B05at记录](../../governance/migration/repository_textbook_refactor.md#1.4.201_B05at互斥真实交接与取消)。
 
 B05au补齐[rwsem对象与观察](../../research/source_reading/locking/source_explanations/include/linux/rwsem.h.md)，两种完整类型与六个观察断言函数核对固定源码，区分共享状态与当前任务持锁证据。新增一项后705项360 validated、327 pending、18 supporting_pending，剩余345项；rwsem慢路径和模块仍待完成。见[B05au记录](../../governance/migration/repository_textbook_refactor.md#1.4.202_B05au读写锁对象与观察)。
+
+B05av完成[rwsem慢路径实现](../../research/source_reading/locking/source_explanations/kernel/locking/rwsem.c.md)，三种类型与八个完整函数取代省略骨架，补预授、接收、写竞争与信号取消。705项361 validated、326 pending、18 supporting_pending，剩余344项；继续模块导读与总索引。见[B05av记录](../../governance/migration/repository_textbook_refactor.md#1.4.203_B05av读写预授与取消)。

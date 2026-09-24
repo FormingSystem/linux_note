@@ -1184,3 +1184,7 @@ B05at从固定dfaf2136的kernel/locking/mutex.c（blob cbae8c0b89ab2b8074a387ebf
 ## 1.154\_rwsem对象布局与观察契约
 
 B05au核对固定dfaf2136的include/linux/rwsem.h（blob c8b543d428b0a8d4662183f3342e88ec61d10189），展开[两种对象布局](../locking/source_explanations/include/linux/rwsem.h.md#1.2_非RT对象的状态落点)及六个观察/断言函数。非RT的is_locked比较整个count，降级写断言只看写位；不把共享状态解释为当前任务已取得。RT仅核对类型替换，未展开rwbase内部，未进行目标配置编译或运行。
+
+## 1.155\_rwsem预授与退出路径
+
+B05av依据固定dfaf2136的kernel/locking/rwsem.c（blob 2bbb6eca51445bdf434ba579ced4beddafbc52ca）展开[批量授予](../locking/source_explanations/kernel/locking/rwsem.c.md#1.4_mark_wake先记账再发布)及读写获取和取消。三种类型、八个完整函数静态比对；读者先补份额后release清task，信号路径持锁复查，写者唤醒仍需acquire设置写位。限定非RT，未执行目标运行或性能测量。

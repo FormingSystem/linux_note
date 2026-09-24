@@ -52,7 +52,7 @@ flowchart TD
 - [spinlock_api_smp.h 上下文与获取释放](../source_explanations/include/linux/spinlock_api_smp.h.md#1.2_普通获取和释放的顺序)
 - [ARM spinlock.h 票号与事件](../source_explanations/arch/arm/include/asm/spinlock.h.md#1.2_取得票号不等于已经进入)
 - [mutex 慢路径源码实现](../source_explanations/kernel/locking/mutex.c.md#1.2_源码符号覆盖账本)
-- [rwsem 慢路径源码实现](../source_explanations/P03_Linux_6.12_rwsem慢路径源码实现.md#3.2_源码符号覆盖账本)
+- [rwsem 慢路径源码实现](../source_explanations/kernel/locking/rwsem.c.md#1.2_状态地址与统一阶段)
 - [rwsem 对象布局与观察边界](../source_explanations/include/linux/rwsem.h.md#1.2_非RT对象的状态落点)
 
 ## 1.4\_状态所有权总表

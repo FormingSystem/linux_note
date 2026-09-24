@@ -4103,11 +4103,11 @@
       "reason": "B05at 按上游位置替换伪代码，展开11个真实函数及登记、交接、接收、取消周期；固定源码静态比对，目标编译运行未执行，人工状态不变。"
     },
     {
-      "path": "research/source_reading/locking/source_explanations/P03_Linux_6.12_rwsem慢路径源码实现.md",
+      "path": "research/source_reading/locking/source_explanations/kernel/locking/rwsem.c.md",
       "baseline_sha256": "e2ee0e1ef88f3f030d3790df51f41e4187f30373f54312deca47e9b348dad6d4",
       "lines": 110,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05av 替换省略骨架，按上游路径展开三类记录与八个完整函数；核对批量预授、接收、写竞争及取消复查，静态验证，目标运行未执行。"
     },
     {
       "path": "research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md",

@@ -64,7 +64,7 @@ flowchart TD
     MW -->|"队首为reader后扫描队列中的reader"| MANY["先计账和授予，再批量wake读者"]
 ```
 
-`rwsem_mark_wake()` 在 wait_lock 下标记任务和调整 count，再把任务加入 wake_q，调用者释放锁后真正唤醒。具体函数见[rwsem 慢路径源码实现](../source_explanations/P03_Linux_6.12_rwsem慢路径源码实现.md#3.2_源码符号覆盖账本)。
+`rwsem_mark_wake()` 在 wait_lock 下标记任务和调整 count，再把任务加入 wake_q，调用者释放锁后真正唤醒。具体函数见[rwsem 慢路径源码实现](../source_explanations/kernel/locking/rwsem.c.md#1.2_状态地址与统一阶段)。
 
 ## 3.5\_共同配置边界
 
