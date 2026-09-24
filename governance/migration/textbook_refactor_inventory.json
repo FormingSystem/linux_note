@@ -2272,15 +2272,15 @@
       "path": "knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md",
       "baseline_sha256": "6b65666a0a1ef499879a68efa37d8210df89ccc96fd6ab94c5c7a0a3d1d5d391",
       "lines": 130,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05v按固定I/O文档重写默认映射契约、锁顺序与posted送达/业务完成边界，加入四阶段完整C模型；GCC和Clang严格C11运行通过，非设备实测。"
     },
     {
       "path": "knowledge/linux/io_model/mmio/大纲.md",
       "baseline_sha256": "ec0ee3c8f3c8f89d93236bbf04ecc1582483310801c5d6d67d4fe89e31798576",
       "lines": 16,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05v按固定I/O文档重写默认映射契约、锁顺序与posted送达/业务完成边界，加入四阶段完整C模型；GCC和Clang严格C11运行通过，非设备实测。"
     },
     {
       "path": "knowledge/linux/object_lifetime/devres/devres_API说明.md",

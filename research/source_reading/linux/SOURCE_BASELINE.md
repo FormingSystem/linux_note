@@ -1058,3 +1058,7 @@ B05t按官方固定dfaf2136核对linux-kernel.cat（adf3c4f412296269bb9f8127cd7e
 ## 1.128\_内存顺序源码阅读模块收束
 
 B05u将已核对的def/bell/cfg单元完整组织为[模型输入模块](../memory_ordering/navigation/P08_LKMM输入_分类与工具配置.md#8.1_linux_kernel_def_把原语翻译成事件)，cat/lock/MP与证据边界组织为[关系模块](../memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md#9.1_linux_kernel_cat_怎样组织公理)。原十单元148行非标题内容迁移前后逐行保留，随后仅修正跨篇衔接和节号；没有新增源码版本或herd7运行结论。总索引保留真实阅读入口，知识与源码模块保持不同阅读职责。
+
+## 1.129\_MMIO默认映射与送达完成边界
+
+B05v按固定dfaf2136的Documentation/memory-barriers.txt中KERNEL I/O BARRIER EFFECTS核对五条普通访问器保证及relaxed削弱范围，并只读Documentation/driver-api/device-io.rst（Git blob 5c7e8194bef92bcb5c3c807852a3b21b04337728）。[MMIO正文](../../../knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md#1.3_普通访问器与_relaxed_访问器)明确默认映射、同外设、同锁跨CPU及一致性DMA前提；[四阶段C模型](../../../knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md#1.4.1_用完整C模型分开送达和完成)区分桥接收、送达、设备完成和驱动观察。GCC14.2与Clang18.1.8宿主严格C11 O2运行通过，不是Linux访问器或真实设备测试。
