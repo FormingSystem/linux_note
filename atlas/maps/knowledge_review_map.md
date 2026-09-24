@@ -832,7 +832,8 @@ mindmap-plugin: basic
             - 🔴 [P01 Linux 6.12 序列计数器源码总阅读索引](../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md)
             - 🔴 [P02 Linux 6.12 seqcount 与 seqlock 模块源码概念导读](../../research/source_reading/sequence_counters/navigation/P02_Linux_6.12_seqcount与seqlock模块源码概念导读.md)
         - 具体实现讲解
-            - 🔴 [P01 Linux 6.12 seqlock.h 读写与 latch 源码实现](../../research/source_reading/sequence_counters/source_explanations/P01_Linux_6.12_seqlock_h读写与latch源码实现.md)
+            - 🔴 [P01 Linux 6.12 seqlock.h 读写与 latch 源码实现](../../research/source_reading/sequence_counters/source_explanations/include/linux/seqlock.h.md)
+            - 🔴 [Linux 6.12 seqlock_types.h 类型与配置实现](../../research/source_reading/sequence_counters/source_explanations/include/linux/seqlock_types.h.md)
     - 等待与完成量
         - 模块概念导读
             - 🔴 [P01 Linux 6.12 等待与完成量源码总阅读索引](../../research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md)

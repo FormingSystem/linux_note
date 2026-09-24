@@ -15,6 +15,8 @@ source_version: "6.12.20"
 
 实现证据固定到 NXP `linux-imx` 标签 `lf-6.12.20-2.0.0` 的提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。序列计数器的大部分核心实现在单个 [`include/linux/seqlock.h`](../../linux/include/linux/seqlock.h) 中，但应按普通 seqcount、关联锁、latch 与 seqlock 四种职责阅读，不能从文件共址推断为一个状态机。
 
+结构和配置字段另位于include/linux/seqlock_types.h。先知道sequence、可选lock指针与实际内嵌锁的位置，再跟操作路径；“一个头文件里的接口”不是所有类型都共享相同等待和抢占规则的证明。
+
 跨版本模型先读[序列计数器专题](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/大纲.md#1.1_专题定位)。
 
 ## 1.2\_源码分支地图
@@ -44,9 +46,12 @@ sequence 是功能状态；关联锁本身完成 writer 串行；检查器只验
 ## 1.4\_阅读入口
 
 - [seqcount 与 seqlock 模块源码概念导读](P02_Linux_6.12_seqcount与seqlock模块源码概念导读.md#2.1_模块问题与职责分支)
-- [`seqlock.h` 读写与 latch 源码实现](../source_explanations/P01_Linux_6.12_seqlock_h读写与latch源码实现.md#1.2_源码符号覆盖账本)
+- [`seqlock_types.h` 类型与配置实现](../source_explanations/include/linux/seqlock_types.h.md#1.2_plain计数与条件检查字段)
+- [`seqlock.h` 读写与 latch 源码实现](../source_explanations/include/linux/seqlock.h.md#1.2_源码符号覆盖账本)
 
 所有宏和函数体只在实现文档中展开一次；模块导读只组织调用顺序和状态通信。
+
+实现账本覆盖初始化、普通读写、关联属性、latch和基础seqlock封装。IRQ/BH机械包装、通用锁/调度器内部及raw_write_seqcount_barrier不在本次逐句范围内；原始文件入口保留，不能把已选函数展开称为上游整个头文件的完整解说。
 
 ## 1.5\_建议阅读顺序
 

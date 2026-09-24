@@ -106,7 +106,7 @@ raw不是一个统一的“去掉全部保护”开关。按固定头文件区�
 
 ## 3.7\_源码入口
 
-先进入[序列计数器源码总索引](../../../../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.1_版本边界与阅读任务)，再按[模块调用链](../../../../../research/source_reading/sequence_counters/navigation/P02_Linux_6.12_seqcount与seqlock模块源码概念导读.md#2.3_普通seqcount调用链)定位读写接口、关联锁属性和seqlock包装。已展开的具体实现见[`seqlock.h`读侧标题](../../../../../research/source_reading/sequence_counters/source_explanations/P01_Linux_6.12_seqlock_h读写与latch源码实现.md#1.3_普通读侧begin与retry)；本章raw差异直接核对固定头文件，不假称现有裁剪页已展开所有变体。更一般的release/acquire和屏障推导见[内存顺序专题](../memory_ordering/大纲.md)。本次为静态源码核对，未运行弱内存模型工具或目标内核。
+先进入[序列计数器源码总索引](../../../../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.1_版本边界与阅读任务)，再按[模块调用链](../../../../../research/source_reading/sequence_counters/navigation/P02_Linux_6.12_seqcount与seqlock模块源码概念导读.md#2.3_普通seqcount调用链)定位读写接口、关联锁属性和seqlock包装。已展开的具体实现见[`seqlock.h`读侧标题](../../../../../research/source_reading/sequence_counters/source_explanations/include/linux/seqlock.h.md#1.3_普通读侧begin与retry)；本章raw差异直接核对固定头文件，不假称现有裁剪页已展开所有变体。更一般的release/acquire和屏障推导见[内存顺序专题](../memory_ordering/大纲.md)。本次为静态源码核对，未运行弱内存模型工具或目标内核。
 
 ## 3.8\_本章结论与下一问
 

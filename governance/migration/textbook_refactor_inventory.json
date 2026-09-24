@@ -4295,22 +4295,22 @@
       "path": "research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md",
       "baseline_sha256": "76921be2bfc7e3ae44b6a77a791e88b315dd58254b8f47f48185379e10fa8c7c",
       "lines": 70,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ah 冷读并按上游位置拆分类型/配置与操作实现，42块实际声明、宏和函数与固定源码静态一致，概念占位替换为真实属性生成；模块统一地址及三种阶段路径，总索引保留导航职责。文档及图语法检查，未编译目标配置/运行RT、NMI和弱内存工具，人工状态保留。"
     },
     {
       "path": "research/source_reading/sequence_counters/navigation/P02_Linux_6.12_seqcount与seqlock模块源码概念导读.md",
       "baseline_sha256": "b0f12da4c6e2bf15b386abdfd33fb13419f7f7bde18859c68f0d8eba449236e0",
       "lines": 70,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ah 冷读并按上游位置拆分类型/配置与操作实现，42块实际声明、宏和函数与固定源码静态一致，概念占位替换为真实属性生成；模块统一地址及三种阶段路径，总索引保留导航职责。文档及图语法检查，未编译目标配置/运行RT、NMI和弱内存工具，人工状态保留。"
     },
     {
-      "path": "research/source_reading/sequence_counters/source_explanations/P01_Linux_6.12_seqlock_h读写与latch源码实现.md",
+      "path": "research/source_reading/sequence_counters/source_explanations/include/linux/seqlock.h.md",
       "baseline_sha256": "e2734735133288bdf730aa9c1d7ea4958eb1288a5ac73a5a15de900684e13bc7",
       "lines": 136,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ah 冷读并按上游位置拆分类型/配置与操作实现，42块实际声明、宏和函数与固定源码静态一致，概念占位替换为真实属性生成；模块统一地址及三种阶段路径，总索引保留导航职责。文档及图语法检查，未编译目标配置/运行RT、NMI和弱内存工具，人工状态保留。"
     },
     {
       "path": "research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md",
@@ -4983,6 +4983,13 @@
       "lines": 72,
       "state": "validated",
       "reason": "B05ad 冷读完成量源码与总阅读索引，按上游头文件/实现分离，补足计数发布、等待包装、try消费与done观察的真实控制流；模块以S0至S6统一状态所有权及两类到达交错。11块源码静态一致，未进行内核运行或真实竞态验证，人工评审状态保留。"
+    },
+    {
+      "path": "research/source_reading/sequence_counters/source_explanations/include/linux/seqlock_types.h.md",
+      "baseline_sha256": "26e5aaa9290b15dfc4f17c645a157433704ec20b806416290e160723d2ecf91f",
+      "lines": 90,
+      "state": "validated",
+      "reason": "B05ah 冷读并按上游位置拆分类型/配置与操作实现，42块实际声明、宏和函数与固定源码静态一致，概念占位替换为真实属性生成；模块统一地址及三种阶段路径，总索引保留导航职责。文档及图语法检查，未编译目标配置/运行RT、NMI和弱内存工具，人工状态保留。"
     }
   ]
 }

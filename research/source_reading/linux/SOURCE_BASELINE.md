@@ -1124,3 +1124,9 @@ B05af继续只读1.138固定seqlock.h对象，核对seqprop_sequence的acquire�
 B05ag只读固定dfaf2136的include/linux/seqlock_types.h（blob dfdf43e3fa3de3acfd294807cc207d6464db0d11）及1.138的seqlock.h，核对关联lock字段在LOCKDEP或PREEMPT_RT配置下保留，RT读取奇数时的真实锁等待，以及非RT/RT抢占属性区别。未运行RT配置或测量调度上界。
 
 [8位回绕C模型](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P06_生命周期误用诊断与选型.md#6.3.1_用8位模型重现回绕误收)在宿主双编译器严格C11 O2输出start=0 end=0 candidate=(0,128)。这以有限有序步骤展示无回绕前提，不说明实际unsigned字段宽度被改动，也不运行真实暂停或并发。知识侧配置/寿命修复与源码模块分别同步，完整实现审查另行推进。
+
+## 1.141\_序列类型与真实操作实现
+
+B05ah按1.138与1.140固定对象，分别组织[seqlock_types.h类型配置](../sequence_counters/source_explanations/include/linux/seqlock_types.h.md#1.2_plain计数与条件检查字段)与[seqlock.h操作实现](../sequence_counters/source_explanations/include/linux/seqlock.h.md#1.2_源码符号覆盖账本)。42块实际文档代码去注释空白后与固定对象一致，真实属性生成宏替换概念占位；中文Doxygen为仓库补充。
+
+模块与总索引指向唯一实现，说明普通读写、关联锁慢路径、latch和基础seqlock封装的不同状态。未扩展成所有包装或底层锁/调度器源码覆盖；静态一致性不代表配置矩阵编译、PREEMPT_RT、NMI、弱内存或目标内核运行已经通过。

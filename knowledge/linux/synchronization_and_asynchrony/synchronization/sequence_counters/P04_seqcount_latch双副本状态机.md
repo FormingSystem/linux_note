@@ -195,7 +195,7 @@ paused_windows=7 schedules=210 full_mixed=0 bit_mixed=21
 
 ## 4.7\_源码入口
 
-Linux 6.12.20中seqcount_latch_t、read_seqcount_latch和write_seqcount_latch_begin/write/end位于include/linux/seqlock.h。先从[版本总索引](../../../../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.1_版本边界与阅读任务)确认固定提交，再进入[模块关系](../../../../../research/source_reading/sequence_counters/navigation/P02_Linux_6.12_seqcount与seqlock模块源码概念导读.md#2.5_latch双副本分支)及[唯一裁剪实现](../../../../../research/source_reading/sequence_counters/source_explanations/P01_Linux_6.12_seqlock_h读写与latch源码实现.md#1.6_latch重定向与双副本更新)。本次静态核对头文件并运行有序C模型，没有执行目标NMI、内核并发或弱内存模型工具。
+Linux 6.12.20中seqcount_latch_t、read_seqcount_latch和write_seqcount_latch_begin/write/end位于include/linux/seqlock.h。先从[版本总索引](../../../../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.1_版本边界与阅读任务)确认固定提交，再进入[模块关系](../../../../../research/source_reading/sequence_counters/navigation/P02_Linux_6.12_seqcount与seqlock模块源码概念导读.md#2.5_latch双副本分支)及[唯一裁剪实现](../../../../../research/source_reading/sequence_counters/source_explanations/include/linux/seqlock.h.md#1.6_latch重定向与双副本更新)。本次静态核对头文件并运行有序C模型，没有执行目标NMI、内核并发或弱内存模型工具。
 
 ## 4.8\_本章结论与下一问
 
