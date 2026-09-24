@@ -50,6 +50,8 @@ sequenceDiagram
 
 RT 配置下，若关联锁可抢占且 sequence 为奇数，读取属性会执行一次关联锁 lock/unlock，再重新读 sequence，让被抢占 writer 有机会完成。实现见[关联锁属性与 RT 补偿](../source_explanations/P01_Linux_6.12_seqlock_h读写与latch源码实现.md#1.5_关联锁属性与RT补偿)。
 
+关联字段的声明还在include/linux/seqlock_types.h：CONFIG_LOCKDEP或CONFIG_PREEMPT_RT任一开启即保留lock指针，所以它不只是检查状态。读者释放关联锁后的新writer仍可能使重读为奇数，不能承诺一次补偿就稳定，更不能把锁覆盖范围扩大到整个候选复制区。知识侧[配置与阶段说明](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P05_关联锁变体与实时性边界.md#5.3_PREEMPT_RT的奇数reader补偿)分别展开这些边界。
+
 ## 2.5\_latch双副本分支
 
 `raw_write_seqcount_latch()`在sequence增量前后放置写屏障；begin和write两次重定向，end结束KCSAN标记而不再翻转。data[0]/data[1]由调用者保存，reader用最低位选副本，用完整sequence在末尾验证。具体实现见[latch重定向与双副本更新](../source_explanations/P01_Linux_6.12_seqlock_h读写与latch源码实现.md#1.6_latch重定向与双副本更新)；[210条交错模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P04_seqcount_latch双副本状态机.md#4.4.1_用C区分暂停写者与跨CPU交错)解释只比最低位为何失败，不代表内核弱内存已经验证。

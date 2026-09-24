@@ -3210,22 +3210,22 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P05_关联锁变体与实时性边界.md",
       "baseline_sha256": "519324de2c2959bb7ce922e9059decd93918b022161b268c765eb9cb181487c9",
       "lines": 78,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ag 冷读关联锁、选型及六章大纲，按固定types/header澄清配置相关lock字段及RT功能补偿，补齐S0至S6协作与生命周期合法取得；8位回绕C模型双编译器验证同偶数误收混合值。原有效边界保留，源码三篇仍独立pending，实际RT/调度与目标运行未验证。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P06_生命周期误用诊断与选型.md",
       "baseline_sha256": "7725570f3dd23f53689c596f739974183ae57494ac0788090d78a44d6dffebb0",
       "lines": 79,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ag 冷读关联锁、选型及六章大纲，按固定types/header澄清配置相关lock字段及RT功能补偿，补齐S0至S6协作与生命周期合法取得；8位回绕C模型双编译器验证同偶数误收混合值。原有效边界保留，源码三篇仍独立pending，实际RT/调度与目标运行未验证。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/大纲.md",
       "baseline_sha256": "7c8d625249e19b3af4f03a867a4193b7931c4b57debaec1d31292c698fdb2faf",
       "lines": 38,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ag 冷读关联锁、选型及六章大纲，按固定types/header澄清配置相关lock字段及RT功能补偿，补齐S0至S6协作与生命周期合法取得；8位回绕C模型双编译器验证同偶数误收混合值。原有效边界保留，源码三篇仍独立pending，实际RT/调度与目标运行未验证。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P01_等待队列.md",

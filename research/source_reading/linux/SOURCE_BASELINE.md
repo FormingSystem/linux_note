@@ -1118,3 +1118,9 @@ B05ae只读固定dfaf2136的Documentation/locking/seqlock.rst（blob ec6411d02ac
 B05af继续只读1.138固定seqlock.h对象，核对seqprop_sequence的acquire读取、稳定偶数循环、retry屏障、raw差异及latch的依赖选址/完整计数比较。明确begin/write两次重定向，end只关闭KCSAN写区。知识正文与相关源码入口分别同步，不改动外部树。
 
 [latch完整C模型](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P04_seqcount_latch双副本状态机.md#4.4.1_用C区分暂停写者与跨CPU交错)双编译器严格C11 O2得到paused_windows=7、schedules=210、full_mixed=0、bit_mixed=21；证明范围为单写者一次有序更新，不含目标NMI、ARM弱内存、计数回绕或动态对象回收。源码实现页只修复直接受影响的真实控制流，关联锁等剩余覆盖继续独立处理。
+
+## 1.140\_关联字段配置与回绕边界
+
+B05ag只读固定dfaf2136的include/linux/seqlock_types.h（blob dfdf43e3fa3de3acfd294807cc207d6464db0d11）及1.138的seqlock.h，核对关联lock字段在LOCKDEP或PREEMPT_RT配置下保留，RT读取奇数时的真实锁等待，以及非RT/RT抢占属性区别。未运行RT配置或测量调度上界。
+
+[8位回绕C模型](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P06_生命周期误用诊断与选型.md#6.3.1_用8位模型重现回绕误收)在宿主双编译器严格C11 O2输出start=0 end=0 candidate=(0,128)。这以有限有序步骤展示无回绕前提，不说明实际unsigned字段宽度被改动，也不运行真实暂停或并发。知识侧配置/寿命修复与源码模块分别同步，完整实现审查另行推进。
