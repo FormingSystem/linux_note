@@ -90,6 +90,7 @@ void complete_all(struct completion *x)
 {
     unsigned long flags;
 
+    lockdep_assert_RT_in_threaded_ctx(); /* 固定源码保留的实时上下文检查。 */
     raw_spin_lock_irqsave(&x->wait.lock, flags);
     x->done = UINT_MAX;
     swake_up_all_locked(&x->wait);

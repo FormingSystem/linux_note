@@ -32,6 +32,7 @@ source_version: "6.12.20"
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant W as wait任务
     participant L as wait.lock
     participant D as done
@@ -45,9 +46,11 @@ sequenceDiagram
     P->>L: 获取同一锁
     P->>D: done增加
     P->>Q: swake一个waiter
+    P->>L: 释放锁
     W->>L: 醒来重新取得锁
-    W->>D: 非饱和done减一
     W->>Q: finish swait
+    W->>D: 非饱和done减一
+    W->>L: 释放锁后返回成功
 ```
 
 `do_wait_for_common()` 在循环内检查信号、准备 swait、释放锁调度、重取锁再检查 done。成功时只有非 `UINT_MAX` 才消费一个令牌。函数实现见[`completion.c` 令牌与等待源码实现](../source_explanations/P02_Linux_6.12_completion_c令牌与等待源码实现.md#2.4_do_wait_for_common等待与消费)。
@@ -55,6 +58,8 @@ sequenceDiagram
 ## 3.5\_初始化与复用
 
 `init_completion()` 同时把 done 清零和初始化 swait 头，只用于首次初始化；`reinit_completion()` 只写 `done=0`。后者没有队列锁，也不检查旧 waiter，调用者必须用外部生命周期协议证明可安全开启新一轮。
+
+固定do_wait_for_common在完成与超时交错时，以重新持锁后的done检查决定是否消费；成功至少返回1。complete_all还包含实时上下文断言，不能仅凭其不睡眠就外推所有配置的中断安全。知识侧[轮次反例](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P02_completion_完成量.md#2.6_复用必须排除旧轮次)说明旧请求迟到完成为何可能被新请求误收。
 
 对象寿命的完整应用见[P07 完成与引用模块](../../../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md#7.3.5_completion_场景里的引用归属)：等待者保留独立份额到工作同步退出，超时不自动归还完成方责任。该示例验证的是组合协议，本页的 done 与 swait 状态职责保持独立。
 

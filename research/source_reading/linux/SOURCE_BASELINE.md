@@ -1082,3 +1082,9 @@ B05y按固定dfaf2136提交核对include/linux/poll.h、fs/select.c、fs/eventpo
 B05z只读固定dfaf2136的include/linux/wait.h（blob 2b322a9b88a2bd122d30e70a3d6eaa12c5cec244）和kernel/sched/wait.c（blob 51e38f5f47018c953e31c834dc6385c182359359），核对初始快查、prepare后condition优先、信号摘链错误出口、正常finish、独占额度及超时边界返回1。知识侧[单槽记录协议](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P01_等待队列.md#1.3_标准条件等待)是仓库应用示例，不是上游摘录；未编译或加载目标驱动。模块导读同步区分循环与退出，未因相同术语删减源码层。
 
 [四窗口证明](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P03_条件等待的统一状态机.md#3.5_逐个关闭检查睡眠窗口)明确持久条件、同步协议、通知匹配和寿命前提。复用既有C枚举模型，GCC14.2/Clang18.1.8严格C11 O2输出均为check_first十种排列丢1条、register_first十种丢0条；不证明ARM弱内存、实际睡眠、信号或设备退出已经运行通过。
+
+## 1.134\_完成令牌与swait广播边界
+
+B05aa按固定dfaf2136核对include/linux/completion.h（fb291567657432083162031ddb949a7e581e2848）、kernel/sched/completion.c（3561ab533dd4e33ddb5284bcab51736f9b9ab6bf）、include/linux/swait.h（d324419482a0f5282ceb9174d091ff4204a49022）、kernel/sched/swait.c（72505cd3b60a3e16c093d07da38eab6093155b2e）。区分done普通计数与UINT_MAX、成功超时边界至少1、finish swait后消费、reinit无锁清零、complete_all的实时上下文检查，以及通用swake_up_all分段与完成量专用swake_up_all_locked持锁广播。
+
+[完成量C模型](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P02_completion_完成量.md#2.7_用完整C模型观察令牌与广播)在GCC14.2/Clang18.1.8严格C11 O2下验证提前保存、两个观察一个令牌、累计两次与广播不消耗；无真实睡眠或内存顺序模拟。内核请求协议只静态核对，未编译加载。模块导读纠正锁释放与finish/消费时序，实现裁剪补回实际存在的RT断言。未将这两处同步称为整个源码专题完成。

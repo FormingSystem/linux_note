@@ -3238,8 +3238,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P02_completion_完成量.md",
       "baseline_sha256": "e5c5234baf57cc819caffe3347f8c24439726e0c8298f79066635ece9618cf8e",
       "lines": 210,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05aa逐篇冷读固定completion/swait头文件和实现，重构提前完成、计数/广播、超时、轮次及退出依赖；完整C令牌模型双编译器通过，目标内核与设备未运行。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P03_条件等待的统一状态机.md",
@@ -3266,15 +3266,15 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P06_completion令牌状态与调用链.md",
       "baseline_sha256": "b78d22478d529273380dc5b4f75fc234c5fc3f9a25afd608bec1ed6658e17e80",
       "lines": 80,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05aa逐篇冷读固定completion/swait头文件和实现，重构提前完成、计数/广播、超时、轮次及退出依赖；完整C令牌模型双编译器通过，目标内核与设备未运行。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P07_swait生命周期调试与选型.md",
       "baseline_sha256": "24f48d56faebe41056147084474f434db4db643a5c25bb1215ab27a00e1c3fb2",
       "lines": 80,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05aa逐篇冷读固定completion/swait头文件和实现，重构提前完成、计数/广播、超时、轮次及退出依赖；完整C令牌模型双编译器通过，目标内核与设备未运行。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/大纲.md",
