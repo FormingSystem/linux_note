@@ -1140,3 +1140,7 @@ B05ai重新核对工作树身份后只读固定dfaf2136的arch/arm/include/asm/s
 ## 1.143\_自旋接口的配置契约
 
 B05aj只读固定dfaf2136的Documentation/locking/locktypes.rst（blob 80c914f6eae7ab07476491c4eba96c004508e28d），核对非RT的自旋/后缀语义与RT普通spinlock、rwlock的替换。RT普通irqsave不屏蔽硬中断，允许抢占但限制迁移；raw仍严格自旋。用于[入门实例边界](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P01_自旋锁.md#1.6_spinlock_与_raw_spinlock)，不是从当前非SMP配置推断全部实现。辅助代码未在目标编译或执行，中断重入图为机制推理。
+
+## 1.144\_ARM票号与事件的静态边界
+
+B05ak核对固定dfaf2136的arch/arm/include/asm/spinlock.h（blob f610a773f2be527dde14415a61fab4c7250d9447）及spinlock_types.h（blob 0c14b36ef10131b2a1fc95d91ccc76871e8ba4d4）：16位owner/next、整字领号、wfe后读取owner、释放推进owner与dsb_sev。用于[领号过程与阶段](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P04_spinlock实现与上下文边界.md#4.3.1_从反复抢夺改为领号等待)。正文不复制函数体；C模型仅验证顺序资格，工作配置非SMP且HEAD为实验提交，未证明该架构分支目标执行。

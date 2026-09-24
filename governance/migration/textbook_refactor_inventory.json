@@ -2888,8 +2888,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P04_spinlock实现与上下文边界.md",
       "baseline_sha256": "d8fe4b6b2d3f0d7331f4ff08c17086e6f3623107a511c138a8898810da6ad478",
       "lines": 92,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ak 全文冷读并从领号问题推导ARM票号与事件通信，统一S阶段、明确共享字段与私有票号，修正所有等待者争写和持锁抢占的泛化。固定源码核对，完整C模型GCC/Clang严格编译运行通过，未执行目标SMP/RT，人工状态保留。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P05_mutex慢路径与所有权交接.md",
