@@ -518,3 +518,5 @@ B05bc完成[查询与pin接入](../../knowledge/linux/synchronization_and_asynch
 B05bd完成[RCU检查适配](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md)，补对象逃逸时序、查询退化与告警条件边界。705项370 validated、317 pending、18 supporting_pending，剩余335项；继续配置与实验，未执行目标内核测试。见[B05bd记录](../../governance/migration/repository_textbook_refactor.md#1.4.211_B05bd读侧诊断与对象逃逸)。
 
 B05be完成[配置与实验章节](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md)，补运行标记、局部账本时序与保留操作的修复对照。705项371 validated、316 pending、18 supporting_pending，剩余334项；继续成本与工程边界，未编译或加载目标模块。见[B05be记录](../../governance/migration/repository_textbook_refactor.md#1.4.212_B05be实验路径与修复对照)。
+
+B05bf完成[成本与工程边界](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md)及[大纲](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md)审查，补缓存成本与容量反例。705项373 validated、314 pending、18 supporting_pending，剩余332项；Lockdep九章与大纲完成作者审查，继续源码模块与实验。见[B05bf记录](../../governance/migration/repository_textbook_refactor.md#1.4.213_B05bf缓存成本与证据收束)。

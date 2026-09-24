@@ -2853,15 +2853,15 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md",
       "baseline_sha256": "bda6222aec5c98e20edb03ef8daf149b2cb89f7727cdc45f4e354aa7d1d89c5e",
       "lines": 159,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05bf 保留条件结论与工具职责，展开同一锁链缓存成本、IRQ独立入口与丢边纸面反例，补覆盖和对象所有权选择练习；固定源码核对，未执行目标实验。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md",
       "baseline_sha256": "74d14f8fe5d33eeaff1fb47f6d45ae80b66ed15d8441bb9e5a8c25516c9c887f",
       "lines": 133,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05bf 全文冷读，保留因果地图、九章契约、四条读法及相邻边界；修正唯一场景过度描述，同步身份实验、查询边界与RCU逃逸学习目标。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P01_自旋锁.md",

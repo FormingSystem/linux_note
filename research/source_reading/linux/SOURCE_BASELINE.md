@@ -1220,3 +1220,7 @@ B05bd核对固定dfaf2136的include/linux/rcupdate.h，blob 48e5c03df1dd83c246a6
 ## 1.163\_循环报告与实验路径标记
 
 B05be复查固定dfaf2136的kernel/locking/lockdep.c，blob 536bd471557f5b4412d6babc480d0832b4ee9d51。print_circular_bug先调用debug_locks_off_graph_unlock，再保存与打印报告；[实验章节](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.4_把运行过程记成状态接力)据此区分检查停检与功能mutex继续执行。S0/S1/S2为教学模块的预期日志，不是已取得的目标运行证据。
+
+## 1.164\_链缓存与容量边界
+
+B05bf核对固定dfaf2136的include/linux/lockdep_types.h，blob 9f361d3ab9d95d98428dbc9b25361c3ffe9e4e10，确认MAX_LOCKDEP_KEYS_BITS为13。复查kernel/locking/lockdep.c中validate_chain只在非trylock且check有效的新链上执行完整依赖分支；[成本章节](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.2_链缓存消除了哪部分成本)不再把全部IRQ使用检查归入首次新链成本。未测量性能或注入容量故障。
