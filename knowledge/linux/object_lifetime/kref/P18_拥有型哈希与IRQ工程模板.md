@@ -22,7 +22,7 @@ domains: [linux, kernel]
 
 这里用spin_lock_irqsave保存进入前的IRQ状态并关闭本地普通IRQ，再用spin_unlock_irqrestore恢复保存值。若进程持锁时本地IRQ再次尝试同一锁，IRQ会等待被自己打断的执行者，后者却无法继续解锁；保存/屏蔽路径防止这种同CPU重入。若调用前本就已关IRQ，退出时应仍保持关闭，不能用无条件开启IRQ代替恢复。当前单CPU配置不提供多CPU竞争测试证据，但本地IRQ重入问题仍然存在；该接口也不能据此推广为NMI/FIQ或任意实时配置的安全保证。
 
-固定包装及配置入口见[锁源码阅读索引](../../../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md)和[spin_lock到raw包装](../../../../research/source_reading/locking/source_explanations/P01_Linux_6.12_spinlock包装与raw路径源码实现.md#1.4_spin_lock到raw包装)。该锁研究主线另有SMP配置，本模板编译边界按[本次基线核对](../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.75_拥有型哈希模板的上下文边界)，不能静默混用两者的架构路径。
+固定包装及配置入口见[锁源码阅读索引](../../../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md)和[spin_lock到raw包装](../../../../research/source_reading/locking/source_explanations/include/linux/spinlock.h.md#1.4_spin_lock到raw包装)。该锁研究主线另有SMP配置，本模板编译边界按[本次基线核对](../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.75_拥有型哈希模板的上下文边界)，不能静默混用两者的架构路径。
 
 ```mermaid
 sequenceDiagram

@@ -113,6 +113,6 @@ release cmpxchg 发布临界区写入；wake 只让目标任务可运行。hando
 
 总索引：[Linux 6.12 锁源码总阅读索引](../navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)。
 
-上一篇：[spinlock 包装与 raw 路径源码实现](P01_Linux_6.12_spinlock包装与raw路径源码实现.md)。
+上一篇：[spinlock 包装与 raw 路径源码实现](include/linux/spinlock.h.md)。
 
 下一篇：[rwsem 慢路径源码实现](P03_Linux_6.12_rwsem慢路径源码实现.md)。

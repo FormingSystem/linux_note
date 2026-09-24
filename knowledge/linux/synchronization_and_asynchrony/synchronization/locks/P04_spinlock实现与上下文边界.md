@@ -178,7 +178,7 @@ int main(void)
 ## 4.7\_源码入口与证据边界
 
 - 先由[锁源码总阅读索引](../../../../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.1_版本边界与阅读任务)确认固定提交，再读[spinlock 模块源码概念导读](../../../../../research/source_reading/locking/navigation/P02_Linux_6.12_spinlock模块源码概念导读.md#2.2_接口层次与状态地址)中的包装、raw锁和架构边界。
-- `spin_lock()`、`do_raw_spin_lock()` 的裁剪实现与架构调用边界见[spinlock 包装与 raw 路径源码实现](../../../../../research/source_reading/locking/source_explanations/P01_Linux_6.12_spinlock包装与raw路径源码实现.md#1.2_源码符号覆盖账本)；该文当前没有展开ARM `arch_spin_lock()` 的汇编函数体。本章票号解释直接核对固定提交的 `arch/arm/include/asm/spinlock.h` 与 `spinlock_types.h`，不把尚未编写的逐句实现讲解称为已经覆盖。
+- `spin_lock()`、`do_raw_spin_lock()` 的裁剪实现与架构调用边界见[spinlock 包装与 raw 路径源码实现](../../../../../research/source_reading/locking/source_explanations/include/linux/spinlock.h.md#1.2_源码符号覆盖账本)；该文当前没有展开ARM `arch_spin_lock()` 的汇编函数体。本章票号解释直接核对固定提交的 `arch/arm/include/asm/spinlock.h` 与 `spinlock_types.h`，不把尚未编写的逐句实现讲解称为已经覆盖。
 - 锁的内存顺序不能脱离 [Linux 内存顺序专题](../memory_ordering/大纲.md)单独推导。
 
 ## 4.8\_本章结论与下一问

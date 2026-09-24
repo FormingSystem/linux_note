@@ -1164,3 +1164,7 @@ B05ao核对固定dfaf2136的Documentation/locking/locktypes.rst及include/linux/
 ## 1.149\_自旋通用包装阅读分支
 
 B05ap核对固定dfaf2136的include/linux/spinlock_api_smp.h（blob 89eb6f4c659c706c1b7376534a25d53a316316b7），并核对spinlock.h及spinlock_types_raw.h的SMP/UP选择。[模块导读](../locking/navigation/P02_Linux_6.12_spinlock模块源码概念导读.md#2.3_普通获取调用链)明确通用常规分支的preempt/检查/架构操作顺序与GENERIC_LOCKBREAK例外，未把当前非SMP工作配置视为SMP宏展开证据。未执行目标编译与架构运行。
+
+## 1.150\_普通锁类型与包装单元
+
+B05aq按固定dfaf2136的include/linux/spinlock_types.h（blob 2dfa35ffec761f933e0f38d38be756d78b4b1669）及spinlock.h整理[类型配置](../locking/source_explanations/include/linux/spinlock_types.h.md#1.2_spinlock_t的配置映射)与[初始化/操作包装](../locking/source_explanations/include/linux/spinlock.h.md#1.3_初始化与对象地址)。18个实际单元规范化比较通过，保留真实声明属性，中文Doxygen为仓库补充；不包含ARM汇编、完整通用API或调试实现，未做目标编译运行。

@@ -4089,11 +4089,11 @@
       "reason": "按职责冷读并确定保留、修复或重写范围"
     },
     {
-      "path": "research/source_reading/locking/source_explanations/P01_Linux_6.12_spinlock包装与raw路径源码实现.md",
+      "path": "research/source_reading/locking/source_explanations/include/linux/spinlock.h.md",
       "baseline_sha256": "685265a3fd2b0ebbb2b120f1f0f0f89266ed3ecfa618d2b842e77a59dfce0169",
       "lines": 109,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05aq 按上游位置拆开类型与包装，补初始化、释放配对、真实声明属性与配置边界；固定源码静态核对，目标编译未执行，人工状态不变。"
     },
     {
       "path": "research/source_reading/locking/source_explanations/P02_Linux_6.12_mutex慢路径源码实现.md",
@@ -4990,6 +4990,13 @@
       "lines": 90,
       "state": "validated",
       "reason": "B05ah 冷读并按上游位置拆分类型/配置与操作实现，42块实际声明、宏和函数与固定源码静态一致，概念占位替换为真实属性生成；模块统一地址及三种阶段路径，总索引保留导航职责。文档及图语法检查，未编译目标配置/运行RT、NMI和弱内存工具，人工状态保留。"
+    },
+    {
+      "path": "research/source_reading/locking/source_explanations/include/linux/spinlock_types.h.md",
+      "baseline_sha256": "261f07d56b1d5d194fa96d7f0911da2ea228cf272e2a6a753845b31554eac2a7",
+      "lines": 86,
+      "state": "validated",
+      "reason": "B05aq 独立类型页展开非RT/RT完整typedef与非RT初始化宏，解释union检查视图；固定源码静态核对，未运行目标。"
     }
   ]
 }

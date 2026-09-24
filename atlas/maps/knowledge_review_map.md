@@ -808,7 +808,8 @@ mindmap-plugin: basic
             - 🔴 [P02 Linux 6.12 spinlock 模块源码概念导读](../../research/source_reading/locking/navigation/P02_Linux_6.12_spinlock模块源码概念导读.md)
             - 🔴 [P03 Linux 6.12 mutex 与 rwsem 模块源码概念导读](../../research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md)
         - 具体实现讲解
-            - 🔴 [P01 Linux 6.12 spinlock 包装与 raw 路径源码实现](../../research/source_reading/locking/source_explanations/P01_Linux_6.12_spinlock包装与raw路径源码实现.md)
+            - 🔴 [Linux 6.12 spinlock 包装与 raw 路径源码实现](../../research/source_reading/locking/source_explanations/include/linux/spinlock.h.md)
+            - 🔴 [Linux 6.12 spinlock_types.h 类型与配置](../../research/source_reading/locking/source_explanations/include/linux/spinlock_types.h.md)
             - 🔴 [P02 Linux 6.12 mutex 慢路径源码实现](../../research/source_reading/locking/source_explanations/P02_Linux_6.12_mutex慢路径源码实现.md)
             - 🔴 [P03 Linux 6.12 rwsem 慢路径源码实现](../../research/source_reading/locking/source_explanations/P03_Linux_6.12_rwsem慢路径源码实现.md)
     - 内存顺序

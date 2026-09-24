@@ -54,7 +54,7 @@ spin_lock(lock)
             → mmiowb_spin_lock()
 ```
 
-释放按相反方向进入 `mmiowb_spin_unlock()` 和 `arch_spin_unlock()`。具体实现和裁剪代码见[spinlock 包装与 raw 路径源码实现](../source_explanations/P01_Linux_6.12_spinlock包装与raw路径源码实现.md#1.4_spin_lock到raw包装)。
+释放按相反方向进入 `mmiowb_spin_unlock()` 和 `arch_spin_unlock()`。具体实现和裁剪代码见[spinlock 包装与 raw 路径源码实现](../source_explanations/include/linux/spinlock.h.md#1.4_spin_lock到raw包装)。
 
 这是一条明确选择的阅读路径，不能声称所有构建都逐层产生函数调用：`_raw_*`可以被内联映射，`kernel/locking/spinlock.c`也提供非内联入口；GENERIC_LOCKBREAK与调试配置会改变所用包装分支。`LOCK_CONTENDED`可先尝试再进入竞争路径，不是额外业务锁。此处只组织调用职责，宏体留给实现讲解。
 
@@ -98,7 +98,7 @@ flags 属于调用栈和当前 CPU，不能跨 CPU 或错误配对。锁字属�
 4. `include/linux/spinlock_api_smp.h` 与 `kernel/locking/spinlock.c`：内联/非内联通用入口、本地状态和配置例外；UP另查对应up头文件。
 5. `arch/arm/include/asm/spinlock_types.h` 与 `spinlock.h`：票号布局与原子操作；仅在所选SMP分支进入，不代表当前配置。
 
-现有[类型讲解](../source_explanations/P01_Linux_6.12_spinlock包装与raw路径源码实现.md#1.3_spinlock_t的配置映射)和[raw到架构边界](../source_explanations/P01_Linux_6.12_spinlock包装与raw路径源码实现.md#1.5_do_raw_spin_lock到架构边界)承担具体裁剪阅读。架构函数体与完整API配置分支仍须对照上述固定源码，不把当前入口的覆盖范围扩大成已经逐句讲完全部spinlock实现。
+现有[类型讲解](../source_explanations/include/linux/spinlock_types.h.md#1.2_spinlock_t的配置映射)和[raw到架构边界](../source_explanations/include/linux/spinlock.h.md#1.5_do_raw_spin_lock到架构边界)承担具体裁剪阅读。架构函数体与完整API配置分支仍须对照上述固定源码，不把当前入口的覆盖范围扩大成已经逐句讲完全部spinlock实现。
 
 ## 2.7\_复核问题
 
