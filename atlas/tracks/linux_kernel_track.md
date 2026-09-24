@@ -66,7 +66,7 @@ domains:
 1. 按序阅读[VFS 子系统专题](../../knowledge/kernel_subsystems/vfs/大纲.md)，建立 path、mount、dentry、inode、file、页缓存和回收的完整模型。
 2. 按序阅读[Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)。
 3. 阅读[错误指针专题](../../knowledge/linux/error_handling/error_pointer/大纲.md#1.1_四次认识变化)。
-4. 阅读[poll 与 epoll 的区别](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)。
+4. 阅读[poll 与 epoll 的区别](../../knowledge/linux/io_model/blocking_io/大纲.md)。
 5. 按序阅读[异步通知](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md)。
 6. 阅读[Linux 内核日志](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md)，建立最基本的观测手段。
 

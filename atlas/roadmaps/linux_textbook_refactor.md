@@ -452,3 +452,5 @@ B05v完成[MMIO正文](../../knowledge/linux/io_model/mmio/P01_MMIO_访问顺序
 B05w完成[DMA交接单元](../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md#1.5_streaming_映射的所有权状态机)，纠正FROM_DEVICE缓冲CPU写入，解释映射失败、设备完成与同步的不同条件。DMA全章保持pending，继续地址、分配与SG单元；清单剩余382项不变。见[B05w记录](../../governance/migration/repository_textbook_refactor.md#1.4.178_B05wDMA交接与方向修正)。
 
 B05x完成[DMA正文及SG模型](../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md#1.7.1_用C核对两套计数)和[阅读大纲](../../knowledge/linux/io_model/dma/大纲.md)，按固定文档补足地址、分配与终止边界。清单694项314 validated、362 pending、18 supporting_pending，剩余380项；继续其他I/O与通知专题。见[B05x记录](../../governance/migration/repository_textbook_refactor.md#1.4.179_B05xDMA地址SG与终止边界)。
+
+B05y完成[poll与epoll三章及大纲](../../knowledge/linux/io_model/blocking_io/大纲.md)，把临时登记、持久候选、触发模式与负载选择分开；新增固定源码阅读索引。清单698项319 validated、361 pending、18 supporting_pending，剩余379项。Linux管道实验未运行，下一批继续等待与通知依赖。见[B05y记录](../../governance/migration/repository_textbook_refactor.md#1.4.180_B05ypoll与epoll状态和选择)。

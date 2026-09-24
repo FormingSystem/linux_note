@@ -321,7 +321,11 @@ mindmap-plugin: basic
             - 🔴 [错误指针接口与排错速查](../../knowledge/linux/error_handling/error_pointer/readme.md)
     - I/O 模型
         - 阻塞 I/O
-            - 🔴 [poll 机制 从用户等待到驱动唤醒的完整链路](../../knowledge/linux/io_model/blocking_io/poll与epoll的区别.md)
+            - 🔴 [poll与epoll阅读路线](../../knowledge/linux/io_model/blocking_io/大纲.md)
+                - 🔴 [poll登记与就绪复查](../../knowledge/linux/io_model/blocking_io/P01_poll登记与就绪复查.md)
+                - 🔴 [epoll持久登记与交付](../../knowledge/linux/io_model/blocking_io/P02_epoll持久登记与交付.md)
+                - 🔴 [从负载选择poll与epoll](../../knowledge/linux/io_model/blocking_io/P03_poll与epoll的选择.md)
+                - 🔴 [poll与epoll源码阅读索引](../../research/source_reading/io_polling/navigation/P01_poll与epoll源码阅读索引.md)
         - 🔴 [Linux DMA 一致性专题](../../knowledge/linux/io_model/dma/大纲.md)
             - 章节评审：1 章未评审
             - 🔴 [P01 DMA 映射同步与门铃顺序](../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md)

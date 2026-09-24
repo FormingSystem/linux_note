@@ -1070,3 +1070,9 @@ B05w只读核对固定dfaf2136的Documentation/core-api/dma-api-howto.rst（0bf3
 ## 1.131\_DMA地址和SG计数与终止同步
 
 B05x继续核对固定dfaf2136的dma-api-howto和Documentation/driver-api/dmaengine/client.rst（Git blob d491e385d61a98b8a804cd823caf254a2dc62cf4），区分CPU虚拟/物理/DMA地址、单段映射缓冲限制、SG输入项与输出段、DMA设备参数及异步终止后同步。[SG完整C模型](../../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md#1.7.1_用C核对两套计数)以固定三项到两段检查计数职责，GCC14.2/Clang18.1.8严格C11 O2运行通过；它不实现dma_map_sg，不构成设备或缓存验证。
+
+## 1.132\_poll登记与触发边界
+
+B05y按固定dfaf2136提交核对include/linux/poll.h、fs/select.c、fs/eventpoll.c；文件blob与阶段入口见[poll与epoll源码阅读索引](../io_polling/navigation/P01_poll与epoll源码阅读索引.md#1.1_固定提交与文件位置)。普通poll区分临时登记、triggered与再次查询；epoll区分持久兴趣、目标队列回调、rdllist/ovflist和交付前复查，并核对LT重排、ET不自动重排、ONESHOT禁用与MOD重启。使用官方固定对象，不使用本地实验HEAD作为证据，不修改外部树。
+
+[就绪C模型](../../../knowledge/linux/io_model/blocking_io/P01_poll登记与就绪复查.md#1.7_用完整C模型观察就绪失效)在宿主双编译器严格C11 O2运行；[Linux管道实验](../../../knowledge/linux/io_model/blocking_io/P02_epoll持久登记与交付.md#2.6_完整Linux实验_留下一个字节)未在Linux运行，正文输出明确为预期。未验证真实驱动、多线程、ARM、信号与并发关闭；不把模型通过等同于系统调用或性能验证。

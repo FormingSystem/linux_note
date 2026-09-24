@@ -2248,11 +2248,11 @@
       "current_lines": 162
     },
     {
-      "path": "knowledge/linux/io_model/blocking_io/poll与epoll的区别.md",
+      "path": "knowledge/linux/io_model/blocking_io/P01_poll登记与就绪复查.md",
       "baseline_sha256": "9b4984bb8d8eb9fd6415830c433cd67396c8c7ad0084136d2bf11e618032d45b",
       "lines": 720,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05y逐单元冷读原三章并按职责重写拆分，保留就绪、登记、触发、场景与驱动知识；固定poll/eventpoll源码核对，宿主C就绪模型双编译器通过，Linux管道实验未运行。"
     },
     {
       "path": "knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md",
@@ -4941,6 +4941,34 @@
       "lines": 146,
       "state": "validated",
       "reason": "B05u由已逐单元审查的固定版本导读完整迁入，补齐上下篇与准确锚点，区分真实实现、模型关系和未执行验证；人评状态保持红色。"
+    },
+    {
+      "path": "knowledge/linux/io_model/blocking_io/P02_epoll持久登记与交付.md",
+      "baseline_sha256": "920c3724054a1e4fa51d6b2537ab3875f150c6ceaaefa01cafde762cc71aeb25",
+      "lines": 258,
+      "state": "validated",
+      "reason": "B05y逐单元冷读原三章并按职责重写拆分，保留就绪、登记、触发、场景与驱动知识；固定poll/eventpoll源码核对，宿主C就绪模型双编译器通过，Linux管道实验未运行。"
+    },
+    {
+      "path": "knowledge/linux/io_model/blocking_io/P03_poll与epoll的选择.md",
+      "baseline_sha256": "80f6bbd395466c701f8771611ad14fc75526a69fec5778b4d16db7631c4a7588",
+      "lines": 63,
+      "state": "validated",
+      "reason": "B05y逐单元冷读原三章并按职责重写拆分，保留就绪、登记、触发、场景与驱动知识；固定poll/eventpoll源码核对，宿主C就绪模型双编译器通过，Linux管道实验未运行。"
+    },
+    {
+      "path": "knowledge/linux/io_model/blocking_io/大纲.md",
+      "baseline_sha256": "038df1d9b28475ea90dbf3a794ebbc8a166532e75ee9e4fbb4fdb7aa8519a6b6",
+      "lines": 35,
+      "state": "validated",
+      "reason": "B05y逐单元冷读原三章并按职责重写拆分，保留就绪、登记、触发、场景与驱动知识；固定poll/eventpoll源码核对，宿主C就绪模型双编译器通过，Linux管道实验未运行。"
+    },
+    {
+      "path": "research/source_reading/io_polling/navigation/P01_poll与epoll源码阅读索引.md",
+      "baseline_sha256": "50b4038e0c9217dfa95160dee9a3c1b4b0928ec89f78bfaaee655e09a441d12a",
+      "lines": 52,
+      "state": "validated",
+      "reason": "B05y逐单元冷读原三章并按职责重写拆分，保留就绪、登记、触发、场景与驱动知识；固定poll/eventpoll源码核对，宿主C就绪模型双编译器通过，Linux管道实验未运行。"
     }
   ]
 }
