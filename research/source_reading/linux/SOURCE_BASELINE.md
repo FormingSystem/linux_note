@@ -1188,3 +1188,7 @@ B05au核对固定dfaf2136的include/linux/rwsem.h（blob c8b543d428b0a8d4662183f
 ## 1.155\_rwsem预授与退出路径
 
 B05av依据固定dfaf2136的kernel/locking/rwsem.c（blob 2bbb6eca51445bdf434ba579ced4beddafbc52ca）展开[批量授予](../locking/source_explanations/kernel/locking/rwsem.c.md#1.4_mark_wake先记账再发布)及读写获取和取消。三种类型、八个完整函数静态比对；读者先补份额后release清task，信号路径持锁复查，写者唤醒仍需acquire设置写位。限定非RT，未执行目标运行或性能测量。
+
+## 1.156\_可睡锁模块配置与协作
+
+B05aw重新核对固定dfaf2136的include/linux/mutex_types.h（blob fdf7f515fde8e3e06c4dd7204bcd7a469e2a76eb）和mutex.h（blob 2bf91b57591b49e4668752e773419ae945f124da），确认RT载体与配置入口。[模块导读](../locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md#3.3_mutex完整调用链)组织已核对mutex.c/rwsem.c的状态协作，不新增重复函数体；目标编译运行及RT仍未验证。

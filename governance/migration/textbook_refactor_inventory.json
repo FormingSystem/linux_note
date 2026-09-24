@@ -4071,8 +4071,8 @@
       "path": "research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md",
       "baseline_sha256": "276e107d60c333352992b810f39894f3654e0169aff15084e669e378ea253afc",
       "lines": 84,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05aw 独立冷读总索引，保留有效状态表、配置和先修，修正旧实现编号与固定证据边界，核对全部模块及七份实现入口；静态检查，人工状态不变。"
     },
     {
       "path": "research/source_reading/locking/navigation/P02_Linux_6.12_spinlock模块源码概念导读.md",
@@ -4085,8 +4085,8 @@
       "path": "research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md",
       "baseline_sha256": "5b08565fc400c136d305ea893c7b20b53fda5132d155bdc8aa50747b52446a25",
       "lines": 79,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05aw 以独立模块任务重写状态地址、阶段协作、两类授予和取消阅读链，三图解释通信并精确链接唯一实现；配置与寿命边界静态核对，未做目标测试。"
     },
     {
       "path": "research/source_reading/locking/source_explanations/include/linux/spinlock.h.md",

@@ -13,7 +13,7 @@ source_version: "6.12.20"
 
 ## 1.1\_版本边界与阅读任务
 
-本专题固定到 NXP `linux-imx` 发布标签 `lf-6.12.20-2.0.0` 解引用后的提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，顶层版本为 Linux 6.12.20。当前开发工作树位于同一 `lf-6.12.y` 分支且比该标签提交前进 3 个提交；本文所有函数和行号仍以固定发布提交为准，不静默混用分支头。
+本专题固定到 NXP `linux-imx` 发布标签 `lf-6.12.20-2.0.0` 解引用后的提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，顶层版本为 Linux 6.12.20。开发工作树可以包含本地实验提交；本文所有函数和行号仍以固定发布提交为准，不把本地分支头作为技术证据。
 
 本轮重新读取标准工作树配置：`CONFIG_SMP`未启用，`CONFIG_PREEMPT_NONE=y`、`CONFIG_TINY_RCU=y`，未启用mutex/rwsem owner spinning。先前“当前配置为SMP并开启owner spinning”的表述已纠正；正文介绍这些分支依据固定提交的源码条件，不代表当前构建选择它们，更不代表已在目标运行。
 
@@ -40,9 +40,9 @@ flowchart TD
     S --> S1["P02包装、raw、IRQ与架构边界"]
     M --> M1["P03 owner、OSQ、waiter与handoff"]
     R --> R1["P03 count、读写waiter与mark_wake"]
-    S1 --> I1["实现P01"]
-    M1 --> I2["实现P02"]
-    R1 --> I3["实现P03"]
+    S1 --> I1["include/linux包装与arch/arm实现"]
+    M1 --> I2["kernel/locking/mutex.c实现"]
+    R1 --> I3["include/linux/rwsem.h与kernel/locking/rwsem.c"]
 ```
 
 - [spinlock 模块源码概念导读](P02_Linux_6.12_spinlock模块源码概念导读.md#2.1_模块问题与配置边界)
@@ -76,7 +76,7 @@ flowchart TD
 2. 不可睡路径进入 P02，先看 `spinlock_t` 配置映射，再看包装层和架构边界。
 3. 可睡排他进入 P03 mutex 分支，依次看 owner flags、OSQ、wait list、schedule 和 unlock handoff。
 4. 多读单写进入 P03 rwsem 分支，依次看 count/owner、waiter type、read/write slowpath 和 `rwsem_mark_wake()`。
-5. 只有需要解释具体字段或函数体时进入三个 source_explanations，避免重复展开。
+5. 需要具体字段或函数体时，按1.3的上游路径入口进入 source_explanations：类型、公共包装、通用raw API、ARM映射和可睡慢路径分别承担独立阅读任务。
 
 ## 1.7\_复核问题
 
