@@ -1236,3 +1236,7 @@ B05bh核对固定dfaf2136的kernel/locking/lockdep.c，blob 536bd471557f5b4412d6
 ## 1.167\_查询返回与pin诊断周期
 
 B05bi复核固定dfaf2136的include/linux/lockdep.h，blob 67964dc4db952ea11d4b88554383ea0ec5946ef9，以及lockdep.c的__lock_is_held、__lock_pin_lock。[查询模块](../lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.3_断言与pin怎样消费held_record)区分三态返回、pin_count配对与功能同步，未执行目标回调测试。
+
+## 1.168\_锁类登记完整控制流
+
+B05bk核对固定dfaf2136的kernel/locking/lockdep.c，blob 536bd471557f5b4412d6babc480d0832b4ee9d51。[register_lock_class讲解](../lockdep/source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.4_register_lock_class锁类注册)改为完整函数，去注释空白后匹配固定源码，保留初始化、verbose重新加锁、解锁标签、force缓存选择及最终返回。未执行目标竞争或容量测试。

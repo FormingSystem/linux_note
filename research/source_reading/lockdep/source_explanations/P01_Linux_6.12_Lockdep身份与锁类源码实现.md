@@ -146,12 +146,15 @@ register_lock_class(struct lockdep_map *lock, unsigned int subclass, int force)
 	struct lock_class *class;
 	int idx;
 
+	/* 仓库补充：入口要求本地中断已关闭。 */
+	DEBUG_LOCKS_WARN_ON(!irqs_disabled());
+
 	class = look_up_lock_class(lock, subclass);
 	if (likely(class))
 		goto out_set_class_cache;
 
 	if (!lock->key) {
-		if (!assign_lock_key(lock)) /* 仅持久静态对象可自动用自身地址。 */
+		if (!assign_lock_key(lock))
 			return NULL;
 	} else if (!static_obj(lock->key) && !is_dynamic_key(lock->key)) {
 		return NULL;
@@ -160,38 +163,141 @@ register_lock_class(struct lockdep_map *lock, unsigned int subclass, int force)
 	key = lock->key->subkeys + subclass;
 	hash_head = classhashentry(key);
 
-	if (!graph_lock())
+	if (!graph_lock()) {
 		return NULL;
-	/* 持锁后再次查找，封闭与其他CPU并发登记的窗口。 */
+	}
+	/*
+	 * We have to do the hash-walk again, to avoid races
+	 * with another CPU:
+	 */
 	hlist_for_each_entry_rcu(class, hash_head, hash_entry) {
 		if (class->key == key)
 			goto out_unlock_set;
 	}
 
-	class = list_first_entry_or_null(&free_lock_classes,
-					 typeof(*class), lock_entry);
-	if (!class) {
-		if (!debug_locks_off_graph_unlock())
-			return NULL;
-		print_lockdep_off("BUG: MAX_LOCKDEP_KEYS too low!");
-		return NULL; /* 容量耗尽后关闭检查，避免半写图。 */
-	}
+	/* 仓库补充：首次使用时建立空闲类等全局结构。 */
+	init_data_structures_once();
 
+	/* Allocate a new lock class and add it to the hash. */
+	class = list_first_entry_or_null(&free_lock_classes, typeof(*class),
+					 lock_entry);
+	if (!class) {
+		if (!debug_locks_off_graph_unlock()) {
+			return NULL;
+		}
+
+		nbcon_cpu_emergency_enter();
+		print_lockdep_off("BUG: MAX_LOCKDEP_KEYS too low!");
+		dump_stack();
+		nbcon_cpu_emergency_exit();
+		return NULL;
+	}
 	nr_lock_classes++;
 	__set_bit(class - lock_classes, lock_classes_in_use);
+	debug_atomic_inc(nr_unused_locks);
 	class->key = key;
 	class->name = lock->name;
 	class->subclass = subclass;
+	WARN_ON_ONCE(!list_empty(&class->locks_before));
+	WARN_ON_ONCE(!list_empty(&class->locks_after));
+	class->name_version = count_matching_names(class);
 	class->wait_type_inner = lock->wait_type_inner;
 	class->wait_type_outer = lock->wait_type_outer;
 	class->lock_type = lock->lock_type;
+	/*
+	 * We use RCU's safe list-add method to make
+	 * parallel walking of the hash-list safe:
+	 */
 	hlist_add_head_rcu(&class->hash_entry, hash_head);
+	/*
+	 * Remove the class from the free list and add it to the global list
+	 * of classes.
+	 */
 	list_move_tail(&class->lock_entry, &all_lock_classes);
-	/* 其余统计、缓存和解锁代码省略。 */
+	idx = class - lock_classes;
+	if (idx > max_lock_class_idx)
+		max_lock_class_idx = idx;
+
+	if (verbose(class)) {
+		graph_unlock();
+
+		nbcon_cpu_emergency_enter();
+		printk("\nnew class %px: %s", class->key, class->name);
+		if (class->name_version > 1)
+			printk(KERN_CONT "#%d", class->name_version);
+		printk(KERN_CONT "\n");
+		dump_stack();
+		nbcon_cpu_emergency_exit();
+
+		if (!graph_lock()) {
+			return NULL;
+		}
+	}
+/* 仓库补充：锁内命中与新建类都从这里释放图锁。 */
+out_unlock_set:
+	graph_unlock();
+
+/* 仓库补充：force可把非零子类写入默认缓存槽。 */
+out_set_class_cache:
+	if (!subclass || force)
+		lock->class_cache[0] = class;
+	else if (subclass < NR_LOCKDEP_CACHING_CLASSES)
+		lock->class_cache[subclass] = class;
+
+	/*
+	 * Hash collision, did we smoke some? We found a class with a matching
+	 * hash but the subclass -- which is hashed in -- didn't match.
+	 */
+	if (DEBUG_LOCKS_WARN_ON(class->subclass != subclass))
+		return NULL;
+
+	return class;
 }
+
 ```
 
 **实现原理：** 首次无锁快速查找减少重复登记；未命中后在 `graph_lock` 下双检，避免两个 CPU 为同一 key 创建两个类。`assign_lock_key()` 只接受内核/模块 per-CPU 的规范地址或其他静态对象；无法确认持久性的临时对象会关闭检查器并要求调用者补正确初始化/注解。
+
+这段函数现保留完整上游控制流；不能把尾部解锁、缓存和返回统称为“统计代码”省略。按R0至R4追踪它：
+
+| 阶段 | 入口与状态变化 | 谁继续读取 |
+| --- | --- | --- |
+| R0 | 当前CPU已关本地IRQ，查找现有类；命中直接转缓存出口 | 当前调用者 |
+| R1 | 身份有效后取得图锁，在类哈希桶中复查 | 与其他CPU串行化的新类登记 |
+| R2 | 初始化全局结构，从free_lock_classes取槽，设置key/名称/类型和占用位 | 类哈希与全局类列表的读者 |
+| R3 | 用RCU链表操作发布哈希节点，把槽移到all_lock_classes，更新最大索引 | 后续取得路径及诊断统计 |
+| R4 | 释放图锁，写实例class_cache，核对subclass并返回 | 本实例后续取得及当前调用者 |
+
+R1的锁内命中直接进入R4，不重复分配。R2无空闲槽时，`debug_locks_off_graph_unlock()` 同时承担停检与释放图锁，随后输出容量故障，返回NULL。调用者不能把这个NULL解释成“锁类不存在但检查仍然完整”。R3的verbose分支是另一个容易漏看的出口：它先解锁再打印，打印后重新取得图锁；重新加锁失败也返回NULL，因此不能在抽取源码时删去它再声称控制流未变。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as 登记CPU
+    participant H as 全局类哈希与空闲槽
+    participant B as 其他CPU
+    participant M as 实例class_cache
+    A->>H: R0 快速查找
+    alt 已有类
+        H-->>A: 返回类地址
+    else 未命中
+        B->>H: 可能先登记同一子键
+        A->>H: R1 取得图锁后再次查找
+        alt 仍未找到且有空闲槽
+            A->>H: R2 初始化槽，R3发布类
+        else 已有类
+            H-->>A: 复用类，不再分配
+        else 容量耗尽
+            A->>H: 停检并解锁，返回NULL
+        end
+        A->>H: 成功路径R4释放图锁
+    end
+    A->>M: 成功路径R4写缓存并检查子类
+```
+
+缓存出口还解释了参数 `force`：subclass为0或force非零时写 `class_cache[0]`；其他可缓存的子类写其编号对应槽。不能将这里概括成“所有子类总写同编号槽”。`name_version` 用于区分同名类的诊断显示，`nr_lock_classes`、占用位及最大索引帮助管理全局槽位；它们不改变由子键决定的身份。`verbose`、`nbcon_cpu_emergency_enter/exit` 和打印调用服务诊断输出，其中重新加锁分支影响返回结果，所以源码保留原样。
+
+**可修改性边界：** 改缓存策略时应同时核对force调用者、子类编号与查找端；改发布顺序时必须保持槽初始化先于哈希发布、空闲列表到全局列表的唯一归属以及全部错误出口解锁。验证应包含首次登记、已有类命中、两CPU竞争同一子键和容量失败；本节没有声称这些目标运行测试已经执行。
 
 **配置与容量边界：** `MAX_LOCKDEP_KEYS` 是固定 class 槽位数。耗尽时不是静默忽略一个类，而是报告并使 `debug_locks` 失效。诊断见[成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.3_固定容量为何是证明前提)。
 
