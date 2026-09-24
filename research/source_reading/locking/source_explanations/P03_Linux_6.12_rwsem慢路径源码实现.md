@@ -107,4 +107,4 @@ writer 分支只标记一个队首任务；reader 分支先把一批读份额计
 
 总索引：[Linux 6.12 锁源码总阅读索引](../navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)。
 
-上一篇：[mutex 慢路径源码实现](P02_Linux_6.12_mutex慢路径源码实现.md)。
+上一篇：[mutex 慢路径源码实现](kernel/locking/mutex.c.md)。

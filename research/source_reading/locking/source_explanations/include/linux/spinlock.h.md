@@ -149,4 +149,4 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 
 总索引：[Linux 6.12 锁源码总阅读索引](../../../navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)。
 
-下一篇：[mutex 慢路径源码实现](../../P02_Linux_6.12_mutex慢路径源码实现.md)。
+下一篇：[mutex 慢路径源码实现](../../kernel/locking/mutex.c.md)。

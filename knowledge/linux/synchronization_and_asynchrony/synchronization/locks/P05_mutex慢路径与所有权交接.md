@@ -132,7 +132,7 @@ HANDOFF由等待路径请求，PICKUP由释放路径发布，两者不是同一�
 
 ## 5.8\_源码入口
 
-先从[锁源码总阅读索引](../../../../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.1_版本边界与阅读任务)确认版本，版本化状态、`__mutex_lock_common()`、`mutex_optimistic_spin()` 和 `__mutex_unlock_slowpath()` 的协作见[mutex 与 rwsem 模块源码概念导读](../../../../../research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md#3.3_mutex完整调用链)。具体函数体只在[mutex 慢路径源码实现](../../../../../research/source_reading/locking/source_explanations/P02_Linux_6.12_mutex慢路径源码实现.md#2.2_源码符号覆盖账本)展开。
+先从[锁源码总阅读索引](../../../../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.1_版本边界与阅读任务)确认版本，版本化状态、`__mutex_lock_common()`、`mutex_optimistic_spin()` 和 `__mutex_unlock_slowpath()` 的协作见[mutex 与 rwsem 模块源码概念导读](../../../../../research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md#3.3_mutex完整调用链)。具体函数体只在[mutex 慢路径源码实现](../../../../../research/source_reading/locking/source_explanations/kernel/locking/mutex.c.md#1.2_源码符号覆盖账本)展开。
 
 ## 5.9\_本章结论与下一问
 

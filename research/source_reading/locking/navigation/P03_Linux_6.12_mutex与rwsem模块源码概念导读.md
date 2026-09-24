@@ -13,7 +13,7 @@ source_version: "6.12.20"
 
 ## 3.1\_模块问题与职责拆分
 
-mutex 与 rwsem 都允许竞争任务睡眠，却不是同一状态机。mutex 围绕唯一 owner 与 waiter handoff；rwsem 围绕读者份额、写者独占和混合 waiter 队列。本章只组织模块与调用链，函数体分别进入 P02/P03 实现文档。
+mutex 与 rwsem 都允许竞争任务睡眠，却不是同一状态机。mutex 围绕唯一 owner 与 waiter handoff；rwsem 围绕读者份额、写者独占和混合 waiter 队列。本章只组织模块与调用链，函数体分别进入下文链接的独立实现文档。
 
 ## 3.2\_文件与对象
 
@@ -36,15 +36,16 @@ flowchart TD
     E -->|"是"| C
     E -->|"否"| F["wait_lock下加入wait_list"]
     F --> G["设置WAITERS并schedule"]
-    G --> H["队首请求handoff/pickup"]
+    G --> H["队首可请求HANDOFF，尚未取得"]
     I["mutex_unlock"] --> J["__mutex_unlock_slowpath"]
-    J --> H
-    H --> C
+    J -->|"有HANDOFF时发布目标身份与PICKUP"| K["目标任务acquire接收"]
+    H -->|"等待定向发布"| K
+    K --> C
 ```
 
 owner 的低三位记录 WAITERS/HANDOFF/PICKUP；wait_list 由 wait_lock 保护；OSQ 协调乐观自旋者。信号退出要在慢路径中移除 waiter 后返回。
 
-具体函数见[mutex 慢路径源码实现](../source_explanations/P02_Linux_6.12_mutex慢路径源码实现.md#2.2_源码符号覆盖账本)。
+具体函数见[mutex 慢路径源码实现](../source_explanations/kernel/locking/mutex.c.md#1.2_源码符号覆盖账本)。
 
 ## 3.4\_rwsem完整调用链
 

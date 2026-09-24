@@ -4096,11 +4096,11 @@
       "reason": "B05aq 按上游位置拆开类型与包装，补初始化、释放配对、真实声明属性与配置边界；固定源码静态核对，目标编译未执行，人工状态不变。"
     },
     {
-      "path": "research/source_reading/locking/source_explanations/P02_Linux_6.12_mutex慢路径源码实现.md",
+      "path": "research/source_reading/locking/source_explanations/kernel/locking/mutex.c.md",
       "baseline_sha256": "280b27038b69a2943be8e0b19cd2a3f553a466616dd3cd6508783ef37b743a1d",
       "lines": 118,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05at 按上游位置替换伪代码，展开11个真实函数及登记、交接、接收、取消周期；固定源码静态比对，目标编译运行未执行，人工状态不变。"
     },
     {
       "path": "research/source_reading/locking/source_explanations/P03_Linux_6.12_rwsem慢路径源码实现.md",

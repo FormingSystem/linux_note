@@ -51,7 +51,7 @@ flowchart TD
 - [spinlock_types.h 类型与配置](../source_explanations/include/linux/spinlock_types.h.md#1.2_spinlock_t的配置映射)
 - [spinlock_api_smp.h 上下文与获取释放](../source_explanations/include/linux/spinlock_api_smp.h.md#1.2_普通获取和释放的顺序)
 - [ARM spinlock.h 票号与事件](../source_explanations/arch/arm/include/asm/spinlock.h.md#1.2_取得票号不等于已经进入)
-- [mutex 慢路径源码实现](../source_explanations/P02_Linux_6.12_mutex慢路径源码实现.md#2.2_源码符号覆盖账本)
+- [mutex 慢路径源码实现](../source_explanations/kernel/locking/mutex.c.md#1.2_源码符号覆盖账本)
 - [rwsem 慢路径源码实现](../source_explanations/P03_Linux_6.12_rwsem慢路径源码实现.md#3.2_源码符号覆盖账本)
 
 ## 1.4\_状态所有权总表

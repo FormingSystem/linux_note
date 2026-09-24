@@ -1176,3 +1176,7 @@ B05ar对固定dfaf2136的include/linux/spinlock_api_smp.h五个完整函数做�
 ## 1.152\_ARM阻塞获取与事件发布
 
 B05as以固定dfaf2136的arch/arm/include/asm/spinlock.h（blob f610a773f2be527dde14415a61fab4c7250d9447）展开[三个真实函数](../locking/source_explanations/arch/arm/include/asm/spinlock.h.md#1.2_取得票号不等于已经进入)，静态内容比对通过。说明ldrex/strex领号、wfe后owner复查、smp_mb与dsb_sev顺序，限定SMP分支且未展开事件替换宏体；当前工作配置非SMP，不构成架构执行证据。
+
+## 1.153\_mutex交接与取消的真实分支
+
+B05at从固定dfaf2136的kernel/locking/mutex.c（blob cbae8c0b89ab2b8074a387ebf1cca86951362cc2）展开[owner取得与等待](../locking/source_explanations/kernel/locking/mutex.c.md#1.3_owner指针与三个位标志)及[释放交接](../locking/source_explanations/kernel/locking/mutex.c.md#1.5_mutex_unlock_slowpath的交接)，11个完整函数静态比对通过。替换概念骨架，明确HANDOFF直接退出释放循环、选当前队首、release发布PICKUP、目标acquire接收先于错误退出。范围为非RT普通mutex，共同函数中的WW分支保留但未展开其算法；当前非SMP工作配置未启用owner自旋，未做目标编译运行。
