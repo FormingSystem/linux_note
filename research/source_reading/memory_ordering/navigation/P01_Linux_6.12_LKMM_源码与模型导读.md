@@ -158,14 +158,45 @@ exists (1:r0=1 /\ 1:r1=0)
 
 ## 1.5\_linux\_kernel\_bell\_给事件分类
 
-[`linux-kernel.bell`](../../linux/tools/memory-model/linux-kernel.bell) 声明：
+前一节已经得到带标签的访问事件，但标签不能直接回答“哪些读可以被rmb排列”“哪次RCU退出对应哪次进入”。[`linux-kernel.bell`](../../linux/tools/memory-model/linux-kernel.bell)提供事件分类，还构造读侧配对、标记访问集合和依赖传播关系；只把它称为标签清单，会漏掉模型进入公理以前已经完成的工作。
 
-- Accesses：`once`、`release`、`acquire`、RMW 等类别；
-- Barriers：`wmb/rmb/mb`、atomic 前后屏障、锁、RCU/SRCU 等；
-- 指令类别与事件标记；
-- RCU 读侧嵌套分析。
+### 1.5.1\_把指令种类和顺序标签分开
 
-herd7 先根据这些分类识别哪些事件可以进入后续 `cat` 关系。若新 Linux API 未在 `.def/.bell` 中表达，Litmus 不能仅凭函数名称理解它。
+固定文件的Accesses枚举包含once、release、acquire和noreturn。读事件允许once/acquire/noreturn，写事件允许once/release，RMW一栏则列出once/acquire/release。RMW是读改写事件类别，不能误写成Accesses枚举中另一个同级标签。noreturn用于不返回结果的RMW的读取部分，也不表示这次操作没有读内存。
+
+Barriers枚举另外列出wmb、rmb、mb、编译器barrier、RCU进入/退出/等待以及atomic和锁相关的辅助屏障。这里的after-spinlock是辅助屏障标签，不是把spin_lock操作本身简化成fence。可睡眠RCU（Sleepable RCU，SRCU）又有专门的事件类别；锁的LKR/LKW分别表示成功获取锁的读取和写入部分，具体配对要沿lock.cat阅读，不能因为都与同步有关就塞进一个标签列表。
+
+回到MP的四个访问：buf写是带once标记的写，flag写是带release标记的写，flag读带acquire，buf读带once。后续关系据此筛选端点。若把所有访问都笼统叫“原子事件”，就看不见release/acquire为何进入不同的关系，也无法解释换回ONCE后哪些边消失。
+
+### 1.5.2\_先配对读侧区间再讨论宽限期
+
+RCU模型要知道一个读侧区间从哪里开始、在哪里结束。设同一参与者按程序顺序出现L0、L1、U1、U0，L表示进入，U表示退出：直觉上应先配内层L1→U1，再配外层L0→U0。不能简单地把每个进入连到其后的所有退出，否则外层可能被误认为在内层退出时就结束。
+
+固定bell里的rcu-rscs采用递归关系：先从尚未匹配的进入/退出事件中找相邻的一对进入→退出，把这对加入matched；随后从未匹配集合里排除它们，再继续建立外层配对。这里的“递归”描述模型关系的求解，不是Linux运行时维护了一张名叫matched的全局表。
+
+```mermaid
+flowchart LR
+    L0["L0：外层进入"] -->|"po"| L1["L1：内层进入"]
+    L1 -->|"po；先成为匹配对"| U1["U1：内层退出"]
+    U1 -->|"po"| U0["U0：外层退出"]
+    L0 -.->|"内层配好后，剩余相邻进入与退出配对"| U0
+```
+
+可以手算三个输入：L0、U0产生一对；L0、L1、U1、U0产生内外两对；L0、L1、U1只产生内层一对，L0仍没有退出。源码随后分别检查未配对进入和退出，并给出unmatched-rcu-lock/unlock标志。不能把带异常标志的输入，当成正常RCU程序证明已经成立。
+
+SRCU配对不能只抄这套括号规则。它还要考虑相同srcu_struct位置，以及进入返回的索引怎样经数据流抵达退出；固定文件用数据依赖和读取来源传递该值，检查多重匹配和不同值匹配。对象位置相同但索引来自另一轮，不足以让读侧区间合法。文件也检查在RCU临界区内出现synchronize_srcu的非法睡眠情形。
+
+以上均为工具中的事件与关系，不是实际任务或CPU之间的通知流程。真实RCU/SRCU怎样登记状态和完成等待，应回到对应实现专题；bell既不执行宽限期线程，也不证明它一定取得调度机会。
+
+### 1.5.3\_Marked不是手写ONCE的同义词
+
+文件随后定义Marked和Plain集合。Marked不只包含Once、Release和Acquire，还纳入初始写、RMW端点、锁事件、SRCU读侧事件以及非内存事件等；Plain是内存事件中扣除Marked后的部分。因此普通赋值不能单凭语法外观归类，初始化事件也不能随意当成未经标记的并发写。
+
+这一分类会影响后面的关系构造。例如cat定义rmb关系时排除Noreturn中的读，说明“只要出现读事件，rmb就一视同仁”不符合此版本模型。这里先建立分类，下一节再看它怎样改变关系端点，不从名字直接猜保证。
+
+bell末尾还扩展addr、ctrl和data依赖：数据经同一参与者内的读取来源传递时，依赖可以穿过中间访问继续传播；SRCU退出被显式排除在相应传递步骤之外。此处不是把所有程序顺序都变成依赖，也不是跨任意线程的rf都可以搬来充当本地数据流。需要核对具体中间事件及rfi条件。
+
+练习：把上一节MP的buf访问改成普通访问，不能只删一个显示标签然后照搬全由Marked端点构成的证明；要继续核对Plain规则和数据竞争诊断。反过来，保留四个ONCE/release/acquire访问，只改结果谓词，则分类没有改变，改变的是要查找的候选执行。先分清“换程序”和“换查询”，才能理解工具给出的答案究竟回答哪个问题。
 
 ## 1.6\_linux\_kernel\_cat\_怎样组织公理
 

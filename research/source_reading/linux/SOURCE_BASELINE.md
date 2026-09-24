@@ -1046,3 +1046,7 @@ B05q按固定dfaf2136核对arch/arm/include/asm/barrier.h（Git blob 83ae97c049d
 ## 1.125\_模型输入与工具配置边界
 
 B05r重新核对官方远端、来源分支、固定标签与Linux版本，外部HEAD仍为实验提交7b60e547，不用于证据。已保存linux-kernel.def和linux-kernel.cfg的Git对象分别为88a39601f52563b670876e3ef4950324dc66224a、3c8098e99f41dfe72cb75f4c276801ab2c855f83，与固定dfaf2136相同。冷读两文件及模型README工具要求，沿[完整MP输入](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.4.1_用一次发布示例核对地址和标签)区分指针/对象实参、四事件和结果谓词；[配置入口](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.8_linux_kernel_cfg_为什么要求正确工作目录)补足显示选项、工具库依赖及进程/Observation/清单三层结果。材料一致性为静态核对，未执行herd7或klitmus7；公理与锁模型继续单独审查。
+
+## 1.126\_bell事件分类与读侧配对
+
+B05s冷读固定linux-kernel.bell全文及cat消费分类的相关定义。已保存bell的Git对象ce068700939c559edc8c91b9a931a0feae82e159与官方dfaf2136一致；外部实验HEAD不参与结论。[事件分类单元](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.5.1_把指令种类和顺序标签分开)区分RMW类别与Accesses标签，沿三个读侧序列手算RCU配对，说明SRCU位置/数据流/值检查、Marked与Plain及本地依赖传递。没有执行herd7，手算不能替代工具求解或真实RCU进展验证；后续cat公理、锁模型与整体导读仍待审查。

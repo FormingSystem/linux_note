@@ -440,3 +440,5 @@ B05p完成[条件加载模块](../../research/source_reading/memory_ordering/nav
 B05q完成[ARM配置模块](../../research/source_reading/memory_ordering/navigation/P07_ARM屏障与配置边界导读.md#7.1_单核为什么仍需要设备方向的顺序)及两份唯一实现，十六组ARMv7交叉编译与十六组宿主回调检查区分CPU、DMA和平台补充路径。清单692项307 validated、367 pending、18 supporting_pending；总索引仍pending，下一项模型定义与公理阅读。见[B05q记录](../../governance/migration/repository_textbook_refactor.md#1.4.172_B05qARM映射与平台补充)。
 
 B05r重写总导读的[模型输入单元](../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.4.1_用一次发布示例核对地址和标签)与工具配置解释，用完整MP材料区分共享地址、局部结果、事件标签和候选谓词。静态匹配输入及固定定义，不冒充herd7结果；总导读仍pending，692项中307 validated、367 pending、18 supporting_pending不变。后续继续bell/cat/lock模型，见[B05r记录](../../governance/migration/repository_textbook_refactor.md#1.4.173_B05r模型输入与配置边界)。
+
+B05s完成[bell分类与读侧配对单元](../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.5_linux_kernel_bell_给事件分类)，补足类别/标签、嵌套匹配、SRCU数据流及Marked边界。cat公理与锁模型尚待处理，总导读仍pending；清单692项、307 validated、385项待办不变。见[B05s记录](../../governance/migration/repository_textbook_refactor.md#1.4.174_B05s事件分类与读侧配对)。
