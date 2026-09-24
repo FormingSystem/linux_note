@@ -542,3 +542,5 @@ B05bo完成子键与实例映射类型页审查，三类型匹配固定源码，
 B05bp补齐登记实现的六个图锁/入口辅助函数，解释递归状态、停检复查和解锁所有权。整页仍pending，剩余328项不变；继续key查找与生命期。见[B05bp记录](../../governance/migration/repository_textbook_refactor.md#1.4.223_B05bp登记图锁与入口自保护)。
 
 B05bq补齐静态对象识别、类查找与key兜底三个完整函数，说明per-CPU规范地址及错误出口；动态key清理仍待继续，剩余328项不变。见[B05bq记录](../../governance/migration/repository_textbook_refactor.md#1.4.224_B05bq查类与静态身份补全)。
+
+B05br补动态key登记、查询与注销三函数，区分停检退化、RCU等待和业务排空。整页仍pending，全仓剩余328项；继续回收边界和符号账本。见[B05br记录](../../governance/migration/repository_textbook_refactor.md#1.4.225_B05br动态key撤销与等待边界)。

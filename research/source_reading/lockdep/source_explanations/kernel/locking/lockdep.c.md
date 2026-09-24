@@ -558,4 +558,143 @@ static bool assign_lock_key(struct lockdep_map *lock)
 
 两个BUILD_BUG_ON检查的是编译期尺寸关系，防止用对象地址充当key时潜在范围重叠假设失效；它们不在运行时给对象分配额外内存。WARN_ONCE及printk/dump_stack属于诊断，KERN_ERR/KERN_CONT标明日志级别或续行，nbcon配对限定紧急输出区。修改地址分类或身份兜底时，必须同时复核动态key注册/注销和模块释放协议，不能只让一个新地址通过static_obj。
 
+## 1.8\_动态key的登记与撤销
+
+普通动态锁对象通常共用调用点静态key；只有key本身也动态分配时，才需要下面的登记协议。动态key哈希保存的是允许作为身份的地址，并不代表当前持有某把功能锁。调用方仍须在撤销之前阻止新的业务使用，并保证没有仍依赖该身份的活动对象。
+
+```c
+/**
+ * @brief 将动态key加入允许使用的身份哈希；拒绝静态地址与重复登记。
+ * 仓库补充，非上游原文。
+ */
+void lockdep_register_key(struct lock_class_key *key)
+{
+	struct hlist_head *hash_head;
+	struct lock_class_key *k;
+	unsigned long flags;
+
+	if (WARN_ON_ONCE(static_obj(key)))
+		return;
+	hash_head = keyhashentry(key);
+
+	raw_local_irq_save(flags);
+	if (!graph_lock())
+		goto restore_irqs;
+	hlist_for_each_entry_rcu(k, hash_head, hash_entry) {
+		if (WARN_ON_ONCE(k == key))
+			goto out_unlock;
+	}
+	hlist_add_head_rcu(&key->hash_entry, hash_head);
+out_unlock:
+	graph_unlock();
+restore_irqs:
+	raw_local_irq_restore(flags);
+}
+
+/**
+ * @brief 检查动态key是否已登记；停检时避免遍历可能失效的哈希。
+ * 仓库补充，非上游原文。
+ */
+static bool is_dynamic_key(const struct lock_class_key *key)
+{
+	struct hlist_head *hash_head;
+	struct lock_class_key *k;
+	bool found = false;
+
+	if (WARN_ON_ONCE(static_obj(key)))
+		return false;
+
+	/*
+	 * If lock debugging is disabled lock_keys_hash[] may contain
+	 * pointers to memory that has already been freed. Avoid triggering
+	 * a use-after-free in that case by returning early.
+	 */
+	if (!debug_locks)
+		return true;
+
+	hash_head = keyhashentry(key);
+
+	rcu_read_lock();
+	hlist_for_each_entry_rcu(k, hash_head, hash_entry) {
+		if (k == key) {
+			found = true;
+			break;
+		}
+	}
+	rcu_read_unlock();
+
+	return found;
+}
+
+/**
+ * @brief 移除动态key及相关类历史，并等待查key读者退出。
+ * 仓库补充，非上游原文。
+ */
+void lockdep_unregister_key(struct lock_class_key *key)
+{
+	struct hlist_head *hash_head = keyhashentry(key);
+	struct lock_class_key *k;
+	struct pending_free *pf;
+	unsigned long flags;
+	bool found = false;
+	bool need_callback = false;
+
+	might_sleep();
+
+	if (WARN_ON_ONCE(static_obj(key)))
+		return;
+
+	raw_local_irq_save(flags);
+	lockdep_lock();
+
+	hlist_for_each_entry_rcu(k, hash_head, hash_entry) {
+		if (k == key) {
+			hlist_del_rcu(&k->hash_entry);
+			found = true;
+			break;
+		}
+	}
+	WARN_ON_ONCE(!found && debug_locks);
+	if (found) {
+		pf = get_pending_free();
+		__lockdep_free_key_range(pf, key, 1);
+		need_callback = prepare_call_rcu_zapped(pf);
+	}
+	lockdep_unlock();
+	raw_local_irq_restore(flags);
+
+	if (need_callback)
+		call_rcu(&delayed_free.rcu_head, free_zapped_rcu);
+
+	/* Wait until is_dynamic_key() has finished accessing k->hash_entry. */
+	synchronize_rcu();
+}
+```
+
+登记D0先排除静态对象，再关本地IRQ并取得图锁；D1在`lock_keys_hash`对应桶查重，使用`hlist_add_head_rcu()`发布节点。恢复IRQ发生在解锁之后，失败取得图锁也走恢复出口。返回类型是void，不是供业务判断功能锁能否使用的成功码。
+
+查询D2用RCU读侧保护桶遍历，比较的是key指针。一个刻意的退化分支是`debug_locks=0`时直接返回true：上游注释指出停检后的哈希可能含已释放地址，因此不再遍历。这不是重新证明key有效；后续主路径仍受停检控制。把这个true用作业务对象仍存活的依据会跨越诊断边界。
+
+撤销D3先通过`might_sleep()`表达上下文要求，然后使用底层`lockdep_lock()`，而不是停检后拒绝进入的`graph_lock()`。因此即使此前停检，它仍尝试移除已登记key。找到节点后用RCU删除，将相关类的清理交给待释放结构；未找到时只在检查有效条件下告警。退出共享临界区并恢复IRQ之后，按需排队类清理回调，最后D4调用`synchronize_rcu()`等待`is_dynamic_key()`中可能仍访问该哈希节点的读者。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant O as key所有者
+    participant H as 动态key哈希
+    participant R as is_dynamic_key读者
+    participant P as 待释放类历史
+    O->>H: D0/D1 图锁内查重并发布key
+    R->>H: D2 RCU保护下遍历
+    O->>H: D3 底层图锁内删除节点
+    O->>P: 标记相关类清理，必要时排队RCU回调
+    O->>R: D4 synchronize_rcu等待旧查询退出
+    R-->>O: 旧读侧结束，等待可以返回
+    Note over O: 等待查key读者不等于排空所有业务使用
+```
+
+`get_pending_free()`选择本轮延迟清理的容器，`__lockdep_free_key_range()`处理关联类，`prepare_call_rcu_zapped()`决定是否需要排队，`free_zapped_rcu()`执行后续清理；这些是类池回收簇，不在本节复制其函数体。这里必须保留的契约是“哈希撤销在锁内、回调排队在恢复IRQ后、等待查key读者在返回前”。`call_rcu()`排队与`synchronize_rcu()`完成并非同一事件，不能把末尾等待描述成已经执行完所有类回调。
+
+**修改约束与练习：** 为何注销不用graph_lock？停检后仍需清理登记，不能被普通新事件的生命状态门控直接拒绝。为何不能删掉末尾等待后马上释放key？已有RCU读者可能仍访问key内嵌的hash_entry。为何调用注销前还要排空业务？该函数不会替驱动停止新请求、取消工作或销毁功能锁。类池与回调回收的内部算法继续作为独立源码审查范围，本节不宣称已证明整个模块卸载协议。
+
 下一篇：[Lockdep 取得释放与持锁账本源码实现](../../P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)。
