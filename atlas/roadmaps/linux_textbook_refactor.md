@@ -514,3 +514,5 @@ B05ba完成[持锁账本闭环](../../knowledge/linux/synchronization_and_asynch
 B05bb完成[依赖环与IRQ规则](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md)，补间接中断闭包和递归读不阻塞反例。705项368 validated、319 pending、18 supporting_pending，剩余337项；继续查询接入，未执行目标实验。见[B05bb记录](../../governance/migration/repository_textbook_refactor.md#1.4.209_B05bb强路径与IRQ闭包)。
 
 B05bc完成[查询与pin接入](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md)，补三态布尔陷阱、pin连续性图和诊断边界。705项369 validated、318 pending、18 supporting_pending，剩余336项；继续RCU适配，未执行目标实验。见[B05bc记录](../../governance/migration/repository_textbook_refactor.md#1.4.210_B05bc查询三态与pin连续性)。
+
+B05bd完成[RCU检查适配](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md)，补对象逃逸时序、查询退化与告警条件边界。705项370 validated、317 pending、18 supporting_pending，剩余335项；继续配置与实验，未执行目标内核测试。见[B05bd记录](../../governance/migration/repository_textbook_refactor.md#1.4.211_B05bd读侧诊断与对象逃逸)。

@@ -45,7 +45,7 @@ flowchart TB
 
 ## 7.3\_业务锁怎样成为RCU保护条件
 
-贯穿设备的更新者用 `state_lock` 串行替换 RCU 指针：
+贯穿设备的更新者用 `state_lock` 串行替换 RCU 指针。下面是更新路径片段，不是可独立加载的模块：约定所有更新者都持有同一把锁，`new_state` 已初始化完成，设备在调用期间仍存活，`demo_retire_state()` 负责等待旧读者退出后再回收旧对象。
 
 ```c
 static void demo_replace_state(struct demo_device *dev,
@@ -97,13 +97,36 @@ static struct demo_state *demo_bad_escape(struct demo_device *dev)
 }
 ```
 
-Lockdep 只知道虚拟 RCU map 在查询时是否存在于 current 账本；它不知道返回值保存到了哪里，也不知道更新者何时取消发布并释放对象。要让指针跨越读侧临界区，仍需引用计数、延长读侧范围或其他经过证明的所有权协议。
+在检查有效且执行到相应查询的通常路径上，Lockdep 可以检查 current 的虚拟 RCU map；它不跟踪返回值保存到了哪里，也不把这个返回值自动转换成长期引用。看一次完整交错，便能知道缺口发生在哪里：
+
+```mermaid
+sequenceDiagram
+    participant R as 读者任务
+    participant D as current的held_locks账本
+    participant U as 更新者任务
+    participant O as 旧对象
+    R->>D: S0 进入读侧，登记虚拟map
+    R->>O: S1 rcu_dereference取得地址
+    R->>D: S1 查询读侧条件，此时可以成立
+    R->>D: S2 退出读侧，撤销当前记录
+    Note over R: 返回裸指针，尚未取得长期引用
+    U->>U: S3 持state_lock替换发布指针
+    U->>U: S4 等待覆盖旧读者的宽限期
+    U->>O: S4 回收旧对象
+    R->>O: S5 解引用已失效地址，形成UAF
+```
+
+S1 的检查没有撒谎：取得指针时确实在读侧范围内。S2 结束的是临时保护，读者手中保存的地址数值却没有随之消失。更新者在 S4 履行了等待义务，也没有责任知道一个已经退出的读者仍偷偷保存着地址。错误在于读者把“曾经受保护”当成了“以后一直有效”。
+
+如果只是读取几个字段，最小修复是把字段复制安排在 S2 之前，退出后只使用副本；这仍要求字段自身满足既定并发访问协议。若必须把对象交给后续工作，则需要在临时保护结束前按该对象的协议取得长期引用，并在使用结束后归还。不能简单在 S2 之后补一次引用计数增加：引用计数所在的对象本身就可能已经释放。延长读侧范围也要遵守该读侧风味的上下文约束，不能随意把可睡眠工作塞进去。
 
 所以“调用条件通过”不能推出“对象生命周期正确”。RCU 场景中的类型、动态上下文和生命期分工见 [RCU 类型语义、Sparse 与 Lockdep](../rcu/P23_RCU_类型语义_Sparse与Lockdep.md#23.7_三类检查不能互相替代)。
 
 ## 7.5\_从通用Lockdep到RCU实现的证据边界
 
 本专题只展开 Lockdep 产生和查询影子状态的通用机制；RCU 虚拟 maps 与告警宏继续在 RCU 源码专题唯一展开：
+
+首次追踪版本实现时，从 [Lockdep 源码总导读](../../../../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md)定位查询层，再按下面的检查点进入实现。这里采用 NXP Linux 6.12.20 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，不把本地实验提交当作依据。
 
 | 检查点 | 本章关心的问题 | 权威实现入口 |
 | --- | --- | --- |
@@ -112,6 +135,10 @@ Lockdep 只知道虚拟 RCU map 在查询时是否存在于 current 账本；它
 | `RCU_LOCKDEP_WARN()` | RCU 访问器怎样消费动态条件 | [`RCU_LOCKDEP_WARN()` 检查适配层](../../../../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_LOCKDEP_WARN检查适配层) |
 
 先用 [Lockdep 查询适配与诊断模块导读](../../../../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md#4.4_RCU适配链)理解通用查询到 RCU 的连接，再进入 [RCU Lockdep适配模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#12.1_模块问题与实现所有权)阅读 RCU 自己的四个实例和接入路径。
+
+还要防止把诊断查询写进业务控制流。在该版本未启用 `CONFIG_DEBUG_LOCK_ALLOC` 的分支中，普通 `rcu_read_lock_held()` 直接返回 1；这表示该查询无法提供所期待的动态核对，而不是内核替调用者进入了读侧。不能据此决定是否调用 `rcu_read_lock()`，也不能据此决定是否释放对象。
+
+`RCU_LOCKDEP_WARN(c, s)` 的 `c` 则是 **应当告警的条件**，与访问器接收的“保护理由成立”条件方向相反。启用 `CONFIG_PROVE_RCU` 时，它先检查诊断有效性，再判断 `c`，随后重新检查有效性，并使用该调用点的静态 `__warned` 限制重复报告；未启用时没有这项运行时告警。因此，同一调用点第二次没有打印，不表示第二次行为已经正确。配置开关、检查器是否有效、路径是否实际执行、该调用点是否已报告，都属于解读沉默时必须补齐的条件。
 
 ## 7.6\_其他逻辑保护域怎样判断能否适配
 
@@ -127,6 +154,12 @@ Lockdep 只知道虚拟 RCU map 在查询时是否存在于 current 账本；它
 如果这些问题没有答案，虚拟 map 只会向全局图注入错误事实，可能同时制造误报和漏报。
 
 ## 7.7\_本章结论
+
+先用三个问题检查自己是否区分了这些责任：
+
+1. 将 `rcu_replace_pointer()` 的保护条件改成常量 1，同时删除外面的 mutex，是否仍能串行更新？不能；常量只撤掉了动态核对，更新者之间的功能互斥已丢失。
+2. 在上面的 S2 与 S3 之间增加一次 `lockdep_is_held()` 查询，能否修复 S5？不能；查询既不延长读侧，也不取得长期引用。
+3. 关闭检查后 `rcu_read_lock_held()` 返回 1，能否删掉实际读侧入口？不能；退化返回值是诊断能力边界，功能保护义务保持不变。
 
 RCU 使用虚拟 lockdep map 表达动态读侧域，业务 mutex 又可以通过 current 查询形成访问条件。两者只提供检查证据：真正的互斥、发布、读侧约束、宽限期和回收仍由各自功能机制承担；条件通过也不能证明裸指针没有逃逸。
 

@@ -1212,3 +1212,7 @@ B05bb核对固定dfaf2136的Documentation/locking/lockdep-design.rst（blob 56b9
 ## 1.161\_查询三态与pin计数
 
 B05bc核对固定dfaf2136的include/linux/lockdep.h（blob 67964dc4db952ea11d4b88554383ea0ec5946ef9）三态值和pin包装，并复查lockdep.c的__lock_pin_lock/__lock_unpin_lock，支持[查询与连续性](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.5_pin解决的是前后断言看不见的空洞)。cookie是计数配对值，诊断不阻止功能释放；未执行内核回调测试。
+
+## 1.162\_RCU查询退化与告警条件
+
+B05bd核对固定dfaf2136的include/linux/rcupdate.h，blob 48e5c03df1dd83c246a61d0fcc8aa638adcd7654。未启用DEBUG_LOCK_ALLOC时普通rcu_read_lock_held返回1；PROVE_RCU告警宏包含有效性复查和调用点__warned状态。证据支持[RCU检查边界](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md#7.5_从通用Lockdep到RCU实现的证据边界)，不能作为功能保护或运行时测试结果。

@@ -2839,8 +2839,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md",
       "baseline_sha256": "4b6bb6e9224d61909c4faa657527ff123e48b60bc21bab305991d2f1eb987d10",
       "lines": 137,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05bd 保留功能/检查分工，补裸指针逃逸完整时序、修复条件、查询退化与告警方向及三题练习；固定头文件核对，未执行目标内核测试。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md",
