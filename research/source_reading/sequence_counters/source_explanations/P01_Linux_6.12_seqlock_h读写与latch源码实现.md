@@ -33,7 +33,7 @@ source_version: "6.12.20"
  * @return 必须交给 read_seqcount_retry() 的 start。
  */
 #define read_seqcount_begin(s) ({         \
-    seqcount_lockdep_reader_access(s);    \
+    seqcount_lockdep_reader_access(seqprop_const_ptr(s)); \
     raw_read_seqcount_begin(s);           \
 })
 
@@ -45,33 +45,33 @@ static inline int do_read_seqcount_retry(const seqcount_t *s,
                                          unsigned start)
 {
     smp_rmb(); /* 先完成受保护数据读取，再进行末尾 sequence 比较。 */
-    return READ_ONCE(s->sequence) != start;
+    return do___read_seqcount_retry(s, start);
 }
 ```
 
-完整 begin 会在奇数 sequence 上等待/重读，并使用属性访问适配关联锁类型。retry 的比较只有与 begin 和数据访问配对才有意义。
+完整begin在奇数sequence上等待/重读，seqprop_sequence对普通及关联锁类型使用acquire读取。do___read_seqcount_retry结束KCSAN读范围后，以READ_ONCE重新读取并比较sequence；上面的普通retry保留这一调用，不把检查器结束遗漏成完整源码。retry只有与begin和数据访问配对才有意义。
 
 ## 1.4\_普通写侧begin与end
 
 ```c
 /** @brief 在 writer 已串行且满足抢占约束时打开奇数写窗口。 */
-static inline void do_write_seqcount_begin(seqcount_t *s)
+static inline void do_raw_write_seqcount_begin(seqcount_t *s)
 {
-    /* 省略：Lockdep/KCSAN 嵌套原子区。 */
+    kcsan_nestable_atomic_begin(); /* 检查器标记，不是取得写者锁。 */
     s->sequence++;
     smp_wmb(); /* 奇数状态先于后续字段写被观察。 */
 }
 
 /** @brief 在全部字段写完成后发布新的偶数稳定代际。 */
-static inline void do_write_seqcount_end(seqcount_t *s)
+static inline void do_raw_write_seqcount_end(seqcount_t *s)
 {
     smp_wmb(); /* 字段写先于偶数关闭窗口。 */
     s->sequence++;
-    /* 省略：KCSAN 区域结束。 */
+    kcsan_nestable_atomic_end();
 }
 ```
 
-代码展示该提交的实现，不应被概括成所有版本固定“两个 wmb”。调用者应依赖配对 API 契约。
+代码展示固定提交的raw写侧核心；普通do_write_seqcount_begin/end还经包装进行Lockdep记账，外层按类型处理抢占。本页关联锁部分仍为明确标注的概念裁剪，尚待独立实现审查，不能把它和上面核心函数混称为逐字完整源码。调用者依赖配对API契约，不应概括成所有版本固定“两个wmb”。
 
 ## 1.5\_关联锁属性与RT补偿
 
@@ -118,11 +118,13 @@ static __always_inline int
 raw_read_seqcount_latch_retry(const seqcount_latch_t *s, unsigned start)
 {
     smp_rmb();
-    return READ_ONCE(s->seqcount.sequence) != start;
+    return unlikely(READ_ONCE(s->seqcount.sequence) != start);
 }
 ```
 
 writer 完整协议必须执行：翻转到副本 1 → 更新 data[0] → 再翻转到副本 0 → 更新 data[1]。只调用一次翻转会让两副本长期不一致。
+
+数据副本由调用者分配，seqcount_latch_t自身不包含data[2]。begin与write各推进一次完整计数，end只结束KCSAN写区标记；最低位选择并不替代完整计数验证。跨CPU旧读者仍可能接触被更新副本，必须retry，不能把同CPU暂停写者的例子外推成所有读者永远只看稳定内存。
 
 ## 1.7\_复核问题
 

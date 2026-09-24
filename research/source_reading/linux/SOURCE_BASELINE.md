@@ -1112,3 +1112,9 @@ B05ad按1.134的固定completion.h/completion.c对象分别组织[对象初始�
 B05ae只读固定dfaf2136的Documentation/locking/seqlock.rst（blob ec6411d02ac8f55aee92b375071c8b2e7b840e59）及include/linux/seqlock.h（blob 5298765d6ca4827eb7bf8a9dca020f1383d3b901），核对串行写者、不可被读侧抢占的奇数窗口、指针限制及关联锁抢占属性。[入门示例](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P01_seqcount_seqlock_读重试快照机制.md#1.3_基本读写模式)限定任务上下文、原始锁短写区和返回局部副本，未在内核编译加载。
 
 [完整C枚举](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P02_一致快照的证明模型.md#2.6.1_用完整C程序枚举有序交错)在宿主GCC14.2/Clang18.1.8严格C11 O2运行，35条尾部版本交错接受5条混合值、70条奇偶交错接受0条。只证明既定动作顺序和一次更新，不验证Linux读写屏障、ARM弱内存、真实自旋、回绕或对象回收。
+
+## 1.139\_序列读写变体与latch验证
+
+B05af继续只读1.138固定seqlock.h对象，核对seqprop_sequence的acquire读取、稳定偶数循环、retry屏障、raw差异及latch的依赖选址/完整计数比较。明确begin/write两次重定向，end只关闭KCSAN写区。知识正文与相关源码入口分别同步，不改动外部树。
+
+[latch完整C模型](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P04_seqcount_latch双副本状态机.md#4.4.1_用C区分暂停写者与跨CPU交错)双编译器严格C11 O2得到paused_windows=7、schedules=210、full_mixed=0、bit_mixed=21；证明范围为单写者一次有序更新，不含目标NMI、ARM弱内存、计数回绕或动态对象回收。源码实现页只修复直接受影响的真实控制流，关联锁等剩余覆盖继续独立处理。

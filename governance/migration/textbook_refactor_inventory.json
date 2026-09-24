@@ -3196,15 +3196,15 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P03_seqcount读写路径与内存顺序.md",
       "baseline_sha256": "0f64dc5c6928fa2f3e06e1a679bb554353e84fc2a5c2984baedf4d21b22c378f",
       "lines": 79,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05af 按固定seqlock.h核对acquire起点、raw各自差异、检查器边界与latch翻转；正文展开完整计数验证及同CPU暂停/跨CPU交错。完整C模型双编译器验证7个暂停点、210种交错，最低位比较错收21条，完整计数0条。无目标NMI、弱内存或内核运行结论。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P04_seqcount_latch双副本状态机.md",
       "baseline_sha256": "a9de49924f72851b93e4b65cd5348bfce1c145a082b7ee45b1c41762913f97ee",
       "lines": 92,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05af 按固定seqlock.h核对acquire起点、raw各自差异、检查器边界与latch翻转；正文展开完整计数验证及同CPU暂停/跨CPU交错。完整C模型双编译器验证7个暂停点、210种交错，最低位比较错收21条，完整计数0条。无目标NMI、弱内存或内核运行结论。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P05_关联锁变体与实时性边界.md",

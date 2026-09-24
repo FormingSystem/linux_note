@@ -52,7 +52,7 @@ RT 配置下，若关联锁可抢占且 sequence 为奇数，读取属性会执�
 
 ## 2.5\_latch双副本分支
 
-`raw_write_seqcount_latch()` 在 sequence 增量前后放置写屏障；begin/write/end 让 reader 在 data[0]/data[1] 之间两次重定向。reader 用最低位选副本，用完整 sequence 在末尾验证。具体实现见[latch 重定向与双副本更新](../source_explanations/P01_Linux_6.12_seqlock_h读写与latch源码实现.md#1.6_latch重定向与双副本更新)。
+`raw_write_seqcount_latch()`在sequence增量前后放置写屏障；begin和write两次重定向，end结束KCSAN标记而不再翻转。data[0]/data[1]由调用者保存，reader用最低位选副本，用完整sequence在末尾验证。具体实现见[latch重定向与双副本更新](../source_explanations/P01_Linux_6.12_seqlock_h读写与latch源码实现.md#1.6_latch重定向与双副本更新)；[210条交错模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P04_seqcount_latch双副本状态机.md#4.4.1_用C区分暂停写者与跨CPU交错)解释只比最低位为何失败，不代表内核弱内存已经验证。
 
 ## 2.6\_seqlock封装与locking\_reader
 
@@ -61,7 +61,7 @@ RT 配置下，若关联锁可抢占且 sequence 为奇数，读取属性会执�
 ## 2.7\_源码阅读核对
 
 - plain writer 的外部串行权由谁提供，`__seqprop_assert()` 验证什么？
-- begin 为什么要处理奇数 sequence，raw begin 又移除了哪段等待？
+- raw_read_seqcount_begin仍等偶数，raw_seqcount_begin不等而清最低位；两者具体交给调用者哪些不同责任？
 - latch reader 为什么既用最低位选副本又比较完整计数？
 - seqlock writer 的锁与 sequence 更新顺序怎样配对？
 
