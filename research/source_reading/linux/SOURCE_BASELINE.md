@@ -1038,3 +1038,7 @@ B05o继续按固定dfaf2136的generic barrier核对九项存储后屏障和atomi
 ## 1.123\_条件加载的循环与退出样本
 
 B05p按固定dfaf2136的generic barrier核对条件加载及控制依赖补强三项完整条件定义，并只读ARM vdso/processor.h核对cpu_relax通常为barrier、ARMv6/勘误分支另有屏障及nop。新增[模块](../memory_ordering/navigation/P06_条件加载与控制依赖导读.md#6.3_一轮轮询与一次成功退出)和[唯一实现](../memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.12_条件加载与控制依赖补强)，分开__PTR、VAL、_val及L0～L4。节选/固定头的即时满足、延后满足、一直不满足各配relaxed/acquire和默认/覆盖辅助，共二十四组受控执行；八组由夹具看门狗停止，不是宏超时。未执行真实并发、ARM、内核检测或LKMM，记录只证明展开与样本保存。
+
+## 1.124\_ARM屏障映射与平台补充路径
+
+B05q按固定dfaf2136核对arch/arm/include/asm/barrier.h（Git blob 83ae97c049d9bd48b474f0127164c71628bf05c0）及arch/arm/mm/flush.c（0749cf8a66371bb608f8bbd793c2e8302d56d989），新增[模块](../memory_ordering/navigation/P07_ARM屏障与配置边界导读.md#7.3_沿一条调用走完配置与运行路径)、[ARM唯一映射](../memory_ordering/source_explanations/arch/arm/include/asm/barrier.h.md#1.2_基础与DMA接口的配置选择)和[heavy函数](../memory_ordering/source_explanations/arch/arm/mm/flush.c.md#1.1_DSB之后还有什么)。当前工作树配置快照为CPU_V7/CPU_32v7、ARM_DMA_MEM_BUFFERABLE、ARM_HEAVY_MB开启，SMP和THUMB2_KERNEL关闭；不把配置快照当成固定提交唯一配置。三轴八组合分别用节选与固定头做十六次Clang ARMv7交叉编译，逐个检查八函数的DMB/DSB范围及heavy调用顺序；heavy函数十六组宿主C回调执行通过。依赖为受控替身，未执行完整内核构建、ARM板上访问或设备协议验证。

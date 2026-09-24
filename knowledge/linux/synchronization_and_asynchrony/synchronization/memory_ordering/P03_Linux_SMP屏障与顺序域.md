@@ -252,7 +252,7 @@ Linux 6.12.20的arch/arm/include/asm/barrier.h在ARMv7分支提供下面的内�
 
 当前标准工作树是UP配置，公共smp_*包装按该配置选择退化路径；看到头文件里存在dmb宏定义，不等于当前内核已实际发出或执行该指令。本节比较固定提交中的分支，不作SMP运行声明。
 
-同一文件还分别定义 `mb/rmb/wmb` 和 `dma_rmb/dma_wmb`，证明“在 ARM 上都是 DMB/DSB”这种压缩说法会丢失 shareability、访问方向、配置和 SoC heavy barrier 等边界。
+同一文件还分别定义 `mb/rmb/wmb` 和 `dma_rmb/dma_wmb`。[ARM模块](../../../../../research/source_reading/memory_ordering/navigation/P07_ARM屏障与配置边界导读.md#7.3_沿一条调用走完配置与运行路径)把三条配置轴和A0～A3放到同一条路径上，[唯一映射](../../../../../research/source_reading/memory_ordering/source_explanations/arch/arm/include/asm/barrier.h.md#1.2_基础与DMA接口的配置选择)精确区分DSB、DMB与平台补充调用；“在ARM上都是屏障指令”会丢失观察范围、访问方向和配置边界。
 
 ## 3.8\_mb\_rmb\_wmb\_不是更保险的默认选择
 

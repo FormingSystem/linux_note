@@ -4906,6 +4906,27 @@
       "lines": 85,
       "state": "validated",
       "reason": "B05p固定条件加载三宏及ARM放松接口核对；L0～L4区分指针、每轮样本、退出补强及寿命，二十四组受控路径通过而不声称内核/ARM/LKMM执行。"
+    },
+    {
+      "path": "research/source_reading/memory_ordering/navigation/P07_ARM屏障与配置边界导读.md",
+      "baseline_sha256": "4afcd48dab3768b176a1ba15db89c974304fb87c70fd78d1f750ac73420742b1",
+      "lines": 106,
+      "state": "validated",
+      "reason": "B05q固定ARM屏障与flush函数冷读；三配置轴和A0～A3分离CPU/DMA/heavy路径，节选与固定头16组ARMv7编译及16组宿主回调检查通过；不声称板上、内核或设备验证。"
+    },
+    {
+      "path": "research/source_reading/memory_ordering/source_explanations/arch/arm/include/asm/barrier.h.md",
+      "baseline_sha256": "f84d2bfa6e7e596a88640bbf2078815e4bff06f8a807e0f0662298690e556d5b",
+      "lines": 78,
+      "state": "validated",
+      "reason": "B05q固定ARM屏障与flush函数冷读；三配置轴和A0～A3分离CPU/DMA/heavy路径，节选与固定头16组ARMv7编译及16组宿主回调检查通过；不声称板上、内核或设备验证。"
+    },
+    {
+      "path": "research/source_reading/memory_ordering/source_explanations/arch/arm/mm/flush.c.md",
+      "baseline_sha256": "bc9695a0a0a51994eb953f085cb6ae57a37bf67b288246308712a8a8bd77ad30",
+      "lines": 50,
+      "state": "validated",
+      "reason": "B05q固定ARM屏障与flush函数冷读；三配置轴和A0～A3分离CPU/DMA/heavy路径，节选与固定头16组ARMv7编译及16组宿主回调检查通过；不声称板上、内核或设备验证。"
     }
   ]
 }

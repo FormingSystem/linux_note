@@ -815,7 +815,10 @@ mindmap-plugin: basic
             - 🔴 [P04 发布取得的访问与配置导读](../../research/source_reading/memory_ordering/navigation/P04_发布取得的访问与配置导读.md#4.1_把屏障绑定到一次访问)
             - 🔴 [P05 存储后屏障与原子强化导读](../../research/source_reading/memory_ordering/navigation/P05_存储后屏障与原子强化导读.md#5.1_屏障位于写前还是写后)
             - 🔴 [P06 条件加载与控制依赖导读](../../research/source_reading/memory_ordering/navigation/P06_条件加载与控制依赖导读.md#6.1_一次取得还不能等待条件成立)
+            - 🔴 [P07 ARM屏障与配置边界导读](../../research/source_reading/memory_ordering/navigation/P07_ARM屏障与配置边界导读.md#7.1_单核为什么仍需要设备方向的顺序)
         - 具体实现讲解
+            - 🔴 [ARM屏障映射](../../research/source_reading/memory_ordering/source_explanations/arch/arm/include/asm/barrier.h.md#1.1_ARMv7指令封装与内部SMP原语)
+            - 🔴 [平台屏障补充](../../research/source_reading/memory_ordering/source_explanations/arch/arm/mm/flush.c.md#1.1_DSB之后还有什么)
             - 🔴 [rwonce.h 单次访问源码实现](../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/rwonce.h.md#1.1_沿读取现场核对实现)
             - 🔴 [barrier.h SMP屏障与顺序访问源码实现](../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.1_从公共调用找到真正执行的分支)
     - 序列计数器

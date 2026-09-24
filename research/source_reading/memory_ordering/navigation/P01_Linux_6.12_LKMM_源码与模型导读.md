@@ -88,6 +88,8 @@ flowchart LR
 
 并分别处理 `mb/rmb/wmb`、`dma_rmb/dma_wmb`、`CONFIG_ARM_HEAVY_MB` 等边界。知识正文只能把它写成“Linux 6.12.20 ARMv7 基线的具体映射”，不能外推到 ARM64、RISC-V 或 x86。
 
+[ARM模块](P07_ARM屏障与配置边界导读.md#7.1_单核为什么仍需要设备方向的顺序)沿A0～A3分开SMP、DMA可缓冲和heavy配置；[ARM唯一映射](../source_explanations/arch/arm/include/asm/barrier.h.md#1.2_基础与DMA接口的配置选择)及[平台补充实现](../source_explanations/arch/arm/mm/flush.c.md#1.1_DSB之后还有什么)分别解释指令与回调，不把DSB返回当成DMA业务完成。
+
 ## 1.4\_linux\_kernel\_def\_把原语翻译成事件
 
 [`linux-kernel.def`](../../linux/tools/memory-model/linux-kernel.def) 使用 herd7 宏语法定义：
