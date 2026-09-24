@@ -44,11 +44,11 @@ topics:
 int held = lockdep_is_held(&dev->state_lock);
 ```
 
-返回值可能是 HELD、NOT_HELD 或 UNKNOWN，下一节再解释三态。`lockdep_is_held()` 查询的是：current 的有效 held records 中，是否存在这个锁实例的 `dep_map`。它不读取 mutex owner，也不扫描其他任务。因此它不回答：
+返回值可能是 HELD、NOT_HELD 或 UNKNOWN，下一节再解释三态。普通未合并记录按这个锁实例的 `dep_map` 匹配 current 的有效 held records；在启用检查的固定实现中，特定 references/nest_lock 合并记录还可能按锁类匹配，不能把查询概括为任何情况下都精确到唯一地址。它不读取 mutex owner，也不扫描其他任务。因此它不回答：
 
 - 锁是否被其他任务占用；
 - 当前 CPU 上某个别的任务是否持锁；
-- current 是否持有同类的另一个设备实例；
+- 同类设备中每一个具体实例分别由谁持有；
 - 被保护对象是否仍存活，或访问是否没有数据竞争。
 
 `mutex_is_locked(&dev->state_lock)` 关注功能锁是否处于占用状态；`lockdep_is_held(&dev->state_lock)` 关注 current 的检查账本。前者不能证明 current 是 owner，后者在检查关闭或停检时也不能提供功能同步。
@@ -60,7 +60,7 @@ int held = lockdep_is_held(&dev->state_lock);
 检查器可能明确找到、明确未找到，也可能已经无法可靠回答：
 
 ```text
-LOCK_STATE_HELD      current账本明确找到匹配实例
+LOCK_STATE_HELD      current账本找到符合查询规则的记录
 LOCK_STATE_NOT_HELD  检查器有效且明确未找到
 LOCK_STATE_UNKNOWN   检查器未构建、停检或当前不可可靠查询
 ```
@@ -76,6 +76,8 @@ if (lockdep_is_held(&dev->state_lock))
 ```
 
 业务锁是否已经取得必须由程序控制流和功能 API 保证；Lockdep 查询只用于检查条件、诊断和专门设计的保护谓词。
+
+在本章固定版本中，UNKNOWN 的值是 -1，NOT_HELD 是 0，HELD 是 1。因此上面的 if 不只是“关闭检查后可能不执行”：UNKNOWN 转成 C 布尔条件仍为真，反而可能继续访问。即使改成显式比较 HELD，也不能凭一次诊断查询创造功能互斥。正确路径应当先由调用者实际取得锁，再进入带断言的辅助函数。
 
 ## 6.4\_断言把隐含前置条件放到被调函数
 
@@ -140,7 +142,42 @@ static void demo_run_callback_locked(struct demo_device *dev,
 }
 ```
 
-被 pin 期间若回调释放该 held record，Lockdep 会报告；cookie 又使 unpin 对应具体 pin 操作。pin 不阻止功能 unlock，也不让锁获得额外硬件属性。若回调协议本来允许临时放锁，就不应使用 pin 假装禁止，而应重新定义并记录清楚调用契约。
+在检查有效、相关路径已接入的前提下，被 pin 期间释放该 held record 会触发诊断。cookie 是传回 unpin 的配对值，不是不可伪造的唯一句柄：本版本把生成的非零数值累加到 held record 的 pin_count，unpin 再减去该值并检查异常。它增加发现失配的机会，不构成恶意回调不能绕过的安全隔离。pin 不阻止功能 unlock，也不让锁获得额外硬件属性。若回调协议本来允许临时放锁，就不应使用 pin 假装禁止，而应重新定义并记录清楚调用契约。
+
+调用这个示例前，state_lock 必须已初始化，callback 必须有效，对象必须由外层寿命协议保持存活到函数返回。回调前后只读“是否持锁”看不到中间空洞，而 pin 的写入地址始终是 current 的检查记录，不是 mutex owner：
+
+```mermaid
+flowchart LR
+    M["mutex 功能取得"] -->|"标准注解"| H["current.held_locks 中的记录"]
+    P["pin 调用"] -->|"增加 cookie.val"| N["该记录 pin_count"]
+    H -->|"定位记录"| N
+    U["回调中的 unlock"] -->|"release 检查未归零的 pin_count"| N
+    U -->|"功能释放仍可发生"| O["mutex owner"]
+    R["unpin 调用"] -->|"减去配对 cookie.val"| N
+```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as 上层调用者
+    participant C as 回调
+    participant H as 当前 held record
+    participant M as mutex 功能状态
+    A->>M: 取得成功
+    A->>H: pin，保存 cookie
+    A->>C: 调用
+    alt 遵守连续持锁契约
+        C-->>A: 不释放锁，返回
+        A->>H: unpin，恢复本次 pin 增量
+        A->>M: 正常解锁
+    else 回调偷放再重取
+        C->>H: release 遇到非零 pin_count，诊断
+        C->>M: 释放后又重新取得
+        C-->>A: 返回时虽持锁，连续保护已破坏
+    end
+```
+
+诊断不是回滚：即使已经打印报告，也不能假定中间无保护访问被撤销。程序必须修复回调协议，不能依赖检查器替它阻止释放。
 
 具体 `pin_count` 和 cookie 更新见 [`lockdep_pin_lock()` 锁保持注解](../../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.4_lockdep_pin_lock锁保持注解)。
 
@@ -182,6 +219,8 @@ static void demo_maybe_refresh(struct demo_device *dev, bool refresh)
 接入审查必须继续追问：真实路径会不会睡眠；共享读是否允许递归；是否有稳定 natural nesting；失败、超时、取消和异常跳转是否都配对；map/key 生命周期是否比所有可能引用更长。只要其中一项说不清，写出“能编译”的注解代码也不等于模型正确。
 
 ## 6.8\_本章结论
+
+用三个反例核对接口选择：UNKNOWN 为 -1 时，错误示例的 if 会进入哪个分支？回调释放再重取以后，前后两个 held 断言和中间 pin 检查分别能看到什么？在标准 mutex 外面再手工上报一次 acquire，会把哪一层状态重复记录？答案是 if 仍为真、端点断言可能都通过但 pin 可诊断中途释放、当前影子账本被重复取得污染。以上推演依赖检查器有效，不能把无告警当成回调连续性或功能同步的完整证明。
 
 普通驱动和模块开发者已经可以通过标准锁原语自动使用 Lockdep，不必先成为检查器维护者；公共契约维护者再按需使用查询、断言、pin 与 `might_lock()`；只有新同步原语或逻辑域的实现者才直接管理 map 和 acquire/release 事件。查询只读 current 的实例记录；断言把调用前置条件变成可执行诊断；pin 检查持锁连续性；`might_lock()` 表达潜在调用关系；这些检查都不提供功能互斥。
 

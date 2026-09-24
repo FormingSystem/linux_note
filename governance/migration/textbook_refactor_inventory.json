@@ -2832,8 +2832,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md",
       "baseline_sha256": "7b51caeb08d4a908d2c8ed863f63d51c9d3fd91763e03387f84403c5126bd885",
       "lines": 192,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05bc 保留接口分层与接入契约，补UNKNOWN为真反例、查询合并边界、pin计数地址与连续性时序，限定cookie与诊断能力；固定源码核对，未做目标实验。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md",

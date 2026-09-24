@@ -1208,3 +1208,7 @@ B05ba复核固定dfaf2136的lockdep.c中__lock_release，确认引用减少、pr
 ## 1.160\_读写阻塞与强路径
 
 B05bb核对固定dfaf2136的Documentation/locking/lockdep-design.rst（blob 56b90eea27312e0a438260eb10425e811f154c9a）的递归读、阻塞矩阵与strong path说明，用于[读写类型反例](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md#5.7_为何图边必须携带读写类型)。区别抽象阻塞契约与具体read_lock API；未进行目标竞争实测。
+
+## 1.161\_查询三态与pin计数
+
+B05bc核对固定dfaf2136的include/linux/lockdep.h（blob 67964dc4db952ea11d4b88554383ea0ec5946ef9）三态值和pin包装，并复查lockdep.c的__lock_pin_lock/__lock_unpin_lock，支持[查询与连续性](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md#6.5_pin解决的是前后断言看不见的空洞)。cookie是计数配对值，诊断不阻止功能释放；未执行内核回调测试。
