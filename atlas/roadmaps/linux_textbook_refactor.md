@@ -442,3 +442,5 @@ B05q完成[ARM配置模块](../../research/source_reading/memory_ordering/naviga
 B05r重写总导读的[模型输入单元](../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.4.1_用一次发布示例核对地址和标签)与工具配置解释，用完整MP材料区分共享地址、局部结果、事件标签和候选谓词。静态匹配输入及固定定义，不冒充herd7结果；总导读仍pending，692项中307 validated、367 pending、18 supporting_pending不变。后续继续bell/cat/lock模型，见[B05r记录](../../governance/migration/repository_textbook_refactor.md#1.4.173_B05r模型输入与配置边界)。
 
 B05s完成[bell分类与读侧配对单元](../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.5_linux_kernel_bell_给事件分类)，补足类别/标签、嵌套匹配、SRCU数据流及Marked边界。cat公理与锁模型尚待处理，总导读仍pending；清单692项、307 validated、385项待办不变。见[B05s记录](../../governance/migration/repository_textbook_refactor.md#1.4.174_B05s事件分类与读侧配对)。
+
+B05t完成[公理检查](../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.6.1_先问候选执行违反了哪一种约束)和[锁候选关系](../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.7.1_从取得成功与观察失败分开读)正文，区别原子性、顺序、传播、诊断及加锁资格。总导读的模型单元已逐步展开，下一步按阅读职责整理模块并做整体收束；清单仍692项307 validated、385项待办。见[B05t记录](../../governance/migration/repository_textbook_refactor.md#1.4.175_B05t公理检查与锁候选关系)。

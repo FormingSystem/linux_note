@@ -4114,7 +4114,7 @@
       "baseline_sha256": "0ea2d7d36fe6c57226b4e348dd5bb6351795a7fa0030c5dcd4d5af514d24babe",
       "lines": 216,
       "state": "pending",
-      "reason": "B05l～q已拆分访问与屏障模块；B05r重写def输入与cfg工具边界；B05s冷读bell并补足类别、RCU/SRCU配对、Marked与依赖传播。cat/lock及整体收束尚未完成，保留pending，不把局部单元完成视为全篇完成。"
+      "reason": "B05l～q已拆分访问与屏障模块；B05r重写def输入与cfg边界；B05s补足bell分类与配对；B05t冷读cat/lock并展开公理、诊断及锁候选关系。模型阅读模块职责整理与整体收束尚未完成，保留pending。"
     },
     {
       "path": "research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md",

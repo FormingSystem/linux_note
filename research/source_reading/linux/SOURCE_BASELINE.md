@@ -1050,3 +1050,7 @@ B05r重新核对官方远端、来源分支、固定标签与Linux版本，外�
 ## 1.126\_bell事件分类与读侧配对
 
 B05s冷读固定linux-kernel.bell全文及cat消费分类的相关定义。已保存bell的Git对象ce068700939c559edc8c91b9a931a0feae82e159与官方dfaf2136一致；外部实验HEAD不参与结论。[事件分类单元](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.5.1_把指令种类和顺序标签分开)区分RMW类别与Accesses标签，沿三个读侧序列手算RCU配对，说明SRCU位置/数据流/值检查、Marked与Plain及本地依赖传递。没有执行herd7，手算不能替代工具求解或真实RCU进展验证；后续cat公理、锁模型与整体导读仍待审查。
+
+## 1.127\_公理检查与锁候选关系
+
+B05t按官方固定dfaf2136核对linux-kernel.cat（adf3c4f412296269bb9f8127cd7e04f276479a57）与lock.cat（03c12efed66a18d5f980ea03efbdba537503ad3b），仓库原文件Git对象相同。[公理入口](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.6.1_先问候选执行违反了哪一种约束)分开coherence、atomic、hb、pb与诊断，[锁入口](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.7.1_从取得成功与观察失败分开读)追踪取得读写、解锁、失败观察和临界区配对，再解释co/rf构造。补充cos-opt.cat工具库依赖。外部实验HEAD未用作证据，未运行herd7，关系推导不替代模型工具结果。
