@@ -1042,3 +1042,7 @@ B05p按固定dfaf2136的generic barrier核对条件加载及控制依赖补强�
 ## 1.124\_ARM屏障映射与平台补充路径
 
 B05q按固定dfaf2136核对arch/arm/include/asm/barrier.h（Git blob 83ae97c049d9bd48b474f0127164c71628bf05c0）及arch/arm/mm/flush.c（0749cf8a66371bb608f8bbd793c2e8302d56d989），新增[模块](../memory_ordering/navigation/P07_ARM屏障与配置边界导读.md#7.3_沿一条调用走完配置与运行路径)、[ARM唯一映射](../memory_ordering/source_explanations/arch/arm/include/asm/barrier.h.md#1.2_基础与DMA接口的配置选择)和[heavy函数](../memory_ordering/source_explanations/arch/arm/mm/flush.c.md#1.1_DSB之后还有什么)。当前工作树配置快照为CPU_V7/CPU_32v7、ARM_DMA_MEM_BUFFERABLE、ARM_HEAVY_MB开启，SMP和THUMB2_KERNEL关闭；不把配置快照当成固定提交唯一配置。三轴八组合分别用节选与固定头做十六次Clang ARMv7交叉编译，逐个检查八函数的DMB/DSB范围及heavy调用顺序；heavy函数十六组宿主C回调执行通过。依赖为受控替身，未执行完整内核构建、ARM板上访问或设备协议验证。
+
+## 1.125\_模型输入与工具配置边界
+
+B05r重新核对官方远端、来源分支、固定标签与Linux版本，外部HEAD仍为实验提交7b60e547，不用于证据。已保存linux-kernel.def和linux-kernel.cfg的Git对象分别为88a39601f52563b670876e3ef4950324dc66224a、3c8098e99f41dfe72cb75f4c276801ab2c855f83，与固定dfaf2136相同。冷读两文件及模型README工具要求，沿[完整MP输入](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.4.1_用一次发布示例核对地址和标签)区分指针/对象实参、四事件和结果谓词；[配置入口](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.8_linux_kernel_cfg_为什么要求正确工作目录)补足显示选项、工具库依赖及进程/Observation/清单三层结果。材料一致性为静态核对，未执行herd7或klitmus7；公理与锁模型继续单独审查。

@@ -104,7 +104,57 @@ rcu_assign_pointer(X,V)   → release Store
 rcu_dereference(X)        → once Load
 ```
 
-同一文件还映射原子交换、锁、RCU/SRCU 等测试可用原语。这里表达“测试语法产生哪些事件标签”，不等价于实际 C 宏展开，也不模拟编译器汇编生成。
+同一文件还映射原子交换、锁、RCU/SRCU等测试可用原语。这里表达“测试语法产生哪些事件标签”，不等价于实际C宏展开，也不模拟编译器汇编生成。上一节的ARM宏由C编译器展开为指令；这一节的定义由herd7前端用于解释Litmus输入。两个处理器面对相似的名字，却不消费同一种文件。
+
+### 1.4.1\_用一次发布示例核对地址和标签
+
+先打开[已有MP材料](../../../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/tests/MP+pooncerelease+poacquireonce.litmus)。它使用下面这组完整参与者和结果条件；这是Litmus的C-like输入，不是可直接交给普通C编译器的完整程序：
+
+```text
+C MP+pooncerelease+poacquireonce
+
+{}
+
+P0(int *buf, int *flag)
+{
+    WRITE_ONCE(*buf, 1);
+    smp_store_release(flag, 1);
+}
+
+P1(int *buf, int *flag)
+{
+    int r0;
+    int r1;
+
+    r0 = smp_load_acquire(flag);
+    r1 = READ_ONCE(*buf);
+}
+
+exists (1:r0=1 /\ 1:r1=0)
+```
+
+这里P0/P1表示模型参与者，形参使两者访问相同的buf和flag位置。r0/r1属于P1的局部结果，不是供P0轮询的共享完成位。末尾exists请求查找“P1读到flag=1但buf=0”的候选执行；它既不是程序中的if，也不是已经得到的实验答案。
+
+按模型定义逐次代入，得到四个访问事件：
+
+| 调用位置 | 共享位置 | 模型访问与标签 | 后续追问 |
+| --- | --- | --- | --- |
+| P0第一句 | buf所指对象 | once写，值1 | 与发布写之间有什么顺序？ |
+| P0第二句 | flag所指对象 | release写，值1 | P1的哪一次读取自它？ |
+| P1第一句 | flag所指对象 | acquire读，结果保存到r0 | 取得之后怎样限制buf读取？ |
+| P1第二句 | buf所指对象 | once读，结果保存到r1 | 若读到初始0，会形成什么关系？ |
+
+注意调用形式的差异：ONCE接受对象表达式，测试传入*buf；release/acquire接受指针，测试传入flag，由定义里的解引用进入共享对象。把smp_load_acquire(flag)机械改写成smp_load_acquire(*flag)，并不是“强调读值”，而是改变了实参角色。阅读版本映射时，先核对对象和指针，再谈标签。
+
+表中的release/acquire是事件属性，不是新建了一个“屏障对象”。在这份定义中，store-release形成一次带release标记的写，而smp_store_mb表达一次once写再加mb屏障事件。因此不能仅凭两个调用都含有顺序保证，就预期它们生成相同的事件结构。
+
+### 1.4.2\_有标签还不等于已有证明
+
+前端得到访问位置、值和标签以后，还要为候选执行确定读取来源、一致性序等关系，最后由公理判断是否合法。一个acquire读若没有取到所需发布写，就不能仅凭名字构成那一轮消息发布证据；模型输入也没有替应用保证对象一直存活。
+
+做两项纸上修改：把发布取得两句换成WRITE_ONCE(*flag,1)与READ_ONCE(*flag)，两位置和读写数量没变，变化的是顺序标签；把smp_store_release换成smp_store_mb，则还改变了事件结构。前一种可与无序MP材料比较，后一种应重新追踪关系，不能沿用原证明。
+
+原子交换、条件交换和锁的映射同样先交给herd7相应前端原语。尤其是cmpxchg上的mb标签，不能单凭.def这一行就宣称失败路径也具有成功RMW的全部顺序：是否写入、RMW配对和哪些关系被保留，还取决于操作结果与模型后续处理。下一节先看事件分类，1.9再沿同一MP坏结果追踪实际需要的回边。
 
 ## 1.5\_linux\_kernel\_bell\_给事件分类
 
@@ -152,6 +202,14 @@ model linux-kernel.cat
 cd research/source_reading/linux/tools/memory-model
 herd7 -conf linux-kernel.cfg /absolute/path/to/test.litmus
 ```
+
+这条命令的路径是占位示意，实际执行应使用上面的实验入口或替换成真实材料路径。固定模型README要求工具单独安装，同时提醒新版本不保证永远兼容旧模型；“工具版本更高”不是可以省略模型身份记录的理由。herd7检查模型候选执行，klitmus7则把测试转成要在目标内核构建和运行的材料，两者不是同一个验证步骤。
+
+配置文件后半还有graph、fontsize、edgeattr等绘图选项。例如showinitwrites=false改变初始写是否显示，不会从判定所需的执行关系中删除初始写；hb显示为某种颜色也不产生一条hb边。阅读图时不能把隐藏的初始化事件误判为“模型没有初始化”。
+
+模型文件还有传递依赖：linux-kernel.cat包含lock.cat，lock.cat又包含工具库提供的cross.cat。因此保存本仓库的五份模型配置文件，不等于已保存完整herdtools运行环境。若报找不到包含文件，应核对模型目录与工具安装的库搜索范围，不应删除include来让命令勉强通过；那会改成另一套模型。
+
+验证记录至少分三层：进程是否成功加载输入并结束、是否输出预期测试名与Observation、该Observation是否满足清单要求。退出码0不能独自替代后两项，源码文件哈希一致也不能替代任何一次实际判定。本轮未执行herd7，后文Never仍是固定模型推导出的预期，不是本机运行结果。
 
 ## 1.9\_沿\_MP\_测试追踪一次判定
 

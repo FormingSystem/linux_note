@@ -4114,7 +4114,7 @@
       "baseline_sha256": "0ea2d7d36fe6c57226b4e348dd5bb6351795a7fa0030c5dcd4d5af514d24babe",
       "lines": 216,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B05l～q已拆分访问与屏障模块；B05r冷读并重写def输入与cfg工具边界，完整MP与固定定义静态匹配。bell/cat/lock及整体收束尚未完成，保留pending，不把局部单元完成视为全篇完成。"
     },
     {
       "path": "research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md",
