@@ -1200,3 +1200,7 @@ B05ay核对固定dfaf2136的kernel/locking/lockdep.c（blob 536bd471557f5b4412d6
 ## 1.158\_实例匹配与身份示例边界
 
 B05az核对同一固定lockdep.c的match_held_lock与当前查询路径，确认先匹配instance，在references与nest_lock条件下还可按类匹配，用于[身份概念](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.2_四个身份概念分别回答什么)的限定。用户态C探针仅验证静态对象身份，不构成内核查询或subclass运行证据。
+
+## 1.159\_当前记录回退与重建
+
+B05ba复核固定dfaf2136的lockdep.c中__lock_release，确认引用减少、prev_chain_key恢复和reacquire_held_locks重建只作用于检查状态，支持[非栈顶回退](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md#4.7_release怎样回退当前链)。沿用blob 536bd471557f5b4412d6babc480d0832b4ee9d51，未进行目标运行验证。

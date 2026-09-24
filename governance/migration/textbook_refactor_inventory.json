@@ -2818,8 +2818,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md",
       "baseline_sha256": "fd63a97f04bf97771037b4fb551c55dae92fc7375ce1c1af6403c2129793e177",
       "lines": 190,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ba 保留当前账本与历史闭环讲解，修正注解名、功能失败撤回正式记录和双提交次序；补非栈顶重建非功能重取、引用合并及练习，静态检查，未运行目标。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md",
