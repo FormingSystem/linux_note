@@ -816,6 +816,8 @@ mindmap-plugin: basic
             - 🔴 [P05 存储后屏障与原子强化导读](../../research/source_reading/memory_ordering/navigation/P05_存储后屏障与原子强化导读.md#5.1_屏障位于写前还是写后)
             - 🔴 [P06 条件加载与控制依赖导读](../../research/source_reading/memory_ordering/navigation/P06_条件加载与控制依赖导读.md#6.1_一次取得还不能等待条件成立)
             - 🔴 [P07 ARM屏障与配置边界导读](../../research/source_reading/memory_ordering/navigation/P07_ARM屏障与配置边界导读.md#7.1_单核为什么仍需要设备方向的顺序)
+            - 🔴 [P08 LKMM输入、分类与工具配置](../../research/source_reading/memory_ordering/navigation/P08_LKMM输入_分类与工具配置.md#8.1_linux_kernel_def_把原语翻译成事件)
+            - 🔴 [P09 LKMM公理、锁关系与验证边界](../../research/source_reading/memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md#9.1_linux_kernel_cat_怎样组织公理)
         - 具体实现讲解
             - 🔴 [ARM屏障映射](../../research/source_reading/memory_ordering/source_explanations/arch/arm/include/asm/barrier.h.md#1.1_ARMv7指令封装与内部SMP原语)
             - 🔴 [平台屏障补充](../../research/source_reading/memory_ordering/source_explanations/arch/arm/mm/flush.c.md#1.1_DSB之后还有什么)

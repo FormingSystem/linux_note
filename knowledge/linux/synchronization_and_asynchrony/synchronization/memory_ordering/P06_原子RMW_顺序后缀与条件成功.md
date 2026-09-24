@@ -34,7 +34,7 @@ flowchart LR
 
 ## 6.2\_非\_RMW\_操作不需要为读取包装\_atomic\_t
 
-本章Linux契约以NXP官方固定提交、Linux 6.12.20为证据，从[版本化阅读入口](../../../../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.11_官方文档证据)进入。该树的文档确实位于 `Documentation/atomic_t.txt`；不要拿另一个版本的目录名替换它。文档指出，`atomic_read()`、`atomic_set()` 通常分别基于READ_ONCE、WRITE_ONCE，带后缀的 `atomic_read_acquire()`、`atomic_set_release()` 才表达对应的顺序。若代码只读写一个值，从不做原子RMW，往往不需要仅为“看起来原子”而使用 `atomic_t`；应直接选择表达所需访问和顺序的原语。
+本章Linux契约以NXP官方固定提交、Linux 6.12.20为证据，从[版本化阅读入口](../../../../../research/source_reading/memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md#9.5_官方文档证据)进入。该树的文档确实位于 `Documentation/atomic_t.txt`；不要拿另一个版本的目录名替换它。文档指出，`atomic_read()`、`atomic_set()` 通常分别基于READ_ONCE、WRITE_ONCE，带后缀的 `atomic_read_acquire()`、`atomic_set_release()` 才表达对应的顺序。若代码只读写一个值，从不做原子RMW，往往不需要仅为“看起来原子”而使用 `atomic_t`；应直接选择表达所需访问和顺序的原语。
 
 但 `atomic_set()` 必须与并发 RMW 保持同一 atomic 对象的不可分割契约，不能让一个锁实现的 RMW 被普通 Store 插入并产生不可能中间结果。这是 atomic API 实现者的责任，不是调用方手加屏障能修补的。
 

@@ -1001,7 +1001,7 @@ B05f只读固定Documentation/RCU/rcu_dereference.rst和include/linux/rcupdate.h
 
 ## 1.114\_原子更新与条件失败契约
 
-B05g只读固定Documentation/atomic_t.txt全篇，核对非RMW、返回值、显式顺序、条件失败、atomic_set与RMW不可分性、期望值回写、辅助屏障范围及前进性；[阅读入口](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.11_官方文档证据)关联原始副本，其Git对象bee3b1bca9a7b46bcf9911f036c3280e77b4405a与固定提交一致。工作树HEAD仍是本地实验提交，不作为证据；当前配置仍UP、TINY_RCU和PREEMPT_NONE。宿主C++17严格编译后四工作者完成40,000次更新、错误0，同时单线程反例显示期望值重用会使OWNED→OWNED也成功。不声称执行Linux/ARM原子或herd7，不以宿主原子替代目标实现。
+B05g只读固定Documentation/atomic_t.txt全篇，核对非RMW、返回值、显式顺序、条件失败、atomic_set与RMW不可分性、期望值回写、辅助屏障范围及前进性；[阅读入口](../memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md#9.5_官方文档证据)关联原始副本，其Git对象bee3b1bca9a7b46bcf9911f036c3280e77b4405a与固定提交一致。工作树HEAD仍是本地实验提交，不作为证据；当前配置仍UP、TINY_RCU和PREEMPT_NONE。宿主C++17严格编译后四工作者完成40,000次更新、错误0，同时单线程反例显示期望值重用会使OWNED→OWNED也成功。不声称执行Linux/ARM原子或herd7，不以宿主原子替代目标实现。
 
 ## 1.115\_隐式顺序与登记空窗
 
@@ -1009,7 +1009,7 @@ B05h只读固定Documentation/memory-barriers.txt的隐式屏障部分及include
 
 ## 1.116\_MP候选关系与模型回边
 
-B05i按固定tools/memory-model/linux-kernel.cat核对po-rel/acq-po、ppo、prop、hb与pb及RCU/plain检查，原始副本对象adf3c4f412296269bb9f8127cd7e04f276479a57与固定提交一致。MP坏候选的fr不是直接hb边；经发布侧累积关系和flag读取来源合成同线程prop回边后进入hb。更新[版本导读的MP阅读](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.9_沿_MP_测试追踪一次判定)并区分Never预期与实际Observation。完整C只求这份已推导子图的可达闭包，四种后缀组合仅双侧出现环，不解析cat/不调用herd7；宿主PATH未发现herd7，本批未运行完整模型或目标硬件。
+B05i按固定tools/memory-model/linux-kernel.cat核对po-rel/acq-po、ppo、prop、hb与pb及RCU/plain检查，原始副本对象adf3c4f412296269bb9f8127cd7e04f276479a57与固定提交一致。MP坏候选的fr不是直接hb边；经发布侧累积关系和flag读取来源合成同线程prop回边后进入hb。更新[版本导读的MP阅读](../memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md#9.3_沿_MP_测试追踪一次判定)并区分Never预期与实际Observation。完整C只求这份已推导子图的可达闭包，四种后缀组合仅双侧出现环，不解析cat/不调用herd7；宿主PATH未发现herd7，本批未运行完整模型或目标硬件。
 
 ## 1.117\_模型工具与硬件生成器边界
 
@@ -1045,12 +1045,16 @@ B05q按固定dfaf2136核对arch/arm/include/asm/barrier.h（Git blob 83ae97c049d
 
 ## 1.125\_模型输入与工具配置边界
 
-B05r重新核对官方远端、来源分支、固定标签与Linux版本，外部HEAD仍为实验提交7b60e547，不用于证据。已保存linux-kernel.def和linux-kernel.cfg的Git对象分别为88a39601f52563b670876e3ef4950324dc66224a、3c8098e99f41dfe72cb75f4c276801ab2c855f83，与固定dfaf2136相同。冷读两文件及模型README工具要求，沿[完整MP输入](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.4.1_用一次发布示例核对地址和标签)区分指针/对象实参、四事件和结果谓词；[配置入口](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.8_linux_kernel_cfg_为什么要求正确工作目录)补足显示选项、工具库依赖及进程/Observation/清单三层结果。材料一致性为静态核对，未执行herd7或klitmus7；公理与锁模型继续单独审查。
+B05r重新核对官方远端、来源分支、固定标签与Linux版本，外部HEAD仍为实验提交7b60e547，不用于证据。已保存linux-kernel.def和linux-kernel.cfg的Git对象分别为88a39601f52563b670876e3ef4950324dc66224a、3c8098e99f41dfe72cb75f4c276801ab2c855f83，与固定dfaf2136相同。冷读两文件及模型README工具要求，沿[完整MP输入](../memory_ordering/navigation/P08_LKMM输入_分类与工具配置.md#8.1.1_用一次发布示例核对地址和标签)区分指针/对象实参、四事件和结果谓词；[配置入口](../memory_ordering/navigation/P08_LKMM输入_分类与工具配置.md#8.3_linux_kernel_cfg_为什么要求正确工作目录)补足显示选项、工具库依赖及进程/Observation/清单三层结果。材料一致性为静态核对，未执行herd7或klitmus7；公理与锁模型继续单独审查。
 
 ## 1.126\_bell事件分类与读侧配对
 
-B05s冷读固定linux-kernel.bell全文及cat消费分类的相关定义。已保存bell的Git对象ce068700939c559edc8c91b9a931a0feae82e159与官方dfaf2136一致；外部实验HEAD不参与结论。[事件分类单元](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.5.1_把指令种类和顺序标签分开)区分RMW类别与Accesses标签，沿三个读侧序列手算RCU配对，说明SRCU位置/数据流/值检查、Marked与Plain及本地依赖传递。没有执行herd7，手算不能替代工具求解或真实RCU进展验证；后续cat公理、锁模型与整体导读仍待审查。
+B05s冷读固定linux-kernel.bell全文及cat消费分类的相关定义。已保存bell的Git对象ce068700939c559edc8c91b9a931a0feae82e159与官方dfaf2136一致；外部实验HEAD不参与结论。[事件分类单元](../memory_ordering/navigation/P08_LKMM输入_分类与工具配置.md#8.2.1_把指令种类和顺序标签分开)区分RMW类别与Accesses标签，沿三个读侧序列手算RCU配对，说明SRCU位置/数据流/值检查、Marked与Plain及本地依赖传递。没有执行herd7，手算不能替代工具求解或真实RCU进展验证；后续cat公理、锁模型与整体导读仍待审查。
 
 ## 1.127\_公理检查与锁候选关系
 
-B05t按官方固定dfaf2136核对linux-kernel.cat（adf3c4f412296269bb9f8127cd7e04f276479a57）与lock.cat（03c12efed66a18d5f980ea03efbdba537503ad3b），仓库原文件Git对象相同。[公理入口](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.6.1_先问候选执行违反了哪一种约束)分开coherence、atomic、hb、pb与诊断，[锁入口](../memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.7.1_从取得成功与观察失败分开读)追踪取得读写、解锁、失败观察和临界区配对，再解释co/rf构造。补充cos-opt.cat工具库依赖。外部实验HEAD未用作证据，未运行herd7，关系推导不替代模型工具结果。
+B05t按官方固定dfaf2136核对linux-kernel.cat（adf3c4f412296269bb9f8127cd7e04f276479a57）与lock.cat（03c12efed66a18d5f980ea03efbdba537503ad3b），仓库原文件Git对象相同。[公理入口](../memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md#9.1.1_先问候选执行违反了哪一种约束)分开coherence、atomic、hb、pb与诊断，[锁入口](../memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md#9.2.1_从取得成功与观察失败分开读)追踪取得读写、解锁、失败观察和临界区配对，再解释co/rf构造。补充cos-opt.cat工具库依赖。外部实验HEAD未用作证据，未运行herd7，关系推导不替代模型工具结果。
+
+## 1.128\_内存顺序源码阅读模块收束
+
+B05u将已核对的def/bell/cfg单元完整组织为[模型输入模块](../memory_ordering/navigation/P08_LKMM输入_分类与工具配置.md#8.1_linux_kernel_def_把原语翻译成事件)，cat/lock/MP与证据边界组织为[关系模块](../memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md#9.1_linux_kernel_cat_怎样组织公理)。原十单元148行非标题内容迁移前后逐行保留，随后仅修正跨篇衔接和节号；没有新增源码版本或herd7运行结论。总索引保留真实阅读入口，知识与源码模块保持不同阅读职责。

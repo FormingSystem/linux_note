@@ -104,7 +104,7 @@ LKMM将访问标签、依赖、屏障与传播规则组合为happens-before（hb
 
 ### 8.4.1\_为MP坏结果找到真实的回边
 
-先沿固定[模型公理入口](../../../../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.6_linux_kernel_cat_怎样组织公理)核对定义，再按本例一步一步归类。这里四个运行时访问都是Marked，即由ONCE或带顺序原语标记的访问；没有plain访问混入。
+先沿固定[模型公理入口](../../../../../research/source_reading/memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md#9.1_linux_kernel_cat_怎样组织公理)核对定义，再按本例一步一步归类。这里四个运行时访问都是Marked，即由ONCE或带顺序原语标记的访问；没有plain访问混入。
 
 1. A→B在release之前形成 `po-rel` 边，C→D从acquire之后形成 `acq-po` 边。二者在本例属于 `ppo`（preserved program order，保留的程序顺序），继而属于hb。
 2. B→C是跨参与者rf，在模型中称 `rfe`；它也属于hb。下标式后缀e表示external，即两个端点来自不同参与者；i表示internal，即同一参与者。

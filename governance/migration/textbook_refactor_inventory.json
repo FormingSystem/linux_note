@@ -4113,8 +4113,8 @@
       "path": "research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md",
       "baseline_sha256": "0ea2d7d36fe6c57226b4e348dd5bb6351795a7fa0030c5dcd4d5af514d24babe",
       "lines": 216,
-      "state": "pending",
-      "reason": "B05l～q已拆分访问与屏障模块；B05r重写def输入与cfg边界；B05s补足bell分类与配对；B05t冷读cat/lock并展开公理、诊断及锁候选关系。模型阅读模块职责整理与整体收束尚未完成，保留pending。"
+      "state": "validated",
+      "reason": "B05l～t逐单元冷读改写，B05u完整迁出十个模型单元并逐行核对148行非标题内容，保留总索引阅读职责与证据边界、同步调用方；无herd7运行声明。"
     },
     {
       "path": "research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md",
@@ -4927,6 +4927,20 @@
       "lines": 50,
       "state": "validated",
       "reason": "B05q固定ARM屏障与flush函数冷读；三配置轴和A0～A3分离CPU/DMA/heavy路径，节选与固定头16组ARMv7编译及16组宿主回调检查通过；不声称板上、内核或设备验证。"
+    },
+    {
+      "path": "research/source_reading/memory_ordering/navigation/P08_LKMM输入_分类与工具配置.md",
+      "baseline_sha256": "6f9ea8eeed791df0360ae2712cc3ea711a0932b40e9b61146e464c9ef5ad6db8",
+      "lines": 150,
+      "state": "validated",
+      "reason": "B05u由已逐单元审查的固定版本导读完整迁入，补齐上下篇与准确锚点，区分真实实现、模型关系和未执行验证；人评状态保持红色。"
+    },
+    {
+      "path": "research/source_reading/memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md",
+      "baseline_sha256": "0164581b5acbb5e0446d8b9c8781b715e38b34d33cb1cb7b188cf77ddd58be8a",
+      "lines": 146,
+      "state": "validated",
+      "reason": "B05u由已逐单元审查的固定版本导读完整迁入，补齐上下篇与准确锚点，区分真实实现、模型关系和未执行验证；人评状态保持红色。"
     }
   ]
 }
