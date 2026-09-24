@@ -132,6 +132,8 @@ flowchart LR
 
 ## 1.14\_配套入口
 
+[DMA章节](../../../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md#1.5_streaming_映射的所有权状态机)把映射有效性、访问资格和设备活动分成三组状态；SG计数模型只核对原输入与硬件段的不同职责。CPU顺序模型不替代这些地址、所有权和终止证据。
+
 [MMIO章节](../../../../knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md#1.3_普通访问器与_relaxed_访问器)按固定I/O文档区分默认映射下同外设顺序、同锁跨CPU写和普通内存方向；四阶段C模型只解释posted送达与设备完成的不同，不把安全读回当成业务完成或DMA同步。
 
 [子系统边界参考](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P10_子系统边界_误用诊断与选型.md#10.1.1_有发布取得为什么仍会拼出两轮字段)用跨轮覆盖轨迹区分CPU顺序、修改资格与寿命；普通内存模型不替代DMA所有权、MMIO门铃到达和设备完成协议。固定memory-barriers.txt的dma示例及默认I/O属性下accessor规则，和Documentation/driver-api/device-io.rst的posted write说明分别承担相关证据，不把当前UP配置当作设备顺序已验证。

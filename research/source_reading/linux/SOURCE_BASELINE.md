@@ -1066,3 +1066,7 @@ B05v按固定dfaf2136的Documentation/memory-barriers.txt中KERNEL I/O BARRIER E
 ## 1.130\_DMA方向与完成前提
 
 B05w只读核对固定dfaf2136的Documentation/core-api/dma-api-howto.rst（0bf31b6c4383c8b36d73f7361a6cdb87d1f5dba6）。[DMA交接单元](../../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md#1.5_streaming_映射的所有权状态机)沿D0～D5分开映射有效、访问资格与设备活动，修正FROM_DEVICE示例在映射区写元数据的错误；同步和unmap前仍须设备停止访问证据。固定文档的只读接收复用例允许无CPU写时省去for_device同步，不据此省略设备交还协议。未运行实际DMA或缓存验证，其他DMA单元继续审查。
+
+## 1.131\_DMA地址和SG计数与终止同步
+
+B05x继续核对固定dfaf2136的dma-api-howto和Documentation/driver-api/dmaengine/client.rst（Git blob d491e385d61a98b8a804cd823caf254a2dc62cf4），区分CPU虚拟/物理/DMA地址、单段映射缓冲限制、SG输入项与输出段、DMA设备参数及异步终止后同步。[SG完整C模型](../../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md#1.7.1_用C核对两套计数)以固定三项到两段检查计数职责，GCC14.2/Clang18.1.8严格C11 O2运行通过；它不实现dma_map_sg，不构成设备或缓存验证。

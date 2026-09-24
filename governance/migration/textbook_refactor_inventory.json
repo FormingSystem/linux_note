@@ -2258,15 +2258,15 @@
       "path": "knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md",
       "baseline_sha256": "6acaec23540099b1bb46b4c3c20f7983c02b07c0c570a50e04e0bfb0b5d70ca6",
       "lines": 235,
-      "state": "pending",
-      "reason": "B05w完成streaming交接单元，按固定howto纠正FROM_DEVICE映射区CPU写入，补齐D0～D5与停止访问前提；地址、分配、SG等单元待进一步教材审查，保持pending。"
+      "state": "validated",
+      "reason": "B05w～x按固定howto与DMAengine client完成方向、地址、分配、SG及退出职责冷读；补齐D0～D5与完整C计数模型，双编译器严格运行通过，无真实DMA验证声明。"
     },
     {
       "path": "knowledge/linux/io_model/dma/大纲.md",
       "baseline_sha256": "3f182cb86928ca8a0241c0945b84c7e3a4f9113aa252ea7dc93d426887a5af2b",
       "lines": 16,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05w～x按固定howto与DMAengine client完成方向、地址、分配、SG及退出职责冷读；补齐D0～D5与完整C计数模型，双编译器严格运行通过，无真实DMA验证声明。"
     },
     {
       "path": "knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md",

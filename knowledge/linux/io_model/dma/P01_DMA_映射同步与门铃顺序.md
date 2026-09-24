@@ -35,7 +35,13 @@ flowchart LR
 
 DMA 是否经过或嗅探 CPU cache 取决于平台。驱动不猜微架构，也不手写 cache flush，而是遵守 DMA API 契约。
 
+先在纸上写下三个地址：CPU用虚拟地址X访问缓冲，页表把X翻译为物理内存Y；设备使用映射接口返回的DMA地址Z，由总线或IOMMU把Z送到Y。简单平台上Y和Z的数值可能相等，但这种相等不是驱动可以依赖的通用契约。dma_addr_t是设备侧地址的载体，不是可以直接在CPU上解引用的指针；同一块内存给另一设备使用，也不能直接复用前一设备的映射。
+
+dma_map_single还不是“任意指针转DMA地址”的万能转换。缓冲必须来自适合该接口的内存；不能把栈变量或vmalloc返回的虚拟连续地址直接传入并假定物理连续。分散页应使用与其组织方式相符的页/SG接口。缓存行边界同样重要：如果设备和CPU分别修改同一缓存行内的不同对象，维护整行时仍可能互相覆盖，不能因为字段地址不同就判定它们独立。
+
 ## 1.2\_先设置设备寻址能力
+
+DMA mask告诉映射层设备能够发出多少位地址，依据是硬件能力，不是本机CPU指针宽度。下面的36位只是示例：若设备只有32位地址寄存器，就不能照抄它；否则高位可能在编程硬件时丢失，使传输落到错误位置。
 
 ```c
 ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(36));
@@ -47,6 +53,8 @@ streaming 和 coherent mask 可以不同；设备若对两类地址宽度要求�
 
 ## 1.3\_两类主要映射模型
 
+沿一次接收区分两种需求：环形队列的描述符可能长期同时被CPU和设备观察，而数据缓冲往往在两者之间轮流移交。前者适合先考虑一致性分配，后者适合streaming映射；不是“一个高级、一个低级”，而是维护可见性与访问资格的方式不同。
+
 | 模型 | 典型接口 | 生命周期 | CPU/设备交接 |
 | --- | --- | --- | --- |
 | 一致性分配 | `dma_alloc_coherent()` / `dmam_alloc_coherent()` | 通常较长，返回 CPU 地址和 DMA 地址 | 不需要 `dma_sync_*()`，仍需要内存顺序 |
@@ -55,6 +63,8 @@ streaming 和 coherent mask 可以不同；设备若对两类地址宽度要求�
 一致性分配不等于“所有访问全序”，streaming 也不等于“一定每次真正 flush cache”。API 描述语义，平台选择实现。
 
 ## 1.4\_一致性分配
+
+一致性分配一次给出两个结果：cpu供CPU读写，dma供设备访问同一分配区。下面ring保存这两个地址和分配长度；hw_desc表示设备手册规定的描述符布局。托管分配的便利在资源回收登记，不在自动停止硬件。
 
 ```c
 struct my_ring {
@@ -184,16 +194,31 @@ map、sync 和 unmap 的方向必须一致。方向影响缓存维护；填错�
 
 ## 1.7\_scatterlist
 
+一帧数据可能由几个不连续缓冲组成。如果先复制成大块连续内存，会增加CPU搬运及临时分配。散布/聚集（scatter-gather，SG）把原始各段列在scatterlist里，让映射层生成设备能访问的段；相邻片段有时可以合并，硬件边界又可能限制合并。因此驱动必须保留两套计数：原始输入的项数nents，以及返回给硬件的段数mapped。
+
+设三个输入片段分别长1024、1024、512字节，映射层在适用条件下把前两个合并。CPU仍用原始三项描述映射资源，设备得到的却是2048和512两个传输段。用三次循环填写硬件会越过有效映射输出，用两项做unmap又把映射输入描述错了。这两个错误来自把不同职责的计数混在一起，不是边界检查里随便取最小值可以修好。
+
+下面是设备相关的流程片段。hw_add_segment把一段记录到尚未提交的硬件描述符中，submit_and_wait已经包括检查完成/失败并在失败时停止设备的协议；它们不是通用内核API。硬件描述符容量应在提交前检查，未提交的失败路径可以直接解除成功建立的映射。
+
 ```c
-int mapped;
+int mapped, i, ret;
+struct scatterlist *sg;
 
 mapped = dma_map_sg(dev, sgl, nents, DMA_TO_DEVICE);
 if (!mapped)
     return -EIO;
 
-/* 用 mapped 个 DMA 段编程硬件，遍历时使用 for_each_sg 等 DMA 语义。 */
+if (mapped > hw_capacity) {
+    ret = -ENOSPC;
+    goto out_unmap; /* 尚未提交，设备没有开始访问。 */
+}
+for_each_sg(sgl, sg, mapped, i)
+    hw_add_segment(i, sg_dma_address(sg), sg_dma_len(sg));
 
+ret = submit_and_wait(); /* 返回前必须确认设备不再访问这些段。 */
+out_unmap:
 dma_unmap_sg(dev, sgl, nents, DMA_TO_DEVICE);
+return ret;
 ```
 
 必须区分：
@@ -202,6 +227,59 @@ dma_unmap_sg(dev, sgl, nents, DMA_TO_DEVICE);
 - 返回的 `mapped` 是合并后供设备编程的 DMA 段数；
 - unmap 和 sync 接口按 DMA API 要求使用原始 `nents`，不能误传 `mapped`；
 - 硬件描述符使用每个映射段的 `sg_dma_address()` 和 `sg_dma_len()`。
+
+再问一个反例：如果dma_map_sg返回0，是否为了“成对”仍调用unmap？不应把失败当作成功建立的映射，错误路径直接返回。本例成功映射以后有容量失败和传输结束两条路径，两条都进入一次unmap；计数和方向沿原始输入保持不变。
+
+### 1.7.1\_用C核对两套计数
+
+下面固定一份“三项合并为两段”的教学输入，不实现Linux映射算法，也不宣称任何真实平台一定这样合并。程序分别检查设备段的总长度、解除映射时的输入身份；最后故意给错计数，要求检查器拒绝。
+
+```c
+#include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+
+struct mapping_record {
+    size_t original_count;
+    size_t mapped_count;
+    size_t dma_lengths[3];
+};
+
+static bool describe_hardware(const struct mapping_record *m,
+                              size_t count, size_t *bytes)
+{
+    if (count != m->mapped_count)
+        return false; /* 硬件只能消费映射层返回的有效段。 */
+    *bytes = 0;
+    for (size_t i = 0; i < count; ++i)
+        *bytes += m->dma_lengths[i];
+    return true;
+}
+
+static bool check_unmap(const struct mapping_record *m, size_t count)
+{
+    return count == m->original_count; /* 解除映射沿原输入身份。 */
+}
+
+int main(void)
+{
+    const size_t input_lengths[] = {1024, 1024, 512};
+    const struct mapping_record m = {3, 2, {2048, 512, 0}};
+    size_t original_bytes = 0, device_bytes = 0;
+    for (size_t i = 0; i < m.original_count; ++i)
+        original_bytes += input_lengths[i];
+    assert(describe_hardware(&m, 2, &device_bytes));
+    assert(original_bytes == device_bytes && device_bytes == 2560);
+    assert(!describe_hardware(&m, 3, &device_bytes));
+    assert(check_unmap(&m, 3));
+    assert(!check_unmap(&m, 2));
+    puts("hardware=2 segments; unmap=3 entries; bytes=2560");
+    return 0;
+}
+```
+
+保存为sg_count_model.c，以`cc -std=c11 -Wall -Wextra -Werror -O2 sg_count_model.c -o sg_count_model`编译运行。若把合并输出改为三段，需要同时改变mapped_count和dma_lengths；original_count仍取决于原输入，不能跟着设备段数一起随意改动。真实驱动不自行制造这份输出，而是读取dma_map_sg返回结果。
 
 ## 1.8\_DMA\_数据发布与\_MMIO\_门铃
 
@@ -212,7 +290,7 @@ flowchart LR
     A[准备数据／描述符] --> B[map 或 sync_for_device]
     B --> C[必要的 dma_wmb／设备协议发布]
     C --> D[writel 门铃]
-    D --> E[必要时 readl 安全寄存器确认 posted write]
+    D --> E[必要时 readl 安全寄存器确认写送达]
 ```
 
 不能建立一条脱离上下文的“所有门铃前必须 `wmb()`”规则：
@@ -220,11 +298,13 @@ flowchart LR
 - 一致性描述符用所有权位发布时，常由 `dma_wmb()` 排序字段和所有权位；
 - streaming 缓冲先完成 map/sync 所有权交接；
 - `writel()` 与 `writel_relaxed()` 对普通内存的排序语义不同，选择 relaxed 时必须明确由什么补足；
-- `writel()` 返回不一定表示 posted write 已到设备，需要完成确认时读取同一设备的安全寄存器或使用设备规定方法。
+- `writel()` 返回不一定表示posted write已到设备，安全读回可在适用协议下确认送达；设备工作完成仍要另取证据。
 
 详细语义参见 [MMIO 访问顺序](../mmio/P01_MMIO_访问顺序与屏障.md)。
 
 ## 1.9\_IOMMU\_与一致性不是一回事
+
+输入输出内存管理单元（I/O Memory Management Unit，IOMMU）位于设备到内存的访问路径上，负责设备地址翻译与权限；SMMU是相关体系结构中的系统内存管理实现名称。地址翻译服务（Address Translation Services，ATS）允许支持它的设备参与翻译请求或缓存，不能据此推断载荷缓存已经一致。这些是地址路径上的机制；CPU缓存是否与设备保持一致是另一条轴。
 
 | 机制 | 主要职责 |
 | --- | --- |
@@ -238,7 +318,11 @@ flowchart LR
 
 DMAengine 管理 DMA 控制器通道、描述符和提交回调，但客户端缓冲区的映射责任取决于具体 API 和子系统约定。不能笼统说“用了 DMAengine 就自动 map”，也不能无条件重复映射框架已经接管的缓冲区。
 
+以slave SG路径为例，客户端在准备传输前建立映射，并使用dmaengine_get_dma_device(chan)得到的DMA设备，而不是凭直觉拿外设本身的struct device。之后sync也使用同一个DMA设备，映射保持到操作结束。不同设备可能有不同地址域和寻址限制，设备参数不是可忽略的记账信息。
+
 使用前核对对应 DMAengine client 文档：谁建立映射、回调表示哪一级完成、terminate 是否同步、描述符和缓冲区何时可以释放。
+
+固定版本区分terminate_async与terminate_sync：前者可能返回时硬件或正在执行的完成回调尚未停稳，释放相关内存前须dmaengine_synchronize；后者等待传输和正在执行的完成回调结束，但不能在原子上下文或完成回调自身调用。异步终止到同步之间又issue_pending，会破坏这个使用前提。不要把函数名里的terminate当成无条件可以free的许可。
 
 ## 1.11\_停止与释放
 
@@ -271,6 +355,8 @@ devm/dmam 只托管最终资源释放，不会替驱动停止 DMA、同步中断
 | 只依赖 dmam 自动释放 | 设备仍 DMA 时资源被回收 |
 
 ## 1.13\_核对表
+
+回到一帧接收，先沿D0～D5复述：取得合适缓冲、成功映射、提交地址、确认设备停止访问、同步给CPU、读取并决定复用或结束。然后考虑三个变化：设备只能寻址低32位、SG映射合并成更少段、等待只得到超时。它们分别改变地址资格、硬件编程计数和停机证据，不能用同一条屏障回答。
 
 - DMA mask 是否在分配和映射前正确设置？
 - 缓冲区使用一致性分配还是 streaming 映射，原因是什么？
