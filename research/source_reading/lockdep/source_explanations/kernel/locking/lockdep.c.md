@@ -397,4 +397,165 @@ static inline int debug_locks_off_graph_unlock(void)
 
 **修改约束：** 保留IRQ前提、递归计数配对、owner写入顺序与graph_lock返回值的锁所有权含义。用三条路径核对每次修改：正常登记后解锁，等待期间他CPU停检导致graph_lock返回0，当前CPU容量失败并停检解锁。不能因为一次初始化未告警就推断这三条都执行过。
 
+## 1.7\_类查找与静态身份补全
+
+登记先调用下面的查找函数；它返回NULL既可能表示尚未登记，也可能表示输入或检查条件错误。因此register_lock_class还要分别检查身份与全局生命状态，不能把每个NULL都当成可以直接分配新类。
+
+```c
+/**
+ * @brief 识别内核、模块与允许阶段的初始化区静态对象地址。
+ * 仓库补充，非上游原文。
+ */
+static int static_obj(const void *obj)
+{
+	unsigned long addr = (unsigned long) obj;
+
+	if (is_kernel_core_data(addr))
+		return 1;
+
+	/*
+	 * keys are allowed in the __ro_after_init section.
+	 */
+	if (is_kernel_rodata(addr))
+		return 1;
+
+	/*
+	 * in initdata section and used during bootup only?
+	 * NOTE: On some platforms the initdata section is
+	 * outside of the _stext ... _end range.
+	 */
+	if (system_state < SYSTEM_FREEING_INITMEM &&
+		init_section_contains((void *)addr, 1))
+		return 1;
+
+	/*
+	 * in-kernel percpu var?
+	 */
+	if (is_kernel_percpu_address(addr))
+		return 1;
+
+	/*
+	 * module static or percpu var?
+	 */
+	return is_module_address(addr) || is_module_percpu_address(addr);
+}
+
+/**
+ * @brief 按子键地址查询全局类，并检查子类边界和IRQ前提。
+ * 仓库补充，非上游原文。
+ */
+static noinstr struct lock_class *
+look_up_lock_class(const struct lockdep_map *lock, unsigned int subclass)
+{
+	struct lockdep_subclass_key *key;
+	struct hlist_head *hash_head;
+	struct lock_class *class;
+
+	if (unlikely(subclass >= MAX_LOCKDEP_SUBCLASSES)) {
+		instrumentation_begin();
+		debug_locks_off();
+		nbcon_cpu_emergency_enter();
+		printk(KERN_ERR
+			"BUG: looking up invalid subclass: %u\n", subclass);
+		printk(KERN_ERR
+			"turning off the locking correctness validator.\n");
+		dump_stack();
+		nbcon_cpu_emergency_exit();
+		instrumentation_end();
+		return NULL;
+	}
+
+	/*
+	 * If it is not initialised then it has never been locked,
+	 * so it won't be present in the hash table.
+	 */
+	if (unlikely(!lock->key))
+		return NULL;
+
+	/*
+	 * NOTE: the class-key must be unique. For dynamic locks, a static
+	 * lock_class_key variable is passed in through the mutex_init()
+	 * (or spin_lock_init()) call - which acts as the key. For static
+	 * locks we use the lock object itself as the key.
+	 */
+	BUILD_BUG_ON(sizeof(struct lock_class_key) >
+			sizeof(struct lockdep_map));
+
+	key = lock->key->subkeys + subclass;
+
+	hash_head = classhashentry(key);
+
+	/*
+	 * We do an RCU walk of the hash, see lockdep_free_key_range().
+	 */
+	if (DEBUG_LOCKS_WARN_ON(!irqs_disabled()))
+		return NULL;
+
+	hlist_for_each_entry_rcu_notrace(class, hash_head, hash_entry) {
+		if (class->key == key) {
+			/*
+			 * Huh! same key, different name? Did someone trample
+			 * on some memory? We're most confused.
+			 */
+			WARN_ONCE(class->name != lock->name &&
+				  lock->key != &__lockdep_no_validate__,
+				  "Looking for class \"%s\" with key %ps, but found a different class \"%s\" with the same key\n",
+				  lock->name, lock->key, class->name);
+			return class;
+		}
+	}
+
+	return NULL;
+}
+
+/**
+ * @brief 为缺省key的静态锁取得规范地址，拒绝未标注的非静态对象。
+ * 仓库补充，非上游原文。
+ */
+static bool assign_lock_key(struct lockdep_map *lock)
+{
+	unsigned long can_addr, addr = (unsigned long)lock;
+
+#ifdef __KERNEL__
+	/*
+	 * lockdep_free_key_range() assumes that struct lock_class_key
+	 * objects do not overlap. Since we use the address of lock
+	 * objects as class key for static objects, check whether the
+	 * size of lock_class_key objects does not exceed the size of
+	 * the smallest lock object.
+	 */
+	BUILD_BUG_ON(sizeof(struct lock_class_key) > sizeof(raw_spinlock_t));
+#endif
+
+	if (__is_kernel_percpu_address(addr, &can_addr))
+		lock->key = (void *)can_addr;
+	else if (__is_module_percpu_address(addr, &can_addr))
+		lock->key = (void *)can_addr;
+	else if (static_obj(lock))
+		lock->key = (void *)lock;
+	else {
+		/* Debug-check: all keys must be persistent! */
+		debug_locks_off();
+		nbcon_cpu_emergency_enter();
+		pr_err("INFO: trying to register non-static key.\n");
+		pr_err("The code is fine but needs lockdep annotation, or maybe\n");
+		pr_err("you didn't initialize this object before use?\n");
+		pr_err("turning off the locking correctness validator.\n");
+		dump_stack();
+		nbcon_cpu_emergency_exit();
+		return false;
+	}
+
+	return true;
+}
+```
+
+`static_obj()`判定的是地址归属，不是承诺对象永不释放。普通内核数据、只读数据、per-CPU区以及模块静态区各有各的存续协议；初始化区只有在`system_state < SYSTEM_FREEING_INITMEM`时可通过对应检查。模块卸载仍需走key/类清理，不能因为一个地址今天被识别为静态就永久保存引用。各地址分类辅助函数由内核/模块/per-CPU设施提供，本节使用其地址归属契约，不展开架构地址布局。
+
+`look_up_lock_class()`先限制subclass，再处理尚无key的情形。哈希桶由子键地址计算，桶内还比较完整子键指针，哈希碰撞不等于同类。遍历使用RCU的notrace入口并要求本地IRQ关闭；它不取得图锁，删除端必须与这种读者协调。`noinstr`及instrumentation_begin/end用于控制插桩区域，不能把它们当成可以随意删除的装饰。名称不一致会告警，但找到的类仍按key返回，名称不是分类键。
+
+`assign_lock_key()`只处理未显式提供key的对象。per-CPU实例先转换为去掉CPU偏移的规范地址，从而让各CPU副本共享逻辑身份；其他认可的静态map用自身地址。普通动态对象不能走这个兜底，否则每个分配地址都会意外变成不同类，释放重用还会使身份失真。失败路径停检、输出初始化/注解提示并返回false，调用者必须停止该次登记。
+
+两个BUILD_BUG_ON检查的是编译期尺寸关系，防止用对象地址充当key时潜在范围重叠假设失效；它们不在运行时给对象分配额外内存。WARN_ONCE及printk/dump_stack属于诊断，KERN_ERR/KERN_CONT标明日志级别或续行，nbcon配对限定紧急输出区。修改地址分类或身份兜底时，必须同时复核动态key注册/注销和模块释放协议，不能只让一个新地址通过static_obj。
+
 下一篇：[Lockdep 取得释放与持锁账本源码实现](../../P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)。
