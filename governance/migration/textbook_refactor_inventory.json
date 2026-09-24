@@ -2895,8 +2895,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P05_mutex慢路径与所有权交接.md",
       "baseline_sha256": "93a9a69c07d434816d7e9d6b9c83ad7026118012e3a76e7987b0ecf5fb1febfc",
       "lines": 100,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05am 冷读并以固定mutex.c重建正交状态/S周期，修正HANDOFF请求者、PICKUP接收、OSQ队首例外和本地配置错误；补A/B/C角色时序与信号顺序反例。文档静态检查，未执行内核调度/信号/RT验证，人工状态不变。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P06_rwsem读写汇聚与唤醒.md",

@@ -1148,3 +1148,7 @@ B05ak核对固定dfaf2136的arch/arm/include/asm/spinlock.h（blob f610a773f2be5
 ## 1.145\_可睡锁应用契约
 
 B05al核对固定dfaf2136的include/linux/rwsem.h（blob c8b543d428b0a8d4662183f3342e88ec61d10189）与Documentation/locking/mutex-design.rst（blob 7c30b4aa5e28fc32afd29ef9d9ebc873bed19c9a），确认rwsem可中断/try/降级入口和非递归契约、mutex所有者与unlock仍在执行时的对象寿命。[应用层章节](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P02_互斥锁与读写信号量.md#2.8_生命周期与停机)不把解锁发布时点当成调用结束；配置辅助C代码未做目标编译运行，工作树实验HEAD不作证据。
+
+## 1.146\_普通mutex的交接与取消
+
+B05am只读固定dfaf2136的kernel/locking/mutex.c（blob cbae8c0b89ab2b8074a387ebf1cca86951362cc2），核对trylock_common、lock_common、optimistic_spin、handoff及unlock_slowpath：队首请求HANDOFF，释放者写入接收者和PICKUP，内部wait_lock下先接收再判信号。见[同场景交接比较](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P05_mutex慢路径与所有权交接.md#5.6_handoff解决什么又付出什么)。同时核对kernel/Kconfig.locks中MUTEX_SPIN_ON_OWNER依赖SMP及原子RMW支持，当前非SMP配置未启用；此前该章“已启用”表述已纠正，不以实验HEAD证明优化运行。未做目标调度与信号验证。
