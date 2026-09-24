@@ -1152,3 +1152,7 @@ B05al核对固定dfaf2136的include/linux/rwsem.h（blob c8b543d428b0a8d4662183f
 ## 1.146\_普通mutex的交接与取消
 
 B05am只读固定dfaf2136的kernel/locking/mutex.c（blob cbae8c0b89ab2b8074a387ebf1cca86951362cc2），核对trylock_common、lock_common、optimistic_spin、handoff及unlock_slowpath：队首请求HANDOFF，释放者写入接收者和PICKUP，内部wait_lock下先接收再判信号。见[同场景交接比较](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P05_mutex慢路径与所有权交接.md#5.6_handoff解决什么又付出什么)。同时核对kernel/Kconfig.locks中MUTEX_SPIN_ON_OWNER依赖SMP及原子RMW支持，当前非SMP配置未启用；此前该章“已启用”表述已纠正，不以实验HEAD证明优化运行。未做目标调度与信号验证。
+
+## 1.147\_rwsem批次与授权证据
+
+B05an核对固定dfaf2136的kernel/locking/rwsem.c（blob 2bbb6eca51445bdf434ba579ced4beddafbc52ca）：mark_wake写分支只通知，读阶段跳过WRITE节点，最多256读者，两遍先计count后release清waiter.task；读慢路径acquire观察并在信号分支复查，写慢路径原子取得。见[批量交付](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P06_rwsem读写汇聚与唤醒.md#6.4_为什么读者可以批量唤醒)。kernel/Kconfig.locks确认RWSEM_SPIN_ON_OWNER依赖SMP与原子RMW，当前工作配置非SMP，不构成优化运行证据。没有目标竞争或调度实测。

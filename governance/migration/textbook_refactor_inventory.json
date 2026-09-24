@@ -2902,8 +2902,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P06_rwsem读写汇聚与唤醒.md",
       "baseline_sha256": "9898ae1afdac6539c1b1c95884f66934edbb947297f1f2dc2b57e3dffdef8b82",
       "lines": 94,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05an 全文冷读并核对固定rwsem.c，修正连续读者批次和唤醒即授予写权，展开count/授权task的两遍发布、统一阶段、取消竞态与配置边界；静态检查通过，未执行目标调度或读写竞争，人工状态不变。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P07_PREEMPT_RT生命周期与选型.md",

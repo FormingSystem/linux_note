@@ -482,3 +482,5 @@ B05ak完成[自旋实现边界](../../knowledge/linux/synchronization_and_asynch
 B05al完成[可睡锁入门](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P02_互斥锁与读写信号量.md)，以完整配置辅助代码建立获取失败、重新验证、拆锁状态与解锁寿命。701项349 validated、334 pending、18 supporting_pending，剩余352项；目标实例未运行，继续mutex/rwsem慢路径。见[B05al记录](../../governance/migration/repository_textbook_refactor.md#1.4.193_B05al可睡互斥与读改写窗口)。
 
 B05am完成[mutex慢路径](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P05_mutex慢路径与所有权交接.md)，修正交接请求/接收、队首自旋例外及配置边界，补取消与pickup先后。701项350 validated、333 pending、18 supporting_pending，剩余351项；继续rwsem。见[B05am记录](../../governance/migration/repository_textbook_refactor.md#1.4.194_B05am互斥交接与取消顺序)。
+
+B05an完成[rwsem汇聚](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P06_rwsem读写汇聚与唤醒.md)，纠正读批次范围与写者唤醒含义，补两遍预授份额和取消复查。701项351 validated、332 pending、18 supporting_pending，剩余350项；继续实时边界与锁大纲。见[B05an记录](../../governance/migration/repository_textbook_refactor.md#1.4.195_B05an读写汇聚与预授份额)。
