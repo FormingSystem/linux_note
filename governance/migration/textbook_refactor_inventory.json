@@ -4015,8 +4015,8 @@
       "path": "research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md",
       "baseline_sha256": "78f152a4571db75fd736302eca1f4bcb5378b8051261c4264b77537925419982",
       "lines": 129,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05bj 全文冷读源码总索引，保留路径地图与模块分工；同步缓存登记、当前提交、失败回退及查询边界，删除过时Tree配置概括，补S6释放入口。"
     },
     {
       "path": "research/source_reading/lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md",

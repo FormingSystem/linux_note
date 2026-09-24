@@ -526,3 +526,5 @@ B05bg完成[身份与事件模块](../../research/source_reading/lockdep/navigat
 B05bh完成[图与规则模块](../../research/source_reading/lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md)，修正缓存登记时序，补锁内重查和IRQ子图闭包。705项375 validated、312 pending、18 supporting_pending，剩余330项；继续查询诊断模块。见[B05bh记录](../../governance/migration/repository_textbook_refactor.md#1.4.215_B05bh图验证与缓存先后)。
 
 B05bi完成[查询与诊断模块](../../research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md)，补三态、合并边界与pin周期，区分全局有效性和当前查询资格。705项376 validated、311 pending、18 supporting_pending，剩余329项；继续总源码索引与实现审查。见[B05bi记录](../../governance/migration/repository_textbook_refactor.md#1.4.216_B05bi查询资格与连续性诊断)。
+
+B05bj完成[源码总索引](../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md)审查，收束缓存、提交、失败回退与配置证据边界。705项377 validated、310 pending、18 supporting_pending，剩余328项；继续具体实现，导航完成不代表实现与实验已完成。见[B05bj记录](../../governance/migration/repository_textbook_refactor.md#1.4.217_B05bj源码总索引收束)。

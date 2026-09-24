@@ -53,7 +53,7 @@ topics:
 
 ## 1.4\_一次acquire的主调用链
 
-以 mutex 为例，常见主线是：
+以启用完整检查的非 PREEMPT_RT 阻塞 mutex 为例，常见主线是下面的阅读路线。缩进表示下一层阅读入口，不保证每次取得都执行所有分支：已有类可以复用，新链和缓存命中也走不同路径。
 
 ```text
 mutex_init()
@@ -69,13 +69,14 @@ mutex_lock*()
   → register_lock_class()
   → mark_usage()
   → validate_chain()
+      → lookup_chain_cache_add()    新链先在图锁内复查并登记缓存
       → check_deadlock()
       → check_prevs_add()
           → check_prev_add()
               → check_noncircular()
               → check_irq_usage()
               → add_lock_to_list()
-  → 提交current->held_locks[]与curr_chain_key
+  → 提交current->lockdep_depth与curr_chain_key，候选成为正式记录
 
 mutex_unlock()
   → mutex_release()
@@ -84,6 +85,8 @@ mutex_unlock()
 ```
 
 注意：阻塞 mutex 在真正取得功能锁以前就上报 acquire 尝试，以便建模等待关系；可中断取得失败时会走 release 注解回退。不要把 `lock_acquire()` 的函数名误读成 CPU acquire memory ordering 或功能锁已经成功。
+
+沿路线作三处停顿：在 `validate_chain()` 之前，候选槽位已经写入，但深度尚未提交；进入适用的新链分支时，缓存登记早于完整依赖验证，缓存项不能单独充当成功证据；检查事件返回之后，功能 mutex 仍可能等待或失败，失败时撤销的是已经正式提交的检查记录。对应阶段详见[身份事件周期](P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.4_取得与释放调用链)和[图验证与缓存分支](P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.3_状态传播图)。
 
 ## 1.5\_状态地址与所有权
 
@@ -100,11 +103,13 @@ flowchart LR
 
 `held_locks[]` 是任务侧当前事实，`lock_class` 图是全局历史；两者不能互相替代。
 
+再加一条横跨两者的前提：`debug_locks` 表示全局检查器是否仍有效，但它不代替当前入口的递归抑制、配置和路径覆盖判断。读者应在源码笔记里分别画出功能owner、当前检查记录、全局历史与检查器生命状态，不能把一次查询没有告警画成全局证明完成。
+
 ## 1.6\_建议阅读顺序
 
 1. 先读 `lockdep_types.h` 的四个核心结构，建立实例、类和 held record 区别；对应[锁类身份结构讲解](../source_explanations/P01_Linux_6.12_Lockdep身份与锁类源码实现.md#1.2_lock_class_key与lockdep_map身份结构)。
 2. 再读 `mutex_init()` 一类标准原语怎样提供静态 key，随后跟到 `lockdep_init_map_type()` 与 `register_lock_class()`；不要从地址猜类身份。
-3. 读 `sched.h` 的任务字段，然后沿 `lock_acquire()` 进入 `__lock_acquire()`，把 S0～S5 的每次写入标在纸上；对应[取得状态提交](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4___lock_acquire取得状态提交)。
+3. 读 `sched.h` 的任务字段，然后沿 `lock_acquire()` 进入 `__lock_acquire()`，把 S0～S5 的每次写入标在纸上，再用 S6 跟完正常释放与功能失败回退；对应[取得状态提交](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4___lock_acquire取得状态提交)和[释放重建](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.5___lock_release释放与链回退)。
 4. 只在当前状态闭环清楚以后阅读 `validate_chain()`、`check_prev_add()` 与 IRQ 搜索，否则容易把链缓存、图边和当前栈混在一起。
 5. 最后读 `lock_is_held_type()`、断言和 proc 输出，观察同一 held record 怎样被业务检查和诊断消费。
 
@@ -114,7 +119,7 @@ flowchart LR
 - `CONFIG_DEBUG_LOCK_ALLOC=y` 也选择 `LOCKDEP`，侧重活锁对象释放、重初始化和任务持锁退出等检查；
 - `CONFIG_LOCKDEP=n` 时 `lockdep_map`/key 可以成为空结构，多数事件和断言为空操作；
 - `CONFIG_LOCK_STAT=y` 复用 hook 增加性能统计，但不是 Lockdep 正确性图的同义词；
-- 当前仓库基线曾核对 Tree RCU 配置，但没有保存目标板 Lockdep 已启用的断言；本文只说明源码配置分支，不宣称某块板当前就在运行 Lockdep。
+- 工作树构建配置与运行内核身份必须另外核对；源码中的配置分支、某份 `.config` 启用了检查，以及目标机确实执行了检查，是三种不同证据。当前环境记录以[源码基线](../../linux/SOURCE_BASELINE.md)为准，本索引不把任何一次配置快照描述成目标板运行结果。
 
 ## 1.8\_阅读完成标准
 
@@ -125,5 +130,5 @@ flowchart LR
 3. 说明链缓存命中省略了什么、仍保留什么；
 4. 从候选 `A → B` 推导为什么搜索 `B → ... → A`；
 5. 区分 IRQ 使用位、全局历史边和 current 状态；
-6. 解释 `lockdep_is_held()` 查询指定实例而不是全局锁占用；
-7. 从 `/proc/lockdep_stats` 判断容量和 `debug_locks` 是否仍有效。
+6. 解释 `lockdep_is_held()` 通常如何匹配实例、合并记录为何存在类匹配边界，以及UNKNOWN为何不能成为功能加锁依据；
+7. 从 `/proc/lockdep_stats` 判断容量和全局检查状态，再结合实际路径记录限定本次结论。
