@@ -4044,7 +4044,7 @@
       "baseline_sha256": "31ee21a97314194688d56403aff1557b64b6801d1c34cb739f6de8d992e71506",
       "lines": 208,
       "state": "pending",
-      "reason": "B05bn已按上游路径拆开类型与实现并保留原ID；两函数已匹配固定源码，辅助符号仍待全量审查，不计完成。"
+      "reason": "B05bn已拆分；B05bp补六个入口/图锁辅助函数及状态所有权；身份查找与key生命期辅助路径仍待审查，不计整页完成。"
     },
     {
       "path": "research/source_reading/lockdep/source_explanations/include/linux/lockdep_types.h.md",

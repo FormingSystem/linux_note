@@ -288,4 +288,113 @@ sequenceDiagram
 | 实例查询仍可精确匹配 | held record 另存具体 `lockdep_map *instance` |
 | 容量失败可观察 | `MAX_LOCKDEP_KEYS` 告警与 `debug_locks` 停检 |
 
+## 1.6\_图锁与检查入口的自保护
+
+类登记依赖的图锁也是共享同步，但不能通过普通被检查锁再次递归进入自己。上游在同一文件定义架构锁`__lock`和拥有者指针`__owner`；另以每CPU的`lockdep_recursion`和当前任务同名字段控制不同重入路径。两个递归计数属于不同存储，不能混作一项。
+
+```c
+/* 仓库补充：这两项全局状态只服务检查器自身的串行化。 */
+static arch_spinlock_t __lock = (arch_spinlock_t)__ARCH_SPIN_LOCK_UNLOCKED;
+static struct task_struct *__owner;
+
+/**
+ * @brief 判断全局检查、每CPU递归和当前任务递归是否允许入口继续。
+ * 仓库补充，非上游原文。
+ */
+static __always_inline bool lockdep_enabled(void)
+{
+	if (!debug_locks)
+		return false;
+
+	if (this_cpu_read(lockdep_recursion))
+		return false;
+
+	if (current->lockdep_recursion)
+		return false;
+
+	return true;
+}
+
+/**
+ * @brief 先增加每CPU递归保护，再取得不经普通Lockdep注解的架构锁。
+ * 仓库补充，非上游原文。
+ */
+static inline void lockdep_lock(void)
+{
+	DEBUG_LOCKS_WARN_ON(!irqs_disabled());
+
+	__this_cpu_inc(lockdep_recursion);
+	arch_spin_lock(&__lock);
+	__owner = current;
+}
+
+/**
+ * @brief 验证拥有者，清除记录后释放架构锁并退出每CPU递归保护。
+ * 仓库补充，非上游原文。
+ */
+static inline void lockdep_unlock(void)
+{
+	DEBUG_LOCKS_WARN_ON(!irqs_disabled());
+
+	if (debug_locks && DEBUG_LOCKS_WARN_ON(__owner != current))
+		return;
+
+	__owner = NULL;
+	arch_spin_unlock(&__lock);
+	__this_cpu_dec(lockdep_recursion);
+}
+
+/**
+ * @brief 取得底层图锁后复查debug_locks，失败时先解锁再返回。
+ * 仓库补充，非上游原文。
+ */
+static int graph_lock(void)
+{
+	lockdep_lock();
+	/*
+	 * Make sure that if another CPU detected a bug while
+	 * walking the graph we dont change it (while the other
+	 * CPU is busy printing out stuff with the graph lock
+	 * dropped already)
+	 */
+	if (!debug_locks) {
+		lockdep_unlock();
+		return 0;
+	}
+	return 1;
+}
+
+/**
+ * @brief 释放图锁，继承底层解锁的IRQ与拥有者要求。
+ * 仓库补充，非上游原文。
+ */
+static inline void graph_unlock(void)
+{
+	lockdep_unlock();
+}
+
+/**
+ * @brief 先关闭检查，再释放图锁，并返回是否由本次完成停检。
+ * 仓库补充，非上游原文。
+ */
+static inline int debug_locks_off_graph_unlock(void)
+{
+	int ret = debug_locks_off();
+
+	lockdep_unlock();
+
+	return ret;
+}
+```
+
+`lockdep_enabled()`先读全局`debug_locks`，再分别读本CPU和current的递归计数，任一条件不允许就返回false。它本身不加锁，也不改变功能锁；初始化非零子类的调用点用它拒绝不合适的递归入口。
+
+`lockdep_lock()`要求调用方已关本地IRQ，然后增加本CPU递归计数，再通过`arch_spin_lock()`争用`__lock`，成功后才写`__owner=current`。关IRQ防止同CPU普通中断重入，架构锁串行化不同CPU，两者不能互换。架构锁的具体指令由目标架构实现，此处只使用其排他与释放契约，不复制架构代码。
+
+`graph_lock()`取得锁后才复查全局生命状态，堵住“等待图锁期间另一CPU已经停检”的窗口。若关闭，它自行解锁并返回0，调用者此时不再拥有图锁；若返回1，调用者必须在成功或失败出口配对释放。容量失败使用`debug_locks_off_graph_unlock()`，因此不能再额外解锁一次。
+
+解锁正常路径先清`__owner`，再释放架构锁，最后减少本CPU递归计数；拥有者不匹配且检查仍有效时会诊断并提前返回。这是内部不变量失败，不能把它当作普通可恢复返回值继续假设已经解锁。`DEBUG_LOCKS_WARN_ON`承担诊断，`unlikely`只表达分支预测提示，`__always_inline`/`inline`是编译器内联指示；都不是功能mutex的状态字段。
+
+**修改约束：** 保留IRQ前提、递归计数配对、owner写入顺序与graph_lock返回值的锁所有权含义。用三条路径核对每次修改：正常登记后解锁，等待期间他CPU停检导致graph_lock返回0，当前CPU容量失败并停检解锁。不能因为一次初始化未告警就推断这三条都执行过。
+
 下一篇：[Lockdep 取得释放与持锁账本源码实现](../../P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)。
