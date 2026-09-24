@@ -536,3 +536,5 @@ B05bl恢复身份实现中初始化函数遗漏的统计和停检分支，完整
 B05bm补齐子键地址身份、两槽缓存与实例/类关系，修正缓存“最近使用”的描述；类型证据与取得端核对。文件仍pending，全仓剩余328项不变，继续上游路径拆分。见[B05bm记录](../../governance/migration/repository_textbook_refactor.md#1.4.220_B05bm子键地址与类缓存布局)。
 
 B05bn按上游路径拆分[身份类型](../../research/source_reading/lockdep/source_explanations/include/linux/lockdep_types.h.md)与[登记实现](../../research/source_reading/lockdep/source_explanations/kernel/locking/lockdep.c.md)，同步真实调用方和评审节点。两份仍pending；拆分后706项377 validated，剩余329项，计数增加来自新增类型文件。见[B05bn记录](../../governance/migration/repository_textbook_refactor.md#1.4.221_B05bn身份类型与登记路径拆分)。
+
+B05bo完成子键与实例映射类型页审查，三类型匹配固定源码，补周期、符号职责和练习。706项378 validated、310 pending、18 supporting_pending，剩余328项；继续登记实现，未执行配置矩阵。见[B05bo记录](../../governance/migration/repository_textbook_refactor.md#1.4.222_B05bo子键映射类型验收)。

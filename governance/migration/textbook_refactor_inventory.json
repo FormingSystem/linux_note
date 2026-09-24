@@ -4050,8 +4050,8 @@
       "path": "research/source_reading/lockdep/source_explanations/include/linux/lockdep_types.h.md",
       "baseline_sha256": "",
       "lines": 0,
-      "state": "pending",
-      "reason": "B05bn从原身份实现完整拆出子键与map类型，新增独立ID及红色评审节点；仍待类型与辅助符号最终验收。"
+      "state": "validated",
+      "reason": "B05bo 冷读子键与实例映射限定范围，三完整类型匹配固定源码，补符号职责、正常初始化周期、失败边界与复核题；全局类/统计算法由对应入口继续，不冒充全头文件讲解。"
     },
     {
       "path": "research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md",
