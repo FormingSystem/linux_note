@@ -1022,3 +1022,7 @@ B05k冷读固定Documentation/memory-barriers.txt的dma屏障、一致性描述�
 ## 1.119\_单次访问与检测边界
 
 B05l按固定dfaf2136的include/asm-generic/rwonce.h全文件与compiler_types.h类型/检测属性部分核对，rwonce原始副本对象8d0a6280e98247dc96450ed6a9e78fcb2e4fa555与官方固定提交一致。总索引迁入navigation并保持ID及标题锚点，新增[单次访问模块](../memory_ordering/navigation/P02_单次访问与类型边界导读.md#2.3_一条访问怎样闭合)和按上游路径保存的[唯一实现](../memory_ordering/source_explanations/include/asm-generic/rwonce.h.md#1.1_沿读取现场核对实现)。只读核对ARM无专属rwonce头及通用必选清单，不修改外部树；类型门槛、机器访问原子性、插桩配置与寿命分别说明。宿主检查采用固定宏/函数与受控依赖替身，仅验证尺寸、求值和访问值，不冒充真实KASAN/KCSAN、ARM或SMP验证；LKMM模型部分仍待审。
+
+## 1.120\_公共SMP屏障与配置选择
+
+B05m按固定dfaf2136核对include/asm-generic/barrier.h三种公共SMP屏障及内部回退、compiler.h的barrier定义；原始副本对象分别为d4f581c1e21da54f340bdfb8a4e846e59989e3aa和b15911e201bf95647dc89df8a61cfaa3144f68ca，均与固定提交一致。另只读include/linux/kcsan-checks.h核对弱内存与两类插桩接入，区分检测事件、功能顺序和空分支。[模块](../memory_ordering/navigation/P03_SMP屏障的配置与调用层次.md#3.3_一次公共屏障的路径)与[唯一实现](../memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.3_三种公共SMP屏障的配置分支)使用F0～F3追踪。八组配置/覆盖组合仅在宿主受控日志替身中验证，真实barrier汇编空函数只剩返回，均不证明ARM硬件顺序、真实KCSAN或LKMM运行。当前目标UP边界保持，release/acquire、atomic辅助及设备屏障不据本批标记完成。

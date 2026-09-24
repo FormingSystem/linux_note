@@ -811,8 +811,10 @@ mindmap-plugin: basic
         - 模块概念导读
             - 🔴 [P01 Linux 6.12 LKMM 源码与模型导读](../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md)
             - 🔴 [P02 单次访问与类型边界导读](../../research/source_reading/memory_ordering/navigation/P02_单次访问与类型边界导读.md#2.1_从一个读取现场进入头文件)
+            - 🔴 [P03 SMP屏障的配置与调用层次](../../research/source_reading/memory_ordering/navigation/P03_SMP屏障的配置与调用层次.md#3.1_同一个调用为什么走两条路径)
         - 具体实现讲解
             - 🔴 [rwonce.h 单次访问源码实现](../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/rwonce.h.md#1.1_沿读取现场核对实现)
+            - 🔴 [barrier.h 三种SMP屏障源码实现](../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.1_从公共调用找到真正执行的分支)
     - 序列计数器
         - 模块概念导读
             - 🔴 [P01 Linux 6.12 序列计数器源码总阅读索引](../../research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md)

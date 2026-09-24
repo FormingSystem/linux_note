@@ -36,7 +36,7 @@ topics:
 
 ## 3.2\_barrier\_只约束编译器
 
-Linux 6.12.20的barrier定义位于include/linux/compiler.h，它把带memory clobber的空GNU内联汇编封装为编译器屏障，具体入口见[固定源码导读](../../../../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.1_READ_ONCE_WRITE_ONCE)。上一章的完整C材料已经用同类空汇编观察过循环读取变化。
+Linux 6.12.20的barrier定义位于include/linux/compiler.h，它把带memory clobber的空GNU内联汇编封装为编译器屏障，具体入口见[固定源码导读](../../../../../research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.3.2_通用屏障)，逐句实现见[编译器barrier](../../../../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.4_barrier怎样约束编译器)。上一章的完整C材料已经用同类空汇编观察过循环读取变化。
 
 空内联汇编通常不生成硬件屏障指令。memory clobber是给编译器的约束，表示汇编可能影响内存，限制相关访问跨过此点；它不是“刷新所有寄存器或缓存”的运行时操作。它适合保护编译器层顺序，例如某些低层状态转换。单独用于两个CPU的消息传递时，机器仍按自己的内存顺序规则执行，编译器约束不能替代处理器需要的顺序约束。
 
@@ -54,7 +54,7 @@ WRITE_ONCE(flag, 1); /* 不能据此声称 CPU1 看到 flag 后一定看到 data
 | `smp_wmb()` | 屏障前相关写 → 屏障后相关写 | 普通内存载荷/标志顺序 | 写后读顺序、设备协议 |
 | `smp_mb()` | 屏障前相关读写 → 屏障后相关读写 | SB、复杂状态机 | 自动形成条件和生命周期 |
 
-“最小关注方向”用于理解选择，不应自行假定某款架构实现恰好更强的效果可以成为通用 Linux 契约。
+“最小关注方向”用于理解选择，不应自行假定某款架构实现恰好更强的效果可以成为通用 Linux 契约。固定配置怎样选中公共包装、检查器如何接入而不替代功能屏障，见[SMP模块导读](../../../../../research/source_reading/memory_ordering/navigation/P03_SMP屏障的配置与调用层次.md#3.3_一次公共屏障的路径)及[三种公共入口实现](../../../../../research/source_reading/memory_ordering/source_explanations/include/asm-generic/barrier.h.md#1.3_三种公共SMP屏障的配置分支)。
 
 体系结构层为什么需要读、写和全屏障，见[屏障、Acquire/Release 与依赖顺序](../../../../foundations/computer_architecture/memory_ordering/P05_屏障_Acquire_Release与依赖顺序.md)。
 

@@ -4871,6 +4871,20 @@
       "lines": 185,
       "state": "validated",
       "reason": "B05l按固定rwonce全文件和类型/检测属性核对，分开模块协作与唯一宏/函数实现；解释尺寸门槛、求值、NOCHECK与按字读取，宿主受控依赖检查不当作ARM或检测器执行。新人工评审节点红色。"
+    },
+    {
+      "path": "research/source_reading/memory_ordering/navigation/P03_SMP屏障的配置与调用层次.md",
+      "baseline_sha256": "979699538c99dcb9a358aec82c18a5bfdc039bb4c57ef168efdb4e08a0677539",
+      "lines": 85,
+      "state": "validated",
+      "reason": "B05m按固定通用SMP三屏障、内部回退与compiler barrier核对，配置和检测/功能路径分层；十项定义匹配、八组受控路径及两编译器验证，不作为ARM、KCSAN或LKMM执行。"
+    },
+    {
+      "path": "research/source_reading/memory_ordering/source_explanations/include/asm-generic/barrier.h.md",
+      "baseline_sha256": "86906f6dd646f7d2d69ff5199cbc57306619152341e4de3f6cf536a1b7e18fd8",
+      "lines": 111,
+      "state": "validated",
+      "reason": "B05m按固定通用SMP三屏障、内部回退与compiler barrier核对，配置和检测/功能路径分层；十项定义匹配、八组受控路径及两编译器验证，不作为ARM、KCSAN或LKMM执行。"
     }
   ]
 }

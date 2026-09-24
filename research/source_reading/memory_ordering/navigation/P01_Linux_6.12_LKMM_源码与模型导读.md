@@ -68,11 +68,13 @@ flowchart LR
 - `CONFIG_SMP=n` 时的编译器屏障退化；
 - release/acquire、atomic 前后屏障和控制依赖补强接口。
 
+[SMP屏障模块导读](P03_SMP屏障的配置与调用层次.md#3.1_同一个调用为什么走两条路径)先闭合公共三屏障的F0～F3配置与调用路径；[唯一实现](../source_explanations/include/asm-generic/barrier.h.md#1.3_三种公共SMP屏障的配置分支)区分SMP检测入口、底层功能原语与UP编译器屏障，已定义的公共接口不会被再次包装。
+
 公共回退用 `__smp_mb() + WRITE_ONCE()` 表达 store-release，用 `READ_ONCE() + __smp_mb()` 表达 load-acquire；架构可以覆盖为更精确实现。
 
 ### 1.3.3\_ARMv7\_映射
 
-[`arch/arm/include/asm/barrier.h`](../../linux/arch/arm/include/asm/barrier.h) 在 ARMv7 SMP 下定义：
+[`arch/arm/include/asm/barrier.h`](../../linux/arch/arm/include/asm/barrier.h) 提供以下内部映射；它们的定义存在本身不要求CONFIG_SMP，公共smp调用是否使用它们还要经过通用配置分支。在ARMv7目标上对应：
 
 | 内部原语 | 该分支映射 |
 | --- | --- |
