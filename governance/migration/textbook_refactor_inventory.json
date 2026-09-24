@@ -4078,8 +4078,8 @@
       "path": "research/source_reading/locking/navigation/P02_Linux_6.12_spinlock模块源码概念导读.md",
       "baseline_sha256": "563be29d08c98e44c09602b647581abe381945908ec770da3d3ef394a0b75e96",
       "lines": 83,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ap 独立冷读模块导读，核对SMP通用API与类型分叉，补真实中间包装、本地/共享/检查状态和统一阶段，限定UP/RT/lockbreak差异及实现覆盖。静态检查，未编译目标宏展开，人工状态不变。"
     },
     {
       "path": "research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md",

@@ -1160,3 +1160,7 @@ B05an核对固定dfaf2136的kernel/locking/rwsem.c（blob 2bbb6eca51445bdf434ba5
 ## 1.148\_实时锁契约与等待状态
 
 B05ao核对固定dfaf2136的Documentation/locking/locktypes.rst及include/linux/mutex.h，确认RT普通自旋锁后缀、抢占/迁移区别、saved_state保存外层等待、raw与读写锁边界以及mutex的RT基础类型分支。用于[配置对比](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P07_PREEMPT_RT生命周期与选型.md#7.3_配置分支的端到端对比)。本地配置仍非RT、非SMP；没有目标优先级继承、任务唤醒或停机实测，不将文档契约视作部署验证。
+
+## 1.149\_自旋通用包装阅读分支
+
+B05ap核对固定dfaf2136的include/linux/spinlock_api_smp.h（blob 89eb6f4c659c706c1b7376534a25d53a316316b7），并核对spinlock.h及spinlock_types_raw.h的SMP/UP选择。[模块导读](../locking/navigation/P02_Linux_6.12_spinlock模块源码概念导读.md#2.3_普通获取调用链)明确通用常规分支的preempt/检查/架构操作顺序与GENERIC_LOCKBREAK例外，未把当前非SMP工作配置视为SMP宏展开证据。未执行目标编译与架构运行。
