@@ -1091,6 +1091,12 @@ B05aa按固定dfaf2136核对include/linux/completion.h（fb291567657432083162031
 
 ## 1.135\_等待宏出口与独占扫描范围
 
-B05ab继续只读固定dfaf2136的wait.h与wait.c（对象身份同1.133），逐支对齐___wait_event的init_wait_entry、condition优先、信号错误出口、正常finish与循环；补回原实现文档声称覆盖但未实际展示的[宏体](../waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.6_wait_event宏循环与出口)。未修改外部树，宏中文说明明确为仓库补充。
+B05ab继续只读固定dfaf2136的wait.h与wait.c（对象身份同1.133），逐支对齐___wait_event的init_wait_entry、condition优先、信号错误出口、正常finish与循环；补回原实现文档声称覆盖但未实际展示的[宏体](../waiting_notification/source_explanations/include/linux/wait.h.md#1.3_wait_event宏循环与出口)。未修改外部树，宏中文说明明确为仓库补充。
 
 [独占扫描C模型](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P05_独占等待批量唤醒与公平性.md#5.3.1_用C观察额度怎样截断扫描)在GCC14.2/Clang18.1.8严格C11 O2下确认额度1/2/不限时访问3/5/6项；成功非独占回调不扣额度，失败不扣额度，额度终止会跳过后续观察者。模型使用固定回调结果，不运行内核唤醒、调度或资源领取；bookmark仍为独立概念方案，固定代码无该分段路径。
+
+## 1.136\_普通等待源码分层与完整分支
+
+B05ac依据1.133的固定wait.h/wait.c对象，把[结构与宏](../waiting_notification/source_explanations/include/linux/wait.h.md#1.2_队列头与等待项)和[登记扫描清理函数](../waiting_notification/source_explanations/kernel/sched/wait.c.md#1.2_源码符号覆盖账本)按上游位置组织。所选9块结构、宏和函数去除仓库中文注释与空白后，与固定源码一致；补足扫描的锁断言、空链、safe_from及自动摘链路径。中文Doxygen为仓库阅读说明。普通模块的关系和端到端时序与这些分支相互对应。
+
+本次静态核对不表示真实信号、调度、弱内存或目标驱动已运行；未改动外部源码。头文件宏的非恒定state保守保留prepare错误检查，实际信号资格由prepare中的signal_pending_state判断，不把辅助宏解释成业务条件判断。

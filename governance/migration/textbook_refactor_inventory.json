@@ -4323,8 +4323,8 @@
       "path": "research/source_reading/waiting_notification/navigation/P02_Linux_6.12_普通等待队列模块源码概念导读.md",
       "baseline_sha256": "901646879b752dd5eb9c5c00426502855365ec87f726749895c38730f1de58a6",
       "lines": 70,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围 B05h局部校正固定wait.c无bookmark分段事实，尚未完成全篇教材审查。"
+      "state": "validated",
+      "reason": "B05ac 按固定dfaf2136源码冷读普通等待状态链；头文件结构/宏与wait.c函数按上游位置分离，9个代码块去注释空白后与固定对象一致。模块图说明状态所有权和正常/信号出口，具体实现回链同一阶段；静态验证不代替内核运行，人工评审状态不变。"
     },
     {
       "path": "research/source_reading/waiting_notification/navigation/P03_Linux_6.12_completion模块源码概念导读.md",
@@ -4334,11 +4334,11 @@
       "reason": "按职责冷读并确定保留、修复或重写范围"
     },
     {
-      "path": "research/source_reading/waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md",
+      "path": "research/source_reading/waiting_notification/source_explanations/kernel/sched/wait.c.md",
       "baseline_sha256": "d87f02ff17fa2a5f6d67066fe88d0d94074685dc71a3265df42dd4bc31f9944c",
       "lines": 118,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ac 按固定dfaf2136源码冷读普通等待状态链；头文件结构/宏与wait.c函数按上游位置分离，9个代码块去注释空白后与固定对象一致。模块图说明状态所有权和正常/信号出口，具体实现回链同一阶段；静态验证不代替内核运行，人工评审状态不变。"
     },
     {
       "path": "research/source_reading/waiting_notification/source_explanations/P02_Linux_6.12_completion_c令牌与等待源码实现.md",
@@ -4969,6 +4969,13 @@
       "lines": 52,
       "state": "validated",
       "reason": "B05y逐单元冷读原三章并按职责重写拆分，保留就绪、登记、触发、场景与驱动知识；固定poll/eventpoll源码核对，宿主C就绪模型双编译器通过，Linux管道实验未运行。"
+    },
+    {
+      "path": "research/source_reading/waiting_notification/source_explanations/include/linux/wait.h.md",
+      "baseline_sha256": "70f667de51c02b36f176bce465b3feca8bf33247200d3030c5501d18e763bfd3",
+      "lines": 133,
+      "state": "validated",
+      "reason": "B05ac 按固定dfaf2136源码冷读普通等待状态链；头文件结构/宏与wait.c函数按上游位置分离，9个代码块去注释空白后与固定对象一致。模块图说明状态所有权和正常/信号出口，具体实现回链同一阶段；静态验证不代替内核运行，人工评审状态不变。"
     }
   ]
 }

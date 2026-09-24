@@ -42,7 +42,7 @@ prepare_to_wait_event持有wq_head.lock时检查当前任务的信号状态。�
 
 prepare返回之后，宏先检查condition，再处理prepare返回的信号错误。这一先后很重要：通知、业务条件与信号可以相邻发生，不能画成“见到信号一律跳过条件并失败”。如果条件已成立，走正常成功与finish路径；条件仍假且错误有效，走错误出口。成功等待仍只是让调用者继续业务协议，不替它取得第一章那把消费锁。
 
-这里也解释了为什么不是所有退出都调用finish_wait：信号分支已经承担摘链责任，标准宏按其契约返回。手写等待不能只复制goto而省掉配套的prepare行为。精确分支见[prepare登记与信号实现](../../../../../research/source_reading/waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.3_prepare_to_wait_event登记与信号分支)。
+这里也解释了为什么不是所有退出都调用finish_wait：信号分支已经承担摘链责任，标准宏按其契约返回。手写等待不能只复制goto而省掉配套的prepare行为。精确分支见[prepare登记与信号实现](../../../../../research/source_reading/waiting_notification/source_explanations/kernel/sched/wait.c.md#1.3_prepare_to_wait_event登记与信号分支)。
 
 ## 4.4\_唤醒侧怎样到达等待任务
 
@@ -81,7 +81,7 @@ __wake_up_common本身遍历entry并调用func，回调负责判断是否匹配�
 
 默认autoremove_wake_function在成功唤醒时可以摘除节点，并非只有某种罕见特殊回调才会移除entry。因此任务继续执行时既可能已不在队列，也可能仍在；再次prepare会按实际链表状态决定是否重加。
 
-正常退出的finish_wait先恢复TASK_RUNNING，再通过安全的空链判断决定是否加队列锁摘链。这个判断配合并发摘链协议使用，不是任意无锁遍历链表的许可证。退出同步确保生产者不能再通过共享队列回调访问已失效的栈节点。具体实现见[finish清理](../../../../../research/source_reading/waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.5_finish_wait恢复任务并移除栈上entry)。
+正常退出的finish_wait先恢复TASK_RUNNING，再通过安全的空链判断决定是否加队列锁摘链。这个判断配合并发摘链协议使用，不是任意无锁遍历链表的许可证。退出同步确保生产者不能再通过共享队列回调访问已失效的栈节点。具体实现见[finish清理](../../../../../research/source_reading/waiting_notification/source_explanations/kernel/sched/wait.c.md#1.5_finish_wait恢复任务并移除栈上entry)。
 
 ## 4.6\_超时与条件同时到达
 
@@ -93,7 +93,7 @@ __wake_up_common本身遍历entry并调用func，回调负责判断是否匹配�
 
 wait宏、waiter结构与函数合作见[普通等待队列模块导读](../../../../../research/source_reading/waiting_notification/navigation/P02_Linux_6.12_普通等待队列模块源码概念导读.md#2.3_等待侧调用链)。阅读时给每一处动作标上S0～S7：快查属于S0，初始化属于S1，prepare登记/设态属于S2，condition和信号决策属于S3，调度属于S4，生产者更新属于S5，wake传播属于S6，最终正常或错误清理属于S7。
 
-宏体逐支对照见[wait_event宏循环与出口](../../../../../research/source_reading/waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.6_wait_event宏循环与出口)，不要把prepare的函数体误当成整个等待宏。
+宏体逐支对照见[wait_event宏循环与出口](../../../../../research/source_reading/waiting_notification/source_explanations/include/linux/wait.h.md#1.3_wait_event宏循环与出口)，不要把prepare的函数体误当成整个等待宏。
 
 再用[四窗口推演](P03_条件等待的统一状态机.md#3.5_逐个关闭检查睡眠窗口)逐条走一遍：哪个窗口由S3看到持久状态补偿，哪个窗口由已登记的通知关系补偿？如果画出的调用链每次schedule回来都直接finish，就会跳过条件仍假的循环分支，应回到宏体修正。
 

@@ -839,7 +839,8 @@ mindmap-plugin: basic
             - 🔴 [P02 Linux 6.12 普通等待队列模块源码概念导读](../../research/source_reading/waiting_notification/navigation/P02_Linux_6.12_普通等待队列模块源码概念导读.md)
             - 🔴 [P03 Linux 6.12 completion 模块源码概念导读](../../research/source_reading/waiting_notification/navigation/P03_Linux_6.12_completion模块源码概念导读.md)
         - 具体实现讲解
-            - 🔴 [P01 Linux 6.12 wait.c 入队与唤醒源码实现](../../research/source_reading/waiting_notification/source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md)
+            - 🔴 [P01 Linux 6.12 wait.c 入队与唤醒源码实现](../../research/source_reading/waiting_notification/source_explanations/kernel/sched/wait.c.md)
+            - 🔴 [Linux 6.12 wait.h 结构与等待宏实现](../../research/source_reading/waiting_notification/source_explanations/include/linux/wait.h.md)
             - 🔴 [P02 Linux 6.12 completion.c 令牌与等待源码实现](../../research/source_reading/waiting_notification/source_explanations/P02_Linux_6.12_completion_c令牌与等待源码实现.md)
     - 工作队列
         - 模块概念导读

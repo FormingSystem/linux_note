@@ -44,7 +44,7 @@ flowchart TD
 
 | 阅读目标 | 模块导读 | 唯一实现 |
 | --- | --- | --- |
-| wait_event、prepare、wake、finish | [普通等待队列模块导读](P02_Linux_6.12_普通等待队列模块源码概念导读.md#2.1_模块问题与状态地址) | [`wait.c` 入队与唤醒实现](../source_explanations/P01_Linux_6.12_wait_c入队与唤醒源码实现.md#1.2_源码符号覆盖账本) |
+| wait_event、prepare、wake、finish | [普通等待队列模块导读](P02_Linux_6.12_普通等待队列模块源码概念导读.md#2.1_模块问题与状态地址) | [`wait.h` 结构与宏](../source_explanations/include/linux/wait.h.md#1.2_队列头与等待项)、[`wait.c` 入队与唤醒实现](../source_explanations/kernel/sched/wait.c.md#1.2_源码符号覆盖账本) |
 | completion 的 done、swait、complete/wait | [completion 模块导读](P03_Linux_6.12_completion模块源码概念导读.md#3.1_模块问题) | [`completion.c` 令牌与等待实现](../source_explanations/P02_Linux_6.12_completion_c令牌与等待源码实现.md#2.2_源码符号覆盖账本) |
 
 ## 1.5\_建议阅读顺序

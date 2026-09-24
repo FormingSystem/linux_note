@@ -110,4 +110,4 @@ void complete_all(struct completion *x)
 
 总索引：[Linux 6.12 等待与完成量源码总阅读索引](../navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)。
 
-上一篇：[wait.c 入队与唤醒源码实现](P01_Linux_6.12_wait_c入队与唤醒源码实现.md)。
+上一篇：[wait.c 入队与唤醒源码实现](kernel/sched/wait.c.md)。
