@@ -1228,3 +1228,7 @@ B05bf核对固定dfaf2136的include/linux/lockdep_types.h，blob 9f361d3ab9d95d9
 ## 1.165\_mutex事件与功能失败配对
 
 B05bg核对固定dfaf2136的kernel/locking/mutex.c，blob cbae8c0b89ab2b8074a387ebf1cca86951362cc2。mutex_acquire_nest位于功能尝试前，错误出口通过mutex_release配对撤销已提交检查记录，支持[身份与事件模块](../lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.4_取得与释放调用链)的S0至S6周期。未执行信号中断的目标运行验证。
+
+## 1.166\_新链登记与图验证顺序
+
+B05bh核对固定dfaf2136的kernel/locking/lockdep.c，blob 536bd471557f5b4412d6babc480d0832b4ee9d51。lookup_chain_cache_add锁内复查并登记新链后才继续validate_chain规则，支持[规则模块](../lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md#3.2_规则链而不是一个环检测函数)修正缓存登记晚于验证的旧图示。缓存存在不单独证明检查器有效；未执行目标多CPU实验。

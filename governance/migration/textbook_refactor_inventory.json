@@ -4029,8 +4029,8 @@
       "path": "research/source_reading/lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md",
       "baseline_sha256": "ee49d6d396b625fc3a62139f3c31bff2803ebe39f14aea0cd04e8df7bc0b962d",
       "lines": 82,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05bh 修正缓存晚于边验证的错误图示，补锁内重查、S4双分支时序、状态地址与IRQ前后子图实例；核对固定源码，未执行目标并发实验。"
     },
     {
       "path": "research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md",
