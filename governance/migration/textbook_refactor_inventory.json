@@ -2811,8 +2811,8 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md",
       "baseline_sha256": "c08bd05df2994d834d2c61d6b65add38f89b1009ca69d9c367bb21cdc3618707",
       "lines": 210,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05az 保留身份分类因果链，补静态身份C实验与改动验证，收紧查询精度、两层subclass与对象寿命前提；固定源码核对，GCC严格编译运行，未做目标内核实验。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md",

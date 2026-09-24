@@ -41,9 +41,11 @@ flowchart LR
 | `lock_class_key` | 哪些实例共享同一套协议规则 | 必须比可能引用它的全局历史更持久 |
 | 锁类 / subclass | 全局图实际推理的节点与层级变体 | 跨任务、跨时间保留 |
 
-两种查询需要不同身份：`lockdep_is_held(&dev->config_lock)` 要精确回答 current 是否持有 **这个实例**；死锁闭包则要让不同设备实例共享 **这个字段所属的锁类**。因此 current held record 同时保存实例指针和类索引，不是二选一。
+两种任务需要不同身份：普通、未合并的持锁记录按实例匹配，`lockdep_is_held(&dev->config_lock)` 消费的是 current 的检查账本；死锁闭包则让不同设备实例共享 **这个字段所属的锁类**。因此 current held record 同时保存实例指针和类索引，不是二选一。这个查询不是读取 mutex owner 后给出的功能授权；检查被关闭或抑制时结果也有边界，不能把它当作业务分支的互斥条件。特定嵌套合并记录还会使用类匹配，后文的查询章节再展开，不能将“永远精确到唯一实例”当作所有配置和注解的统一契约。
 
 ## 3.3\_dep\_map由什么配置提供
+
+从此处开始进入版本化证据，先读 [Linux 6.12.20 Lockdep 源码总入口](../../../../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)。本章采用固定提交 dfaf2136，字段与配置选择不外推为全部内核版本的固定布局。
 
 `dep_map` 不需要用户态分析工具，也不是运行时外挂模块。它由启用锁调试的内核在锁结构和锁 API 中编译接入：
 
@@ -88,6 +90,47 @@ Lockdep身份初始化
 
 “同一初始化函数”不是魔法字符串匹配，而是因为同一宏展开位置拥有同一个静态 key 对象。若业务绕过标准初始化、自行复制已初始化锁内存，或者给同一协议的实例制造大量不同调用点，就可能破坏预期分类。
 
+### 3.4.1\_亲手观察静态身份与实例地址
+
+下面是完整的用户态 C 程序，只模拟“两个调用点各自有静态身份”这一语言机制，不实现锁、不调用 Lockdep。先预测三个比较结果，再编译运行；对象地址不同与身份地址相同并不矛盾。
+
+```c
+#include <stdio.h>
+
+struct identity_probe {
+	const int *key;
+};
+
+static void init_config_identity(struct identity_probe *probe)
+{
+	/* 模拟一个初始化调用点的静态身份，生命周期覆盖整个程序。 */
+	static int config_key;
+	probe->key = &config_key;
+}
+
+static void init_state_identity(struct identity_probe *probe)
+{
+	/* 第二个调用点有另一个静态对象，不因值相同而合并身份。 */
+	static int state_key;
+	probe->key = &state_key;
+}
+
+int main(void)
+{
+	struct identity_probe config_a, config_b, state_a;
+
+	init_config_identity(&config_a);
+	init_config_identity(&config_b);
+	init_state_identity(&state_a);
+	printf("different_instances=%d\n", &config_a != &config_b);
+	printf("same_call_site_identity=%d\n", config_a.key == config_b.key);
+	printf("different_call_site_identity=%d\n", config_a.key != state_a.key);
+	return 0;
+}
+```
+
+把代码保存为 identity_probe.c，使用 `cc -std=c11 -Wall -Wextra -Werror identity_probe.c -o identity_probe` 编译后运行。三行结果都应为 1：第一项检查业务实例不同，第二项检查重复调用共享静态对象，第三项检查不同调用点的身份分离。修改 main，在 init_state_identity 调用后追加 `init_config_identity(&state_a);`，预测第三项变为 0，再运行验证。这里只有普通指针赋值，不是对在用内核锁重新初始化；它只演示身份归类输入如何改变，不证明这种改类符合业务锁序。
+
 ## 3.5\_key为何必须比实例更持久
 
 全局图会在具体锁释放以后保留历史边。若用一块短命动态内存地址当 key，对象释放后该地址可能被无关对象复用，旧图节点就被错误解释成新协议。
@@ -129,7 +172,7 @@ Linux 6.12.20 首次查找或登记锁类的双检和容量失败路径见 [`reg
 
 ## 3.7\_完整层级示例为何需要subclass
 
-现在考虑一棵设备树，每个节点都有同一字段 `lock`。父子节点都由同一初始化调用点创建，所以默认属于同一锁类。删除子节点时，协议规定必须始终先锁父节点，再锁子节点：
+现在只考虑两层设备拓扑：一层父节点及它们的直接子节点，每个节点都有同一字段 `lock`。父子节点都由同一初始化调用点创建，所以默认属于同一锁类。下面的辅助函数只把子节点标记为离线，不释放对象。调用者必须已通过外层生命周期协议保证 child 与 parent 都存活、child 不是根且二者不同，并保证 parent 指针在本次操作期间不会被改挂；这两把锁本身不能保护取得锁之前的指针读取。协议规定始终先锁父节点，再锁子节点：
 
 ```c
 enum demo_node_lock_level {
@@ -185,6 +228,8 @@ demo_node.lock/PARENT → demo_node.lock/CHILD
 
 若无法证明这四点，应重构锁序或所有权，而不是用 `_nested()` 压掉报告。
 
+两层限制有实际含义。若扩成祖父 A、父 B、子 C，B 在 A→B 中被标成 CHILD，在 B→C 中却被标成 PARENT；此时标签是本次调用的相对角色，已经不能直接充当一致的全局深度证明。不能只把这段代码放进循环就宣称支持任意树深，必须先重新设计全局层级与最大嵌套约束，或者选用其他已经证明的锁序协议。
+
 ## 3.8\_从抽象身份映射到Linux\_6.12
 
 开始阅读具体字段前，先用 [Lockdep 身份与事件接入模块导读](../../../../../research/source_reading/lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题) 建立文件地图。映射关系如下：
@@ -200,6 +245,8 @@ demo_node.lock/PARENT → demo_node.lock/CHILD
 这些是特定版本的实现落点；“实例用于当前查询、类用于跨实例协议推理”才是跨版本机制结论。
 
 ## 3.9\_本章结论
+
+检查三个边界：把每个实例都分成独立类会失去哪种跨实例证据？仅给同一把 mutex 的第二次取得换一个 subclass，会改变它已经被 current 持有的事实吗？若 child 在读取 parent 后立刻被另一条路径释放，nested 注解能否保护这次访问？答案分别是同一协议的历史组合能力、不会改变功能递归、不能保护对象寿命。分类、锁功能和内存寿命必须分别证明。
 
 锁实例回答“当前是哪一个对象”，锁类回答“哪些对象共享同一套顺序规则”。`dep_map` 是内核调试配置编译进锁原语的检查身份，不需要额外用户态生成工具；key 必须足够持久，subclass 只用于经过证明的自然层级。错误合并会误报，错误拆分会漏报。
 

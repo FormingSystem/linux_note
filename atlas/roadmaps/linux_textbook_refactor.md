@@ -506,3 +506,5 @@ B05aw完成[可睡锁模块](../../research/source_reading/locking/navigation/P0
 B05ax完成[Lockdep问题入口](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P01_为什么需要_Lockdep.md)的冷读修复，保留已有因果链，补初始化、统一锁序修复与交错练习。705项364 validated、323 pending、18 supporting_pending，剩余341项；继续抽象模型，未执行内核实验。见[B05ax记录](../../governance/migration/repository_textbook_refactor.md#1.4.205_B05ax锁验证问题入口)。
 
 B05ay完成[检查抽象模型](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md)，补具体状态地址、阶段先后与两类失败的账本练习。705项365 validated、322 pending、18 supporting_pending，剩余340项；继续身份与锁类，未执行目标实验。见[B05ay记录](../../governance/migration/repository_textbook_refactor.md#1.4.206_B05ay检查与功能失败分层)。
+
+B05az完成[身份与层级](../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md)，补可执行C身份实验、查询边界和两层拓扑的寿命前提。705项366 validated、321 pending、18 supporting_pending，剩余339项；继续持锁账本周期。见[B05az记录](../../governance/migration/repository_textbook_refactor.md#1.4.207_B05az身份实验与层级前提)。

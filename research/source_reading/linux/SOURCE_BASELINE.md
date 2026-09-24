@@ -1196,3 +1196,7 @@ B05aw重新核对固定dfaf2136的include/linux/mutex_types.h（blob fdf7f515fde
 ## 1.157\_Lockdep候选与功能回退边界
 
 B05ay核对固定dfaf2136的kernel/locking/lockdep.c（blob 536bd471557f5b4412d6babc480d0832b4ee9d51）与保存文件一致，阅读validate_chain及__lock_acquire的候选、usage、链键和有效深度提交，用于[四轴与阶段](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md#2.4_S0到S6的端到端周期)。当前工作配置LOCKDEP/PROVE_LOCKING开启不代表运行检查有效或路径已覆盖；未做目标实验。
+
+## 1.158\_实例匹配与身份示例边界
+
+B05az核对同一固定lockdep.c的match_held_lock与当前查询路径，确认先匹配instance，在references与nest_lock条件下还可按类匹配，用于[身份概念](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.2_四个身份概念分别回答什么)的限定。用户态C探针仅验证静态对象身份，不构成内核查询或subclass运行证据。
