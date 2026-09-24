@@ -12,6 +12,10 @@ domains:
 
 ## 1.1\_DMA\_API\_同时解决四个问题
 
+上一专题已经把写门铃、命令送达和设备完成分开。现在设备收到命令后要把一帧数据写进内存：它通过哪个地址找到缓冲区，CPU何时能读到结果，读取过程中设备会不会又覆盖它？直接内存访问（Direct Memory Access，DMA）让设备发起内存传输，减少CPU逐字搬运；代价是地址和访问资格不能再只按当前线程的指针推理。
+
+本章先沿一次接收建立映射与所有权，再比较长期描述符和复用缓冲。MMIO负责寄存器命令，DMA负责设备访问内存，两者接口不同，完成证据仍由设备协议提供。
+
 设备发起 DMA 时，驱动不能把 CPU 虚拟地址直接写给硬件。DMA API 同时表达：
 
 ```mermaid
@@ -80,14 +84,31 @@ WRITE_ONCE(desc->flags, cpu_to_le32(DESC_OWN));
 
 ## 1.5\_streaming\_映射的所有权状态机
 
+streaming映射不是持续传输模式的名字，而是一类把已有缓冲区交给设备使用的映射接口。它常用于发送或接收数据。这里同时存在三组状态：映射是否有效、缓冲区当前允许谁访问、设备是否仍在执行。它们不能合成一个“已完成”布尔值；例如设备停下以后映射仍可有效，但CPU还没执行必要的同步。
+
 ```mermaid
 stateDiagram-v2
-    [*] --> CPU: CPU 准备缓冲区
-    CPU --> Device: dma_map_* 或 dma_sync_*_for_device
-    Device --> Device: 设备执行 DMA，CPU 不越权访问
-    Device --> CPU: dma_sync_*_for_cpu 或 dma_unmap_*
-    CPU --> [*]: 使用结果或释放缓冲区
+    [*] --> CPU: D0准备可映射缓冲
+    CPU --> CPU: D1映射失败，不启动设备
+    CPU --> Device: D1映射成功或D5同步交还
+    Device --> Device: D2设备执行，CPU不访问载荷
+    Device --> Quiescent: D3协议确认设备停止访问
+    Quiescent --> CPU: D4同步给CPU或结束映射
+    CPU --> [*]: 映射已结束且无人持有后释放
 ```
+
+这张图显示访问资格交接，不表示dma_sync能命令设备停下。设备正在写时调用sync或unmap，不会自动撤销尚未完成的总线请求；提前释放后，迟到的写可能落进已分给其他对象的内存。
+
+| 阶段 | 驱动或设备修改的状态 | 后续允许动作 |
+| --- | --- | --- |
+| D0准备 | 驱动持有CPU地址buf，记录长度和方向 | 申请映射，尚无可提交的DMA地址 |
+| D1映射 | DMA API返回dma_addr_t，驱动先检查失败 | 仅成功地址写入设备描述符或寄存器 |
+| D2提交 | 驱动交出载荷访问资格，设备开始访问 | CPU只检查独立完成状态，不越权读写载荷 |
+| D3完成 | 设备按协议发布完成，驱动确认不会继续访问本缓冲 | 可进入CPU同步或unmap，而非靠超时猜测完成 |
+| D4收回 | 驱动对同一设备、地址、范围及方向执行同步或结束映射 | CPU按方向契约访问数据 |
+| D5复用 | 保留映射时按协议重新交还资格并提交 | 重复D2；最终停机后仍需unmap |
+
+buf属于CPU地址空间，dma是供该设备使用的DMA地址。完成证据可能在MMIO状态寄存器或独立的一致性描述符中，不能把“读取尚归设备所有的streaming载荷”本身当成轮询手段。驱动保存映射地址、长度、方向及提交状态，设备保存自己的执行状态；是否完成经设备协议传回，映射接口本身没有收到业务完成通知。
 
 ### 1.5.1\_一次映射一次传输
 
@@ -102,26 +123,51 @@ if (dma_mapping_error(dev, dma))
 program_device(dma, len);
 writel(START, regs + COMMAND);
 
-wait_for_device_completion();
+wait_for_device_completion(); /* 示意：必须确证停止访问，不是仅等待超时。 */
 dma_unmap_single(dev, dma, len, DMA_TO_DEVICE);
 ```
 
-从成功 map 到 unmap，设备拥有 streaming 映射；CPU 不应访问该缓冲区，除非先按 API 执行 `dma_sync_*_for_cpu()` 收回所有权。
+这是发送路径示意，prepare_tx和program_device等表示设备驱动自己的操作，不是通用Linux函数。成功map后到合法收回之前，CPU不再访问载荷。wait_for_device_completion在这里假定已经取得可靠完成证据；若实际等待可能超时，失败分支必须先停止/复位设备并确认其不再访问，才能unmap。不能把上面直线片段复制成“无论等待结果如何都释放”的代码。
 
 ### 1.5.2\_保留映射并循环复用
 
 ```c
-/* 设备完成后，CPU 取得所有权。 */
+/* D3已经确认设备不再写本缓冲，然后进入D4。 */
 dma_sync_single_for_cpu(dev, dma, len, DMA_FROM_DEVICE);
-consume_rx(buf, len);
+consume_rx(buf, len); /* 本例只读取接收内容，不修改映射区。 */
 
-/* 下一轮交还设备。 */
-prepare_rx_metadata(buf);
+/* D5：只修改映射区以外的驱动记账，按协议准备下一轮。 */
 dma_sync_single_for_device(dev, dma, len, DMA_FROM_DEVICE);
 ring_doorbell();
 ```
 
 sync 不结束映射，只在 CPU 与设备之间转换所有权。最终不再使用时仍调用匹配的 unmap。
+
+这里刻意不在buf里准备接收元数据：固定DMA文档明确要求CPU不写DMA_FROM_DEVICE映射区。如果算法需要CPU修改随后还交给设备使用的数据，应重新确定双向方向或另设CPU私有元数据，不能只在错误方向下多调用一次sync。固定howto的只读接收复用例还说明，无CPU写入时可不需要for_device同步；上面保留通用显式交还形式，不把一次同步调用的有无当成设备已经停止的证据。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as 驱动与CPU缓冲地址
+    participant A as DMA映射接口
+    participant D as 设备及独立完成状态
+    C->>A: D1 map，给出设备/长度/方向
+    A-->>C: DMA地址或错误
+    alt 映射失败
+        C->>C: 保留CPU缓冲，未发出启动
+    else 映射成功
+        C->>D: D2 提交DMA地址并启动
+        D->>D: 写载荷，完成后更新独立状态
+        D-->>C: D3 驱动按协议取得停止访问证据
+        C->>A: D4 sync_for_cpu或unmap
+        A-->>C: 可以按方向访问载荷
+        C->>C: 读取接收结果
+    end
+```
+
+做两个反例推演：如果D1失败却仍敲门铃，错误发生在地址资格而不是屏障数量；如果D3只有超时而没有停止证据，D4不能合法进行，因为设备仍可能写。再考虑D4同步以后保留映射：映射有效不等于设备随时可以重新访问，必须先完成约定的交还和下一轮提交。
+
+本单元按NXP官方Linux 6.12.20固定版本的Documentation/core-api/dma-api-howto.rst核对，证据身份见[源码基线](../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.130_DMA方向与完成前提)。这些片段没有在真实设备执行；设备停止、缓存效果与错误恢复仍需目标平台验证。
 
 ## 1.6\_方向参数
 

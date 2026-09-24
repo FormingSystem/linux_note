@@ -2259,7 +2259,7 @@
       "baseline_sha256": "6acaec23540099b1bb46b4c3c20f7983c02b07c0c570a50e04e0bfb0b5d70ca6",
       "lines": 235,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "B05w完成streaming交接单元，按固定howto纠正FROM_DEVICE映射区CPU写入，补齐D0～D5与停止访问前提；地址、分配、SG等单元待进一步教材审查，保持pending。"
     },
     {
       "path": "knowledge/linux/io_model/dma/大纲.md",

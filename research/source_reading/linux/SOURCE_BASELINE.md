@@ -1062,3 +1062,7 @@ B05u将已核对的def/bell/cfg单元完整组织为[模型输入模块](../memo
 ## 1.129\_MMIO默认映射与送达完成边界
 
 B05v按固定dfaf2136的Documentation/memory-barriers.txt中KERNEL I/O BARRIER EFFECTS核对五条普通访问器保证及relaxed削弱范围，并只读Documentation/driver-api/device-io.rst（Git blob 5c7e8194bef92bcb5c3c807852a3b21b04337728）。[MMIO正文](../../../knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md#1.3_普通访问器与_relaxed_访问器)明确默认映射、同外设、同锁跨CPU及一致性DMA前提；[四阶段C模型](../../../knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md#1.4.1_用完整C模型分开送达和完成)区分桥接收、送达、设备完成和驱动观察。GCC14.2与Clang18.1.8宿主严格C11 O2运行通过，不是Linux访问器或真实设备测试。
+
+## 1.130\_DMA方向与完成前提
+
+B05w只读核对固定dfaf2136的Documentation/core-api/dma-api-howto.rst（0bf31b6c4383c8b36d73f7361a6cdb87d1f5dba6）。[DMA交接单元](../../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md#1.5_streaming_映射的所有权状态机)沿D0～D5分开映射有效、访问资格与设备活动，修正FROM_DEVICE示例在映射区写元数据的错误；同步和unmap前仍须设备停止访问证据。固定文档的只读接收复用例允许无CPU写时省去for_device同步，不据此省略设备交还协议。未运行实际DMA或缓存验证，其他DMA单元继续审查。

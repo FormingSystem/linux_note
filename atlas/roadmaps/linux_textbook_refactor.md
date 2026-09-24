@@ -448,3 +448,5 @@ B05t完成[公理检查](../../research/source_reading/memory_ordering/navigatio
 B05u完成内存顺序版本总导读收束，模型内容完整迁入[输入模块](../../research/source_reading/memory_ordering/navigation/P08_LKMM输入_分类与工具配置.md#8.1_linux_kernel_def_把原语翻译成事件)和[关系模块](../../research/source_reading/memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md#9.1_linux_kernel_cat_怎样组织公理)，保留总索引各阅读入口。清单694项310 validated、366 pending、18 supporting_pending，剩余384项；不等于全仓完成。见[B05u记录](../../governance/migration/repository_textbook_refactor.md#1.4.176_B05u模型模块与总导读收束)。
 
 B05v完成[MMIO正文](../../knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md#1.1_先区分三种顺序问题)与[因果阅读大纲](../../knowledge/linux/io_model/mmio/大纲.md)，校正默认映射契约及同锁写顺序，完整C模型经双编译器运行。清单694项312 validated、364 pending、18 supporting_pending，剩余382项；下一项DMA映射和所有权。见[B05v记录](../../governance/migration/repository_textbook_refactor.md#1.4.177_B05vMMIO顺序与业务完成)。
+
+B05w完成[DMA交接单元](../../knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md#1.5_streaming_映射的所有权状态机)，纠正FROM_DEVICE缓冲CPU写入，解释映射失败、设备完成与同步的不同条件。DMA全章保持pending，继续地址、分配与SG单元；清单剩余382项不变。见[B05w记录](../../governance/migration/repository_textbook_refactor.md#1.4.178_B05wDMA交接与方向修正)。
