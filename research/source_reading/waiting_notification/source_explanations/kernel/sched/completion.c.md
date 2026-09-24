@@ -169,7 +169,7 @@ bool try_wait_for_completion(struct completion *x)
 	unsigned long flags;
 	bool ret = true;
 
-	
+
 	if (!READ_ONCE(x->done))
 		return false;
 
@@ -197,7 +197,7 @@ bool completion_done(struct completion *x)
 	if (!READ_ONCE(x->done))
 		return false;
 
-	
+
 	raw_spin_lock_irqsave(&x->wait.lock, flags);
 	raw_spin_unlock_irqrestore(&x->wait.lock, flags);
 	return true;
