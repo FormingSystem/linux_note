@@ -484,3 +484,5 @@ B05al完成[可睡锁入门](../../knowledge/linux/synchronization_and_asynchron
 B05am完成[mutex慢路径](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P05_mutex慢路径与所有权交接.md)，修正交接请求/接收、队首自旋例外及配置边界，补取消与pickup先后。701项350 validated、333 pending、18 supporting_pending，剩余351项；继续rwsem。见[B05am记录](../../governance/migration/repository_textbook_refactor.md#1.4.194_B05am互斥交接与取消顺序)。
 
 B05an完成[rwsem汇聚](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P06_rwsem读写汇聚与唤醒.md)，纠正读批次范围与写者唤醒含义，补两遍预授份额和取消复查。701项351 validated、332 pending、18 supporting_pending，剩余350项；继续实时边界与锁大纲。见[B05an记录](../../governance/migration/repository_textbook_refactor.md#1.4.195_B05an读写汇聚与预授份额)。
+
+B05ao完成[实时与寿命收束](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P07_PREEMPT_RT生命周期与选型.md)及[锁阅读大纲](../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/大纲.md)，七章知识侧完成作者审查，源码层继续独立推进。701项353 validated、330 pending、18 supporting_pending，剩余348项。见[B05ao记录](../../governance/migration/repository_textbook_refactor.md#1.4.196_B05ao实时边界与锁阅读收束)。

@@ -1156,3 +1156,7 @@ B05am只读固定dfaf2136的kernel/locking/mutex.c（blob cbae8c0b89ab2b8074a387
 ## 1.147\_rwsem批次与授权证据
 
 B05an核对固定dfaf2136的kernel/locking/rwsem.c（blob 2bbb6eca51445bdf434ba579ced4beddafbc52ca）：mark_wake写分支只通知，读阶段跳过WRITE节点，最多256读者，两遍先计count后release清waiter.task；读慢路径acquire观察并在信号分支复查，写慢路径原子取得。见[批量交付](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P06_rwsem读写汇聚与唤醒.md#6.4_为什么读者可以批量唤醒)。kernel/Kconfig.locks确认RWSEM_SPIN_ON_OWNER依赖SMP与原子RMW，当前工作配置非SMP，不构成优化运行证据。没有目标竞争或调度实测。
+
+## 1.148\_实时锁契约与等待状态
+
+B05ao核对固定dfaf2136的Documentation/locking/locktypes.rst及include/linux/mutex.h，确认RT普通自旋锁后缀、抢占/迁移区别、saved_state保存外层等待、raw与读写锁边界以及mutex的RT基础类型分支。用于[配置对比](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P07_PREEMPT_RT生命周期与选型.md#7.3_配置分支的端到端对比)。本地配置仍非RT、非SMP；没有目标优先级继承、任务唤醒或停机实测，不将文档契约视作部署验证。

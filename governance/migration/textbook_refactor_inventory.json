@@ -2909,15 +2909,15 @@
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P07_PREEMPT_RT生命周期与选型.md",
       "baseline_sha256": "e69b130ecd018828949345b6102006f43d4188ce57db196d57a7db65976bf43b",
       "lines": 100,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ao 全文冷读，补三任务优先级反转、RT后缀和保存任务状态，明确非RT跨CPU对比与读者继承限制；展开停机等待环和引用边界。固定locktypes核对，静态检查，未执行RT目标验证，人工状态不变。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/大纲.md",
       "baseline_sha256": "f2b975d0bacc459818060f6edc69abb7c3200d2bd3b1a9fbb38d59904652614d",
       "lines": 50,
-      "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "state": "validated",
+      "reason": "B05ao 冷读七章阅读任务与全篇大纲，修正不可睡分支的非RT限定，补每章前置结论和下一问及示例验证边界；保留既有章节入口、源码/Lockdep关系与人工状态。"
     },
     {
       "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P01_READ_WRITE_ONCE_与_SMP_内存顺序原语.md",
