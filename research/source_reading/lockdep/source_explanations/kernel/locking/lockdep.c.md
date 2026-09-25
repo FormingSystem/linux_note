@@ -989,4 +989,96 @@ Z3扫描所有链，每条链通过其base/depth区间中的类索引判断是�
 
 **修改约束：** 保留图锁前提、双端依赖匹配、哈希删除和失效标记顺序，以及链槽先进入待回收位图再归还的关系。复核三个输入：没有匹配类、目标类关联多条链、多个待回收类共享同一条链。最后一种情形中，已经从链哈希摘除的链不应再次由后续扫描重复回收。此处仍是源码推演，不是已执行的并发测试。
 
+## 1.11\_初始化为何需要两个完成标志
+
+回到锁类登记的R阶段：从`free_lock_classes`取槽之前，谁把静态数组里的槽挂到空闲列表？回收的F阶段又假定两份`pending_free.zapped`已经是合法空链表。这两个前提都由`init_data_structures_once()`建立。然而函数名里的“once”不能理解成“第一次调用后，所有后续调用都直接返回”。内核启动早期已经可能登记锁类，而RCU回调头的初始化需要等到这里检查的系统阶段；固定实现因此分别保存 **数据结构完成** 和 **RCU头完成** 两项状态。
+
+代码中的`ds_initialized`和`rcu_head_initialized`是两个静态布尔完成标志，分别记住上述两件事。`SYSTEM_SCHEDULING`是与全局系统阶段`system_state`比较的枚举值，不是某个任务的调度状态。`INIT_LIST_HEAD()`把链表头的前后指针指回自身，从而建立空的双向链表；这里不能靠全零存储替代这一步。
+
+上游位置：`kernel/locking/lockdep.c`。下列函数保留完整语句，Doxygen是仓库补充。
+
+```c
+/**
+ * @brief 建立类空闲池，并在系统进入调度阶段后初始化回调头。
+ * @note 仓库补充，非上游原文；本函数本身不加锁，不能用两个bool替代调用方串行化。
+ */
+static void init_data_structures_once(void)
+{
+	static bool __read_mostly ds_initialized, rcu_head_initialized;
+	int i;
+
+	if (likely(rcu_head_initialized))
+		return;
+
+	if (system_state >= SYSTEM_SCHEDULING) {
+		init_rcu_head(&delayed_free.rcu_head);
+		rcu_head_initialized = true;
+	}
+
+	if (ds_initialized)
+		return;
+
+	ds_initialized = true;
+
+	INIT_LIST_HEAD(&delayed_free.pf[0].zapped);
+	INIT_LIST_HEAD(&delayed_free.pf[1].zapped);
+
+	for (i = 0; i < ARRAY_SIZE(lock_classes); i++) {
+		list_add_tail(&lock_classes[i].lock_entry, &free_lock_classes);
+		INIT_LIST_HEAD(&lock_classes[i].locks_after);
+		INIT_LIST_HEAD(&lock_classes[i].locks_before);
+	}
+	init_chain_block_buckets();
+}
+```
+
+沿一次启动过程追踪，而不是把两个标志分别背下来：
+
+| 阶段 | 进入条件与写入者 | 修改的存储 | 后续读取者与退出条件 |
+| --- | --- | --- | --- |
+| I0 尚未建立 | 首次调用，两个静态标志初值均为false | 若尚未到`SYSTEM_SCHEDULING`，跳过RCU头；设置`ds_initialized`，建立两个待回收链表，逐个挂接类槽并初始化其前后依赖表，再初始化链元素空闲桶 | 本次返回后，登记路径可以取得类槽；不能由此推断RCU头已初始化 |
+| I1 数据已可用 | 仍处早期阶段的再次调用 | 两个条件检查均不会初始化RCU头；在`ds_initialized`处返回，不重挂类槽 | 原有类、依赖和空闲池继续有效，等待后续调用遇到新的系统阶段 |
+| I2 补齐回调头 | 某次调用看到`system_state >= SYSTEM_SCHEDULING` | 先执行`init_rcu_head(&delayed_free.rcu_head)`，置`rcu_head_initialized`；若数据结构此前完成，紧接着返回 | F阶段使用该回调头；后续调用在函数首部返回 |
+
+若第一次调用已经位于调度阶段，同一次执行就会初始化回调头和数据结构，直接完成I0与I2。表中的分阶段路径解释早期调用的必要性，并不声称每次启动都必须观察到I1。`system_state`由启动流程推进，本函数只读取它；两个完成标志则属于本函数保存的静态软件状态。
+
+这里没有`cmpxchg()`、等待队列或完成通知。`__read_mostly`也不是同步原语，它不使“检查false再写true”成为原子操作。当前登记调用在图锁内执行，不能把这段代码抽出来当作任意线程均可并发调用的通用一次初始化模板。尤其`ds_initialized = true`先于链表填充：脱离调用上下文后，另一个执行者可能见到true却没有得到完整的池。
+
+### 1.11.1\_链元素池的初始化边界
+
+类槽数组与链元素数组各有自己的空闲结构。前者用`free_lock_classes`保存`lock_classes[]`槽，后者在`CONFIG_PROVE_LOCKING`下用`chain_block_buckets[]`保存`chain_hlocks[]`空闲区间的起始下标。`MAX_CHAIN_BUCKETS`是桶数宏，在该固定源码中取16；它不是类槽数量或数组元素总数。桶中的`-1`表示没有区间，不能用静态零初始化代替：下标0本身就是有效区间起点。
+
+```c
+/**
+ * @brief 将所有链元素空闲桶设为空，再归入整块初始存储。
+ * @note 仓库补充，非上游原文；本定义位于CONFIG_PROVE_LOCKING分支。
+ */
+static void init_chain_block_buckets(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_CHAIN_BUCKETS; i++)
+		chain_block_buckets[i] = -1;
+
+	add_chain_block(0, ARRAY_SIZE(chain_hlocks));
+}
+```
+
+`add_chain_block()`接收“起始下标、元素数”，而不是字节地址和字节数。它把空闲链的管理信息写进`chain_hlocks[]`空闲区间自身，并更新桶头及空闲元素计数；因此不能把初始化理解成只清一个指针表。分配后同一数组保存类索引，归还后又承载空闲链信息，两种解释取决于区间当前的所有权。具体桶选择、拆分和归还算法属于链元素分配器，不能从这一调用推断它会合并相邻区间。
+
+关闭`CONFIG_PROVE_LOCKING`时，同一上游文件提供的定义是：
+
+```c
+/* 仓库补充说明：该配置下不建立依赖链元素桶；类池初始化仍然执行。 */
+static void init_chain_block_buckets(void)	{ }
+```
+
+这处空函数只消去链桶初始化，不能据此宣称所有Lockdep状态都没有成本，也不能把启用分支的数组布局套用于关闭配置。
+
+### 1.11.2\_用反例检查初始化顺序
+
+先预测再对照完整函数：如果把首部早退改为检查`ds_initialized`，启动早期已经完成类池后，哪一步永远没有机会补做？答案是I2的回调头初始化。如果每次都执行类数组循环，同一个`lock_entry`会在原有状态仍使用它时再次挂接，破坏列表，而不是“多做一点无害初始化”。如果把桶头默认值0当成空桶，空桶和从下标0开始的真实块将无法区分。
+
+这些反例约束的是源码修改，不是已执行的启动测试。复核本节时应同时覆盖首次早期调用、早期重复调用、进入调度后的补齐调用、首次即处于调度阶段，以及关闭`CONFIG_PROVE_LOCKING`的分支；单次用户态顺序替身无法证明真实启动时序和图锁约束。
+
 下一篇：[Lockdep 取得释放与持锁账本源码实现](../../P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.1_关联入口)。

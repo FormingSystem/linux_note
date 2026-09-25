@@ -4044,7 +4044,7 @@
       "baseline_sha256": "31ee21a97314194688d56403aff1557b64b6801d1c34cb739f6de8d992e71506",
       "lines": 208,
       "state": "pending",
-      "reason": "B05bp至bs补身份与回收批次，B05bt补四个依赖/链摘除函数；辅助分配器边界及全页符号冷读仍待收束，不计完成。"
+      "reason": "B05bp至bt补身份、回收与摘除，B05bu补两阶段初始化及配置分支；链元素分配器及全页符号冷读仍待收束，不计完成。"
     },
     {
       "path": "research/source_reading/lockdep/source_explanations/include/linux/lockdep_types.h.md",

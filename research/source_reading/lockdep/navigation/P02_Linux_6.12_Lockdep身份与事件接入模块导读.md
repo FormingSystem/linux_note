@@ -93,6 +93,8 @@ sequenceDiagram
 
 上图从事件登记走向功能结果，省略的是 mutex owner 的具体竞争过程，不是把 owner 隐藏在检查账本里。若释放的记录不在栈顶，释放路径要在移除目标后重放后续检查记录，重算链；它不会替业务重新取得那些功能锁。特殊合并记录还可能先递减引用数而保持深度不变，继续读实现时须同时看 `references` 和 `nest_lock` 分支。
 
+登记前还要建立类空闲池。启动早期的数据池初始化与进入调度阶段后的RCU回调头初始化并非同一完成点，见[初始化为何需要两个完成标志](../source_explanations/kernel/locking/lockdep.c.md#1.11_初始化为何需要两个完成标志)。不要把该内部函数当成无锁的一次初始化接口。
+
 具体状态写入只在下列唯一实现标题展开：
 
 - [`task_struct` 持锁账本与 `held_lock`](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.2_task_struct持锁账本与held_lock)
