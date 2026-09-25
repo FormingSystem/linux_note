@@ -3,6 +3,14 @@
   "baseline_commit": "d2a942520db0b5dd0ab9d8e71225119e1bbf5042",
   "baseline_includes_uncommitted": true,
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
+  "quality_reassessment": {
+    "status": "required",
+    "trigger": "2026-09-25 开发者指出 class_sysfs 卡片化；跨批次抽查发现其他已验证正文也有字段、状态或工具清单替代逐步讲解的问题。",
+    "scope": "全部 entries，按教材、参考、研究、实验、导航及治理各自职责逐篇复核；抽查不代替全量审查，也不预判每篇均需重写。",
+    "prior_states": "保留 state 与 reason 作为既有工作和技术验证记录；validated 或 retained 暂不代表教材质量验收完成，不得据此报告全仓剩余完成量。",
+    "reviewed_paths": [],
+    "next": "先复核并修复 class_sysfs 的连续讲解，再回查此前各批已标完成内容；每篇记录具体认知断点、修改或保留依据及适用验证，不以图表、代码、篇幅或脚本数量判定完成。"
+  },
   "entries": [
     {
       "path": "research/source_reading/kref/navigation/P06_整数索引与拥有型查找导读.md",
