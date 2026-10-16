@@ -20,7 +20,7 @@ P08 已经证明查找者怎样在受保护窗口内取得自己的一份。现�
 
 ## 9.2\_基本分工\_kref\_管生命周期\_锁管一致性
 
-先保留一个服务对象：共享入口使它可被查找，value 记录已完成的同步操作次数，accepting 决定还接不接新操作。对象中还嵌入 access_lock 和 ref。计数存储与业务状态在同一个分配块内，并不意味着它们自动使用同一种同步规则。
+先沿用一个服务对象：共享入口使它可被查找，value 记录已完成的同步操作次数，accepting 决定还接不接新操作。对象中还嵌入 access_lock 和 ref。计数存储与业务状态在同一个分配块内，并不意味着它们自动使用同一种同步规则。
 
 ### 9.2.1\_kref\_和锁分别保护什么
 
@@ -39,6 +39,8 @@ P08 已经证明查找者怎样在受保护窗口内取得自己的一份。现�
 另一方面，若只拿嵌在对象里的锁，却没有先证明对象存储有效，执行 mutex_lock 本身就可能访问失效地址。P08 的取得窗口先为调用者建立独立份额，随后才能安全访问对象内部的锁；本次份额应保留到最后一次 unlock 完成以后。
 
 下面复用 P03 的完整 [note_kref_shutdown.c](../../../../labs/kernel/object_lifetime/materials/note_kref_shutdown.c)，从两把锁的职责重新阅读。它只有一个服务槽，全部演示操作在模块初始化中顺序执行，没有外部调用者、异步 work 或实际设备；这样关闭保证能由代码本身说明，而不藏在未定义的 stop_hw 中。
+
+其中 `DEFINE_MUTEX(entry_lock)` 是内核定义并静态初始化一把 mutex 的宏；对象内的 access_lock 则在创建时用 mutex_init 初始化。两者使用相同同步原语，只是存储位置和保护范围不同。
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -188,7 +190,8 @@ service_step 的业务操作只是“检查是否接纳并增加一次整数值�
 | S5 回收 | 最后使用者归还 | ref 正常归零同步进入 release，外部 release_calls 记录后回收 | 无本协议内继续访问者 |
 
 ```mermaid
-flowchart LR
+%%{init: {'flowchart': {'nodeSpacing': 120, 'rankSpacing': 160}}}%%
+flowchart TB
     E[service_entry与entry_lock] -->|非空槽拥有一份| R[obj.ref]
     L[查找者] -->|S2锁内读槽并取得| E
     L -->|自己的份额保护对象地址| R
@@ -219,9 +222,31 @@ sequenceDiagram
 
 entry_lock 的解锁/取得传递发布状态，access_lock 的解锁/取得传递业务结果和关闭决定，ref 的原子存储结算总份数。读者没有因为 kref_get 自动收到“关闭了”的通知，而是在每次操作的门锁内读取 accepting。正常操作成本是取得对象锁和读写这组共享字段，关闭路径则有清入口、等待已进入同步操作和归还原入口份额的成本。
 
-沿材料目录已有构建方法设置 KDIR，构建模块并在匹配目标装卸 note_kref_shutdown.ko。正常预期是关闭前 result=0、value=1；关闭后 result=-ESHUTDOWN（该 Linux 错误码为 108，所以日志为 -108）、输出参数仍为初始化的 -1；最终 release_calls=1。value 的真实内容没有因拒绝改成 -1，-1 是调用者输出变量保持不变。这一点也应从 service_step 的赋值分支读出来。
+先在 Linux 构建主机准备与目标运行内核匹配的构建树，把它的绝对路径赋给 KERNEL_BUILD。交叉构建还需设置匹配的 ARCH 与 CROSS_COMPILE。从本仓库根目录执行以下步骤，只构建本节模块：
 
-既有 ARM 前端和八组顺序替身证据保留，本次复用程序没有改变行为；目标链接、装卸和真实双线程竞争仍未执行。练习时先把第二次 service_step 移到 shutdown 之前，预测输出值会继续增加；再只在纸上把“检查 accepting”移到锁外，补出读到 true 后关闭者先写 false、旧请求却继续执行的交错，不运行这个有竞争的版本。
+```bash
+kref_shutdown_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_kref_shutdown.c "$kref_shutdown_dir/"
+printf 'obj-m += note_kref_shutdown.o\n' > "$kref_shutdown_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_shutdown_dir" modules
+```
+
+临时目录保存源码、Makefile 和构建产物，M 指定外部模块位置。将 note_kref_shutdown.ko 复制到匹配目标 Linux，在模块所在目录加载；本机就是目标时可直接进入上述临时目录：
+
+```bash
+sudo insmod ./note_kref_shutdown.ko
+```
+
+加载成功后卸载，再读取初始化和退出日志：
+
+```bash
+sudo rmmod note_kref_shutdown
+sudo dmesg | tail -n 12
+```
+
+正常预期是关闭前 result=0、value=1；关闭后 result=-ESHUTDOWN（该 Linux 错误码为 108，所以日志为 -108）、输出参数仍为初始化的 -1；最终 release_calls=1。value 的真实内容没有因拒绝改成 -1，-1 是调用者输出变量保持不变。这一点也应从 service_step 的赋值分支读出来。
+
+本节复用 P03 的同一程序与本轮已经完成的八组宿主顺序检查。历史 ARM 前端结果不作为本轮目标构建；目标链接、装卸和真实双线程竞争仍未执行。练习时先把第二次 service_step 移到 shutdown 之前，预测输出值会继续增加；再只在纸上把“检查 accepting”移到锁外，补出读到 true 后关闭者先写 false、旧请求却继续执行的交错，不运行这个有竞争的版本。
 
 ### 9.2.2\_两类锁\_集合锁和对象锁
 
@@ -237,13 +262,13 @@ access_lock 保护 accepting 与 value 的读写，以及“检查允许→实�
 
 id 若在发布前固定且之后不变，可以按发布/取得协议读取，不必强行增加一把 id 锁。state、enabled、flags 等可变字段则应按真实不变量选择同锁：若几个字段必须一起变化，把它们拆给互不关联的锁反而会让观察者看见不一致组合。锁按状态关系分工，不按字段数量分配。
 
-#### (3)\_两者不能混用
+#### (3)\_按共享状态分工\_何时共用或拆分锁
 
 **原有人工批注保留：**
 
 > <span style="color:red;">说实话，我完全不认同这个ai总结的小结。不过我又觉得这个标题是需要提醒做到对锁职权分离的。所以保留下来。</span>
 
-这条批注指出了原标题容易造成的误解。应把“不能混用”理解为 **不能让不同访问者各自猜一把锁来保护同一不变量**，不能理解为“集合和字段永远必须分成两把锁”。若所有相关路径都采用一个全局锁，它完全可以同时保护集合与业务字段；其代价是本可独立的对象操作也会串行。是否拆锁，要由共享状态与负载决定。
+锁职责分离要求 **不能让不同访问者各自猜一把锁来保护同一不变量**，不要求“集合和字段永远必须分成两把锁”。若所有相关路径都采用一个全局锁，它完全可以同时保护集合与业务字段；其代价是本可独立的对象操作也会串行。是否拆锁，要由共享状态与负载决定。
 
 反例中的 `mutex_lock(&obj->lock); list_del_init(...);` 只有在其他链表操作采用另一把互不协调的全局锁时才违反协议；不是因为函数名叫对象锁就天然无权修改 node。同样，只拿集合锁写 state 是否正确，要看其他 state 访问者是否也遵守它。不要把位置或命名当成同步证明。
 
@@ -285,315 +310,125 @@ static struct my_obj *lookup_get(int id)
 
 ### 9.3.2\_remove\_时\_先\_unlink\_再\_put\_但必须匹配集合引用
 
-以下讨论唯一拥有型链表的成员引用；按对象地址调用 remove 的路径须另有一份或等效期限保证，覆盖本次调用。所谓允许重复 remove，不允许重复使用已经释放的对象地址。已有讲清的逐步解释保留如下。
+查找能在集合锁内使用普通 get，是因为可见成员始终有集合持有的一份。撤下必须保持这个不变量：先在同锁下摘下节点，让新查找再也碰不到它，再归还原成员份额。摘下到归还之间，这一份临时由撤下者负责，仍保护对象。
 
-对象从集合中删除时，常见顺序是：
+原有阅读批注保留如下：
 
-```text
-先从集合中撤销可见性；（避免并发时，被别的地方从列表找到需要被ut的节点。针对最后一个引用释放）
-再释放集合持有的引用。
-```
+> 先从集合中撤销可见性；（避免并发时，被别的地方从列表找到需要被ut的节点。针对最后一个引用释放）
 
-也就是：
+这个次序不只在实际最后归还时才需要。只要接口宣称“成员存在就有集合份额”，每次撤下都应维持它；最后归还会把违反协议的后果直接暴露为失效地址访问。还要补上一条：**只有本次确实摘下成员，才能归还那一份。** 按对象地址调用 remove 的路径另外持有一份或等效期限，覆盖整个调用；允许重复 remove，不等于允许重复使用已经释放的地址。
 
-```text
-unlink first, put later.
-```
-
-但是这句话还不完整。
-
-更准确的规则应该是：
-
-```text
-unlink first, put later;
-unlink once, put once.
-```
-
-也就是说：
-
-```text
-只有本次 remove 确实撤销了集合中的可见性，
-才能释放集合持有的那一份引用。
-```
-
-如果对象根本不在集合中，却仍然调用 `kref_put()`，就不是“正常 remove”，而是多释放了一次引用。
-
-------
-
-假设对象结构如下：
+先看责任怎样建立。下面是唯一链表模型的局部片段，`my_obj_list` 和 `my_obj_list_lock` 是该集合及其锁，`my_obj_release` 是对象的归零回调；本节没有把这些片段当成独立可编译程序。对象的 id 在发布前确定，node 初始化为自链接：
 
 ```c
 struct my_obj {
-	struct kref ref;
-	struct list_head node;
-	int id;
+    struct kref ref;
+    struct list_head node;
+    int id;
 };
-```
 
-对象初始化时，`node` 应该先初始化为空链表节点：
-
-```c
-void my_obj_init(struct my_obj *obj)
+void my_obj_init(struct my_obj *obj, int id)
 {
-	kref_init(&obj->ref);
-	INIT_LIST_HEAD(&obj->node);
+    kref_init(&obj->ref);
+    INIT_LIST_HEAD(&obj->node);
+    obj->id = id;
 }
-```
 
-如果集合会长期持有对象，那么对象加入集合时，集合应当获得一份引用：
-
-```c
+/* 前提：新对象只由此调用者发布一次，调用者持有初始份额。 */
 void my_obj_add(struct my_obj *obj)
 {
-	kref_get(&obj->ref);		/* 集合获得一份引用 */
-
-	mutex_lock(&my_obj_list_lock);
-	list_add(&obj->node, &my_obj_list);
-	mutex_unlock(&my_obj_list_lock);
+    kref_get(&obj->ref); /* 先预留集合份额，再让节点可见。 */
+    mutex_lock(&my_obj_list_lock);
+    list_add(&obj->node, &my_obj_list);
+    mutex_unlock(&my_obj_list_lock);
 }
 ```
 
-对应地，移出集合时，集合应该释放这份引用。
+这个 add 没有重复发布检查，不能用于多个发布者争抢同一节点。这里只用“一次发布”的前提隔离撤下问题；9.3.7 和 9.6 会把发布状态与拒绝分支也做进接口。`list_add()` 自身不执行 get，份额来自前一行显式操作。
 
-------
-
-错误写法：
+如果 remove 只把摘链放进条件，却无条件 put，就会在第二次调用时消费不属于集合的引用：
 
 ```c
-void my_obj_remove(struct my_obj *obj)
+/* 错误示意：节点已经摘下时，仍然多归还一次。 */
+void my_obj_remove_bad(struct my_obj *obj)
 {
-	mutex_lock(&my_obj_list_lock);
-
-	if (!list_empty(&obj->node))
-		list_del_init(&obj->node);
-
-	mutex_unlock(&my_obj_list_lock);
-
-	kref_put(&obj->ref, my_obj_release);
+    mutex_lock(&my_obj_list_lock);
+    if (!list_empty(&obj->node))
+        list_del_init(&obj->node);
+    mutex_unlock(&my_obj_list_lock);
+    kref_put(&obj->ref, my_obj_release);
 }
 ```
 
-这段代码的问题不在于没有检查 `kref_put()` 的返回值。
+假设调用者和集合各有一份，计数是 2。第一次 remove 摘下并归还成员份额，剩下调用者的 1；第二次发现节点已空，仍执行 put，就把调用者尚在使用的一份消耗掉了。随后字段访问可能形成释放后使用（UAF），调用者正常退出时还会再次 put。问题不是没检查 put 返回值：返回值描述本次是否归零并进入回调，不描述本次是否摘下成员，也不能授权消费别人的份额。
 
-`kref_put()` 的返回值表示：
-
-```text
-这次 put 是否导致引用计数归零，并触发 release。
-```
-
-它不能回答：
-
-```text
-这次 remove 是否真的删除了集合节点？
-这次 put 是否真的对应集合持有的那份引用？
-```
-
-真正的问题是：
-
-```text
-即使 obj->node 已经不在 list 中，
-代码仍然会调用 kref_put()。
-```
-
-这会导致：
-
-```text
-没有 unlink；
-却执行了 put。
-```
-
-也就是：
-
-```text
-没有撤销集合引用；
-却释放了一次集合引用。
-```
-
-如果 `remove` 被重复调用，第二次调用就可能造成引用计数失衡：
-
-```text
-第一次 remove:
-    list_del_init()
-    kref_put()      正确释放集合引用
-
-第二次 remove:
-    list_empty() 为 true
-    没有 list_del_init()
-    仍然 kref_put()  多 put 一次
-```
-
-严重时会导致对象提前释放、UAF 或 double put。
-
-------
-
-更稳妥的写法是记录本次是否真的删除了节点：
+让同一临界区同时决定“有没有成员”和“本次拿回了哪一份”，再用局部标志把归还责任带到锁外：
 
 ```c
+/* 调用者独立持有一份；node只属于本集合，所有成员操作遵守同锁。 */
 void my_obj_remove(struct my_obj *obj)
 {
-	bool removed = false;
+    bool removed = false;
 
-	mutex_lock(&my_obj_list_lock);
+    mutex_lock(&my_obj_list_lock);
+    if (!list_empty(&obj->node)) {
+        list_del_init(&obj->node);
+        removed = true;
+    }
+    mutex_unlock(&my_obj_list_lock);
 
-	if (!list_empty(&obj->node)) {
-		list_del_init(&obj->node);
-		removed = true;
-	}
-
-	mutex_unlock(&my_obj_list_lock);
-
-	if (removed)
-		kref_put(&obj->ref, my_obj_release);
+    if (removed)
+        kref_put(&obj->ref, my_obj_release);
 }
 ```
 
-这个版本表达的语义是：
-
-```text
-只有本次确实从集合中 unlink 了 obj，
-才释放集合持有的那份引用。
-```
-
-流程如下：
+`list_del_init()` 把节点恢复成自链接，下一次同锁检查会看到空；`removed` 记录的是本次责任，既不是共享生命周期状态，也不是引用计数的副本。
 
 ```mermaid
 flowchart TD
-    A["my_obj_remove(obj)"] --> B["加 my_obj_list_lock"]
-    B --> C{"obj->node 是否在集合中?"}
-
-    C -- "是" --> D["list_del_init(&obj->node)"]
-    D --> E["removed = true"]
-    E --> F["解锁"]
-    F --> G["kref_put(&obj->ref, release)"]
-
-    C -- "否" --> H["不删除节点"]
-    H --> I["removed = false"]
-    I --> J["解锁"]
-    J --> K["不调用 kref_put"]
+    A[调用者有独立份额，进入remove] --> B[取得集合锁]
+    B --> C{节点仍是本集合成员?}
+    C -- 是 --> D[摘下并恢复自链接，接回成员份额]
+    D --> E[removed为true]
+    C -- 否 --> F[没有接回任何成员份额]
+    F --> G[removed为false]
+    E --> H[解除集合锁]
+    G --> H
+    H --> I{本次removed?}
+    I -- 是 --> J[只归还接回的成员份额]
+    I -- 否 --> K[直接返回]
+    J --> K
 ```
 
-这时生命周期关系是匹配的：
+这里的成员判断依赖“node 只属于这张表”的前提。`list_empty()` 不知道一条非空节点属于哪张表；如果允许跨表迁移，就必须增加所属集合的记录与相应锁协议，不能沿用这个判断。
 
-```text
-list_del_init() 成功一次；
-集合引用 put 一次。
-```
-
-------
-
-不过，工程里还要区分两种 remove 语义。
-
-第一种是**幂等 remove**。
-
-也就是允许重复调用：
-
-```text
-对象在集合中：删除并 put；
-对象不在集合中：什么也不做。
-```
-
-这种情况下可以使用 `removed` 标志：
+这个版本提供 **幂等 remove**：在参数仍有效的前提下，重复调用不会再次改变成员状态或归还成员份额。另一种接口要求 remove 恰好调用一次，把重复调用视为调用方错误。它可以用以下版本替换，而不是与前一版本同时定义：
 
 ```c
+/* 调用者独立持有一份；本接口要求对象当前确实是本集合成员。 */
 void my_obj_remove(struct my_obj *obj)
 {
-	bool removed = false;
-
-	mutex_lock(&my_obj_list_lock);
-
-	if (!list_empty(&obj->node)) {
-		list_del_init(&obj->node);
-		removed = true;
-	}
-
-	mutex_unlock(&my_obj_list_lock);
-
-	if (removed)
-		kref_put(&obj->ref, my_obj_release);
+    mutex_lock(&my_obj_list_lock);
+    if (WARN_ON_ONCE(list_empty(&obj->node))) {
+        mutex_unlock(&my_obj_list_lock);
+        return; /* 告警不会自动终止流程，必须明确拒绝多余归还。 */
+    }
+    list_del_init(&obj->node);
+    mutex_unlock(&my_obj_list_lock);
+    kref_put(&obj->ref, my_obj_release);
 }
 ```
 
-第二种是**非幂等 remove**。
+两者的区别是接口如何对待重复调用，不是引用规则不同。严格版本也不能告警以后继续 put。add、lookup、remove、遍历和其他摘链路径必须遵守同一集合保护协议，否则两个撤下者可能同时判断节点非空，仍会重复摘链或重复归还。
 
-也就是调用者必须保证：
+| 应用动作 | 集合可见性 | 引用责任如何变化 |
+| --- | --- | --- |
+| get 后在锁内 list_add | 从不可见变成可见 | 显式 get 新增集合份额，链表函数不增计数 |
+| 锁内 list_del_init | 从可见变成不可见 | 成员份额暂交撤下者，计数尚未减少 |
+| 解锁后且 removed 为真时 put | 已不可见 | 显式 put 消费刚接回的成员份额 |
+| 节点已空，未执行摘下 | 保持不可见 | 没有接回成员份额，不能再以集合名义 put |
 
-```text
-obj 当前一定在集合中；
-remove 只能调用一次；
-重复 remove 是调用路径 bug。
-```
-
-这种情况下，不应该悄悄吞掉错误，而应该暴露错误：
-
-```c
-void my_obj_remove(struct my_obj *obj)
-{
-	mutex_lock(&my_obj_list_lock);
-
-	if (WARN_ON_ONCE(list_empty(&obj->node))) {
-		mutex_unlock(&my_obj_list_lock);
-		return; /* 告警不会自动终止控制流，不能继续消耗不存在的成员份额。 */
-	}
-	list_del_init(&obj->node);
-
-	mutex_unlock(&my_obj_list_lock);
-
-	kref_put(&obj->ref, my_obj_release);
-}
-```
-
-本版在告警条件成立时明确返回。WARN_ON_ONCE 自身只是诊断表达式，不会替调用者中止后面的 list_del_init 和 put；不能把诊断当成错误恢复。
-
-这个版本的含义是：
-
-```text
-remove 必须对应一个真实存在的集合引用；
-如果 obj 不在集合中，说明调用路径已经错了。
-```
-
-------
-
-无论采用哪种写法，都必须保证所有修改 `obj->node` 的路径使用同一把锁保护：
-
-```text
-lookup；
-add；
-remove；
-遍历；
-销毁前 unlink；
-```
-
-否则一个 CPU 判断 `!list_empty()` 的同时，另一个 CPU 也可能删除同一个节点，最终仍然会出现重复 unlink 或重复 put。
-
-所以集合删除的核心规则是：
-
-```text
-集合可见性和集合引用必须绑定。
-```
-
-可以总结成表：
-
-| 操作              | 集合可见性               | 集合引用            |
-| ----------------- | ------------------------ | ------------------- |
-| `list_add()`      | 对 lookup 可见           | 集合获得 1 份引用   |
-| `list_del_init()` | 对 lookup 不可见         | 集合释放 1 份引用   |
-| 没有 unlink       | 集合状态未变化           | 不应该 put 集合引用 |
-| 重复 remove       | 第二次没有集合引用可释放 | 再 put 就是 bug     |
-
-最终结论：
-
-```text
-remove 的顺序是 unlink first, put later；
-但 put 的前提是本次 remove 确实撤销了集合持有的引用。
-```
-
-更短的工程口诀是：
-
-```text
-unlink once, put once.
-```
-
----
+所以规则是 `unlink first, put later; unlink once, put once`：先切断这个入口，再消费对应份额；一次实际摘下只对应一次成员归还。调用者另外持有的份额始终由调用者自己的退出路径负责。
 
 ### 9.3.3\_put\_前后访问字段的边界
 
@@ -633,9 +468,9 @@ object_put(obj);
 
 发布后不再变化的 id 可以按发布协议读取，某些字段也可以采用独立的原子或其他同步方案。因此结论是“遵守字段同步协议”，不是无条件要求每一次读取都额外拿 mutex。
 
-### 9.3.5\_锁内只能借用指针\_锁外必须持有引用
+### 9.3.5\_从锁内借用到锁外使用\_保护依据如何接续
 
-原标题提醒读者不要把临时地址带出保护窗口，但“只能”和“必须”需要限定场景。在本章拥有型集合中，如果调用者原先没有别的保护，只依集合锁读到一个地址，那么锁内可以借用；要把对象交到锁外使用，就必须先取得自己的份额。
+在本章拥有型集合中，如果调用者原先没有别的保护，只依集合锁读到一个地址，那么锁内可以借用；要把对象交到锁外使用，就必须先取得自己的份额。
 
 ```c
 /* find_locked只借出地址；锁内复制一个不可变编号，不带走对象。 */
@@ -691,6 +526,8 @@ mutex_unlock(&list_lock);
 业务运行状态通常和对象内部字段绑定。
 
 因此可以把对象设计成：
+
+以下枚举名由示例定义，不是 kref 的内建状态。成员阶段 NEW、LIVE、DYING、DEAD 分别表示未发布、已发布、已撤下和回收前终态；业务阶段 IDLE、RUNNING、STOPPING、ERROR 分别表示空闲、运行、停止过程和出错。代码用 MY_OBJ_ 前缀避免名称冲突，阶段表为便于阅读省略此前缀。ERROR 只是给后续业务扩展预留，本例不实现错误恢复。
 
 ```c
 enum my_obj_life_state {
@@ -764,7 +601,7 @@ kref 决定对象内存能不能活到使用结束。
 | S1 | publish | list_lock内追加集合一份，NEW→LIVE并挂链 | 后续lookup依同锁观察，拒绝不追加 |
 | S2 | lookup | list_lock内比较id与LIVE，再get | 调用者独立份额接续到锁外 |
 | S3 | start/stop | obj.lock内检查并改变run_state | 本节仅同步状态模型，不创建异步活动 |
-| S4 | remove_by_id | list_lock内LIVE→DYING并摘链，记录待归还份额 | 本页保留双锁写段，顺序为集合锁→对象锁；解除两锁后put |
+| S4 | remove_by_id | list_lock内LIVE→DYING并摘链，记录待归还份额 | 嵌套写段，顺序为集合锁→对象锁；解除两锁后put |
 | S5 | 最后put触发release | 最后责任退出，检查节点、写DEAD并回收 | 此时正常协议下无其他读写者；创建未发布也可直接走此阶段 |
 
 因而 LIVE+IDLE、LIVE+RUNNING、DYING+RUNNING 都可能有意义。最后一种说明入口已撤下，但本节并没有宣称业务停止；若产品要求撤下以后旧用户也不能启动，必须补业务门，不能靠 life_state 的名字猜保证。
@@ -1057,7 +894,7 @@ int my_obj_remove_by_id(int id)
 }
 ```
 
-当前保留的代码实际上在 list_lock 内又取得了 obj->lock，原文“这里没有拿对象锁”与代码不符。原有插锁和中文注释保留，按它们的实际行为解释：这是集合锁→对象锁的嵌套写段，两把锁都不保护独立的 put；归还在全部解锁后发生。
+这段代码在 my_obj_list_lock 内又取得了 obj->lock，是集合锁→对象锁的嵌套写段。两把锁都在归还成员份额以前解除；put 可能继续进入回调，不能把这次归还算作仍在两锁内执行的动作。
 
 本节的既定字段表仍把这些状态归集合锁保护：
 
@@ -1074,11 +911,12 @@ list 持有的引用。
 ```mermaid
 flowchart TD
     A[remove_by_id 开始] --> B[拿 my_obj_list_lock]
-    B --> C[遍历 my_obj_list]
-    C --> D{id 匹配?}
-    D -- 否 --> C
+    B --> C{还有候选成员?}
+    C -- 是 --> D{id 匹配?}
+    C -- 否，保留ENOENT --> J
+    D -- 否，检查下一成员 --> C
     D -- 是 --> E{life_state == MY_OBJ_LIVE?}
-    E -- 否 --> F[返回错误]
+    E -- 否 --> F[记录EINVAL错误]
     E -- 是 --> N[按顺序取得 obj.lock]
     N --> G[life_state = MY_OBJ_DYING]
     G --> H[list_del_init 撤销集合可见性]
@@ -1151,20 +989,22 @@ sequenceDiagram
     autonumber
     participant R as remove 线程
     participant L as lookup 线程
-    participant Lock as my_obj_list_lock
+    participant Lock as my_obj_list_lock及链表
     participant Obj as obj
 
     R->>Lock: mutex_lock
+    R->>Obj: mutex_lock对象锁
     R->>Obj: life_state = MY_OBJ_DYING
     R->>Obj: list_del_init
+    R->>Obj: mutex_unlock对象锁
     R->>Lock: mutex_unlock
-    R->>Obj: kref_put 释放 list 引用
+    R->>Obj: kref_put 归还成员份额，可能回收
 
     L->>Lock: mutex_lock
-    L->>Obj: 遍历 my_obj_list
-    L->>Obj: 找不到 obj
+    L->>Lock: 遍历现有成员，未找到目标
     L->>Lock: mutex_unlock
     L-->>L: 返回 NULL
+    Note over L,Obj: 查找不再访问已撤下对象，甚至不要求它仍存在
 ```
 
 这种情况下：
@@ -1317,10 +1157,12 @@ flowchart TD
     B --> C[life_state = MY_OBJ_NEW]
     C --> D[run_state = MY_OBJ_IDLE]
 
-    D --> E[my_obj_publish]
-    E --> F[kref_get list 引用]
+    D --> E{my_obj_publish成功?}
+    E -- 是 --> F[kref_get list 引用]
+    E -- 否，仍有初始份额 --> V[kref_put 创建者引用]
     F --> G[life_state = MY_OBJ_LIVE]
     G --> H[list_add 到 my_obj_list]
+    H --> V
 
     H --> I[my_obj_lookup_get_live]
     I --> J[kref_get 调用者引用]
@@ -1334,6 +1176,7 @@ flowchart TD
 
     L --> Q{最后一个引用?}
     P --> Q
+    V --> Q
 
     Q -- 否 --> R[对象继续存在]
     Q -- 是 --> S[my_obj_release]
@@ -1341,7 +1184,7 @@ flowchart TD
     T --> U[kfree]
 ```
 
-这张图里有三条线：
+这张图把成员路径与创建者初始份额的退出一并画出：
 
 ```text
 发布线：
@@ -1350,11 +1193,14 @@ flowchart TD
 查找线：
     lookup -> kref_get -> 使用 -> kref_put
 
-删除线：
-    remove -> list 不可见 -> put list 引用 -> release
+撤下线：
+    remove -> list 不可见 -> put list 引用 -> 仅归零时release
+
+创建者退出线：
+    发布成功或失败 -> put 创建者初始引用 -> 仅归零时release
 ```
 
-这三条线使用的是成员、业务和引用三组状态，而不是一条单独的生命周期枚举。请用图和阶段表解释：创建后发布失败可以从 S0 直接退出；查找先取得一份后，S4 撤下不妨碍它归还；S4 已发生却仍为 RUNNING，说明业务关闭尚未由本模型证明。
+这些路径使用的是成员、业务和引用三组状态，而不是一条单独的生命周期枚举。请用图和阶段表解释：创建后发布失败可以从 S0 直接退出；查找先取得一份后，S4 撤下不妨碍它归还；S4 已发生却仍为 RUNNING，说明业务关闭尚未由本模型证明。
 
 ------
 
@@ -1391,7 +1237,7 @@ kref 保护“对象内存是否仍然存在”。
 
 ### 9.3.8\_锁顺序问题
 
-刚才保留的 remove 写段同时持集合锁和对象锁，因此已经建立一条真实的锁依赖：先拿 my_obj_list_lock，再拿 obj->lock。若另一路径反过来，就可能各持一把并互等：
+刚才的 remove 写段同时持集合锁和对象锁，因此已经建立一条真实的锁依赖：先拿 my_obj_list_lock，再拿 obj->lock。若另一路径反过来，就可能各持一把并互等：
 
 ```mermaid
 sequenceDiagram
@@ -1644,7 +1490,29 @@ flowchart LR
 
 如果查找者在 S4b 期间先取得锁并把 1 增到 2，归还者以后只减到 1，helper 自行解锁，回调不会执行。新读者以后仍须按相同归还协议退出。不能混入一条普通锁外 put，把“最后减少也在索引锁内”的证明破坏掉。
 
-按材料目录的 KDIR 构建方式在匹配目标装卸该模块；既有 ARM 前端、六组模块控制路径和十类 helper 分支证据仍有效，本次没有改动程序。宿主的锁和原子为顺序替身，未执行真实等待、目标装卸或内存序验证。
+沿用 9.2 的构建主机、KERNEL_BUILD 与工具链准备，从仓库根目录单独构建本节模块：
+
+```bash
+kref_locked_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_kref_locked.c "$kref_locked_dir/"
+printf 'obj-m += note_kref_locked.o\n' > "$kref_locked_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_locked_dir" modules
+```
+
+临时目录保存源码、Makefile 和构建产物，M 指定外部模块位置。将 note_kref_locked.ko 复制到匹配目标 Linux，在模块所在目录加载；本机就是目标时可直接进入上述临时目录：
+
+```bash
+sudo insmod ./note_kref_locked.ko
+```
+
+加载成功后卸载，再读取初始化和退出日志：
+
+```bash
+sudo rmmod note_kref_locked
+sudo dmesg | tail -n 12
+```
+
+本节复用 P05 的同一程序、本轮六组模块控制路径和十类 helper 分支检查。历史 ARM 前端结果不作为本轮目标构建。宿主的锁和原子为顺序替身，未执行真实等待、目标装卸或内存序验证。
 
 ### 9.4.6\_kref\_put\_lock()\_的用途
 
@@ -1701,7 +1569,7 @@ completion、timer 和 IRQ 这些名字本身不是份额来源。完成事件�
 
 硬中断或通常的非线程化软中断路径不能调用需要睡眠的回收步骤，如 mutex_lock、阻塞 I/O、GFP_KERNEL 分配或等待 completion。若普通 put 在这里归零，这些限制直接作用于 release。基线的非 PREEMPT_RT 假设应保留；不能从本页结论反推所有实时配置的执行线程和锁语义。
 
-原来把 dev_id 直接转成 obj 后无条件 put 的 IRQ 片段缺少责任来源：若 dev_id 是注册期借用指针，每次中断都 put 就会连续消耗不属于这次中断的份额。正确协议必须说明这次完成事件对应哪个已预留的请求份额、为什么只会消费一次、撤销和迟到中断怎样分工，或者由注册管理者保有存储并同步注销后再归还。不要根据中断函数形参自动创造一份。
+把 dev_id 直接转成 obj 后无条件 put，会遗漏责任来源：若 dev_id 是注册期借用指针，每次中断都 put 就会连续消耗不属于这次中断的份额。正确协议必须说明这次完成事件对应哪个已预留的请求份额、为什么只会消费一次、撤销和迟到中断怎样分工，或者由注册管理者保有存储并同步注销后再归还。不要根据中断函数形参自动创造一份。
 
 如果这个完成者已有合法份额但回收必须在可睡眠上下文进行，可以在它归零以前把指定份额交给进程上下文的工作，也可以提前完成所有可阻塞关闭，让 IRQ 最后回调只做适用的非睡眠清理。前者须处理投递拒绝、重复完成和模块退出，不能在 IRQ 先 put 最后一份、回收后才安排 work。
 
@@ -1821,6 +1689,8 @@ mutex 允许合法等待取得，但不会替应用判断等待图是否有环�
 ### 9.6.1\_一个完整的锁\_+\_kref\_对象模板
 
 完整 [note_kref_table.c](../../../../labs/kernel/object_lifetime/materials/note_kref_table.c) 如下。每个对象有独立对象锁，所有表成员使用同一 table_lock；涉及两者的路径固定先集合锁、后对象锁。id 发布前固定，表内编号唯一；一个对象只允许成功发布一次，撤下以后不再重新发布。
+
+这里 OBJECT_NEW、OBJECT_LIVE、OBJECT_DYING 是这个服务自己定义的枚举：未发布、已发布且接纳请求、已撤下且拒绝请求。它们与前一个模型的字段保护规则不同，全部由对象锁保护；`LIST_HEAD(object_table)` 定义并初始化共享链表表头，节点的挂入、遍历和摘下仍由 table_lock 保护。
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -2012,7 +1882,8 @@ note_table: release=1 empty=1
 | S5 回收 | 最后普通put触发检查与kfree | 正常协议下无其他使用者，不能再从对象读日志字段 |
 
 ```mermaid
-flowchart LR
+%%{init: {'flowchart': {'nodeSpacing': 140, 'rankSpacing': 220}}}%%
+flowchart TB
     P[发布与撤下者] -->|先取得| G[table_lock与链表node]
     P -->|再取得并更新| O[obj.lock与state]
     L[查找者] -->|同顺序定位并取得引用| G
@@ -2051,7 +1922,29 @@ sequenceDiagram
 
 发布也要处理拒绝。重复发布同一对象违反只发布一次的状态约定，返回 -EINVAL；另一个新对象使用已占编号，则返回 -EEXIST。两者都在 get 之前退出，调用者初始份额始终保留，不需要猜“这次失败是否已经消费”。创建失败返回 -ENOMEM，尚无对象引用可归还。
 
-在材料目录设置匹配构建树的 KDIR，执行 `make -C "$KDIR" M="$PWD" modules`，将 note_kref_table.ko 放到匹配 Linux 实验环境中装卸并读取日志。这里给出的是预期输出：本轮仅完成 ARM 前端和宿主六组顺序检查，目标构建链接与装卸尚未执行。宿主使用实际模块、固定普通引用和链表删除 helper，锁、原子、分配、插入和遍历采用显式顺序替身；检查同节点/同编号拒绝、未发布退出、查找先后、重复移除、关闭后请求、锁顺序与无遗留分配，不声称真实线程竞争或内存序得到验证。
+沿用 9.2 的构建主机、KERNEL_BUILD 与工具链准备，从仓库根目录单独构建本节模块：
+
+```bash
+kref_table_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_kref_table.c "$kref_table_dir/"
+printf 'obj-m += note_kref_table.o\n' > "$kref_table_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_table_dir" modules
+```
+
+临时目录保存源码、Makefile 和构建产物，M 指定外部模块位置。将 note_kref_table.ko 复制到匹配目标 Linux，在模块所在目录加载；本机就是目标时可直接进入上述临时目录：
+
+```bash
+sudo insmod ./note_kref_table.ko
+```
+
+加载成功后卸载，再读取初始化和退出日志：
+
+```bash
+sudo rmmod note_kref_table
+sudo dmesg | tail -n 12
+```
+
+上文日志是预期输出。本轮重新核对完整程序并运行宿主六组顺序检查；历史 ARM 前端结果不作为本轮目标构建，目标构建链接与装卸尚未执行。宿主使用实际模块、固定普通引用和链表删除 helper，锁、原子、分配、插入和遍历采用显式顺序替身；检查同节点/同编号拒绝、未发布退出、查找先后、重复移除、关闭后请求、锁顺序与无遗留分配，不声称真实线程竞争或内存序得到验证。
 
 ### 9.6.2\_上面模板的锁顺序
 
