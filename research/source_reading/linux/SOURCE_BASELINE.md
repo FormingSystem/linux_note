@@ -1379,3 +1379,23 @@ ssleep 的秒到毫秒乘法、usleep_range 的 unsigned long 参数及不可中
 gpio-keys 的 debounce-interval 以毫秒计、默认5，poll-interval属于gpio-keys-polled；不将教学nxp私有属性冒充官方绑定，不把软件策略普遍写入DT。原三机制拼装示例中，GPIO错误、IRQ早于初始化、无锁配置/事件标志、属性写入凭空制造任务与不关闭IRQ便取消工作等问题，不再作为可直接落地代码保留。对应真实按键与事务职责回指现有机制章节；本章改用完整无硬件platform属性实验，演示统一配置验证与下一轮排队生效。
 
 提取正文解析、工作、sysfs访问和remove函数，在GCC/Clang C11/O2顺序桩模型中核对缺失、数量/读取错误、各项上下界、混合来源、失败不发布半份配置、写入不修改已排到期点、后续排队采用新值及停止后不再生产。取消数量检查、写入强制重排、遗漏停止位三个反例均被拒绝。桩替代内核属性后端、锁、队列和数值解析；不是目标Kbuild、模块装载、DT Schema/DTB、sysfs并发或板级测试结果。
+
+## 1.179\_异步清理依赖与电源引用
+
+2026-10-17 复审[定时对象与设备生命周期](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P10_与_devres_驱动生命周期和_PM_的关系.md)，复用同提交 device.h/devres.c、timer.c/h、workqueue.c/h、pm.h 与设备核心证据，新增核对官方不可变提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 以下文件。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| include/linux/pm_runtime.h | d39dc863f612fe18dc34182117f87908d63c8e6d |
+| include/linux/pm_wakeup.h | 76cd1f9f1365306ab45b2832767e400f09e503bc |
+| drivers/base/power/wakeup.c | 752b417e81290eb97d578de7f388b83201e52421 |
+| Documentation/power/runtime_pm.rst | 12f429359a823eeb2ed34eff169dab22924e2d98 |
+| Documentation/driver-api/driver-model/devres.rst | 5f2ee8d717b1deafb43a60b03dbc5d5bc6b4875a |
+| include/linux/devm-helpers.h | 708ca9131402e4746f98e26f924ae60be4a0b183 |
+| drivers/base/power/runtime.c | 2ee45841486bc73225b3e971164466647b3ce6d3 |
+
+devm-helpers.h 实际提供普通/延迟工作的初始化与自动同步取消，采用 devm_add_action；不宣称异步控制流没有托管封装。or_reset 仅登记失败立即执行，登记成功后的 probe 回滚由核心处理；release_action 执行并摘下记录，remove_action 只摘记录。timer_shutdown_sync 切断最终重排，timer_delete_sync 用于有共同门控的可恢复暂停；hrtimer 不存在正文原先声称的 wheel。
+
+runtime_resume_and_get 失败平衡使用计数，get_sync 失败仍保留增加；runtime.c 的 rpm_resume 在同步路径可等待正在执行的 suspend，所以 suspend 中同步取消一个正在等待恢复的工作可能形成环。pm_wakeup_event 的毫秒参数表示事件处理保护区间，不是未来唤醒闹钟；设备唤醒状态、计时域与实际硬件唤醒分别说明。
+
+完整无硬件模块以 timer→work→timer 环更新托管样本内存，明确LIVE/PAUSED/DEAD与排队/运行状态正交，最终动作执行并摘除，暂停保留恢复能力。提取回调、暂停恢复、probe与remove至GCC/Clang GNU11/O2顺序桩模型，覆盖两处分配失败、动作登记失败、启动后失败回滚、四种停止窗口、暂停恢复、工作中闭门后不重排；三个反例被拒绝。模型不证明真实锁并发、弱内存、设备核心回滚或电源管理执行，未进行目标Kbuild、装载、IRQ、系统睡眠或runtime PM实测。
