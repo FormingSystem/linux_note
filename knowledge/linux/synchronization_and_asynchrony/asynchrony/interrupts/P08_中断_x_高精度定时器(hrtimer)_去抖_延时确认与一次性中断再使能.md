@@ -10,789 +10,399 @@ domains:
 
 # 第8章\_中断\_x\_高精度定时器(hrtimer)\_去抖\_延时确认与一次性中断再使能
 
-## 8.1\_章节内容说明
+上一章已经能够记录待处理事件，并把可睡眠业务交给工作线程。但“收到了一次 GPIO 中断”仍不等于“机械按键已经稳定按下”。假设接点在 0、10、25 ms 都出现变化，我们希望减少重复业务，又不能把尚未结束的抖动误称为一次确认。现在必须先确定 **从哪个事件开始计时、窗口内还观察什么、结束时接受什么结果**，然后再选择定时接口。
 
-上一章已经把业务计数、执行通知和停止门控分开，但首沿窗口仍不能证明输入已经稳定。本章继续讨论定时确认与 IRQ 再使能；定时器指定到期目标，并不保证回调或业务在那个时刻精确执行。下面围绕这些问题展开：
+本章比较首沿节流、屏蔽后采样和最后观察边沿后的静默窗口，完整实现其中的屏蔽后采样。它承担中断入口与定时通知的组合问题；hrtimer 的内部时间队列见[定时器第五章](../timers/P05_高精度定时器_hrtimer_的驱动用法.md)，末沿窗口的完整实现见[定时器第十二章](../timers/P12_常用模式与代码模板.md#12.4_把状态与可睡眠采样分开)。读完应能根据时间线判断一个方案究竟减少了中断、减少了业务，还是确认了某种状态。
 
-- 为什么 jiffies/线程延时不适合做精细去抖；
-- hrtimer 的运行语义（上下文、不能睡、时钟源、精度）；
-- 三种常用协同模式（硬中断关线+hrtimer开线 / threaded+hrtimer / hrtimer+workqueue）；
-- 完整实战代码（i.MX6ULL GPIO 按键：**按下→关 IRQ→到时再开→只消费一次事件**）；
-- 调试核对表与踩坑对照表（`disable_irq_nosync()` 何时用、共享中断注意事项、hrtimer 回调里不能睡等）。
+以下接口以 Linux 6.12.20、NXP 固定提交为准，[源码基线](../../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.188_定时采样与IRQ再使能协议)记录证据。示例是教学驱动，不是已经验证过接线的板级驱动，也没有实现输入子系统上报或电源管理。
 
-------
+## 8.1\_同样等三十毫秒为什么会得到不同结果
 
-## 8.2\_为什么要用\_hrtimer\_做中断去抖与\_再使能
+先沿用上一章的首沿窗口：在 0 ms 接受一次事件，记录窗口终点 30 ms；10、25 ms 的通知仍进入处理函数，只是不再增加业务。到 31 ms 又出现通知，可以接受下一次。它适合“限制业务执行频率”，但最后一次变化才过去 6 ms，不能据此宣布稳定了 30 ms。
 
-**目标**：在“中断极短路径”里实现**精确的消抖/延时确认**，并且保证**这段时间内不再重入**，到点**自动再使能**。
+如果目标变成降低这根 IRQ 在窗口内的处理次数，可以在第一轮处理中暂时禁用它，等到窗口结束再读取引脚并重新使能。此时软件连 10、25 ms 的中间变化都可能看不到。读到逻辑 1 只证明 **采样时输入有效**，不证明它一直保持有效，也不保证一次物理按压只产生一个采样窗口。
 
-对比常见替代方案：
+真正要求“最后一次观察到变化以后再等 30 ms”，就必须继续观察变化。0 ms 的目标原本是 30 ms，10 ms 的事件把目标推到 40 ms，25 ms 再推到 55 ms。这个策略的代价是持续变化可能不断推迟结果，IRQ 入口也没有因为业务合并而停止工作。
 
-| 方案                        | 精度                | 上下文                     | 对 IRQ 重入控制                                        | 风险                               |
-| --------------------------- | ------------------- | -------------------------- | ------------------------------------------------------ | ---------------------------------- |
-| jiffies + `time_after()`    | 粗（tick 量级）     | hardirq 可用               | 无法严格禁止重入，只能忽略事件                         | 抖动多时会“翻多次”                 |
-| `threaded IRQ` + `msleep()` | 粗（毫秒级）        | 可睡                       | `IRQF_ONESHOT` 下阻塞重入，但线程被慢操作拖住          | 容易“看起来卡住”                   |
-| **hrtimer（本章）**         | **高（微秒~毫秒）** | **软中断上下文**（不可睡） | **配合 `disable_irq_nosync()` 真正禁止这段时间内重入** | 需要正确收尾、不可睡、不可做慢 I/O |
+| 策略 | 窗口内观察与状态更新 | 上述输入的名义处理点 | 能成立的结论 |
+| --- | --- | --- | --- |
+| 首沿节流 | IRQ 继续进入；首个已接受时间不随被拒绝事件变化 | 首次可立即反馈，30 ms 后允许新事件 | 业务按首沿窗口限频 |
+| 屏蔽后采样 | 暂停这根 IRQ 的处理；到期后读取当前 GPIO | 不早于所安排的窗口结束，实际还受执行延迟影响 | 本轮只做一次延后采样 |
+| 末沿静默窗口 | 每次已观察事件更新期限与代数 | 最后观察事件为 25 ms 时，目标为 55 ms | 接受时没有已观察到的新事件使该窗口失效 |
 
-结论：当你既想**精准**控制窗口，又不想被“线程里慢操作”拖住时，hrtimer 是更合适的“定时开闸”工具。
+三者不是三个速度档位。按键事件需要“按下确认—等待释放—允许下次按下”时，还要增加按下/释放状态，[按键窗口与按下释放确认](../timers/P14_按键窗口合并与按下释放确认.md)专门处理这个问题。若外设自身会保持中断请求直到驱动清状态，则必须先遵守它的清源协议，不能靠等 30 ms 代替确认或清除硬件原因。
 
-------
+## 8.2\_定时器只安排通知并不决定输入是否稳定
 
-## 8.3\_hrtimer\_基础\_你必须知道的\_6\_个点
+现在需要一种办法在未来唤起采样。对几十毫秒的按键窗口，`delayed_work` 通常已足够；它直接把延后处理交给可睡眠工作线程。jiffies 有量化粒度并不意味着它不能实现正确去抖：可以在工作执行时用同一时钟域的期限再次检查，尚未到期就继续等待。选择依据是允许的延迟与代码复杂度，而不是接口名字是否含有“高精度”。
 
-1. **上下文**：hrtimer 回调运行在 softirq（`HRTIMER_SOFTIRQ`）上下文，**不可睡**，不能做可能阻塞的 I/O；
-2. **时钟源**：常用 `CLOCK_MONOTONIC`；
-3. **模式**：`HRTIMER_MODE_REL` 用相对到期时间（最常用），必要时可 `*_PINNED` 将回调固定在当前 CPU；
-4. **返回值**：
-   - `HRTIMER_NORESTART`：一次性定时（最常用）；
-   - `HRTIMER_RESTART`：周期性，回调里调用 `hrtimer_forward_now()`；
-5. **精度**：高于 jiffies；实际精度受平台和抢占影响，微秒~毫秒量级；
-6. **资源管理**：无 `devm_hrtimer_*`，常用 `hrtimer_init()` + `hrtimer_cancel()`，或 `devm_add_action_or_reset()` 做回收。
+**高分辨率定时器 hrtimer** 用 `ktime_t` 表示更细的到期点，必要时能减少安排期限时的量化损失。本章用它把“窗口到期通知”和“采样业务”分开：hrtimer 回调只提交普通 work，worker 再读取 GPIO。时间分成 IRQ 被软件处理、启动 timer、目标到期、回调实际运行、worker 获得执行、GPIO 访问结束几个点；本例参数指定的是启动 timer 后的相对目标间隔，其他阶段的等待不能凭参数消失。
 
-------
+普通非实时配置中，未选择 SOFT 的 hrtimer 通常在硬中断路径执行；显式 SOFT 使用软中断路径。PREEMPT_RT 的默认执行有差异，但这些回调都不应按普通可睡眠线程来编程。`gpiod_get_value_cansleep()`、互斥锁和可能睡眠的总线访问放到普通 work 中。日志也有运行成本；`printk` 并非一律非法，但不能用大量输出测量一个未受扰动的时间窗口。
 
-## 8.4\_三种\_中断\_x\_hrtimer\_协同思路
+| 本章涉及的接口或值 | 作用 | 不能从名称推出的保证 |
+| --- | --- | --- |
+| `hrtimer_init(..., CLOCK_MONOTONIC, HRTIMER_MODE_REL)` | 初始化单调时钟域的 timer 对象 | 初始化不等于已经启动 |
+| `hrtimer_start(..., ms_to_ktime(ms), HRTIMER_MODE_REL)` | 从本次安排时刻计算相对目标 | 不承诺 worker 恰在 ms 毫秒后执行 |
+| `HRTIMER_MODE_ABS` | 参数是所选时钟域中的绝对到期点 | 不能直接把“30 ms 时长”当作系统运行时间轴上的绝对点 |
+| `HRTIMER_MODE_PINNED` | 启动时要求使用当前 CPU 的相应队列 | 不提供独占 CPU 或固定执行延迟；CPU 热插拔也需单独考虑 |
+| `HRTIMER_NORESTART` | 本次回调不要求自动重新入队 | 不禁止其他路径以后重新 start |
+| `HRTIMER_RESTART` | 按对象现有到期点重新排队 | 不自动增加一个周期；周期方案还须推进期限 |
+| `hrtimer_cancel()` | 取消排队并等待正在执行的回调 | 不永久封闭别处的 start，也不取消回调派生的 work |
 
-采用相同的设备树设定：
+ABS 与 REL 是两种时间参数含义，不是“会阻塞”和“不会阻塞”的区别。例如系统已经运行 100 s 时，把 `ms_to_ktime(30)` 以 ABS 传入就是一个早已过去的目标；以 REL 传入才表示从现在再等 30 ms。两者都不能替代设备协议。
+
+## 8.3\_屏蔽窗口必须记录谁欠了一次重新使能
+
+先把本章要完整实现的策略限定好：一个独占、低有效、下降沿触发的 GPIO IRQ；它不与其他 action 共享，不需要消费外设 FIFO 或清除设备保持的电平原因。第一轮 IRQ 线程接到通知后取得一次软件禁用，安排单次 hrtimer。到期 work 读取当前输入，若仍有效则翻转 LED，随后归还自己取得的禁用。
+
+`disable_irq_nosync()` 中的 nosync 表示 **不等待已经在执行的处理路径结束**。它不是对“窗口内绝无在途处理”的证明，更不是切断电线。禁用与使能使用嵌套深度，每取得一次禁用都要按协议归还一次。若两个在途路径都禁用，而到期只使能一次，中断就可能一直保持禁用。
+
+因此驱动自己保存 `masked`：它只表示本设备是否持有一次显式禁用，不读取或冒充内核 `irq_desc` 的全部状态。IRQ 线程、worker 与 remove 用同一把互斥锁串行修改它。另一个字段 `stopping` 表示是否已关闭新窗口入口；不能把“正在窗口内”和“正在销毁设备”塞进同一个含混的 armed 位。
+
+```mermaid
+flowchart LR
+    G["低有效 GPIO 输入"] -->|下降沿通知| I["IRQ 线程"]
+    I -->|锁内取得一次禁用并启动| T["hrtimer 对象"]
+    I -->|读写 masked / stopping| S["设备私有结构 gate_demo<br/>mutex 保护业务状态"]
+    T -->|到期仅 schedule_work| W["普通 work 回调"]
+    W -->|同锁内检查停止状态| S
+    W -->|读取当前逻辑值| G
+    W -->|有效则翻转逻辑输出| L["LED GPIO"]
+    W -->|清除 masked 并配对 enable_irq| I
+    R["remove"] -->|锁内关闭入口并归还禁用| S
+    R -->|锁外依次同步 IRQ / timer / work| Q["资源不再被异步访问"]
+```
+
+图 8-1：通知保存在 timer/work 执行对象中，禁用所有权保存在驱动私有字段中，两者必须一起管理。图中的重新使能箭头表示允许后续 IRQ 处理，不保证立刻有新事件。内核的默认 primary 负责唤起线程；本例所有业务状态访问都发生在可睡眠路径，所以使用 mutex，不在 hrtimer 回调里取它。
+
+| 接口 | 在本方案中的责任 | 边界 |
+| --- | --- | --- |
+| `disable_irq_nosync()` | IRQ 线程取得一次禁用 | 不等正在运行的处理；不得每次重复取得而忘记配对 |
+| `disable_irq()` | 禁用并同步在途处理 | 不能在自己的 IRQ 处理路径中等待自己结束；持有处理者需要的锁也会死锁 |
+| `enable_irq()` | worker 或 remove 归还本设备的禁用 | 在 IRQ 上下文调用还受 irq_chip 总线锁条件限制，不能无条件搬进 timer 回调 |
+| `IRQF_ONESHOT` | 线程化 IRQ 在相应线程处理期间保持屏蔽 | 线程返回不代表本例显式禁用也消失；两种管理不能混为一谈 |
+| `devm_free_irq()` | 撤销该 action 并同步处理路径，同时移除其 devres 登记 | 不代替 timer 与 work 的同步 |
+| `cancel_work_sync()` | 等本设备这一个 work 不再排队或执行 | 调用前须封闭继续投递它的生产者 |
+
+共享 IRQ 上调用 disable 会影响该 Linux IRQ 的其他使用者，所以这个例子明确不申请 `IRQF_SHARED`。把代码改成不 disable 也不自动变成共享驱动：共享 primary 仍需判断是不是本设备产生的请求，返回 `IRQ_NONE` 或唤起自己的线程，并处理设备自身的清源规则。
+
+## 8.4\_沿一个窗口检查采样再使能与退出
+
+该机制有两组相互配合的状态：驱动的 `masked/stopping`，以及内核 timer/work 的排队与运行状态。一个 work 可能已经运行，而 timer 通知又为它安排后续执行；不能把它们画成只有一个 armed 位的单一状态机。
+
+| 阶段 | 进入条件与写入者 | 驱动与执行对象的变化 | 后继读取者与退出条件 |
+| --- | --- | --- | --- |
+| S0 就绪 | probe 完成初始化，开放 IRQ | `stopping=false, masked=false` | IRQ 线程可开启一轮 |
+| S1 取得窗口 | IRQ 线程持 mutex 检查两个标志 | 禁用一次，`masked=true`，启动 timer | 线程返回；等待 timer 通知 |
+| S2 到期通知 | timer 回调运行 | 提交 work，不读取 GPIO、不取 mutex | worker 获得执行 |
+| S3 采样 | worker 持 mutex，未停止且持有禁用 | 读取 GPIO；成功有效则翻 LED，记录结果 | 本轮业务结束或读取失败 |
+| S4 归还禁用 | 同一 worker 仍持 mutex | 先清 `masked`，再配对 enable | 下一轮线程取得 mutex 后才能进入 S1 |
+| S5 关闭入口 | remove 取得 mutex | `stopping=true`；若仍持有禁用则配对归还 | 所有后续线程看到停止，不再启动 timer |
+| S6 排空与释放 | remove 已放开 mutex | 同步撤销 IRQ、取消 timer、取消 work，最后关 LED | devres 才可释放 GPIO 与对象 |
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant I as IRQ线程
+    participant S as 私有状态与mutex
+    participant T as hrtimer
+    participant W as 普通worker
+    participant R as remove
+    I->>S: S1 加锁，确认未停止且未持有禁用
+    I->>I: disable_irq_nosync一次
+    I->>T: masked=true，start相对窗口
+    I->>S: 解锁并返回
+    T->>W: S2 到期投递work
+    W->>S: S3 加锁并核对状态
+    W->>W: 可睡眠GPIO采样及业务
+    W->>S: S4 清masked并enable，然后解锁
+    alt 正常继续
+        I->>S: 新通知取得锁，开始下一窗口
+    else 设备移除
+        R->>S: S5 加锁设stopping，必要时归还禁用
+        R->>S: 解锁
+        R->>I: S6 devm_free_irq等待旧线程结束
+        R->>T: hrtimer_cancel等待旧回调结束
+        R->>W: cancel_work_sync等待旧work结束
+    end
+```
+
+图 8-2：步骤 1～8 展开 S1～S4，末尾三个等待构成 S6。remove 可以在 S1～S4 任一点开始。若 worker 正在采样，remove 先等它释放 mutex，这次已经开始的采样可以完成；若停止标志已置位，迟来的 work 直接退出。退出等待都放在锁外，否则可能出现 remove 等 IRQ 线程、IRQ 线程等同一把 mutex 的循环。
+
+S5 在撤销 action 前归还禁用，是为了清算本设备的嵌套所有权。这会短暂允许通知再次进入，但停止门已经关闭，线程只返回而不再开 timer。不能为了避免这一瞬间的通知，就把没有归还的禁用深度遗留给下一次使用者。也不能先 free_irq 再让旧 worker 调用 enable_irq：那时它已经失去对该 action 生命周期的控制。
+
+## 8.5\_把这个协议写成一个可检查的驱动
+
+把下面三段按顺序保存为 `gpio_gate_demo.c`。参数 `window_ms` 是加载时指定的毫秒数，范围 1～1000，加载后只读；默认 30 ms。它从 IRQ 线程启动 timer 的时刻开始，不从无法直接取得的物理接点变化时刻开始。GPIO 描述符的逻辑 1 表示有效，低有效输入会由 GPIO 框架转换，代码不能再次取反。
+
+### 8.5.1\_状态与到期通知先于入口准备好
+
+第一段建立私有状态及 timer 回调。`container_of()` 从内嵌的 timer 地址找回所属设备结构。回调不需要碰业务锁，因为它只产生通知；是否仍允许业务由 worker 检查。`windows`、`sampled`、`read_errors` 分别计数已建立窗口、成功采样和读取失败，不声称统计物理按压次数。
+
+```c
+// SPDX-License-Identifier: GPL-2.0
+#include <linux/module.h>
+#include <linux/platform_device.h>
+#include <linux/of.h>
+#include <linux/slab.h>
+#include <linux/err.h>
+#include <linux/errno.h>
+#include <linux/gpio/consumer.h>
+#include <linux/interrupt.h>
+#include <linux/hrtimer.h>
+#include <linux/ktime.h>
+#include <linux/workqueue.h>
+#include <linux/mutex.h>
+
+static unsigned int window_ms = 30;
+module_param(window_ms, uint, 0444);
+
+struct gate_demo {
+    struct device *dev;
+    struct gpio_desc *key;
+    struct gpio_desc *led;
+    struct mutex lock;
+    struct hrtimer timer;
+    struct work_struct work;
+    int irq;
+    bool masked;
+    bool stopping;
+    bool led_on;
+    unsigned long windows;
+    unsigned long sampled;
+    unsigned long read_errors;
+};
+
+static enum hrtimer_restart gate_timeout(struct hrtimer *timer)
+{
+    struct gate_demo *d = container_of(timer, struct gate_demo, timer);
+
+    /* 只提交执行通知；业务许可在可睡眠的worker里检查。 */
+    schedule_work(&d->work);
+    return HRTIMER_NORESTART;
+}
+```
+
+### 8.5.2\_同一把锁串行取得和归还禁用
+
+下一段让 IRQ 线程与 worker 使用同一份状态。只在 `masked=false` 时取得禁用，防止在途通知重复增加深度。worker 把 GPIO 读取与输出也放在 mutex 内，因此再使能、下一窗口与退出不能穿过当前业务。mutex 可以在这些线程路径中睡眠，但这种串行化也意味着慢 GPIO 会延长屏蔽期，不满足严格的最大屏蔽时长要求。
+
+```c
+static irqreturn_t gate_irq_thread(int irq, void *data)
+{
+    struct gate_demo *d = data;
+
+    mutex_lock(&d->lock);
+    if (!d->stopping && !d->masked) {
+        disable_irq_nosync(irq);
+        d->masked = true;
+        d->windows++;
+        hrtimer_start(&d->timer, ms_to_ktime(window_ms), HRTIMER_MODE_REL);
+    }
+    mutex_unlock(&d->lock);
+    return IRQ_HANDLED;
+}
+
+static void gate_work(struct work_struct *work)
+{
+    struct gate_demo *d = container_of(work, struct gate_demo, work);
+    int value;
+
+    mutex_lock(&d->lock);
+    if (d->stopping || !d->masked)
+        goto out;
+
+    value = gpiod_get_value_cansleep(d->key);
+    if (value < 0) {
+        d->read_errors++;
+    } else {
+        d->sampled++;
+        if (value) {
+            d->led_on = !d->led_on;
+            gpiod_set_value_cansleep(d->led, d->led_on);
+        }
+    }
+    /* 读取失败也结束本窗口，不能因错误永久留下禁用。 */
+    d->masked = false;
+    enable_irq(d->irq);
+out:
+    mutex_unlock(&d->lock);
+}
+```
+
+这里没有在采样后打印每一条事件，避免把控制台开销直接混入窗口。读取失败计数保留到退出时报告；它不会把负错误码当作“非零即按下”。一次窗口只做一次采样，但被控制器保留的 pending 事件可能在重新使能后引起下一窗口，因此这还不是“一次物理按下只翻一次”的输入设备协议。
+
+### 8.5.3\_先关生产入口再等通知和消费者
+
+最后一段申请资源并实现退出。`devm_gpiod_get()` 的返回可能携带负错误码；原样返回包含延后探测在内的原因。示例要求低有效 key，否则拒绝加载，避免把下降沿错误解释为按下。`GPIOD_OUT_LOW` 传的是逻辑 0，表示 LED 默认无效，不能按名字把它误解成低有效 LED 默认点亮。
+
+```c
+static int gate_probe(struct platform_device *pdev)
+{
+    struct device *dev = &pdev->dev;
+    struct gate_demo *d;
+    int ret;
+
+    if (window_ms < 1 || window_ms > 1000)
+        return -EINVAL;
+    d = devm_kzalloc(dev, sizeof(*d), GFP_KERNEL);
+    if (!d)
+        return -ENOMEM;
+    d->dev = dev;
+    mutex_init(&d->lock);
+    INIT_WORK(&d->work, gate_work);
+    hrtimer_init(&d->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+    d->timer.function = gate_timeout;
+    platform_set_drvdata(pdev, d);
+
+    d->key = devm_gpiod_get(dev, "key", GPIOD_IN);
+    if (IS_ERR(d->key))
+        return PTR_ERR(d->key);
+    if (!gpiod_is_active_low(d->key))
+        return -EINVAL;
+    d->led = devm_gpiod_get(dev, "led", GPIOD_OUT_LOW);
+    if (IS_ERR(d->led))
+        return PTR_ERR(d->led);
+    d->irq = gpiod_to_irq(d->key);
+    if (d->irq < 0)
+        return d->irq;
+
+    /* 默认primary只唤起线程；所有回调依赖均已准备，注册是最后失败点。 */
+    ret = devm_request_threaded_irq(dev, d->irq, NULL, gate_irq_thread,
+                                    IRQF_ONESHOT | IRQF_TRIGGER_FALLING,
+                                    dev_name(dev), d);
+    return ret;
+}
+
+static void gate_remove(struct platform_device *pdev)
+{
+    struct gate_demo *d = platform_get_drvdata(pdev);
+
+    mutex_lock(&d->lock);
+    d->stopping = true;
+    if (d->masked) {
+        d->masked = false;
+        enable_irq(d->irq);
+    }
+    mutex_unlock(&d->lock);
+
+    /* 不持业务锁等待；先封闭IRQ，再排空timer派生的work。 */
+    devm_free_irq(d->dev, d->irq, d);
+    hrtimer_cancel(&d->timer);
+    cancel_work_sync(&d->work);
+    dev_info(d->dev, "windows=%lu sampled=%lu read_errors=%lu\n",
+             d->windows, d->sampled, d->read_errors);
+    gpiod_set_value_cansleep(d->led, 0);
+}
+
+static const struct of_device_id gate_match[] = {
+    { .compatible = "example,gpio-gate-demo" },
+    { }
+};
+MODULE_DEVICE_TABLE(of, gate_match);
+
+static struct platform_driver gate_driver = {
+    .probe = gate_probe,
+    .remove = gate_remove,
+    .driver = {
+        .name = "gpio_gate_demo",
+        .of_match_table = gate_match,
+    },
+};
+module_platform_driver(gate_driver);
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("GPIO delayed sampling with paired IRQ gating");
+```
+
+Linux 6.12.20 的 platform `remove` 返回 `void`。这里在回收时显式调用 `devm_free_irq()`，其 devres 登记也会被移除，所以之后不会再自动释放一次。普通 `free_irq()` 版本则要自己管理申请失败回滚及其余资源；devres 只减少资源登记代码，不替我们决定异步停止顺序。
+
+这份示例没有 PM 回调。若实际设备会挂起、关闭 GPIO 所在电源域或用该引脚唤醒系统，必须继续设计停止采样、唤醒许可和恢复状态，不能把 remove 原样用作 suspend。
+
+## 8.6\_用可复现输入观察窗口而不是凭灯亮判断精度
+
+先在目标板确认引脚复用、控制器、GPIO 索引和电气有效性，再使用下面的 **待替换节点模板**。`example,gpio-gate-demo` 是这份教学驱动自定义的匹配串，不是 NXP 官方绑定。`KEY_INDEX`、`LED_INDEX` 和控制器标签需要替换；模板本身不能直接编译为 DTB。这里由 `key-gpios` 推导 IRQ，不再另外填写一份可能互相矛盾的 `interrupts`。
 
 ```dts
-demo_led_key_int: led_key_int@0 {
-    compatible = "nxp,imx6ull-led_key_int"; 	// 与驱动匹配的compatible属性
+#include <dt-bindings/gpio/gpio.h>
+
+gpio_gate_demo {
+    compatible = "example,gpio-gate-demo";
     pinctrl-names = "default";
-    pinctrl-0 = <&pinctrl_led_key_int>;
-
-    led-gpios = <&gpio1 3 	GPIO_ACTIVE_LOW>;	// 引用GPIO1_IO03，低电平点亮，默认关闭状态
-    key-gpios = <&gpio1 18 	GPIO_ACTIVE_LOW>;	// UART1_CTS_B → GPIO1_IO18
-
-    interrupt-parent = <&gpio1>;
-    interrupts = <18 IRQ_TYPE_EDGE_FALLING>;
-
-    nxp,debounce-ms = <30>;	/* 软件去抖动 */
+    pinctrl-0 = <&pinctrl_gate_demo>; /* 使用本板实际建立的引脚组 */
+    key-gpios = <&gpio_controller KEY_INDEX GPIO_ACTIVE_LOW>;
+    led-gpios = <&gpio_controller LED_INDEX GPIO_ACTIVE_LOW>;
     status = "okay";
 };
 ```
 
-makefile:
+节点不声明寄存器地址，所以不随意添加 `@0`。引脚不能同时被另一个按键、串口或 LED 驱动占用。Linux 设备核心通常会选择匹配设备的 default pinctrl 状态；不必为演示再无条件获取一次并忽略错误。
+
+在源码同目录创建 `Makefile`，内容为：
 
 ```makefile
-tartget_p := key_led_int
-# 编译目标：$(tartget_p).c -> $(tartget_p).ko
-obj-m := $(tartget_p).o
-
-# 内核源码路径（改成你自己的）
-KDIR := /home/lizhaojun/linux/nxp/kernel/linux-imx-6.1
-PWD  := $(shell pwd)
-
-# 默认目标：交叉编译 ARM 模块
-ARCH ?= arm
-CROSS_COMPILE ?= arm-none-linux-gnueabihf-
-
-all:
-	$(MAKE) -C $(KDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) modules
-
-clean:
-	$(MAKE) -C $(KDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) clean
-
-install:
-	make
-	cp $(tartget_p).ko ~/nfs/driver/
+obj-m += gpio_gate_demo.o
 ```
 
+在已经准备好的目标内核构建环境执行下面命令。`KDIR` 必须是与目标正在运行内核匹配的构建目录；交叉编译前缀以实际工具链为准，不由本机目录名推断。
 
-
-### 8.4.1\_模式A\_hardirq\_立刻关线\_to\_启动\_hrtimer\_to\_到点再开线(一次性再使能)
-
-- 目标：严格控制**窗口内不再重入**；
-- 实现：`disable_irq_nosync(irq)`（**不能**在中断上下文用 `disable_irq()`）→ `hrtimer_start()`；
-- 回调：`enable_irq(irq)`，消费（或排队）一次事件；
-- 适用：GPIO 边沿触发、机械按键典型需求；
-- 注意：**不适合共享中断线**（会把别的设备也关了）。
-
-### 8.4.2\_模式B\_hardirq\_锁存\_to\_threaded\_IRQ\_只排\_hrtimer(延时确认)\_to\_回调里排\_work
-
-- 目标：窗口内合并多次边沿，回调触发一次“确认处理”；
-- 优点：中断线程极短，回调里不睡，真正业务在 work 里；
-- 适用：既要“像中断”又要有“定时确认”的场景。
-
-### 8.4.3\_模式C\_只用\_hrtimer\_做\_延后消费\_不关线
-
-- 目标：不关 IRQ，仅避免“过于密集”的消费；
-- 适用：事件频率可接受、允许重入但要合并；
-- 风险：窗口内仍可能进多次中断，仅逻辑上“最后一次生效”。
-
-
-
-<span style="color:red">**注意：**</span>
-
-> * 下面示例中用到的 trace_printk() 接口必须要开启内核对应的配置选项；
-> * 如果没有开启也不会影响。
-> * 反正就是不准用 printk() 在软中断中执行，会造成软中断阻塞。
-
-------
-
-## 8.5\_代码模板(模式A)\_关线去抖\_+\_hrtimer\_到时再开\_+\_work\_中消费
-
-> 语义：第一次边沿到来 → **关这条 IRQ 线** → 启动 hrtimer（如 30ms）→ 到点**开线**并只消费**一次**事件。
->
-> 优点：**严格禁止窗口内重入**、不依赖 console 速度、业务在 work 里可睡。
->
-> 风险：会将整条中断线都关闭，这会导致丢中断，那么在共享中断中不可采用模式A的方式，这会影响到其他中断的正常运行。
-
-```c
-// SPDX-License-Identifier: GPL-2.0
-#include <linux/module.h>
-#include <linux/platform_device.h>
-#include <linux/of.h>
-#include <linux/of_irq.h>
-#include <linux/gpio/consumer.h>
-#include <linux/interrupt.h>
-#include <linux/ktime.h>
-#include <linux/hrtimer.h>
-#include <linux/workqueue.h>
-#include <linux/spinlock.h>
-
-#define DRV_NAME "imx6ull-key-hrtimer-gate"
-
-struct keydev {
-	struct device      *dev;
-	struct gpio_desc   *led;
-	struct gpio_desc   *key;
-	int                 irq;
-
-	/* 去抖窗口（ms） */
-	unsigned int        debounce_ms;
-
-	/* 原子状态 */
-	atomic_t            latched;    /* 已锁存一次事件 */
-	atomic_t            armed;      /* 已关线并挂了定时器 */
-
-	/* work：真正消费 */
-	struct work_struct  work;
-
-	/* hrtimer：到点开线 */
-	struct hrtimer      timer;
-};
-
-static void key_work(struct work_struct *w)
-{
-	struct keydev *kd = container_of(w, struct keydev, work);
-
-	/* 进程上下文：可睡、可打印、可访问子系统 */
-	/* 这里示例为翻转 ACTIVE_LOW LED（可用 _cansleep 版本更保险） */
-	static bool on;
-	on = !on;
-	gpiod_set_value_cansleep(kd->led, on ? 0 : 1);
-	dev_info(kd->dev, "work: consume one key event, LED=%d\n", on);
-}
-
-/* hrtimer 回调：开线 + 拉起一次消费 */
-static enum hrtimer_restart key_timer_fn(struct hrtimer *t)
-{
-	struct keydev *kd = container_of(t, struct keydev, timer);
-
-	/* 允许该 IRQ 再次进入 */
-	enable_irq(kd->irq);
-	atomic_set(&kd->armed, 0);
-
-	/* 窗口内可能来了多次边沿，但我们只消费一次 */
-	if (atomic_xchg(&kd->latched, 0))
-		schedule_work(&kd->work);
-
-	return HRTIMER_NORESTART;
-}
-
-/* 硬中断：第一次边沿即“关线 + 启动定时器 + 锁存一次事件” */
-static irqreturn_t key_isr(int irq, void *data)
-{
-	struct keydev *kd = data;
-
-	/* 锁存一次事件（无论窗口内是否重复触发） */
-	atomic_set(&kd->latched, 1);
-
-	/* 原子设置 armed：只在未 armed→armed=1 的瞬间执行关线与启动定时器 */
-	if (!atomic_xchg(&kd->armed, 1)) {
-		/* 关键：中断上下文要用 _nosync 变体，避免死等自身 */
-		disable_irq_nosync(irq);
-
-		/* 启动一次性 hrtimer（相对时间） */
-		hrtimer_start(&kd->timer,
-			      ms_to_ktime(kd->debounce_ms),
-			      HRTIMER_MODE_REL);
-	}
-	return IRQ_HANDLED;
-}
-
-static int key_probe(struct platform_device *pdev)
-{
-	struct device *dev = &pdev->dev;
-	struct keydev *kd;
-	u32 ms = 30;
-	int ret;
-
-	kd = devm_kzalloc(dev, sizeof(*kd), GFP_KERNEL);
-	if (!kd) return -ENOMEM;
-	kd->dev = dev;
-
-	/* 资源 */
-	kd->led = devm_gpiod_get(dev, "led", GPIOD_OUT_HIGH); /* ACTIVE_LOW: 高=灭 */
-	if (IS_ERR(kd->led))
-		return dev_err_probe(dev, PTR_ERR(kd->led), "led-gpios\n");
-
-	kd->key = devm_gpiod_get(dev, "key", GPIOD_IN);
-	if (IS_ERR(kd->key))
-		return dev_err_probe(dev, PTR_ERR(kd->key), "key-gpios\n");
-
-	/* IRQ：DTS 优先，失败再从 key 推导 */
-	kd->irq = platform_get_irq_optional(pdev, 0);
-	if (kd->irq < 0) {
-		if (kd->irq != -ENXIO) return kd->irq;
-		kd->irq = gpiod_to_irq(kd->key);
-		if (kd->irq < 0) return kd->irq;
-	}
-	irq_set_irq_type(kd->irq, IRQ_TYPE_EDGE_FALLING);
-
-	/* 去抖窗口 */
-	of_property_read_u32(dev->of_node, "nxp,debounce-ms", &ms);
-	kd->debounce_ms = ms;
-
-	/* 初始化状态与定时器、work */
-	atomic_set(&kd->latched, 0);
-	atomic_set(&kd->armed,   0);
-
-	INIT_WORK(&kd->work, key_work);
-	hrtimer_init(&kd->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-	kd->timer.function = key_timer_fn;
-
-	/* 申请硬中断（只用 primary handler） */
-	ret = devm_request_irq(dev, kd->irq, key_isr,
-			       IRQF_TRIGGER_FALLING | IRQF_NO_THREAD,
-			       dev_name(dev), kd);
-	if (ret)
-		return dev_err_probe(dev, ret, "request_irq\n");
-
-	platform_set_drvdata(pdev, kd);
-	dev_info(dev, "ready: irq=%d, debounce=%ums (hrtimer gate)\n",
-		 kd->irq, kd->debounce_ms);
-	return 0;
-}
-
-static int key_remove(struct platform_device *pdev)
-{
-	struct keydev *kd = platform_get_drvdata(pdev);
-
-	/* 收尾：防止定时器/工作仍未结束 */
-	hrtimer_cancel(&kd->timer);
-	cancel_work_sync(&kd->work);
-	return 0;
-}
-
-static const struct of_device_id key_of_match[] = {
-	{ .compatible = "nxp,imx6ull-led_key_int" },
-	{ }
-};
-MODULE_DEVICE_TABLE(of, key_of_match);
-
-static struct platform_driver key_drv = {
-	.probe  = key_probe,
-	.remove = key_remove,
-	.driver = {
-		.name           = DRV_NAME,
-		.of_match_table = key_of_match,
-	},
-};
-module_platform_driver(key_drv);
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Leaf & ChatGPT");
-MODULE_DESCRIPTION("GPIO key: disable_irq_nosync + hrtimer debounce + enable_irq once");
+```bash
+# 构建主机：当前目录包含gpio_gate_demo.c与Makefile。
+make -C "$KDIR" M="$PWD" ARCH=arm CROSS_COMPILE="$CROSS_COMPILE" modules
 ```
 
-**语义解读**：
+把生成模块按项目部署流程送到目标板后，确认旧模块未占用节点，再执行：
 
-1. 当第一次按键中断进入软中断 key_isr() ：
-   1. 拉起当前中断状态锁存变量latched。
-   2. 关闭该中断线。
-   3. 启动定时器中断。
-2. 当定时器任务到点后，会进入定时器中断的绑定任务 key_timer_fn()：
-   1. 使能按键中断线。
-   2. 将中断状态锁存变量latched清除。
-   3. 调用工作队列 key_work()。
-
-------
-
-## 8.6\_什么时候用\_disable\_irq\_nosync()\_什么时候不用
-
-- **用**：你明确要“窗口内**彻底禁止**再进”这条 IRQ（机械按键、极端抖动、某些电平敏感外设的一次性确认）。
-- **不用**：共享中断线（你会把别人也关掉）、事件频率很高（关来开去成本太高）、你只想“合并处理而非禁止进入”。
-  - 此时可选 **模式B/C**：不关线，**hrtimer 到点消费/合并**。
-
-
-
-------
-
-## 8.7\_模式\_B\_threaded\_IRQ\_+\_hrtimer\_延时确认(不关线)完整示例
-
-这一版的出发点是：**我想用中断+定时器做延时确认，但我又不想把这根 IRQ 整体关掉**。
- 和 8.6 那个“先 `disable_irq_nosync()` 再 hrtimer 到期再开”不一样，这一版的策略是：
-
-1. 中断还是可以频繁进；
-2. 每次中断只是在“请求一次确认”；
-3. 真正的“确认”由 hrtimer 来“延后触发”；
-4. hrtimer 回调只排 work，work 再去读稳定电平、做业务。
-
-这样做的典型目的有两个：
-
-- 不想影响同线（共享）设备
-- 不想因为一次按键抖动就把整条线关 30ms
-
-------
-
-### 8.7.1\_动作流程
-
-1. GPIO 按键产生一次下降沿 → 触发中断
-2. **threaded IRQ** 收到这次中断，做的事很轻：记录“有事件” + 启动/刷新 hrtimer
-3. hrtimer 到期（比如 30ms 后）→ 排一个 work
-4. work 在进程上下文中读取 GPIO 真正的电平（`gpiod_get_value_cansleep()`），如果仍然是按下，就执行业务（翻 LED / 上报）
-5. 因为**整个过程中都没有关 IRQ**，所以中间即使又来了几次中断，也只是不断“刷新”一次 hrtimer，最后只会确认一次——这就实现了“最后一次为准”的软件去抖
-
-可以理解成：**中断只负责“推迟处理”，真正处理由 hrtimer 的到期来决定**。
-
-------
-
-### 8.7.2\_完整代码
-
-```c
-// SPDX-License-Identifier: GPL-2.0
-/*
- * 改正后的：threaded IRQ + hrtimer 软窗口防抖（REL模式，不关线）
- * 特征：
- *   - 中断线程里马上翻 LED → 肉眼绝不会看到 2~5s
- *   - hrtimer 只负责 30ms 后把锁放开
- *   - 用 REL，不用 ABS，避免“看起来没回调”
- */
-
-#include <linux/module.h>
-#include <linux/platform_device.h>
-#include <linux/of_device.h>
-#include <linux/of_irq.h>
-#include <linux/gpio/consumer.h>
-#include <linux/interrupt.h>
-#include <linux/hrtimer.h>
-#include <linux/pinctrl/consumer.h>
-#include <linux/ktime.h>
-
-#define DRV_NAME "imx6ull-key_irq_hrtimer_softwin_v2"
-
-struct lk_dev {
-	struct device      *dev;
-	struct gpio_desc   *led;
-	struct gpio_desc   *key;
-	int                 irq;
-
-	unsigned int        debounce_ms;
-
-	struct hrtimer      t_unlock;     /* 30ms 软窗口 */
-	atomic_t            locked;       /* 1=窗口中，0=可触发 */
-
-	bool                led_on;
-};
-
-/* ---- hrtimer 回调：只解锁 ---- */
-static enum hrtimer_restart lk_unlock_cb(struct hrtimer *t)
-{
-	struct lk_dev *lk = container_of(t, struct lk_dev, t_unlock);
-
-	atomic_set(&lk->locked, 0);
-	trace_printk(DRV_NAME ": unlock\n");
-	return HRTIMER_NORESTART;
-}
-
-/* ---- 中断线程：立即翻 + 开窗口 ---- */
-static irqreturn_t lk_irq_thread(int irq, void *data)
-{
-	struct lk_dev *lk = data;
-
-	/* 窗口里直接忽略 */
-	if (atomic_xchg(&lk->locked, 1))
-		return IRQ_HANDLED;
-
-	/* 1) 先给人看得到的反馈 */
-	lk->led_on = !lk->led_on;
-	gpiod_set_value(lk->led, lk->led_on);
-
-	/* 2) 启动 30ms 的软窗口，REL 最简单最稳 */
-	hrtimer_start(&lk->t_unlock,
-		      ms_to_ktime(lk->debounce_ms),
-		      HRTIMER_MODE_REL_PINNED);
-
-	trace_printk(DRV_NAME ": irq -> LED=%d (win %u ms)\n",
-		     lk->led_on, lk->debounce_ms);
-
-	return IRQ_HANDLED;
-}
-
-/* devres 适配器 */
-static void lk_hrtimer_cancel(void *data)
-{
-	struct hrtimer *t = data;
-	hrtimer_cancel(t);
-}
-
-/* 硬中断：只用来唤醒线程 */
-static irqreturn_t lk_irq_primary(int irq, void *data)
-{
-	return IRQ_WAKE_THREAD;
-}
-
-static int lk_probe(struct platform_device *pdev)
-{
-	struct device *dev = &pdev->dev;
-	struct lk_dev *lk;
-	struct pinctrl *pct;
-	u32 val;
-	int irq, ret;
-
-	lk = devm_kzalloc(dev, sizeof(*lk), GFP_KERNEL);
-	if (!lk)
-		return -ENOMEM;
-
-	lk->dev = dev;
-	lk->led_on = false;
-
-	/* pinctrl */
-	pct = devm_pinctrl_get_select_default(dev);
-	if (IS_ERR(pct))
-		dev_warn(dev, "pinctrl default not applied: %ld\n", PTR_ERR(pct));
-
-	/* 去抖窗口 */
-	lk->debounce_ms = 30;
-	if (!of_property_read_u32(dev->of_node, "nxp,debounce-ms", &val))
-		lk->debounce_ms = val;
-
-	/* GPIO */
-	lk->led = devm_gpiod_get(dev, "led", GPIOD_OUT_LOW);
-	if (IS_ERR(lk->led))
-		return dev_err_probe(dev, PTR_ERR(lk->led), "get led failed\n");
-
-	lk->key = devm_gpiod_get(dev, "key", GPIOD_IN);
-	if (IS_ERR(lk->key))
-		return dev_err_probe(dev, PTR_ERR(lk->key), "get key failed\n");
-
-	/* IRQ */
-	irq = platform_get_irq_optional(pdev, 0);
-	if (irq < 0) {
-		if (irq != -ENXIO)
-			return irq;
-		irq = gpiod_to_irq(lk->key);
-		if (irq < 0)
-			return irq;
-	}
-	lk->irq = irq;
-	irq_set_irq_type(lk->irq, IRQ_TYPE_EDGE_FALLING);
-
-	/* hrtimer: 用 REL，回调只解锁 */
-	hrtimer_init(&lk->t_unlock, CLOCK_MONOTONIC, HRTIMER_MODE_REL_PINNED);
-	lk->t_unlock.function = lk_unlock_cb;
-
-	atomic_set(&lk->locked, 0);
-
-	/* 线程化中断，不用 ONESHOT，也不关线 */
-	ret = devm_request_threaded_irq(dev, lk->irq,
-	                                lk_irq_primary,
-	                                lk_irq_thread,
-	                                IRQF_TRIGGER_FALLING,
-	                                dev_name(dev), lk);
-	if (ret)
-		return dev_err_probe(dev, ret, "request_threaded_irq failed\n");
-
-	/* 收尾 */
-	devm_add_action_or_reset(dev, lk_hrtimer_cancel, &lk->t_unlock);
-
-	platform_set_drvdata(pdev, lk);
-	dev_info(dev, "soft-window v2 ready: win=%u ms, irq=%d\n",
-		 lk->debounce_ms, lk->irq);
-	return 0;
-}
-
-static int lk_remove(struct platform_device *pdev)
-{
-	printk(DRV_NAME "remove!\r\n");
-	return 0;
-}
-
-static const struct of_device_id lk_of_match[] = {
-	{ .compatible = "nxp,imx6ull-led_key_int" },
-	{ }
-};
-MODULE_DEVICE_TABLE(of, lk_of_match);
-
-static struct platform_driver lk_driver = {
-	.probe  = lk_probe,
-	.remove = lk_remove,
-	.driver = {
-		.name           = DRV_NAME,
-		.of_match_table = lk_of_match,
-	},
-};
-module_platform_driver(lk_driver);
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Leaf & ChatGPT");
-MODULE_DESCRIPTION("i.MX6ULL: threaded IRQ + hrtimer soft debounce window (REL, instant LED)");
-
+```bash
+# 目标板：先测试30ms窗口，观察后卸载以取得最终计数。
+sudo insmod ./gpio_gate_demo.ko window_ms=30
+# 此时施加按下、快速松开以及连续抖动等输入，随后执行：
+sudo rmmod gpio_gate_demo
+dmesg | tail -n 20
 ```
 
-------
+`windows - sampled - read_errors` 在计数未溢出的前提下表示退出时尚未采样的窗口数，本例通常为 0 或 1，不代表丢掉的物理边沿总数。窗口内没有采到有效输入时也会增加 sampled，却不会翻 LED。失败装载应保留具体错误码，先检查引脚占用、低有效配置、IRQ 映射和下降沿能力，不要继续忽略错误调用 `irq_set_irq_type()`。
 
-### 8.7.3\_本示例的特点
+按同一设备依次做三组观察，才能理解行为差别：短于 30 ms 的脉冲可能在采样前已撤销；长按会使一次采样读到有效，但后续 pending 通知仍可能产生其他窗口；窗口中卸载则应撤销 IRQ、timer 和 work，不能在模块退出后继续访问 GPIO。缩短窗口只改变安排目标，不能保证修好接点抖动。
 
-1. **不关线**：整个过程中没有 `disable_irq_nosync()`，所以不会影响共享中断；
-2. **多次抖动会被“刷新”**：hrtimer 用的是 `HRTIMER_MODE_ABS` + 重新 `start`，所以只会以最后一次为准；
-3. **线程很轻**：threaded IRQ 只负责“记一次事件 + 启动定时器”，马上返回，不会像你之前那个 `printk` 一样把节奏拖死；
-4. **真正的 GPIO 读取在 work 里**：符合“hrtimer 不睡、GPIO 读要睡”的规则；
-5. **devm 做收尾**：`hrtimer_cancel()`、`cancel_work_sync()` 都绑在 probe 成功后，卸载时不会残留。
-6. **注意**：在测试阶段，发现 hrtimer 采用ABS模式会导致任务阻塞，而采用REL模式才能够正常运行驱动和消抖处理。
+需要测量时，按[中断诊断](P06_Linux_中断的调试与诊断.md)使用独立跟踪实例，并结合 timer、work 的可用事件或暂时增加的驱动时间戳，分别记录 IRQ 线程开始、timer 到期回调、worker 开始和采样结束。`irq_handler_entry` 只包围 primary，不是这里整个 IRQ 线程的持续时间。实测引脚变化还需要逻辑分析仪等外部证据；肉眼看到 LED 响应不能证明微秒精度。
 
-------
+## 8.7\_保留中间观察以后仍要防止旧工作提前确认
 
-### 8.7.4\_适用/不适用场景
+现在回到另一种需求：不屏蔽输入，要求最后一次已观察变化之后留出完整窗口。可以在每次 IRQ 中重新 start timer，但这只更新 timer 的安排，并不会撤回先前已经交给 worker 的执行记录。
 
-- 适用：按键、轻量 GPIO 事件、共享 IRQ、希望最后一次为准
-- 不适用：极端高频中断（会频繁 start hrtimer）、一定要立刻屏蔽这根线的场景（应用 8.5 的“再使能窗口”）
+设窗口为 30 ms：0 ms 的事件启动 timer，30 ms 回调已把 work 排队；31 ms 新边沿把 timer 改到 61 ms；旧 work 在 32 ms 才得到运行。若它直接读 GPIO 并报告“稳定”，它只离最近观察事件过去 1 ms。队列中的通知属于旧期限，却被误用为新窗口已经满足的证明。
 
-------
+修复需要业务状态，而不只是更换计时模式：保存 `deadline` 和 `generation`（每次观察更新的代数）。worker 先检查当前时间是否到达最新期限，再保存代数并读取可睡眠 GPIO；读取后重新检查代数与期限。期间有新边沿就放弃旧结果，按最新期限重新检查。只检查采样前一次不够，因为 GPIO 读取本身可能睡眠。
 
-这样 8.7 就是一个完整、能进书的例子了。
+| 交错 | 只重启 timer 的结果 | 期限与代数复核的结果 |
+| --- | --- | --- |
+| 旧 work 已排队，随后新边沿到来 | 旧 work 可能提前报告新窗口 | 读取最新期限，尚未到达则重新安排 |
+| worker 已开始读 GPIO，读取期间有新边沿 | 旧采样可能覆盖新状态 | 采样后代数不同，丢弃旧采样 |
+| 连续边沿一直出现 | 可能偶然在执行延迟中报告 | 窗口持续延期，业务需要另定最长等待策略 |
+| 没有观察到新 IRQ，但引脚实际上变化 | 无法察觉漏观察 | 同样无法证明连续电气稳定，需要硬件能力与外部测量 |
 
-------
+[完整末沿窗口实现](../timers/P12_常用模式与代码模板.md#12.4_把状态与可睡眠采样分开)已经把这些检查放进 IRQ、工作、参数修改与退出流程；[hrtimer 替换等待路径](../timers/P12_常用模式与代码模板.md#12.7_若用hrtimer等待窗口哪些责任仍然不变)说明更细安排时必须保留哪些责任。需要末沿确认时，可以从该实现继续实验，观察新边沿怎样使旧采样失效。首沿立即反馈再等待、延后确认按下、等待释放等产品行为则按[按键状态策略](../timers/P14_按键窗口合并与按下释放确认.md)选择。
 
-我是 GPT-5 Thinking。
+## 8.8\_用反例核对你实际选择了哪一种保证
 
-下面把“8.8 模式C：hrtimer + work 作为『最后一次为准』的合并器”按**可直接编译运行**的标准，给出一整套最小可用工程：源码（.c）、Kconfig、Makefile、DTS 片段、构建与加载步骤、调试方法，并符合你要求的**6.1 内核**、**devres(devm_)** 覆盖与对比。
+**练习一：** `_nosync` 返回后另一个处理路径还在运行，是 GIC 内部状态机出了错吗？
 
-------
+**答案：** 不能这样推断。这个 API 本来不等待已有处理完成。软件需要管理自己的在途状态与生命周期；GIC 的硬件状态转换正确性属于另一层问题。不能用固定等几个控制器时钟周期代替 `synchronize_irq` 或正确的关闭协议。
 
-## 8.8\_模式C\_hrtimer\_+\_work\_合并抖动(最后一次为准)
+**练习二：** 模块只在首个 IRQ 翻 LED，接下来 30 ms 忽略输入，timer 到期仅清锁。这算“最后一次为准”吗？
 
-### 8.8.1\_机制要点(极简回顾)
+**答案：** 是首沿立即反馈加固定窗口节流。被忽略的事件没有移动期限，代码也没有延后采样，因此不能写成末沿静默确认。若希望立即反馈后能撤销，还须明确撤销语义与不能撤回的外部副作用。
 
-- **IRQ 顶半部**只做：`hrtimer_start(..., HRTIMER_MODE_REL)`（每次中断都重启计时器）。
-- **hrtimer 到期**视为“这段时间再无新的抖动”，在回调里**仅**调度 `work`。
-- **work**在进程上下文中执行真实业务（可睡）：读按键、翻转 LED、上报 input 等。
-- 好处：**所有抖动被合并成一次**；不在中断上下文内 sleep，避免“线程化中断里延时导致卡顿/死锁”的风险。
+**练习三：** remove 先执行 timer cancel 和 work cancel，再等 devres 自动释放 IRQ，是否足够？
 
-------
+**答案：** 不够。两次取消之间或之后，仍注册的 IRQ 可以重新 start timer。先关闭生产许可并同步 IRQ，再取消 timer 与其派生 work；若 worker 自己也能重启 timer，还要把它的重启入口纳入同一停止协议。
 
-### 8.8.2\_源码(单文件驱动\_可直接编译为模块)
+**练习四：** 为何示例把 enable 放到 work，且清 masked 与 enable 都在同一把 mutex 内？
 
-文件：`drivers/leaf/leaf_key_debounce_hrtimer.c`
+**答案：** 线程上下文容纳 irq_chip 可能需要的可睡眠总线管理；同一把锁让禁用所有权转换与下一窗口串行。若提前解锁，下一处理可能看到状态已允许新窗口，而旧路径尚未完成配对操作，证明会变复杂。这里的锁保护的是驱动协议，不是让软件接管 GIC 内部状态机。
 
-```c
-// SPDX-License-Identifier: GPL-2.0
-// demo_key_debounce_hrtimer.c
-// i.MX6ULL: 按你的 DTS 调整版本（compatible/irq/debounce 属性名）
-// 模式C：hrtimer + work, "最后一次为准"
-
-#include <linux/module.h>
-#include <linux/platform_device.h>
-#include <linux/of.h>
-#include <linux/gpio/consumer.h>
-#include <linux/interrupt.h>
-#include <linux/hrtimer.h>
-#include <linux/workqueue.h>
-#include <linux/ktime.h>
-
-struct demo_keydev {
-    struct device    *dev;
-    struct gpio_desc *key_gpiod; /* 输入：key-gpios (ACTIVE_LOW) */
-    struct gpio_desc *led_gpiod; /* 输出：led-gpios (ACTIVE_LOW, 默认灭) */
-    int               irq;
-
-    struct hrtimer debounce_timer;
-    ktime_t        debounce_period_ns;
-
-    struct work_struct work;
-
-    bool led_on;   /* 逻辑态："1" 表示点亮（对 ACTIVE_LOW 会转换为线为低） */
-    int  last_key; /* 逻辑态："1" 表示按下（ACTIVE_LOW 由框架自动取反） */
-};
-
-static void
-demo_key_work(struct work_struct *work)
-{
-    struct demo_keydev *lk  = container_of(work, struct demo_keydev, work);
-    int                 key = gpiod_get_value_cansleep(lk->key_gpiod);
-
-    if (key < 0) {
-        dev_warn(lk->dev, "read key failed: %d\n", key);
-        return;
-    }
-    lk->last_key = key; /* 逻辑电平：ACTIVE_LOW 已自动取反，因此 key==1 表示“按下” */
-
-    /* 仅在“稳定按下”时翻转 LED；若你想松开时翻转，把判断改成 !key */
-    if (key) {
-        lk->led_on = !lk->led_on; /* 逻辑翻转 */
-        gpiod_set_value_cansleep(lk->led_gpiod, lk->led_on);
-        dev_info(lk->dev, "KEY stable(pressed), toggle LED -> %d\n", lk->led_on);
-    } else {
-        dev_info(lk->dev, "KEY stable(released), no toggle\n");
-    }
-}
-
-static enum hrtimer_restart
-demo_key_timer(struct hrtimer *t)
-{
-    struct demo_keydev *lk = container_of(t, struct demo_keydev, debounce_timer);
-    schedule_work(&lk->work);
-    return HRTIMER_NORESTART;
-}
-
-static irqreturn_t
-demo_key_irq(int irq, void *dev_id)
-{
-    struct demo_keydev *lk = dev_id;
-
-    /* 每次 IRQ 重启 hrtimer，实现“最后一次为准” */
-    hrtimer_start(&lk->debounce_timer, lk->debounce_period_ns, HRTIMER_MODE_REL);
-    return IRQ_HANDLED;
-}
-
-static int
-demo_key_probe(struct platform_device *pdev)
-{
-    struct device_node *np = pdev->dev.of_node;
-    struct demo_keydev *lk;
-    u32                 debounce_ms = 20; /* 默认值；可被 nxp,debounce-ms 覆盖 */
-    int                 ret;
-
-    lk = devm_kzalloc(&pdev->dev, sizeof(*lk), GFP_KERNEL);
-    if (!lk)
-        return -ENOMEM;
-    lk->dev = &pdev->dev;
-
-    /* 读取厂商前缀属性：nxp,debounce-ms（按你的 DTS） */
-    of_property_read_u32(np, "nxp,debounce-ms", &debounce_ms);
-    if (debounce_ms < 1)
-        debounce_ms = 1;
-    lk->debounce_period_ns = ktime_set(0, (u64) debounce_ms * 1000ULL * 1000ULL);
-
-    /* GPIO：名字要与 DTS 的 *-gpios 前缀一致（key/led） */
-    lk->key_gpiod = devm_gpiod_get(&pdev->dev, "key", GPIOD_IN);
-    if (IS_ERR(lk->key_gpiod))
-        return dev_err_probe(&pdev->dev, PTR_ERR(lk->key_gpiod),
-                             "failed to get key gpio\n");
-
-    /* LED ACTIVE_LOW，默认“灭”——用逻辑 0 初始化（线被驱动为高） */
-    lk->led_gpiod = devm_gpiod_get(&pdev->dev, "led", GPIOD_OUT_LOW);
-    if (IS_ERR(lk->led_gpiod))
-        return dev_err_probe(&pdev->dev, PTR_ERR(lk->led_gpiod),
-                             "failed to get led gpio\n");
-    lk->led_on = 0;
-
-    /* 按 DTS 拿 IRQ（由 interrupt-parent/interrupts 给出），触发类型也走 DTS */
-    lk->irq = platform_get_irq(pdev, 0);
-    if (lk->irq < 0)
-        return dev_err_probe(&pdev->dev, lk->irq, "platform_get_irq failed\n");
-
-    INIT_WORK(&lk->work, demo_key_work);
-
-    hrtimer_init(&lk->debounce_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-    lk->debounce_timer.function = demo_key_timer;
-
-    /* 这里 flags 传 0，让触发类型完全由设备树生效 */
-    ret = devm_request_irq(&pdev->dev, lk->irq, demo_key_irq, 0,
-                           dev_name(&pdev->dev), lk);
-    if (ret)
-        return dev_err_probe(&pdev->dev, ret, "request_irq failed\n");
-
-    platform_set_drvdata(pdev, lk);
-    dev_info(&pdev->dev, "loaded (debounce=%ums, irq=%d)\n", debounce_ms, lk->irq);
-    return 0;
-}
-
-static int
-demo_key_remove(struct platform_device *pdev)
-{
-    struct demo_keydev *lk = platform_get_drvdata(pdev);
-    hrtimer_cancel(&lk->debounce_timer);
-    cancel_work_sync(&lk->work);
-    printk("exit!\r\n");
-    return 0;
-}
-
-static const struct of_device_id demo_key_of_match[] = {
-    /* 按你的 DTS 兼容串 */
-    { .compatible = "nxp,imx6ull-led_key_int" },
-    { /* sentinel */ }
-};
-MODULE_DEVICE_TABLE(of, demo_key_of_match);
-
-static struct platform_driver demo_key_driver = {
-    .probe  = demo_key_probe,
-    .remove = demo_key_remove,
-    .driver = {
-               .name           = "demo-key-hrtimer",
-               .of_match_table = demo_key_of_match,
-               },
-};
-module_platform_driver(demo_key_driver);
-
-MODULE_AUTHOR("Leaf");
-MODULE_DESCRIPTION("i.MX6ULL key debounce via hrtimer+work (last-one-wins)");
-MODULE_LICENSE("GPL");
-
-```
-
-#### (1)\_关于\_devm\_与非\_devm
-
-- 这里使用 `devm_kzalloc / devm_gpiod_get / devm_request_irq` 等 **devres** 接口，让资源在 `device` 生命周期内自动释放，避免忘记 `free_irq()/gpio_put()`。
-- 若改为**非 devm_**：
-  - 需要在 `remove()` 中显式 `free_irq(lk->irq, lk)`、`gpiod_put(lk->key_gpiod)`/`gpiod_put(lk->led_gpiod)`、`kfree(lk)` 等；
-  - 在错误路径上也要逐一回滚，出错即释放已分配的每一项，代码更冗长但在极端场景可更灵活。
-- 本例对初学与量产都足够安全、简洁，建议保留 devres 版本。
-
-
-
-------
-
-## 8.9\_调试核对表
-
-1. **上下文**：hrtimer 回调不可睡，**不要**做 I2C/SPI/printk；
-2. **关线 API**：中断上下文只能 `disable_irq_nosync()`，**不要** `disable_irq()`；
-3. **共享 IRQ**：尽量不要在共享线上关线；若必须，确保不会影响其他设备；
-4. **race**：用 `atomic_xchg()` 管理 `armed/latched`，不要用普通布尔；
-5. **收尾**：`remove()` 里 **先** `hrtimer_cancel()`，**再** `cancel_work_sync()`；
-6. **trace**：时序观察用 `trace_printk()` + `trace_pipe`，不要在中断/回调里 `printk`；
-7. **类型**：即使 DTS 写了触发类型，驱动里再 `irq_set_irq_type()` 钉一次。
-
-------
-
-## 8.10\_常见踩坑与对照
-
-| 现象                      | 常见原因                                         | 快速修复                                      |
-| ------------------------- | ------------------------------------------------ | --------------------------------------------- |
-| “卡住、长时间无响应”      | threaded+`IRQF_ONESHOT` 里 `printk/msleep`       | 换 workqueue；日志用 `trace_printk`           |
-| “偶尔丢一次按键”          | 只 `schedule_work()` 没锁存事件；work 仍在队列中 | hardirq 用 `atomic` 锁存，work 里消费         |
-| “enable_irq 后仍不断抖动” | 窗口太短 / 关线没成功                            | 增大 `debounce_ms`；确认用的是 `_nosync` 变体 |
-| “删除驱动时 Oops”         | 忘记 `hrtimer_cancel()` 或 `cancel_work_sync()`  | 在 `remove()` 做完整收尾                      |
-| “不同板卡精度差异大”      | 时钟源选择/平台 HZ/中断负载                      | 适当预留余量（如 20~50ms），不要逼近微秒极限  |
-
-------
-
-## 8.11\_小结
-
-- **hrtimer = 精准时间窗控制**，特别适合“**一次性再使能**”与“**延时确认**”；
-- 结合 `disable_irq_nosync()` 可构建“窗口内绝不重入”的强语义（**但避免共享中断线**）；
-- 真正业务丢给 **workqueue**，中断与 hrtimer 回调都保持极短；
-- 与第5章/第7章结合：
-  - 第5章解决“线程里慢操作拖死 ONESHOT”的坑；
-  - 第7章给出“下半部选择”；
-  - **本章给出‘精确时间窗 + 一次性再使能’的工程化方案**。
-
-——到此，GPIO 按键/边沿类中断的“快/稳/可调/不重入”方案闭环。
- 下一章将进入**电平触发中断的 ACK/CLEAR 语义**与**控制器层（irq_chip）协同要点**。
-
-------
+现在能够从输入时间线选出需要的窗口语义，并沿 IRQ → timer → work 找到每一处状态与退出责任。仍未展开的是 GPIO 控制器、父中断控制器与 Linux IRQ 层级怎样传递同一请求。下一章进入这个控制器协作问题，而不是再添加一种去抖延时。
 
 上一篇：[P07 中断下半部机制与驱动中的选择](P07_中断下半部机制与驱动中的选择.md)。
 下一篇：[P09 层级中断控制器与 ARM GIC 在 Linux 中的实现](P09_层级中断控制器与_ARM_GIC_在_Linux_中的实现.md)。

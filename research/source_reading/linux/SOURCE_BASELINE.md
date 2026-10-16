@@ -1586,3 +1586,20 @@ softirq使用固定向量与每CPUpending标志；tasklet另持对象状态及�
 完整gpio_work_demo分别支持硬回调直接投递与IRQ线程转交。raw_spinlock保护计数、停止门和所有schedule位置；待取计数最多64，工作回调一次取最多8份局部批次，满则记录overflow。64位首沿时间窗口与稳定去抖区分。remove关闭门、同步撤销IRQ、同步取消work后才统计并归还资源，未取业务明确计入discarded。
 
 正文不宣称目标Kbuild、真实工作池调度、GPIO硬件或PM已验证；板级节点是需替换控制器与索引的模板。源码证据不支持原文无条件工作队列最安全、任意devm_work_autocancel版本可用或单pending位保存所有事件的结论。
+
+## 1.188\_定时采样与IRQ再使能协议
+
+2026-10-17 复审[中断与定时采样](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P08_中断_x_高精度定时器(hrtimer)_去抖_延时确认与一次性中断再使能.md)，以下文件从官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 取得；GPIO描述符、platform remove及devres接口复用前述固定证据。外部标准工作树未恢复，本次不声称重新核对其配置。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| kernel/irq/manage.c | f0803d6bd2969820443f25b5b508ec553f4cb9a2 |
+| kernel/time/hrtimer.c | db9c06bb23116a0d76d972477b40afd43b9b6d8f |
+| include/linux/hrtimer.h | 6caaa62d2b1f893439129bdbe42135ef1da13f8b |
+| drivers/gpio/gpio-mxc.c | d8d1ae23e0935f85548d61cdbdc8a0189f14dfb6 |
+
+disable_irq_nosync不等待已有处理完成；enable/disable嵌套，enable在IRQ上下文使用受irq_chip总线锁条件限制。IRQ线程不能使用等待自身完成的disable_irq。默认primary配合ONESHOT仅提供线程处理阶段管理，不能替代驱动取得的显式禁用配对。
+
+hrtimer的REL/ABS规定时间参数含义，PINNED在启动时起作用；回调执行域区分普通默认、SOFT及RT变化，不授予睡眠权限。NORESTART不阻止外部再次start，cancel等待当前回调但不永久关闭生产者。固定gpio-mxc使用每引脚状态位，屏蔽与pending处理不能推出所有物理边沿被计数保存。
+
+完整教学例子用mutex保护masked所有权与stopping，IRQ线程取得禁用后启动timer，timer只排work，worker采样后配对enable；remove在关门后归还禁用，锁外同步IRQ、timer、work。它只实现屏蔽后单次采样，不实现连续稳定证明或按压/释放协议；末沿静默窗口仍使用定时器专题中唯一完整generation/deadline实现。未宣称目标Kbuild或硬件实验通过。
