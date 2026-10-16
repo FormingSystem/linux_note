@@ -1,3 +1,6 @@
+#ifdef NDEBUG
+#error "bst_order_check requires assertions"
+#endif
 #include <cassert>
 #include <climits>
 #include <iostream>

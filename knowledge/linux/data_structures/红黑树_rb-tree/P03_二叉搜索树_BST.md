@@ -19,7 +19,7 @@ domains:
 - 你可以统计它；
 - 但你**不能天然高效地查找某个值**。
 
-因此，本章进入一类更“工程化”的二叉树：**二叉搜索树**（Binary Search Tree，BST）。
+为了让一次比较就排除整棵不可能命中的子树，本章给二叉树加入键序约束，得到：**二叉搜索树**（Binary Search Tree，BST）。
 
 BST 的核心不是“长得像树”，而是它在二叉树基础上额外加入了一条**全局有序约束**。
 正是这条约束，让 BST 具备了：
@@ -40,7 +40,7 @@ BST 的核心不是“长得像树”，而是它在二叉树基础上额外加�
 
 ## 3.2\_阅读说明
 
-本文档阅读说明：
+下面先固定键、失败与语言三个边界，后文的比较和返回值都按这些约定解释：
 
 1. 为了示例简单，键 key 是互异整数。发现重复键返回“已存在”，不改变原树；唯一键约束不要求程序终止。
 2. 失败也是接口结果：C 版检查空指针，C++ 版使用 std::nothrow；需要捕获异常时使用 try/catch。这里的节点初始化只有整数和指针，不能把 nothrow 的分配保证推广到任意会抛异常的构造器。下文明确各返回值，C++ 语法可对照 C 版本理解。
@@ -105,17 +105,17 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
+	C --> C_L
 	C -->|R| F
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| G
 	E -->|R| H
 
 	F -->|L| I
-	F -->|R| F_R
+	F --> F_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,D_L,D_R,F_R ghost;
@@ -158,14 +158,14 @@ graph TD
 	A -->|L| B
 	A -->|R| C
 
-	B -->|L| B_L
+	B --> B_L
 	B -->|R| D
 
-	C -->|L| C_L
-	C -->|R| C_R
+	C --> C_L
+	C --> C_R
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class B_L,C_L,C_R,D_L,D_R ghost;
@@ -244,26 +244,26 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
+	C --> C_L
 	C -->|R| F
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| G
 	E -->|R| H
 
 	F -->|L| I
-	F -->|R| F_R
+	F --> F_R
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
-	H -->|L| H_L
-	H -->|R| H_R
+	H --> H_L
+	H --> H_R
 
-	I -->|L| I_L
-	I -->|R| I_R
+	I --> I_L
+	I --> I_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	classDef path fill:#fff3cd,stroke:#d97706,stroke-width:2px;
@@ -347,20 +347,20 @@ graph TD
 		E_L[" "]
 		E_R[" "]
 
-	A -->|L| A_L
+	A --> A_L
 	A -->|R| B
 
-	B -->|L| B_L
+	B --> B_L
 	B -->|R| C
 
-	C -->|L| C_L
+	C --> C_L
 	C -->|R| D
 
-	D -->|L| D_L
+	D --> D_L
 	D -->|R| E
 
-	E -->|L| E_L
-	E -->|R| E_R
+	E --> E_L
+	E --> E_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class A_L,B_L,C_L,D_L,E_L,E_R ghost;
@@ -424,20 +424,20 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
-	C -->|R| C_R
+	C --> C_L
+	C --> C_R
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| F
 	E -->|R| G
 
-	F -->|L| F_L
-	F -->|R| F_R
+	F --> F_L
+	F --> F_R
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,C_R,D_L,D_R,F_L,F_R,G_L,G_R ghost;
@@ -494,23 +494,23 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
-	C -->|R| C_R
+	C --> C_L
+	C --> C_R
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| F
 	E -->|R| G
 
-	F -->|L| F_L
+	F --> F_L
 	F -->|R| H
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
-	H -->|L| H_L
-	H -->|R| H_R
+	H --> H_L
+	H --> H_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,C_R,D_L,D_R,F_L,G_L,G_R,H_L,H_R ghost;
@@ -862,9 +862,14 @@ int main(int argc, char **argv)
 ```bash
 gcc -std=c11 -Wall -Wextra -Werror -pedantic bst_insert_demo.c -o bst_insert_demo
 ./bst_insert_demo
+```
+
+正常输出中序 1 3 4 6 7 8 10 13 14，重复插入 6 返回 0，查找 7 成功、查找 100 失败。确认正常路径后，再运行第四次分配失败：
+
+```bash
 ./bst_insert_demo 4
 ```
 
-正常输出中序 1 3 4 6 7 8 10 13 14，重复插入 6 返回 0，查找 7 成功、查找 100 失败。第二条运行命令在第四次节点申请前注入失败，退出 1；前三个已挂入的节点由根统一回收。0 或省略参数不注入，1～9 指定失败点；非法值或多余参数退出 2。真实 malloc 失败也走同一出口。示例深度有限，递归回收不承诺适合任意深度输入。
+这次在第四次节点申请前注入失败，退出 1；前三个已挂入的节点由根统一回收。0 或省略参数不注入，1～9 指定失败点；非法值或多余参数退出 2。真实 malloc 失败也走同一出口。示例深度有限，递归回收不承诺适合任意深度输入。
 
 为什么发现重复键后不再调用分配器？因为已经定位现有对象，树的唯一键契约决定不新增节点。把插入 6 改成 5，会多出一个值，但不能因此宣称树自动平衡。下一步进入[删除与子树回接](P22_BST删除与子树回接.md)，解决移走一个键以后两边如何保持连通与有序。

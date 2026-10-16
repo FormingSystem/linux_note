@@ -56,20 +56,20 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
-	C -->|R| C_R
+	C --> C_L
+	C --> C_R
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| F
 	E -->|R| G
 
-	F -->|L| F_L
-	F -->|R| F_R
+	F --> F_L
+	F --> F_R
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,C_R,D_L,D_R,F_L,F_R,G_L,G_R ghost;
@@ -85,7 +85,7 @@ graph TD
 	linkStyle 13 stroke:transparent;
 ```
 
-`7` 没有左右孩子，因此直接把其父节点 `6` 的右指针置空即可。
+`7` 没有左右孩子，因此连通性上只需把父节点 `6` 的右指针改为空；本例还拥有动态分配的节点，必须释放原 `7` 对象。断开边与回收存储是两个动作。
 
 删除后：
 
@@ -115,17 +115,17 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
-	C -->|R| C_R
+	C --> C_L
+	C --> C_R
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| F
-	E -->|R| E_R
+	E --> E_R
 
-	F -->|L| F_L
-	F -->|R| F_R
+	F --> F_L
+	F --> F_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,C_R,D_L,D_R,E_R,F_L,F_R ghost;
@@ -168,14 +168,14 @@ graph TD
 	A -->|L| B
 	A -->|R| C
 
-	B -->|L| B_L
-	B -->|R| B_R
+	B --> B_L
+	B --> B_R
 
-	C -->|L| C_L
+	C --> C_L
 	C -->|R| D
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class B_L,B_R,C_L,D_L,D_R ghost;
@@ -205,11 +205,11 @@ graph TD
 	A -->|L| B
 	A -->|R| C
 
-	B -->|L| B_L
-	B -->|R| B_R
+	B --> B_L
+	B --> B_R
 
-	C -->|L| C_L
-	C -->|R| C_R
+	C --> C_L
+	C --> C_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class B_L,B_R,C_L,C_R ghost;
@@ -322,26 +322,26 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
+	C --> C_L
 	C -->|R| F
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| G
 	E -->|R| H
 
 	F -->|L| I
-	F -->|R| F_R
+	F --> F_R
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
-	H -->|L| H_L
-	H -->|R| H_R
+	H --> H_L
+	H --> H_R
 
-	I -->|L| I_L
-	I -->|R| I_R
+	I --> I_L
+	I --> I_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_L,D_L,D_R,F_R,G_L,G_R,H_L,H_R,I_L,I_R ghost;
@@ -403,22 +403,22 @@ graph TD
 	B -->|R| E
 
 	C -->|L| F
-	C -->|R| C_R
+	C --> C_R
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| G
 	E -->|R| H
 
-	F -->|L| F_L
-	F -->|R| F_R
+	F --> F_L
+	F --> F_R
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
-	H -->|L| H_L
-	H -->|R| H_R
+	H --> H_L
+	H --> H_R
 
 	classDef ghost fill:transparent,stroke:transparent,color:transparent;
 	class C_R,D_L,D_R,F_L,F_R,G_L,G_R,H_L,H_R ghost;
@@ -506,28 +506,31 @@ BST 删除通常分为三类：
 
 ## 22.3\_删除流程总览
 
-下面集中画命中节点后的分类。若查找落到空子树，实际代码直接返回 nullptr，由上一层接回原来的空槽；不存在的键不会进入删除分类，也不会释放其他节点。
+下面把未命中、根入口和普通孩子槽放在同一条返回协议中。图中的“调用者入口槽”可能是上层节点的 left/right，也可能是最外层的根变量；更新位置不能一律称为父节点。
 
 ```mermaid
 flowchart TD
 	A["开始删除 key"] --> B["按 BST 规则查找目标节点"]
-	B --> C["找到目标节点"]
+	B --> Q{"目标存在?"}
+	Q -->|否| P["空子树返回nullptr<br/>逐层接回，整棵树不变"]
+	Q -->|是| C["找到目标节点"]
 
 	C --> D["孩子数 = 0 ?"]
 	D -->|是| E["叶子删除"]
-	E --> F["父节点对应指针置空"]
+	E --> F["释放当前对象，返回空入口<br/>调用者接回入口槽"]
 
 	D -->|否| G["孩子数 = 1 ?"]
 	G -->|是| H["单孩子删除"]
-	H --> I["父节点绕过待删节点<br/>直接连到唯一孩子"]
+	H --> I["保存唯一孩子，释放当前对象<br/>返回孩子并由调用者接回"]
 
 	G -->|否| J["孩子数 = 2"]
 	J --> K["找前驱或后继"]
 	K --> L["用替代值覆盖当前节点"]
 	L --> M["删除原前驱/后继节点"]
-	M --> N["若替代节点带孩子<br/>继续做回接调整"]
+	M --> N["原位置接回空入口或唯一孩子<br/>逐层返回调整后的子树根"]
 
-	F --> O["删除完成"]
+	P --> O["操作返回"]
+	F --> O
 	I --> O
 	N --> O
 
@@ -582,26 +585,26 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
+	C --> C_L
 	C -->|R| F
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| G
 	E -->|R| H
 
 	F -->|L| I
-	F -->|R| F_R
+	F --> F_R
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
-	H -->|L| H_L
-	H -->|R| H_R
+	H --> H_L
+	H --> H_R
 
-	I -->|L| I_L
-	I -->|R| I_R
+	I --> I_L
+	I --> I_R
 
 	classDef target fill:#f8d7da,stroke:#c82333,stroke-width:2px,color:#000;
 	classDef replace fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
@@ -658,23 +661,23 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
+	C --> C_L
 	C -->|R| F
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| G
-	E -->|R| E_R
+	E --> E_R
 
 	F -->|L| I
-	F -->|R| F_R
+	F --> F_R
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
-	I -->|L| I_L
-	I -->|R| I_R
+	I --> I_L
+	I --> I_R
 
 	classDef target fill:#f8d7da,stroke:#c82333,stroke-width:2px,color:#000;
 	classDef replace fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
@@ -697,12 +700,15 @@ graph TD
 	linkStyle 15 stroke:transparent;
 ```
 
-这一类删除，代码里真正做的事情可以概括为：
+这一类删除的最终结果是父槽为空、旧对象已释放。后面的递归实现按下面次序达到它：
 
 ```text
-parent->right = nullptr
-delete node
+当前调用保存替代入口 nullptr
+当前调用 delete node，然后返回 nullptr
+上层调用把返回值写入 parent->right
 ```
+
+delete 与上层回接之间，父槽短暂保留旧地址，但独占调用不会沿它再次读取被释放对象。完整操作返回后才恢复可供外部使用的树；这段过程不能直接交给并发读者观察。
 
 叶子删除的本质就是：
 
@@ -751,23 +757,23 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
+	C --> C_L
 	C -->|R| F
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| G
-	E -->|R| E_R
+	E --> E_R
 
 	F -->|L| H
-	F -->|R| F_R
+	F --> F_R
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
-	H -->|L| H_L
-	H -->|R| H_R
+	H --> H_L
+	H --> H_R
 
 	classDef target fill:#f8d7da,stroke:#c82333,stroke-width:2px,color:#000;
 	classDef replace fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
@@ -822,20 +828,20 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
+	C --> C_L
 	C -->|R| H
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| G
-	E -->|R| E_R
+	E --> E_R
 
-	H -->|L| H_L
-	H -->|R| H_R
+	H --> H_L
+	H --> H_R
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
 	classDef target fill:#f8d7da,stroke:#c82333,stroke-width:2px,color:#000;
 	classDef replace fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
@@ -858,11 +864,12 @@ graph TD
 	linkStyle 13 stroke:transparent;
 ```
 
-这一步代码里真正发生的事可以概括为：
+这一步递归实现的动作是：
 
 ```text
-parent(10)->right = child(13)
-delete node(14)
+先保存 node(14)->left，也就是 child(13)
+delete node(14)，返回保存的 child(13)
+上层调用把返回值写入 parent(10)->right
 ```
 
 你要注意，这里虽然待删节点 `14` 不在“树的中间”，但代码动作已经体现出了单孩子删除的本质：
@@ -906,17 +913,17 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
-	C -->|R| C_R
+	C --> C_L
+	C --> C_R
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| F
-	E -->|R| E_R
+	E --> E_R
 
-	F -->|L| F_L
-	F -->|R| F_R
+	F --> F_L
+	F --> F_R
 
 	classDef target fill:#f8d7da,stroke:#c82333,stroke-width:2px,color:#000;
 	classDef replace fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
@@ -964,14 +971,14 @@ graph TD
 	B -->|L| D
 	B -->|R| F
 
-	C -->|L| C_L
-	C -->|R| C_R
+	C --> C_L
+	C --> C_R
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
-	F -->|L| F_L
-	F -->|R| F_R
+	F --> F_L
+	F --> F_R
 
 	classDef target fill:#f8d7da,stroke:#c82333,stroke-width:2px,color:#000;
 	classDef replace fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
@@ -992,11 +999,12 @@ graph TD
 	linkStyle 9 stroke:transparent;
 ```
 
-这一步的本质是：
+这一步仍按相同的返回协议进行：
 
 ```text
-parent(3)->right = child(4)
-delete node(6)
+先保存 node(6)->left，也就是 child(4)
+delete node(6)，返回保存的 child(4)
+上层调用把返回值写入 parent(3)->right
 ```
 
 所以，单孩子删除的核心不在“删”，而在：
@@ -1055,20 +1063,20 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
+	C --> C_L
 	C -->|R| H
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| G
-	E -->|R| E_R
+	E --> E_R
 
-	H -->|L| H_L
-	H -->|R| H_R
+	H --> H_L
+	H --> H_R
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
 	classDef target fill:#f8d7da,stroke:#c82333,stroke-width:2px,color:#000;
 	classDef replace fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
@@ -1128,17 +1136,17 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	H -->|L| H_L
-	H -->|R| H_R
+	H --> H_L
+	H --> H_R
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| G
-	E -->|R| E_R
+	E --> E_R
 
-	G -->|L| G_L
-	G -->|R| G_R
+	G --> G_L
+	G --> G_R
 
 	classDef target fill:#f8d7da,stroke:#c82333,stroke-width:2px,color:#000;
 	classDef replace fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
@@ -1306,7 +1314,7 @@ graph TD
 	F -->|L| L
 	F -->|R| M
 
-	G -->|L| G_L
+	G --> G_L
 	G -->|R| O
 
 	classDef replace fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
@@ -1338,7 +1346,7 @@ parent_of_successor(14)->left = nullptr
 
 ## 22.9\_补充\_中间节点删除\_且后继还带右孩子
 
-上面那个例子虽然是“中间节点删除”，但因为原树是满二叉树，所以后继只能是叶子。
+上面那个例子虽然是“中间节点删除”，但因为这棵原树是各层填满的完美二叉树，右子树最左路径一直走到末层，所以后继是叶子。
 这样你还是看不到**回接调整**。
 
 下面补一个更重要的例子：
@@ -1406,23 +1414,23 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
-	C -->|R| C_R
+	C --> C_L
+	C --> C_R
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| H
 	E -->|R| I
 
-	H -->|L| H_L
+	H --> H_L
 	H -->|R| J
 
-	I -->|L| I_L
-	I -->|R| I_R
+	I --> I_L
+	I --> I_R
 
-	J -->|L| J_L
-	J -->|R| J_R
+	J --> J_L
+	J --> J_R
 
 	classDef target fill:#f8d7da,stroke:#c82333,stroke-width:2px,color:#000;
 	classDef replace fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
@@ -1478,20 +1486,20 @@ graph TD
 	B -->|L| D
 	B -->|R| E
 
-	C -->|L| C_L
-	C -->|R| C_R
+	C --> C_L
+	C --> C_R
 
-	D -->|L| D_L
-	D -->|R| D_R
+	D --> D_L
+	D --> D_R
 
 	E -->|L| J
 	E -->|R| I
 
-	J -->|L| J_L
-	J -->|R| J_R
+	J --> J_L
+	J --> J_R
 
-	I -->|L| I_L
-	I -->|R| I_R
+	I --> I_L
+	I --> I_R
 
 	classDef replace fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
 	classDef parent fill:#fff3cd,stroke:#d39e00,stroke-width:2px,color:#000;
@@ -1517,7 +1525,8 @@ graph TD
 这一组图里，你真正应该盯住的不是“根变没变”，而是这一句：
 
 ```text
-parent_of_successor(15)->left = successor->right(13)
+删除前先把 successor->right 保存为 child(13)
+删除后继并返回 child(13) 后，上层写 parent_of_successor(15)->left = child(13)
 ```
 
 也就是：
@@ -1898,7 +1907,7 @@ int main()
 
 你在阅读这个示例时，需要重点观察下面四点：
 
-1. 删除 `7` 时，代码没有做复杂调整，只是把父节点对应孩子指针置空
+1. 删除 `7` 时，当前调用释放叶子并返回空指针，上层把空指针接回对应孩子槽
 2. 删除 `14` 时，代码不是“删完就空”，而是让唯一孩子 `13` 顶替其位置
 3. 删除 `8` 时，代码不是直接把整棵子树乱接，而是先找后继 `10`，做值覆盖，再递归删除原来的 `10`
 4. 当后继节点本身还带孩子时，真正的难点在于：**如何把后继节点原来的那一支重新挂回去**
