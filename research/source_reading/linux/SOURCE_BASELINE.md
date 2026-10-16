@@ -1923,3 +1923,30 @@ include/linux/uaccess.h的用户复制路径有might_fault并返回未复制量�
 fs/char_dev.c的cdev_del说明既有file操作仍可调用。drivers/base/dd.c解绑先device_remove，再device_unbind_cleanup调用devres_release_all；托管内存不等待用户fd全部关闭才释放。正文比较手动/托管责任、跨解绑软件引用和生产者停止，未提供无寿命协议的伪platform模板。固定devres及Kbuild文档与正文在线官方说明交叉核对。
 
 本章完整内核代码在GCC和Clang模型中检查初始化失败回滚、空满、部分用户复制、阻塞重查、方向订阅及两万次独立队列序列；完整用户接收代码各25种控制流场景、容量Python程序12种正常/错误模型，Bash和Python语法检查通过。模型替换内核/系统接口，仅验证教学控制流和状态约束，不代表真实调度、信号ABI、内核头文件或模块链接验收；当前Windows环境未完成目标Kbuild与实际装载，正文给出Linux上完整构建、有限事务、容量及阻塞实验和清理步骤。
+
+## 1.200\_GPIO异步通知的采样与解绑协议
+
+2026-10-17 重写[异步通知P07](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P07_中断驱动设备的异步通知实践.md)，以官方固定Linux 6.12.20提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 核对GPIO消费者、IRQ、延迟工作、misc入口和平台驱动接口。复用前章fs/file_table.c、fs/fcntl.c及用户复制接口，新增原始字节证据如下。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| drivers/char/misc.c | f7dd455dd0dd3c7c9956e772b5ab8bd83a67a4a6 |
+| include/linux/platform_device.h | 7132623e4658576f0be2a80b493e445e0c9d4de6 |
+| include/linux/gpio/consumer.h | db2dfbae8edbd12059826183b1c0f73c7a58ff40 |
+| drivers/gpio/gpiolib.c | 209871c219d697d05ac12c9a20edeb68ba59c5d8 |
+| drivers/gpio/gpio-mxc.c | d8d1ae23e0935f85548d61cdbdc8a0189f14dfb6 |
+| drivers/input/keyboard/gpio_keys.c | 380fe8dab3b06379f9744e8190a4afcc0aee20b4 |
+| Documentation/devicetree/bindings/input/gpio-keys.yaml | cc78c2152921308fe0cad3e29ca78a5fad08f066 |
+| kernel/workqueue.c | a9d64e08dffc7c7aef2caae2f170268d83e99e23 |
+| Documentation/driver-api/gpio/consumer.rst | bb3366047fadb51bd9323f51d78cbf237a370d11 |
+| kernel/irq/manage.c | f0803d6bd2969820443f25b5b508ec553f4cb9a2 |
+
+GPIO consumer文档与gpiolib实现确认get_value_cansleep在可睡眠上下文使用，active-low已转换为逻辑值，负值为错误；gpiod_to_irq取得该输入GPIO的Linux IRQ映射，触发类型另行设定。gpio-mxc的mx3_gpio_irq_handler按ISR和IMR求待处理位，mxc_gpio_irq_handler调用generic_handle_domain_irq；消费者不自行推算IRQ号或清上级中断状态。
+
+gpio_keys_gpio_isr安排工作或hrtimer，gpio_keys_gpio_report_event取得逻辑状态并拒绝负读取结果；gpio_keys_setup_key尝试硬件去抖，失败进入软件路径，根据是否可睡眠选择计时方案，并使用上升/下降双边沿。教学驱动不冒充gpio-keys或NXP绑定；板级引脚未获本次硬件证据，不保留旧稿GPIO1_18即可上板的承诺。
+
+workqueue的mod_delayed_work_on契约允许IRQ上下文重排，重排不撤销已执行采样。教学代码增加generation/last_edge/stopping自旋锁状态，工作在窗口之后读GPIO，提交前持data_lock再edge_lock检查代次与停止标志。记录为16字节小端序号加逻辑状态及保留字节，最新单槽覆盖，序号不是原始IRQ数；用户复制全成功才消费，等待循环重查，poll先登记再查状态，采样失败保存错误而非伪造释放。
+
+misc_open持misc_mtx查表、设置private_data并执行驱动open，misc_deregister使用同锁撤销入口；教学open在绑定引用仍存在时取得kref。固定__fput先fasync撤销再release，release归还file引用。platform_driver.remove在本版本为void。教学probe最后才misc_register，失败先free_irq与cancel_delayed_work_sync；remove先撤入口、停止提交、同步IRQ和工作，再标记offline和通知，最后归还绑定引用。旧file只访问软件状态，GPIO由devm在解绑清理，软件对象独立kref管理，不等待所有fd关闭才remove，也不让devm提前释放旧file对象。
+
+完整模块以GCC和Clang模型检查申请失败回滚、属性错误/零窗口、逻辑值与读取错误、代次变更和停止期间采样、时间回绕、复制失败保留、阻塞重查、离线剩余数据及最终引用释放。有限Python接收器18种正常/错误场景核对关闭、订阅恢复和30秒期限。模型替代内核与系统调用，只证明受测控制流；没有目标Kbuild、实际Linux ABI、真实并发或板上电气验收。
