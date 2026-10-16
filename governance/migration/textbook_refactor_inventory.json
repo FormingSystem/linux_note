@@ -5592,6 +5592,18 @@
           "全仓8947有效链接、正文与基线锚点、格式元数据路径和diff通过。"
         ],
         "limits": "锁、计时器、工作、唤醒源、ioctl由宿主桩替代，日历库适配宿主；不是目标Kbuild、Linux用户工具实际构建、硬件RTC、板级挂起或真实并发测试。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P13_调试_验证与常见陷阱.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以完整周期与退出实验建立观察阶段、对象轮次和证据边界；提供隔离trace实例脚本与Python配对器，保存卸载前符号映射，修正事件分组、delayed_work观察点、sync返回与remove入口以及时钟/补跑判断。",
+        "date": "2026-10-17",
+        "validation": [
+          "原文成稿全文冷读，八份固定事件定义/文档/配置与官方trace-cmd选项核对；两图目视，连续性零风险，术语候选复核。",
+          "Python构造记录覆盖正常、交错对象、运行中新轮、取消待执行、十类无效记录和符号地址映射四种结果；所有shell块语法及事件名称核对。",
+          "全仓8951有效链接、正文和基线锚点、元数据路径格式与diff通过；同步P06隔离采集与延迟工作观察说明。"
+        ],
+        "limits": "构造trace不是实测；未执行Linux tracefs、模块装卸、function_graph、trace-cmd/KernelShark或板级性能测量。语法与配对测试不能证明真实事件覆盖。"
       }
     },
     "additional_documents": [
