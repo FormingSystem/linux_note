@@ -536,15 +536,15 @@ P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_str
 
 再次核对固定 lib/rbtree.c 的 lockless lookups 注释，以及 include/linux/rbtree.h、include/linux/rbtree_augmented.h 相关入口，已跟踪三文件与官方固定提交差量为空。孩子单次写入约束、不成环写序、有限向下路径与可能漏查相互区分；父链不在同一循环论证内。既有[查找实现](../rbtree/source_explanations/include/linux/rbtree.h.md#1.4_rb_find_rcu的孩子读取与缺失边界)和[替换实现](../rbtree/source_explanations/lib/rbtree.c.md#1.9_同键替换的普通与RCU入口)继续唯一展开，无新增重复函数体。
 
-[P12 并发单元](../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#12.4_rbtree_与并发控制)补 M0～M4，宿主 copy_under_lock 使用真实 pthread、互斥与条件变量重放两种观察次序；重复 512 次并检查两处分配失败，既有 lookup_paths 四行结果重新验证。用户态模型只含一个入口槽，不实现树或内核锁；没有本批 ARM 并发、Linux RCU、SMP 压力或目标模块执行证据，外部树未改。
+[P12 并发单元](../../../knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md#45.1_rbtree_与并发控制)补 M0～M4，宿主 copy_under_lock 使用真实 pthread、互斥与条件变量重放两种观察次序；重复 512 次并检查两处分配失败，既有 lookup_paths 四行结果重新验证。用户态模型只含一个入口槽，不实现树或内核锁；没有本批 ARM 并发、Linux RCU、SMP 压力或目标模块执行证据，外部树未改。
 
 ## 1.33\_rbtree调用者示例的比较收敛
 
-[P12 示例回访](../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#12.5_Linux_内核_rbtree_示例代码)统一使用 P37 的完整 owner 模块和 P27 的完整遍历材料，不新增第二份内核接口实现。owner 的查找与插入共享 compare_key，关系判断结果相减避免任意 int 键相减溢出。宿主重新执行 36 组操作次序、四处分配失败以及 INT_MIN/INT_MAX 等极值接入、查找、拒绝重复和移除。ARMv7 前端读取 354 份头，消费的已跟踪头与官方固定提交无差量。没有目标 Kbuild、MODPOST、装卸或并发运行证据，未修改外部树。
+[P12 示例回访](../../../knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md#45.8_Linux_内核_rbtree_示例代码)统一使用 P37 的完整 owner 模块和 P27 的完整遍历材料，不新增第二份内核接口实现。owner 的查找与插入共享 compare_key，关系判断结果相减避免任意 int 键相减溢出。宿主重新执行 36 组操作次序、四处分配失败以及 INT_MIN/INT_MAX 等极值接入、查找、拒绝重复和移除。ARMv7 前端读取 354 份头，消费的已跟踪头与官方固定提交无差量。没有目标 Kbuild、MODPOST、装卸或并发运行证据，未修改外部树。
 
 ## 1.34\_rbtree联合不变量的有限检查
 
-[P12 有界快照](../../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行有界快照检查器)使用 C11 固定容量数组与整数槽号，在访问前识别已知对象、拒绝重复进入，再检查键界、父链、颜色、黑计数、原始载荷重算摘要、计数与缓存身份。十二类样例通过；固定增强算法宿主夹具的 120960 个稳定状态转换为模型后通过联合检查，各状态再注入计数错误与非空摘要错误验证拒绝。固定算法来源与显式位宽适配仍见 1.31，不新增内核原文或另一套实现讲解。
+[P12 有界快照](../../../knowledge/linux/data_structures/红黑树_rb-tree/P46_独立验证树形与派生状态.md#46.10.1_运行有界快照检查器)使用 C11 固定容量数组与整数槽号，在访问前识别已知对象、拒绝重复进入，再检查键界、父链、颜色、黑计数、原始载荷重算摘要、计数与缓存身份。十二类样例通过；固定增强算法宿主夹具的 120960 个稳定状态转换为模型后通过联合检查，各状态再注入计数错误与非空摘要错误验证拒绝。固定算法来源与显式位宽适配仍见 1.31，不新增内核原文或另一套实现讲解。
 
 这是已知对象模型和有限输入证据，不验证任意损坏指针、并发快照采集、目标 ABI、RCU/SMP 或内核模块运行。结构与计数同时漏掉对象仍需外部业务台账才能发现，未报错不能超出执行路径与观察边界。
 

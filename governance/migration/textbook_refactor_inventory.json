@@ -4284,7 +4284,14 @@
         ],
         "limits": "只是固定版本源码和串行函数观察，不证明并发、目标ARM或性能。长度提示来自同一旋转责任比较；完整函数仍在唯一实现标题展开，历史文件未改写。"
       }
-    }
+    },
+    "additional_documents": [
+      "knowledge/linux/data_structures/红黑树_rb-tree/P43_反复取首与最左缓存.md",
+      "knowledge/linux/data_structures/红黑树_rb-tree/P44_区间查询与子树摘要.md",
+      "knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md",
+      "knowledge/linux/data_structures/红黑树_rb-tree/P46_独立验证树形与派生状态.md",
+      "knowledge/linux/data_structures/红黑树_rb-tree/P47_从内核使用场景选择索引.md"
+    ]
   },
   "quality_reassessment": {
     "status": "required",

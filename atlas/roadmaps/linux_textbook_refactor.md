@@ -195,17 +195,17 @@ B03ak 收束 P09 的 9.2.8～9.2.9，[双索引寿命 C 模型](../../knowledge/
 
 B03al 将 P09 原使用者长单元独立为[P37 调用者框架](../../knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md#37.16_运行完整的私有调用者框架)，保留图解并修正重复键、比较、根槽、移除输出与并发边界；补完整内核 C 示例、U0～U5 和失败清理。P09 留有阅读桥接，原人工状态不变，P37 默认红色；[记录](../../governance/migration/repository_textbook_refactor.md#1.4.48_B03al调用者框架与完整示例)说明验证及未执行目标项。下一项 P12 工程扩展，全仓继续。
 
-B03am 完成 P12 引入与 cached 单元冷读，以[完整缓存模块](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行缓存一致性实验)演示缓存独立不变量、插入/删除返回和普通删除反例，新增固定模块导读及唯一实现入口。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.49_B03am最左缓存与一致性)记录验证边界；P12 增强树、并发和后续单元仍 pending。
+B03am 完成 P12 引入与 cached 单元冷读，以[完整缓存模块](../../knowledge/linux/data_structures/红黑树_rb-tree/P43_反复取首与最左缓存.md#43.6.1_运行缓存一致性实验)演示缓存独立不变量、插入/删除返回和普通删除反例，新增固定模块导读及唯一实现入口。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.49_B03am最左缓存与一致性)记录验证边界；P12 增强树、并发和后续单元仍 pending。
 
-B03an 完成 P12 增强单元，以[闭区间模块](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行完整区间摘要实验)推导摘要的维护代价、三个回调和 A0～A5，补齐旋转继承前提、后继两段传播及偏大也会漏查的反例；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.50_B03an子树摘要与增强回调)区分宿主语义与目标运行。下一项 12.4 外部同步，P12 与全仓仍未完成。
+B03an 完成 P12 增强单元，以[闭区间模块](../../knowledge/linux/data_structures/红黑树_rb-tree/P44_区间查询与子树摘要.md#44.9.1_运行完整区间摘要实验)推导摘要的维护代价、三个回调和 A0～A5，补齐旋转继承前提、后继两段传播及偏大也会漏查的反例；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.50_B03an子树摘要与增强回调)区分宿主语义与目标运行。下一项 12.4 外部同步，P12 与全仓仍未完成。
 
-B03ao 完成 P12 并发单元冷读，以[双线程 C 实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_用两个线程观察复制值与删除)区分锁内副本与对象寿命，并核对查重事务、向下漏查、父链及 RCU 发布边界；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.51_B03ao并发观察与结果寿命)保留有限验证范围。下一项 12.5 完整示例的职责与调用关系，P12 和全仓继续。
+B03ao 完成 P12 并发单元冷读，以[双线程 C 实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md#45.3.1_用两个线程观察复制值与删除)区分锁内副本与对象寿命，并核对查重事务、向下漏查、父链及 RCU 发布边界；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.51_B03ao并发观察与结果寿命)保留有限验证范围。下一项 12.5 完整示例的职责与调用关系，P12 和全仓继续。
 
-B03ap 冷读 P12 12.5，按九个原知识单元[回访完整调用者示例](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#12.5_Linux_内核_rbtree_示例代码)，统一 P37 程序的比较函数并收拢重复片段，保留遍历/销毁与寿命边界；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.52_B03ap调用者实例回访与比较收敛)逐项说明去向和重验。下一项 12.6 验证，P12 和全仓仍未完成。
+B03ap 冷读 P12 12.5，按九个原知识单元[回访完整调用者示例](../../knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md#45.8_Linux_内核_rbtree_示例代码)，统一 P37 程序的比较函数并收拢重复片段，保留遍历/销毁与寿命边界；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.52_B03ap调用者实例回访与比较收敛)逐项说明去向和重验。下一项 12.6 验证，P12 和全仓仍未完成。
 
-B03aq 完成 P12 12.6/12.7 冷读与改写，用[完整 C 检查器](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#%281%29_运行有界快照检查器)建立已知对象、独立摘要、祖先界与错误返回，再以具体反例收束接口误区；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.53_B03aq联合不变量与有限证据)保留验证限制。下一项 12.8 固定内核场景与章末收束，P12/全仓继续。
+B03aq 完成 P12 12.6/12.7 冷读与改写，用[完整 C 检查器](../../knowledge/linux/data_structures/红黑树_rb-tree/P46_独立验证树形与派生状态.md#46.10.1_运行有界快照检查器)建立已知对象、独立摘要、祖先界与错误返回，再以具体反例收束接口误区；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.53_B03aq联合不变量与有限证据)保留验证限制。下一项 12.8 固定内核场景与章末收束，P12/全仓继续。
 
-B03ar 完成 P12 剩余[固定内核场景](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md#12.8_Linux_rbtree_在内核中的典型使用场景)和章末收束，核对十份官方固定文件与十八个函数，纠正调度排序、timerqueue 返回、epoll 注册/就绪及范围端点的混同；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.54_B03ar真实调用场景与P12收束)记录版本和未执行项。P12 经连续批次完成实际审查，下一项 P13，树专题与全仓仍未完成。
+B03ar 完成 P12 剩余[固定内核场景](../../knowledge/linux/data_structures/红黑树_rb-tree/P47_从内核使用场景选择索引.md#47.1_Linux_rbtree_在内核中的典型使用场景)和章末收束，核对十份官方固定文件与十八个函数，纠正调度排序、timerqueue 返回、epoll 注册/就绪及范围端点的混同；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.54_B03ar真实调用场景与P12收束)记录版本和未执行项。P12 经连续批次完成实际审查，下一项 P13，树专题与全仓仍未完成。
 
 B03as 完成 P13 全篇冷读与改写，保留二十键贯穿实例和七张机制图，纠正 B 树记录重复、B+ 相等路由与分裂分隔混用；[完整页模型](../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md#%281%29_运行等值路由与叶分裂模型)验证固定高度下的插入、查询及失败不改状态。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.55_B03as页记录归属与叶分裂)列出检查和边界。下一项 P15；树专题和全仓继续。
 
