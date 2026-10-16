@@ -5760,6 +5760,17 @@
           "快照Bash语法与九种缓存模拟场景通过；全仓9004有效链接、九出链及入链检查和diff通过。连续性仅162行H2阈值提示，人工保留一个恢复协议及其完整模型；术语区分前置概念并解释本例五个状态名。"
         ],
         "limits": "无目标Kbuild、真实风暴注入、硬件复位或板级滤波验证；模型不证明内核并发、内存序和设备已停止，脚本使用模拟proc文件。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "把空小节和过期逐章提纲改为十四章因果地图与前提/问题/后续疑问表，保留softirq实现缺口与Tiny RCU接缝，更新GIC十一章范围并把未落地第十五章转成现有组合练习。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读并对照十四章当前标题和教学任务；因果地图渲染目视。",
+          "24条出链与5条标题入链通过，保留1.2和1.3既有入口；全仓9007有效链接及标题、元数据、路径和diff检查通过。"
+        ],
+        "limits": "大纲整理不增加softirq完整源码或目标板实验覆盖，不升级人工评审状态。"
       }
     },
     "additional_documents": [
