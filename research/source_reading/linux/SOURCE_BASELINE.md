@@ -2021,3 +2021,28 @@ wait_event_interruptible内层先prepare_to_wait_event再检查条件并决定sc
 正文用数据、订阅、信号pending、边沿采样、等待登记和对象引用的正交状态重建S0至S6，补订阅删除与设备解绑两条时序。纠正只关本地中断等同跨CPU互斥、cancel_work_sync阻止未来重新排队、模块引用阻止设备解绑、devm自动等待旧fd、所有锁都是全屏障等旧说法。
 
 正文Python模型枚举正确等待的10种顺序一致性交错，构造先检查后登记和先通知后发布的丢唤醒反例；两读者6种交错中4种双方都先观察到就绪，实际仅一方消费。该模型验证逻辑交接，不是Linux调度、LKMM弱内存、硬件或Kbuild验证。lockdep/KCSAN等动态检查仅对已启用、未失效且实际执行的接入路径提供有限证据，未告警不构成完整正确性证明。
+
+## 1.204\_异步通知的调试观测与时间关联证据
+
+2026-10-17 重写[异步通知P11](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P11_调试_排错与性能分析.md)，沿用官方固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0。复用 fs/fcntl.c、kernel/signal.c、fs/signalfd.c、fs/pipe.c、fs/proc/array.c 及前章状态与接收协议，新增原始字节如下。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| include/trace/events/signal.h | 1db7e4b07c0148683065641799886c4845964bc4 |
+| Documentation/trace/ftrace.rst | 4073ca48af4ad2639c2289eb28c691a5c3538850 |
+| Documentation/trace/events.rst | 759907c20e7591ce3f03ac191cbc14a29b242f8a |
+| fs/proc/fd.c | 5e391cbca7a3be0cb02f55e96d6728ad98e3ea16 |
+| Documentation/core-api/timekeeping.rst | 22ec68f244210681d89ab36445ecf3f67f7a597d |
+| kernel/trace/trace_functions.c | fbbc3c719d2f68c9bfa8eaf64864191a639d5594 |
+| kernel/trace/trace.c | ffe1422ab03f888101f836e73d4c14b47ce3b54c |
+| include/linux/time_namespace.h | 876e31b4461d0ee01fe2bd3d136acdea2611789f |
+
+fs/proc/fd.c的seq_show读取file的flags并合入fd当前close-on-exec，以0%o显示；不能按十进制解析或从flags推出owner。fs/proc/array.c分别输出线程pending、共享pending、线程blocked和共享处置，SigQ取用户计费与任务限额，非设备队列长度。
+
+include/trace/events/signal.h定义生成结果0到4为DELIVERED、IGNORED、ALREADY_PENDING、OVERFLOW_FAIL、LOSE_INFO；kernel/signal.c的__send_signal_locked在生成路径记录结果。DELIVERED不是用户handler完成；signal_deliver位于get_signal普通递达路径，signalfd通过dequeue_signal取走pending，不要求产生同一递达事件。事件专用pid/comm是目标，记录通用前缀是执行者，不能混作同一角色。
+
+ftrace.rst的Instances旧段落仍声称实例只有事件、没有function tracer，但本提交kernel/trace/trace_functions.c的function_trace明确allow_instances=true，trace.c按该标志允许实例选择。正文以实现和运行时能力检查为准，不照抄旧段落。trace.c的printk_trace默认global_trace，选项可转移目的地，因此trace_printk不会天然进入新建实例；正文不修改该共享目的地。ftrace文档区分local跨CPU时间边界、mono时钟、每CPU缓冲统计、trace与trace_pipe。
+
+timekeeping.rst将ktime_get_ns对应MONOTONIC，区分boottime与raw；time_namespace.h为用户时间增加命名空间偏移的接口进一步限定跨域相减。正文用run/device/sequence关联不可变记录与IRQ、发布、read完成、业务完成时间，不把最近一次ioctl快照配给旧事件，不把kill_fasync返回当作远端接收的必然前驱，也不提供无测量依据的通用微秒阈值。
+
+三个完整Python工具从正文提取检查一致并实际运行模拟验证：proc快照9个场景、tracefs/Popen替代接口33个场景、CSV关联统计12个场景，覆盖八进制、共享pending、线程读取失败、PID复用、能力缺失、超时TERM/KILL、采集输出失败与清理失败、重复键/时钟域/倒序及跨设备分组。窗口内多次proc读取仍非原子，模拟不能证明Linux proc/tracefs ABI、真实函数插桩或硬件延迟；当前环境未运行目标内核采集。正文给出有限Linux实验和清理方法，并把合成CSV明确标成练习数据。
