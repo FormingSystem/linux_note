@@ -3,6 +3,10 @@
 #include <cstddef>
 #include <iostream>
 
+#ifdef NDEBUG
+#error "本教学程序依靠断言验证结果，请勿定义 NDEBUG"
+#endif
+
 /* 四个逻辑页驻留在宿主数组中；物理块号只是模型标签。 */
 struct page {
     bool leaf;

@@ -169,7 +169,7 @@ B03x 将 P06 自底向上单元组织为[P32 下溢回溯](../../knowledge/linux
 B03y 冷读并修订 P06 叶层/编码/回顾，将成熟删除比较组织为[P33](../../knowledge/linux/data_structures/红黑树_rb-tree/P33_从多路删除到红黑缺口.md#33.1_在两套规则建立以后对照)，安排在 P07 定义之后，修正合并传播、阶段容量、后继身份与哨兵父槽。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.35_B03y多路编码与红黑缺口)区分黑高算术检查与完整实现；P06 页级索引/Maple 和 P07 全篇仍 pending，下一项继续 P06 6.9 实际冷读。
 
 
-B03z 完整冷读 P06 原 6.9，组织为[P34 页级索引](../../knowledge/linux/data_structures/红黑树_rb-tree/P34_从多路节点到页级索引.md#34.3_运行页请求与未命中的计数模型)，保留原概念和应用推演，修正页/缓存层次、相等键路由、定位符与读写比较；完整 C++ 四页模型解释请求减少为何不等于未命中同比减少。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.36_B03z页级索引与访问成本)记录官方资料和固定 ext4 格式证据。下一项 P06 6.10 Maple；P06 整章及全仓仍未完成。
+B03z 完整冷读 P06 原 6.9，组织为[P34 页级索引](../../knowledge/linux/data_structures/红黑树_rb-tree/P34_从多路节点到页级索引.md#34.12_运行页请求与未命中的计数模型)，保留原概念和应用推演，修正页/缓存层次、相等键路由、定位符与读写比较；完整 C++ 四页模型解释请求减少为何不等于未命中同比减少。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.36_B03z页级索引与访问成本)记录官方资料和固定 ext4 格式证据。下一项 P06 6.10 Maple；P06 整章及全仓仍未完成。
 
 B03aa 完整冷读 P06 原 6.10 与 P14，将重复的 VMA 概念收拢至[P14 范围实例](../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md#14.9.3_运行G与H的区间模型)，保留 G/H 推演并修正权限、pivot、TLB 与历史数据边界；新增 C++ 区间模型和[固定查询源码](../../research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)。[批次记录](../../governance/migration/repository_textbook_refactor.md#1.4.37_B03aa范围契约与Maple入口)区分有限模型与目标运行。P06 分批内容已审完，下一项按依赖继续 P07；P15 只迁移四个查询函数体，其余仍待实际冷读。
 
