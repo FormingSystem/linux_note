@@ -5903,6 +5903,17 @@
           "Python替代接口42场景，C程序GCC/Clang各16场景；5出链无标题入链，9043有效链接及格式元数据路径和diff通过。"
         ],
         "limits": "替代接口仅验证应用控制流，未在Linux实际构建运行，不声称io_uring、GPIO或性能实测。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P13_工程实践案例与编码核对表.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以多源三模式完整实验重写工程组合，保留GPIO协议适配、轮询迁移、devm与旧fd寿命、失败现场双侧核对，清除重复错误骨架。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文阅读、内容去向和冷读完成；三图目视，连续阅读仅同一完整实验长度提示经人工保留。",
+          "正文C提取一致，GCC/Clang各248场景；P09清理后成功输出修复各162场景回归；8出链无标题入链，9051有效链接及格式元数据路径和diff通过。"
+        ],
+        "limits": "替代系统接口不证明Linux ABI、真实信号与硬件，GPIO资源仍须按实际板卡核对和运行。"
       }
     },
     "additional_documents": [
