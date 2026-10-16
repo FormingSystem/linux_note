@@ -1557,6 +1557,18 @@
           "标题、元数据、路径、全仓链接和 git diff --check 通过；连续阅读与术语候选人工复核"
         ],
         "limits": "未进行目标内核编译、真实 MFD 子驱动失败或 Component 聚合/拆除运行测试；人工评审状态不变。"
+      },
+      "knowledge/linux/device_model/P16_API调试与选择边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留参考页定位，按登记、匹配探测、功能发布和资源/代码寿命整理接口与诊断证据；补足只读目标命令、driver 链接中间态、uevent 非历史事件、模块别名和诊断无输出的边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "核对固定 Linux 6.12.20 core.c、dd.c、Component 诊断及动态调试/跟踪官方文档",
+          "排错 Mermaid 渲染并检查；专题根目录三十个本地标题片段核对",
+          "格式、元数据、路径、全仓链接和 git diff --check 通过；参考页术语候选按既有先修人工复核"
+        ],
+        "limits": "没有目标 Linux 命令执行、动态调试启用或事件捕获；观察例不宣称目标系统成功，人工评审状态不变。"
       }
     }
   },
