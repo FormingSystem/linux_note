@@ -317,6 +317,8 @@ make clean
 
 卸载模块只移除功能代码和锁实例，不保证重新开启已经停检的 Lockdep。完成预期错误注入后应重启实验内核，再确认 `debug_locks`，然后才运行下一轮需要有效检查器的测试。
 
+同目录的 [identity_probe.c](identity_probe.c) 是[锁类身份章节](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md#3.4.1_亲手观察静态身份与实例地址)的普通用户态语言实验，只演示静态身份地址与对象地址的区别，不参与本模块的 Kbuild。它的编译、预测和修改步骤放在该章节中，不能用运行它代替本节的内核检查。
+
 ## 1.11\_实验结论边界
 
 本实验能够证明：Lockdep 可以把同一线程先后执行的两条简单组件链组合成潜在 ABBA 报告，因而不必制造真实卡死。它不能证明所有未执行分支安全，也不能替代 KCSAN 的数据竞争检测、KASAN/KFENCE 的内存错误检测、Sparse 的类型检查、lockstat 或 `perf lock` 的竞争分析，以及对象生命周期证明。

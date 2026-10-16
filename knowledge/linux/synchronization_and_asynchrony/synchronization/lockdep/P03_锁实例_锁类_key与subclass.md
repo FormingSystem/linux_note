@@ -129,7 +129,23 @@ int main(void)
 }
 ```
 
-把代码保存为 identity_probe.c，使用 `cc -std=c11 -Wall -Wextra -Werror identity_probe.c -o identity_probe` 编译后运行。三行结果都应为 1：第一项检查业务实例不同，第二项检查重复调用共享静态对象，第三项检查不同调用点的身份分离。修改 main，在 init_state_identity 调用后追加 `init_config_identity(&state_a);`，预测第三项变为 0，再运行验证。这里只有普通指针赋值，不是对在用内核锁重新初始化；它只演示身份归类输入如何改变，不证明这种改类符合业务锁序。
+将完整代码保存为当前工作目录中的 `identity_probe.c`，也可直接取用[配套 C 文件](../../../../../labs/kernel/lockdep/P01_锁顺序反转与报告解读/identity_probe.c)。这是普通用户程序，不使用本专题内核模块的 Kbuild 命令。操作路线是“保存源码 → 编译 → 运行并解释三次比较 → 改一次归类输入再运行”。
+
+```bash
+# 带 C 编译器的 Linux 用户终端，在 identity_probe.c 所在目录执行。
+cc -std=c11 -Wall -Wextra -Werror identity_probe.c -o identity_probe
+```
+
+`-std=c11` 选择 C11，三项告警选项要求常见问题被报告且编译无告警；`-o` 指定输出文件。这里既不链接内核，也不启用真正的 Lockdep。编译成功后运行：
+
+```bash
+# 同一目录，普通用户权限即可。
+./identity_probe
+```
+
+三行结果都应为 1：第一项检查业务实例不同，第二项检查重复调用共享静态对象，第三项检查不同调用点的身份分离。若编译失败，先修复编译错误，不运行上一次遗留的可执行文件。
+
+再修改 main，在 init_state_identity 调用后追加 `init_config_identity(&state_a);`，预测第三项变为 0，然后重新执行编译和运行两步。这里只有普通指针赋值，不是对在用内核锁重新初始化；它只演示身份归类输入如何改变，不证明这种改类符合业务锁序。保留后续仍需使用的源码；本实验没有后台进程、内核模块或设备状态需要恢复。
 
 ## 3.5\_key为何必须比实例更持久
 
@@ -145,6 +161,8 @@ int main(void)
 Linux 6.12.20 首次查找或登记锁类的双检和容量失败路径见 [`register_lock_class()` 锁类注册](../../../../../research/source_reading/lockdep/source_explanations/kernel/locking/lockdep.c.md#1.4_register_lock_class锁类注册)。
 
 ## 3.6\_错误归类如何制造误报与漏报
+
+key 活得足够久，只保证身份不会因为地址复用而变质，还没有保证“哪些对象共享这个身份”是对的。分类过宽会把本不相干的协议拼在一起，分类过窄又会拆散本应组合的证据。下面仍用两条先后执行的路径，分别观察全局图怎样被这两种错误改变。
 
 ### 3.6.1\_错误合并
 
