@@ -6060,9 +6060,9 @@
           "python_blocks": 1,
           "blocks_added_or_changed": 1,
           "previously_reviewed": true,
-          "state": "pending",
-          "decision": null,
-          "reason": null
+          "state": "reviewed",
+          "decision": "replaced_with_c",
+          "reason": "b429b58以C11替换队列与补发模型，双编译器/NDEBUG验证40000步独立FIFO对照、通知边界、三项正文练习和去掉公平轮次的失败变体；代码一致及全仓链接通过。连续性仅同一完整实验偏长，人工保留；SOURCE_BASELINE 1.209记录无真实Linux/DMA/并发与回绕验证。"
         },
         {
           "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P10_并发_竞态与内存可见性问题.md",
