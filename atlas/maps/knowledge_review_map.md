@@ -516,7 +516,7 @@ mindmap-plugin: basic
                 - 🔴 [P06 flush、cancel 与颜色代际](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P06_flush_cancel与颜色代际.md)
                 - 🔴 [P07 unbound、rescuer 与回收前进性](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P07_unbound_rescuer与回收前进性.md)
                 - 🔴 [P08 CPU 热插拔、电源管理与生命周期](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P08_CPU热插拔电源管理与生命周期.md)
-            - 🔴 [驱动中的 时间问题 概述](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/大纲.md)
+            - 🔴 [定时与延迟执行阅读路线](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/大纲.md)
                 - 章节评审：13 章未评审
                 - 🔴 [P01 驱动中的 时间问题 概述](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P01_驱动中的_时间问题_概述.md)
                 - 🔴 [P02 Linux 时间基础与 timekeeping 框架速览](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P02_Linux_时间基础与_timekeeping_框架速览.md)

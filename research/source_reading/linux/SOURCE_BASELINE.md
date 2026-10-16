@@ -1256,3 +1256,22 @@ B05bl复查同一固定lockdep.c的lockdep_init_map_type，恢复统计CPU记录
 [unbound正文](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P07_unbound_rescuer与回收前进性.md#7.2_属性传播关系)记录同树文档与实现差异：保存的Documentation/core-api/workqueue.rst仍称unbound额度总是per-CPU，而固定代码wq_update_node_max_active与pwq_tryinc_nr_active已采用节点共享账本。正文按实现解释，不把该文档句子当作当前实现保证。保存文档的LF归一blob为16f861c9791e4ae2914bbf517c1a1835263711bf，kernel/workqueue_internal.h为f6275944ada776814787ac5a1cfa01f891bfe934；后二者本次只记录本地副本摘要，未重新取得外部工作树对象比较。
 
 [异步状态C模型](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P02_异步执行的抽象状态机.md#2.4_用完整C模型区分pending与running)在GCC14.2/Clang18.1.8、严格C11、O0/O2及NDEBUG开关共八组通过；第三次事件提前到drain之前仍计数完整，错误清除后继pending则按预期失败，共十组编译运行。它是顺序模型，不实现线程、真实锁、调度或弱内存。第一章设备门控代码明确为协议片段，未编译或加载目标驱动；当前共享源码工作树不可访问，本次没有重新验证外部工作树身份。
+
+## 1.171\_时间基础与定时入口边界
+
+2026-10-17 复审[定时入口](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P01_驱动中的_时间问题_概述.md)与[时间框架](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P02_Linux_时间基础与_timekeeping_框架速览.md)，从官方 linux-imx 仓库的固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 下载以下原文，记录原始字节的 Git blob。来源入口为[该提交源码树](https://github.com/nxp-imx/linux-imx/tree/dfaf2136deb2af2e60b994421281ba42f1c087e0)，不是当前本地共享目录或移动分支。
+
+| 上游路径 | 本次取得的 blob |
+| --- | --- |
+| include/linux/jiffies.h | 5d21dacd62bc7d5187af9d96ec288c6517557475 |
+| include/linux/timekeeping.h | fc12a9ba2c884271a75608211a72173b7ebaa24c |
+| include/linux/hrtimer.h | 6caaa62d2b1f893439129bdbe42135ef1da13f8b |
+| include/linux/clocksource.h | c846436b64593e913d452d2ba07870e13729ea21 |
+| include/linux/clockchips.h | b0df28ddd394be3cee7e6491e04d922471fc04d4 |
+| kernel/time/timekeeping.c | 96933082431fe0c99a2f0704d9c5c64dd57de3cf |
+| Documentation/timers/hrtimers.rst | f88ff8bae89c8acf857225f2797478d2e502ebaf |
+| Documentation/timers/highres.rst | bde5eb7e5c9efc10494b242bd055bb602a03efff |
+
+核对 jiffies/get_jiffies_64 的位宽与读取边界、time_after 族的差值比较、ktime_get 的序列计数读取及 timekeeping_cycles_to_ns 的周期差换算、boottime/real 偏移入口、clocksource 与 clock_event_device 的读数/事件接口。hrtimer 模式说明区分软硬中断路径；高分辨率设计说明明确要求合适时钟源、事件设备及运行时启用，不能由 CONFIG_HIGH_RES_TIMERS 单独推出实际高分辨率。普通定时器删除/关闭继续复用 [1.62 定时器证据](#1.62_定时器改期与最终退出证据)及其实现讲解。
+
+在线 Linux 6.12 的 timekeeping、ktime accessors、NO_HZ 和 highres 文档作为机制对照；历史设计文字不代替当前实现。共享源码树仍未恢复访问，本次通过不可变官方 URL 取得相关文件，不声称重新验证了工作树或目标配置。正文代码是单位/属性接入片段，未作 Kbuild、加载、实时延迟或退出竞态实测；图示是职责与状态流程，不是某块 SoC 的物理布局。
