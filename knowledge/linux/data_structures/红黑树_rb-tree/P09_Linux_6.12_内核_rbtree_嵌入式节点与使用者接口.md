@@ -28,7 +28,7 @@ domains:
 
 仍用上一章的任务：同一个任务有 id 和到期时间，既希望按时间取下一个任务，也希望按 id 找回它。若为每个索引另分配包装节点，两个包装都要保存指向任务的地址，并分别处理分配失败和撤销关系。嵌入式设计把每个索引需要的链接字段直接放进任务中：索引可以独立，业务对象仍只有一个。下面先建立成员地址与对象地址的关系，再讨论比较、释放和并发责任。
 
-先用一种外部包装设计作对照（这是教学模型，不概括所有用户态容器）：
+先用一种外部包装设计作对照（这里只画对象关系，省略平衡元数据，不是可直接使用的完整红黑树实现，也不概括所有用户态容器）：
 
 ```c
 struct tree_node {
@@ -95,18 +95,18 @@ graph TD
 	rb_core --> rb_root
 	rb_core --> rb_fix
 
-	user_obj --> user_key
-	user_obj --> user_value
-	user_obj --> rb_node
-	user_obj --> user_cmp
-	user_obj --> user_lock
-	user_obj --> user_life
+	user_obj -->|包含字段| user_key
+	user_obj -->|包含字段| user_value
+	user_obj -->|嵌入成员| rb_node
+	caller["调用者代码"] -->|定义键序| user_cmp
+	caller -->|建立访问协议| user_lock
+	caller -->|管理分配与回收| user_life
 
 	classDef rb fill:#2f2f2f,stroke:#111,color:#fff,stroke-width:2px;
 	classDef user fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
 
 	class rb_core,rb_node,rb_root,rb_fix rb;
-	class user_obj,user_key,user_value,user_cmp,user_lock,user_life user;
+	class caller,user_obj,user_key,user_value,user_cmp,user_lock,user_life user;
 ```
 
 这张图要表达的核心是：
@@ -498,6 +498,9 @@ bad = container_of(node, struct other_node, rb);
 
 ```c
 /* GNU C 宿主实验：使用保存的固定宏；不调用树算法或父色指针编码。 */
+#ifdef NDEBUG
+#error "This experiment requires assertions"
+#endif
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -965,7 +968,7 @@ else
 graph TD
 	cmp_rule["比较规则"]
 	no_dup["不允许重复 key"]
-	dup_right["重复 key 插右侧"]
+	dup_right["本次搜索相等时向右<br/>旋转后不保证仍在右侧"]
 	key_addr["key 相同再比较稳定 id"]
 
 	no_dup_text["相等返回 -EEXIST"]
@@ -1032,6 +1035,9 @@ while (*link) {
 
 ```c
 /* C11：比较规则与调用方式分开；不是 rbtree 实现或性能基准。 */
+#ifdef NDEBUG
+#error "This experiment requires assertions"
+#endif
 #include <assert.h>
 #include <limits.h>
 #include <stddef.h>
@@ -1220,6 +1226,7 @@ graph TD
 如果采用泛型容器设计，树节点和业务对象可能是两块内存。
 
 ```c
+/* 只展示包装与载荷关系，省略颜色等平衡元数据。 */
 struct generic_rb_node {
 	struct generic_rb_node *left;
 	struct generic_rb_node *right;
@@ -1398,11 +1405,11 @@ graph TD
 	lock_insert --> search_pos
 	search_pos --> link_obj
 	link_obj --> fix_obj
-	fix_obj --> in_tree
+	fix_obj -->|结束插入临界区| in_tree
 	in_tree --> lock_delete
 	lock_delete --> erase_obj
 	erase_obj --> clear_after
-	clear_after --> check_refs
+	clear_after -->|结束删除临界区| check_refs
 	check_refs --> free_obj
 
 	classDef user fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
@@ -1603,7 +1610,8 @@ graph TD
 	clear_obj --> unlock_writer
 	unlock_writer --> call_rcu_node
 	call_rcu_node --> grace_period
-	grace_period --> rcu_free
+	rcu_reader -->|相关旧读侧退出是完成条件| grace_period
+	grace_period -->|相关宽限期完成后执行回调| rcu_free
 
 	classDef state fill:#e8f5e9,stroke:#2e7d32,color:#000,stroke-width:2px;
 	classDef writer fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
@@ -1632,7 +1640,8 @@ graph TD
 从 rbtree 中摘除，只表示：
 
 ```text
-这个对象不再能通过树查到。
+在同一入口保护协议下，摘除完成后开始的新查找不能再从该树取得它；
+已取得的地址与其他索引不受这次摘除撤销。
 ```
 
 在纯引用计数协议下，每个持有者取得引用后才可越过保护窗口继续使用；每次放弃只撤销自己的一份持有权。计数归零时调用匹配的释放操作。若另有 RCU 旧读者等未计入该计数的访问者，还要同时满足它们的退出条件。
@@ -1645,7 +1654,7 @@ graph TD
 	lookup_get["在入口保护范围内<br/>查找并获取引用"]
 	other_user["已合法取得引用的其他路径"]
 	remove_tree["rb_erase 从树中摘除"]
-	not_find["后续不能再从树中查到"]
+	not_find["受保护的新查找不再取得它<br/>旧持有者仍有引用"]
 	put_ref["各持有者放弃自己的一份引用"]
 	ref_zero{"引用计数为 0?"}
 	keep_alive["对象继续存活"]
@@ -1717,6 +1726,7 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant W as 入口拥有者
     participant I as 两个索引槽
     participant O as job.references与载荷
@@ -1740,6 +1750,9 @@ sequenceDiagram
 
 ```c
 /* C11 单线程所有权模型：两个索引入口、一个借出者，不实现树或 RCU。 */
+#ifdef NDEBUG
+#error "This experiment requires assertions"
+#endif
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1926,7 +1939,8 @@ graph TD
 `RB_CLEAR_NODE()` 的意义是：
 
 ```text
-把 rb_node 标记成“当前不在树中”。
+在调用者已确认未挂树且可修改字段时，写入“已知游离”的约定标记；
+这个写入不会摘除仍在树中的节点。
 ```
 
 `RB_EMPTY_NODE()` 的意义是：

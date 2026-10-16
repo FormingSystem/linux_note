@@ -1,3 +1,6 @@
+#ifdef NDEBUG
+#error "This experiment requires assertions"
+#endif
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>

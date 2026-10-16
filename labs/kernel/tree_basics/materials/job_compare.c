@@ -1,4 +1,7 @@
 /* C11：比较规则与调用方式分开；不是 rbtree 实现或性能基准。 */
+#ifdef NDEBUG
+#error "This experiment requires assertions"
+#endif
 #include <assert.h>
 #include <limits.h>
 #include <stddef.h>

@@ -1,4 +1,7 @@
 /* C11 单线程所有权模型：两个索引入口、一个借出者，不实现树或 RCU。 */
+#ifdef NDEBUG
+#error "This experiment requires assertions"
+#endif
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

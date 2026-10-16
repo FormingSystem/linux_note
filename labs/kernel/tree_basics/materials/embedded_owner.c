@@ -1,4 +1,7 @@
 /* GNU C 宿主实验：使用保存的固定宏；不调用树算法或父色指针编码。 */
+#ifdef NDEBUG
+#error "This experiment requires assertions"
+#endif
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
