@@ -1275,3 +1275,11 @@ B05bl复查同一固定lockdep.c的lockdep_init_map_type，恢复统计CPU记录
 核对 jiffies/get_jiffies_64 的位宽与读取边界、time_after 族的差值比较、ktime_get 的序列计数读取及 timekeeping_cycles_to_ns 的周期差换算、boottime/real 偏移入口、clocksource 与 clock_event_device 的读数/事件接口。hrtimer 模式说明区分软硬中断路径；高分辨率设计说明明确要求合适时钟源、事件设备及运行时启用，不能由 CONFIG_HIGH_RES_TIMERS 单独推出实际高分辨率。普通定时器删除/关闭继续复用 [1.62 定时器证据](#1.62_定时器改期与最终退出证据)及其实现讲解。
 
 在线 Linux 6.12 的 timekeeping、ktime accessors、NO_HZ 和 highres 文档作为机制对照；历史设计文字不代替当前实现。共享源码树仍未恢复访问，本次通过不可变官方 URL 取得相关文件，不声称重新验证了工作树或目标配置。正文代码是单位/属性接入片段，未作 Kbuild、加载、实时延迟或退出竞态实测；图示是职责与状态流程，不是某块 SoC 的物理布局。
+
+## 1.172\_普通定时器的排队执行与最终关闭
+
+2026-10-17 复审[普通定时器](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P04_基础定时器机制_struct_timer_list.md#4.2_为什么未排队不能证明回调已结束)，复用 1.62 已记录的 timer.c 与 timer.h，并从官方固定提交下载 `include/linux/timer_types.h`，Git blob 为 `fae5a388f91495757a5f7492b0114ce4509a0988`。核对 `entry`、`expires`、`function`、`flags` 的声明，`expire_timers()` 先登记 `running_timer`、摘队，在 base 锁外调用回调再清除运行者的过程，以及 `timer_delete_sync()` 与 `timer_shutdown_sync()` 的不同保证。`TIMER_PINNED` 依赖排队 CPU，不能解释成初始化时永久绑定。
+
+正文保留一次性、周期和转交普通工作队列三个独立模块，并明确静态对象、唯一生产者与退出后读取计数的前提。周期算法的验证只检查计划相位、跳过过期点和无符号回绕，不模拟内核执行延迟或同步实现；共享源码树不可访问，未进行目标 Kbuild、模块加载、设备移除或竞争压力测试。永久关闭不代替外部入口注销或对象引用回收。
+
+从正文回调提取下一次到期计算，在 32 位无符号计数模型中用 GCC 14.2 与 Clang 18.1.8 的 C11/O2 分别运行一百万组随机输入及准点、迟到、回绕三个边界；结果与宽整数参考计算一致。把算法改回只递增一个周期的反例被同一检查拒绝。该结果不等于完整内核模块编译或运行通过。
