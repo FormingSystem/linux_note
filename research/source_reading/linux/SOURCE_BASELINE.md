@@ -1399,3 +1399,29 @@ devm-helpers.h 实际提供普通/延迟工作的初始化与自动同步取消�
 runtime_resume_and_get 失败平衡使用计数，get_sync 失败仍保留增加；runtime.c 的 rpm_resume 在同步路径可等待正在执行的 suspend，所以 suspend 中同步取消一个正在等待恢复的工作可能形成环。pm_wakeup_event 的毫秒参数表示事件处理保护区间，不是未来唤醒闹钟；设备唤醒状态、计时域与实际硬件唤醒分别说明。
 
 完整无硬件模块以 timer→work→timer 环更新托管样本内存，明确LIVE/PAUSED/DEAD与排队/运行状态正交，最终动作执行并摘除，暂停保留恢复能力。提取回调、暂停恢复、probe与remove至GCC/Clang GNU11/O2顺序桩模型，覆盖两处分配失败、动作登记失败、启动后失败回滚、四种停止窗口、暂停恢复、工作中闭门后不重排；三个反例被拒绝。模型不证明真实锁并发、弱内存、设备核心回滚或电源管理执行，未进行目标Kbuild、装载、IRQ、系统睡眠或runtime PM实测。
+
+## 1.180\_系统睡眠的闹钟委托与唤醒交接
+
+2026-10-17 复审[系统挂起与定时唤醒](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P11_电源管理_系统挂起与定时唤醒.md)，新增核对官方不可变提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 下列文件；复用上一节同提交唤醒源、设备PM和时间管理证据。外部工作树不可访问，本轮采用官方固定提交的原始文件，不宣称重新验证本地配置。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| kernel/time/alarmtimer.c | 8bf888641694918dbbd72de297adedae1aa0386d |
+| include/linux/alarmtimer.h | 05e758b8b894541c1388b8ec97300dc8573fa317 |
+| include/linux/pm_qos.h | 4a69d4af3ff8e954c9e15b5879a32ea08d0d980d |
+| kernel/power/qos.c | 4244b069442e08effee8f580231e670a6a87a4a0 |
+| drivers/rtc/dev.c | c4a3ab53dcd4b7280a3a2981fe842729603a1feb |
+| drivers/rtc/interface.c | aaf76406cd7d7d2cfd5479fc1fc892fcb5efbb6b |
+| drivers/rtc/sysfs.c | e3062c4d3f2ce1fbf2ce70c9cbaa13853fc60b92 |
+| include/uapi/linux/rtc.h | 97aca4503a6a390319ca7a53e8b19748912b8b19 |
+| Documentation/admin-guide/pm/sleep-states.rst | ee55a460c639bcbaee09a1fa9b4e555895ce730c |
+| Documentation/ABI/testing/sysfs-class-rtc | 95984289a4ee69fd9990e3d2d05a0d59e8785ac9 |
+| Documentation/admin-guide/rtc.rst | 688c95b11919e780fcbe006304433f3b9936b7cd |
+| include/linux/math64.h | 6aaccc1626ab4c6d38d7b4cb6cd3820ba41f628f |
+| kernel/time/Makefile | 4af2a264a16073046b5dadba4ce4f8816dfa0a5b |
+
+alarmtimer 运行时借助 hrtimer，挂起时按时间类型求最近剩余量并委托选定RTC；选取条件包含RTC闹钟能力与父设备唤醒许可。无RTC时该挂起钩子返回，但不能据此声称硬件唤醒成立。基线对不足两秒的目标可拒绝挂起，对硬件范围受限目标可提前安排唤醒；消费者的软件目标与RTC硬件目标分层。alarm_start 返回void；alarm_cancel不永久禁止其他生产者重排。回调默认路径不得睡眠，不外推所有实时配置的硬中断上下文。
+
+RTC字符接口的ALM_SET接收rtc_time，WKALM_SET接收rtc_wkalrm；文件关闭保留一次性闹钟。sysfs +N以RTC当前时间为基准，不能与系统REALTIME或NTP状态等同。RTC核心队列、aie_timer和底层驱动IRQ有明确所有权，不能让消费者虚构第二根IRQ。CPU延迟约束按本版cpu_latency_qos_*登记、更新和撤销；不是原稿旧PM_QOS_CPU_DMA_LATENCY调用。
+
+正文完整alarm周期模块与RTC工具分别经GCC/Clang GNU11/O2宿主模型检查：930000组相位输入、溢出、启动失败、四种退出窗口、工作结束后重读时间、事件保护与闭门；136组跨月/闰日/跨年日历转换及错误日期、参数、ioctl失败和结构传参。三种删除门控/工作排空/事件保护的反例被拒绝。模型使用原始RTC结构布局，系统调用、锁、闹钟、工作和PM由桩替代，日历转换使用宿主库适配；不等于目标Kbuild、Linux用户态编译、真实并发、系统挂起或RTC硬件实测。
