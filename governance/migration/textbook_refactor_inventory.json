@@ -5242,6 +5242,114 @@
           "全仓8860有效链接、受影响文档格式/元数据/路径及git diff检查通过。"
         ],
         "limits": "当前共享盘不可访问，使用保存的固定源码；未运行目标内核。术语告警已按阶段、前章定义和函数上下文审查，源码不为消除缩写告警而改名。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P01_工作队列.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从采样场景建立线程工作队列，区分WQ_BH；统一门控锁与停止变量，修正ordered入口和延迟自重排协议。",
+        "date": "2026-10-16",
+        "validation": [
+          "九篇完整冷读；两个核心保存源码blob匹配固定记录，核对投递、取消、运行数、节点额度、flush、救援和冻结。",
+          "完整顺序模型十组编译运行，包括双编译器O0/O2与NDEBUG、提前事件成功与错误清后继登记预期失败。",
+          "十八张图逐张目视，最终两张修订重新渲染；九篇锚点和连续性检查、全仓8862有效链接及格式/元数据/路径/diff通过。"
+        ],
+        "limits": "共享源码树当前不可访问，使用保存原文；内核协议片段未编译加载，C模型不证明调度/锁/弱内存。术语告警按前章定义和属性参考表逐项审查；文档与实现的unbound额度差异明确记录。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P02_异步执行的抽象状态机.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "重写抽象推导，分开事件、pending、running与停止状态，补完整C模型及两个可验证变体。",
+        "date": "2026-10-16",
+        "validation": [
+          "九篇完整冷读；两个核心保存源码blob匹配固定记录，核对投递、取消、运行数、节点额度、flush、救援和冻结。",
+          "完整顺序模型十组编译运行，包括双编译器O0/O2与NDEBUG、提前事件成功与错误清后继登记预期失败。",
+          "十八张图逐张目视，最终两张修订重新渲染；九篇锚点和连续性检查、全仓8862有效链接及格式/元数据/路径/diff通过。"
+        ],
+        "limits": "共享源码树当前不可访问，使用保存原文；内核协议片段未编译加载，C模型不证明调度/锁/弱内存。术语告警按前章定义和属性参考表逐项审查；文档与实现的unbound额度差异明确记录。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P03_cmwq对象层次与状态所有权.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先推导共享资源为何需要pwq，再给对象与所有权表，补执行位置与拓扑术语。",
+        "date": "2026-10-16",
+        "validation": [
+          "九篇完整冷读；两个核心保存源码blob匹配固定记录，核对投递、取消、运行数、节点额度、flush、救援和冻结。",
+          "完整顺序模型十组编译运行，包括双编译器O0/O2与NDEBUG、提前事件成功与错误清后继登记预期失败。",
+          "十八张图逐张目视，最终两张修订重新渲染；九篇锚点和连续性检查、全仓8862有效链接及格式/元数据/路径/diff通过。"
+        ],
+        "limits": "共享源码树当前不可访问，使用保存原文；内核协议片段未编译加载，C模型不证明调度/锁/弱内存。术语告警按前章定义和属性参考表逐项审查；文档与实现的unbound额度差异明确记录。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P04_work投递激活与pending合并.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正disable返回、同队列非重入前提及inactive不插队分流，解释活动额度与运行状态不同。",
+        "date": "2026-10-16",
+        "validation": [
+          "九篇完整冷读；两个核心保存源码blob匹配固定记录，核对投递、取消、运行数、节点额度、flush、救援和冻结。",
+          "完整顺序模型十组编译运行，包括双编译器O0/O2与NDEBUG、提前事件成功与错误清后继登记预期失败。",
+          "十八张图逐张目视，最终两张修订重新渲染；九篇锚点和连续性检查、全仓8862有效链接及格式/元数据/路径/diff通过。"
+        ],
+        "limits": "共享源码树当前不可访问，使用保存原文；内核协议片段未编译加载，C模型不证明调度/锁/弱内存。术语告警按前章定义和属性参考表逐项审查；文档与实现的unbound额度差异明确记录。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P05_worker并发管理与执行循环.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补bound运行数钩子的具体通信过程、临时manager角色以及CPU-intensive约束。",
+        "date": "2026-10-16",
+        "validation": [
+          "九篇完整冷读；两个核心保存源码blob匹配固定记录，核对投递、取消、运行数、节点额度、flush、救援和冻结。",
+          "完整顺序模型十组编译运行，包括双编译器O0/O2与NDEBUG、提前事件成功与错误清后继登记预期失败。",
+          "十八张图逐张目视，最终两张修订重新渲染；九篇锚点和连续性检查、全仓8862有效链接及格式/元数据/路径/diff通过。"
+        ],
+        "limits": "共享源码树当前不可访问，使用保存原文；内核协议片段未编译加载，C模型不证明调度/锁/弱内存。术语告警按前章定义和属性参考表逐项审查；文档与实现的unbound额度差异明确记录。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P06_flush_cancel与颜色代际.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补flush局部到全局汇聚与准备哨兵，按固定版本修正临时disable取消，区分running和pending可并存。",
+        "date": "2026-10-16",
+        "validation": [
+          "九篇完整冷读；两个核心保存源码blob匹配固定记录，核对投递、取消、运行数、节点额度、flush、救援和冻结。",
+          "完整顺序模型十组编译运行，包括双编译器O0/O2与NDEBUG、提前事件成功与错误清后继登记预期失败。",
+          "十八张图逐张目视，最终两张修订重新渲染；九篇锚点和连续性检查、全仓8862有效链接及格式/元数据/路径/diff通过。"
+        ],
+        "limits": "共享源码树当前不可访问，使用保存原文；内核协议片段未编译加载，C模型不证明调度/锁/弱内存。术语告警按前章定义和属性参考表逐项审查；文档与实现的unbound额度差异明确记录。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P07_unbound_rescuer与回收前进性.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补亲和分组与节点额度、记录同树文档差异，展开mayday登记及救援引用，修正ordered入口。",
+        "date": "2026-10-16",
+        "validation": [
+          "九篇完整冷读；两个核心保存源码blob匹配固定记录，核对投递、取消、运行数、节点额度、flush、救援和冻结。",
+          "完整顺序模型十组编译运行，包括双编译器O0/O2与NDEBUG、提前事件成功与错误清后继登记预期失败。",
+          "十八张图逐张目视，最终两张修订重新渲染；九篇锚点和连续性检查、全仓8862有效链接及格式/元数据/路径/diff通过。"
+        ],
+        "limits": "共享源码树当前不可访问，使用保存原文；内核协议片段未编译加载，C模型不证明调度/锁/弱内存。术语告警按前章定义和属性参考表逐项审查；文档与实现的unbound额度差异明确记录。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P08_CPU热插拔电源管理与生命周期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完善冻结过程、停止门控与在途完成源边界，补验证场景及诊断工具含义。",
+        "date": "2026-10-16",
+        "validation": [
+          "九篇完整冷读；两个核心保存源码blob匹配固定记录，核对投递、取消、运行数、节点额度、flush、救援和冻结。",
+          "完整顺序模型十组编译运行，包括双编译器O0/O2与NDEBUG、提前事件成功与错误清后继登记预期失败。",
+          "十八张图逐张目视，最终两张修订重新渲染；九篇锚点和连续性检查、全仓8862有效链接及格式/元数据/路径/diff通过。"
+        ],
+        "limits": "共享源码树当前不可访问，使用保存原文；内核协议片段未编译加载，C模型不证明调度/锁/弱内存。术语告警按前章定义和属性参考表逐项审查；文档与实现的unbound额度差异明确记录。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按现实问题、抽象推导和源码落点更新阅读契约，明确线程主线与BH差量。",
+        "date": "2026-10-16",
+        "validation": [
+          "九篇完整冷读；两个核心保存源码blob匹配固定记录，核对投递、取消、运行数、节点额度、flush、救援和冻结。",
+          "完整顺序模型十组编译运行，包括双编译器O0/O2与NDEBUG、提前事件成功与错误清后继登记预期失败。",
+          "十八张图逐张目视，最终两张修订重新渲染；九篇锚点和连续性检查、全仓8862有效链接及格式/元数据/路径/diff通过。"
+        ],
+        "limits": "共享源码树当前不可访问，使用保存原文；内核协议片段未编译加载，C模型不证明调度/锁/弱内存。术语告警按前章定义和属性参考表逐项审查；文档与实现的unbound额度差异明确记录。"
       }
     },
     "additional_documents": [
