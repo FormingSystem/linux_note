@@ -108,14 +108,22 @@ sequenceDiagram
 
 ## 1.7\_用完整C模型观察就绪失效
 
-下面是顺序模型，不调用Linux poll，也不制造C数据竞争。它让两个读者依次观察同一状态，再分别尝试消费，重现“两个可读观察只对应一份数据”。false只模拟暂时无数据，不是完整read错误协议。
+下面是顺序模型，不调用Linux poll，也不制造C数据竞争。它让两个读者依次观察同一状态，再分别尝试消费，重现“两个可读观察只对应一份数据”。false只模拟暂时无数据，不是完整read错误协议。need 是本例自定义的检查函数，EXIT_FAILURE 是标准 C 的失败退出状态宏；检查失败会打印原因并退出，不依赖标准 assert 是否被编译掉。
 
 ```c
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 struct buffer_model { unsigned int bytes; };
+
+static void need(bool ok, const char *step)
+{
+    if (!ok) {
+        fprintf(stderr, "unexpected result: %s\n", step);
+        exit(EXIT_FAILURE); /* 失败直接报告，不依赖是否启用assert。 */
+    }
+}
 
 static bool readable(const struct buffer_model *b)
 {
@@ -135,16 +143,26 @@ int main(void)
     struct buffer_model b = {1};
     bool a_ready = readable(&b);
     bool b_ready = readable(&b);
-    assert(a_ready && b_ready);
-    assert(try_read(&b));   /* A先消费唯一字节。 */
-    assert(!try_read(&b));  /* B的旧观察没有为它保留数据。 */
-    assert(!readable(&b));
+    need(a_ready && b_ready, "both observe readiness");
+    bool a_read = try_read(&b); /* A先消费唯一字节。 */
+    bool b_read = try_read(&b); /* B的旧观察没有为它保留数据。 */
+    need(a_read && !b_read, "only one successful read");
+    need(!readable(&b), "buffer empty after consumption");
     puts("two readiness observations; one successful read");
     return 0;
 }
 ```
 
-保存为readiness_model.c，以`cc -std=c11 -Wall -Wextra -Werror -O2 readiness_model.c -o readiness_model`编译运行。先预测把初始字节数改为2会改变哪条断言，再修改模型；若希望两次成功，必须同时修改消费后的预期，不能把原程序的断言失败误读成poll错误。
+把代码保存为 readiness_model.c。这个名字由实验自行选择；程序只使用标准 C 库，可以先在宿主环境观察顺序语义。Linux 或具有 cc 的环境中，先编译再运行：
+
+```bash
+cc -std=c11 -Wall -Wextra -Werror -O2 readiness_model.c -o readiness_model
+./readiness_model
+```
+
+第一条命令按 C11 编译，开启常用警告并把警告视为错误，生成名为 readiness_model 的可执行文件；第二条才执行它。预期打印 `two readiness observations; one successful read`。消费动作先执行并保存结果，再由 need 检查，定义 NDEBUG 关闭标准 assert 也不会使读取消失。
+
+先预测把初始字节数改为 2 会改变哪个检查，再修改模型：此时 A、B 都能消费成功，最终仍为空；若希望程序通过，必须把“只有 A 成功”的预期改成“两者成功”。仅改初始数据而保留旧预期会报错，这属于实验条件变化，不是 poll 出错。
 
 回到驱动，验证应分别覆盖登记前已有数据、登记与睡眠间到达、睡眠后到达、多读者争抢、信号、超时和对象关闭。这些是不同路径，模型只解释其中一个竞争反例，不能代替内核或设备测试。
 

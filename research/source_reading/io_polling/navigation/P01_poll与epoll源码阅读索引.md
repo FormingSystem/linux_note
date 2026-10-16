@@ -14,7 +14,7 @@ domains:
 
 ## 1.1\_固定提交与文件位置
 
-官方来源为NXP的linux-imx，来源分支lf-6.12.y，发布标签lf-6.12.20-2.0.0，固定提交dfaf2136deb2af2e60b994421281ba42f1c087e0，Linux 6.12.20。身份与本轮边界见[源码基线](../../linux/SOURCE_BASELINE.md#1.132_poll登记与触发边界)。本地实验提交不作为证据。
+官方来源为NXP的linux-imx，来源分支lf-6.12.y，发布标签lf-6.12.20-2.0.0，固定提交dfaf2136deb2af2e60b994421281ba42f1c087e0，Linux 6.12.20。身份与既有核对边界见[源码基线](../../linux/SOURCE_BASELINE.md#1.132_poll登记与触发边界)。本地实验提交不作为证据。
 
 | 上游相对文件 | Git blob | 阅读职责 |
 | --- | --- | --- |
@@ -23,6 +23,8 @@ domains:
 | fs/eventpoll.c | 1a06e462b6efba8824456cffebad040720c4226a | 持久兴趣、回调、候选扫描、模式处理与撤销 |
 
 ## 1.2\_按阶段阅读
+
+阶段沿用正文模型，LT/ET 与 ONESHOT 的行为见[交付模式](../../../../knowledge/linux/io_model/blocking_io/P02_epoll持久登记与交付.md#2.5_LT与ET改变的是后续检查责任)，ADD/MOD/DEL 的动作见[接口职责](../../../../knowledge/linux/io_model/blocking_io/P02_epoll持久登记与交付.md#2.2_三个接口分开管理与等待)。这里把已建立的动作映射到函数，不另起一套阶段编号。
 
 | 正文阶段 | 入口顺序 | 阅读时要回答的问题 |
 | --- | --- | --- |
@@ -48,5 +50,7 @@ domains:
 ## 1.4\_验证边界与继续阅读
 
 上述证据是固定源码的只读核对，未修改或运行外部内核。宿主C模型只验证就绪观察不保留数据；[Linux管道实验](../../../../knowledge/linux/io_model/blocking_io/P02_epoll持久登记与交付.md#2.6_完整Linux实验_留下一个字节)当前没有Linux运行日志。两者均不证明所有驱动的.poll实现、并发关闭、信号或所有epoll标志都已验证。
+
+E3 的扫描与回调是并行关系，不是“先交付完，再接收一次新通知”。[正文完整时序](../../../../knowledge/linux/io_model/blocking_io/P02_epoll持久登记与交付.md#2.4_从登记到再次等待的一轮过程)把 ep_start_scan、txlist、ovflist 和 ep_done_scan 放进同一窗口；源码阅读时应同时对照这些函数，确认未完成项怎样回到候选集合。
 
 本页只承担模块概念与阅读索引，未新建空的source_explanations目录；后续若增加特定宏体/函数体讲解，须按上游路径落地唯一实现标题并从对应阶段精确链接。回到[P03负载选择](../../../../knowledge/linux/io_model/blocking_io/P03_poll与epoll的选择.md)，可以把版本中的树、候选、回调与复制成本映射到实际应用，而不推导出恒定O(1)的口号。

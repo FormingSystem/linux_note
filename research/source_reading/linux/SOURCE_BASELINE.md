@@ -1077,6 +1077,8 @@ B05y按固定dfaf2136提交核对include/linux/poll.h、fs/select.c、fs/eventpo
 
 [就绪C模型](../../../knowledge/linux/io_model/blocking_io/P01_poll登记与就绪复查.md#1.7_用完整C模型观察就绪失效)在宿主双编译器严格C11 O2运行；[Linux管道实验](../../../knowledge/linux/io_model/blocking_io/P02_epoll持久登记与交付.md#2.6_完整Linux实验_留下一个字节)未在Linux运行，正文输出明确为预期。未验证真实驱动、多线程、ARM、信号与并发关闭；不把模型通过等同于系统调用或性能验证。
 
+2026-10-16 复审改用显式检查函数，将消费动作从 assert 表达式中分离。GCC/Clang、O0/O2、启用/关闭标准断言的八组编译运行通过，另检查两字节条件下旧预期失败及修正预期成功，共十组。三份保存源码的 Git blob 与上表固定记录一致，据此核对扫描期间 ovflist、合并未完成 txlist 及排他登记限制；本次共享盘不可访问，当前外部工作树复核未完成。Linux 系统调用程序未改，仍无本次 Linux 运行证据。
+
 ## 1.133\_等待条件与退出分支
 
 B05z只读固定dfaf2136的include/linux/wait.h（blob 2b322a9b88a2bd122d30e70a3d6eaa12c5cec244）和kernel/sched/wait.c（blob 51e38f5f47018c953e31c834dc6385c182359359），核对初始快查、prepare后condition优先、信号摘链错误出口、正常finish、独占额度及超时边界返回1。知识侧[单槽记录协议](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P01_等待队列.md#1.3_标准条件等待)是仓库应用示例，不是上游摘录；未编译或加载目标驱动。模块导读同步区分循环与退出，未因相同术语删减源码层。
