@@ -2394,6 +2394,226 @@
           "格式、元数据、命名、707篇链接和diff通过。"
         ],
         "limits": "复用明确列出的既有证据，本次未重跑ARM前端或执行目标装卸、真实诊断故障；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/drivers/base/bus.c.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对公共bus描述与内部subsys_private，注销临时份额和内部release界限完整。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；2个代码块核对，仓库注释单独识别。",
+          "2个出链、5个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/drivers/base/class.c.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读；澄清内部份额延后class_release进而延后动态公共描述清理，保留输入身份与手工管理边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；6个代码块核对，仓库注释单独识别。",
+          "2个出链、7个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/drivers/base/core.c.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对注册失败初始份额、公开get/put、注销及三个release优先级，devres兜底与解绑区分完整。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；5个代码块核对，仓库注释单独识别。",
+          "5个出链、22个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/drivers/base/dd.c.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对解绑资源、DMA及驱动关联清理不等待设备引用归零，退出前排空限制完整。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；1个代码块核对，仓库注释单独识别。",
+          "2个出链、3个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/include/linux/compiler_attributes.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；返回值诊断与运行时清理分开，kref与底层bool消费职责准确。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；1个代码块核对，仓库注释单独识别。",
+          "2个出链、6个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/include/linux/compiler_types.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对signed_wrap按配置抑制插桩及编译选项边界，不把属性当通用C回绕定义。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；1个代码块核对，仓库注释单独识别。",
+          "3个出链、6个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/include/linux/kobject.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对身份字段、独立状态位、类型回调及调试延迟工作配置。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；2个代码块核对，仓库注释单独识别。",
+          "2个出链、3个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/include/linux/kref.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读；分开实现与应用回链，保留全部入口，明确条件链始终转换0/1及异常非零边界，修正创建模板章号。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；9个代码块核对，仓库注释单独识别。",
+          "54个出链、148个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/include/linux/rculist.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对摘链保留next、毒化prev及外部写同步和RCU回收责任，阶段与应用协议对应。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；1个代码块核对，仓库注释单独识别。",
+          "3个出链、6个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/include/linux/refcount.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对普通增减旧值、异常处理、内存序和条件循环；唯一非上游代码块为已标明的三层初始化器展开。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；13个代码块核对，仓库注释单独识别。",
+          "12个出链、34个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/include/linux/refcount_types.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对refs原子成员与模型饱和布尔位差别，未把模型布局当真实类型。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；1个代码块核对，仓库注释单独识别。",
+          "4个出链、5个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/include/linux/timer.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对pending只观察挂接及旧名同步删除包装，保留重启与执行退出区别。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；2个代码块核对，仓库注释单独识别。",
+          "4个出链、5个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/include/linux/types.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对atomic_t结构及ATOMIC_INIT初始化层次，不赋予发布或寿命保证。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；1个代码块核对，仓库注释单独识别。",
+          "5个出链、4个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/include/linux/xarray.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对插入包装自行管理锁及底层分配可能脱锁，发布预留与初始化边界准确。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；1个代码块核对，仓库注释单独识别。",
+          "2个出链、3个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/kernel/time/timer.c.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；逐行核对改期合并、running阻止迁移、shutdown置空function和等待重试摘除，非RT及目标验证边界明确。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；6个代码块核对，仓库注释单独识别。",
+          "4个出链、11个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/lib/idr.c.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对局部编号与对象字段、alloc_u32先写再发布及外部同步和对象引用责任。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；4个代码块核对，仓库注释单独识别。",
+          "2个出链、4个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/lib/kobject.c.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；逐行核对初始化、取得、显式及隐式撤下、类型释放与保存name/parent收尾，延迟配置边界完整。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；9个代码块核对，仓库注释单独识别。",
+          "2个出链、10个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/lib/refcount.c.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；逐行核对饱和告警、unsigned快路径、保留最后份额、锁内重查与归零接锁。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；5个代码块核对，仓库注释单独识别。",
+          "7个出链、23个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/lib/xarray.c.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读；核对load内部RCU范围、删除锁包装及已持锁入口，对象保活责任另由应用承担。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；3个代码块核对，仓库注释单独识别。",
+          "3个出链、8个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
+      },
+      "research/source_reading/kref/source_explanations/Makefile.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读；更新GCC14.2.0的日期化选项查询结果，固定构建选项与函数插桩属性分工准确。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定dfaf2136源码重新读取，blob吻合；1个代码块核对，仓库注释单独识别。",
+          "2个出链、4个入链标题有效；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "沿用既有固定函数宿主检查，不新增目标构建、装卸、并发、硬件内存序或诊断器运行结论；人工状态不变。"
       }
     }
   },
