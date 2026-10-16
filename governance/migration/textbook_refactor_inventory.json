@@ -4761,6 +4761,127 @@
           "复用已目视的模块关系/时序图并说明当前符号对应阶段；九篇完整出入标题锚点，全仓719篇8847有效链接及格式元数据/diff通过。"
         ],
         "limits": "实现参考页依赖关联模块的既有术语；审计提示的源码宏/字段/配置名按契约和本地解释复核，不为消提示删除源码。三处非连续宏摘录已注明。源码静态核对不等于目标Kbuild、装卸、完整节点算法或并发运行，既有宿主/前端结果未重记为本轮执行。"
+      },
+      "research/source_reading/rbtree/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补缓存/增强/应用阅读地图，保留全部表格入口并按依赖重排，修正P12旧前置。",
+        "date": "2026-10-16",
+        "validation": [
+          "十一篇完整冷读，十九张Mermaid图渲染并逐张目视；表格重排保证所有原行保留。",
+          "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
+      },
+      "research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按布局、查询、接入、删除、遍历、替换、扩展与场景重排完整问题入口，修正已落地范围与历史验证措辞。",
+        "date": "2026-10-16",
+        "validation": [
+          "十一篇完整冷读，十九张Mermaid图渲染并逐张目视；表格重排保证所有原行保留。",
+          "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
+      },
+      "research/source_reading/rbtree/navigation/P02_查找路径与返回边界导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "冷读查找L0到L3、重复键、旧路径漏查和返回后寿命，已有解释与图文有效，保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "十一篇完整冷读，十九张Mermaid图渲染并逐张目视；表格重排保证所有原行保留。",
+          "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
+      },
+      "research/source_reading/rbtree/navigation/P03_红叶接入与冲突修复导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "冷读红叶I0到I5、叔红上推、内外侧旋转和同步回调，已有中间态边界完整，保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "十一篇完整冷读，十九张Mermaid图渲染并逐张目视；表格重排保证所有原行保留。",
+          "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
+      },
+      "research/source_reading/rbtree/navigation/P04_对象摘除与缺黑修复导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "冷读D0到D4、后继身份/原色、缺黑父槽、回调与持有权，图中自动步号与正文逐项一致，保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "十一篇完整冷读，十九张Mermaid图渲染并逐张目视；表格重排保证所有原行保留。",
+          "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
+      },
+      "research/source_reading/rbtree/navigation/P05_有序推进与整树销毁导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "冷读中序取消及后序销毁的不同next证明、旋转漏访问反例和输入边界，保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "十一篇完整冷读，十九张Mermaid图渲染并逐张目视；表格重排保证所有原行保留。",
+          "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
+      },
+      "research/source_reading/rbtree/navigation/P06_同键替换与旧对象退出导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "冷读R0到R4普通/RCU发布、父链非快照、缓存额外入口与旧对象寿命，保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "十一篇完整冷读，十九张Mermaid图渲染并逐张目视；表格重排保证所有原行保留。",
+          "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
+      },
+      "research/source_reading/rbtree/navigation/P07_节点布局与编码状态导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "冷读根/嵌入节点/外围对象地址、T0到T4、父色位与成员偏移，保留有效内容。",
+        "date": "2026-10-16",
+        "validation": [
+          "十一篇完整冷读，十九张Mermaid图渲染并逐张目视；表格重排保证所有原行保留。",
+          "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
+      },
+      "research/source_reading/rbtree/navigation/P08_最左缓存与结构更新导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "冷读C0到C6缓存与拓扑更新、两个返回值歧义、独立首地址检查，保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "十一篇完整冷读，十九张Mermaid图渲染并逐张目视；表格重排保证所有原行保留。",
+          "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
+      },
+      "research/source_reading/rbtree/navigation/P09_子树摘要与增强回调导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "冷读A0到A5传播/copy/rotate、stop边界、错误摘要漏报及稳定检查点，保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "十一篇完整冷读，十九张Mermaid图渲染并逐张目视；表格重排保证所有原行保留。",
+          "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
+      },
+      "research/source_reading/rbtree/navigation/P10_内核调用场景与选择边界导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留四类场景索引与业务决策分工，修正示例归属及十文件/十八函数的历史核对措辞。",
+        "date": "2026-10-16",
+        "validation": [
+          "十一篇完整冷读，十九张Mermaid图渲染并逐张目视；表格重排保证所有原行保留。",
+          "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
       }
     },
     "additional_documents": [
