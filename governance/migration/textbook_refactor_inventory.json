@@ -13,7 +13,10 @@
     "scope_rule": "该提交中全部已跟踪 Markdown，新增或拆分正文继续纳入；历史记录按证据职责保留，治理、导航与参考按各自用途审查，不回写冻结出版物或第三方原始证据。",
     "skill": "tools/ai/codex/skills/build-linux-note-topic/SKILL.md",
     "default_review_state": "pending",
-    "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。reviews 中未出现的路径仍为待复审，人工评审地图状态不得自动升级。",
+    "path_migrations": {
+      "knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md": "knowledge/linux/object_lifetime/kref/P05_基础_API_调用前提与状态转换.md"
+    },
+    "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
       "GIC 与真实关联的 Linux 中断说明",
       "class_sysfs、Maple 游标及 Lockdep 等已指出的讲解断点",

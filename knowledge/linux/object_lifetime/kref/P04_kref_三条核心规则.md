@@ -496,4 +496,4 @@ cc -std=c11 -Wall -Wextra -Werror -O2 labs/kernel/object_lifetime/materials/refe
 
 上一篇：[kref 生命周期状态机](P03_kref_生命周期状态机.md)。
 
-下一篇：[基础 API 源码逐行讲解](P05_基础_API_源码逐行讲解.md)。
+下一篇：[基础 API 调用前提与状态转换](P05_基础_API_调用前提与状态转换.md)。

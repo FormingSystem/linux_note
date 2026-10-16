@@ -348,7 +348,7 @@ mindmap-plugin: basic
             - 🟢 [P02 源码入口与结构定义](../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md)
             - 🟢 [P03 kref 生命周期状态机](../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md)
             - 🟢 [P04 kref 三条核心规则](../../knowledge/linux/object_lifetime/kref/P04_kref_三条核心规则.md)
-            - 🟢 [P05 基础 API 源码逐行讲解](../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md)
+            - 🟢 [P05 基础 API 调用前提与状态转换](../../knowledge/linux/object_lifetime/kref/P05_基础_API_调用前提与状态转换.md)
             - 🟢 [P06 release 回调与复杂销毁模式](../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md)
             - 🟢 [P07 handoff 所有权转移模型](../../knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md)
             - 🟢 [P08 lookup 场景与 kref get unless zero()](../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md)

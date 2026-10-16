@@ -47,7 +47,7 @@ B04d 布局调整后重新通过 ARM 前端、354 份头文件固定源码差异
 
 ## 1.6\_类型接口与部分初始化清理
 
-[note_kref_object.c](note_kref_object.c)是[P02 完整对象模板](../../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.19_标准自定义引用对象模板)的配套模块。外壳与 data 分别申请；init 建立创建者份额，部分初始化失败和正常最后归还共用 release，先清理 data 再清理外壳。NULL put 是本类型明确允许的空槽操作，get 仍须非空且已有正引用保护。[P05 类型契约](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.10_API_封装模板)复用这些已验证分支解释封装边界；本次仅重构讲解，材料程序未修改，不新增目标验证结论。
+[note_kref_object.c](note_kref_object.c)是[P02 完整对象模板](../../../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md#2.19_标准自定义引用对象模板)的配套模块。外壳与 data 分别申请；init 建立创建者份额，部分初始化失败和正常最后归还共用 release，先清理 data 再清理外壳。NULL put 是本类型明确允许的空槽操作，get 仍须非空且已有正引用保护。[P05 类型契约](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_调用前提与状态转换.md#5.10_API_封装模板)复用这些已验证分支解释封装边界；本次仅重构讲解，材料程序未修改，不新增目标验证结论。
 
 ARM 前端通过，354 份头文件中 342 份非生成源码与固定提交无差异。宿主 C 夹具采用实际模块代码和固定普通引用函数、明确的顺序原子/分配替身，覆盖成功、外壳分配失败、data 申请失败及空槽 put，检查释放顺序、回调次数、存活块归零和 ref 非首成员。未执行目标链接、装卸、真实分配器故障注入或并发。
 
@@ -83,13 +83,13 @@ ARM 前端检查通过，354 份依赖头中 342 份非生成源码与官方固�
 
 ## 1.12\_条件取得的比较窗口
 
-[conditional_take.c](conditional_take.c)对应[P05 完整条件模型](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.7.2_kref_get_unless_zero%28%29_的使用场景)，使用 C11 原子比较交换和显式安排的计数变化观察零、正数、读后变零和正数重试四路径。严格 C11 编译运行通过；没有线程或回收，对象地址始终有效，不模拟 Linux 饱和和内存模型。
+[conditional_take.c](conditional_take.c)对应[P05 完整条件模型](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_调用前提与状态转换.md#5.7.2_kref_get_unless_zero%28%29_的使用场景)，使用 C11 原子比较交换和显式安排的计数变化观察零、正数、读后变零和正数重试四路径。严格 C11 编译运行通过；没有线程或回收，对象地址始终有效，不模拟 Linux 饱和和内存模型。
 
 固定条件链的四个实际函数另由宿主顺序夹具核对六类 helper 路径（含 oldp、读后变零/正数以及溢出/已饱和）与两种 kref 返回结果；忽略返回值按预期触发编译诊断。底层比较交换和原子是明确替身，保留旧值与失败更新规则；未执行目标模块、真实并发、架构指令或内存序验证。
 
 ## 1.13\_非拥有索引与最后归还锁
 
-[note_kref_locked.c](note_kref_locked.c)对应[P05 完整锁交接模块](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md#5.8.2_kref_put_mutex%28%29_的典型用途)。初始份额仍归创建者，单槽不拥有引用，所有归还经过同一 mutex 组合接口；最终回调清槽、解锁后回收。Makefile 已登记，构建与观察步骤在正文。
+[note_kref_locked.c](note_kref_locked.c)对应[P05 完整锁交接模块](../../../../knowledge/linux/object_lifetime/kref/P05_基础_API_调用前提与状态转换.md#5.8.2_kref_put_mutex%28%29_的典型用途)。初始份额仍归创建者，单槽不拥有引用，所有归还经过同一 mutex 组合接口；最终回调清槽、解锁后回收。Makefile 已登记，构建与观察步骤在正文。
 
 ARM 前端通过，354 份头文件中的 342 份非生成源码与官方固定提交无差异。宿主顺序夹具覆盖六组模块路径（含满槽拒绝、不误清旧入口、查找者抢先加入和两个读者退出顺序）及 mutex/spinlock 各五种分支，共十例；固定五函数与普通引用链保持真实主体。初次严格构建发现固定 unsigned/signed 常量比较告警，明确使用 Wno-sign-compare，固定 scripts/Makefile.extrawarn 在非 W=3 分支同样关闭该告警；不改函数体避警。锁、分配和原子为顺序替身，未验证真实竞争、调度、IRQ、PREEMPT_RT、目标装卸或内存序。
 

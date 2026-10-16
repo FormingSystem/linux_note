@@ -1,6 +1,6 @@
 ---
 id: knowledge.linux.object_lifetime.kref.p05_基础_api_源码逐行讲解
-title: "基础 API 源码逐行讲解"
+title: "基础 API 调用前提与状态转换"
 kind: mechanism
 status: evolving
 domains:
@@ -8,7 +8,7 @@ domains:
   - kernel
 ---
 
-# 第5章\_基础\_API\_源码逐行讲解
+# 第5章\_基础\_API\_调用前提与状态转换
 
 ## 5.1\_本章主线
 
