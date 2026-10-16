@@ -3392,6 +3392,201 @@
           "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
         ],
         "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+      },
+      "knowledge/linux/data_structures/单链表_linked_list/P01_概念_定位与底层实现.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读对象、连接、哨兵、侵入式与寿命的推导，核对循环图和四问答案；叙述职责明确，保留正文。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "knowledge/linux/data_structures/单链表_linked_list/P02_初始化与基本操作.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留完整拓扑模型与接口边界，在表前补操作选择背景，并让材料和正文明确拒绝关闭断言的构建。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "knowledge/linux/data_structures/单链表_linked_list/P03_并发原语与原子性.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "冷读确定性交错、共同锁与S0至S5交接、READ_ONCE及执行上下文边界；补实验断言构建保护，核对角色图与含引用分支时序。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "knowledge/linux/data_structures/单链表_linked_list/P04_一次性初始化.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "区分容器初始化周期与成员交接阶段；补静态键含义、非RT边界、优化分配失败后的持续锁成本，补时序中跳过回调方的解锁。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "knowledge/linux/data_structures/单链表_linked_list/P05_接口_示例与注意事项.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读模块、私有批次拼接、失败回滚、退出与预测；用固定链表函数和分配替身重验成功、三处注入、三处分配失败、非法参数及失败后恢复，保留完整正文。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "knowledge/linux/data_structures/单链表_linked_list/P06_调试与验证.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "将上一章日志改为尚待目标执行的预测，补检查问题背景；按配置解释直接解引用故障和报告路径，避免承诺任意坏指针都有友好诊断。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "knowledge/linux/data_structures/单链表_linked_list/P07_总结与学习资源.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补接口表前的实际操作背景，将careful展开为同一成员地址上的完成观察，解释false、保活、不重新入队及无主动通知边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "knowledge/linux/data_structures/单链表_linked_list/P08_高级应用.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "冷读等待队列、网络、slab和设备集合四种附加职责；按固定源码核对真实字段与专用接口，保留参考页而不复制旁支完整课程。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "knowledge/linux/data_structures/单链表_linked_list/P09_优化与总结.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留查找与拓扑成本、局部性和批次代价；由整批交接需求引入llist，补六种并发组合、del_first旧后继反例及接入顺序不等于事件时间。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "knowledge/linux/data_structures/单链表_linked_list/大纲.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "核对九章阅读地图、前置实验与后续缺口，链接实际材料及源码索引，角色完整且无空章，保留大纲。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "将本地工作配置定位为历史快照而非标签固定配置；补表前阅读路径和careful唯一实现入口。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "research/source_reading/linked_list/navigation/P02_拓扑修改与发布边界导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按固定源码重读状态落点、检查、once和子系统边界；纠正混合增删后毒化的图，补故障分支、careful通信地址、RT限制和剩余锁成本。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "research/source_reading/linked_list/source_explanations/include/linux/list.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "原有十一函数与safe宏保持固定源码，补两个careful函数及完整状态/访问顺序说明，明确初始自环、重新入队和错误观察地址不构成完成证据。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "research/source_reading/linked_list/大纲.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "核对教材、总索引、模块导读与唯一实现职责，保留短导航，不将其改写成重复教程。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
+      },
+      "labs/kernel/linked_list/materials/README.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "同步四份模型的断言保护说明；五份完整程序与章节一致，保留模型、目标语法与真实模块运行的证据分层。",
+        "date": "2026-10-16",
+        "validation": [
+          "15篇完整冷读；全部进出标题链接及连续性审计通过；9张图渲染目视，once补解锁后复验。",
+          "四个C/C++宿主模型以GCC14.2及Clang18.1.8在O0/O2编译执行，NDEBUG拒绝构建共40命令通过；五个正文程序与材料一致。Clang配合MinGW线程运行库使用femulated-tls。",
+          "15份固定Linux源码重新读取，11份既有副本一致，另核对spinlock_rt；13函数和safe宏与原件一致。模块宿主替身验证正常、三处显式失败、三处实际分配返回空、两处非法参数及每次失败后的恢复。",
+          "标题、元数据、命名和全仓707篇链接检查通过；git diff --check通过。"
+        ],
+        "limits": "本轮没有目标Kbuild、MODPOST、模块装卸或内核动态检查器运行；宿主替身不验证内核并发或硬件内存序。人工评审状态保持不变。"
       }
     }
   },
