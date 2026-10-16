@@ -493,7 +493,7 @@ P05 的内核单元独立为[P29 完成边界](../../../knowledge/linux/data_str
 
 ## 1.28\_Maple范围与VMA查询证据
 
-[P14 VMA 范围教材](../../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md#14.1_一个地址为什么需要三种查询)沿同一固定提交核对区间、节点容量、查询封装和返回对象保护；[Maple 总索引](../maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)区分模块导读与唯一函数体。P15 的四个 VMA 查询函数体移入对应上游路径的实现文档，其余 P15 内容仍待独立审查。
+[P14 VMA 范围教材](../../../knowledge/linux/data_structures/红黑树_rb-tree/P14_从地址查询到VMA范围修改.md#14.1_一个地址为什么需要三种查询)沿同一固定提交核对区间、节点容量、查询封装和返回对象保护；[Maple 总索引](../maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)区分模块导读与唯一函数体。P15 的四个 VMA 查询函数体移入对应上游路径的实现文档，其余 P15 内容仍待独立审查。
 
 | 上游相对路径 | 固定 blob | 本批职责 |
 | --- | --- | --- |

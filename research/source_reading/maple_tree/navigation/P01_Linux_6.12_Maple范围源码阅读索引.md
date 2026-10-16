@@ -15,7 +15,7 @@ domains:
 
 给出地址 0x50010000，为什么 VMA 的排除式终点不属于前一段，而 Maple pivot 相等时又留在同号槽？给出空洞地址，为什么两个看似“查 VMA”的接口返回不同结果？这里围绕这些问题组织固定版本的阅读入口。
 
-知识模型见 [P14 Maple 与 VMA](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md#14.1_一个地址为什么需要三种查询)。本索引负责版本、源码位置和模块关系；原始证据来自 NXP 官方 linux-imx 的 Linux 6.12.20，标签 lf-6.12.20-2.0.0，提交 dfaf2136deb2af2e60b994421281ba42f1c087e0。具体 blob 与配置界限见 [SOURCE_BASELINE](../../linux/SOURCE_BASELINE.md#1.28_Maple范围与VMA查询证据)。
+知识模型见 [P14 Maple 与 VMA](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P14_从地址查询到VMA范围修改.md#14.1_一个地址为什么需要三种查询)。本索引负责版本、源码位置和模块关系；原始证据来自 NXP 官方 linux-imx 的 Linux 6.12.20，标签 lf-6.12.20-2.0.0，提交 dfaf2136deb2af2e60b994421281ba42f1c087e0。具体 blob 与配置界限见 [SOURCE_BASELINE](../../linux/SOURCE_BASELINE.md#1.28_Maple范围与VMA查询证据)。
 
 ## 1.2\_按读者问题进入证据
 
