@@ -213,7 +213,7 @@ B03at 完成 P15 开篇及 15.1～15.3，按固定实现纠正树根直存、外
 
 B03au 将 P15 15.4 落实为[P38 节点与空洞](../../knowledge/linux/data_structures/红黑树_rb-tree/P38_Maple节点中的范围与空洞.md#38.1_从一个共享根继续向下)，保留七 VMA 地址图并修正 NULL 分区、叶/非叶职责、构建容量及 union 解释；完整 C++ 模型与固定布局分别验证语义和字节边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.57_B03au节点分区与空洞成本)记录证据和局限。下一项 P15 15.5 编码，全仓继续。
 
-B03av 完成 P15 15.5 [字段编码](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.5.4_用定宽整数观察错误掩码)，区分节点类型、父槽、两种根标记、保留 entry 与独立错误状态，补齐完整 C11 整数模型及固定 helper。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.58_B03av字段编码与状态边界)列出静态证据和模型限度。下一项 15.6/15.7 游标状态周期，P15 与全仓仍未完成。
+B03av 完成 P15 15.5 [字段编码](../../knowledge/linux/data_structures/红黑树_rb-tree/P52_按字段区分Maple编码与错误状态.md#52.1.4_用定宽整数观察错误掩码)，区分节点类型、父槽、两种根标记、保留 entry 与独立错误状态，补齐完整 C11 整数模型及固定 helper。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.58_B03av字段编码与状态边界)列出静态证据和模型限度。下一项 15.6/15.7 游标状态周期，P15 与全仓仍未完成。
 
 B03aw 完成 P15 15.6 的[P39 游标周期](../../knowledge/linux/data_structures/红黑树_rb-tree/P39_Maple操作游标的暂停与继续.md#39.3_沿S0到S6比较暂停与重置)拆分与实际改写，核对 15.7 八段查询场景并修正快速点查状态承诺；完整私有模块和源码模块按 S0～S6 比较 pause/reset 与边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.59_B03aw游标暂停与查询状态)保留目标未运行限制。下一项 P15 15.8 普通 API，全仓继续。
 
@@ -221,7 +221,7 @@ B03ax 完成 P15 15.8 的[P40 普通接口](../../knowledge/linux/data_structure
 
 B03ay 完成 P15 15.9 的职责改写与[P41 写入准备](../../knowledge/linux/data_structures/红黑树_rb-tree/P41_Maple写入准备与锁边界.md#41.3_沿S0到S5区分位置与资源)完整单元，以外部锁私有模块串起准备、取消、兑现与清理；原 API 分组与分层图保留并纠正边界，两处 vma_find 函数体移为唯一实现入口。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.61_B03ay写入准备与资源协议)记录验证限制。下一项 P15 15.10/15.11 的 VMA 接入与包装契约，全仓继续。
 
-B03az 完成 P15 15.10/15.11 的 VMA 接入与边界改写，保留原两节入口和两张图的教学任务，补状态所有权、两种初始化、错误映射与完整[C 边界实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.11.4_运行边界等价性实验)。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.62_B03azVMA游标与边界适配)记录固定包装验证及真实目标限制。下一项 P15 15.12～15.17 查询场景与收束，全仓继续。
+B03az 完成 P15 15.10/15.11 的 VMA 接入与边界改写，保留原两节入口和两张图的教学任务，补状态所有权、两种初始化、错误映射与完整[C 边界实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P53_VMA游标怎样翻译范围请求.md#53.2.4_运行边界等价性实验)。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.62_B03azVMA游标与边界适配)记录固定包装验证及真实目标限制。下一项 P15 15.12～15.17 查询场景与收束，全仓继续。
 
 B03ba 冷读并收束 P15 15.12～15.17：查询/前驱例子按固定契约保留，补两个输出与返回范围边界；原 E/F/G 撤销进入[P42 两棵树](../../knowledge/linux/data_structures/红黑树_rb-tree/P42_撤销映射中的两棵Maple树.md#42.3_沿S0到S5观察职责转移)，总图纠正为职责图，未落地的旧第16～19章安排替换为真实模块与研究边界。[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.63_B03ba查询收束与撤销两棵树)记录八函数、分区模型和未执行项。P15 及 B03 数据结构正文完成本轮逐篇审查；下一项 B04 kref 问题入口与生命周期路线，全仓继续。
 

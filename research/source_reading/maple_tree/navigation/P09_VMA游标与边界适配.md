@@ -12,7 +12,7 @@ domains:
 
 ## 9.1\_同一树可以有多个局部游标
 
-沿[总索引](P01_Linux_6.12_Maple范围源码阅读索引.md#1.1_从地址查询进入版本证据)进入固定 Linux 6.12.20。mm_struct 保存地址空间共享的 mm_mt；调用方的 vma_iterator 内嵌 ma_state 关联这棵树，局部位置不属于 VMA 本身。线程共享 mm 时也共享索引。教材见[P15 接入层](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.10_VMA_接入层_mm_struct.mm_mt)。
+沿[总索引](P01_Linux_6.12_Maple范围源码阅读索引.md#1.1_从地址查询进入版本证据)进入固定 Linux 6.12.20。mm_struct 保存地址空间共享的 mm_mt；调用方的 vma_iterator 内嵌 ma_state 关联这棵树，局部位置不属于 VMA 本身。线程共享 mm 时也共享索引。教材见[P15 接入层](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P53_VMA游标怎样翻译范围请求.md#53.1_VMA_接入层_mm_struct.mm_mt)。
 
 ## 9.2\_从地址空间到局部游标
 

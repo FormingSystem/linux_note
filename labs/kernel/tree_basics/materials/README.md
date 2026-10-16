@@ -125,7 +125,7 @@ domains: [c_language, data_structures]
 
 [maple_pivot_slots.cpp](maple_pivot_slots.cpp)配合[P38 分区实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P38_Maple节点中的范围与空洞.md#38.5_运行包含空槽的分区程序)，由七个 VMA 构造包含 NULL 空洞的闭区间分区，验证包含式上界、最大连续空洞和窗口内 first-fit。256 种小地址占用图、207360 组窗口/长度与独立逐地址扫描一致，另查排除终点极值；模型没有真实 Maple 节点、更新、对齐筛选、RCU 或内核运行。
 
-[maple_encoded_words.c](maple_encoded_words.c)配合[P15 编码实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.5.4_用定宽整数观察错误掩码)，只用定宽整数区分 enode、非根父槽、根树对象关联与错误载荷，严格 C11 编译及 18432 次节点/父槽往返通过。不会把模型整数转成宿主指针，未验证真实 Maple 对象、操作状态转换或 RCU。
+[maple_encoded_words.c](maple_encoded_words.c)配合[P15 编码实验](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P52_按字段区分Maple编码与错误状态.md#52.1.4_用定宽整数观察错误掩码)，只用定宽整数区分 enode、非根父槽、根树对象关联与错误载荷，严格 C11 编译及 18432 次节点/父槽往返通过。不会把模型整数转成宿主指针，未验证真实 Maple 对象、操作状态转换或 RCU。
 
 [note_maple_state.c](note_maple_state.c)配合[P39 游标周期](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P39_Maple操作游标的暂停与继续.md#39.5_运行完整私有模块)，使用真实 Maple API 的私有树比较暂停后继续、重置重复、改起点与 NULL/active 边界。Makefile 已登记，ARM 前端通过；宿主使用固定控制函数和明确树行走替身检查顺序及四个 store 失败出口。目标 Kbuild/MODPOST/装卸、RCU 与并发未执行，预期日志不是实际目标记录。
 
@@ -133,6 +133,6 @@ domains: [c_language, data_structures]
 
 [note_maple_prealloc.c](note_maple_prealloc.c)配合[P41 写入准备](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P41_Maple写入准备与锁边界.md#41.6_运行外部锁下的完整私有模块)，在连续外部互斥锁保护下先准备并取消，再准备写入，最后按 gfp 接口覆盖；销毁使用由调用者保护的 __mt_destroy。ARM 前端通过。宿主固定三个控制函数配合明确资源/写入替身覆盖零需求、准备失败清理、16 种补分配分支及 NULL 请求范围恢复，不是目标模块运行。目标 Kbuild/MODPOST/装卸、真实节点分配与批量重平衡未执行。
 
-[vma_boundary_contract.c](vma_boundary_contract.c)配合[P15 VMA 边界](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md#15.11.4_运行边界等价性实验)，主动检查半开输入并转换闭区间；528 组合法输入、561 组拒绝和 17424 次成员比较已实际运行。整数模型没有操作真实 VMA，输入检查也不冒充内核短包装自带保证。固定包装另以显式 Maple 替身核对两种初始化、查询方向和错误映射。
+[vma_boundary_contract.c](vma_boundary_contract.c)配合[P15 VMA 边界](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P53_VMA游标怎样翻译范围请求.md#53.2.4_运行边界等价性实验)，主动检查半开输入并转换闭区间；528 组合法输入、561 组拒绝和 17424 次成员比较已实际运行。整数模型没有操作真实 VMA，输入检查也不冒充内核短包装自带保证。固定包装另以显式 Maple 替身核对两种初始化、查询方向和错误映射。
 
 [unmap_partition.cpp](unmap_partition.cpp)配合[P42 两棵树](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P42_撤销映射中的两棵Maple树.md#42.6_运行分区与序号模型)，以值对象分区原 E/F/G 请求，区分处理序号与地址。严格 C++17 编译与 9216 种小域分区、82944 次点归属、最大值/非法输入及原五项查询例子通过。此模型不表示真实 VMA 拆分回滚或页表清理；固定 clear_ptes 的显式下层替身检查另验证两次序号重置、地址/计数边界和锁标志转发。
