@@ -5837,6 +5837,17 @@
           "GCC/Clang各两万次队列序列及边界测试、用户程序各25种控制流、Python12种正常/错误模型与脚本语法通过；5出链无标题入链，全仓9025有效链接及格式元数据路径和diff通过。"
         ],
         "limits": "模型替代内核/系统接口，不证明实际并发、目标头文件/Kbuild或Linux信号ABI；正文提供实际Linux构建装载和有限验证，当前环境未运行。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P07_中断驱动设备的异步通知实践.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以GPIO逻辑状态、安静窗口与代次校验、共享快照和跨解绑引用重建完整硬件生产与用户读取协议，纠正极性、双边沿、非阻塞和devm寿命错误。",
+        "date": "2026-10-17",
+        "validation": [
+          "原稿全文、内容去向与冷读；角色图及完整S0-S6时序图渲染目视通过，完整模块长度提示经人工解释保留。",
+          "GCC/Clang控制流模型、Python18种正常与错误路径及Bash/Python语法通过；4出链无标题入链，全仓9028有效链接及格式元数据路径和diff通过。"
+        ],
+        "limits": "教学DTS明确需要实际板级映射；模型不替代Linux ABI、内核Kbuild、真实并发和目标板电气验证，当前环境未完成这些运行。"
       }
     },
     "additional_documents": [
