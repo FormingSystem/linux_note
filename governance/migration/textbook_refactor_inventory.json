@@ -3200,6 +3200,54 @@
           "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
         ],
         "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "knowledge/linux/io_model/dma/P01_DMA_映射同步与门铃顺序.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按两条访问路径重画地址图，补中转边界、完成描述符读取与门铃分支；纠正终止错误返回和托管泛化，SG模型去除断言副作用并补材料与操作练习。",
+        "date": "2026-10-16",
+        "validation": [
+          "四篇完整冷读，九张图渲染逐张目视，修改图重新渲染；出入标题链接通过，MMIO大纲首屏链接阈值经人工按导航职责保留。",
+          "两个模型与正文一致；GCC和Clang的普通/NDEBUG构建共24组编译运行，正确轨迹返回0、错误计数/长度/缺失完成返回1。",
+          "只读核对dfaf2136固定提交的DMA API/howto、DMAengine客户端及头文件、swiotlb、device-io和memory-barriers；格式、元数据、命名、全仓链接和diff通过。"
+        ],
+        "limits": "模型不调用Linux DMA/MMIO API；未运行真实DMA、设备停机、缓存维护或目标内核构建。未提升人工评审状态。"
+      },
+      "knowledge/linux/io_model/dma/大纲.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "冷读地址到所有权、SG再到停止释放的阅读地图；所有前置与阶段锚点有效，不将导航扩写成重复正文。",
+        "date": "2026-10-16",
+        "validation": [
+          "四篇完整冷读，九张图渲染逐张目视，修改图重新渲染；出入标题链接通过，MMIO大纲首屏链接阈值经人工按导航职责保留。",
+          "两个模型与正文一致；GCC和Clang的普通/NDEBUG构建共24组编译运行，正确轨迹返回0、错误计数/长度/缺失完成返回1。",
+          "只读核对dfaf2136固定提交的DMA API/howto、DMAengine客户端及头文件、swiotlb、device-io和memory-barriers；格式、元数据、命名、全仓链接和diff通过。"
+        ],
+        "limits": "模型不调用Linux DMA/MMIO API；未运行真实DMA、设备停机、缓存维护或目标内核构建。未提升人工评审状态。"
+      },
+      "knowledge/linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补访问宽度、端序与本地示意寄存器表，统一描述符端序；送达模型改为显式状态检查，补同源材料、运行步骤及失败变体。",
+        "date": "2026-10-16",
+        "validation": [
+          "四篇完整冷读，九张图渲染逐张目视，修改图重新渲染；出入标题链接通过，MMIO大纲首屏链接阈值经人工按导航职责保留。",
+          "两个模型与正文一致；GCC和Clang的普通/NDEBUG构建共24组编译运行，正确轨迹返回0、错误计数/长度/缺失完成返回1。",
+          "只读核对dfaf2136固定提交的DMA API/howto、DMAengine客户端及头文件、swiotlb、device-io和memory-barriers；格式、元数据、命名、全仓链接和diff通过。"
+        ],
+        "limits": "模型不调用Linux DMA/MMIO API；未运行真实DMA、设备停机、缓存维护或目标内核构建。未提升人工评审状态。"
+      },
+      "knowledge/linux/io_model/mmio/大纲.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "阅读任务从配置启动完成的现场进入，地图区分有序、送达、完成；低字数高链接是导航职责，人工冷读保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "四篇完整冷读，九张图渲染逐张目视，修改图重新渲染；出入标题链接通过，MMIO大纲首屏链接阈值经人工按导航职责保留。",
+          "两个模型与正文一致；GCC和Clang的普通/NDEBUG构建共24组编译运行，正确轨迹返回0、错误计数/长度/缺失完成返回1。",
+          "只读核对dfaf2136固定提交的DMA API/howto、DMAengine客户端及头文件、swiotlb、device-io和memory-barriers；格式、元数据、命名、全仓链接和diff通过。"
+        ],
+        "limits": "模型不调用Linux DMA/MMIO API；未运行真实DMA、设备停机、缓存维护或目标内核构建。未提升人工评审状态。"
       }
     }
   },
