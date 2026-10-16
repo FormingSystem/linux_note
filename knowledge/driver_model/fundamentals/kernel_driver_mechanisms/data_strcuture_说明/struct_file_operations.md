@@ -35,7 +35,7 @@ struct file_operations 定义在 include/linux/fs.h，struct file 的 f_op 指�
 | read_iter / write_iter | 以 kiocb 和 iov_iter 表达请求；更新 ki_pos，不直接代替为共享 f_pos；并非自动异步或零拷贝 |
 | iopoll | 参与后端完成轮询；不是普通就绪查询 poll |
 | iterate_shared | 枚举目录项；目录实现管理 ctx->pos 与并发，不能仅靠名称推断 RCU 安全 |
-| poll | 登记等待入口并报告就绪；就绪观察不是数据预留 |
+| poll | 按上层需要登记等待入口并报告就绪；登记过程可能睡眠，就绪观察不是数据预留 |
 | unlocked_ioctl | 处理控制命令；自行验证 ABI、用户数据及同步 |
 | compat_ioctl | 兼容用户态命令入口；是否可复用取决于指针/标量与结构布局 |
 | mmap | 建立文件/设备与 VMA 的关系；需证明后备页、范围、权限与寿命 |
