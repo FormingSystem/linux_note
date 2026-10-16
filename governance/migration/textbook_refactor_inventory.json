@@ -5782,6 +5782,17 @@
           "双编译器各二十种控制流程模拟通过；全仓9010有效链接及标题、元数据、路径与diff检查通过。"
         ],
         "limits": "无可用Linux运行环境，模拟不证明Linux ABI或真实信号行为；固定源码和man手册形成语义证据。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P02_Linux_IO_与信号机制基础.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从dup共享身份和管道有限实验进入等待与信号状态，补就绪竞争、EOF短读与handler丢唤醒窗口；纠正SIGIO默认动作、字符设备打开入口和POLL原因/掩码混用。",
+        "date": "2026-10-17",
+        "validation": [
+          "原1952行全文冷读并逐节映射，三张图渲染目视；连续阅读严格检查通过，术语候选人工处理。",
+          "双编译器各17种控制流程模拟与Bash语法通过；全仓9012有效链接、元数据、标题、路径和diff检查通过。"
+        ],
+        "limits": "无真实Linux运行；模拟不证明Linux ABI。固定源码只核对本章相关路径，不声明全部VFS或epoll实现覆盖。"
       }
     },
     "additional_documents": [
