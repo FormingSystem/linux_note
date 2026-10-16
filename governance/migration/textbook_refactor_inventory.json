@@ -5881,6 +5881,17 @@
           "正文Python穷举10种正确等待与6种双读者交错，构造两类丢唤醒反例；5出链无标题入链、全仓9036有效链接及格式元数据路径和diff通过。"
         ],
         "limits": "交错模型仅验证顺序一致的原子步骤，不是LKMM、目标内核构建、真实信号或硬件验证；W盘源码工作树仍不可访问，证据固定官方不可变提交。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P11_调试_排错与性能分析.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按S0至S6建立分层观测证据，重写proc、strace、函数与信号事件跟踪，提供独立实例有限采集、逐记录时间关联与优化边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "原稿全文、内容去向和冷读完成；三图渲染目视；连续阅读仅完整采集程序较长一项提示经人工保留。",
+          "正文三Python程序提取一致，proc9/trace33/CSV12共54模拟场景通过；4出链无标题入链，全仓9039有效链接及格式元数据路径和diff通过。"
+        ],
+        "limits": "替代接口模拟不证明Linux proc/tracefs、真实信号或目标硬件；CSV为明确标注的合成练习，实际内核采集与延迟测量尚未运行。"
       }
     },
     "additional_documents": [
