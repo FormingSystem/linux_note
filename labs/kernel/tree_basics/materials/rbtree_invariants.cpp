@@ -1,3 +1,7 @@
+#if defined(NDEBUG)
+#error "This example requires assertions"
+#endif
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>
