@@ -5914,6 +5914,17 @@
           "正文C提取一致，GCC/Clang各248场景；P09清理后成功输出修复各162场景回归；8出链无标题入链，9051有效链接及格式元数据路径和diff通过。"
         ],
         "limits": "替代系统接口不证明Linux ABI、真实信号与硬件，GPIO资源仍须按实际板卡核对和运行。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "把十三章罗列与虚构第十四章改为因果阅读地图、逐章前提/问题/未决问题及实验任务入口，恢复track职责。",
+        "date": "2026-10-17",
+        "validation": [
+          "原文全文与所有十三章实际标题对照，阅读图渲染目视；34出链和5标题入链精确检查通过。",
+          "同步父级、路线、字符设备入口和评审地图锚点；无实际出版/Obsidian调用，9073有效链接及格式元数据路径和diff通过。"
+        ],
+        "limits": "仅将完成实质复审的大纲新增计数；导航调用方的局部入口同步不冒充全文复审，不升级人工评审状态。"
       }
     },
     "additional_documents": [
