@@ -83,8 +83,8 @@ lock.cat先把同一取得中的LKR/LKW配成RMW，再把成功写入LKW与对�
 
 以实验中的 `MP+pooncerelease+poacquireonce.litmus` 为例：
 
-1. `.def` 把 `WRITE_ONCE(buf)` 映射为 once Write；
-2. 把 `smp_store_release(flag)` 映射为 release Write；
+1. `.def` 把 `WRITE_ONCE(*buf, 1)` 映射为 once Write；
+2. 把 `smp_store_release(flag, 1)` 映射为 release Write；
 3. 把 `smp_load_acquire(flag)` 映射为 acquire Read；
 4. `.bell` 给事件标记访问类别；
 5. 寄存器条件选择 Rflag 从发布 Write 取值，Rbuf 从初始写取值；
