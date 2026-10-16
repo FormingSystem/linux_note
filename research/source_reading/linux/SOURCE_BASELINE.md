@@ -1975,3 +1975,25 @@ Netlink intro建立消息族、命令、属性和组语义；af_netlink.c的netl
 正文替换了旧稿提前出队再复制、满队列再插两项、每槽独立序号、限频跳过且无补发回调、dup/fork复制订阅节点等错误示例。采用显式count环形队列、丢新、队列外累计丢失报告与复制成功后确认，报告和数据交替责任防止持续溢出饿死数据。真实IRQ读取协议使用read_mutex串行读者、ring_lock保护索引，复制期间不推进tail；该证明依赖生产者不覆盖占用槽，不可直接套覆盖旧数据策略。
 
 Python模型实跑8种容量共40000次队列操作，对照独立deque检查顺序/容量/丢失/复制失败；通知模型核对固定期限、无新输入补发、读空跳过、零间隔、迟到回调、每设备隔离及10000时刻的间隔约束。模型为单线程确定性模拟，不代表Linux锁并发、信号ABI、Kbuild或DMA硬件测试；真实数据源、计数ABI与硬件所有权仍需对应实现验证。
+
+## 1.202\_用户态异步通知的接收与退出协议
+
+2026-10-17 重写[异步通知P09](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P09_用户态编程_从_SIGIO_到_signalfdepoll.md)。沿用官方固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0 的 fs/fcntl.c、kernel/signal.c、fs/signalfd.c、fs/pipe.c 及文件关闭证据；新增原始字节记录如下。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| include/uapi/linux/signalfd.h | 83429a05b698e32fcc9be74827577058a5aec974 |
+| fs/timerfd.c | 137523e0bb211389888283b1a87c25c1aa4991ef |
+| include/linux/signalfd.h | 9a47c380bda8b1310d7d287cdddcf61e095daf1e |
+
+signalfd_ctx只保存选择掩码；signalfd_poll先向current->sighand->signalfd_wqh登记，再在siglock下查看current->pending与current->signal->shared_pending。signalfd_dequeue调用dequeue_signal从调用线程可见pending取走记录，不能画成独立signalfd消息队列或永久绑定创建者。内核signalfd_notify唤醒该等待队列，标准信号的合并行为没有改变。
+
+signalfd_copyinfo按siginfo_layout选择字段，SIL_POLL填ssi_band/ssi_fd，SIL_TIMER填定时器标识与overrun；ssi_tid不是接收线程TID。UAPI固定结构为128字节，正常read_iter输出整记录整数倍，缓冲不足一记录EINVAL，非阻塞无可见信号EAGAIN。kernel/signal.c的do_sigtimedwait同样使用dequeue_signal，在等待前后修改并恢复线程阻塞状态，返回信号号、EINTR或EAGAIN。
+
+fs/fcntl.c的send_sigio_to_task区别signum零和非零：非零构造I/O siginfo并尝试发送，失败回退SIGIO；选SIGIO非零不使标准信号变成实时信号。用户必须先准备接收、再启用O_ASYNC、再检查已有数据；掩码属于线程，owner/signum/文件状态属于file，处置在线程组共享。dup/fork引用同一file，不因另一个调用者切O_ASYNC就自动改变owner。proc信号掩码和fdinfo的判断边界复用前章证据。
+
+timerfd_read_iter以u64 ticks返回到期计数，周期重启补算积压，不是设备事件计数。正文完整程序用pipe订阅前AB、timerfd稍后C和关闭写端，分别检查启动现状、通知后读取、EOF；三种F_SETSIG模式统一接收回退SIGIO。有限数据/信号批处理保留继续责任，LT读取与ET扩展边界分开，使用单调时钟总截止时间，撤销源后关闭接收设施并保持信号阻塞至进程退出。
+
+用户接口交叉核对Linux man-pages的signalfd、sigaction、sigtimedwait、F_SETSIG、pselect及signal-safety说明。纠正旧稿先开启再屏蔽、counter++保证事件数、read非异步信号安全、只事件线程阻塞、ssi_tid为线程ID、关signalfd取消通知等错误；保留多线程队列/IPC分发与共享fd交接的具体责任，不声称任意节点只换路径即可复用。
+
+完整程序替换系统调用接口后，经GCC与Clang分别检查3种选择各54场景，包含部分数据读取、各阶段失败清理、EINTR/EAGAIN、回退SIGIO、短记录拒绝、EOF、定时积压、持续数据公平预算和超时。模型不能证明Linux libc ABI、真实信号调度或目标板行为；当前Windows环境未完成Linux头文件构建与实际运行，正文保留完整目标编译和有限运行命令。
