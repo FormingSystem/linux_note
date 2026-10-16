@@ -5604,6 +5604,30 @@
           "全仓8951有效链接、正文和基线锚点、元数据路径格式与diff通过；同步P06隔离采集与延迟工作观察说明。"
         ],
         "limits": "构造trace不是实测；未执行Linux tracefs、模块装卸、function_graph、trace-cmd/KernelShark或板级性能测量。语法与配对测试不能证明真实事件覆盖。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P01_中断的定位与演化.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从有限缓冲与轮询服务间隔推导通知，修正I/O不能并行、必然立即打断、每次切换任务等绝对表述；区分设备事实、控制器状态、CPU入口与软件消费，补充成本比较和答案。",
+        "date": "2026-10-17",
+        "validation": [
+          "原文与成稿全文冷读，核对四份固定提交官方文档，连续性零风险，术语候选逐项复核。",
+          "四张Mermaid图渲染目视，五项教学算术断言通过；图示区分设备处理、父级结束与汇总信号变化。",
+          "全仓8955有效链接、标题锚点、元数据与diff检查通过；修正GIC路线旧锚点与下一章入口前提。"
+        ],
+        "limits": "寄存器表和图为明确假设的功能模型，未宣称实际SoC布局、板级事件测量或Linux编译运行。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P02_SoC_视角下的中断体系.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以GPIO共享父输入的两来源周期建立局部状态、汇聚与软件解复用；补全功能寄存器表、编号空间和固件属性，分开硬件级联、irq_chip操作表与层级irq_domain。",
+        "date": "2026-10-17",
+        "validation": [
+          "原文与成稿全文冷读，核对四份固定提交官方文档，连续性零风险，术语候选逐项复核。",
+          "四张Mermaid图渲染目视，五项教学算术断言通过；图示区分设备处理、父级结束与汇总信号变化。",
+          "全仓8955有效链接、标题锚点、元数据与diff检查通过；修正GIC路线旧锚点与下一章入口前提。"
+        ],
+        "limits": "寄存器表和图为明确假设的功能模型，未宣称实际SoC布局、板级事件测量或Linux编译运行。"
       }
     },
     "additional_documents": [
