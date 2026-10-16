@@ -7,6 +7,10 @@
 #include <utility>
 #include <vector>
 
+#ifdef NDEBUG
+#error "本教学程序使用断言验证区间契约，请勿定义 NDEBUG"
+#endif
+
 using address = std::uint64_t;
 
 struct region {
