@@ -5532,6 +5532,18 @@
           "五图目视并修复状态图标签重叠；全仓8924链接、章节/基线锚点、格式元数据路径和diff通过；新增地图节点保持红色。"
         ],
         "limits": "模型以桩代替锁、GPIO、等待和队列，不模拟真实Linux并发/弱内存；无目标Kbuild、模块加载、GPIO/IRQ波形、PM或卸载压力测试。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P07_睡眠与超时调度接口.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按稳定期、裸调度预算、同钟截止轮询、结果发布、完成令牌、收尾与重试重构；修正hrtimeout与唤醒来源误判、固定减片段、范围硬上限、每轮强制reinit、无发布序和旧事务晚到；保留PLL式前置稳定、按键同步与freezer边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "原文与成稿全文冷读，固定timer/hrtimer/completion/wait及新增delay.h/kthread.c核对；三张图目视，连续性零风险，术语候选按前置定义和本地接口解释复核。",
+          "两编译器C11/O2模型覆盖截止、提前/迟到恢复、读取跨截止、64组等待结果与清理组合、五个线程通知窗口；三个错误反例被拒绝。",
+          "全仓8930有效链接、章节/基线锚点、格式元数据路径与diff通过。"
+        ],
+        "limits": "顺序桩模型不验证内核弱内存或调度；没有目标Kbuild、装载、信号、freezer和设备测试。原不完整设备事务改为明确伪代码，并由两份完整无硬件模块闭合实际可演示路径。"
       }
     },
     "additional_documents": [
