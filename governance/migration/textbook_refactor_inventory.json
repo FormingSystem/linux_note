@@ -5804,6 +5804,17 @@
           "终端/socket/管道/evdev固定源码核对；3条出链无标题入链，全仓9014有效链接及元数据、标题、路径和diff检查通过。"
         ],
         "limits": "批量计数是给定前提的纸面推演，不是性能测试；未推断helper首次提交或设备频率适用阈值。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P04_内核视角_核心数据结构与控制路径.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "沿S1/S3/S6解释owner、订阅链、信号pending及寿命，核对真实字段和锁，修正FASYNC更新与最终清理责任。",
+        "date": "2026-10-17",
+        "validation": [
+          "原稿全文与内容去向记录、正文冷读、三图渲染目视及连续阅读严格检查通过。",
+          "五段摘录与固定源码匹配；4条出链无标题入链，全仓9017有效链接及元数据、标题、路径和diff检查通过。"
+        ],
+        "limits": "本章为固定版本源码分析及纸面状态实验，未声称Kbuild或目标硬件运行。"
       }
     },
     "additional_documents": [
