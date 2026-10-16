@@ -96,7 +96,7 @@ domains:
 
 表中的：
 
-* **LPI**（Locality-specific Peripheral Interrupt，特定局部外设中断）：是 GIC 管理的一类中断，常用于设备通过写事务发送的消息中断；
+* **局部性专属外设中断（Locality-specific Peripheral Interrupt，LPI）**：是 GIC 管理的一类消息中断来源；中文译名与本专题正文一致；
 * **ITS**（Interrupt Translation Service，中断翻译服务）：把设备发来的标识翻译为目标中断及其投递位置。这里只解释为何收集对应资料，完整机制在物理中断主线建立后从零推演。
 
 | 证据 | 定位 | 本次确认的事实 |
@@ -141,36 +141,43 @@ Linux IRQ 子系统讲软件如何管理、映射和分派中断；独立 GIC �
 
 ## 1.5\_下载与校验
 
-在仓库根目录运行：
+先固定本次需要的范围，再决定查看、校验还是下载。下面三步都从仓库根目录执行，使用 Python 3；Windows 没有 `python3` 命令时可将它替换为 `python`。以下以 RK3588 的 GICv3.0 资料组为例，三个步骤分别执行，不必复制后面的所有查询变体。
 
 ```bash
-# 查看学习资料组，不读取缓存也不访问网络
-python3 scripts/download_external_resources.py --list-profiles
-
-# 当前推荐：查看、下载或只校验 RK3588 的 GICv3.0 资料
+# 工作目录：仓库根目录；只查看本次选中的条目。
 python3 scripts/download_external_resources.py --profile rk3588_gicv3 --list
-python3 scripts/download_external_resources.py --profile rk3588_gicv3 --yes
-python3 scripts/download_external_resources.py --profile rk3588_gicv3 --verify-only
-
-# 查看清单，不访问网络
-python3 scripts/download_external_resources.py --list
-
-# 下载所有具有官方直链的缺失文件；需要人工取得的文件只给出来源提示
-python3 scripts/download_external_resources.py
-
-# 已经审阅清单时，可在自动化环境中显式跳过交互确认
-python3 scripts/download_external_resources.py --yes
-
-# 只处理指定文档，可以多次使用 --select
-python3 scripts/download_external_resources.py --select arm.ddi0487.mc --select arm.ihi0069.hb
-
-# 不下载，只核对当前缓存中的全部清单文件
-python3 scripts/download_external_resources.py --verify-only
 ```
+
+`--profile` 选择清单里已经定义的资料组，`--list` 只展示条目，不访问网络。先检查显示的文档编号、版本和目标位置，确认它们符合本次学习任务；资料组名称不代表所有文件都已经下载。
+
+```bash
+# 工作目录：仓库根目录；在审阅上述清单后下载缺失资料。
+python3 scripts/download_external_resources.py --profile rk3588_gicv3 --yes
+```
+
+`--yes` 表示本次调用者已经审阅选择，跳过工具的交互确认。工具先检查缓存，已经校验通过的文件不会重复下载；只能从门户取得的资料会列为待手工获取。下载结束后应查看结果分类，不能把“工具运行结束”当作所有条目都取得成功。
+
+```bash
+# 工作目录：仓库根目录；只检查本次资料组，不联网补文件。
+python3 scripts/download_external_resources.py --profile rk3588_gicv3 --verify-only
+```
+
+`--verify-only` 用当前清单检查缓存；缺文件或校验失败时应先核对路径、来源与版本，再决定是否获取正确文件，不能通过修改哈希让未知文件“通过”。已经存在的原件如何受到保护，见下文下载与替换过程。
+
+其他查询方式按需要单独选择。表中省略的公共命令前缀均为 `python3 scripts/download_external_resources.py`，不是要依次执行的另一组步骤：
+
+| 当前目的 | 添加的参数 | 作用范围与行为 |
+| --- | --- | --- |
+| 查看有哪些资料组 | `--list-profiles` | 只读清单，不读缓存、不联网 |
+| 查看完整资料清单 | `--list` | 全部登记条目，不联网 |
+| 下载完整清单中的缺失官方直链文件 | 不添加参数 | 交互终端在确有下载需求时确认；门户条目只提示来源 |
+| 已审阅完整清单后用于批处理 | `--yes` | 同上，但由调用者显式跳过交互确认 |
+| 只选择两份文档 | `--select arm.ddi0487.mc --select arm.ihi0069.hb` | `--select` 可以重复；文档 ID 来自清单 |
+| 校验完整缓存 | `--verify-only` | 全部登记条目，只校验，不下载 |
 
 其他组为 `gicv3_virtualization`（GICv3 虚拟化选修）、`gicv4_extension`（以后扩展）、`imx6ull_gicv2`（原有平台对照）。`--profile` 与 `--select` 互斥；不指定选择参数仍处理完整清单，不会静默只处理推荐组。组内保持清单顺序，共用文档不会复制到多个目录。
 
-Windows 没有 `python3` 命令时使用 `python`。默认缓存根目录来自 `manifest.json`，也可以用 `--cache-root` 指向另一个本地目录。
+默认缓存根目录来自 `manifest.json`，也可以用 `--cache-root` 指向另一个本地目录。
 
 官方页面和下载直链统一在 [manifest.json](manifest.json) 的 `documents[]` 条目中维护：`official_page` 是读者可以查看条款和版本信息的官方页面，`download_url` 是允许自动获取时使用的官方直链。工具启动界面会显示该清单的仓库相对路径，并明确提示这两个字段的修改位置。文档换版时不能只改链接；必须同时核对 `version`、`size_bytes`、`pages` 和 `sha256`，避免新链接与旧校验值混用。
 
