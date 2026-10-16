@@ -2081,3 +2081,11 @@ kernel/irq/devres.c的devm_request_threaded_irq在成功申请后登记irq/dev_i
 新增完整multi_async.c用两pipe与本地socketpair，比较direct/signal/both三模式，使用稳定索引、已知源扫描、每源预算、EOF撤销登记与单调截止。普通SIGIO的ssi_fd不作可信来源；两条提示都只产生检查责任，业务由同一读取逻辑消费。socketpair与accept4边界交叉核对Linux man-pages，未声称实现TCP服务器。正常数据为abc/123/N!，含信号模式还要求至少一条提示，不按通知次数恢复业务记录。
 
 正文程序提取一致，替代系统接口经GCC与Clang各运行248个场景：三模式正常数据及逐调用失败注入、短写/分段读、EINTR、合并提示、无信号、坏信号记录、定时积压、超时、终止和清理错误；检查所有取得的fd均归还，失败不打印PASS。另修第九章成功输出必须晚于清理并重跑两编译器各162场景。模拟验证应用控制流，不证明Linux libc ABI、实际内核调度或硬件；目标Linux编译、运行和GPIO解绑仍需实际环境验证。
+
+## 1.207\_锁应用契约与历史配置复核
+
+2026-10-17复审[自旋锁](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P01_自旋锁.md)与[可睡锁](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P02_互斥锁与读写信号量.md)。从官方固定提交dfaf2136deb2af2e60b994421281ba42f1c087e0重新取得include/linux/rwsem.h、kernel/locking/rwsem.c、kernel/locking/mutex.c、include/linux/spinlock_types.h，与仓库保存原件逐字节相同；Git blob依次为c8b543d428b0a8d4662183f3342e88ec61d10189、2bbb6eca51445bdf434ba579ced4beddafbc52ca、cbae8c0b89ab2b8074a387ebf1cca86951362cc2、2dfa35ffec761f933e0f38d38be756d78b4b1669。另核对spinlock_types_raw.h（91cb36b65a1705717a476bf634843e6eb8f9b8b4）和kernel/Kconfig.locks（4198f0273ecdcfd61420f652cc124925be2b534b）。
+
+rwsem公开接口和非RT实现确认可中断/killable获取返回0或负错误码，trylock返回1或0，写降读之后归还读资格；普通接口保留所有者责任，专用non-owner接口另有契约。mutex_unlock的对象存活要求持续到函数返回。locktypes.rst确认RT普通自旋锁的可抢占、迁移约束和IRQ后缀差异，不能从“内部可阻塞”推导临界区可任意睡眠。
+
+正文辅助代码提取后经GCC与Clang编译，用顺序替代锁接口验证中断原状态恢复、无符号计数回绕、非法参数、获取中断、条件冲突和数值改回的语义；不模拟真实竞争、调度或内存顺序，不等于目标Kbuild。先修交错材料另验证原版、加二及过早释放模型。标准工作树本次不可访问，既有非SMP、非RT配置均只作历史记录，未重新确认当前配置，未完成目标运行。
