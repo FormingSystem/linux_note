@@ -1358,3 +1358,24 @@ ssleep 的秒到毫秒乘法、usleep_range 的 unsigned long 参数及不可中
 原始 iopoll.h 去掉内核 include 后，以受控时间、睡眠、延时和读取桩编译实际宏，连同正文 MMIO 封装及无硬件模块初始化在 GCC/Clang GNU11/O2 下执行。覆盖最后补读、恰好到期、睡眠延后、200 组零超时最终就绪、原子预算低估与零间隔、条件重复求值、294 组参数边界和模块结果路径；删除补读、把大于改为大于等于、允许零预算三个反例均被拒绝。该模型不模拟总线、IRQ 或调度，不等于目标内核构建和装载。
 
 正文取消没有芯片依据的 GPIO 稳定位与 MMIO 地址，用接口契约表和真实宏实验替代；IRQ 交接保留为有明确设备前提的协议，hrtimer 到 work 提供一次性、有类型的 devres 取消辅助。后者提取到两编译器的顺序桩模型，核对参数、分配/登记失败以及未到期、已投递、已执行和取消中投递四种清理窗口；不证明真实并发。没有进行设备时序、PREEMPT_RT、调频、移除竞争或 ftrace 运行验证。
+
+## 1.178\_时间属性解析与运行配置生效
+
+2026-10-17 复审[时间与设备树平台数据](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P09_时间与设备树平台数据的对接.md)。继续使用官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；前三项重新取得原始文件，后五项复用本轮设备模型核对的同提交原始缓存并计算 Git blob。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| Documentation/devicetree/bindings/writing-bindings.rst | 1ad081de2dd04e0f3a03adce0f0c9f9b6c256f00 |
+| Documentation/devicetree/bindings/input/gpio-keys.yaml | cc78c2152921308fe0cad3e29ca78a5fad08f066 |
+| drivers/of/property.c | c79d3645bee3be6d30baab3469d4c2e64a8c3dcc |
+| drivers/base/property.c | 837d77e3af2bd5bf655e6fa0f64c10a05b361b90 |
+| drivers/base/platform.c | 6f2a33722c5203ac196a6e36e153648d0fe6c6d4 |
+| drivers/base/swnode.c | eb6eb25b343bafaa9c03f881b98a528305fa6093 |
+| include/linux/property.h | 61fc20e5f81f8da992aa021996ddf68ef3eff0ed |
+| drivers/base/dd.c | bcc1f28b71f4f554ec8cf279934d13bdc6acce9c |
+
+设备属性标量读取委托到数组读取，不替驱动强制单元素契约；OF 数量检查会拒绝非元素大小倍数的长度，读取长度和语义 Schema 仍是不同层。统一固件节点读取不会自动转换 platform_data；platform_device_register_full 的 properties 路径创建软件节点。驱动核心成功 probe 后创建 dev_groups，在属性创建失败或解绑时调用相应清理；remove 前移除驱动属性组。工作对象采用此前 workqueue 证据中的关闭生产者后同步取消模式。
+
+gpio-keys 的 debounce-interval 以毫秒计、默认5，poll-interval属于gpio-keys-polled；不将教学nxp私有属性冒充官方绑定，不把软件策略普遍写入DT。原三机制拼装示例中，GPIO错误、IRQ早于初始化、无锁配置/事件标志、属性写入凭空制造任务与不关闭IRQ便取消工作等问题，不再作为可直接落地代码保留。对应真实按键与事务职责回指现有机制章节；本章改用完整无硬件platform属性实验，演示统一配置验证与下一轮排队生效。
+
+提取正文解析、工作、sysfs访问和remove函数，在GCC/Clang C11/O2顺序桩模型中核对缺失、数量/读取错误、各项上下界、混合来源、失败不发布半份配置、写入不修改已排到期点、后续排队采用新值及停止后不再生产。取消数量检查、写入强制重排、遗漏停止位三个反例均被拒绝。桩替代内核属性后端、锁、队列和数值解析；不是目标Kbuild、模块装载、DT Schema/DTB、sysfs并发或板级测试结果。
