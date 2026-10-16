@@ -1,3 +1,7 @@
+#if defined(NDEBUG)
+#error "This example requires assertions"
+#endif
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
