@@ -1857,6 +1857,19 @@
           "连续性大节提示对应完整管理者借用实例，未拆碎程序；16项术语候选结合前章、枚举和局部说明人工检查"
         ],
         "limits": "宿主夹具使用显式顺序替身，不验证真实 timer 时钟、等待、线程、软硬中断或内存序；未执行目标 Kbuild、MODPOST 或装卸。材料 README 仅同步该条说明，未计为整篇完成。"
+      },
+      "knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读 borrow/ref/take、超时完成与队列交付；修正借用窗口标题、直接转交练习和旧 assert 文案，将已出队阶段从 RUNNING 改为 TAKEN，时序图分开投递接口与 worker，保留同场景两种所有权对照及失败路径。",
+        "date": "2026-10-16",
+        "validation": [
+          "两个严格宿主构建运行通过：completion 七组与队列十组显式顺序夹具；未变化的所有权模型复用本会话 P01 普通/优化及练习检查",
+          "固定提交重新读取 completion.c 与 completion.h 并核对保存原件，结合本会话 workqueue 固定源码确认超时、取消、投递边界",
+          "三份完整程序与正文一致；13个出站标题片段有效；更名标题无外部锚点调用方、旧 REQUEST_RUNNING 无跟踪残留；六幅 Mermaid 已渲染查看",
+          "全仓707篇链接和当前文档元数据、标题、命名及 diff 检查通过；大节含完整可构建队列对照程序，术语候选按前章及局部解释人工处理"
+        ],
+        "limits": "顺序替身不证明真实线程、等待与内存序；历史 ARM 前端记录与本轮宿主检查区分，未执行目标 Kbuild、MODPOST、模块装卸。"
       }
     }
   },
