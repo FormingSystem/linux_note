@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,10 +15,19 @@ static struct request *registry;
 static unsigned int objects, buffers, channels, releases;
 static unsigned int tick, channel_end, buffer_end, object_end;
 
+/* 检查始终执行，定义NDEBUG也不跳过责任核对。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("rollback ownership invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
+
 static void dispose_parts(struct request *request)
 {
     if (request->channel) {
-        assert(request->channel->buffer == request->buffer);
+        require_model(request->channel->buffer == request->buffer);
         free(request->channel);
         request->channel = NULL; /* 清空后不再把这项责任留给最终清理。 */
         --channels;
@@ -34,15 +42,15 @@ static void dispose_parts(struct request *request)
 }
 static void request_get(struct request *request)
 {
-    assert(request && request->refs);
+    require_model(request && request->refs);
     ++request->refs;
 }
 static void request_put(struct request *request)
 {
-    assert(request && request->refs);
+    require_model(request && request->refs);
     if (--request->refs)
         return;
-    assert(registry != request); /* 发布份额必须先被真正撤下。 */
+    require_model(registry != request); /* 发布份额必须先被真正撤下。 */
     dispose_parts(request);
     ++releases;
     --objects;
@@ -51,7 +59,7 @@ static void request_put(struct request *request)
 }
 static void publish(struct request *request)
 {
-    assert(!registry && request->buffer && request->channel);
+    require_model(!registry && request->buffer && request->channel);
     request_get(request); /* 登记槽额外拥有一份，创建者仍保留原份额。 */
     registry = request;
 }
@@ -68,7 +76,7 @@ static void finish_creator(struct request *request, enum cleanup_policy policy)
 {
     unpublish(request);
     /* 本顺序模型没有查找者或异步借用者；现实系统必须另行证明排空。 */
-    assert(request->refs == 1);
+    require_model(request->refs == 1);
     if (policy == EXPLICIT_PARTS)
         dispose_parts(request);
     request_put(request); /* 最后清理仍检查空字段，不会重复free。 */
@@ -112,23 +120,26 @@ int main(void)
     for (unsigned int policy = EXPLICIT_PARTS; policy <= FINAL_PARTS; ++policy) {
         for (unsigned int stage = 0; stage <= 5; ++stage) {
             struct request *request;
-            assert(!registry && !objects && !buffers && !channels);
+            bool removed;
+            require_model(!registry && !objects && !buffers && !channels);
             releases = tick = channel_end = buffer_end = object_end = 0;
             request = create_request(stage, (enum cleanup_policy)policy);
             if (stage == 0) {
-                assert(request && registry == request && request->refs == 2);
-                assert(unpublish(request));
-                assert(!unpublish(request) && request->refs == 1);
+                require_model(request && registry == request && request->refs == 2);
+                removed = unpublish(request);
+                require_model(removed);
+                removed = unpublish(request);
+                require_model(!removed && request->refs == 1);
                 finish_creator(request, (enum cleanup_policy)policy);
             } else {
-                assert(!request);
+                require_model(!request);
             }
-            assert(!registry && !objects && !buffers && !channels);
-            assert(releases == (stage == 1 ? 0u : 1u));
+            require_model(!registry && !objects && !buffers && !channels);
+            require_model(releases == (stage == 1 ? 0u : 1u));
             if (channel_end)
-                assert(buffer_end && channel_end < buffer_end);
+                require_model(buffer_end && channel_end < buffer_end);
             if (buffer_end)
-                assert(buffer_end < object_end);
+                require_model(buffer_end < object_end);
             printf("policy=%u stage=%u releases=%u cleanup=%u/%u/%u\n",
                    policy, stage, releases, channel_end, buffer_end, object_end);
         }
