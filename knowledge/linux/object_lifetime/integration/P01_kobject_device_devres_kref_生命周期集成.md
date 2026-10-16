@@ -23,14 +23,14 @@ domains:
 | device外壳 | `struct device`内嵌kobject及框架引用 | 通过设备接口取得/归还；最后归还进入设备release体系 |
 | driver binding | 设备核心的绑定关系及驱动自己的业务门 | 核心组织probe/remove，驱动决定何时停止接纳；remove不是外壳最终析构 |
 | devres资源 | `dev->devres_head`记录及各子系统资源 | 包装登记，清理路径摘出并调用回调；通常在失败或解绑阶段结束 |
-| 独立私有对象 | 应用设计的`ctx->ref`、closing、active、owner等字段 | 文件、活动、发布槽和绑定期分别持份额；最后一份归还才回收软件外壳 |
+| 独立私有对象 | 应用设计的 `ctx->refs`、closing、active、owner 等字段 | 文件、活动、发布槽和绑定期分别持份额；最后一份归还才回收软件外壳 |
 
 这里的ctx字段是本章应用协议，不是每个Linux驱动自动拥有的字段。active记录已经接纳、仍会使用绑定资源的活动；普通引用可能仅表示一个闲置文件还开着，两者不能互换。下图沿用前章的中断请求（Interrupt Request，IRQ）资源：这里关心处理函数及其数据指针何时不再被使用，不重新展开中断控制器。
 
 ```mermaid
-flowchart LR
+flowchart TB
     core["设备核心"] -->|"保持设备对象并组织绑定退出"| dev["device外壳与kobject引用"]
-    file["旧文件实例"] -->|"持一份私有对象引用"| ctx["ctx：ref / closing / active"]
+    file["旧文件实例"] -->|"持一份私有对象引用"| ctx["ctx：refs / closing / active"]
     ctx -->|"若保存owner则持设备桥接份额"| dev
     slot["发布槽"] -->|"可查找期间持一份"| ctx
     activity["已接纳操作"] -->|"登记active并持活动份额"| ctx
@@ -64,7 +64,7 @@ put_device(held);
 
 ## 1.3\_probe\_remove\_与\_release
 
-总线设备通常先存在，再尝试匹配驱动。probe为一次绑定准备资源和服务；probe失败沿核心回滚路径清理，但不把驱动remove当成失败出口。成功绑定以后，remove负责执行本驱动的停止与撤销协议，设备对象可以在它返回后继续存在并匹配其他驱动。
+总线设备通常先存在，再尝试匹配驱动。probe 为一次绑定准备资源和服务；**驱动的 probe 回调自身返回失败** 时，需要自行结束已启动的非托管活动，不能等 remove 补救。如果 probe 已返回成功、核心后续步骤才失败，则应沿那个具体失败标签检查是否调用 remove，不能把两类失败混为一谈。成功绑定后正常解绑时，remove 负责执行本驱动的停止与撤销协议，设备对象可以在它返回后继续存在并匹配其他驱动。
 
 device release则属于最后设备份额的归还。更外层的注册拥有者何时归还设备份额，与绑定期何时结束也是两项责任：普通unbind可以保留已注册device，unregister还会撤下设备并归还相应份额。下面模型为观察最后回收，在解绑后再模拟注册拥有者的归还，不把这一步写成所有unbind都会自动执行。
 
@@ -73,6 +73,8 @@ device release则属于最后设备份额的归还。更外层的注册拥有者
 ## 1.4\_devres\_何时释放
 
 对于常见绑定期资源，成功获取后保存清理记录，probe失败或解绑清理会消费这些记录。正常解绑的核心通常在remove完成后继续devres清理，而不是等待device的最后引用才动手。资源也可能通过匹配的托管释放接口或分组提前结束，例如devm_kfree、devm_free_irq或devres_release_group；不能发明一个所有资源族通用的devm_release接口。
+
+固定版本的 device 最终 release 还会调用 devres_release_all，处理无驱动绑定时获取或设备撤销后仍留存的受管资源。这是最后清理入口，不能反向推导“绑定期 devm 资源会一直等到最后设备引用”。判断某份资源的实际终点，应先看它是否已在解绑或提前释放路径消费，而不是只找最晚存在的那个清理函数。
 
 还有一个集成细节：如果IRQ回调、action或其他清理记录使用ctx，ctx就必须跨过它们的最后访问。不能在remove末尾随意put掉绑定期份额，又让核心稍后用ctx执行清理。
 
@@ -119,7 +121,7 @@ remove不应把用户何时关闭文件作为可以无限等待的前提。它�
 
 成功责任只能被消费一次。devm内存使用配套托管提前释放接口会同时处理记录；直接普通free则可能让记录日后再次清理。独立ctx使用kzalloc/kfree是本例的存储选择，不意味着所有使用者都必须手写底层资源退出。引用份额、资源记录和直接拥有者可以协作，只要各自管理的是清楚的一份责任。
 
-## 1.9\_完整停机状态机
+## 1.9\_用六条轨迹串起组合退出
 
 用T0～T6组织这次组合周期，避免把设备框架、devres和私有状态误画成同一个单变量状态机。它们分别回指已学的kref接纳阶段和devres退出阶段。
 
@@ -158,13 +160,28 @@ sequenceDiagram
     G->>G: ctx最终清理，再归还device桥接
 ```
 
-下面是完整C11顺序模型。函数调用代表已经正确串行化的一步，没有模拟Linux锁、真实等待或devres分配。设备外壳用栈对象模拟逻辑释放，私有ctx则真正分配和回收。模型明确假设创建成功已建立所有记录；action分配失败如何回滚仍由[devres核心模型](../devres/P01_从失败回滚到设备资源账本.md#1.5_运行完整C模型观察六条路径)单独验证，不能把本模型成功分支冒充所有内核失败出口。
+图中的接纳与关门竞争同一个协议。若 T2 先完成，关闭者必须在 T4 看到这项活动并等它结束；若 T3 先完成，新业务就不能增加 active。引用计数负责 ctx 存储，排空条件负责硬件访问，两条证明缺一不可。图的后半段特意保留旧文件，说明 T5 结束资源以后，T6 仍可以只做软件收尾。
 
-因此模型的最终回调断言只适用于这里已经发布、再经过关闭的对象。真实驱动还要允许未发布对象沿初始化失败路径合法回收，不能强制所有release都先经过closing或drained。应按已取得的责任分别审查，不能把本例断言当作通用内核实现。
+在运行程序前，先手算“一个旧文件、两个已接纳操作”这一条轨迹。`refs` 每一份都有具体持有者，不能凭感觉加减；设备外壳的计数与 ctx 计数分别记账。
+
+| 执行到哪一步 | ctx 的持有者与 refs | active / drained | 设备外壳与资源 |
+| --- | --- | --- | --- |
+| T0/T1 建立并发布 | 绑定、发布槽：2 | 0 / false | 框架与 ctx 桥接共 2 份，资源有效 |
+| 打开文件，再完成两次 T2 | 再加文件、两个活动：5 | 2 / false | 资源可由已接纳活动使用 |
+| T3 关门并撤槽 | 绑定、文件、两个活动：4 | 2 / false | 新业务被拒绝，旧活动尚须完成 |
+| 第一个活动结束 | 绑定、文件、一个活动：3 | 1 / false | 不能退出绑定资源 |
+| 第二个活动结束 | 绑定、文件：2 | 0 / true | T4 条件成立，可进入 T5 |
+| T5 归还资源和绑定份额 | 只剩文件：1 | 0 / true | 资源结束；模型随后归还框架设备份额，桥接仍在 |
+| T6 最后文件归还 | 0，执行 ctx 最终释放 | 不再读取 ctx | ctx 归还桥接，设备最后份额也结束 |
+
+下面是完整 C11 顺序模型。函数调用代表已经正确串行化的一步，没有模拟 Linux 锁、真实等待或 devres 分配。设备外壳用栈对象模拟逻辑释放，私有 ctx 则真正分配和回收。`create_binding` 合并模拟 T0 和 T1，假设成功时已经建立所有记录；action 分配失败如何回滚仍由[devres核心模型](../devres/P01_从失败回滚到设备资源账本.md#1.5_运行完整C模型观察六条路径)单独验证，不能把本模型成功分支冒充所有内核失败出口。
+
+因此模型的最终回调检查只适用于这里已经发布、再经过关闭的对象。真实驱动还要允许未发布对象沿初始化失败路径合法回收，不能强制所有 release 都先经过 closing 或 drained。应按已取得的责任分别审查，不能把本例检查当作通用内核实现。
+
+程序使用普通函数 `require_model` 检查不变量；条件不成立就报错，并以 C 标准库的失败状态 `EXIT_FAILURE` 退出。调用参数始终求值，所以其中的活动接纳不会因定义 `NDEBUG` 而消失。不要把具有状态变化的调用放进可能被编译配置删除的检查宏。
 
 ```c
 /* C11顺序模型：不调用Linux devres、kref、锁或真实设备接口。 */
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -181,24 +198,32 @@ struct context {
 static struct context *registry;
 static unsigned int context_releases;
 
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("model invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
+
 static void device_put(struct device_model *dev)
 {
-    assert(dev->refs && !dev->released);
+    require_model(dev->refs && !dev->released);
     if (--dev->refs == 0)
         dev->released = true; /* 外壳用栈存储，只模拟其逻辑回收。 */
 }
 static void context_get(struct context *ctx)
 {
-    assert(ctx && ctx->refs);
+    require_model(ctx && ctx->refs);
     ++ctx->refs;
 }
 static void context_put(struct context *ctx)
 {
-    assert(ctx && ctx->refs);
+    require_model(ctx && ctx->refs);
     if (--ctx->refs != 0)
         return;
-    assert(ctx->closing && ctx->drained && !ctx->active);
-    assert(registry != ctx && !ctx->owner->resources_live);
+    require_model(ctx->closing && ctx->drained && !ctx->active);
+    require_model(registry != ctx && !ctx->owner->resources_live);
     device_put(ctx->owner); /* 先结束桥接责任，此后不再访问owner。 */
     ++context_releases;
     free(ctx);
@@ -214,7 +239,7 @@ static struct context *create_binding(struct device_model *dev, bool fail)
     ctx->owner = dev;
     ++dev->refs;
     dev->resources_live = true;
-    assert(!registry);
+    require_model(!registry);
     context_get(ctx); /* 拥有型发布槽持有一份。 */
     registry = ctx;
     return ctx;
@@ -228,17 +253,17 @@ static struct context *open_session(void)
 }
 static bool begin_operation(struct context *ctx)
 {
-    assert(ctx && ctx->refs);
+    require_model(ctx && ctx->refs);
     if (ctx->closing)
         return false;
-    assert(ctx->owner->resources_live);
+    require_model(ctx->owner->resources_live);
     ++ctx->active;
     context_get(ctx);
     return true;
 }
 static void close_gate(struct context *ctx)
 {
-    assert(registry == ctx);
+    require_model(registry == ctx);
     ctx->closing = true;
     registry = NULL;
     context_put(ctx); /* 撤下发布槽的份额，绑定期份额仍在。 */
@@ -246,7 +271,7 @@ static void close_gate(struct context *ctx)
 }
 static void finish_operation(struct context *ctx)
 {
-    assert(ctx->active && ctx->owner->resources_live);
+    require_model(ctx->active && ctx->owner->resources_live);
     --ctx->active;
     if (ctx->closing && !ctx->active)
         ctx->drained = true; /* 只模拟汇聚条件，不实现通知和等待。 */
@@ -254,7 +279,7 @@ static void finish_operation(struct context *ctx)
 }
 static void finish_binding(struct context *ctx)
 {
-    assert(ctx->closing && ctx->drained && !ctx->active);
+    require_model(ctx->closing && ctx->drained && !ctx->active);
     ctx->owner->resources_live = false; /* 模拟IRQ、时钟、映射等先退出。 */
     context_put(ctx); /* 最后才消费绑定期记录中的私有对象份额。 */
 }
@@ -267,38 +292,38 @@ int main(void)
         context_releases = 0;
         ctx = create_binding(&dev, scenario == 0);
         if (scenario == 0) {
-            assert(!ctx && !registry && dev.refs == 1);
+            require_model(!ctx && !registry && dev.refs == 1);
             device_put(&dev);
         } else {
-            assert(ctx);
+            require_model(ctx);
             if (scenario >= 2) {
                 file = open_session();
-                assert(file == ctx);
+                require_model(file == ctx);
             }
             for (unsigned int i = 0; i < active; ++i)
-                assert(begin_operation(file));
+                require_model(begin_operation(file));
             bool old_live_snapshot = !ctx->closing;
             close_gate(ctx);
-            assert(open_session() == NULL && !begin_operation(ctx));
-            assert(ctx->drained == (active == 0));
+            require_model(open_session() == NULL && !begin_operation(ctx));
+            require_model(ctx->drained == (active == 0));
             while (active) {
                 finish_operation(ctx);
                 --active;
-                assert(ctx->drained == (active == 0));
+                require_model(ctx->drained == (active == 0));
             }
             finish_binding(ctx); /* 无旧文件时，ctx可在这里最终回收。 */
             ctx = NULL;
             device_put(&dev); /* 再模拟框架归还自己的设备份额。 */
             if (file) {
-                assert(!dev.resources_live && !dev.released && dev.refs == 1);
-                assert(context_releases == 0 && !begin_operation(file));
+                require_model(!dev.resources_live && !dev.released && dev.refs == 1);
+                require_model(context_releases == 0 && !begin_operation(file));
                 if (scenario == 5)
-                    assert(old_live_snapshot && file->closing);
+                    require_model(old_live_snapshot && file->closing);
                 context_put(file); /* 旧文件只归还软件对象，不再操作硬件。 */
             }
-            assert(context_releases == 1);
+            require_model(context_releases == 1);
         }
-        assert(!registry && dev.released && dev.refs == 0);
+        require_model(!registry && dev.released && dev.refs == 0);
         printf("case %u: context_release=%u device_released=1\n",
                scenario, context_releases);
     }
@@ -307,11 +332,22 @@ int main(void)
 }
 ```
 
-在仓库根目录用C开发环境运行[同名材料](../../../../labs/kernel/object_lifetime/materials/binding_lifetime.c)：
+先沿程序认出三组动作。`context_get/put` 只改变 ctx 的持有份额；最终 put 先归还 owner 桥接，再释放 ctx。`begin_operation/finish_operation` 还改变 active，因此每项业务活动同时参与存储保活与排空判断。`close_gate/finish_binding` 分别关闭入口、结束绑定责任，两者之间必须满足 drained，不能直接跳过等待条件。
+
+`main` 中的局部变量 active 是驱动模型执行多少次“活动完成”的测试计数，`ctx->active` 才是模型状态；二者在每次完成后比较。`old_live_snapshot` 保存的是关门前的布尔值，场景 5 让它与关门后的真实状态并存，展示“以前可用”不能授权当前操作。这个变量不参与真正的接纳判断。
+
+在带 C 编译器的 Linux/POSIX 开发环境中，从仓库根目录编译[同名材料](../../../../labs/kernel/object_lifetime/materials/binding_lifetime.c)：
 
 ```bash
+# 仓库根目录；产物写入临时目录。
 cc -std=c11 -Wall -Wextra -Werror -O2 \
   labs/kernel/object_lifetime/materials/binding_lifetime.c -o /tmp/binding_lifetime
+```
+
+这条命令以 C11 编译模型，把常见警告作为错误处理；它不构建内核模块，也不需要真实设备。编译成功后再运行：
+
+```bash
+# 同一开发环境；运行刚生成的顺序模型。
 /tmp/binding_lifetime
 ```
 
@@ -323,7 +359,7 @@ cc -std=c11 -Wall -Wextra -Werror -O2 \
 
 先观察场景2：T5后resources_live已经为false，设备外壳仍有ctx持有的一份桥接，旧文件再次begin却失败。再观察场景4：第一个活动结束不能形成drained；第二个结束后才可进入T5。两个现象分别说明存储与业务资格不同，以及局部完成必须汇聚成全局排空。
 
-这些顺序轨迹本批已严格编译并执行。它们没有测试真实中断、锁、内存序、唤醒、虚拟内存区域（Virtual Memory Area，VMA）的映射撤销或硬件，模型中的drained赋值也不是真实completion。内核实现需要继续兑现这些通信义务。
+六条轨迹只验证这里写出的顺序责任关系。它们没有测试真实中断、锁、内存序、唤醒、虚拟内存区域（Virtual Memory Area，VMA）的映射撤销或硬件，模型中的 drained 赋值也不是真实 completion。内核实现需要继续兑现这些通信义务；宿主程序结束不能代替目标驱动退出证明。
 
 ## 1.10\_常见错误
 
@@ -337,7 +373,7 @@ cc -std=c11 -Wall -Wextra -Werror -O2 \
 | 文件最后关闭必须发生在remove之前 | 把软件会话寿命绑到资源退出，可能无限等待用户 |
 | devm分配加一个kref就能延长存储 | devres的free不会读取这套私有计数 |
 
-## 1.11\_核对表
+## 1.11\_修改退出顺序检验生命周期边界
 
 先做三个修改实验：把finish_binding中的ctx归还提前到资源退出之前，哪类场景会立即暴露问题？去掉T3的closing检查但保留ctx引用，旧文件会跨过哪条资源边界？让第一个活动结束就设置drained，第二个活动会失去哪项保证？
 
