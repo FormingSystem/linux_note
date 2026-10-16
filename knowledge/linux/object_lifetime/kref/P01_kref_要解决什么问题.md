@@ -153,7 +153,6 @@ sequenceDiagram
 这个程序是 **串行所有权模型**：没有内核工作队列，也没有原子操作；`submit()` 的布尔参数控制接收与拒绝。它验证责任如何闭合，不验证并发内存序、真实调度或 `refcount_t` 的饱和保护。为便于观察，两条主路径都按创建者先退出、处理者后执行的顺序运行。标准库宏 `UINT_MAX` 表示无符号整数上限，用于拒绝计数溢出；`EXIT_FAILURE` 和 `EXIT_SUCCESS` 分别表示进程失败和成功退出。
 
 ```c
-#include <assert.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -168,9 +167,17 @@ struct object {
 struct owner { struct object *ptr; };
 static unsigned int released;
 
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("ownership invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
+
 static bool create(struct owner *dst)
 {
-    assert(!dst->ptr);
+    require_model(!dst->ptr);
     struct object *obj = malloc(sizeof(*obj));
     if (!obj)
         return false;
@@ -181,22 +188,22 @@ static bool create(struct owner *dst)
 
 static void share(struct owner *dst, const struct owner *src)
 {
-    assert(!dst->ptr && src->ptr);
-    assert(src->ptr->refs > 0 && src->ptr->refs < UINT_MAX);
+    require_model(!dst->ptr && src->ptr);
+    require_model(src->ptr->refs > 0 && src->ptr->refs < UINT_MAX);
     ++src->ptr->refs;
     dst->ptr = src->ptr;
 }
 
 static void move(struct owner *dst, struct owner *src)
 {
-    assert(!dst->ptr && src->ptr);
+    require_model(!dst->ptr && src->ptr);
     dst->ptr = src->ptr;
     src->ptr = NULL; /* 责任转交，计数不变。 */
 }
 
 static void drop(struct owner *slot)
 {
-    assert(slot->ptr && slot->ptr->refs > 0);
+    require_model(slot->ptr && slot->ptr->refs > 0);
     struct object *obj = slot->ptr;
     slot->ptr = NULL; /* 先结束本槽使用权，再执行可能的释放。 */
     if (--obj->refs == 0) {
@@ -214,7 +221,7 @@ static int borrow(const struct object *obj)
 static bool submit(struct owner *pending, struct owner *candidate,
                    bool accept)
 {
-    assert(!pending->ptr && candidate->ptr);
+    require_model(!pending->ptr && candidate->ptr);
     if (!accept)
         return false;
     move(pending, candidate);
@@ -225,7 +232,7 @@ static void consume(struct owner *pending)
 {
     struct owner worker = {0};
     move(&worker, pending);
-    assert(borrow(worker.ptr) == 42);
+    require_model(borrow(worker.ptr) == 42);
     drop(&worker);
 }
 
@@ -238,30 +245,40 @@ int main(void)
             fputs("allocation failed\n", stderr);
             return EXIT_FAILURE;
         }
-        assert(borrow(producer.ptr) == 42 && producer.ptr->refs == 1);
+        require_model(borrow(producer.ptr) == 42 && producer.ptr->refs == 1);
         share(&candidate, &producer);
-        assert(producer.ptr->refs == 2);
+        require_model(producer.ptr->refs == 2);
         bool queued = submit(&pending, &candidate, accept != 0);
         if (!queued)
             drop(&candidate); /* 发布失败，归还预留的那一份。 */
         drop(&producer);
         if (queued) {
-            assert(pending.ptr->refs == 1);
+            require_model(pending.ptr->refs == 1);
             consume(&pending);
         }
-        assert(!producer.ptr && !candidate.ptr && !pending.ptr);
-        assert(released == accept + 1);
+        require_model(!producer.ptr && !candidate.ptr && !pending.ptr);
+        require_model(released == accept + 1);
         printf("accept=%u released=%u\n", accept, released);
     }
     return EXIT_SUCCESS;
 }
 ```
 
-在程序所在目录运行，保持断言开启：
+`require_model` 是普通检查函数，参数会正常求值，条件失败时输出 `ownership invariant failed` 并退出；定义 `NDEBUG` 也不会删掉这些检查。模型把检查留在责任发生变化的位置，便于练习时发现究竟是哪一步失配。
+
+在带 C 编译器的 Linux 开发环境中，从仓库根目录编译材料文件：
 
 ```bash
-cc -std=c11 -Wall -Wextra -Werror -O2 reference_ownership.c -o reference_ownership
-./reference_ownership
+# 仓库根目录；产物放入临时目录。
+cc -std=c11 -Wall -Wextra -Werror -O2 \
+  labs/kernel/object_lifetime/materials/reference_ownership.c -o /tmp/reference_ownership
+```
+
+这里构建的是宿主 C11 程序；严格警告用于检查示例本身，不需要 Linux 内核头文件或工作队列。编译成功以后再执行：
+
+```bash
+# 同一开发环境；运行刚编译的程序。
+/tmp/reference_ownership
 ```
 
 预期输出：
@@ -366,7 +383,7 @@ flowchart TD
 
 ## 1.10\_为什么\_多个地方能拿到对象\_时必须有生命周期协议
 
-不使用引用计数也能有正确的生命周期协议。例如所有使用都在同一把锁的临界区内完成，销毁者取锁后关闭入口并释放；或者由拥有者停止新请求、等待所有使用者退出后统一回收。只要覆盖了所有参与者，这些方案同样成立。
+不使用引用计数也能有正确的生命周期协议。例如，用一把 **寿命独立于待释放对象的外部锁** 保护入口；所有使用者先取锁，再从入口取得对象，并在解锁前完成全部访问。销毁者也先取锁，撤下入口后释放对象，后来取锁者只会看到空入口。这里锁本身必须仍然存在，不能释放一个内嵌着其他线程正在等待的锁的对象，再声称“已经加过锁所以安全”。另一种方案是由拥有者停止新请求、等待所有使用者退出后统一回收。只要覆盖全部参与者，这些方案同样成立。
 
 引用计数的价值是把独立使用期限汇总为可执行的退出条件：A 用完归还 A 的份额，B 用完归还 B 的份额，最后的归还触发 release。调用者无需知道究竟是 A 还是 B 最晚结束。但这份“全局结论”只涵盖 **已经正确登记的责任**，不会发现偷偷保存的裸指针。
 
@@ -404,7 +421,7 @@ mutex_unlock(&refobj->lock);
 
 ## 1.12\_kref\_不能单独解决\_lookup\_问题
 
-原来的全局链表例子保留如下角色：每个对象有链表成员 `struct list_head node` 和整数标识 `int id`，全局链表头 `refobj_list` 用于查找，互斥锁对象 `refobj_list_lock` 负责查找与摘除。仅遍历得到地址后调用 get，仍可能发生“读到地址 → 删除方摘除并释放 → 查找方访问内部计数”的 UAF。
+现在把查找入口具体化为全局链表：每个对象有链表成员 `struct list_head node` 和整数标识 `int id`，全局链表头 `refobj_list` 用于查找，互斥锁对象 `refobj_list_lock` 负责查找与摘除。仅遍历得到地址后调用 get，仍可能发生“读到地址 → 删除方摘除并释放 → 查找方访问内部计数”的 UAF。
 
 先选定一种容易证明的协议：**链表中的每个对象由链表拥有一份引用，插入、查找取引用和摘除共用同一把锁。** 查找方持锁完成匹配和 get，得到独立引用后才解锁。删除方持锁摘除，解锁后归还链表的那份引用。于是查找与删除有两个可解释的顺序：
 
@@ -503,7 +520,7 @@ RCU 查找还要分两件事：读侧窗口保证访问的内存尚未被回收�
 
 ### 1.16.1\_运行一次真实工作交付
 
-下面的完整模块只创建一个新对象、投递一次、没有重排或外部生产者。它落实 S0～S5：初始化创建者引用，投递前预留，成功后两方各归还一次，卸载前等待私有队列完成。文件为[note_kref_work.c](../../../../labs/kernel/object_lifetime/materials/note_kref_work.c)，配套 [Makefile](../../../../labs/kernel/object_lifetime/materials/Makefile)。若尚未完成内核模块的构建课程，可先阅读过程，稍后按[构建入口](../../../../engineering/build/kernel_modules/P01_从C文件到匹配目标内核的模块.md)准备目标环境。
+下面的完整模块只创建一个新对象、投递一次、没有重排或外部生产者。它落实 S0～S5：初始化创建者引用，投递前预留，成功后两方各归还一次，卸载前等待私有队列完成。文件为 [note_kref_work.c](../../../../labs/kernel/object_lifetime/materials/note_kref_work.c)。材料目录的 [Makefile](../../../../labs/kernel/object_lifetime/materials/Makefile)收集了全专题模块；本章下面另外准备一个只包含本实验的构建目录，避免入门实验依赖后续模块。若尚未完成内核模块的构建课程，可先阅读过程，稍后按[构建入口](../../../../engineering/build/kernel_modules/P01_从C文件到匹配目标内核的模块.md)准备目标环境。
 
 `work_struct` 保存交给工作队列的工作项，`INIT_WORK()` 为它关联回调；私有有序队列由 `alloc_ordered_workqueue()` 创建。`queue_work()` 返回是否成功排入，`destroy_workqueue()` 在本例无新生产者的前提下等已提交工作结束再销毁队列。成功 queue 的发布契约使本次投递前初始化的 `value` 能被回调看到；后续并发修改仍需单独同步。它们提供执行与等待，不替业务对象增加 kref。
 
@@ -580,12 +597,56 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("一次工作交付的引用责任实验");
 ```
 
-在源码匹配、配置和构建产物准备完成的独立实验环境中，采用标准外部模块命令；`KERNEL_BUILD` 指向目标内核构建目录，交叉编译参数沿构建课程设置：
+先对照两个回调的入参：`note_worker` 从 work 成员地址找到请求，`note_release` 从 ref 成员地址找到同一请求。最后归还可能发生在任一方，但释放只能有一次；worker 的最后 put 以后不能再读取 request。固定工作队列实现允许回调释放其内嵌 work 所在对象，这不等于允许模块代码也提前卸载，后者由退出时的队列等待保证。
+
+这些接口以 NXP Linux 6.12.20、固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 核对。版本入口见 [kref 源码索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.1_版本与读者任务)，普通增加和归还分别见[取得实现](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.3_为独立使用追加引用)、[最后归还实现](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理)。工作队列的发布与退出保证还要核对该版本 `include/linux/workqueue.h` 的 queue_work 契约和 `kernel/workqueue.c` 的执行、销毁路径，不能从 kref 推出它们。
+
+在源码匹配、配置和构建产物准备完成的 Linux 实验环境中，先从仓库根目录准备独立目录：
 
 ```bash
-make -C "$KERNEL_BUILD" M="$PWD" modules
+# 仓库根目录；保留变量，后续在同一个 shell 中执行。
+kref_lab_dir=$(mktemp -d /tmp/kref_intro.XXXXXX)
+```
+
+`mktemp -d` 创建一个新的空目录，并把路径交给 `kref_lab_dir`，不会把已有实验当成空白目录重用。随后复制本章源码：
+
+```bash
+# 仓库根目录；目标是刚创建的独立目录。
+cp labs/kernel/object_lifetime/materials/note_kref_work.c "$kref_lab_dir/"
+```
+
+这里只有这一份模块源文件。为它写入最小 Makefile：
+
+```bash
+# 同一 shell；只登记本章模块。
+printf '%s\n' 'obj-m += note_kref_work.o' > "$kref_lab_dir/Makefile"
+```
+
+`obj-m` 告诉内核构建系统生成模块；对象文件名与 `note_kref_work.c` 对应。`KERNEL_BUILD` 应已按构建课程设为匹配目标内核的构建目录，交叉编译参数也沿该课程设置。接下来编译：
+
+```bash
+# Linux 构建主机；KERNEL_BUILD 已指向准备完毕的目标内核构建目录。
+make -C "$KERNEL_BUILD" M="$kref_lab_dir" modules
+```
+
+`-C` 选择内核构建目录，`M` 指定本实验的外部模块目录。成功后产物是该目录下的 `note_kref_work.ko`。若构建主机不是目标机，把这个产物传到目标机上的实验目录；下面两条装卸命令必须在目标机执行。
+
+```bash
+# 匹配该模块的目标 Linux；进入存放 note_kref_work.ko 的实验目录。
 sudo insmod ./note_kref_work.ko
+```
+
+加载调用 note_init，建立私有队列并投递一次请求。成功加载不要求 worker 恰好已经结束；下一步卸载才能同时检查队列退出协议：
+
+```bash
+# 同一目标 Linux；模块名不带 .ko 后缀。
 sudo rmmod note_kref_work
+```
+
+卸载进入 note_exit，在私有队列完成后才结束模块代码的寿命。最后读取内核日志：
+
+```bash
+# 同一目标 Linux；只读本次实验附近的日志。
 sudo dmesg | tail -n 20
 ```
 
@@ -612,7 +673,7 @@ sudo dmesg | tail -n 20
 3. 解锁后归还旧槽引用；这样即使旧对象的 release 有额外清理，也不把它无意中放进槽锁内。
 4. 关闭槽时按同一协议置空并归还旧值，再处理外部入口的结束。
 
-旧值和新值恰好相同时，一次预留和一次旧槽归还可以相抵，但读者仍须检查具体接口约定。这里保留原全局保存场景，同时明确它不是“get 后写全局变量”两行就完成的线程安全模板。
+旧值和新值恰好相同时，一次预留和一次旧槽归还可以相抵，但读者仍须检查具体接口约定。全局槽的替换还必须与读取方采用同一套同步协议，不能只靠“get 后写全局变量”两行完成线程安全发布。
 
 ------
 
