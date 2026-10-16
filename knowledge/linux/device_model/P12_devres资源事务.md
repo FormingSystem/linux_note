@@ -63,7 +63,7 @@ open 本身也可能因分配失败返回 NULL，必须先检查成功，再保�
 
 ## 12.4\_进入完整资源教材并带回退出结论
 
-沿 [devres 阅读大纲](../object_lifetime/devres/大纲.md#1.1_从退出责任进入资源接口)继续：先在[资源账本与分组](../object_lifetime/devres/P01_从失败回滚到设备资源账本.md#1.1_从两条退出路径提取同一份责任)中运行完整 C 模型，区分登记失败、关闭、移除和释放；再到[托管资源与使用者退出](../object_lifetime/devres/P02_托管资源与使用者退出.md#2.3_时序与控制流)追踪请求、后台工作和实际清理的交错。该分支的 S0～S4 是资源管理周期的局部编号，与本专题准备到解绑的阶段有关联但不是同一组枚举。
+沿 [devres 阅读大纲](../object_lifetime/devres/大纲.md#1.1_从退出责任进入资源接口)继续：先在[资源账本与分组](../object_lifetime/devres/P01_从失败回滚到设备资源账本.md#1.1_从两条退出路径提取同一份责任)中运行完整 C 模型，区分登记失败、关闭、移除和释放；再到[托管资源与使用者退出](../object_lifetime/devres/P02_托管资源与使用者退出.md#2.3_让中断退出早于时钟和内存结束)追踪请求、后台工作和实际清理的交错。该分支的 S0～S4 是资源管理周期的局部编号，与本专题准备到解绑的阶段有关联但不是同一组枚举。
 
 固定源码从 [devres 阅读索引](../../../research/source_reading/devres/navigation/P01_Linux_6.12_devres源码阅读索引.md#1.1_固定版本与阅读任务)进入；[devres_release_all](../../../research/source_reading/devres/source_explanations/drivers/base/devres.c.md#1.6_devres_release_all交出待清理记录)和[release_nodes](../../../research/source_reading/devres/source_explanations/drivers/base/devres.c.md#1.7_release_nodes执行实际清理)分别说明摘取与执行。设备删除及最终清理的额外入口见固定 [core.c](../../../research/source_reading/linux/drivers/base/core.c) 的 device_del、device_release。这些证据针对本专题固定版本，不从名字推断其他内核版本的细节。
 
