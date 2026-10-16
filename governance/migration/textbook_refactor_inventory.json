@@ -5496,6 +5496,18 @@
           "两篇连续性零风险；术语候选按前置章节、接口表及就地说明复核，章节/基线锚点、全仓8906链接和格式元数据路径diff通过。"
         ],
         "limits": "模型不实现Linux锁、工作队列、GPIO或内存序；未进行目标Kbuild、模块加载、物理引脚验证、IRQ/sysfs/事务/退出竞争实测。共享树不可访问，使用官方不可变URL与已校验缓存。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P05_高精度定时器_hrtimer_的驱动用法.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从细粒度期限推导时钟基座与执行状态，纠正forward基于旧计划而非现在重置的错误；三份LED驱动合为三模式同口径实验，保留一次性模块、动态配置协议及原始两组日志，修正上下文/统计/取消/板级假设。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，固定hrtimer.c/h与新增types/defs核对；辨认旧注释的running位置错误，按结构和执行代码更正。",
+          "固定forward主体与正文锚点算式在GCC/Clang各十万输入及五类边界一致；两组历史日志逐字匹配；两图目视。",
+          "连续性零风险，术语候选按前置章节与本地接口解释复核；章节/基线锚点、全仓8911链接及格式元数据路径diff通过。"
+        ],
+        "limits": "数值模型不模拟内核同步、队列或硬件；未进行目标Kbuild、模块加载、IRQ/GPIO波形与退出压力测试。原日志未验证采集身份，不用于实测优劣结论。"
       }
     },
     "additional_documents": [
