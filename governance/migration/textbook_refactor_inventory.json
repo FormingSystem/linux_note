@@ -5712,6 +5712,18 @@
           "全仓8982有效链接及标题元数据路径diff通过；八个出链与四处入链锚点核对并修正，连续性零风险，术语候选按前置和局部解释复核。"
         ],
         "limits": "没有对真实procfs写亲和性，没有目标多核运行、真实IPI计数或性能测量；历史单核配置不用于证明SMP分支。提示返回错误和托管行为限定固定版本。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P11_电源管理中的中断_suspendresume_与唤醒源.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从睡眠后的检测路径推导能力、策略、IRQ wake和软件活动四层状态，以S0-S6统一交接与恢复；使用gpio-keys实际驱动实验替换混用NO_SUSPEND的示例，补齐pinctrl与runtime边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "原文与352行成稿冷读，二十二份固定源码核对，两张图渲染目视；修正活动证据与用户策略的图示关系。",
+          "正文Bash语法及十一种缓存伪文件场景通过，覆盖握手/挂起/恢复失败与无唤醒记录；设备树真实头宏预处理核对。",
+          "全仓8986有效链接、标题元数据路径及diff通过，七个出链与一处入链锚点核对；连续性零风险，术语候选人工核对并补充模板常量及信号说明。"
+        ],
+        "limits": "未执行真实挂起、硬件唤醒、DTB/schema或目标内核构建；旧deep/IRQ46日志仅为历史观察，gpio-keys未检查初始化返回值及恢复警告不隐藏。"
       }
     },
     "additional_documents": [
