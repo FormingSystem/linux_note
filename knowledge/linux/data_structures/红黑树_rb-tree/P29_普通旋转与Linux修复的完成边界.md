@@ -39,32 +39,32 @@ P05 的普通单旋返回时，孩子边、父边和外部入口都已经一致�
 
 从 Linux 内核对外提供的 rbtree 使用方式来看，调用者通常不会直接调用“左旋函数”或“右旋函数”。标准流程是：
 
-1. 先由调用者自己按 BST 规则查找插入位置，再用 `rb_link_node()` 把节点接到树上，随后调用 `rb_insert_color()` 做插入后的红黑修复；
+1. 采用底层组合时，调用者按 BST 规则查找插入位置，再用 `rb_link_node()` 接点，随后调用 `rb_insert_color()`；也可把比较规则交给辅助插入接口，由它完成这套流程；
 2. 删除时则调用 `rb_erase()`。
-3. 因此，从使用者视角看，左右旋不是公开 API，而是被封装在插入 / 删除修复流程内部。固定版本文档对 rbtree 的基本使用方式也是这样描述的。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree.h))
+3. 因此，从使用者视角看，左右旋不是公开 API，而是被封装在插入 / 删除修复流程内部。固定版本文档对 rbtree 的基本使用方式也是这样描述的。
 
-这说明内核对外暴露的是“**怎么把节点接上树并完成修复**”，而不是“**请你自己决定什么时候做左旋、什么时候做右旋**”。也就是说，左右旋在内核里首先是一种**内部实现动作**，而不是用户直接编排的公共算法接口。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree.h))
+这说明内核对外暴露的是“**怎么把节点接上树并完成修复**”，而不是“**请你自己决定什么时候做左旋、什么时候做右旋**”。也就是说，左右旋在内核里首先是一种**内部实现动作**，而不是用户直接编排的公共算法接口。
 
 ------
 
 ### 29.2.3\_使用者负责什么\_rbtree\_代码又负责什么
 
-`struct rb_node` 被嵌入业务对象，树本身不知道请求的排序键是什么。调用者定义比较规则，可以自己编写搜索循环，也可以把比较函数交给 `rb_add()`、`rb_find_add()`、`rb_find()` 等辅助入口。基础平衡接口不把比较器保存在树对象里，不等于头文件没有接收比较回调的辅助函数。无论走哪种入口，**比较结果由业务定义，红黑修复由树基础设施执行**。([本地源码](../../../../research/source_reading/linux/Documentation/core-api/rbtree.rst))
+`struct rb_node` 被嵌入业务对象，树本身不知道请求的排序键是什么。调用者定义比较规则，可以自己编写搜索循环，也可以把比较函数交给 `rb_add()`、`rb_find_add()`、`rb_find()` 等辅助入口。基础平衡接口不把比较器保存在树对象里，不等于头文件没有接收比较回调的辅助函数。无论走哪种入口，**比较结果由业务定义，红黑修复由树基础设施执行**。
 
 因此，从职责划分上看：
 
 - **调用者负责**：比较规则、选择搜索入口、并发与寿命保护、业务数据结构组织。
-- **rbtree 负责**：`rb_link_node()` 接点、`rb_insert_color()` 插入修复、`rb_erase()` 删除修复，以及遍历与替换等基础树操作。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree.h))
+- **rbtree 负责**：`rb_link_node()` 接点、`rb_insert_color()` 插入修复、`rb_erase()` 删除修复，以及遍历与替换等基础树操作。
 
-这和很多教学版红黑树有明显差别。教学版通常把“比较、插入、旋转、修复”都写在一个类里，而 Linux 内核把“BST 决策”和“红黑修复”拆开了。这样做更符合内核通用容器的定位。([本地源码](../../../../research/source_reading/linux/Documentation/core-api/rbtree.rst))
+与把比较和节点布局绑定在同一容器实现中的一种教学写法相比，这里让业务对象自行内嵌连接，并选择比较入口。它避免要求所有业务对象采用同一外围类型；代价是调用者必须自行满足排序、成员、同步和寿命前提。本文比较的是选定的教学模型，不概括所有教材容器。
 
 ------
 
 ### 29.2.4\_内核内部\_左右旋没有被做成一个统一公开旋转函数
 
-如果继续往 `lib/rbtree.c` 里看，会发现内核内部**并没有把左旋和右旋彻底包装成一个对使用者公开的统一“旋转总函数”**。固定实现里，确实抽取出了一部分公共收尾逻辑，例如 `__rb_rotate_set_parents()`，它专门处理旋转之后“局部新根怎么继承父节点和颜色、旧局部根怎么重新标记、整棵树怎么接回去”的公共部分。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
+如果继续往 `lib/rbtree.c` 里看，会发现内核内部**并没有把左旋和右旋彻底包装成一个对使用者公开的统一“旋转总函数”**。固定实现里，确实抽取出了一部分公共收尾逻辑，例如 `__rb_rotate_set_parents()`，它专门处理旋转之后“局部新根怎么继承父节点和颜色、旧局部根怎么重新标记、整棵树怎么接回去”的公共部分。
 
-但真正的左右旋指针改接动作，并没有完全隐藏到一个 `rotate(dir, ...)` 的统一总入口里。相反，插入修复的 `__rb_insert()` 和删除修复的 `____rb_erase_color()` 中，左右镜像场景都是**按 case 直接展开**的。源码注释会直接写出`left rotate at parent`、`right rotate at gparent`、`left rotate at sibling`这类语义。也就是说，**内核内部当然在做左旋和右旋，但它们是被嵌在具体修复 case 中的，而不是先抽成一个教学式的完整旋转 API 再由上层调用**。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
+但真正的左右旋指针改接动作，并没有完全隐藏到一个 `rotate(dir, ...)` 的统一总入口里。相反，插入修复的 `__rb_insert()` 和删除修复的 `____rb_erase_color()` 中，左右镜像场景都是**按 case 直接展开**的。源码注释会直接写出`left rotate at parent`、`right rotate at gparent`、`left rotate at sibling`这类语义。也就是说，**内核内部当然在做左旋和右旋，但它们是被嵌在具体修复 case 中的，而不是先抽成一个教学式的完整旋转 API 再由上层调用**。
 
 ------
 
@@ -135,7 +135,7 @@ augment_rotate(gparent, parent);
 镜像分支则反过来：
 
 - 先“right rotate at parent”
-- 再“left rotate at gparent” ([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
+- 再“left rotate at gparent”
 
 ------
 
@@ -162,9 +162,9 @@ augment_rotate(parent, sibling);
 sibling = tmp1;
 ```
 
-红兄弟的孩子为黑；在这一缺黑前提下，它们也不能是空叶，因此这里直接改 tmp1 的父色，不再写 if 判断。这一步的作用不是直接修复结束，而是先把红兄弟提上来，把结构改造成后续 case 容易处理的形态。镜像分支则是“**right rotate at parent**”。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
+红兄弟的孩子为黑；在这一缺黑前提下，它们也不能是空叶，因此这里直接改 tmp1 的父色，不再写 if 判断。这一步的作用不是直接修复结束，而是先把红兄弟提上来，把结构改造成后续 case 容易处理的形态。镜像分支则是“**right rotate at parent**”。
 
-#### (2)\_Case\_3\_先在\_sibling\_上旋转\_把近侄红转换成远侄红
+#### (2)\_Case\_3\_先调整近侧可借结构再交接颜色
 
 删除修复里最典型的“先变形、再终结”动作，就是 Case 3。源码注释会写“**right rotate at sibling**”或镜像的“**left rotate at sibling**”。其骨架整理如下：
 
@@ -191,7 +191,7 @@ sibling = tmp2;
 抽象模型的“近红变远红”不能当作此处回调时已经完成的染色。
 ```
 
-在这里，旧 sibling 仍为黑，上移的 tmp2 仍为红，若干父地址要由 Case 4 继续修正。`augment_rotate()` 只能依赖约定的局部子树关系，不能假设全树 parent 链已稳定。Case 4 可直接进入，也可接在 Case 3 后：后者的 tmp1 指向旧黑 sibling，不能一律称作“红色远侄”。这与教学模型中“Case 3 为 Case 4 准备形状”相符，但必须保留实现的中间态区别。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
+在这里，旧 sibling 仍为黑，上移的 tmp2 仍为红，若干父地址要由 Case 4 继续修正。`augment_rotate()` 只能依赖约定的局部子树关系，不能假设全树 parent 链已稳定。Case 4 可直接进入，也可接在 Case 3 后：后者的 tmp1 指向旧黑 sibling，不能一律称作“红色远侄”。这与教学模型中“Case 3 为 Case 4 准备形状”相符，但必须保留实现的中间态区别。
 
 #### (3)\_Case\_4\_最后围绕\_parent\_旋转并做颜色翻转
 
@@ -212,17 +212,17 @@ augment_rotate(parent, sibling);
 break;
 ```
 
-这一段非常适合和你前面学到的“删除修复最终通过一次旋转 + 颜色调整恢复黑高”对照起来看。由 Case 3 进入与直接进入时，tmp1 的原色不同；此处都将其设为黑，不能用抽象图的先染色次序替换真实语句。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
+这一段非常适合和你前面学到的“删除修复最终通过一次旋转 + 颜色调整恢复黑高”对照起来看。由 Case 3 进入与直接进入时，tmp1 的原色不同；此处都将其设为黑，不能用抽象图的先染色次序替换真实语句。
 
 ------
 
 ### 29.2.8\_内核版与教学版的差别到底在哪里
 
-如果把前面学的“成品左旋 / 成品右旋”与内核版对照起来，差别主要不在**结构语义**，而在**组织方式**。
+把 P05 的独立单旋与本章固定修复分支对照，最终孩子形状可以相同，但中间状态和函数返回时承诺的完整程度不同。组织方式之所以值得比较，正是因为它决定回调能读取哪些字段。
 
 #### (1)\_教学版
 
-教学版通常写成：
+P05 的教学接口写成：
 
 ```c
 left_rotate(root, x);
@@ -250,7 +250,7 @@ right_rotate(root, y);
 - case 与具体修复逻辑贴得更近
 - 左右镜像分支可以就地展开
 - 已知分支前提允许就地处理，不必通过公开通用旋转接口再次分派；是否更快仍需指定编译器、输入和测量，不能由写法单独推出性能幅度
-- 增强树回调 `augment_rotate()` 能直接跟在旋转点之后执行 ([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
+- 增强树回调 `augment_rotate()` 在约定的局部改边点同步执行，部分父色仍由下一 case 完成
 
 所以你后面看内核 rbtree 源码时，最重要的不是找一个“完整 `left_rotate()` 函数”，而是要能识别：
 
@@ -259,7 +259,7 @@ right_rotate(root, y);
 - 当前这一段是插入修复的 Case 2 / 3，还是删除修复的 Case 1 / 3 / 4
 - `__rb_rotate_set_parents()` 为什么恰好出现在这里
 
-这些识别能力，才是从教学版过渡到内核版的关键。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
+这些识别能力，才是从教学版过渡到内核版的关键。
 
 ------
 
@@ -271,9 +271,9 @@ right_rotate(root, y);
 - 为什么增强红黑树要求用户提供 `rotate` 回调
 - 为什么增强信息能在旋转后保持正确
 
-那就必须看 `include/linux/rbtree_augmented.h` 和文档中的增强树部分。这个头文件明确说明：对增强红黑树而言，用户需要提供 `struct rb_augment_callbacks`，其中就包括 `rotate(old, new)` 回调；文档也明确说，增强红黑树在插入 / 删除重平衡时会回调用户函数来更新受影响子树的增强信息。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree_augmented.h))
+那就必须看 `include/linux/rbtree_augmented.h` 和文档中的增强树部分。这个头文件明确说明：对增强红黑树而言，用户需要提供 `struct rb_augment_callbacks`，其中就包括 `rotate(old, new)` 回调；文档也明确说，增强红黑树在插入 / 删除重平衡时会回调用户函数来更新受影响子树的增强信息。
 
-因此，`augment_rotate(parent, node)` 这一类调用不是多余装饰，而是增强树实现中“**旋转之后顺便更新增强数据**”的关键钩子。这也是为什么 `include/linux/rbtree_augmented.h` 也是本节必须列出的参考文件之一。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree_augmented.h))
+旋转保留中序序列，却改变 old/new 分别覆盖的子树集合，所以原来的子树统计可能不能继续使用。`augment_rotate(parent, node)` 在约定时点调整这些统计，不能把它理解成任意遍历整树的完成通知。聚合值的具体维护规则由 P12 的增强树单元建立。
 
 ------
 
@@ -295,10 +295,10 @@ right_rotate(root, y);
 还包括：
 
 ```text
-并发下中间态能不能保证遍历不会形成结构性灾难
+对象存活且访问协议相容时，向下路径是否成环、是否可能漏掉子树
 ```
 
-这也是为什么你在内核源码里看到很多左右孩子写入都用了 `WRITE_ONCE()`，而不是普通赋值。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
+这也是为什么你在内核源码里看到很多左右孩子写入都用了 `WRITE_ONCE()`，而不是普通赋值。
 
 ------
 
@@ -306,9 +306,9 @@ right_rotate(root, y);
 
 本节固定版本的 rbtree 在旋转组织上，可以总结为下面四点：
 
-1. **对外接口层**：调用者通常只看到 `rb_link_node()`、`rb_insert_color()`、`rb_erase()`，看不到单独公开的左旋 / 右旋接口。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree.h))
-2. **对内实现层**：左右旋仍然明确存在，但它们被直接嵌在 `__rb_insert()` 和 `____rb_erase_color()` 的具体修复 case 中，只把父节点 / 颜色收尾提炼成 `__rb_rotate_set_parents()`。([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
-3. **增强树层**：若使用增强红黑树，则 `include/linux/rbtree_augmented.h` 中定义的回调机制会让旋转动作顺便触发增强信息更新。([本地源码](../../../../research/source_reading/linux/include/linux/rbtree_augmented.h))
+1. **对外接口层**：调用者通常只看到 `rb_link_node()`、`rb_insert_color()`、`rb_erase()`，看不到单独公开的左旋 / 右旋接口。
+2. **对内实现层**：左右旋仍然明确存在，但它们被直接嵌在 `__rb_insert()` 和 `____rb_erase_color()` 的具体修复 case 中，只把父节点 / 颜色收尾提炼成 `__rb_rotate_set_parents()`。
+3. **增强树层**：若使用增强红黑树，则 `include/linux/rbtree_augmented.h` 中定义的回调机制会让旋转动作顺便触发增强信息更新。
 4. **工程约束层**：此处源码考虑 lockless lookup 场景，对 `rb_left` / `rb_right` 强调 `WRITE_ONCE()` 和不产生临时环的改边顺序；两者仍不提供完整查询、父链遍历或对象寿命保证。([固定原文](../../../../research/source_reading/linux/lib/rbtree.c))
 
 因此，学习内核 rbtree 时，正确的关注点不是：
@@ -317,7 +317,7 @@ right_rotate(root, y);
 
 而是：
 
-> “我能不能在 `__rb_insert()` 和 `____rb_erase_color()` 的 case 展开代码里，识别出这一步本质上是在做左旋还是右旋？” ([本地源码](../../../../research/source_reading/linux/lib/rbtree.c))
+> “我能不能在 `__rb_insert()` 和 `____rb_erase_color()` 的 case 展开代码里，识别出这一步本质上是在做左旋还是右旋？”
 
 这才是把教学版红黑树真正过渡到 Linux 内核实现版红黑树的关键。
 
@@ -327,6 +327,35 @@ right_rotate(root, y);
 ## 29.3\_相同形状不等于相同中间状态
 
 用 P26 的 LR 三键输入 30、10、20 回想插入：中间键 20 先越过父 10，随后越过祖父 30。树形变化与普通双旋一致，但完整算法可以把第一次父槽收尾留给下一段。局部 tmp、parent、gparent 在修复者栈上，孩子边与打包父色在共享 rb_node 上，增强回调在同一更新调用栈同步执行，不是另一个接收通知的线程。
+
+先把 30、10、20 的第一次转向放在同一组地址上。图只画相关真实节点：实线是孩子边，虚线是节点内记录的父地址；30 始终仍是整树根。两图都尚未执行围绕30的第二次转向，因此不应宣称已经恢复红黑性质。
+
+```mermaid
+flowchart LR
+    subgraph generic[普通单旋返回：结构回接完整]
+        g30[30 黑，根] -->|left| g20[20 红]
+        g20 -->|left| g10[10 红]
+        g10 -.parent.-> g20
+        g20 -.parent.-> g30
+    end
+    subgraph linux[Linux I4回调：等待I5接续]
+        l30[30 黑，根] -->|left仍指10| l10[10 红]
+        l20[20 红，局部游标可达] -->|left已指10| l10
+        l10 -.parent已指20.-> l20
+        l20 -.parent仍指10.-> l10
+    end
+    generic ~~~ linux
+```
+
+| 观察位置 | 普通单旋已返回 | 固定插入 I4 回调现场 |
+| --- | --- | --- |
+| 10 的右孩子、20 的左孩子 | 已改为中间子树、10 | 同样已经改好 |
+| 10 的父地址 | 20 | 20 |
+| 20 的父地址 | 30 | 仍是10；与10的父地址构成临时回指环 |
+| 30 的左孩子槽 | 20 | 仍是10，尚未接到20 |
+| 允许的下一动作 | 依完整父孩子关系继续教学算法 | 回调仅按约定更新局部统计，修复接着执行I5 |
+
+这个父地址环没有反驳“不让向下孩子边成环”的约束：两种边必须分别检查。I5 最后让20成为黑根、10/30为红孩子，根槽和两边父地址才一起闭合。若此刻把一个假定父链完整的通用验证器放进 I4 回调，它看到的不是普通单旋承诺的状态。
 
 ```mermaid
 flowchart LR
