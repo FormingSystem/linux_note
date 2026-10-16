@@ -115,7 +115,7 @@ mode=2并不让计数为2时的put“没做事”：它确实消费A内那位使
 | 阶段 | 当前代码与引用责任 | 功能锁及检查状态 | 退出条件 |
 | --- | --- | --- | --- |
 | S0 准备 | 创建初始份额；mode=2另get一份 | A、B均空闲；本次尚未产生嵌套 | 分配成功，否则无资源返回 |
-| S1 A内动作 | mode=1归零进入release；mode=2只从2减到1；mode=0保留1 | mode=1在A内请求B，检查器消费当前A记录，验证并保存A到B | 回调若发生则返回，随后释放A |
+| S1 A内动作 | mode=1归零进入release；mode=2只从2减到1；mode=0保留1 | mode=1在A内请求B，检查器读取当前A记录，验证并保存A到B | 回调若发生则返回，随后释放A |
 | S2 A外清理 | mode=0/2最后put并释放；mode=1已释放 | 正确模式只单独请求B，不生成A到B；所有模式结束时锁均空闲 | 对象已清理，旧地址不再访问 |
 | S3 反向路径 | 已无对象份额，执行独立B到A | 先取得B，再请求A；mode=1的旧A到B使新候选闭环 | 无真实对手占锁；检查器可能报告并停检，功能路径仍需释放锁 |
 | S4 返回和卸载 | 输出外部计数，不保留异步对象 | 功能锁均释放；当前持锁状态不等于全局历史，历史不会因unlock自动删边 | 正常返回；若报告导致panic，则按实验环境恢复 |
@@ -141,8 +141,10 @@ sequenceDiagram
     end
     I->>H: S1 释放A，移除当前记录
     Note over H,G: 解锁不删除已保存的全局历史
-    I->>R: S2 mode0和mode2在A外最后put
-    R-->>I: 单独取还B并释放对象
+    opt 仅mode0和mode2需要S2清理
+        I->>R: S2 在A外最后put
+        R-->>I: 单独取还B并释放对象
+    end
     I->>H: S3 取得B，再请求A
     H->>G: 候选B到A，搜索A能否到达B
     alt mode1已有反向历史
@@ -159,7 +161,7 @@ sequenceDiagram
 
 源码证据先从[kref源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入[Lockdep源码总导读](../../../../research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)。[归零回调实现](../../../../research/source_reading/kref/source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理)兑现S1/S2的同步调用；[功能与检查路径](../../../../research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.6_功能路径与检查路径)解释请求和成功的时机，[新依赖验证](../../../../research/source_reading/lockdep/source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.4_check_prev_add新依赖验证)兑现S3。核心函数不在本章重复展开。
 
-固定NXP Linux 6.12.20的PROVE_LOCKING依赖DEBUG_KERNEL和LOCK_DEBUGGING_SUPPORT，并选择LOCKDEP、DEBUG_LOCK_ALLOC、DEBUG_SPINLOCK等分支；非PREEMPT_RT时还选择DEBUG_MUTEXES等。原实验列出的四行CONFIG不是四条Shell命令，也不是任意架构都可以强写的开关。完整关系见[配置实现](../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.5_PROVE_LOCKING_DEBUG_LOCK_ALLOC与LOCKDEP)。
+固定 NXP Linux 6.12.20 的 PROVE_LOCKING 依赖 DEBUG_KERNEL 和 LOCK_DEBUGGING_SUPPORT，并选择 LOCKDEP、DEBUG_LOCK_ALLOC、DEBUG_SPINLOCK 等分支；非 PREEMPT_RT 时还选择 DEBUG_MUTEXES 等。应通过目标 Kconfig 解析这些依赖，再确认最终配置保留 CONFIG_PROVE_LOCKING=y；单独向 .config 追加若干行不能代替这一步。完整关系见[配置实现](../../../../research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.5_PROVE_LOCKING_DEBUG_LOCK_ALLOC与LOCKDEP)。
 
 按[P32准备匹配的构建与运行环境](P32_基础引用与源码对照实验.md#32.1_先分清读哪份源码和运行哪个内核)，从仓库根目录先构建并运行控制路径：
 
@@ -190,7 +192,9 @@ sudo cat /proc/lockdep_stats
 
 先不运行，预测mode=2在S1结束后的引用数、release次数和全局嵌套边，再与mode=1比较。接着把mode=2的额外get去掉，逐行检查后面的第二个put是否还有合法份额；此修改会同时破坏生命周期，不能把新故障仅解释为锁顺序。最后设想A保护集合入口，写出“摘除、解锁、归还”的责任转移，解释为什么当前拥有份额必须一直保留到解锁之后。
 
-本批十四组宿主协议检查通过，覆盖检查配置开启和关闭时的三模式、分配失败、故障拒绝与非法参数。夹具中的mutex和两类历史图都是顺序替身；它核对本模块的引用、释放及顺序输入，不运行真正Lockdep规则引擎。ARM编译前端通过，354份头中342份非生成源码与固定提交无差异。没有目标模块链接装卸、真实Lockdep报告或死锁实验。检查通过不能把上面预期报告改写成已经观察到的事实。
+核对答案时，以 S1 已释放 A、尚未进入 S2 为观察点：mode=2 还剩 1 份，release_calls 为 0，没有本例产生的 A 到 B 嵌套边；mode=1 已归零并回收，外部 release_calls 为 1，成功检查时已保存 A 到 B。后者的“引用为零”是根据已执行路径推导，不能再读取已释放对象来测量。删去 mode=2 的 get 后，S1 就消费唯一份额，S2 再 put 已没有合法地址或责任。
+
+本轮十四组宿主协议重新通过，覆盖检查配置开启和关闭时的三模式、分配失败、故障拒绝与非法参数。正文与模块一致；夹具只在 release 中增加一项“是否仍持 A”的观察计数，其余模块内容一致。夹具中的 mutex 和两类历史图都是顺序替身，不运行真正 Lockdep 规则引擎。固定 mutex.c、lockdep.c 和 Kconfig.debug 与保存的版本证据重新对照一致。已有 ARM 前端通过、354 份头中 342 份非生成源码无固定差异的记录属于历史证据，本轮未重跑。没有目标模块链接装卸、真实 Lockdep 报告或死锁实验，不能把预期报告改写成已经观察到的事实。
 
 现在已经能够解释：同一put接口为什么会因是否最后一份而经过不同锁路径，以及为何必须检查所有可能最后归还的调用上下文。下一组实验把这种“先区分责任与观测”的方法用于多put、计数快照和未摘链释放。
 
