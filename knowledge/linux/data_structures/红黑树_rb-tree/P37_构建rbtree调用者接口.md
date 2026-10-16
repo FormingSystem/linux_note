@@ -43,7 +43,7 @@ rbtree 不负责并发保护。
 
 这就是 Linux rbtree 的使用者视角。
 
-它不像用户态容器那样：
+与把这些职责一起封装起来的容器接口相比，Linux rbtree 没有直接提供下面这种完整业务接口（并非所有用户态容器都采用这个模型）：
 
 ```c
 map.insert(key, value);
@@ -140,13 +140,14 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant C as 调用者
     participant L as tree.lock
     participant T as 根槽、节点字段和count
     participant O as 私有或树拥有的item
     C->>O: U0 锁外分配、初始化
     C->>L: U1 取得保护
-    C->>T: 按键搜索
+    C->>T: 先检查游离标记，满足后按键搜索
     alt 重复键或非游离
         C->>L: 不改变树与count，解锁
         C->>O: 仍由原持有者处理失败对象
@@ -517,9 +518,9 @@ item = rb_entry(node, struct demo_rb_item, deadline_node);
 
 ------
 
-## 37.4\_定义\_struct\_rb\_root\_根节点
+## 37.4\_定义\_struct\_rb\_root\_树入口
 
-有了业务节点，还需要定义树根。
+有了业务节点，还需要一个在树外保存根地址的入口对象。`struct rb_root` 是这个入口的类型；树中的实际根节点仍是某个业务对象内嵌的 `struct rb_node`，二者不能混称。
 
 普通 rbtree 使用：
 
@@ -631,7 +632,7 @@ graph TD
 	tree --> root
 	tree --> lock
 	tree --> count
-	tree --> policy
+	tree -.调用者另行定义的协议.-> policy
 
 	classDef tree_class fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
 	classDef rb fill:#fff3e0,stroke:#ef6c00,color:#000,stroke-width:2px;
@@ -696,7 +697,7 @@ key 大的在右子树；
 key 相等按业务策略处理。
 ```
 
-最基础的 BST 关系如下：
+最基础的 BST 关系如下，蓝色只标出键，不代表红黑颜色：
 
 ```mermaid
 graph TD
@@ -711,7 +712,7 @@ graph TD
 	rb_10 -->|L| rb_05
 	rb_10 -->|R| rb_15
 
-	classDef node fill:#2f2f2f,stroke:#111,color:#fff,stroke-width:2px;
+	classDef node fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
 	class rb_20,rb_10,rb_30,rb_05,rb_15 node;
 ```
 
@@ -892,9 +893,9 @@ key 相等时怎么办？
 
 第一种：不允许重复 key。
 
-本章用 `-EEXIST` 错误码表示键已存在；`-EINVAL` 表示接口参数或标记约定不满足，`-ENOENT` 表示按键没有找到对象。失败分支必须明确是否接入过节点，不能只让调用者看到一个负数却猜对象归谁。
+本章用 `-EEXIST` 错误码表示键已存在；`-EINVAL` 表示输出参数无效，`-EBUSY` 表示节点不带本协议要求的游离标记，`-ENOENT` 表示按键没有找到对象。失败分支必须明确是否接入过节点，不能只让调用者看到一个负数却猜对象归谁。
 
-这是最简单、最常见的工程模板。
+本章选择这个模板，以便让每个键对应唯一的对象和持有权。
 
 插入时：
 
@@ -945,7 +946,7 @@ graph TD
 
 ------
 
-第二种：允许重复 key，重复 key 统一插到一边。
+第二种：允许重复 key，本次插入搜索遇到相等时统一选择一边。
 
 例如本次搜索遇到相等时继续向右寻找空槽：
 
@@ -977,7 +978,7 @@ graph TD
 	rb_20_a -->|L| rb_10
 	rb_20_a -->|R: equal goes right| rb_20_b
 
-	rb_20_b -->|L| rb_20_b_nil_left
+	rb_20_b --> rb_20_b_nil_left
 	rb_20_b -->|R: equal goes right| rb_20_c
 
 	classDef black fill:#2f2f2f,stroke:#111,color:#fff,stroke-width:2px;
@@ -987,6 +988,7 @@ graph TD
 	class rb_20_a,rb_10,rb_20_b black;
 	class rb_20_c red;
 	class rb_20_b_nil_left nil;
+	linkStyle 2 stroke:transparent;
 ```
 
 图是一种可能的合法形状，不是“相等永久只在右边”的不变量。旋转会把相等节点放到另一侧，返回所有等价对象要先定位区间起点再沿中序推进。大量相等键不会取消红黑平衡保证，扫描结果多与树高退化是两件事。
@@ -1022,7 +1024,7 @@ key 相等时按稳定业务 id 排序；
 
 这里额外需要一个稳定 id 字段，并保证目标对象集合中的唯一性；若仍允许完整键重复，它就不是对象身份的唯一顺序。不能把独立分配对象的指针 `<` 作为可移植 C 通用顺序。完整键、极值比较与调用形式见[P09 比较实验](P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_让同一个比较规则走两种调用路径)。
 
-所以实际工程中更常见的做法是：
+因此，应按业务身份决定：
 
 ```text
 如果 key 应该唯一，就拒绝重复；
@@ -1295,7 +1297,7 @@ struct rb_node **link;
 struct rb_node *parent;
 ```
 
-典型写法：
+本例要求 tree 已初始化、item 仍存活且不会被另一调用同时接入；标记检查、搜索、挂接、修复和 count 更新都在同一把锁内。失败不改变原持有权：对新建游离对象，调用者仍可清理；对已经挂树的对象，EBUSY 不把它交回，也不授权清标记或释放。典型写法：
 
 ```c
 static int
@@ -1305,6 +1307,10 @@ demo_rb_insert(struct demo_rb_tree *tree, struct demo_rb_item *item)
 	struct rb_node *parent = NULL;
 
 	spin_lock(&tree->lock);
+	if (!RB_EMPTY_NODE(&item->rb)) {
+		spin_unlock(&tree->lock);
+		return -EBUSY;
+	}
 
 	while (*link) {
 		struct demo_rb_item *this;
@@ -1324,6 +1330,7 @@ demo_rb_insert(struct demo_rb_tree *tree, struct demo_rb_item *item)
 
 	rb_link_node(&item->rb, parent, link);
 	rb_insert_color(&item->rb, &tree->root);
+	++tree->count;
 
 	spin_unlock(&tree->lock);
 	return 0;
@@ -1373,28 +1380,17 @@ link = &parent->rb_right
 图示如下：
 
 ```mermaid
-graph TD
-	root_link["link = &root->rb_node"]
-	check_root{"*link 是否为空?"}
-	parent_20["parent = key=20"]
-	go_left["item->key 更小<br/>link = &parent->rb_left"]
-	go_right["item->key 更大<br/>link = &parent->rb_right"]
-	empty_slot["*link == NULL<br/>找到插入位置"]
-	link_node["rb_link_node(&item->rb, parent, link)"]
-
-	root_link --> check_root
-	check_root -->|否| parent_20
-	parent_20 --> go_left
-	parent_20 --> go_right
-	go_left --> empty_slot
-	go_right --> empty_slot
-	empty_slot --> link_node
-
-	classDef flow fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
-	classDef rb fill:#fff3e0,stroke:#ef6c00,color:#000,stroke-width:2px;
-
-	class root_link,check_root,parent_20,go_left,go_right,empty_slot flow;
-	class link_node rb;
+flowchart TD
+    root_link["link=&tree.root.rb_node；parent=NULL"] --> check_root{"*link 是否为空？"}
+    check_root -->|是| empty_slot["link 保存空槽地址；parent 是其父或 NULL"]
+    check_root -->|否| parent_node["parent=*link；还原当前对象"]
+    parent_node --> compare{"比较 item.key 与当前键"}
+    compare -->|小于| go_left["link=&parent.rb_left"]
+    compare -->|大于| go_right["link=&parent.rb_right"]
+    compare -->|相等| duplicate["解锁并返回 EEXIST；不改结构与 count"]
+    go_left --> check_root
+    go_right --> check_root
+    empty_slot --> link_node["挂接、修复、count 加一后解锁"]
 ```
 
 `parent` 则记录：
@@ -1425,7 +1421,7 @@ graph TD
 
 	root --> parent_node
 	parent_node -->|L or R| link_slot
-	link_slot --> new_item
+	link_slot -.挂接时才写入成员地址.-> new_item
 
 	classDef rb fill:#2f2f2f,stroke:#111,color:#fff,stroke-width:2px;
 	classDef slot fill:#fff3e0,stroke:#ef6c00,color:#000,stroke-width:2px;
@@ -1447,7 +1443,7 @@ link：告诉父节点的哪个孩子指针要指向新节点。
 
 插入前还应该考虑节点状态。
 
-如果模板中使用 `RB_EMPTY_NODE()` 判断节点是否已经挂树，那么对象初始化时应调用：
+如果模板中使用 `RB_EMPTY_NODE()` 检查约定游离标记，那么对象初始化时应调用：
 
 ```c
 RB_CLEAR_NODE(&item->rb);
@@ -1457,7 +1453,7 @@ RB_CLEAR_NODE(&item->rb);
 
 ```c
 if (!RB_EMPTY_NODE(&item->rb))
-	return -EINVAL;
+	return -EBUSY;
 ```
 
 完整示意：
@@ -1476,13 +1472,13 @@ static void demo_rb_item_init(struct demo_rb_item *item,
 
 ```c
 if (!RB_EMPTY_NODE(&item->rb))
-	return -EINVAL;
+	return -EBUSY;
 ```
 
 注意：
 
 ```text
-RB_EMPTY_NODE() 只能作为状态检查；
+RB_EMPTY_NODE() 只读约定标记，不查所属树；
 不能替代锁；
 不能解决并发插入/删除问题。
 ```
@@ -1842,6 +1838,7 @@ static int demo_rb_remove(struct demo_rb_tree *tree, int key,
 
 	rb_erase(&item->rb, &tree->root);
 	RB_CLEAR_NODE(&item->rb);
+	--tree->count;
 
 	*removed = item;
 
@@ -1868,7 +1865,7 @@ graph TD
 	found{"是否找到?"}
 	not_found["返回 -ENOENT"]
 	erase_node["rb_erase(&item->rb, root)"]
-	clear_node["RB_CLEAR_NODE 可选"]
+	clear_node["本例写游离标记并将 count 减一"]
 	return_item["返回 removed item"]
 	lifetime_decide["调用者决定释放 / 延迟释放 / put 引用"]
 
@@ -1923,7 +1920,7 @@ rb_erase(&item->rb, &tree_a->root);
 
 这会直接破坏树结构。
 
-所以工程模板中要避免“裸 `rb_erase()` 到处调用”，更推荐封装为：
+本章把这些前提集中到一个业务入口，避免每个调用点各自猜测成员关系：
 
 ```c
 demo_rb_remove(tree, key, &removed);
@@ -1935,7 +1932,7 @@ demo_rb_remove(tree, key, &removed);
 demo_rb_remove_item(tree, item);
 ```
 
-这样可以在统一入口里维护锁、状态、计数、生命周期策略。
+统一入口可以维护锁、状态、计数和生命周期策略，但函数名本身不验证成员关系。按键查找得到的是当前树的成员；按地址删除的替代入口还必须证明该成员属于传入的树。
 
 ------
 
@@ -2013,13 +2010,13 @@ if (!ret)
 
 ```mermaid
 graph TD
-	removed["item 已从 rbtree 摘除"]
+	removed["item 已从 rbtree 摘除<br/>其余取得入口也已关闭"]
 	no_ref{"是否有并发读者 / 引用 / RCU?"}
-	direct_free["可以直接 kfree"]
+	direct_free["已无访问者<br/>满足直接回收条件"]
 	ref_put["引用计数 put"]
 	rcu_free["call_rcu 延迟释放"]
 	wait_done["满足本协议全部持有条件<br/>混合方案不能二选一"]
-	final_free["最终释放对象"]
+	final_free["使用与分配方式匹配的操作<br/>最终释放对象"]
 
 	removed --> no_ref
 	no_ref -->|没有| direct_free
@@ -2335,8 +2332,9 @@ graph TD
 
 	writer_lock["写侧加锁"]
 	erase_node["rb_erase 摘除"]
-	call_rcu_node["call_rcu 延迟释放"]
-	grace_period["GP 覆盖摘除前潜在旧读者"]
+	writer_unlock["写侧解锁，保留旧字段"]
+	call_rcu_node["call_rcu 排队回收"]
+	grace_period["等待相关旧读侧退出"]
 	free_obj["释放对象"]
 
 	rcu_read --> search_rcu
@@ -2344,16 +2342,18 @@ graph TD
 	use_item --> rcu_unlock
 
 	writer_lock --> erase_node
-	erase_node --> call_rcu_node
+	erase_node --> writer_unlock
+	writer_unlock --> call_rcu_node
 	call_rcu_node --> grace_period
-	grace_period --> free_obj
+	rcu_unlock -->|相关旧读者交还访问期| grace_period
+	grace_period -->|宽限期后执行回调| free_obj
 
 	classDef rcu fill:#fff3e0,stroke:#ef6c00,color:#000,stroke-width:2px;
 	classDef writer fill:#e3f2fd,stroke:#1565c0,color:#000,stroke-width:2px;
 	classDef free fill:#e8f5e9,stroke:#2e7d32,color:#000,stroke-width:2px;
 
 	class rcu_read,search_rcu,use_item,rcu_unlock rcu;
-	class writer_lock,erase_node,call_rcu_node writer;
+	class writer_lock,writer_unlock,erase_node,call_rcu_node writer;
 	class grace_period,free_obj free;
 ```
 
@@ -2458,7 +2458,7 @@ struct demo_rb_tree {
 
 ```text
 不允许重复；
-允许重复并统一插一侧；
+允许重复，本次插入搜索相等时选一侧，旋转后仍按中序等价组理解；
 或者 key 相等后引入第二排序条件。
 ```
 
@@ -2495,7 +2495,7 @@ Linux rbtree 的使用者不是调用一个现成 map，而是把业务对象、
 
 ## 37.16\_运行完整的私有调用者框架
 
-前面的片段分别讲字段和控制流，现在使用唯一键 20、10、30，再尝试插入第二个 20。主例的接口契约是：insert_item 成功移交持有权，失败仍由原调用者持有；read_value 成功只写出一个 int 值；remove_item 成功交还一个独占对象，失败将 removed 清空。count 只随成功结构变化更新。
+前面的片段分别讲字段和控制流，现在使用唯一键 20、10、30，再尝试插入第二个 20。主例的接口契约是：insert_item 成功移交持有权，失败不改变原持有权；read_value 成功只写出一个 int 值；remove_item 成功交还一个独占对象，有效输出槽在未找到时为 NULL；传入 NULL 输出槽则返回 EINVAL。count 只随成功结构变化更新。接口默认 tree 和 item 等对象地址有效；输出槽由调用者独占，不能借它覆盖树内部字段。正常插入输入应是私有游离对象；EBUSY 防止误接入，但不证明传入对象归调用者释放，更不能识别它属于哪棵树。
 
 完整材料 [note_rbtree_owner.c](../../../../labs/kernel/tree_basics/materials/note_rbtree_owner.c) 如下。它不建立设备、文件、定时器或其他外部入口，所有对象在初始化返回前清理；所以示例不会让读者误以为一个导出的并发服务已经完成。GFP_KERNEL 分配可能睡眠，因此位于自旋锁之外；EBUSY 表示成员按本协议已经占用，ENOMEM 表示分配失败，其他错误已在前面定义。ARRAY_SIZE 是取真实数组元素个数的宏，本例作用于 keys 数组，不用于已经退化成指针的参数。文件首行 SPDX 是机器可读的许可证标记，GPL-2.0 表示该示例声明采用的许可证，不参与运行逻辑。
 
@@ -2543,7 +2543,7 @@ static struct demo_item *search_locked(struct demo_tree *tree, int key)
     return NULL;
 }
 
-/* 调用者独占游离 item；成功移交给树，失败仍由调用者持有。 */
+/* 正常输入为调用者独占的游离 item；成功移交，失败不改变原持有权。 */
 static int insert_item(struct demo_tree *tree, struct demo_item *item)
 {
     struct rb_node **link = &tree->root.rb_node;
@@ -2712,15 +2712,22 @@ MODULE_DESCRIPTION("Private rbtree ownership and copied-value exercise");
 make -C "$KDIR" M="$PWD/labs/kernel/tree_basics/materials" modules
 ```
 
+第一行的 `:` 不执行构建，`${KDIR:?...}` 在变量未设置或为空时给出提示并阻止继续按错误目录执行。`-C` 让 make 进入 KDIR，`M` 指定外部模块材料目录，`modules` 构建该目录 Makefile 登记的模块；这里还会构建同目录的其他实验。构建成功后，目标文件位于材料目录。
+
 将 note_rbtree_owner.ko 放到匹配的目标环境后，从它所在目录执行：
 
 ```bash
+# 在匹配目标内核上，进入 note_rbtree_owner.ko 所在目录。
 sudo insmod ./note_rbtree_owner.ko
-sudo dmesg | tail -n 30
-sudo rmmod note_rbtree_owner
 ```
 
-成功时预期有以下三行（日志时间戳与级别省略）：
+insmod 请求内核装入模块并运行初始化函数。这里的插入、查询、摘除和 U5 清理都在初始化返回前完成；命令成功仅表示初始化返回成功，还应检查对应消息。
+
+```bash
+sudo dmesg | tail -n 30
+```
+
+dmesg 读取内核日志，tail 只保留末尾 30 行便于查看；日志繁忙时目标消息可能不在这 30 行内，应在完整日志中按 `note_owner:` 前缀查找。成功时预期有以下三行（日志时间戳与级别省略）：
 
 ```text
 note_owner: duplicate rejected, count=3, value=200
@@ -2728,9 +2735,17 @@ note_owner: remove 20, count=2, missing returns ENOENT
 note_owner: cleanup count=0
 ```
 
+确认模块成功装入且已完成观察后，再卸载：
+
+```bash
+sudo rmmod note_rbtree_owner
+```
+
+rmmod 传模块名，不带 .ko 后缀；它运行退出函数并卸载模块。本例的对象早已在 U5 清完，退出函数没有额外对象可释放。
+
 若 insmod 因版本、签名、符号或初始化失败而拒绝装入，应先读取错误和内核日志；模块没有成功加载时不把 rmmod 的“找不到模块”当成资源回收失败。不要把强制装入当成匹配构建环境的替代。
 
-本轮实际进行了 ARMv7 前端语法检查和明确适配的宿主执行，没有执行目标 Kbuild、MODPOST、装卸或取得上述目标日志。宿主以 uintptr_t 适配父色位宽，锁替身只记录串行持锁范围；它能发现计数、持有权和失败清理问题，不能验证 SMP、抢占、中断、弱内存序或真实自旋锁。
+验证证据应区分层次：ARMv7 前端检查只检查该配置下的类型与语法，不能代替 Kbuild、MODPOST 和目标装卸。宿主执行需要明确适配，例如 Windows 的父色字段应使用足以容纳指针的 uintptr_t，锁替身只能记录串行持锁范围；它可以检查计数、持有权和失败清理，不能验证 SMP、抢占、中断、弱内存序或真实自旋锁。已有检查的版本与环境见[源码基线记录](../../../../research/source_reading/linux/SOURCE_BASELINE.md)，上面的三行是目标预期日志，不能由宿主输出冒充。
 
 ## 37.17\_改变条件并检查接口承诺
 

@@ -41,7 +41,7 @@ static struct demo_item *search_locked(struct demo_tree *tree, int key)
     return NULL;
 }
 
-/* 调用者独占游离 item；成功移交给树，失败仍由调用者持有。 */
+/* 正常输入为调用者独占的游离 item；成功移交，失败不改变原持有权。 */
 static int insert_item(struct demo_tree *tree, struct demo_item *item)
 {
     struct rb_node **link = &tree->root.rb_node;
