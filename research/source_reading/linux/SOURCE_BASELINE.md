@@ -1853,3 +1853,24 @@ tty_fasync持有tty锁，__tty_fasync按需要分配file owner并调用helper维
 evdev_fasync使用file->private_data取得evdev_client，链头为client->fasync；__pass_event先写客户端缓冲，在EV_SYN/SYN_REPORT更新packet_head后请求SIGIO/POLL_IN。这证明标准输入业务可与fasync共存，并提供批次边界实例，不证明任意设备都应复用input包边界。
 
 历史只保留Linux man-pages明确标注的SIGIO与4.2BSD关联、管道/FIFO自Linux2.6支持O_ASYNC，不虚构Linux内部helper的首次提交或阻塞、poll、fasync、input的单线演进。400条记录、3个稳定链项与4批处理为正文纸面推演，1200/12是给定完整遍历前提的访问机会，不是性能实测或完整内核成本。
+
+## 1.197\_fasync注册发送与撤销的固定实现
+
+2026-10-17 重写[异步通知P04](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P04_内核视角_核心数据结构与控制路径.md)，逐段核对官方Linux 6.12.20固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的下列路径。正文统一到本提交，不沿用旧3.x/Android字段和伪调用链。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| fs/fcntl.c | 3d89de31066ae030ff3d4d3ca2cfe44e1c81539e |
+| include/linux/fs.h | b98f128c9afa78f02ea273a7f98b12c7761e7ae5 |
+| kernel/signal.c | 2ae45e6eb6bb8ed9c9293efea2ee1c1b9fda00b5 |
+| fs/file_table.c | 18735dc8269a10d6e7085c9bb882a0788dd3e0ca |
+
+setfl比较请求与当前FASYNC并检查回调存在，先调用fasync，负值退出、正值归零；SETFL_MASK不含FASYNC。helper新增先GFP_KERNEL分配，insert持file->f_lock、fasync_lock，按fa_file查重，已有项在fa_lock写锁下更新fa_fd；新项初始化后rcu_assign_pointer发布并置FASYNC。返回0可伴随fd更新，不代表完全未改状态；同标志F_SETFL并不调用helper。
+
+fasync_struct.fa_lock为rwlock_t，fa_fd传递给扩展信号信息；file.f_owner是按需分配的指针。file_f_owner_allocate用cmpxchg协调并发分配，fown含file回指、pid对象引用、pid_type、uid/euid与signum；F_SETOWN调用force=1，F_SETSIG经f_owner_sig，不存在旧稿拼造的本版本f_setown_signum调用。
+
+kill_fasync_rcu在RCU读侧逐节点取fa_lock读锁，检查fa_file和owner，SIGURG且未选扩展信号有独立跳过分支。send_sigio读锁保护目标读取，线程/线程组与进程组使用不同查找路径；send_sigio_to_task先sigio_perm（设置者与目标凭据及LSM）再按READ_ONCE(signum)选扩展或普通路径，扩展失败回退SIGIO。kernel/signal.c按pid_type选择pending位置，legacy_queue合并已有标准信号。未将可从中断调用外推为NMI或所有PREEMPT_RT锁配置安全。
+
+fasync_remove_entry先节点写锁清fa_file，再摘链、kfree_rcu、清FASYNC，file和全局修改锁包围过程；未找到返回0。RCU保护节点存储、fa_lock保护file交接，各有职责。__fput在FASYNC与回调成立时先fasync(-1,file,0)，再release，随后file_f_owner_release；不是所有驱动都必须在release额外重复撤销。该协议不删除已生成pending，也不保活提前释放的驱动private_data。
+
+正文局部源码摘录通过去注释与空白后的原文匹配核对；图与纸面状态表只解释本路径，不声明完成目标Kbuild、真实信号运行或硬件验证。
