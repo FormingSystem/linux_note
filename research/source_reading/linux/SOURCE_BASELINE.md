@@ -1446,3 +1446,20 @@ timer与hrtimer事件同属timer组，硬IRQ与softirq事件同属irq组。timer
 ftrace说明核对实例、跟踪时钟、静态trace与消费式trace_pipe、函数图根和过滤器差别、每CPU缓冲区丢失计数。用户工具以trace-cmd官方record手册核对-B及事件归属；工具版本需在目标环境再次确认。正文以完整timer_lifetime_demo生命周期采集，保存事件格式、模块卸载前的符号地址与丢失统计；Python工具分别保存waiting/running证据，避免新轮入队覆盖旧轮执行，并用保存的地址识别卸载后失去符号名称的记录。地址隐藏或不唯一时拒绝配对。
 
 提取Python配对器进行正常样本、运行中新一轮、交错对象、其他函数过滤、取消待执行、分位点和十类无效记录检查；示意数据明确非实测。所有shell块经Git Bash语法检查，事件名称与固定头文件核对；未执行Linux tracefs采集、模块装卸、function_graph、trace-cmd、KernelShark或板级性能测量。Shell语法检查不是仓库format.sh的运行，后者依然使用既定Python检查体。
+
+## 1.182\_中断通知与GPIO级联的职责边界
+
+2026-10-17 复审中断专题前两章，核对官方不可变提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的以下文档；外部工作树不可访问，使用官方固定提交原始文件，不宣称重新验证本地配置。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| Documentation/core-api/genericirq.rst | 25f94dfd66fad42ee07e02c9f15f6c2e9cb4189a |
+| Documentation/core-api/irq/irq-domain.rst | f88a6ee67a350f5b480e894023ca29b960ba31be |
+| Documentation/driver-api/gpio/driver.rst | ae433261e11a061e680d29b6dbeaf8960e882ff0 |
+| Documentation/devicetree/bindings/interrupt-controller/interrupts.txt | 4ebfa00087816f14149a944891367ab3ae375b30 |
+
+轮询可以与设备自主运行重叠，中断改变通知与进入处理方式，不替代数据存储和搬运。GPIO共享父级输出依靠本地状态解复用；GPIO irq_chip是软件控制操作，不是额外硬件块。级联分派与hierarchical irq_domain的逐层资源分配不能等同；编号需同时保留域身份，Linux IRQ不是跨启动恒定硬件身份。
+
+教学图明确区分硬件状态、软件队列和各层完成动作。GPIO清除顺序采用显式边沿锁存、按位确认与父级电平汇总假设，不外推为实际芯片寄存器协议；寄存器表只列功能职责，不编造地址。源码文档内的历史旧入口及静态描述符数组叙述不作为Linux 6.12当前具体实现的证明。具体函数、结构及固件解析在后续章节另行核对。
+
+本轮为机制与纸面时间线复审，图表和算术检查不等于板级测量、Linux运行或目标编译。GIC产品硬件细节保留唯一专题，本章不重复维护另一套产品布局。
