@@ -254,13 +254,13 @@ flowchart LR
 
 GP 完成后，callback 获得成熟资格，但还需要执行上下文真正调用它：
 
-- **softirq（software interrupt，软中断）** 是内核的延迟执行上下文；RCU 可以通过 `RCU_SOFTIRQ` 运行本地核心工作。软中断与下半部背景见 [中断下半部机制](../../asynchrony/interrupts/P07_中断下半部机制与驱动中的选择.md#7.5_tasklet_/_softirq_老一代的下半部)；
+- **softirq（software interrupt，软中断）** 是内核的延迟执行上下文；RCU 可以通过 `RCU_SOFTIRQ` 运行本地核心工作。软中断与下半部背景见 [中断下半部机制](../../asynchrony/interrupts/P07_中断下半部机制与驱动中的选择.md#7.4_其他下半部也有自己的状态_不能按新旧或名字选型)；
 - **`rcuc` kthread** 中的 kthread 是 **kernel thread（内核线程）**；`rcuc` 是可承担本 CPU `rcu_core()` 工作的每 CPU 内核线程路径，它与 softirq 是执行上下文差异，不是第二套 RCU 语义；
 - **NOCB kthread** 管理指定 offload（卸载，即把执行责任转移出去）CPU 的 callback 等待与执行；它复用普通 Tree RCU 发布的 GP 完成事实。
 
 softirq、`rcuc` 与 NOCB 的职责对比见 [五类执行者和状态通信](P07_Tree_RCU_初始化_拓扑与执行上下文.md#7.7_五类执行者和状态通信)。
 
-### 4.4.3\_PREEMPT_RCU只替换读者债务分支
+### 4.4.3\_PREEMPT\_RCU只替换读者债务分支
 
 因此正确的因果关系是：**先有一套普通 Tree RCU 骨架，再由 `CONFIG_PREEMPT_RCU` 选择读侧证明分支**；不是“因为启用了 `CONFIG_PREEMPT_RCU`，所以系统才只有一棵树”。无论该配置取 `y` 还是 `n`，具体构建中都只有这一套普通 Tree RCU 的 `rcu_state`、`rcu_node` 拓扑、callback 代际和同步等待主链。取 `y` 时，内核在同一批叶节点上启用被抢占任务的登记和清债路径，主要改变的是 **读者在临界区内被换出时，证明债务保存在哪里**：
 
@@ -366,7 +366,7 @@ CONFIG_SMP=n && CONFIG_PREEMPT_RCU=n
 
 在本章七条轴中，这两个名字落在 **公共契约的接口包装子类**，不是第八种保护域：业务代码用它们表达额外执行约束，内核仍把完成证明交给普通 RCU GP。
 
-这里的 **Bottom Half（下半部）** 是把中断后续工作延后执行的历史分类，**softirq（软件中断）** 是其中一种内核机制；完整背景见 [tasklet / softirq 下半部](../../asynchrony/interrupts/P07_中断下半部机制与驱动中的选择.md#7.5_tasklet_/_softirq_老一代的下半部)。版本化接口证据见固定基线的 [`include/linux/rcupdate.h`](../../../../../research/source_reading/linux/include/linux/rcupdate.h)：`rcu_read_lock_bh()` 与 `rcu_read_lock_sched()` 分别兑现上述本地约束，而不是选择新的全局 GP 状态。
+这里的 **Bottom Half（下半部）** 是把中断后续工作延后执行的历史分类，**softirq（软件中断）** 是其中一种内核机制；完整背景见 [tasklet / softirq 下半部](../../asynchrony/interrupts/P07_中断下半部机制与驱动中的选择.md#7.4_其他下半部也有自己的状态_不能按新旧或名字选型)。版本化接口证据见固定基线的 [`include/linux/rcupdate.h`](../../../../../research/source_reading/linux/include/linux/rcupdate.h)：`rcu_read_lock_bh()` 与 `rcu_read_lock_sched()` 分别兑现上述本地约束，而不是选择新的全局 GP 状态。
 
 ## 4.9\_先按约束选择再看Kconfig
 

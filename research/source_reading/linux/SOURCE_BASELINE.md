@@ -1564,3 +1564,25 @@ handle.c在action->handler前后放置irq_handler_entry/exit，manage.c在线程
 pinctrl设备核心处理默认/初始化状态，消费驱动无须为了诊断无条件重复选择；错误和延迟探测必须按实际协议处理。gpioinfo用法另核对官方libgpiod 2.2.4文档，只观察线路信息，不将其当作电平读取或抢占线路方法。irqsoff测量本地关中断区间，不能代替线程等待/业务响应耗时。
 
 本轮仅进行源码、正文与脚本宿主验证，未在真实Linux内核运行tracefs采集、GPIO输入、pinctrl切换或延迟测量。示意计数与时序不作为测量结果。
+
+## 1.187\_下半部选择与有界事件交接
+
+2026-10-17 复审[下半部选择](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P07_中断下半部机制与驱动中的选择.md)，以下文件重新从官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 取得，另复用前述IRQ生命周期、GPIO消费者和平台remove证据。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| include/linux/workqueue.h | 59c2695e12e7674d5bc4cdd1fb416074374f981c |
+| kernel/workqueue.c | a9d64e08dffc7c7aef2caae2f170268d83e99e23 |
+| include/linux/interrupt.h | 457151f9f263d9042625decde2c15822d860b134 |
+| kernel/softirq.c | 8c4524ce65fafe508c3b4ee1ccb371f29b2dd6d5 |
+| Documentation/core-api/workqueue.rst | 16f861c9791e4ae2914bbf517c1a1835263711bf |
+| Documentation/driver-api/basics.rst | d78b7c328ff7b3e179e36d8c91eff9ba6483ef81 |
+| include/trace/events/workqueue.h | b0de2bc9ed52fa25af65be6126144419b92f6287 |
+
+schedule_work投递到system_wq；queue_work_on对已pending或disable状态不新排队，false不等于业务完成。cancel_work_sync的完成保证以没有竞争投递为前提。工作队列概念及源码索引保持既有权威位置，当前章仅说明消费驱动的业务状态与使用协议，不复制内部唯一实现。
+
+softirq使用固定向量与每CPUpending标志；tasklet另持对象状态及每CPU链表，在调度时可合并且同一对象串行。头文件明确deprecated，不能外推成整个softirq废弃。WQ_BH执行于softirq而不能睡眠，普通线程工作队列的睡眠说明不适用于此分支。
+
+完整gpio_work_demo分别支持硬回调直接投递与IRQ线程转交。raw_spinlock保护计数、停止门和所有schedule位置；待取计数最多64，工作回调一次取最多8份局部批次，满则记录overflow。64位首沿时间窗口与稳定去抖区分。remove关闭门、同步撤销IRQ、同步取消work后才统计并归还资源，未取业务明确计入discarded。
+
+正文不宣称目标Kbuild、真实工作池调度、GPIO硬件或PM已验证；板级节点是需替换控制器与索引的模板。源码证据不支持原文无条件工作队列最安全、任意devm_work_autocancel版本可用或单pending位保存所有事件的结论。
