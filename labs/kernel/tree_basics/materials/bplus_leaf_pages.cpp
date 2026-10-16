@@ -7,6 +7,10 @@
 #include <limits>
 #include <vector>
 
+#ifdef NDEBUG
+#error "本教学程序依靠断言执行并验证操作，请勿定义 NDEBUG"
+#endif
+
 enum class insert_result { inserted, duplicate, full };
 
 class page_index {
