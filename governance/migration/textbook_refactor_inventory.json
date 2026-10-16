@@ -5826,6 +5826,17 @@
           "完整程序GCC/Clang各16种控制流场景，源码摘录匹配和Bash语法通过；5出链无标题入链，全仓9021有效链接及标题元数据路径和diff检查通过。"
         ],
         "limits": "控制流模型不代替Linux ABI；未在目标Linux运行信号或Kbuild，不将固定源码行为外推所有文件系统及协议。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P06_字符设备中实现异步通知的基础模式.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以完整256字节共享流设备建立数据、等待、订阅及模块寿命闭环，补构建与有限用户实验，纠正复制锁、短读、空读、poll和热移除边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "原稿全文、内容去向与冷读；两图渲染目视通过，连续阅读仅完整模块长度一项提示经人工说明保留。",
+          "GCC/Clang各两万次队列序列及边界测试、用户程序各25种控制流、Python12种正常/错误模型与脚本语法通过；5出链无标题入链，全仓9025有效链接及格式元数据路径和diff通过。"
+        ],
+        "limits": "模型替代内核/系统接口，不证明实际并发、目标头文件/Kbuild或Linux信号ABI；正文提供实际Linux构建装载和有限验证，当前环境未运行。"
       }
     },
     "additional_documents": [
