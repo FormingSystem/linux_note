@@ -1485,6 +1485,18 @@
           "标题、元数据、命名及全仓707篇链接检查通过；git diff --check 通过"
         ],
         "limits": "未执行目标注册、probe、异步探测或并发解绑；没有用零返回、链接存在或静态验证代替运行成功。"
+      },
+      "knowledge/linux/device_model/P09_deferred_probe解绑与remove.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从晚到供应者推导 pending/active、节点所有权、互斥与工作线程引用，展开先触发后入队的计数补偿和超时观察边界；按正常解绑真实顺序区分链接撤下、remove、资源与集合清理，删除绑定必持模块引用的错误。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读，连续性与术语候选复核；错误码、既有阶段及下一章导航名称不冒充新缩写",
+          "沿用当前已核对的固定 dd.c、core.c 与 base.h，复查延迟工作、计数比较、解绑、device_del 和 dev_err_probe；检查现有配置边界",
+          "三图渲染及目视检查；标题、元数据、命名、全仓707篇链接和 git diff --check 通过"
+        ],
+        "limits": "未执行目标延迟探测、超时、debugfs观察或并发删除；不将配置存在与源码交错推演当作实际运行证明。"
       }
     }
   },
