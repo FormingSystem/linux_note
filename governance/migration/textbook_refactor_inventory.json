@@ -5158,6 +5158,90 @@
           "十七张图渲染并逐张目视；八篇出入锚点、连续性、全仓8860有效链接、格式/元数据/路径及diff检查通过。"
         ],
         "limits": "共享源码树当前不可访问，本次使用已保存的固定版本原文；未运行内核或驱动。术语扫描告警已逐项审查并修补状态、宏、NMI/DMA和UAF入口，既有阶段组合和前章已建立的名称不机械重复。"
+      },
+      "research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读文件地图、两类机制及阅读边界，保留充分的版本化总索引。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读；四份保存原文hash匹配固定记录，二十块源码去注释和空白后均匹配。",
+          "五张图渲染并逐张目视，七篇出入锚点与连续性检查通过。",
+          "全仓8860有效链接、受影响文档格式/元数据/路径及git diff检查通过。"
+        ],
+        "limits": "当前共享盘不可访问，使用保存的固定源码；未运行目标内核。术语告警已按阶段、前章定义和函数上下文审查，源码不为消除缩写告警而改名。"
+      },
+      "research/source_reading/waiting_notification/navigation/P02_Linux_6.12_普通等待队列模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "展开信号与通知先后，补复核答案及无锁队列观察的双旧值风险和顺序要求。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读；四份保存原文hash匹配固定记录，二十块源码去注释和空白后均匹配。",
+          "五张图渲染并逐张目视，七篇出入锚点与连续性检查通过。",
+          "全仓8860有效链接、受影响文档格式/元数据/路径及git diff检查通过。"
+        ],
+        "limits": "当前共享盘不可访问，使用保存的固定源码；未运行目标内核。术语告警已按阶段、前章定义和函数上下文审查，源码不为消除缩写告警而改名。"
+      },
+      "research/source_reading/waiting_notification/navigation/P03_Linux_6.12_completion模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正摘链对象，补令牌被先取走、继续等待及超时分支，并给出复核答案。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读；四份保存原文hash匹配固定记录，二十块源码去注释和空白后均匹配。",
+          "五张图渲染并逐张目视，七篇出入锚点与连续性检查通过。",
+          "全仓8860有效链接、受影响文档格式/元数据/路径及git diff检查通过。"
+        ],
+        "limits": "当前共享盘不可访问，使用保存的固定源码；未运行目标内核。术语告警已按阶段、前章定义和函数上下文审查，源码不为消除缩写告警而改名。"
+      },
+      "research/source_reading/waiting_notification/source_explanations/include/linux/completion.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "在对象与空钩子源码前解释状态保存需要和名称不能证明功能，保留原实现。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读；四份保存原文hash匹配固定记录，二十块源码去注释和空白后均匹配。",
+          "五张图渲染并逐张目视，七篇出入锚点与连续性检查通过。",
+          "全仓8860有效链接、受影响文档格式/元数据/路径及git diff检查通过。"
+        ],
+        "limits": "当前共享盘不可访问，使用保存的固定源码；未运行目标内核。术语告警已按阶段、前章定义和函数上下文审查，源码不为消除缩写告警而改名。"
+      },
+      "research/source_reading/waiting_notification/source_explanations/include/linux/wait.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先推导共享头与临时项、等待循环需要，再解释GNU语句表达式及局部标签。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读；四份保存原文hash匹配固定记录，二十块源码去注释和空白后均匹配。",
+          "五张图渲染并逐张目视，七篇出入锚点与连续性检查通过。",
+          "全仓8860有效链接、受影响文档格式/元数据/路径及git diff检查通过。"
+        ],
+        "limits": "当前共享盘不可访问，使用保存的固定源码；未运行目标内核。术语告警已按阶段、前章定义和函数上下文审查，源码不为消除缩写告警而改名。"
+      },
+      "research/source_reading/waiting_notification/source_explanations/kernel/sched/completion.c.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补计数发布与持久广播的背景，保留完整等待和非阻塞观察分支。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读；四份保存原文hash匹配固定记录，二十块源码去注释和空白后均匹配。",
+          "五张图渲染并逐张目视，七篇出入锚点与连续性检查通过。",
+          "全仓8860有效链接、受影响文档格式/元数据/路径及git diff检查通过。"
+        ],
+        "limits": "当前共享盘不可访问，使用保存的固定源码；未运行目标内核。术语告警已按阶段、前章定义和函数上下文审查，源码不为消除缩写告警而改名。"
+      },
+      "research/source_reading/waiting_notification/source_explanations/kernel/sched/wait.c.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补扫描回调额度及退出清理的具体动机，保留固定源码及状态所有权解释。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读；四份保存原文hash匹配固定记录，二十块源码去注释和空白后均匹配。",
+          "五张图渲染并逐张目视，七篇出入锚点与连续性检查通过。",
+          "全仓8860有效链接、受影响文档格式/元数据/路径及git diff检查通过。"
+        ],
+        "limits": "当前共享盘不可访问，使用保存的固定源码；未运行目标内核。术语告警已按阶段、前章定义和函数上下文审查，源码不为消除缩写告警而改名。"
       }
     },
     "additional_documents": [
