@@ -48,8 +48,8 @@ new 必须和 victim 处在同一个排序位置。
 也就是说：
 
 ```text
-new 的 key 必须等价于 victim 的 key；
-或者至少对树中所有其他节点的比较结果保持一致。
+按本章使用的公共接口契约，new 的完整比较键必须与 victim 相同；
+不能把改变排序键伪装成只交接对象地址。
 ```
 
 固定版本的接口文档要求相同 key。若排序由多个字段共同决定，“相同”须覆盖整个比较键，不能只比较展示出来的编号。不同键偶然仍落在左右子树允许的区间内，数学上未必立即破坏顺序；但替换函数既不检查这个区间，也不负责重新排序，不应把这种偶然当作修改 key 的接口保证。
@@ -157,7 +157,7 @@ new 放在 victim 的位置仍然满足业务排序。
 
 ------
 
-### 28.2.4\_rb\_replace\_node\_rcu()\_与\_RCU\_读侧安全
+### 28.2.4\_最后发布入口为何还不能立即释放旧对象
 
 RCU 版本和普通版本结构相似，也会：
 
@@ -257,7 +257,7 @@ R2 先于 R3，说明发布的只是外部入口，不是把所有父子指针�
 
 ### 28.2.5\_rb\_replace\_node\_cached()\_如何维护最左缓存
 
-cached rbtree 额外保存：
+如果经常需要取最小成员，每次从根走到最左都会重复追踪相同路径。cached 根用额外的最左地址缩短这个入口：读者直接取得已保存的成员，写者则要在成员变化时同步维护它。它额外保存：
 
 ```text
 root->rb_leftmost
@@ -289,6 +289,16 @@ cached 信息不属于普通 rb_root；
 注意这个顺序的代价：cached 入口已经指向 new 时，普通替换还没有执行 R1，new 的结构字段可能尚未继承完成。因此调用者的保护必须覆盖整个包装调用，不能让无保护读者从缓存提前进入新节点。固定版本没有 `rb_replace_node_cached_rcu()` 这一组合接口；把名字接在一起不能产生一个新的并发协议。
 
 增广树还多一层业务状态。子树最大值、计数等通常位于外层对象中，复制 rb_node 不会自动接管它们。即使形状和 key 没变，新 payload 若改变增广量的含义，调用者仍需按该量的定义重新计算、传播并保护读取；不能一律复制旧值后声称缓存正确。
+
+三种入口接收的都是内嵌节点地址，返回类型均为 void；它们没有“比较失败”的返回通道。调用前就要满足同键、旧成员有效、新节点未挂接和相应同步协议：
+
+| 调用 | 修改哪些入口 | 没有代办的责任 |
+| --- | --- | --- |
+| `rb_replace_node(victim, new, root)` | 节点复制、孩子回指、普通根槽或父孩子槽 | 不比较、不改业务计数、不处理旧对象回收 |
+| `rb_replace_node_rcu(victim, new, root)` | 相同结构交接，最后用 RCU 发布外部入口 | 不串行化写者、不等待宽限期、不提供普通父链并发遍历 |
+| `rb_replace_node_cached(victim, new, cached_root)` | 必要时先改最左缓存，再做普通替换 | 整个包装需要同一保护；不是 RCU cached 组合接口 |
+
+普通和 RCU 入口的 root 类型为 `struct rb_root *`，cached 包装接收 `struct rb_root_cached *`。这里“计数不变”是成员一换一的业务结论，不意味着内核函数访问了业务 count 字段；新对象在其他索引中的状态仍需各自处理。
 
 ------
 
@@ -473,15 +483,32 @@ MODULE_DESCRIPTION("同键替换与旧对象寿命观察");
 在匹配目标内核的构建环境中，从仓库根执行：
 
 ```bash
-# KDIR 指向已经准备好的目标内核构建目录。
-make -C "$KDIR" M="$PWD/labs/kernel/tree_basics/materials" modules
-# 把模块放到对应 Linux 目标后，在模块所在目录加载。
-sudo insmod note_rbtree_replace.ko
+# 两个变量必须与目标运行内核及工具链相匹配。
+: "${KERNEL_BUILD:?请先设置目标内核构建目录}"
+: "${CROSS_COMPILE:?请先设置ARM交叉编译器前缀}"
+make -C "$KERNEL_BUILD" M="$PWD/labs/kernel/tree_basics/materials" \
+  ARCH=arm CROSS_COMPILE="$CROSS_COMPILE" modules
+```
+
+`-C` 选择内核构建目录，`M` 指定外部模块源码，modules 会构建该目录登记的各模块。本节只把 note_rbtree_replace.ko 部署到版本和配置匹配的目标，加载命令在目标的模块目录执行：
+
+```bash
+sudo insmod ./note_rbtree_replace.ko
+```
+
+加载成功后查看日志；按 replace 前缀识别各组输出，其他内核活动很多时须扩大保留范围。
+
+```bash
 sudo dmesg | tail -n 30
+```
+
+观察结束后卸载；若初始化因申请失败等原因未成功，模块并未驻留。
+
+```bash
 sudo rmmod note_rbtree_replace
 ```
 
-交叉构建继续使用插入实验已说明的 ARCH、CROSS_COMPILE 和匹配配置，不把 Windows 宿主编译结果当成可加载模块。下面是按程序推演的核心日志，省略内核时间戳，**不是本次目标机运行实录**：
+构建环境准备沿用[P26 模块前提](P26_Linux红叶接入与插入修复.md#26.3.15_在内核模块中观察五组插入)，Windows 宿主接口适配不能产生可加载的目标模块。下面是按程序推演的核心日志，省略内核时间戳，**不是本次目标机运行实录**：
 
 ```text
 replace plain key=10 payload=1
