@@ -264,7 +264,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 
 ## 1.46\_对象保活与字段更新
 
-[P38](../../../../knowledge/linux/object_lifetime/kref/P38_字段更新与KCSAN实验.md#38.1_两个有效使用者怎样丢掉一次更新)新增[counter_updates.cpp](counter_updates.cpp)与[note_kref_counter.c](note_kref_counter.c)，Makefile登记后者。C++20三种真实双线程结果为2000/2000/1000，第三种是安全原子访问组成的更新丢失，不是数据竞争或KCSAN报告。内核十二组宿主协议及无KCSAN ARM前端通过，故意竞争mode=2未执行；新模块在不支持配置时拒绝该模式。
+[P38](../../../../knowledge/linux/object_lifetime/kref/P38_字段更新与KCSAN实验.md#38.1_两个有效使用者怎样丢掉一次更新)使用[counter_updates.cpp](counter_updates.cpp)与[note_kref_counter.c](note_kref_counter.c)，Makefile 登记后者。C++20 三种真实双线程结果为 2000/2000/1000；本轮普通/NDEBUG 构建、改错预期的负例及 acquire/release 练习通过，结果检查不随断言开关消失。第三种是安全原子访问组成的更新丢失，不是数据竞争或 KCSAN 报告。内核十二组宿主协议本轮重验；无 KCSAN 的 ARM 前端通过属于历史证据，故意竞争 mode=2 未执行。
 
 ## 1.47\_最后归还与锁顺序
 

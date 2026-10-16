@@ -41,15 +41,19 @@ sequenceDiagram
 
 三个模式分别为locked（互斥更新）、atomic_rmw（原子读改写）和split_atomic（拆开的原子读与写）。rounds固定为1000，计数范围不会溢出；本例原子值只用于计数，relaxed顺序不被用来发布其他业务字段。
 
+这里的 latch 与 barrier 都来自 C++ 标准库。start_gate 初值为 1，管理者 count_down 后一次性放行所有 wait；rendezvous 的参与者数为 2，每次 arrive_and_wait 都等两名工作者到齐，然后进入下一轮，因此可以分别卡住“都已读完”和“都已写完”两道位置。它们协调运行阶段，不是给 counter 增加引用。
+
+工作函数使用 lambda 表达式 `[&, state]`：把 shared_ptr 类型的 state 按值捕获，其他所需局部变量按引用捕获；线程再各自保存这个工作函数的副本。join 等待线程完成，因此被引用的局部屏障和模式变量在整个使用期间仍在作用域内。locked 分支的 lock_guard 在构造时加锁、离开大括号时解锁，覆盖整个加一动作；atomic_rmw 分支则用一条 fetch_add 完成原子读改写。
+
 ```cpp
 #include <atomic>
 #include <barrier>
-#include <cassert>
 #include <exception>
 #include <iostream>
 #include <latch>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <thread>
 
 enum class update_mode { locked, atomic_rmw, split_atomic };
@@ -103,7 +107,9 @@ static void run_case(update_mode mode, const char *name)
         worker.join();
     unsigned int actual = mode == update_mode::locked ? state->plain : state->atomic.load();
     unsigned int expected = mode == update_mode::split_atomic ? rounds : 2 * rounds;
-    assert(actual == expected);
+    // 结果检查不随 NDEBUG 消失；错误沿 main 的异常路径报告。
+    if (actual != expected)
+        throw std::runtime_error("counter update result does not match expectation");
     std::cout << name << ": updates=" << 2 * rounds << " value=" << actual << '\n';
     // 管理者和线程的shared_ptr保住外壳，字段正确性仍由上述更新协议负责。
 }
@@ -121,10 +127,10 @@ int main()
 }
 ```
 
-在材料目录编译：
+从仓库根目录编译。结果不符时抛出 runtime_error，由 main 报告并返回 1；定义 NDEBUG 不会移除这一检查：
 
 ```bash
-c++ -std=c++20 -Wall -Wextra -Werror -O2 -pthread counter_updates.cpp -o /tmp/counter_updates
+c++ -std=c++20 -Wall -Wextra -Werror -O2 -pthread labs/kernel/object_lifetime/materials/counter_updates.cpp -o /tmp/counter_updates
 /tmp/counter_updates
 ```
 
@@ -140,9 +146,9 @@ split_atomic: updates=2000 value=1000
 
 ## 38.3\_完整内核模块给每个工作者一份
 
-原实验用kthread_run启动两个线程，管理者等它们结束后直接kfree，没有分别get。因此原文“两个线程都持有引用”的结论不符合代码；若完整退出保证管理者保活，实际是借用协议，还需要处理线程创建失败和可靠结束。msleep(1000)只是延迟，不保证两个线程已经完成，也不建立字段同步。
+进入内核实验前，先选择工作者的存储资格。管理者可以保留引用并等待两个借用者全部结束，也可以给每个工作者独立的一份；前者不能描述为“两个线程各持一份”。若使用 kthread_run 启动线程，还须处理部分创建失败与可靠等待，msleep(1000) 只是延迟，不能证明两个线程都已完成，也不建立字段同步。
 
-新的[note_kref_counter.c](../../../../labs/kernel/object_lifetime/materials/note_kref_counter.c)选用已学习的工作队列来闭合启动、部分失败和等待：两个独立work可由不同工作线程执行，每个接纳的work明确得到一份；管理者保留初始份额到队列销毁、统计完成。这里没有把一个work重复排两次，也不依赖kthread裸指针退出时序。
+本章的[note_kref_counter.c](../../../../labs/kernel/object_lifetime/materials/note_kref_counter.c)选用已学习的工作队列来闭合启动、部分失败和等待：两个独立 work 可由不同工作线程执行，每个接纳的 work 明确得到一份；管理者保留初始份额到队列销毁、统计完成。这里没有把一个 work 重复排两次，也不依赖 kthread 裸指针退出时序。
 
 ```mermaid
 flowchart LR
@@ -303,11 +309,13 @@ mode=2的计数没有可依赖的正确值，也不保证一次运行就触发�
 
 ## 38.5\_按证据层级验收
 
-本批C++20三个真实双线程对照通过；线程创建异常清理已冷读，但未注入宿主线程创建失败。内核模块的十二组宿主协议检查覆盖两种正确模式下正常、队列分配失败、对象分配失败、第一次/第二次投递拒绝，以及非法mode和未启用时拒绝故障。夹具检查完成数、引用清理和开始放行顺序，锁、原子、completion和队列均为顺序替身；故意竞争模式没有运行。
+本轮 C++20 三个真实双线程对照在 G++ 普通与 NDEBUG 构建下均通过，另验证 acquire/release 练习仍丢更新；故意改错预期的 NDEBUG 变体返回 1，确认结果检查仍执行。线程创建异常清理已冷读，但未注入宿主线程创建失败。正文两份完整程序分别与材料一致，固定 KCSAN 配置和文档与保存来源一致。内核模块十二组宿主协议重新检查，覆盖两种正确模式下正常、队列分配失败、对象分配失败、第一次/第二次投递拒绝，以及非法 mode 和未启用时拒绝故障。夹具检查完成数、引用清理和开始放行顺序，锁、原子、completion 和队列均为顺序替身；故意竞争模式没有运行。
 
-ARM前端在当前无KCSAN配置下通过，354头中342份非生成源码与固定NXP提交无差异；初次严格宿主编译发现atomic_read与unsigned字段的条件表达式符号性不一致，已显式转换并重验。没有目标模块装卸、实际KCSAN报告、内核并发或硬件结论。两种正确协议的选择仍由业务字段约束决定，不能仅凭一次测试耗时排序。
+已有 ARM 前端在未启用 KCSAN 配置下通过、354 头中 342 份非生成源码与固定提交无差异的记录属于历史证据，本轮未重跑。当前模块在读取 atomic 值时显式转换为 unsigned，与另一分支字段及打印格式一致。没有目标模块装卸、实际 KCSAN 报告、内核并发或硬件结论。两种正确协议的选择仍由业务字段约束决定，不能仅凭一次测试耗时排序。
 
-练习一，将C++反例的load改成acquire、store改成release，解释为什么两次独立动作仍不是fetch_add。练习二，画出第二次排队失败时管理者、候选和已接纳worker的三份责任去向。练习三，在原kthread写法里坚持采用管理者借用，列出必须关闭的访问入口、全部成功创建者和等待完成点，不能继续称为每线程独立引用。
+练习一，将 C++ 反例的 load 改成 acquire、store 改成 release，解释为什么两次独立动作仍不是 fetch_add。练习二，画出第二次排队失败时管理者、候选和已接纳 worker 的三份责任去向。练习三，若改用 kthread 并坚持采用管理者借用，列出必须关闭的访问入口、全部成功创建的线程和等待完成点，不能继续称为每线程独立引用。
+
+练习一仍会在每轮两次读取之间保留相同旧值，两次写入也仍各写 old+1，因此结果保持 1000；更强的内存顺序没有把两条操作合并。练习二先收回第二次候选，剩管理者与第一个 worker 两份；complete_all 放行该 worker，等待它归还并返回，管理者读完结果后再归还最后一份。练习三的保活期限必须覆盖所有成功创建者，也包括部分创建失败时已经启动的线程。
 
 本章已把存储期限、单字段更新和动态采样分开。下一实验检查锁顺序：给字段加锁能够串行更新，却也可能因另一条路径按相反顺序取锁而无法继续。
 

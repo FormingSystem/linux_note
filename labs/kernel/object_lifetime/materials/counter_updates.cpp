@@ -1,11 +1,11 @@
 #include <atomic>
 #include <barrier>
-#include <cassert>
 #include <exception>
 #include <iostream>
 #include <latch>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <thread>
 
 enum class update_mode { locked, atomic_rmw, split_atomic };
@@ -59,7 +59,9 @@ static void run_case(update_mode mode, const char *name)
         worker.join();
     unsigned int actual = mode == update_mode::locked ? state->plain : state->atomic.load();
     unsigned int expected = mode == update_mode::split_atomic ? rounds : 2 * rounds;
-    assert(actual == expected);
+    // 结果检查不随 NDEBUG 消失；错误沿 main 的异常路径报告。
+    if (actual != expected)
+        throw std::runtime_error("counter update result does not match expectation");
     std::cout << name << ": updates=" << 2 * rounds << " value=" << actual << '\n';
     // 管理者和线程的shared_ptr保住外壳，字段正确性仍由上述更新协议负责。
 }
