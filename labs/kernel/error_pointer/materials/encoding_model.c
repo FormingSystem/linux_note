@@ -1,5 +1,4 @@
 /* 只模拟整数编码，不创建或解引用任何指针。 */
-#include <assert.h>
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -28,8 +27,10 @@ int main(void)
             uint64_t encoded = (uint64_t)(int64_t)error & mask;
             /* 差值只有 0 到 4094，不把超范围无符号数强转成有符号数。 */
             int64_t decoded = -(int64_t)(mask - encoded) - 1;
-            assert(encoded >= threshold);
-            assert(decoded == error);
+            if (encoded < threshold || decoded != error) {
+                fprintf(stderr, "check failed: width=%u error=%d\n", width, error);
+                return 1;
+            }
         }
     }
     return 0;
