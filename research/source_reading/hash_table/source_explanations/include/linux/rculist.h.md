@@ -8,6 +8,8 @@ domains: [linux, source_reading]
 
 # 第1章\_rculist.h的单桶发布与旧路径
 
+普通单桶操作允许在独占期间临时破坏局部连接，但 RCU 读者可能正在沿 next 前进。因此本页要追踪两个时刻：新入口何时允许被读到，旧节点的前向路径要保存到何时。回指 pprev 只供串行修改者使用，不能把它和读者路径当成同一份保护需求。
+
 固定源码为 [include/linux/rculist.h](../../../../linux/include/linux/rculist.h)。从[总索引](../../../navigation/P01_Linux_6.12_哈希计算源码阅读索引.md)确认版本，再读[模块导读](../../../navigation/P03_节点连接与并发边界导读.md#3.2_普通修改与RCU发布的分界)。本页的 S0～S5 与教材和导读共用，中文 Doxygen 为仓库补充；不在哈希专题重复 RCU 全局宽限期实现。
 
 ## 1.1\_先构建再发布
@@ -54,6 +56,8 @@ rcu_assign_pointer 的非空 release 发布与常量空值分支在[通用框架
 
 ## 1.2\_删除保留前向连接
 
+读者已经可能取得节点 B 后，写者只能先让新路径绕过它，不能假定所有读者都会重新从桶头出发。下面两个删除接口因此都保留 B.next；不同的是给修改者留下毒化回指还是空回指。
+
 ```c
 /**
  * hlist_del_rcu - 仓库补充阅读说明：S3 摘除并毒化 pprev，保留旧读者可能访问的 next。
@@ -95,6 +99,8 @@ sequenceDiagram
 
 ## 1.3\_遍历的取得与检查分开
 
+新入口正确发布、旧 next 保留以后，读者还要用匹配的取得操作访问这些字段。循环宏同时放入了一项动态检查，用于发现缺少读侧保护的调用；取得与检查各自承担不同职责，关闭检查不能改变调用者的寿命责任。
+
 ```c
 /**
  * hlist_for_each_entry_rcu - 仓库补充阅读说明：S2 沿 first/next 取得节点，经 hlist_entry_safe 恢复宿主；cond 是可选检查条件。
@@ -110,7 +116,7 @@ sequenceDiagram
 
 hlist_entry_safe 的空值处理与成员恢复见[list.h 遍历实现](list.h.md#1.3_成员恢复与遍历游标)。rcu_dereference_raw 使用有约束的取得，但不自己做普通 rcu_dereference 的动态上下文警告，具体原语在[RCU 通用 raw 取得实现](../../../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.4_rcu_dereference_raw的无检查取得)唯一展开。
 
-循环前的 __list_check_rcu 承担检查职责，cond 可用于声明另一种确实成立的保护条件。把 cond 填成 1 只会使检查接受，不会自动建立那种保护。Kconfig 布尔项 CONFIG_PROVE_RCU_LIST 控制 RCU 链表的运行期检查；当前工作配置未启用该项。下面裁剪掉独立的可睡眠 RCU（Sleepable RCU，SRCU）检查宏，保留本宏的两种配置分支：
+循环前的 __list_check_rcu 承担检查职责，cond 可用于声明另一种确实成立的保护条件。把 cond 填成 1 只会使检查接受，不会自动建立那种保护。Kconfig 布尔项 CONFIG_PROVE_RCU_LIST 控制 RCU 链表的运行期检查；开启与关闭是同一源码支持的两种配置，不能把某次工作树配置当作固定版本的唯一行为。下面裁剪掉独立的可睡眠 RCU（Sleepable RCU，SRCU）检查宏，保留本宏的两种配置分支：
 
 ```c
 /** 仓库补充：空宏利用参数数量诊断，只允许指定数量的额外条件。 */

@@ -14,7 +14,7 @@ topics:
 
 # 第4章\_并发保护与RCU机制\_多核下的读写博弈
 
-前两章已经给出桶、节点和选桶规则。只要所有访问者持同一把锁，写者可以完整改边，读者也不会走到半改好的拓扑。现在给会话表增加一个条件：很多处理器频繁按用户编号查询，用户加入和退出相对少，而且已发布的编号和名字不再原地修改。
+前三章已经给出桶、节点和选桶规则。只要所有访问者持同一把锁，写者可以完整改边，读者也不会走到半改好的拓扑。现在给会话表增加一个条件：很多处理器频繁按用户编号查询，用户加入和退出相对少，而且已发布的编号和名字不再原地修改。
 
 本章以一个已经选中的桶为单位，比较共同锁与 RCU（Read-Copy-Update）的责任变化。它不重讲整个宽限期检测器；先修是[RCU 通用机制与最小闭环](../../../synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md)。若还不能解释“取消发布为何不等于立即释放”，先从[RCU 问题与推演](../../../synchronization_and_asynchrony/synchronization/rcu/大纲.md)补齐这一结论。
 
@@ -63,23 +63,25 @@ sequenceDiagram
     participant state as 桶头与节点 A/B/C
     participant writer as 持锁写者 W
     participant rcu as RCU 回调基础设施
+    participant hooks as 调度与读侧钩子
     reader->>reader: S2 进入普通 RCU 读侧
     reader->>state: 取得 B，尚未读取 B.next
     writer->>state: S3 A.next 改为 C，保留 B.next=C
     writer->>writer: 归还 session_lock
     writer->>rcu: S4 call_rcu(B.rcu, reclaim_user)
+    opt 配置支持 Preempt RCU，且 R 此时被抢占
+        hooks->>rcu: 登记 R 仍在读侧的阻塞任务证据
+        rcu->>rcu: 不能因 R 所在 CPU 切走就判定 R 已结束
+        hooks-->>reader: R 恢复执行，继续原读侧区间
+    end
     reader->>state: 经旧 B.next 继续到 C
     reader->>reader: 结束使用，退出读侧
-    alt 读侧任务曾被抢占且配置支持 Preempt RCU
-        rcu->>rcu: 还要跟踪被阻塞的旧任务，不能仅看 CPU 切走
-    else 非抢占读侧
-        rcu->>rcu: 按该配置的静止状态证据推进
-    end
-    rcu->>rcu: 所需宽限期完成，回调取得执行资格
+    hooks->>rcu: 按配置更新静止状态或阻塞任务证据
+    rcu->>rcu: 综合相关执行流证据，宽限期完成后回调才有资格执行
     rcu->>state: S5 reclaim_user 释放 B
 ```
 
-图中的基础设施是通用 RCU 的职责，当前工作树启用的是 Tiny RCU、非 SMP 配置。Tree/Preempt 分支说明接口为何不能按一种配置猜测，并非声称本实验实际运行了所有分支。版本入口见[哈希源码索引](../../../../../research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md#1.1_版本和任务边界)。
+图中的基础设施是通用 RCU 的职责。抢占分支发生在 R 尚未退出读侧时；任务已恢复并退出后，不能再把它说成仍被阻塞的旧读者。钩子一栏表示对应配置的调度/读侧记账路径，不是额外的后台线程。既有工作树快照启用 Tiny RCU、非 SMP，Tree/Preempt 分支说明接口为何不能按一种配置猜测，并非声称本实验实际运行了所有分支。版本入口见[哈希源码索引](../../../../../research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md#1.1_版本和任务边界)。
 
 ## 4.3\_没有对象参数不等于一把全局读写锁
 
@@ -280,7 +282,7 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("hlist 旧路径与回调寿命教学模块");
 ```
 
-材料保存为 note_hlist_rcu.c；同目录 Makefile 的内容为 `obj-m += note_hlist_rcu.o`。kzalloc/ENOMEM 沿用模块课程，EEXIST 表示重复编号，E2BIG 表示名字未能完整复制，ENOENT 表示未找到，EINVAL 表示参数或实验不变量不成立。strscpy 返回负值时直接释放未发布候选；没有沿用本版本已经移除的 strlcpy。
+材料保存为 note_hlist_rcu.c；同目录 Makefile 包含 `obj-m += note_hlist_rcu.o`，并列登记后续两种哈希模块，执行 modules 会一并构建。本节只装载 note_hlist_rcu。kzalloc/ENOMEM 沿用模块课程，EEXIST 表示重复编号，E2BIG 表示名字未能完整复制，ENOENT 表示未找到，EINVAL 表示参数或实验不变量不成立。strscpy 返回负值时直接释放未发布候选；没有沿用本版本已经移除的 strlcpy。
 
 rcu_read_lock 区间里没有分配或等待宽限期。remove_user_async 只持有短自旋锁、撤下节点并提交 call_rcu；普通遍历在摘除后立即 break，不再用已删除的当前项推进。drain_sessions 则要继续删其他项，因此提前保存下一游标。RCU 回调中的 container_of 从 rcu_head 找回同一宿主对象，只执行最后释放。
 

@@ -3,6 +3,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#ifdef NDEBUG
+#error "This model requires active assertions"
+#endif
+
 struct node {
     int key;
     bool terminal;

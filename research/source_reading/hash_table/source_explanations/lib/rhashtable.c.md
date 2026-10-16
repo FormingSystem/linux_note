@@ -8,6 +8,8 @@ domains: [linux, source_reading]
 
 # 第1章\_rhashtable.c的迁移调度与销毁
 
+查找者已经能识别跨链并沿后继表继续查找，但新表还需要有人分配、挂接和逐桶迁移。这里跟随承担这些工作的写侧：先建立可发现的后继，再改变节点连接，最后切换当前入口并等待旧读者退出。停止整张表时又有不同的前提，不能把在线迁移的延后回收自动套到销毁接口上。
+
 本页固定 [lib/rhashtable.c](../../../linux/lib/rhashtable.c) 的 NXP Linux 6.12.20 提交，身份见[总索引](../../navigation/P01_Linux_6.12_哈希计算源码阅读索引.md)，函数阅读次序见[动态表导读](../../navigation/P04_动态表迁移与接口边界导读.md)。中文 Doxygen 为仓库补充。R0～R5 与[教材公共周期](../../../../../knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P05_动态伸缩的rhashtable_无感扩容的艺术.md#5.4_一次迁移怎样保持可以继续查找)相同，不另设第二套阶段。
 
 ## 1.1\_新表分配与后继挂接
@@ -240,7 +242,7 @@ sequenceDiagram
     participant item as 尾节点entry
     participant dest as 末端表目的桶
     participant r as 旧RCU读者
-    participant gp as 核心RCU回调
+    participant gp as RCU宽限期与回调设施
     w->>old: R3 锁旧桶，找到尾节点
     w->>dest: 嵌套锁新桶并取得当前头
     w->>item: entry.next 指向新头
@@ -250,6 +252,8 @@ sequenceDiagram
     w->>old: 处理后续尾节点，空链后解锁
     w->>w: R4 发布 ht.tbl，失效旧 walker
     w->>gp: call_rcu 登记 old_tbl.rcu
+    r->>r: 完成旧表访问并退出读侧
+    gp->>gp: 收齐本轮宽限期所需证据
     gp->>old: R5 宽限期满足后释放桶存储
 ```
 
@@ -498,6 +502,8 @@ mutex_init/spin_lock_init 建立不同保护范围，atomic_set 初始化数量�
 
 ## 1.5\_同步销毁与两种回调寿命
 
+在线换表还要服务新请求，R4 因而先切入口、再延后释放旧桶。整表销毁面对的是另一种现场：业务已经关闭入口并结束容器访问，库才停止后台调整、遍历剩余成员和释放桶数组。下面的同步销毁没有替调用方等待所有查找者；即使用户回调只安排对象稍后释放，也不能据此允许读者继续访问将立即释放的桶。
+
 ```c
 /** rhashtable_free_one - 仓库补充阅读说明：同步调用用户 free_fn；同键组模式逐个释放组内对象。 */
 static void rhashtable_free_one(struct rhashtable *ht, struct rhash_head *obj,
@@ -518,7 +524,7 @@ static void rhashtable_free_one(struct rhashtable *ht, struct rhash_head *obj,
 		free_fn(rht_obj(ht, obj), arg);
 	} while (list);
 }
-/** rhashtable_free_and_destroy - 仓库补充阅读说明：停止后台调整，按版本链释放剩余成员和桶存储；调用方保证不再并发写入并提供相容的读者寿命。 */
+/** rhashtable_free_and_destroy - 仓库补充阅读说明：停止后台调整，按版本链处理剩余成员并释放桶；调用方须结束容器访问，另行保证对象借用寿命。 */
 void rhashtable_free_and_destroy(struct rhashtable *ht,
 				 void (*free_fn)(void *ptr, void *arg),
 				 void *arg)
@@ -559,11 +565,13 @@ restart:
 
 cancel_work_sync 等待本表后台工作；它不是关闭业务入口。mutex 保护销毁遍历的容器状态；每次桶遍历先保存 next，才能允许 free_fn 释放当前宿主。rht_ptr_exclusive 在已有独占协议下解释桶槽；不获取额外的对象引用。free_fn 是调用期间同步执行的用户函数；与旧表 R5 的 bucket_table_free_rcu 不同。
 
-next_tbl 在当前桶表释放前保存，继续销毁可能存在的后继链。rhashtable_destroy 只是以 NULL free_fn 调用本函数，因此只销毁容器，不替调用者释放全部业务对象。已有 RCU 业务读者仍可能使用对象，调用者必须先排空它们或提供相容的回收回调；不能把这里的同步工作取消等同于 synchronize_rcu。
+next_tbl 在当前桶表释放前保存，继续销毁可能存在的后继链。bucket_table_free 在这里直接释放桶存储，最终调用 kvfree，并没有为这些桶登记新的 RCU 回调。rhashtable_destroy 只是以 NULL free_fn 调用本函数，因此只销毁容器，不替调用者释放全部业务对象。
+
+必须分开两种旧使用者。仍在查找或遍历表的读者会访问桶、后继表或节点连接，必须先结束这类容器访问；已完成查找、只借用业务对象的读者，则可以由调用方独立的对象保活协议保护。只有后一种情况下，相容的延后对象回收才可能满足剩余需要。不能把 free_fn 中的 call_rcu 当作桶数组的保护，也不能把 cancel_work_sync 等同于 synchronize_rcu。
 
 ```mermaid
 flowchart LR
-    caller["业务关闭协议"] -->|"不再并发写入，妥善处理旧读者"| destroy["free_and_destroy"]
+    caller["业务关闭协议"] -->|"结束容器访问，另行保证对象借用寿命"| destroy["free_and_destroy"]
     destroy -->|"cancel_work_sync"| worker["ht.run_work 已停止"]
     destroy -->|"同步调用 free_fn"| objects["仍在表中的业务对象"]
     destroy -->|"bucket_table_free"| tables["当前及后继桶存储"]
