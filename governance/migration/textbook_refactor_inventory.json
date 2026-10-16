@@ -5958,6 +5958,28 @@
           "两章八图渲染目视、连续性严格检查零风险；GCC与Clang验证辅助程序的顺序接口模型；精确链接及全仓9076有效链接、格式元数据路径和diff通过。"
         ],
         "limits": "顺序替代接口只证明辅助程序逻辑，不证明内核竞争、屏障、调度或真实设备；无目标Kbuild与运行。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P03_锁的统一状态与通信周期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正S0可用与上一解锁返回的混淆，把发布资格归入S6，S7仅处理各调用收尾，限定自旋等待配置。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读并与固定ARM类型、架构实现、SMP/UP包装共六文件核对。",
+          "GCC与Clang运行正文票号模型，五图目视、严格连续性零风险，章节精确链接与全仓9076有效链接及格式元数据路径diff通过。"
+        ],
+        "limits": "顺序票号模型不证明独占指令、弱内存或实际调度；历史配置不代表当前可用工作树，未做目标运行。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P04_spinlock实现与上下文边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补齐32位ARM票号与独占访问边界、模型执行说明；修复普通获取错误指向irqsave变体的关系图并明确同一次配对调用。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读并与固定ARM类型、架构实现、SMP/UP包装共六文件核对。",
+          "GCC与Clang运行正文票号模型，五图目视、严格连续性零风险，章节精确链接与全仓9076有效链接及格式元数据路径diff通过。"
+        ],
+        "limits": "顺序票号模型不证明独占指令、弱内存或实际调度；历史配置不代表当前可用工作树，未做目标运行。"
       }
     },
     "additional_documents": [
