@@ -110,7 +110,7 @@ https://github.com/FormingSystem/linux_note.git
 
 [有限窗口模板](knowledge/driver_model/character_device/P10_字符设备驱动模板.md)、[构建运行](knowledge/driver_model/character_device/P11_构建运行与验证.md)与[环形流模板](knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md)分别落实位置、设备入口和等待通知，附完整材料及渐进实验。
 
-第一次进入 Linux 内核，可以从 [读取一份文件的小程序](knowledge/linux/architecture/kernel_composition/linux内核概貌.md#1.1_先让程序读到几个字)开始，再读 [从问题找到源码文件](knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md#1.1_先区分源码目录与正在运行的系统)。两篇基础正文已采用实例、逐步讲解、预测与练习相结合的教材写法；后续材料沿 [内核学习路线](atlas/tracks/linux_kernel_track.md)阅读，整体改写按 [重构蓝图](atlas/roadmaps/linux_textbook_refactor.md)分批推进。
+第一次进入 Linux 内核，可以从 [读取一份文件的小程序](knowledge/linux/architecture/kernel_composition/linux内核概貌.md#1.1_先让程序读到几个字)开始，再读 [从问题找到源码文件](knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md#1.1_先区分源码目录与正在运行的系统)。两篇基础正文已采用实例、逐步讲解、预测与练习相结合的教材写法；后续材料沿 [内核学习路线](atlas/tracks/linux_kernel_track.md)阅读，既有改写批次与验证边界见 [重构蓝图](atlas/roadmaps/linux_textbook_refactor.md)。2026-10-16 的历史恢复与 GIC 专项修订范围见[本次恢复记录](governance/migration/repository_textbook_refactor.md#1.1.1_20261016历史恢复与GIC修订)，不据此宣称全仓质量复审完成。
 
 [Typora Code](https://github.com/FormingSystem/typora_code) 是针对本仓库文档跳转链接多、源码阅读与修改频繁的场景制作的 Typora 阅读适配工具，围绕多文档阅读、链接定位、源码查看与编辑提供工作台增强。工具的配置、实现、测试和开发历史均在独立仓库维护，本仓库仅保留此链接与背景介绍。
 
@@ -120,7 +120,7 @@ Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，�
 
 需要连续阅读一个完整专题时，从 [MarkBook 专题电子书](markbook/README.md#1.2_当前刊物)进入。MarkBook 只做月度快照和出版编排，不替代上述权威正文；书中显示的版本、来源哈希和工作树状态用于还原当期内容。
 
-面向 RK3588 的硬件中断控制器学习，从 [GICv3 物理中断专题大纲](platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)进入：十篇中文命名正文从外设事件逐步讲到状态、配置、消息翻译与软件交接，另有 RK3588 集成记录。正文可独立阅读，关键概念附中英文术语与官方章节对照；GICv3 虚拟化、GICv4、逐函数源码与板上实验后续展开。与 Linux IRQ 管理的分工见[交叉阅读入口](atlas/roadmaps/gic_learning_plan.md#1.7_与现有中断章节的交叉阅读)。
+面向 RK3588 的硬件中断控制器学习，从 [GICv3 物理中断专题大纲](platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)进入：十一篇连续教材从外设事件逐步讲到状态、配置、消息翻译与软件交接，最后以 UART 完成综合复盘，另有 RK3588 集成记录。各章配有纸面推演、主机算例或目标板观察步骤，关键概念附中英文术语与官方章节对照；GICv3 虚拟化、GICv4、逐函数源码与板上实验后续展开。与 Linux IRQ 管理的分工见[交叉阅读入口](atlas/roadmaps/gic_learning_plan.md#1.7_与现有中断章节的交叉阅读)。
 
 ## 1.5\_内容说明
 

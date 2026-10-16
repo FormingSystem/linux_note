@@ -1,4 +1,4 @@
-"""在临时仓库检查单向同步、失败边界及重复执行。"""
+"""在临时目录检查仓库到安装镜像的单向同步、失败边界及重复执行。"""
 
 import json
 from pathlib import Path
@@ -19,13 +19,13 @@ class sync_skills_test(unittest.TestCase):
         self.script = self.repo / "tools/ai/codex/sync_skills.py"
         self.script.parent.mkdir(parents=True)
         shutil.copyfile(Path(__file__).with_name("sync_skills.py"), self.script)
-        self.source = self.codex / "skills/example-skill"
+        self.source = self.repo / "tools/ai/codex/skills/example-skill"
         self.source.mkdir(parents=True)
         (self.source / "SKILL.md").write_text("---\nname: example-skill\ndescription: 测试同步\n---\n新版\n", encoding="utf-8")
-        self.mirror = self.repo / "tools/ai/codex/skills/example-skill"
+        self.mirror = self.codex / "skills/example-skill"
         self.registry = {"schema_version": 1, "skills": [{
-            "name": "example-skill", "source": "codex_home/skills/example-skill",
-            "mirror": "tools/ai/codex/skills/example-skill", "direction": "codex_to_repository",
+            "name": "example-skill", "source": "tools/ai/codex/skills/example-skill",
+            "mirror": "codex_home/skills/example-skill", "direction": "repository_to_codex",
         }]}
         self.write_registry()
 
@@ -54,6 +54,16 @@ class sync_skills_test(unittest.TestCase):
         self.assertEqual((self.mirror / "asset.bin").read_bytes(), b"\xff\x00\r\n")
         (self.source / "asset.bin").write_bytes(b"\xfe\x00")
         self.assertEqual(self.run_sync("check").returncode, 1)
+
+    def test_local_mirror_edit_is_replaced_without_changing_repository(self):
+        self.assertEqual(self.run_sync("apply").returncode, 0)
+        before = (self.source / "SKILL.md").read_bytes()
+        (self.mirror / "SKILL.md").write_bytes(before + b"local mirror edit\n")
+        self.assertEqual(self.run_sync("check").returncode, 1)
+        self.assertEqual((self.source / "SKILL.md").read_bytes(), before)
+        self.assertEqual(self.run_sync("apply").returncode, 0)
+        self.assertEqual((self.source / "SKILL.md").read_bytes(), before)
+        self.assertEqual((self.mirror / "SKILL.md").read_bytes(), before)
 
     def test_cache_is_excluded(self):
         cache = self.source / "scripts/__pycache__"
@@ -84,6 +94,33 @@ class sync_skills_test(unittest.TestCase):
         self.write_registry()
         self.assertEqual(self.run_sync("apply").returncode, 2)
         self.assertFalse((self.root / "outside").exists())
+        self.assertFalse(self.mirror.exists())
+
+    def test_reverse_registration_does_not_write(self):
+        self.registry["skills"][0].update({
+            "source": "codex_home/skills/example-skill",
+            "mirror": "tools/ai/codex/skills/example-skill",
+            "direction": "codex_to_repository",
+        })
+        self.write_registry()
+        before = (self.source / "SKILL.md").read_bytes()
+        self.assertEqual(self.run_sync("apply").returncode, 2)
+        self.assertEqual((self.source / "SKILL.md").read_bytes(), before)
+        self.assertFalse(self.mirror.exists())
+
+    def test_source_and_mirror_cannot_be_same_directory(self):
+        self.codex = self.repo / "tools/ai/codex"
+        before = (self.source / "SKILL.md").read_bytes()
+        self.assertEqual(self.run_sync("apply").returncode, 2)
+        self.assertEqual((self.source / "SKILL.md").read_bytes(), before)
+
+    def test_later_invalid_entry_prevents_earlier_writes(self):
+        self.registry["skills"].append({
+            "name": "missing-skill", "source": "tools/ai/codex/skills/missing-skill",
+            "mirror": "codex_home/skills/missing-skill", "direction": "repository_to_codex",
+        })
+        self.write_registry()
+        self.assertEqual(self.run_sync("apply").returncode, 2)
         self.assertFalse(self.mirror.exists())
 
 

@@ -1,4 +1,4 @@
-"""按仓库注册表从 Codex 主源检查或同步 skill，不反向安装。"""
+"""检查或将仓库权威 skill 单向同步到 Codex 安装镜像，不回写仓库。"""
 
 import argparse
 import json
@@ -40,24 +40,26 @@ def main():
     snapshots = []
     for item in registry["skills"]:
         name = item["name"]
-        if item["direction"] != "codex_to_repository" or item["source"] != f"codex_home/skills/{name}":
-            raise ValueError("注册关系不是受支持的 Codex 主源")
         if not name or Path(name).name != name or "/" in name or "\\" in name or name in {".", ".."}:
             raise ValueError("非法 skill 名称")
-        source = (args.codex_home / "skills" / name).resolve()
-        mirror = repo_root / item["mirror"]
-        expected = repo_root / "tools/ai/codex/skills" / name
-        if mirror != expected or mirror.resolve() != expected.absolute() or source == mirror.resolve():
-            raise ValueError("镜像路径必须是仓库内独立的 skill 目录")
+        if (item["direction"] != "repository_to_codex"
+                or item["source"] != f"tools/ai/codex/skills/{name}"
+                or item["mirror"] != f"codex_home/skills/{name}"):
+            raise ValueError("注册关系必须从仓库权威副本指向 Codex 安装镜像")
+        source = repo_root / item["source"]
+        mirror = args.codex_home.absolute() / "skills" / name
+        if (source.resolve() != source or mirror.resolve() != mirror
+                or source.is_relative_to(mirror) or mirror.is_relative_to(source)):
+            raise ValueError("仓库源与安装镜像必须是独立目录，不支持链接、联接或相互包含")
         if not (source / "SKILL.md").is_file():
-            raise ValueError(f"Codex 主源不可用：{name}；不会用仓库副本覆盖它")
+            raise ValueError(f"仓库权威副本不可用：{name}；不会从安装镜像反向恢复")
         source_files = inventory(source)
         mirror_files = inventory(mirror) if mirror.exists() else {}
         if f"name: {name}" not in source_files[Path("SKILL.md")].decode("utf-8-sig").splitlines():
             raise ValueError(f"目录名与 skill name 不一致：{name}")
         extras = mirror_files.keys() - source_files.keys()
         if extras:
-            raise ValueError(f"{name} 存在主源已无的文件，先审查调用关系并清理再同步：{sorted(map(str, extras))}")
+            raise ValueError(f"{name} 安装镜像存在仓库未收录的文件，先审查来源和调用关系：{sorted(map(str, extras))}")
         for relative, data in source_files.items():
             if relative not in mirror_files or normalized(data) != normalized(mirror_files[relative]):
                 print(f"{'ADD' if relative not in mirror_files else 'UPDATE'} {name}/{relative.as_posix()}")
@@ -69,7 +71,7 @@ def main():
             path.write_bytes(data)
         for source, mirror, snapshot in snapshots:
             if inventory(source) != snapshot:
-                raise ValueError("同步期间主源发生变化，请重新检查")
+                raise ValueError("同步期间仓库权威副本发生变化，请重新检查")
             current = inventory(mirror)
             if current.keys() != snapshot.keys() or any(normalized(data) != normalized(current[key]) for key, data in snapshot.items()):
                 raise ValueError("同步后文件集或内容不一致")

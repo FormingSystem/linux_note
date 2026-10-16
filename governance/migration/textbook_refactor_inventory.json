@@ -9,7 +9,7 @@
     "scope": "全部 entries，按教材、参考、研究、实验、导航及治理各自职责逐篇复核；抽查不代替全量审查，也不预判每篇均需重写。",
     "prior_states": "保留 state 与 reason 作为既有工作和技术验证记录；validated 或 retained 暂不代表教材质量验收完成，不得据此报告全仓剩余完成量。",
     "reviewed_paths": [],
-    "next": "先复核并修复 class_sysfs 的连续讲解，再回查此前各批已标完成内容；每篇记录具体认知断点、修改或保留依据及适用验证，不以图表、代码、篇幅或脚本数量判定完成。"
+    "next": "2026-09-25 留存的续接建议：先复核并修复 class_sysfs 的连续讲解，再回查此前各批已标完成内容；每篇记录具体认知断点、修改或保留依据及适用验证，不以图表、代码、篇幅或脚本数量判定完成。2026-10-16 的历史恢复与 GIC 专项修订不自动启动此全仓续接任务。"
   },
   "entries": [
     {
@@ -3610,84 +3610,84 @@
       "baseline_sha256": "9836107b23cb14ddd7bc2518a13e7ddc6d6b50611f6d8a7b5a82bbca4d94658b",
       "lines": 115,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：补清事件、请求和硬件职责的进入顺序。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/architecture/gic/P02_从控制器规则到芯片与软件身份.md",
       "baseline_sha256": "6e2b6184ef467d2c70eb52f98c28e01d537a6823550c7a55b317c0dbecfbaad5",
       "lines": 96,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：补证据归属练习答案及产品与芯片身份边界。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/architecture/gic/P03_多核控制器的角色_寄存器与编号.md",
       "baseline_sha256": "31d304c14dcb6bcb777a205d48c499f2670603f80779520f52ecb5793cb64501",
       "lines": 111,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：补逻辑接口、GIC-600物理块、PPI设计理由及寄存器布局。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/architecture/gic/P04_一次中断的状态转换与完成协议.md",
       "baseline_sha256": "7f262a0990a5f8626de8d710f8a5c68475ba895dfdc8b576249d1608723f6052",
       "lines": 236,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：核对状态转换、硬件状态机保证与软件完成协议。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/architecture/gic/P05_优先级_屏蔽与嵌套处理.md",
       "baseline_sha256": "1dfe46ff494df708679e6382694c38935911fa2d0a628d8b886b1c8dac14bbea",
       "lines": 201,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：补优先级与屏蔽接口表并调整解释顺序。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/architecture/gic/P06_权限_安全分组与初始化闭环.md",
       "baseline_sha256": "5d5b02322c6420fe7f7dc4bb89133683decab7705dc6df85a65f9a1723aaadcc",
       "lines": 209,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：补控制范围、安全分组与初始化接口及必要过程。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/architecture/gic/P07_目标选择_核间通知与电源交接.md",
       "baseline_sha256": "5d9b1c49b579521dbb61314e7bb81e1d9e3b1bb53d9b7cb41c41c2deb4a532fa",
       "lines": 144,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：补SPI单目标与1-of-N、SGI多目标状态及电源交接图表。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md",
       "baseline_sha256": "bcbb6798a5f10614219e389c49f7c7893d75e2ddacb0e4bfefe0d439503deb5d",
       "lines": 119,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：补LPI表所有权、内存访问与关闭边界，过程先于字段表。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md",
       "baseline_sha256": "103609cdfc3d4acf8701a098b18aa758f6c61a87871501cfdb5fb1824f0fdf99",
       "lines": 144,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：补ITS映射、命令发布与完成、物理互连及寄存器和命令表。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/architecture/gic/P10_软件交接_部署与分层排障.md",
       "baseline_sha256": "d0eaab890d5a4536241c15f69d8017aa59f34c9233b7baff84fa21dd10662771",
       "lines": 115,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：补软件职责交接与分层故障观察过程。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/architecture/gic/P11_UART中断的端到端流程复盘.md",
       "baseline_sha256": "f6740e5a7d43f122dda32dc5723cde943cb4283e1e2d8f700595888f614376c5",
       "lines": 2094,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：按UART的S0至S6复盘硬件和软件交接，补接口表并同步导出图。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/architecture/gic/大纲.md",
       "baseline_sha256": "748efd4cf28fbc7de7d9d6c221819d3f2d266cb1ad73ddfbb84e62100dd2ecc0",
       "lines": 84,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：同步实际章节、认知顺序与跨章入口。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md",
@@ -3715,7 +3715,7 @@
       "baseline_sha256": "baa2c89aa478c72ed7a5f5cb3101ba2a5cef4f62685c63d240db7d1030882fc0",
       "lines": 90,
       "state": "pending",
-      "reason": "按职责冷读并确定保留、修复或重写范围"
+      "reason": "按职责冷读并确定保留、修复或重写范围；2026-10-16 GIC 专项修订（源提交 5b37dad）：完整呈现原件集成参数和连接，说明访问方向、电源与证据边界。已记录相应来源、链接和图表检查范围；原批次状态及人工评审结论不因移植升级。"
     },
     {
       "path": "publications/books/running_linux_kernel/P01_linux系统基础知识.md",

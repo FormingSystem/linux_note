@@ -80,7 +80,7 @@ domains:
 
 ### 1.4.1\_先锁定\_RK3588\_实际使用的控制器
 
-当前目标是 **RK3588 上的 GIC-600 r1p6，所实现的架构为 GICv3.0**。不是先遍历所有 Arm 架构，也不要求先读完 GICv2，再把 GICv3/v4 混合比较。已落地的十篇物理中断正文见 [GIC 专题大纲](../../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)：概念可以独立学懂，每节旁边提供官方目录对照。后续虚拟化、源码与板上验证由[建设路线](../../../atlas/roadmaps/gic_learning_plan.md#1.6_建设落点与当前交付边界)维护。
+当前目标是 **RK3588 上的 GIC-600 r1p6，所实现的架构为 GICv3.0**。不是先遍历所有 Arm 架构，也不要求先读完 GICv2，再把 GICv3/v4 混合比较。已落地的十一篇物理中断教材见 [GIC 专题大纲](../../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)：按前置依赖连续阅读，每节旁边提供官方目录对照。后续虚拟化、源码与板上验证由[建设路线](../../../atlas/roadmaps/gic_learning_plan.md#1.6_建设落点与当前交付边界)维护。
 
 | 名称 | 它是什么 | 能回答什么，不能回答什么 |
 | --- | --- | --- |
@@ -101,7 +101,7 @@ domains:
 
 | 证据 | 定位 | 本次确认的事实 |
 | --- | --- | --- |
-| RK3588 TRM V1.0 Part1，2022-03-09，条目 `rockchip.rk3588.trm.1_0.part1` | 第 11 章，11.1，表 11-1；PDF 第 1312 页 | 控制器为 GIC600，修订为 `r1p6-00rel0`；启用 LPI，配置两个 ITS |
+| RK3588 TRM V1.0 Part1，2022-03-09，条目 `rockchip.rk3588.trm.1_0.part1` | 第 11 章，11.1 表 11-1 上方 Overview 正文及表内配置；PDF 第 1312 页 | 表前正文记载控制器为 GIC600、修订为 `r1p6-00rel0`；表内配置记载启用 LPI、两个 ITS |
 | [Arm GIC-600 TRM 100336 r1p6](https://developer.arm.com/documentation/100336/0106) | 1.3 Compliance；原文 1-17，PDF 第 17 页 | 遵循 GIC 架构版本 3.0 |
 | 同一 RK3588 TRM | 1.1 地址表，PDF 第 18 页 | GIC600 的 SoC 地址窗口从 `0xFE600000` 开始；不等于每类 GIC 寄存器都使用同一基地址 |
 

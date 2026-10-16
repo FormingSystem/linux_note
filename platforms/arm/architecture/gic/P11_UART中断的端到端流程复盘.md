@@ -2,7 +2,7 @@
 id: platforms.arm.gic.uart_interrupt_route
 title: "UART中断的端到端流程复盘"
 kind: concept
-status: draft
+status: evolving
 domains:
   - arm
   - gic
@@ -10,2084 +10,294 @@ domains:
 
 # 第11章\_UART中断的端到端流程复盘
 
-本章保留 UART 场景的配套图解与逐阶段阅读记录，用于复盘前十章的物理中断机制。这里的 S0～S13 是本例的细化步骤，不等同于第四章的 S0～S6；技术内容仍待逐项核对，图解和场景不构成板上实验结果。
+前十章分别建立了来源、状态、优先级、权限与消息翻译。本章把镜头收回到一个串口：字节 A 已经到达，为什么程序尚未读到它？我们沿同一次请求追踪到返回，再改变一个条件，判断它会停在哪个交接点。读完后，应能把设备数据、控制器通知和处理器执行现场分别画出来，而不是把所有寄存器接成一条流水线。
 
-阅读入口：[专题大纲](大纲.md#1.2_因果阅读地图)。复盘前可回看[状态与完成协议](P04_一次中断的状态转换与完成协议.md#4.4_用同一组阶段闭合正常周期)、[安全组与异常路由](P06_权限_安全分组与初始化闭环.md#6.3.3_安全组怎样影响IRQ与FIQ_又怎样到达EL)；Linux 实现与实测边界见[软件交接与部署](P10_软件交接_部署与分层排障.md#10.1_硬件模型闭合后_软件该接管哪一段)。
-
-![gicv3_中断传递架构图](../../../../assets/images/gic/gicv3_中断传递架构图.png)
-
-对，这次不要把那张图当“标准答案”。真正应该建立的是一条**GICv3 物理中断从产生到处理结束的完整因果链**。
-
-最重要的是先把整个过程拆成两个控制系统：
-
-![gic3中断产生流程](../../../../assets/images/gic/gic3中断产生流程.png)
-
-![gicv3_interrupt_edraw_spacious_zfixed](../../../../assets/images/gic/gicv3_interrupt_edraw_spacious_zfixed.svg)
-
-这里有一个以后必须始终保持的认识：
-
-> **GIC 的“路由”和 PE 的“异常路由”是两个完全不同的概念。**
-
-`GICD_IROUTER` 回答的是：
-
-> **这个中断送 CPU0、CPU1、CPU2 还是 CPU3？**
-
-`SCR_EL3/HCR_EL2` 回答的是：
-
-> **已经送到这个 CPU 以后，由 EL1、EL2 还是 EL3 接？**
-
-把这两个层次分清，GICv3 一大半就通了。
+这是连续教材的综合章，沿用第四章的状态模型和第六章的两安全状态、AArch64 异常模型；后文出现的名称会提醒其当前职责。所有编号、亲和性与串口条件都是教学设定，不是 RK3588 串口的真实配置，也不宣称某个 Linux 版本按本章顺序执行结束动作。
 
 ## 11.1\_阶段导航
 
-| 编号            | 图中含义                                | 跳转到正文                                                   |
-| --------------- | --------------------------------------- | ------------------------------------------------------------ |
-| [S0](#11.3_阶段_0_GIC_之前_设备自己为什么产生中断)   | 设备产生 IRQ 条件                       | [二、阶段 0：GIC 之前——设备自己为什么产生中断？](#11.3_阶段_0_GIC_之前_设备自己为什么产生中断)    |
-| [S1](#11.4_阶段_1_设备_IRQ_到_GIC_首先形成_Pending)   | GIC 记录 Pending                        | [三、阶段 1：设备 IRQ 到 GIC，首先形成 Pending](#11.4_阶段_1_设备_IRQ_到_GIC_首先形成_Pending)     |
-| [S2](#11.6_阶段_2_这个_INTID_属于什么_Group)   | Interrupt Group / Group Enable          | [五、阶段 2：这个 INTID 属于什么 Group？](#11.6_阶段_2_这个_INTID_属于什么_Group)           |
-| [S3](#11.8_阶段_3_这个_INTID_自己有没有被_Enable)   | INTID Enable                            | [七、阶段 3：这个 INTID 自己有没有被 Enable？](#11.8_阶段_3_这个_INTID_自己有没有被_Enable)      |
-| [S4](#11.9_阶段_4_到底送给哪个_PE)   | Routing / 目标 PE / 可接收性            | [八、阶段 4：到底送给哪个 PE？](#11.9_阶段_4_到底送给哪个_PE)                     |
-| [S5](#11.11_阶段_5_优先级_有资格送_PE2_不代表现在就送)   | Priority / PMR                          | [十、阶段 5：优先级——有资格送 PE2，不代表现在就送](#11.11_阶段_5_优先级_有资格送_PE2_不代表现在就送)  |
-| [S6](#11.14_阶段_6_如果_CPU_正在处理中断_还要看_RPR)   | RPR / BPR / Preemption                  | [十三、阶段 6：如果 CPU 正在处理中断，还要看 RPR](#11.14_阶段_6_如果_CPU_正在处理中断_还要看_RPR)   |
-| [S7](#11.18_阶段_7_SCR_EL3_/_HCR_EL2_IRQ_最终送哪个_EL)   | SCR_EL3 / HCR_EL2 / Exception Routing   | [十七、阶段 7：SCR_EL3 / HCR_EL2——IRQ 最终送哪个 EL？](#11.18_阶段_7_SCR_EL3_/_HCR_EL2_IRQ_最终送哪个_EL) |
-| [S8](#11.20_阶段_8_PSTATE.I_/_PSTATE.F_CPU_当前允许不允许进异常)   | PSTATE.I / PSTATE.F                     | [十九、阶段 8：PSTATE.I / PSTATE.F——CPU 当前允许不允许进异常？](#11.20_阶段_8_PSTATE.I_/_PSTATE.F_CPU_当前允许不允许进异常) |
-| [S9](#11.21_阶段_9_VBAR_ELn_已经决定进_EL1_那代码从哪里开始执行)   | VBAR / 异常入口 / ELR / SPSR            | [二十、阶段 9：VBAR_ELn——已经决定进 EL1，那代码从哪里开始执行？](#11.21_阶段_9_VBAR_ELn_已经决定进_EL1_那代码从哪里开始执行) |
-| [S10](#11.23_现在已经进异常了_但软件还不知道到底是谁打断了_CPU) | ICC_IAR* / INTID / Linux 分发到 ISR     | [二十二、现在已经进异常了，但软件还不知道到底是谁打断了 CPU](#11.23_现在已经进异常了_但软件还不知道到底是谁打断了_CPU) |
-| [S11](#11.27_阶段_11_ISR_真正处理设备) | ISR / 清设备源                          | [二十六、阶段 11：ISR 真正处理设备](#11.27_阶段_11_ISR_真正处理设备)                |
-| [S12](#11.29_阶段_12_EOIR_到底干什么) | EOIR / DIR / Priority Drop / Deactivate | [二十八、阶段 12：EOIR 到底干什么？](#11.29_阶段_12_EOIR_到底干什么)               |
-| [S13](#11.33_阶段_13_ERET_和_EOI_又不是一回事) | ERET 返回                               | [三十二、阶段 13：ERET 和 EOI 又不是一回事](#11.33_阶段_13_ERET_和_EOI_又不是一回事)        |
-
-------
-
-## 11.2\_先选一个最典型的场景
-
-我们先不把 SGI、PPI、LPI 全混进来。
-
-假设：
-
-```text
-UART
- │
- │ IRQ wire
- ▼
-GICv3
- │
- │ SPI INTID = 64
- ▼
-PE2
- │
- ▼
-Non-secure EL1 Linux
-```
-
-假设这个 UART 是普通共享外设中断：
-
-```text
-SPI = Shared Peripheral Interrupt
-```
-
-也就是 `INTID >= 32` 的普通 SPI。
-
-Arm GICv3 中，SGI、PPI、SPI、LPI 是四类主要中断；SPI 可以路由到不同 PE，而 PPI 是特定 PE 私有的。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
-
-下面就跟着 **UART 收到一个字节** 一步一步走。
-
-------
-
-## 11.3\_阶段\_0\_GIC\_之前\_设备自己为什么产生中断
-
-这个阶段实际上**和 GIC 没关系**。
-
-比如 UART 内部可能有：
-
-```text
-RX FIFO
-RX_FIFO_NOT_EMPTY
-RX_INT_ENABLE
-RX_INT_MASK
-RX_THRESHOLD
-ERROR_STATUS
-...
-```
-
-假设：
-
-```text
-RX FIFO 收到数据
-        +
-RX interrupt enable = 1
-        +
-RX interrupt mask = 0
-        ↓
-UART IRQ output = asserted
-```
-
-那么 UART 才把 IRQ 信号送出去。
-
-所以：
-
-```text
-设备产生 IRQ
-```
-
-不等于：
-
-```text
-CPU 一定会收到 IRQ
-```
-
-甚至不等于：
-
-```text
-GIC 一定会把它送出去
-```
-
-此时仅仅意味着：
-
-> **设备向 GIC 报告：“我的中断条件成立了。”**
-
-所以第一层控制是：
-
-| 控制对象                       | 谁负责 |
-| ------------------------------ | ------ |
-| 为什么产生中断                 | 外设   |
-| RX/TX/Error 哪一个事件产生中断 | 外设   |
-| FIFO threshold                 | 外设   |
-| 外设中断 enable/mask           | 外设   |
-| INTID 的优先级                 | GIC    |
-| INTID 送哪个 CPU               | GIC    |
-| 最后进哪个 EL                  | PE     |
-
-GIC 根本不知道：
-
-> “UART FIFO 里面来了 8 个字节。”
-
-GIC只知道：
-
-> “我的 INTID 64 输入现在被 assert 了。”
-
-------
-
-## 11.4\_阶段\_1\_设备\_IRQ\_到\_GIC\_首先形成\_Pending
-
-SoC 设计阶段已经把这个 UART IRQ 线接到了 GIC 的某个 SPI 输入：
-
-```text
-UART IRQ
-   │
-   └──────────────→ GIC SPI INTID 64
-```
-
-这个映射主要是**SoC 硬件集成决定的**。
-
-也就是说：
-
-```text
-UART → INTID 64
-```
-
-通常不是 Linux 启动以后通过 `GICD_*` 随便决定的。
-
-------
-
-### 11.4.1\_GICD\_ICFGR\_这个信号到底是电平还是边沿
-
-这是这个阶段最重要的配置之一：
-
-```text
-GICD_ICFGRn
-```
-
-对于 SPI，它告诉 GIC：
-
-```text
-这个 INTID 是：
-
-Level-sensitive
-
-还是
-
-Edge-triggered
-```
-
-PPI/SPI 都需要配置触发类型，而 SGI 天生按 edge 类型处理。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8&utm_source=chatgpt.com))
-
-这个寄存器必须和外设真实行为对应。
-
-例如 UART 经常是：
-
-```text
-FIFO 非空
-    ↓
-IRQ = 1
-    ↓
-一直保持
-    ↓
-软件把 FIFO 读空 / 清状态
-    ↓
-IRQ = 0
-```
-
-这就是典型：
-
-```text
-Level-sensitive
-```
-
-------
-
-## 11.5\_Pending\_并不等于\_马上中断\_CPU
-
-这是理解 GIC 非常关键的一点。
-
-外设 assert 后：
-
-```text
-Inactive
-   ↓
-Pending
-```
-
-GIC 内部为 INTID 维护状态。
-
-主要状态是：
-
-```text
-Inactive
-Pending
-Active
-Active + Pending
-```
-
-Arm 对 SPI/PPI/SGI 就是按照这样的状态机管理。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
-
-注意：
-
-> **即使这个中断当前 Disabled，它仍然可以变成 Pending。**
-
-`Enable` 控制的是：
-
-> 能不能继续向 PE 递送。
-
-而不是：
-
-> 能不能产生 Pending。
-
-所以如果：
-
-```text
-UART IRQ assert
-GICD_ISENABLER[64] = 0
-```
-
-可能出现：
-
-```text
-INTID 64 = Pending
-```
-
-但不会送到 CPU。
-
-以后你再 enable：
-
-```text
-GICD_ISENABLER[64] = 1
-```
-
-这个早已 pending 的中断就可能马上被递送。
-
-这也是调 GIC 时很容易误解的地方。
-
-------
-
-## 11.6\_阶段\_2\_这个\_INTID\_属于什么\_Group
-
-接下来是：
-
-```text
-GICD_IGROUPRn
-GICD_IGRPMODRn
-```
-
-两者配合决定一个 SPI 属于：
-
-```text
-Group 0
-Secure Group 1
-Non-secure Group 1
-```
-
-这里最好别把 `Group` 简单理解为“中断分类标签”。
-
-它实际上参与决定：
-
-```text
-Security 属性
-       +
-GIC 的 Group enable
-       +
-使用 IAR0 还是 IAR1
-       +
-使用 EOIR0 还是 EOIR1
-       +
-最终向 PE 呈现 IRQ 还是 FIQ
-```
-
-Arm 的安全模型明确把中断分为这三类。Group 0 始终按 FIQ 呈现；Secure Group 1 和 Non-secure Group 1 根据 PE 当前 Security state 可能呈现 IRQ 或 FIQ。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/TrustZone for Armv8-A.pdf?revision=c3134c8e-f1d0-42ff-869e-0e6a6bab824f&utm_source=chatgpt.com))
-
-对于我们普通 Linux UART：
-
-```text
-UART INTID 64
-      ↓
-Non-secure Group 1
-```
-
-最典型。
-
-于是如果 CPU 当前也是：
-
-```text
-Non-secure state
-```
-
-这个中断正常会作为：
-
-```text
-IRQ
-```
-
-呈现给 PE。
-
-------
-
-## 11.7\_这里已经出现第一组\_合作配置
-
-光设置：
-
-```text
-INTID 64 = Non-secure Group 1
-```
-
-还不够。
-
-还需要对应 Group 被打开。
-
-大致是：
-
-```text
-GICD_CTLR.EnableGrp1NS
-             &&
-ICC_IGRPEN1_EL1
-```
-
-前者属于 GIC 的全局/Distributor 侧 Group 开关。
-
-后者属于目标 PE CPU Interface 的 Group 开关。
-
-所以可以理解成：
-
-```text
-INTID 64
-属于 NS Group1
-       │
-       ├── GIC 全局允许 NS Group1？
-       │       GICD_CTLR.EnableGrp1NS
-       │
-       └── PE2 CPU Interface 允许 Group1？
-               ICC_IGRPEN1_EL1
-
-两层都允许
-       ↓
-才具备递送资格
-```
-
-Arm 的官方说明也明确指出：Group enable 同时涉及 Distributor 和每个 CPU interface；Group disabled 时，中断可以保持 Pending，但不能向 PE signal。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
-
-所以这里应该建立一个概念：
-
-> **Group 是属性，Group Enable 是门。**
-
-不是一回事。
-
-------
-
-## 11.8\_阶段\_3\_这个\_INTID\_自己有没有被\_Enable
-
-对于 SPI：
-
-```text
-GICD_ISENABLERn
-GICD_ICENABLERn
-```
-
-控制单个 INTID 是否允许递送。
-
-因此现在至少已经有三种状态：
-
-```text
-Pending?
-Group Enable?
-INTID Enable?
-```
-
-可以粗略写成：
-
-```text
-Pending(INTID)
-    &&
-InterruptEnabled(INTID)
-    &&
-GroupEnabled(Group)
-```
-
-才继续向后。
-
-比如：
-
-```text
-UART 已经 assert
-INTID 64 Pending = 1
-
-但是
-
-GICD_ISENABLER bit64 = 0
-```
-
-结果就是：
-
-```text
-Pending 保留
-CPU 不知道
-```
-
-这对于驱动开发非常重要：
-
-> `disable_irq()` 类似动作，并不等于硬件事件不存在，也不一定意味着 pending 状态消失。
-
-------
-
-## 11.9\_阶段\_4\_到底送给哪个\_PE
-
-这是：
-
-```text
-GICD_IROUTER<n>
-```
-
-负责的。
-
-只对 SPI 特别重要。
-
-GICv3 使用 affinity 来标识 PE，和：
-
-```text
-MPIDR_EL1
-```
-
-对应。
-
-例如：
-
-```text
-PE0 affinity = 0.0.0.0
-PE1 affinity = 0.0.0.1
-PE2 affinity = 0.0.0.2
-PE3 affinity = 0.0.0.3
-```
-
-假设：
-
-```text
-GICD_IROUTER64
-    =
-Affinity = 0.0.0.2
-IRM = 0
-```
-
-意思就是：
-
-```text
-INTID 64
-只能送 PE2
-```
-
-Arm 将 `GICD_IROUTERn` 的路由分成两种主要模式：`IRM=0` 指定具体 affinity；`IRM=1` 则允许 Distributor 在参与该中断组分发的 PE 中选择一个，也就是 1-of-N。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
-
-------
-
-### 11.9.1\_这里必须特别纠正一个容易形成的错误模型
-
-不要把：
-
-```text
-Distributor
-    ↓
-Redistributor
-    ↓
-CPU Interface
-```
-
-机械理解成：
-
-> 所有中断必须像数据包一样依次经过三个流水站。
-
-更准确的理解是三个**职责域**：
-
-```text
-Distributor
-    主要负责 SPI
-    全局配置
-    SPI 路由
-
-Redistributor
-    每 PE 一份
-    SGI / PPI
-    LPI
-    PE power/wake 相关
-
-CPU Interface
-    每 PE 一份逻辑接口
-    Priority mask
-    Running priority
-    Group enable
-    Acknowledge
-    EOI
-```
-
-所以：
-
-```text
-SPI
-```
-
-主要在 Distributor 配置。
-
-而：
-
-```text
-SGI / PPI
-```
-
-主要通过目标 PE 的 Redistributor 配置。
-
-Arm 官方的程序员模型也明确把 SPI 配置归到 `GICD_*`，而 SGI/PPI 配置归到对应 PE 的 `GICR_*`。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
-
-因此以后如果你重新画架构图，我反而不建议画成绝对的：
-
-```text
-GICD → GICR → ICC
-```
-
-串行流水线。
-
-------
-
-## 11.10\_GICR\_WAKER\_目标\_CPU\_现在醒着吗
-
-目标确定成 PE2 后，还有现实问题：
-
-```text
-PE2 当前有没有 online？
-```
-
-Redistributor 有：
-
-```text
-GICR_WAKER
-```
-
-其中：
-
-```text
-ProcessorSleep
-ChildrenAsleep
-```
-
-和 PE 的电源/睡眠状态有关。
-
-正常启动一个 PE 时，会把它的 Redistributor 从睡眠状态带出来。
-
-如果 PE 处于 offline/sleep 状态，目标它的中断还可能触发：
-
-```text
-Wake Request
-      ↓
-Power Controller
-      ↓
-唤醒 PE
-```
-
-等 Redistributor/PE 准备好以后再递送。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
-
-所以路由不只是：
-
-```text
-IROUTER == PE2
-```
-
-还隐含：
-
-```text
-PE2 能否参与接收
-```
-
-------
-
-## 11.11\_阶段\_5\_优先级\_有资格送\_PE2\_不代表现在就送
-
-现在来到 CPU Interface。
-
-这是 GIC 最核心的一层判断之一。
-
-假设：
-
-```text
-INTID 64 priority = 0x60
-```
-
-SPI 的优先级来自：
-
-```text
-GICD_IPRIORITYRn
-```
-
-注意 Arm/GIC 优先级：
-
-```text
-数值越小
-优先级越高
-
-0x00 → 高
-...
-0xFF → 低
-```
-
-这和很多人的直觉相反。
-
-------
-
-## 11.12\_ICC\_PMR\_EL1\_PE\_的优先级门槛
-
-PE2 自己还有：
-
-```text
-ICC_PMR_EL1
-```
-
-Priority Mask Register。
-
-例如：
-
-```text
-ICC_PMR_EL1 = 0x80
-```
-
-那么：
-
-```text
-INTID 64 priority = 0x60
-```
-
-因为：
-
-```text
-0x60 < 0x80
-```
-
-它的优先级高于 mask threshold，可以通过。
-
-如果另一个中断：
-
-```text
-priority = 0xA0
-```
-
-那么：
-
-```text
-0xA0 > 0x80
-```
-
-就被 PMR 挡住。
-
-这个中断不会丢失：
-
-```text
-仍 Pending
-```
-
-只是：
-
-```text
-暂时不 signal PE
-```
-
-Arm 的递送条件明确包含 INTID priority 与目标 PE 的 `ICC_PMR_EL1` 比较。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
-
-这和稍后的：
-
-```text
-PSTATE.I
-```
-
-完全不是一回事。
-
-------
-
-## 11.13\_这是第一个必须分清的\_双重屏蔽
-
-### 11.13.1\_GIC\_层屏蔽
-
-```text
-ICC_PMR_EL1
-```
-
-意思：
-
-> GIC 认为这个中断优先级不够，因此暂时不要向 PE 提 IRQ。
-
-### 11.13.2\_PE\_层屏蔽
-
-```text
-PSTATE.I
-```
-
-意思：
-
-> GIC 已经在向我报告 IRQ 了，但 CPU 现在不要进入 IRQ exception。
-
-这是两个完全不同的位置：
-
-```text
-                     ICC_PMR
-                        │
-Pending ──→ GIC ────────┤
-                        │
-                        ▼
-                       IRQ
-                        │
-                     PSTATE.I
-                        │
-                        ▼
-                       PE
-```
-
-以后分析“为什么 IRQ 不进 CPU”，这两个必须分开查。
-
-------
-
-## 11.14\_阶段\_6\_如果\_CPU\_正在处理中断\_还要看\_RPR
-
-假设 PE2 此时已经在处理中断 A。
-
-CPU Interface 会维护：
-
-```text
-ICC_RPR_EL1
-```
-
-Running Priority Register。
-
-它表示：
-
-> 当前 PE 正在处理的中断形成的运行优先级。
-
-空闲状态通常相当于：
-
-```text
-RPR = 0xFF
-```
-
-假设正在处理中断 A：
-
-```text
-A priority = 0x80
-```
-
-现在 UART INTID64：
-
-```text
-priority = 0x60
-```
-
-新的中断比当前中断优先级更高。
-
-于是它**可能**抢占。
-
-为什么说可能？
-
-因为还要看：
-
-```text
-ICC_BPR0_EL1
-ICC_BPR1_EL1
-```
-
-Binary Point。
-
-Arm 明确把 Running Priority 与 Binary Point 用于中断嵌套和抢占。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
-
-------
-
-## 11.15\_BPR\_到底做什么
-
-假设 8 位 Priority：
-
-```text
-abcdefgh
-```
-
-BPR 会把它划成：
-
-```text
-Group Priority | Subpriority
-```
-
-例如概念上：
-
-```text
-aaaa | bbbb
-```
-
-决定：
-
-> 两个中断的优先级差异是否已经大到足以发生嵌套抢占。
-
-非常重要的是：
-
-> **BPR 主要控制 preemption，不是普通的“哪个 pending interrupt 更优先”。**
-
-Arm 文档明确说明，选择 pending interrupt 时并不使用 Binary Point 来抹掉 subpriority；Binary Point 影响的是已经在处理中断时，另一个中断是否能抢占。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
-
-所以这里实际上是：
-
-```text
-GICD_IPRIORITYR
-        │
-        ├── vs ICC_PMR_EL1
-        │       能不能进入候选集？
-        │
-        └── vs ICC_RPR_EL1 + ICC_BPRn_EL1
-                能不能抢占当前中断？
-```
-
-这几个寄存器是**合作关系**。
-
-不是各干各的。
-
-------
-
-## 11.16\_到目前为止\_GIC\_的\_可递送条件\_可以写成一个公式
-
-对于某个：
-
-```text
-INTID X → PE Y
-```
-
-粗略可以理解成：
-
-```text
-Deliverable(X, Y) =
-
-    Pending(X)
-
-&&  InterruptEnable(X)
-
-&&  GlobalGroupEnable(Group(X))
-
-&&  CPUInterfaceGroupEnable(Y, Group(X))
-
-&&  RoutingMatches(X, Y)
-
-&&  PE_Y_Available
-
-&&  Priority(X) passes ICC_PMR_EL1(Y)
-
-&&  Priority(X) can beat current RunningPriority(Y)
-```
-
-全部成立：
-
-```text
-                GIC
-                 │
-                 │ IRQ / FIQ
-                 ▼
-                PE
-```
-
-Arm 对 pending 中断的路由检查，本身就是按照 Group enable、INTID enable、routing、priority mask、running priority 这些条件逐层判断。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
-
-这其实就是整套 GIC 的核心。
-
-------
-
-## 11.17\_接下来已经离开\_GIC\_路由\_进入\_Arm\_PE\_异常模型
-
-比如 INTID 64 是：
-
-```text
-Non-secure Group 1
-```
-
-而 PE2 当前：
-
-```text
-Non-secure
-```
-
-那么 GIC 对 PE2 呈现：
-
-```text
-IRQ
-```
-
-注意这里 GIC 做完的事情是：
-
-> **我给 PE2 一个 IRQ。**
-
-但是 GIC 不负责最终决定：
-
-```text
-EL1？
-EL2？
-EL3？
-```
-
-后面是 CPU 自己的异常模型。
-
-------
-
-## 11.18\_阶段\_7\_SCR\_EL3\_/\_HCR\_EL2\_IRQ\_最终送哪个\_EL
-
-这里两个控制寄存器非常关键：
-
-```text
-SCR_EL3
-HCR_EL2
-```
-
-例如针对 IRQ：
-
-```text
-SCR_EL3.IRQ
-HCR_EL2.IMO
-```
-
-可以影响 physical IRQ 往哪个 Exception Level 走。
-
-非常粗略地看：
-
-```text
-IRQ
- │
- ├── SCR_EL3.IRQ 要求接管？
- │        ↓
- │       EL3
- │
- └── 否
-      │
-      ├── HCR_EL2.IMO 要求接管？
-      │        ↓
-      │       EL2
-      │
-      └── 否
-               ↓
-              EL1
-```
-
-实际异常路由规则还会受到 Security state、EL2 是否启用等条件约束，但是这个层次关系最重要。
-
-而且：
-
-> `SCR_EL3` 的高层路由控制优先于 `HCR_EL2`。
-
-Arm 的异常模型明确说明，physical IRQ/FIQ/SError 可以被路由到不同 privileged EL，并由 `SCR_EL3` 和 `HCR_EL2` 控制；被路由到低于当前执行 EL 的异步异常会被隐式屏蔽，直到 PE 回到适当 EL。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/Exception model.pdf?utm_source=chatgpt.com))
-
-------
-
-## 11.19\_现在可以看到两个完全不同的\_Route
-
-这个区别值得单独记住：
-
-| 问题                  | 配置                |
-| --------------------- | ------------------- |
-| INTID 64 送哪个 CPU？ | `GICD_IROUTER64`    |
-| 到 CPU 后进哪个 EL？  | `SCR_EL3 / HCR_EL2` |
-
-所以：
-
-```text
-GICD_IROUTER
-```
-
-是：
-
-```text
-PE routing
-```
-
-而：
-
-```text
-SCR_EL3
-HCR_EL2
-```
-
-是：
-
-```text
-Exception routing
-```
-
-以后看到“route”必须先问：
-
-> **是在 GIC 世界里路由 PE，还是在 Arm Exception Model 里路由 EL？**
-
-------
-
-## 11.20\_阶段\_8\_PSTATE.I\_/\_PSTATE.F\_CPU\_当前允许不允许进异常
-
-例如最终确定：
-
-```text
-这是一个 IRQ
-目标是 EL1
-```
-
-还要考虑 CPU 的 exception mask：
-
-```text
-PSTATE.I → IRQ mask
-PSTATE.F → FIQ mask
-```
-
-注意：
-
-```text
-PSTATE.A
-```
-
-是 SError。
-
-```text
-PSTATE.D
-```
-
-是 Debug。
-
-它们不是普通 GIC IRQ/FIQ 的 mask。
-
-所以图里面如果列：
-
-```text
-PSTATE.I/F/A/D
-```
-
-只是完整展示 DAIF，真正 GIC IRQ/FIQ 流程主要关心：
-
-```text
-I
-F
-```
-
-普通 Linux IRQ 最常见：
-
-```text
-PSTATE.I = 0
-```
-
-于是 IRQ 可以进入。
-
-如果：
-
-```text
-PSTATE.I = 1
-```
-
-那么即便：
-
-```text
-GIC
-已经选好了 INTID 64
-已经向 PE2 提 IRQ
-```
-
-CPU 当前也不会正常进入对应 IRQ exception。
-
-中断仍然存在，等条件允许。
-
-------
+固定一个 **通用异步收发器（Universal Asynchronous Receiver/Transmitter，UART）**。它的接收 **先进先出缓冲（First-In, First-Out，FIFO）** 保存字节；本例约定 FIFO 非空时，且设备接收中断已使能、未屏蔽，输出持续有效电平。实际串口可能按阈值、超时或错误组合产生请求，移植时首先替换的是这条设备契约。
 
-## 11.21\_阶段\_9\_VBAR\_ELn\_已经决定进\_EL1\_那代码从哪里开始执行
+芯片把这根请求接到 **共享外设中断（Shared Peripheral Interrupt，SPI）**，教学 **中断标识符（Interrupt Identifier，INTID）** 为 64，定向到 **处理单元（Processing Element，PE）** PE2。PE2 的教学亲和性为 0.0.0.2，当前在 Non-secure EL1 执行，IRQ 也路由到这一层。这里的 Non-secure 是非安全访问域，EL1 是运行内核的异常级，两个名称不描述来源的紧急程度。默认采用 EOImode=0，没有嵌套，并假定必要访问权限与内存顺序已经建立。
 
-假设最后决定：
+本章只使用[第四章的 S0～S6](P04_一次中断的状态转换与完成协议.md#4.4_用同一组阶段闭合正常周期)。一个阶段可以包含多个动作，编号不规定硬件串行执行次序。
 
-```text
-IRQ → EL1
-```
-
-于是 CPU 使用：
-
-```text
-VBAR_EL1
-```
-
-Vector Base Address Register。
-
-它指向：
-
-```text
-EL1 exception vector table
-```
-
-然后 CPU 根据：
-
-```text
-异常类型
-+
-异常来自哪个 EL
-+
-当前使用 SP0 还是 SPx
-```
-
-选择具体 vector slot。
-
-例如如果：
-
-```text
-EL0 AArch64
-   ↓ IRQ
-EL1
-```
-
-对应：
-
-```text
-VBAR_EL1 + 0x480
-```
-
-而如果：
-
-```text
-当前已经 EL1
-使用 SP_EL1
-发生 IRQ
-```
-
-则对应：
-
-```text
-VBAR_EL1 + 0x280
-```
-
-所以 `VBAR` 不负责：
-
-> “这个 INTID 是 UART。”
-
-它只负责：
-
-> “既然决定进入 EL1 IRQ exception，入口代码在哪里？”
-
-------
-
-## 11.22\_异常入口时\_ELR\_EL1\_/\_SPSR\_EL1\_是做什么的
-
-CPU 进入异常时，会保存原执行现场的关键控制信息：
-
-```text
-ELR_EL1
-SPSR_EL1
-```
-
-可以简单理解：
-
-```text
-ELR_EL1
-    = 回去以后继续执行的位置
-
-SPSR_EL1
-    = 被打断时的 PSTATE 快照
-```
-
-例如原先：
-
-```text
-EL0 userspace
-PC = 0x12345678
-```
-
-IRQ 来了：
-
-```text
-ELR_EL1  ← return PC
-SPSR_EL1 ← old PSTATE
-PC       ← VBAR_EL1 + IRQ vector offset
-```
-
-所以：
-
-```text
-ELR/SPSR
-```
-
-和 GIC 的 `IAR/EOIR` 也是两套东西。
-
-前者：
-
-> CPU 异常现场。
-
-后者：
-
-> GIC 中断状态机。
-
-------
-
-## 11.23\_现在已经进异常了\_但软件还不知道到底是谁打断了\_CPU
-
-这是一个特别重要的点。
-
-CPU 收到的本质只是：
-
-```text
-IRQ
-```
-
-IRQ 信号本身并没有携带：
-
-```text
-"UART interrupt"
-```
-
-异常入口代码只是知道：
-
-> 有一个 IRQ 需要处理。
-
-于是需要读：
-
-```text
-ICC_IAR1_EL1
-```
-
-对于 Group1。
-
-如果是 Group0，则通常：
-
-```text
-ICC_IAR0_EL1
-```
-
-Arm 明确规定 IAR read 会返回 INTID，并完成 interrupt acknowledge。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
-
-例如：
-
-```text
-MRS x0, ICC_IAR1_EL1
-```
-
-结果：
-
-```text
-x0 = 64
-```
-
-现在软件终于知道：
-
-```text
-INTID 64
-```
-
-------
-
-## 11.24\_IAR\_不只是\_读编号\_它会修改\_GIC\_状态
-
-这一点非常重要。
-
-读：
-
-```text
-ICC_IAR1_EL1
-```
-
-不是普通 status read。
-
-它有副作用：
-
-```text
-Acknowledge
-```
-
-例如：
-
-```text
-Pending
-   ↓ ICC_IAR1_EL1
-Active
-```
-
-对于仍然保持 assert 的 level interrupt，可能变成：
-
-```text
-Active + Pending
-```
-
-所以：
-
-```text
-IAR
-```
-
-实际上是在告诉 GIC：
-
-> **“PE 已经正式接手处理这个中断。”**
-
-同时 Running Priority 也会随之更新。
-
-------
-
-## 11.25\_更细一点\_异常是因为\_A\_进来的\_IAR\_不一定最终读到\_A
-
-这是 GIC 一个非常值得理解的细节。
-
-假设最开始：
-
-```text
-INTID 64 pending
-```
-
-GIC 因此向 CPU assert IRQ。
-
-CPU开始进入 exception。
-
-但是在软件真正执行：
-
-```text
-MRS x0, ICC_IAR1_EL1
-```
-
-之前，又来了：
-
-```text
-INTID 32
-priority 比 64 更高
-```
-
-此时 IAR 读的是：
-
-> **读 IAR 那一刻最高优先级、可 acknowledge 的中断。**
-
-不一定机械绑定到：
-
-> 最初导致 IRQ line assert 的那个 INTID。
-
-这也说明：
-
-```text
-IRQ exception
-```
-
-和：
-
-```text
-具体 INTID
-```
-
-不是一回事。
-
-前者是 CPU 异常请求。
-
-后者通过 CPU Interface 的 IAR 确认。
-
-------
+| 统一阶段 | 本例追踪的交接 | 继续阅读 |
+| --- | --- | --- |
+| S0 准备 | 来源、目标、权限、向量和处理函数就绪 | [把配置放到正确状态位置](#11.2_S0_先把编号变成可定位的配置) |
+| S1 事件 | A 写入 FIFO，外设条件成立 | [设备数据与请求](#11.3_S1到S2_字节留在外设_通知进入控制器) |
+| S2 保留与选择 | Pending、使能、目标、组与优先级共同决定递送 | [逐项检查递送条件](#11.4_S2_待处理为什么不等于现在能递送) |
+| S3 异常进入与确认 | PE 进入向量，入口保存现场，再读确认寄存器认领来源 | [异常路由](#11.5_S3_先进入哪个异常入口)与[来源确认](#11.6_S3_进入异常以后才领取具体来源) |
+| S4 设备处理 | 读出数据、处理错误并撤销设备条件 | [数据消费与清源](#11.7_S4_处理字节并让设备撤销请求) |
+| S5 完成协议 | 下降运行优先级，按模式停用来源 | [完成与返回的区别](#11.8_S5到S6_先兑现交接义务_再恢复执行现场) |
+| S6 继续执行 | 恢复软件现场，异常返回或继续处理 | [完整时间线与故障复盘](#11.9_沿同一次事件检查正常与失败路径) |
 
-## 11.26\_阶段\_10\_Linux\_才开始把\_INTID\_映射到你的驱动\_ISR
+## 11.2\_S0\_先把编号变成可定位的配置
 
-到这里 GIC 工作结果是：
+“UART 对应 INTID 64”首先是一个接线假设。设备树可以描述这条连接，控制器驱动可以改变它的触发配置和接收目标，但不能靠写路由寄存器把任意 UART 物理接到任意 SPI 输入。确认真实连接应查芯片中断表、适用的硬件描述与控制器能力，不能把教学编号复制到开发板。
 
-```text
-INTID = 64
-```
-
-然后 Linux GICv3 irqchip 代码再把：
-
-```text
-INTID 64
-```
-
-通过 irqdomain/generic IRQ framework 映射成 Linux IRQ，并最终找到：
-
-```text
-struct irq_desc
-        ↓
-irqaction
-        ↓
-你的 handler
-```
-
-大概逻辑概念是：
-
-```text
-IRQ exception entry
-       ↓
-GICv3 handler
-       ↓
-ICC_IAR1_EL1
-       ↓
-INTID
-       ↓
-irq_domain
-       ↓
-Linux IRQ number
-       ↓
-irq_desc
-       ↓
-driver ISR
-```
-
-所以驱动里面：
-
-```c
-request_irq(...)
-```
-
-做的不是：
-
-> 往 GIC 里面塞一个 C 函数地址。
-
-而是 Linux 建立：
-
-```text
-Linux IRQ → irq_desc → handler
-```
-
-的软件映射。
-
-GIC 根本不知道 C 函数是什么。
-
-------
-
-## 11.27\_阶段\_11\_ISR\_真正处理设备
-
-现在 UART ISR 才会干：
-
-```text
-读取 UART status
-读取 RX FIFO
-清 interrupt status
-...
-```
-
-最关键的是：
-
-> **ISR 必须消除设备侧真正的中断条件。**
-
-例如 level-sensitive UART：
-
-```text
-RX FIFO 非空
-      ↓
-IRQ line = 1
-```
-
-ISR：
-
-```text
-读取 FIFO
-      ↓
-FIFO empty
-      ↓
-IRQ line = 0
-```
-
-此时：
-
-```text
-Device
-        deassert
-           ↓
-GIC
-```
-
-才知道设备已经不再要求服务。
-
-------
-
-## 11.28\_为什么\_level-triggered\_中断特别强调\_先清设备源
-
-因为假如：
-
-```text
-UART IRQ line
-一直 = 1
-```
-
-你却直接：
-
-```text
-EOI
-```
-
-GIC 会认为：
-
-```text
-你说 INTID 64 处理完了
-
-但是……
-
-INTID 64 的外部输入怎么还 assert？
-```
-
-于是：
-
-```text
-Inactive
-  ↓
-Pending
-```
-
-又来了。
-
-然后：
-
-```text
-IRQ
-ISR
-EOI
-IRQ
-ISR
-EOI
-IRQ
-...
-```
-
-这就是经典：
-
-```text
-interrupt storm
-```
-
-所以对 level-sensitive interrupt：
-
-```text
-ISR
- ↓
-处理设备
- ↓
-清中断条件 / deassert IRQ
- ↓
-EOI / deactivate
-```
-
-这个次序非常重要。
-
-------
-
-## 11.29\_阶段\_12\_EOIR\_到底干什么
-
-处理结束以后需要：
-
-```text
-ICC_EOIR1_EL1
-```
-
-Group1。
+**分发器（Distributor）** 提供 SPI 的系统范围配置和状态，并按目标路由到相应 **再分发器（Redistributor）**；再分发器提供每个 PE 的 SGI/PPI 与接收侧电源接口，在实现支持 LPI 时还提供其相关接口，也把路由到本 PE 的 SPI 交给关联 **处理器接口（CPU Interface）**。处理器接口管接收侧优先级、确认和结束。CPU 是中央处理器的英文缩写。这三者描述的是硬件的架构逻辑职责，SPI 的状态不会因为经过 PE2 的 Redistributor 就变成 PE2 的私有中断状态。
 
-Group0 是：
+`GICD_` 是分发器寄存器前缀。不同寄存器族每个条目容纳的来源数不同，**INTID 64 不等于“所有寄存器都写第 64 项”**：
 
-```text
-ICC_EOIR0_EL1
-```
-
-这里要理解两个概念：
-
-```text
-Priority Drop
-Deactivation
-```
-
-不是天然同一件事。
-
-------
-
-## 11.30\_Priority\_Drop
-
-前面读 IAR 后：
-
-```text
-Running Priority
-```
-
-被抬到了当前 interrupt priority。
-
-例如：
-
-```text
-原来 idle = 0xFF
-
-INTID64 priority = 0x60
-
-IAR
- ↓
-RPR = 0x60
-```
-
-执行 EOI：
-
-```text
-Priority Drop
-```
-
-以后恢复之前的 Running Priority，例如：
-
-```text
-0xFF
-```
-
-或者如果存在嵌套：
-
-```text
-恢复外层 IRQ 的 running priority
-```
-
-------
-
-## 11.31\_Deactivation
-
-第二件事是：
-
-```text
-这个 INTID 不再 Active
-```
-
-例如：
-
-```text
-Active
- ↓
-Inactive
-```
-
-这就是：
-
-```text
-Deactivation
-```
-
-到底 EOIR 是否同时完成 deactivate，由：
-
-```text
-ICC_CTLR_ELn.EOImode
-```
-
-决定。
+下表沿用前章记号：RW（Read/Write，读写）、RO（Read-only，只读）、WO（Write-only，只写）表示访问属性；IRM 是 **中断路由模式（Interrupt Routing Mode）** 字段，先固定为指定单个目标的 0。MMIO 是 **内存映射输入输出（Memory-mapped I/O）** 访问；MRS、MSR 则是读取、写入系统寄存器的 AArch64 指令名，不另造缩写全称。
 
-------
+先算一个动作：来源使能采用每项 32 位、每来源一位的布局，64 除以 32 得寄存器索引 2、余数 0，因此这次要改变的是第 2 项的 bit 0。设置本例来源使能，向 `GICD_ISENABLER2` 写 bit 0 为 1 即可，其他位写 0 不改变其他来源。普通读改写与这种“写 1 执行动作”不同；这里也没有提供一个实际物理地址，因为地址属于芯片集成与软件映射层。第三章的[索引算例](P03_多核控制器的角色_寄存器与编号.md#3.7_动手计算同一个编号的不同寄存器索引)可以交叉验算下面各项。
 
-## 11.32\_EOImode\_=\_0\_和\_EOImode\_=\_1
+同一个 INTID 的触发、优先级和路由采用不同容量的条目，必须分别计算。下表把本次配置及观察位置逐一对齐，并不表示其中每个寄存器都要在初始化时写一遍。
 
-如果：
+| 接口与当前用途 | INTID 64 的位置与 GICD 基址内偏移 | 访问属性及本例效果 |
+| --- | --- | --- |
+| `GICD_ISENABLER<n>` / `GICD_ICENABLER<n>`，置/清来源使能 | 各自寄存器 2，bit 0；偏移 0x0108 / 0x0188 | 32 位 RW，每项覆盖 32 个来源；读返回使能，写 1 分别置/清使能、写 0 不变；不清设备数据 |
+| `GICD_ISPENDR<n>`，观察/设置挂起 | 寄存器 2，bit 0；偏移 0x0208 | 32 位 RW，每来源一位；读 1 表示存在 Pending，写 1 软件置挂起、写 0 无作用；读取不确认来源 |
+| `GICD_IGROUPR<n>` / `GICD_IGRPMODR<n>`，安全归属 | 各自寄存器 2，bit 0；偏移 0x0088 / 0x0D08 | 32 位 RW、受安全权限限制；每来源一个分组位和一个修饰位；本例 IGROUPR 位为 1，选择 Non-secure Group 1 |
+| `GICD_ICFGR<n>`，触发配置 | 寄存器 4，bits 1:0；偏移 0x0C10 | 32 位 RW，每项 16 个来源、每来源两位；本例字段写 00，选择电平；改变配置须满足下文条件 |
+| `GICD_IPRIORITYR<n>`，优先级 | 优先级区字节偏移 64，即 GICD+0x0440；按 32 位访问为寄存器 16 的 bits 7:0 | RW，32 位寄存器并支持字节访问；每来源一字节；本例在一致的非安全视图中用 0x60 |
+| `GICD_IROUTER<n>`，目标亲和性 | `GICD_IROUTER64`，偏移 0x6200 | 64 位 RW，每 INTID 一项；IRM[31]=0，Aff3/Aff2/Aff1/Aff0 为 0/0/0/2；改变目标规则不改变设备接线 |
 
-```text
-EOImode = 0
-```
+表中 GICD 基址由芯片资源发现和映射取得。前五类数组按各自每项容纳数量计算索引、步长为 4 字节；IROUTER 按 INTID 索引、步长为 8 字节。本卷普通 SPI 为 32～1019 且须实际实现、当前访问有权，不能把数组保留范围当成可用来源。完整索引与位图见[第三章](P03_多核控制器的角色_寄存器与编号.md#3.7_动手计算同一个编号的不同寄存器索引)，安全组组合见[第六章](P06_权限_安全分组与初始化闭环.md#6.3.1_来源分组位放在哪里_与其他组有什么区别)，路由字段见[第七章](P07_目标选择_核间通知与电源交接.md#7.2.1_固定目标与1-of-N_一次选择几个接收者)。
 
-写：
+本例的触发字段为 0b00，表示电平；0b10 表示边沿。不能把“配置电平”理解为在任意运行时刻清两位：来源使能期间改变触发配置不在架构可依赖的保证内，已有 Pending 时切换电平/边沿也无法保留一个可预测的挂起状态。应在来源受控、设备与处理路径已经同步后按协议配置；不是边运行边试哪个值能进中断。
 
-```text
-ICC_EOIR1_EL1
-```
+> 官方对照：[IHI0069 H.b](https://developer.arm.com/documentation/ihi0069/hb)，其中 IHI0069 是 Arm Generic Interrupt Controller（通用中断控制器，GIC）架构规范的文档编号，H.b 是本次核对的修订。参见 12.9 的 GICD_ISENABLER、GICD_IGROUPR、GICD_ICFGR、GICD_IPRIORITYR、GICD_IROUTER 条目；尤其 12.9.9 的字段索引与修改前提。这里推导的是公开编程接口，不猜测控制器内部存储布局。
 
-同时完成：
+## 11.3\_S1到S2\_字节留在外设\_通知进入控制器
 
-```text
-Priority Drop
-+
-Deactivation
-```
+字节 A 到达后，UART 接收硬件把它写入 FIFO。设备自己的接收使能、屏蔽和触发条件决定是否使请求输出有效；接收数据、发送空间可用和错误也可能汇总到同一根线。本例只打开接收非空这一项，所以 FIFO 从空变为 [A] 时请求有效。
 
-如果：
+GIC 观察到有效输入后形成 **挂起（Pending）** 条件。GIC 没有复制 A，也不知道 FIFO 中究竟有几个字符。此时两处状态是：UART 保存数据 [A]，GIC 保存来源 64 的通知状态。以后软件必须读设备数据寄存器才能取走 A。
 
-```text
-EOImode = 1
+```mermaid
+flowchart TD
+    input["串口输入"] -->|"接收硬件保存 A"| fifo["UART FIFO 与状态<br/>真实数据留在设备"]
+    fifo -->|"非空且设备允许请求"| spi["GICD 中的 SPI 64<br/>Pending / Active / 配置"]
+    spi -->|"按 SPI 64 的路由选择 PE2"| redist["PE2 Redistributor<br/>目标交付节点"]
+    redist -->|"交付到关联接口"| cpu_if["PE2 CPU Interface<br/>确认与运行优先级"]
+    cpu_if -->|"呈现 IRQ"| pe["PE2 异常逻辑<br/>硬件保存最小返回状态并选择向量"]
+    pe -->|"从向量地址开始执行指令"| entry["PE2 执行公共入口与框架代码<br/>软件保存现场、确认来源、查映射"]
+    entry -->|"按确认的来源调用设备处理动作"| handler["PE2 执行设备驱动代码"]
+    handler -->|"读走 A，消除设备条件"| fifo
+    handler -->|"设备处理返回"| entry
+    entry -->|"框架按模式执行结束协议"| cpu_if
 ```
 
-那么：
+CPU Interface 与异常逻辑属于硬件；公共入口、框架和驱动则是 **同一个 PE2 上依次执行的软件阶段**。向量入口先确定从哪里开始执行，软件随后确认来源并分派处理动作；设备处理返回后，由承担结束责任的框架路径操作 CPU Interface。Redistributor 的出现表示请求交付节点，不是第二份 SPI 64 路由或使能配置。箭头依据 IHI0069 H.b 3.1 的 SPI 逻辑路径描述通信职责，不规定芯片内部必须按这张图布线；产品功能块的对应关系见[第三章的 GIC-600 布局](P03_多核控制器的角色_寄存器与编号.md#3.4.1_PPI块为什么这样设计_从布线与电源约束到每核状态归属)，其中 GIC-600 是控制器产品名称。
 
-```text
-ICC_EOIR1_EL1
-```
+来源使能为 0 时，普通 SPI 仍然可能挂起，使能控制的是后续递送资格。因此“关了来源但看到 Pending”不是自相矛盾。不过“仍然可以挂起”也不等于电平被永远锁存：若唯一的电平条件在确认前撤销，挂起状态会按电平规则改变；边沿锁存与软件置挂起则要分别分析。排障应记录观察时刻和触发类型，不能拿两次不同时刻的快照拼成同一个瞬间。
 
-只做：
+**活动（Active）** 要等真实确认以后才建立。在 S2，进入向量的通知尚未被软件认领，不能因为设备线已经有效就写“UART 正在被 ISR 处理”。Pending 和 Active 是控制器协议的两个维度；FIFO 数据、来源使能、处理器执行位置是其他维度。
 
-```text
-Priority Drop
-```
+> 官方对照：[IHI0069 H.b](https://developer.arm.com/documentation/ihi0069/hb)，4.1.2 Interrupt handling state machine 与 4.5 Shared Peripheral Interrupts。沿“有效电平、撤销电平、确认、停用”分别查状态改变；UART 的非空触发是教学设备契约。
 
-之后还要：
+## 11.4\_S2\_待处理为什么不等于现在能递送
 
-```text
-ICC_DIR_EL1
-```
+先检查安全归属。采用第六章的两安全状态配置时，来源 64 对应的 IGROUPR 位为 1，就属于 **非安全第 1 组（Non-secure Group 1）**；它不是“优先级第一组”。若 IGROUPR 为 0，再由 IGRPMODR 区分 Secure Group 0 和 Secure Group 1。归属配置必须由拥有权限的软件建立，普通设备驱动不能夺取安全固件的来源。
 
-做：
+属于某组与该组已经放开也不同。全局分发器的适用组使能和 PE2 的 `ICC_IGRPEN1_EL1` 接收使能都要成立，还需要来源 64 自己使能。全局开关的字段名字随安全访问视图而异；本例所说的“允许 Non-secure Group 1”是逻辑条件，不能把安全视图中的寄存器写值直接给非安全驱动使用。
 
-```text
-Deactivation
-```
+随后检查目标。`GICD_IROUTER64` 的 IRM 为 0 时，本例指定完整亲和性 0.0.0.2。亲和性来自硬件身份，与 `MPIDR_EL1` 的坐标关系对应；PE2 是本例标签，不保证等于 Linux 逻辑 CPU2。IRM 为 1 的 1-of-N 则是在合适接收者中选一个，不是广播，也不保证负载平均。支持相应功能时，`GICR_CTLR.DPG*` 控制对应组是否参与 1-of-N 分发；它不是定向路由的任意改写开关。
 
-Arm 把这两个动作明确拆开；EOImode=0 合并执行，而 EOImode=1 使用 EOIR 和 DIR 分离。([Arm Developer](https://developer.arm.com/-/media/Arm Developer Community/PDF/Learn the Architecture/GICv3_v4_overview.pdf?revision=65f91645-cd52-4795-952b-f01095ff5ef8))
+目标还要准备好。PE2 的 `GICR_WAKER.ProcessorSleep` 是软件电源交接请求，`ChildrenAsleep` 是硬件握手状态；两者不是 Linux 的 online 标志。若 PE2 尚在完成休眠退出，就不能仅凭目标字段正确宣布可以接收。GIC-600 的唤醒请求能否通过电源控制器恢复接收，取决于芯片连接和平台协议；软件下线、执行 **等待中断指令（Wait For Interrupt，WFI）** 和真正断电不能混成一个状态。当前正常路径假定握手已经完成。
 
-虚拟化场景特别喜欢 split EOI/deactivate。
+最后看优先级。`GICD_IPRIORITYR` 中的来源优先级、`ICC_PMR_EL1` 中的门槛、`ICC_RPR_EL1` 所反映的运行优先级共同参与判断。PMR 要求来源数值严格更小；BPR 决定用于抢占的高位部分。它们的全称和按位推导已在第五章建立，这里只把它们放回同一次请求。
 
-------
+固定同一非安全数值视图、有效优先级位足够、访问条件成立：来源 0x60、PMR 0x80 且接收侧无未结束的优先级占用，满足门槛条件。若 PMR 改为 0x60，等于门槛也不能通过。若另一个来源正在占用优先级，即便通过 PMR，还要按 BPR 比较组优先级；子优先级不同可以改变排队次序，却不能让相同组优先级互相抢占。完整优先级与非安全可见值的转换不能省略，详见[第五章的数值视图](P05_优先级_屏蔽与嵌套处理.md#5.4.2_分割点编码与软件看到的数值不能混用)。
 
-## 11.33\_阶段\_13\_ERET\_和\_EOI\_又不是一回事
+| 本节复用的接口与范围 | 访问位置、宽度与本章字段 | 本例操作语义与详细入口 |
+| --- | --- | --- |
+| `GICD_CTLR`，全局组许可 | GICD+0x0000，32 位；两安全状态、亲和性路由开启时，安全视图 EnableGrp1NS[1]，非安全视图为 EnableGrp1A[1] | 允许整个 Non-secure Group 1 递送；受视图与权限约束，见[组使能表](P06_权限_安全分组与初始化闭环.md#6.3.2_硬件结构与配置归属先对齐) |
+| `ICC_IGRPEN1_EL1`，PE2 的组接收 | 64 位系统寄存器 RW，Enable[0] | 本 PE 当前安全状态副本置 1；不会打开其他 PE；同见组使能表 |
+| `ICC_PMR_EL1` / `ICC_RPR_EL1`，PE2 的优先级接口 | 各 64 位系统寄存器；PMR RW、RPR RO；相关优先级为 [7:0] | PMR 设置门槛；RPR 观察运行优先级，读取不认领中断；见[优先级接口表](P05_优先级_屏蔽与嵌套处理.md#5.3_先过固定门槛_再过当前处理的门槛) |
+| `ICC_BPR1_EL1` / `ICC_BPR0_EL1`，PE2 的分割点 | 各 64 位系统寄存器，按视图与配置读写，BinaryPoint[2:0] | 本例 Group 1、CBPR=0 使用 BPR1；共同分割点分支及最小编码见[分割点表](P05_优先级_屏蔽与嵌套处理.md#5.4_为什么还要区分组优先级与子优先级) |
+| `MPIDR_EL1`，当前 PE 的身份 | 64 位 RO 系统寄存器；Aff3[39:32]、Aff2[23:16]、Aff1[15:8]、Aff0[7:0] | 读硬件坐标，不分配 Linux CPU 编号；见[亲和性表](P07_目标选择_核间通知与电源交接.md#7.2_硬件目标坐标不是Linux逻辑编号) |
+| `GICR_CTLR`，PE2 的候选参与状态 | RD_base+0x0000，32 位；DPG1S[26]、DPG1NS[25]、DPG0[24] | DPG 的能力、权限与完成条件见[候选表](P07_目标选择_核间通知与电源交接.md#7.2.2_候选资格是PE的状态_路由属性仍属于SPI)；本例 IRM=0，不用它选择定向目标 |
+| `GICR_WAKER`，PE2 的电源交接 | RD_base+0x0014，32 位；ProcessorSleep[1] RW、ChildrenAsleep[2] RO | 本例两位都已为 0；请求与完成不同，访问权限及转换条件见[电源握手表](P07_目标选择_核间通知与电源交接.md#7.5_目标准备下线时_要交接的不只是路由) |
 
-最后 CPU 执行：
+系统寄存器的读写使用获准的 MRS/MSR，MMIO 访问则使用对应组件映射；本表不是设备驱动可以越过公共框架重配的清单。这里复用前章已经给出的 IHI0069 H.b 接口定义，只列同一次 UART 请求需要判断的含义。
 
-```asm
-eret
-```
+因此，检查 S2 时应把这些条件并列考虑：存在可递送挂起请求、来源与组使能、目标匹配且接收侧可用、通过 PMR 和抢占判断，并且没有未停用 Active 等状态约束阻止同一普通来源再次递送。这是逻辑关系，不是控制器按软件 if 语句串行走过的八级流水线。
 
-ERET 的职责是：
+> 官方对照：[概览 198123，3.2-01](https://developer.arm.com/documentation/198123/0302)，第 5 章 Configuring the Arm GIC；[IHI0069 H.b](https://developer.arm.com/documentation/ihi0069/hb)，4.5、4.6、4.8 与 GICR_CTLR 的 DPG 字段；[GIC-600 r1p6](https://developer.arm.com/documentation/100336/0106)，3.6.2 的电源握手。分别核对分组、门槛、目标和实现支持，不能让一个读数替其他条件作证。
 
-```text
-SPSR_EL1 → PSTATE
-ELR_EL1  → PC
-```
+## 11.5\_S3\_先进入哪个异常入口
 
-也就是：
+上一节解决“把哪条请求呈现给哪个 PE”。现在 GIC 为 PE2 呈现的是 **中断请求（Interrupt Request，IRQ）** 还是 **快速中断请求（Fast Interrupt Request，FIQ）**，还要看来源安全组与 PE 当前状态。在本例 Non-secure EL1 下，Non-secure Group 1 呈现 IRQ；Group 0 呈现 FIQ，Secure Group 1 在这一非安全执行状态下也呈现 FIQ。换到 Secure EL1 或 EL3，必须重新查呈现关系，不能把 Group 1 永久等同于 IRQ。FIQ 的 Fast 是架构名称，不保证具体设备处理更快。
 
-> **退出 Arm exception。**
+**GIC 的路由选 PE，PE 的异常路由选 EL。** `SCR_EL3` 是安全配置寄存器，其 IRQ/FIQ 路由控制可以让高权限固件接管异常；`HCR_EL2` 是虚拟机管理程序配置寄存器，其适用 IMO/FMO 控制可以把物理 IRQ/FIQ 路由到 EL2。前者的路由优先于后者。本例固定两层都不接管这条物理 IRQ，且目标执行状态为 AArch64，才得到 EL1 入口；不能从 GIC 的一个安全分组位直接推导所有异常路由。
 
-而：
+再检查 **处理器状态（Processor State，PSTATE）**。当前在 EL1、目标也是 EL1 时，I 位为 1 会屏蔽 IRQ，I 位为 0 才允许这项接收；对应 FIQ 看 F 位。A 位关联 SError 异步系统错误，D 位关联适用的调试异常，它们不是普通 GIC 来源的两个额外开关。
 
-```text
-ICC_EOIR1_EL1
-ICC_DIR_EL1
-```
+软件通过名为 DAIF 的系统寄存器入口访问这些屏蔽位；这个名称由 D、A、I、F 四个位名组成，仍是当前 PE 的处理器状态接口。
 
-是：
+这条 I/F 判断具有层次边界：若 IRQ 从 EL0 路由到更高的 EL1，不能用 EL0 当前 I 位判断内核是否能够接收；若目标比当前 EL 更低，处理器也不会为接收它强行降级。高权限软件的物理中断接管还应核对完整路由条件。这正是先确定当前层与目标层，再解释屏蔽位的原因。
 
-> **完成 GIC interrupt protocol。**
+选好了 EL1，仍未选择 UART 函数。`VBAR_EL1` 是 **向量基地址寄存器（Vector Base Address Register）**，提供一组架构入口的起点。硬件根据异常类别、来源执行状态以及同级入口的栈选择，决定向量偏移：
 
-这两个完全不同。
+| 已限定的进入条件 | IRQ 向量相对 VBAR_EL1 的偏移 |
+| --- | --- |
+| 当前 EL1 使用 `SP_EL1`，IRQ 进入当前 EL1 | 0x280 |
+| 较低 EL0 以 AArch64 执行，IRQ 进入 EL1 | 0x480 |
 
-所以：
+SP_EL1 是本层使用的栈指针。偏移定位的是入口槽位，不是 UART 的函数地址；同一个 IRQ 槽位可以先后接住很多不同设备。完整向量表还有其他异常与栈组合，不应把这两个偏移当作通用常量。
 
-```text
-EOI
-```
+进入异常时，PE 将返回位置写入 **异常链接寄存器（Exception Link Register，ELR）** `ELR_EL1`，把原处理器状态写入 **保存的程序状态寄存器（Saved Program Status Register，SPSR）** `SPSR_EL1`，再转入向量。通用寄存器不会因此全部自动压栈；公共入口软件要建立栈帧保存被打断的现场，尤其必须在允许同 EL 嵌套之前保存 ELR/SPSR，否则下一次进入会覆盖返回链。
 
-不能代替：
+下面按本次用途复用前章表项。后续 **异常返回指令（Exception Return，ERET）** 会使用恢复的返回地址和状态；此处先标出保存位置，不提前执行返回。
 
-```text
-ERET
-```
+| 处理器接口 | 访问方式、宽度与本章所用内容 | 这次异常中的作用及复用入口 |
+| --- | --- | --- |
+| `SCR_EL3` / `HCR_EL2` | 64 位系统寄存器，由有权的高异常级软件 MRS/MSR；前者 IRQ[1]、FIQ[2]，后者 IMO[4]、FMO[3] | 决定是否接管到高 EL；本例沿用第六章限定的普通路由前提，见[异常路由表](P06_权限_安全分组与初始化闭环.md#6.3.3_安全组怎样影响IRQ与FIQ_又怎样到达EL) |
+| `DAIF`，PSTATE 屏蔽位入口 | 64 位系统寄存器，当前条件下 EL1 可 MRS/MSR；D、A、I、F 分别为 bit 9、8、7、6 | 当前 EL1 接收 IRQ 时查看 I；写屏蔽位不清 GIC 状态，见[屏蔽位表](P05_优先级_屏蔽与嵌套处理.md#5.5.1_哪些异常受哪个屏蔽位约束) |
+| `VBAR_EL1` | 64 位系统寄存器 RW；向量基址字段 VBA[63:11]，基址须 2 KiB 对齐并是有效地址 | 给公共向量起点，不保存 UART 函数指针；见[向量基址表](P06_权限_安全分组与初始化闭环.md#6.4_全局_每核与每个来源分别准备什么) |
+| `SP_EL1` | 当前 PE 的 64 位 EL1 栈指针；本例选择它作为当前栈指针，软件经此地址寻址保存现场 | 它保存栈地址，不保存 INTID；本例只使用已经准备好的栈，不把 SP_EL1 当作普通 EL1 可随意 MRS/MSR 的 GIC 寄存器 |
+| `ELR_EL1` / `SPSR_EL1` | 64 位系统寄存器，当前条件下 EL1 可 MRS/MSR；ELR 保存返回地址；SPSR 保存条件标志、DAIF[9:6]、模式 M[4:0] 等有效状态 | 硬件异常进入时写入，公共软件保护并恢复，ERET 使用；详细副作用见[异常现场表](P05_优先级_屏蔽与嵌套处理.md#5.6.1_硬件先保存什么_公共入口还必须保存什么) |
 
-反过来也不行。
+这些对象都属于 PE，不是 GIC 的 MMIO 寄存器。读写返回现场既不会确认来源，也不会下降 GIC 运行优先级；表中省略的高层截获、执行状态及地址合法性条件仍沿用上述主讲章节。
 
-正确概念：
+> 官方对照：[Exception model，Version 1.0](https://developer.arm.com/-/media/Arm%20Developer%20Community/PDF/Learn%20the%20Architecture/Exception%20model.pdf?revision=a62f2bf2-b08a-4a4f-8cbe-38c67ddf4434)，5.2 Taking an exception、5.3 Routing asynchronous exceptions、5.5 Returning from an exception、第 6 章 The vector tables。组到 IRQ/FIQ 的关系另查[概览第 4 章 Security model](https://developer.arm.com/documentation/198123/0302)。
 
-```text
-设备层：
-清 interrupt source
+## 11.6\_S3\_进入异常以后才领取具体来源
 
-GIC 层：
-EOIR / DIR
+PE2 已经执行 EL1 的 IRQ 入口，只知道“有一类 IRQ 需要检查”。软件随后读取 `ICC_IAR1_EL1`，即 **中断确认寄存器（Interrupt Acknowledge Register，IAR）**，取得该组路径上当前可确认的 INTID。这个读取同时执行确认，不是拿来随时窥视的无副作用状态查询。
 
-CPU exception 层：
-ERET
-```
+本例得到 64，GIC 建立该来源的 Active，并更新接收侧运行优先级。UART 的请求电平如果仍有效，还可能同时具有 Pending。**这不证明又收到第二个字节**，也不表示同号来源现在就能再次进入；旧 Active 的停用责任还在。
 
-三个不同生命周期。
+接口必须与路径配对：Group 1 使用本例的 `ICC_IAR1_EL1` 与 `ICC_EOIR1_EL1`；Group 0 对应 `ICC_IAR0_EL1` 与 `ICC_EOIR0_EL1`。其中的 0/1 指来源安全组路径，EL1 是寄存器命名中的异常级，两者不是同一个编号。读 IAR1 不会把 Group 0 自动改成 Group 1；是否有权访问仍由当前安全状态与高层配置决定。
 
-------
+| 当前 PE 的确认接口 | 访问方式与字段 | 本章可依赖的效果 |
+| --- | --- | --- |
+| `ICC_IAR0_EL1` / `ICC_IAR1_EL1` | 64 位 RO 系统寄存器，MRS；INTID[23:0] | 普通有效返回同时确认来源并建立优先级占用；不是无副作用调试读。特殊值不建立普通来源的完成义务 |
 
-## 11.34\_把整个\_UART\_例子真正跑一次
+这一确认接口复用[第四章的接口与配对规则](P04_一次中断的状态转换与完成协议.md#4.3_确认_清源_优先级下降与停用)；表中的 RO 只表示软件不能写，不表示读取无副作用。结束操作及其接口表在 11.8 节展开，不能在取得一个特殊返回值后无条件写 EOIR/DIR。
 
-假设配置：
+异常通知与确认之间存在时间窗口。设来源 64 导致 IRQ 呈现，入口尚未读 IAR，另一个更高有效优先级的来源 65 成为可确认候选，IAR 可以返回 65。选择依据是确认时的可领取状态，不是异常通知瞬间拍下的一个永久设备标签。来源变得不可确认时，还可能返回 1023 这样的特殊值；1020～1023 不属于普通 SPI，必须依据实际接口的语义处理，不能调用设备函数再无条件写结束寄存器。
 
-```text
-UART SPI INTID = 64
+如果上层软件是 Linux，它还需要把 GIC 域中的硬件编号对应到软件 IRQ，再沿软件描述对象找到注册的设备处理函数。`irq_domain` 承担编号映射，`irq_desc` 是软件中断描述对象，`irqaction` 关联注册的处理动作；这些是软件对象，GIC 不保存这些 C 结构或函数地址。驱动通过 `request_irq` 等接口登记处理函数，也不等于把函数地址写进 GIC。这里说明对象职责，具体版本调用链仍由[Linux IRQ 专题](../../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P03_Linux_的中断抽象_irq_chip_irq_domain_与_irq_desc.md)负责。
 
-GICD_ICFGR64
-    level sensitive
+所以可以把这段交接说完整：硬件向量决定从哪里开始执行公共入口；IAR 确定本次领到哪个硬件来源；软件映射确定调用哪个设备处理动作。三次选择不能省成“GIC 调用 UART ISR”。ISR 是 **中断服务程序（Interrupt Service Routine）**，实际执行者仍是 PE2。
 
-GICD_IGROUPR / IGRPMODR
-    Non-secure Group 1
+> 官方对照：[IHI0069 H.b](https://developer.arm.com/documentation/ihi0069/hb)，4.1.1 Physical CPU interface、12.2.14 ICC_IAR1_EL1，以及特殊 INTID 的定义。重点核对确认的状态副作用和无有效来源的返回条件。本节没有声称已核验某个 RK3588 Linux 构建的函数体。
 
-GICD_ISENABLER64
-    enable
+## 11.7\_S4\_处理字节并让设备撤销请求
 
-GICD_IROUTER64
-    PE2
+设备服务程序进入时，需要先读 UART 状态。INTID 64 只能定位到设备来源，不能保证本次一定有接收数据，也不能区分接收溢出、帧错误或发送空间可用。驱动依设备契约判断原因，再读数据、处理错误或执行清除动作。
 
-GICD_IPRIORITYR64
-    0x60
+本例读一次数据寄存器取出 A，FIFO 变空，请求电平撤销。若 B、C 在本轮处理前已到达，FIFO 变为 [A,B,C]，当前 ISR 可以连续读走三个字节；GIC 不给这些数据贴上“下一次中断才能读”的标签。软件还要把读出的字节放到自己的接收队列，处理队列已满等失败，设备数据搬进内存才算真正发生了消费。
 
-PE2:
-    ICC_PMR_EL1 = 0x80
-    ICC_IGRPEN1_EL1 = 1
-    RPR = 0xFF
+真实串口可能需要读状态后再读数据、写指定清除寄存器，或分别清除错误；不能把本例“读空”当作所有设备的清源方法。持续输入时也不能无界忙到 FIFO 为空：设置处理预算后，必须留下可靠的后续消费路径。电平仍有效可以继续提出请求，边沿设备则不能假定退出后一定再产生一个新边沿。
 
-CPU:
-    Non-secure
-    IRQ → EL1
-    PSTATE.I = 0
-    VBAR_EL1 valid
-```
+清源与停用的先后决定一个常见故障。若 A 根本没读走，却先停用来源 64，外设电平仍要求服务；当其他接收条件允许时，它会再次递送。反复进入并不一定代表产生了许多新事件，可能只是同一个设备条件没有消除。反过来，FIFO 已空却漏掉停用，来源仍可能 Active；此时“没有风暴”也不是处理正确的证据。
 
-现在 UART 收到字节：
-
-```text
-① UART RX FIFO 非空
-        │
-        ▼
-② UART IRQ = 1
-        │
-        ▼
-③ GIC INTID64 → Pending
-        │
-        ▼
-④ Enable?
-   Yes
-        │
-        ▼
-⑤ Group = NS Group1
-   Group enabled?
-   Yes
-        │
-        ▼
-⑥ IROUTER → PE2
-        │
-        ▼
-⑦ priority 0x60 < PMR 0x80
-   Pass
-        │
-        ▼
-⑧ RPR 0xFF
-   Pass
-        │
-        ▼
-⑨ GIC → PE2 : IRQ
-        │
-        ▼
-⑩ SCR/HCR
-   IRQ → NS EL1
-        │
-        ▼
-⑪ PSTATE.I == 0
-        │
-        ▼
-⑫ CPU 保存 ELR_EL1/SPSR_EL1
-        │
-        ▼
-⑬ PC → VBAR_EL1 + IRQ vector
-        │
-        ▼
-⑭ MRS ICC_IAR1_EL1
-        │
-        ├── 得到 INTID64
-        └── Pending → Active
-        │
-        ▼
-⑮ Linux IRQ subsystem
-        │
-        ▼
-⑯ UART ISR
-        │
-        ▼
-⑰ 读 FIFO / 清 status
-        │
-        ▼
-⑱ UART IRQ = 0
-        │
-        ▼
-⑲ ICC_EOIR1_EL1
-   （必要时 ICC_DIR_EL1）
-        │
-        ▼
-⑳ INTID64 → Inactive
-        │
-        ▼
-㉑ ERET
-        │
-        ▼
-返回原程序
-```
+第四章的[状态实验](P04_一次中断的状态转换与完成协议.md#4.7_亲手分开数据_挂起与完成义务)已经把这两类故障分开。实际硬件还存在设备访问和请求撤销的传播时延：PE 先处理设备，不自动证明 GIC 先观察到请求撤销。若停用先被观察到，来源可短暂保留 Pending；若期间再次被确认，还会产生新一轮完成义务，具体分支见[清源与停用的两条路径](P04_一次中断的状态转换与完成协议.md#4.4.1_清源与停用先后不同_谁保证状态正确)。
 
-这条链，我认为就是你现在应该真正掌握的 **GICv3 一次中断完整生命周期**。
-
-------
-
-## 11.35\_把所有关键配置按\_阶段\_+\_合作关系\_汇总
-
-这个表其实可以作为你以后读 GIC 的总索引。
-
-| 配置/状态                 | 所属阶段          | 和谁合作                 | 决定什么                             |
-| ------------------------- | ----------------- | ------------------------ | ------------------------------------ |
-| 外设 `INT_EN/MASK/STATUS` | 中断产生          | 外设内部状态             | 要不要 assert IRQ                    |
-| SoC IRQ wiring            | 中断产生          | 外设 + GIC INTID         | 外设对应哪个 SPI                     |
-| `GICD_ICFGRn`             | Pending 形成      | 外设 IRQ 行为            | Edge / Level                         |
-| `GICD_ISPENDRn`           | Pending           | 状态机                   | 软件观察/设置 Pending                |
-| `GICD_IGROUPRn`           | Group             | `IGRPMODR`               | Group0 / S-G1 / NS-G1                |
-| `GICD_IGRPMODRn`          | Group             | `IGROUPR`                | Security/Group 分类                  |
-| `GICD_CTLR.EnableGrp*`    | Group Gate        | INTID Group              | 全局是否允许该 Group                 |
-| `GICD_ISENABLERn`         | INTID Gate        | Pending                  | 这个 INTID 能否递送                  |
-| `GICD_IROUTERn`           | PE Routing        | PE affinity              | SPI 送哪个 PE                        |
-| `GICR_WAKER`              | PE 可用性         | power controller         | PE 能否接收/是否需要唤醒             |
-| `GICR_CTLR.DPG*`          | 1-of-N            | `IROUTER.IRM`            | 是否参与 1-of-N                      |
-| `GICD_IPRIORITYRn`        | Priority          | PMR/RPR/BPR              | INTID 的基础优先级                   |
-| `ICC_PMR_EL1`             | Priority Gate     | INTID Priority           | 优先级够不够进入 PE                  |
-| `ICC_RPR_EL1`             | Preemption        | 新 INTID Priority        | 当前正在处理多高优先级               |
-| `ICC_BPRn_EL1`            | Preemption        | Priority + RPR           | 新 IRQ 能否嵌套抢占                  |
-| `ICC_IGRPEN0/1_EL1`       | CPU Interface     | Group                    | PE 是否接受该 Group                  |
-| `ICC_SRE_ELn`             | 初始化            | `ICC_*`                  | 软件能否使用系统寄存器 CPU interface |
-| Group + Security state    | GIC→PE            | 当前 Security state      | 呈现 IRQ 还是 FIQ                    |
-| `SCR_EL3`                 | Exception Routing | IRQ/FIQ + Security state | 是否进 EL3                           |
-| `HCR_EL2`                 | Exception Routing | IRQ/FIQ + EL2            | 是否进 EL2                           |
-| `PSTATE.I/F`              | CPU Mask          | IRQ/FIQ                  | 当前是否响应                         |
-| `VBAR_ELn`                | Exception Entry   | 最终目标 EL              | 跳到哪个 vector table                |
-| `ELR_ELn/SPSR_ELn`        | Exception Context | CPU exception entry      | 保存返回现场                         |
-| `ICC_IAR0/1_EL1`          | Acknowledge       | Pending arbitration      | 取得 INTID，Pending→Active           |
-| 设备 status/FIFO          | ISR               | device IRQ condition     | 真正消除中断原因                     |
-| `ICC_CTLR.EOImode`        | Completion        | EOIR/DIR                 | EOI 是否同时 deactivate              |
-| `ICC_EOIR0/1_EL1`         | Completion        | RPR                      | Priority Drop / 可选 deactivate      |
-| `ICC_DIR_EL1`             | Completion        | EOImode=1                | Deactivate                           |
-| `ERET`                    | Exception Return  | ELR/SPSR                 | 返回被打断代码                       |
-
-------
-
-## 11.36\_SPI\_PPI\_SGI\_LPI\_的前半段不同\_后半段趋同
-
-你现在最好把它理解为：
-
-```text
-                      ┌─ SPI → Distributor / IROUTER
-                      │
-Interrupt source ─────┼─ PPI → 本 PE Redistributor
-                      │
-                      ├─ SGI → SGI register + target PE
-                      │
-                      └─ LPI → ITS / Redistributor
-                                  │
-                                  ▼
-                          CPU Interface
-                                  │
-                                  ▼
-                              IRQ/FIQ
-                                  │
-                                  ▼
-                             PE Exception
-```
+这些状态转换由 GIC 硬件保证，驱动负责遵守设备与控制器的接口协议，并在有依赖时取得规定的完成保证。不能据传播时延给每次 UART 处理凭空增加“等几个 GIC 周期”或“轮询 Active/Pending 都为零”的步骤；也不能把主机模型里的立即更新当作真实硬件已经同步。
 
-其中：
+## 11.8\_S5到S6\_先兑现交接义务\_再恢复执行现场
 
-### 11.36.1\_SPI
+设备处理结束后，还有两项 GIC 义务。第一项是 **优先级下降（Priority drop）**：释放本次确认对 PE2 运行优先级的占用。第二项是 **停用（Deactivation）**：结束来源 64 的 Active。设备是否已清源是前一节的另一件事，GIC 不读取 FIFO 来代替软件判断。
 
-典型外设：
+本例 EOImode=0，向 `ICC_EOIR1_EL1` 写入与本次确认匹配的结束信息，同时完成两项动作。如果没有其他挂起条件，来源回到 Inactive；若还有待处理请求，停用不会把它一并删除。`EOIR` 是 **中断结束寄存器（End Of Interrupt Register）** 的名称缩写。
 
-```text
-UART
-SPI controller
-Ethernet
-PCIe legacy interrupt
-```
+若改为 EOImode=1，EOIR 只下降优先级，稍后由承担停用责任的路径写 `ICC_DIR_EL1`，即 **中断停用寄存器（Deactivate Interrupt Register）**。分离模式允许优先级占用与来源完成发生在不同时间，例如设备交给另一执行上下文处理时；代价是必须显式追踪后续责任。漏写 DIR 不能靠重复 EOIR 补救，没有新确认也不应多写一次 EOIR。
 
-主要配置：
+这时再对齐本例用到的完成接口。每次写入都承接前面的真实确认；模式已经在 S0 约定，不是临近返回时任选一个寄存器。
 
-```text
-GICD_*
-```
+| 当前 PE 的完成控制接口 | 访问方式与字段 | 本章可依赖的效果 |
+| --- | --- | --- |
+| `ICC_EOIR0_EL1` / `ICC_EOIR1_EL1` | 64 位 WO 系统寄存器，MSR；INTID[23:0] | 写与确认匹配的 INTID，完成优先级下降；EOImode=0 时同时停用普通来源 |
+| `ICC_DIR_EL1` | 64 位 WO 系统寄存器，MSR；INTID[23:0] | 分离模式下停用已经确认且需结束 Active 的普通来源；不补做优先级下降 |
+| `ICC_CTLR_EL1` | 64 位系统寄存器，控制位按权限读写；EOImode[1] | 0 合并优先级下降与停用，1 分离两步；本例预先采用 0，不能在处理途中任意切换来省略义务 |
 
-并通过：
+存在嵌套时，优先级下降按确认的逆序配对：先确认外层 B、再确认内层 A，就先结束 A 的优先级占用，再结束 B。恢复的是此前的约束，不是总把运行优先级清成空闲值。分离模式下 Active 与当前正在运行的 C 函数也不一一对应，不能只从函数返回次数推算停用完成。
 
-```text
-GICD_IROUTER
-```
+S6 才是处理器返回。公共退出代码恢复软件保存的通用寄存器、ELR/SPSR，再执行 **异常返回指令（Exception Return，ERET）**，据此恢复原状态与执行位置。普通 C 函数 return 只是回到调用者，EOIR/DIR 只推进 GIC 协议，ERET 才完成处理器异常返回；三者不能互相顶替。
 
-选 PE。
+本章选择先服务设备、再以合并模式结束，是用于闭合正常路径的协议示例。有些内核在分离模式下更早下降优先级、较晚停用，实际次序必须按目标版本核对。不要把下面的教学时间线当作对所有 Linux 实现的描述。
 
-### 11.36.2\_PPI
+> 官方对照：[IHI0069 H.b](https://developer.arm.com/documentation/ihi0069/hb)，4.1.1 的 Priority drop、Deactivation 与 ICC_CTLR/ICC_EOIR/ICC_DIR 这些寄存器族的接口条目；异常返回见 Exception model 5.5。第四章的[分离原因](P04_一次中断的状态转换与完成协议.md#4.3.1_同一来源还没收尾_为什么接收侧可以先释放优先级)给出异步交接的成本与适用边界。
 
-比如 Arm Generic Timer。
+## 11.9\_沿同一次事件检查正常与失败路径
 
-它天生属于某个 PE：
+先固定一条没有新事件、请求撤销先被 GIC 观察到的正常路径，不在时间线中同时切换结束模式与异常级。图中的观察顺序是这次推演的条件，不是软件先清源就天然建立的硬件传播保证；另一顺序及再次确认的分支已经在第四章展开。
 
-```text
-PE0 timer → PE0 PPI
-PE1 timer → PE1 PPI
+```mermaid
+sequenceDiagram
+    autonumber
+    participant uart as UART FIFO 与请求条件
+    participant gic as GIC SPI 64 与 PE2 接口
+    participant pe as PE2 异常硬件
+    participant entry as PE2 上的软件入口与框架阶段
+    participant driver as PE2 上的 UART 驱动阶段
+    Note over uart,driver: S0 已准备完成，定向 PE2，当前与目标均为 NS EL1，EOImode=0
+    uart->>uart: S1 保存 A，非空条件成立
+    uart->>gic: S2 有效电平使来源 Pending
+    gic-->>pe: 来源、组、目标与优先级满足，呈现 IRQ
+    pe->>entry: S3 保存 ELR/SPSR，执行 EL1 IRQ 向量
+    entry->>entry: 保存软件现场
+    entry->>gic: 读 IAR，取得 64 并承担 Active 与优先级义务
+    entry->>driver: S4 依据软件映射调用设备处理动作
+    driver->>uart: 读取 A，按设备协议处理状态
+    uart-->>gic: 请求电平撤销
+    driver-->>entry: 本次设备处理返回
+    entry->>gic: S5 写匹配 EOIR，下降优先级并停用
+    entry->>entry: S6 恢复软件现场及异常返回状态
+    entry->>pe: 执行 ERET
+    pe->>pe: 继续被打断的执行路径
 ```
-
-所以不需要像 SPI 一样：
 
-```text
-GICD_IROUTER
-```
+步骤 4 不包含步骤 6 的确认，步骤 9 不包含步骤 11 的停用，步骤 10 的设备函数返回也不包含步骤 13 的异常返回。能把这三对动作说清，才有办法根据证据判断失败发生在哪层。
 
-配置由对应 Redistributor 的：
+现在做三道故障推演。先遮住下一段解答，按图标出最后一个得到证据支持的阶段：
 
-```text
-GICR_*
-```
+1. FIFO 有 A，来源 64 Pending，目标与组都正确，但优先级等于 PMR。会到步骤 4 吗？
+2. 已读走 A，改成分离模式后只写 EOIR，B 随后到达。同一来源为何可能再也不进入？
+3. 从 EL0 进入 EL1 IRQ 前，观察到应用上下文 I 位为 1。能否据此判定内核不会接收？
 
-管理。
+第一题停在 S2 的优先级条件，等于门槛不通过；应检查相同数值视图与有效位后再解释，不能先改向量。第二题尚欠 S5 的停用，B 的数据和挂起可以存在，旧 Active 却仍约束同一普通来源；应找到承担 DIR 的路径，而不是额外读 IAR 抢走请求。第三题不能这样判断：当前与目标 EL 不同，低层屏蔽位不是阻止更高层接收的通用门；本例需要重新应用异常路由与目标层规则。
 
-### 11.36.3\_SGI
+再把第三题换成“当前 EL1、目标 EL1，I=1”，结论才变为这一接收条件被屏蔽。改动仅一个前提，就改变结果，说明排障记录必须写出当前 EL、目标 EL 与安全状态，而不能只有“屏蔽位的值”。
 
-软件主动产生：
+## 11.10\_把观察位置与能证明的事情对齐
 
-```text
-ICC_SGI1R_EL1
-```
+这张表用于查询刚才走过的流程，不替代前面的解释。寄存器位应通过所有权清楚的系统驱动与调试设施观察；IAR 有认领副作用，不能作为普通日志读取。
 
-通常用于：
+| 状态或接口 | 谁持有、谁改变 | 对应阶段与证明边界 |
+| --- | --- | --- |
+| UART 数据、接收使能、屏蔽、阈值、错误状态 | 设备硬件与设备驱动 | S1、S4；证明真实条件与消费，不证明 GIC 已确认 |
+| 芯片请求接线、触发配置 | 集成连线；控制器驱动在授权范围配置 | S0、S2；决定怎样解释来源，不是设备函数地址 |
+| GICD 分组、来源使能、Pending/Active、优先级、路由寄存器 | 配置软件与控制器硬件 | S0、S2、S3、S5；不能由 Pending 推出设备字节数 |
+| `GICR_WAKER`、适用的 DPG 参与控制 | 平台电源路径、控制器软件与硬件握手 | S0、S2；不能替代内核 online 与软件工作交接 |
+| `ICC_SRE`、`ICC_IGRPEN`、PMR、BPR、RPR | 当前 PE 的授权软件与 CPU Interface | 接口访问、S2 筛选和 S3、S5 优先级状态 |
+| SCR/HCR、PSTATE、VBAR | 高权限软件与 PE 异常逻辑 | S0、S3；决定目标层、屏蔽与向量，不定位设备 |
+| ELR/SPSR、软件栈帧 | PE 保存最小返回状态，公共代码保存完整现场 | S3、S6；不能替代控制器结束 |
+| IAR、软件 IRQ 映射与处理动作 | 公共入口、控制器驱动、IRQ 框架 | S3、S4；确认与分派发生在不同层 |
+| EOImode、EOIR、DIR | 控制器初始化与协议结束路径 | S5；模式决定哪项义务由哪个动作完成 |
+| ERET | PE 执行退出代码中的架构指令 | S6；不读取设备，也不清除 Active |
 
-```text
-IPI
-reschedule
-TLB shootdown
-CPU间通知
-```
+ICC_SRE 的职责是控制系统寄存器接口访问，不能等 IRQ 到来才临时猜它是否开放。记录这些状态时还要区分“配置预期值”和“硬件实际读回值”，以及快照之间是否可能已经有新事件。只看某一层的一次计数，无法证明全链路完成。
 
-产生的时候就指定目标 affinity/target list。
-
-### 11.36.4\_LPI
-
-这又是另一套模型：
-
-```text
-PCIe MSI/MSI-X
-       ↓
-      ITS
-       ↓
-DeviceID/EventID translation
-       ↓
-LPI INTID
-       ↓
-Redistributor
-       ↓
-PE
-```
+## 11.11\_换一种来源时\_保留什么\_重新检查什么
 
-而且 LPI 的配置/priority/pending 很多信息来自内存中的 Property/Pending Table，不应该硬套普通 SPI 的 `GICD_ISENABLER/IPRIORITYR` 模型。
+前面已经各自建立 SPI、私有外设中断（Private Peripheral Interrupt，PPI）、软件产生中断（Software Generated Interrupt，SGI）和 LPI，现在才做同轴比较。共同骨架仍然是工作产生、形成可接收请求、确认、消费与结束；变化落在来源归属、状态载体和完成义务。
 
-所以学习时我建议：
+| 来源类型 | 替换 UART 主线的哪一部分 | 必须重新检查的条件 |
+| --- | --- | --- |
+| SPI，共享外设中断 | 设备电平/边沿进入分发器共享来源 | 接线、触发类型、路由寄存器与来源所有权 |
+| PPI，私有外设中断 | 本 PE 定时等事件进入其私有来源 | 对应再分发器；触发配置是否可编程取决于实现，不能当 SPI 改目标 |
+| SGI，软件产生中断 | 发送方发布共享工作后写 SGI 生成接口 | `ICC_SGI1R_EL1` 的目标列表与亲和性；通知合并不等于工作合并 |
+| LPI，局部性专属外设中断 | 设备消息通过翻译/接收路径建立本地挂起 | 内存属性、配置失效、映射与命令同步；没有普通来源 Active，不套 DIR 停用 |
 
-> **先把 SPI 完整走通，再学 PPI/SGI，最后单独学 ITS/LPI。**
+SPI 对应的设备可以是 UART、串行外设接口控制器、网络控制器或汇总的其他请求，设备种类不改变 SPI 的架构身份。SGI 常用于调度通知或地址转换缓存维护请求，但真实工作仍在软件共享状态中。PCIe 的 MSI/MSI-X 则常经 ITS 映射到 LPI；消息值、设备身份、GIC 编号和 Linux IRQ 编号需要各自定位，不能因为它们碰巧相等就删掉映射层。
 
-否则第一次看 GICv3 很容易把四条不同来源路径搅到一起。
+LPI 没有 Active，却仍占用接收侧运行优先级，所以不能把“两状态”理解为“不必 EOI”。这项差量已经在[第八章](P08_从消息请求到内存中的中断状态.md#8.2_为什么不再沿用四状态模型)独立建立；ITS 的命令完成也不等于设备工作完成，见[第九章](P09_设备事件翻译与命令完成.md#9.5_命令读走了_不等于全部副作用完成)。
 
-------
+本章至此能把同一次中断的状态、通信、配置和恢复过程连起来。真正移植到某块板时，还需要把教学 UART 的清源方法换成设备手册，把编号与地址换成芯片集成证据，把示例约定的结束次序换成目标软件实现；这些变化应逐项取证，不能由一张总图替代。
 
-最后我认为你现在可以把 GICv3 压缩成一句特别有用的话：
+### 11.11.1\_与正文一致的导出图
 
-> **设备负责“为什么要中断”；GIC 的 Distributor/Redistributor 负责“哪个 INTID、是否合法、送哪个 PE”；CPU Interface 负责“优先级够不够、现在能不能送”；GIC Group 决定以 IRQ/FIQ 哪种形式呈现；PE 的 SCR/HCR/PSTATE/VBAR 决定“由哪个 EL、哪个异常入口接住”；IAR 完成认领，ISR 消除设备原因，EOIR/DIR 完成 GIC 生命周期，ERET 完成 CPU 异常生命周期。**
+需要单独查看或导出时，可以打开[请求路径架构图](../../../../assets/images/gic/gicv3_中断传递架构图.png)、[UART 中断完整流程图](../../../../assets/images/gic/gic3中断产生流程.png)及[可缩放请求路径图](../../../../assets/images/gic/gicv3_interrupt_edraw_spacious_zfixed.svg)。这些附件从当前正文的 Mermaid 图生成：架构图组合[含 ITS 的接收关系](P09_设备事件翻译与命令完成.md#9.2.1_把消息翻译放回完整硬件关系)与[SGI 完整发送路径](P03_多核控制器的角色_寄存器与编号.md#3.3.4_SGI的发送侧和接收侧都要画出来)，UART 图组合本章的角色图与 S0～S6 时序图。
 
-这比单纯记 `GICD_* / GICR_* / ICC_*` 寄存器列表有用得多。
+维护时以对应正文为图源，同步重新导出附件。图中的组件表示硬件逻辑职责，入口、框架和驱动表示同一 PE 上的软件阶段；物理功能块的具体组合另查第三章与 RK3588 集成图，不从逻辑框图推断芯片布线或块数量。
 
 上一篇：[软件交接、部署与分层排障](P10_软件交接_部署与分层排障.md#10.1_硬件模型闭合后_软件该接管哪一段)
 

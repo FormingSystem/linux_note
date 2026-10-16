@@ -249,9 +249,9 @@ docs(repository/git): 更新分支与提交规范
 
 ## 1.12\_Codex\_skill\_仓库备份
 
-Codex 当前使用的个人 skill 是 **主源**，`tools/ai/codex/skills/` 保存供本仓库评审和追溯的同步副本。主源通常位于 `$CODEX_HOME/skills/`（未设置时为用户目录下的 `.codex/skills/`），以当前会话实际发现的 skill 为准。在其他仓库更新主源后，本仓库按 **Codex → 仓库** 单向同步，不用过时仓库副本反向覆盖主源，不依据时间戳猜测谁更新，也不把机器绝对路径写入已跟踪文件。
+仓库维护的 Codex skill 统一保存在 `tools/ai/codex/skills/`，这里是可评审、可追溯的 **权威副本**。`$CODEX_HOME/skills/`（未设置时为用户目录下的 `.codex/skills/`）下的同名目录只是安装镜像，按 **仓库 → Codex 安装镜像** 单向同步。不能把安装镜像反过来作为唯一来源，不依据时间戳猜测谁更新，也不把机器绝对路径写入已跟踪文件。
 
-同步注册关系保存在 `tools/ai/codex/skill_registry.json`，它是本仓库同步工具的数据，不是 Codex 的额外配置接口。当前个人 skill 已由 Codex 发现；仓库副本不另建同名运行时注册。进入本仓库执行专题任务前运行 `python tools/ai/codex/sync_skills.py check`；发现新增或修改即运行 `python tools/ai/codex/sync_skills.py apply`，随后重新阅读本次使用的规则。发现主源不可用、仓库独有文件或来源不明时报告具体差异，先核对真实来源与调用方，不能倒转同步方向。此检查由任务执行时触发，不是后台监视器。
+同步注册关系保存在 `tools/ai/codex/skill_registry.json`，它是本仓库同步工具的数据，不是 Codex 的额外配置接口。Codex 从安装镜像发现 skill，仓库权威副本不另建同名运行时注册。进入本仓库执行专题任务前运行 `python tools/ai/codex/sync_skills.py check`，此命令只读比较；需要同步时先确认差异仍在本次授权范围内，再运行 `python tools/ai/codex/sync_skills.py apply`，随后重新阅读本次使用的规则。仓库源不可用或安装镜像有仓库未收录的文件时，工具在写入前拒绝同步；先核对真实来源与调用方，不自动删除镜像独有文件或倒转同步方向。此检查由任务执行时触发，不是后台监视器。`check` 返回 0 表示一致、1 表示有待同步内容、2 表示检查失败；`apply` 只写安装镜像。
 
 当前只维护一个通用专题生成 skill：`build-linux-note-topic`。它统一负责技术书籍与知识专题的创建、排版、重组、认知大纲、问题链、错误模型、动态过程、多视角观察、源码或规范证据、工程约束、内容守恒和验证流程，覆盖 Linux 内核机制、数据结构与 API、驱动和子系统、硬件芯片、协议、嵌入式工程与系统软件，包括 `knowledge/linux/object_lifetime/kref`。不得再按领域拆出并列专题生成 skill；涉及这类长篇专题时统一使用该 skill，并先按用户动词确定编辑权限：
 
@@ -269,10 +269,10 @@ skill 的机器标识采用英文 kebab-case：目录名、`SKILL.md` 的 `name`
 
 skill 更新流程如下：
 
-1. 修改 skill 时先定位 Codex 当前使用的主源，再在获授权范围内修改主源；仅同步时直接读取主源，不修改它。保持目录名与 `SKILL.md` 的 `name` 完全一致。
+1. 先在获授权范围内修改 `tools/ai/codex/skills/<skill-name>/`；仅同步时只读取仓库权威副本，不修改它。保持目录名与 `SKILL.md` 的 `name` 完全一致。
 2. `SKILL.md` 使用 Codex skill 规范，只保留 `name` 与 `description` 两个 Front Matter 字段；`agents/openai.yaml`、`references/` 和 `scripts/` 只保存运行所需内容。
-3. 执行 skill 校验和本次相关审计，再用 `python tools/ai/codex/sync_skills.py apply` 将注册的 Codex 主源同步到仓库；非默认来源通过 `--codex-home` 明确传入，不改写个人环境变量或全局配置。
-4. 同步后再次运行 `check`，比较完整文件集与规范化为 UTF-8/LF 后的内容；文件集或内容不一致时，不得声称同步完成。主源删除的文件先审查调用关系，再清理仓库副本，不保留旧入口作为兼容实现。
+3. 执行 skill 校验和本次相关审计，再用 `python tools/ai/codex/sync_skills.py apply` 将注册的仓库权威副本同步到 Codex 安装镜像；非默认安装位置通过 `--codex-home` 明确传入，不改写个人环境变量或全局配置。
+4. 同步后再次运行 `check`，比较完整文件集与规范化为 UTF-8/LF 后的内容；文件集或内容不一致时，不得声称同步完成。仓库删除的文件先审查调用关系，再按授权清理安装镜像，不保留旧入口作为兼容实现。
 5. 不提交 `__pycache__`、字节码、日志、构建产物或机器专属配置。
 
 Codex skill 的 Markdown 是运行时指令，不是知识库章节：`scripts/format_metadata.sh` 和 `scripts/format_markdown.sh` 必须跳过 `tools/ai/codex/skills/`，避免补入仓库正文元数据或重写 skill 标题。链接与路径检查仍应覆盖 skill 内的相对引用。layout-only 工作必须优先运行 `scripts/audit_content_conservation.py`；它是严格行级对比工具，失败表示需要逐项核对差异，不自动等同于技术内容丢失。修改 skill 后至少运行对应审计脚本、skill 结构校验、仓库链接检查和 `git diff --check`。某个校验因环境缺少依赖无法运行时，必须准确报告缺失项。
