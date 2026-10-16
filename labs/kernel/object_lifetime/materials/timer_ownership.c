@@ -1,7 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+/* 检查始终执行；状态推进另写成语句，不藏在检查表达式里。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("timer ownership invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* 对象外的顺序观察账本，不是 struct timer_list 或真实引用计数器。 */
 struct timer_model {
@@ -24,7 +33,7 @@ static int model_mod(struct timer_model *timer)
 
 static void model_begin(struct timer_model *timer)
 {
-    assert(timer->pending && !timer->running);
+    require_model(timer->pending && !timer->running);
     timer->pending = false;
     timer->running = true;
     ++timer->callbacks;
@@ -32,7 +41,7 @@ static void model_begin(struct timer_model *timer)
 
 static void model_end(struct timer_model *timer)
 {
-    assert(timer->running);
+    require_model(timer->running);
     timer->running = false;
 }
 
@@ -50,50 +59,67 @@ static int model_delete_sync(struct timer_model *timer, bool shutdown)
 
 static void model_work(struct timer_model *timer)
 {
-    assert(timer->work_pending);
+    require_model(timer->work_pending);
     timer->work_pending = false;
     (void)model_mod(timer); /* 借用 worker 尝试重新启动 timer。 */
 }
 
 static void owner_exit(struct timer_model *timer)
 {
-    assert(!timer->pending && !timer->running && !timer->work_pending);
-    assert(timer->refs == 1);
+    require_model(!timer->pending && !timer->running && !timer->work_pending);
+    require_model(timer->refs == 1);
     --timer->refs;
 }
 
 int main(void)
 {
+    int changed;
     struct timer_model bad = { .refs = 1 };
-    ++bad.refs; assert(model_mod(&bad) == 0);
-    ++bad.refs; assert(model_mod(&bad) == 1);
-    model_begin(&bad); model_end(&bad); --bad.refs; /* 仅一次回调归还。 */
+    ++bad.refs;
+    changed = model_mod(&bad);
+    require_model(changed == 0);
+    ++bad.refs;
+    changed = model_mod(&bad);
+    require_model(changed == 1);
+    model_begin(&bad);
+    model_end(&bad);
+    --bad.refs; /* 仅一次回调归还。 */
     --bad.refs; /* 管理者退出，错误地留下无人认领的一份。 */
-    assert(bad.refs == 1 && bad.callbacks == 1);
+    require_model(bad.refs == 1 && bad.callbacks == 1);
     puts("two gets, one callback: leaked responsibility=1");
 
     struct timer_model owned = { .refs = 1 };
-    assert(model_mod(&owned) == 0 && model_mod(&owned) == 1);
+    changed = model_mod(&owned);
+    require_model(changed == 0);
+    changed = model_mod(&owned);
+    require_model(changed == 1);
     model_begin(&owned);
-    assert(!owned.pending && owned.running); /* pending 为假并非已退出。 */
-    assert(model_delete_sync(&owned, true) == 0);
+    require_model(!owned.pending && owned.running); /* pending 为假并非已退出。 */
+    changed = model_delete_sync(&owned, true);
+    require_model(changed == 0);
     owner_exit(&owned);
-    assert(owned.refs == 0 && owned.callbacks == 1);
+    require_model(owned.refs == 0 && owned.callbacks == 1);
     puts("owner retained through running callback: refs=0");
 
     struct timer_model reopened = { .refs = 1 };
-    assert(model_mod(&reopened) == 0);
-    assert(model_delete_sync(&reopened, false) == 1);
-    assert(model_mod(&reopened) == 0 && reopened.pending);
-    assert(model_delete_sync(&reopened, true) == 1);
+    changed = model_mod(&reopened);
+    require_model(changed == 0);
+    changed = model_delete_sync(&reopened, false);
+    require_model(changed == 1);
+    changed = model_mod(&reopened);
+    require_model(changed == 0 && reopened.pending);
+    changed = model_delete_sync(&reopened, true);
+    require_model(changed == 1);
     owner_exit(&reopened);
     puts("delete allowed a later restart; shutdown closed it");
 
     struct timer_model cycle = { .refs = 1, .work_pending = true };
-    assert(model_delete_sync(&cycle, true) == 0);
+    changed = model_delete_sync(&cycle, true);
+    require_model(changed == 0);
     model_work(&cycle);
-    assert(!cycle.pending && !cycle.work_pending);
-    assert(model_mod(&cycle) == 0 && !cycle.pending);
+    require_model(!cycle.pending && !cycle.work_pending);
+    changed = model_mod(&cycle);
+    require_model(changed == 0 && !cycle.pending);
     owner_exit(&cycle);
     puts("worker rearm after shutdown: discarded, refs=0");
     return 0;

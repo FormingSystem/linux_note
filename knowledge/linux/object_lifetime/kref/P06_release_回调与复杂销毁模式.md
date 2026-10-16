@@ -185,19 +185,36 @@ MODULE_DESCRIPTION("管理者保活并等待借用工作退出的完整实验");
 
 模块中没有导出接口或其他生产者；worker 不重新投递。它的完整关闭发生在初始化返回前，卸载时只输出对象外的统计。把这些函数接到实际驱动时，还要建立外部调用者和模块代码的进入/退出协议，不能只复制这个 `module_exit()`。
 
-在与运行内核匹配、已经准备好的可写构建环境中执行：
+先在 Linux 构建主机准备与目标运行内核匹配的构建树，将其绝对路径赋给 KERNEL_BUILD，再从本仓库根目录执行以下命令。临时目录只登记本章模块，避免一并构建其他实验；交叉构建还需按目标设置 ARCH 和 CROSS_COMPILE。
 
 ```bash
-# KDIR 由当前构建环境设置，指向匹配目标内核的构建目录。
-make -C "$KDIR" M="$PWD/labs/kernel/object_lifetime/materials" modules
-sudo insmod labs/kernel/object_lifetime/materials/note_kref_owned_work.ko
+kref_owned_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_kref_owned_work.c "$kref_owned_dir/"
+printf 'obj-m += note_kref_owned_work.o\n' > "$kref_owned_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_owned_dir" modules
+```
+
+将生成的 note_kref_owned_work.ko 复制到目标 Linux，在模块所在目录加载。若本机就是匹配目标，可直接进入上述临时目录。加载过程会同步执行完整创建与关闭演示：
+
+```bash
+sudo insmod ./note_kref_owned_work.ko
+```
+
+加载成功后卸载，退出函数只输出对象外的回收次数：
+
+```bash
 sudo rmmod note_kref_owned_work
-dmesg | tail -n 12
+```
+
+随后读取目标内核日志，对照以下预期：
+
+```bash
+sudo dmesg | tail -n 12
 ```
 
 观察 `note_owned` 日志：`submit=0`，`closed=-108`（该固定内核的 `ESHUTDOWN`），`completed` 为 0 或 1，卸载输出 `release=1`。前两项说明提交与关闭后的入口行为，最后一项说明这个同步演示只回收一次；一次日志没有覆盖所有实际竞态。若编译或装载失败，先保留错误并核对构建目录、架构和运行版本，不能把宿主检查当作已成功装载。
 
-本轮已完成 ARM 前端语法检查和宿主九组控制路径检查，含三处分配失败、两种模块顺序、关闭窗口中的再提交拒绝、重复工作及管理者最后退出。宿主的锁、原子和队列是显式顺序替身，没有真实线程；目标构建链接、装卸、调度竞争和内存序未验证。命令是读者复现实验的步骤，不是本轮执行报告。
+历史材料记录了 ARM 前端语法检查；本轮重审重新核对完整模块与宿主夹具，运行九组控制路径，含三处分配失败、两种模块顺序、关闭窗口中的再提交拒绝、重复工作及管理者最后退出。宿主的锁、原子和队列是显式顺序替身，没有真实线程；目标构建链接、装卸、调度竞争和内存序未验证。命令是读者复现实验的步骤，不是目标执行报告。
 
 ### 6.2.3\_沿一轮关闭追踪到最后清理
 
@@ -223,11 +240,11 @@ sequenceDiagram
     U->>J: S2 gate 内检查开放
     U->>W: gate 内提交 job.work
     M->>J: S3 gate 内写 stopping=true 后解锁
-    U->>J: 再提交读取 stopping，返回 ESHUTDOWN
+    U->>J: 再提交读取 stopping，返回 -ESHUTDOWN
     M->>W: S4 锁外 cancel_work_sync
     alt 工作尚未开始且被取消
         W-->>M: 移除 pending，返回 true
-    else 工作抢先执行或已经完成
+    else 工作抢先开始，取消者等待它退出
         W->>J: gate 内增加 completed 后退出
         W-->>M: 确认执行结束，返回 false
     end
@@ -237,7 +254,7 @@ sequenceDiagram
     J-->>U: 同步调用 release，回收资源
 ```
 
-在这个单次投递演示里，取消返回 true/false 可对应图中两支；一般 work 重排场景不能只凭这个布尔值重建整段执行历史。真正承担对象安全保证的是 **先封闭全部生产者，再等待没有旧执行者**，不是把 true 读成“安全”、false 读成“失败”。固定版本的[同步取消实现](../../../../research/source_reading/workqueue/source_explanations/P03_Linux_6.12_worker_flush与取消源码实现.md#3.5_cancel_work_sync撤销与等待)明确写出不存在竞争投递这一前提。
+图中选取“取消了尚未开始的工作”和“工作已开始，取消者等待退出”两条轨迹；若工作在取消调用以前已经完成，增加 completed 的动作更早发生，取消仍返回 false。图里还把一次再提交放在关闭窗口中检验拒绝；完整模块把这次调用安排在 owned_close 返回后，两者都由同一停止门约束。一般 work 重排场景不能只凭这个布尔值重建整段执行历史。真正承担对象安全保证的是 **先封闭全部生产者，再等待没有旧执行者**，不是把 true 读成“安全”、false 读成“失败”。固定版本的[同步取消实现](../../../../research/source_reading/workqueue/source_explanations/P03_Linux_6.12_worker_flush与取消源码实现.md#3.5_cancel_work_sync撤销与等待)明确写出不存在竞争投递这一前提。
 
 试着在纸上改两处代码：第一，把 `owned_put(job)` 从 S5 移到 S4 等待之前，且让管理者成为唯一持有者；此时尚在执行的 worker 会拿到已回收对象。第二，让 `owned_request()` 解锁后才排队；此时它可能在 S4 返回后重新发布 work。前者缺的是存储保留，后者缺的是关闭和发布的串行化，单独增加一个停止标志不能同时修复两者。
 
@@ -446,11 +463,22 @@ P05 完整程序中的 `indexed_release_locked()` 正好表达这个契约：它
 
 以下完整 [timer_ownership.c](../../../../labs/kernel/object_lifetime/materials/timer_ownership.c) 用对象外账本安排四条顺序。先预测第一个反例最后剩多少份，再看管理者模式如何避开重复 get。这里没有实际时间流逝；`model_delete_sync` 显式完成 running 状态，只表示真实同步操作返回后的结果。
 
+model_mod 和 model_delete_sync 的返回值先保存在 changed，再由 require_model 检查预期；失败用标准库 EXIT_FAILURE 退出。与第五章相同，NDEBUG 不会关闭这些检查。模型状态由单个测试过程显式修改，不用布尔字段模拟真实 timer 的内部锁实现。
+
 ```c
 // SPDX-License-Identifier: GPL-2.0
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+/* 检查始终执行；状态推进另写成语句，不藏在检查表达式里。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("timer ownership invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* 对象外的顺序观察账本，不是 struct timer_list 或真实引用计数器。 */
 struct timer_model {
@@ -473,7 +501,7 @@ static int model_mod(struct timer_model *timer)
 
 static void model_begin(struct timer_model *timer)
 {
-    assert(timer->pending && !timer->running);
+    require_model(timer->pending && !timer->running);
     timer->pending = false;
     timer->running = true;
     ++timer->callbacks;
@@ -481,7 +509,7 @@ static void model_begin(struct timer_model *timer)
 
 static void model_end(struct timer_model *timer)
 {
-    assert(timer->running);
+    require_model(timer->running);
     timer->running = false;
 }
 
@@ -499,64 +527,87 @@ static int model_delete_sync(struct timer_model *timer, bool shutdown)
 
 static void model_work(struct timer_model *timer)
 {
-    assert(timer->work_pending);
+    require_model(timer->work_pending);
     timer->work_pending = false;
     (void)model_mod(timer); /* 借用 worker 尝试重新启动 timer。 */
 }
 
 static void owner_exit(struct timer_model *timer)
 {
-    assert(!timer->pending && !timer->running && !timer->work_pending);
-    assert(timer->refs == 1);
+    require_model(!timer->pending && !timer->running && !timer->work_pending);
+    require_model(timer->refs == 1);
     --timer->refs;
 }
 
 int main(void)
 {
+    int changed;
     struct timer_model bad = { .refs = 1 };
-    ++bad.refs; assert(model_mod(&bad) == 0);
-    ++bad.refs; assert(model_mod(&bad) == 1);
-    model_begin(&bad); model_end(&bad); --bad.refs; /* 仅一次回调归还。 */
+    ++bad.refs;
+    changed = model_mod(&bad);
+    require_model(changed == 0);
+    ++bad.refs;
+    changed = model_mod(&bad);
+    require_model(changed == 1);
+    model_begin(&bad);
+    model_end(&bad);
+    --bad.refs; /* 仅一次回调归还。 */
     --bad.refs; /* 管理者退出，错误地留下无人认领的一份。 */
-    assert(bad.refs == 1 && bad.callbacks == 1);
+    require_model(bad.refs == 1 && bad.callbacks == 1);
     puts("two gets, one callback: leaked responsibility=1");
 
     struct timer_model owned = { .refs = 1 };
-    assert(model_mod(&owned) == 0 && model_mod(&owned) == 1);
+    changed = model_mod(&owned);
+    require_model(changed == 0);
+    changed = model_mod(&owned);
+    require_model(changed == 1);
     model_begin(&owned);
-    assert(!owned.pending && owned.running); /* pending 为假并非已退出。 */
-    assert(model_delete_sync(&owned, true) == 0);
+    require_model(!owned.pending && owned.running); /* pending 为假并非已退出。 */
+    changed = model_delete_sync(&owned, true);
+    require_model(changed == 0);
     owner_exit(&owned);
-    assert(owned.refs == 0 && owned.callbacks == 1);
+    require_model(owned.refs == 0 && owned.callbacks == 1);
     puts("owner retained through running callback: refs=0");
 
     struct timer_model reopened = { .refs = 1 };
-    assert(model_mod(&reopened) == 0);
-    assert(model_delete_sync(&reopened, false) == 1);
-    assert(model_mod(&reopened) == 0 && reopened.pending);
-    assert(model_delete_sync(&reopened, true) == 1);
+    changed = model_mod(&reopened);
+    require_model(changed == 0);
+    changed = model_delete_sync(&reopened, false);
+    require_model(changed == 1);
+    changed = model_mod(&reopened);
+    require_model(changed == 0 && reopened.pending);
+    changed = model_delete_sync(&reopened, true);
+    require_model(changed == 1);
     owner_exit(&reopened);
     puts("delete allowed a later restart; shutdown closed it");
 
     struct timer_model cycle = { .refs = 1, .work_pending = true };
-    assert(model_delete_sync(&cycle, true) == 0);
+    changed = model_delete_sync(&cycle, true);
+    require_model(changed == 0);
     model_work(&cycle);
-    assert(!cycle.pending && !cycle.work_pending);
-    assert(model_mod(&cycle) == 0 && !cycle.pending);
+    require_model(!cycle.pending && !cycle.work_pending);
+    changed = model_mod(&cycle);
+    require_model(changed == 0 && !cycle.pending);
     owner_exit(&cycle);
     puts("worker rearm after shutdown: discarded, refs=0");
     return 0;
 }
 ```
 
-在材料所在目录编译运行：
+在具有 C11 编译器的 Linux 宿主上，从仓库根目录编译到临时目录。启用 NDEBUG 后，模型步骤与检查仍然完整执行：
 
 ```bash
-cc -std=c11 -Wall -Wextra -Werror -O2 timer_ownership.c -o timer_ownership
-./timer_ownership
+cc -std=c11 -Wall -Wextra -Werror -O2 -DNDEBUG \
+    labs/kernel/object_lifetime/materials/timer_ownership.c -o /tmp/timer_ownership
 ```
 
-不要为这个实验定义 NDEBUG，因为程序使用 assert 检查并执行待观察的模型步骤。四行输出依次给出：两次 get 只有一次回调时遗留一份；管理者保留到旧回调退出后归零；普通删除后仍能重新启动；最终关闭以后 worker 的再启动被丢弃。模型没有真实分配，第一行的泄漏是责任账本残留，不是在实验里故意遗失一块堆内存。
+编译成功后运行。检查失败会以非零状态退出，成功则输出四条轨迹：
+
+```bash
+/tmp/timer_ownership
+```
+
+四行输出依次给出：两次 get 只有一次回调时遗留一份；管理者保留到旧回调退出后归零；普通删除后仍能重新启动；最终关闭以后 worker 的再启动被丢弃。模型没有真实分配，第一行的泄漏是责任账本残留，不是在实验里故意遗失一块堆内存。
 
 第三、四条还揭示 API 返回值陷阱：正常 inactive timer 的 mod_timer 返回 0 可以表示启动成功；已 shutdown 的 timer 返回 0 却表示启动被丢弃。它不是 queue_work 的接收布尔值。固定版本的[定时器退出源码索引入口](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)连接[改期与关闭模块](../../../../research/source_reading/kref/navigation/P05_定时器重启与退出导读.md#5.2_从排队到最终关闭)，再到[唯一改期实现](../../../../research/source_reading/kref/source_explanations/kernel/time/timer.c.md#1.1_改期不等于追加一次回调)。
 
@@ -564,7 +615,7 @@ cc -std=c11 -Wall -Wextra -Werror -O2 timer_ownership.c -o timer_ownership
 
 ### 6.7.4\_release\_不应该负责模糊的\_timer\_语义
 
-原示例使用 del_timer_sync。固定 Linux 6.12.20 中它只是[旧名包装](../../../../research/source_reading/kref/source_explanations/include/linux/timer.h.md#1.2_旧名转到同步删除)，新代码使用 timer_delete_sync；但换名字不会自动解决重新启动。
+阅读使用 del_timer_sync 的代码时，要知道固定 Linux 6.12.20 中它只是[旧名包装](../../../../research/source_reading/kref/source_explanations/include/linux/timer.h.md#1.2_旧名转到同步删除)，本章以 timer_delete_sync 说明当前接口；但换名字不会自动解决重新启动。
 
 timer_delete_sync 在调用者防止重启的前提下撤销 pending 并等待回调结束。它没有永久封闭 timer；另一参与者以后调用 mod_timer 仍可启动。timer_shutdown_sync 则在同一个 base 锁下清空 callback 函数指针，并等待已经进入的回调退出，使之后的启动请求被丢弃。它用于最终退出，不适合之后还需要同一个 timer 正常工作的临时暂停；再次初始化一个身份不是继续使用已关闭身份的旁路。
 
@@ -587,6 +638,8 @@ sequenceDiagram
 ```
 
 固定[同步退出实现](../../../../research/source_reading/kref/source_explanations/kernel/time/timer.c.md#1.2_等待执行与关闭重启)支持这一顺序，但不接管 kref 责任，也不使裸指针自动保活。所有调用 timer API 的路径仍须有有效地址；管理者在全部退出前不能 put 掉最后一份，剩余清理也不能依赖 timer 再触发一次才能结束。不要在本 timer 回调中同步等自己，也不要持有妨碍它退出的锁。当前普通非 RT timer 回调的软中断约束不能直接扩大成所有定时设施和配置都相同。
+
+对普通非 irqsafe timer，“妨碍退出的锁”还可能不在 timer 回调自身的代码里。设 CPU0 持有锁 L 并同步删除；CPU1 正执行该 timer 的软中断回调，随后被硬中断打断，硬中断也需要 L。CPU0 等回调返回，CPU1 的回调却必须等硬中断先返回，硬中断又在等 CPU0 解锁，三步组成等待环。即使 L 不保护 timer 的任何字段，仍会死锁。因此同步删除的锁约束必须覆盖可能中断回调的路径；仅检查 timer 函数里没有取 L 不够。这也是固定接口注释要求普通 timer 的调用者不持中断上下文会取得的锁的原因。
 
 ### 6.7.5\_release\_和\_callback\_的关系
 
@@ -715,7 +768,7 @@ release 可以核对某个终态与本类型前提一致，但不应第一次在
 
 本章的完整实现是[管理者等待借用退出模块](#6.2.2_运行一个由管理者等待借用退出的模块)，不再追加一份缺少创建、注册和失败路径的“综合模板”。它已经覆盖真正影响清理次序的几项资源：名称、私有队列、嵌入 work、管理者与独立调用者份额。
 
-先不改代码，按两次实验各写一份结果预测：工作被取消时 `completed=0`，抢先执行时 `completed=1`，两者关闭后都返回 ESHUTDOWN，调用者结束后都清理一次。再解释为何名称尚可读取：S4 只销毁活动所需的队列，名称仍由最后一份对象引用保护，直到 S5 的 release。
+先不改代码，按两次实验各写一份结果预测：工作被取消时 `completed=0`，抢先执行时 `completed=1`，两者关闭后的再提交都返回 -ESHUTDOWN，调用者结束后都清理一次。再解释为何名称尚可读取：S4 只销毁活动所需的队列，名称仍由最后一份对象引用保护，直到 S5 的 release。
 
 然后做三个小修改练习：
 

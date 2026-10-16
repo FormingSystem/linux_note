@@ -103,7 +103,7 @@ P06 的[入口和上下文回访](../../../../knowledge/linux/object_lifetime/kr
 
 ## 1.15\_定时器改期与退出责任
 
-[timer_ownership.c](timer_ownership.c)对应[P06 四条顺序模型](../../../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.7.3_release_和_timer_的收尾关系)。外部账本分别记录 pending、running、shutdown、派生 work 和责任数，展示重复 get 改期泄漏、管理者等执行退出、删除后重启、最终关闭阻止 work 再启动。严格 C11 编译运行通过；不定义 NDEBUG，因为 assert 承担模型步骤与检查。无真实时钟、分配器、线程、中断或内核 timer 执行。
+[timer_ownership.c](timer_ownership.c)对应[P06 四条顺序模型](../../../../knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md#6.7.3_release_和_timer_的收尾关系)。外部账本分别记录 pending、running、shutdown、派生 work 和责任数，展示重复 get 改期泄漏、管理者等执行退出、删除后重启、最终关闭阻止 work 再启动。模型动作与检查分开，require_model 始终执行，不受 NDEBUG 影响。无真实时钟、分配器、线程、中断或内核 timer 执行。
 
 固定六个 timer helper 另以 C11 夹具覆盖八种删除/关闭 × pending × running 组合及旧名包装，检查返回值、清空 function 与等待先后；base 锁、队列摘除和运行者退出均为显式顺序替身，未覆盖 RT/LOCKDEP、实际阻塞或定时轮算法。八个唯一实现函数体去注释规范化后与固定源码一致；本批没有新增 ARM 模块或目标运行结论。
 
