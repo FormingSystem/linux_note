@@ -5472,6 +5472,30 @@
           "连续性审计零风险，术语候选按前章、接口表和就地说明复核；章节/基线锚点、全仓8897链接及格式元数据路径diff通过。"
         ],
         "limits": "未作目标Kbuild、模块加载、延迟测量或退出竞争实测；共享树不可访问，源文件使用已校验缓存与官方固定提交下载。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P03_时间表示与转换接口详解.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "重建长度、时间点、时钟域与单位四轴，修复零值、转换范围、乘法窄化、jiffies回绕和ktime类型；复杂应用在第四与十二章保留并修正。",
+        "date": "2026-10-17",
+        "validation": [
+          "两篇全文冷读，固定提交下载并核对ktime类型/转换、hrtimer前移取消、completion返回与platform回调；五张图逐张目视，修改后重渲染。",
+          "GCC/Clang下三种HZ各核对5001输入和常量/溢出反例；提取去抖与事务函数的顺序模型检查边沿/改参/停止/GPIO错误和27种结果顺序，去代数/去首终结者检查的反例被拒绝。",
+          "两篇连续性零风险；术语候选按前置章节、接口表及就地说明复核，章节/基线锚点、全仓8906链接和格式元数据路径diff通过。"
+        ],
+        "limits": "模型不实现Linux锁、工作队列、GPIO或内存序；未进行目标Kbuild、模块加载、物理引脚验证、IRQ/sysfs/事务/退出竞争实测。共享树不可访问，使用官方不可变URL与已校验缓存。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P12_常用模式与代码模板.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按轮询、稳定窗口和事务结果重建模板；补完整高精度周期模块和分段完整GPIO平台驱动，修复代数复核、动态配置、IRQ释放、void remove、超时结果与旧硬件收尾。",
+        "date": "2026-10-17",
+        "validation": [
+          "两篇全文冷读，固定提交下载并核对ktime类型/转换、hrtimer前移取消、completion返回与platform回调；五张图逐张目视，修改后重渲染。",
+          "GCC/Clang下三种HZ各核对5001输入和常量/溢出反例；提取去抖与事务函数的顺序模型检查边沿/改参/停止/GPIO错误和27种结果顺序，去代数/去首终结者检查的反例被拒绝。",
+          "两篇连续性零风险；术语候选按前置章节、接口表及就地说明复核，章节/基线锚点、全仓8906链接和格式元数据路径diff通过。"
+        ],
+        "limits": "模型不实现Linux锁、工作队列、GPIO或内存序；未进行目标Kbuild、模块加载、物理引脚验证、IRQ/sysfs/事务/退出竞争实测。共享树不可访问，使用官方不可变URL与已校验缓存。"
       }
     },
     "additional_documents": [
