@@ -136,7 +136,7 @@ Windows 使用解释器命令名 `python` 亦可。准备完成后直接从 A �
 | 控制器在芯片里处于什么位置？ | [P02 芯片内的中断体系](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P02_SoC_视角下的中断体系.md#2.1_多个来源汇入处理器_为什么还要保存身份) | A～C：从事件推出控制器角色、身份与连接，不从分类表起步 |
 | 硬件编号和软件映射怎样衔接？ | [P09 层级控制器与 Linux 映射](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P09_层级中断控制器与_ARM_GIC_在_Linux_中的实现.md#9.1_同一根汇聚线为何需要两次来源识别) | F：核对 RK3588 实际集成、设备描述与驱动边界 |
 | 为什么目标处理器改变后要重新核对递送条件？ | [P10 多核与中断亲和性](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P10_SMP_与中断亲和性_IPI_机制.md#10.2_允许集合与实际目标是两份不同状态) | E～F：硬件路由、核间通知与每核初始化，不重复 Linux 使用教程 |
-| 休眠后能否继续接收或唤醒？ | [P11 电源切换与唤醒源](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P11_电源管理中的中断_suspendresume_与唤醒源.md#11.1.1_章节内容说明) | E～F：控制器电源交接、芯片连接与固件条件，不把硬件能力等同于软件唤醒策略 |
+| 休眠后能否继续接收或唤醒？ | [P11 电源切换与唤醒源](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P11_电源管理中的中断_suspendresume_与唤醒源.md#11.2_四种唤醒状态不能靠一个标志代替) | E～F：控制器电源交接、芯片连接与固件条件，不把硬件能力等同于软件唤醒策略 |
 | 一次消息写入怎样变成可处理的中断？ | [P12 消息中断的软件框架](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P12_MSI_MSI-X_与_PCIe_设备的中断框架.md#12.1.1_章节引入与目标) | G：设备事件、翻译服务和目标中断的硬件过程；Linux 分配与驱动使用仍在原章节 |
 
 维护时，真实章节的默认顺序由[正式大纲](../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)组织，长期建设阶段由本路线维护；官方版本与下载位置由[资料索引](../../reference/external_resources/arm/README.md#1.7_维护规则)和机器清单维护，人工评审状态只在[评审地图](../maps/knowledge_review_map.md#1.3_按阅读目标进入)维护。入口同步不意味着全文镜像；仅对实际落地的源码阅读、出版和编辑器调用方补齐链接。

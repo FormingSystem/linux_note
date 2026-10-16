@@ -1632,3 +1632,42 @@ kernel/smp.c使用目标每CPU的call_single_queue与CSD记录。llist_add在原
 ARM与ARM64函数调用IPI通过架构分派进入通用队列处理。GICv3发送器在生成SGI前执行dsb(ishst)，之后使用isb，寄存器只携带SGI与目标信息。不是每次CSD都有独立IPI，也不能从IPI计数断言GPIO链路正确。正文只展开消费者流程与状态归属，不复制上游函数体；脚本试验需目标多核Linux，未宣称实机迁移或IPI测量。
 
 call_function_single_prep_ipi还可通过set_nr_if_polling原子设置目标idle任务的thread_info.flags，在polling承诺成立时省掉IPI。do_idle退出轮询后清polling、执行smp_mb__after_atomic，再flush_smp_call_function_queue；省掉通知的成本由共享标志与轮询协议承担，不等于没有通信。
+
+## 1.190\_系统唤醒IRQ与设备电源交接
+
+2026-10-17 复审[中断的系统唤醒与运行时恢复](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P11_电源管理中的中断_suspendresume_与唤醒源.md)。下列材料从官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 获取，芯片与固件的物理唤醒路径仍以目标集成及试验为准。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| Documentation/power/suspend-and-interrupts.rst | f588feeecad0fccb7d8f6a169cb93d24a273960a |
+| Documentation/power/runtime_pm.rst | 12f429359a823eeb2ed34eff169dab22924e2d98 |
+| Documentation/devicetree/bindings/power/wakeup-source.txt | 27f1797be96375c4aa6969b0c3d09679fed8388d |
+| kernel/irq/pm.c | c556bc49d2137ea30f27d18016b2104d5c48f456 |
+| kernel/irq/manage.c | f0803d6bd2969820443f25b5b508ec553f4cb9a2 |
+| drivers/base/power/wakeirq.c | 5a5a9e978e85f3fc9d89cb7d43527dc1dd42a9b1 |
+| drivers/base/power/wakeup.c | 752b417e81290eb97d578de7f388b83201e52421 |
+| drivers/base/power/main.c | 4a67e83300e164cfcaf216004df3786de3597369 |
+| drivers/base/power/sysfs.c | a1474fb67db9b2f09812b293127730efc6655243 |
+| drivers/pinctrl/core.c | b3eec63c00ba044da37d8f75ac1eb94ede13fc14 |
+| drivers/gpio/gpio-mxc.c | d8d1ae23e0935f85548d61cdbdc8a0189f14dfb6 |
+| include/linux/pm_wakeirq.h | d9642c6cf85211af603ce39e280a5b4de6617ee5 |
+| include/linux/pm_wakeup.h | 76cd1f9f1365306ab45b2832767e400f09e503bc |
+| include/linux/pm_runtime.h | d39dc863f612fe18dc34182117f87908d63c8e6d |
+| drivers/input/keyboard/gpio_keys.c | 380fe8dab3b06379f9744e8190a4afcc0aee20b4 |
+| Documentation/devicetree/bindings/input/gpio-keys.yaml | cc78c2152921308fe0cad3e29ca78a5fad08f066 |
+| drivers/input/keyboard/Kconfig | 3bb67dc9ea0facb16d22527db50b5f6181a06ea2 |
+| kernel/power/main.c | 6254814d481714f769a7ae95bad1310ba1bf1d45 |
+| include/dt-bindings/input/input.h | 221253480b21c0786c13fe4fda3d14078763e20f |
+| include/dt-bindings/input/linux-event-codes.h | 693bbcd2670a41ce72418214217c613d8ad52037 |
+| include/uapi/linux/input-event-codes.h | 5a199f3d4a26a22a94e51d4b53aeed3767c97bce |
+| include/dt-bindings/input/gpio-keys.h | 8962df79e753b7b80bf793d9d180154a543ef416 |
+
+设备能力、power/wakeup策略、IRQ wake配置与软件wakeup_source活动相互区分。suspend_device_irqs在late后/noirq前处理普通与wake IRQ，irq_pm_check_wakeup将armed来源转为pending/suspended并报告PM，正常设备action不在此时照常执行。resume在noirq设备恢复后恢复IRQ，早于常规设备resume。NO_SUSPEND与同一设备enable_irq_wake不可作为双保险叠加；COND_SUSPEND仅用于满足来源判断和显式唤醒条件的特殊共享方案。
+
+dev_pm_set_wake_irq关联已有工作IRQ，dedicated版本另行注册专用线程。helper调用底层enable/disable wake不透传每次错误，因此登记不能证明物理唤醒成功。runtime远程唤醒与system wake策略可不同；专用wake线程可同步恢复设备，不表示普通hardirq可以任意调用可睡眠恢复。
+
+gpio-keys解析按键子节点的wakeup-source、debounce-interval和wakeup-event-action。GPIO分支正常双边沿，低有效asserted选择下降沿唤醒；suspend检查设置错误，部分失败回滚，resume恢复配置并报告状态。它自身PM回调未调用pinctrl sleep/default选择；仅声明sleep状态不会自动证明切换。硬件去抖失败后按GPIO读取是否睡眠选择hrtimer或delayed_work，不能用软件确认撤销已发生的物理唤醒。
+
+输入常量路径include/dt-bindings/input/linux-event-codes.h在Git中为指向../../uapi/linux/input-event-codes.h的符号链接，表中对应blob是链接内容；KEY_WAKEUP实值143来自目标UAPI头，EV_ACT_ASSERTED为1来自gpio-keys.h。模板待替换板级引脚，不声称DTB构建或schema校验。
+
+pm_wakeup_irq暴露当前记录首槽，无记录时返回ENODATA，不是全部物理来源或最后事件历史。wakeup_count读取/写回握手可拒绝竞争活动。正文保留原有deep/IRQ46日志作为历史观察，未将其升级为本轮实测；不执行真实挂起，也不根据gpio-mxc多SoC分支推断i.MX6ULL有同样pad固件通路。
