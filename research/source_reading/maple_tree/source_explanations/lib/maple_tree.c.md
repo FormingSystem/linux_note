@@ -1,6 +1,6 @@
 ---
 id: research.maple_tree.implementation.core
-title: "lib/maple_tree.c 内部节点资源去向"
+title: "lib/maple_tree.c 节点编码_查询与写入控制"
 kind: source
 status: evolving
 domains:
@@ -8,13 +8,17 @@ domains:
   - memory
 ---
 
-# 第1章\_lib/maple\_tree.c\_内部节点资源去向
+# 第1章\_lib/maple\_tree.c\_节点编码\_查询与写入控制
 
 ## 1.1\_固定实现边界
 
-上游 lib/maple_tree.c，固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，blob 8d73ccf66f3aa0588d5ee00a6e7dad3258110d83。[原始实现](../../../linux/lib/maple_tree.c)用于核对；[树模式导读](../../navigation/P03_树对象与模式选择.md#3.2_从未发布到受保护使用)说明 R0～R3 背景，[总索引](../../navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)连接其他模块。本文件目前只展开一个退休节点分派函数，不宣称完整 Maple 回收已审完。
+一次范围操作从共享根进入，却在调用者的 ma_state 中保存位置、错误和准备资源。下面沿节点表示、查询、写入与退出追踪这些状态怎样改变，重点区分返回值、状态标志和实际发布之间的边界。
+
+上游 lib/maple_tree.c，固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，blob 8d73ccf66f3aa0588d5ee00a6e7dad3258110d83。[原始实现](../../../linux/lib/maple_tree.c)用于核对；[树模式导读](../../navigation/P03_树对象与模式选择.md#3.2_从未发布到受保护使用)说明 R0～R3 背景，[总索引](../../navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)连接其他模块。本页按源码实现簇展开节点表示、查询状态、普通封装、写入准备与资源退出；保留各簇唯一的函数体。完整节点分裂、合并、内部行走和延迟回收算法未在这里全部展开。
 
 ## 1.2\_退休节点根据模式选择去向
+
+修改索引后，一些内部节点已不再属于当前树形，但旧读者可能仍能观察它们。调用者先完成摘除，本函数再根据树模式选择延迟释放或归还当前操作的资源池；它不负责决定任意节点是否已经安全退出。
 
 ```c
 /**
@@ -39,6 +43,8 @@ static inline void mas_free(struct ma_state *mas, struct maple_enode *used)
 
 ## 1.3\_节点缓存按实际结构大小申请对齐
 
+编码入口要借用地址低位，分配器必须给出足够对齐的节点地址。初始化节点缓存时同时指定对象大小和对齐，才能让后续的掩码解码有合法前提；这与初始化某棵业务树不同。
+
 ```c
 /**
  * @brief 仓库补充阅读说明：对象大小与申请的对齐均由 sizeof(maple_node) 给出。
@@ -54,9 +60,11 @@ void __init maple_tree_init(void)
 
 maple_node_cache 保存后续节点分配使用的缓存。kmem_cache_create 的对象大小和对齐参数相同，SLAB_PANIC 是初始化分配失败策略；本函数不创建一棵业务树。源码头部说明节点容器按 256 字节布局和对齐，但具体构建仍应结合类型与 ABI 核对。
 
-本次从固定头提取相关定义，显式提供 __rcu 与双指针形状的 rcu_head 适配，以 Clang 的 ARM32 和 x86_64 freestanding 前端检查 sizeof：maple_node/range 均为 256，arange 分别为 256/248。此项只验证明确适配后的字段布局，没有完整 Kbuild、调试配置组合或分配器运行验证。回到[节点布局导读](../../navigation/P04_节点布局与范围分区.md#4.2_按问题读取布局)。
+既有布局验证从固定头提取相关定义，显式提供 __rcu 与双指针形状的 rcu_head 适配，以 Clang 的 ARM32 和 x86_64 freestanding 前端检查 sizeof：maple_node/range 均为 256，arange 分别为 256/248。此项只验证明确适配后的字段布局，没有完整 Kbuild、调试配置组合或分配器运行验证。回到[节点布局导读](../../navigation/P04_节点布局与范围分区.md#4.2_按问题读取布局)。
 
 ## 1.4\_编码节点保存类型而不是父槽
+
+向下走树时，需要从一个入口同时取出节点地址和节点类型。对齐留下的低位承载类型等标记；恢复裸地址与仅移除根标记是两种不同操作，不能用同一个清位表达式替换。
 
 ```c
 /**
@@ -133,6 +141,10 @@ static inline void *mte_safe_root(const struct maple_enode *node)
 这些 helper 解释下行节点表示，不读取父槽号。mt_mk_node 默认置 MAPLE_ENODE_NULL；本节不由构造位推出完整空洞维护结论。解码后的地址还需要正确生命周期保护。
 
 ## 1.5\_父关系编码与根例外
+
+本节的 MASK 常量选择槽号所在位，SHIFT 给出解码移位量；RANGE64/RANGE32/NOT_RANGE16 是父关系格式标记，不能由名称推断本次目标位宽。MAS_BUG_ON 是诊断宏，其调试和普通构建分支行为见[诊断边界](../include/linux/maple_tree.h.md#1.14_诊断宏不会替调用者修复状态)，不提供非法父类型的可恢复返回。
+
+向上回溯还需要知道父节点地址及自己占据的槽。node.parent 因而有另一套编码；根的父关系指向树对象，必须先识别根，不能按普通节点对齐盲目解码。
 
 ```c
 /**
@@ -288,6 +300,8 @@ xa_is_internal 的具体低位判断见[xarray 辅助](../include/linux/xarray.h
 
 ## 1.7\_从操作状态选择树入口
 
+尚未定位的请求面对三种根：空根、直接 entry、编码节点。mas_start 先选择解释并更新局部 status/node，mas_state_walk 才决定返回当前结果还是继续节点行走。
+
 ```c
 /**
  * @brief 仓库补充阅读说明：只在 start 状态建立根范围，并区分节点树、空树和根直存。
@@ -400,6 +414,8 @@ retry:
 条件是 !mas_is_active || !mas_is_start，同一枚举不可能同时等于 active 与 start，所以此版本进入函数时会设为 start。之后可能因并发读到失效节点而重试，none/root 分支调整结果范围；这是固定代码的行为，不用注释或函数名替它猜测缓存复用。这里没有改动外部源码，也没有证明整个重试协议的并发正确性。
 
 ## 1.9\_暂停继续与有界find
+
+调用者准备放锁时，旧节点位置不能跨越保护空隙继续信任。pause 保留逻辑范围并清节点入口；重获保护后的 find 根据旧状态决定从何处继续，因此不能把 pause 简化成 reset 的另一个名字。
 
 ```c
 /**
@@ -520,9 +536,11 @@ void *mas_find(struct ma_state *mas, unsigned long max)
 
 S2 pause 由调用者在放锁前执行，S4 重获保护后 find 的 pause 分支先检查 last<max，再推进 index=++last；S5 reset 则保持当前 index。active 且 last 已到 max 时 setup 直接结束，返回 NULL 不改变 active。进入下一槽分支后，本函数也明确覆盖状态为 active，不把任意 NULL 推断为 overflow。ma_error 分支只早退，不帮调用者恢复或释放资源。
 
-本批私有模块和模型化树行走的宿主夹具只核对这些控制路径；mas_next_slot/mtree_range_walk 的完整动态算法、RCU 重试与回收仍未运行。模块导读见[一次遍历周期](../../navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)。
+既有私有模块及使用模型替代树行走的宿主夹具只核对这些控制路径；mas_next_slot/mtree_range_walk 的完整动态算法、RCU 重试与回收仍未运行。模块导读见[一次遍历周期](../../navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)。
 
 ## 1.10\_普通点查与读侧边界
+
+MA_STATE 宏创建栈上操作状态，定义及各字段见[状态初始化](../include/linux/maple_tree.h.md#1.10_操作状态与初始化)。本次点查只把 index 作为输入；RCU 的进入和退出围住内部行走，不围住调用者之后的对象访问。
 
 ```c
 /**
@@ -563,6 +581,10 @@ unlock:
 从 S4 看本函数：mas_start 处理空根、根直接 entry 和节点根，普通快速 walk 不承诺维护完整游标，失效入口会重试。最后把 XA_ZERO_ENTRY 归为 NULL。业务对象的引用与返回后寿命不由这里建立，见[普通接口导读](../../navigation/P07_普通接口与范围契约.md#7.2_沿一次调用划分责任)。
 
 ## 1.11\_普通写入与整段擦除
+
+这里 -EINVAL 表示参数不合法，-EEXIST 表示插入范围已被占用。WARN_ON_ONCE 产生诊断，而真正拒绝入参的是随后的 return；不能把告警本身当作错误恢复。
+
+覆盖已有范围、要求范围为空才插入、删除当前命中整段是不同请求。三个普通封装各自创建临时状态并安排内部锁；比较它们的检查、重试与返回出口，才能确定失败后调用者还拥有什么。
 
 ```c
 /**
@@ -668,9 +690,11 @@ void *mtree_erase(struct maple_tree *mt, unsigned long index)
 
 store 的范围覆盖与 insert 的拒绝覆盖是两种业务契约。固定 mas_insert 的冲突路径调用 mas_set_err(mas, -EEXIST)，因此错误名是 EEXIST；上游 insert 文档中的 EEXISTS 拼写不能照抄为有效常量。普通参数检查用 xa_is_advanced，不等于 mt_is_reserved。
 
-mtree_lock 宏直接取 ma_lock，本封装没有外部锁自动分派；已持有该内部锁时也不能再套一层普通写接口。S2 内部 mas_store_gfp/mas_nomem 的资源与重试协议尚未在此完整展开，不能把这个外围锁对理解成整个分配过程绝不放锁。erase 的完整内部算法也仍在后续范围内，此处契约由固定函数文档及调用路径确定。
+mtree_lock 宏直接取 ma_lock，本封装没有外部锁自动分派；已持有该内部锁时也不能再套一层普通写接口。S2 内部 mas_store_gfp/mas_nomem 的资源与重试协议见本页后续 1.13～1.14 节，不能把这个外围锁对理解成整个分配过程绝不放锁。erase 的完整内部算法也仍在后续范围内，此处契约由固定函数文档及调用路径确定。
 
 ## 1.12\_向后查找与回绕终止
+
+成功时要为下一次搜索留下位置，因而写回整个命中范围末端加一；到 unsigned long 最大值 ULONG_MAX 后会回绕为零。CONFIG_DEBUG_MAPLE_TREE 编译分支另检查索引是否前进；该检查没有负责推进索引，普通构建的功能语句仍然存在。
 
 ```c
 /**
@@ -743,6 +767,10 @@ void *mt_find_after(struct maple_tree *mt, unsigned long *index,
 index>max 直接返回且不改游标；其他 NULL 返回也不写回。max 限制搜索，而命中范围可以延伸过 max。若 last=ULONG_MAX，成功后 index 回绕零，DEBUG 分支也显式允许这个零值。zero-entry 不作为普通可见对象返回。函数返回时内部 RCU 读侧已经退出，不替载荷取得引用。见[普通接口模块](../../navigation/P07_普通接口与范围契约.md#7.3_结果与证明边界)。
 
 ## 1.13\_高级写入与准备兑现
+
+MA_WR_STATE 声明局部写操作上下文 ma_wr_state，将 mas 关联到调用者状态、entry 设为新载荷、content 先置空以备保存旧载荷；它不是第二棵树。MA_STATE_PREALLOC 是资源准备标志，定义见[资源清理](maple_tree.c.md#1.15_资源清理与批量准备)。这里的 MAS_WARN_ON/MAS_WR_BUG_ON 采用[诊断宏分支](../include/linux/maple_tree.h.md#1.14_诊断宏不会替调用者修复状态)，不能凭名称假定全部配置下都立即中止。
+
+高级接口把 ma_state 留给调用者。一轮写入既要维护索引，又可能申请节点，所以可以选择一次完成并处理重试，或先准备资源再兑现。以下四个入口的返回值并不相同：旧 entry、错误码和无返回值不能互相代替。
 
 ```c
 /**
@@ -891,6 +919,10 @@ S0/S1 建立请求与写入类型，S2 准备节点，S3 保持请求与保护�
 
 ## 1.14\_节点准备与补分配锁边界
 
+GFP_NOWAIT 表示本轮不等待资源，__GFP_NOWARN 抑制分配失败告警；GFP_KERNEL 允许正常进程上下文中的阻塞分配。-ENOMEM 是内存资源不足错误，mas_nomem 对照的是 node 中编码的这项载荷，不是任意失败状态。
+
+首轮申请不等待，便于在内部自旋锁保护下尝试。失败后若允许阻塞，继续持有自旋锁等待资源就不成立；mas_nomem 仅在内部锁模式释放锁、补分配并重获锁，再要求上层从 start 重试。直接预分配走的是另一条不代为放锁的路径。
+
 ```c
 /**
  * @brief 仓库补充阅读说明：检查已准备数量，不足时直接按 gfp 申请；本函数不替调用者放锁。
@@ -948,6 +980,10 @@ bool mas_nomem(struct ma_state *mas, gfp_t gfp)
 mas_nomem 返回 true 只要求上层重新尝试，不表示写入已完成。外部锁模式没有代为解锁，非阻塞标志也不走放锁分支；调用者必须选择相容的上下文。mas_store_gfp 的 NULL entry 重试另恢复原 index/last，以免内部定位改变清除请求。实际节点分配器和写入分类在本单元只追踪调用职责，不将其全部算法视为已展开或运行。
 
 ## 1.15\_资源清理与批量准备
+
+MA_STATE_BULK 标识有序批量填充，MA_STATE_REBALANCE 标识退出时需要检查尾部重平衡，MA_STATE_PREALLOC 标识准备资源的处理方式。这些是 mas_flags 位，不是 status 枚举。后面的 DIV_ROUND_UP 按容量向上取整估算节点数，估算本身不保证以后绝不再分配。
+
+准备出来但没有用完的节点属于当前操作，不属于业务载荷。批量插入还可能为了顺序填充暂时留下需要整理的末节点，所以 mas_destroy 除了释放资源，还可能回到树中重平衡；不能仅凭名字把它视为纯内存 free。
 
 ```c
 /**
@@ -1062,9 +1098,11 @@ int mas_expected_entries(struct ma_state *mas, unsigned long nr_entries)
 }
 ```
 
-S5 清理不能简单等同 free：REBALANCE 分支会回到树中定位并可能修正尾节点。expected_entries 依据条目数量和布局估算，不能作为任意写入序列的永久免分配保证；固定实现使用 GFP_KERNEL，调用上下文要允许相应分配。本批私有模块不启用 BULK，不把批量重平衡当作已运行验证。
+S5 清理不能简单等同 free：REBALANCE 分支会回到树中定位并可能修正尾节点。expected_entries 依据条目数量和布局估算，不能作为任意写入序列的永久免分配保证；固定实现使用 GFP_KERNEL，调用上下文要允许相应分配。配套私有模块不启用 BULK，不把批量重平衡当作已运行验证。
 
 ## 1.16\_树销毁的锁责任
+
+操作资源退出之后，整棵索引仍可能存在。真正销毁树需要撤下根并遍历节点；调用者已经保护的内部入口与自行取得 ma_lock 的普通包装分开，避免漏锁或重复取锁。
 
 ```c
 /**
@@ -1097,3 +1135,18 @@ void mtree_destroy(struct maple_tree *mt)
 ```
 
 外部锁模式示例在持有互斥锁时调用 __mt_destroy；业务对象为静态载荷，不由这两个函数释放。该边界与 mas_destroy 清理操作资源不同。回到[资源模块](../../navigation/P08_写入准备与资源清理.md#8.3_资源与树的退出)。
+
+## 1.17\_沿实现簇检查修改影响
+
+本页不是独立的新算法版本。每一簇函数都回到对应导读中的状态地址和时序箭头，修改时应同时核对入口、结果、失败与清理。
+
+| 实现簇 | 图中落点与必须维持的不变量 | 修改后的重点检查 |
+| --- | --- | --- |
+| mas_free 与根模式 | [R3 退休分派](../../navigation/P03_树对象与模式选择.md#3.2_从未发布到受保护使用)：只接收已退出的内部节点，模式决定去向 | RCU/非 RCU 两路；不能把业务 entry 当节点，也不能提前复用旧读者可能持有的节点 |
+| 节点与父编码 | [字段职责图](../../navigation/P05_字段编码与状态分工.md#5.2_同一数值先按存储位置解读)：下行类型、上行槽号和根例外各有表示 | 与头文件掩码/容量/对齐一起改；覆盖根、合法最大槽和不同节点类型，不把编码容量当实际槽数 |
+| start/walk/pause/find | [S0～S6 游标周期](../../navigation/P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)：status 和范围共同决定下一步 | 空树、根直存、active/pause/none/error、最大索引及重试；NULL 不能作为唯一状态判据 |
+| 普通 load/store/insert/erase/find | [普通接口 S0～S4](../../navigation/P07_普通接口与范围契约.md#7.2_沿一次调用划分责任)：临时状态、内部锁、返回对象寿命分别成立 | 参数拒绝、重叠政策、整段擦除、特殊零项和回绕终止；不要把外部锁模式默认为普通写可用 |
+| prepare/nomem/store/destroy | [资源 S0～S5](../../navigation/P08_写入准备与资源清理.md#8.2_沿S0到S5追踪资源)：准备与发布分离，放锁后重建位置 | 零需求、失败清理、返回 ret 与清后状态、内部/外部锁、可阻塞/不可阻塞及 NULL entry 重试 |
+| expected_entries 与树销毁 | [资源退出](../../navigation/P08_写入准备与资源清理.md#8.3_资源与树的退出)：操作资源、树节点和业务对象有不同所有者 | BULK/REBALANCE 清理、真实回收和目标并发需单独验证；内部 destroy 调用前必须已有保护 |
+
+宿主状态或控制夹具只能验证其替身边界内的分支；涉及真正节点行走、并发重试、分裂或延迟回收的修改，需要相应内核配置与目标路径验证，不能沿用封装测试的通过结果。

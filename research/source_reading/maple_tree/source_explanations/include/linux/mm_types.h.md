@@ -1,6 +1,6 @@
 ---
 id: research.maple_tree.implementation.mm_tree_flags
-title: "include/linux/mm_types.h VMA 树模式"
+title: "include/linux/mm_types.h VMA 树模式与游标"
 kind: source
 status: evolving
 domains:
@@ -8,13 +8,17 @@ domains:
   - memory
 ---
 
-# 第1章\_include/linux/mm\_types.h\_VMA树模式
+# 第1章\_include/linux/mm\_types.h\_VMA树模式与游标
 
 ## 1.1\_固定定义的位置
+
+地址空间需要一棵共享范围树，而每位查询者需要自己的当前位置。本页核对 VMA 树选择的模式和两种游标初始化，说明哪些属于共享索引，哪些只属于本次操作。
 
 上游 include/linux/mm_types.h，固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，blob 6894de506b364fa7f3396146f53216d0d40b80d2。核对[原始头文件](../../../../linux/include/linux/mm_types.h)，回到[树模式导读](../../../navigation/P03_树对象与模式选择.md#3.2_从未发布到受保护使用)及[总索引](../../../navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)。
 
 ## 1.2\_VMA树的三项模式
+
+进程既要查询某个地址属于谁，也要找可用空洞；修改又受地址空间锁统一约束。MM_MT_FLAGS 把这些使用要求交给通用树初始化。它表达选择，不执行选择后的加锁、分配或回收动作。
 
 ```c
 /**
@@ -28,6 +32,8 @@ domains:
 宏只产生组合值，不会取得 mmap_lock、分配树节点或保护返回的 VMA。kernel/fork.c 的 mm_init 将该值交给 mt_init_flags，再登记外部锁的 lockdep 描述。ALLOC_RANGE 换取空洞搜索信息，同时付出节点容量和维护成本；LOCK_EXTERN 让地址空间调用者承担锁责任；USE_RCU 决定内核节点处理路径，不等同于 CONFIG_PER_VMA_LOCK 已启用，也不提供 VMA 的长期持有权。各位的唯一解释见[树字段与模式](maple_tree.h.md#1.2_共享树字段与模式位)。
 
 ## 1.3\_VMA游标与两种初始化
+
+共享同一地址空间的线程可以从不同地址开始遍历。索引留在 mm_struct，当前位置随调用者放入 vma_iterator；两种初始化都建立待查询状态，但它们并没有逐字段相同的初值。
 
 ```c
 /**
@@ -68,3 +74,5 @@ static inline void vma_iter_init(struct vma_iterator *vmi,
 ```
 
 S1 两种初始化建立 start 入口，但不保证每个字段相同；尚未查询时 last 不表示已经命中的 VMA 末端。mm_struct 的 mm_mt 成员归地址空间所有，多个共享 mm 的线程并不各自复制这棵树。模块入口见[VMA 适配](../../../navigation/P09_VMA游标与边界适配.md#9.2_从地址空间到局部游标)。
+
+修改 MM_MT_FLAGS 要同时核对 mm_init 的初始化/外部锁登记及节点退休分支；修改 vma_iterator 初始化要检查首次查询、last 的零初值与函数初始化的 addr 初值，不能把未查询的 last 当结果。它们分别落在[树模式 R0](../../../navigation/P03_树对象与模式选择.md#3.2_从未发布到受保护使用)和[VMA 适配 S1](../../../navigation/P09_VMA游标与边界适配.md#9.2_从地址空间到局部游标)的写入箭头上，两处图同时说明共享状态与私有状态的关系。

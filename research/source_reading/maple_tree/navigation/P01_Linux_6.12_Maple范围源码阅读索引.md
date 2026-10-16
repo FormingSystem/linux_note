@@ -35,6 +35,7 @@ domains:
 | pause/reset 怎样影响下一次查询 | [游标模块](P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)，进入[状态初始化](../source_explanations/include/linux/maple_tree.h.md#1.10_操作状态与初始化)和[暂停继续](../source_explanations/lib/maple_tree.c.md#1.9_暂停继续与有界find) |
 | 普通接口怎样处理范围与返回值 | [普通接口模块](P07_普通接口与范围契约.md#7.2_沿一次调用划分责任)，对应[点查](../source_explanations/lib/maple_tree.c.md#1.10_普通点查与读侧边界)、[写入](../source_explanations/lib/maple_tree.c.md#1.11_普通写入与整段擦除)及[find](../source_explanations/lib/maple_tree.c.md#1.12_向后查找与回绕终止) |
 | 写入资源与锁怎样衔接 | [资源模块](P08_写入准备与资源清理.md#8.2_沿S0到S5追踪资源)，进入[准备与兑现](../source_explanations/lib/maple_tree.c.md#1.13_高级写入与准备兑现)、[补分配](../source_explanations/lib/maple_tree.c.md#1.14_节点准备与补分配锁边界)与[清理](../source_explanations/lib/maple_tree.c.md#1.15_资源清理与批量准备) |
+| 诊断宏是否会阻止后续语句 | [四个诊断宏的构建分支](../source_explanations/include/linux/maple_tree.h.md#1.14_诊断宏不会替调用者修复状态)：区分累计计数、输出现场和功能控制流 |
 | VMA 游标怎样适配地址空间 | [VMA 适配模块](P09_VMA游标与边界适配.md#9.2_从地址空间到局部游标)，进入[初始化](../source_explanations/include/linux/mm_types.h.md#1.3_VMA游标与两种初始化)、[方向](../source_explanations/include/linux/mm.h.md#1.5_VMA方向与范围遍历)与[写入包装](../source_explanations/include/linux/mm.h.md#1.6_VMA写入请求与资源退出) |
 | 撤销主索引之后如何继续处理对象 | [撤销范围模块](P10_撤销范围与临时索引.md#10.2_两棵树沿S0到S5分工)，关联[对齐入口](../source_explanations/mm/vma.c.md#1.2_对齐撤销建立临时树)、[恢复](../source_explanations/mm/vma.h.md#1.3_恢复分离标记而非逆转全部拆分)与[页表清理](../source_explanations/mm/memory.c.md#1.3_释放页表与上界哨兵) |
 
