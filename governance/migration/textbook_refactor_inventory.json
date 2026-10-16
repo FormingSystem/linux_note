@@ -1017,6 +1017,78 @@
           "七张Mermaid渲染，新增和修改三条时序目视检查；目标格式、元数据、命名、全仓707篇链接及diff通过"
         ],
         "limits": "未执行内核构建、真实复制缺页、描述符/映射/最终清理运行实验；源码核对与语义冷读不升级开发者人工评审。"
+      },
+      "knowledge/driver_model/file_operations/P01_一次打开与最后一次释放.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留dup与独立open的完整模型和程序，统一F周期、补观察临时引用归还与本版本close边界；逐步说明本机/交叉构建、节点、日志和恢复。",
+        "date": "2026-10-16",
+        "validation": [
+          "七份正文C代码与材料一致；三模块通过真实ARM头文件语法检查，471个实际头未偏离固定提交",
+          "十六份固定源码核对，十一份已保存原件一致；目录模型普通、O2-NDEBUG及错误预期分支共三次运行符合结果",
+          "七张Mermaid渲染并目视检查三条修改时序；六篇连续性无风险，目标格式、全仓链接及diff通过"
+        ],
+        "limits": "session_probe仅通过宿主MinGW语法，iter/mapping探针缺少Linux用户空间sysroot未编译；未执行Kbuild、MODPOST、目标加载、真实用户缺页、映射或跨位宽实验。术语提示按前置、代码标识和参考页职责核对，未宣称严格零提示。"
+      },
+      "knowledge/driver_model/file_operations/P02_迭代读取与请求位置.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留两组游标与完整read_iter实验，澄清范围检查不能保证用户页可访问；统一R周期、补独立构建和逐步readv/pread观察及恢复。",
+        "date": "2026-10-16",
+        "validation": [
+          "七份正文C代码与材料一致；三模块通过真实ARM头文件语法检查，471个实际头未偏离固定提交",
+          "十六份固定源码核对，十一份已保存原件一致；目录模型普通、O2-NDEBUG及错误预期分支共三次运行符合结果",
+          "七张Mermaid渲染并目视检查三条修改时序；六篇连续性无风险，目标格式、全仓链接及diff通过"
+        ],
+        "limits": "session_probe仅通过宿主MinGW语法，iter/mapping探针缺少Linux用户空间sysroot未编译；未执行Kbuild、MODPOST、目标加载、真实用户缺页、映射或跨位宽实验。术语提示按前置、代码标识和参考页职责核对，未宣称严格零提示。"
+      },
+      "knowledge/driver_model/file_operations/P03_只读映射与后备页寿命.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留专用清零页、当前及潜在权限、file保活与热拔插限制；统一M/F周期交接，补最终清理执行者和双终端普通卸载步骤。",
+        "date": "2026-10-16",
+        "validation": [
+          "七份正文C代码与材料一致；三模块通过真实ARM头文件语法检查，471个实际头未偏离固定提交",
+          "十六份固定源码核对，十一份已保存原件一致；目录模型普通、O2-NDEBUG及错误预期分支共三次运行符合结果",
+          "七张Mermaid渲染并目视检查三条修改时序；六篇连续性无风险，目标格式、全仓链接及diff通过"
+        ],
+        "limits": "session_probe仅通过宿主MinGW语法，iter/mapping探针缺少Linux用户空间sysroot未编译；未执行Kbuild、MODPOST、目标加载、真实用户缺页、映射或跨位宽实验。术语提示按前置、代码标识和参考页职责核对，未宣称严格零提示。"
+      },
+      "knowledge/driver_model/file_operations/P04_扩展接口的契约与选择.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按参考职责完整冷读控制、事件、目录、锁、持久化和搬运边界；修正poll_wait不睡眠的绝对表述，目录模型改为显式检查并补就地命令，选型表前补判断过程。",
+        "date": "2026-10-16",
+        "validation": [
+          "七份正文C代码与材料一致；三模块通过真实ARM头文件语法检查，471个实际头未偏离固定提交",
+          "十六份固定源码核对，十一份已保存原件一致；目录模型普通、O2-NDEBUG及错误预期分支共三次运行符合结果",
+          "七张Mermaid渲染并目视检查三条修改时序；六篇连续性无风险，目标格式、全仓链接及diff通过"
+        ],
+        "limits": "session_probe仅通过宿主MinGW语法，iter/mapping探针缺少Linux用户空间sysroot未编译；未执行Kbuild、MODPOST、目标加载、真实用户缺页、映射或跨位宽实验。术语提示按前置、代码标识和参考页职责核对，未宣称严格零提示。"
+      },
+      "knowledge/driver_model/file_operations/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "核对四篇真实问题链及相邻职责，补全用户探针和目录模型入口描述，统一F/R/M与源码导读的周期映射。",
+        "date": "2026-10-16",
+        "validation": [
+          "七份正文C代码与材料一致；三模块通过真实ARM头文件语法检查，471个实际头未偏离固定提交",
+          "十六份固定源码核对，十一份已保存原件一致；目录模型普通、O2-NDEBUG及错误预期分支共三次运行符合结果",
+          "七张Mermaid渲染并目视检查三条修改时序；六篇连续性无风险，目标格式、全仓链接及diff通过"
+        ],
+        "limits": "session_probe仅通过宿主MinGW语法，iter/mapping探针缺少Linux用户空间sysroot未编译；未执行Kbuild、MODPOST、目标加载、真实用户缺页、映射或跨位宽实验。术语提示按前置、代码标识和参考页职责核对，未宣称严格零提示。"
+      },
+      "labs/kernel/file_operations/materials/README.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "逐项核对三模块、三探针、目录模型和Makefile的对应关系，保留材料导航及执行限制，不复制正文实验手册。",
+        "date": "2026-10-16",
+        "validation": [
+          "七份正文C代码与材料一致；三模块通过真实ARM头文件语法检查，471个实际头未偏离固定提交",
+          "十六份固定源码核对，十一份已保存原件一致；目录模型普通、O2-NDEBUG及错误预期分支共三次运行符合结果",
+          "七张Mermaid渲染并目视检查三条修改时序；六篇连续性无风险，目标格式、全仓链接及diff通过"
+        ],
+        "limits": "session_probe仅通过宿主MinGW语法，iter/mapping探针缺少Linux用户空间sysroot未编译；未执行Kbuild、MODPOST、目标加载、真实用户缺页、映射或跨位宽实验。术语提示按前置、代码标识和参考页职责核对，未宣称严格零提示。"
       }
     }
   },
