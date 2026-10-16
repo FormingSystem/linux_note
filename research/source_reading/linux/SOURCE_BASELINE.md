@@ -2089,3 +2089,25 @@ kernel/irq/devres.c的devm_request_threaded_irq在成功申请后登记irq/dev_i
 rwsem公开接口和非RT实现确认可中断/killable获取返回0或负错误码，trylock返回1或0，写降读之后归还读资格；普通接口保留所有者责任，专用non-owner接口另有契约。mutex_unlock的对象存活要求持续到函数返回。locktypes.rst确认RT普通自旋锁的可抢占、迁移约束和IRQ后缀差异，不能从“内部可阻塞”推导临界区可任意睡眠。
 
 正文辅助代码提取后经GCC与Clang编译，用顺序替代锁接口验证中断原状态恢复、无符号计数回绕、非法参数、获取中断、条件冲突和数值改回的语义；不模拟真实竞争、调度或内存顺序，不等于目标Kbuild。先修交错材料另验证原版、加二及过早释放模型。标准工作树本次不可访问，既有非SMP、非RT配置均只作历史记录，未重新确认当前配置，未完成目标运行。
+
+## 1.208\_锁资格交接与诊断检查点复核
+
+2026-10-17按同一官方提交dfaf2136deb2af2e60b994421281ba42f1c087e0复核[统一周期](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P03_锁的统一状态与通信周期.md)、[ARM实现](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P04_spinlock实现与上下文边界.md)、[mutex交接](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P05_mutex慢路径与所有权交接.md)、[rwsem批次](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P06_rwsem读写汇聚与唤醒.md)与[实时和寿命边界](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P07_PREEMPT_RT生命周期与选型.md)。新增或重新下载的关键来源如下，已有mutex.c、rwsem.c和locktypes.rst身份沿用上节及先前各实现证据。
+
+| 上游相对文件 | Git blob |
+| --- | --- |
+| arch/arm/include/asm/spinlock.h | f610a773f2be527dde14415a61fab4c7250d9447 |
+| arch/arm/include/asm/spinlock_types.h | 0c14b36ef10131b2a1fc95d91ccc76871e8ba4d4 |
+| include/linux/spinlock_api_smp.h | 89eb6f4c659c706c1b7376534a25d53a316316b7 |
+| kernel/locking/osq_lock.c | 75a6f6133866d81ab4bd94f128d3f20f85c7c15f |
+| include/linux/osq_lock.h | ea8fb31379e3cba3520c202e1d4b42fb08e13e04 |
+| kernel/sched/core.c | 1f817d0c5d2d0e04a8d48836bf465eb7585d16d8 |
+| include/linux/kernel.h | be2e8c0a187e4b26a704ee5e628b7afe404d9211 |
+| Documentation/dev-tools/kasan.rst | d7de44f5339d43aee128091930ead29511060925 |
+| Documentation/dev-tools/kcsan.rst | d81c42d1063eab5db0cba1786de287406ca3ebe7 |
+
+32位ARM票号的next/owner各16位，获取成功领号后复查owner，释放推进owner后执行事件路径；不外推ARM64。普通获取与irqsave/bh是调用者选择的不同包装入口，不是spin_lock自动调用irqsave。票号顺序C模型经GCC与Clang编译运行，不能替代真实独占访问与弱内存验证。
+
+mutex非交接释放可先清owner再处理等待队列，所以锁资格可用与旧unlock返回是不同事件。HANDOFF保持旧所有权直至指定接收者，PICKUP由接收者acquire确认；取消检查晚于锁下尝试接收。OSQ的队尾在锁对象中，optimistic_spin_node为每CPU节点；已在等待链表队首的自旋者可绕过OSQ。rwsem读批次先完整记份额再release清waiter.task，写者收到唤醒仍须实际取得独占；读批次扫描可跳过写节点，单次上限256属于版本实现。
+
+DEBUG_ATOMIC_SLEEP分支中的might_sleep先调用__might_sleep检查，后续might_resched有自己的配置选择；__might_resched检查抢占、IRQ等状态并带有启动阶段/故障状态例外及限频。该报告不证明已经调度睡眠，安静也不能排除未检查或被抑制路径。KASAN与KCSAN文档只支持各自检测范围，不能把一种检查的未告警当成全部锁和寿命正确。此次未运行目标锁竞争、RT调度、解绑或检查器实验；历史配置与本次工作树不可访问的边界保持不变。

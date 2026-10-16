@@ -11,9 +11,9 @@ topics: [synchronization, locking, rwsem]
 
 ## 6.1\_多读单写增加了什么难题
 
-mutex 只需回答“唯一 owner 是谁”。rwsem 允许多个读者共享所有权，写者却要等所有旧读者退出，并阻止无限到达的新读者让写者永远等不到零。于是状态不再是单一 owner，而是读者份额、写者占有、等待者存在、首 waiter 类型和唤醒批次共同组成的分布式状态机。
+上一章mutex围绕唯一owner交接。现在让两个任务同时遍历同一份配置，管理任务W需要替换配置。只要任一旧读者仍在临界区，W就不能独占；而每个读者退出时又只知道自己这一份结束了。把份额集中记入一个计数，最后退出者便能观察“旧读者已全部归还”，但这还没有回答新读者是否允许加入、谁负责通知W、通知是否已经授予写权。
 
-设两个任务正在遍历同一份只读配置，管理任务W需要替换配置。只要任一旧读者仍在临界区，W就不能独占；而每个读者退出时又只知道自己这一份结束了。把份额集中记入一个计数，最后退出者便能观察“旧读者已全部归还”，但这还没有回答新读者是否允许加入、谁负责通知W、通知是否已经授予写权。本章逐项补齐这些缺口，具体字段与批次策略限定固定Linux 6.12.20的 **非PREEMPT_RT实现**。
+如果不断允许新读者补进来，W还可能一直等不到全部份额归零。我们因此不仅需要读者计数，还需要写者占有、等待者登记、队首类型以及本轮交付给哪些任务的状态。它们共同组成分布在锁对象与任务等待节点中的状态机。本章逐项补齐这些责任，具体字段与批次策略限定固定Linux 6.12.20的 **非PREEMPT_RT实现**。
 
 ## 6.2\_角色与状态地址
 
@@ -96,7 +96,7 @@ sequenceDiagram
 
 ## 6.6\_乐观自旋和公平边界
 
-开启 `CONFIG_RWSEM_SPIN_ON_OWNER` 时，部分竞争者可以依据owner运行状态短暂自旋。当前核对的工作配置未启用SMP，也没有该选项的启用项；本节只解释固定源码可选分支。优化尝试减少短持锁场景的切换，但读取owner和竞争count仍有共享访问成本，也不能从一个读owner提示推断所有读者都即将退出。
+开启 `CONFIG_RWSEM_SPIN_ON_OWNER` 时，部分竞争者可以依据owner运行状态短暂自旋。仓库历史配置记录未启用SMP，也没有该选项的启用项，本次没有重新核验可用工作树；本节只解释固定源码可选分支。优化尝试减少短持锁场景的切换，但读取owner和竞争count仍有共享访问成本，也不能从一个读owner提示推断所有读者都即将退出。
 
 rwsem 的队列策略需要在吞吐与等待上界之间折中：过度偏向读者会拖延写者，过度阻挡新读者又会降低读并发。调用者不能依赖未写入 API 契约的精确唤醒顺序来实现业务协议。
 
@@ -112,7 +112,7 @@ rwsem 的队列策略需要在吞吐与等待上界之间折中：过度偏向�
 
 ## 6.8\_源码入口
 
-先由[锁源码总阅读索引](../../../../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.1_版本边界与阅读任务)确认固定版本，再读 `struct rw_semaphore`、`struct rwsem_waiter`、读写慢路径和 `rwsem_mark_wake()` 的[模块关系](../../../../../research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md#3.4_rwsem完整调用链)。完整类型见[rwsem.h 对象布局](../../../../../research/source_reading/locking/source_explanations/include/linux/rwsem.h.md#1.2_非RT对象的状态落点)；慢路径实现见[rwsem 慢路径源码实现](../../../../../research/source_reading/locking/source_explanations/kernel/locking/rwsem.c.md#1.2_状态地址与统一阶段)，完整分支依据固定提交的 `kernel/locking/rwsem.c`，本页只展开明确列出的完整函数，不代表整个文件全部覆盖。
+先由[锁源码总阅读索引](../../../../../research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.1_版本边界与阅读任务)确认固定版本，再读 `struct rw_semaphore`、`struct rwsem_waiter`、读写慢路径和 `rwsem_mark_wake()` 的[模块关系](../../../../../research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md#3.4_rwsem完整调用链)。完整类型见[rwsem.h 对象布局](../../../../../research/source_reading/locking/source_explanations/include/linux/rwsem.h.md#1.2_非RT对象的状态落点)；慢路径实现见[rwsem 慢路径源码实现](../../../../../research/source_reading/locking/source_explanations/kernel/locking/rwsem.c.md#1.2_状态地址与统一阶段)，完整分支依据固定提交的 `kernel/locking/rwsem.c`。本章建立状态协作模型，具体函数体只在上述实现文档的对应标题展开，不能把模型图当成全文件控制流。
 
 ## 6.9\_本章结论与下一问
 
