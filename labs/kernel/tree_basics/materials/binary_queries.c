@@ -1,3 +1,6 @@
+#ifdef NDEBUG
+#error "binary_queries requires assertions"
+#endif
 #include <assert.h>
 #include <stdio.h>
 
