@@ -2222,6 +2222,18 @@
           "格式、元数据、命名、707篇链接及diff通过"
         ],
         "limits": "模型的GP完成和回收动作相接不代表真实回调即时完成；未新增真实RCU、ARM、目标装卸或内存序结论，人工状态不变。"
+      },
+      "knowledge/linux/object_lifetime/kref/P37_KASAN释放后访问实验.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读KASAN实验并复核固定资料，补Generic影子内存状态载体与读写方向；就地说明多次报告与panic选项的组合，给出目标只读检查方法，区分本轮宿主和历史ARM证据。",
+        "date": "2026-10-16",
+        "validation": [
+          "正文、模块、宿主夹具一致，GCC下Generic开关两种组合共五条安全路径通过，未运行故意UAF",
+          "固定Kconfig及KASAN文档与保存证据一致，当前ARM配置仍未启用KASAN",
+          "8个入口和9个入链标题有效，两图渲染并目视检查，连续阅读、格式、元数据、命名、707篇链接及diff通过"
+        ],
+        "limits": "无启用KASAN的目标构建、装卸或真实告警，历史ARM前端未重跑；人工状态不变。"
       }
     }
   },
