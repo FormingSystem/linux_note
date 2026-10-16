@@ -10,11 +10,13 @@ domains:
 
 # 第1章\_devm\_API接口文档说明
 
-本页用于查询接口，初次学习先读[从失败回滚到设备资源账本](P01_从失败回滚到设备资源账本.md#1.1_从两条退出路径提取同一份责任)。devres保存清理责任，devm包装登记具体资源；调用者仍负责错误判断、资源使用同步、业务关停和未托管责任。
+本页用于查询接口，初次学习先读[从失败回滚到设备资源账本](P01_从失败回滚到设备资源账本.md#1.1_从两条退出路径提取同一份责任)。devres 保存清理责任，devm 包装登记具体资源；调用者仍负责错误判断、资源使用同步、业务关停和未托管责任。查询时先确定资源族，再同时读该项的返回值、托管动作及配置边界；不能只从函数名前缀生成统一的错误检查代码。
+
+文中“错误指针”指把错误码编码在指针类型结果里的约定。`IS_ERR()` 检测这种结果，`PTR_ERR()` 取出错误码，不能把它当作资源地址解引用；NULL 是另一种结果，是否允许由具体接口决定。带返回值的片段用于查询调用形式，不是可以省略上下文直接编译的完整驱动。
 
 ## 1.1\_官方内核文档(首选)
 
-优先阅读已确认版本源码中的`Documentation/driver-api/driver-model/devres.rst`，通过[固定源码索引](../../../../research/source_reading/devres/navigation/P01_Linux_6.12_devres源码阅读索引.md#1.1_固定版本与阅读任务)核对本仓库使用的NXP Linux 6.12.20、不可变提交与实际配置。在线[devres文档](https://docs.kernel.org/driver-api/driver-model/devres.html)方便检索，但滚动页面不能代替固定提交证据；历史`Documentation/driver-model/devres.txt`只作为旧目录线索，不用来证明当前接口原型。
+本页接口以 NXP Linux 6.12.20、发布标签 `lf-6.12.20-2.0.0`、固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 为边界。公共设计依据位于该版本 `Documentation/driver-api/driver-model/devres.rst`；通过[固定源码索引](../../../../research/source_reading/devres/navigation/P01_Linux_6.12_devres源码阅读索引.md#1.1_固定版本与阅读任务)可追溯具体实现与配置。下面已在本地正文列出本页承诺的原型、结果和清理责任，原始材料用于深入核对。在线 [devres 文档](https://docs.kernel.org/driver-api/driver-model/devres.html)方便检索，但滚动页面不能代替固定提交证据；历史 `Documentation/driver-model/devres.txt` 只作为旧目录线索，不用来证明当前接口原型。
 
 ## 1.2\_源码位置(实现\_&\_接口宣告)
 
@@ -23,9 +25,22 @@ domains:
 下面在已确认身份的源码仓库只读查询固定版本，不依赖当前实验工作树内容：
 
 ```bash
+# 已确认身份且含有该提交对象的 Linux 源码仓库根目录；只读查询。
 baseline=dfaf2136deb2af2e60b994421281ba42f1c087e0
 git grep -n -E 'devm_[a-z0-9_]+\(' "$baseline" -- include/linux drivers lib
+```
+
+`baseline` 是本次 shell 保存的固定提交号；`git grep` 在该提交的指定源码目录中查找 devm 调用或定义，不读取当前工作树的实验改动。输出较多时，应按需要的函数名缩小表达式。定位核心后，可分别读取实现和声明：
+
+```bash
+# 同一源码仓库、同一 shell；输出固定对象内容，不修改工作树。
 git show "$baseline":drivers/base/devres.c
+```
+
+该文件保存记录管理、分组和 action 等实现。公共类型、声明及部分内联包装在设备头文件中：
+
+```bash
+# 同一源码仓库、同一 shell。
 git show "$baseline":include/linux/device.h
 ```
 
@@ -62,6 +77,8 @@ action可封装资源释放，也可封装符合依赖的关停动作。正常�
 ### 2.1.3\_devres\_open\_group
 
 原型为`void *devres_open_group(struct device *dev, void *id, gfp_t gfp)`。返回组ID，分配失败返回NULL；**返回类型不是公开的struct devres_group指针**。传入非NULL标识须避免与另一组冲突，传NULL则由核心生成标识。成功只登记开始标记，后续记录沿同一设备链追加。见[open实现](../../../../research/source_reading/devres/source_explanations/drivers/base/devres.c.md#1.2_devres_open_group登记开始标记)。
+
+必须先检查创建结果。后续组操作中的 NULL 可以选择最近未关闭组，不能把创建失败得到的 NULL 原样传下去，并以为它仍代表本次根本没有建立的组。open 与 close 之间也不自动形成独占范围；其他执行者是否能在这期间登记资源，由上层同步协议决定。
 
 ### 2.1.4\_devres\_close\_group
 
@@ -112,7 +129,7 @@ action可封装资源释放，也可封装符合依赖的关停动作。正常�
 
 ## 2.3\_I/O\_资源与寄存器映射
 
-映射给出的是内核访问设备地址空间的入口，类型`__iomem`用来标注I/O地址，不应当作普通RAM指针随意解引用。基础映射和resource包装的失败表示 **不同**：前者NULL，后者错误指针。固定实现见[映射返回值导读](../../../../research/source_reading/devres/navigation/P03_内存映射与中断资源导读.md#3.2_映射与区域占用是两条责任)。
+映射给出的是内核访问设备地址空间的入口，`__iomem` 是用于检查 I/O 地址空间的标注，不是一个独立的 C 基本类型；这种指针不应当作普通 RAM 指针随意解引用。基础映射和 resource 包装的失败表示 **不同**：前者 NULL，后者错误指针。固定实现见[映射返回值导读](../../../../research/source_reading/devres/navigation/P03_内存映射与中断资源导读.md#3.2_映射与区域占用是两条责任)。
 
 ### 2.3.1\_devm\_ioremap
 
@@ -134,7 +151,7 @@ action可封装资源释放，也可封装符合依赖的关停动作。正常�
 
 原型：`void __iomem *devm_platform_ioremap_resource_byname(struct platform_device *pdev, const char *name)`。按资源名查找后进入同一包装，适合已经定义稳定命名的资源。名称要与最终platform资源表一致，不能只凭任意设备树字符串猜测。
 
-两种platform入口在无HAS_IOMEM配置下有返回错误的头文件桩，不能从编译通过推断硬件映射存在。主动提前iounmap只处理映射；区间占用是另一条责任，应按实际需要使用对应托管区间释放接口。解绑前仍须阻止IRQ、工作或用户继续使用该I/O地址。
+两种 platform 入口在无 HAS_IOMEM 配置下有返回错误的头文件桩，不能从编译通过推断硬件映射存在。需要提前结束托管映射时，用 `devm_iounmap()` 同时处理映射与其记录，不能普通 iounmap 后留下旧记录。区间占用是另一条责任，应按实际需要使用对应托管区间释放接口。解绑前仍须阻止 IRQ、工作或用户继续使用该 I/O 地址。
 
 ## 2.4\_GPIO(gpiod\_消费者)
 
@@ -277,7 +294,7 @@ DMAengine管理的是传输通道与提交给它的工作，不是CPU通过普�
 
 原型：`struct phy *devm_phy_get(struct device *dev, const char *string)`，头文件`include/linux/phy/phy.h`。成功返回PHY句柄，失败错误指针；管理包装记录phy_put，未自动代办phy_init/exit或phy_power_on/off。
 
-驱动按实际成功阶段回滚，并按PM和硬件依赖安排退出；不能在某次power_on失败以后假定它已建立需要power_off的责任。若关闭通用PHY支持，头文件桩有单独契约，须同时核对驱动的配置依赖。
+驱动按实际成功阶段回滚，并按 PM 和硬件依赖安排退出；不能在某次 power_on 失败以后假定它已建立需要 power_off 的责任。若关闭通用 PHY 支持，本版本 `devm_phy_get()` 的头文件桩返回 `ERR_PTR(-ENOSYS)`，须同时核对驱动的配置依赖；不能沿用某些其他资源族“禁用配置时返回 NULL”的判断。
 
 ## 2.11\_pinctrl
 
@@ -286,6 +303,8 @@ pinctrl组织设备引脚复用和配置状态；句柄、某个命名状态对�
 ### 2.11.1\_devm\_pinctrl\_get
 
 原型：`struct pinctrl *devm_pinctrl_get(struct device *dev)`，头文件`include/linux/pinctrl/consumer.h`。启用实现成功返回句柄，失败错误指针，登记pinctrl_put；不因这次获取就自动完成驱动期待的default/sleep切换。
+
+未启用 PINCTRL 时，本版本对应桩返回 NULL，其状态选择辅助操作也可能为空操作；因此编译通过或未得到错误指针，不是引脚已经切到指定电气功能的证据。
 
 pinctrl_lookup_state返回状态对象或错误，pinctrl_select_state返回整数结果，二者的错误也要处理。框架已有自动状态选择路径与驱动的PM策略应协调，不能不看总线及驱动核心行为就在所有remove里重复切换。提前结束句柄使用devm_pinctrl_put；这不代替设备安全电平时序。源码入口见[状态与注册导读](../../../../research/source_reading/devres/navigation/P04_句柄启停与注册契约导读.md#4.5_pinctrl与注册类返回值)。
 
@@ -296,6 +315,8 @@ pinctrl_lookup_state返回状态对象或错误，pinctrl_select_state返回整�
 ### 2.12.1\_platform\_get\_irq
 
 原型：`int platform_get_irq(struct platform_device *pdev, unsigned int num)`，头文件`include/linux/platform_device.h`。成功返回有效正IRQ号，失败负错误；本实现会把不应出现的0当作无效IRQ处理。先判断负值并传播适用的延迟错误，再调用devm_request_irq或threaded变体；取得IRQ号本身未注册handler。
+
+“获取编号”也不意味着它只是读一个普通数组元素：具体路径可能从固件描述建立中断映射，或按资源标志在中断描述中记录触发类型。这里承诺的是得到可交给申请接口的 Linux IRQ 号，不能由函数名推出映射与中断描述状态一定不变。
 
 ### 2.12.2\_platform\_get\_resource
 
@@ -317,7 +338,7 @@ pinctrl_lookup_state返回状态对象或错误，pinctrl_select_state返回整�
 
 包装成功登记thermal_of_zone_unregister清理，data和ops涉及的状态要活过回调使用期限。无THERMAL_OF配置时桩返回`-ENOTSUPP`错误指针。不要把旧函数名、旧ops类型或遗留源码注释中的名称拼成当前原型；应以声明和函数定义共同定位。
 
-其他如extcon、IIO及DRM有各自对象与清理期限，按对应子系统继续查阅；尤其drmm的生命周期对象不能直接等同于通用devm设备资源链。
+其他如外部连接器通知 extcon、工业输入输出（Industrial I/O，IIO）及图形显示管理 DRM 也有各自对象与清理期限，应按对应子系统继续查阅；尤其 drmm 的生命周期对象不能直接等同于通用 devm 设备资源链。
 
 
 ## 2.14\_全局注意事项(统一要求)
@@ -333,17 +354,40 @@ pinctrl_lookup_state返回状态对象或错误，pinctrl_select_state返回整�
 
 # 第3章\_关键区别总表(同族接口横向对比)
 
+前面已经分别建立各族职责。先在同族内选择需要的保证，再核对返回表示；两张表不能混成一个“名字类似就同样处理”的模板。
+
+## 3.1\_同一资源族按取得与退出责任选择
+
 | 类别         | 接口                                              | 主要区别点             | 推荐                          |
 | ------------ | ------------------------------------------------- | ---------------------- | ----------------------------- |
 | I/O 映射     | `devm_ioremap` vs `devm_ioremap_resource`         | 前者失败为NULL；后者校验并申请区域，失败为错误指针 | 需要同时取得区域占用责任时用`_resource`；不能重复申请已占用区域 |
-| 平台映射     | `devm_platform_ioremap_resource` vs `_byname`     | 按索引/按名称获取      | 依 DTS 命名使用               |
+| 平台映射     | `devm_platform_ioremap_resource` vs `_byname`     | 按索引/按名称获取      | 按最终 platform 资源表选择，不把任意设备树字符串当作资源名 |
 | GPIO         | `devm_gpiod_get` vs `_optional` vs `_index`       | optional允许规定的缺席，index选择多路中的一项 | 按硬件依赖选取；仍传播其他错误，并核对配置桩 |
-| IRQ          | `devm_request_irq` vs `devm_request_threaded_irq` | 是否提供线程化处理     | 需要可睡眠操作用 **threaded** |
-| CLK          | `devm_clk_get`、`devm_clk_bulk_get`与`devm_clk_get_enabled` | 普通单个/批量仅取得句柄；enabled同时准备使能并登记逆操作 | 按句柄与运行阶段责任选择；批量数组须活到清理结束 |
-| REGULATOR    | `devm_regulator_get`、`_optional`、`bulk_get`与`get_enable` | optional缺席按错误指针处理；get_enable返回整数并登记disable和put | 分清可选供电政策与运行阶段；批量数组期限由调用者保证 |
-| RESET        | `get` vs `get_exclusive` vs `get_shared`          | 此版本普通get即exclusive；shared受共享状态配对规则约束 | 依据真实复位线使用者与硬件协议选择，不能只为避开忙错误而改shared |
+| IRQ          | `devm_request_irq` vs `devm_request_threaded_irq` | 是否提供线程化处理     | 可睡眠部分放到 thread_fn；handler 的上下文、共享来源判断和标志仍须符合底层契约 |
+| 时钟          | `devm_clk_get`、`devm_clk_bulk_get`与`devm_clk_get_enabled` | 普通单个/批量仅取得句柄；enabled同时准备使能并登记逆操作 | 按句柄与运行阶段责任选择；批量数组须活到清理结束 |
+| 供电    | `devm_regulator_get`、`_optional`、`bulk_get`与`get_enable` | optional缺席按错误指针处理；get_enable返回整数并登记disable和put | 分清可选供电政策与运行阶段；批量数组期限由调用者保证 |
+| 复位        | `get` vs `get_exclusive` vs `get_shared`          | 此版本普通get即exclusive；shared受共享状态配对规则约束 | 依据真实复位线使用者与硬件协议选择，不能只为避开忙错误而改shared |
 | 阶段回滚     | `devres_open_group/close/remove/release`                  | close限定范围；remove仅撤标记；release实际清理组内资源 | 保留阶段成果用remove，撤销阶段责任用release |
-| 无 devm 资源 | `devm_add_action` vs `_or_reset`                  | 注册失败时是否立即回滚 | **`_or_reset` 优先**          |
+| 自定义清理 | `devm_add_action` vs `_or_reset`                  | 登记失败时是否立即执行动作 | 已取得资源且失败就应立即撤销、回调适合当前上下文时用 reset；否则普通 add 的失败由调用者明确接回责任 |
+
+## 3.2\_同样叫获取接口也可能返回不同种类的结果
+
+下表汇总最容易误用的表示。沿用开头的错误指针检查约定，同时独立判断 NULL 是否正常、零是否成功。
+
+| 接口或情形 | 成功或允许缺席 | 失败表示 | 检查时不能省略的区别 |
+| --- | --- | --- | --- |
+| 非零大小 `devm_kzalloc()` / `devm_kcalloc()` | 内存地址 | NULL，数组长度溢出也返回 NULL | 零总长度可能返回 ZERO_SIZE_PTR，它不是可访问元素 |
+| `devm_ioremap()` | I/O 映射地址 | NULL | 不是错误指针族，也没有取得独占区间责任 |
+| `devm_ioremap_resource()` 及 Platform 包装 | I/O 映射地址 | 错误指针 | 不能只检查 NULL，区间与映射是两份责任 |
+| 启用实现的 `devm_gpiod_get_optional()` | 描述符或规定缺席时的 NULL | 其他错误指针 | 先处理错误，再选择无 GPIO 分支；配置桩也可能返回 NULL |
+| 启用实现的 `devm_regulator_get_optional()` | 供电句柄 | 包括缺席在内的相应错误指针 | optional 不等于 NULL；按业务区分允许缺席与依赖未就绪 |
+| `devm_reset_control_get_optional()` | 控制句柄或规定缺席时的 NULL | 其他错误指针 | 不把缺席与已执行复位混为一谈 |
+| `devm_request_threaded_irq()`、`devm_clk_bulk_get()`、`devm_regulator_get_enable()` | 0 | 负错误码 | 返回状态不是资源指针；get_enable 不向调用者返回供电句柄 |
+| `platform_get_irq()` | 正 Linux IRQ 号 | 负错误码 | 正数是结果，不能按“非零均失败”判断 |
+| `platform_get_resource()` | 借用的描述地址 | 找不到为 NULL | 不分配资源，调用者不能释放这个描述 |
+| `devres_open_group()` | 组标识 | NULL | 不能把失败 NULL 当成后续操作的有效组标识 |
+
+此外，时钟、供电、GPIO、复位、PHY 和 pinctrl 的禁用配置桩并不统一。应回到各族条目核对当前配置，把“接口在这套配置下如何返回”和“板上是否有该硬件”分开。
 
 ------
 
