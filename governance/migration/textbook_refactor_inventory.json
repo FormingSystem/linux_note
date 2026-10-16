@@ -5815,6 +5815,17 @@
           "五段摘录与固定源码匹配；4条出链无标题入链，全仓9017有效链接及元数据、标题、路径和diff检查通过。"
         ],
         "limits": "本章为固定版本源码分析及纸面状态实验，未声称Kbuild或目标硬件运行。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P05_VFS_与文件系统中的异步通知支持.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以真实操作表接入、打开标志与最终引用清理解释VFS边界，按实际字段和条件比较管道、TTY、socket及其他文件，补返回值和位值观察实验。",
+        "date": "2026-10-17",
+        "validation": [
+          "原稿全文、内容去向与正文冷读，连续阅读严格检查和两图渲染目视通过。",
+          "完整程序GCC/Clang各16种控制流场景，源码摘录匹配和Bash语法通过；5出链无标题入链，全仓9021有效链接及标题元数据路径和diff检查通过。"
+        ],
+        "limits": "控制流模型不代替Linux ABI；未在目标Linux运行信号或Kbuild，不将固定源码行为外推所有文件系统及协议。"
       }
     },
     "additional_documents": [
