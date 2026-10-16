@@ -158,7 +158,7 @@ call_rcu(&obj->rcu, obj_free_rcu);
 | [Tasks Rude RCU](#4.6_Tasks家族改变等待对象) | `Rude` 是内核对“粗暴打扰各 CPU”方式的昵称，不是缩写 | 通过对在线 CPU 施加调度动作取得更强制的执行边界 | 不是 Tasks RCU 的性能升级档 |
 | [Tasks Trace RCU](#4.6_Tasks家族改变等待对象) | **面向显式 trace reader 的 Tasks RCU** | 用 trace 读侧标记和任务状态保护可阻塞 tracing/BPF 轨迹 | 不是普通 RCU tracepoint 开关 |
 | [normal GP](P15_Tree_RCU_Expedited_GP.md#15.2_它不是普通GP的超时开关) | **普通推进的宽限期**；主要等待参与者按正常事件提供 QS | GP 的推进和等待成本 | 这里的 `normal` 不等于“普通 RCU 保护域” |
-| [expedited GP](P15_Tree_RCU_Expedited_GP.md#15.1_场景_控制路径愿意用系统扰动换更短等待) | **加速宽限期**；`expedited` 意为加急 | 主动检查、必要时通过 [IPI（Inter-Processor Interrupt，处理器间中断）](../../asynchrony/interrupts/P10_SMP_与中断亲和性_IPI_机制.md#10.4.1_IPI_是什么)探测，用更高扰动争取更短同步等待 | 不是普通 GP 超时后的自动强制成功，也不改变安全边界 |
+| [expedited GP](P15_Tree_RCU_Expedited_GP.md#15.1_场景_控制路径愿意用系统扰动换更短等待) | **加速宽限期**；`expedited` 意为加急 | 主动检查、必要时通过 [IPI（Inter-Processor Interrupt，处理器间中断）](../../asynchrony/interrupts/P10_SMP_与中断亲和性_IPI_机制.md#10.5_CPU主动通知另一核时工作内容放在哪里)探测，用更高扰动争取更短同步等待 | 不是普通 GP 超时后的自动强制成功，也不改变安全边界 |
 | [NOCB](P16_Tree_RCU_NOCB回调卸载.md#16.2_卸载前后责任对比) | 内核常称 **no-CBs CPU / no-callbacks-on-this-CPU**；即从指定 CPU 卸载 callback 处理 | callback 的 GP 管理与实际执行位置 | 不是“没有 callback”，也不取消该 CPU 的 reader / QS 责任 |
 
 ### 4.2.3\_检查与观测名称也不是新的RCU类型

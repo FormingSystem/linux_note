@@ -1603,3 +1603,32 @@ disable_irq_nosync不等待已有处理完成；enable/disable嵌套，enable在
 hrtimer的REL/ABS规定时间参数含义，PINNED在启动时起作用；回调执行域区分普通默认、SOFT及RT变化，不授予睡眠权限。NORESTART不阻止外部再次start，cancel等待当前回调但不永久关闭生产者。固定gpio-mxc使用每引脚状态位，屏蔽与pending处理不能推出所有物理边沿被计数保存。
 
 完整教学例子用mutex保护masked所有权与stopping，IRQ线程取得禁用后启动timer，timer只排work，worker采样后配对enable；remove在关门后归还禁用，锁外同步IRQ、timer、work。它只实现屏蔽后单次采样，不实现连续稳定证明或按压/释放协议；末沿静默窗口仍使用定时器专题中唯一完整generation/deadline实现。未宣称目标Kbuild或硬件实验通过。
+
+## 1.189\_中断亲和性与IPI工作状态
+
+2026-10-17 复审[多核中断与IPI](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P10_SMP_与中断亲和性_IPI_机制.md)。以下源码及文档来自官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，包含显式区分的ARM/ARM64编译分支，不代表历史单核工作树配置运行过SMP实验。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| kernel/irq/proc.c | 9081ada81c3d023a531d65e5a35a31f4d4ebbe55 |
+| kernel/irq/manage.c | f0803d6bd2969820443f25b5b508ec553f4cb9a2 |
+| kernel/irq/cpuhotplug.c | 15a7654eff684f06dac92b98e36f2287c017469b |
+| drivers/irqchip/irq-gic-v3.c | a3417461abe15616a64972427f635ba6118c3e35 |
+| kernel/smp.c | f25e20617b7eb7a507b002b18672ab197f2ee8e5 |
+| arch/arm/kernel/smp.c | 3431c0553f45cdf5f0b1b8dbb59bf38003da9995 |
+| arch/arm64/kernel/smp.c | 2478e8d2ec88402356342b54525fc637fd6e72f9 |
+| include/linux/smp.h | f1aa0952e8c30b47b58ffcda4757d137c1790342 |
+| include/linux/interrupt.h | 457151f9f263d9042625decde2c15822d860b134 |
+| Documentation/core-api/irq/irq-affinity.rst | 29da5000836a973d8272a431189fc44e2a142607 |
+| kernel/sched/core.c | 1f817d0c5d2d0e04a8d48836bf465eb7585d16d8 |
+| kernel/sched/idle.c | 53bb9193c537a8179a61d834eee7b6140e9f9082 |
+
+proc显示请求/待迁移掩码与effective掩码的不同来源。irq_can_set_affinity_usr排除managed，通用层还检查可平衡性及chip回调。GICv3 SPI设置从请求与在线集合选单CPU，转换硬件亲和性并更新单CPU effective；这不等于硬件1-of-N广播或轮询。IRQ线程通过IRQTF_AFFINITY在自身路径调整可运行集合。
+
+irq_update_affinity_hint只保存提示指针。irq_set_affinity_and_hint路径会尝试设置，但__irq_apply_affinity_hint没有透传内部设置返回值；返回0不能单独证明路由成功。提示存储必须有足够寿命并在销毁前清除。热插拔迁移对普通IRQ可打破无在线目标的原集合，对managed可关闭IRQ并保留集合。
+
+kernel/smp.c使用目标每CPU的call_single_queue与CSD记录。llist_add在原队列为空时进入通知路径；目标摘队列后，SYNC类型先执行函数再release清标志，ASYNC类型可先清标志再执行已保存func/info。发送方同步等待采用acquire观察；异步节点复用不是参数对象生命周期结束。目标为本CPU有本地直接执行分支，远端离线可失败。
+
+ARM与ARM64函数调用IPI通过架构分派进入通用队列处理。GICv3发送器在生成SGI前执行dsb(ishst)，之后使用isb，寄存器只携带SGI与目标信息。不是每次CSD都有独立IPI，也不能从IPI计数断言GPIO链路正确。正文只展开消费者流程与状态归属，不复制上游函数体；脚本试验需目标多核Linux，未宣称实机迁移或IPI测量。
+
+call_function_single_prep_ipi还可通过set_nr_if_polling原子设置目标idle任务的thread_info.flags，在polling承诺成立时省掉IPI。do_idle退出轮询后清polling、执行smp_mb__after_atomic，再flush_smp_call_function_queue；省掉通知的成本由共享标志与轮询协议承担，不等于没有通信。
