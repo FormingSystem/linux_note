@@ -28,6 +28,7 @@ domains:
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant L as 查找者
     participant G as 登记槽与槽锁
     participant D as 撤销者
@@ -87,7 +88,7 @@ if (obj)
 
 固定版本接口由[源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入；普通取得和归零仍沿已有唯一实现核对。本节先保留只有一个槽的登记表，把链表遍历的细节暂时拿开。这样每次增加都能说清新份额属于谁，读者不必一边查链表宏一边猜回收协议。随后增加链表节点，寿命证明保持不变。
 
-### 8.3.1\_正确模型一\_mutex/list\_lookup\_+\_kref\_get()
+### 8.3.1\_正确模型一\_在拥有型槽内取得普通引用
 
 完整程序来自已引入的 [note_kref_registry.c](../../../../labs/kernel/object_lifetime/materials/note_kref_registry.c)，这里按“首次取得”的问题重新阅读。它没有导出并发入口，所有实验操作在模块初始化中执行；锁展示协议，不能把这次顺序运行称为真实竞争测试。
 
@@ -208,8 +209,8 @@ MODULE_DESCRIPTION("容器持有引用与锁内取得实验");
 | S1 发布 | 创建者预留一份；持 registry_lock 写 registry_entry | 成功计数 2、槽可见；槽占用则退回预留 | 创建者归还自己的份额后，槽独持 1 |
 | S2 取得 | 查找者持同锁读槽，写对象计数 | 非空时 1→2，建立查找者份额 | 解锁后把这一份交给 reader |
 | S3 撤下 | 撤销者持锁把槽值移入局部 obj 并清槽 | 可见→不可见；槽的一份暂由撤销者负责 | 新查找读到 NULL；旧 reader 仍持有 |
-| S4 归还 | 撤销者解锁后 put 槽的一份 | 2→1；随后 reader 用完再 put | 谁最后归还，谁同步进入回调 |
-| S5 回收 | release 更新对象外记录并 kfree | 1→0 后存储退出 | 只读外部记录，不再访问 obj |
+| S4 归还 | 撤销者解锁后 put 槽的一份 | 2→1；随后 reader 用完再 put，1→0 | 最后归还者同步进入回调 |
+| S5 回收 | release 更新对象外记录并 kfree | 计数已经为零，存储从有效转为回收 | 只读外部记录，不再访问 obj |
 
 ```mermaid
 flowchart LR
@@ -226,6 +227,7 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant L as 查找者
     participant G as 槽与registry_lock
     participant D as 撤销者
@@ -247,9 +249,31 @@ sequenceDiagram
 
 第二分支的 put 可以在查找空槽之前或之后发生，两者都安全：查找者已经没有取得旧地址的入口。第一分支则允许对象在“不可再查找”时继续存活，这正是引用与可见性分开的价值。
 
-在配好同版本目标内核构建环境后，从材料目录运行 `make -C "$KDIR" M="$PWD" modules`，其中 KDIR 指向已经配置并准备好目标头文件的构建树，不是任意版本源码目录。将生成模块放到匹配的 Linux 实验环境后执行 `sudo insmod note_kref_registry.ko`，读取日志，再用 `sudo rmmod note_kref_registry` 卸载。正常初始化日志含 `detached reader id=7`，卸载记录 `release_calls=1`。即使登记已撤下，reader 仍可打印编号，因为 S2 已建立自己的份额。
+先在 Linux 构建主机准备与目标运行内核匹配的构建树，将其绝对路径赋给 KERNEL_BUILD。从本仓库根目录执行以下步骤，只构建本节模块；交叉构建还需设置对应 ARCH 与 CROSS_COMPILE：
 
-既有验证包括 ARM 前端和显式顺序替身下的成功、空槽、重复发布、重复撤下及分配失败分支；本节复用原程序，不新增另一份实现。目标构建链接、装卸及真实并发尚未执行，不能把上面的预期日志当成本次设备实测。
+```bash
+kref_registry_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_kref_registry.c "$kref_registry_dir/"
+printf 'obj-m += note_kref_registry.o\n' > "$kref_registry_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_registry_dir" modules
+```
+
+将 note_kref_registry.ko 复制到匹配的目标 Linux，在模块所在目录加载；若本机就是目标，可直接进入上述临时目录。加载会同步完成查找和撤下：
+
+```bash
+sudo insmod ./note_kref_registry.ko
+```
+
+加载成功后卸载，再读取日志核对初始化与退出记录：
+
+```bash
+sudo rmmod note_kref_registry
+sudo dmesg | tail -n 12
+```
+
+正常初始化日志含 `detached reader id=7`，卸载记录 `release_calls=1`。即使登记已撤下，reader 仍可打印编号，因为 S2 已建立自己的份额。
+
+本节复用 P02 的同一程序与本轮已完成的宿主成功、空槽、重复发布、重复撤下及分配失败检查。历史 ARM 前端结果不作为本轮目标构建；目标链接、装卸及真实并发尚未执行，不能把预期日志当作设备实测。
 
 ### 8.3.2\_list\_持有引用的模型
 
@@ -257,7 +281,7 @@ sequenceDiagram
 
 与槽不同，链表发布还须拒绝同一节点重复插入、按接口约定处理重复编号；创建时先 `INIT_LIST_HEAD`，不能把全零节点当作合法的自链接空节点。按编号遍历也必须比较 id，不能把“遍历到了一个节点”当作命中。
 
-下面是从完整槽协议迁移到链表时的核心片段，不是一份省去创建和退出的可加载模块。前提是调用者有独立引用、节点只用于这一张表、全部成员变化受同一锁保护、没有未说明的重新发布者：
+下面是从完整槽协议迁移到链表时的核心片段，不是一份省去创建和退出的可加载模块。查找者起初没有对象引用，依靠锁内成员关系仍拥有的一份安全地读节点并追加引用；发布或按对象参数移除的调用者才需要另外持有独立引用。节点只用于这一张表，全部成员变化受同一锁保护，没有未说明的重新发布者：
 
 ```c
 /* found 初始为 NULL；锁保护链表及其拥有的一份。 */
@@ -379,14 +403,20 @@ int main(void)
 
 这是独立 C11 教学模型。`refs` 始终是仍有效的自动变量；模型不分配/释放对象，不实现 Linux 饱和标记，也不启动其他线程。`event` 在观察和比较之间顺序插入一个状态变化，模拟需要处理的交错。`atomic_compare_exchange_strong_explicit` 比较失败会把当前值写回 old，这正是下一轮判断所需的信息。
 
-在材料目录运行：
+在具有 C11 编译器的 Linux 宿主上，从仓库根目录编译到临时目录。require_model 是始终执行的检查函数，NDEBUG 不会移除其调用：
 
 ```bash
-cc -std=c11 -Wall -Wextra -Werror -O2 conditional_take.c -o conditional_take
-./conditional_take
+cc -std=c11 -Wall -Wextra -Werror -O2 -DNDEBUG \
+    labs/kernel/object_lifetime/materials/conditional_take.c -o /tmp/conditional_take
 ```
 
-输出应为：
+编译成功后运行；检查失败会输出原因并以非零状态退出：
+
+```bash
+/tmp/conditional_take
+```
+
+正常输出应为：
 
 ```text
 path=0 taken=0 count=0 attempts=0
@@ -397,7 +427,7 @@ path=3 taken=1 count=3 attempts=2
 
 先只比较路径 1 和 2：同样先读到 1，路径 2 在首次比较前被改成 0，所以比较失败、old 更新为 0，循环结束，绝不重试成 1。路径 3 则把计数改成 2，第一次比较同样失败，但下一次可以把 2 改成 3。**比较失败不等于取得最终失败**；只有重新看到零，才走本模型的拒绝分支。
 
-模型中的 assert 检查预期，编译时不要加 NDEBUG。运行结果不证明任意地址有效，也不证明 ARM 上的全部排序行为；这里观察的只是比较、重试与零值退出。
+精确比较次数来自“只干扰一次”和 strong 比较交换这两个条件；换成允许伪失败的 weak 形式，不能继续要求完全相同的次数，语义对照见[P05 条件实验](P05_基础_API_调用前提与状态转换.md#5.7.2_kref_get_unless_zero%28%29_的使用场景)。运行结果不证明任意地址有效，也不证明 ARM 上的全部排序行为；这里观察的只是比较、重试与零值退出。
 
 ### 8.4.2\_kref\_get\_unless\_zero()\_不解决什么
 
@@ -423,6 +453,7 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant L as 查找者
     participant P as 最后外部持有者
     participant M as 索引mutex
@@ -471,7 +502,7 @@ RCU 可以提供另一种读侧窗口，但必须先有匹配的发布/摘除和
 
 ### 8.4.5\_mutex\_+\_list\_+\_kref\_get\_unless\_zero()\_模板
 
-下面只展示配对的关键函数；创建、初始引用交付和节点发布须按本节非拥有索引协议完成。这是接口片段，不是另一份完整模块。所有节点变化使用 `index_lock`，发布前完成初始化；索引从不持有一份；全部普通 put 在未持此锁且可睡眠的上下文执行。不要把上一节拥有型 remove 再接到这里，两个退出者会争夺同一个节点。
+下面只展示已经成功发布的对象所用的查找与回收配对；创建、初始引用交付和节点发布须按本节非拥有索引协议完成。这是接口片段，不是另一份完整模块。所有节点变化使用 `index_lock`，发布前完成初始化；索引从不持有一份；全部普通 put 在未持此锁且可睡眠的上下文执行。未发布对象的失败清理不能直接套用这里无条件摘链的回调，必须另按已取得资源处理，或扩展明确的成员状态协议。不要把上一节拥有型 remove 再接到这里，两个退出者会争夺同一个节点。
 
 ```c
 /* 借助同锁阻止回调摘链回收，但允许计数在锁外归零。 */
@@ -581,6 +612,8 @@ XArray 可以按整数索引保存指针。它有内部锁，但不同 API 的�
 
 下面是完整 [note_kref_xarray.c](../../../../labs/kernel/object_lifetime/materials/note_kref_xarray.c)。它把上一节单槽实验换成整数索引 7，并故意撤下两次。XArray 中只放非空普通对象地址，不放编码值或保留条目；所有对象字段在发布前完成初始化。
 
+DEFINE_XARRAY 定义并初始化索引对象，内部锁由 xa_lock/xa_unlock 操作。本例的 object_index 位于对象外，索引内部节点用于定位编号，条目指针指向另外分配的 indexed_object；索引节点寿命与条目对象的引用寿命因此分别管理。后面的 xa_destroy 退出前者，indexed_put 归还后者，不能互相替代。
+
 ```c
 // SPDX-License-Identifier: GPL-2.0
 #include <linux/errno.h>
@@ -688,7 +721,29 @@ MODULE_DESCRIPTION("XArray拥有型查找与重复撤下实验");
 
 插入可能因相同索引已占用返回 -EBUSY，也可能因内部节点分配失败返回 -ENOMEM。两种失败都退回预留、保留调用者原份额。允许分配的底层插入可暂时释放再取得 xa_lock，这不是随意修改已发布对象字段的窗口；本例发布前字段就已固定，不依赖整个分配过程始终持锁来掩护半成品。
 
-从材料目录按 8.3 的 KDIR 构建模块，在匹配目标加载 `note_kref_xarray.ko`，正常初始化预期打印 `detached reader id=7`，卸载预期 `release=1`。本轮 ARM 前端及宿主六组路径已通过；宿主执行实际应用和固定 xa_insert/xa_load/xa_erase 包装，存储节点、锁、RCU、分配及原子是显式顺序替身。目标构建链接、装卸、真实 XArray 节点分配与并发未执行，预期日志不作为设备实测。
+沿用 8.3 的 Linux 构建主机、KERNEL_BUILD 与目标工具链准备，从仓库根目录单独构建本节模块：
+
+```bash
+kref_xarray_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_kref_xarray.c "$kref_xarray_dir/"
+printf 'obj-m += note_kref_xarray.o\n' > "$kref_xarray_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_xarray_dir" modules
+```
+
+将 note_kref_xarray.ko 复制到匹配目标，在模块所在目录加载，初始化会执行两次删除；本机即目标时可进入上述临时目录：
+
+```bash
+sudo insmod ./note_kref_xarray.ko
+```
+
+加载成功后卸载，并读取日志：
+
+```bash
+sudo rmmod note_kref_xarray
+sudo dmesg | tail -n 12
+```
+
+正常初始化预期打印 `detached reader id=7`，卸载预期 `release=1`。历史材料记录了 ARM 前端检查；本轮重新核对完整程序并运行宿主六组路径，执行应用和固定 xa_insert/xa_load/xa_erase 包装，存储节点、锁、RCU、分配及原子仍是显式顺序替身。目标构建链接、装卸、真实 XArray 节点分配与并发未执行，预期日志不作为设备实测。
 
 源码阅读先从[总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入[整数索引模块](../../../../research/source_reading/kref/navigation/P06_整数索引与拥有型查找导读.md#6.2_把容器动作接到引用周期)，再分别核对[插入包装](../../../../research/source_reading/kref/source_explanations/include/linux/xarray.h.md#1.1_插入包装自行管理锁)、[查询窗口](../../../../research/source_reading/kref/source_explanations/lib/xarray.c.md#1.1_查询内部读侧窗口在返回前结束)与[删除包装](../../../../research/source_reading/kref/source_explanations/lib/xarray.c.md#1.2_删除包装与已持锁入口)。这些结论限于记录的固定 NXP Linux 6.12.20。
 
@@ -965,7 +1020,7 @@ return obj; /* 非空才交付取得的一份。 */
 
 #### (1)\_list\_+\_mutex\_模板
 
-使用 [8.3 完整登记模型](#8.3.1_正确模型一_mutex/list_lookup_+_kref_get%28%29)及其链表扩展：成员拥有一份，同锁遍历、比较键和普通 get，解锁后交付一份。重复删除只归还实际摘下的成员责任。
+使用 [8.3 完整登记模型](#8.3.1_正确模型一_在拥有型槽内取得普通引用)及其链表扩展：成员拥有一份，同锁遍历、比较键和普通 get，解锁后交付一份。重复删除只归还实际摘下的成员责任。
 
 #### (2)\_list\_+\_mutex\_+\_state\_模板
 
