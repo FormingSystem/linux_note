@@ -12,7 +12,7 @@ domains:
 
 P38 已把范围分区放进节点。继续沿一个 slot 向下或沿 parent 向上之前，要先判断这个字段保存裸地址、节点类型、父槽还是错误载荷；同一组低位在不同位置承担不同职责。
 
-## 52.1\_指针低位编码\_Maple\_Tree\_的\_隐形字段
+## 52.1\_解码前先辨认字段职责
 
 P38 说明了节点怎样组织范围。现在沿父子关系前进一步：如果一个 slot 保存的数值不是裸地址，读者凭什么知道该去掉哪些位？答案不是对所有 Maple 指针统一清低八位，而是先确认 **这个值存在哪个字段、表达哪种关系**。
 
@@ -27,6 +27,8 @@ P38 说明了节点怎样组织范围。现在沿父子关系前进一步：如�
 再看节点的 parent 字段。在本版本 range/arange 的非根父关系中，低位保存的是父关系格式与孩子在父里的槽号，而不是该孩子自身的 enum maple_type。具体写入见[mas_set_parent](../../../../research/source_reading/maple_tree/source_explanations/lib/maple_tree.c.md#1.5_父关系编码与根例外)。父地址同为 0x1000，槽号为 17 时，得到 `0x1000 | (17 << 3) | 6 = 0x108e`；取槽号应使用父槽掩码与位移，不能调用节点类型解码后解释成“第几个孩子”。
 
 这里有一个需要按实际代码判断的版本细节：固定 maple_tree.h 的较早注释仍把部分父槽说成四位，lib/maple_tree.c 的实际 SLOT_MASK 是 0xF8，覆盖位 3～7，共五位，足以编码普通 ARM32 范围节点的 32 个槽号。正文以实际掩码与写入函数为依据，不把两个注释悄悄合并成同一种格式；16-bit 历史格式的常量也不表示当前四种节点类型都按它写入。
+
+**能编码 0～31，不等于每种节点都存在 32 个有效槽。** P38 已给出容量：64 位布局的 range/arange 分别只有 16/10 个槽，ARM32 布局分别为 32/21；一个具体节点还可能尚未用满。上面的槽号 17 可以落在 ARM32 的这些容量内，却超出两种 64 位布局。先读父节点类型、容量和有效末端，再检查槽号，才能判断它是否指向实际孩子；掩码只回答怎样取出数字。
 
 ### 52.1.2\_根父关系不能套用节点地址掩码
 
@@ -68,9 +70,15 @@ flowchart LR
 
 因此不要把 start、none、pause 全说成“ma_state.node 里的特殊指针值”。在这个版本，它们主要由独立状态枚举表达；只有先读对 status，才能知道 node 当前能否按编码节点使用。头文件关于 errno 的旧注释写过移位方向和混淆风险，当前证据应以 MA_ERROR 和实际状态检查函数为准，也不能写成对有符号负数直接左移。
 
+普通写接口还会使用另一个谓词 xa_is_advanced，检查范围与 mt_is_reserved 不同。因此，小值保留区不是所有接口共同的输入验证器；P40 会在实际写入入口比较二者。这里先把“位形可解释”“入口接受”和“对象可访问”分开。
+
 ### 52.1.4\_用定宽整数观察错误掩码
 
-下面的完整 C11 程序只计算整数，不将编码值转换成宿主指针。它分别实现当前节点、range/arange 父槽和根父关联的算术形状；32/64 是模型位宽，不声称 Windows 的 unsigned long 或真实目标指针具有同一布局。状态转换和 RCU 不在该模型中。
+下面的完整 C11 程序只计算整数，不将编码值转换成宿主指针。它分别实现当前节点、range/arange 父槽和根父关联的算术形状；32/64 是模型位宽，不声称 Windows 的 unsigned long 或真实目标指针具有同一布局。循环遍历所有可编码槽号，只验证往返算术，不验证对应节点的实际容量、已用槽数或存活期。状态转换和 RCU 不在该模型中。
+
+程序把部分构造调用写在 assert 断言内，因此必须保留断言求值。NDEBUG 是关闭标准断言的编译宏；若定义它，程序将主动拒绝编译，避免构造动作被一同删掉后继续读取未初始化的结果。
+
+程序中的 UINT32_MAX、UINT64_MAX 是标准头文件提供的无符号定宽最大值，UINT64_C 则构造对应宽度的整数常量；它们用于明确位运算范围，不把宿主 unsigned long 的宽度暗中当成目标宽度。
 
 ```c
 // SPDX-License-Identifier: MIT
@@ -79,6 +87,10 @@ flowchart LR
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+
+#ifdef NDEBUG
+#error "This experiment requires assertions enabled"
+#endif
 
 /* 只观察定宽整数，不构造或解引用宿主指针。 */
 static uint64_t width_mask(unsigned width)
@@ -166,11 +178,18 @@ int main(void)
 }
 ```
 
-材料为[maple_encoded_words.c](../../../../labs/kernel/tree_basics/materials/maple_encoded_words.c)。保持断言启用，从仓库根目录运行：
+材料为[maple_encoded_words.c](../../../../labs/kernel/tree_basics/materials/maple_encoded_words.c)。在具备 C11 编译器的 Linux 或同类 shell 中，从仓库根目录编译：
 
 ```bash
+# 执行位置：linux-note 仓库根目录；cc 为宿主 C 编译器。
 cc -std=c11 -O2 -Wall -Wextra -Werror \
   labs/kernel/tree_basics/materials/maple_encoded_words.c -o /tmp/maple_encoded_words
+```
+
+这一步生成宿主程序，尚未执行位运算检查。运行刚生成的文件：
+
+```bash
+# 执行位置不变；运行 /tmp 中的实验程序。
 /tmp/maple_encoded_words
 ```
 
@@ -184,6 +203,6 @@ error -12: word32=0xffffffd2 word64=0xffffffffffffffd2
 node/parent round trips: 18432
 ```
 
-先解释每一行属于哪个字段，再做三个修改：将父槽改为 31 与 32，观察容量边界；把根树对象地址改为另一个偶数但非 256 对齐值，判断两种掩码；将 -12 的错误载荷误当节点清位，说明得到一个整数为什么不等于得到可解引用的对象。最后一个实验只在纸上或整数模型里进行，不构造虚假的 C 指针访问。
+先解释每一行属于哪个字段，再做三个修改：将父槽改为 31 与 32，观察五位编码边界，并另按父节点容量判断实际有效性；把根树对象地址改为另一个偶数但非 256 对齐值，判断两种掩码；将 -12 的错误载荷误当节点清位，说明得到一个整数为什么不等于得到可解引用的对象。最后一个实验只在纸上或整数模型里进行，不构造虚假的 C 指针访问。
 
 本单元已经把相同低位位置上的不同职责分开。下一单元 [P39 游标](P39_Maple操作游标的暂停与继续.md#39.1_从查一个对象走到继续遍历)继续追踪 ma_state 的 index、last、offset 和 status 怎样随一次查询变化，而不是再把这些状态压回一个指针比喻。

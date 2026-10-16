@@ -59,6 +59,8 @@ vma_iter_next_range 又承担不同任务：它调用 mas_next_range，推进到
 
 ### 53.2.2\_写入和清除的请求从哪里来
 
+查询只选择既有对象，修改则必须说明哪一段映射要改变。存入 VMA 时，边界来自对象的 vm_start/vm_end；清除时，调用者直接提供 start/end。二者最后都设置局部 ma_state 的范围，再提交树修改。另一些名称看似也在操作范围，却只移动游标或清理本次资源，需要先按副作用分开。
+
 | 包装 | 请求区间的来源 | 传给 Maple 的动作与返回处理 |
 | --- | --- | --- |
 | vma_iter_bulk_store | vma->vm_start 与 vma->vm_end | 直接写入 index 与 end-1，再调用 mas_store；依据错误状态返回 0 或 -ENOMEM |
@@ -156,19 +158,28 @@ int main(void)
 }
 ```
 
+在具备 C11 编译器的 Linux 或同类 shell 中编译：
+
 ```bash
+# 执行位置：linux-note 仓库根目录；生成宿主边界实验程序。
 cc -std=c11 -Wall -Wextra -Werror -O2 labs/kernel/tree_basics/materials/vma_boundary_contract.c -o /tmp/vma_boundary_contract
+```
+
+编译成功后，执行区间成员关系检查。程序使用自己的 require 函数，失败时打印原因并退出，不依赖标准 assert 是否启用。
+
+```bash
+# 执行位置不变；运行刚生成的文件。
 /tmp/vma_boundary_contract
 ```
 
-本批宿主实际结果：
+预期输出：
 
 ```text
 A=[1000,2fff] B=[3000,3fff]
 accepted=528 rejected=561 membership_checks=17424; zero-1 wraps
 ```
 
-528 组有效区间分别核对 33 个地址，561 组空/逆序输入拒绝且输出不变。使用 uint64_t 是为了明确整数模型的宽度，不表示当前 ARM32 VMA 能使用任意 64 位地址。固定包装另用显式后端夹具检查转发参数、两种初始化和错误映射；真实内核 VMA 更新、锁竞争和页表操作未运行。
+528 组有效区间分别核对 33 个地址，561 组空/逆序输入拒绝且输出不变。使用 uint64_t 是为了明确整数模型的宽度，不表示当前 ARM32 VMA 能使用任意 64 位地址。固定包装的转发参数、两种初始化和错误映射另有[既有后端夹具记录](../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.42_VMA游标初始化与边界适配证据)；它不是本整数程序执行的检查。真实内核 VMA 更新、锁竞争和页表操作未运行。
 
 ### 53.2.5\_把边界转换放回操作周期
 

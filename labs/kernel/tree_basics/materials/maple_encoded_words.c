@@ -5,6 +5,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#ifdef NDEBUG
+#error "This experiment requires assertions enabled"
+#endif
+
 /* 只观察定宽整数，不构造或解引用宿主指针。 */
 static uint64_t width_mask(unsigned width)
 {

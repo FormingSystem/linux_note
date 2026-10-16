@@ -35,7 +35,7 @@ domains:
 
 这里的成功都以返回 0 为前提。store_range 也可能因分配失败返回 `-ENOMEM`，不能忽略结果后把打印的“拟写入范围”当成树内事实。起点大于终点是 `-EINVAL`；本章完整程序用 [2,1] 观察这个无需触发警告的非法请求。
 
-源码的入参检查使用 `xa_is_advanced(entry)`。它与[P15 的 mt_is_reserved](P52_按字段区分Maple编码与错误状态.md#52.1_指针低位编码_Maple_Tree_的_隐形字段)不是同一个谓词：前者判断 internal 编码且不大于 XA_RETRY_ENTRY，后者以 4096 为小值边界。不要从“没有被这个检查拒绝”反推“任意整数都能当业务指针”。本章只传有效对象地址或 NULL，也不以故意触发 WARN_ON_ONCE 作为普通实验步骤。具体比较和 zero-entry 转换见[值编码实现](../../../../research/source_reading/maple_tree/source_explanations/include/linux/xarray.h.md#1.3_普通接口检查与零entry)。
+源码的入参检查使用 `xa_is_advanced(entry)`。它与[P52 的 mt_is_reserved](P52_按字段区分Maple编码与错误状态.md#52.1_解码前先辨认字段职责)不是同一个谓词：前者判断 internal 编码且不大于 XA_RETRY_ENTRY，后者以 4096 为小值边界。不要从“没有被这个检查拒绝”反推“任意整数都能当业务指针”。本章只传有效对象地址或 NULL，也不以故意触发 WARN_ON_ONCE 作为普通实验步骤。具体比较和 zero-entry 转换见[值编码实现](../../../../research/source_reading/maple_tree/source_explanations/include/linux/xarray.h.md#1.3_普通接口检查与零entry)。
 
 ## 40.3\_点查与向后查的游标终点
 
@@ -118,7 +118,7 @@ sequenceDiagram
     end
 ```
 
-这里最容易误用的是锁模式。固定头文件中的 mtree_lock 宏直接调用 `spin_lock(&mt->ma_lock)`，没有“若 external 模式则自动取得外部锁”的分支。因此本章使用 mt_init 初始化的私有树，而且不在已持有同一内部锁时再调用这些写入封装。VMA 的 mm_mt 登记外部锁，写入需服从其高级接口和外围 mmap 锁协议，不能仅凭“普通 API 会加锁”就改成 mtree_store_range。外部锁登记的意义回看[P15 树模式](P51_共享树根怎样确定表示与保护模式.md#51.1_struct_maple_tree_树对象本身)。
+这里最容易误用的是锁模式。固定头文件中的 mtree_lock 宏直接调用 `spin_lock(&mt->ma_lock)`，没有“若 external 模式则自动取得外部锁”的分支。因此本章使用 mt_init 初始化的私有树，而且不在已持有同一内部锁时再调用这些写入封装。VMA 的 mm_mt 登记外部锁，写入需服从其高级接口和外围 mmap 锁协议，不能仅凭“普通 API 会加锁”就改成 mtree_store_range。外部锁登记的意义回看[P51 树模式](P51_共享树根怎样确定表示与保护模式.md#51.1_为什么共享入口还要保存模式)。
 
 本章没有展开 mas_store_gfp 的重试、预分配或分裂算法，也不把失败等同于“从未分配任何节点”。这一层只规定调用者如何提交请求、识别返回，以及选择正确的树模式；高级写入的资源阶段留给后续单元。
 
