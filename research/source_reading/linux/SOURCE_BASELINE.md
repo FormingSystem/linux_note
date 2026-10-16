@@ -1463,3 +1463,29 @@ ftrace说明核对实例、跟踪时钟、静态trace与消费式trace_pipe、�
 教学图明确区分硬件状态、软件队列和各层完成动作。GPIO清除顺序采用显式边沿锁存、按位确认与父级电平汇总假设，不外推为实际芯片寄存器协议；寄存器表只列功能职责，不编造地址。源码文档内的历史旧入口及静态描述符数组叙述不作为Linux 6.12当前具体实现的证明。具体函数、结构及固件解析在后续章节另行核对。
 
 本轮为机制与纸面时间线复审，图表和算术检查不等于板级测量、Linux运行或目标编译。GIC产品硬件细节保留唯一专题，本章不重复维护另一套产品布局。
+
+## 1.183\_中断对象映射\_流程分派与消费者登记
+
+2026-10-17 复审[Linux中断对象](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P03_Linux_的中断抽象_irq_chip_irq_domain_与_irq_desc.md)，核对官方不可变提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 以下文件。外部工作树不可访问，使用官方原始字节并记录blob身份，未重新声明本地配置或执行结果。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| include/linux/irq.h | fa711f80957b60157f38eceffa154b7b9469d3cd |
+| include/linux/irqdesc.h | fd091c35d5721eee37a2fd3d5526559671d5048d |
+| include/linux/irqdomain.h | e432b6a12a32f9f16ec1ea2fa8e24a649d55caae |
+| include/linux/interrupt.h | 457151f9f263d9042625decde2c15822d860b134 |
+| kernel/irq/handle.c | 9489f93b3db34431aa71594a95d7a20e6ec1442c |
+| kernel/irq/chip.c | 271e9139de77f5348539c95e3463c4fb7585df10 |
+| kernel/irq/manage.c | f0803d6bd2969820443f25b5b508ec553f4cb9a2 |
+| kernel/irq/irqdomain.c | e0bff21f30e0a997464b48cc2bdfa67196d76009 |
+| kernel/irq/irqdesc.c | 1dee88ba0ae449a7c83d5cfa8fe6b69f83b3b6d6 |
+| kernel/irq/devres.c | b3e98668f4dd87e725626ad55f48a34d117e1c67 |
+| drivers/base/platform.c | 6f2a33722c5203ac196a6e36e153648d0fe6c6d4 |
+
+irq_domain反向映射保存irq_data关联，由domain与hwirq解析到描述符；irq_to_desc在SPARSE_IRQ下使用Maple Tree，非稀疏配置使用数组。irq_data将本层来源、chip和私有数据连接起来；desc承载核心软件状态，不是设备硬件状态的完整镜像。action的handler与desc的handle_irq分别处理设备业务和IRQ流程。
+
+handle.c的普通事件分派遍历全部action并按位汇总返回值，不在第一个IRQ_HANDLED时停止。handle_irq_event标记处理中并在调用设备回调时释放desc锁，再重新取得；私有数据不因此自动同步。线程唤醒和结束通过action标志、desc线程计数及等待队列交接。
+
+manage.c检查共享等约束并按自动使能策略启动，普通路径可能在请求调用返回前进入处理。free路径按dev_id摘除action，必要时关闭最后消费者的线路，等待在途处理并停止相关线程；不替驱动排空独立work/timer。devres封装记录释放动作，不改变首次回调窗口。platform_get_irq返回负错误，不能转无符号后继续登记。
+
+正文提供对象成员与回调表、正常电平流程和退出边界；没有将示意映射号当作本机资源，也没有把机制图当作实际内核运行验证。本轮未执行目标内核编译、真实IRQ、强制线程化或设备卸载实验。
