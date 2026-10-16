@@ -1535,3 +1535,32 @@ mx3_gpio_irq_handler读取ISR与IMR交集并分派子来源；generic-chip的irq
 三个按键点灯实验合并为一个完整可选模式模块：硬回调、线程、首沿固定窗口门控；日志与线程人为延时另作变量。首次事件单独标志、get_jiffies_64与time_before64、参数上限、睡眠能力检查、硬件去抖失败返回和同步注销形成完整边界。64位时间避免32位长时间无事件后的半周期歧义；比较仍遵守半周期契约。trace_printk仅用于开发调试，缓冲写入和内存有成本，不保证不丢记录。硬件去抖参数为0只是不请求配置，不承诺清除以前配置。
 
 本轮未执行目标Kbuild、设备树编译部署、真实中断/波形或系统挂起唤醒。板级模板有明确占位符，程序不宣称为某开发板实测驱动；宿主模型只能检查抽取代码在桩约束下的分支和顺序。
+
+## 1.186\_中断诊断观察范围与事件采集
+
+2026-10-17 复审[中断诊断](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P06_Linux_中断的调试与诊断.md)，从官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 核对以下原始文件。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| kernel/irq/proc.c | 9081ada81c3d023a531d65e5a35a31f4d4ebbe55 |
+| kernel/irq/irqdesc.c | 1dee88ba0ae449a7c83d5cfa8fe6b69f83b3b6d6 |
+| kernel/irq/manage.c | f0803d6bd2969820443f25b5b508ec553f4cb9a2 |
+| kernel/irq/handle.c | 9489f93b3db34431aa71594a95d7a20e6ec1442c |
+| include/trace/events/irq.h | 837c1740d0d07ab23f401e1d6e2d2c2dd1886bb0 |
+| include/trace/events/sched.h | 9ea4c404bd4ef3efab26e0d1f135a329d21e69de |
+| Documentation/trace/events.rst | 759907c20e7591ce3f03ac191cbc14a29b242f8a |
+| Documentation/trace/ftrace.rst | 4073ca48af4ad2639c2289eb28c691a5c3538850 |
+| kernel/trace/trace_irqsoff.c | fce064e205706f50e3b64f345b53c0f23bb226ee |
+| kernel/trace/trace_functions_graph.c | ebb61ddca749d80ee947b501b8fda679955c1788 |
+| Documentation/ABI/testing/sysfs-kernel-irq | 8910d0c4bcd8af21a644fef83de4a03e7c2d9672 |
+| drivers/base/pinctrl.c | c22864458511c10194e7f334219da5603df360c1 |
+
+show_interrupts按在线CPU显示统计，并跳过hidden、无action、chained或无kstat存储的描述符，不能由父行缺失判断GPIO级联没有工作；共享action列表不互相覆盖。IRQ sysfs的type只依据软件level标志输出level/edge，per_cpu_count按possible CPU排列，不能等同于引脚极性和寄存器测量。
+
+handle.c在action->handler前后放置irq_handler_entry/exit，manage.c在线程路径另行调用thread_fn并完成oneshot。irq_handler_exit原始ret保留整数，但TP_printk把所有非零值显示为handled，包含IRQ_WAKE_THREAD；文本handled不证明线程完成。sched事件的目标pid/prev_pid/next_pid与记录行的当前任务身份不同。
+
+正文的事件采集脚本创建独立tracefs实例，设置global时钟、单IRQ事件和可选线程调度过滤，保存事件格式/过滤、前后计数、trace和每CPU统计，并用退出陷阱清理自己的实例。不接管根实例的函数跟踪或trace_printk输出。源码文档的部分历史实例描述不作为所有当前内核功能限制，实际能力仍按本机接口核对。
+
+pinctrl设备核心处理默认/初始化状态，消费驱动无须为了诊断无条件重复选择；错误和延迟探测必须按实际协议处理。gpioinfo用法另核对官方libgpiod 2.2.4文档，只观察线路信息，不将其当作电平读取或抢占线路方法。irqsoff测量本地关中断区间，不能代替线程等待/业务响应耗时。
+
+本轮仅进行源码、正文与脚本宿主验证，未在真实Linux内核运行tracefs采集、GPIO输入、pinctrl切换或延迟测量。示意计数与时序不作为测量结果。
