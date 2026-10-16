@@ -5736,6 +5736,18 @@
           "Bash提取语法与十种缓存伪文件场景通过，验证设备模式、IRQ精确匹配和只读性；全仓8990有效链接、八出链两入链及格式diff通过。连续性仅164行H2阈值提示，人工保留单一生命周期内的完整组件及devres对照。"
         ],
         "limits": "未运行实际PCIe设备、DMA、目标内核构建或DTschema；组件调用方负责硬件停产、初始化、通知与异步消费者同步，不冒充任意PCI卡的完整驱动。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P13_特殊与高优先级中断_NMI_定时器_性能中断.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "分开事件用途、路由归属与屏蔽条件，从普通IRQ停顿推导NMI入口及同CPU锁风险；以计时器和PMU真实驱动建立寄存器、每核事件、共享样本环和S0-S5交付过程，补完整有限负载实验。",
+        "date": "2026-10-17",
+        "validation": [
+          "原文与333行成稿冷读；二十八份固定源码核对，三张图渲染目视。",
+          "提取负载以GCC/Clang编译，三种有效输入校验checksum和九种错误输入通过；Bash语法与成功、stat失败、record失败、report失败四种模拟场景通过。",
+          "全仓8995有效链接，六条精确出链及入链检查通过；连续性严格检查无风险，术语提示人工区分前章前置知识、寄存器和宏并补局部说明，diff通过。"
+        ],
+        "limits": "未运行Linux perf、目标PMU/NMI硬件或Kbuild；缓存脚本检查使用模拟perf和中断快照，不能证明设备采样有效。"
       }
     },
     "additional_documents": [
