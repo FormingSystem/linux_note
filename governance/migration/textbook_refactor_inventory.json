@@ -5892,6 +5892,17 @@
           "正文三Python程序提取一致，proc9/trace33/CSV12共54模拟场景通过；4出链无标题入链，全仓9039有效链接及格式元数据路径和diff通过。"
         ],
         "limits": "替代接口模拟不证明Linux proc/tracefs、真实信号或目标硬件；CSV为明确标注的合成练习，实际内核采集与延迟测量尚未运行。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P12_fasync_与其他通知机制的对比与整合.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按数据语义、消费规则、就绪与操作完成重写机制比较，补标准输入、管理消息、属性通知和共享队列责任，提供有限实验。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文阅读、内容去向和冷读完成；四图渲染目视，连续阅读严格零风险。",
+          "Python替代接口42场景，C程序GCC/Clang各16场景；5出链无标题入链，9043有效链接及格式元数据路径和diff通过。"
+        ],
+        "limits": "替代接口仅验证应用控制流，未在Linux实际构建运行，不声称io_uring、GPIO或性能实测。"
       }
     },
     "additional_documents": [
