@@ -35,7 +35,7 @@ RB_CLEAR_NODE()
 业务对象自己保存 key；
 业务结构体内嵌 struct rb_node；
 调用者自己写比较逻辑；
-调用者自己写查找和插入落点搜索；
+调用者决定比较与重复策略，搜索循环可手写或交给辅助接口；
 调用者负责对象生命周期和并发保护；
 rbtree 核心只维护树结构和红黑性质。
 ```
@@ -60,7 +60,7 @@ __rb_rotate_set_parents()
 
 ### 26.1.2\_本章参照的源码文件
 
-版本入口是[固定源码阅读索引](../../../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)：NXP 官方 lf-6.12.20-2.0.0，提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，Linux 6.12.20。目录名和本地实验提交不作为证据。查找函数的唯一函数体讲解仍由[查找模块导读](../../../../research/source_reading/rbtree/navigation/P02_查找路径与返回边界导读.md#2.2_按一次查找定位源码)。
+版本入口是[固定源码阅读索引](../../../../research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)：NXP 官方 lf-6.12.20-2.0.0，提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，Linux 6.12.20。目录名和本地实验提交不作为证据。查找函数的唯一函数体讲解仍通过[查找模块导读](../../../../research/source_reading/rbtree/navigation/P02_查找路径与返回边界导读.md#2.2_按一次查找定位源码)定位。
 
 本章对应以下上游文件原文：
 
@@ -166,7 +166,7 @@ rbtree 核心负责：
 
 ### 26.2.2\_struct\_rb\_node\_link\_的二级指针意义
 
-插入搜索时常见写法是：
+以下是省略外围对象定义的搜索骨架，new_key 是待插入键，this_key 表示从当前 *link 所属对象取出的键；完整、可构建的写法在 26.3.15。这里先看 link 怎样保存槽地址：
 
 ```c
 struct rb_node **link = &root->rb_node;
@@ -224,6 +224,21 @@ link = &parent->rb_right
 可能是某个 parent->rb_right。
 ```
 
+把“指向节点”与“指向保存节点地址的槽”分开后，才知道哪一次赋值真正改变树：parent、link 都是本次调用的局部变量；调用者改变它们只是选择路径，写入 *link 才会改共享入口。以下以根 30、左孩子 10，向 10 的右侧接入 20 为例；图中连线分别标出字段取值和即将执行的动作。
+
+```mermaid
+flowchart LR
+    caller[写侧已受保护的插入调用] -->|比较20，先左后右| local[局部 parent 指向10<br/>局部 link 保存10.rb_right的地址]
+    root[根对象的 rb_node 槽] -->|保存30地址| n30[对象30的 rb_node]
+    n30 -->|rb_left 保存10地址| n10[对象10的 rb_node]
+    n10 -->|包含字段| slot[10.rb_right 槽<br/>挂接前为NULL]
+    local -.定位待写槽.-> slot
+    caller -->|先初始化键和节点字段| fresh[私有对象20<br/>父=10，红，左右空]
+    slot -.I1写入20地址后可达.-> fresh
+```
+
+这次入树由一个受保护的写者推进，不是多个 CPU 协商完成的状态机。根槽、孩子字段和父色是树状态，比较结果和修复游标是调用栈状态；业务计数与对象持有权另有调用者协议。它们不会因为某一条孩子边已写入，就同时变成“插入完成”。
+
 因此 `rb_link_node()` 只需要：
 
 ```c
@@ -238,7 +253,7 @@ link = &parent->rb_right
 
 `parent` 记录的是新节点最终父节点。
 
-当 `*link == NULL` 时：
+在非空树中，当搜索走到 `*link == NULL` 时：
 
 ```text
 parent 是最后一个非空节点；
@@ -267,13 +282,13 @@ link == &parent->rb_left 或 &parent->rb_right
 
 `rb_link_node()` 需要 `parent`，是因为新节点的 `__rb_parent_color` 要初始化为父指针。
 
-源码逻辑是：
+按字段看，挂接依次改变三处状态；完整函数体见前面的“红叶挂接与发布”定位。
 
-```c
-node->__rb_parent_color = (unsigned long)parent;
-node->rb_left = node->rb_right = NULL;
-*rb_link = node;
-```
+| 顺序 | 写入位置 | 接入后的含义 |
+| --- | --- | --- |
+| 1 | 新节点 `__rb_parent_color` | 保存 parent 地址并以零色位表示红色 |
+| 2 | 新节点 `rb_left`、`rb_right` | 都为空，作为新的真实叶节点 |
+| 3 | `*rb_link` 指向的根槽或父孩子槽 | 由 NULL 改为新节点地址，树开始能到达它 |
 
 这里颜色位没有显式加 `RB_RED`，因为 `RB_RED` 的值是 0。
 
@@ -329,7 +344,7 @@ rb_link_node(&item->rb, parent, link);
 rb_insert_color(&item->rb, root);
 ```
 
-这两句不能颠倒，也不能缺其中任何一句。
+对这里的普通树底层组合路径，先正确挂接，再调用修复，不能把两者颠倒。rb_add 等帮助器会在内部完成这两步；调用者使用完整帮助器后不应再次挂接或再次调用修复。
 
 如果只调用 `rb_link_node()`：
 
@@ -368,7 +383,7 @@ RCU 版本的含义是：
 再用 RCU 发布语义把 node 挂到树上。
 ```
 
-这样 RCU 读者通过孩子指针看到新节点时，应该能看到该节点之前已经初始化好的字段。
+业务对象中供读者观察的键和字段也应在发布前初始化；读者须使用与发布配套的取指针方式及寿命协议，才能据此观察已初始化状态。仅换掉最后一次赋值，不能把任意普通读或已在并发修改的业务字段都变成安全访问；P10 已说明 rb_find_rcu 的首次取根也要单独核对。
 
 但是仍然要注意：
 
@@ -431,7 +446,15 @@ rb_link_node_rcu() 只处理链接发布；
 比较规则仍然由调用者提供。
 ```
 
-它们只是把搜索落点和挂接修复封装到同一个内联函数里。
+它们把搜索落点和挂接修复封装到同一个内联函数里。用本章刚才的两个问题来比较：需要“允许等价节点继续插入”，还是需要“发现已有等价节点就返回”？
+
+| 接口 | 比较参数和含义 | 结果与对象状态 |
+| --- | --- | --- |
+| `rb_add(node, tree, less)` | `bool less(struct rb_node *a, const struct rb_node *b)`；a 严格排在 b 前面才为真 | 返回 void；按比较挂接并修复，不报告重复 |
+| `rb_find_add(node, tree, cmp)` | `int cmp(struct rb_node *a, const struct rb_node *b)`；负、零、正表示新节点相对当前节点的顺序 | 返回 NULL 表示已接纳新节点；非 NULL 是已有等价成员，新节点保持未接入 |
+| `rb_find_add_rcu(node, tree, cmp)` | 同上，挂接改用发布接口 | 返回约定相同；仍需调用者提供写侧同步、读侧与回收协议 |
+
+这里两个比较参数都是节点，区别于 P10 的“查询键对节点”比较器。三个入口都不检查节点是否已在其他树中；合法的新对象是调用前提。辅助接口不为成功插入自动增加业务计数，也不为重复返回取得已有对象的额外引用。固定实现见[不查重的 rb_add](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.6_不查重的rb_add)与[查重后插入及 RCU 变体](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.7_查重后插入与RCU发布变体)。
 
 ------
 
@@ -484,7 +507,7 @@ Linux rbtree 的新节点通过 __rb_parent_color 低位自然成为红色。
 ```text
 第一，插入修复之前必须先完成 BST 挂接。
 
-第二，link 是指向“应该写入新节点的孩子指针”的二级指针。
+第二，link 指向应写入新节点地址的槽：空树是根槽，非空树是父节点孩子槽。
 
 第三，parent 是新节点的父节点。
 
@@ -499,14 +522,14 @@ Linux rbtree 的新节点通过 __rb_parent_color 低位自然成为红色。
 
 ## 26.3\_rbtree\_插入后半段\_rb\_insert\_color()\_与插入修复
 
-接入红叶以后，路径黑数没有增加；现在只需解决根为红或红父红子的冲突。先沿下文的案例推演，再到[完整固定实现](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支)对照实际变量和写入。该实现保留本章原中文注释与图形，并按官方固定提交保留 WRITE_ONCE、tmp 复用及左右分支；父色写入另见[打包接口](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md#1.1_父色打包写入)。
+接入红叶以后，路径黑数没有增加；现在只需解决根为红或红父红子的冲突。先沿下文的案例推演，再到[完整固定实现](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支)对照实际变量和写入。该实现按官方固定提交保留 WRITE_ONCE、tmp 复用及左右分支，并附中文解释；父色写入另见[打包接口](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md#1.1_父色打包写入)。
 
 `__rb_insert()` 的入口前提是：**节点已经被 `rb_link_node()` 挂进树里**。它不负责查找插入位置、不负责比较 key、不负责处理重复 key，只负责把“插入红节点后可能破坏的红黑树性质”修回来。Linux 文档也明确说明，rbtree 的插入位置查找和锁保护由使用者自己负责，核心库只提供链接、着色、旋转等基础操作。
 
 最核心的不变量是：
 
 ```text
-node 一定是红色。
+每次进入修复循环顶部时，node 指向红节点。
 ```
 
 所以插入修复只围绕一个问题：
@@ -661,7 +684,7 @@ Loop invariant: node is red.
 插成红色。
 ```
 
-如果插成黑色，会立刻增加某些路径的黑高。
+在非空合法树的某个空槽接入黑叶，会只增加经过这个槽的路径黑数；其他路径没有同时增加。空树只有新根的特殊情形另算，不能据它推断一般插入也可直接接黑叶。
 
 这会破坏性质 5：
 
@@ -712,7 +735,7 @@ if (!parent) {
 含义是：
 
 ```text
-如果新节点没有父节点，它就是根；
+如果当前修复节点没有父节点，它就是根；
 根必须是黑色；
 设置为黑色后结束。
 ```
@@ -1259,6 +1282,42 @@ rb_insert_color() 或 rb_insert_augmented()
 第八，augment_rotate() 让普通 rbtree 和 augmented rbtree 共享同一套旋转修复代码。
 ```
 
+现在回到 30、10、20 这次操作，把字段变化和完成条件放到同一张表里。每行的写入者都是当前插入调用；若采用共享树加锁方案，锁由调用者持有，修复函数不会替它解锁。后面的私有栈上观察没有其他参与者，不需要额外加锁。
+
+| 阶段 | 进入条件与状态变化 | 具体地址及后续使用者 |
+| --- | --- | --- |
+| I0 准备与找槽 | 私有20已初始化；比较后确定10右侧为空；重复则直接按策略返回 | 局部 parent/link 记录10和10.rb_right槽地址；树尚未改变 |
+| I1 接入红叶 | 初始化20父色与空孩子，把空槽改为20地址 | 20的节点字段及10.rb_right；修复从20读取父色 |
+| I2 检查根与父色 | 无父则染黑结束；父黑直接结束；父红才看叔色 | node/parent是局部游标，颜色来自节点父色字段 |
+| I3 叔红上推 | 其他输入可能将父叔染黑、祖父染红 | 三个节点父色改变，局部node转到祖父，再读I2 |
+| I4 内侧预处理 | 此例20是10的右孩子；先转中间子树，再让20.left指向10 | 10/20孩子字段及10父色已变，但30.left尚未完成回接；仅供紧接的I5继续 |
+| I5 外侧收尾 | 30下沉，20继承黑色与原根位置，30变红 | 根槽改指20，20/30父色和相关孩子回接；修复函数返回 |
+| 调用者收尾 | 成功后记账、落实树持有权，再结束写侧保护 | 业务count及持有状态；受同一协议保护的后续查询才使用完成状态 |
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as 插入调用与局部游标
+    participant T as 根槽和节点字段
+    participant B as 调用者业务状态
+    C->>B: 按协议取得写侧保护，准备私有对象20
+    C->>T: I0 按比较规则搜索空槽或等价对象
+    alt 发现等价对象且策略拒绝
+        C->>B: 保持原树与计数，返回已有对象或错误
+    else 接纳新20
+        C->>T: 本例比较30、10后，确认10右侧空槽
+        C->>T: I1 初始化20节点，写入10右槽
+        C->>T: I2 读取父10红、祖父30黑、叔为空
+        C->>T: I4 10右接中间树、20左接10；局部父色更新
+        Note over C,T: 此时仍在修复中；回调不能发布完成
+        C->>T: I5 30下沉，20继承黑色；根槽改指20
+        C->>B: 修复返回后更新计数与成功持有状态
+    end
+    C->>B: 按协议结束写侧保护，返回结果
+```
+
+图中的失败分支表示另一种搜索结果，不是把同一个20挂接后再回滚。若采用无锁读侧方案，写者保护只串行化写者，并不阻挡那些读者；发布、漏查容忍与回收须按 P10 的边界另行建立。
+
 把刚才各个分支合在一起，注意“上推继续”与“旋转后结束”的区别。图中 I0～I5 与固定源码导读对应；状态留在已说明的节点父色/孩子字段中，node 等局部游标只决定本次调用下一步从哪里读。
 
 ```mermaid
@@ -1286,7 +1345,7 @@ flowchart TD
 | --- | --- | --- | --- |
 | rb_link_node | 把私有红叶写入空槽 | 先完成比较；节点不能已在另一棵树中 | [挂接](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.5_红叶挂接与发布) |
 | rb_insert_color | 恢复根颜色或红红冲突 | 接入后调用；不会重新查重或管理内存 | [修复](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支) |
-| rb_first/rb_next | 稳定树上按中序打印 | 此处没有并发修改；不从弱查询推导父链安全 | [固定原文](../../../../research/source_reading/linux/lib/rbtree.c)，具体后继实现进入 P11 |
+| rb_first/rb_next | 稳定树上按中序打印 | 此处没有并发修改；不从弱查询推导父链安全 | [中序端点与父链推进](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.7_中序端点与父链推进)，遍历正文进入 P27 |
 | node_color 与根检查 | 显示该版本最低颜色位，核对预期根 | 只观察，不是完整红黑性质验证器 | [父色边界](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md#1.1_父色打包写入) |
 
 ```c
@@ -1401,7 +1460,7 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("私有红黑树插入、父链与颜色观察");
 ```
 
-材料是[note_rbtree_insert.c](../../../../labs/kernel/tree_basics/materials/note_rbtree_insert.c)，同目录 [Makefile](../../../../labs/kernel/tree_basics/materials/Makefile)只构建这个模块，不把此前的宿主 C 程序编入内核。下面在 **Linux 构建环境的仓库根目录** 执行，先按[模块构建路线](../../../../engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)准备与目标运行内核匹配的构建目录、配置和交叉工具链：
+材料是[note_rbtree_insert.c](../../../../labs/kernel/tree_basics/materials/note_rbtree_insert.c)，同目录 [Makefile](../../../../labs/kernel/tree_basics/materials/Makefile)登记了本专题多份内核模块，modules 目标会一并构建；它不把此前的宿主 C 程序编入内核。本节只加载 note_rbtree_insert。下面在 **Linux 构建环境的仓库根目录** 执行，先按[模块构建路线](../../../../engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)准备与目标运行内核匹配的构建目录、配置和交叉工具链：
 
 ```bash
 : "${KERNEL_BUILD:?先设置与目标内核匹配的构建目录}"
@@ -1410,17 +1469,29 @@ make -C "$KERNEL_BUILD" M="$PWD/labs/kernel/tree_basics/materials" \
   ARCH=arm CROSS_COMPILE="$CROSS_COMPILE" modules
 ```
 
+其中 `-C` 让 make 进入内核构建目录，`M` 指定这批外部模块的源码目录，`ARCH` 与 `CROSS_COMPILE` 选择 ARM 构建；前两行在变量未设置时立即停止，避免误用宿主构建树。
+
 把生成的 ko 部署到对应 ARM 目标后，在目标上执行；不能把 ARM 模块加载进宿主 x86 内核。加载只运行这个私有观察，没有设备节点或后台工作：
 
 ```bash
 sudo insmod ./note_rbtree_insert.ko
+```
+
+确认加载成功后，再查看内核环形日志的尾部；其他内核活动也会写入日志，应按 note_rbtree_insert 前缀识别五组输出，必要时保留更长日志。
+
+```bash
 sudo dmesg | tail -n 30
+```
+
+观察完卸载模块，让退出入口记录结束；若初始化失败，模块并未成功驻留，不应把卸载失败当作第二个实验错误。
+
+```bash
 sudo rmmod note_rbtree_insert
 ```
 
 按本章推导，四组三键日志均应显示根 20 为黑，10 和 30 为红且父为 20。叔红组应为根 50 黑、30 黑且父 50、70 黑且父 50、20 红且父 30。日志逐行中序打印，所以叔红组的键次序仍是 20、30、50、70，不按插入顺序输出。
 
-这些是目标运行时应核对的预期。当前材料已通过 ARM 头环境的语法检查，尚未取得目标 Kbuild、装卸与真实日志；不能把源码推导当成已在板上运行。加载失败时先查看 dmesg：格式/版本/符号不匹配属于构建部署问题，程序若发现根不符则返回 EINVAL，重复插入返回 EEXIST。失败前可能已经打印前几组结果，不能把部分日志当作五组全部完成。
+这些是目标运行时应核对的预期。历史 ARM 头环境语法检查的范围见[源码基线记录](../../../../research/source_reading/linux/SOURCE_BASELINE.md)；语法检查不等于完整构建。本章没有提供目标 Kbuild、装卸与真实日志；不能把源码推导当成已在板上运行。加载失败时先查看 dmesg：格式/版本/符号不匹配属于构建部署问题，程序若发现根不符则返回 EINVAL，重复插入返回 EEXIST。失败前可能已经打印前几组结果，不能把部分日志当作五组全部完成。
 
 再做三次修改，先预测再运行：
 
@@ -1545,7 +1616,7 @@ new 继承 old 原来的颜色。
 这棵局部子树的黑高不应该因为根节点换人而变化。
 ```
 
-让 `new` 继承 `old` 的颜色，就是为了维持这棵局部子树对外表现不变。
+在 Case 3 的具体前提下，旧祖父为黑；上移节点继承黑色、旧祖父变红，并与已经完成的子树转接一起保持每条出口路径的黑数。仅复制一个颜色字段并不能为任意旋转自动保证黑高；证明依赖本 case 的颜色和子树条件。
 
 ------
 
@@ -1730,7 +1801,7 @@ rbtree 核心负责从这个位置开始恢复红黑性质。
 插入修复的核心心智模型是：
 
 ```text
-node 始终是红色；
+每次回到循环顶部时 node 是红色；
 父黑则结束；
 父红则修红红冲突；
 父红叔红靠染色上推；
