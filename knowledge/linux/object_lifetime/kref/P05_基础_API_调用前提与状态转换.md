@@ -88,7 +88,7 @@ static struct my_refobj global_refobj = {
 
 静态对象的最后 put 仍会同步调用 release。回调可以关闭资源、释放外壳所拥有的动态缓冲区或记录结束，但不能 `kfree(&global_refobj)`：这块存储并非动态分配器交给调用者的块。静态对象本身由其所属存储机制管理；例如模块静态数据在安全卸载模块时回收。
 
-动态对象通常先成功分配、初始化业务字段，再用 `kref_init(&refobj->ref)` 建立初始一份，最后按外层同步协议发布。静态对象也要在归零前关闭入口并保证全部使用结束；计数为零后字节仍在，不等于可以再次取得引用。完整状态与归零观察见[P02 实验](P02_源码入口与结构定义.md#2.14.2_运行一个不释放静态内存的完整模块)。
+动态对象先成功分配，再在私有阶段完成业务字段与初始引用的准备，最后按外层同步协议发布。init 与子资源申请的先后由失败清理策略决定，下一节给出两种安排。静态对象也要在归零前关闭入口并保证全部使用结束；计数为零后字节仍在，不等于可以再次取得引用。完整状态与归零观察见[P02 实验](P02_源码入口与结构定义.md#2.14.2_运行一个不释放静态内存的完整模块)。
 
 
 ### 5.4.3\_kref\_init()
@@ -101,7 +101,7 @@ static struct my_refobj global_refobj = {
 
 以[P02 完整对象模块](P02_源码入口与结构定义.md#2.19_标准自定义引用对象模板)为例，外壳分配成功后先 init 建立初始一份，再申请 data；第二步失败时可通过类型 put 清理部分初始化对象。这个安排要求回调能够处理 data 尚未成功的状态。另一种创建协议可以在全部资源准备好之后才 init，失败时直接按已取得资源逆序清理。二者不能混用到某条分支既没有引用却调用 put，或已经有初始份额却遗忘归还。
 
-原来的 reset 反例仍然成立：A/B/C 各持一份时重新 init 把数值从 3 覆盖成 1，三份外部责任没有消失，下一次正常 put 就可能过早回收。业务 reset 应处理业务状态；若要复用对象池内存，应先证明旧访问、旧入口和旧身份均已退出，再建立新周期。
+例如，A/B/C 各持一份时重新 init 把数值从 3 覆盖成 1，三份外部责任没有消失，下一次正常 put 就可能过早回收。业务 reset 应处理业务状态；若要复用对象池内存，应先证明旧访问、旧入口和旧身份均已退出，再建立新周期。
 
 ------
 
@@ -233,14 +233,25 @@ if (kref_put(&refobj->ref, my_refobj_release))
 
 NONE 表示无干扰，DROP_LAST 表示安排最后一份先归还到零，ADD_OWNER 表示安排其他路径把 1 增到 2。它们是测试选择，不是内核里的字段。atomic_uint 是 C11 原子无符号整数类型，UINT_MAX 是该整数的最大值；本模型只用小的正常数值，不实现 Linux 的有符号饱和算法。
 
+require_model 是实验自己的结果检查函数，条件不成立就输出错误并用标准库 EXIT_FAILURE 退出。NDEBUG 是可关闭标准 assert 的预处理宏；这里没有把结果核对放进 assert，避免读者改变编译选项后无声跳过检查。
+
 ```c
-#include <assert.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdatomic.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 enum interference { NONE, DROP_LAST, ADD_OWNER };
+
+/* 检查始终执行，不能因 NDEBUG 而丢失实验结果核对。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("conditional reference invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* refs 本身始终在有效存储中；这里只模拟零/正数，不模拟内核饱和。 */
 static bool try_take(atomic_uint *refs, enum interference event,
@@ -249,7 +260,7 @@ static bool try_take(atomic_uint *refs, enum interference event,
     unsigned int old = atomic_load_explicit(refs, memory_order_relaxed);
     *attempts = 0;
     while (old != 0) {
-        assert(old < UINT_MAX);
+        require_model(old < UINT_MAX);
         if (*attempts == 0 && event != NONE) {
             /* 在第一次观察与比较之间，显式安排另一条路径先改变计数。 */
             atomic_store_explicit(refs, event == DROP_LAST ? 0u : 2u,
@@ -277,9 +288,9 @@ int main(void)
         unsigned int attempts;
         bool taken = try_take(&refs, events[path], &attempts);
         unsigned int count = atomic_load_explicit(&refs, memory_order_relaxed);
-        assert(taken == expected_result[path]);
-        assert(count == expected_count[path]);
-        assert(attempts == expected_attempts[path]);
+        require_model(taken == expected_result[path]);
+        require_model(count == expected_count[path]);
+        require_model(attempts == expected_attempts[path]);
         printf("path=%u taken=%u count=%u attempts=%u\n",
                path, taken ? 1u : 0u, count, attempts);
     }
@@ -287,11 +298,17 @@ int main(void)
 }
 ```
 
-在材料目录运行：
+在具有 C11 编译器的 Linux 宿主上，从仓库根目录编译到临时目录。检查函数不受 NDEBUG 影响；即使启用优化和关闭标准 assert，结果核对仍会执行：
 
 ```bash
-cc -std=c11 -Wall -Wextra -Werror -O2 conditional_take.c -o conditional_take
-./conditional_take
+cc -std=c11 -Wall -Wextra -Werror -O2 -DNDEBUG \
+    labs/kernel/object_lifetime/materials/conditional_take.c -o /tmp/conditional_take
+```
+
+编译成功后运行程序，正常应依次输出下表的四条结果；检查失败会向标准错误输出原因并以非零状态退出。
+
+```bash
+/tmp/conditional_take
 ```
 
 | path | 读出后安排什么 | taken | 最终 count | 比较次数 | 原因 |
@@ -302,6 +319,8 @@ cc -std=c11 -Wall -Wextra -Werror -O2 conditional_take.c -o conditional_take
 | 3 | 先读到 1，再变为 2 | 1 | 3 | 2 | 第一次失败取回 2，第二次从 2 增到 3 |
 
 path 2 解释为什么“读到过正数”不是取得；path 3 解释为什么一次比较失败不等于引用已归零。比较失败更新 old 是循环能继续前进的关键；若一直沿用第一次观察值，会在计数改变后不停失败。真实并发竞争还可能使重试次数更多，本模型没有证明时间上界。
+
+表中的精确比较次数还依赖两个实验条件：只在第一次比较前安排一次干扰，并且使用 strong 比较交换。C11 的比较失败会把当前值写回传入的 old；weak 形式还允许值相等时的伪失败，不能据此维持这张表的精确次数。这里选 strong 是为了让轨迹可重复，不是在断言内核必须使用同一种 C11 接口。语义依据见 [C11 委员会草案 N1570，7.17.7.4](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf)。
 
 程序使用 relaxed 顺序，因为这里只研究计数条件，不用成功取得去发布业务数据。对象没有被分配或回收，计数存储始终有效；四条确定性轨迹不证明 UAF 已被解决，也不证明内核的原子指令或内存序。回到真实 lookup，成功才交付新责任，失败没有这份责任可 put，必须按未取得返回并退出原保护窗口。
 
@@ -340,7 +359,7 @@ return taken ? refobj : NULL;
 
 ### 5.8.1\_kref\_put\_mutex()
 
-它接受内部 kref、类型 release 和对象外的 mutex 指针。调用者拥有一份待归还责任，进入时 **没有持有这把将被 helper 获取的锁**，并且允许当前路径使用 mutex。流程并非“先归零，再加锁”：
+它接受内部 kref、类型 release 和 mutex 指针。接口本身没有规定 mutex 必须位于对象外，但锁的存储必须保持有效直到完成解锁。本章的全局索引把 index_lock 放在对象外：查找者尚未取得对象就要先锁住索引，这把锁也必须活过索引中任何单个对象的退出。调用者拥有一份待归还责任，进入时 **没有持有这把将被 helper 获取的锁**，并且允许当前路径使用 mutex。流程并非“先归零，再加锁”：
 
 | 当前路径 | 计数与锁动作 | 返回时由谁负责锁 |
 | --- | --- | --- |
@@ -373,6 +392,8 @@ sequenceDiagram
 
 下面完整 [note_kref_locked.c](../../../../labs/kernel/object_lifetime/materials/note_kref_locked.c)将单槽改成 **非拥有索引**。创建者保留初始一份，发布只让对象可被找到；索引本身不加引用。与前章主动清槽后 put 的模型相比，此处最后持有者自动在归零锁下清槽。
 
+DEFINE_MUTEX 定义并初始化全局互斥锁；index_entry 保存入口，obj->ref 保存该对象计数，release_calls 在对象之外统计回调次数。失败返回沿用内核的负错误码：-ENOMEM 表示分配失败，-EEXIST 表示槽已占用，-ENOENT 表示未找到对象。以下同步 init 路径允许使用 GFP_KERNEL 分配，模块声明与加载方法沿用第二章实验。
+
 ```mermaid
 flowchart LR
     C["创建者持初始一份"] -->|"持index_lock发布，份额不转出"| E["index_entry非拥有入口"]
@@ -380,7 +401,9 @@ flowchart LR
     C -->|"indexed_put统一归还"| K["对象ref"]
     R -->|"结束时indexed_put"| K
     K -->|"锁内归零才调用"| F["indexed_release_locked"]
-    F -->|"持锁清槽、解锁后回收"| E
+    F -->|"持锁清除本对象入口"| E
+    F -->|"清槽后解锁"| L["对象外的index_lock"]
+    F -->|"解锁后释放外壳"| O["indexed_object存储"]
 ```
 
 ```c
@@ -484,12 +507,30 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("非拥有索引与最后归还锁交接实验");
 ```
 
-材料 Makefile 已登记；在匹配运行内核的 Linux 构建环境中，从材料目录执行下列目标步骤。KDIR 指向已准备好的匹配内核构建树，本轮未执行目标装卸：
+先在 Linux 构建主机上准备与目标运行内核匹配的构建树，并将其绝对路径赋给 KERNEL_BUILD。从本仓库根目录执行以下命令，只构建本节模块；临时目录用于隔离其他实验模块。交叉构建时，还须按目标工具链设置 ARCH 与 CROSS_COMPILE。
 
 ```bash
-make -C "$KDIR" M="$PWD" modules
+kref_locked_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_kref_locked.c "$kref_locked_dir/"
+printf 'obj-m += note_kref_locked.o\n' > "$kref_locked_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_locked_dir" modules
+```
+
+将生成的 note_kref_locked.ko 复制到目标 Linux；若本机就是匹配目标，可直接进入上述临时目录。在模块所在目录加载，init 会同步完成创建、查找和全部归还：
+
+```bash
 sudo insmod ./note_kref_locked.ko
+```
+
+加载成功后卸载。该例没有外部调用入口或异步工作，退出函数只记录已经完成的回调次数：
+
+```bash
 sudo rmmod note_kref_locked
+```
+
+最后在目标机读取日志，对照下面的责任变化。以下是运行预期，本轮没有执行目标内核装卸：
+
+```bash
 sudo dmesg | tail -n 12
 ```
 
@@ -555,7 +596,7 @@ spinlock 版本具有同样的快路径、锁内重查和回调接锁结构；�
 | my_refobj_put | 消费调用者负责的一份 | 本例允许 NULL 作为空槽，不意味着非空地址都可归还 |
 | my_refobj_release | 最后归还时回收 data 和外壳 | 参数是 ref 成员地址，按类型还原且匹配分配器 |
 
-这样集中回调后，增加 trace 或诊断也有共同入口。但原来“先 WARN_ON(!refobj)，随后继续解引用”的写法不能作为空指针保护：告警通常不替程序 return，后面的 kref_get 仍会访问无效地址。若接口约定非空，就由调用者先处理分配/查找失败；若选择允许空值，则包装器必须明确返回行为，并要求调用者兑现该契约。
+这样集中回调后，增加 trace 或诊断也有共同入口。但“先 WARN_ON(!refobj)，随后继续解引用”的写法不能作为空指针保护：告警通常不替程序 return，后面的 kref_get 仍会访问无效地址。若接口约定非空，就由调用者先处理分配/查找失败；若选择允许空值，则包装器必须明确返回行为，并要求调用者兑现该契约。
 
 这里不再复制另一套缺分配与错误路径的类型模板。完整程序中的创建者把 consumer 取得后才放弃自身份额，consumer 最后归还；NULL put 是本对象封装的便利规则，不是原生 kref_put 支持 NULL。修改封装前，检查它的全部实际调用者，不以添加一个告警代替新的错误控制流。
 

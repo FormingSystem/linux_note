@@ -315,13 +315,22 @@ if (removed)
 尝试增加不是“先 read 非零，再普通 get”。两步之间可能有最后一次减少。真实条件取得在比较和更新之间不能被插入一次成功的冲突修改；若观察值过时，必须重新判断。P05 已经给出这个机制，下面复用完整 [conditional_take.c](../../../../labs/kernel/object_lifetime/materials/conditional_take.c)，让四条分支在本章问题中重新变得可预测。
 
 ```c
-#include <assert.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdatomic.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 enum interference { NONE, DROP_LAST, ADD_OWNER };
+
+/* 检查始终执行，不能因 NDEBUG 而丢失实验结果核对。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("conditional reference invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* refs 本身始终在有效存储中；这里只模拟零/正数，不模拟内核饱和。 */
 static bool try_take(atomic_uint *refs, enum interference event,
@@ -330,7 +339,7 @@ static bool try_take(atomic_uint *refs, enum interference event,
     unsigned int old = atomic_load_explicit(refs, memory_order_relaxed);
     *attempts = 0;
     while (old != 0) {
-        assert(old < UINT_MAX);
+        require_model(old < UINT_MAX);
         if (*attempts == 0 && event != NONE) {
             /* 在第一次观察与比较之间，显式安排另一条路径先改变计数。 */
             atomic_store_explicit(refs, event == DROP_LAST ? 0u : 2u,
@@ -358,9 +367,9 @@ int main(void)
         unsigned int attempts;
         bool taken = try_take(&refs, events[path], &attempts);
         unsigned int count = atomic_load_explicit(&refs, memory_order_relaxed);
-        assert(taken == expected_result[path]);
-        assert(count == expected_count[path]);
-        assert(attempts == expected_attempts[path]);
+        require_model(taken == expected_result[path]);
+        require_model(count == expected_count[path]);
+        require_model(attempts == expected_attempts[path]);
         printf("path=%u taken=%u count=%u attempts=%u\n",
                path, taken ? 1u : 0u, count, attempts);
     }
