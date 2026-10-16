@@ -1425,3 +1425,24 @@ alarmtimer 运行时借助 hrtimer，挂起时按时间类型求最近剩余量�
 RTC字符接口的ALM_SET接收rtc_time，WKALM_SET接收rtc_wkalrm；文件关闭保留一次性闹钟。sysfs +N以RTC当前时间为基准，不能与系统REALTIME或NTP状态等同。RTC核心队列、aie_timer和底层驱动IRQ有明确所有权，不能让消费者虚构第二根IRQ。CPU延迟约束按本版cpu_latency_qos_*登记、更新和撤销；不是原稿旧PM_QOS_CPU_DMA_LATENCY调用。
 
 正文完整alarm周期模块与RTC工具分别经GCC/Clang GNU11/O2宿主模型检查：930000组相位输入、溢出、启动失败、四种退出窗口、工作结束后重读时间、事件保护与闭门；136组跨月/闰日/跨年日历转换及错误日期、参数、ioctl失败和结构传参。三种删除门控/工作排空/事件保护的反例被拒绝。模型使用原始RTC结构布局，系统调用、锁、闹钟、工作和PM由桩替代，日历转换使用宿主库适配；不等于目标Kbuild、Linux用户态编译、真实并发、系统挂起或RTC硬件实测。
+
+## 1.181\_定时对象的事件观测与配对边界
+
+2026-10-17 复审[定时调试与验证](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P13_调试_验证与常见陷阱.md)，核对官方不可变提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 以下事件定义、跟踪说明及配置；复用同提交timer/workqueue/alarmtimer与已审KASAN边界。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| include/trace/events/timer.h | 1ef58a04fc5798011fd664e115cceb86d91a10c8 |
+| include/trace/events/workqueue.h | b0de2bc9ed52fa25af65be6126144419b92f6287 |
+| include/trace/events/irq.h | 837c1740d0d07ab23f401e1d6e2d2c2dd1886bb0 |
+| include/trace/events/alarmtimer.h | 13483c7ca70b3ddb35f715de4cb2830bf5d8ae85 |
+| Documentation/trace/ftrace.rst | 4073ca48af4ad2639c2289eb28c691a5c3538850 |
+| Documentation/trace/events.rst | 759907c20e7591ce3f03ac191cbc14a29b242f8a |
+| lib/Kconfig.debug | e48375fe5a50ce1e633f3687ec84e464256568c9 |
+| kernel/trace/Kconfig | 721c3b221048a9de000f785620889d537e8795f2 |
+
+timer与hrtimer事件同属timer组，硬IRQ与softirq事件同属irq组。timer_start的expires/bucket_expiry/now以jiffies表达；hrtimer载荷使用其时间基准，不直接与任意trace前缀相减。delayed_work的queue事件发生在非零延迟已到期并真正入队时；queue/activate/execute分属不同阶段。摘除/cancel事件不是同步取消返回；remove开始后可有合法在途工作，需与同步完成和释放边界比较。
+
+ftrace说明核对实例、跟踪时钟、静态trace与消费式trace_pipe、函数图根和过滤器差别、每CPU缓冲区丢失计数。用户工具以trace-cmd官方record手册核对-B及事件归属；工具版本需在目标环境再次确认。正文以完整timer_lifetime_demo生命周期采集，保存事件格式、模块卸载前的符号地址与丢失统计；Python工具分别保存waiting/running证据，避免新轮入队覆盖旧轮执行，并用保存的地址识别卸载后失去符号名称的记录。地址隐藏或不唯一时拒绝配对。
+
+提取Python配对器进行正常样本、运行中新一轮、交错对象、其他函数过滤、取消待执行、分位点和十类无效记录检查；示意数据明确非实测。所有shell块经Git Bash语法检查，事件名称与固定头文件核对；未执行Linux tracefs采集、模块装卸、function_graph、trace-cmd、KernelShark或板级性能测量。Shell语法检查不是仓库format.sh的运行，后者依然使用既定Python检查体。

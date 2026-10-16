@@ -386,12 +386,14 @@ sudo rmmod dwork_demo
 出现“30 ms 的任务晚了”时，至少记录请求登记、timer 到期、work 开始、业务结束四个时刻。只有 work 开始时间无法区分定时迟到和执行排队。具备 trace-cmd 与相应 tracepoint 的实验机可以在可控窗口记录：
 
 ```bash
-# 记录十秒的定时器与工作队列事件，输出 trace.dat。
-sudo trace-cmd record -e 'timer:*' -e 'workqueue:*' sleep 10
-trace-cmd report
+# root终端：用本次独立实例记录十秒，避免清空全局跟踪设置。
+name=dwork_record_$$
+test ! -d "/sys/kernel/tracing/instances/$name" || exit 1
+trace-cmd record -B "$name" -e 'timer:*' -e 'workqueue:*' -o dwork_trace.dat sleep 10
+trace-cmd report -i dwork_trace.dat
 ```
 
-用对象地址与函数身份关联同一工作，注意零延迟没有 timer 等待阶段；系统其他定时器也会出现在记录里。接口调用返回值不能代替业务计数，work 合并也不能代替设备 FIFO 或事件队列。
+用对象地址与函数身份关联同一工作，注意零延迟没有 timer 等待阶段；系统其他定时器也会出现在记录里。非零延迟的 `workqueue_queue_work` 出现在 timer 等待以后，不能把 queue→execute 误当作完整延迟。接口调用返回值不能代替业务计数，work 合并也不能代替设备 FIFO 或事件队列。工具版本、事件格式、跟踪时钟和丢失统计的完整检查见[第十三章采集与配对](P13_调试_验证与常见陷阱.md#13.3_在独立实例中采集一次完整装载与退出)。
 
 卸载压力实验必须覆盖生产者同时触发、工作正在睡眠和自重排临界点。内核地址检查器 KASAN 的告警能揭示部分非法访问，但“未告警”还取决于配置、覆盖路径与时序，不能承诺错误示例必然稳定崩溃，也不能用没有日志证明所有生产者均已关闭。
 
