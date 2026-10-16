@@ -16,6 +16,8 @@ topics:
 
 ## 1.1\_基线与阅读目标
 
+知识正文已经说明：同一个线程先后走 config→state 和 state→config，也足以留下潜在死锁证据。进入源码后仍需回答证据究竟写在哪、谁在功能等待以前检查、函数返回时哪层状态已经改变。本索引围绕这条现场安排阅读，帮助读者从任务记录走到共享历史和报告，而不是从几千行源码的首行顺读。
+
 本专题源码证据来自 NXP 官方 `linux-imx` 仓库的发布标签 `lf-6.12.20-2.0.0`，不可变提交为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，内核版本为 Linux 6.12.20。Lockdep 核心位于架构无关路径，因此本文讨论通用实现；PREEMPT_RT、NMI 和架构 IRQ flags 支持仍属于配置边界。
 
 目标不是从 `kernel/locking/lockdep.c` 第一行顺序翻译到最后一行，而是追踪三条状态链：
@@ -109,7 +111,7 @@ flowchart LR
 
 1. 先读 `lockdep_types.h` 的四个核心结构，建立实例、类和 held record 区别；对应[锁类身份结构讲解](../source_explanations/include/linux/lockdep_types.h.md#1.2_lock_class_key与lockdep_map身份结构)。
 2. 再读 `mutex_init()` 一类标准原语怎样提供静态 key，随后跟到 `lockdep_init_map_type()` 与 `register_lock_class()`；不要从地址猜类身份。
-3. 读 `sched.h` 的任务字段，然后沿 `lock_acquire()` 进入 `__lock_acquire()`，把 S0～S5 的每次写入标在纸上，再用 S6 跟完正常释放与功能失败回退；对应[取得状态提交](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4___lock_acquire取得状态提交)和[释放重建](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.5___lock_release释放与链回退)。
+3. 读 `sched.h` 的任务字段，然后沿 `lock_acquire()` 进入 `__lock_acquire()`，把 S0～S5 的每次写入标在纸上，再用 S6 跟完正常释放与功能失败回退；对应[取得状态提交](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4_内部取得函数的状态提交)和[释放重建](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.5_内部释放函数的链回退)。
 4. 只在当前状态闭环清楚以后阅读 `validate_chain()`、`check_prev_add()` 与 IRQ 搜索，否则容易把链缓存、图边和当前栈混在一起。
 5. 最后读 `lock_is_held_type()`、断言和 proc 输出，观察同一 held record 怎样被业务检查和诊断消费。
 

@@ -16,6 +16,8 @@ topics:
 
 ## 1.1\_关联入口
 
+多个设备实例共用一套配置锁协议，类历史却必须跨实例保留；设备删除之后，旧查询者还可能持有类地址。本页围绕身份的完整寿命追踪初始化、登记、共享图锁、注销和延迟槽位归还。阅读结果应是一条可检查的所有权链：哪一步只写实例 map，哪一步发布全局类，哪一步摘除可见身份，哪一步才允许固定槽重新使用。具体取得记录和图规则由对应实现页继续承担。
+
 | 入口 | 本文提供的实现证据 |
 | --- | --- |
 | [Lockdep 总阅读索引](../../../navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标) | Linux 6.12.20 源码地图和建议顺序 |
@@ -265,7 +267,9 @@ sequenceDiagram
         else 已有类
             H-->>A: 复用类，不再分配
         else 容量耗尽
-            A->>H: 停检并解锁，返回NULL
+            break 本次登记失败并退出
+                A->>H: 停检并解锁，返回NULL
+            end
         end
         A->>H: 成功路径R4释放图锁
     end
@@ -828,25 +832,32 @@ F4清scheduled后查看目前开放的批次。如果其中又积累了类，pre
 sequenceDiagram
     autonumber
     participant D as 删除路径
-    participant A as pf[index]开放批次
-    participant B as pf[index^1]封闭批次
+    participant A as 固定槽pf[0]
+    participant B as 固定槽pf[1]
+    participant S as delayed_free的index与scheduled
     participant R as RCU回调
     participant F as 空闲类与链槽
-    D->>A: F0 追加待回收类和链槽位
-    D->>A: F1 scheduled置位并翻转index
-    Note over A,B: 原开放槽成为封闭槽，后续删除写另一槽
+    Note over A,S: 本例起点index=0，scheduled=0；pf[0]开放
+    D->>A: F0 图锁内追加待回收类和链槽位
+    D->>S: F1 scheduled=1，index从0变1
+    Note over A,B: pf[0]封闭；pf[1]成为新的开放槽
     D->>R: 解锁后call_rcu
-    R->>B: F2 宽限期后图锁内取封闭批次
+    R->>A: F2 宽限期后取pf[index^1]，此时为pf[0]
     R->>F: F3 重置类并归还槽位
-    R->>A: F4 清scheduled，检查下一批
+    R->>S: F4 清scheduled
+    R->>B: 检查当前开放槽pf[index]，此时为pf[1]
     alt 下一批非空
-        R->>R: 翻转index，解锁后再次call_rcu
+        R->>S: scheduled=1，index从1变0
+        Note over A,B: pf[1]封闭；pf[0]再次开放
+        R->>R: 解锁后再次call_rcu
     else 下一批为空
         Note over R: 不排队，等待以后删除触发
     end
 ```
 
 `inside_selftest()`比较current与专用自测任务，本段WARN用于排除不适用的自测调用；`check_data_structures()`是内部一致性审计，不代替RCU寿命协议。链表拼接和位图运算只回收检查器存储，不释放业务对象。批次进入前的zap_class负责摘图与标记，仍需独立核对其边清理；本节证明的是“已加入批次的槽何时可以再用”。
+
+图中的参与者是固定的两个数组槽，不随 index 改名。第 2 步只改变两槽角色：pf[0] 中的旧批次没有搬到 pf[1]，所以第 4 步仍从 pf[0] 回收。第 8 步再次翻转后，两槽角色才交换回来。这一区分避免把“开放/封闭的逻辑角色”误画成两个始终固定的物理容器。
 
 **修改边界：** 同时检查空批次、回调已安排时新增删除、回调期间另一批非空及容量再利用；禁止在宽限期前归还封闭槽，禁止翻转index后把新删除继续写旧槽。测试需要真实并发与RCU推进，本仓库本次只核对源码和状态推演。
 

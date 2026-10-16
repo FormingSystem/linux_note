@@ -62,8 +62,8 @@ flowchart LR
 
 | 阶段 | 触发与写入者 | 状态落点及后续读取 | 进入下一阶段的条件 |
 | --- | --- | --- | --- |
-| S0 | 功能路径准备取得，调用 `mutex_acquire_nest()` | 将 `dep_map` 与取得参数传给 `lock_acquire()` | 检查入口允许继续处理 |
-| S1 | 类查找/登记代码解析 key 与 subclass | map缓存及全局类身份；后续候选记录引用类 | 找到有效类 |
+| S0 | 锁初始化使实例身份就绪 | map 保存名称与等待类型；动态初始化提供持久 key，静态对象可在首次登记时补全身份 | 实例已按初始化协议发布 |
+| S1 | 功能路径准备取得，调用 `mutex_acquire_nest()` 并进入检查入口 | 传入 map 与取得参数；按 key/subclass 查类或登记，后续候选引用该类 | 检查入口允许继续且找到有效类 |
 | S2 | `__lock_acquire()` 填候选 | `held_locks[lockdep_depth]`，此时深度尚未增加 | 候选字段与当前上下文可检查 |
 | S3 | 检查代码处理上下文/使用状态和链键 | 当前前缀、类使用状态、候选链；规则引擎读取 | 前置检查通过 |
 | S4 | `validate_chain()` 验证适用的新链 | 全局依赖/链历史，必要时受图锁保护 | 验证成功；失败不能冒充正式提交 |
@@ -99,8 +99,8 @@ sequenceDiagram
 
 - [`task_struct` 持锁账本与 `held_lock`](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.2_task_struct持锁账本与held_lock)
 - [`lock_acquire()` 事件入口](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.3_lock_acquire事件入口)
-- [`__lock_acquire()` 取得状态提交](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4___lock_acquire取得状态提交)
-- [`__lock_release()` 释放与链回退](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.5___lock_release释放与链回退)
+- [`__lock_acquire()` 取得状态提交](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4_内部取得函数的状态提交)
+- [`__lock_release()` 释放与链回退](../source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.5_内部释放函数的链回退)
 
 ## 2.5\_阅读时必须区分的边界
 

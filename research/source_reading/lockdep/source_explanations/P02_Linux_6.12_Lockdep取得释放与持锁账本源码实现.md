@@ -16,6 +16,8 @@ topics:
 
 ## 2.1\_关联入口
 
+current 已持有配置锁，现在准备以可中断方式取得状态锁。功能路径还没有成为状态锁的 owner，检查账本却必须先记录这段可能等待的区间，否则两个任务可能先卡死，验证器再也没有报告机会。本页核对谁隔离检查器重入、谁提交候选，以及失败或释放撤回什么；读完应能指出深度改变的语句，并区分检查返回值与功能取得结果。
+
 | 入口 | 本文提供的实现证据 |
 | --- | --- |
 | [Lockdep 总阅读索引](../navigation/P01_Linux_6.12_Lockdep源码导读.md#1.4_一次acquire的主调用链) | acquire/release 主链 |
@@ -25,6 +27,8 @@ topics:
 基线为 Linux 6.12.20，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。所有 Doxygen 和中文行内注释均为仓库补充，非上游原文。
 
 ## 2.2\_task\_struct持锁账本与held\_lock
+
+新取得需要找到 current 尚未结束的前缀，释放又要找回一次取得的身份和旧链键。因此任务保存固定数组，记录同时保留本次实例与全局类身份。下面裁剪两份头文件中的相关字段，不是完整结构定义：可选统计时间戳及其他无关字段没有展开。任务中的 lockdep_recursion 与每 CPU 同名变量是不同存储，不能合并理解。
 
 **上游相对位置：** [`include/linux/sched.h`](../../linux/include/linux/sched.h)、[`include/linux/lockdep_types.h`](../../linux/include/linux/lockdep_types.h)
 
@@ -61,6 +65,8 @@ struct held_lock {
 
 ## 2.3\_lock\_acquire事件入口
 
+标准锁上报事件也可能触发日志和其他检查，检查器不能因此无限检查自己。本入口先判断全局和当前递归资格，再保存本地 IRQ 状态并增加每 CPU 递归保护。全局图的跨 CPU 同步仍由后续图锁负责，关本地 IRQ 不代替图锁。
+
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
 ```c
@@ -71,21 +77,40 @@ struct held_lock {
  * 也不表示硬件acquire内存序。
  */
 void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
-		  int trylock, int read, int check,
-		  struct lockdep_map *nest_lock, unsigned long ip)
+			  int trylock, int read, int check,
+			  struct lockdep_map *nest_lock, unsigned long ip)
 {
 	unsigned long flags;
 
 	trace_lock_acquire(lock, subclass, trylock, read, check, nest_lock, ip);
+
 	if (!debug_locks)
 		return;
+
 	if (unlikely(!lockdep_enabled())) {
-		/* NMI特殊检查分支省略。 */
+
+		if (lockdep_nmi() && !trylock) {
+			struct held_lock hlock;
+
+			hlock.acquire_ip = ip;
+			hlock.instance = lock;
+			hlock.nest_lock = nest_lock;
+			hlock.irq_context = 2;
+			hlock.trylock = trylock;
+			hlock.read = read;
+			hlock.check = check;
+			hlock.hardirqs_off = true;
+			hlock.references = 0;
+
+			verify_lock_unused(lock, &hlock, subclass);
+		}
 		return;
 	}
 
-	raw_local_irq_save(flags); /* 防止本CPU中断重入Lockdep。 */
+	/* 仓库补充：隔离本 CPU 普通中断重入，再进入检查器递归保护。 */
+	raw_local_irq_save(flags);
 	check_flags(flags);
+
 	lockdep_recursion_inc();
 	__lock_acquire(lock, subclass, trylock, read, check,
 		       irqs_disabled_flags(flags), nest_lock, ip, 0, 0, 0);
@@ -96,7 +121,11 @@ void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 
 **调用上下文：** 公共入口自己保存本地 IRQ 并增加 per-CPU 递归保护，再调用要求 IRQ 已关闭的内部状态机。阻塞 mutex 路径在等待前上报，以便记录潜在等待依赖；取得失败会用 `mutex_release()` 回退影子记录。
 
-## 2.4\_\_\_lock\_acquire取得状态提交
+`trace_lock_acquire()` 位于全局停检判断以前，所以存在 trace 不证明本次完成依赖检查。普通入口受抑制时大部分调用直接返回；NMI（不可屏蔽中断）的非 trylock 路径还有特例：用栈上临时 hlock 调用 `verify_lock_unused()` 核对使用事实，不走常规 current 记录提交。不能把该分支说成 NMI 内也执行了一次完整的普通获取检查。
+
+## 2.4\_内部取得函数的状态提交
+
+入口已经隔离重入，本函数现在要解决候选何时可被后续查询看见。它先取得类身份、检查容量并填写数组尾部，依次核对上下文、使用状态和依赖链，最后才增加有效深度。源码还包含合并记录与 sync 注解等不增加新深度的出口，因而保留全部可执行语句，不能只截取最后两条赋值。
 
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -104,7 +133,7 @@ void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 /**
  * @brief 建立候选held record、验证链并提交current状态。
  *
- * 仓库补充，非上游原文；以下裁剪保留S1到S5主路径。
+ * 仓库补充，非上游原文；以下保留该版本完整可执行语句，省去上游英文说明注释。
  */
 static int __lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 			  int trylock, int read, int check, int hardirqs_off,
@@ -119,26 +148,68 @@ static int __lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 	int class_idx;
 	u64 chain_key;
 
-	if (unlikely(!debug_locks) ||
-	    unlikely(lock->key == &__lockdep_no_track__))
+	if (unlikely(!debug_locks))
 		return 0;
+
+	if (unlikely(lock->key == &__lockdep_no_track__))
+		return 0;
+
 	if (!prove_locking || lock->key == &__lockdep_no_validate__)
-		check = 0; /* 仍可跟踪，但不做完整依赖验证。 */
+		check = 0;
 
 	if (subclass < NR_LOCKDEP_CACHING_CLASSES)
 		class = lock->class_cache[subclass];
+
 	if (unlikely(!class)) {
 		class = register_lock_class(lock, subclass, 0);
 		if (!class)
 			return 0;
 	}
 
+	debug_class_ops_inc(class);
+
+	if (very_verbose(class)) {
+		nbcon_cpu_emergency_enter();
+		printk("\nacquire class [%px] %s", class->key, class->name);
+		if (class->name_version > 1)
+			printk(KERN_CONT "#%d", class->name_version);
+		printk(KERN_CONT "\n");
+		dump_stack();
+		nbcon_cpu_emergency_exit();
+	}
+
+	/* 仓库补充：候选放在当前有效区间之后，先不提交深度。 */
 	depth = curr->lockdep_depth;
+
 	if (DEBUG_LOCKS_WARN_ON(depth >= MAX_LOCK_DEPTH))
 		return 0;
+
 	class_idx = class - lock_classes;
 
-	hlock = curr->held_locks + depth; /* 只预留，尚未增加有效深度。 */
+	/* 仓库补充：同类且由 nest_lock 串行化时，可能合并到栈顶引用。 */
+	if (depth && !sync) {
+
+		hlock = curr->held_locks + depth - 1;
+		if (hlock->class_idx == class_idx && nest_lock) {
+			if (!references)
+				references++;
+
+			if (!hlock->references)
+				hlock->references++;
+
+			hlock->references += references;
+
+			if (DEBUG_LOCKS_WARN_ON(hlock->references < references))
+				return 0;
+
+			return 2;
+		}
+	}
+
+	hlock = curr->held_locks + depth;
+
+	if (DEBUG_LOCKS_WARN_ON(!class))
+		return 0;
 	hlock->class_idx = class_idx;
 	hlock->acquire_ip = ip;
 	hlock->instance = lock;
@@ -150,15 +221,29 @@ static int __lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 	hlock->sync = !!sync;
 	hlock->hardirqs_off = !!hardirqs_off;
 	hlock->references = references;
+#ifdef CONFIG_LOCK_STAT
+	hlock->waittime_stamp = 0;
+	hlock->holdtime_stamp = lockstat_clock();
+#endif
 	hlock->pin_count = pin_count;
 
-	if (check_wait_context(curr, hlock) ||
-	    !mark_usage(curr, hlock, check))
+	if (check_wait_context(curr, hlock))
+		return 0;
+
+	if (!mark_usage(curr, hlock, check))
+		return 0;
+
+	if (DEBUG_LOCKS_WARN_ON(!test_bit(class_idx, lock_classes_in_use)))
 		return 0;
 
 	chain_key = curr->curr_chain_key;
-	if (!depth)
+	if (!depth) {
+
+		if (DEBUG_LOCKS_WARN_ON(chain_key != INITIAL_CHAIN_KEY))
+			return 0;
 		chain_head = 1;
+	}
+
 	hlock->prev_chain_key = chain_key;
 	if (separate_irq_context(curr, hlock)) {
 		chain_key = INITIAL_CHAIN_KEY;
@@ -166,13 +251,48 @@ static int __lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 	}
 	chain_key = iterate_chain_key(chain_key, hlock_id(hlock));
 
+	if (nest_lock && !__lock_is_held(nest_lock, -1)) {
+		print_lock_nested_lock_not_held(curr, hlock);
+		return 0;
+	}
+
+	if (!debug_locks_silent) {
+		WARN_ON_ONCE(depth && !hlock_class(hlock - 1)->key);
+		WARN_ON_ONCE(!hlock_class(hlock)->key);
+	}
+
 	if (!validate_chain(curr, hlock, chain_head, chain_key))
 		return 0;
-	if (hlock->sync)
-		return 1; /* 同步注解不建立真实持有区间。 */
 
+	if (hlock->sync)
+		return 1;
+
+	/* 仓库补充：验证通过且不是 sync 事件，才提交当前链与深度。 */
 	curr->curr_chain_key = chain_key;
-	curr->lockdep_depth++; /* 验证通过后才正式提交候选记录。 */
+	curr->lockdep_depth++;
+	check_chain_key(curr);
+#ifdef CONFIG_DEBUG_LOCKDEP
+	if (unlikely(!debug_locks))
+		return 0;
+#endif
+	if (unlikely(curr->lockdep_depth >= MAX_LOCK_DEPTH)) {
+		debug_locks_off();
+		nbcon_cpu_emergency_enter();
+		print_lockdep_off("BUG: MAX_LOCK_DEPTH too low!");
+		printk(KERN_DEBUG "depth: %i  max: %lu!\n",
+		       curr->lockdep_depth, MAX_LOCK_DEPTH);
+
+		lockdep_print_held_locks(current);
+		debug_show_all_locks();
+		dump_stack();
+		nbcon_cpu_emergency_exit();
+
+		return 0;
+	}
+
+	if (unlikely(curr->lockdep_depth > max_lockdep_depth))
+		max_lockdep_depth = curr->lockdep_depth;
+
 	return 1;
 }
 ```
@@ -181,7 +301,15 @@ static int __lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 
 **配置分支：** `prove_locking=0` 或 novalidate 类把 `check` 清零，保留基础跟踪而跳过完整图验证； notrack 类连 held record 都不建立。二者都不应作为普通告警修复手段。
 
-## 2.5\_\_\_lock\_release释放与链回退
+先看两个正常但不增加深度的出口。当前栈顶同类且提供 `nest_lock` 时，函数可能增加栈顶 `references` 后返回 2，表示合并检查记录；`sync` 事件验证后返回 1，但不形成实际临界区。普通路径才把候选变成 S5 的有效记录。
+
+返回 0 也不统一表示“状态没变”。类登记和 usage 写入可能已发生，合并引用可能在递增后发现溢出；S5 提交后还要核对链键和容量。深度达到 `MAX_LOCK_DEPTH` 时，代码已经写入最后一个数组槽并增加深度，随后停检、报告并返回 0，不会回滚成调用前快照。业务能否进入临界区仍由功能 mutex 的返回值决定。
+
+`separate_irq_context()` 使新上下文从初始链键开始，旧记录仍在任务数组中；`nest_lock` 还必须存在于当前检查记录。LOCK_STAT 时间戳与 verbose 输出服务统计和诊断，不是功能 owner。修改时应分别追踪普通新记录、合并引用、sync、候选失败及提交后容量停检，不能只验证末尾成功返回。
+
+## 2.5\_内部释放函数的链回退
+
+状态锁的功能获取可能因信号失败，也可能成功后走到 unlock；两者都要结束此前上报的等待/持有区间。release 按实例寻找当前记录，而不是从功能 owner 反推。普通栈顶记录可以直接回退；中间记录和合并引用则必须保留其他尚未结束的区间。
 
 **上游相对位置：** [`kernel/locking/lockdep.c`](../../linux/kernel/locking/lockdep.c)
 
@@ -200,7 +328,9 @@ static int __lock_release(struct lockdep_map *lock, unsigned long ip)
 
 	if (unlikely(!debug_locks))
 		return 0;
+
 	depth = curr->lockdep_depth;
+
 	if (depth <= 0) {
 		print_unlock_imbalance_bug(curr, lock, ip);
 		return 0;
@@ -211,21 +341,40 @@ static int __lock_release(struct lockdep_map *lock, unsigned long ip)
 		print_unlock_imbalance_bug(curr, lock, ip);
 		return 0;
 	}
+
+	if (hlock->instance == lock)
+		lock_release_holdtime(hlock);
+
 	WARN(hlock->pin_count, "releasing a pinned lock\n");
 
+	/* 仓库补充：合并记录先减引用，仍有引用时不删除整个槽。 */
+	if (hlock->references) {
+		hlock->references--;
+		if (hlock->references) {
+
+			return 1;
+		}
+	}
+
+	/* 仓库补充：退回目标以前，再按需重放后续检查记录。 */
 	curr->lockdep_depth = i;
-	curr->curr_chain_key = hlock->prev_chain_key; /* 先退回被删记录以前。 */
-	if (i == depth - 1)
-		return 1; /* 常见栈顶释放已经完成。 */
+	curr->curr_chain_key = hlock->prev_chain_key;
+
+	if (i == depth-1)
+		return 1;
 
 	if (reacquire_held_locks(curr, depth, i + 1, &merged))
-		return 0; /* 非栈顶释放要重建后半段。 */
+		return 0;
+
 	DEBUG_LOCKS_WARN_ON(curr->lockdep_depth != depth - merged);
+
 	return 0;
 }
 ```
 
 **实现原理：** `find_held_lock()` 从当前上下文的尾部向前按实例匹配，不能跨 IRQ context。栈顶释放直接恢复 `prev_chain_key`；非栈顶释放先截断，再用原记录属性调用 `__lock_acquire()` 重建后半段。全局锁类图和链缓存不随这次 release 删除。
+
+`references` 非零时先减一，仍非零就返回，整条记录继续有效；只有引用归零或普通记录才进入深度回退。pin 检查在这些出口以前发生。末尾返回 0 不统一表示释放失败：非栈顶重建完成也会到达这里，必须结合分支和调用者理解。重建只重放检查记录，不松开或重新取得后面的功能锁。
 
 ## 2.6\_功能路径与检查路径
 
@@ -233,7 +382,7 @@ static int __lock_release(struct lockdep_map *lock, unsigned long ip)
 | --- | --- | --- |
 | 进入阻塞取得 | 尝试 owner 竞争、必要时等待 | 在等待前上报候选依赖 |
 | 取得成功 | current 成为功能 owner | held record 已存在，另可记录 acquired 统计 |
-| 可中断取得失败 | 从等待队列退出，未成为 owner | release 注解撤销候选记录 |
+| 可中断取得失败 | 从等待队列退出，未成为 owner | release 注解撤销 S5 已正式提交的当前记录；不是撤销尚未提交的候选 |
 | unlock | 清除 owner并唤醒等待者 | release 删除 current 实例记录 |
 
 下一篇：[Lockdep 依赖图与规则引擎源码实现](P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md#3.1_关联入口)。

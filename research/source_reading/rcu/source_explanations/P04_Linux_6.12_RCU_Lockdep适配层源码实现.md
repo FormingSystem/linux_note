@@ -25,7 +25,7 @@ source_version: "6.12.20"
 | 实现问题 | 权威位置 |
 | --- | --- |
 | `lockdep_map`、key、lock class 和 class cache 的通用含义 | [`lock_class_key` 与 `lockdep_map` 身份结构](../../lockdep/source_explanations/include/linux/lockdep_types.h.md#1.2_lock_class_key与lockdep_map身份结构) |
-| acquire 怎样写入 `current->held_locks[]`，release 怎样撤销当前记录 | [`lock_acquire()` 事件入口](../../lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.3_lock_acquire事件入口)与 [`__lock_acquire()` 取得状态提交](../../lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4___lock_acquire取得状态提交) |
+| acquire 怎样写入 `current->held_locks[]`，release 怎样撤销当前记录 | [`lock_acquire()` 事件入口](../../lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.3_lock_acquire事件入口)与 [`__lock_acquire()` 取得状态提交](../../lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md#2.4_内部取得函数的状态提交) |
 | `lock_is_held()` 怎样查询当前任务的影子持有记录 | [`lock_is_held_type()` 当前持锁查询](../../lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md#4.2_lock_is_held_type当前持锁查询) |
 | RCU Lockdep适配模块的参与者、状态和三条调用链 | [Linux 6.12 RCU Lockdep适配模块源码概念导读](../navigation/P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#12.1_模块问题与实现所有权) |
 | RCU 为什么需要四个虚拟 map、怎样登记和消费它们 | **本章** |
