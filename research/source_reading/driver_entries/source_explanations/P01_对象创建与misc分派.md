@@ -14,6 +14,8 @@ domains:
 
 ## 1.1\_动态kobject的创建引用
 
+教材调用创建函数后只有两条分支：失败返回，或继续创建 status 属性。它没有收到“内存已分配但目录未加入”这样的中间对象。这意味着便利函数内部必须完成一次所有权交接：成功交出创建引用，失败自己回收。先看它如何建立最终释放方法，再看错误分支把引用交给谁。
+
 声明位于 [include/linux/kobject.h](../../linux/include/linux/kobject.h)，定义位于 [lib/kobject.c](../../linux/lib/kobject.c)。调用者是教材 note_sysfs_init。实现原理围绕一个不变量展开：便利函数一旦返回非空指针，调用方得到的是已经初始化并登记的对象引用；它失败时不得把一个半成品交给调用方清理。
 
 ```c
@@ -21,10 +23,11 @@ domains:
  * 仓库阅读说明：动态对象的最终释放由公共内核代码执行。
  * @kobj: 最后一个引用归还后的动态对象
  *
- * 原函数中的 pr_debug 仅输出地址，已裁剪，不改变释放动作。
+ * pr_debug 是诊断输出；实际释放动作仍由 kfree 完成。
  */
 static void dynamic_kobj_release(struct kobject *kobj)
 {
+    pr_debug("(%p): %s\n", kobj, __func__);
     kfree(kobj);
 }
 
@@ -66,7 +69,7 @@ struct kobject *kobject_create_and_add(const char *name, struct kobject *parent)
 
     retval = kobject_add(kobj, parent, "%s", name);
     if (retval) {
-        /* 原 pr_warn 只记录加入错误，已裁剪。 */
+        pr_warn("%s: kobject_add error: %d\n", __func__, retval);
         kobject_put(kobj);
         kobj = NULL;
     }
@@ -95,7 +98,9 @@ kobject_put 的实际动作是对 kref 调用 kref_put 并指定 kobject_release
 
 声明和描述结构位于 [include/linux/miscdevice.h](../../linux/include/linux/miscdevice.h)，实现位于 [drivers/char/misc.c](../../linux/drivers/char/misc.c)。misc_init 在子系统初始化阶段登记名为 misc 的 class，再通过 register_chrdev 把主号 10 接到公共 misc_fops；这使单个驱动以后只需登记次号服务。其失败路径撤销已经登记的 class，并清理可选的 /proc/misc 观察入口，不把观察入口当作实际分派表。
 
-符号账本先说明同一实现簇中的状态承载者：
+调用教材的 misc_register 时，号码还只是动态请求标记。框架要先占住一个实际次号，再创建能被观察到的设备入口，最后让公共 open 查到服务。如果第二步失败，第一步占住的号就必须归还；如果并发 open 在中间进入，也不能把半成品当作可用服务。
+
+misc 用共享互斥锁串起这几个动作。调用方的 miscdevice 留在原处，登记只改写它的次号、链表成员和模型对象指针，不复制一份私有描述。下面按这次事务整理状态；表中的锁、集合和分配器分别解决串行执行、查找服务和号码占用问题：
 
 | 实现簇 | 初始化、写入与消费 | 修改边界 |
 | --- | --- | --- |
@@ -106,7 +111,7 @@ kobject_put 的实际动作是对 kref 调用 kref_put 并指定 kobject_release
 | this_device / parent / groups / name | 注册调用 device_create_with_groups，保存结果 | parent 决定父对象，groups 为属性组，name 是格式化名称；this_device 失败是错误指针 |
 | misc_fops / 服务 fops / file | 公共 open 先接请求，再交给具体服务 | 公共表的 noop_llseek 不会在替换后自动补到服务表上 |
 
-以下保留动态次号的完整成功与设备创建失败分支，固定次号分支以裁剪说明替代：
+以下保留固定版本的完整登记函数。INIT_LIST_HEAD 把描述中的 list 初始化为尚未加入共享集合的空链节点；MISC_DYNAMIC_MINOR 是值为 255 的动态请求标记，继承教材中的号码约定。先沿动态分支读通，再比较固定号分支如何检查已有登记和预留编号：
 
 ```c
 /**
@@ -132,12 +137,21 @@ int misc_register(struct miscdevice *misc)
         }
         misc->minor = i;
     } else {
-        /*
-         * 裁剪：原代码扫描 misc_list 拒绝已有相同次号，
-         * 随后调用 misc_minor_alloc 预留相应编号；
-         * 任一步失败均设置 -EBUSY 并转到 out。
-         * 本摘录只研究动态次号；固定次号不可使用此裁剪体。
-         */
+        struct miscdevice *c;
+        int i;
+
+        list_for_each_entry(c, &misc_list, list) {
+            if (c->minor == misc->minor) {
+                err = -EBUSY;
+                goto out;
+            }
+        }
+
+        i = misc_minor_alloc(misc->minor);
+        if (i < 0) {
+            err = -EBUSY;
+            goto out;
+        }
     }
 
     dev = MKDEV(MISC_MAJOR, misc->minor);
@@ -146,8 +160,9 @@ int misc_register(struct miscdevice *misc)
                                   misc, misc->groups, "%s", misc->name);
     if (IS_ERR(misc->this_device)) {
         misc_minor_free(misc->minor);
-        if (is_dynamic)
+        if (is_dynamic) {
             misc->minor = MISC_DYNAMIC_MINOR;
+        }
         err = PTR_ERR(misc->this_device);
         goto out;
     }
@@ -169,7 +184,9 @@ MKDEV 组合主次号；MISC_MAJOR 的值来自 include/uapi/linux/major.h。dev
 
 ## 1.3\_misc打开与注销的交接
 
-下面的打开函数保留首次查找、操作表交接和驱动 open；未命中的装载重试以明确说明裁剪。完整重试代码在同路径原文中，不能把裁剪块理解为原实现“什么也没做”。
+登记成功后，公共 open 按节点次号查服务，取得服务操作表的模块引用，并把表和实例地址交给本次 file。这样后续 read 不必再次搜索 misc_list；代价是注销列表以后，还要另行考虑旧 file 持有的对象。
+
+还有一条不能省略的分支：首次没取得操作表时，内核尝试请求装载对应模块，再完整查找一次。装载会执行模块初始化，初始化又可能登记 misc，所以这里必须先释放 misc_mtx，不能持着这把锁等登记路径回来。下面保留完整重试；request_module 的返回值不是最终分派依据，第二次查找是否取得操作表才决定能否继续。
 
 ```c
 /**
@@ -195,12 +212,19 @@ static int misc_open(struct inode *inode, struct file *file)
     }
 
     if (!new_fops) {
-        /*
-         * 裁剪：释放 misc_mtx，调用 request_module 请求
-         * char-major-主号-次号，再持锁完整查找一次。
-         * 若重试仍未取得操作表，则 goto fail。
-         */
-        goto fail; /* 本摘录仅保留直接命中的路径。 */
+        mutex_unlock(&misc_mtx);
+        request_module("char-major-%d-%d", MISC_MAJOR, minor);
+        mutex_lock(&misc_mtx);
+
+        list_for_each_entry(iter, &misc_list, list) {
+            if (iter->minor != minor)
+                continue;
+            c = iter;
+            new_fops = fops_get(iter->fops);
+            break;
+        }
+        if (!new_fops)
+            goto fail;
     }
 
     file->private_data = c;
@@ -242,6 +266,7 @@ sequenceDiagram
     participant open as misc_open
     participant file as file.f_op / private_data
     participant del as misc_deregister
+    participant use as 旧文件的访问与最终清理
     reg->>state: S1 持锁取得号码、创建入口
     alt 创建失败
         reg->>state: 归还号码，不加入列表，解锁
@@ -249,12 +274,14 @@ sequenceDiagram
         reg->>state: S2 加入列表，解锁
         open->>state: S3 持锁按次号找服务
         open->>file: 取得模块引用，设置实例，替换操作表
-        open->>file: 调用服务 open 后解锁
+        open->>state: 调用服务 open 后解锁
         del->>state: S4 持锁摘链、撤模型入口、归还号
-        file->>file: 既有文件仍使用保存的表
-        file->>file: 最后关闭归还模块引用
+        use->>file: 后续访问读取保存的表
+        use->>use: 最终释放文件时归还模块引用
     end
 ```
+
+步骤 1、2 展开登记失败的回滚；成功分支的步骤 3～6 完成发布、直接命中和操作表交接。步骤 7 撤销列表，步骤 8、9 由旧访问及文件最终清理路径继续消费保存的状态，file 结构自身不是执行线程。图中省略的首次未命中重试见上方完整函数；它发生在交接操作表之前，不会在每次 read 时重做。
 
 图中特意允许注销时还有旧文件，展示的是通用运行中注销。教材采用普通模块卸载，已有打开引用会阻止进入模块退出，所以教材的正常顺序是先 close 再 S4；不能把一种调用场景误读成函数本身的保证。
 

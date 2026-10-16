@@ -12,6 +12,8 @@ domains: [linux, source_reading]
 
 ## 1.1\_设备创建便利函数的所有权
 
+沿教材的属性实例看一次失败：设备内存已经分配，名字设置或公开目录却失败了。调用者最终只能收到一个错误指针，因此便利函数必须在返回前收回自己已经取得的资源；否则一个失败的发布也会留下无人持有的对象。成功分支则相反，要把初始引用交给调用者，使后续注销有明确的配对对象。
+
 `device_create` 与 `device_create_with_groups` 处理可变参数后都进入 device_create_groups_vargs。后者把传入的关系、属性和私有数据放进分配的 device，再调用 device_add，而不是调用 device_register。因为它已经执行 device_initialize，重复走 register 会破坏“只初始化一次”的前提。
 
 这里沿用错误指针章节的 IS_ERR_OR_NULL 与 ERR_PTR；初始 -ENODEV 表示没有可接受的分类对象，分配失败改为 -ENOMEM。GFP_KERNEL 允许按可睡眠的普通分配路径工作，不能把这套创建流程移到硬中断中。
@@ -78,6 +80,8 @@ device_initialize 建立初始引用；device_create_release 是本文件里的�
 可修改边界：调用方可以改变名字、有效父对象、设备号和已准备好的 groups，不应在发布后才补齐 show/store 所需的数据。若不需要 class，使用适合场景的分步 device 初始化或已有子系统接口，不能给这个便利函数传 NULL 后期待它替你创建匿名分类。直接更换 release 也不是普通扩展点：必须先明确谁分配、谁最终归还外层对象。
 
 ## 1.2\_从通用属性回到设备回调
+
+创建成功只解决了“有哪些对象”。用户随后写属性时，入口面对的是通用文件节点，业务代码却要修改创建时传入的实例。框架没有把业务状态复制进每个属性文件，而是保留对象与属性的地址关联，通过两次外层对象还原找到目标。
 
 sysfs 使用通用 kobject 与 attribute，业务回调却需要 device 与 device_attribute。两组结构通过内嵌成员的地址关系适配。这里的 to_dev_attr 宏在同一上游文件中用 container_of 找外层对象，kobj_to_dev 找到包含 kobject 的 device；不能将非 device 类型的 kobject 配上这套操作表。
 
