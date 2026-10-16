@@ -1283,3 +1283,20 @@ B05bl复查同一固定lockdep.c的lockdep_init_map_type，恢复统计CPU记录
 正文保留一次性、周期和转交普通工作队列三个独立模块，并明确静态对象、唯一生产者与退出后读取计数的前提。周期算法的验证只检查计划相位、跳过过期点和无符号回绕，不模拟内核执行延迟或同步实现；共享源码树不可访问，未进行目标 Kbuild、模块加载、设备移除或竞争压力测试。永久关闭不代替外部入口注销或对象引用回收。
 
 从正文回调提取下一次到期计算，在 32 位无符号计数模型中用 GCC 14.2 与 Clang 18.1.8 的 C11/O2 分别运行一百万组随机输入及准点、迟到、回绕三个边界；结果与宽整数参考计算一致。把算法改回只递增一个周期的反例被同一检查拒绝。该结果不等于完整内核模块编译或运行通过。
+
+## 1.173\_时间转换与组合模式的版本核对
+
+2026-10-17 从官方不可变提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 取得以下原文，支持[单位与范围](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P03_时间表示与转换接口详解.md#3.3_转换函数为什么救不了调用前的溢出)与[组合模板](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P12_常用模式与代码模板.md#12.8_事务被唤醒以后还必须读取结果)的修正。
+
+| 上游路径 | 原始字节 Git blob | 本次核对点 |
+| --- | --- | --- |
+| include/linux/types.h | 2bc8766ba20cab014a380f02e5644bd0d772ec67 | ktime_t 是 s64 类型别名 |
+| include/linux/ktime.h | 3a4e723eae0f1203d5aec7bb2d460dfbf171b644 | ktime_set、ns/ms_to_ktime、加减与比较签名和边界 |
+| kernel/time/time.c | 1ad88e97b4ebcf1b51745c6b73ce6422a481bc62 | 毫秒和微秒的运行时转换分支；头文件沿用 1.171 |
+| include/linux/platform_device.h | 7132623e4658576f0be2a80b493e445e0c9d4de6 | platform_driver.remove 为 void 回调 |
+| kernel/time/hrtimer.c | db9c06bb23116a0d76d972477b40afd43b9b6d8f | hrtimer_forward 基于旧期限推进、分辨率下限与 cancel 等待循环 |
+| kernel/sched/completion.c | 3561ab533dd4e33ddb5284bcab51736f9b9ab6bf | complete 通知不携带业务结果，timeout 返回值与重新初始化责任 |
+
+`include/linux/hrtimer.h` 沿用 1.171 的固定文件，核对 `hrtimer_start()` 返回 void、forward_now 的当前时钟取值与模式边界。普通 timer 与 work 的取消协议沿用既有固定实现证据，不把 hrtimer_cancel 写成永久关闭。模板中的 start/quiesce 是教学设备操作契约，不是上游通用函数；GPIO 绑定和物理引脚未得到本次板级验证。无目标 Kbuild、硬件去抖、IRQ、sysfs、事务或卸载竞争实测结果。
+
+毫秒转换提取固定头文件与运行时函数，在 HZ=100/250/1000 下用 GCC/Clang 的 C11/O2 各核对 0～5000 共 5001 个运行时输入，以及零值、15 ms、极大值常量和乘法溢出反例。另把正文去抖检查函数与事务共同终结函数放入顺序模型，核对提前检查、准点、采样期间新边沿/改参/停止、GPIO 负错误，以及三种结果的 27 种先后组合；两个编译器均通过。模型将锁、队列、GPIO 和通知替换为桩，只检验这些指定状态交错，不模拟 Linux 并发、内存序、硬件或完整模块构建。
