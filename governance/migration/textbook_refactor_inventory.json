@@ -4882,6 +4882,90 @@
           "十一篇出入完整标题锚点通过；全仓719篇8848有效链接无缺失，格式元数据/路径及diff通过。"
         ],
         "limits": "导航页链接密度服务查询；既有章号/阶段组合及ARM/NXP等不是新增概念。无autonumber图用T/C/A阶段定位，其余图自动编号与文字相符。未修改或重复运行算法实验，目标构建/装卸/并发边界不变。"
+      },
+      "research/source_reading/rbtree/source_explanations/block/elevator.c.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补请求位置索引背景、接入查找摘除关系与时序，解释游离标记和错误断言。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读，七个固定源码blob与二十四段摘录核对，原C块全部保持。",
+          "八张Mermaid渲染及逐张目视；七篇出入锚点、连续性及术语严格检查通过。",
+          "全仓719篇8851有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "仅核对固定版本代码和说明；未宣称子系统构建、运行、性能或并发验证。现有实验未修改，不重复运行。"
+      },
+      "research/source_reading/rbtree/source_explanations/fs/eventpoll.c.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补注册身份复合键背景、保护及局部查询状态，区别身份索引与就绪交付。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读，七个固定源码blob与二十四段摘录核对，原C块全部保持。",
+          "八张Mermaid渲染及逐张目视；七篇出入锚点、连续性及术语严格检查通过。",
+          "全仓719篇8851有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "仅核对固定版本代码和说明；未宣称子系统构建、运行、性能或并发验证。现有实验未修改，不重复运行。"
+      },
+      "research/source_reading/rbtree/source_explanations/include/linux/container_of.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补嵌入节点还原外围对象的使用背景，保留已有类型检查和偏移解释。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读，七个固定源码blob与二十四段摘录核对，原C块全部保持。",
+          "八张Mermaid渲染及逐张目视；七篇出入锚点、连续性及术语严格检查通过。",
+          "全仓719篇8851有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "仅核对固定版本代码和说明；未宣称子系统构建、运行、性能或并发验证。现有实验未修改，不重复运行。"
+      },
+      "research/source_reading/rbtree/source_explanations/include/linux/rbtree_types.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补节点/根/缓存的出现原因、初始化器类型和成员周期精确图链。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读，七个固定源码blob与二十四段摘录核对，原C块全部保持。",
+          "八张Mermaid渲染及逐张目视；七篇出入锚点、连续性及术语严格检查通过。",
+          "全仓719篇8851有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "仅核对固定版本代码和说明；未宣称子系统构建、运行、性能或并发验证。现有实验未修改，不重复运行。"
+      },
+      "research/source_reading/rbtree/source_explanations/include/linux/timerqueue.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补到期候选与真正到期的边界，回链同一队列的完整操作图。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读，七个固定源码blob与二十四段摘录核对，原C块全部保持。",
+          "八张Mermaid渲染及逐张目视；七篇出入锚点、连续性及术语严格检查通过。",
+          "全仓719篇8851有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "仅核对固定版本代码和说明；未宣称子系统构建、运行、性能或并发验证。现有实验未修改，不重复运行。"
+      },
+      "research/source_reading/rbtree/source_explanations/kernel/sched/fair.c.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补EEVDF资格与排序的区别，区分基准和子树min_vruntime，图示真实早退顺序及修改影响。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读，七个固定源码blob与二十四段摘录核对，原C块全部保持。",
+          "八张Mermaid渲染及逐张目视；七篇出入锚点、连续性及术语严格检查通过。",
+          "全仓719篇8851有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "仅核对固定版本代码和说明；未宣称子系统构建、运行、性能或并发验证。现有实验未修改，不重复运行。"
+      },
+      "research/source_reading/rbtree/source_explanations/lib/timerqueue.c.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "用同一队列解释add/del/getnext的不同返回语义，区分rbtree摘除与timerqueue设置游离标记。",
+        "date": "2026-10-16",
+        "validation": [
+          "七篇完整冷读，七个固定源码blob与二十四段摘录核对，原C块全部保持。",
+          "八张Mermaid渲染及逐张目视；七篇出入锚点、连续性及术语严格检查通过。",
+          "全仓719篇8851有效链接无缺失，格式元数据/路径及diff通过。"
+        ],
+        "limits": "仅核对固定版本代码和说明；未宣称子系统构建、运行、性能或并发验证。现有实验未修改，不重复运行。"
       }
     },
     "additional_documents": [
