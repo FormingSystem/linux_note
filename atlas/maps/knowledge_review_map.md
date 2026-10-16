@@ -532,7 +532,7 @@ mindmap-plugin: basic
                 - 🔴 [P12 常用模式与代码模板](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P12_常用模式与代码模板.md)
                 - 🔴 [P13 调试 验证与常见陷阱](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P13_调试_验证与常见陷阱.md)
                 - 🔴 [P14 按键窗口合并与按下释放确认](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md)
-            - 🔴 [异步通知全景与知识地图](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md)
+            - 🔴 [异步通知全景与知识地图](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md#1.1_先看到数据与提示的区别_再进入实现)
                 - 章节评审：13 章未评审
                 - 🔴 [P01 异步通知全景与知识地图](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P01_异步通知全景与知识地图.md)
                 - 🔴 [P02 Linux IO 与信号机制基础](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P02_Linux_IO_与信号机制基础.md)

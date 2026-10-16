@@ -85,7 +85,7 @@ domains:
 2. 按序阅读[Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)。
 3. 阅读[错误指针专题](../../knowledge/linux/error_handling/error_pointer/大纲.md#1.1_四次认识变化)。
 4. 阅读[poll 与 epoll 的区别](../../knowledge/linux/io_model/blocking_io/大纲.md)。
-5. 按序阅读[异步通知](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md)。
+5. 按[异步通知阅读地图](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md#1.1_先看到数据与提示的区别_再进入实现)建立订阅、信号pending和数据消费的分工，再进入实现与有限实验。
 6. 阅读[Linux 内核日志](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md)，建立最基本的观测手段。
 
 阶段验收：能描述路径和打开文件怎样进入 I/O，设备怎样注册、匹配和暴露节点，以及阻塞唤醒和异步通知怎样接回用户接口。
