@@ -3057,6 +3057,149 @@
           "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
         ],
         "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "总索引按源码、模型与实验入口组织，局部解释明确手工建立Litmus；46条链接履行导航职责，经人工冷读保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/navigation/P02_单次访问与类型边界导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "保留R0至R3编译与运行分界、实际地址和类型尺寸推导，READ_ONCE_NOCHECK与read_word_at_a_time边界及答案可本地理解。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/navigation/P03_SMP屏障的配置与调用层次.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "保留F0至F3配置选择、检测入口与功能屏障层次；UP只取消处理器间需要，不泛化为设备方向无序。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/navigation/P04_发布取得的访问与配置导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "保留S0至S3一次发布和保存读值，区分KCSAN事件与数据通信、SMP原生字尺寸和UP分支，完整回收练习。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/navigation/P05_存储后屏障与原子强化导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "保留写后屏障与release区别、T0至T4辅助原子强化及同一运行流程；不将辅助宏本身当RMW。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/navigation/P06_条件加载与控制依赖导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "保留L0至L4样本轮询、退出补强与返回保存值，解释无唤醒和无超时以及持锁等待反例。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/navigation/P07_ARM屏障与配置边界导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "明确历史ARM编译与本次源码复核边界；三类屏障选择图拆开相同目标节点，消除条件标签重叠。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/navigation/P08_LKMM输入_分类与工具配置.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "将易误读为CPU协作的两个处理器改为两种处理工具；保留完整MP输入、分类与RCU配对示例及工具配置边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/navigation/P09_LKMM公理_锁关系与验证边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正MP映射实例中的WRITE_ONCE与release参数；保留hb/prop、锁候选插入与验证边界的逐步推导。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/source_explanations/arch/arm/include/asm/barrier.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "核对ARMv7指令、三条配置轴和heavy调用条件；唯一实现节选保留，与通用包装和平台函数分工明确。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/source_explanations/arch/arm/mm/flush.c.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "逐行对照固定flush.c函数，保留外部缓存回调与SoC回调次序、构建开关/非空检查和无设备完成证明边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/source_explanations/include/asm-generic/barrier.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "核对通用屏障各宏默认定义与SMP/UP包装，保留类型检查、KCSAN、保存值和条件加载完整执行链。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
+      },
+      "research/source_reading/memory_ordering/source_explanations/include/asm-generic/rwonce.h.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "核对ONCE及类型辅助宏、检测抑制和跨边界读取节选，保留中文Doxygen与源码条件的明确归属。",
+        "date": "2026-10-16",
+        "validation": [
+          "十三篇完整冷读；十四张图渲染逐张目视，ARM选择图修复后重渲染；出入标题链接通过，连续性仅索引链接密度提示经人工保留。",
+          "沿用本轮已与dfaf2136固定提交比对的十五份源码/模型证据，补读固定flush.c、ARM cpu_relax和当前配置；格式、元数据、命名、全仓链接和diff检查通过。"
+        ],
+        "limits": "本组未重跑历史宏夹具、目标内核构建或ARM硬件实验，未运行herd7；本次源码审查不冒充这些动态验证，人工评审状态不变。"
       }
     }
   },
