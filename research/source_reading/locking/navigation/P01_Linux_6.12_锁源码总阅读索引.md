@@ -15,7 +15,7 @@ source_version: "6.12.20"
 
 本专题固定到 NXP `linux-imx` 发布标签 `lf-6.12.20-2.0.0` 解引用后的提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，顶层版本为 Linux 6.12.20。开发工作树可以包含本地实验提交；本文所有函数和行号仍以固定发布提交为准，不把本地分支头作为技术证据。
 
-本轮重新读取标准工作树配置：`CONFIG_SMP`未启用，`CONFIG_PREEMPT_NONE=y`、`CONFIG_TINY_RCU=y`，未启用mutex/rwsem owner spinning。先前“当前配置为SMP并开启owner spinning”的表述已纠正；正文介绍这些分支依据固定提交的源码条件，不代表当前构建选择它们，更不代表已在目标运行。
+仓库既有配置核验记录为：`CONFIG_SMP`未启用，`CONFIG_PREEMPT_NONE=y`、`CONFIG_TINY_RCU=y`，未启用mutex/rwsem owner spinning。该记录属于历史配置证据；本次重构时标准工作树不可访问，没有重新核验当前`.config`。正文介绍SMP、owner spinning及实时分支依据固定发布提交的源码条件，不代表读者当前构建选择它们，更不代表已在目标运行。源码身份与各次核验边界见[Linux源码基线](../../linux/SOURCE_BASELINE.md)。
 
 跨版本因果模型先读[锁机制专题](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/大纲.md#1.1_专题定位)。本目录只回答 Linux 6.12.20 把锁状态放在哪里、哪些函数读写、慢路径怎样通信。
 
@@ -68,7 +68,7 @@ flowchart TD
 
 ## 1.5\_配置与证明边界
 
-类型头显示 `CONFIG_PREEMPT_RT` 下普通 `spinlock_t` 映射到 `rt_mutex_base`，非 RT 才内嵌 raw spinlock。当前 `.config` 不能执行 RT 分支，因此本专题只通过同一提交的条件编译源码解释该替代关系，不宣称做过 RT 运行验证。Lockdep 状态只证明已配置、已接入且已执行路径的锁协议，单独进入[Lockdep 源码导读](../../lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)。
+类型头显示 `CONFIG_PREEMPT_RT` 下普通 `spinlock_t` 映射到 `rt_mutex_base`，非 RT 才内嵌 raw spinlock。既有非RT配置记录不能提供RT运行证据，因此本专题只通过同一提交的条件编译源码解释该替代关系，不宣称做过 RT 运行验证。Lockdep 状态只证明已配置、已接入且已执行路径的锁协议，单独进入[Lockdep 源码导读](../../lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)。
 
 ## 1.6\_建议阅读顺序
 
@@ -83,10 +83,10 @@ flowchart TD
 - 为什么关闭本地 IRQ 和取得跨 CPU 锁是两个状态动作？
 - mutex 的 WAITERS、HANDOFF、PICKUP 分别连接哪个阶段？
 - rwsem 为什么必须同时保存 count、owner 和混合 waiter 队列？
-- 当前配置能验证哪些分支，PREEMPT_RT 结论又来自哪层证据？
+- 一份已核验配置能选择哪些分支，它与源码阅读、实际运行各能证明什么？PREEMPT_RT结论来自哪层证据？
 
 下一篇：[spinlock 模块源码概念导读](P02_Linux_6.12_spinlock模块源码概念导读.md)。
 
 ## 1.8\_执行路径先修与锁类别规则
 
-[执行路径先修](../../../../knowledge/linux/synchronization_and_asynchrony/P01_同一对象的多条执行路径.md#1.5_先辨认当前路径再选择接口)先区分访问协议和等待方式。固定提交[Documentation/locking/locktypes.rst](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/locking/locktypes.rst)的Lock categories、CPU local locks和raw_spinlock_t and spinlock_t章节用于核对可睡上下文、本地约束不能排除远端、实时配置改变普通锁语义。kernel/Kconfig.locks中两种owner spinning都依赖SMP与ARCH_SUPPORTS_ATOMIC_RMW；当前配置不满足前者。这里引用文档及配置契约，不新增宏体或函数体展开；具体实现仍从1.3中的唯一入口进入。
+[执行路径先修](../../../../knowledge/linux/synchronization_and_asynchrony/P01_同一对象的多条执行路径.md#1.5_先辨认当前路径再选择接口)先区分访问协议和等待方式。固定提交[Documentation/locking/locktypes.rst](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/locking/locktypes.rst)的Lock categories、CPU local locks和raw_spinlock_t and spinlock_t章节用于核对可睡上下文、本地约束不能排除远端、实时配置改变普通锁语义。kernel/Kconfig.locks中两种owner spinning都依赖SMP与ARCH_SUPPORTS_ATOMIC_RMW；既有非SMP配置记录不满足前者。这里引用文档及配置契约，不新增宏体或函数体展开；具体实现仍从1.3中的唯一入口进入。
