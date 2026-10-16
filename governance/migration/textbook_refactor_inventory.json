@@ -5848,6 +5848,17 @@
           "GCC/Clang控制流模型、Python18种正常与错误路径及Bash/Python语法通过；4出链无标题入链，全仓9028有效链接及格式元数据路径和diff通过。"
         ],
         "limits": "教学DTS明确需要实际板级映射；模型不替代Linux ABI、内核Kbuild、真实并发和目标板电气验证，当前环境未完成这些运行。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P08_流式设备与高级场景中的异步通知.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以有界队列容量、复制期间所有权、固定期限补发与队列外丢失报告重建流式协议，校正TTY/evdev/Netlink的数据语义和信号计数边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "原稿全文、内容去向、冷读与术语审查，连续阅读严格零风险；三图渲染目视通过。",
+          "完整Python实跑与八种容量四万次操作、通知一万时刻及错误和公平路径通过；3出链无标题入链，全仓9030有效链接及格式元数据路径和diff通过。"
+        ],
+        "limits": "模型为串行状态模拟，不证明Linux锁并发、真实信号ABI、目标Kbuild或DMA硬件；实际接口ABI与源端反压仍需设备实现兑现。"
       }
     },
     "additional_documents": [
