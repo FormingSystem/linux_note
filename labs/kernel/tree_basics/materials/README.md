@@ -111,15 +111,15 @@ domains: [c_language, data_structures]
 
 [note_rbtree_owner.c](note_rbtree_owner.c)是[P37 的完整调用者框架](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md#37.16_运行完整的私有调用者框架)：初始化期间私有运行唯一键插入、复制值查询、摘除交还和整树清理，Makefile 已登记。ARM 前端检查通过；宿主按显式位宽/锁适配运行 36 组插入移除顺序与四个分配失败点。目标 Kbuild、MODPOST、装卸和日志未执行，不由宿主模型推导实际并发保证。
 
-[note_rbtree_cached.c](note_rbtree_cached.c)配合[P12 缓存一致性](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P43_反复取首与最左缓存.md#43.6.1_运行缓存一致性实验)，私有数组核对最左对象身份、辅助接口返回，以及普通删除留下过时缓存的反例。Makefile 已登记；ARM 前端与宿主 14400 组插入/删除次序检查通过，目标构建与装卸未执行，故障对象始终存活，不模拟任意悬空指针诊断。
+[note_rbtree_cached.c](note_rbtree_cached.c)配合[P43 缓存一致性](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P43_反复取首与最左缓存.md#43.6.1_运行缓存一致性实验)，私有数组核对最左对象身份、辅助接口返回，以及普通删除留下过时缓存的反例。Makefile 已登记；ARM 前端与宿主 14400 组插入/删除次序检查通过，目标构建与装卸未执行，故障对象始终存活，不模拟任意悬空指针诊断。
 
-[note_rbtree_augmented.c](note_rbtree_augmented.c)配合[P12 区间摘要](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P44_区间查询与子树摘要.md#44.9.1_运行完整区间摘要实验)，完整运行六个闭区间的插入、点查询、末端缩短和删除；按原始载荷独立核对子树最大值。Makefile 已登记；宿主 8640 组次序及逐点对照通过，ARM 前端通过；目标构建、装卸和并发验证未执行。
+[note_rbtree_augmented.c](note_rbtree_augmented.c)配合[P44 区间摘要](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P44_区间查询与子树摘要.md#44.9.1_运行完整区间摘要实验)，完整运行六个闭区间的插入、点查询、末端缩短和删除；按原始载荷独立核对子树最大值。Makefile 已登记；宿主 8640 组次序及逐点对照通过，ARM 前端通过；目标构建、装卸和并发验证未执行。
 
-[copy_under_lock.c](copy_under_lock.c)配合[P12 锁内复制](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md#45.3.1_用两个线程观察复制值与删除)，以 POSIX pthread 互斥锁、条件变量和一个入口槽控制两种真实线程次序；没有实现树、内核自旋或 RCU。编译使用 `cc -std=c11 -Wall -Wextra -Werror -pthread`，作为用户态材料不加入内核模块 Makefile。宿主重复 512 次有序读/删实验并检查两个分配失败点；不能外推成目标内核并发验证。
+[copy_under_lock.c](copy_under_lock.c)配合[P45 锁内复制](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md#45.3.1_用两个线程观察复制值与删除)，以 POSIX pthread 互斥锁、条件变量和一个入口槽控制两种真实线程次序；没有实现树、内核自旋或 RCU。编译使用 `cc -std=c11 -Wall -Wextra -Werror -pthread`，作为用户态材料不加入内核模块 Makefile。宿主重复 512 次有序读/删实验并检查两个分配失败点；不能外推成目标内核并发验证。
 
-[P12 示例回访](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md#45.8_Linux_内核_rbtree_示例代码)继续使用 note_rbtree_owner.c 和 P27 的遍历材料。owner 的搜索与插入已收敛到 compare_key；重新通过 36 组顺序、四处分配失败、极值键接入/查找/重复/移除及 ARM 前端检查。用户态锁、缓存和增强实验仍分别维护各自契约，不将删除末尾的释放操作机械替换成另一种寿命协议。
+[P45 示例回访](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md#45.8_回到调用者接口核对持有权)继续使用 note_rbtree_owner.c 和 P27 的遍历材料。owner 的搜索与插入已收敛到 compare_key；重新通过 36 组顺序、四处分配失败、极值键接入/查找/重复/移除及 ARM 前端检查。用户态锁、缓存和增强实验仍分别维护各自契约，不将删除末尾的释放操作机械替换成另一种寿命协议。
 
-[rb_snapshot_check.c](rb_snapshot_check.c)配合[P12 有界验证](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P46_独立验证树形与派生状态.md#46.10.1_运行有界快照检查器)：C11 整数槽号模型验证已知对象池，依次检查重复访问、父链、祖先界、颜色、黑计数、独立摘要、总数和首身份。完整十二类样例及 120960 个固定算法夹具稳定快照交叉检查通过；不采集或解引用任意内核地址，不进入模块 Makefile。
+[rb_snapshot_check.c](rb_snapshot_check.c)配合[P46 有界验证](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P46_独立验证树形与派生状态.md#46.10.1_运行有界快照检查器)：C11 整数槽号模型验证已知对象池，依次检查重复访问、父链、祖先界、颜色、黑计数、独立摘要、总数和首身份。完整十二类样例及 120960 个固定算法夹具稳定快照交叉检查通过；不采集或解引用任意内核地址，不进入模块 Makefile。
 
 [bplus_leaf_pages.cpp](bplus_leaf_pages.cpp)配合[P13 页布局](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md#%281%29_运行等值路由与叶分裂模型)：C++17 固定一层根与九叶容量，运行二十键实例的等值路由、叶分裂和范围扫描。宿主 5040 种次序、35280 个操作状态与 std::set 对照，容量拒绝、重复和整数极值已查；不实现任意高度、删除、设备 I/O、并发或持久化，不加入内核模块 Makefile。
 

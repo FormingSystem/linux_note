@@ -278,7 +278,7 @@ mindmap-plugin: basic
             - 🔴 **未校正** [P27 Linux 有序遍历与整树销毁](../../knowledge/linux/data_structures/红黑树_rb-tree/P27_Linux有序遍历与整树销毁.md)
             - 🔴 **未校正** [P28 Linux 同键替换与旧对象退出](../../knowledge/linux/data_structures/红黑树_rb-tree/P28_Linux同键替换与旧对象退出.md)
             - 🔴 **未校正** [P29 普通旋转与 Linux 修复的完成边界](../../knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md)
-            - 🟢 [P12 Linux 6.12 内核 rbtree 工程扩展 并发与验证](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md)
+            - 🟢 [P12 Linux rbtree 工程扩展的阅读路线](../../knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_rbtree_工程扩展的阅读路线.md)
             - 🔴 **未校正** [P43 反复取首与最左缓存](../../knowledge/linux/data_structures/红黑树_rb-tree/P43_反复取首与最左缓存.md)
             - 🔴 **未校正** [P44 区间查询与子树摘要](../../knowledge/linux/data_structures/红黑树_rb-tree/P44_区间查询与子树摘要.md)
             - 🔴 **未校正** [P45 完整操作与返回对象的并发保护](../../knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md)
