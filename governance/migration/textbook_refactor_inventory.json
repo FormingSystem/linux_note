@@ -801,6 +801,66 @@
           "四篇正文连续性无风险，大纲仅入口密度提示；标题/元数据/命名、全仓707篇链接及 diff 检查通过"
         ],
         "limits": "ARM 语法检查使用当前开发树生成配置，未执行完整 Kbuild、Linux 空设备实验、并发读取或热移除。专题脚本默认递归将 .cache 历史副本计为重复 ID，且只接受固定上一篇/下一篇行式；未把该脚本结果宣称为全专题通过。"
+      },
+      "knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留字节进度与整条替换的因果模型、完整 C 程序、跨调用快照反例和练习；补同源实验材料、就地构建运行说明，时序由复制帮助函数报告剩余量并逐步解释。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定提交十八份源码和资料核对，沿用此前 cdev/file/select 证据；跟踪 Markdown 的696个已有ID无重复",
+          "复制模型与材料一致，普通/O2-NDEBUG及预算0/4变体通过；九张 Mermaid 渲染并目视检查关键时序",
+          "五篇连续性无风险，术语候选逐项按前置/私有标识/错误码解释核对；标题/元数据/命名、全仓链接及diff通过"
+        ],
+        "limits": "未运行目标内核 read/poll/SIGIO、fork映射、DMA或解绑实验；普通 C 模型只检验复制提交状态，不模拟真实用户缺页和并发。大纲与材料README仅同步对应入口，不重复计篇。"
+      },
+      "knowledge/driver_model/character_device/P06_阻塞_poll与异步通知.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从空队列空转引出登记后复查，沿 S2/S3/S4 比较 read、poll 和信号订阅；明确 wait_event 返回值、按需 poll 登记、等待后重新领取，以及最终 file 释放时异步订阅撤销。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定提交十八份源码和资料核对，沿用此前 cdev/file/select 证据；跟踪 Markdown 的696个已有ID无重复",
+          "复制模型与材料一致，普通/O2-NDEBUG及预算0/4变体通过；九张 Mermaid 渲染并目视检查关键时序",
+          "五篇连续性无风险，术语候选逐项按前置/私有标识/错误码解释核对；标题/元数据/命名、全仓链接及diff通过"
+        ],
+        "limits": "未运行目标内核 read/poll/SIGIO、fork映射、DMA或解绑实验；普通 C 模型只检验复制提交状态，不模拟真实用户缺页和并发。大纲与材料README仅同步对应入口，不重复计篇。"
+      },
+      "knowledge/driver_model/character_device/P07_mmap与跨文件生命周期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从持续采样映射引出 file/VMA/后备资源不同责任；修正 close 与 release 混淆和一律附加 VMA 引用的结论，补父子映射、页范围计算、地址类型及已有页表撤销边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定提交十八份源码和资料核对，沿用此前 cdev/file/select 证据；跟踪 Markdown 的696个已有ID无重复",
+          "复制模型与材料一致，普通/O2-NDEBUG及预算0/4变体通过；九张 Mermaid 渲染并目视检查关键时序",
+          "五篇连续性无风险，术语候选逐项按前置/私有标识/错误码解释核对；标题/元数据/命名、全仓链接及diff通过"
+        ],
+        "limits": "未运行目标内核 read/poll/SIGIO、fork映射、DMA或解绑实验；普通 C 模型只检验复制提交状态，不模拟真实用户缺页和并发。大纲与材料README仅同步对应入口，不重复计篇。"
+      },
+      "knowledge/driver_model/character_device/P08_设备模型与硬件子系统交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从采样单元建立固件信息、platform 匹配、实例查找和 GPIO/IRQ/DMA 的交付责任；以一次采样时序说明提交不等于完成，分开硬件模型对象与旧软件后端寿命，补发布前回调条件。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定提交十八份源码和资料核对，沿用此前 cdev/file/select 证据；跟踪 Markdown 的696个已有ID无重复",
+          "复制模型与材料一致，普通/O2-NDEBUG及预算0/4变体通过；九张 Mermaid 渲染并目视检查关键时序",
+          "五篇连续性无风险，术语候选逐项按前置/私有标识/错误码解释核对；标题/元数据/命名、全仓链接及diff通过"
+        ],
+        "limits": "未运行目标内核 read/poll/SIGIO、fork映射、DMA或解绑实验；普通 C 模型只检验复制提交状态，不模拟真实用户缺页和并发。大纲与材料README仅同步对应入口，不重复计篇。"
+      },
+      "knowledge/driver_model/character_device/P09_安全移除_旧fd与模块卸载.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "用应用不关闭 fd 的解绑过程区分 S5 硬件停止与 S6 软件回收；纠正 remove 必须等待所有 file/VMA 及节点尚未创建便无旧使用者的错误，补重投递、代码寿命与失败初始化交接。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定提交十八份源码和资料核对，沿用此前 cdev/file/select 证据；跟踪 Markdown 的696个已有ID无重复",
+          "复制模型与材料一致，普通/O2-NDEBUG及预算0/4变体通过；九张 Mermaid 渲染并目视检查关键时序",
+          "五篇连续性无风险，术语候选逐项按前置/私有标识/错误码解释核对；标题/元数据/命名、全仓链接及diff通过"
+        ],
+        "limits": "未运行目标内核 read/poll/SIGIO、fork映射、DMA或解绑实验；普通 C 模型只检验复制提交状态，不模拟真实用户缺页和并发。大纲与材料README仅同步对应入口，不重复计篇。"
       }
     }
   },
