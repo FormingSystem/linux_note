@@ -45,6 +45,10 @@ MMIO 地址应通过 `ioremap()` 等接口获得，并使用 `readb/readw/readl/
 - 某些平台需要在访问器中加入架构相关的顺序约束；
 - `sparse` 可利用 `__iomem` 检查地址空间误用。
 
+访问宽度也是设备协议的一部分：readb/readw/readl分别表示8/16/32位访问，write侧相同；readq/writeq对应64位，但是否支持以及会不会拆成两个访问要看架构和设备。不能为了凑齐一个64位值就随意读两次有副作用的32位寄存器。常规readX/writeX面向小端外设并按架构需要转换；设备采用大端寄存器时应使用适配的访问器，例如ioread32be/iowrite32be，不能只改C变量类型。
+
+宽度、端序和64位拆分依据为固定Linux 6.12.20 [device-io.rst 的 Differences between I/O access functions](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/driver-api/device-io.rst)。先确定手册允许的访问，再选择访问器；不能把“C语言能读这个宽度”当成设备也接受该事务。
+
 ## 1.3\_普通访问器与\_relaxed\_访问器
 
 先固定比较条件：同一个外设、默认I/O属性映射。Linux对readX/writeX给出可移植保证，不必让每位驱动作者从某款处理器的指令重新猜测；非默认映射才需要额外核对架构边界。readl/writel是32位访问器，不能因本机unsigned long宽度变化就改变寄存器访问宽度。
@@ -73,7 +77,7 @@ sequenceDiagram
     participant CPU
     participant Bus as 总线/桥
     participant DEV as 设备
-    CPU->>Bus: writel(command)
+    CPU->>Bus: 用writel写启动命令寄存器
     Bus-->>CPU: 接受写请求
     Note over CPU,DEV: 此时设备可能尚未收到或执行
     CPU->>DEV: readl(safe_status)
@@ -94,7 +98,6 @@ sequenceDiagram
 下面的单线程教学模型刻意把三个存储位置分开：桥的pending记录待送请求，设备的running表示命令已经送达且正在执行，done表示业务完成。它不是总线模拟器，不执行Linux访问器，也不证明真实硬件时序。
 
 ```c
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -104,10 +107,12 @@ struct device_model {
     bool done;    /* 设备发布的业务完成状态。 */
 };
 
-static void post_start(struct device_model *d)
+static bool post_start(struct device_model *d)
 {
-    assert(!d->pending && !d->running && !d->done);
+    if (d->pending || d->running || d->done)
+        return false; /* 本模型只允许从初始状态发出一次启动。 */
     d->pending = true;
+    return true;
 }
 
 static void deliver(struct device_model *d)
@@ -124,30 +129,50 @@ static bool safe_status_read(struct device_model *d)
     return d->done;
 }
 
-static void finish_work(struct device_model *d)
+static bool finish_work(struct device_model *d)
 {
-    assert(d->running);
+    if (!d->running)
+        return false;
     d->running = false;
     d->done = true;
+    return true;
 }
 
 int main(void)
 {
     struct device_model d = {0};
-    post_start(&d);                         /* I0：写已被桥接收。 */
-    assert(d.pending && !d.running);
-    assert(!safe_status_read(&d));          /* I1：送达，但尚未完成。 */
-    assert(!d.pending && d.running);
-    finish_work(&d);                        /* I2：设备完成业务。 */
-    assert(safe_status_read(&d));           /* I3：驱动取得完成证据。 */
+    if (!post_start(&d) || !d.pending || d.running)
+        goto failed;                       /* I0：写应已被桥接收。 */
+    if (safe_status_read(&d) || d.pending || !d.running)
+        goto failed;                       /* I1：送达，但尚未完成。 */
+    if (!finish_work(&d))
+        goto failed;                       /* I2：设备完成业务。 */
+    if (!safe_status_read(&d))
+        goto failed;                       /* I3：驱动取得完成证据。 */
     puts("accepted -> delivered -> completed -> observed");
     return 0;
+failed:
+    fputs("delivery/completion contract failed\n", stderr);
+    return 1;
 }
 ```
 
-保存为mmio_delivery_model.c，用`cc -std=c11 -Wall -Wextra -Werror -O2 mmio_delivery_model.c -o mmio_delivery_model`编译并执行。输出应为accepted → delivered → completed → observed四阶段对应的英文行。第一次安全读返回false，正好说明读回已经做到送达确认，却没有凭空替设备完成工作。
+先预测：第一次安全读会推进送达，却应返回false；只有finish_work执行后，第二次读才返回true。把程序保存为mmio_delivery_model.c，或取用[同源材料](../../../../labs/kernel/memory_ordering/materials/mmio_delivery_model.c)。在该文件所在实验目录、具备C11编译器的终端编译：
 
-练习：移除finish_work，预测第二次读取是否变成true。它仍是false；多读几次不能在这个模型中代替设备推进。再把首次读取放到post_start之前，此次读回就不可能确认一条尚未发出的写。这里读回的因果位置，与访问器名字同样重要。
+```bash
+# 当前目录：mmio_delivery_model.c 所在目录。
+cc -std=c11 -Wall -Wextra -Werror -O2 mmio_delivery_model.c -o mmio_delivery_model
+```
+
+这只构建普通用户程序，不访问设备。编译成功后执行：
+
+```bash
+./mmio_delivery_model
+```
+
+应输出 `accepted -> delivered -> completed -> observed` 并返回0；Windows原生工具链生成.exe时，在PowerShell中运行 `./mmio_delivery_model.exe`。程序每一阶段都检查实际状态，失败会输出错误并返回1，不把有副作用的读取藏在可能被关闭的assert里。
+
+练习：删除main中调用finish_work的两行if语句，再删除不再使用的finish_work函数定义，重新编译。第二次读还会变成true吗？不会，程序应因最后的检查失败而返回1；多读几次不能在这个模型中代替设备推进。再从原程序开始，在post_start之前增加一次safe_status_read，随后保留原有步骤：额外读取只得到初始false，不可能确认尚未发出的写。这里读回的因果位置，与访问器名字同样重要。
 
 ## 1.5\_典型模式
 
@@ -156,6 +181,16 @@ int main(void)
 ### 1.5.1\_同一设备的配置与启动
 
 REG_CFG0、REG_CFG1是两个配置寄存器偏移，REG_CTRL是控制寄存器偏移，CTRL_GO是启动位值。它们是示意常量，不是本章替某块板卡规定的真实地址。
+
+为了不用在几个片段之间猜名字，先列出本节用到的寄存器角色。表中没有数值偏移或位号，因为这里尚未选定设备；移植时必须从同一份设备手册取得这些数值，不能把示意常量当成硬件定义。
+
+| 本章示意名称 | 地址与访问方式 | 本例含义及副作用 |
+| --- | --- | --- |
+| REG_CFG0、REG_CFG1 | regs加相应偏移，32位writel | 写入配置；设备在启动前应观察到它们 |
+| REG_CTRL与CTRL_GO | regs加REG_CTRL，32位writel | 写入启动值，使设备开始处理；写返回不代表处理结束 |
+| REG_DOORBELL | regs加相应偏移，32位writel | 写入new_tail，通知设备处理新增描述符 |
+| safe_status | 指向协议允许读回的寄存器，32位readl | 只有设备规定为无读取副作用且适合该状态时才能用于送达确认；不保证就是完成寄存器 |
+| 完成状态寄存器与DONE | 由设备给出地址、宽度及完成位语义 | 读取并判断已完成；是否读清、中断应答及复位时是否可读必须另核对 |
 
 ```c
 /* 寄存器顺序由设备协议规定；非 relaxed 访问器表达常规 MMIO 顺序。 */
@@ -171,9 +206,9 @@ writel(CTRL_GO, regs + REG_CTRL);
 REG_DOORBELL表示设备门铃寄存器偏移，写入new_tail通知设备有新描述符可处理；设备是否只在门铃之后读取描述符，必须是已确认的协议前提。
 
 ```c
-/* 填充设备即将读取的描述符。 */
-desc->addr = dma_addr;
-desc->len = len;
+/* 本例假设地址和长度字段分别为64位、32位小端。 */
+desc->addr = cpu_to_le64(dma_addr);
+desc->len = cpu_to_le32(len);
 
 /* 前提：描述符为一致性DMA内存，门铃使用默认I/O映射。 */
 writel(new_tail, regs + REG_DOORBELL);

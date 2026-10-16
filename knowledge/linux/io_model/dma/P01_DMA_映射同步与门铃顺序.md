@@ -16,15 +16,7 @@ domains:
 
 本章先沿一次接收建立映射与所有权，再比较长期描述符和复用缓冲。MMIO负责寄存器命令，DMA负责设备访问内存，两者接口不同，完成证据仍由设备协议提供。
 
-设备发起 DMA 时，驱动不能把 CPU 虚拟地址直接写给硬件。DMA API 同时表达：
-
-```mermaid
-flowchart LR
-    A[CPU 虚拟地址] --> B[设备可用 DMA 地址]
-    B --> C[DMA 方向]
-    C --> D[CPU／设备所有权]
-    D --> E[平台所需缓存维护]
-```
+设备发起 DMA 时，驱动不能把 CPU 虚拟地址直接写给硬件。即使地址正确，也还要约定设备读还是写、当前轮到谁访问，以及平台怎样让接手者得到正确数据。因此，DMA API 同时承担下面四项职责；它们不是四个依次经过的硬件模块。
 
 | 问题 | DMA API 的职责 |
 | --- | --- |
@@ -36,6 +28,19 @@ flowchart LR
 DMA 是否经过或嗅探 CPU cache 取决于平台。驱动不猜微架构，也不手写 cache flush，而是遵守 DMA API 契约。
 
 先在纸上写下三个地址：CPU用虚拟地址X访问缓冲，页表把X翻译为物理内存Y；设备使用映射接口返回的DMA地址Z，由总线或IOMMU把Z送到Y。简单平台上Y和Z的数值可能相等，但这种相等不是驱动可以依赖的通用契约。dma_addr_t是设备侧地址的载体，不是可以直接在CPU上解引用的指针；同一块内存给另一设备使用，也不能直接复用前一设备的映射。
+
+```mermaid
+flowchart LR
+    C["CPU上的驱动"] -->|"用虚拟地址X访问"| V["CPU地址转换"]
+    V -->|"物理地址Y"| M["本例的内存缓冲区"]
+    C -->|"提交映射返回的地址Z"| D["DMA设备"]
+    D -->|"以Z发起读写"| B["总线地址转换／可选IOMMU"]
+    B -->|"本例映射到Y"| M
+```
+
+图示选取设备直接访问原缓冲区的情况，重点是两条地址路径汇合到同一份数据，不是CPU的页表替设备完成翻译。映射层也可能借助中转缓冲解决设备寻址限制；这时设备实际访问的物理区与原缓冲不同，复制工作由DMA映射/同步实现处理。驱动仍使用返回的Z，并遵守同一交接契约，不能通过数值反推平台一定采用图中的直接路径。
+
+地址图按固定Linux 6.12.20 [dma-api-howto.rst 的 CPU and DMA addresses](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/core-api/dma-api-howto.rst)重绘；中转情形见同版本[swiotlb说明的开头及Core Functionality](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/core-api/swiotlb.rst)。中转会增加复制和CPU开销，说明“使用DMA”也不等于整条路径绝无CPU搬运。
 
 dma_map_single还不是“任意指针转DMA地址”的万能转换。缓冲必须来自适合该接口的内存；不能把栈变量或vmalloc返回的虚拟连续地址直接传入并假定物理连续。分散页应使用与其组织方式相符的页/SG接口。缓存行边界同样重要：如果设备和CPU分别修改同一缓存行内的不同对象，维护整行时仍可能互相覆盖，不能因为字段地址不同就判定它们独立。
 
@@ -79,7 +84,7 @@ if (!ring->cpu)
     return -ENOMEM;
 ```
 
-CPU 和设备不需要显式 sync 就能观察该分配区，但多个字段的发布仍需要顺序：
+CPU 和设备不需要显式 sync 就能观察该分配区，但多个字段的发布仍需要顺序。假设设备会主动轮询描述符中的OWN位：CPU必须先写地址和长度，最后才允许设备接手；否则设备看见OWN时，地址字段可能尚未成为它可观察的新值。
 
 ```c
 desc->addr = cpu_to_le64(buf_dma);
@@ -92,19 +97,33 @@ WRITE_ONCE(desc->flags, cpu_to_le32(DESC_OWN));
 
 设备完成后，若它先写数据、最后写完成标志，CPU 观察完成标志后通常需要按协议使用 `dma_rmb()` 再消费此前字段。具体位置由描述符协议决定，不是给每个 DMA 缓冲机械添加屏障。
 
+例如约定设备把结果写入同一一致性描述符的result字段，最后清除OWN，表示本轮不再改动结果。CPU的一次检查可以写成：
+
+```c
+/* 示意协议：OWN清零才允许CPU读取本轮结果。 */
+if (!(le32_to_cpu(READ_ONCE(desc->flags)) & DESC_OWN)) {
+    dma_rmb();
+    result = le32_to_cpu(desc->result);
+}
+```
+
+这里假定描述符已经提交且本轮完成尚未被消费，不是把刚初始化的OWN=0当成一次新完成。flags、result、addr和len都是示意描述符字段，宽度/端序按示例采用32位或64位小端；真实布局来自设备手册。`READ_ONCE`固定一次状态采样，`dma_rmb`约束取得完成后的数据读取；两者都不生成设备完成事件。若result保存的只是streaming载荷的索引或长度，随后读取该载荷仍要先走1.5节的CPU同步，不能拿描述符的一致性替载荷作证。
+
+依据为固定Linux 6.12.20 [memory-barriers.txt 的 dma_rmb/dma_wmb 示例](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/memory-barriers.txt)。上面采用本章的字段名重新表达所有权协议，不冒充某块设备的寄存器布局。
+
 ## 1.5\_streaming\_映射的所有权状态机
 
 streaming映射不是持续传输模式的名字，而是一类把已有缓冲区交给设备使用的映射接口。它常用于发送或接收数据。这里同时存在三组状态：映射是否有效、缓冲区当前允许谁访问、设备是否仍在执行。它们不能合成一个“已完成”布尔值；例如设备停下以后映射仍可有效，但CPU还没执行必要的同步。
 
 ```mermaid
-stateDiagram-v2
-    [*] --> CPU: D0准备可映射缓冲
-    CPU --> CPU: D1映射失败，不启动设备
-    CPU --> Device: D1映射成功或D5同步交还
-    Device --> Device: D2设备执行，CPU不访问载荷
-    Device --> Quiescent: D3协议确认设备停止访问
-    Quiescent --> CPU: D4同步给CPU或结束映射
-    CPU --> [*]: 映射已结束且无人持有后释放
+flowchart LR
+    C["D0：CPU拥有可映射缓冲"] -->|"D1申请映射"| M{"映射成功？"}
+    M -->|"否：不启动设备"| F["仍由CPU持有，处理失败"]
+    M -->|"是：保存DMA地址"| D["D2：设备访问，CPU不读写载荷"]
+    D -->|"D3协议确认停止访问"| Q["设备已停，CPU尚未收回"]
+    Q -->|"D4同步给CPU或结束映射"| R["CPU取得访问资格"]
+    R -->|"保留映射：D5同步交还并再提交"| D
+    R -->|"映射已结束且无人持有"| E["释放缓冲"]
 ```
 
 这张图显示访问资格交接，不表示dma_sync能命令设备停下。设备正在写时调用sync或unmap，不会自动撤销尚未完成的总线请求；提前释放后，迟到的写可能落进已分给其他对象的内存。
@@ -138,6 +157,8 @@ dma_unmap_single(dev, dma, len, DMA_TO_DEVICE);
 ```
 
 这是发送路径示意，prepare_tx和program_device等表示设备驱动自己的操作，不是通用Linux函数。成功map后到合法收回之前，CPU不再访问载荷。wait_for_device_completion在这里假定已经取得可靠完成证据；若实际等待可能超时，失败分支必须先停止/复位设备并确认其不再访问，才能unmap。不能把上面直线片段复制成“无论等待结果如何都释放”的代码。
+
+`regs + COMMAND`示意默认I/O映射上的32位命令寄存器，START是设备协议定义的启动值；本章不指定虚构的偏移或位号。这里仅借它表示提交时刻，实际寄存器的宽度、写入副作用与完成状态必须一起按设备文档替换。
 
 ### 1.5.2\_保留映射并循环复用
 
@@ -235,7 +256,6 @@ return ret;
 下面固定一份“三项合并为两段”的教学输入，不实现Linux映射算法，也不宣称任何真实平台一定这样合并。程序分别检查设备段的总长度、解除映射时的输入身份；最后故意给错计数，要求检查器拒绝。
 
 ```c
-#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -269,17 +289,34 @@ int main(void)
     size_t original_bytes = 0, device_bytes = 0;
     for (size_t i = 0; i < m.original_count; ++i)
         original_bytes += input_lengths[i];
-    assert(describe_hardware(&m, 2, &device_bytes));
-    assert(original_bytes == device_bytes && device_bytes == 2560);
-    assert(!describe_hardware(&m, 3, &device_bytes));
-    assert(check_unmap(&m, 3));
-    assert(!check_unmap(&m, 2));
+    if (!describe_hardware(&m, 2, &device_bytes) ||
+        original_bytes != device_bytes || device_bytes != 2560 ||
+        describe_hardware(&m, 3, &device_bytes) ||
+        !check_unmap(&m, 3) || check_unmap(&m, 2)) {
+        fputs("SG count contract failed\n", stderr);
+        return 1; /* 检查失败不得继续打印成功，关闭断言也不能跳过检查。 */
+    }
     puts("hardware=2 segments; unmap=3 entries; bytes=2560");
     return 0;
 }
 ```
 
-保存为sg_count_model.c，以`cc -std=c11 -Wall -Wextra -Werror -O2 sg_count_model.c -o sg_count_model`编译运行。若把合并输出改为三段，需要同时改变mapped_count和dma_lengths；original_count仍取决于原输入，不能跟着设备段数一起随意改动。真实驱动不自行制造这份输出，而是读取dma_map_sg返回结果。
+先预测：总字节数应为2560，硬件消费两段，解除映射用三项。将程序保存为sg_count_model.c，或取用[同源材料](../../../../labs/kernel/memory_ordering/materials/dma_sg_count_model.c)。以下在保存该文件的实验目录、具备C11编译器的终端执行：
+
+```bash
+# 当前目录：sg_count_model.c 所在目录。
+cc -std=c11 -Wall -Wextra -Werror -O2 sg_count_model.c -o sg_count_model
+```
+
+命令把模型编译成可执行文件，警告视为错误；它不构建内核驱动，也不调用实际DMA API。编译成功后运行：
+
+```bash
+./sg_count_model
+```
+
+应打印 `hardware=2 segments; unmap=3 entries; bytes=2560` 并返回0。Windows原生编译器通常生成sg_count_model.exe，在PowerShell中使用 `./sg_count_model.exe`。返回1并打印错误意味着模型中的某项契约未满足；程序的判断不依赖assert或NDEBUG。
+
+练习一，只把正确解除映射的检查从 `check_unmap(&m, 3)` 改成 `check_unmap(&m, 2)`，重新编译后应失败，因为解除映射仍须沿原始输入。练习二，把合并输出改为三段：需要同时改变mapped_count、dma_lengths、调用describe_hardware的正确计数以及预期输出；原来的“3是错误硬件计数”检查也要改成另一个错误值。original_count仍为3，总长度仍为2560。不能只改返回段数就认为整套测试输入仍相容。真实驱动不自行制造这份输出，而是读取dma_map_sg返回结果。
 
 ## 1.8\_DMA\_数据发布与\_MMIO\_门铃
 
@@ -287,10 +324,12 @@ int main(void)
 
 ```mermaid
 flowchart LR
-    A[准备数据／描述符] --> B[map 或 sync_for_device]
-    B --> C[必要的 dma_wmb／设备协议发布]
-    C --> D[writel 门铃]
-    D --> E[必要时 readl 安全寄存器确认写送达]
+    A["准备streaming载荷"] -->|"交出载荷资格"| B["map或sync_for_device"]
+    B -->|"填写有效DMA地址和长度"| C["准备一致性描述符"]
+    C -->|"设备轮询OWN时"| O["dma_wmb后发布OWN"]
+    C -->|"设备只在门铃后读取时"| D["普通writel提交门铃"]
+    O -->|"本例协议另需门铃通知"| D
+    D -->|"协议要求确认送达时"| E["readl安全寄存器"]
 ```
 
 不能建立一条脱离上下文的“所有门铃前必须 `wmb()`”规则：
@@ -299,6 +338,8 @@ flowchart LR
 - streaming 缓冲先完成 map/sync 所有权交接；
 - `writel()` 与 `writel_relaxed()` 对普通内存的排序语义不同，选择 relaxed 时必须明确由什么补足；
 - `writel()` 返回不一定表示posted write已到设备，安全读回可在适用协议下确认送达；设备工作完成仍要另取证据。
+
+图中特意把“仅门铃触发”和“先发布OWN”分开：前者在默认I/O映射下可由普通writel承担描述符写先于门铃的顺序；后者多出一条设备在看见OWN后就能读取字段的边，不能等到门铃才补。dma_rmb/dma_wmb本身不提供MMIO访问的排序保证，不能把图中的普通writel任意改成relaxed而继续声称所有边都已建立。
 
 详细语义参见 [MMIO 访问顺序](../mmio/P01_MMIO_访问顺序与屏障.md)。
 
@@ -324,6 +365,10 @@ DMAengine 管理 DMA 控制器通道、描述符和提交回调，但客户端�
 
 固定版本区分terminate_async与terminate_sync：前者可能返回时硬件或正在执行的完成回调尚未停稳，释放相关内存前须dmaengine_synchronize；后者等待传输和正在执行的完成回调结束，但不能在原子上下文或完成回调自身调用。异步终止到同步之间又issue_pending，会破坏这个使用前提。不要把函数名里的terminate当成无条件可以free的许可。
 
+这里还必须检查终止接口的返回值。固定版本的terminate_sync先请求异步终止；若底层返回错误，它直接返回该错误，不会执行后续synchronize。因此只有成功完成停机协议，才获得释放许可；失败时保留相关内存并进入设备规定的恢复路径，不能在通用示例中假定复位一定成功。异步终止后的synchronize也要求非原子上下文，且不能在本通道的完成回调里等待自身退出。
+
+依据：[固定版本DMAengine客户端说明](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/driver-api/dmaengine/client.rst)的Further APIs，以及[同版本dmaengine.h](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/dmaengine.h)中terminate_sync的错误返回分支。
+
 ## 1.11\_停止与释放
 
 ```mermaid
@@ -337,7 +382,7 @@ flowchart LR
 
 `dma_unmap_*()` 只能在设备不再访问映射后调用。unmap 之后 DMA 地址失效，绝不能再把它写入门铃启动设备。
 
-devm/dmam 只托管最终资源释放，不会替驱动停止 DMA、同步中断、转换所有权或阻止新提交。remove 仍要先完成停机协议。
+本章使用的dmam_alloc_coherent只托管该分配的最终释放，不会替驱动停止DMA、同步中断或阻止新提交。不能把这个结论扩大成“所有devm包装都只做free”；其他托管接口可能登记启停动作，必须按其具体契约判断。对本例而言，remove仍要先完成停机协议；unmap本身可承担结束streaming映射并收回CPU访问资格，无须为了图中分成两步而机械先做一次sync。
 
 ## 1.12\_常见错误
 
