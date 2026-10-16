@@ -5628,6 +5628,18 @@
           "全仓8955有效链接、标题锚点、元数据与diff检查通过；修正GIC路线旧锚点与下一章入口前提。"
         ],
         "limits": "寄存器表和图为明确假设的功能模型，未宣称实际SoC布局、板级事件测量或Linux编译运行。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P03_Linux_的中断抽象_irq_chip_irq_domain_与_irq_desc.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从域内编号、操作差异和运行状态逐步建立irq_domain/irq_data/irq_chip/irq_desc/irqaction与流程函数；修正共享链首个HANDLED停止、硬件状态全在desc、IRQ号固定等错误，贯穿建立服务注销周期及派生工作退出门控。",
+        "date": "2026-10-17",
+        "validation": [
+          "原文与成稿全文冷读，十一份固定提交对象/分派/登记/释放/资源入口源码核对。",
+          "两图渲染目视，连续性零风险，53术语候选复核，前置术语不重复倾倒。",
+          "全仓8957有效链接，正文/基线标题、元数据路径格式与diff通过；同步第四章前置回顾。"
+        ],
+        "limits": "对象表与时序按固定源码建立，未执行目标编译、实际IRQ、强制线程化或设备卸载实验。"
       }
     },
     "additional_documents": [
