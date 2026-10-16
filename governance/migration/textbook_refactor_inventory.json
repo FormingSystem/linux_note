@@ -3,6 +3,206 @@
   "baseline_commit": "d2a942520db0b5dd0ab9d8e71225119e1bbf5042",
   "baseline_includes_uncommitted": true,
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
+  "current_pass": {
+    "id": "20261016_skill_full_rewrite",
+    "status": "active",
+    "authorization": "2026-10-16 用户明确选择全仓说明文档，要求使用补全后的 skill 全量重构并持续运行至完成，不创建定时任务。",
+    "mode": "rewrite",
+    "baseline_commit": "393e2e5f02e0794f81bacd5d954865cdbd245fed",
+    "baseline_markdown_count": 707,
+    "scope_rule": "该提交中全部已跟踪 Markdown，新增或拆分正文继续纳入；历史记录按证据职责保留，治理、导航与参考按各自用途审查，不回写冻结出版物或第三方原始证据。",
+    "skill": "tools/ai/codex/skills/build-linux-note-topic/SKILL.md",
+    "default_review_state": "pending",
+    "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。reviews 中未出现的路径仍为待复审，人工评审地图状态不得自动升级。",
+    "reading_order": [
+      "GIC 与真实关联的 Linux 中断说明",
+      "class_sysfs、Maple 游标及 Lockdep 等已指出的讲解断点",
+      "按现有阅读依赖逐专题覆盖知识正文、工程与平台",
+      "分别复核对应源码讲解、实验、参考与导航",
+      "完成剩余治理与工具说明的职责审查，并执行全量回查"
+    ],
+    "reviews": {
+      "platforms/arm/architecture/gic/P01_从外设事件到中断请求.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "冷读完整事件、轮询与请求主线，保留缓冲反例、数据所有权和两种时序视角；改正将流程图称为伪代码的文案，补清两幅时序表示的不同阅读任务。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/architecture/gic/P02_从控制器规则到芯片与软件身份.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "冷读规则、产品、核、SoC、板与软件的身份链；2.6.1 已给两份原件分别证明什么的答案，表前有定位过程，表中有具体修订与能力，未用型号数字裁决冲突，保留正文。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/architecture/gic/P03_多核控制器的角色_寄存器与编号.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "冷读三类来源、组件路径、两种访问及 PPI 物理分块；保留布线与电源约束到功能、配置、接口和私有状态的因果链。将来源分类与架构编号约定分开命名，统一整数商记号；索引实验改为完整 C11，补输入失败与退出状态。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过",
+          "GCC C11 严格编译、边界/非法输入、五场景、优化构建及练习失败与恢复等27项检查通过；正文与C文件一致"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/architecture/gic/P04_一次中断的状态转换与完成协议.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "冷读设备、Pending/Active、运行优先级与异常现场四层；保留清源/停用两种传播路径及再次确认分支。标题将再次进入与软件重入区分；状态模型改为 C11，五种场景和练习失败/恢复保留，普通检查不因关闭断言跳过。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过",
+          "GCC C11 严格编译、边界/非法输入、五场景、优化构建及练习失败与恢复等27项检查通过；正文与C文件一致"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/architecture/gic/P05_优先级_屏蔽与嵌套处理.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读门槛、运行优先级、组/子优先级与嵌套保存链；核对教学数值视图和 GIC-600 五有效位限制均有本地说明。寄存器表跟随问题与过程，逆序 EOIR、现场保存和锁反例能共同解释嵌套边界，保留正文。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/architecture/gic/P06_权限_安全分组与初始化闭环.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读权限/安全归属、全局/每核/来源许可、IRQ/FIQ 与 EL 路由、SRE、唤醒及 RWP。状态所有权、架构/产品选择、启动超时与回滚均有局部因果；配置作用范围没有被画成 PPI 必经请求路径，保留正文。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/architecture/gic/P07_目标选择_核间通知与电源交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读固定/1-of-N、私有来源、SGI 多目标及关核；补软件共享 work_queue 的记录、数量、锁和本地批次，明确发布、领取、执行三个时刻以及容量、抢占、生命周期边界，避免用抽象队列协议掩盖通信。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读 LPI 状态、两张表的所有权/地址/布局、两层缓存和整体关闭。标题改为实际解释的确认与优先级义务，增加同一次 LPI 的端到端时序图，明确图不规定内部更新先后；统一 RWP 译名并去掉无关 Python 前提。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过",
+          "LPI 状态与优先级义务对照 IHI0069 H.b 4.1.1/4.1.2；新增 Mermaid 使用仓库11.17运行时渲染并目视检查"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读设备/事件/集合、架构与芯片物理连接、映射表、命令队列和同步迁移。必要产品图、寄存器表、命令字段、环形算例已在正文；MAPC/MOVALL 对旧目标 SYNC 的规范与指南差异明确，保留当前展开。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/architecture/gic/P10_软件交接_部署与分层排障.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读软件所有权、证据链、部署与只读观察。移除本轮不导入函数体的作者任务文案，改为版本取证职责；每个 shell 块标明目标板与同一会话前提，更新软件映射入口锚点。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/architecture/gic/P11_UART中断的端到端流程复盘.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读 S0～S6、寄存器索引、来源确认和三类返回动作；各节本地解释成立，39 个内链用于复用前章详细条件及阶段导航，没有取代主线。同步 LPI 新标题锚点，其他正文与导出图源保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/architecture/gic/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整检查真实十一章、因果依赖、主机实验、图示索引与后续边界；更新 C11 实验环境，保持阅读地图和唯一人工评审入口。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "platforms/arm/rockchip/rk3588/P01_RK3588的GIC-600集成与手册核对.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读芯片身份、低32GiB访问、Non-shareable限制、电源域、完整25项参数及摘要冲突。平台事实与架构职责分层，必要框图和参数表已本地呈现，保留；未新增未经核对的设备号或板上结论。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "atlas/roadmaps/gic_learning_plan.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整检查长期阶段与已落地章节的区别、软件/硬件分工和虚拟化后续边界；同步 Linux P09 新入口，不把建设目标当作已完成正文或板上验收。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "reference/external_resources/arm/README.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整按参考索引职责检查版本、证据、缓存和下载说明；统一 LPI 译名，将推荐路径拆为查看、下载、只校验并就地解释，其他命令保留为查询表。只读核对脚本选项并校验所选11份缓存全部通过，未联网下载。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P09_层级中断控制器与_ARM_GIC_在_Linux_中的实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读 GPIO 汇聚与两次识别、域映射和层级 irq_data；重写空父节与断裂标题，沿同一 GPIO 场景补预测答案。驱动示例准确标为片段，补注册失败、退出同步和延后工作边界；fixed dfaf2136 源码及 v6.12 官方文档核对，不冒充完整驱动运行。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+        ],
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+      }
+    }
+  },
   "quality_reassessment": {
     "status": "required",
     "trigger": "2026-09-25 开发者指出 class_sysfs 卡片化；跨批次抽查发现其他已验证正文也有字段、状态或工具清单替代逐步讲解的问题。",
