@@ -1753,3 +1753,39 @@ arm_arch_timer的每核分支request_percpu_irq并按CPU上线配置clock_event_
 armpmu_request_irq按perCPU描述符选择NMI尝试与普通IRQ回退，保存每CPU操作集；armpmu_dispatch_irq从注册的arm_pmu指针地址取出对象并调用其handle_irq。PMUv3读清溢出、更新事件与周期，perf_event_overflow处理采样/节流。perf环先写记录再发布data_head，消费者按协议更新data_tail；pending_wakeup与pending_irq的irq_work实现延后唤醒，不等于所有样本写入都延后。计数模式也可能通过溢出折叠短硬件计数器。
 
 正文给出有限用户负载及stat/record观察过程，未实施真实目标perf采样、NMI生成、关IRQ锁死或启动参数修改。watchdog文档描述的perf后端需结合配置与CPU覆盖，未告警不等于无限范围的正确性证明。寄存器表仅列当前路径所用角色，不复制另一架构指令或厂商绝对地址。
+
+## 1.193\_中断过载的隔离恢复与误报检测边界
+
+2026-10-17 复审[中断风暴与有界恢复](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P14_中断风暴_抖动与防御机制.md)。以下读取官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，Linux 6.12.20；不把generic IRQ的未处理检测当作所有设备的高频限流保证。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| kernel/irq/spurious.c | 02b2daf074414f1340a4f25cf134145150d90c1b |
+| kernel/irq/handle.c | 9489f93b3db34431aa71594a95d7a20e6ec1442c |
+| kernel/irq/manage.c | f0803d6bd2969820443f25b5b508ec553f4cb9a2 |
+| kernel/irq/chip.c | 271e9139de77f5348539c95e3463c4fb7585df10 |
+| kernel/irq/internals.h | a29df4b02a2ed9c580bbaf7db0b8331543cb1a7e |
+| kernel/irq/proc.c | 9081ada81c3d023a531d65e5a35a31f4d4ebbe55 |
+| include/linux/interrupt.h | 457151f9f263d9042625decde2c15822d860b134 |
+| drivers/gpio/gpio-mxc.c | d8d1ae23e0935f85548d61cdbdc8a0189f14dfb6 |
+| drivers/input/keyboard/gpio_keys.c | 380fe8dab3b06379f9744e8190a4afcc0aee20b4 |
+| Documentation/devicetree/bindings/input/gpio-keys.yaml | cc78c2152921308fe0cad3e29ca78a5fad08f066 |
+| Documentation/networking/napi.rst | dfa5d549be9c03f863669f6396bf28fb6424a9a0 |
+| net/core/dev.c | 7b7b36c43c82cc01f84554f5df3eb5e19bfa334d |
+| Documentation/driver-api/gpio/consumer.rst | bb3366047fadb51bd9323f51d78cbf237a370d11 |
+| Documentation/core-api/genericirq.rst | 25f94dfd66fad42ee07e02c9f15f6c2e9cb4189a |
+| kernel/workqueue.c | a9d64e08dffc7c7aef2caae2f170268d83e99e23 |
+| kernel/softirq.c | 8c4524ce65fafe508c3b4ee1ccb371f29b2dd6d5 |
+| include/linux/irqdesc.h | fd091c35d5721eee37a2fd3d5526559671d5048d |
+| kernel/irq/generic-chip.c | 32ffcbb87fa126cc32c2cb45434415d08e79a4a7 |
+| kernel/irq/settings.h | 7b7efb1a114bd8132e45409fcc99c7a10492b5e6 |
+
+handle_irq_event_percpu汇总action返回值并在调试条件成立时调用note_interrupt；线程返回HANDLED递增threads_handled，由后续硬入口比较。检测在irq_count到100000时检查irqs_unhandled > 99900；未处理间隔超过last_unhandled + HZ/10则重新计相应历史。达到条件时置IRQS_SPURIOUS_DISABLED、增加depth并irq_disable，安排定时轮询。try_one_irq只对符合条件的共享action等路径尝试，不承诺禁用后绝无handler执行，也不自动证明硬件修复。noirqdebug在注册配置阶段设置相应no-debug状态。
+
+irq_thread_fn无论thread_fn返回值如何均调用irq_finalize_oneshot，解除条件涉及threads_oneshot、disabled与masked状态，IRQ_NONE不是保持屏蔽指令。disable_irq_nosync增加嵌套深度而不等待；disable_irq会同步，enable_irq只归还一层。不得在自身处理者或持有其所需锁时同步等待。work登记不保存每次业务事件，cancel同步须结合生产入口关闭，不能靠单个last_status字段代替业务队列。
+
+gpio-mxc的imx35_gpio_hwdata给出IMR0x14与ISR0x18，irq_gc_mask_clr_bit及irq_gc_ack_set_bit分别修改屏蔽位和写ack位，父入口读ISR & IMR。该布局不能推广imx1等分支，控制器确认也不等于外设数据消费。gpio-keys解析debounce-interval毫秒，默认5；尝试gpiod_set_debounce微秒，失败软件回退，依gpiod_cansleep选择work或hrtimer。软件采样不证明窗口内连续稳定，不能将任意厂商自造属性说成标准binding。
+
+NAPI文档说明napi_struct消费调度所有权、预算poll及设备队列通知mask；显式mask路径先schedule_prep再mask后提交，成功complete_done后才放行。budget为0、恰好耗尽及停止并发另有约束，不能以局部调用替代网卡完整生命周期。中断计数、设备业务量、缓冲积压和CPU执行时间分开解释。
+
+正文恢复程序是离散事件的完整可执行模型，验证重复故障、有限重试、旧探测结果与停止交错，不是内核锁或硬件驱动。只读快照脚本不修改IRQ状态；未实施真实风暴注入、硬件复位、目标Kbuild或板级滤波配置。irq_spurious_proc_show输出保存的last_unhandled时间值经jiffies_to_msecs转换，不是距当前时刻的差值。
