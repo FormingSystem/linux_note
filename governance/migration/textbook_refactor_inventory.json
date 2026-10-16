@@ -5980,6 +5980,39 @@
           "GCC与Clang运行正文票号模型，五图目视、严格连续性零风险，章节精确链接与全仓9076有效链接及格式元数据路径diff通过。"
         ],
         "limits": "顺序票号模型不证明独占指令、弱内存或实际调度；历史配置不代表当前可用工作树，未做目标运行。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P05_mutex慢路径与所有权交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从A/B/C竞争推进先解释handoff问题，再列共享地址；明确OSQ队尾和每CPU节点、普通与指定交接及取消接收次序。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读；固定mutex、rwsem、OSQ、locktypes及调度检查源码逐段核对，新增来源身份记录于SOURCE_BASELINE 1.208。",
+          "三章七图目视、严格连续性零风险、精确章节链接与全仓9081有效链接及格式元数据路径diff通过。"
+        ],
+        "limits": "没有目标锁竞争、RT调度、解绑或检查器运行验证；历史配置不代表本次工作树核验。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P06_rwsem读写汇聚与唤醒.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先从旧读者归还与新读者插入推导状态，复核读批次预记账和写者唤醒边界，校正配置及源码页面职责。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读；固定mutex、rwsem、OSQ、locktypes及调度检查源码逐段核对，新增来源身份记录于SOURCE_BASELINE 1.208。",
+          "三章七图目视、严格连续性零风险、精确章节链接与全仓9081有效链接及格式元数据路径diff通过。"
+        ],
+        "limits": "没有目标锁竞争、RT调度、解绑或检查器运行验证；历史配置不代表本次工作树核验。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P07_PREEMPT_RT生命周期与选型.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "区分不可睡约束和无条件选择raw，完善两层回收图，修正might_sleep检查点不等于实际调度睡眠的证明边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读；固定mutex、rwsem、OSQ、locktypes及调度检查源码逐段核对，新增来源身份记录于SOURCE_BASELINE 1.208。",
+          "三章七图目视、严格连续性零风险、精确章节链接与全仓9081有效链接及格式元数据路径diff通过。"
+        ],
+        "limits": "没有目标锁竞争、RT调度、解绑或检查器运行验证；历史配置不代表本次工作树核验。"
       }
     },
     "additional_documents": [
@@ -5996,7 +6029,106 @@
       "knowledge/linux/data_structures/红黑树_rb-tree/P53_VMA游标怎样翻译范围请求.md",
       "knowledge/linux/data_structures/红黑树_rb-tree/P54_同一地址的四种VMA查询结果.md",
       "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md"
-    ]
+    ],
+    "language_review": {
+      "status": "in_progress",
+      "requirement_date": "2026-10-17",
+      "requirement": "教学示例、机制模型和配套测试默认C/C++，其他语言须有具体任务必要性；补充复审先前引入内容。",
+      "coverage": "当前720份已跟踪Markdown中的Python围栏及技术正文/实验中的Python执行命令；同时核对labs等目录中的配套.py材料。",
+      "completion_rule": "既有reviews仅保存完成时证据；本补充审查全部解决前不能宣布全仓任务完成。扫描候选还须逐项冷读，不以无匹配替代语言审查。",
+      "candidates": [
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P06_字符设备中实现异步通知的基础模式.md",
+          "python_blocks": 1,
+          "blocks_added_or_changed": 1,
+          "previously_reviewed": true,
+          "state": "pending",
+          "decision": null,
+          "reason": null
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P07_中断驱动设备的异步通知实践.md",
+          "python_blocks": 1,
+          "blocks_added_or_changed": 1,
+          "previously_reviewed": true,
+          "state": "pending",
+          "decision": null,
+          "reason": null
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P08_流式设备与高级场景中的异步通知.md",
+          "python_blocks": 1,
+          "blocks_added_or_changed": 1,
+          "previously_reviewed": true,
+          "state": "pending",
+          "decision": null,
+          "reason": null
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P10_并发_竞态与内存可见性问题.md",
+          "python_blocks": 1,
+          "blocks_added_or_changed": 1,
+          "previously_reviewed": true,
+          "state": "pending",
+          "decision": null,
+          "reason": null
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P11_调试_排错与性能分析.md",
+          "python_blocks": 3,
+          "blocks_added_or_changed": 3,
+          "previously_reviewed": true,
+          "state": "pending",
+          "decision": null,
+          "reason": null
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P12_fasync_与其他通知机制的对比与整合.md",
+          "python_blocks": 1,
+          "blocks_added_or_changed": 1,
+          "previously_reviewed": true,
+          "state": "pending",
+          "decision": null,
+          "reason": null
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P14_中断风暴_抖动与防御机制.md",
+          "python_blocks": 1,
+          "blocks_added_or_changed": 1,
+          "previously_reviewed": true,
+          "state": "pending",
+          "decision": null,
+          "reason": null
+        },
+        {
+          "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P13_调试_验证与常见陷阱.md",
+          "python_blocks": 1,
+          "blocks_added_or_changed": 1,
+          "previously_reviewed": true,
+          "state": "pending",
+          "decision": null,
+          "reason": null
+        },
+        {
+          "path": "labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md",
+          "python_blocks": 0,
+          "blocks_added_or_changed": 0,
+          "previously_reviewed": true,
+          "state": "pending",
+          "decision": null,
+          "reason": null
+        },
+        {
+          "path": "platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md",
+          "python_blocks": 0,
+          "blocks_added_or_changed": 0,
+          "previously_reviewed": false,
+          "state": "pending",
+          "decision": null,
+          "reason": null
+        }
+      ]
+    }
   },
   "quality_reassessment": {
     "status": "required",
