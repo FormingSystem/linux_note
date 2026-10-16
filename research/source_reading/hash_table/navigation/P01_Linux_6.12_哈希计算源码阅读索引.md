@@ -8,7 +8,7 @@ domains: [linux, source_reading]
 
 # 第1章\_Linux\_6.12\_哈希计算源码阅读索引
 
-正文已经区分完整键、哈希结果和桶索引。本组沿计算、桶数组、单桶节点和 RCU 旧路径核对特定版本入口，不用函数名相似代替位宽、转换和寿命规则。
+正文已经区分完整键、哈希结果和桶索引。本组沿计算、桶数组、单桶节点和 RCU 旧路径进入动态换表，再追踪名称、连接与邻居的实际使用者。目标是把每条结论落到固定版本的状态和动作，不用函数名相似代替位宽、转换和寿命规则。
 
 ## 1.1\_版本和任务边界
 
@@ -19,9 +19,9 @@ domains: [linux, source_reading]
 | 固定提交 | dfaf2136deb2af2e60b994421281ba42f1c087e0 |
 | 版本 | Linux 6.12.20 |
 | 核对对象 | include/linux/hash.h、hashtable.h、list.h、types.h、rculist.h、rhashtable-types.h、rhashtable.h，lib/rhashtable.c，以及下表 PID 三份证据、dcache.c、list_bl.h、conntrack 与 neighbour 的实现/头文件 |
-| 运行边界 | 当前访问配置为 ARM、非 64 位；未启用 HAVE_ARCH_HASH。通用 64 位路径作为条件分支阅读，不称为目标运行结果 |
+| 配置边界 | 基线记录的工作树配置快照为 ARM、非 64 位，未启用 HAVE_ARCH_HASH；不是发布标签唯一支持的配置。通用 64 位路径作为条件分支阅读，不称为目标运行结果 |
 
-当前本地三个实验提交不参与结论。统一身份见[Linux 基线](../../linux/SOURCE_BASELINE.md)。正文的历史 5.10 目录保持路径稳定，但不承担版本证明。
+本组证据直接取上述固定提交，不把本地工作树的额外实验提交混入结论。统一身份见[Linux 基线](../../linux/SOURCE_BASELINE.md)。正文的历史 5.10 目录保持路径稳定，但不承担版本证明。
 
 ## 1.2\_从问题选择入口
 
@@ -29,7 +29,7 @@ domains: [linux, source_reading]
 | --- | --- | --- |
 | 32 位混合何时截断，何时取高位 | [调用路径](P02_键位宽与落桶导读.md#2.1_从调用表达式追到计算路径) | [32 位函数](../source_explanations/include/linux/hash.h.md#1.1_32位乘法与取高位) |
 | u64、long、指针怎样选择路径 | [位宽与类型](P02_键位宽与落桶导读.md#2.2_稳定的类型是表协议的一部分) | [64 位与指针](../source_explanations/include/linux/hash.h.md#1.2_64位输入与指针入口) |
-| 桶号相同是不是键相等 | [调用者职责](P02_键位宽与落桶导读.md#2.3_索引之外的职责) | [hashtable.h 原文](../../linux/include/linux/hashtable.h) |
+| 桶号相同是不是键相等 | [调用者职责](P02_键位宽与落桶导读.md#2.3_索引之外的职责) | [候选遍历与完整键比较](../source_explanations/include/linux/hashtable.h.md#1.3_候选遍历与全表清理) |
 | 入口槽、毒化值和 safe 游标分别保存什么 | [节点导读](P03_节点连接与并发边界导读.md#3.1_节点与桶数组分别负责什么) | [list.h](../source_explanations/include/linux/list.h.md#1.1_头节点与初始化)、[hashtable.h](../source_explanations/include/linux/hashtable.h.md#1.1_数组身份与初始化) |
 | 发布和删除怎样保留旧路径 | [并发边界](P03_节点连接与并发边界导读.md#3.2_普通修改与RCU发布的分界) | [rculist.h](../source_explanations/include/linux/rculist.h.md#1.1_先构建再发布) |
 | 回调何时允许销毁，模块何时允许卸载 | [撤下到回调](P03_节点连接与并发边界导读.md#3.3_从撤下到回调完成) | [完整模块](../../../../labs/kernel/hash_table/materials/note_hlist_rcu.c) |

@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef NDEBUG
+#error "This model requires active assertions"
+#endif
+
 struct name_key {
     unsigned int parent_id;
     const char *component;
