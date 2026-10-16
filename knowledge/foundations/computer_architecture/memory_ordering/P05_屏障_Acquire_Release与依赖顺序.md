@@ -39,6 +39,8 @@ topics:
 
 ## 5.2\_四类常见顺序能力
 
+消息传递要求写端保留“载荷写 → 标志写”，读端保留“标志读 → 载荷读”；SB 则要求处理“写 → 后续读”。需要补的边不同，能力也不同。先按这些方向比较，再映射为目标模型认可的具体操作。
+
 | 能力 | 约束方向 | 典型问题 |
 | --- | --- | --- |
 | 写屏障 | 早先写 → 后续写 | 先初始化描述符，再更新生产者索引 |
@@ -56,7 +58,7 @@ topics:
 W(data) → store-release(flag=1) → 后续访问
 ```
 
-release 保证此前相关访问不能在可观察顺序上越过这次发布 Store，但一般不约束发布之后的访问必须留在后面。它适合把“已经完成的初始化”交付出去，不是一个双向栅栏。
+release 的基本保证是此前相关访问不能在可观察顺序上越过这次发布 Store；仅凭这个语义，不保证发布之后的所有访问都留在后面。它适合把“已经完成的初始化”交付出去，不是一个双向栅栏。具体体系结构指令可能提供额外组合保证，5.6 节会单独检查。
 
 如果多个写者同时更新 `data` 和 `flag`，release 也不决定谁拥有写权限。互斥、原子状态转换或单写者约束必须由协议另行提供。
 
@@ -76,6 +78,7 @@ acquire 防止后续相关访问在可观察顺序上跑到取得操作之前，
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant P as 生产者 CPU0
     participant F as 共享发布位置 flag
     participant C as 消费者 CPU1
@@ -102,9 +105,15 @@ CPU0：W(x) → R(y)
 CPU1：W(y) → R(x)
 ```
 
-单纯 release Store 只排列它之前的访问，而这里需要限制发布 Store 之后的 Load；单纯 acquire Load 只排列它之后的访问，而这里没有需要保护的后续访问。因此 MP 中恰当的 release/acquire 不能机械套到 SB。
+若只使用前面定义的单向 release/acquire 最低保证，release Store 排列它之前的访问，acquire Load 排列它之后的访问，恰好没有覆盖中间需要的 Store→Load 边。C/C++ 的普通 release/acquire 原子语义也不能仅凭这两个名字排除 SB 的 0/0，尤其两个 Load 都没有读到对方发布值时，并未形成跨线程同步配对。
 
-在两边的 Store 与 Load 之间放置全屏障，才能直接补上两条 Store→Load 边并打破 0/0 环。这个对比说明原语选择取决于事件方向，不取决于“都是两个 CPU 共享两个变量”的表面相似性。
+在两边的 Store 与 Load 之间放置目标模型认可的全屏障，是直接补上这两条边的一种办法；也可以使用其他提供所需保证的原语。不能写成“只有全屏障才行”，因为具体指令可能比语言层最低保证更强。
+
+一个必须保留的架构例外是 AArch64：`STLR` 是 Store-Release 指令，`LDAR` 是 Load-Acquire 指令；按 Arm 的 RCsc（Release Consistency sequentially consistent）规则，同一 PE 的前置 STLR 与后续 LDAR 之间还有排序，因此两边都使用这对指令的 SB 不等于仅有抽象单向边。`LDAPR` 是另一种 Load-AcquirePC 指令，其 RCpc（Release Consistency processor consistent）规则放宽了这项前置 release 约束。它们都能承担 acquire 职责，却不是任意上下文中完全相同的替换。
+
+> 原件依据：[Arm ARM DDI0487 G.b](https://developer.arm.com/documentation/ddi0487/gb)，B2.3 的 Load-Acquire、Load-AcquirePC 与 Store-Release 说明（152～154 页）；[Arm 同步白皮书，第 6 页](https://documentation-service.arm.com/static/62b4777131ea212bb66241e6) 明确说明 STLR 后的 LDAR 排序。这里不把 RCsc 名称等同于整个程序的所有访问均为 SC，也不假定某次 C acquire 编译必然选 LDAR。
+
+这个对比说明原语选择要核对事件方向、语言契约和实际指令，不能只看“都是两个 CPU 共享两个变量”。
 
 ## 5.7\_依赖顺序为什么比显式屏障更脆弱
 
@@ -168,10 +177,12 @@ flowchart TD
 
 ## 5.11\_本章验收
 
+先把 MP 中消费者的 acquire 改成普通读取，同时保留生产者 release。是否还能仅凭 release 排除坏结果？不能，消费端顺序仍须有其他合法依据。再把 SB 写成每边“release Store；acquire Load”，能否跨平台断言 0/0 被禁止？不能；最低语义不够，具体指令却可能更强，必须像 STLR/LDAR 与 STLR/LDAPR 那样分别核对。
+
 1. 能从禁止结果推导需要补哪条顺序边。
 2. 能说明 release 和 acquire 各自只约束哪个方向。
 3. 能解释 acquire 读取旧值时为什么没有取得本次发布。
-4. 能说明 MP 的 release/acquire 为什么不能直接解决 SB。
+4. 能说明 release/acquire 最低语义与具体架构的额外组合保证为何必须分开判断。
 5. 能区分地址、数据和控制依赖，并说明编译器为何会影响它们。
 6. 能在三 CPU 中继场景识别累积传播需求。
 
