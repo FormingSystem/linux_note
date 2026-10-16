@@ -1710,3 +1710,46 @@ pcim_enable_device设置受管理身份，pci_setup_msi_context会调用pcim_set
 pci_msi_setup_msi_irqs保留层级域与旧架构入口分支；域的parent关系不等于硬件串联。x86 MSI可修改APIC目标与向量，不能概括为必经IO-APIC。PCI的msi-map按RID区间和提供者标识映射，msi-parent不是所有平台唯一入口；msi-controller表示接收能力，不能给没有发送能力的设备增添硬件。
 
 端口服务按消息编号分配MSI/MSI-X，PME服务挂起可尝试enable_irq_wake；不能说所有唤醒必须另拉GPIO。PM恢复同时依赖PCI状态、平台消息接收与业务设备队列，不能把恢复后不通知写成正常结果。正文只读sysfs脚本、IRQ资源组件及映射示例不构成真实PCIe硬件、目标Kbuild或设备树schema验证。
+
+## 1.192\_特殊中断的屏蔽边界与PMU样本交付
+
+2026-10-17 复审[特殊中断的用途与屏蔽边界](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P13_特殊与高优先级中断_NMI_定时器_性能中断.md)。以下来自官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，Linux 6.12.20；分别保留arm64、ARM32与x86实现边界，不以历史单核配置证明所有分支已运行。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| drivers/clocksource/arm_arch_timer.c | 03733101e23174a6a327c8388862caf5d541cf73 |
+| drivers/perf/arm_pmu.c | 398cce3d76fc44dcc1e1f84f9e3c62b3574a8d12 |
+| drivers/perf/arm_pmuv3.c | 0afe02f879b45a8600b9cea1bfd88e6a68096a67 |
+| drivers/perf/arm_v7_pmu.c | 420cadd108e79821f43537fab23fe081ca6fd9bc |
+| arch/arm64/Kconfig | 57a56500c79593f3fbd46bf5f1d778ad3a742e4b |
+| arch/arm64/include/asm/irqflags.h | d4d7451c2c129f47216d51200d29297610122112 |
+| arch/arm64/kernel/entry-common.c | 3fcd9d080bf2a9086ebe6a596e73dee63fd2cb7e |
+| drivers/irqchip/irq-gic-v3.c | a3417461abe15616a64972427f635ba6118c3e35 |
+| kernel/irq/manage.c | f0803d6bd2969820443f25b5b508ec553f4cb9a2 |
+| arch/x86/kernel/nmi.c | ed163c8c8604e30afed3855c856b461a51c9561a |
+| arch/x86/include/asm/nmi.h | 41a0ebb699ec64284832878191404a9cfa8ffbc4 |
+| Documentation/admin-guide/lockup-watchdogs.rst | 3e09284a8b9bef75c0ac1607a1809ac3b8a4c1ea |
+| Documentation/locking/locktypes.rst | 80c914f6eae7ab07476491c4eba96c004508e28d |
+| Documentation/devicetree/bindings/timer/arm,arch_timer.yaml | c5fc3b6c8bd0bfeaf06867ab2d58b0be07729236 |
+| arch/arm/boot/dts/nxp/imx/imx6ul.dtsi | 0926ea811f61cf9c7280635b4843d8658d71b6ad |
+| include/linux/perf_event.h | 347901525a46ae7569073853682c3d5371325413 |
+| kernel/events/core.c | 5fff74c736063c9be4af20bb2fc8863e3c71b413 |
+| kernel/events/ring_buffer.c | 4f46f688d0d4909d5a307fdc0359b4c0a0d65955 |
+| arch/arm64/include/asm/perf_event.h | eb7071c9eb343c0e6affac21747cadb247906b08 |
+| include/linux/perf/arm_pmuv3.h | 3372c1b56486fcfcd2068ff3a49df35a35e8eeb5 |
+| arch/arm64/include/asm/arm_pmuv3.h | 468a049bc63b59f75b6aa2e828021d8bb6b9cf6a |
+| include/clocksource/arm_arch_timer.h | cbbc9a6dc571587db49b5e9b965f9e3610b83c55 |
+| Documentation/devicetree/bindings/arm/pmu.yaml | 528544d0a1614c9f9bddaafa8dac4782d09ac7e9 |
+| tools/perf/Documentation/perf-stat.txt | 2bc06367248691dd1320d5bbd1c433f1a8a7ddfe |
+| tools/perf/Documentation/perf-record.txt | 242223240a08045e0e6e5c946737cdb8896f8294 |
+| tools/perf/Documentation/perf-report.txt | 7c66d81ab978c84bf46244d9e4fccea28d2162db |
+| Documentation/admin-guide/perf-security.rst | 34aa334320cad3d0f632429670cc31e727709dca |
+| arch/arm64/include/asm/arch_timer.h | f5794d50f51dc371177cfb838b0c024cef31e4cf |
+
+arm64固定实现的CONFIG_ARM64_PSEUDO_NMI利用GICv3优先级与ICC_PMR_EL1屏蔽普通IRQ，入口仍使用irq_desc/domain及generic_handle_domain_nmi；DAIF屏蔽与运行时集成条件仍然存在。request_nmi要求相应每CPU用途、禁止自动使能及irqchip能力，不能共享/线程化；perCPU版本需逐CPU prepare/enable及反向清理。x86 register_nmi_handler为宏，按NMI分类登记nmiaction；其分发考虑有限锁存会汇聚事件，不作无条件必达保证。
+
+arm_arch_timer的每核分支request_percpu_irq并按CPU上线配置clock_event_device，timer_handler读控制状态、mask并调用event_handler；内存映射分支可request_irq。imx6ul.dtsi描述了disabled的armv7-timer节点与PMU SPI94节点，最终板级选择另行核对。tick/clockevent与可读取clocksource不同，NO_HZ和CPU覆盖必须纳入计数解释。PREEMPT_RT的spinlock_t irq后缀不按非RT语义改变硬IRQ状态，raw锁亦不能消除NMI同CPU自等。
+
+armpmu_request_irq按perCPU描述符选择NMI尝试与普通IRQ回退，保存每CPU操作集；armpmu_dispatch_irq从注册的arm_pmu指针地址取出对象并调用其handle_irq。PMUv3读清溢出、更新事件与周期，perf_event_overflow处理采样/节流。perf环先写记录再发布data_head，消费者按协议更新data_tail；pending_wakeup与pending_irq的irq_work实现延后唤醒，不等于所有样本写入都延后。计数模式也可能通过溢出折叠短硬件计数器。
+
+正文给出有限用户负载及stat/record观察过程，未实施真实目标perf采样、NMI生成、关IRQ锁死或启动参数修改。watchdog文档描述的perf后端需结合配置与CPU覆盖，未告警不等于无限范围的正确性证明。寄存器表仅列当前路径所用角色，不复制另一架构指令或厂商绝对地址。
