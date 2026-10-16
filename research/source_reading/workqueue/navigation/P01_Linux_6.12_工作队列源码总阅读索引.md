@@ -13,9 +13,9 @@ source_version: "6.12.20"
 
 ## 1.1\_版本边界与阅读任务
 
-源码固定到 NXP `linux-imx` 标签 `lf-6.12.20-2.0.0` 的 Linux 6.12.20 提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。当前 `lf-6.12.y` 工作树比标签前进 3 个提交，本索引仍以固定提交的对象布局和调用链为唯一版本边界。
+源码固定到 NXP `linux-imx` 标签 `lf-6.12.20-2.0.0` 的 Linux 6.12.20 提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。本索引以不可变提交的对象布局和调用链为版本边界，本地工作树是否前进不改变这里的源码身份；本次保存原文的核对范围见[源码基线](../../linux/SOURCE_BASELINE.md#1.170_工作队列执行模型与取消版本边界)。
 
-跨版本模型先读[工作队列专题](../../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/大纲.md#1.1_专题定位)。本目录按“对象/投递、worker 管理、flush/取消/生命周期”三条独立任务组织源码，不把约六千行 `kernel/workqueue.c` 按行号顺读。
+机制模型先读[工作队列专题](../../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/大纲.md#1.1_专题定位)。本目录按“对象/投递、worker 管理、flush/取消/生命周期”三条任务组织源码。主线是线程工作队列，WQ_BH 的软中断执行上下文在相应分支明确区分，不把共同使用某个函数理解成共同允许睡眠。
 
 ## 1.2\_核心文件地图
 
@@ -69,7 +69,9 @@ flowchart TD
 
 ## 1.7\_配置边界
 
-当前 `.config` 未启用 `CONFIG_WQ_WATCHDOG`，因此源码存在 watchdog 状态不等于部署中会产生相应告警。WQ_MEM_RECLAIM、UNBOUND、FREEZABLE 等主要是每个 workqueue 的运行时 flags，不应从全局 Kconfig 有无推断某个子系统已正确使用。
+`CONFIG_WQ_WATCHDOG` 控制工作队列的停滞监测；源码存在相关字段不证明目标配置已启用或实际产生过告警。本次共享源码工作树不可访问，不把历史配置快照写成当前部署状态。WQ_MEM_RECLAIM、WQ_UNBOUND、WQ_FREEZABLE 等主要是每个 workqueue 的分配属性，不应从全局配置有无推断某个子系统已经正确使用。
+
+保存的 workqueue.rst 对 unbound max_active 的部分文字与同树节点共享计数实现有差异，不能仅靠文档文件的版本相同就跳过代码核对；差异记录见上述源码基线。静态对照与宿主顺序模型不替代目标内核中的实际并发、回收和热插拔验证。
 
 ## 1.8\_复核问题
 

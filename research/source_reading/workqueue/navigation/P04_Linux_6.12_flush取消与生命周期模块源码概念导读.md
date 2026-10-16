@@ -15,6 +15,8 @@ source_version: "6.12.20"
 
 本章区分四个结论：指定 work 的目标执行实例结束、workqueue 某个颜色代际结束、pending work 被取消、workqueue 不再接受外部提交并可销毁。它们由不同状态证明，不能都简称“清空”。
 
+采样设备停止时，调用者关心的是旧回调何时不再访问对象；在线配置切换时，它可能只想等待此前提交的处理完成，允许新记录继续到达。两种需求不同，因此不能用“队列现在为空”作共同答案。本模块落实知识侧 S8 的完成证明，沿连接计数、完成量与入口停止协议分别追踪。
+
 ## 4.2\_三类完成证明
 
 | 目标 | 核心状态 | 等待对象 |
@@ -25,6 +27,17 @@ source_version: "6.12.20"
 
 `drain_workqueue()` 进一步设置 DRAINING，只允许当前队列 work 链式提交，并反复 flush；它比一次 flush 强，却仍需要调用者最终停止业务生产者。
 
+```mermaid
+flowchart LR
+    F[flush调用者] -->|封存颜色并登记目标| P[pwq.nr_in_flight与flush_color]
+    K[完成或取消路径] -->|在pool锁下减少目标计数| P
+    P -->|本连接目标归零后减一次| N[wq.nr_pwqs_to_flush]
+    N -->|最后一个完成者通知| C[first_flusher.done]
+    C -->|等待者恢复并处理后继flush| F
+    R[设备停止协议] -->|撤销提交入口并同步来源| Q[外部生产者]
+    R -->|另行同步工作| K
+```
+
 ## 4.3\_颜色汇聚调用链
 
 ```text
@@ -34,12 +47,34 @@ __flush_workqueue(wq)
   → flush_workqueue_prep_pwqs()
     → 对有目标颜色 in-flight 的 pwq 设置 flush_color
     → wq->nr_pwqs_to_flush 计数
-  → wait_for_completion(this_flusher.done)
-  → 最后一个 pwq 归零时 complete first_flusher
-  → first flusher 级联同色/后续/overflow flusher
+  → 等待this_flusher.done（完成可能早于等待）
+完成/取消路径：最后一个目标pwq归零 → complete first_flusher
+被唤醒的first flusher：级联同色/后续/overflow flusher
 ```
 
-后来 queue 的 work 使用新 work_color，不让本轮 flush 被持续输入活锁。实现见[flush 颜色与 barrier](../source_explanations/P03_Linux_6.12_worker_flush与取消源码实现.md#3.4_flush颜色与barrier)。
+各 pwq 切换 work_color 后，新入账的工作属于后继颜色；与准备遍历并发的提交要按对应连接锁区间判断，不能假定全系统在同一时刻切换。准备阶段先给 nr_pwqs_to_flush 一份哨兵计数，逐个登记非空目标连接，最后才归还哨兵，防止尚未登记完就因前面连接完成而提前通知。实现见[flush 颜色与 barrier](../source_explanations/P03_Linux_6.12_worker_flush与取消源码实现.md#3.4_flush颜色与barrier)。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant F as flush调用者
+    participant A as pwq0与pool锁
+    participant B as pwq1与pool锁
+    participant N as wq汇聚计数
+    participant C as first_flusher.done
+    F->>N: 建立准备期哨兵1
+    F->>A: 登记非空目标颜色，切换提交颜色
+    F->>N: 为pwq0增加一份
+    A->>N: 目标工作已完成，归还pwq0份额
+    Note over F,N: 哨兵仍在，不能提前结束
+    F->>B: 登记非空目标颜色并切换
+    F->>N: 为pwq1增加一份
+    F->>N: 遍历结束，归还哨兵
+    F->>C: 等待完成
+    B->>N: 目标归零，最后一份归还
+    N->>C: complete
+    C-->>F: 可继续处理flusher链和收尾
+```
 
 ## 4.4\_cancel调用链
 
@@ -48,6 +83,8 @@ __flush_workqueue(wq)
 [P03 单实例票据模型](../../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#%287%29_所有权表要补充失败路径和取消路径)把本次 pending 实例的取消与其外层引用配对；仅在明确停止新提交且不重排的范围内推演。cancel 的返回值不自动归还 kref，也不能概括此前或另一个运行实例的责任。
 
 delayed work 必须用 delayed 专用 cancel，因为 timer 仍可能持有尚未进入 workqueue 的投递责任。
+
+当前运行的一轮与下一轮 pending 可以并存，所以取消 pending 与等待 running 不是互斥分支。普通 cancel_sync 临时增加禁用层，等待后再归还；disable_work_sync 则保留该层，直到匹配 enable。返回布尔值反映是否取消 pending，不能用 false 推断“没有等待回调”，更不能据此决定所有业务引用都应该归还一次。
 
 ## 4.5\_destroy与对象生命期
 
