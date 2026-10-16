@@ -531,6 +531,7 @@ mindmap-plugin: basic
                 - 🔴 [P11 电源管理 系统挂起与定时唤醒](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P11_电源管理_系统挂起与定时唤醒.md)
                 - 🔴 [P12 常用模式与代码模板](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P12_常用模式与代码模板.md)
                 - 🔴 [P13 调试 验证与常见陷阱](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P13_调试_验证与常见陷阱.md)
+                - 🔴 [P14 按键窗口合并与按下释放确认](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md)
             - 🔴 [异步通知全景与知识地图](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md)
                 - 章节评审：13 章未评审
                 - 🔴 [P01 异步通知全景与知识地图](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P01_异步通知全景与知识地图.md)

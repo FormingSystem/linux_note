@@ -1310,3 +1310,23 @@ B05bl复查同一固定lockdep.c的lockdep_init_map_type，恢复统计CPU记录
 原有三份 LED 驱动合为共享初始化、统计和回收的三模式教学驱动；旧两组日志原样保留，并标记缺少配置、负载和驱动身份，不能作为本轮实测或优劣结论。板级 GPIO 和 pad 示例仍需实物与手册核对，未进行目标 Kbuild、模块运行或 GPIO 波形验证。
 
 固定 `hrtimer_forward()` 主体与正文手工锚点计算置入宿主数值模型，在 GCC/Clang C11/O2 下分别比较十万组相同输入，并检查未来期限、恰好到期、跨多周期、分辨率下限及已排队保护分支；两者在正文约束内一致。模型替换了内核时间与对象操作辅助，不模拟队列、锁、硬件事件或完整驱动执行。验证过程中补齐宿主桩的 unlikely 宏后编译通过，未把桩缺失误记为内核问题。
+
+## 1.175\_延迟工作与按键策略核对
+
+2026-10-17 复审[延迟工作](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P06_基于工作队列的延迟执行_delayed_work.md)并拆出[按键策略](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md)，复用 1.170 固定 workqueue.c/h，核对非零延迟保存目标、零延迟直接投递、pending 与运行正交、mod 返回值、flush 提前投递和同步取消临时禁用。另从同一官方不可变提交下载以下文件。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| drivers/gpio/gpiolib.c | 209871c219d697d05ac12c9a20edeb68ba59c5d8 |
+| include/linux/wait.h | 2b322a9b88a2bd122d30e70a3d6eaa12c5cec244 |
+| include/linux/debugfs.h | 0928a6c8ae1ee56b9fa654aa273aa6b588cc2562 |
+| fs/debugfs/file.c | 67299e8b734edfef53d99dbf368d2d34403c9f93 |
+| fs/debugfs/inode.c | 66d9b3b4c5881defe68fa2527f621e0162f2c48c |
+| include/linux/pm.h | 97b0e23363c8283f53c361d8129ef90d7a2b9350 |
+| include/linux/interrupt.h | 457151f9f263d9042625decde2c15822d860b134 |
+
+GPIO get/set 接口采用逻辑极性，get 负错误在 active-low 翻转以前返回；wait_event_timeout 以保存的条件为准，唤醒必须晚于条件更新。debugfs 属性宏使用受保护的读写包装，remove 等待这些活动访问；unsafe 创建接口也允许已自行保护的属性宏，不能仅按接口名判断。PM 与 platform/remove 声明按本基线核对。
+
+旧首边沿反馈、窗口噪声合并和两种按下释放事务改为共用资源与状态锁的四策略驱动；轮询、有限退避、故障注入与在线参数改为无硬件模块。错误 GPIO 极性、负数当真、丢释放通知、无界重试和先销毁队列后注销 IRQ 的路径已修正。不声称已经构建或加载目标模块，不声称板级接线、释放波形、PM 或移除竞争经过实测。
+
+从两章正文提取业务函数与参数控制，使用 GCC/Clang 的 C11/O2 顺序模型核对推测反馈撤回、窗口合并、释放截止与回绕、读取跨过截止、负错误、通知早于等待、停止和重试预算；两套退避函数各覆盖 12502500 组有效输入及无符号极值。清零丢通知与倍增先溢出的两个反例均被断言拒绝。模型以桩替代锁、队列、GPIO 与等待，不检验 Linux 弱内存或真实并发，也不构成完整模块构建结果。
