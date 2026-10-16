@@ -5427,6 +5427,39 @@
           "三张图逐张目视，三篇标题锚点、全仓8867有效链接、格式元数据路径及diff检查通过。"
         ],
         "limits": "未执行目标内核构建或运行。P03完成协议大节为保留完整函数控制流达到三百余行，已有四个递进子节；连续性长度提示保留。术语提示按前章定义、常量及代码中文注释逐项复核，不宣称零告警。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "重建kind track因果路线，按真实十三章链接前提与未解问题，撤下不存在的第十四章规划，保留跨专题入口。",
+        "date": "2026-10-17",
+        "validation": [
+          "三篇全文冷读；八份相关原文从官方不可变提交下载并记录blob，核对相关头文件、ktime读取与高分辨率条件。",
+          "七张图逐张目视，最终选型与时序图重新渲染；章节与源码基线标题锚点、全仓8891有效链接及格式元数据路径和diff通过。"
+        ],
+        "limits": "代码为单位与属性接入片段，未作目标Kbuild、加载、延迟或退出竞态实测；共享树不可访问，使用官方固定URL取得原文。术语提示按前章定义、厂商名、错误码与上下文复核。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P01_驱动中的_时间问题_概述.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从采样场景推导等待对象、执行环境与时间单位；修复硬中断、合并事件、释放保护、属性验证和unbind误用。",
+        "date": "2026-10-17",
+        "validation": [
+          "三篇全文冷读；八份相关原文从官方不可变提交下载并记录blob，核对相关头文件、ktime读取与高分辨率条件。",
+          "七张图逐张目视，最终选型与时序图重新渲染；章节与源码基线标题锚点、全仓8891有效链接及格式元数据路径和diff通过。"
+        ],
+        "limits": "代码为单位与属性接入片段，未作目标Kbuild、加载、延迟或退出竞态实测；共享树不可访问，使用官方固定URL取得原文。术语提示按前章定义、厂商名、错误码与上下文复核。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P02_Linux_时间基础与_timekeeping_框架速览.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从计数增量推导时间保持与事件接口，补状态所有权和并行时序，修正回绕、接口口径和高分辨率运行条件，保留有效NO_HZ推导。",
+        "date": "2026-10-17",
+        "validation": [
+          "三篇全文冷读；八份相关原文从官方不可变提交下载并记录blob，核对相关头文件、ktime读取与高分辨率条件。",
+          "七张图逐张目视，最终选型与时序图重新渲染；章节与源码基线标题锚点、全仓8891有效链接及格式元数据路径和diff通过。"
+        ],
+        "limits": "代码为单位与属性接入片段，未作目标Kbuild、加载、延迟或退出竞态实测；共享树不可访问，使用官方固定URL取得原文。术语提示按前章定义、厂商名、错误码与上下文复核。"
       }
     },
     "additional_documents": [
