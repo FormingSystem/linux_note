@@ -49,6 +49,7 @@ S2：功能mutex仍能完成取得与释放；检查器已经给出潜在循环�
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant U as "实验者"
     participant M as "模块初始化线程"
     participant C as "current持锁账本"
@@ -67,26 +68,100 @@ sequenceDiagram
 
 日志是检查结果的交付方向；功能 mutex 没有向实验者承诺“修好了锁序”，也没有真的形成两个等待任务。
 
+### 1.3.1\_三阶段在完整模块中对应哪些语句
+
+同目录的 [lockdep_cycle_demo.c](lockdep_cycle_demo.c) 是下面这份完整程序。两次嵌套都发生在初始化函数中，第一组已经全部释放，第二组才开始；没有创建后台线程，也没有其他代码访问这两把静态锁。`DEFINE_MUTEX` 定义并初始化锁对象，标准 mutex 接口负责上报适用的 Lockdep 事件，模块不直接伪造 acquire/release。
+
+```c
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Lockdep 锁序实验：
+ * 1. 先完整执行 config_lock -> state_lock；
+ * 2. 再完整执行 state_lock -> config_lock；
+ * 3. 让 Lockdep 组合两条组件链，而不制造真实 ABBA 卡死。
+ */
+
+#include <linux/errno.h>
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/mutex.h>
+
+#define LAB_PREFIX "lockdep_cycle_lab: "
+
+static DEFINE_MUTEX(config_lock);
+static DEFINE_MUTEX(state_lock);
+
+static int __init lockdep_cycle_demo_init(void)
+{
+	if (!IS_ENABLED(CONFIG_PROVE_LOCKING)) {
+		pr_err(LAB_PREFIX "CONFIG_PROVE_LOCKING is disabled\n");
+		return -EOPNOTSUPP;
+	}
+
+	pr_info(LAB_PREFIX "S0 record config_lock -> state_lock\n");
+	mutex_lock(&config_lock);
+	mutex_lock(&state_lock);
+	mutex_unlock(&state_lock);
+	mutex_unlock(&config_lock);
+
+	pr_info(LAB_PREFIX "S1 propose state_lock -> config_lock\n");
+	mutex_lock(&state_lock);
+	mutex_lock(&config_lock);
+	mutex_unlock(&config_lock);
+	mutex_unlock(&state_lock);
+
+	pr_info(LAB_PREFIX "S2 functional mutex path completed\n");
+	return 0;
+}
+
+static void __exit lockdep_cycle_demo_exit(void)
+{
+	pr_info(LAB_PREFIX "unloaded\n");
+}
+
+module_init(lockdep_cycle_demo_init);
+module_exit(lockdep_cycle_demo_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("FormingSystem");
+MODULE_DESCRIPTION("Lockdep lock-order inversion lab without a real deadlock");
+```
+
+`LAB_PREFIX` 只是本例日志前缀，S0/S1/S2 对应前图的三段观察。初始化先用 `IS_ENABLED` 核对构建配置；没有完整证明配置就返回 `-EOPNOTSUPP`，此时没有执行两组锁操作，也没有成功加载的模块需要卸载。这个条件只检查构建能力，不能发现运行中已变为 0 的 debug_locks，所以下面的运行前检查仍不可省。
+
+成功路径中的每次取得都有对应释放，退出函数只输出标记。报告不会替模块解锁；本例能够走到 S2，依赖的是单线程顺序执行和完整配对，而不是验证器会修复真实死锁。
+
 ## 1.4\_实验前检查
 
 优先使用可保存快照并可重启的虚拟机或 QEMU。确认运行内核、构建目录和检查能力来自同一份内核：
 
 ```bash
+# 可重启的目标 Linux，先确认运行身份与默认构建目录。
 uname -a
 test -d /lib/modules/"$(uname -r)"/build
+```
 
+`uname` 给出运行身份，test 检查与该版本对应的构建目录是否存在；test 成功通常没有输出，失败时应先准备匹配的构建树。随后读取运行配置：
+
+```bash
+# 目标 Linux；优先读取内核导出的配置，否则检查该版本的发行版配置文件。
 if test -r /proc/config.gz; then
 	zgrep -E 'CONFIG_(PROVE_LOCKING|DEBUG_LOCK_ALLOC|LOCKDEP)=' /proc/config.gz
 else
 	grep -E 'CONFIG_(PROVE_LOCKING|DEBUG_LOCK_ALLOC|LOCKDEP)=' \
 		/boot/config-"$(uname -r)"
 fi
+```
 
+最低预期是 `CONFIG_PROVE_LOCKING=y`。若系统没有 `/proc/config.gz` 或 `/boot/config-*`，读取正在运行内核对应构建树的 `.config`；不能拿另一份内核配置代替。再检查运行中的验证器：
+
+```bash
+# 目标 Linux；这一步是当前运行状态，不是再次查看编译配置。
 sudo grep -E 'debug_locks|lock-classes|direct dependencies|dependency chains' \
 	/proc/lockdep_stats
 ```
 
-最低预期是 `CONFIG_PROVE_LOCKING=y`，并且实验前 `/proc/lockdep_stats` 中 `debug_locks` 表示检查器仍有效。若系统没有 `/proc/config.gz` 或 `/boot/config-*`，读取正在运行内核对应构建树的 `.config`；不能拿另一份内核配置代替。
+实验前 debug_locks 必须表示检查器仍有效。文件缺失、无权读取或检查器已经停检，都不能当作“无告警”的有效起点；应先查清能力或在合适环境干净重启。
 
 还要确认以下工程边界：
 
@@ -101,43 +176,72 @@ sudo grep -E 'debug_locks|lock-classes|direct dependencies|dependency chains' \
 在本目录执行：
 
 ```bash
+# Linux 构建环境，本实验目录。
 make
+```
+
+`make` 默认使用 `/lib/modules/$(uname -r)/build`。交叉编译或为另一台机器构建时，应显式传入与目标运行内核完全匹配的 `kernel_build`、`ARCH` 和 `CROSS_COMPILE`；本实验不把“能够编译”当作“可以加载到当前内核”的证明。生成模块以后再查看元数据：
+
+```bash
+# 同一实验目录；前一步已成功生成 .ko 文件。
 modinfo ./lockdep_cycle_demo.ko
 ```
 
-`make` 默认使用 `/lib/modules/$(uname -r)/build`。交叉编译或为另一台机器构建时，应显式传入与目标运行内核完全匹配的 `kernel_build`、`ARCH` 和 `CROSS_COMPILE`；本实验不把“能够编译”当作“可以加载到当前内核”的证明。
+核对模块身份及 vermagic 等版本信息，再结合目标的配置、符号版本和签名要求判断能否加载。modinfo 能读取文件，不等于模块已在内核运行。
 
 ## 1.6\_运行并保留首个报告
 
 终端 A 先跟随新日志，二选一：
 
 ```bash
+# 目标 Linux 的终端 A；跟随日志直到手工按 Ctrl+C 停止。
 sudo dmesg -wH
 ```
 
 ```bash
+# 或在使用 systemd 日志的目标上，选择这一条跟随内核日志。
 sudo journalctl -kf
 ```
 
-终端 B 记录实验前状态并加载模块：
+终端 B 先记录实验前状态：
 
 ```bash
+# 目标 Linux 的终端 B，本实验目录；先保存运行前状态。
 sudo grep -E 'debug_locks|lock-classes|direct dependencies|dependency chains' \
 	/proc/lockdep_stats > lockdep_stats.before.txt
-
-sudo insmod ./lockdep_cycle_demo.ko
-
-sudo dmesg > lockdep_cycle_demo.full.dmesg
-grep -E 'lockdep_cycle_lab|possible circular locking dependency|existing dependency chain|locks held' \
-	lockdep_cycle_demo.full.dmesg
-
-sudo grep -E 'debug_locks|lock-classes|direct dependencies|dependency chains' \
-	/proc/lockdep_stats > lockdep_stats.after.txt
-
-sudo rmmod lockdep_cycle_demo
 ```
 
-不要先清空整个 dmesg；完整日志和时间线比只留下几行 `grep` 更容易区分旧报告、本次报告和模块加载失败。生成的 `.ko`、日志和统计快照是本机实验产物，不应提交到知识仓库。
+确认文件中的 debug_locks 仍有效，且统计读取成功，再加载模块。若在另一台机器交叉构建，应先把产物放到当前目录，并已核对它与目标匹配：
+
+```bash
+# 目标 Linux 的终端 B；本次启动只注入这一种预期错误。
+sudo insmod ./lockdep_cycle_demo.ko
+```
+
+加载时在终端 A 观察 S0、S1、循环报告及 S2。若 insmod 失败，先区分配置拒绝、版本/签名错误或其他加载错误，不把没有循环报告解释为协议已经正确。随后保存完整现场：
+
+```bash
+# 目标 Linux，同一目录；保留完整日志，不只保存筛选结果。
+sudo dmesg > lockdep_cycle_demo.full.dmesg
+```
+
+文件保存后可以用下面命令定位本例标记，但报告前后文仍以完整文件为准：
+
+```bash
+# 读取刚才保存的日志，不改变内核日志缓冲。
+grep -E 'lockdep_cycle_lab|possible circular locking dependency|existing dependency chain|locks held' \
+	lockdep_cycle_demo.full.dmesg
+```
+
+最后保存报告后的检查器状态，与 before 文件比较：
+
+```bash
+# 目标 Linux，同一目录；保存后续沉默是否还能作为证据的判断依据。
+sudo grep -E 'debug_locks|lock-classes|direct dependencies|dependency chains' \
+	/proc/lockdep_stats > lockdep_stats.after.txt
+```
+
+不要先清空整个 dmesg；完整日志和时间线比只留下几行 `grep` 更容易区分旧报告、本次报告和模块加载失败。生成的 `.ko`、日志和统计快照是本机实验产物，不应提交到知识仓库。读完本次报告后按 1.10 节卸载，再准备下一轮变体。
 
 ## 1.7\_预期证据
 
@@ -168,7 +272,7 @@ the existing dependency chain (in reverse order) is:
   → 候选边加入后闭合
 ```
 
-功能 mutex 都是空闲后才进入下一阶段，所以 S2 仍可出现。**报告后 `debug_locks` 很可能变为 0**；这表示验证器为避免不完整状态继续伪装成有效证明而停检，不表示功能 mutex 已经损坏。
+功能 mutex 都是空闲后才进入下一阶段，所以 S2 仍可出现。**固定 Linux 6.12.20 的循环报告路径会关闭 debug_locks**；这表示验证器为避免不完整状态继续伪装成有效证明而停检，不表示功能 mutex 已经损坏。目标运行仍应保存实际统计，不用预期值代替观察。
 
 ## 1.8\_按问题读取报告
 
@@ -200,7 +304,14 @@ the existing dependency chain (in reverse order) is:
 ## 1.10\_清理与恢复
 
 ```bash
-sudo rmmod lockdep_cycle_demo 2>/dev/null || true
+# 目标 Linux；只在本次模块成功加载后执行，保留卸载错误。
+sudo rmmod lockdep_cycle_demo
+```
+
+成功时可在日志看到本例 unloaded 标记。若加载本来就失败，没有已加载实例需要卸载；若卸载出错，先核对模块状态与错误，不隐藏错误后直接宣称清理完成。构建产物可在保存日志之后清理：
+
+```bash
+# 原构建环境的实验目录；交叉构建时沿用先前的 kernel_build 与工具链参数。
 make clean
 ```
 
@@ -210,4 +321,6 @@ make clean
 
 本实验能够证明：Lockdep 可以把同一线程先后执行的两条简单组件链组合成潜在 ABBA 报告，因而不必制造真实卡死。它不能证明所有未执行分支安全，也不能替代 KCSAN 的数据竞争检测、KASAN/KFENCE 的内存错误检测、Sparse 的类型检查、lockstat 或 `perf lock` 的竞争分析，以及对象生命周期证明。
 
-回到专题时，继续阅读[报告解读与覆盖计划](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.5_再把循环报告还原成同一条因果链)和[成本、覆盖边界与工程选择](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.7_把Lockdep放进完整验证流水线)。
+这里列出的是实验设计与预期证据。本轮文档复审核对了源码和操作顺序，没有在目标内核加载模块或采集真实告警；只有实际执行并保存本节要求的记录后，才能把结果写成该目标环境中的验证结论。
+
+回到专题时，继续阅读[报告解读与覆盖计划](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md#8.5_再把循环报告还原成同一条因果链)和[修复锁序后选择下一份证据](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P09_成本_覆盖边界与工程选择.md#9.7_修复锁序之后_同一设备还要证明什么)。
