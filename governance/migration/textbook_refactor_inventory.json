@@ -5394,6 +5394,39 @@
           "四篇连续性与标题锚点、全仓8863有效链接、格式元数据路径及diff检查通过。"
         ],
         "limits": "共享源码树不可访问，未重新验证目标配置和运行行为。术语提示按前章概念、标志常量及紧邻解释人工复核，未宣称术语审计零告警。"
+      },
+      "research/source_reading/workqueue/source_explanations/P01_Linux_6.12_工作队列对象布局源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从共享执行资源推导连接账本，补全五个结构定义、对齐和节点额度归属，区分诊断与功能字段。",
+        "date": "2026-10-16",
+        "validation": [
+          "三篇全文冷读并核对固定源码；二十个完整定义去注释空白后与原文一致，kernel/workqueue.c blob匹配固定记录。",
+          "三张图逐张目视，三篇标题锚点、全仓8867有效链接、格式元数据路径及diff检查通过。"
+        ],
+        "limits": "未执行目标内核构建或运行。P03完成协议大节为保留完整函数控制流达到三百余行，已有四个递进子节；连续性长度提示保留。术语提示按前章定义、常量及代码中文注释逐项复核，不宣称零告警。"
+      },
+      "research/source_reading/workqueue/source_explanations/P02_Linux_6.12_工作队列投递与激活源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "用完整投递与活动申请函数替换不完整骨架，补disable拒绝、同队列非重入、重试和节点等待屏障。",
+        "date": "2026-10-16",
+        "validation": [
+          "三篇全文冷读并核对固定源码；二十个完整定义去注释空白后与原文一致，kernel/workqueue.c blob匹配固定记录。",
+          "三张图逐张目视，三篇标题锚点、全仓8867有效链接、格式元数据路径及diff检查通过。"
+        ],
+        "limits": "未执行目标内核构建或运行。P03完成协议大节为保留完整函数控制流达到三百余行，已有四个递进子节；连续性长度提示保留。术语提示按前章定义、常量及代码中文注释逐项复核，不宣称零告警。"
+      },
+      "research/source_reading/workqueue/source_explanations/P03_Linux_6.12_worker_flush与取消源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "用完整线程、执行、barrier、flush及cancel定义闭合退出与完成分支，解释准备哨兵、颜色溢出与禁用层。",
+        "date": "2026-10-16",
+        "validation": [
+          "三篇全文冷读并核对固定源码；二十个完整定义去注释空白后与原文一致，kernel/workqueue.c blob匹配固定记录。",
+          "三张图逐张目视，三篇标题锚点、全仓8867有效链接、格式元数据路径及diff检查通过。"
+        ],
+        "limits": "未执行目标内核构建或运行。P03完成协议大节为保留完整函数控制流达到三百余行，已有四个递进子节；连续性长度提示保留。术语提示按前章定义、常量及代码中文注释逐项复核，不宣称零告警。"
       }
     },
     "additional_documents": [
