@@ -1950,3 +1950,28 @@ workqueue的mod_delayed_work_on契约允许IRQ上下文重排，重排不撤销�
 misc_open持misc_mtx查表、设置private_data并执行驱动open，misc_deregister使用同锁撤销入口；教学open在绑定引用仍存在时取得kref。固定__fput先fasync撤销再release，release归还file引用。platform_driver.remove在本版本为void。教学probe最后才misc_register，失败先free_irq与cancel_delayed_work_sync；remove先撤入口、停止提交、同步IRQ和工作，再标记offline和通知，最后归还绑定引用。旧file只访问软件状态，GPIO由devm在解绑清理，软件对象独立kref管理，不等待所有fd关闭才remove，也不让devm提前释放旧file对象。
 
 完整模块以GCC和Clang模型检查申请失败回滚、属性错误/零窗口、逻辑值与读取错误、代次变更和停止期间采样、时间回绕、复制失败保留、阻塞重查、离线剩余数据及最终引用释放。有限Python接收器18种正常/错误场景核对关闭、订阅恢复和30秒期限。模型替代内核与系统调用，只证明受测控制流；没有目标Kbuild、实际Linux ABI、真实并发或板上电气验收。
+
+## 1.201\_流式异步通知的队列与限频证据
+
+2026-10-17 重写[异步通知P08](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P08_流式设备与高级场景中的异步通知.md)，继续以官方固定Linux 6.12.20提交 dfaf2136deb2af2e60b994421281ba42f1c087e0 为证据身份。复用前章n_tty.c、tty_io.c、evdev.c、fs/fcntl.c与kernel/signal.c，新增下列原始字节证据。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| Documentation/input/event-codes.rst | b4557462edd7b3fef9e9cd6c2c3cb2d05bb531ab |
+| include/uapi/linux/input.h | 2557eb7b056178b2b8be98d9cea855eba1bd5aaf |
+| Documentation/core-api/dma-api-howto.rst | 0bf31b6c4383c8b36d73f7361a6cdb87d1f5dba6 |
+| fs/proc/array.c | 5e4f7b411fbdb9d2d8153db76340be532334fbd7 |
+| net/netlink/af_netlink.c | 775d707ec708a7ad6879f81f578ca3a1bd282879 |
+| Documentation/userspace-api/netlink/intro.rst | aacffade8f84c362962dd342e2e3839661f432eb |
+
+n_tty.c的input_available_p在规范且非EXTPROC时比较canon_head/read_tail；否则比较commit_head-read_tail与amt。poll且TIME_CHAR为0、MIN_CHAR非零时amt为MIN_CHAR，否则为1。n_tty_poll先登记read_wait/write_wait，再查输入及挂断、输出状态；接收路径先发布规范或非规范head再通知，不概括为空转非空唯一策略。read的完整VMIN/VTIME行为不能被poll局部谓词替代。
+
+evdev_client各有buffer/head/tail/packet_head与fasync。__pass_event溢出后保留SYN_DROPPED和最新事件并调整packet_head；SYN_REPORT时设置packet_head并kill_fasync。event-codes规范要求客户端忽略直到下一个SYN_REPORT（包含）再EVIOCG*查询当前状态；不承诺补回相对增量、历史或丢失数。input_event包含时间字段及type/code/value，用户布局必须按目标头文件，不能使用省略时间的近似结构。
+
+DMA HOWTO区分一致性与流式映射，说明一致性内存仍需适当屏障，流式复用可能需要CPU/设备访问同步。教学块所有权FREE/DEVICE/READY/CONSUMER是推理模型，不是API枚举；未把中断完成或mmap误作缓冲可复用凭证，也未宣称i.MX6ULL某ADC具有特定DMA能力。
+
+Netlink intro建立消息族、命令、属性和组语义；af_netlink.c的netlink_overrun按RECV_NO_ENOBUFS条件报告ENOBUFS并增加sk_drops，多播投递失败可达此路径，不能当作可靠无损广播。fs/proc/array.c的task_sig取task_ucounts与UCOUNT_RLIMIT_SIGPENDING计数，取task_rlimit的RLIMIT_SIGPENDING作为上限；SigPnd/ShdPnd分别来自线程pending和共享pending的signal位图，不代表标准信号累计次数。
+
+正文替换了旧稿提前出队再复制、满队列再插两项、每槽独立序号、限频跳过且无补发回调、dup/fork复制订阅节点等错误示例。采用显式count环形队列、丢新、队列外累计丢失报告与复制成功后确认，报告和数据交替责任防止持续溢出饿死数据。真实IRQ读取协议使用read_mutex串行读者、ring_lock保护索引，复制期间不推进tail；该证明依赖生产者不覆盖占用槽，不可直接套覆盖旧数据策略。
+
+Python模型实跑8种容量共40000次队列操作，对照独立deque检查顺序/容量/丢失/复制失败；通知模型核对固定期限、无新输入补发、读空跳过、零间隔、迟到回调、每设备隔离及10000时刻的间隔约束。模型为单线程确定性模拟，不代表Linux锁并发、信号ABI、Kbuild或DMA硬件测试；真实数据源、计数ABI与硬件所有权仍需对应实现验证。
