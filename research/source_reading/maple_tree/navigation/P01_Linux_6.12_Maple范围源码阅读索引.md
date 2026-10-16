@@ -19,22 +19,24 @@ domains:
 
 ## 1.2\_按读者问题进入证据
 
+这里的 VMA（Virtual Memory Area，虚拟内存区域）是保存一段映射边界与属性的对象；RCU（Read-Copy Update，读—复制—更新）用于协调读者与被替换对象的回收时机。Maple 内部节点的回收和 VMA 本身的使用期限仍是两项责任，不能因为树采用 RCU 就跳过 VMA 的外围保护。
+
 目前先沿[范围契约与查询入口](P02_范围契约与查询入口.md#2.1_同一地址可以提出不同问题)区分半开区间、闭区间与查询任务，再连接节点容量、调用方游标和返回指针的期限；随后用[树对象与模式](P03_树对象与模式选择.md#3.2_从未发布到受保护使用)追踪 R0～R3、初始化、实际持锁和内部节点退休。
 
 | 阅读任务 | 唯一实现入口 |
 | --- | --- |
-| 容量、叶/非叶槽、union 与空洞怎样连接 | [节点布局导读](P04_节点布局与范围分区.md#4.2_按问题读取布局)，进入[固定布局](../source_explanations/include/linux/maple_tree.h.md#1.6_构建条件决定数组容量)和[缓存初始化](../source_explanations/lib/maple_tree.c.md#1.3_节点缓存按实际结构大小申请对齐) |
-| 同样低位在不同字段中如何解释 | [字段编码导读](P05_字段编码与状态分工.md#5.2_同一数值先按存储位置解读)与[节点编码](../source_explanations/lib/maple_tree.c.md#1.4_编码节点保存类型而不是父槽) |
-| 撤销主索引之后如何继续处理对象 | [撤销范围模块](P10_撤销范围与临时索引.md#10.2_两棵树沿S0到S5分工)，关联[对齐入口](../source_explanations/mm/vma.c.md#1.2_对齐撤销建立临时树)、[恢复](../source_explanations/mm/vma.h.md#1.3_恢复分离标记而非逆转全部拆分)与[页表清理](../source_explanations/mm/memory.c.md#1.3_释放页表与上界哨兵) |
-| VMA 游标怎样适配地址空间 | [VMA 适配模块](P09_VMA游标与边界适配.md#9.2_从地址空间到局部游标)，进入[初始化](../source_explanations/include/linux/mm_types.h.md#1.3_VMA游标与两种初始化)、[方向](../source_explanations/include/linux/mm.h.md#1.5_VMA方向与范围遍历)与[写入包装](../source_explanations/include/linux/mm.h.md#1.6_VMA写入请求与资源退出) |
-| 写入资源与锁怎样衔接 | [资源模块](P08_写入准备与资源清理.md#8.2_沿S0到S5追踪资源)，进入[准备与兑现](../source_explanations/lib/maple_tree.c.md#1.13_高级写入与准备兑现)、[补分配](../source_explanations/lib/maple_tree.c.md#1.14_节点准备与补分配锁边界)与[清理](../source_explanations/lib/maple_tree.c.md#1.15_资源清理与批量准备) |
-| 普通接口怎样处理范围与返回值 | [普通接口模块](P07_普通接口与范围契约.md#7.2_沿一次调用划分责任)，对应[点查](../source_explanations/lib/maple_tree.c.md#1.10_普通点查与读侧边界)、[写入](../source_explanations/lib/maple_tree.c.md#1.11_普通写入与整段擦除)及[find](../source_explanations/lib/maple_tree.c.md#1.12_向后查找与回绕终止) |
-| pause/reset 怎样影响下一次查询 | [游标模块](P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)，进入[状态初始化](../source_explanations/include/linux/maple_tree.h.md#1.10_操作状态与初始化)和[暂停继续](../source_explanations/lib/maple_tree.c.md#1.9_暂停继续与有界find) |
-| 共享树如何初始化、外部锁登记是否加锁 | [树根、模式与初始化](../source_explanations/include/linux/maple_tree.h.md#1.3_初始化先选择锁模式再建立空根)及[VMA 模式](../source_explanations/include/linux/mm_types.h.md#1.2_VMA树的三项模式) |
-| RCU 模式怎样影响退休节点 | [mas_free](../source_explanations/lib/maple_tree.c.md#1.2_退休节点根据模式选择去向) |
 | 当前地址没有对象时是否返回 NULL | [vma_lookup](../source_explanations/include/linux/mm.h.md#1.2_vma_lookup只查询当前地址) |
 | 空洞之后继续找，范围上界在哪里 | [find_vma 与相交查询](../source_explanations/mm/mmap.c.md#1.2_find_vma与上界) |
 | 同时带回前一个 VMA | [find_vma_prev](../source_explanations/mm/mmap.c.md#1.4_find_vma_prev保持两个结果) |
+| 共享树如何初始化、外部锁登记是否加锁 | [树根、模式与初始化](../source_explanations/include/linux/maple_tree.h.md#1.3_初始化先选择锁模式再建立空根)及[VMA 模式](../source_explanations/include/linux/mm_types.h.md#1.2_VMA树的三项模式) |
+| RCU 模式怎样影响退休节点 | [mas_free](../source_explanations/lib/maple_tree.c.md#1.2_退休节点根据模式选择去向) |
+| 容量、叶/非叶槽、union 与空洞怎样连接 | [节点布局导读](P04_节点布局与范围分区.md#4.2_按问题读取布局)，进入[固定布局](../source_explanations/include/linux/maple_tree.h.md#1.6_构建条件决定数组容量)和[缓存初始化](../source_explanations/lib/maple_tree.c.md#1.3_节点缓存按实际结构大小申请对齐) |
+| 同样低位在不同字段中如何解释 | [字段编码导读](P05_字段编码与状态分工.md#5.2_同一数值先按存储位置解读)与[节点编码](../source_explanations/lib/maple_tree.c.md#1.4_编码节点保存类型而不是父槽) |
+| pause/reset 怎样影响下一次查询 | [游标模块](P06_操作游标与暂停继续.md#6.2_沿一次遍历追踪状态)，进入[状态初始化](../source_explanations/include/linux/maple_tree.h.md#1.10_操作状态与初始化)和[暂停继续](../source_explanations/lib/maple_tree.c.md#1.9_暂停继续与有界find) |
+| 普通接口怎样处理范围与返回值 | [普通接口模块](P07_普通接口与范围契约.md#7.2_沿一次调用划分责任)，对应[点查](../source_explanations/lib/maple_tree.c.md#1.10_普通点查与读侧边界)、[写入](../source_explanations/lib/maple_tree.c.md#1.11_普通写入与整段擦除)及[find](../source_explanations/lib/maple_tree.c.md#1.12_向后查找与回绕终止) |
+| 写入资源与锁怎样衔接 | [资源模块](P08_写入准备与资源清理.md#8.2_沿S0到S5追踪资源)，进入[准备与兑现](../source_explanations/lib/maple_tree.c.md#1.13_高级写入与准备兑现)、[补分配](../source_explanations/lib/maple_tree.c.md#1.14_节点准备与补分配锁边界)与[清理](../source_explanations/lib/maple_tree.c.md#1.15_资源清理与批量准备) |
+| VMA 游标怎样适配地址空间 | [VMA 适配模块](P09_VMA游标与边界适配.md#9.2_从地址空间到局部游标)，进入[初始化](../source_explanations/include/linux/mm_types.h.md#1.3_VMA游标与两种初始化)、[方向](../source_explanations/include/linux/mm.h.md#1.5_VMA方向与范围遍历)与[写入包装](../source_explanations/include/linux/mm.h.md#1.6_VMA写入请求与资源退出) |
+| 撤销主索引之后如何继续处理对象 | [撤销范围模块](P10_撤销范围与临时索引.md#10.2_两棵树沿S0到S5分工)，关联[对齐入口](../source_explanations/mm/vma.c.md#1.2_对齐撤销建立临时树)、[恢复](../source_explanations/mm/vma.h.md#1.3_恢复分离标记而非逆转全部拆分)与[页表清理](../source_explanations/mm/memory.c.md#1.3_释放页表与上界哨兵) |
 
 这些小封装没有完成 Maple 的节点搜索或分裂。完整 Maple API 与状态的进一步阅读由[已有 P15](../../../../knowledge/linux/data_structures/红黑树_rb-tree/P15_Maple固定实现的阅读路线.md#15.1_本章涉及的源码文件)组织；各实现文件分别承担已经核对的查询封装、树根模式及节点分派，不把尚未展开的内层算法列成已完成模块。节点布局与完整范围程序已单独落实，字段编码另有独立模块；游标的有限操作周期已独立落实，完整动态写入与内层搜索/回收算法仍在后续审查范围内。
 
@@ -42,4 +44,4 @@ domains:
 
 先在 mm_types.h 找到共享 mm_mt 与 VMA 边界；再读 mm.h 中查询封装；最后读 mmap.c 的向后查询、相交查询和前驱组合。转到 maple_tree.h 时先核对构建条件与 pivot 的包含规则，不从结构体名字推断平台位宽。
 
-本轮只读源码及运行独立 C++ 区间模型，没有编译或运行目标 Maple 实现，没有执行真实 mmap/mprotect/munmap。源码语义、宿主模型和目标行为是三种不同证据。
+各模块分别标明固定源码、独立模型、显式后端替身和既有 ARM 前端检查；它们证明的范围不同。当前没有完整目标 Kbuild、模块装卸或真实 mmap/mprotect/munmap 运行证据，不能把模型通过或头文件编译通过合并成“Maple 已在目标验证”。源码语义、宿主模型和目标行为应分别判断。
