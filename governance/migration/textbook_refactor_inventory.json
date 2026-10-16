@@ -5508,6 +5508,30 @@
           "连续性零风险，术语候选按前置章节与本地接口解释复核；章节/基线锚点、全仓8911链接及格式元数据路径diff通过。"
         ],
         "limits": "数值模型不模拟内核同步、队列或硬件；未进行目标Kbuild、模块加载、IRQ/GPIO波形与退出压力测试。原日志未验证采集身份，不用于实测优劣结论。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P06_基于工作队列的延迟执行_delayed_work.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "重建timer与work两阶段及pending/running正交模型，修正queue/mod返回、flush提前投递、普通线程与BH、unbound/ordered、临时cancel禁用和关闭生产者；保留一次性/巡检/有限重试/在线参数与故障注入完整模块。",
+        "date": "2026-10-17",
+        "validation": [
+          "原P06全文及新两章全文冷读，固定workqueue与七份新官方文件核对，连续性零风险；术语候选按章节前置、枚举定义和接口注释逐项复核。",
+          "正文核心提取到GCC/Clang C11/O2顺序模型，含提前通知、读取跨截止、回绕、停止、负错误、控制范围与有限重试；退避12502500组输入，两个错误反例被拒绝。",
+          "五图目视并修复状态图标签重叠；全仓8924链接、章节/基线锚点、格式元数据路径和diff通过；新增地图节点保持红色。"
+        ],
+        "limits": "模型以桩代替锁、GPIO、等待和队列，不模拟真实Linux并发/弱内存；无目标Kbuild、模块加载、GPIO/IRQ波形、PM或卸载压力测试。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从P06拆出按键策略，先区分推测反馈、窗口合并与完整按下释放证据，再共用一套四策略驱动；修正GPIO逻辑极性、负错误、通知清零窗口、截止裁决、重试预算和IRQ/PM退出。",
+        "date": "2026-10-17",
+        "validation": [
+          "原P06全文及新两章全文冷读，固定workqueue与七份新官方文件核对，连续性零风险；术语候选按章节前置、枚举定义和接口注释逐项复核。",
+          "正文核心提取到GCC/Clang C11/O2顺序模型，含提前通知、读取跨截止、回绕、停止、负错误、控制范围与有限重试；退避12502500组输入，两个错误反例被拒绝。",
+          "五图目视并修复状态图标签重叠；全仓8924链接、章节/基线锚点、格式元数据路径和diff通过；新增地图节点保持红色。"
+        ],
+        "limits": "模型以桩代替锁、GPIO、等待和队列，不模拟真实Linux并发/弱内存；无目标Kbuild、模块加载、GPIO/IRQ波形、PM或卸载压力测试。"
       }
     },
     "additional_documents": [
@@ -5522,7 +5546,8 @@
       "knowledge/linux/data_structures/红黑树_rb-tree/P51_共享树根怎样确定表示与保护模式.md",
       "knowledge/linux/data_structures/红黑树_rb-tree/P52_按字段区分Maple编码与错误状态.md",
       "knowledge/linux/data_structures/红黑树_rb-tree/P53_VMA游标怎样翻译范围请求.md",
-      "knowledge/linux/data_structures/红黑树_rb-tree/P54_同一地址的四种VMA查询结果.md"
+      "knowledge/linux/data_structures/红黑树_rb-tree/P54_同一地址的四种VMA查询结果.md",
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md"
     ]
   },
   "quality_reassessment": {
