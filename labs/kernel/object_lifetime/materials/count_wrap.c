@@ -1,7 +1,16 @@
-#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+/* 检查及其参数求值不随 NDEBUG 消失。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("reference invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* 缩小到八位的串行教学模型，不是 Linux refcount_t 的实现。 */
 struct guarded_count {
@@ -18,7 +27,7 @@ static void add_guarded(struct guarded_count *count)
         count->value = 192; /* 教学标记，进入后不再作为真实责任数。 */
         return;
     }
-    assert(count->value > 0);
+    require_model(count->value > 0);
     ++count->value;
 }
 
@@ -26,7 +35,7 @@ static bool drop_guarded(struct guarded_count *count)
 {
     if (count->saturated)
         return false;
-    assert(count->value > 0);
+    require_model(count->value > 0);
     return --count->value == 0;
 }
 
@@ -44,15 +53,16 @@ int main(void)
     --owners;
     wrapping = (uint8_t)(wrapping - 1u);
     bool guarded_release = drop_guarded(&guarded);
-    assert(owners == 256 && wrapping == 0 && !guarded_release);
+    require_model(owners == 256 && wrapping == 0 && !guarded_release);
     printf("owners=%u wrapping=%u guarded_release=%d\n",
            owners, (unsigned int)wrapping, guarded_release);
 
     while (owners) {
         --owners;
-        assert(!drop_guarded(&guarded));
+        bool released_now = drop_guarded(&guarded);
+        require_model(!released_now);
     }
-    assert(guarded.saturated && guarded.value == 192);
+    require_model(guarded.saturated && guarded.value == 192);
     puts("all owners left; saturated model still refuses release");
     return 0;
 }

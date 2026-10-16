@@ -1,7 +1,15 @@
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+/* 检查及其参数求值不随 NDEBUG 消失。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("reference invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* 顺序责任模型：refs 不是原子变量，不用于真实并发。 */
 struct object {
@@ -12,7 +20,7 @@ static unsigned int released;
 
 static void put(struct object *obj)
 {
-    assert(obj->refs > 0);
+    require_model(obj->refs > 0);
     if (--obj->refs == 0) {
         ++released; /* 只在对象外保存回收记录。 */
         free(obj);
@@ -34,17 +42,17 @@ static bool run(bool hold)
 
     put(obj); /* 原持有者先结束；之后不能再依赖它保活。 */
     bool original_released = released != before;
-    assert(original_released == !hold);
+    require_model(original_released == !hold);
     printf("hold=%u saved=%u original_released=%u\n",
            hold ? 1u : 0u, saved, original_released ? 1u : 0u);
 
     if (hold) {
         /* 能读字段的依据是尚未归还的观察者责任，不是 saved。 */
-        assert(obj->refs == 1 && obj->value == 42);
+        require_model(obj->refs == 1 && obj->value == 42);
         put(obj);
     }
     /* 无持有分支从第一次 put 后就不再读取、比较或传递旧 obj。 */
-    assert(released == before + 1);
+    require_model(released == before + 1);
     return true;
 }
 
@@ -54,6 +62,6 @@ int main(void)
         fputs("allocation failed\n", stderr);
         return EXIT_FAILURE;
     }
-    assert(released == 2);
+    require_model(released == 2);
     return EXIT_SUCCESS;
 }
