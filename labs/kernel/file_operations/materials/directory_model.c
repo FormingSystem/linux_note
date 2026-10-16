@@ -1,5 +1,4 @@
 /* 容量以条目计，观察输出成功后才提交位置，不模拟真实目录并发。 */
-#include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
 
@@ -26,8 +25,10 @@ int main(void)
         const char *output[5];
         size_t count = emit_page(&position, output, capacities[page]);
         size_t index;
-        assert(position == expected_positions[page]);
-        assert(count == expected_counts[page]);
+        if (position != expected_positions[page] || count != expected_counts[page]) {
+            fputs("输出进度与预测不符\n", stderr);
+            return 1;
+        }
         printf("%zu [", position);
         for (index = 0; index < count; ++index)
             printf("%s%s", index ? ", " : "", output[index]);
