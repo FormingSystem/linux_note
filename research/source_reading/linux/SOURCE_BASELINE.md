@@ -2070,3 +2070,14 @@ kernfs普通属性poll比较打开实例观察代次与当前通知代次，变�
 正文将input数据语义、每客户端evdev记录、Netlink对象消息、uevent设备模型、sysfs当前属性和fasync就绪提示放回不同职责；保留事件码、报告边界、SYN_DROPPED恢复、port ID、丢消息重查询与多通道去重。实现引用用于核对接口边界，未测量任何目标硬件吞吐或延迟。
 
 两个完整程序分别验证select/poll/epoll不消费数据、POLL_ADD完成后仍需read。正文代码提取一致检查后，Python替代接口执行42个场景，涵盖普通与优化运行、就绪、短进度和清理错误；C程序经GCC与Clang各执行16个替代接口场景，包含初始化/提交/等待失败、错误CQE、先复制后归还、数据和EOF检查及清理。替代接口只验证应用控制流，不证明Linux ABI、真实io_uring或目标板行为；当前Windows环境未完成Linux头文件构建及内核运行。
+## 1.206\_异步通知工程整合与资源迁移证据
+
+2026-10-17 重写[异步通知P13](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P13_工程实践案例与编码核对表.md)。沿用官方固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，复用第六至十二章的文件订阅、信号、pipe、signalfd、timerfd、epoll、GPIO、工作与对象寿命证据。新增原始字节为 kernel/irq/devres.c（Git blob b3e98668f4dd87e725626ad55f48a34d117e1c67）与 include/linux/regmap.h（9f7b39a2342a19d1b5570b0015844c8455c74e62）。
+
+kernel/irq/devres.c的devm_request_threaded_irq在成功申请后登记irq/dev_id；devm_free_irq先devres_destroy再free_irq，支持按配套接口提前释放。不能普通free_irq后留下托管登记，也不能删除显式停产而依赖晚到的自动归还。已有drivers/base/devres.c提供自定义托管action，devres文档列出托管clock接口，regmap头提供托管初始化；是否托管取决于此次句柄的责任与寿命，非资源类别的绝对禁止。
+
+正文不再假设i.MX6ULL任意板卡GPIO接线、不使用旧class_create签名与不存在的class引用字段、不将release误写成单参数回调、不在自旋锁下调用可能分配的fasync_helper。GPIO完整驱动与16字节最新状态协议回链第七章，软件对象保活独立于硬件devres；六类原工程任务都保留为集成、迁移与失败现场的连续推导。
+
+新增完整multi_async.c用两pipe与本地socketpair，比较direct/signal/both三模式，使用稳定索引、已知源扫描、每源预算、EOF撤销登记与单调截止。普通SIGIO的ssi_fd不作可信来源；两条提示都只产生检查责任，业务由同一读取逻辑消费。socketpair与accept4边界交叉核对Linux man-pages，未声称实现TCP服务器。正常数据为abc/123/N!，含信号模式还要求至少一条提示，不按通知次数恢复业务记录。
+
+正文程序提取一致，替代系统接口经GCC与Clang各运行248个场景：三模式正常数据及逐调用失败注入、短写/分段读、EINTR、合并提示、无信号、坏信号记录、定时积压、超时、终止和清理错误；检查所有取得的fd均归还，失败不打印PASS。另修第九章成功输出必须晚于清理并重跑两编译器各162场景。模拟验证应用控制流，不证明Linux libc ABI、实际内核调度或硬件；目标Linux编译、运行和GPIO解绑仍需实际环境验证。

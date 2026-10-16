@@ -451,9 +451,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "实验未满足 ABC、EOF、至少一次通知的联合条件\n");
 		goto cleanup;
 	}
-	printf("%s bytes=%zu notices=%zu eof=%d stopped=%d\n",
-	       ctx.test_mode ? "PASS" : "OBSERVED",
-	       ctx.bytes, ctx.notices, ctx.eof, ctx.stopped);
 	result = EXIT_SUCCESS;
 	goto cleanup;
 error:
@@ -472,6 +469,10 @@ cleanup:
 			perror("关闭描述符");
 			result = EXIT_FAILURE;
 		}
+	if (result == EXIT_SUCCESS)
+		printf("%s bytes=%zu notices=%zu eof=%d stopped=%d\n",
+		       ctx.test_mode ? "PASS" : "OBSERVED",
+		       ctx.bytes, ctx.notices, ctx.eof, ctx.stopped);
 	return result;
 }
 ```
