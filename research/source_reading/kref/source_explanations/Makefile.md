@@ -22,4 +22,4 @@ KBUILD_CFLAGS	+= -fno-strict-overflow
 
 这是该固定内核构建加入的编译选项，和函数上的[插桩属性](include/linux/compiler_types.h.md#1.1_检查器属性与构建选项分工)来自不同位置。宿主验证如需执行固定 helper 的边界算术，必须声明实际编译器与相应选项；单独复制 no_sanitize 属性不能提供同样依据。
 
-本轮 GCC 的选项查询确认加 -fno-strict-overflow 后 -fwrapv 已启用；这个结果只描述实际使用的宿主 GCC。它不证明默认 ISO C 的 signed overflow 有定义，也不替代目标编译器、Kbuild 和最终二进制验证。返回[模块导读](../navigation/P02_普通引用与归零回调导读.md#2.5_编译语义与检查器边界)。
+2026-10-16 使用 MinGW GCC 14.2.0 的 `-Q --help=optimizers -fno-strict-overflow` 查询确认 `-fwrapv` 已启用；这个结果只描述该宿主 GCC。它不证明默认 ISO C 的 signed overflow 有定义，也不替代目标编译器、Kbuild 和最终二进制验证。返回[模块导读](../navigation/P02_普通引用与归零回调导读.md#2.5_编译语义与检查器边界)。
