@@ -50,7 +50,7 @@ wait_event_interruptible(wq, condition)
       → 仍需等待：schedule后继续prepare与条件重检
 ```
 
-`prepare_to_wait_event()` 在同一 `wq_head.lock` 下处理“信号退出时删除 entry”与“正常时入队并 set_current_state”，使 wake 与可中断失败不会各自消费同一 exclusive 事件。具体实现见[`prepare_to_wait_event()`](../source_explanations/kernel/sched/wait.c.md#1.3_prepare_to_wait_event登记与信号分支)。
+`prepare_to_wait_event()` 在同一 `wq_head.lock` 下处理“信号退出时删除 entry”与“正常时入队并 set_current_state”。如果信号分支先取得锁并摘链，后来的扫描就不会把独占额度花在这个已退出的项上；如果唤醒先发生，等待宏仍要优先重检业务条件，再决定成功还是信号退出。这里协调的是登记与通知资格，队列没有替业务保存或消费资源。具体实现见[`prepare_to_wait_event()`](../source_explanations/kernel/sched/wait.c.md#1.3_prepare_to_wait_event登记与信号分支)。
 
 这里先判断condition，再处理prepare返回的信号结果；不能画成每次醒来都执行finish，也不能把信号出口遗漏的finish当成漏清理。prepare信号分支已经摘链，普通退出的finish则恢复任务状态并处理仍在队列中的项。知识侧的[S0～S7四个窗口](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P03_条件等待的统一状态机.md#3.5_逐个关闭检查睡眠窗口)用于对照阶段，源码仍按本页版本和分支阅读。
 
@@ -114,7 +114,16 @@ wake_up_interruptible(wq)
 
 ## 2.6\_waitqueue\_active屏障边界
 
-`waitqueue_active()` 是无锁链表非空观察。头文件明确要求调用者持有队列锁，或在 waker 条件写之后使用额外 `smp_mb()`，与 waiter 的 `set_current_state()` 屏障配对。省掉无条件 wake 的微优化换来严格内存序责任，多数驱动应直接 wake。
+如果经常没有等待者，生产者可能想先看链表是否为空，只有非空才调用 wake。`waitqueue_active()` 函数只做无锁非空观察，不会锁住登记关系；仅凭“代码先写条件，再查链表”的书写顺序，不能证明其他处理器按这一顺序看见效果。
+
+危险交错是生产者查链表时还没看见登记，于是跳过通知；等待者查业务条件时又还没看见发布，于是进入睡眠。两边各自看见旧值，就把原本由“持久条件或通知至少接住一种”的保证破坏了。固定头文件为这种无锁优化要求：生产者写条件后执行完整内存屏障宏 `smp_mb()`，再观察链表，与等待者先登记、再用 `set_current_state()` 宏设置状态时的屏障配对；业务条件本身仍须使用正确的访问与同步协议。
+
+| 参与方 | 必须保留的先后关系 | 要避免的错误观察 |
+| --- | --- | --- |
+| 生产者 | 发布条件 → 完整屏障 → 观察队列 → 必要时 wake | 把“队列为空”的观察提前到条件发布之前 |
+| 等待者 | 登记等待项 → 带屏障的设态 → 重检条件 → 必要时调度 | 在登记尚未可见时，已经按旧条件决定睡眠 |
+
+头文件也允许在持有队列锁的协议下使用队列观察，此时按该加锁协议分析，不能混用上面的无锁推理。省掉无条件 wake 的优化换来严格内存序责任；没有测得需要这项优化时，直接调用匹配的 wake 接口更容易维护。这里不声称宿主顺序模型已经验证处理器弱内存行为。
 
 ## 2.7\_源码阅读核对
 
@@ -122,6 +131,8 @@ wake_up_interruptible(wq)
 - signal pending 与 exclusive wake 并发时，队列锁保护哪个决策？
 - wake callback 返回 0 时为什么不能消耗 exclusive 额度？
 - `finish_wait()` 为什么先恢复 TASK_RUNNING 再处理链表？
+
+核对答案：标准宏的一次等待用栈项保存本次登记，退出前必须让共享队列无法再访问它；队列锁把信号摘链与通知扫描排成先后，业务条件仍由调用者保护；回调返回 0 表示本次没有成功通知该项，不能消耗独占成功额度；finish 先声明当前任务不再等待，再处理残留登记，避免把“仍在链上”误当成当前任务仍可按旧等待状态被唤醒。任务恢复为可运行与链表摘除是两组不同状态。
 
 总索引：[等待与完成量源码总阅读索引](P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)。
 
