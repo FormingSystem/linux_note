@@ -2046,3 +2046,27 @@ ftrace.rst的Instances旧段落仍声称实例只有事件、没有function trac
 timekeeping.rst将ktime_get_ns对应MONOTONIC，区分boottime与raw；time_namespace.h为用户时间增加命名空间偏移的接口进一步限定跨域相减。正文用run/device/sequence关联不可变记录与IRQ、发布、read完成、业务完成时间，不把最近一次ioctl快照配给旧事件，不把kill_fasync返回当作远端接收的必然前驱，也不提供无测量依据的通用微秒阈值。
 
 三个完整Python工具从正文提取检查一致并实际运行模拟验证：proc快照9个场景、tracefs/Popen替代接口33个场景、CSV关联统计12个场景，覆盖八进制、共享pending、线程读取失败、PID复用、能力缺失、超时TERM/KILL、采集输出失败与清理失败、重复键/时钟域/倒序及跨设备分组。窗口内多次proc读取仍非原子，模拟不能证明Linux proc/tracefs ABI、真实函数插桩或硬件延迟；当前环境未运行目标内核采集。正文给出有限Linux实验和清理方法，并把合成CSV明确标成练习数据。
+## 1.205\_通知机制比较的实现与接口边界
+
+2026-10-17 重写[异步通知P12](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P12_fasync_与其他通知机制的对比与整合.md)，沿用官方固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0。复用 fs/select.c、fs/eventpoll.c、fs/signalfd.c、drivers/input/evdev.c、Documentation/input/event-codes.rst 与 net/netlink/af_netlink.c。新增原始字节如下。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| io_uring/rw.c | 6abc495602a4e941e9870f612d2dd47108e9e45a |
+| io_uring/poll.c | b93e9ebdd87c8f9b1c6b1879dc9f6695703c322d |
+| fs/aio.c | e8920178b50f73267306a6da8f177785267f0c15 |
+| fs/kernfs/file.c | 8502ef68459b9842d090a4ac338591778d1b3b24 |
+| fs/sysfs/file.c | d1995e2d6c943a644ff9f34cf2488864d57daf81 |
+| lib/kobject_uevent.c | b7f2fa08d9c82c2838b703f3fd25f6e43b88b68a |
+| Documentation/filesystems/sysfs.rst | c32993bc83c70436db118df8f582f59715798b20 |
+| Documentation/userspace-api/netlink/intro.rst | aacffade8f84c362962dd342e2e3839661f432eb |
+| include/linux/input.h | cd866b020a01d67081788e1baa2d372ce1c79767 |
+| drivers/input/input.c | c51858f1cdc556939c2ee1bd21669c71c169d84e |
+
+io_iter_do_read优先使用read_iter，缺少时可经loop_rw_iter回退普通read；回退拒绝HIPRI，NOWAIT与文件阻塞模式的组合也有约束。原生AIO读写路径则要求相应read_iter/write_iter。io_uring poll通过vfs_poll取得就绪并登记等待；这些证据不支持“有poll就支持全部读写”或“所有io_uring读都必须read_iter”。用户接口分别核对Linux man-pages的POSIX AIO、原生io_submit，以及liburing的prep_poll_add、wait_cqe_timeout和queue_exit，区分就绪完成、数据完成、多次完成和取消结果。
+
+kernfs普通属性poll比较打开实例观察代次与当前通知代次，变化时增加PRI/ERR；默认可读写位不能用来判断属性变化。sysfs_notify按属性查找进入kernfs_notify，后者更新代次、唤醒等待并安排fsnotify工作；属性生产者没有通知时，不能推导任意值变化都可监视。kobject_uevent_env沿对象查找kset，缺失时返回错误，并有抑制和过滤条件；裸kobject不是无条件广播入口。
+
+正文将input数据语义、每客户端evdev记录、Netlink对象消息、uevent设备模型、sysfs当前属性和fasync就绪提示放回不同职责；保留事件码、报告边界、SYN_DROPPED恢复、port ID、丢消息重查询与多通道去重。实现引用用于核对接口边界，未测量任何目标硬件吞吐或延迟。
+
+两个完整程序分别验证select/poll/epoll不消费数据、POLL_ADD完成后仍需read。正文代码提取一致检查后，Python替代接口执行42个场景，涵盖普通与优化运行、就绪、短进度和清理错误；C程序经GCC与Clang各执行16个替代接口场景，包含初始化/提交/等待失败、错误CQE、先复制后归还、数据和EOF检查及清理。替代接口只验证应用控制流，不证明Linux ABI、真实io_uring或目标板行为；当前Windows环境未完成Linux头文件构建及内核运行。
