@@ -1089,6 +1089,30 @@
           "七张Mermaid渲染并目视检查三条修改时序；六篇连续性无风险，目标格式、全仓链接及diff通过"
         ],
         "limits": "session_probe仅通过宿主MinGW语法，iter/mapping探针缺少Linux用户空间sysroot未编译；未执行Kbuild、MODPOST、目标加载、真实用户缺页、映射或跨位宽实验。术语提示按前置、代码标识和参考页职责核对，未宣称严格零提示。"
+      },
+      "knowledge/driver_model/misc/readme.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "冷读共享编号、锁、分派、注册回滚和旧file，保留完整模块与两探针；补公共锁下服务open的成本，按身份、位置、寿命三轮展开操作并调整父标题。",
+        "date": "2026-10-16",
+        "validation": [
+          "三份正文代码与材料一致，一模块通过真实ARM头文件语法检查，450个实际头未偏离固定提交；两个用户探针仅通过MinGW语法",
+          "七份固定源码核对，操作表34个成员均有查询项；三图渲染、新实验路线目视检查",
+          "成员参考连续性无风险；misc长节包含两份完整观察程序且已分三步，不按长度拆散；目标格式、全仓链接及diff通过"
+        ],
+        "limits": "未执行Kbuild、MODPOST或目标装卸与读取；材料README本组只维护新标题锚点，不计入独立复审。术语候选按前置、错误码、源码标识和参考职责核对，未宣称零提示。"
+      },
+      "knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_file_operations.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读成员查询、缺省行为及版本轴，保留原稿来源批注与参考职责；逐项覆盖固定结构的34成员，仅修正poll按需登记及可能睡眠的边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "三份正文代码与材料一致，一模块通过真实ARM头文件语法检查，450个实际头未偏离固定提交；两个用户探针仅通过MinGW语法",
+          "七份固定源码核对，操作表34个成员均有查询项；三图渲染、新实验路线目视检查",
+          "成员参考连续性无风险；misc长节包含两份完整观察程序且已分三步，不按长度拆散；目标格式、全仓链接及diff通过"
+        ],
+        "limits": "未执行Kbuild、MODPOST或目标装卸与读取；材料README本组只维护新标题锚点，不计入独立复审。术语候选按前置、错误码、源码标识和参考职责核对，未宣称零提示。"
       }
     }
   },
