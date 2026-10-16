@@ -20,7 +20,7 @@ domains:
 1. `__CHECKER__` 是否真的改变了分析器看到的程序？
 2. 一个函数体为空的类型检查函数为什么仍能形成边界？删除形参上的地址域以后，哪条诊断会消失？
 3. 地址域转换错误与 `noderef` 裸解引用是不是同一件事？
-4. “调用前必须持有”“返回前必须清偿”“不能凭空释放”分别由哪条路径触发？
+4. “调用前必须持有”“返回前必须清偿”“不能凭空释放”中哪些能由当前工具发现，哪些不能？
 5. `__cond_lock()` 为什么只能在条件成功的分支增加 context？
 6. 包装函数已经执行 `__acquire()` 时，为什么仍需要对调用者可见的 `__acquires()` 契约？
 7. 同一份故意错误代码为什么可以通过普通 GCC 语法检查，却被 Sparse 拒绝？
@@ -37,7 +37,7 @@ domains:
 | --- | --- | --- |
 | `sparse_annotation_demo.c` | 提供正确基线和由 `-D...` 逐个启用的反例 | 否；不访问用户内存，也不取得真实锁 |
 | `Makefile` | 固定每轮命令，使一次实验只打开一个变量 | 否；只调用预处理器、编译器和 Sparse |
-| `verify.sh` | 核对正确样例必须静默、错误样例必须出现预期诊断类别 | 否；只验证静态分析输出 |
+| `verify.sh` | 核对基线、可检测错误和固定版本的静默盲区 | 否；只验证静态分析输出 |
 | `kernel_module/` | 在真实内核构建目录中比较 `C=1/C=2`，并让 `CF` 打开地址域反例 | 只构建模块，不加载模块 |
 
 ```mermaid
@@ -45,7 +45,7 @@ flowchart LR
     SRC["同一份实验源码"] -->|"类型轴"| TYPE["address_space + noderef"]
     SRC -->|"路径轴"| CTX["context属性 + __context__事件"]
     TYPE -->|"边界、赋值、解引用"| TW["类型诊断"]
-    CTX -->|"前置检查、退出债务、条件分支"| CW["context诊断"]
+    CTX -->|"调用净增量、退出债务、条件分支"| CW["context诊断"]
     SRC -->|"普通编译分支"| GCC["属性退化后只做普通C检查"]
     TW --> EVIDENCE["按实验变量解释证据"]
     CW --> EVIDENCE
@@ -57,7 +57,7 @@ flowchart LR
 | 状态轴 | 状态保存在哪里 | 谁建立或修改 | 谁消费 | 本实验怎样观察 |
 | --- | --- | --- | --- | --- |
 | 指针类型状态 | Sparse 的类型表示 | `address_space(1)`、`noderef` 与声明位置 | 形参与实参检查、赋值和解引用分析 | `different address spaces`、`dereference of noderef expression` |
-| 路径 context 状态 | Sparse 对当前控制流路径维护的抽象账本 | 函数 `context(...)` 契约和 `__context__()` 语句 | 调用点检查、基本块合流和函数退出检查 | `context check failure`、`wrong count at exit`、`unexpected unlock` 等 |
+| 路径 context 状态 | Sparse 对当前控制流路径维护的抽象账本 | 函数 `context(...)` 契约和 `__context__()` 语句 | 调用净变化、基本块合流和函数退出检查 | `wrong count at exit`、`unexpected unlock` 等；不检查所有持锁前提 |
 
 实验中的 `fake_lock()`、`fake_unlock()` 和 `__cond_lock()` 只操纵静态账本。即使变量名叫 `lock`，它们也不会产生原子指令、禁止抢占或影响其他线程。
 
@@ -66,17 +66,20 @@ flowchart LR
 推荐在 Linux 构建主机运行，至少准备：
 
 ```text
-POSIX shell
+Bash（交互命令）；verify.sh自身使用POSIX shell
 GNU make
 GCC或兼容预处理器
 Sparse静态分析器
 grep
 ```
 
-进入实验目录后先运行：
+本实验固定Sparse 0.6.4的context边界；其他版本须记录差异。交互命令若用 `tee` 保存日志，先执行 `set -o pipefail`，避免掩盖前一命令失败。验证脚本要求正常退出，不应给 `make verify` 的 `SPARSE_FLAGS` 追加 `-Wsparse-error`；该选项的失败语义应单独测试。
+
+从仓库根目录进入实验目录后先运行：
 
 ```bash
-cd labs/foundations/c_language/P01_Sparse地址空间与上下文记账
+# 从linux-note仓库内执行，可避免重复进入目录。
+cd "$(git rev-parse --show-toplevel)/labs/foundations/c_language/P01_Sparse地址空间与上下文记账"
 make doctor
 ```
 
@@ -107,6 +110,8 @@ Sparse/GCC/make版本：
 
 ## 1.4\_先观察两个预处理分支
 
+先只比较两个消费者收到的文本，不运行任何静态诊断。这样后续出现差异时，能够排除宏分支没有进入翻译单元的情况。
+
 ### 1.4.1\_假设与操作
 
 假设：同一份源码在定义 `__CHECKER__` 时会保留 Sparse 专用属性和 `__context__` 语句；普通编译分支则把这些记号退化为空属性或无副作用表达式。
@@ -114,8 +119,8 @@ Sparse/GCC/make版本：
 执行：
 
 ```bash
-make preprocess-sparse > /tmp/sparse-branch.i
-make preprocess-compiler > /tmp/compiler-branch.i
+make -s preprocess-sparse > /tmp/sparse-branch.i
+make -s preprocess-compiler > /tmp/compiler-branch.i
 
 grep -nE 'address_space\(|noderef|__context__|__attribute__.*context' /tmp/sparse-branch.i
 grep -nE 'address_space\(|noderef|__context__|__attribute__.*context' /tmp/compiler-branch.i
@@ -135,6 +140,8 @@ Sparse 分支应能找到 `address_space`、`noderef`、`context` 或 `__context
 本轮能证明预处理器向两个消费者交付了不同记号，不能证明 Sparse 对这些记号采用了什么语义。下一轮才让分析器消费它们。
 
 ## 1.5\_建立无告警基线
+
+两份输入已有预期差异以后，才运行分析器建立共同对照。下面三条路径分别保留类型边界、无条件配对和条件成功配对，后续反例都从它们出发。
 
 ### 1.5.1\_先读正确路径
 
@@ -181,6 +188,8 @@ make check-good
 
 ## 1.6\_类型边界实验\_空函数怎样把实参送进检查
 
+基线成立后只改变形参是否保留地址域，让相同普通指针进入同一个空函数。函数体不变的对照能够判断诊断究竟来自哪里。
+
 ### 1.6.1\_实验A\_保留形参契约
 
 待验证假设：`check_boundary_pointer()` 即使不读 `pointer`，形参上的 `__user` 仍会迫使 Sparse 在调用点比较实参与形参地址域。
@@ -222,6 +231,8 @@ make check-address-boundary-erased
 这组 A/B 实验说明诊断来自 **类型契约**，不是函数名、函数体或运行时访问。诊断消失也不表示传参突然变安全，而是分析器失去了表达“不允许这样传”的类型证据。
 
 ## 1.7\_地址空间与noderef实验\_把两种错误拆开
+
+形参边界之外，指针还可能在赋值或成员访问时违反协议。下面分两轮运行，避免前一项类型错误传播后掩盖第二项规则。
 
 ### 1.7.1\_实验A\_只做地址域赋值
 
@@ -275,10 +286,10 @@ make check-context-call
 反例路径：
 
 ```text
-入口0 → requires_lock要求入口至少为1 → 条件不满足
+入口0 → requires_lock的context(1,1)净变化为0 → 退出0
 ```
 
-预期出现 `context check failure` 或版本等价的 context 诊断。这里没有 `+1` 或 `-1`，错误来自调用点不满足 `__must_hold(lock)` 的前置状态。
+固定 Sparse 0.6.4 下预期静默。调用者没有满足作者声明的持锁前提，但 `context(lock,1,1)` 只在函数体分析时设置入口、出口计数；普通调用不生成前提检查。这是工具盲区，不是正确性证明。
 
 ### 1.8.2\_实验B\_取得后直接返回
 
@@ -312,13 +323,15 @@ make check-context-release
 
 | 反例 | 缺失的契约 | 诊断观察点 | 常见真实修复 |
 | --- | --- | --- | --- |
-| 未持有调用 | 调用前没有建立所需状态 | 调用点 context check | 在正确成功路径取得，或修正错误的 `__must_hold()` 声明 |
+| 未持有调用 | 调用前没有建立所需状态 | 0.6.4静默，无法据此证明持锁 | 修复真实取得路径，另行审查或使用适当动态断言 |
 | 未清偿退出 | 某条返回路径缺少释放 | 函数退出计数 | 把退出汇聚到统一清理路径 |
 | 凭空释放 | 释放前没有相应取得 | `-1` 事件位置 | 删除错误释放，或补回真正被遗漏的取得路径 |
 
 三个问题可能都含有“lock”一词，但它们对应不同时间边界，不能压缩成一句“锁不平衡”。
 
 ## 1.9\_条件取得实验\_为什么记账必须跟随成功分支
+
+简单增减之后再加入真假分支。错误的位置不一定是释放语句，也可能是成功条件尚未成立时就提前登记取得；两条路径的计数可以揭示这种差别。
 
 ### 1.9.1\_先预测正确的两条路径
 
@@ -335,7 +348,7 @@ if (__cond_lock(lock, succeeds)) {
 
 ```text
 失败：入口0 → condition为0 → 不执行__acquire → 退出0
-成功：入口0 → condition非0 → __acquire登记+1 → requires_lock看到1 → fake_unlock登记-1 → 退出0
+成功：入口0 → condition非0 → __acquire登记+1 → requires_lock净增量0，当前计数保持1 → fake_unlock登记-1 → 退出0
 ```
 
 这也是 `make check-good` 静默的组成部分。
@@ -409,6 +422,8 @@ make compile-compiler
 
 ## 1.12\_自动复验与混合诊断分类
 
+各个实验已经能单独解释，再让脚本逐项复验。混合打开所有错误只放在最后用于诊断分类，不替代单变量对照。
+
 ### 1.12.1\_先让脚本复验每个单变量实验
 
 ```bash
@@ -420,7 +435,7 @@ make verify
 - 正确基线必须没有诊断；
 - 擦掉空函数形参契约以后，原地址域边界诊断必须消失；
 - 地址域赋值和 `noderef` 解引用必须分别出现对应类别；
-- 三种 context 基本错误、条件取得错误和包装层缺约必须出现 context 类别。
+- 漏锁调用在Sparse 0.6.4中静默，作为 `context_call_gap` 记录；退出债务、错误释放、条件取得错误和包装层缺约必须出现各自的context类别。
 
 脚本匹配诊断类别而不固定行号和整句排版，以容纳 Sparse 版本间的输出差异。若脚本失败，应查看它打印的实际输出并判断：是工具版本改变了措辞、实验假设不成立，还是出现了与目标无关的新基线诊断。不要为了让脚本变绿而无条件扩大正则。
 
@@ -436,7 +451,7 @@ make check-all 2>&1 | tee /tmp/sparse-check-all.log
 | --- | --- | --- | --- |
 | `different address spaces` | 指针地址域 | 1.6 或 1.7.1 | 形参类型、赋值方向、专用访问接口 |
 | `dereference of noderef expression` | 受限指针访问 | 1.7.2 | 访问器边界，不能用普通解引用替代 |
-| `context check failure` | 调用前置状态 | 1.8.1 | 调用以前的取得路径或错误契约 |
+| 漏锁调用没有诊断 | 聚合计数盲区 | 1.8.1 | 不把 `__must_hold` 等同于调用点持锁断言 |
 | `wrong count at exit` | 返回路径债务 | 1.8.2 | 失败返回、`goto` 清理和声明出口状态 |
 | `unexpected unlock` | 错误释放 | 1.8.3 | 取得/释放配对 |
 | `different lock contexts` | 分支合流不一致 | 1.9 | 条件事件放置位置 |
@@ -518,7 +533,7 @@ const int *plain = source;
 1. **功能事实：** 先确认函数在哪个条件下真正取得，失败时是否回滚，返回时锁是否仍由调用者持有；
 2. **红灯反例：** 准备一个调用者在取得后调用 `__must_hold()` helper 的正确样例，以及未取得调用、错误返回和多释放样例；
 3. **最小契约：** 只有无条件成功并保持锁的接口才使用 `__acquires()`；trylock 把布尔成功交给 `__cond_lock()` 所在的控制流；
-4. **绿灯复验：** 正确样例静默，所有故意错误仍能触发预期类别；
+4. **有限绿灯：** 正确样例静默，可检测错误仍产生预期类别；漏锁调用等已知盲区明确保留；
 5. **普通分支：** 再运行普通编译，确认注解没有改变实参求值、ABI 和真实控制流；
 6. **运行时配套：** 用 Lockdep、专项测试或其他能观察真实锁事件的证据验证功能层。
 
@@ -526,7 +541,7 @@ const int *plain = source;
 
 ## 1.15\_清理记录与结论边界
 
-实验只产生 `/tmp` 中由读者显式重定向的文本，没有对象文件；清理命令为：
+独立分析部分只产生显式重定向的文本，不生成目标文件；Kbuild部分会产生对象、模块等构建文件。先保存日志和版本记录，再按各自范围清理：
 
 ```bash
 make clean
@@ -552,6 +567,6 @@ Sparse/GCC/GNU make版本及实际路径
 能够证明的结论与未覆盖边界
 ```
 
-完成本实验后可以证明：在记录的工具版本和命令下，Sparse 实际消费了实验注解；地址域、`noderef`、函数 context 契约和条件路径事件分别能对相应反例产生可分类诊断；普通编译分支不提供同一组证据。
+完成本实验后可以证明：在记录的工具版本和命令下，Sparse 实际消费了实验注解；地址域、`noderef`、退出计数和条件路径事件能对相应反例产生可分类诊断，`__must_hold()` 的漏锁调用则可能静默；普通编译分支不提供同一组证据。
 
 本实验不能证明真实 Linux `copy_from_user()`、锁原语、Lockdep、RCU、对象生命期、硬件 I/O 或数据竞争正确。下一步回到第 6 章的[E7：从独立实验迁移到 Kbuild](../../../../knowledge/foundations/c_language/kernel_static_annotations/P06_在Linux内核中使用Sparse与设计注解.md#6.10_E7把独立实验迁移到真实Kbuild目标)，再把静态结论接入目标内核配置、翻译单元和运行时验证工具。

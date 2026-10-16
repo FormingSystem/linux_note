@@ -129,7 +129,7 @@ static void conditional_context_good(int *lock, int succeeds)
 #ifdef BAD_CONTEXT_CALL
 static void context_bad_call(int *lock)
 {
-	/* 预期：未建立 context 就调用要求持有的函数。 */
+	/* 违背持锁契约；Sparse 0.6.4只传播净增量0，预期静默。 */
 	requires_lock(lock);
 }
 #endif

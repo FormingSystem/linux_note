@@ -13,6 +13,8 @@ domains:
 
 ## 3.1\_相同机器表示为什么还要分类型
 
+宏展开已经让地址域属性对Sparse可见。要理解这种额外类型信息的价值，先比较同一份用户记录经过普通解引用与专用复制接口的差别，再把观察推广到其他访问协议。
+
 ### 3.1.1\_从宏展开走到一次真实的用户记录导入
 
 上一章已经能够把：
@@ -68,7 +70,7 @@ static int import_record(const struct record __user *src,
 2. `import_record()` 先通过 `copy_from_user()` 把用户域数据导入局部内核对象；复制失败时返回且不发布 `tmp`，复制成功后再校验长度，最后才更新 `*dst`；
 3. 示例没有动态分配，因此不存在本函数内的释放步骤；真正的资源与生命期边界是“调用期间 `dst` 必须存活，失败返回后调用者不得把未更新的目标当成新记录”。
 
-这个现场说明，`__user` 不是为了改变指针宽度，也不是为了自动执行一次复制。它首先把“这个地址必须经由用户访问协议使用”带进静态类型检查；真正的数据访问仍由 `copy_from_user()` 在运行时完成。
+这个现场说明，`__user` 不是为了改变指针宽度，也不是为了自动执行一次复制。它首先把“这个地址必须经由用户访问协议使用”带进静态类型检查；真正的数据访问仍由 `copy_from_user()` 在运行时完成。复制成功只表示这次请求的字节已经取得，不保证它们来自用户对象同一时刻的原子快照。用户线程仍可能在复制期间修改输入；因此后续只使用并校验本地 `tmp`，不能校验后再从用户地址重新读取长度作为可信值。
 
 ### 3.1.2\_机器表示相同不等于访问契约相同
 
@@ -95,7 +97,14 @@ static int import_record(const struct record __user *src,
 
 #### (2)\_MMIO地址\_映射寄存器以后仍不能使用普通指针
 
-假设一个平台设备具有两个由设备手册规定为 32 位小端的寄存器：控制寄存器用于启停设备，状态寄存器用于读取当前状态。驱动先取得 `__iomem` 映射，再通过匹配宽度的访问器读写：
+假设一个教学设备通过控制寄存器接收启停请求，通过状态寄存器返回当前状态。下面的偏移和位是本例自定协议，不属于某款真实芯片；实际驱动必须替换为目标设备手册给出的定义。先在正文列清本例允许的访问，再看驱动怎样保留 `__iomem` 类型：
+
+| 寄存器 | 相对映射基址偏移 | 宽度与端序 | 访问与本例语义 |
+| --- | --- | --- | --- |
+| CONTROL | `0x00` | 32位、小端 | 写入；bit 0为RUN，写1请求运行，写0请求停止，其余位写0 |
+| STATUS | `0x04` | 32位、小端 | 只读、读取无副作用；本例只返回原始状态值，不定义停止完成位 |
+
+本节只演示类型与访问器，不实现完整设备状态机。特别是写入停止请求以后怎样确认完成，必须由另行给出的设备协议决定。
 
 ```c
 #define DEMO_REG_CONTROL 0x00
@@ -145,7 +154,7 @@ static void demo_mmio_start_bad(struct demo_mmio *io)
 
 1. `demo_mmio_init()` 先把平台资源转换成 `__iomem` 映射；映射失败时直接返回，后续函数不得运行；
 2. `demo_mmio_start()`、`demo_mmio_read_status()` 与 `demo_mmio_stop()` 始终保留 `__iomem` 类型，并通过 `writel()`、`readl()` 完成设备访问；
-3. 移除设备以前，驱动先停止新的功能路径并按设备协议调用 `demo_mmio_stop()`；映射由 `devm_` 资源管理在解绑时释放，因此示例不再手工 `iounmap()`；
+3. 移除设备以前，驱动先停止新的功能路径，发出 `demo_mmio_stop()`，再按真实设备协议确认停止并同步在途访问、中断或工作项；本例没有给出这些设备专有步骤，不能直接作为完整 remove 实现。映射由 `devm_` 资源管理在解绑时释放，因此不再手工 `iounmap()`，但资源管理不会代替停止与排空；
 4. 错误版即使用 `__force` 得到相同数值的普通指针，也只消除了 Sparse 的阻拦。普通 `*control` 写入没有自动获得 MMIO 所需的访问宽度、端序、架构指令和顺序语义。
 
 示例只假定设备手册允许这三个 32 位访问，不假定 `writel()` 返回就表示设备已经执行写入。若设备要求确认 posted write、配置 DMA 描述符或使用 `*_relaxed()`，还必须继续分析设备协议和体系结构顺序。静态类型问题继续看 [address_space 如何建立逻辑指针域](#3.2_address_space建立逻辑指针域)与 [noderef 的访问器边界](#3.3_noderef阻止错误的普通解引用)；运行时顺序进入 [MMIO 访问顺序与屏障](../../../linux/io_model/mmio/P01_MMIO_访问顺序与屏障.md#1.2_为什么必须使用访问器)。
@@ -301,7 +310,7 @@ static void record_slot_destroy(struct record_slot *slot)
 {
     struct record *old_record;
 
-    /* 调用者此前必须停止新读者和新更新者进入。 */
+    /* 调用者此前必须停止新调用，并等待所有在途更新者返回。 */
     mutex_lock(&slot->update_lock);
     old_record = rcu_dereference_protected(
         slot->current, lockdep_is_held(&slot->update_lock));
@@ -431,7 +440,7 @@ __chk_user_ptr(const volatile void __user *ptr)
 
 ### 3.4.2\_完整实例\_用同一个空函数检查两种指针来源
 
-下面是一个可单独保存为 `check_user_pointer.c` 的教学实验。它只复现 `__user` 与 `__chk_user_ptr()` 相关的最小机制，不是对 Linux 某个完整用户访问接口的重新实现：
+下面是一个可单独保存为 [`check_user_pointer.c`](../../../../labs/foundations/c_language/materials/check_user_pointer.c) 的教学实验。它只复现 `__user` 与 `__chk_user_ptr()` 相关的最小机制，不是对 Linux 某个完整用户访问接口的重新实现：
 
 ```c
 struct record {
@@ -779,7 +788,7 @@ static void record_cache_break_boundary(struct record_cache *cache)
 | `__safe` | 否，记录不为空且非陷阱的声明 | 对已经声明为 safe 的指针再次做条件测试时给出诊断 | 真实空指针检查、对象生命期和调用者契约正确性 |
 | `__private` | 否，增加成员访问限制 | 让 `cache->state` 的普通访问触发 `noderef` 诊断 | C 语言权限控制、并发同步和对象所有权 |
 
-把除 uaccess 对照之外的四段教学代码按顺序合并后可以执行：
+把除 uaccess 对照之外的四段教学代码按顺序合并后得到完整的 [`sparse_qualifier_demo.c`](../../../../labs/foundations/c_language/materials/sparse_qualifier_demo.c)，在文件所在目录可以执行：
 
 ```bash
 sparse -Wbitwise sparse_qualifier_demo.c
@@ -791,6 +800,8 @@ gcc -fsyntax-only sparse_qualifier_demo.c
 这组属性的稳定语义可对照 [Sparse annotations 文档](https://sparse.docs.kernel.org/en/v0.6.4/annotations.html)；Linux 6.12 如何用 `__bitwise` 与 `__force` 构造受限整数类型，见 [Linux 6.12 Sparse 类型检查说明](https://docs.kernel.org/6.12/dev-tools/sparse.html#using-sparse-for-typechecking)。本仓库中的版本化定义和普通编译退化继续看 [其他限定与 ACCESS PRIVATE 逃生口](../../../../research/source_reading/compiler_annotations/source_explanations/P01_Linux_6.12_compiler_types注解宏源码实现.md#1.7_其他限定与_ACCESS_PRIVATE逃生口)。
 
 ## 3.7\_ACCESS\_PRIVATE集中管理有意越权
+
+上节的小缓存演示了怎样把字段访问收进对象接口。真实内核中，这种收口还要保证写侧协调和内存顺序；下面用VMA标志与RCU节点锁说明逃生口为何必须留在对象实现内部。
 
 ### 3.7.1\_需求从哪里来\_字段可读不等于允许任意修改
 

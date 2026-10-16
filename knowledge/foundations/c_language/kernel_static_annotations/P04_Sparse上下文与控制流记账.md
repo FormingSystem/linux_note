@@ -13,6 +13,8 @@ domains:
 
 ## 4.1\_类型正确仍然可能在错误时机调用
 
+指针类型正确，只能回答数据通过了哪种入口。共享状态还要求调用发生在合适的时间：下面为记录导入加上一次trylock，跟踪成功、拒绝提交与错误返回各自留下的责任。
+
 ### 4.1.1\_从用户地址类型走到一次带trylock的更新
 
 上一章已经用记录导入场景说明：`struct record __user *` 不能当成普通内核指针解引，必须通过 `copy_from_user()` 把数据导入内核对象。现在再加一个真实工程约束：多个执行路径共享同一个 `state->current`，更新者只愿意尝试取锁，锁正被占用时立即返回 `-EBUSY`，不在这里自旋等待。
@@ -131,6 +133,18 @@ static int try_import_record_bad_exit(const struct record __user *src,
 
 这三类状态彼此不会自动同步。`__user` 类型正确不代表已经持锁；Sparse 账本加一不代表真实硬件原子操作成功；真实锁已经取得也不代表分析器一定看见了对应事件。二者只有在锁原语的正确时间点接入注解，才能在给定翻译单元中形成有用的对照。
 
+继续沿用第一章的阶段编号，把本章新增的校验失败与拒绝提交放入同一周期：
+
+| 阶段 | 当前执行与分支 | 真实功能状态 | Sparse 0.6.4 的聚合计数 |
+| --- | --- | --- | --- |
+| S0 进入 | 已初始化的 `state` 被借给本次调用 | 本调用未取锁 | 0 |
+| S1 导入 | 复制并校验长度，任一步失败直接返回 | `current` 不变，未取锁 | 0 |
+| S2 尝试 | 失败返回 `-EBUSY`；成功进入提交 | 只有成功路径取得锁 | 失败0，成功由 `__cond_lock` 加到1 |
+| S3 提交 | `accepting` 为真则写入，否则返回拒绝状态给调用者 | 两个分支仍持锁 | helper 调用净变化0；调用者仍为1 |
+| S4 退出 | 外层解锁后返回提交结果 | 本调用不再持锁 | 从1减到0，符合退出预期 |
+
+这里假定更新由允许用户复制的进程上下文进入，初始化先于发布，且同 CPU 中断不会重入取得这把锁。锁外对象存活由调用者保证；`accepting=false` 只阻止提交，不阻止新调用触碰 `state`，因此不能单独充当销毁屏障。
+
 ### 4.1.3\_为什么本章现在必须出现
 
 仅凭上一章的类型模型，读者还无法回答下列问题：
@@ -165,7 +179,30 @@ Linux 6.12 定义：
 
 这个限制使 `__must_hold(x)` 必须被读成 **函数体的入口/退出契约和对开发者的锁定意图**，不能宣称它必然在每个调用点识别“正好是这把锁”。例如 `context(x, 1, 1)` 对调用者的数值变化是零；调用点是否真的已持有 `x` 仍不能单靠这个属性形成完整证明。[Sparse context 属性文档](https://sparse.docs.kernel.org/en/v0.6.4/annotations.html#context-ctxt-entry-exit) 给出了稳定语义，[Sparse IR 的 OP\_CONTEXT 说明](https://sparse.docs.kernel.org/en/v0.6.4/IR.html#op-context) 则可用来核对当前实现粒度。
 
+可以立即保存下面的独立文件 [`must_hold_gap.c`](../../../../labs/foundations/c_language/materials/must_hold_gap.c) 检查这个边界。它没有实现真实锁，只让声明和调用之间的缺口可见：
+
+```c
+#ifdef __CHECKER__
+#define must_hold(x) __attribute__((context(x, 1, 1)))
+#else
+#define must_hold(x)
+#endif
+
+extern void commit_locked(int *lock) must_hold(lock);
+
+void missing_lock(int *lock);
+void missing_lock(int *lock)
+{
+    /* 违背调用契约，但这次调用的静态净增量为0。 */
+    commit_locked(lock);
+}
+```
+
+在安装了 Sparse 0.6.4 的实验目录执行 `sparse -Wcontext must_hold_gap.c`。根据该版本 `linearize.c` 的调用展开，`1-1=0` 不产生普通 context 增减指令，因此预期没有这项漏锁诊断。再把声明临时改成 `context(x, 1, 0)`，同一调用变成减一，才会暴露从0到负数的计数问题；这只是检查模型的对照，绝不是修复原函数契约的方法。应修复的是调用者真实取锁路径，而不能用“工具安静”作为正确性证明。
+
 ## 4.3\_context语句标记函数体内的状态变化
+
+函数属性给出了边界预期，分析器还需要知道函数体在哪里改变了计数。接下来把声明和路径事件配对，区分“作者承诺返回时持有”与“哪条分支实际登记了取得”。
 
 ### 4.3.1\_context双下划线语句的语义由谁规定
 
@@ -309,7 +346,7 @@ static int import_record_session_bad(const struct record __user *src,
 | --- | --- | --- | --- |
 | `__acquire(lock)` / `__release(lock)` | Sparse 静态分析 | 抽象 context 计数 | 否 |
 | `smp_load_acquire()` / `smp_store_release()` | Linux 内存顺序 | 编译器/CPU 可观察顺序 | 视架构实现而定 |
-| `spin_lock()` / `spin_unlock()` | 真实锁功能 | 锁状态及其隐含顺序 | 是或进入体系结构实现 |
+| `spin_lock()` / `spin_unlock()` | 真实锁功能 | 锁状态及其隐含顺序 | 依架构与配置兑现；单处理器配置可能主要控制抢占，不能保证都有硬件原子指令 |
 | `lock_acquire()` / `lock_release()` | Lockdep 动态检查 | 当前任务影子账本和历史依赖 | 仅检查器代码，不取得功能锁 |
 
 因此，给函数加 `__acquires(lock)` 不会让它获得互斥性；删除注解也不会取消真实锁，但会失去相应静态诊断。
@@ -325,9 +362,9 @@ trylock 只有成功时才建立持锁状态。若无条件写入静态账本，
 
 ```mermaid
 flowchart TD
-    C["求值真实条件c"] --> Q{"c是否成功"}
-    Q -->|"否"| F["返回0<br/>context不变"]
-    Q -->|"是"| A["Sparse执行__acquire(x)<br/>当前路径计数加一"]
+    C["分析包含真实调用的条件c"] --> Q{"沿哪条条件路径分析"}
+    Q -->|"假"| F["表达式值0<br/>context不变"]
+    Q -->|"真"| A["Sparse处理__acquire(x)<br/>当前路径计数加一"]
     A --> T["返回1<br/>进入成功分支"]
 ```
 
@@ -335,30 +372,34 @@ flowchart TD
 
 ## 4.6\_条件取得的调用时序
 
+下面把同一段调用路径放进 **Sparse 的分析时间**。图中的分支是分析器遍历的控制流，不是运行中的 CPU 向 Sparse 发送消息。真实 trylock 的成功与失败在运行时决定能否进入临界区；分析阶段只依据宏把两条可能路径分别记账。
+
 ```mermaid
 sequenceDiagram
-    participant C as "调用者控制流"
-    participant F as "真实trylock功能"
-    participant S as "Sparse抽象账本"
-    participant H as "要求持锁的helper"
-
-    C->>F: "尝试取得真实锁"
-    F-->>C: "返回成功或失败"
-    alt "成功分支"
-        C->>S: "__acquire(lock)，抽象计数加一"
-        C->>H: "调用__must_hold(lock)函数"
-        H-->>S: "入口1、出口1契约满足"
-        C->>F: "真实unlock"
-        C->>S: "__release(lock)，抽象计数减一"
-    else "失败分支"
-        C->>S: "不登记取得"
-        C-->>C: "不得调用要求持锁的helper"
+    autonumber
+    participant A as "Sparse控制流分析"
+    participant T as "已展开的调用者路径"
+    participant S as "聚合context计数C"
+    A->>S: "S0：以C=0开始分析调用者"
+    A->>T: "S2：遇到__cond_lock中的条件分支"
+    alt "分析成功路径"
+        T-->>A: "真分支包含__acquire(lock)"
+        A->>S: "S2：C从0加到1"
+        T-->>A: "S3：helper声明context(lock,1,1)"
+        A->>S: "净增量0，C仍为1；不验证调用前提"
+        T-->>A: "S4：释放路径包含减一事件"
+        A->>S: "C从1回到0，检查函数退出计数"
+    else "分析失败路径"
+        T-->>A: "没有取得事件，直接返回"
+        A->>S: "S2：C保持0，检查函数退出计数"
     end
 ```
 
-这个时序显示了功能状态与静态状态的配对要求：若功能成功却漏掉静态登记，会产生误报；若功能失败却错误登记，会掩盖真实误用。
+分析 helper 函数体则是另一次分析：它自己的入口计数设为1，正常退出也应为1，不能把这一过程误画成调用现场检查成功。功能动作与注解仍须配对：真实取得成功却漏记，会在后续释放时产生计数告警；真实取得失败却误记，可能掩盖错误。这里的 S0～S4 对应前面完整更新过程，差别只在于观察者是分析器还是运行中的 CPU。
 
 ## 4.7\_cond\_acquires的负值不能按普通计数读取
+
+显式条件宏已经能把加一放进成功分支，但另一个常见写法把条件取得写在函数属性里。它使用负退出值；必须继续核对分析器怎样处理这个特殊值，不能直接套用普通计数算术。
 
 ### 4.7.1\_负一首先是条件退出的哨兵值
 
@@ -468,7 +509,7 @@ static int commit_with_explicit_branch(const struct record *record,
 3. 相关配置分支进入了翻译单元；
 4. 分析器能够追踪当前控制流和包装层；
 5. 条件取得路径确实用 `__cond_lock()` 或等价分支标记登记成功，没有把 `__cond_acquires()` 的负退出值误当成已实现的返回值传播；
-6. 没有通过错误的 `__force`、内联汇编或不可见实现绕开契约。
+6. 没有用不符合真实动作的 `__acquire()` / `__release()` 伪造计数，也没有因不可见实现或缺失的接口注解丢掉事件。`__force` 主要放宽类型转换，不能拿它当成清除 context 状态的通用开关。
 
 即便全部满足，它仍然不证明真实锁实现无缺陷、不证明运行时不存在未建模锁类别依赖，也不证明对象生命期正确。由于本章核对的 Sparse 实现跟踪的是聚合计数，而不是以 `x` 为键的每锁账本，“某次取得与某次释放数量平衡”也不足以证明它们必然对应同一把锁。运行时锁依赖由 [Lockdep 专题](../../../linux/synchronization_and_asynchrony/synchronization/lockdep/大纲.md#1.1_专题定位) 继续检查；类型、动态上下文和对象生命期的分工见 [RCU 类型语义](../../../linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md#23.7_三类检查不能互相替代)。
 

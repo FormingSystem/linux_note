@@ -46,10 +46,12 @@ flowchart TD
 | 层次 | 权威位置 | 当前导读如何处理 |
 | --- | --- | --- |
 | 基础注解宏 | `include/linux/compiler_types.h` | 组织完整定义簇并链接唯一实现讲解 |
-| Sparse 分析器语义 | Sparse 项目 | 只引用官方文档，不把分析器算法复制成 Linux 实现 |
+| Sparse 分析器语义 | Sparse 项目 | 以官方文档与v0.6.4固定源码核对分析边界，不把分析器算法写成Linux实现 |
 | 子系统接入 | `spinlock.h`、`refcount.h`、`rcupdate.h` 等 | 展示代表性调用点，具体功能仍归对应专题 |
 
 ## 1.3\_源码入口分组
+
+下面按消费者分支组织定义簇。先确认普通构建的能力条件，再进入Sparse的类型与路径规则，最后回到普通分支检查退化；每个入口都指向唯一的宏实现说明。
 
 ### 1.3.1\_构建能力门槛
 
@@ -111,6 +113,8 @@ __kernel
 
 ## 1.4\_代表性调用链
 
+定义簇说明有哪些基础能力，调用链则说明子系统在哪里使用它们。以下分别追踪形参类型、成功分支和条件声明，避免从宏名反推真实功能已经完成。
+
 ### 1.4.1\_用户与I/O指针检查
 
 ```text
@@ -147,6 +151,7 @@ raw_spin_trylock(lock)
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant CPP as "预处理器"
     participant CT as "compiler_types.h"
     participant SP as "Sparse"
@@ -181,7 +186,7 @@ sequenceDiagram
 ## 1.7\_当前证据边界
 
 - 本导读确认的是仓库保存的 Linux 6.12.20 `compiler_types.h` 与代表性调用点；不声明其他内核版本宏组织完全相同。
-- 当前 `.config` 中的 `CONFIG_TREE_RCU`、`CONFIG_PREEMPT_RCU` 不能推出构建时一定启用 `CONFIG_DEBUG_INFO_BTF`，也不能推出开发机已经运行 Sparse。
+- RCU实现配置与 `CONFIG_DEBUG_INFO_BTF`、Sparse执行是不同条件；不能由Tree RCU或Preempt RCU是否开启推断后两者。
 - BTF 能力还依赖编译器属性与 `pahole`；仅看到源码分支不能证明最终 `.BTF` 已包含标签。
 - Sparse 的分析能力受其版本、配置分支、注解完整性和翻译单元可见性限制。
-- 本地 Windows 会话没有 Sparse 运行环境，因此实验观测仍待 Linux 环境补录。
+- 本轮核对Sparse v0.6.4提交 `c4706aa764f3ae68258ba60be6325a5662900362` 的调用线性化与context检查实现，确认普通 `context(x,1,1)` 调用不检查持锁前提、计数也不按锁身份区分。没有完成该版本分析器在受支持环境中的诊断实跑；实验预期不冒充实测记录。

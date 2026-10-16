@@ -13,6 +13,8 @@ domains:
 
 ## 5.1\_Sparse分支结束后还剩下什么问题
 
+静态分析完成后，还需要生成真正运行的内核。接下来沿同一段更新代码观察普通编译分支，检查哪些注解消失、哪些功能表达式必须保留，以及哪些类型信息还能进入产物。
+
 ### 5.1.1\_从Sparse账本走向真正用于运行的构建产物
 
 第 3 章已经说明，Sparse 可以把 `__user`、`__percpu` 和 `__rcu` 解释成彼此不同的逻辑地址域；第 4 章又说明，`__must_hold()`、`__acquire()` 和 `__release()` 可以形成沿控制流传播的 context 账本。这两类能力都发生在 **Sparse 分析阶段**：它们帮助开发者发现类型或路径契约冲突，却不负责生成最终运行的内核指令。
@@ -179,6 +181,8 @@ C类型关系
 
 ## 5.4\_DWARF与BTF分别承担什么
 
+类型标签值得保留，但它不会自己从源码走到最终镜像。下面把生成者、转换工具和存储格式分开，追踪一次普通内核构建怎样把调试类型送给后续消费者。
+
 ### 5.4.1\_pahole为什么会出现在内核BTF生成链中
 
 第一次看到 `pahole` 时，最容易把它误认为一种调试信息格式，或者误以为它是内核运行后负责检查 BTF 的守护程序。实际上，`pahole` 是一个 **构建期用户空间命令**，属于名为 `dwarves` 的工具集；`dwarves` 是项目和软件包名，不是另一种调试格式。`pahole` 的命令名也不是需要背诵英文展开的标准缩写，理解它在本章中的角色比猜名字来源更重要。
@@ -267,6 +271,42 @@ ptr
 
 因此，DWARF 名称中的 `DW_TAG_*` 不是这里所说的字符串 type tag。前者是 DWARF 自己的节点分类，后者是附加到 C 类型并由工具链传递的语义。
 
+### 5.5.1\_先在一个小目标文件里看见标签
+
+不必先编译整个内核，就能观察“属性进入调试信息”这一段。保存下面完整文件为 `type_tag_probe.c`；实验只编译、查看，不运行其中的指针访问，也不需要用户空间或内核头文件：
+
+```c
+#if !__has_attribute(btf_type_tag)
+#error 当前编译器不支持本实验属性
+#endif
+
+struct tag_sample {
+    int __attribute__((btf_type_tag("user"))) *source;
+};
+
+struct tag_sample sample;
+
+unsigned int tagged_pointer_size(void)
+{
+    /* 只观察类型大小，不解引用source。 */
+    return sizeof(sample.source);
+}
+```
+
+在文件所在目录使用Clang和配套的 `llvm-dwarfdump`：
+
+```bash
+clang --target=x86_64-unknown-linux-gnu -std=gnu11 -O0 -g -gdwarf-5 \
+    -c type_tag_probe.c -o type_tag_probe.o
+llvm-dwarfdump type_tag_probe.o
+```
+
+这里显式选择x86-64 Linux目标以固定ELF与指针宽度，`-c` 只生成目标文件，不要求本机能运行目标程序。`-g -gdwarf-5` 请求DWARF 5调试信息。本轮使用Clang 18.1.8可见 `tag_sample` 大小为8字节，以及 `DW_TAG_LLVM_annotation` 中的 `btf_type_tag` 和 `user` 字符串。节点显示方式属于这个工具版本，不能要求所有编译器逐字相同。[Clang 18.1.8 属性说明](https://releases.llvm.org/18.1.8/tools/clang/docs/AttributeReference.html#btf-type-tag)给出了该标签的调试信息边界。
+
+先预测，再分别做两项修改：保留属性却去掉 `-g -gdwarf-5`，调试类型标签应不再出现；保留调试选项却删除属性，结构体仍只含一个8字节指针，但不再含 `user` 注解。两项对照分别区分“有属性但未生成调试信息”和“有类型记录但未请求标签”。保存观察结果后可以删除这次生成的 `.o` 文件。
+
+此处只证明标签进入DWARF，尚未经过 `pahole`，不能报告已经验证最终BTF。下一节再把这段小链条放回Linux构建条件中。
+
 ## 5.6\_BTF\_TYPE\_TAG的启用门槛
 
 下面开始进入版本化实现。先从 [Linux 6.12 编译器与 Sparse 注解源码导读](../../../../research/source_reading/compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务)建立源码坐标，再通过[普通编译模块链](../../../../research/source_reading/compiler_annotations/navigation/P02_Linux_6.12_compiler_types注解模块概念导读.md#2.6_普通编译模块链)理解职责；具体宏体只在 [BTF TYPE TAG能力门槛](../../../../research/source_reading/compiler_annotations/source_explanations/P01_Linux_6.12_compiler_types注解宏源码实现.md#1.4_BTF_TYPE_TAG能力门槛)唯一展开。
@@ -297,6 +337,8 @@ ptr
 还要注意，源码中出现非空宏分支只证明“构建条件允许编译器接收该属性”，不能单独证明某个最终 `vmlinux` 或模块的 `.BTF` 中一定保留了目标标签。完整证据还要观察实际编译参数、DWARF、`pahole` 转换结果和最终 BTF 转储。
 
 ## 5.7\_普通分支中的地址域宏矩阵
+
+能力条件已经确定，现在才能逐个回答普通编译时每个地址域宏变成什么。这里同时出现Linux注解、构建标记和工具名称，先辨明身份再读分支矩阵。
 
 ### 5.7.1\_读表以前先拆开地址域名和工具名
 
@@ -411,6 +453,8 @@ Linux 内核需要防止未初始化的内核栈内容随着结构体复制泄�
 
 ## 5.12\_builtin\_warning回退只提供表达式形状
 
+条件宏需要保留真实条件，另一类检查宏却必须删除检查参数。下面用一个会分配编号的表达式观察这种回退：源码里出现两次实参文本，是否就意味着业务调用执行两次？
+
 ### 5.12.1\_需求背景\_静态检查参数不能变成第二次业务求值
 
 假设一个公共宏要返回调用者传入的表达式，同时希望 Sparse 在实参带有自增、赋值或普通函数调用等副作用时发出提醒。检查只应发生在分析阶段；普通 GCC/Clang 构建必须继续得到合法表达式，而且真正的业务实参仍然只能求值一次。
@@ -431,7 +475,9 @@ Sparse 提供 `__builtin_safe_p()` 与 `__builtin_warning()` 来表达这项检�
 #include <stdio.h>
 
 /* 模拟Linux非__CHECKER__分支提供的普通编译回退。 */
+#ifndef __CHECKER__
 #define __builtin_warning(x, y...) (1)
+#endif
 
 /*
  * Sparse能够理解检查参数；普通编译时，检查参数被上面的回退删除。
@@ -476,7 +522,7 @@ int main(void)
 }
 ```
 
-普通构建和执行方式为：
+把完整程序保存为 [`warning_shape_demo.c`](../../../../labs/foundations/c_language/materials/warning_shape_demo.c)，在该文件所在的实验目录进行普通构建和执行：
 
 ```bash
 gcc -std=gnu11 -O0 -Wall -Wextra warning_shape_demo.c \
@@ -504,13 +550,15 @@ CHECK_THEN_EVALUATE(allocate_record_id())
 
 如果普通回退错误地引用或求值 `x`，普通编译器不仅可能遇到不认识的 `__builtin_safe_p()`，还可能让带副作用的实参在检查位置和业务位置各执行一次。这个完整例子因此固定了三项设计要求：检查参数在普通分支消失，外层表达式仍有合法整数形状，业务实参求值次数不变。
 
-在 Sparse 路径中，`base + 2` 属于无副作用表达式，`allocate_record_id()` 这类普通函数调用则可触发提醒；Sparse 负责诊断而不生成这个演示程序的运行指令。两条路径的逐步宏展开见 [GNU可变参数宏与占位回退](P02_预处理器_GNU属性与表达式扩展.md#2.7_GNU可变参数宏与占位回退)。
+在 Sparse 路径中，`#ifndef __CHECKER__` 不提供回退，分析器才会看到自己的内建检查：`base + 2` 属于无副作用表达式，`allocate_record_id()` 这类普通函数调用则可触发提醒。若删除这层条件、始终定义常量回退，Sparse 也只会看到常量1，提醒会一起消失。Sparse 负责诊断而不生成这个演示程序的运行指令。两条路径的逐步宏展开见 [GNU可变参数宏与占位回退](P02_预处理器_GNU属性与表达式扩展.md#2.7_GNU可变参数宏与占位回退)。
 
 ### 5.12.3\_从实例返回阅读纪律
 
 只有把宏放回完整调用表达式，才能知道常量 `1` 是被保存后丢弃、用于条件选择，还是参与更大的计算。宏名只是作者提供的入口名称，证明语义必须来自当前配置下的展开结果、实参求值次数与调用位置；不能因为名字里有 `warning` 就宣称普通构建会产生警告。
 
 ## 5.13\_从源码到结果的观察路径
+
+已经知道元数据和真实执行不能互证，接下来就可以选择观察入口。先确认构建系统究竟把哪些文件送给Sparse，再按问题选择预处理、反汇编或类型转储，避免拿错层次的成功结果。
 
 ### 5.13.1\_make\_C=1与C=2决定检查哪些文件
 

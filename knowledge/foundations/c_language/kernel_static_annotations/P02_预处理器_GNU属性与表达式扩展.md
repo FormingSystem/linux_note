@@ -13,6 +13,8 @@ domains:
 
 ## 2.1\_从处理链进入语法层
 
+上一章已经分清谁在读取注解。现在把视线缩到一个宏调用内部：相同的C源码外形，怎样容纳普通编译器和Sparse各自需要的语义？
+
 ### 2.1.1\_读者为什么会在这里卡住
 
 上一章已经把源码契约、静态分析状态、编译元数据和功能运行状态分开，也建立了“先找消费者，再判断语义”的处理链坐标。这个结论解决了一个重要误解：`__user`、`__must_hold()` 或 `__cond_lock()` 并不是内核运行时统一调用的一组特殊函数。
@@ -84,6 +86,8 @@ if (raw_spin_trylock(&state->lock)) {
 
 ## 2.2\_预处理条件与宏替换只处理记号
 
+条件取得的宏里既有数字又有分支。先把数字放回一次取得与释放的过程，再判断预处理器究竟替换了什么，才能避免把记号替换误认为加锁。
+
 ### 2.2.1\_先看为什么需要取得与释放标记
 
 继续沿用 `update_record()` 的锁保护场景。`state->current` 只能在当前执行路径持有 `state->lock` 时修改，因此一次成功操作具有三个功能阶段：
@@ -98,13 +102,13 @@ if (raw_spin_trylock(&state->lock)) {
 Sparse影子账本
   当前路径计数0
     → __acquire(&state->lock)，计数加1
-    → 调用要求计数为1的commit_record()
+    → 调用声明为入口1、出口1的commit_record()，调用处计数不变
     → __release(&state->lock)，计数减1并回到0
 ```
 
-这里的 `0` 和 `1` 描述的是 **Sparse 当前分析路径对同一个上下文身份的抽象计数**：
+这里的 `0` 和 `1` 描述的是 **Sparse 0.6.4 当前分析路径的聚合 context 计数**。本例只有一把锁，所以可以用这本账对照一次取得与释放；一旦涉及多把锁，就不能把它理解成每把锁各有一个独立计数：
 
-- `0` 表示当前路径没有登记持有 `&state->lock`，不表示整个系统中的锁字一定处于未锁状态；另一个 CPU 仍可能持有真实锁；
+- `0` 表示当前路径净计数为0；在本例中尚未登记取得，不表示整个系统中的锁字一定处于未锁状态，另一个 CPU 仍可能持有真实锁；
 - `1` 表示当前路径已经登记一次持有，不是把真实锁字设置为整数 `1`，也不是 C 布尔值；
 - `__acquire(x)` 和 `__release(x)` 是路径上的增减事件，真实 trylock 与 unlock 仍由锁原语完成。
 
@@ -123,7 +127,7 @@ Sparse影子账本
 #define __releases(x)  __attribute__((context(x, 1, 0)))
 ```
 
-这里的 `0, 1` 或 `1, 0` 不是增量，而是函数进入与正常退出时应满足的计数。例如 `context(x, 0, 1)` 表示调用前为 0、返回后为 1；`context(x, 1, 0)` 表示调用前为 1、返回后为 0。路径事件与函数边界契约的完整检查留到第 4 章，本节只需要先知道这些数字来自同一轮“取得—使用—释放”过程，而不是凭空约定。
+这里的 `0, 1` 或 `1, 0` 不是增量，而是分析函数体时采用的入口与正常出口计数。调用这些函数时，Sparse 0.6.4 把二者的差计入调用者：`0, 1` 增加1，`1, 0` 减少1，`1, 1` 不改变计数。尤其不能把最后一种写成“调用前自动检查已经持锁”；这个版本不执行这种调用点前提检查。路径事件与函数边界的完整检查留到第4章，本节先分清“函数体假设”与“调用点净变化”。
 
 ### 2.2.2\_再看预处理器怎样选择记号
 
@@ -160,6 +164,8 @@ Sparse影子账本
 只有完成这一步，才轮到 Sparse 或普通编译器解释剩余语法。Sparse 把 `__context__()` 当成分析事件；普通编译器只看到两个无功能副作用的空表达式。预处理器既没有取得锁，也没有自己维护 0、1 计数。
 
 ## 2.3\_GNU属性是语法容器而不是统一功能
+
+条件编译选定了分析分支以后，工具才会遇到属性。相同的双括号可以承载完全不同的规则；要从属性名称、附着位置和当前解析器一起判断效果。
 
 ### 2.3.1\_先区分语法入口与属性名称
 
@@ -246,12 +252,28 @@ static int import_record(const char *text)
     return 0;
 }
 
+#ifdef BAD_UNUSED_RESULT
 static void broken_import(const char *text)
 {
     /* 故意忽略返回值，GCC可在构建阶段给出警告。 */
     parse_record(text);
 }
+#endif
 ```
+
+把这一完整片段保存为 [`attribute_result_probe.c`](../../../../labs/foundations/c_language/materials/attribute_result_probe.c)，在同目录用GCC或Clang做两轮目标文件编译，不需要链接可执行文件：
+
+```bash
+# 正确基线：片段中的static函数只为分析使用，关闭未使用函数噪声。
+gcc -std=gnu11 -Wall -Wextra -Werror -Wno-unused-function \
+    -c attribute_result_probe.c -o attribute_result_probe.o
+
+# 只打开丢弃返回值的路径，预期因unused-result诊断而失败。
+gcc -std=gnu11 -Wall -Wextra -Werror -Wno-unused-function \
+    -DBAD_UNUSED_RESULT -c attribute_result_probe.c -o attribute_result_bad.o
+```
+
+这里刻意使用 `-c`：本轮GCC 14.2对这个片段使用 `-fsyntax-only` 时未报告丢弃返回值，而进入目标文件编译后才产生诊断；Clang 18.1.8在语法检查阶段已经能报告。检查阶段本身也是证据条件。预测第二轮以后，再把 `MUST_USE_RESULT` 的定义暂时改为空：两轮都可能通过。这说明警告来自声明上的编译器属性，不来自函数名，也不来自运行时打印。实验完成后恢复属性并删除本例生成的 `.o`；擦除契约只是对照，不是修复忽略错误结果的办法。
 
 预处理器先把 `MUST_USE_RESULT` 换成 GNU 属性语法。GCC 解析 `parse_record()` 的声明时识别 `warn_unused_result`，把“返回值必须被使用”挂到函数内部表示上。分析 `import_record()` 的调用时，返回值进入 `if`，契约得到满足；分析 `broken_import()` 时，调用结果形成一个被丢弃的表达式，因此 GCC 可以根据对应警告选项报告问题。这里的警告来自编译器对调用表达式的静态检查，不来自 `parse_record()` 函数体主动打印日志。
 
@@ -277,7 +299,7 @@ Sparse 的路径与此平行而不是包含在 GCC 里面：`__user` 在 `__CHEC
 5. `== p` 继续要求两边类型可比较；
 6. 最外层 `(void)` 丢弃没有业务意义的比较结果。
 
-工具识别的是展开后的类型构造，不是 `rcu_check_sparse` 这个名字。
+工具识别的是展开后的类型构造，不是 `rcu_check_sparse` 这个名字。这里讨论固定对象类型；一般 `typeof` 遇到可变修改类型时另有求值规则。即使本例的 `typeof(*p)` 不读取对象，宏后面的转换与比较仍各出现一次 `p`，不能把整个宏称为“实参只求值一次”；传入带副作用的表达式还可能制造未排序的重复修改，应使用已经取得的指针值。
 
 关于 `typeof`、`container_of()` 等通用 GNU C 用法，继续参考 [GNU C 扩展](../gnu_extensions/C_language_extension.md#1.3.1_typeof_获取表达式类型)。本专题只讨论它怎样承载分析契约。
 
@@ -310,6 +332,8 @@ GNU C 允许：
 因此不会为了静态记账多执行一次真实加锁。
 
 ## 2.6\_typeof与强制转换怎样构造受控逃生口
+
+前面用typeof构造了分析类型，也用语句表达式保留了业务结果。接下来考虑对象实现者需要访问受限成员的情况：怎样留下一个可审查的转换入口，同时不替代对象自身的锁协议？
 
 ### 2.6.1\_先看它要约束的真实场景
 
@@ -400,6 +424,8 @@ raw_spin_lock(&bucket->lock);
 
 ## 2.7\_GNU可变参数宏与占位回退
 
+受限类型可以在普通构建中退化，但检查表达式往往还嵌在别的宏里。删除检查时必须保留外层所需的表达式形状，并保证业务实参没有被多执行一次。
+
 ### 2.7.1\_为什么回退宏必须接住不定数量的参数
 
 Sparse 认识一个专用内建表达式 `__builtin_warning()`：它可以接收检查条件和常量字符串，在条件能够确定为真时输出静态警告，并把整个表达式的值保持为整数 `1`。普通 GCC 构建不需要执行这项 Sparse 检查，因此 Linux 在非 `__CHECKER__` 分支提供占位回退：
@@ -456,7 +482,7 @@ __builtin_warning(
 
 因此，GCC 不会再看到 `__builtin_safe_p()`，也不会求值藏在该检查参数里的 `counter++`。后面的 `(void)(expr)` 才执行真正的 `counter++`，所以业务实参仍然只求值一次。占位宏的用途由此完整闭合：**接受 Sparse 调用外形，删除普通编译器不认识的检查参数，保留外层表达式需要的类型和值形状，同时不额外执行业务实参。**
 
-这个例子也说明了为什么不能根据 `__builtin_warning` 的名字推断普通构建会打印警告：Sparse 分支由分析器内建逻辑产生诊断，普通分支只是常量回退。具体实现可对照 [Sparse 官方源码中的 `__builtin_warning()`](https://git.kernel.org/pub/scm/devel/sparse/sparse.git/tree/builtin.c)及其[副作用检查验证样例](https://git.kernel.org/pub/scm/devel/sparse/sparse.git/tree/validation/builtin_safe1.c)。
+这个例子也说明了为什么不能根据 `__builtin_warning` 的名字推断普通构建会打印警告：Sparse 分支由分析器内建逻辑产生诊断，普通分支只是常量回退。具体实现可对照 [Sparse v0.6.4 中的 `__builtin_warning()`](https://git.kernel.org/pub/scm/devel/sparse/sparse.git/tree/builtin.c?h=v0.6.4)及其[副作用检查验证样例](https://git.kernel.org/pub/scm/devel/sparse/sparse.git/tree/validation/builtin_safe1.c?h=v0.6.4)。
 
 ## 2.8\_一套可复用的手工展开顺序
 
@@ -464,7 +490,7 @@ __builtin_warning(
 
 1. 先确定当前配置定义了哪些条件宏；
 2. 删除不会进入翻译单元的条件分支；
-3. 从最外层宏逐层替换参数；
+3. 按宏规则展开实参、替换并重新扫描；遇到字符串化 `#` 或拼接 `##` 时单独处理，不把它们当成普通文本替换；
 4. 标出剩余的 GNU C 扩展和工具专用记号；
 5. 判断属性究竟附着在哪个声明或类型上；
 6. 判断表达式是否会求值，是否只用于形成类型约束；

@@ -65,7 +65,7 @@ check-all:
 	$(SPARSE) $(SPARSE_FLAGS) $(ALL_BAD_FLAGS) $(SOURCE)
 
 verify: compile-compiler
-	sh ./verify.sh
+	SPARSE="$(SPARSE)" SPARSE_FLAGS="$(SPARSE_FLAGS)" sh ./verify.sh
 
 preprocess-sparse:
 	$(CC) -E -P -D__CHECKER__ $(SOURCE)

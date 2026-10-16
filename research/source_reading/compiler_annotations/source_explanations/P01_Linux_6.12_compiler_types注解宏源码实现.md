@@ -133,7 +133,7 @@ __chk_io_ptr(const volatile void __iomem *ptr)
 | 路径 | 输入 | 分析状态变化 | 生成代码 |
 | --- | --- | --- | --- |
 | Sparse声明 | 指针声明 | 增加逻辑地址域与noderef限定 | 无目标代码 |
-| Sparse调用检查函数 | 实参表达式 | 执行类型兼容检查 | 空函数通常不产生业务代码 |
+| Sparse调用检查函数 | 实参表达式 | 执行类型兼容检查 | Sparse检查不生成内核目标代码 |
 | 普通编译 | 相同友好宏 | 无Sparse类型状态 | 空、插件属性或BTF标签 |
 
 ### 1.5.3\_可修改性说明
@@ -169,11 +169,13 @@ __chk_io_ptr(const volatile void __iomem *ptr)
 
 `context(x, entry, exit)` 是函数声明属性。调用点用 `exit - entry` 更新抽象状态，函数体分析则检查各返回路径能否满足声明。`__context__(x, delta)` 直接在当前控制流上增加或减少计数。
 
+这里的普通非负计数规则以Sparse v0.6.4提交 `c4706aa764f3ae68258ba60be6325a5662900362` 为边界。[`linearize.c` 的调用展开](https://git.kernel.org/pub/scm/devel/sparse/sparse.git/tree/linearize.c?h=v0.6.4#n1538)只在存在检查标志或非零增量时生成 `OP_CONTEXT`；因此 `context(x,1,1)` 的普通调用不会检查当前计数是否为1。[`sparse.c` 的context检查](https://git.kernel.org/pub/scm/devel/sparse/sparse.git/tree/sparse.c?h=v0.6.4#n43)沿基本块传播一个聚合整数，没有用 `context_expr` 为不同锁各建账本。函数体的入口/出口要求、调用处净变化和真实锁身份必须分开评审。
+
 这里没有任何真实锁字段，也没有 CPU acquire/release 内存序。底层锁函数必须另外完成原子取得、等待、失败返回和释放。
 
 ### 1.6.2\_cond\_acquires的特殊退出值
 
-`context(x, 0, -1)` 中的负退出值不能作为普通目标计数读取。它表达条件取得的特殊情况；当前 Sparse 不能仅凭函数返回值自动把调用者真分支变成一次取得。因此在分析调用点时，仍要确认是否存在 `__cond_lock()` 这种把 `__acquire()` 放入成功表达式的包装。
+`context(x, 0, -1)` 中的负退出值不能作为普通目标计数读取。它表达条件取得的特殊情况；Sparse 0.6.4将调用点负退出值归一为0，没有仅凭函数返回值把调用者真分支变成一次取得。因此在分析调用点时，仍要确认是否存在 `__cond_lock()` 这种把 `__acquire()` 放入成功表达式的包装。
 
 这也是修改 `refcount_dec_and_lock*()` 一类接口时的风险：函数声明出现 `__cond_acquires()` 只能说明作者表达了条件语义，不能直接证明所有包装层和调用者分支都得到精确跟踪。
 
@@ -186,22 +188,23 @@ __chk_io_ptr(const volatile void __iomem *ptr)
     __cond_lock(lock, _raw_spin_trylock(lock))
 ```
 
-Sparse 分支的端到端过程：
+Sparse 分支的端到端过程发生在分析器内部，真实锁函数此时没有在目标CPU上运行：
 
 ```mermaid
 sequenceDiagram
-    participant C as "raw_spin_trylock调用者"
-    participant F as "_raw_spin_trylock真实功能"
-    participant M as "__cond_lock宏"
-    participant S as "Sparse当前路径context"
+    autonumber
+    participant P as "Sparse预处理与解析"
+    participant C as "展开后的条件控制流"
+    participant S as "Sparse聚合context"
 
-    C->>F: "执行真实尝试"
-    F-->>M: "返回0或1"
-    alt "返回1"
-        M->>S: "__context__(lock,1)"
-        M-->>C: "表达式值1"
-    else "返回0"
-        M-->>C: "表达式值0，账本不变"
+    P->>C: "将真实调用表达式保留为条件c"
+    P->>C: "真分支放入__context__(lock,1)，末值1"
+    alt "分析c为真路径"
+        C->>S: "处理加一事件"
+        C-->>P: "沿条件值1的后续路径继续分析"
+    else "分析c为假路径"
+        C->>S: "没有取得事件，计数不变"
+        C-->>P: "沿条件值0的后续路径继续分析"
     end
 ```
 
@@ -215,7 +218,7 @@ sequenceDiagram
 - 失败、回滚和取消路径是否错误登记；
 - 每个正常与错误返回的计数；
 - trylock 成功条件是否进入调用者可见分支；
-- 嵌套取得是否使用同一上下文身份；
+- 真实取得与释放是否匹配同一对象；聚合计数无法替代这项身份核对；
 - 普通编译分支是否改变实参求值次数；
 - `-Wcontext` 正确与错误样例。
 
@@ -307,6 +310,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant SRC as "调用方源码"
     participant CPP as "预处理器"
     participant CT as "compiler_types.h"
@@ -364,4 +368,4 @@ sequenceDiagram
 - 本篇宏体来自仓库保存的 [`include/linux/compiler_types.h`](../../linux/include/linux/compiler_types.h)，版本身份见 [Linux 源码阅读基线](../../linux/SOURCE_BASELINE.md#1.1_当前来源)。
 - 可执行的单变量反例、消费者对照、自动断言和 Kbuild 接入见 [Sparse 地址空间与上下文记账研究型实验](../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标)。
 
-当前 Windows 会话没有 Sparse 可执行环境，因此源码位置、宏展开关系、链接和实验源文件可以静态核对，但不能把预期警告描述为本次已运行结果。
+本轮已核对固定Linux宏定义和Sparse v0.6.4分析器源码；普通编译、预处理及脚本控制逻辑可以分别验证，但没有完成受支持环境中的Sparse诊断实跑，也没有构建或加载实验内核模块。正文中的预期警告不属于本次实测记录。
