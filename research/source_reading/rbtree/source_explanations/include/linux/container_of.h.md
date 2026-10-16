@@ -8,6 +8,8 @@ domains: [linux, source_reading]
 
 # 第1章\_container\_of.h成员地址还原实现
 
+树槽保存嵌入节点的地址，业务却要读取外围对象的键和载荷。container_of 根据已知成员偏移还原外围地址；类型、成员身份和对象寿命必须先成立，宏本身不会替调用者发现这些事实。
+
 上游位置 `include/linux/container_of.h`，证据为 NXP `linux-imx` 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`（Linux 6.12.20），[原文件](../../../../linux/include/linux/container_of.h)保持原文。先读[布局与所有者导读](../../../navigation/P07_节点布局与编码状态导读.md#7.4_从嵌入成员回到所有者)，再对应本页 GNU C 语句。这里的编译期设施不受 Tiny/Tree RCU 选择影响，也不提供任何一种读侧保护。
 
 ## 1.1\_一次还原中的求值与类型检查

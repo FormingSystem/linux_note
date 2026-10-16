@@ -8,6 +8,8 @@ domains: [linux, source_reading]
 
 # 第1章\_eventpoll.c注册对象复合键
 
+同一文件对象可以由不同描述符引用，仅记 fd 或仅记 file 都不足以表达这里使用的注册键。epoll 的注册树以两者组成身份；就绪事件另有存储和交付路径。以下只追踪注册索引的查找与接入。
+
 本页对应[内核调用场景导读](../../navigation/P10_内核调用场景与选择边界导读.md#10.2_按排序键和业务问题逐项阅读)。上游相对位置为 `fs/eventpoll.c`，来源为 NXP linux-imx 官方提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`（Linux 6.12.20），文件 Git blob 为 `1a06e462b6efba8824456cffebad040720c4226a`。选择性保留下面的完整函数，未列出的子系统过程不由本页代替。原许可证及上下文可在[固定源文件](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/fs/eventpoll.c)核对。
 
 中文 Doxygen 为仓库补充，不是上游注释；函数语句保持固定版本。
@@ -108,3 +110,38 @@ static void ep_rbtree_insert(struct eventpoll *ep, struct epitem *epi)
 ```
 
 返回[场景导读](../../navigation/P10_内核调用场景与选择边界导读.md#10.2_按排序键和业务问题逐项阅读)与[总索引](../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。本页源码核对不是子系统构建、运行、并发或性能验证。
+
+## 1.4\_注册身份与就绪交付分开追踪
+
+查询时 ffd 和 rbp 属于当前调用，ep->rbr 与 epitem.ffd/rbn 属于共享注册集合。ep->mtx 的持有条件来自外层；这些短函数不会自行把整个注册过程锁住。rdllist/ovflist 是就绪路径的状态，不能从 rbr 的次序推导事件交付次序。
+
+```mermaid
+flowchart LR
+    caller[持有ep.mtx的调用者] -->|file及fd| local[栈上ffd与rbp]
+    local -->|ep_cmp_ffd比较后选孩子| tree[共享ep.rbr]
+    tree -->|rbn还原对象| epi[epitem：ffd身份及rbn]
+    epi -->|ep_find返回候选| caller
+    caller -->|策略检查后才接入新对象| insert[ep_rbtree_insert]
+    insert -->|改孩子槽及最左缓存| tree
+    ready[rdllist及ovflist] -->|另一条就绪路径| delivery[事件交付]
+```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant c as 已建立保护的注册调用者
+    participant f as ep_find及局部ffd
+    participant t as ep.rbr与epitem
+    c->>f: 提供file和fd
+    f->>f: ep_set_ffd构造本次查询键
+    f->>t: 沿孩子槽比较复合键
+    t-->>c: 已有注册项或NULL
+    alt 已有匹配
+        c->>c: 外层按请求类型决定后续
+    else 外层决定新增且其他前提已成立
+        c->>t: ep_rbtree_insert按同一比较器找空槽
+        c->>t: rb_link_node及缓存修复
+    end
+```
+
+这个时序只覆盖本页两个入口的衔接，不省略成完整 epoll_ctl 实现。修改复合键必须同时核对查询、插入和外层注册政策；不能把内部“相等向左”当成允许重复注册。修改缓存维护须验证最左身份，修改返回对象用法须检查锁外寿命，不能从 safe 名称或查找成功推导长期引用。

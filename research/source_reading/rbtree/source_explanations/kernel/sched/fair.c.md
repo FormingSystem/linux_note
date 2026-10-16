@@ -8,6 +8,8 @@ domains: [linux, source_reading]
 
 # 第1章\_fair.c排序资格与候选选择
 
+公平调度的候选选择同时面对两个问题：谁在当前虚拟时间下有资格运行，以及合格者中谁的虚拟截止时间更早。固定实现按 deadline 排树，用 vruntime 与子树摘要检查资格；仅取最左节点不能完成整个选择。
+
 本页对应[内核调用场景导读](../../../navigation/P10_内核调用场景与选择边界导读.md#10.2_按排序键和业务问题逐项阅读)。上游相对位置为 `kernel/sched/fair.c`，来源为 NXP linux-imx 官方提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`（Linux 6.12.20），文件 Git blob 为 `58ba14ed8fbcb98ef1d2bb6779aae1a51c71e595`。选择性保留下面的完整函数，未列出的子系统过程不由本页代替。原许可证及上下文可在[固定源文件](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/kernel/sched/fair.c)核对。
 
 中文 Doxygen 为仓库补充，不是上游注释；函数语句保持固定版本。
@@ -44,6 +46,8 @@ static inline bool __entity_less(struct rb_node *a, const struct rb_node *b)
 ```
 
 ## 1.2\_资格由虚拟运行时间另行判定
+
+“有资格”在这里要求候选虚拟运行时间没有超过当前加权虚拟时间。cfs_rq->min_vruntime 是整条队列计算相对值的基准；se->min_vruntime 是节点子树的摘要，虽同名却不在同一地址。entity_key 以实体 vruntime 减队列基准，scale_load_down 将调度权重缩放后参加加权计算。
 
 avg_vruntime 与 avg_load 保存加权计算的状态；若当前实体仍 on_rq，把它的贡献加入局部 avg/load。最后以乘法比较避免先做平均除法导致精度丢失。此处只解释容器剪枝读取什么，不把完整权重、lag 更新和调度公平性证明压缩成一个比较式。
 
@@ -114,7 +118,9 @@ static void __dequeue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 
 ## 1.4\_先取合格候选再与当前实体比较
 
-入口先读树根、最左实体与 curr。单实体、当前资格和 RUN_TO_PARITY 分支可能提前返回。一般路径先试最左的资格，再用左子树 min_vruntime 判断是否可能存在更早的合格候选；左边不合格才检查自身或进入右边。found 还会比较仍合法的 curr，因此返回值不能简化为固定取 rb_first_cached。
+EEVDF（Earliest Eligible Virtual Deadline First，最早合格虚拟截止时间优先）把资格与截止时间分开。RUN_TO_PARITY 是调度特性开关，允许满足本节条件的当前实体继续运行；它不是树的颜色或排序位。
+
+入口先读树根、最左实体与 curr。单实体分支可能提前返回；多实体路径先过滤当前资格，再判断 RUN_TO_PARITY 是否允许早退。一般路径先试最左的资格，再用左子树 min_vruntime 判断是否可能存在更早的合格候选；左边不合格才检查自身或进入右边。found 还会比较仍合法的 curr，因此返回值不能简化为固定取 rb_first_cached。源码注释的 EEVD 指最早合格虚拟截止时间候选，HACK 是上游对 set_next_entity 中相关处理的描述，不是本函数的新接口。
 
 ```c
 /**
@@ -188,3 +194,53 @@ found:
 ```
 
 返回[场景导读](../../../navigation/P10_内核调用场景与选择边界导读.md#10.2_按排序键和业务问题逐项阅读)与[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。本页源码核对不是子系统构建、运行、并发或性能验证。
+
+## 1.5\_一次选择读取哪几组状态
+
+__enqueue_entity/__dequeue_entity 改共享统计、拓扑和摘要；pick_eevdf 的 node/se/curr/best 只是本次选择的局部变量。当前实体可能还需单独参与比较，不能由树根或最左缓存独自代表所有候选。
+
+```mermaid
+flowchart LR
+    caller[调度器的受保护调用环境] -->|组织接入与摘除| tree[cfs_rq.tasks_timeline：树根与最左缓存]
+    tree -->|run_node连接候选| se[sched_entity：deadline及vruntime]
+    se -->|增强维护| summary[各se.min_vruntime及min_slice]
+    stats[cfs_rq：avg_vruntime及avg_load与基准min_vruntime] -->|资格计算| pick[pick_eevdf局部node及best]
+    summary -->|左子树是否可能合格| pick
+    tree -->|根与最左候选| pick
+    curr[cfs_rq.curr及on_rq等当前状态] -->|单独核对资格和截止时间| pick
+    pick -->|返回候选地址| caller
+```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant c as 调度器调用者
+    participant p as pick_eevdf局部状态
+    participant t as 队列树及子树摘要
+    participant v as 队列统计与当前实体
+    c->>p: 在要求的保护条件下选择
+    p->>t: 读取根及最左候选
+    p->>v: 读取curr和nr_running
+    alt nr_running为1
+        p-->>c: 返回curr或最左实体
+    else 多实体路径
+        p->>v: 排除已离队或不合格的curr
+        alt RUN_TO_PARITY开启且有效curr的vlag等于deadline
+            p-->>c: 返回curr
+        else 一般搜索
+            p->>v: 检查最左候选资格
+            opt 最左候选不合格
+                loop 沿可能含合格对象的路径
+                    p->>t: 用左子树min_vruntime判断能否下行
+                    p->>v: 必要时核对当前节点资格
+                end
+            end
+            p->>p: 将树候选与仍有效的curr比较deadline
+            p-->>c: 返回best
+        end
+    end
+```
+
+单实体路径先返回；多实体路径才过滤当前实体，再判断 RUN_TO_PARITY，最后进入一般搜索。min_slice 由同组维护路径保存，但此处所示资格剪枝读取的是 min_vruntime，不能混称为一项统计。
+
+修改比较器要同时核对接入顺序和最终 curr/best 比较；修改资格公式或摘要要核对平均统计、当前实体贡献、子树更新及剪枝条件，不能只在 pick 中替换一个字段。验证应覆盖单实体、当前离队/不合格、特性开关、最左不合格而子树有合格者、以及 curr 优于树候选。完整调度公平性、权重变化与抢占仍须沿调度专题和目标配置另行验证。

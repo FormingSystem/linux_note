@@ -8,6 +8,8 @@ domains: [linux, source_reading]
 
 # 第1章\_timerqueue.h读取最早入口
 
+定时队列已经按到期时间排序，读取下一候选只需要取缓存首项。候选“在队列中最早”与“当前已经到期”是两项判断；这里仅完成前者。
+
 本页对应[内核调用场景导读](../../../navigation/P10_内核调用场景与选择边界导读.md#10.2_按排序键和业务问题逐项阅读)。上游相对位置为 `include/linux/timerqueue.h`，来源为 NXP linux-imx 官方提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`（Linux 6.12.20），文件 Git blob 为 `d306d9dd22073f04bb0106fcf3ba598e87ba9b07`。选择性保留下面的完整函数，未列出的子系统过程不由本页代替。原许可证及上下文可在[固定源文件](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/timerqueue.h)核对。
 
 中文 Doxygen 为仓库补充，不是上游注释；函数语句保持固定版本。
@@ -31,3 +33,5 @@ struct timerqueue_node *timerqueue_getnext(struct timerqueue_head *head)
 ```
 
 返回[场景导读](../../../navigation/P10_内核调用场景与选择边界导读.md#10.2_按排序键和业务问题逐项阅读)与[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。本页源码核对不是子系统构建、运行、并发或性能验证。
+
+此函数落在[队列关系与一次取首时序](../../../source_explanations/lib/timerqueue.c.md#1.4_沿同一队列解释三个返回值)的 Q2：共享 head 提供缓存地址，局部 leftmost 保存结果，再按 node 成员还原对象。改读入口时须同步核对 add/del 对缓存的维护；改 rb_entry_safe 时须保留空队列返回 NULL，不能把读取改成自动摘除，也不能在调用者保护结束后默认对象仍有效。
