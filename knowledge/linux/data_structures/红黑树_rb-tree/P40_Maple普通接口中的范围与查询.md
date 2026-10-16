@@ -33,7 +33,7 @@ domains:
 | insert C 到 [240,299] | B 覆盖请求前十个索引 | 返回 -EEXIST，B 保留，250 仍为空 |
 | store C 到 [300,349] | 此段空 | C[300,349] |
 
-这里的成功都以返回 0 为前提。store_range 也可能因分配失败返回 `-ENOMEM`，不能忽略结果后把打印的“拟写入范围”当成树内事实。起点大于终点是 `-EINVAL`；本章完整程序用 [2,1] 观察这个无需触发警告的非法请求。
+这里的成功都以返回 0 为前提。EEXIST、ENOMEM、EINVAL 是内核错误常量，接口使用其负值分别表示已有映射冲突、内存不足和参数无效。store_range 也可能因分配失败返回 `-ENOMEM`，不能忽略结果后把打印的“拟写入范围”当成树内事实。起点大于终点是 `-EINVAL`；本章完整程序用 [2,1] 观察这个无需触发警告的非法请求。
 
 源码的入参检查使用 `xa_is_advanced(entry)`。它与[P52 的 mt_is_reserved](P52_按字段区分Maple编码与错误状态.md#52.1_解码前先辨认字段职责)不是同一个谓词：前者判断 internal 编码且不大于 XA_RETRY_ENTRY，后者以 4096 为小值边界。不要从“没有被这个检查拒绝”反推“任意整数都能当业务指针”。本章只传有效对象地址或 NULL，也不以故意触发 WARN_ON_ONCE 作为普通实验步骤。具体比较和 zero-entry 转换见[值编码实现](../../../../research/source_reading/maple_tree/source_explanations/include/linux/xarray.h.md#1.3_普通接口检查与零entry)。
 
@@ -260,16 +260,30 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Private Maple normal API contracts");
 ```
 
-在配置匹配的目标内核构建环境中，按[材料说明](../../../../labs/kernel/tree_basics/materials/README.md)准备目录，并在仓库根目录执行：
+先在 Linux 构建端准备与目标内核匹配的配置、生成头及符号信息，并把环境变量 KDIR 设为这棵构建树的目录。交叉构建时，还要按目标设置 ARCH 和 CROSS_COMPILE；使用宿主编译器生成的模块不能直接交给不同架构的目标加载。完整材料及 Makefile 见[材料说明](../../../../labs/kernel/tree_basics/materials/README.md)。
 
 ```bash
-make -C "$KDIR" M="$PWD/labs/kernel/tree_basics/materials" modules
-sudo insmod labs/kernel/tree_basics/materials/note_maple_basic.ko
-sudo dmesg | tail -n 16
-sudo rmmod note_maple_basic
+# 执行位置：构建端 linux-note 仓库根目录；KDIR 须先指向匹配的目标构建树。
+make -C "${KDIR:?请先设置目标内核构建树}" M="$PWD/labs/kernel/tree_basics/materials" modules
 ```
 
-KDIR 指向已准备好配置和生成头的目标构建树；交叉编译还需设置匹配的 ARCH 和工具链，模块在该目标运行。Makefile 已登记本模块；目标必须具备与模块匹配的符号、配置和构建结果。成功路径的预期信息是：
+-C 让 make 进入内核构建树，M 指出外部模块材料目录，modules 请求构建模块；同目录 Makefile 会同时登记其他实验。成功后本例得到 `note_maple_basic.ko`。构建失败时先处理首个编译或符号检查错误，不继续加载旧产物。
+
+把这个 .ko 复制到目标机选定的实验目录，进入该目录再加载。若仓库就在目标机并使用本机内核构建，也可以直接进入仓库的材料目录；以下命令均在 **目标运行端、包含 .ko 的目录** 执行：
+
+```bash
+# 执行位置：目标机中保存本例 .ko 的目录。
+sudo insmod ./note_maple_basic.ko
+```
+
+insmod 调用模块初始化函数，本例的树操作和资源清理都在该函数返回前完成；初始化返回错误则加载失败。只有加载成功才按下面顺序查看本例日志并卸载。日志中可能夹有其他任务的信息，应核对 `maple_basic` 前缀，不凭最后若干行存在便认定每项检查通过。
+
+```bash
+# 执行位置：同一目标终端；读取内核日志中的本例记录。
+sudo dmesg | tail -n 16
+```
+
+成功路径的预期信息是：
 
 ```text
 maple_basic overwrite: A[100,149] B[150,249]
@@ -278,7 +292,14 @@ maple_basic clear: A[100,109] hole[110,119] A[120,149]
 maple_basic end: wrapped cursor=0, find_after stopped
 ```
 
-本批执行了 ARM 前端编译和明确替代树后端的宿主检查，包含五个分配失败出口、zero/retry entry 与整轮迭代终止；Windows 宿主的 internal 值到指针转换显式经 uintptr_t 适配宽度，其余所选普通封装保持固定语句。目标 Kbuild、MODPOST、加载、卸载和上述目标日志 **未执行**。宿主检查只能核对请求顺序、返回处理及固定封装的控制行为，不能替代实际 Maple 分裂、RCU、并发和回收验证。预期输出不是实测记录。
+观察结束后卸载模块。这里退出函数没有树要清理，因为私有树已在初始化结束前销毁；该设计不能照搬到仍有已发布对象或异步使用者的模块。
+
+```bash
+# 执行位置：同一目标终端；模块名不带 .ko。
+sudo rmmod note_maple_basic
+```
+
+既有验证记录执行了 ARM 前端和带明确后端替身的固定控制函数检查，包含五个分配失败出口、zero/retry entry 与整轮迭代终止；Windows 宿主的 internal 值到指针转换显式经 uintptr_t 适配宽度，其余所选普通封装保持固定语句。目标 Kbuild、MODPOST、加载、卸载和上述目标日志 **未执行**。宿主检查只能核对请求顺序、返回处理及固定封装的控制行为，不能替代实际 Maple 分裂、RCU、并发和回收验证。预期输出不是实测记录。
 
 ## 40.7\_练习与回顾
 

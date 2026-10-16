@@ -19,7 +19,7 @@ P51 已区分共享树、调用者游标与独立 VMA 对象。根如果指向�
 
 ## 38.2\_先把空洞也放进范围分区
 
-保留原来的七个 VMA。A～D 落在较低地址，E～G 使用较高的 64 位示例地址；这是一份解释索引的抽象地址图，不是声称 ARM32 当前进程能映射这些高地址。VMA 边界都是半开形式：
+本单元用 A～G 重新标记下面七个 VMA，地址以本表为准，不沿用 P14 的 G/H 编号。A～D 落在较低地址，E～G 使用较高的 64 位示例地址；这是一份解释索引的抽象地址图，不是声称 ARM32 当前进程能映射这些高地址。VMA 边界都是半开形式：
 
 | VMA | 起点 | 排除式终点 |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ range 布局有 parent、pivot 数组和一个 union：slot 数组的末端存�
 
 最外层[maple_node union](../../../../research/source_reading/maple_tree/source_explanations/include/linux/maple_tree.h.md#1.8_容器复用与节点资源)又在同一块存储中提供几种视角：普通 parent/slot、mr64、ma64、预分配 alloc，以及供退休处理的 rcu 和其他字段。union 不意味着这些字段同时有效。节点退出与读者保护按上一单元的协议处理后，算法才可在其允许的阶段复用存储，不能把业务 VMA 放进这个 union 后直接销毁。
 
-源码注释将节点容器描述为 256 字节并按 256 字节对齐；[缓存初始化](../../../../research/source_reading/maple_tree/source_explanations/lib/maple_tree.c.md#1.3_节点缓存按实际结构大小申请对齐)实际把 sizeof(maple_node) 同时传作对象大小和对齐要求。容量宏旁的 arange “240 bytes” 注释不能直接当成完整结构 sizeof：元数据和尾部填充也占空间。对固定定义作明确类型适配后的 ARM32 与 x86_64 前端检查，节点容器均为 256 字节；arange 分别为 256 与 248 字节。它只核对这些 ABI 下的布局，不是完整内核构建、所有架构或运行时分配器验证。
+源码注释将节点容器描述为 256 字节并按 256 字节对齐；[缓存初始化](../../../../research/source_reading/maple_tree/source_explanations/lib/maple_tree.c.md#1.3_节点缓存按实际结构大小申请对齐)实际把 sizeof(maple_node) 同时传作对象大小和对齐要求。容量宏旁的 arange “240 bytes” 注释不能直接当成完整结构 sizeof：元数据和尾部填充也占空间。既有验证对固定定义作明确类型适配后，在 ARM32 与 x86_64 前端检查，节点容器均为 256 字节；arange 分别为 256 与 248 字节。它只核对这些 ABI 下的布局，不是完整内核构建、所有架构或运行时分配器验证。
 
 ## 38.4\_空洞摘要改变了哪一段搜索
 
@@ -125,6 +125,8 @@ E 与 F 之间有 4 MiB 空洞。若请求 3 MiB 且允许窗口覆盖整个空�
 
 下面用 uint64_t 表示索引，把模型地址域限定为 `[0,0x800000000000)`。它根据已合法排序的半开 VMA 构造完整闭区间分区，以 `'-'` 代表 NULL 空洞；lookup 使用包含式上界，first_fit 则检查窗口内第一个足够长的空洞。程序不构造真实多层 Maple 节点，不模拟 RCU、gap 向上传播、对齐约束或动态更新。
 
+输入必须满足构造函数注释列出的前提；assert 只用于实验中及时发现错误，不是可恢复的输入处理接口。程序拒绝定义 NDEBUG 的构建，确保这些断言不会被关闭。std::optional 用“是否有值”区分结果：lookup 的无值表示地址越出模型域，有值但为字符 `-` 表示域内空洞；first_fit 的有值则是可用起点，起点 0 也能是成功结果。
+
 ```cpp
 // SPDX-License-Identifier: MIT
 // 有限地址域的范围分区模型；不调用 Maple API，也不模拟真实节点分裂。
@@ -135,6 +137,10 @@ E 与 F 之间有 4 MiB 空洞。若请求 3 MiB 且允许窗口覆盖整个空�
 #include <iostream>
 #include <optional>
 #include <vector>
+
+#ifdef NDEBUG
+#error "This experiment requires assertions enabled"
+#endif
 
 using address = std::uint64_t;
 struct region { address start, end; char owner; };
@@ -211,10 +217,14 @@ int main() {
     };
     partition tree(0x800000000000, regions);
     tree.print();
-    for (const auto &item : regions) {
+    for (std::size_t i = 0; i < regions.size(); ++i) {
+        const auto &item = regions[i];
         assert(tree.lookup(item.start) == item.owner);
         assert(tree.lookup(item.end - 1) == item.owner);
-        assert(tree.lookup(item.end) == '-');
+        // 排除终点若紧接下一对象，应归下一对象；否则归空洞。
+        char after = i + 1 < regions.size() && regions[i + 1].start == item.end
+                   ? regions[i + 1].owner : '-';
+        assert(tree.lookup(item.end) == after);
     }
     assert(!tree.lookup(0x800000000000));
     auto fit = tree.first_fit(0x7f1000200000,0x7f1000600000,0x300000);
@@ -227,11 +237,18 @@ int main() {
 }
 ```
 
-完整材料为[maple_pivot_slots.cpp](../../../../labs/kernel/tree_basics/materials/maple_pivot_slots.cpp)，从仓库根目录编译，保持默认断言开启：
+完整材料为[maple_pivot_slots.cpp](../../../../labs/kernel/tree_basics/materials/maple_pivot_slots.cpp)，在具备 C++17 编译器的 Linux 或同类 shell 中，从仓库根目录编译：
 
 ```bash
+# 执行位置：linux-note 仓库根目录；生成宿主范围分区程序。
 c++ -std=c++17 -O2 -Wall -Wextra -Werror \
   labs/kernel/tree_basics/materials/maple_pivot_slots.cpp -o /tmp/maple_pivot_slots
+```
+
+编译成功后运行；程序先打印分区，再检查对象端点及找洞结果。
+
+```bash
+# 执行位置不变；运行刚生成的程序。
 /tmp/maple_pivot_slots
 ```
 
@@ -244,13 +261,13 @@ c++ -std=c++17 -O2 -Wall -Wextra -Werror \
 3 B [0x600000,0x60ffff]
 ```
 
-最后输出 E-F gap 为 0x400000，完整窗口找到 0x7f1000200000，而裁剪窗口无可用位置。每个对象末地址仍命中自身，排除终点都落入紧随的空洞。本例没有相邻相接的 VMA，但检查另外覆盖了这种排列。
+最后输出 E-F gap 为 0x400000，完整窗口找到 0x7f1000200000，而裁剪窗口无可用位置。每个对象末地址仍命中自身，排除终点都落入紧随的空洞。本例没有相邻相接的 VMA；断言已区分紧接下一对象和空洞两种末端，因而修改第一道练习时仍可检查正确的归属。
 
 宿主验证枚举八地址域的全部 256 种占用图，以逐地址扫描为独立对照，检查 207360 个窗口/长度组合、点查和最大连续空洞；另查最大可表示排除终点附近的加减边界。该证据只覆盖本程序的范围分区，不能外推为真实 Maple 算法、内存安全或性能证明。
 
 ## 38.6\_修改条件再作判断
 
-1. 把 B 起点改为 A 的排除终点。先预测两个对象之间是否还需要 NULL 槽，再观察边界属于谁。两个对象相接不等于同一对象，模型仍保留各自 owner。
+1. 把 B 起点改为 A 的排除终点。先预测两个对象之间是否还需要 NULL 槽，再观察边界属于谁。两个对象相接不等于同一对象，模型仍保留各自 owner。此时 A 的排除终点命中 B，空槽总数减少一个；原 E-F 找洞结果不受影响。
 2. 把 lookup 的比较从 `part.last < key` 改成 `part.last <= key`。查询 A 的最后地址会发生什么？等值被错误跳过，会走到后面的空洞，这正是把 B+ 的另一套边界规则搬过来的后果。
 3. 请求长度不变，只缩小 E-F 窗口。解释为什么全局 max_gap 很大也不能直接返回成功；真正候选必须落在裁剪后的交集中。
 4. 根据表推导普通 ARM32 range 的 pivot/slot 数量，再解释为何不能把 32 槽直接说成“当前 32 个孩子”。数组、有效终点、节点是否为叶和元数据解释是四个不同条件。

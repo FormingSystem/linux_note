@@ -186,16 +186,30 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Private Maple allocation and external-lock protocol");
 ```
 
-在匹配目标的构建和运行环境中，从仓库根目录执行：
+先在 Linux 构建端准备与目标内核匹配的配置、生成头及符号信息，并把环境变量 KDIR 设为这棵构建树的目录。交叉构建时，还要按目标设置 ARCH 和 CROSS_COMPILE；使用宿主编译器生成的模块不能直接交给不同架构的目标加载。完整材料及 Makefile 见[材料说明](../../../../labs/kernel/tree_basics/materials/README.md)。
 
 ```bash
-make -C "$KDIR" M="$PWD/labs/kernel/tree_basics/materials" modules
-sudo insmod labs/kernel/tree_basics/materials/note_maple_prealloc.ko
-sudo dmesg | tail -n 16
-sudo rmmod note_maple_prealloc
+# 执行位置：构建端 linux-note 仓库根目录；KDIR 须先指向匹配的目标构建树。
+make -C "${KDIR:?请先设置目标内核构建树}" M="$PWD/labs/kernel/tree_basics/materials" modules
 ```
 
-KDIR 是已准备配置和生成头的内核构建树；交叉构建应设置匹配目标的 ARCH 与工具链。材料 Makefile 可能同时构建同目录其他模块。成功路径的预期输出如下：
+-C 让 make 进入内核构建树，M 指出外部模块材料目录，modules 请求构建模块；同目录 Makefile 会同时登记其他实验。成功后本例得到 `note_maple_prealloc.ko`。构建失败时先处理首个编译或符号检查错误，不继续加载旧产物。
+
+把这个 .ko 复制到目标机选定的实验目录，进入该目录再加载。若仓库就在目标机并使用本机内核构建，也可以直接进入仓库的材料目录；以下命令均在 **目标运行端、包含 .ko 的目录** 执行：
+
+```bash
+# 执行位置：目标机中保存本例 .ko 的目录。
+sudo insmod ./note_maple_prealloc.ko
+```
+
+insmod 调用模块初始化函数，本例的树操作和资源清理都在该函数返回前完成；初始化返回错误则加载失败。只有加载成功才按下面顺序查看本例日志并卸载。日志中可能夹有其他任务的信息，应核对 `maple_prealloc` 前缀，不凭最后若干行存在便认定每项检查通过。
+
+```bash
+# 执行位置：同一目标终端；读取内核日志中的本例记录。
+sudo dmesg | tail -n 16
+```
+
+成功路径的预期信息是：
 
 ```text
 maple_prealloc cancel: tree still empty
@@ -203,7 +217,14 @@ maple_prealloc publish: A[100,199]
 maple_prealloc overwrite: A then B, external lock retained
 ```
 
-本批只执行 ARM 前端和带明确后端替身的固定控制函数检查。目标 Kbuild、MODPOST、装卸、上述目标日志以及真实分配/节点重平衡均未执行；预期输出与宿主模型结果不能称为目标运行结果。
+观察结束后卸载模块。这里退出函数没有树要清理，因为私有树已在初始化结束前销毁；该设计不能照搬到仍有已发布对象或异步使用者的模块。
+
+```bash
+# 执行位置：同一目标终端；模块名不带 .ko。
+sudo rmmod note_maple_prealloc
+```
+
+既有验证记录执行了 ARM 前端和带明确后端替身的固定控制函数检查。目标 Kbuild、MODPOST、装卸、上述目标日志以及真实分配/节点重平衡均未执行；预期输出与宿主模型结果不能称为目标运行结果。
 
 ## 41.7\_练习与回顾
 

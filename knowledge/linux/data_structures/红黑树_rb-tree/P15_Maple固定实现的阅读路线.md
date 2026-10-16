@@ -205,7 +205,7 @@ flowchart TD
 | `free_pgtables()` | 释放页表时需要按 VMA 边界遍历 |
 | `unmap_vmas()` | 解除映射时要逐段处理 VMA |
 
-完整 E/F/G 部分撤销场景已进入[P42 两棵树](P42_撤销映射中的两棵Maple树.md#42.2_保留原来的E与F与G场景)，原全部地址边界和保留结果不丢失。关键增量是：主树 mm_mt 按地址索引，临时 mt_detach 按处理序号保存待撤销对象，清主树后还要完成页表、对象与临时索引的退出。
+完整 E/F/G 部分撤销场景已进入[P42 两棵树](P42_撤销映射中的两棵Maple树.md#42.2_一次撤销怎样切开三个VMA)，原全部地址边界和保留结果不丢失。关键增量是：主树 mm_mt 按地址索引，临时 mt_detach 按处理序号保存待撤销对象，清主树后还要完成页表、对象与临时索引的退出。
 
 free_pgtables 与 unmap_vmas 的完整固定签名和函数分别见[页表释放](../../../../research/source_reading/maple_tree/source_explanations/mm/memory.c.md#1.3_释放页表与上界哨兵)及[映射清除](../../../../research/source_reading/maple_tree/source_explanations/mm/memory.c.md#1.2_解除映射与继续遍历)，通过[撤销模块](../../../../research/source_reading/maple_tree/navigation/P10_撤销范围与临时索引.md#10.2_两棵树沿S0到S5分工)关联调用方。ma_state 的 tree、索引单位、首项参数与搜索上界必须一起看；exit_mmap 与对齐 munmap 传入的树并不相同。
 

@@ -8,6 +8,10 @@
 #include <optional>
 #include <vector>
 
+#ifdef NDEBUG
+#error "This experiment requires assertions enabled"
+#endif
+
 using address = std::uint64_t;
 struct region { address start, end; char owner; };
 struct slot { address first, last; char entry; };
@@ -83,10 +87,14 @@ int main() {
     };
     partition tree(0x800000000000, regions);
     tree.print();
-    for (const auto &item : regions) {
+    for (std::size_t i = 0; i < regions.size(); ++i) {
+        const auto &item = regions[i];
         assert(tree.lookup(item.start) == item.owner);
         assert(tree.lookup(item.end - 1) == item.owner);
-        assert(tree.lookup(item.end) == '-');
+        // 排除终点若紧接下一对象，应归下一对象；否则归空洞。
+        char after = i + 1 < regions.size() && regions[i + 1].start == item.end
+                   ? regions[i + 1].owner : '-';
+        assert(tree.lookup(item.end) == after);
     }
     assert(!tree.lookup(0x800000000000));
     auto fit = tree.first_fit(0x7f1000200000,0x7f1000600000,0x300000);

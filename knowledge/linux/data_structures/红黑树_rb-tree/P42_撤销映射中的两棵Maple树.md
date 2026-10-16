@@ -18,7 +18,7 @@ domains:
 
 本章只追踪 do_vmi_align_munmap 的收集、清主树、后续处理与退出，不展开完整系统调用、每种页表格式或全部错误恢复。固定入口见[撤销范围模块](../../../../research/source_reading/maple_tree/navigation/P10_撤销范围与临时索引.md#10.2_两棵树沿S0到S5分工)。外部实验提交不参与证据。
 
-## 42.2\_保留原来的E与F与G场景
+## 42.2\_一次撤销怎样切开三个VMA
 
 仍用 P54 的 64 位抽象地址图；它不是当前 ARM32 机器可直接运行的地址。设调用请求长度为 0x00600000，起点为 0x7f1000100000，则结束地址为 0x7f1000700000。三个相关 VMA 为：
 
@@ -117,6 +117,8 @@ sequenceDiagram
 
 下面的[unmap_partition.cpp](../../../../labs/kernel/tree_basics/materials/unmap_partition.cpp)保留原 E/F/G 输入，用值对象生成保留片段与待处理序列。它用 vector 表示处理顺序，帮助看清“序号”和“地址”的区别；它不实现真正的 Maple、对象引用、VMA 分裂回滚或页表回收。
 
+partition 的输入以 const 引用只读传入；函数先生成独立计划，main 取得成功结果后才替换 live。空或逆序请求、无效输入区域会抛出 invalid_argument 异常，本例没有捕获并恢复，因而非法输入会终止实验。分配异常也不是内核错误码。这里观察的是有效输入下的范围归属，不把宿主容器的异常保证等同于 Linux 的失败恢复。
+
 ```cpp
 #include <cstdint>
 #include <iomanip>
@@ -186,12 +188,21 @@ int main()
 }
 ```
 
+在具备 C++17 编译器的 Linux 或同类 shell 中，从仓库根目录编译：
+
 ```bash
+# 执行位置：linux-note 仓库根目录；生成宿主分区程序。
 c++ -std=c++17 -Wall -Wextra -Werror -O2 labs/kernel/tree_basics/materials/unmap_partition.cpp -o /tmp/unmap_partition
+```
+
+这一步只生成程序。运行后先看三个待处理序号，再看发布后的保留区间，最后核对待清理计数：
+
+```bash
+# 执行位置不变；运行刚生成的程序。
 /tmp/unmap_partition
 ```
 
-本批宿主实际输出：
+预期输出：
 
 ```text
 prepared: live_count=3
