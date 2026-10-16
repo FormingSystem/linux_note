@@ -43,7 +43,7 @@ rb_insert_color() 调用 __rb_insert() 修复红红冲突；
 黑高缺失
 ```
 
-黑高缺失不是一个真实节点颜色能直接表达的状态。Linux 源码用 `node == NULL`、`parent` 和循环不变量来表达这个“少一个黑色”的位置。
+黑高缺失不是一个真实节点颜色能直接表达的状态。Linux 修复入口用 `node == NULL`、`parent` 和循环不变量表达这个“少一个黑色”的位置；上推以后 node 可以指向一棵真实的黑根子树，缺失的是这棵子树对外的一份黑色贡献。
 
 删除以一个确定对象为起点；删除以后怎样继续处理下一项，是另一个需要证明的问题。本章先闭合一次取消，下一篇再区分有序推进与整树回收。
 
@@ -110,8 +110,53 @@ flowchart LR
     E -->|"D1/D3 写父地址、颜色和孩子"| N["仍在树中的 rb_node"]
     N -->|"D2/D3 读取原色、兄弟和侄子"| E
     E -->|"D4 返回，未释放原对象"| C
-    C -->|"条件满足后清标记和回收"| V["已摘除的业务对象"]
+    C -->|"按协议分别处理成员标记与最终回收"| V["已摘除的业务对象"]
 ```
+
+把前面的深后继例子画出来，更容易核对对象身份。实线是完成前或完成后的树边，虚线表示原对象仍在调用者手中；图不表示中间每条写入都能供任意读者安全观察。
+
+```mermaid
+flowchart LR
+    subgraph before[取消前]
+        root0[根槽] -->|地址| a0[对象A：20 黑]
+        a0 -->|left| b0[对象B：10 黑]
+        a0 -->|right| c0[对象C：30 黑]
+        c0 -->|left| d0[对象D：25 红]
+    end
+    subgraph after[取消A后]
+        root1[根槽] -->|改存D地址| d1[同一对象D：25 黑]
+        d1 -->|left| b1[同一对象B：10 黑]
+        d1 -->|right| c1[同一对象C：30 黑]
+        c1 -->|left| nil[NULL：原25位置]
+        caller[调用者保留A地址] -.等待业务回收条件.-> a1[同一对象A：key仍为20]
+    end
+    before ~~~ after
+```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as 取消调用与对象A地址
+    participant T as 根槽和节点字段
+    participant R as rb_erase当前调用栈
+    participant O as 调用者成员状态与寿命协议
+    C->>O: D0 按协议保护树及对象寿命
+    C->>T: 核对目标仍是本树对象A
+    C->>R: rb_erase(A的rb, root)
+    R->>T: D1 深后继D从30.left移走，接管根与10/30
+    R->>T: D2 读取D原色红；继承A的位置黑色
+    alt 本例原位置不缺黑
+        R-->>C: 不进入D3，返回
+    else 其他输入留下非根黑色空缺
+        R->>T: D3 读取兄弟侄子，局部抵偿或上推
+        R-->>C: 修复完成，返回
+    end
+    C->>O: D4 更新成员标记与持有状态，结束写侧保护
+    Note over C,O: 摘除不等于释放；旧读者和其他持有权仍须分别处理
+    O->>O: 满足最终释放条件后，才回收A
+```
+
+此图的 D1/D2 是职责阶段，不强行把实现中的读旧色、改父色及换入口写成两段完全不交错的代码。对这里的栈上私有实验，最终退出函数即可结束对象寿命；共享堆对象要服从自己的释放协议。
 
 图中没有另一个修复执行者；所有树字段由当前写者按步骤更新，读者不能依赖每条语句之间都构成一棵完整稳定的树。精确的同步回调及函数间交接见[版本模块时序](../../../../research/source_reading/rbtree/navigation/P04_对象摘除与缺黑修复导读.md#4.2_从对象到缺黑父槽)。
 
@@ -129,13 +174,13 @@ flowchart LR
 
 这一段可以完成局部补黑，也可能留下一个待修复的空孩子槽。返回值 rebalance 是这个槽的父节点，存放在调用者的局部变量中。非 NULL 才进入下一步；删除唯一黑根虽然减少了黑色贡献，但树已为空，没有另一侧需要对齐，返回 NULL。
 
-[结构摘除的完整实现](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md#1.3_结构摘除与缺黑父槽)保留原逐步中文注释及两种后继图，下面 11.2.7～11.2.13 先逐项推导为什么要这样改边。
+[结构摘除的完整实现](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree_augmented.h.md#1.3_结构摘除与缺黑父槽)保留逐步中文注释及两种后继图，下面 11.2.7～11.2.13 先逐项推导为什么要这样改边。
 
 ### 11.2.2\_缺黑修复接收什么
 
 修复接收 rebalance 指向的父节点，内部第一次令 node=NULL。缺黑不是把某个节点涂成第三种颜色，而是“这条下行路径比兄弟路径少一个黑色”的关系。兄弟在另一孩子槽中，读兄弟和侄子的颜色便可决定把缺口上推还是在本层抵偿。
 
-[两侧完整修复实现](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.5_缺黑修复的四种转换)保留原四类、镜像和中文图解。11.3 按同一父、兄弟、近侄、远侄解释每个转折；先建立这些角色，再逐句阅读函数。
+[两侧完整修复实现](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.5_缺黑修复的四种转换)保留四类、镜像和中文图解。11.3 按同一父、兄弟、近侄、远侄解释每个转折；先建立这些角色，再逐句阅读函数。
 
 ### 11.2.3\_普通接口把两步接起来
 
@@ -359,7 +404,7 @@ child 接替 node 的父节点和颜色；
 
 为什么？
 
-因为在红黑树中，如果被删节点只有一个非空孩子，那么这个孩子必然是红色，而被删节点必然是黑色。
+在合法红黑树中，另一侧已经直接到 NULL；若唯一孩子为黑，这一侧就多一份真实黑色贡献，黑高不等。这个孩子因此只能是红色，其孩子又不能为红，也不能再增加黑色，所以它是红叶。父节点不能与它同红，故被删节点为黑。这里依赖的是删除前合法，不能把它当作修复任意坏树的保证。
 
 让红色 child 接替黑色 node 的位置并继承黑色，相当于：
 
@@ -453,8 +498,8 @@ node->rb_right != NULL
 
 ```text
 找 node 的中序后继 successor；
-用 successor 接替 node 的位置；
-再从 successor 原来的位置删掉 successor。
+把 successor 从旧位置移出，并为它原来的右孩子安排回接；
+让同一个 successor 对象接管 node 的位置。
 ```
 
 中序后继是：
@@ -566,7 +611,7 @@ successor 继承 node 原来的 parent 和 color；
 node 原父节点的孩子指针改成 successor。
 ```
 
-源码中关键动作包括：
+以下摘出位置交接的相关语句，中间省略了后继原颜色判断等步骤，不是可独立执行的连续函数体：
 
 ```c
 WRITE_ONCE(successor->rb_left, tmp);
@@ -591,10 +636,10 @@ successor->__rb_parent_color = pc 表示 successor 继承 node 的位置颜色�
 
 ```text
 这棵子树的根从 node 换成 successor；
-但这棵子树对外的黑高贡献应该保持一致。
+它在这个入口处的颜色贡献应继续保留；后继旧位置是否缺黑要另行判断。
 ```
 
-所以 successor 必须继承 node 的颜色。
+所以 successor 继承 node 的颜色。不过这还不保证整棵子树黑高已经恢复：后继旧位置若少了黑色，仍须进入后续修复。
 
 ------
 
@@ -670,7 +715,7 @@ successor 原位置的颜色。
 
 `__rb_erase_augmented()` 同时服务普通树和增强树。
 
-增强树需要维护子树增强信息，所以删除过程中有三个回调点：
+增强树需要维护子树增强信息。按删除分支可能经过以下回调点，并非每次删除都会调用全部三处：
 
 ```text
 augment->copy(node, successor)
@@ -682,7 +727,7 @@ augment->propagate(tmp, NULL)
 
 ```text
 copy：
-	successor 接替 node 的位置时，复制 node 的增强信息。
+	successor 接替 node 的位置时，以 node 的旧增强值作为交接起点；只复制摘要，不复制整个业务对象，随后仍须重算受影响路径。
 
 propagate(parent, successor)：
 	successor 从原位置移走后，原路径上的增强信息需要向上更新，
@@ -692,14 +737,14 @@ propagate(tmp, NULL)：
 	结构删除最终完成后，从受影响节点继续向根方向更新；允许因值不变早停。
 ```
 
-普通 rbtree 传入 dummy callbacks，所以这些动作会被优化为空。
+普通 rbtree 传入空回调，编译器可在内联后消去这些调用；是否完全消去要看具体构建结果，不能只凭源码名字承诺运行成本。
 
 这就是 Linux rbtree 结构删除写在 `rbtree_augmented.h` 中的原因：
 
 ```text
 普通树和增强树共用删除骨架；
 增强树在必要位置插入回调；
-普通树靠 dummy callback 消除额外成本。
+普通树复用骨架并提供空回调，允许编译器消去无效动作。
 ```
 
 ------
@@ -763,7 +808,7 @@ parent == rebalance
 
 ```text
 parent 的某个孩子位置缺少一个黑色；
-这个缺黑位置可能是 NULL。
+第一次进入时这个缺黑位置就是 NULL 空槽；之后上推才可能指向真实子树。
 ```
 
 源码注释给出循环不变量：
@@ -897,7 +942,7 @@ Case 4：
 
 ```text
 Case 1 把红兄弟转换成黑兄弟；
-Case 3 把近侄红转换成远侄红；
+Case 3 把近侧可借结构调整到远侧，Linux 的颜色交接延至 Case 4；
 Case 4 进行最终旋转并结束；
 Case 2 可能把缺黑向上推进。
 ```
@@ -1063,7 +1108,7 @@ break;
 
 ------
 
-### 11.3.6\_Case\_3\_兄弟为黑且近侄红\_转换成远侄红
+### 11.3.6\_Case\_3\_近侧可借时先调整结构
 
 Case 3 条件：
 
@@ -1090,7 +1135,7 @@ S 是黑色；
 ```text
 Sl 上来；
 S 下去；
-把近侄红转换成远侄红形态。
+按抽象修复先把可借键调整到外侧；实际颜色稍后统一交接。
 ```
 
 下面仅用普通赋值表达改边方向；真实实现保留 WRITE_ONCE，见[唯一修复标题](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.5_缺黑修复的四种转换)：
@@ -1123,14 +1168,14 @@ Case 3 也不是最终修复。
 它的目标是：
 
 ```text
-把近侄红转换成远侄红，交给 Case 4 一步结束。
+把内侧可借结构交给 Case 4 收尾；这不表示当前字段已经是“黑兄弟、红远侄”。
 ```
 
 ------
 
-### 11.3.7\_Case\_4\_兄弟为黑且远侄红\_旋转并结束修复
+### 11.3.7\_Case\_4\_承接两种入口并完成缺黑修复
 
-Case 4 条件：
+直接从远侄检查进入 Case 4 时，条件是：
 
 ```text
 S 是黑色；
@@ -1172,14 +1217,16 @@ augment_rotate(parent, sibling);
 break;
 ```
 
-这里：
+这里必须分开两个入口；tmp2 在 Case 4 中重新取得上移节点的左子树，tmp1 则沿用前一段保存的对象：
 
-```text
-tmp1 是远侄 Sr；
-tmp2 是近侄 Sl。
-```
+| Case 4 的入口 | sibling 指向谁、当前颜色 | tmp1 指向谁、当前颜色 | 本段怎样完成颜色交接 |
+| --- | --- | --- | --- |
+| 远侄本来为红，直接进入 | 原黑兄弟 S | 原红远侄 Sr | 远侄染黑，S 继承父色，旧父变黑 |
+| 经过 Case 3 的内侧旋转 | 原红近侄 Sl，实际仍红 | 原黑兄弟 S，实际仍黑 | tmp1 设置黑色并修正父地址，Sl 继承原父颜色，旧父变黑 |
 
-`rb_set_parent_color(tmp1, sibling, RB_BLACK)` 把远侄染黑。
+因此同一条“设置 tmp1 为黑”的语句，可能改变颜色，也可能只保持黑色并改父地址。表中是固定 Linux 实现的中间态，不把教科书两次完整旋转的着色时点硬套进来。
+
+`rb_set_parent_color(tmp1, sibling, RB_BLACK)` 在两条路径都把 tmp1 的父地址和最终黑色写好。
 
 `__rb_rotate_set_parents(parent, sibling, root, RB_BLACK)` 让：
 
@@ -1231,7 +1278,7 @@ sibling = parent->rb_left
 远侄 = Sl
 ```
 
-四个 case 镜像为：
+四个 case 的直接判断及收尾方向镜像如下；经过 Case 3 再进入 Case 4 时，仍须采用上一节的延后颜色交接：
 
 ```text
 Case 1：
@@ -1287,7 +1334,7 @@ Sl <-> Sr
 	把可借 key 调整到远侄方向，再进入最终借位。
 ```
 
-这能解释为什么删除 Case 2 会继续向上，而 Case 4 会结束。
+这能解释为什么删除 Case 2 可能继续向上，而 Case 4 会结束；父为红可以就地吸收 Case 2 的缺口，到整树根也不再向上。
 
 ```text
 Case 2：
@@ -1326,7 +1373,7 @@ ____rb_erase_color(parent, ...)
 
 ```text
 Case 1 转成黑兄弟；
-Case 3 转成远侄红；
+Case 3 调整可借结构，固定实现把父色交接留给 Case 4；
 Case 4 最终结束；
 Case 2 可能向上。
 ```
@@ -1371,7 +1418,7 @@ near nephew
 far nephew
 ```
 
-左侧删除四个 case 可以这样记：
+左侧删除四个 case 可以按下述动作记；Case 3 与 Case 4 合起来才是完整旋转和着色，不能把中间态当成稳定树：
 
 ```text
 兄弟红：
@@ -1381,7 +1428,7 @@ far nephew
 	兄弟染红，缺黑可能向上。
 
 兄弟黑，近侄红，远侄黑：
-	先围绕兄弟旋转，转成远侄红。
+	先围绕兄弟调整可借结构，接着在 Case 4 统一完成父色。
 
 兄弟黑，远侄红：
 	围绕 parent 旋转并染色，修复结束。
@@ -1403,7 +1450,7 @@ far nephew
 | rb_link_node / rb_insert_color | 建立每组合法初始树 | 独占树、唯一键、未入树对象；重复挂接会破坏结构 | [接入](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.5_红叶挂接与发布)、[修复](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.3_插入修复的两侧分支) |
 | rb_erase | 摘除指定数组对象并修复 | linked 由本例维护，不能删两次或传错 root | [删除入口](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.6_删除入口与黑色位辅助) |
 | RB_CLEAR_NODE / RB_EMPTY_NODE | 设置/读取节点自己的游离标记 | 只在对象仍存活、已摘除时使用；不查树、不提供并发保护 | [标记实现](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.8_游离标记不等于成员搜索) |
-| rb_first / rb_next | 返回后按序观察幸存对象 | 保持独占与对象存活；11.4 解释父链，不能在旋转中间随意调用 | [固定 lib/rbtree.c](../../../../research/source_reading/linux/lib/rbtree.c) |
+| rb_first / rb_next | 返回后按序观察幸存对象 | 保持独占与对象存活；P27 解释父链，不能在旋转中间随意调用 | [中序端点与父链推进](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.7_中序端点与父链推进) |
 | inspect_tree | 查对象地址、数量、顺序、键未改变 | 这是本例的有限检查，不检查任意坏指针、黑高或所有父链 | 本节完整定义 |
 
 ```c
@@ -1542,6 +1589,8 @@ MODULE_DESCRIPTION("私有红黑树删除与对象身份观察");
 
 先预测再运行。第一组删 20 之后，中序数组身份应为 [1]=10、[3]=25、[2]=30，25 接根；被删的 [0] 仍保留 key=20，只是不再可达。删除后、清标记前的 empty_before_clear 预期为 0，清标记后为 1：rb_erase 没有替调用者写“节点地址等于打包字段”的游离标记。最后删空树时，不需要制造一个额外“缺黑根”。第二组首次删除后根应为 30，20 和 40 为黑，25 为红；可依据四类修复解释，而不是只比较打印顺序。
 
+先在 Linux 环境的仓库根目录构建；Makefile 会一并构建同目录登记的模块，本节只部署和加载 note_rbtree_erase。
+
 ```bash
 # 在准备好目标 ARM 构建树与交叉工具链的 Linux 环境运行。
 # KERNEL_BUILD 是与目标运行内核及配置匹配、已准备好的构建目录。
@@ -1549,13 +1598,27 @@ MODULE_DESCRIPTION("私有红黑树删除与对象身份观察");
 : "${CROSS_COMPILE:?请先设置目标交叉工具链前缀}"
 cd labs/kernel/tree_basics/materials
 make -C "$KERNEL_BUILD" M="$PWD" ARCH=arm CROSS_COMPILE="$CROSS_COMPILE" modules
-# 将 note_rbtree_erase.ko 放到目标机后，在目标机执行：
+```
+
+两个变量检查防止误用未设置的构建目录和编译前缀。cd 进入模块源码目录，`-C` 选择内核构建树，`M="$PWD"` 指定外部模块目录。将 ko 复制到版本与配置匹配的 ARM 目标，再加载：
+
+```bash
 sudo insmod ./note_rbtree_erase.ko
+```
+
+只有加载成功，才按本章预期核对两个分组的完整日志；系统其他活动可能把日志推离尾部，需要时增加保留行数。
+
+```bash
 sudo dmesg | tail -n 100
+```
+
+观察结束后卸载。初始化失败时模块没有成功驻留，不能把缺少卸载对象当成树删除错误。
+
+```bash
 sudo rmmod note_rbtree_erase
 ```
 
-上段是操作步骤，前段是预期现象。本批完成的是 ARM 语法检查及宿主 C 算法验证，尚未执行目标 Kbuild、MODPOST、装卸或取得实际日志。宿主模型将打包父色的整型改用 uintptr_t 以适配 Windows LLP64，仅检查串行算法；不能拿它证明真实内核 ABI、RCU 或 SMP。部署的版本与配置核对沿用[P26 模块前提](P26_Linux红叶接入与插入修复.md#26.3.15_在内核模块中观察五组插入)。
+上段是操作步骤，前段是预期现象。历史 ARM 语法检查与宿主算法核对的范围见[源码基线记录](../../../../research/source_reading/linux/SOURCE_BASELINE.md)，不等同于目标 Kbuild、MODPOST、装卸或真实日志；本章不把预期现象写成已上板结果。宿主模型将打包父色的整型改用 uintptr_t 以适配 Windows LLP64，仅检查串行算法；不能拿它证明真实内核 ABI、RCU 或 SMP。部署的版本与配置核对沿用[P26 模块前提](P26_Linux红叶接入与插入修复.md#26.3.15_在内核模块中观察五组插入)。
 
 ### 11.3.13\_沿同一个对象做三道练习
 
@@ -1563,7 +1626,7 @@ sudo rmmod note_rbtree_erase
 2. 暂时去掉删除后的 RB_CLEAR_NODE，只保留 linked=false，观察两个标记为什么不同。恢复之后，再把同一删除下标重复一次：本例应由 linked 检查返回错误，不要绕过它实际执行重复 rb_erase。
 3. 只保留一个键，再删它。预测 root、rebalance 的含义和最终日志，解释为什么“删的是黑节点”不足以推出一定进入颜色循环。随后改成两个键，预测红孩子如何继承黑色。
 
-第一题的起点仍是原合法树：先删红 25 不减黑高，之后删 20 的直接后继 30 原为黑且无孩子，缺口在移位后的 30.right。第三题分别检验空树退出与红孩子补位。完成这些推演后，11.4 再追问怎样找到“下一个仍在树里的对象”，以及为什么后序 safe 不能任意夹入会重排结构的删除。
+第一题的起点仍是原合法树：先删红 25 不减黑高，之后删 20 的直接后继 30 原为黑且无孩子，缺口在移位后的 30.right。第三题分别检验空树退出与红孩子补位。完成这些推演后，下一篇 P27 再追问怎样找到“下一个仍在树里的对象”，以及为什么后序 safe 不能任意夹入会重排结构的删除。
 
 ## 11.4\_本章小结
 
@@ -1591,7 +1654,7 @@ ____rb_erase_color()
 	兄弟染红，缺黑可能向上。
 
 兄弟黑，近侄红：
-	先旋转兄弟，转成远侄红。
+	先旋转兄弟调整可借结构；父色留到下一步统一收尾。
 
 兄弟黑，远侄红：
 	旋转 parent 并染色，修复结束。
