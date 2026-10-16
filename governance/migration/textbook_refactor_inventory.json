@@ -5936,6 +5936,28 @@
           "三幅图渲染目视，连续性严格检查零风险，10出链与11标题入链、全仓9074有效链接及格式元数据路径和diff通过。"
         ],
         "limits": "有限单线程交错模型不模拟C数据竞争或硬件乱序，不证明真实Linux锁运行；源码索引此次仅修边界，尚不新增全文复审计数。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P01_自旋锁.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补足锁序与实时替换的设计背景、接口和私有名解释，限制上下文表适用范围并修正flags跨函数绝对禁令。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读；固定提交六个来源复核，四份已保存原件逐字节一致。",
+          "两章八图渲染目视、连续性严格检查零风险；GCC与Clang验证辅助程序的顺序接口模型；精确链接及全仓9076有效链接、格式元数据路径和diff通过。"
+        ],
+        "limits": "顺序替代接口只证明辅助程序逻辑，不证明内核竞争、屏障、调度或真实设备；无目标Kbuild与运行。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P02_互斥锁与读写信号量.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先推导多读并行成本再比较rwsem，补全返回值及释放责任；停机区分阻止投递、排空硬件用户和旧文件对象最终回收。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读；固定提交六个来源复核，四份已保存原件逐字节一致。",
+          "两章八图渲染目视、连续性严格检查零风险；GCC与Clang验证辅助程序的顺序接口模型；精确链接及全仓9076有效链接、格式元数据路径和diff通过。"
+        ],
+        "limits": "顺序替代接口只证明辅助程序逻辑，不证明内核竞争、屏障、调度或真实设备；无目标Kbuild与运行。"
       }
     },
     "additional_documents": [
