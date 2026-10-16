@@ -1,4 +1,7 @@
 /* 单线程教学模型：pprev 保存“通向本节点的指针槽地址”。 */
+#ifdef NDEBUG
+#error "This teaching experiment requires active assertions"
+#endif
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>

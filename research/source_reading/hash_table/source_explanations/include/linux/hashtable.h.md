@@ -8,7 +8,9 @@ domains: [linux, source_reading]
 
 # 第1章\_hashtable.h的固定桶数组包装
 
-证据为固定 [include/linux/hashtable.h](../../../../linux/include/linux/hashtable.h)，版本从[总索引](../../../navigation/P01_Linux_6.12_哈希计算源码阅读索引.md)进入。本页只解释固定数组层的包装，单桶连接转入 [list.h](list.h.md)，乘法转入 [hash.h](hash.h.md)，不重复函数体。中文 Doxygen 为仓库阅读说明。
+单桶 hlist 已能连接对象，但按键查找还需要选择哪一个桶。hashtable.h 把“从数组取得桶数、按键落桶、调用单桶原语”组合起来，没有另外建立对象寿命或键唯一性状态。本页沿定义数组、接入成员和遍历三步，检查这个包装实际做了什么。
+
+证据为固定 [include/linux/hashtable.h](../../../../linux/include/linux/hashtable.h)，版本从[总索引](../../../navigation/P01_Linux_6.12_哈希计算源码阅读索引.md)进入。单桶连接转入 [list.h](list.h.md)，乘法转入 [hash.h](hash.h.md)，不重复函数体。中文 Doxygen 为仓库阅读说明。
 
 ## 1.1\_数组身份与初始化
 
@@ -56,6 +58,8 @@ DEFINE 中的 [0 ... last] 是 GNU C 范围初始化器。ARRAY_SIZE 使用数�
 
 ## 1.2\_选桶与成员操作
 
+桶数组已经初始化后，插入需从键算出某个桶头，再把节点交给单桶接口。删除的起点不同：已有节点的 pprev 保存了入口槽位置，因此无需键或数组参数。先认清这个不对称，再看包装中的参数为什么不同。
+
 ```c
 /**
  * hash_min - 仓库补充阅读说明：按键表达式大小选择 hash_32 或 hash_long，后者仍受机器 long 宽度约束。
@@ -93,6 +97,8 @@ static inline void hash_del_rcu(struct hlist_node *node)
 RCU 的两个包装分别链接[发布](rculist.h.md#1.1_先构建再发布)与[删除](rculist.h.md#1.2_删除保留前向连接)。区别不是多加一个名字后缀：普通 hash_del 清 next，hash_del_rcu 保留 next，都会影响旧读者能否继续。
 
 ## 1.3\_候选遍历与全表清理
+
+查找一个键只需进入候选桶，全表清理却要把每个桶走一遍。下面三种宏因此使用不同游标：单桶查找保留业务对象，全表扫描再增加桶序号，允许删除当前项时还要提前保存下一节点。循环体仍要负责完整键比较或回收决定。
 
 ```c
 /**

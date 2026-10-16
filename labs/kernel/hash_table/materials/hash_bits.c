@@ -1,4 +1,7 @@
 /* 固定宽度模型：观察桶分布，不把计数当作 CPU 性能测试。 */
+#ifdef NDEBUG
+#error "This teaching experiment requires active assertions"
+#endif
 #include <assert.h>
 #include <inttypes.h>
 #include <stdint.h>
@@ -40,6 +43,7 @@ int main(void)
     unsigned int high_counts[16] = { 0 };
     unsigned int index;
     uint64_t value = (UINT64_C(1) << 32) + 1;
+    uint32_t narrow_key = UINT32_C(0x12345678);
 
     for (index = 0; index < 16; ++index) {
         uint32_t key = index * UINT32_C(16);
@@ -51,6 +55,8 @@ int main(void)
     printf("截断为32位: %" PRIu32 "\n", bucket_32((uint32_t)value, 4));
     printf("完整64位/32位机器: %" PRIu32 "\n", bucket_64(value, 4, 32));
     printf("完整64位/64位机器: %" PRIu32 "\n", bucket_64(value, 4, 64));
+    printf("同值键/32位入口: %" PRIu32 "\n", bucket_32(narrow_key, 4));
+    printf("同值键/64位入口: %" PRIu32 "\n", bucket_64(narrow_key, 4, 64));
     assert(bucket_32(123, 32) == multiply_32(123));
     return 0;
 }

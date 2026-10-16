@@ -47,6 +47,9 @@ flowchart LR
 
 ```c
 /* 单线程教学模型：pprev 保存“通向本节点的指针槽地址”。 */
+#ifdef NDEBUG
+#error "This teaching experiment requires active assertions"
+#endif
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -152,9 +155,11 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic hlist_model.c -o hlist_model
 ./hlist_model
 ```
 
-预期四行顺序分别是 26/18/10、26/10、10、10/18，然后报告清空通过。自检没有定义 NDEBUG，assert 会检查“回指槽当前确实指向自己”和每个节点的槽地址。
+预期四行顺序分别是 26/18/10、26/10、10、10/18，然后报告清空通过。代码明确拒绝 NDEBUG 构建，assert 会检查“回指槽当前确实指向自己”和每个节点的槽地址。
 
 删除 18 后，10.pprev 指向 26.next；再删除 26，10.pprev 改为 &head.first。18 的内存一直存在，所以初始化连接后可以重新加入。本模型的 remove_init 把 next/pprev 置空，允许再次检查空节点；它对应普通摘除并初始化的教学语义，不模拟毒化、RCU、内存屏障或真实多线程。
+
+模型的 add_head 还主动断言 `node->pprev == NULL`，用于及时暴露实验中的重复接入。真实 `hlist_add_head` 没有这项检查；不能因模型报错及时，就期待内核接口自动替你确认节点未在别处挂接。这个条件仍须由调用者的成员资格协议保证。
 
 ## 2.4\_进入Linux接口之前先分清两层
 

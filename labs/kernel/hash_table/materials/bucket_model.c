@@ -1,4 +1,7 @@
 /* 教学模型：固定最多十六个桶，节点由调用者持有，不进行动态分配。 */
+#ifdef NDEBUG
+#error "This teaching experiment requires active assertions"
+#endif
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>

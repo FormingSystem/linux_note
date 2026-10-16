@@ -8,6 +8,8 @@ domains: [linux, source_reading]
 
 # 第1章\_list.h的单桶连接与遍历
 
+桶号只能带我们走到一个候选集合；要从集合中摘下指定对象，还得找到原来指向该节点的入口槽。教材已经用 pprev 建立了这个地址模型，本页继续核对真实函数怎样改槽、怎样留下删除后状态，以及游标何时读取 next。
+
 按固定 NXP Linux 6.12.20 的 [list.h](../../../../linux/include/linux/list.h)和[types.h](../../../../linux/include/linux/types.h)展开。先由[总索引](../../../navigation/P01_Linux_6.12_哈希计算源码阅读索引.md)确认身份，再读[节点模块导读](../../../navigation/P03_节点连接与并发边界导读.md)。以下中文 Doxygen 为仓库补充，原语句保留；普通 list_head 的实现仍由[链表实现文档](../../../../linked_list/source_explanations/include/linux/list.h.md)维护，不在这里复制。
 
 ## 1.1\_头节点与初始化
@@ -75,7 +77,7 @@ READ_ONCE 的单次访问边界沿[链表并发章](../../../../../../knowledge/
 
 ## 1.2\_摘除与节点后置状态
 
-头插接好新节点的 next、旧首项的回指以及桶头入口。所有修改者必须遵守外部串行协议；下面的函数自己不获取锁。
+头插接好新节点的 next、旧首项的回指以及桶头入口。所有修改者必须遵守外部串行协议；下面的函数自己不获取锁。与普通 list_head 的增删检查不同，这里的 hlist_add_head、__hlist_del 没有调用 __list_add_valid/__list_del_entry_valid；不能只开启 DEBUG_LIST 就期待它们自动检查节点资格。
 
 ```c
 /**
@@ -130,6 +132,7 @@ sequenceDiagram
     participant slot as n.pprev 指向的槽
     participant next as 后继节点
     participant node as 当前 n
+    Note over caller,node: 本图入口是当前合法挂接的成员<br/>hlist_del_init 对 pprev 为 NULL 的节点直接跳过
     caller->>node: 取得 next 与 pprev
     caller->>slot: WRITE_ONCE(*pprev, next)
     alt 存在后继
