@@ -1,7 +1,15 @@
 /* 教学状态模型：显式插入事件，不模拟Linux IRQ、锁或真实分配器。 */
-#include <assert.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("model check failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 enum resource_kind { memory_record, clock_record, irq_record };
 
@@ -19,7 +27,7 @@ struct model {
 
 static void record_resource(struct model *state, enum resource_kind resource)
 {
-    assert(state->count < 3);
+    require_model(state->count < 3);
     state->records[state->count++] = resource;
 }
 
@@ -101,11 +109,11 @@ static void run_case(unsigned int scenario)
 finish:
     release_records(&state);
     deliver_interrupt(&state); /* 入口撤销后应拒绝，不读取已结束的资源。 */
-    assert(!state.memory_live && !state.clock_on && !state.irq_registered);
-    assert(!state.source_running && state.count == 0);
-    assert(state.order_errors == 0);
-    assert(state.invalid_access == (scenario >= 5 ? 1U : 0U));
-    assert(state.accepted == (scenario < 3 ? 0U : scenario == 3 ? 1U : 2U));
+    require_model(!state.memory_live && !state.clock_on && !state.irq_registered);
+    require_model(!state.source_running && state.count == 0);
+    require_model(state.order_errors == 0);
+    require_model(state.invalid_access == (scenario >= 5 ? 1U : 0U));
+    require_model(state.accepted == (scenario < 3 ? 0U : scenario == 3 ? 1U : 2U));
     printf(" accepted=%u invalid=%u\n", state.accepted, state.invalid_access);
 }
 
