@@ -7,22 +7,23 @@ domains: [linux, kernel]
 topics: [probe, binding, matching]
 ---
 
-# 第8章\_匹配绑定与\_probe状态机
+# 第8章\_匹配绑定与probe状态机
 
-设备先到走 `device_attach()`，驱动先到走 `driver_attach()`；二者最终进入 `driver_match_device()` 与 `driver_probe_device()`。匹配成功只表示候选关系，`really_probe()` 成功后才建立 `dev->driver`、sysfs 双向链接并调用 `driver_bound()`。
+设备登记触发对已有驱动的查找，驱动登记触发对已有设备的查找；应按“本次后来登记的是谁”区分设备侧 attach 与 `driver_attach()`，不能把先到者与触发者倒置。二者沿匹配与探测路径进入驱动核心。匹配成功只表示候选关系；固定 6.12.20 的 `really_probe()` 在调用 probe 之前已设置 `dev->driver` 并尝试建立 sysfs 绑定链接，后续全部必要步骤成功才调用 `driver_bound()`。失败路径撤销这些临时关系。
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant C as Driver Core
     participant B as bus->match
     participant D as device
     participant R as driver->probe
     C->>B: 判断候选设备与驱动
     B-->>C: 匹配／不匹配／错误
-    C->>D: 设置临时绑定状态并准备依赖
+    C->>D: 设置临时关联，准备资源与sysfs链接
     C->>R: probe(dev)
     alt 成功
-        C->>D: 建立bound状态和sysfs链接
+        C->>D: 后续核心步骤成功后完成bound登记
     else 失败
         C->>D: 按阶段回滚
     end
