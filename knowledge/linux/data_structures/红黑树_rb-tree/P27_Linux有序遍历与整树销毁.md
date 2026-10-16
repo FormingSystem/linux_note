@@ -32,7 +32,7 @@ rbtree 是红黑树，也是 BST。
 右子树
 ```
 
-Linux rbtree 没有递归遍历接口，而是提供：
+本章使用的 Linux rbtree 公共遍历入口通过游标推进，不要求调用者编写递归函数：
 
 ```text
 rb_first()
@@ -44,6 +44,19 @@ rb_prev()
 它们允许调用者从某个节点开始按排序顺序前进或后退。前面的递归遍历需要栈记住从哪里回来；这里的 rb_node 父地址已经保存了回程，调用者只需当前游标。父链和孩子链都必须稳定，函数本身不取得锁或引用；不能把 P10 仅向下的 RCU 查询边界扩展成这些接口的保证。
 
 以下把一轮记为 W0 建立根和寿命保护、W1 取得当前、W2 计算下一、W3 处理当前、W4 推进。阶段名属于讲解，内核没有对应的 W 字段；共享拓扑在 rb_node，pos/n 两个游标在调用者的局部变量中。版本函数与[模块导读](../../../../research/source_reading/rbtree/navigation/P05_有序推进与整树销毁导读.md#5.1_拓扑与游标分别保存在哪)分别承担代码证据与地址定位。
+
+这里有三组独立状态：树中字段保存拓扑，局部游标保存本轮选择，对象分配与引用协议决定地址还能否访问。safe 宏只改变第二组，没有把第一组冻结，也没有替第三组增加引用。
+
+```mermaid
+flowchart LR
+    owner[调用者的排他与寿命协议] -->|覆盖本轮所有将访问的对象| fields[对象内的 rb_node<br/>父色与左右孩子字段]
+    root[根对象的 rb_node 槽] -->|W1取得首节点| pos[局部当前游标 pos]
+    pos -->|W2读取当前及父孩子关系| fields
+    fields -->|算出下一对象地址| next[局部下一游标 next]
+    pos -->|W3处理当前对象| body[循环体：取消或整树回收]
+    next -->|W4赋给pos；并不重新查找| pos
+    body -->|按选定方案改结构或释放| fields
+```
 
 ------
 
@@ -157,7 +170,7 @@ return parent;
 
 ------
 
-### 27.2.5\_RB\_EMPTY\_NODE()\_对遍历的保护
+### 27.2.5\_游离标记能识别什么
 
 `rb_next()` 和 `rb_prev()` 开头都有：
 
@@ -232,6 +245,18 @@ rbtree_postorder_for_each_entry_safe()
 
 释放当前对象后，旧父的孩子字段可以暂时保留旧地址；它不是一棵可交给普通查询者的有效剩余树。后序算法不会再跟随那条已完成的孩子路径，整轮结束后由调用者重置根为空。其安全性依赖没有外部读者、没有重排、所有下一步所需对象仍存活，不是名称里的 safe 自动提供并发保护。
 
+比较这些接口时，把“空根”“空节点”与“游离节点”分开：
+
+| 调用 | 参数与结果 | 空值和成员前提 |
+| --- | --- | --- |
+| `rb_first(root)` / `rb_last(root)` | 有效根对象地址；返回最左/最右 `rb_node *` | root 本身不能为 NULL；空树返回 NULL |
+| `rb_next(node)` / `rb_prev(node)` | 当前节点地址；返回中序后继/前驱 | node 不能为 NULL；有效游离标记返回 NULL，不代替成员和寿命检查 |
+| `rb_first_postorder(root)` | 有效根地址；返回左优先后序起点 | 空树返回 NULL，root 本身仍必须有效 |
+| `rb_next_postorder(node)` | 当前节点地址；返回未完成右子树的起点或父 | 固定实现允许 node 为 NULL 并返回 NULL；不检查 RB_EMPTY_NODE，非空时要有有效拓扑 |
+| `rbtree_postorder_for_each_entry_safe(pos, next, root, field)` | 两个同类型业务对象指针变量、根地址、内嵌成员名 | 循环体前保存 next，最后一轮的 next 为 NULL；不会自动清根或取得引用 |
+
+不能仅因这些函数都接收地址，就把空值约定相互套用。宏产生的是外围对象指针，四种中序及两种后序函数返回的是内嵌节点指针。
+
 ------
 
 ### 27.2.7\_遍历过程中删除节点的限制
@@ -303,6 +328,41 @@ W4 继续到保存的 40，它的父现在是 30；按新后序规则下一项�
 
 固定树只读的一轮中序或后序推进总计 O(n)、游标 O(1)，但单次 next 可以走高 h 的路径。中序取消额外执行 n 次删除，其总成本不能仍写成只读遍历的 O(n)。
 
+把同一组 W 阶段放回两种正确流程，可以看出差别发生在 W3；是否仍保留一棵可查询的树，决定了下一轮能依赖什么。
+
+| 阶段 | 中序取消 | 后序整树销毁 |
+| --- | --- | --- |
+| W0 准备 | 独占修改，保证本轮成员存活 | 关闭外部访问，取得所有待销毁对象的释放权 |
+| W1 起点 | 从根找最左成员 | 从根找左优先后序起点 |
+| W2 下一 | 当前仍有效时，按中序保存后继地址 | 当前仍有效时，按尚未完成的父/右子树保存下一地址 |
+| W3 处理 | 摘除当前并修复剩余树，满足持有权条件后释放当前 | 只释放当前，不做旋转重排；剩余入口不再作为普通可查询树 |
+| W4 推进 | 把保存的后继交给当前游标，回 W2 | 把保存的下一交给当前游标，回 W2；到 NULL 后重置根 |
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as 调用者pos与next
+    participant T as 根槽和仍需读取的节点
+    participant M as 当前业务对象
+    C->>T: W0建立本方案的排他和寿命条件
+    C->>T: W1取得中序或后序起点
+    loop 当前pos非空
+        C->>T: W2在pos存活时计算并保存next
+        alt 中序取消
+            C->>T: W3 rb_erase当前，恢复剩余树
+            C->>M: 持有权允许后释放当前
+        else 后序整树销毁
+            C->>M: W3释放当前，不重排未完成拓扑
+            Note over C,T: 半销毁的根禁止交给普通查询
+        end
+        C->>C: W4 pos=next，不再读取已释放对象
+    end
+    C->>T: 中序删除已删空；后序由调用者重置根
+    C->>T: 结束本轮保护，只有空入口可再交付
+```
+
+后序 W4 若到了父，算法会读取这个仍活父的父地址，判断是否转入更上层尚未完成的右子树；不会重新递归进入它已经释放的孩子。正是这条后续访问路径，允许当前对象内存在 W3 失效。
+
 ### 27.2.9\_运行完整遍历与销毁模块
 
 材料[note_rbtree_walk.c](../../../../labs/kernel/tree_basics/materials/note_rbtree_walk.c)使用与上节相同的四键。先反向读取，再按中序保存下一项、摘除并释放；重新构建后按后序 safe 回收。最后的错误混用只使用仍存活的自动对象，不释放它们，用漏访 20 展示限制。
@@ -311,7 +371,7 @@ W4 继续到保存的 40，它的父现在是 30；按新后序规则下一项�
 
 | 接口 | 本例的状态职责 | 必须满足的边界 | 固定实现 |
 | --- | --- | --- | --- |
-| rb_first/last、rb_next/prev | W1 起点、W2 中序前后对象 | 非空节点、稳定父孩子链、对象存活 | [四个遍历函数](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.7_中序端点与父链推进) |
+| rb_first/last、rb_next/prev | W1 起点、W2 中序前后对象 | 起点接收有效根，next/prev接收非空节点；所需父孩子链稳定、对象存活 | [四个遍历函数](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.7_中序端点与父链推进) |
 | rb_erase | W3 中序取消，保留合法剩余树 | 只摘当前，保存的 next 仍存活 | [删除入口](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.6_删除入口与黑色位辅助) |
 | rb_first_postorder/next_postorder | 找后序起点及未完成父/右子树 | 不与旋转重排混用 | [后序函数](../../../../research/source_reading/rbtree/source_explanations/lib/rbtree.c.md#1.8_后序推进只跨向未完成部分) |
 | rbtree_postorder_for_each_entry_safe | 循环体前保存另一个局部游标 | 仅当前可失效，宏不取锁或引用 | [两个游标宏](../../../../research/source_reading/rbtree/source_explanations/include/linux/rbtree.h.md#1.9_后序safe的两个局部游标) |
@@ -468,19 +528,35 @@ MODULE_DESCRIPTION("有序取消与后序整树销毁观察");
 
 预期反向输出 40、30、20、10；中序取消输出 10、20、30、40；后序销毁输出 10、40、30、20。错误混用输出取消 10、40、30 后报告漏掉 20。root=RB_ROOT 是调用者在整轮销毁后重置入口，safe 宏自身不会清根。
 
+在 Linux 环境的仓库根目录开始构建。Makefile 会构建同目录登记的多个内核模块，本节只加载 note_rbtree_walk。
+
 ```bash
 # 在已准备好匹配目标 ARM 的构建环境中执行。
 : "${KERNEL_BUILD:?请先设置目标内核构建目录}"
 : "${CROSS_COMPILE:?请先设置目标交叉工具链前缀}"
 cd labs/kernel/tree_basics/materials
 make -C "$KERNEL_BUILD" M="$PWD" ARCH=arm CROSS_COMPILE="$CROSS_COMPILE" modules
-# 将 note_rbtree_walk.ko 放到目标机后，在目标机执行：
+```
+
+变量检查要求构建目录和编译前缀已设置；`-C` 进入目标内核构建树，`M` 指定当前外部模块目录。部署 ko 到版本与配置匹配的 ARM 目标后加载：
+
+```bash
 sudo insmod ./note_rbtree_walk.ko
+```
+
+加载成功后读取日志，按 walk 前缀核对各段顺序。其他内核日志较多时应增加保留范围，不能把尾部截断误判成漏访。
+
+```bash
 sudo dmesg | tail -n 100
+```
+
+确认结果后卸载；初始化失败时模块没有成功驻留。
+
+```bash
 sudo rmmod note_rbtree_walk
 ```
 
-本批已完成 ARM 语法检查；以明确宿主接口适配直接包含材料也得到上述顺序，并检查八个分配失败位置、重复键、空树和单节点的回收。另用固定遍历核心核对六对象全排列的三种次序与保存后继删除，包括重复键。宿主使用 uintptr_t 适配 Windows 父色位宽，GNU C 保留宏的语句表达式；这些都不是目标 Linux ABI、并发或真实内核执行。目标 Kbuild、装卸和实际日志仍未完成。
+历史验证的输入及结果见[遍历与整树销毁证据](../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.23_rbtree遍历与整树销毁证据)：ARM 语法检查、带显式宿主适配的模块运行、八个分配失败位置、重复键、空树和单节点，以及六对象全排列的次序检查属于不同证据层次。宿主使用 uintptr_t 适配 Windows 父色位宽，GNU C 保留宏的语句表达式；这些都不是目标 Linux ABI、并发或真实内核执行。目标 Kbuild、装卸和实际日志仍未完成。
 
 先做三道修改练习，再进入小结：
 
