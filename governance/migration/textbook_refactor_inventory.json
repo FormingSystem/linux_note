@@ -2877,6 +2877,186 @@
           "独立穷举六组抽象SC交错验证坏结果均不可达；Arm G.b 138、152至154页及一手论文核对；格式、元数据、命名、707篇链接与diff通过。"
         ],
         "limits": "SC枚举不是herd7；本轮没有运行硬件并发、目标屏障或压力测试，编译结果不证明硬件原子性；人工状态不变。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P01_READ_WRITE_ONCE_与_SMP_内存顺序原语.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留M0至M3单次发布、完整程序和答案，补选择树只提供首个候选，多个保证必须组合审查。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读七函数编译对照、ONCE类型边界与cpu_relax反例；重新生成GCC/Clang O0/O2确认次数和回边，保留局部教学宏与Linux宏的区别。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P03_Linux_SMP屏障与顺序域.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "标题回到SB缺失的Store到Load方向，区分Linux最低契约与ISA额外保证；待写模型改为不受NDEBUG影响的退出校验。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P04_release_acquire_发布协议.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "保留单次发布到S0至S5单槽归还的因果链；重跑10000次标准原子交接，核对严格交替、同址一致性和普通字段生命期前提。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P05_数据依赖_控制依赖与RCU取得.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "保留D0至D3地址来源和RCU保护的两条责任；固定文档核对，重做GCC/Clang数据流对照确认known_address实现差异。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P06_原子RMW_顺序后缀与条件成功.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "保留CAS资格、成功/失败及归还链，重跑40000次更新与错误期望值反例；170行单节包含同一机制完整程序，人工审查确认不因长度拆散。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P07_锁_调度_中断与隐式顺序.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "核对schedule、wake_up和失败加锁契约，保留W0至W4及十种交错模型；179行单节是同一登记空窗的完整推导和实验，人工审查保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P08_LKMM事件_关系与一致性判定.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "逐条核对固定cat的ppo、prop、hb，确认MP回边D到C而非直接把fr写成hb；重跑四节点检查，保留它不等于完整LKMM的边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P09_Litmus_形式验证与硬件实验.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正klitmus7接收Litmus再生成代码的证据图，明确历史16项替身验证与本轮未运行Bash/herd7，保留失败和零见证拒绝说明。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P10_子系统边界_误用诊断与选型.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读跨轮覆盖、MMIO/DMA到达与完成、查找寿命、超时回收及三个答案，保留诊断参考职责和权威机制回链。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/大纲.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "十章路线均能接续上一缺口，完整材料与源码入口已就地闭合；39个链接属于导航页职责，人工审查保留，不为通过密度阈值删除。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补背景、五类观察目标、输出覆盖边界和本轮编译证据，保留完整正文材料入口。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "内嵌完整MP发布取得输入和来源推导，区分2026-09-24替身记录与本轮模型文件核验、未执行环境。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-08-02_windows_x86_64.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "保留带日期的历史编译证据，复核关键指令、访问次数与目标边界；本轮直接生成的O0/O2映射吻合，不把历史Bash启动环境改写成本轮。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
+      },
+      "labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/expected/2026-09-24_compiler_access.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "保留带日期的历史编译证据，复核关键指令、访问次数与目标边界；本轮直接生成的O0/O2映射吻合，不把历史Bash启动环境改写成本轮。",
+        "date": "2026-10-16",
+        "validation": [
+          "十五篇完整冷读；28张Mermaid渲染逐张目视，出入标题链接通过；连续性三项阈值提示分别按完整单机制实验和导航职责人工复核保留，其余通过。",
+          "七份正文材料与源文件一致；六个教学程序严格编译运行成功，两种工具链各自O0/O2访问观察及O2依赖观察通过；NDEBUG正常与错误期望副本分别返回0和1。",
+          "15份保存源码/文档/模型与dfaf2136固定提交比对一致，另读RCU依赖文档；八份Litmus身份及清单静态核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "未运行Bash驱动、herd7、klitmus7、目标Linux或ARM并发；宿主程序、教学枚举及源文件校验不代替LKMM结果，历史替身记录保留原时间边界；人工状态不变。"
       }
     }
   },
