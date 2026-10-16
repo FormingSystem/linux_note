@@ -1,4 +1,7 @@
 // 教学模型：共同锁保护发布，智能指针保存使用期，不模拟内核内存序。
+#ifdef NDEBUG
+#error "This teaching experiment requires active assertions"
+#endif
 #include <cassert>
 #include <future>
 #include <iostream>

@@ -178,4 +178,37 @@ static inline void list_splice_tail_init(struct list_head *list,
 
 可修改性：去掉 INIT_LIST_HEAD 会改变源头后续可用性；调换 head->prev/head 与 head/head->next 会改变批次插入位置。若多表分别有锁，需要先确定统一的锁顺序与所有权转移，不能把同一段指针赋值放在各自不同锁下就认为两边都安全。
 
+## 1.4\_脱链完成怎样通过同一成员被观察
+
+普通 `list_del_init` 已能在独占条件下摘链并重建自环。额外的问题是：当 A 摘下成员并写好结果，B 只观察这个成员的连接状态时，怎样获得脱链前写入的顺序保证？下面的配对在 **被摘成员自己的 next** 上传递完成信息，不是通过原队列头发布结果。
+
+```c
+/**
+ * 仓库阅读说明：先摘除 entry，再通过 entry->next 的 release 存储发布自环。
+ * 调用者保证有效成员资格、合法删除协议和宿主寿命，不允许另一方重新插入。
+ */
+static inline void list_del_init_careful(struct list_head *entry)
+{
+	__list_del_entry(entry);
+	WRITE_ONCE(entry->prev, entry);
+	smp_store_release(&entry->next, entry);
+}
+
+/**
+ * 仓库阅读说明：读取同一成员的 next，并检查两个方向都指回该成员。
+ * head 是本次被观察地址；若等的是某个对象脱链，就传那个对象的成员地址。
+ */
+static inline int list_empty_careful(const struct list_head *head)
+{
+	struct list_head *next = smp_load_acquire(&head->next);
+	return list_is_head(next, head) && (next == READ_ONCE(head->prev));
+}
+```
+
+A 先完成结果字段与邻居连接的修改，再写 `entry->prev = entry`，最后以 release 语义写 `entry->next = entry`。B 对同一 next 作 acquire 读取，观察到这次发布的自环并确认 prev 也相等时，才能沿配对顺序读取 A 在发布前完成的写入。`list_is_head(next, head)` 就是判定 next 是否等于当前观察地址，没有隐藏的成员登记表。
+
+这不是无条件的“判空就得到同步”。成员一开始就自环、检查返回 false、观察另一张表的头，或者出现重新插入/复用，都不能套用上述完成证明。双方还必须保证对象存活、结果没有被其他路径并发修改。检查只返回布尔值，不阻塞、不通知；需要等待时由调用方安排轮询、通知或其他策略。
+
+可修改性：把 release/acquire 换成普通 WRITE/READ_ONCE 会丢失这里的配对保证；把参数从 `&obj->link` 换成队列头会改变被观察的事件；允许重新入队则必须重新设计代际与寿命协议。检查失败后的外层行为仍遵循第 1.2 节所述边界，不能在已经损坏的链上用 careful 修复状态。
+
 返回[模块导读](../../../navigation/P02_拓扑修改与发布边界导读.md)、[总索引](../../../navigation/P01_Linux_6.12_链表源码阅读索引.md)或[教材](../../../../../../knowledge/linux/data_structures/单链表_linked_list/大纲.md)。

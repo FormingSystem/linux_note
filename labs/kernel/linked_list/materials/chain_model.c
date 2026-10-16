@@ -1,4 +1,7 @@
 /* 教学模型：只演示单线程拓扑，不是 Linux list.h 的替代品。 */
+#ifdef NDEBUG
+#error "This teaching experiment requires active assertions"
+#endif
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>

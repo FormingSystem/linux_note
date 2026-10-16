@@ -1,4 +1,7 @@
 /* 计数真正的逐项比较，不把操作次数解释成执行时间。 */
+#ifdef NDEBUG
+#error "This teaching experiment requires active assertions"
+#endif
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
