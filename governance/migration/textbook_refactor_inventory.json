@@ -4552,6 +4552,116 @@
           "两图渲染、新增Maple图目视，出入标题锚点核对，全仓719篇8822有效链接无缺失，格式/元数据/路径和diff通过。"
         ],
         "limits": "材料索引118链接承担取用和回正文职责；C/C++为语言，NDEBUG就地解释，BST/NIL/MODPOST沿正文；区域代号不是术语。材料程序未修改，历史检查不重跑或记为新证据。"
+      },
+      "research/source_reading/maple_tree/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读并把查询路线延伸至共享树、资源与退出；保留单一实现入口。",
+        "date": "2026-10-16",
+        "validation": [
+          "十篇完整冷读，相关固定源码按已核定版本交叉核对；15张图渲染并逐张目视。",
+          "十篇出入完整标题锚点通过；全仓719篇8823有效链接无缺失，元数据/标题/路径及diff通过。"
+        ],
+        "limits": "导读只组织函数协作，不复制唯一实现函数体。时序以R/S阶段编号，未再叠加autonumber；导航链接密度服务定位。ARM为架构名、MODPOST为构建阶段、DEBUG为源码配置片段，既有VMA/RCU等前置沿正文与索引建立。没有重跑目标Kbuild、模块装卸或并发验证。"
+      },
+      "research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按读者任务重排入口，补VMA/RCU边界，区分历史与目标验证。",
+        "date": "2026-10-16",
+        "validation": [
+          "十篇完整冷读，相关固定源码按已核定版本交叉核对；15张图渲染并逐张目视。",
+          "十篇出入完整标题锚点通过；全仓719篇8823有效链接无缺失，元数据/标题/路径及diff通过。"
+        ],
+        "limits": "导读只组织函数协作，不复制唯一实现函数体。时序以R/S阶段编号，未再叠加autonumber；导航链接密度服务定位。ARM为架构名、MODPOST为构建阶段、DEBUG为源码配置片段，既有VMA/RCU等前置沿正文与索引建立。没有重跑目标Kbuild、模块装卸或并发验证。"
+      },
+      "research/source_reading/maple_tree/navigation/P02_范围契约与查询入口.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正对象关联和返回箭头，衔接根模式与后续操作。",
+        "date": "2026-10-16",
+        "validation": [
+          "十篇完整冷读，相关固定源码按已核定版本交叉核对；15张图渲染并逐张目视。",
+          "十篇出入完整标题锚点通过；全仓719篇8823有效链接无缺失，元数据/标题/路径及diff通过。"
+        ],
+        "limits": "导读只组织函数协作，不复制唯一实现函数体。时序以R/S阶段编号，未再叠加autonumber；导航链接密度服务定位。ARM为架构名、MODPOST为构建阶段、DEBUG为源码配置片段，既有VMA/RCU等前置沿正文与索引建立。没有重跑目标Kbuild、模块装卸或并发验证。"
+      },
+      "research/source_reading/maple_tree/navigation/P03_树对象与模式选择.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读R0到R3所有权与回收分支，现有解释和图文成立，保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "十篇完整冷读，相关固定源码按已核定版本交叉核对；15张图渲染并逐张目视。",
+          "十篇出入完整标题锚点通过；全仓719篇8823有效链接无缺失，元数据/标题/路径及diff通过。"
+        ],
+        "limits": "导读只组织函数协作，不复制唯一实现函数体。时序以R/S阶段编号，未再叠加autonumber；导航链接密度服务定位。ARM为架构名、MODPOST为构建阶段、DEBUG为源码配置片段，既有VMA/RCU等前置沿正文与索引建立。没有重跑目标Kbuild、模块装卸或并发验证。"
+      },
+      "research/source_reading/maple_tree/navigation/P04_节点布局与范围分区.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "在布局表之前解释固定空间、摘要与槽数代价，说明ABI及历史验证。",
+        "date": "2026-10-16",
+        "validation": [
+          "十篇完整冷读，相关固定源码按已核定版本交叉核对；15张图渲染并逐张目视。",
+          "十篇出入完整标题锚点通过；全仓719篇8823有效链接无缺失，元数据/标题/路径及diff通过。"
+        ],
+        "limits": "导读只组织函数协作，不复制唯一实现函数体。时序以R/S阶段编号，未再叠加autonumber；导航链接密度服务定位。ARM为架构名、MODPOST为构建阶段、DEBUG为源码配置片段，既有VMA/RCU等前置沿正文与索引建立。没有重跑目标Kbuild、模块装卸或并发验证。"
+      },
+      "research/source_reading/maple_tree/navigation/P05_字段编码与状态分工.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "区分五位编码容量和实际节点槽数、有效终点，保留平台分支。",
+        "date": "2026-10-16",
+        "validation": [
+          "十篇完整冷读，相关固定源码按已核定版本交叉核对；15张图渲染并逐张目视。",
+          "十篇出入完整标题锚点通过；全仓719篇8823有效链接无缺失，元数据/标题/路径及diff通过。"
+        ],
+        "limits": "导读只组织函数协作，不复制唯一实现函数体。时序以R/S阶段编号，未再叠加autonumber；导航链接密度服务定位。ARM为架构名、MODPOST为构建阶段、DEBUG为源码配置片段，既有VMA/RCU等前置沿正文与索引建立。没有重跑目标Kbuild、模块装卸或并发验证。"
+      },
+      "research/source_reading/maple_tree/navigation/P07_普通接口与范围契约.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "用同一重叠请求引出store/insert差异，补状态归属和S0到S4时序。",
+        "date": "2026-10-16",
+        "validation": [
+          "十篇完整冷读，相关固定源码按已核定版本交叉核对；15张图渲染并逐张目视。",
+          "十篇出入完整标题锚点通过；全仓719篇8823有效链接无缺失，元数据/标题/路径及diff通过。"
+        ],
+        "limits": "导读只组织函数协作，不复制唯一实现函数体。时序以R/S阶段编号，未再叠加autonumber；导航链接密度服务定位。ARM为架构名、MODPOST为构建阶段、DEBUG为源码配置片段，既有VMA/RCU等前置沿正文与索引建立。没有重跑目标Kbuild、模块装卸或并发验证。"
+      },
+      "research/source_reading/maple_tree/navigation/P08_写入准备与资源清理.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先建立资源失败问题，再补分配释放锁、位置失效与重试时序。",
+        "date": "2026-10-16",
+        "validation": [
+          "十篇完整冷读，相关固定源码按已核定版本交叉核对；15张图渲染并逐张目视。",
+          "十篇出入完整标题锚点通过；全仓719篇8823有效链接无缺失，元数据/标题/路径及diff通过。"
+        ],
+        "limits": "导读只组织函数协作，不复制唯一实现函数体。时序以R/S阶段编号，未再叠加autonumber；导航链接密度服务定位。ARM为架构名、MODPOST为构建阶段、DEBUG为源码配置片段，既有VMA/RCU等前置沿正文与索引建立。没有重跑目标Kbuild、模块装卸或并发验证。"
+      },
+      "research/source_reading/maple_tree/navigation/P09_VMA游标与边界适配.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补共享树和私有游标关系、暂停后的重新定位时序，更新章节入口。",
+        "date": "2026-10-16",
+        "validation": [
+          "十篇完整冷读，相关固定源码按已核定版本交叉核对；15张图渲染并逐张目视。",
+          "十篇出入完整标题锚点通过；全仓719篇8823有效链接无缺失，元数据/标题/路径及diff通过。"
+        ],
+        "limits": "导读只组织函数协作，不复制唯一实现函数体。时序以R/S阶段编号，未再叠加autonumber；导航链接密度服务定位。ARM为架构名、MODPOST为构建阶段、DEBUG为源码配置片段，既有VMA/RCU等前置沿正文与索引建立。没有重跑目标Kbuild、模块装卸或并发验证。"
+      },
+      "research/source_reading/maple_tree/navigation/P10_撤销范围与临时索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先解释临时集合必要性，再连接S0到S5与失败恢复、页表和TLB责任。",
+        "date": "2026-10-16",
+        "validation": [
+          "十篇完整冷读，相关固定源码按已核定版本交叉核对；15张图渲染并逐张目视。",
+          "十篇出入完整标题锚点通过；全仓719篇8823有效链接无缺失，元数据/标题/路径及diff通过。"
+        ],
+        "limits": "导读只组织函数协作，不复制唯一实现函数体。时序以R/S阶段编号，未再叠加autonumber；导航链接密度服务定位。ARM为架构名、MODPOST为构建阶段、DEBUG为源码配置片段，既有VMA/RCU等前置沿正文与索引建立。没有重跑目标Kbuild、模块装卸或并发验证。"
       }
     },
     "additional_documents": [
