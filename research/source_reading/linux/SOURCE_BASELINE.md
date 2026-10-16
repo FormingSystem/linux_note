@@ -1816,3 +1816,25 @@ kill_fasync_rcu沿订阅取得file owner，经send_sigio检查目标和权限；
 fs/pipe.c的pipe_fasync登记读/写端订阅，pipe_write在写后向fasync_readers请求SIGIO/POLL_IN，字节保存在独立管道缓冲。fs/file_table.c最终__fput在FASYNC与回调条件成立时先fasync(-1,file,0)，再调用release；关闭一个共享fd不保证已发生最终fput。evdev的file_operations也包含fasync，说明标准子系统事件语义与信号通知不是互斥分类。
 
 首章完整实验仅使用进程自身管道：先屏蔽SIGIO并清除继承忽略处置，设置接收者/非阻塞/异步标志，三次小写入后同步接收一次信号，再读尽字节，最后撤销并关闭；进程退出前保持SIGIO屏蔽。未在当前Windows环境执行Linux信号内核路径，控制流模型和语法验证不能代替目标Linux运行或板级中断验证。
+
+## 1.195\_异步通知的文件共享与等待基础
+
+2026-10-17 重写[异步通知P02](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P02_Linux_IO_与信号机制基础.md)，继续核对官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，Linux 6.12.20。复用1.194的fcntl、pipe、eventpoll、signal和poll头文件，并增加以下原始文件；不声明整套VFS或信号实现已逐函数覆盖。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| fs/open.c | 5da4df2f9b18a637ed83cde8f2fe52f9034f5290 |
+| fs/char_dev.c | 57cc096c498a29fc3bc2278a142a494ffbe5f3fd |
+| fs/select.c | 834f438296e2ba97c87636e3c5d12d65c7b94030 |
+| fs/file.c | 4cb952541dd036a57177b3ce29587cdffa186aaa |
+| include/linux/fdtable.h | b1c5722f2b3ce4ba82e89716d5e27f85c67a8afd |
+| include/linux/sched/signal.h | c8ed09ac29ac580d15e9bad0175e0507349faee9 |
+| include/linux/sched.h | 0d1d70aded38f6be700c120c3529096b6a0be1db |
+
+fs/file.c的dup取得原file引用并把它安装到新fd；close_on_exec在fdtable中单独维护。fs/open.c的do_dentry_open先取得inode操作表，fs/char_dev.c的chrdev_open再取得cdev的ops并replace_fops后调用驱动open，不能把inode->i_fop直接等同最终驱动表。最终fput的异步撤销路径见1.194。
+
+fs/select.c的__pollwait登记文件引用、wait_address、key和pollwake回调；__pollwake设置triggered并唤醒polling_task，do_poll重新扫描。do_pollfd可直接产生POLLNVAL，错误/挂断加入过滤条件；include/linux/poll.h的poll_wait调用_qproc并建立检查顺序，本身不睡眠。fs/pipe.c的pipe_poll先登记rd_wait/wr_wait，再检查缓冲与读写端状态，可同时返回输入和挂断条件。状态检查与消费仍需驱动同步，登记顺序不能代替缓冲锁。
+
+task_struct含blocked及pending，signal_struct含shared_pending，sighand_struct含action数组；通常多线程共享动作但屏蔽按线程维护。fs/fcntl.c的band_table把六种POLL_原因转换为掩码，send_sigio_to_task在配置signum路径设置si_code、si_fd及si_band，默认及失败回退路径为普通SIGIO；不能传POLLIN组合掩码作为reason，也不能凭SA_SIGINFO假定普通SIGIO带有效fd/band。
+
+正文完整管道实验观察dup共享O_NONBLOCK、关闭一个引用后继续访问、空缓冲EAGAIN、POLLIN与POLLHUP并存、短读保留剩余字节与最终EOF。当前Windows环境未执行Linux ABI，控制流程模拟和编译检查不代替真实系统运行；用户契约另外以正文所列Linux man-pages核对。
