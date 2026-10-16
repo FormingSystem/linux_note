@@ -3248,6 +3248,18 @@
           "只读核对dfaf2136固定提交的DMA API/howto、DMAengine客户端及头文件、swiotlb、device-io和memory-barriers；格式、元数据、命名、全仓链接和diff通过。"
         ],
         "limits": "模型不调用Linux DMA/MMIO API；未运行真实DMA、设备停机、缓存维护或目标内核构建。未提升人工评审状态。"
+      },
+      "knowledge/foundations/c_language/gnu_extensions/C_language_extension.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整重写GNU C与内核宏的责任链，保留原内联汇编/属性/类型/性能/访问/诊断知识范围；修复用户拷贝越界、WARN必继续、kfree(NULL)误判、packed/对齐/空宏泛化和无效来源，宏体转到已有唯一实现。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读与连续性检查通过；成员还原图渲染目视、五个出链及两个入链标题通过，正文与材料一致。",
+          "GCC14.2/Clang18.1.8共12组正反例符合预期；Clang生成x86-64 ELF的CR0读取目标代码，LLD可重定位链接确认强符号取代弱符号。",
+          "核对GCC14.2官方语法手册及固定dfaf2136内核init/cache/compiler/container_of/uaccess/bug/弃用说明/sysctl/slub；格式、元数据、命名、全仓链接和diff通过。"
+        ],
+        "limits": "用户程序验证语法及宿主布局，CR0仅编译不执行；未运行目标内核、Sparse、真实用户拷贝或异常告警。人工状态不变。"
       }
     }
   },
