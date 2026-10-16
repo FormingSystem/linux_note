@@ -15,7 +15,7 @@ bus 组织匹配与管理域，class 提供功能分类；sysfs 把对象属性�
 
 ## 11.1\_沿两个完整实例展开
 
-进入[class 与 sysfs 学习路线](class_sysfs/大纲.md#1.1_从分类观察到可控数据入口)：先创建两个没有设备节点的分类实例，再加入 enabled 属性控制字符读取，随后解释发布、权限、并发与撤销。系统属性参考把这些认识接到真实子系统、设备树、PM 与其他文件系统。
+进入[class 与 sysfs 学习路线](class_sysfs/大纲.md#1.1_从分类观察到可控数据入口)：先创建两个没有设备节点的分类实例，再加入 enabled 属性控制字符读取，随后解释发布、权限、并发与撤销。系统属性参考把这些认识接到真实子系统、设备树、电源管理与其他文件系统。
 
 这个分支学习结束后，应能解释“目录有而节点无”“节点有而读取被拒绝”“删除目录还要等待回调”各发生在哪一层。成员查询保留在[class 参考](../../driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_class.md)，固定源码从[驱动入口索引](../../../research/source_reading/driver_entries/navigation/P01_Linux_6.12_驱动入口源码阅读索引.md)进入。
 
