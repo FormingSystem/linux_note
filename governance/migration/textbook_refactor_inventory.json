@@ -3260,6 +3260,138 @@
           "核对GCC14.2官方语法手册及固定dfaf2136内核init/cache/compiler/container_of/uaccess/bug/弃用说明/sysctl/slub；格式、元数据、命名、全仓链接和diff通过。"
         ],
         "limits": "用户程序验证语法及宿主布局，CR0仅编译不执行；未运行目标内核、Sparse、真实用户拷贝或异常告警。人工状态不变。"
+      },
+      "knowledge/foundations/c_language/kernel_static_annotations/P01_同一份源码怎样面对多个消费者.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "重建锁外用户复制与锁内提交的完整实例，分离消费者预处理分支，修正每锁记账和must_hold调用前提误承诺，统一四类状态与S0至S4。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读11篇正文/导航/实现/实验；20张Mermaid渲染并目视，最终context图复验，全部进出标题锚点通过。",
+          "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
+          "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
+        ],
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+      },
+      "knowledge/foundations/c_language/kernel_static_annotations/P02_预处理器_GNU属性与表达式扩展.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补齐宏展开的语法因果与本地属性正反例，校正聚合计数、函数体假设和调用净变化，说明typeof与重复求值边界及GCC语法检查盲区。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读11篇正文/导航/实现/实验；20张Mermaid渲染并目视，最终context图复验，全部进出标题锚点通过。",
+          "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
+          "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
+        ],
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+      },
+      "knowledge/foundations/c_language/kernel_static_annotations/P03_Sparse地址空间与指针类型契约.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读四类指针协议与限定示例，补用户复制非原子快照、MMIO教学寄存器表与停止完成边界，修正RCU销毁必须等待在途更新者。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读11篇正文/导航/实现/实验；20张Mermaid渲染并目视，最终context图复验，全部进出标题锚点通过。",
+          "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
+          "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
+        ],
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+      },
+      "knowledge/foundations/c_language/kernel_static_annotations/P04_Sparse上下文与控制流记账.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以固定Sparse实现统一函数体与调用点计数语义，增加漏锁静默的完整反例，修复把运行时锁操作与静态分析画在同一执行时序的错误。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读11篇正文/导航/实现/实验；20张Mermaid渲染并目视，最终context图复验，全部进出标题锚点通过。",
+          "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
+          "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
+        ],
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+      },
+      "knowledge/foundations/c_language/kernel_static_annotations/P05_普通编译_BTF与运行时边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补本地Clang DWARF标签三组对照，修复warning回退无条件覆盖Sparse内建的问题，保留元数据、静态检查和真实协议的边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读11篇正文/导航/实现/实验；20张Mermaid渲染并目视，最终context图复验，全部进出标题锚点通过。",
+          "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
+          "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
+        ],
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+      },
+      "knowledge/foundations/c_language/kernel_static_annotations/P06_在Linux内核中使用Sparse与设计注解.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "重写context三类违例的预期，保留漏锁调用盲区；修正设备句柄A/B受另一调用污染、函数名、目录进入与日志退出状态，补足操作阶段衔接。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读11篇正文/导航/实现/实验；20张Mermaid渲染并目视，最终context图复验，全部进出标题锚点通过。",
+          "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
+          "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
+        ],
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+      },
+      "knowledge/foundations/c_language/kernel_static_annotations/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留六章因果学习地图，新增每锁账本和must_hold调用前提的错误模型，将固定版本盲区纳入第四章结果。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读11篇正文/导航/实现/实验；20张Mermaid渲染并目视，最终context图复验，全部进出标题锚点通过。",
+          "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
+          "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
+        ],
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+      },
+      "research/source_reading/compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "核对Linux源码入口与Sparse固定实现，补模块阅读过渡和时序编号，修正配置暗示并明确本轮没有Sparse诊断实跑。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读11篇正文/导航/实现/实验；20张Mermaid渲染并目视，最终context图复验，全部进出标题锚点通过。",
+          "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
+          "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
+        ],
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+      },
+      "research/source_reading/compiler_annotations/navigation/P02_Linux_6.12_compiler_types注解模块概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "将模块路径状态明确为聚合整数，拆分函数体入口出口与调用净增量，补must_hold及条件取得的版本边界和精确实现链接。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读11篇正文/导航/实现/实验；20张Mermaid渲染并目视，最终context图复验，全部进出标题锚点通过。",
+          "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
+          "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
+        ],
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+      },
+      "research/source_reading/compiler_annotations/source_explanations/P01_Linux_6.12_compiler_types注解宏源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "核对七份固定Linux保存证据，补Sparse源码依据与计数盲区，纠正分析/运行混合时序、每锁身份和无目标代码的说明。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读11篇正文/导航/实现/实验；20张Mermaid渲染并目视，最终context图复验，全部进出标题锚点通过。",
+          "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
+          "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
+        ],
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+      },
+      "labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修复实验预期、脚本错误传播和Make参数传递；明确静默盲区，保留正常与故障分支诊断分类，更新清理范围与实验步骤。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读11篇正文/导航/实现/实验；20张Mermaid渲染并目视，最终context图复验，全部进出标题锚点通过。",
+          "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
+          "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
+        ],
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
       }
     }
   },
