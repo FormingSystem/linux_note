@@ -142,26 +142,76 @@ sequenceDiagram
 
 移除等待的依据不是“sleep 一会儿应该读完了”，而是 kernfs 节点的活动状态。该保证针对经过这条 sysfs 路径的调用，不会自动取消你额外启动的工作、定时器或 DMA。本例根本没有这些异步使用者。
 
+步骤 1、2 建立目录与属性；步骤 3～7 表示 show 已经进入时，移除必须等它交还活动保护；步骤 8 才归还创建引用。步骤 9、10 则是在属性创建失败时撤回对象。图里的“等待活动结束”不要求每个用户描述符都先 close；它针对已经进入的受保护操作，不能把两个计数混用。
+
 若启用延迟释放调试，kobject 最终内存清理可以延后。这里动态对象的 release 属于内核公共实现，模块自己的 status_attr 和 status_show 则已经在 S3 与新调用隔离；这也是显式先移除属性的价值。不要把这个例子的释放函数照搬到内嵌 kobject 的自定义对象，后者应由其类型的 release 回收外层对象。
 
 更一般的 kobject_init、kobject_add、kobject_del、kobject_put 分别承担初始化、加入层次、撤销登记、归还引用。del 不等于归还调用方自己的所有引用，put 也不等于“无论计数多少都强制删除”。引用与业务可用性继续见[对象集成生命周期](../../../linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md)。
 
 ## 1.5\_构建观察并改变一个条件
 
-把源码与[Makefile](../../../../labs/kernel/driver_entries/materials/Makefile)放在同一个实验目录。该文件会同时构建本章和下一篇的 misc 模块，所以直接使用完整[材料目录](../../../../labs/kernel/driver_entries/materials/README.md)。先按 Hello 工程设置变量 KDIR 为与目标内核匹配且已经构建的内核构建目录；交叉构建时还需该工程说明的 ARCH 与 CROSS_COMPILE。
+本轮按“构建模块 → 发布属性 → 读取内容和权限 → 撤销并检查入口”推进。在专用练习目录保存 note_sysfs.c，创建下面的独立 Makefile；也可以从[材料目录](../../../../labs/kernel/driver_entries/materials/README.md)直接取用现成文件。本章只请求自己的模块目标，不依赖下一篇的 misc 代码。
+
+```make
+# 当前练习只生成只读属性模块。
+obj-m += note_sysfs.o
+```
+
+下面默认在具有本机编译器及匹配构建树的目标 Linux 上操作。先定位运行内核的构建入口：
 
 ```bash
-make -C "$KDIR" M="$PWD" modules
+# 执行位置：目标练习目录，已有 note_sysfs.c 和 Makefile。
+export KDIR="/lib/modules/$(uname -r)/build"
+test -f "$KDIR/Makefile"
+```
+
+KDIR 保存与运行内核匹配的构建目录，检查失败时先补齐环境。交叉构建沿前置 Hello 工程设置 ARCH、CROSS_COMPILE 与目标的 KDIR，生成后传送产物；下面加载、读取和卸载均在目标执行。
+
+```bash
+# 执行位置：准备好的构建环境中的当前练习目录。
+make -C "$KDIR" M="$PWD" note_sysfs.ko
+```
+
+`-C` 选择内核构建树，`M` 指定当前模块源码，目标只生成 note_sysfs.ko。生成成功后，在启用并挂载 sysfs 的目标加载：
+
+```bash
+# 执行位置：目标的匹配产物目录，尚未加载 note_sysfs。
 sudo insmod ./note_sysfs.ko
+```
+
+成功返回后目录与属性已发布。若加载失败，先读错误与日志，不继续执行依赖属性存在的后续步骤。
+
+```bash
+# 执行位置：目标会话，刚才的加载已成功。
 cat /sys/kernel/note_sysfs/status
+```
+
+应得到 ready 和换行，对应 show 返回的六字节。再看属性的访问形式：
+
+```bash
+# 执行位置：同一目标会话，stat 支持 GNU 风格的 -c 格式参数。
 stat -c '%a %F' /sys/kernel/note_sysfs/status
+```
+
+`%a` 显示八进制权限，应为 444；`%F` 显示普通文件视图，具体文字受语言环境影响。这里说的是 sysfs 属性，不是磁盘上持久存储的普通文件。没有 /dev/note_sysfs 才是本实验的正常结果。
+
+现在预测一次错误操作：普通用户向 status 写入文本会怎样？它没有写权限，也没有 store 回调，不能靠重定向把 ready 改掉。无需改变系统权限来“修好”它；只读正是我们承诺的接口。
+
+观察完成后撤销本轮登记：
+
+```bash
+# 执行位置：目标会话，本轮模块已经成功加载。
 sudo rmmod note_sysfs
+```
+
+退出先移除属性并排空活动，再归还对象引用。卸载成功后检查可见入口：
+
+```bash
+# 执行位置：同一目标会话。
 test ! -e /sys/kernel/note_sysfs/status && echo removed
 ```
 
-在目标启用并挂载 sysfs、模块成功装载的条件下，cat 应打印 ready，stat 应看到权限 444 的普通文件视图，退出后应打印 removed。权限和文件类型说的是 sysfs 属性，不是磁盘上持久存储的普通文件。没有 /dev/note_sysfs 才是本实验的正常结果。
-
-现在预测一次错误操作：普通用户向 status 写入文本会怎样？它没有写权限，也没有 store 回调，不能靠重定向把 ready 改掉。无需改变系统权限来“修好”它；只读正是我们承诺的接口。
+打印 removed 证明当前路径已不存在，不证明所有配置下动态对象内存都已经同步释放；S4 的延迟清理边界仍成立。
 
 若加载失败，先查看返回错误及内核日志，不要直接执行依赖目录已存在的后续步骤。发现重名应查清已有对象的所有者，不要删除别人的目录。成功加载以后才需在结束时 rmmod；初始化失败的清理已在函数内完成。
 
