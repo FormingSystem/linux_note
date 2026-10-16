@@ -364,6 +364,110 @@
           "专题结构、目标格式及全仓链接检查通过；3 张 Mermaid 渲染并检查"
         ],
         "limits": "未执行目标内核构建、加载或告警注入；术语及导航密度提示按阅读契约逐项核对，未宣称严格零提示。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P01_为什么需要_Lockdep.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读两条 mutex 路径、修复、跨时间历史与 IRQ 反例；补 ABBA 字母含义、current 归属和图中关键步骤，保留功能锁与检查链区别。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "10 份固定提交证据核对：9 份 LF 规范化一致，lockdep_proc.c 仅少文件末尾空行",
+          "身份 C 实验普通/优化/变体运行通过；正文与材料一致；14 张图渲染",
+          "专题结构、目标格式、全仓链接及 git diff --check 通过"
+        ],
+        "limits": "未执行目标内核构建、加载或 IRQ/信号并发实验；术语提示及完整实验节长度按阅读契约处置，未宣称严格零提示。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P02_Lockdep_抽象模型与证明边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读四层状态、S0～S6、候选提交与失败回退；补从职责到事件采集的父节推导、跨执行流步骤指引及 UAF 释义，保留缓存先登记与停检边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "10 份固定提交证据核对：9 份 LF 规范化一致，lockdep_proc.c 仅少文件末尾空行",
+          "身份 C 实验普通/优化/变体运行通过；正文与材料一致；14 张图渲染",
+          "专题结构、目标格式、全仓链接及 git diff --check 通过"
+        ],
+        "limits": "未执行目标内核构建、加载或 IRQ/信号并发实验；术语提示及完整实验节长度按阅读契约处置，未宣称严格零提示。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P03_锁实例_锁类_key与subclass.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读类身份、配置、动态 key、误归类和两层 subclass；补分类正确性的父节问题，身份实验提供同源 C 材料与逐步编译运行及修改。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "10 份固定提交证据核对：9 份 LF 规范化一致，lockdep_proc.c 仅少文件末尾空行",
+          "身份 C 实验普通/优化/变体运行通过；正文与材料一致；14 张图渲染",
+          "专题结构、目标格式、全仓链接及 git diff --check 通过"
+        ],
+        "limits": "未执行目标内核构建、加载或 IRQ/信号并发实验；术语提示及完整实验节长度按阅读契约处置，未宣称严格零提示。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P04_持锁账本_依赖图与状态闭环.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读阻塞前事件、候选前驱、两种提交、缓存、非栈顶释放和 trylock；纠正 S4/S5 来源章节并按图序号分清成功与失败路径，原有状态模型保留。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "10 份固定提交证据核对：9 份 LF 规范化一致，lockdep_proc.c 仅少文件末尾空行",
+          "身份 C 实验普通/优化/变体运行通过；正文与材料一致；14 张图渲染",
+          "专题结构、目标格式、全仓链接及 git diff --check 通过"
+        ],
+        "limits": "未执行目标内核构建、加载或 IRQ/信号并发实验；术语提示及完整实验节长度按阅读契约处置，未宣称严格零提示。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P05_递归_依赖环_IRQ与读写规则.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读反向搜索、递归、IRQ 强路径和 wait type；先用等待写者阻止再次读的交错推出 r/R 区别，再给分类表，保留递归读有环却不阻塞的反例。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "10 份固定提交证据核对：9 份 LF 规范化一致，lockdep_proc.c 仅少文件末尾空行",
+          "身份 C 实验普通/优化/变体运行通过；正文与材料一致；14 张图渲染",
+          "专题结构、目标格式、全仓链接及 git diff --check 通过"
+        ],
+        "limits": "未执行目标内核构建、加载或 IRQ/信号并发实验；术语提示及完整实验节长度按阅读契约处置，未宣称严格零提示。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P06_查询_断言_pin与自定义原语接入.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读查询三态、断言、pin、might_lock 与新原语事件契约；从设备辅助函数和回调缺口引出接口选择，说明 pin 时间线关键步骤，保留 UNKNOWN=-1 与功能同步边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "10 份固定提交证据核对：9 份 LF 规范化一致，lockdep_proc.c 仅少文件末尾空行",
+          "身份 C 实验普通/优化/变体运行通过；正文与材料一致；14 张图渲染",
+          "专题结构、目标格式、全仓链接及 git diff --check 通过"
+        ],
+        "limits": "未执行目标内核构建、加载或 IRQ/信号并发实验；术语提示及完整实验节长度按阅读契约处置，未宣称严格零提示。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读虚拟 map、业务锁条件、指针逃逸与告警门控；补 RCU 最小寿命契约，将错误的告警到释放箭头改为由读侧退出驱动两条职责，补序号与关键步骤解释。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "10 份固定提交证据核对：9 份 LF 规范化一致，lockdep_proc.c 仅少文件末尾空行",
+          "身份 C 实验普通/优化/变体运行通过；正文与材料一致；14 张图渲染",
+          "专题结构、目标格式、全仓链接及 git diff --check 通过"
+        ],
+        "limits": "未执行目标内核构建、加载或 IRQ/信号并发实验；术语提示及完整实验节长度按阅读契约处置，未宣称严格零提示。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P08_配置_亲手实验与报告解读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读配置、实验、报告、proc 和覆盖计划；将正文模块统一为既有材料，统一锁名和日志前缀，在正文完成环境、构建、加载、证据与清理主线，以具体恢复分支推出覆盖计划。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；不等同于开发者人工评审",
+          "10 份固定提交证据核对：9 份 LF 规范化一致，lockdep_proc.c 仅少文件末尾空行",
+          "身份 C 实验普通/优化/变体运行通过；正文与材料一致；14 张图渲染",
+          "专题结构、目标格式、全仓链接及 git diff --check 通过"
+        ],
+        "limits": "未执行目标内核构建、加载或 IRQ/信号并发实验；术语提示及完整实验节长度按阅读契约处置，未宣称严格零提示。"
       }
     }
   },
