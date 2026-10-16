@@ -1545,6 +1545,18 @@
           "本批P05至P14的23个本地标题片段逐项核对，修复一处旧标题；格式、全仓链接及 git diff --check 通过"
         ],
         "limits": "未执行物理热拔出、旧文件持有期间卸载、映射撤销或真实驱动停机；教学计数协议不替代具体硬件与子系统保证。"
+      },
+      "knowledge/linux/device_model/P15_复合设备_MFD与Component.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "由单芯片功能拆分与多单元服务聚合分别推导 MFD 和 Component，补足实际状态载体、到齐触发、部分绑定回滚、分级撤销及资源组寿命；纠正组件/子对象引用不得越过父对象的绝对化表述。",
+        "date": "2026-10-16",
+        "validation": [
+          "固定 Linux 6.12.20 的 MFD/Component 五份源码及接口资料核对",
+          "三张 Mermaid 渲染并逐图检查",
+          "标题、元数据、路径、全仓链接和 git diff --check 通过；连续阅读与术语候选人工复核"
+        ],
+        "limits": "未进行目标内核编译、真实 MFD 子驱动失败或 Component 聚合/拆除运行测试；人工评审状态不变。"
       }
     }
   },
