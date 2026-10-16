@@ -1497,6 +1497,18 @@
           "三图渲染及目视检查；标题、元数据、命名、全仓707篇链接和 git diff --check 通过"
         ],
         "limits": "未执行目标延迟探测、超时、debugfs观察或并发删除；不将配置存在与源码交错推演当作实际运行证明。"
+      },
+      "knowledge/linux/device_model/P10_fwnode_OF与Platform适配.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从板级描述与运行管理职责分离推导 device_node、platform_device 和 fwnode，解释实例化筛选、递归规则、I2C 子设备与 reg 语义；用属性读取过程及完整匹配停止表区分描述、实例、候选和服务。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读，连续性与术语候选复核；OF/ACPI 为前文已定义名称组合",
+          "十一份固定 dfaf2136 源码核对，一份已有保存副本一致；两图渲染并目视复核，纠正递归箭头为登记成功以后",
+          "标题、元数据、命名、全仓707篇链接及 git diff --check 通过"
+        ],
+        "limits": "未执行设备树编译、固件变更、目标属性读取或硬件探测；教学属性名和纸面匹配练习不冒充真实绑定规范。"
       }
     }
   },
