@@ -5870,6 +5870,17 @@
           "GCC与Clang各3模式54场景共162个接口模型测试、正文代码一致性和Bash语法通过；3出链无标题入链，全仓9032有效链接、格式元数据路径和diff通过。"
         ],
         "limits": "系统接口模型不证明Linux头文件编译、信号ABI或板上运行；正文提供目标Linux有限验证，Windows当前环境未运行这些目标步骤。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P10_并发_竞态与内存可见性问题.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按数据、订阅、寿命拆分并发责任，解释核心RCU与节点锁、等待登记重查、上下文选择及解绑后旧file保活，替换错误大锁和屏障模板。",
+        "date": "2026-10-17",
+        "validation": [
+          "原稿全文与内容去向、术语冷读完成；三图渲染目视，严格连续阅读0风险。",
+          "正文Python穷举10种正确等待与6种双读者交错，构造两类丢唤醒反例；5出链无标题入链、全仓9036有效链接及格式元数据路径和diff通过。"
+        ],
+        "limits": "交错模型仅验证顺序一致的原子步骤，不是LKMM、目标内核构建、真实信号或硬件验证；W盘源码工作树仍不可访问，证据固定官方不可变提交。"
       }
     },
     "additional_documents": [
