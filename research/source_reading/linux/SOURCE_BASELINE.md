@@ -1093,6 +1093,8 @@ B05aa按固定dfaf2136核对include/linux/completion.h（fb291567657432083162031
 
 ## 1.135\_等待宏出口与独占扫描范围
 
+2026-10-16 全篇复审时，将完成量模型的消费动作移出 assert，两个模型都改为不受 NDEBUG 影响的显式结果检查。GCC 14.2 / Clang 18.1.8 的 C11 严格警告、O0/O2、启用/关闭标准断言组合共 16 组通过；另验证单次完成替代广播的预期失败，以及独占首项成功、负回调提前终止、观察者前移三种扫描答案，共 20 组编译运行。完成量模型还覆盖 UINT_MAX 附近的饱和边界。复查仓库保存的 wait.h、wait.c、completion.h、completion.c 与 swait.h，Git blob 均匹配上列固定对象；当前共享源码工作树不可访问，本次没有重新验证外部工作树，也没有运行真实内核等待或驱动停机。
+
 B05ab继续只读固定dfaf2136的wait.h与wait.c（对象身份同1.133），逐支对齐___wait_event的init_wait_entry、condition优先、信号错误出口、正常finish与循环；补回原实现文档声称覆盖但未实际展示的[宏体](../waiting_notification/source_explanations/include/linux/wait.h.md#1.3_wait_event宏循环与出口)。未修改外部树，宏中文说明明确为仓库补充。
 
 [独占扫描C模型](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P05_独占等待批量唤醒与公平性.md#5.3.1_用C观察额度怎样截断扫描)在GCC14.2/Clang18.1.8严格C11 O2下确认额度1/2/不限时访问3/5/6项；成功非独占回调不扣额度，失败不扣额度，额度终止会跳过后续观察者。模型使用固定回调结果，不运行内核唤醒、调度或资源领取；bookmark仍为独立概念方案，固定代码无该分段路径。

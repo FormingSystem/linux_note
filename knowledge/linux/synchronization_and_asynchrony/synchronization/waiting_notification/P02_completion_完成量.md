@@ -48,7 +48,7 @@ flowchart LR
 
 ## 2.3\_先建立对象寿命\_再启动工作
 
-动态对象在发布给完成者之前调用init_completion，静态对象可使用DECLARE_COMPLETION；栈上声明使用DECLARE_COMPLETION_ONSTACK，以配合相应的调试初始化。两种声明只是存储位置不同，都不证明异步回调已结束。
+动态对象在发布给完成者之前调用初始化函数 `init_completion()`；静态对象可使用声明宏 `DECLARE_COMPLETION`，栈上声明使用宏 `DECLARE_COMPLETION_ONSTACK`，以配合相应的调试初始化。两种声明适配不同存储位置，都不证明异步回调已结束。
 
 以下是本章的内核内部请求协议片段，不是独立模块。请求由外层持有，只有一个完成者写result和调用一次complete；等待成功以后，不再有写入者改result。request_init在异步提交之前执行，request_finish由真实工作路径在确定结果后调用。
 
@@ -114,9 +114,9 @@ if (ret < 0) {
 
 ## 2.5\_完成接口与硬件完成点
 
-complete增加一个令牌，complete_all发布广播完成状态。二者不执行睡眠等待，但上下文限制仍需按版本和配置核对：固定实现complete_all包含实时内核上下文断言，不能把“非睡眠”扩张成所有配置、所有中断和NMI上下文都无条件安全。
+complete增加一个令牌，complete_all发布广播完成状态。二者不执行睡眠等待，但上下文限制仍需按版本和配置核对：固定实现complete_all包含实时内核上下文断言，不能把“非睡眠”扩张成所有配置、所有中断和不可屏蔽中断（Non-maskable Interrupt，NMI）上下文都无条件安全。
 
-硬件中断处理中，设备驱动应先确认中断属于本次请求，按设备手册获取结果和应答中断，再到达软件约定的完成点。先清状态还是先读取结果、完成位是否意味着DMA已经停止，都由具体设备协议决定。不能随手发明STATUS和TRANSFER_DONE寄存器后，把一次writel加complete当成适用所有硬件的完成模板。
+硬件中断处理中，设备驱动应先确认中断属于本次请求，按设备手册获取结果和应答中断，再到达软件约定的完成点。先清状态还是先读取结果、完成位是否意味着直接内存访问（Direct Memory Access，DMA）已经停止，都由具体设备协议决定。不能随手发明STATUS和TRANSFER_DONE寄存器后，把一次writel加complete当成适用所有硬件的完成模板。
 
 complete不是取消硬件的指令，也不保证调用它的函数已经返回。工作者如果在complete之后还有资源释放、日志或其他访问，等待方只能依据已定义的完成点继续，不能提前卸载模块代码或释放工作者还要使用的对象。
 
@@ -145,15 +145,23 @@ init_completion会初始化队列，不能用它代替reinit来“更彻底地�
 
 ## 2.7\_用完整C模型观察令牌与广播
 
-下面只模拟令牌状态，不含任务、锁、真实睡眠或内存屏障。它让提前完成、观察不占有、两次完成和广播持续生效成为可运行的反例。UINT_MAX来自limits.h；它在模型中对应固定实现的饱和值。
+下面只模拟令牌状态，不含任务、锁、真实睡眠或内存屏障。它让提前完成、观察不占有、两次完成和广播持续生效成为可运行的反例。UINT_MAX来自limits.h；它在模型中对应固定实现的饱和值。need 是本例的检查函数，使用标准 C 的 EXIT_FAILURE 失败退出宏。每次 take 先执行并保存结果，再检查预期，因此 NDEBUG 关闭标准 assert 也不会改变消费过程。
 
 ```c
-#include <assert.h>
 #include <stdbool.h>
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 struct completion_model { unsigned int done; };
+
+static void need(bool ok, const char *step)
+{
+    if (!ok) {
+        fprintf(stderr, "unexpected result: %s\n", step);
+        exit(EXIT_FAILURE); /* 显式失败检查，不依赖assert的编译开关。 */
+    }
+}
 
 static void publish(struct completion_model *m)
 {
@@ -176,22 +184,41 @@ int main(void)
     publish(&m);                 /* 尚无等待者也保存令牌。 */
     bool a_saw = m.done != 0;
     bool b_saw = m.done != 0;
-    assert(a_saw && b_saw);
-    assert(take(&m));
-    assert(!take(&m));            /* 两个观察不是两个令牌。 */
+    need(a_saw && b_saw, "two observers see one token");
+    bool first = take(&m);
+    bool second = take(&m);
+    need(first && !second, "observation does not reserve token");
     publish(&m);
     publish(&m);
-    assert(take(&m) && take(&m) && !take(&m));
+    first = take(&m);
+    second = take(&m);
+    bool third = take(&m);
+    need(first && second && !third, "two publications yield two tokens");
     m.done = UINT_MAX;            /* 模拟广播完成。 */
-    assert(take(&m) && take(&m) && m.done == UINT_MAX);
+    first = take(&m);
+    second = take(&m);
+    need(first && second && m.done == UINT_MAX, "broadcast stays available");
     m.done = 0;                   /* 这里只因没有异步使用者才可重置。 */
-    assert(!take(&m));
+    first = take(&m);
+    need(!first, "reset removes completed state");
+    m.done = UINT_MAX - 1;        /* 验证有限计数达到饱和值的边界。 */
+    publish(&m);
+    publish(&m);                 /* 已饱和时不继续递增溢出。 */
+    first = take(&m);
+    need(first && m.done == UINT_MAX, "saturated count does not wrap");
     puts("early=stored; observations=2 tokens=1; counted=2; broadcast=sticky");
     return 0;
 }
 ```
 
-保存为completion_model.c，用`cc -std=c11 -Wall -Wextra -Werror -O2 completion_model.c -o completion_model`编译后运行。预期输出为`early=stored; observations=2 tokens=1; counted=2; broadcast=sticky`。先预测把广播改成一次publish会在哪条断言失败，再实际修改；广播不是向每个未来等待者预先分配一个有限令牌。
+把代码保存为自行命名的 completion_model.c。具有 cc 的环境中，先用 C11 和严格警告编译，再执行生成的文件：
+
+```bash
+cc -std=c11 -Wall -Wextra -Werror -O2 completion_model.c -o completion_model
+./completion_model
+```
+
+编译命令的 -o 指定可执行文件名，-O2 选择优化级别；程序输出来自第二条运行命令。预期输出为`early=stored; observations=2 tokens=1; counted=2; broadcast=sticky`。先预测把 `m.done = UINT_MAX` 这一广播动作改成一次 `publish(&m)` 会在哪个检查失败，再实际修改。此时前一阶段已消耗完令牌，单次 publish 只留下一个，first 成功而 second 失败，`broadcast stays available` 检查就会报错。广播不是向每个未来等待者预先分配一个有限令牌。末尾饱和边界还说明计数不能无限精确累计。
 
 这也解释与信号量的边界：信号量通常管理可归还的资源额度，完成量表达工作完成；它们都可能有计数，却承诺不同的应用协议。任意“队列非空或已停止”条件仍适合waitqueue，排他临界区仍需mutex等互斥协议。不能因为模型只有一个整数就把所有同步原语当成同一种东西。
 
