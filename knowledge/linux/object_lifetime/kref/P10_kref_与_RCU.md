@@ -83,9 +83,18 @@ RCU 并不与 kref 自动互相通知。第一种协议是应用的 release 接�
 完整 [rcu_take_window.c](../../../../labs/kernel/object_lifetime/materials/rcu_take_window.c) 用观察者账本安排两种先后顺序。它既不实现 RCU，也不模拟原子指令；alive 只是账本状态，程序从未实际分配或解引用已释放内存。
 
 ```c
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+/* 模型检查始终执行，定义 NDEBUG 也不会移除状态转换。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("RCU ownership model check failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* 观察者账本；字段不是 Linux RCU 或 kref 的内部实现。 */
 enum retire_order { ZERO_THEN_GP, GP_THEN_PUT };
@@ -99,14 +108,14 @@ struct object_model {
 
 static void reclaim(struct object_model *obj)
 {
-    assert(obj->alive && obj->refs == 0 && obj->gp_done && !obj->in_read);
+    require_model(obj->alive && obj->refs == 0 && obj->gp_done && !obj->in_read);
     obj->alive = false;
     ++obj->free_calls;
 }
 
 static void drop_ref(struct object_model *obj)
 {
-    assert(obj->alive && obj->refs > 0);
+    require_model(obj->alive && obj->refs > 0);
     if (--obj->refs != 0)
         return;
     ++obj->release_calls;
@@ -118,7 +127,7 @@ static void drop_ref(struct object_model *obj)
 
 static void unpublish(struct object_model *obj)
 {
-    assert(obj->published && obj->publish_owns);
+    require_model(obj->published && obj->publish_owns);
     obj->published = false;
     if (obj->order == ZERO_THEN_GP) {
         obj->publish_owns = false;
@@ -128,7 +137,7 @@ static void unpublish(struct object_model *obj)
 
 static bool try_take(struct object_model *obj)
 {
-    assert(obj->alive && obj->in_read && !obj->reader_owns);
+    require_model(obj->alive && obj->in_read && !obj->reader_owns);
     if (obj->refs == 0)
         return false;
     ++obj->refs;
@@ -138,14 +147,14 @@ static bool try_take(struct object_model *obj)
 
 static bool finish_gp(struct object_model *obj)
 {
-    assert(!obj->published);
+    require_model(!obj->published);
     if (obj->in_read)
         return false; /* 旧读者尚在，模拟器不能宣布本次 GP 完成。 */
     if (obj->order == ZERO_THEN_GP && !obj->free_pending)
         return false; /* 本模型此时尚未由 release 排出回收请求。 */
     obj->gp_done = true;
     if (obj->order == GP_THEN_PUT) {
-        assert(obj->publish_owns);
+        require_model(obj->publish_owns);
         obj->publish_owns = false;
         drop_ref(obj);
     } else {
@@ -157,7 +166,7 @@ static bool finish_gp(struct object_model *obj)
 
 static void reader_put(struct object_model *obj)
 {
-    assert(obj->reader_owns && !obj->in_read);
+    require_model(obj->reader_owns && !obj->in_read);
     obj->reader_owns = false;
     drop_ref(obj);
 }
@@ -168,7 +177,7 @@ static void run_case(enum retire_order order, bool reader_first)
         .order = order, .refs = 1, .published = true,
         .in_read = true, .publish_owns = true, .alive = true
     }; /* S1：入口已有一份，读者已在读区中保存旧地址。 */
-    bool taken;
+    bool taken, gp_finished;
     if (reader_first) {
         taken = try_take(&obj);
         unpublish(&obj);
@@ -176,23 +185,26 @@ static void run_case(enum retire_order order, bool reader_first)
         unpublish(&obj);
         taken = try_take(&obj);
     }
-    assert(taken == (reader_first || order == GP_THEN_PUT));
-    assert(obj.alive && !finish_gp(&obj));
+    require_model(taken == (reader_first || order == GP_THEN_PUT));
+    gp_finished = finish_gp(&obj);
+    require_model(obj.alive && !gp_finished);
     printf("%s %s: taken=%d refs=%u alive=%d\n",
            order == ZERO_THEN_GP ? "zero_then_gp" : "gp_then_put",
            reader_first ? "reader_first" : "remove_first", taken, obj.refs, obj.alive);
     obj.in_read = false; /* 模拟旧读者退出，不会自动归还长期份额。 */
     if (order == GP_THEN_PUT) {
-        assert(finish_gp(&obj));
-        assert(obj.alive && obj.reader_owns && obj.refs == 1);
+        gp_finished = finish_gp(&obj);
+        require_model(gp_finished);
+        require_model(obj.alive && obj.reader_owns && obj.refs == 1);
         reader_put(&obj); /* GP 已完，长期使用者现在才退出。 */
     } else {
         if (taken)
             reader_put(&obj);
-        assert(finish_gp(&obj));
+        gp_finished = finish_gp(&obj);
+        require_model(gp_finished);
     }
-    assert(!obj.alive && !obj.publish_owns && !obj.reader_owns);
-    assert(obj.release_calls == 1 && obj.free_calls == 1);
+    require_model(!obj.alive && !obj.publish_owns && !obj.reader_owns);
+    require_model(obj.release_calls == 1 && obj.free_calls == 1);
 }
 
 int main(void)
@@ -206,7 +218,7 @@ int main(void)
 }
 ```
 
-在仓库根目录编译运行，不定义 NDEBUG，因为断言参与轨迹执行：
+在仓库根目录编译运行。require_model 是模型自己的检查函数；finish_gp 等状态转换先独立执行再检查结果，定义 NDEBUG 也不会改变轨迹：
 
 ```bash
 cc -std=c11 -Wall -Wextra -Werror -O2 \
@@ -226,11 +238,11 @@ four ownership orders passed
 
 第二行最关键：refs 已为零，alive 仍为真，取得失败。第四行中入口已经撤下，refs 却仍有退休份额和读者份额共两份。随后模型先完成 GP、归还退休份额，再让长期读者归还，证明“GP 完成”也不是“所有引用结束”。四条轨迹最终各触发一次 release 和一次回收。
 
-finish_gp 被旧读区挡住时返回 false，是模型显式安排的检查结果，不是实际 RCU API，也不是用一个全局读者计数解释内核实现。严格 C11 编译运行已通过；没有真实线程、内存序、内核 GP 调度、目标模块装卸或运行时间测量。
+finish_gp 被旧读区挡住时返回 false，是模型显式安排的检查结果，不是实际 RCU API，也不是用一个全局读者计数解释内核实现。模型把“边界满足”与“执行相应退休动作”合在一次函数调用中；真实系统中，GP 已结束不等于所有已登记回调已经执行，模块退出还要按 10.4 的回调完成协议处理。严格 C11 编译及四条轨迹只检查这个账本，没有真实线程、内存序、内核 GP 调度、目标模块装卸或运行时间测量。
 
-### 10.2.2\_为什么\_RCU\_lookup\_不能直接\_kref\_get()
+### 10.2.2\_入口份额先归还\_为何必须处理取得失败
 
-本节标题限定在已经选定的“撤下立即 put、归零后延迟回收”协议。错误不在于地址必然失效，而在于地址有效与计数为正不再同时成立。
+继续采用已经选定的“撤下立即 put、归零后延迟回收”协议。错误不在于地址必然失效，而在于地址有效与计数为正不再同时成立。
 
 ```mermaid
 sequenceDiagram
@@ -259,7 +271,7 @@ sequenceDiagram
 
 如果改用发布份额跨 GP 的完整协议，相关旧读者始终受那一份保护，普通 get 可以成立；代价是退休份额与回调必须正确交接，而且查找成功仍不意味着业务许可。不能只替换一个 get 调用就宣称切换协议。继续使用条件 get 也不能修复错误的发布/回收顺序。
 
-相比上一章，读者不再为定位取得同一把集合锁，但仍要原子写共享计数；高频 get/put 仍可能使计数所在缓存行在 CPU 间迁移。更新侧又要保留退休内存并处理回收进度。只有读写比例、临界区内容及这些成本适合时，组合才有价值，不能从“读侧无集合锁”直接推出整体更快。
+相比上一章，读者不再为定位取得同一把集合锁，但仍要原子写共享计数；高频 get/put 仍可能使计数所在缓存行在 CPU 间迁移。比如两个 CPU 反复查同一热点对象，双方虽只读 id，却都要更新同一个 ref；一次原子增加需要取得该缓存行的写入权限，另一 CPU 再更新时又要经一致性协议取得权限。这里省掉了查找锁的等待，却保留了共享计数写入的协调成本；对象分散到不同缓存行时，争用程度又可能不同。更新侧又要保留退休内存并处理回收进度。只有读写比例、临界区内容及这些成本适合时，组合才有价值，不能从“读侧无集合锁”直接推出整体更快。
 
 ### 10.2.3\_kref\_get\_unless\_zero()\_解决什么\_不解决什么
 
@@ -268,6 +280,7 @@ sequenceDiagram
 下面是接口片段，lookup_obj_rcu 表示后文才实现的匹配 RCU 查找，不是可直接编译的完整函数：
 
 ```c
+found = NULL; /* 未找到或取得失败时，不能遗留上一次查询的地址。 */
 rcu_read_lock();
 obj = lookup_obj_rcu(id);
 if (obj && kref_get_unless_zero(&obj->ref))
@@ -279,7 +292,7 @@ rcu_read_unlock();
 
 失败也要分清期限：没有取得长期引用，因此不能把这个地址带出读区继续使用。它不意味着仍在正确读区内连遍历所需的链接都不能读取；这种临时读取能否成立取决于 RCU 链表保留旧路径的协议。业务字段或子资源则未必保留到同一时刻，不能由外壳仍在推出任意字段都可用。
 
-先完成两项练习。把模型中第二种协议的 GP 之后 reader_put 提前到 GP 之前，预测最终由谁触发 release；再尝试把第一种协议的 reclaim 提前到旧读区结束前，解释是哪条断言阻止它。只在账本上构造反例，不用真实释放后解引用演示错误。下一节把这些责任映射到对象字段、查找循环和业务检查。
+先完成两项练习。把模型中第二种协议的 GP 之后 reader_put 提前到 GP 之前，预测最终由谁触发 release；再尝试把第一种协议的 reclaim 提前到旧读区结束前，解释是哪条模型检查阻止它。只在账本上构造反例，不用真实释放后解引用演示错误。下一节把这些责任映射到对象字段、查找循环和业务检查。
 
 ## 10.3\_查找路径\_从对象模型到\_get\_模板
 
@@ -304,6 +317,8 @@ rcu_read_unlock();
 linked 不用来让 RCU 读者决定地址是否有效，也不能用 list_empty 判断已删除的 RCU 节点。撤下仍要保留旧读者所需的 next；单独的 linked 使第二次撤下能够识别“这次没有接走表份额”，不再重复 put。
 
 完整 [note_kref_rcu.c](../../../../labs/kernel/object_lifetime/materials/note_kref_rcu.c) 如下，后面逐步跟踪它的查找和回收分支。所有按对象地址调用的发布、请求及撤下函数，都要求调用者另持一份，覆盖整个调用。
+
+回收计数 free_calls 放在对象之外，类型 atomic_t 表示内核原子整数，`ATOMIC_INIT(0)` 是它的静态初始化宏。回调通过 atomic_inc 增加它，退出路径等完回调再用 atomic_read 读取；这只是避免统计丢失，不用这个计数代替 GP 或回调完成保证。
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -476,11 +491,24 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("RCU临时读取转长期引用与模块回调退出实验");
 ```
 
-目标构建使用已经准备好、与运行内核匹配的内核构建目录；以下命令只给出 Linux 环境步骤，KDIR 是读者环境变量，不能把当前源码目录名当作运行身份：
+在 Linux 构建主机准备与目标运行内核匹配的构建树，把绝对路径赋给 KERNEL_BUILD。交叉构建还需设置匹配的 ARCH 与 CROSS_COMPILE。从仓库根目录执行以下步骤，只构建本节模块：
 
 ```bash
-make -C "$KDIR" M="$PWD/labs/kernel/object_lifetime/materials" modules
-sudo insmod labs/kernel/object_lifetime/materials/note_kref_rcu.ko
+kref_rcu_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_kref_rcu.c "$kref_rcu_dir/"
+printf 'obj-m += note_kref_rcu.o\n' > "$kref_rcu_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_rcu_dir" modules
+```
+
+临时目录保存源码、Makefile 和构建产物；M 指定这个外部模块的位置。将 note_kref_rcu.ko 复制到匹配的目标 Linux，在模块所在目录加载；本机即目标时可直接进入上述临时目录：
+
+```bash
+sudo insmod ./note_kref_rcu.ko
+```
+
+加载执行初始化中的同步服务周期，最后登记延迟回收。加载成功后卸载并读取日志：
+
+```bash
 sudo rmmod note_kref_rcu
 sudo dmesg | tail -n 20
 ```
@@ -495,7 +523,7 @@ note_rcu: free=1 empty=1
 
 第三行只在退出调用 rcu_barrier 以后打印。init 最后一份 put 已登记回调，但不能据函数返回推断回调已经执行。私有失败对象也走同一回收出口，所以初始化失败路径先 barrier 再返回错误，避免代码被卸载后旧回调才调用本模块函数。
 
-本次实际完成 ARM 前端检查，以及执行真实应用函数、固定引用 helper 和固定 list_del_rcu 的八组宿主顺序检查；底层锁、链表插入/遍历、原子、分配与 RCU 排队/完成由显式替身提供。检查覆盖正常周期、分配失败、重复发布和编号、重复撤下、条件取得先成功/归零先发生、移除后查找及保留 next 的旧路径，另覆盖可选状态过滤包装的成功与关闭回滚；该包装也通过 ARM 前端。目标构建链接、装卸、真实线程和 GP 调度均未执行；上述目标日志是预计结果，不冒充板上日志。
+本轮重新核对完整程序，运行真实应用函数、固定引用 helper 和固定 list_del_rcu 的八组宿主顺序检查；底层锁、链表插入/遍历、原子、分配与 RCU 排队/完成由显式替身提供。检查覆盖正常周期、分配失败、重复发布和编号、重复撤下、条件取得先成功/归零先发生、移除后查找及保留 next 的旧路径，另覆盖可选状态过滤包装的成功与关闭回滚。历史模块和包装 ARM 前端结果不作为本轮目标构建。目标构建链接、装卸、真实线程和 GP 调度均未执行；上述目标日志是预计结果，不冒充板上日志。
 
 ### 10.3.2\_正确的\_RCU\_lookup\_+\_kref\_模板
 
@@ -580,7 +608,7 @@ object_unpublish 接收的是调用者已经拥有的地址；它不是任意裸
 
 发布侧也要与此配对：object_publish 在检查首次发布和编号唯一之后才追加表份额。成功不消费创建者原份额；失败不新增表份额。若只 list_add_rcu 而未说明初始份额转交或另 get，后续“归还表份额”就可能归还一个从未建立的责任。
 
-### 10.4.2\_release\_中为什么不能直接\_kfree
+### 10.4.2\_旧读者尚在\_为何归零还不能直接回收
 
 在本章主协议中，最后归还只排除了长期拥有者，旧 RCU 临时读者可能还在比较 id、尝试取得或沿 next 遍历。因此 object_release 调用 call_rcu 登记 object_rcu_free，暂不释放对象。S4 可以先于旧读者退出，S5 必须晚于所需保护边界。
 
@@ -639,7 +667,7 @@ object_unpublish 接收的是调用者已经拥有的地址；它不是任意裸
 
 ### 10.5.2\_RCU\_不保护对象字段一致性
 
-用完整模块的 completed 再推一次：两个拥有者都持有引用，所以对象不会归零；两者若同时执行普通的“读旧值、加一、写回”，仍可能都读取 0、都写回 1，丢失一次请求。RCU 或 kref 已经保住地址，却没有把这三个步骤变成互斥操作。
+用完整模块的 completed 再推一次：两个拥有者都持有引用，所以对象不会归零；两者若同时执行普通的“读旧值、加一、写回”，逻辑交错可以表现为都读取 0、都写回 1，丢失一次请求。这只是错误过程的示意；真实无同步 C 数据竞争还可能产生未定义行为，不能把后果限定成少加一次。RCU 或 kref 已经保住地址，却没有把这三个步骤变成互斥操作。
 
 object_request 因而把 dying 检查和 completed 更新放在同一对象锁内。如果只在锁内检查、解锁后增加，更新者可以在中间关门，本次操作就可能越过关闭决定。如果业务只需要独立原子计数，可以重新设计相应协议；但一个字段能原子增加，不代表“门仍打开才计数”这个复合条件也已原子化。
 
@@ -675,7 +703,7 @@ static void object_with_buf_free(struct rcu_head *head)
 
 没有明确独立协议时，不要随手在 remove 中清空 buf 指针并立即 free。旧读者可能已经把原指针保存到本地变量，清空共享字段不会撤销那个地址。多块共享数据的版本根应沿[复合快照协议](../../synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md#21.1_先按分配与所有权拓扑选模板)核对每块的份额；不能让某个外壳回调替其他拥有者擅自销毁共享块。
 
-## 10.6\_完整工程模板
+## 10.6\_沿同一程序核对接口责任
 
 本节回访 [10.3 的完整模块](#10.3.1_基础对象模型)，按接口职责审查同一份程序，不再维护另一套缺少入口份额和退出路径的 my_obj 片段。源文件仍是 [note_kref_rcu.c](../../../../labs/kernel/object_lifetime/materials/note_kref_rcu.c)；接下来每个决定都可以回到实际函数核对。
 

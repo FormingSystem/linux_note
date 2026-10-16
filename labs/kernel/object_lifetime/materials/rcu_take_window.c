@@ -1,6 +1,15 @@
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+/* 模型检查始终执行，定义 NDEBUG 也不会移除状态转换。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("RCU ownership model check failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* 观察者账本；字段不是 Linux RCU 或 kref 的内部实现。 */
 enum retire_order { ZERO_THEN_GP, GP_THEN_PUT };
@@ -14,14 +23,14 @@ struct object_model {
 
 static void reclaim(struct object_model *obj)
 {
-    assert(obj->alive && obj->refs == 0 && obj->gp_done && !obj->in_read);
+    require_model(obj->alive && obj->refs == 0 && obj->gp_done && !obj->in_read);
     obj->alive = false;
     ++obj->free_calls;
 }
 
 static void drop_ref(struct object_model *obj)
 {
-    assert(obj->alive && obj->refs > 0);
+    require_model(obj->alive && obj->refs > 0);
     if (--obj->refs != 0)
         return;
     ++obj->release_calls;
@@ -33,7 +42,7 @@ static void drop_ref(struct object_model *obj)
 
 static void unpublish(struct object_model *obj)
 {
-    assert(obj->published && obj->publish_owns);
+    require_model(obj->published && obj->publish_owns);
     obj->published = false;
     if (obj->order == ZERO_THEN_GP) {
         obj->publish_owns = false;
@@ -43,7 +52,7 @@ static void unpublish(struct object_model *obj)
 
 static bool try_take(struct object_model *obj)
 {
-    assert(obj->alive && obj->in_read && !obj->reader_owns);
+    require_model(obj->alive && obj->in_read && !obj->reader_owns);
     if (obj->refs == 0)
         return false;
     ++obj->refs;
@@ -53,14 +62,14 @@ static bool try_take(struct object_model *obj)
 
 static bool finish_gp(struct object_model *obj)
 {
-    assert(!obj->published);
+    require_model(!obj->published);
     if (obj->in_read)
         return false; /* 旧读者尚在，模拟器不能宣布本次 GP 完成。 */
     if (obj->order == ZERO_THEN_GP && !obj->free_pending)
         return false; /* 本模型此时尚未由 release 排出回收请求。 */
     obj->gp_done = true;
     if (obj->order == GP_THEN_PUT) {
-        assert(obj->publish_owns);
+        require_model(obj->publish_owns);
         obj->publish_owns = false;
         drop_ref(obj);
     } else {
@@ -72,7 +81,7 @@ static bool finish_gp(struct object_model *obj)
 
 static void reader_put(struct object_model *obj)
 {
-    assert(obj->reader_owns && !obj->in_read);
+    require_model(obj->reader_owns && !obj->in_read);
     obj->reader_owns = false;
     drop_ref(obj);
 }
@@ -83,7 +92,7 @@ static void run_case(enum retire_order order, bool reader_first)
         .order = order, .refs = 1, .published = true,
         .in_read = true, .publish_owns = true, .alive = true
     }; /* S1：入口已有一份，读者已在读区中保存旧地址。 */
-    bool taken;
+    bool taken, gp_finished;
     if (reader_first) {
         taken = try_take(&obj);
         unpublish(&obj);
@@ -91,23 +100,26 @@ static void run_case(enum retire_order order, bool reader_first)
         unpublish(&obj);
         taken = try_take(&obj);
     }
-    assert(taken == (reader_first || order == GP_THEN_PUT));
-    assert(obj.alive && !finish_gp(&obj));
+    require_model(taken == (reader_first || order == GP_THEN_PUT));
+    gp_finished = finish_gp(&obj);
+    require_model(obj.alive && !gp_finished);
     printf("%s %s: taken=%d refs=%u alive=%d\n",
            order == ZERO_THEN_GP ? "zero_then_gp" : "gp_then_put",
            reader_first ? "reader_first" : "remove_first", taken, obj.refs, obj.alive);
     obj.in_read = false; /* 模拟旧读者退出，不会自动归还长期份额。 */
     if (order == GP_THEN_PUT) {
-        assert(finish_gp(&obj));
-        assert(obj.alive && obj.reader_owns && obj.refs == 1);
+        gp_finished = finish_gp(&obj);
+        require_model(gp_finished);
+        require_model(obj.alive && obj.reader_owns && obj.refs == 1);
         reader_put(&obj); /* GP 已完，长期使用者现在才退出。 */
     } else {
         if (taken)
             reader_put(&obj);
-        assert(finish_gp(&obj));
+        gp_finished = finish_gp(&obj);
+        require_model(gp_finished);
     }
-    assert(!obj.alive && !obj.publish_owns && !obj.reader_owns);
-    assert(obj.release_calls == 1 && obj.free_calls == 1);
+    require_model(!obj.alive && !obj.publish_owns && !obj.reader_owns);
+    require_model(obj.release_calls == 1 && obj.free_calls == 1);
 }
 
 int main(void)

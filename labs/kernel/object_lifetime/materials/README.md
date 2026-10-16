@@ -143,7 +143,7 @@ ARM 前端通过，354 份依赖头中的 342 份非生成源码与官方固定�
 
 ## 1.20\_RCU取得窗口与两种退休顺序
 
-[rcu_take_window.c](rcu_take_window.c)对应[P10 两种退休顺序](../../../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md#10.2.1_RCU_和_kref_分别保护什么)。观察者账本分别保存入口/长期份额、旧读区、存储和待回收状态；比较先归零再 GP 与发布份额跨 GP，各安排读者先取得和撤下先发生。严格 C11 编译运行四条轨迹通过，每条一次 release、一次回收；旧读区阻止过早宣告 GP，跨 GP 的长期引用仍须归还。模型没有真实分配、原子、线程或内核 RCU，不属于 Makefile 的内核模块。
+[rcu_take_window.c](rcu_take_window.c)对应[P10 两种退休顺序](../../../../knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md#10.2.1_RCU_和_kref_分别保护什么)。观察者账本分别保存入口/长期份额、旧读区、存储和待回收状态；比较先归零再 GP 与发布份额跨 GP，各安排读者先取得和撤下先发生。状态推进独立执行，require_model 检查不受 NDEBUG 影响；GCC/Clang 的普通与 NDEBUG 构建均完成四条轨迹，每条一次 release、一次回收。另核对长期读者先于退休份额退出，以及提前回收、忽略旧读者两种错误被检查拒绝。模型没有真实分配、原子、线程或内核 RCU，不属于 Makefile 的内核模块。
 
 ## 1.21\_RCU查找与回调代码退出
 
