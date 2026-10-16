@@ -10,941 +10,417 @@ domains:
 
 # 第12章\_MSI\_MSI-X\_与\_PCIe\_设备的中断框架
 
-## 12.1\_MSI\_/\_MSI-X\_与\_PCIe\_设备的中断框架
+上一章把运行通知与低功耗唤醒分开了：能产生中断，仍要有接收路径和正确的软件状态。本章继续改变通知的载体。假设一块 PCIe 网卡有四个接收队列，队列里的完成记录已经写入内存，设备还要告诉 CPU“现在可以来取”。如果四个队列共用一个入口，这件事能够完成；但我们如何让不同队列分别通知不同 CPU，而不先挤进同一个处理入口？
 
-### 12.1.1\_章节引入与目标
+这里先从单入口的价值与限制推出消息中断，再追踪设备内的向量索引、平台硬件身份和 Linux IRQ 号怎样关联。驱动部分给出完整的中断资源管理组件与只读观察脚本；没有具体网卡寄存器协议，便不虚构能直接驱动任意 PCIe 卡的模块。接口依据 Linux 6.12.20、NXP 固定提交，见[源码基线](../../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.191_PCI消息中断的分配与生命周期)。
 
-本章讨论的是**“非引脚型中断”在 Linux 中是如何被纳入统一中断子系统的**，重点是 MSI（Message Signaled Interrupt）和 MSI-X 两种机制，以及它们与 PCIe 设备、irq_domain、平台中断控制器之间的关系。
+## 12.1\_一个入口能通知四个队列为什么还要拆开
 
-前面 1～11 章的主线都是“有一根中断线 → 挂到某个中断控制器 → 经过 irq_domain → 落到 irq_desc → 驱动 request_irq()”。本章要解决的问题是：
+先保留最朴素方案：设备只发一个通知，处理函数读取完成状态，发现队列 0 和队列 2 有数据，就分别消费它们。只要状态保存可靠，软件按协议排空并重新允许通知，单入口并不妨碍正确工作。低频设备甚至更适合这种简单设计：处理入口少，状态和资源也少。
 
-1. **没有中断线怎么办？**（PCIe 设备只发一个“写消息”）
-2. **同一个设备要很多条中断怎么办？**（多队列网卡、NVMe）
-3. **SoC 上没有完整 PC 那套 IO-APIC / HPET，但也要用 MSI 怎么办？**
-4. **Linux 怎么把这条“消息型中断路径”塞进现有 irq_domain 框架？**
+当四个队列持续有完成时，缺口才出现。设备把不同队列的“有事可做”汇入一个通知，CPU 进入后再读取状态，重新拆分来源；接收这个 IRQ 的 CPU 成为第一轮分发者。把后续工作交给其他 CPU 仍然可行，但增加了队列传递与通知，且不能靠这一条 IRQ 给四个队列分别配置入口亲和性。
 
-本章完成后，读者应该能做到：
+如果这条传统 IRQ 还与另一设备共享，Linux 又得调用同线登记的各个处理函数，询问“是不是你的原因”。这和 **同一设备内部多个队列共用一个向量** 是两层不同的汇聚，不能混为一谈。共享不是一定出错，但每次多检查几个设备寄存器的成本会随中断频率累积；一个持续不撤销原因的设备也可能使共享入口反复被调度。
 
-- 看得懂 `pci_alloc_irq_vectors()` 背后的 IRQ 分配链路；
-- 能区分 MSI 和 MSI-X 的作用、使用场景以及“不写的后果”；
-- 知道在平台/SoC 上如果 DTS 里写了 `msi-parent`，内核里应该出现哪几个 irq_domain；
-- 会在 PCIe 驱动里写**多中断向量版本**的 probe()，并能配合 devm_ 接口写干净的退出路径；
-- 能排查“中断号出来了但中断不打”的典型 MSI 故障。
+这里的传统模式称为 **INTx**，x 表示 A～D 等传统中断标识。并行 PCI 时代存在对应引脚；**PCI Express（PCIe，PCI 快速互连）链路上的传统 INTx 通知使用 Assert/Deassert 消息来表达兼容语义，并不是每个 PCIe 端点再沿插槽拉一根专用 IRQ 线。** 一个功能的传统 INTx 仍只有一个通知选择，不能因此推出全系统只有四个 Linux IRQ。端点是链路上的设备一侧，根复合体 Root Complex 是主机与 PCIe 层次连接的一侧。
 
-本章关注 Linux 如何分配和使用消息中断；消息进入 GIC（Generic Interrupt Controller，通用中断控制器）后怎样对应到目标中断，则按[消息状态](../../../../../platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md#8.1_来源越来越多_为什么让设备发送一条消息)与[事件翻译](../../../../../platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md#9.1_两个设备都发事件0_怎样区分)章节从问题推演，并使用[消息中断指南与规范阅读入口](../../../../../reference/external_resources/arm/README.md#1.4.3_先读哪几份资料)。RK3588 的 GICv3.0 主线包含这部分内容，不需要等到 GICv4 才学习；具体硬件表项与命令的讲解不在本章重复维护。
+这一传输区别可追溯到[PCI Express Base Specification r2.1，6.1.2（Intel提供的原件）](https://www.intel.com/content/dam/support/us/en/programmable/support-resources/fpga-wiki/asset03/pci-express-base-r2.1.pdf)：传统语义由链路内消息表达，根复合体再将它映射到系统中断资源。
 
-------
+改进方向于是很具体：保留队列各自的完成记录，让通知也带上可区分的身份，由主机预先安排不同接收入口。**消息信号中断 MSI（Message Signaled Interrupt）** 用设备发出的内存写事务实现通知：主机给设备配置消息地址和数据，设备发生事件时发送该写事务，由平台接收并转为中断。这里的地址是中断接收目标，不是给 CPU 留一段普通业务字符串的缓冲区。
 
-### 12.1.2\_MSI\_出现的动机与和\_线中断\_的区别
+MSI 不等于“CPU 软件执行了一次 MMIO 写”，也不等于“DMA 数据本身就是中断号”。普通业务数据、完成记录和中断通知仍有不同作用。若四个队列只分到一个 MSI，软件仍须从状态判断哪些队列有完成；消息中断没有凭空消灭设备内部的分发需求。
 
-#### (1)\_是什么
+## 12.2\_MSI-X怎样把独立通知变成独立配置
 
-MSI（Message Signaled Interrupt）是 PCI/PCIe 体系里定义的一种**用一次内存写事务来表示中断**的机制。设备要打中断时，不再去拉 INTA#/INTB# 这些物理引脚，而是**往主机预先配置好的一个地址写一段固定的数据**，上游的中断收集硬件（比如 x86 的 APIC/IO-APIC，ARM 的 GICv2m / GICv3 ITS）收到这个写操作后，就把它当成一次中断事件，进而向 CPU 报告中断。
+普通 MSI 已能提供多个向量，但它们使用一组受共同配置约束的消息资源。这里的 **向量 vector** 先指设备可选择的通知槽位，不是 Linux IRQ 整数，更不是处理函数地址。MSI 支持 1、2、4、8、16、32 这类数量，实际可用数量受设备和平台共同限制。
 
-MSI-X 是 MSI 的扩展版，它的改进点核心只有两条：
+普通多消息MSI共用消息地址，由设备在允许范围内改变消息数据的低位来选择通知；启用k个选择位，就得到2的k次方个组合。因此它不是每个向量各保存任意地址、任意数据的独立配置表。平台还可能限制这一组通知的目标CPU集合，不能把“有四个MSI”直接当成“四个完全独立的路由”。
 
-1. **向量数量更多**（设备自己有一个 MSI-X Table，每个表项就是一条中断）；
-2. **每条向量的地址/数据可以独立配置**（便于做亲和性和多队列的拆分）。
+低位选择的具体含义可对照[Intel MSI Message Data字段说明](https://edc.intel.com/content/www/us/en/design/publications/core-processors-series-3-i-o-registers/001/message-signaled-interrupt-message-data-msi-md-offset-8c/)。这里采用其说明的消息选择规则，下面的能力头偏移则按固定Linux源码定义整理。
 
-#### (2)\_要解决什么问题
+四个队列如果希望分别选择目标，或者管理事件与数据事件需要独立配置，就需要更细的表项。**MSI-X 是 MSI 的扩展机制**：设备有一张表，每个表项保存自己的消息地址、数据和屏蔽控制；表的硬件容量最多为 2048 项，分配数量不要求是二的幂。更多表项只是能力上限，不能把 TabSize 当成当前驱动已申请数量。MSI 与 MSI-X 可同时作为设备能力存在，但不能同时作为该功能的已启用模式。
 
-MSI 不是为了“更高级”而生的，它是为了解决**线中断天然做不到或者做得很难**的几个点：
+| 同一功能的通知选择 | INTx | MSI | MSI-X |
+| --- | --- | --- | --- |
+| 通知表示 | PCIe 上保留传统置位/撤销语义 | 消息写事务 | 消息写事务 |
+| 可用通知粒度 | 单个传统入口，可能与其他设备共享 | 1～32，数量为二的幂，受共同配置约束 | 每表项独立配置，容量最多2048 |
+| 多队列处理 | 可汇聚后由软件分发 | 可按实际向量数分组 | 更适合灵活的一队列一向量或队列分组 |
+| 主要代价 | 来源检查与汇聚入口负载 | 平台消息接收与资源分配 | 表存储、更多IRQ及状态维护 |
+| 选择边界 | 设备支持且通知负载可接受时仍可用 | 向量数及路由约束够用时可选 | 需要独立配置且设备、平台、驱动均支持时选 |
 
-1. **中断线数量不够**
-    板子上能布出来的中断线有限，PCIe 插进来一堆卡，不可能一张卡一根线。共享线中断就会出现“要轮询一圈是谁产生的”，而且一个坏设备可以拖慢一条线上的所有设备。
-2. **需要很多条中断（多队列设备）**
-    高性能网卡、NVMe、RDMA、加速卡、虚拟化的 VF 设备都希望做到“每个队列有自己的中断”，这样可以做到 CPU 间分摊和 NUMA 亲和；这在 INTx 模式下基本做不到。
-3. **更灵活的拓扑和虚拟化**
-    消息型中断可以被 Hypervisor 捕获、重定向，也可以被中断控制器做更灵活的路由；线中断的物理性太强，虚拟化迁移不好做。
-4. **不要共享中断的性能损耗**
-    MSI/MSI-X 的典型特点是**一条向量只对应一个中断源**（或至少是预期如此），进入中断不需要像共享线那样一轮一轮问。
+### 12.2.1\_配置空间保存入口信息而BAR空间保存表项
 
-##### 1)\_为啥要用MSI\_使用在什么场景
+要理解 MSI-X 的独立配置，先区分两种访问位置。**PCI 配置空间**保存设备身份、能力与控制信息；**基址寄存器 BAR（Base Address Register）**描述设备资源窗口。MSI-X capability 位于配置空间，但完整 MSI-X Table 位于某个 BAR 映射的设备地址范围内，不能把二者说成同一张配置空间表。
 
-**提问：**
+MSI 的能力头保存消息配置，MSI-X 的能力头则告诉系统表在哪里。以下偏移均有明确基准；“+0x04”不能脱离所属能力头或表项单独使用。
 
-上文提及：
+| MSI能力头相对偏移 | 宽度 | 名称与作用 |
+| --- | --- | --- |
+| +0x02 | 16位 | Message Control：bit0启用；bits3:1表示支持的多消息数量编码，bits6:4表示已启用数量编码，数量按2的幂解释；bit7表示64位地址能力；bit8表示逐向量屏蔽能力 |
+| +0x04 | 32位 | Message Address低32位，由内核配置消息目的地 |
+| +0x08，仅64位地址格式 | 32位 | Message Upper Address |
+| +0x08或+0x0c | 16位 | Message Data，分别用于32位或64位地址格式 |
+| +0x0c或+0x10，可选 | 32位 | Mask Bits，必须先确认逐向量屏蔽能力 |
+| +0x10或+0x14，可选 | 32位 | Pending Bits，记录被屏蔽通知的待处理情况；不是业务完成计数 |
 
-> 板子上能布出来的中断线有限，PCIe 插进来一堆卡，不可能一张卡一根线。共享线中断就会出现“要轮询一圈是谁产生的”，而且一个坏设备可以拖慢一条线上的所有设备。
+| MSI-X能力头相对偏移 | 宽度 | 名称与作用 |
+| --- | --- | --- |
+| +0x02 | 16位 | Message Control：bits10:0为表大小减1；bit14为Function Mask；bit15为MSI-X Enable |
+| +0x04 | 32位 | Table：bits2:0为BAR索引BIR，其余位为该BAR内的表偏移 |
+| +0x08 | 32位 | Pending Bit Array（PBA，待处理中断位数组）的位置，同样由BAR索引与偏移组成 |
 
-为什么做不到用线中断呢？我的脑海里任务pcie只有一个中断引脚，它这个中断引脚能够实现中断的目的，那么你这里是在说什么场景需求呢？
+第 i 项的访问位置由“选定 BAR 的映射基址 + Table Offset + 16×i”得到。单项布局如下：
 
-**回答**：
+| 表项内偏移 | 宽度 | 内容 | 维护者 |
+| --- | --- | --- | --- |
+| +0x00 | 32位 | 消息地址低32位 | PCI/MSI核心按平台消息格式写入 |
+| +0x04 | 32位 | 消息地址高32位 | 同上 |
+| +0x08 | 32位 | 消息数据 | 同上，不可直接填Linux IRQ号 |
+| +0x0c | 32位 | Vector Control，bit0为Mask | 由中断管理路径协调；修改地址/数据时须遵守屏蔽协议 |
 
-你这个疑惑非常关键，归根结底是两句话：
+这些字段说明消息怎样形成，不授权普通设备驱动绕过内核直接修改 MSI-X Table。固定实现的 `pci_write_msg_msix()` 会在需要时先屏蔽表项，再修改消息，最后恢复控制状态。业务驱动另外负责“队列使用哪个表项”的设备私有配置；这一组队列寄存器须查具体设备协议，不能从标准 MSI-X 表推导出通用地址。
 
-1. **“能不能用线中断” ≠ “线中断是不是一个好、可扩展的方案”**
-2. **PCIe 体系里确实保留了“像 PCI 那样的 Legacy INTx”这条路，但它一旦进入‘有很多设备/很多中断源/高 PPS’场景，就会暴露出结构性问题，所以才要 MSI。**
+PBA 为相应表项留下待处理位，多个事件可以汇聚在一位中；它不是完成记录队列，也不是 Linux `irq_desc` 内的 pending 标志。驱动仍需以设备完成环或状态寄存器判断实际完成了多少工作。上述布局依据固定 `include/uapi/linux/pci_regs.h` 与 `drivers/pci/msi/msi.c`，来源入口保留在本章源码基线中。
 
-我拆开说，尽量对着你脑子里的模型讲。
+### 12.2.2\_四个向量不自动等于四路并行
 
-------
+假设设备和驱动允许把队列0～3分别映射到表项0～3。平台为四个表项配置不同消息，Linux 为四个通知注册四个上下文，再把其 IRQ 合理分布到在线 CPU。这样 CPU0 消费队列0时，CPU1可以消费队列1，不必等待同一个入口先拆分所有来源。
 
-###### a)\_你脑子里的模型\_一个\_PCIe\_设备\_to\_一个中断引脚\_to\_能中断
-
-这个是对的，但它说的是**“单设备、低并发、板上布线简单”**这个最小场景，比如：
-
-- 板上就一个 PCIe endpoint；
-- 主控（Root Complex）就给你虚拟了一条 Legacy INTx；
-- 你的驱动里 `request_irq(pdev->irq, ...)` 就能收到中断。
-
-在这种情况下，“用线中断”完全能工作，你说的没错。
-
-------
-
-###### b)\_我说的场景是\_总线上有很多设备\_而且要高性能
-
-问题一旦变成下面这样，线中断就不好用了：
-
-- 一条 PCIe 链路下面挂了**多个 endpoint**（比如下面还有个 PCIe switch）；
-- 每个 endpoint 都有**比较频繁的中断**（网卡、存储、加速卡、SR-IOV 出来的很多 VF）；
-- 操作系统想要**给不同队列/不同功能分配多条中断**，做 CPU 分摊。
-
-这时，Legacy INTx 的几个结构性限制会被放大。
-
-------
-
-###### c)\_Legacy\_INTx\_的结构性限制
-
-###### d)\_物理/逻辑上就几个中断信号
-
-老的 PCI 是 INTA#/INTB#/INTC#/INTD# 四根线，PCIe 为了兼容，也保留了 “INTx 的语义”（虽然物理上不是那四根线了，很多时候是 message-based emulation），但**数量上仍然是那几个固定的中断“槽位”**。
- 一旦**挂的设备多**，就只能**共享**。
-
-###### e)\_共享就意味着\_进中断要轮询一圈
-
-共享中断的处理逻辑你肯定熟：ISR 进来以后要看“是不是我产生的中断”，如果不是要立刻 return `IRQ_NONE`。
-
-- 共享设备一多，**每次中断都要所有设备过一遍**；
-- 如果有一个设备没清 pending，中断线就一直是 active 的，**整个共享组的中断都会被拖慢**；
-- 这就是我写的那句话：“一个坏设备可以拖慢一条线上的所有设备”。
-
-这话的前提就是：**那条线是共享的**。
-
-###### f)\_一个设备只能有一条中断\_这个约束太紧
-
-高性能 PCIe 设备（多队列网卡、NVMe）需要的不是“能不能中断”，而是“要 N 条中断做并行”。
- Legacy INTx 的模型基本就是“一功能一中断”。你说的“一个引脚能实现中断的目的”只是说：**能打得进来**，不是说：**能支撑多中断向量的调度需求**。
-
-------
-
-###### g)\_为什么\_板子上能布出来的中断线有限\_也能说得通
-
-你可能觉得：PCIe 都是差分对，哪里还有一根一根的中断线。这里我说的“板子上能布出来的中断线有限”，其实对应的是**“用 Legacy INTx 这种‘一条总线层面的中断资源’去服务很多设备，是不经济的”**，更具体讲两点：
-
-1. **总线维度的中断资源是有限的**：不管它最终是用线表述，还是用 emulated INTx 表述，**它的命名空间就是 4 个**，挂多了就共享。
-2. **共享就要软件分发**：软件分发就是慢、就是受坏设备影响，这在高 PPS 场景是不可接受的。
-
-所以我那句话是在说**“当你把一个总线/一个 Root Port 下挂很多设备时，用‘总线级共享中断’这条路就不合适了”**，不是在说“你一块板子永远不能用线中断”。
-
-------
-
-###### h)\_那\_MSI\_到底解决了什么
-
-1. **每个设备（甚至每个 queue）拿自己的中断向量**
-   - MSI/MSI-X 是“1 设备 → N 向量”，而不是“很多设备 → 1 根共享线”
-   - 不用再轮询一圈了
-2. **触发不依赖总线级共享资源**
-   - 它是“往上游的中断控制器写一个消息”
-   - 上游能区分出来是哪个向量、哪个设备
-3. **可以配合亲和性/SMP/多队列**
-   - 这一点在线中断模型下几乎做不到
-
-------
-
-###### i)\_回答你最后一句\_你这里是在说什么场景需求呢
-
-我说的场景是**“一条 PCIe 根端口/一段 PCIe 拓扑下面有多个高频率、甚至多队列的设备，需要各自独立的中断通道，而且不能互相拖慢”**。
- 在这个场景下：
-
-- 用 Legacy INTx → 一定共享 → 一定要轮询 → 一定容易被一个坏/吵的设备拖住
-- 用 MSI/MSI-X → 每个设备/每个队列一条 → 不需要轮询 → 好做负载均衡
-
-如果你这个项目是**板上就一个 endpoint，偶尔发一下中断**，那你完全可以继续用 INTx，不会有问题；但一旦你要做**高吞吐 PCIe 设备、SR-IOV、多队列网卡、NVMe、加速器**，就必须走 MSI/MSI-X，这是 PCIe 规范层面已经给出的进化路径。
-
-------
-
-##### 2)\_一个多通道设备\_可以多通道并行处理中断
-
-**提问：**
-
-那么相当于pcie上挂一个多通道的设备，它还可以做到位每个通道分配中断向量，做到单设备多通道并行中断处理吗？
-
-
-
-**回答：**
-
----
-
-可以，而且这正是 **MSI-X 最典型、也是最“值钱”** 的用法之一：**单个 PCIe 设备 → 多通道/多队列 → 每个通道一条中断向量 → 并行中断处理**。但要满足几个前提，我给你拆成“条件—怎么配—驱动怎么写—受什么限制”四段说。
-
-------
-
-###### a)\_前提条件(硬件\_+\_平台)
-
-1. **设备硬件要支持 MSI-X**
-   - 设备的 PCIe 配置空间里要有 MSI-X Capability，里面有 MSI-X Table，表项数就是你能要的“最多向量数”；
-   - 没有 MSI-X，只有 MSI，也能多向量，但数量往往更少、配置粒度差一点。
-2. **平台要有能“收消息”的中断域**
-   - x86 上是 IO-APIC / xAPIC / x2APIC
-   - ARM 上是 GICv2m / GICv3 ITS
-   - 如果是 SoC，要 DTS 里有 `msi-parent`，内核里得真的建了 MSI irq_domain，不然你驱动能要到的向量数会变少或直接失败。
-3. **Linux 内核要开 MSI 相关选项**
-   - `CONFIG_PCI_MSI`
-   - 最好还有 `CONFIG_PCI_MSI_IRQ_DOMAIN`
-   - 嵌入式 BSP 有时候关了这个，要注意。
-
-满足这三个，才谈“一个设备多通道并行中断”。
-
-------
-
-###### b)\_分配方式(驱动怎么要)
-
-驱动里就是这一句：
-
-```c
-nvec = pci_alloc_irq_vectors(pdev,
-                             min_needed,  /* 比如 1 */
-                             max_needed,  /* 比如 通道数/队列数 */
-                             PCI_IRQ_MSIX | PCI_IRQ_MSI);
+```mermaid
+flowchart LR
+    Q0["设备队列0<br/>完成记录写入主存环0"] -->|选择表项0发送消息| T0["MSI-X项0<br/>地址和数据"]
+    Q1["设备队列1<br/>完成记录写入主存环1"] -->|选择表项1发送消息| T1["MSI-X项1<br/>地址和数据"]
+    T0 -->|消息写及来源身份| M["平台消息接收与路由"]
+    T1 -->|消息写及来源身份| M
+    M -->|递送已配置的目标| C0["CPU0 / Linux IRQ A<br/>handler上下文0"]
+    M -->|递送已配置的目标| C1["CPU1 / Linux IRQ B<br/>handler上下文1"]
+    C0 -->|按DMA协议读取并消费| R0["主存完成环0"]
+    C1 -->|按DMA协议读取并消费| R1["主存完成环1"]
+    Q0 -.->|DMA写入完成记录| R0
+    Q1 -.->|DMA写入完成记录| R1
 ```
 
-- 假设你有 4 个“通道/队列”，你就写 `min=1, max=4`；
-- 内核会尽量给你 4 条，如果平台/硬件只能给 2 条，你就只能用 2 条，驱动要能退化；
-- 分配完后用 `pci_irq_vector(pdev, i)` 挨个取 irq，然后给每个通道注册各自的 ISR。
+图 12-1 只展开四队列中的两队列。设备完成环是主存中的 DMA 共享对象，消息表位于设备 BAR 窗口；平台路由状态又属于控制器。CPU 读取业务数据与硬件递送通知是两条关联路径，不是 CPU 把 MSI-X Table 当作数据环来消费。
 
-这就是“单设备多中断向量”的标准写法。
+并行仍有条件：设备确实能够独立生产队列工作，驱动没有让所有向量抢同一把长时间持有的全局锁，接收 CPU 在线，后续线程与工作队列也按设计分工。否则四个入口只把竞争搬到了同一个锁上。增加向量还会增加资源与通知开销，不能认为越多必然越快。
 
-------
+多向量还改变锁的重入条件：同一IRQ不会随意重入，不代表另一条向量不能在持锁路径上到来。如果进程或允许本地中断的路径持有一把handler也使用的自旋锁，应按上下文使用保存并关闭本地中断的加锁协议，避免当前CPU被另一个向量打断后再次等待自己持有的锁。不同CPU之间仍需锁本身的互斥；关闭本地中断不能替代它。
 
-###### c)\_ISR\_层面怎么做到\_一通道一中断
+MSI 的事务顺序可避免传统引脚通知先于此前有序设备写到达的问题，但它不取消 DMA API、缓存一致性与内存屏障要求。尤其不能看到中断就任意解引用未映射缓冲区，也不能用这项 PCI 顺序保证推导所有跨设备、乱序属性下的写都已可见。
 
-你就按“第 i 条中断向量 → 第 i 个通道/队列”的方式写，最直观：
+## 12.3\_同一个通知为什么经过三套编号
 
-```c
-for (i = 0; i < nvec; i++) {
-    int irq = pci_irq_vector(pdev, i);
-    struct leaf_queue *q = &leaf->queues[i];
+上一节说“表项0到了Linux IRQ A”，其中的关联必须由系统建立。设教学示例中的设备队列2使用表项1，分配所得 Linux IRQ 为74；在采用 GIC ITS 的平台，还可能把来源身份与消息事件翻译为某个 LPI。队列2、表项1、IRQ74和LPI号分属不同命名空间，任何两个数恰好相等都不构成接口保证。
 
-    ret = devm_request_irq(&pdev->dev, irq,
-                           leaf_queue_isr,
-                           0,
-                           "leaf-pcie-q",
-                           q);   /* dev_id 传该队列 */
-}
+| 对象与状态位置 | 谁写入 | 谁读取或使用 |
+| --- | --- | --- |
+| 设备队列到向量的选择，设备私有寄存器 | 设备驱动按实际设备协议设置 | 设备完成逻辑选择通知槽位 |
+| MSI/MSI-X消息配置，配置空间或BAR表 | PCI/MSI核心与平台回调 | 设备形成消息写事务 |
+| `struct msi_desc`，内核内存 | MSI核心分配并缓存消息、设备、索引与亲和性信息 | PCI/MSI及中断域管理路径 |
+| `irq_data`及所属`irq_domain`，内核内存 | 各域分配与路由操作 | 控制器操作与映射查找 |
+| `irq_desc`及action，内核内存 | IRQ核心与驱动登记/注销 | CPU收到中断后的通用分发 |
+| 完成环与队列上下文，DMA内存及驱动对象 | 设备生产完成，驱动推进消费位置 | 对应处理函数及后续业务 |
+
+`msi_desc` 不是永远“一对象一向量”：固定实现的多消息 MSI 可在一份描述符中记录 `nvec_used > 1`；通常 MSI-X 每项使用一份 `nvec_used = 1` 的描述符。业务驱动不应依赖这个内部数量关系自行计算 IRQ，而应调用 `pci_irq_vector(pdev, i)`。
+
+**irq_domain 是软件映射与资源管理对象**，不是每来一条消息都必须依次执行一次的“虚拟硬件控制器”。在层级域实现中，PCI/MSI层把消息配置、分配及屏蔽等操作与父域协作，最终仍由统一的 IRQ 状态和处理函数服务设备。这延续[第九章的域层次](P09_层级中断控制器与_ARM_GIC_在_Linux_中的实现.md)，但不能把软件 parent 关系直接画成物理中断线级联。
+
+也不能说所有 Linux MSI 实现都强制具有同一层数。固定 `pci_msi_setup_msi_irqs()` 在具备层级域时走相应域分配，否则保留架构旧分配入口；本文介绍的是现代常见层级路径，不抹掉源码中的配置分支。
+
+平台落点由硬件决定。Arm 的 GICv2m 可把消息转为 SPI，GICv3 ITS 则处理设备事件与 LPI 的关联；二者不能因为都接收写事务就当成同一种控制器。x86 的 **高级可编程中断控制器 APIC（Advanced Programmable Interrupt Controller）** 体系中，MSI涉及处理器本地APIC目的地与可选中断重映射；负责外部引脚汇聚的IO-APIC并不是所有MSI的必经入口。接收角色建立后，再读[GIC消息状态](../../../../../platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md#8.1_来源越来越多_为什么让设备发送一条消息)和[ITS事件翻译](../../../../../platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md#9.1_两个设备都发事件0_怎样区分)，其中有控制器自身的寄存器和表项说明。
+
+## 12.4\_先确定允许的退化再申请资源
+
+知道映射由内核建立以后，驱动首先要回答的是“最少几条向量还能正确工作”。四队列设备如果能把所有队列汇聚到一个入口，并由处理函数检查全部完成状态，便可申请 min=1、max=4。若协议硬性要求一个管理入口加一个数据入口，min至少为2。固定数量同样合理：驱动只能正确支持四条时，应要求4～4；不能为了让probe成功就谎称支持单向量。
+
+接口 `pci_alloc_irq_vectors(pdev, min, max, flags)` 返回实际获得数量，负值表示失败。固定实现按许可范围依次尝试 MSI-X、MSI、INTx。**只有包含 `PCI_IRQ_INTX`、min为1且存在可用传统IRQ时，才可能回退到INTx。** `PCI_IRQ_MSIX | PCI_IRQ_MSI` 不包含这种许可。本基线使用 `PCI_IRQ_INTX` 名称，不把旧资料中的 `PCI_IRQ_LEGACY` 宏直接拼进当前示例。
+
+| 接口或输入 | 本章需要的契约 |
+| --- | --- |
+| `pci_alloc_irq_vectors()` | 选择flags允许的模式；实际数量决定后续可使用的索引 |
+| `pci_irq_vector(pdev, i)` | 返回设备相对索引i对应的Linux IRQ；越界返回错误，不保证等于首IRQ+i |
+| `request_irq()` / `free_irq()` | 登记/注销具体处理函数与dev_id；资源回收必须早于向量释放 |
+| `pci_free_irq_vectors()` | 释放该次向量资源并结束相应MSI/MSI-X模式；不是替驱动停止DMA的函数 |
+| `PCI_IRQ_AFFINITY` | 让分配过程考虑CPU分布；不能代替设备队列布局与热插拔协调 |
+| `pci_irq_get_affinity()` | 查询分配的亲和性描述，可能为NULL；不是硬件实时目标读数 |
+
+若允许 INTx，驱动还必须准备共享入口所需的来源判断、`IRQF_SHARED`、唯一而稳定的 `dev_id`，以及把所有必要队列交给该入口的业务方案。加上一个flag并不能把只会处理单个队列的函数改成可靠退化。单向量也不一定是INTx，可能是一条MSI或MSI-X，应查看实际模式。
+
+中断亲和性在这里是队列设计的一部分。可让分配器依据 `struct irq_affinity` 描述保留管理向量并分布数据向量，或按平台规则处理普通IRQ；托管IRQ的热插拔与用户修改限制见[第十章](P10_SMP_与中断亲和性_IPI_机制.md#10.2_允许集合与实际目标是两份不同状态)。不能对 `i % nr_cpu_ids` 得到的CPU盲目绑定，它未必在线。
+
+亲和性提示还涉及内存寿命：`irq_update_affinity_hint()` 保存提示指针，不是把临时掩码复制成永久配置；清提示前必须保留对象。旧 `irq_set_affinity_hint()` 同时涉及设置与提示，返回值也不能证明实际设置成功。不要在调用后立即释放掩码，更不能把hint写成“保证固定到指定CPU”。当前允许集合、effective目标和历史计数仍须分别观察。
+
+## 12.5\_先停止生产再拆掉处理入口和向量
+
+现在看完整生命周期。设备可能正在写完成环、发送消息，CPU也可能已经进入处理函数。如果仅仅释放向量而保留handler，后者仍引用已经拆除的中断状态；如果先释放队列，正在运行的handler可能访问失效对象。正确顺序来自所有权依赖，而不是某个API名称带不带devm。
+
+| 阶段 | 设备与软件的状态 | 下一步条件 |
+| --- | --- | --- |
+| S0 准备 | PCI资源和队列上下文有效；设备业务中断保持关闭 | 所有可能被handler读取的状态已初始化 |
+| S1 分配 | 获得nvec及平台消息配置 | 按实际数量建立设备队列到向量的方案 |
+| S2 登记 | 各handler、dev_id和名字已登记 | 全部成功后才放开设备业务通知 |
+| S3 运行 | 设备生产完成并发送消息；CPU消费相应队列 | 按设备协议确认、排空与重新允许通知 |
+| S4 停止 | 阻止新提交，关闭设备通知，完成必要写刷新并停止DMA | 证明不会再生成访问即将释放资源的工作 |
+| S5 回收 | free_irq等待对应处理结束，再同步后续工作，最后释放向量、队列和设备资源 | 全部异步使用者退出，才能归还被引用对象 |
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant D as 驱动与队列对象
+    participant P as PCI/MSI与IRQ核心
+    participant H as 设备硬件
+    participant M as 平台消息接收硬件
+    participant C as CPU处理函数
+    D->>H: S0 初始化并保持业务通知关闭
+    D->>P: S1 申请允许模式与实际数量
+    P->>H: 配置消息地址与数据
+    P-->>D: 返回nvec，逐项查询Linux IRQ
+    D->>P: S2 为已初始化上下文登记handler
+    alt 某一登记失败
+        D->>P: 注销已经成功的handler
+        D->>P: 最后释放向量，返回失败
+    else 全部成功
+        D->>H: 配置队列到向量并允许业务
+        H->>D: S3 DMA写完成环
+        H->>M: 发送所选向量的消息写事务
+        M->>P: CPU接收硬件中断并进入通用分发
+        P->>C: 分发对应action与dev_id
+        C->>D: 消费完成环，按设备协议更新状态
+        D->>H: S4 停止提交、通知与DMA并确认生效
+        D->>P: S5 free_irq注销并等待在途handler
+        D->>D: 同步handler派生的work或其他消费者
+        D->>P: 释放向量后再释放上下文和PCI资源
+    end
 ```
 
-然后 ISR 里就是只处理这个队列的数据：
+图12-2把正常和注册失败放在同一生命周期中。CPU收到消息并不等于所有DMA已经停止；`free_irq()`等待中断处理也不等于等待处理函数排入的普通work。设备专有的“停止且确认”步骤必须成立，不能用固定延时猜硬件已经安静。
+
+### 12.5.1\_用一份完整组件管理向量与handler的配对
+
+下面是供具体PCI驱动嵌入的完整IRQ资源组件。它只接受MSI/MSI-X，采用普通 `request_irq()` 配对释放，避免将不支持的INTx路径伪装成fallback。`queue_irq_set` 是自定义资源对象，`queue_irq_slot` 是每向量长期保存的名字、IRQ和业务上下文；它们不是内核标准结构。
+
+调用方先用普通PCI资源流程完成设备使能、BAR映射、DMA与队列初始化，保持设备业务通知关闭，再准备容量至少为max的 `contexts` 数组。每项是处理函数能理解的长期对象：可代表一个队列，也可代表一组队列。所有对象必须在第一次request_irq前初始化，防止登记后立刻到来的通知访问半成品。
+
+组件在允许睡眠的probe/remove等管理上下文执行，并由调用方串行调用。`kcalloc(..., GFP_KERNEL)` 分配清零的slot数组，可能睡眠；返回的 `-EBUSY`、`-EINVAL`、`-ENOMEM` 分别表示资源对象已在使用、参数不合法和内存不足。IRQ回调自身仍遵守前章的硬中断上下文限制。
 
 ```c
-static irqreturn_t leaf_queue_isr(int irq, void *data)
+#include <linux/errno.h>
+#include <linux/interrupt.h>
+#include <linux/pci.h>
+#include <linux/slab.h>
+
+struct queue_irq_slot {
+    int irq;
+    void *context;
+    char name[64]; /* 保持到free_irq返回，不能指向循环内栈数组 */
+};
+
+struct queue_irq_set {
+    struct pci_dev *pdev;
+    struct queue_irq_slot *slots;
+    unsigned int nvec;
+    unsigned int registered;
+};
+
+/* 先注销入口，给调用方留下同步后续消费者的阶段。 */
+static void queue_irqs_unregister(struct queue_irq_set *set)
 {
-    struct leaf_queue *q = data;
-
-    /* 只处理这个队列的完成、中断状态、doorbell 等 */
-    ...
-    return IRQ_HANDLED;
+    while (set->registered) {
+        struct queue_irq_slot *slot =
+            &set->slots[--set->registered];
+        free_irq(slot->irq, slot->context);
+    }
 }
-```
 
-这样**中断入口一进来就知道自己在处理哪条通道**，不需要再做“在设备寄存器里扫一圈到底是哪条队列发的”，这就是用 MSI-X 的最大收益。
-
-------
-
-###### d)\_并行怎么来的
-
-1. **中断本身分开了**：每个队列有自己的 irq number
-
-2. **你可以给每个 irq 设不同的 CPU 亲和性**：
-
-   ```c
-   irq_set_affinity_hint(irq, cpumask_of(cpu_id));
-   ```
-
-   这样 4 条中断可以分到 4 个核上 → 真并行
-
-3. **设备侧也要做 per-queue ring**：网卡/NVMe 本来就是 per-queue，正好对上
-
-4. **不共享**：因为每条 MSI-X 向量就是你这一条队列的，所以不会出现“一个坏队列把整条线拖住”的问题
-
-------
-
-###### e)\_会受哪些限制
-
-- **设备 MSI-X 表的大小**：你想要 16 条，但设备只实现了 8 条，那就只能 8 条；
-- **平台 MSI 域的容量**：有的 SoC 的 MSI 门户做得很小，只能给很少的中断；
-- **内核可能会给得比你要的少**：所以驱动里一定要写“拿多少用多少”的分配逻辑；
-- **功耗/挂起场景**：挂起把 MSI 门户关了，起来要重新配置，这跟你第11章要写的是同一条线。
-
-------
-
-###### f)\_我给你一张对照图(共享\_INTx\_vs\_MSI-X)
-
-```mermaid
-graph LR
-    A["共享 INTx：只有一个中断入口"] --> B["ISR 里读设备状态寄存器"]
-    B --> C["判断是哪条通道/队列"]
-    C --> D["按通道处理（可能串行/部分并行）"]
-
-    E["MSI-X：每通道一条向量"] --> F["每条向量注册独立 ISR"]
-    F --> G["ISR 进来就拿到该通道上下文"]
-    G --> H["可给不同 CPU，真正并行"]
-```
-
-这里的重点是：**共享 INTx 要“判断是谁”，MSI-X 一进来就知道是谁**。
-
-------
-
-###### g)\_小结一句
-
-你的理解可以更新成这样：
-
-> **PCIe 设备本身可以只暴露一条传统中断（INTx），这样也能用；但只要它支持 MSI/MSI-X，而且平台也建了 MSI 域，就可以做到“单个 PCIe 设备内部的多个通道/队列各分一条中断向量”，进而在 Linux 里做到真正的并行中断处理。**
-
-
-
-#### (3)\_和线中断的本质区别
-
-可以用一个表严格对比：
-
-| 维度         | 线中断（INTx/GPIO）        | MSI                          | MSI-X                     |
-| ------------ | -------------------------- | ---------------------------- | ------------------------- |
-| 中断表示方式 | 外部引脚电平/边沿          | 内存写事务（addr+data）      | 内存写事务（addr+data）   |
-| 中断数量     | 一般 1 条，可共享          | 一定程度可多向量             | 可很多条，每条独立        |
-| 路由         | 固定走中断控制器的引脚     | 走中断控制器的“MSI 接口”/ITS | 同左，但更细粒度          |
-| 是否易共享   | 是，但要轮询               | 理论上不共享                 | 理论上不共享              |
-| 典型场景     | GPIO、SPI 控制器、低速外设 | 普通 PCIe 设备               | 高性能/多队列设备         |
-| 典型问题     | 共享干扰、触发类型不一致   | 依赖平台 MSI 支持            | 依赖更完整的 MSI-X 表和域 |
-
-#### (4)\_不写的后果
-
-- 驱动如果**不去申请 MSI/MSI-X**，那么它往往只能拿到 `pdev->irq` 这一个 Legacy INTx；
-- 一旦退回 Legacy INTx，就有可能**和其他 PCIe 设备共享中断**，从而引入你在第5章讲过的“只来一次/一直来”的排查逻辑；
-- 多队列设备如果没有 MSI-X，就只能**在中断里自己分发**，CPU 间分摊效果变差；
-- 在某些平台/虚拟化场景里，**Legacy INTx 会被禁止或不可用**，不写 MSI 就是设备不可用。
-
-------
-
-### 12.1.3\_Linux\_MSI\_框架与\_irq\_domain\_的结合
-
-这一节是本章的核心，因为你前面已经把“irq_chip + irq_domain + irq_desc 是统一抽象”这条主线定死了，所以这里必须回答一个很直白的问题：
-
-> **既然 MSI 没有物理中断线，Linux 凭什么还能把它塞进 irq_domain？**
-
-答案是：**Linux 对 MSI 也做了“虚拟成一个中断控制器”的抽象**，让它看起来就像是“又多了一个能分配中断号的控制器，只不过这个控制器发中断的方式是写消息”。
- 也就是说，MSI 不是“跳过了 Linux 中断子系统”，而是“又增加了一层/一种 irq_domain”。
-
-#### (1)\_关键抽象组件
-
-1. **struct msi_desc**
-   - 描述“一条 MSI/MSI-X 向量”的信息；
-
-   - 包含向量号、消息地址、消息数据、关联的设备指针、亲和性信息等；
-
-   - 典型来源是：PCI core 在解析设备的 MSI/MSI-X Capability 时创建它；
-
-   - 驱动一般不直接 new 这个结构，而是通过高层接口拿到对应的 irq。
-
-
-
-2. **MSI irq_domain（struct irq_domain）**
-   - 这是专门给 MSI 准备的中断域；
-
-   - 它的职责是把“这个设备要 N 条 MSI”映射成“N 个 Linux irq number”；
-
-   - 它**本身还会挂到一个 parent domain 上**，parent 才是真正打到 CPU 的 GIC/IO-APIC/ITS 域；
-
-   - 所以这和你在第9章里讲的“GPIO 域挂到 GIC”是一个套路，只是这次挂的是“MSI 域”。
-
-
-
-3. **struct msi_domain_info / struct msi_domain_ops**
-   - 这是用来描述“这个 MSI 域该怎么分配、怎么释放、怎么写消息”的一套回调；
-
-   - 不同平台（x86，ARM GICv3 ITS，某些 SoC 的 v2m）会给出不同的 ops；
-
-   - 这保证了驱动上层是统一的，而底层怎么把 MSI 写进 GIC ITS 表，是平台各自实现的事。
-
-
-
-4. **PCI/MSI bus 层 glue 代码**
-   - 比如 `drivers/pci/msi/*`
-   - 它负责把 PCI 设备的 MSI/MSI-X Capability 读出来，转成 msi_desc，然后调用 msi_domain 去申请 irq。
-
-#### (2)\_分层视角(从上往下看)
-
-可以用一个分层示意（注意转义）：
-
-```mermaid
-graph TD
-    A["PCIe 驱动: pci_alloc_irq_vectors()"] --> B["PCI/MSI 层: 解析 MSI/MSI-X 能力"]
-    B --> C["MSI Domain: 分配 N 条中断, 建立 msi_desc"]
-    C --> D["Parent IRQ Domain: GICv3 ITS / GICv2m / IO-APIC"]
-    D --> E["最终 irq_desc / CPU 中断入口"]
-```
-
-解释这个图：
-
-- **A 层**是驱动能看到的接口；
-- **B 层**是总线相关的 glue，它知道“这是个 PCIe 设备，所以要在它的 Capability 里找 MSI”；
-- **C 层**是 MSI 专用域，它知道“我要把这 N 条 MSI 注册成 Linux 能识别的 irq”；
-- **D 层**是真正和硬件打交道的控制器域；
-- **E 层**是统一的 `handle_irq()`/`__do_irq()` 那条路径。
-
-也就是说，**MSI 只是把“分配 irq 的起点”换到了设备这边，但最后还是会回到统一的 irq_desc 上**。
-
-#### (3)\_为什么一定要走\_irq\_domain
-
-你在第3章就定过原则：**所有中断最终都要进入 irq_domain，理由是要统一号段管理、统一中断控制器层级、统一驱动接口**。
- MSI 如果不进 irq_domain，会出现下面的问题：
-
-1. **中断号无法统一分配**：不同设备各写各的 MSI，最终一个平台上中断号会乱；
-2. **无法做层级化**：MSI 要挂到 GIC 上，还是挂到 IO-APIC 上，还是走 ITS，都无法表达；
-3. **驱动接口不统一**：你就没法用 `request_irq()`，而要用一套专门的 “request_msi_irq()”，这和 Linux 一贯做法相悖；
-4. **中断调试工具不好用**：`/proc/interrupts`、`/sys/kernel/irq/` 都是在 irq_desc 基础上做的，MSI 不进来的话这些工具全废。
-
-所以，**不要把 MSI 理解成“特殊中断”，要把它理解成“触发方式特殊，但在中断子系统里完全要跟别的中断一样”**。
-
-#### (4)\_驱动能看到的接口层次
-
-对一个普通 PCIe 驱动来说，它能看到的其实就三步：
-
-1. 申请中断向量：`pci_alloc_irq_vectors()`
-2. 取出每一条向量的 irq number：`pci_irq_vector(pdev, i)`
-3. 注册 ISR（最好是 devres 版本）：`devm_request_irq(dev, irq, ...)`
-
-底下 MSI 域、parent 域、ITS 表、doorbell 地址、消息数据，全部都被内核挡住了。
- 这是我们在写书时要强调的**“驱动视角 vs 内核视角分离”**：驱动只写接口，内核做域、映射、消息写入。
-
-#### (5)\_不写的后果(这里要特别说)
-
-- 如果驱动直接写 `request_irq(pdev->irq, ...)`，那你其实是在用 **legacy INTx**，MSI/MSI-X 全部浪费；
-- 如果平台的 MSI domain 没初始化好，`pci_alloc_irq_vectors()` 会失败，驱动应该要**能优雅回退**（比如只要 1 条，用 legacy）；
-- 如果你要写**可复用的 PCIe 驱动**（面向多 SoC、多主板），那就必须写出“能用 MSI 就用，不能用就退 INTx”的模板。
-
-------
-
-### 12.1.4\_平台中断\_to\_MSI\_的迁移
-
-这一节是给**做嵌入式板子、SoC 上挂了一个 PCIe 控制器、想让下面的设备也能用 MSI**的读者写的。服务器/PC 上这节很多时候是“平台都给你弄好了”，但在 SoC/BSP 里这节往往是“你要自己补”。
-
-#### (1)\_问题背景
-
-嵌入式/SoC 场景里会同时出现三种设备：
-
-1. **老的平台设备（platform_device）**：走传统 DTS，写 `interrupts = <...>`，拉 GPIO/中断线的；
-2. **板载 PCIe 设备**：焊死在板子上，通过 SoC 内部的 PCIe 根端口出来的；
-3. **外插的 PCIe 设备**：真正的 PCIe 插槽里插的卡。
-
-前两类设备有一个共同点：**它们的中断最终都要打到 SoC 里那颗 GIC**，但是触发方式不一样：
-
-- platform 设备是 GPIO/外部中断线 → GIC；
-- PCIe 设备是 MSI → SoC 的 MSI 门户（比如 GICv2m，或者 GICv3 ITS）→ GIC。
-
-如果你只初始化了前者的 irq_domain，而**没有把 MSI 这一条 irq_domain 栈建起来**，那么 PCIe 设备的驱动在调 `pci_alloc_irq_vectors()` 的时候就会失败。
-
-所以这节要说的其实是：**怎么让 Linux 在一个 SoC 上同时拥有“线中断域”和“MSI 域”，并且都能挂到同一颗 GIC 上**。
-
-#### (2)\_平台\_MSI\_的通用做法
-
-Linux 为了让“不是 PCI 设备”的东西也能用 MSI，引入了所谓的 **platform MSI**（有的资料里叫 non-PCI MSI）。它的思路和 GPIO 子中断非常像：
-
-1. **先有一个能收消息的硬件节点**：比如 GICv2m，或者你自己写的 MSI 控制器 IP；
-2. **给它建一个 MSI irq_domain**：这个域的 parent 是真正的 GIC 域；
-3. **在 DTS 里给需要用 MSI 的设备写上 `msi-parent = <&msi_ctrl>;`**；
-4. **驱动在 probe 里调平台 MSI 的分配接口**，拿到一个 irq，然后就能用 `request_irq()`。
-
-也就是说，**平台 MSI 的关键点是：你要把“收消息的那个控制器”也当成一个 irq_domain。**
-
-可以用一个简化的 DTS 片段说明（注意，这里只是示意，名字你按自己的板子改）：
-
-```dts
-msi_ctrl: msi-controller@12340000 {
-    compatible = "vendor,my-msi-ctrl";
-    reg = <0x12340000 0x1000>;
-    interrupt-controller;
-    msi-controller;          // 表示这是能发 MSI 的
-};
-pcie0: pcie@... {
-    ...
-    msi-parent = <&msi_ctrl>;
-};
-```
-
-这里的关键点是 `msi-controller;` 和 `msi-parent` 这两个属性，它们对应的正是 Linux MSI 框架里的那一层 irq_domain。
-
-##### 1)\_语法说明
-
-- **作用**：告诉内核“这不是 GPIO 型的中断控制器，而是一个能收 MSI 消息并把它转换成中断的控制器”；
-- **使用场景**：SoC 上有 on-chip PCIe，但没有 PC 那种正儿八经的 IO-APIC，需要靠这个节点把 MSI 接起来；
-- **不写的后果**：内核看不到 MSI 域，导致 PCIe 驱动里 `pci_alloc_irq_vectors()` 失败，只能退回 INTx；
-- **驱动中的使用逻辑**：驱动不需要关心这个节点，只管调分配接口；这是 DTS/平台代码要保证的。
-
-#### (3)\_与\_irq\_domain\_的衔接方式
-
-这一小节要把它和你第9章说的“层级中断控制器”做一次显式对齐，防止以后你在整理书稿时两章看起来风格不一样。
-
-MSI 的 irq_domain 一般是这样挂的：
-
-1. **根域（root / GIC 域）**：真正连着 CPU 的中断控制器，比如 GICv3；
-2. **MSI 域**：负责把“某设备要 N 条 MSI”翻译成 N 条“能在 GIC 上注册的中断号”；
-3. **设备/总线层**：PCI/MSI 层会去这个 MSI 域要中断。
-
-可以用一个更细一点的 Mermaid 图表示 MSI 域是怎么挂到 GIC 的（已转义）：
-
-```mermaid
-graph TD
-    G["GIC / Root IRQ Domain"] --> M["MSI IRQ Domain (platform / PCI-MSI)"]
-    M --> D["PCIe Device / Platform Device (needs MSI)"]
-```
-
-这和你前面写的 GPIO 子域图其实是一个套路，只是这里的中断源不是“GPIO 控制器的 pin”，而是“某个设备要发的消息中断”。
-
-**几点实现上的注意：**
-
-1. **MSI 域一定要有 parent**
-    否则消息到了不知道往哪送，就会出现“驱动能分到 irq，但中断进不来”的现象，看上去像是“中断号对不上”。
-2. **MSI 域的 alloc() 里要调用 parent 的 alloc()**
-    这和“GPIO 域要让 GIC 放行”是一致的，否则父域没有真正生成对应的硬件中断。
-3. **DTS 里的 `msi-parent` 要写对**
-    很多 BSP 出问题就是这里写错了 phandle，结果 MSI 域建出来了，但是没挂到真正的 GIC 上。
-4. **平台代码要注册 MSI 控制器驱动**
-    只是 DTS 写了还不够，内核里还要有对应的 driver 去 `irq_domain_add_msi()`，这一步漏了就会出现“属性有了但就是不工作”的情况。
-
-到这里，平台端的“从线中断世界迁到 MSI 世界”这条路径就完整了：
-
-- 线中断：设备 → DTS `interrupts` → GPIO/外部中断域 → GIC → CPU
-- MSI：设备 → DTS `msi-parent` → MSI 域 → GIC → CPU
-
-它们只是**入口属性不一样**，但进入 GIC 以后就是一条路。
-
-
-
-------
-
-### 12.1.5\_多中断向量设备(MSI-X)的分配与管理
-
-这一节的目标是把下面这句话写成“可落地”的驱动代码和内核视角：
-
-> “同一个 PCIe 设备，可以要到多条 MSI/MSI-X 中断向量，然后把这些向量一一绑定到设备内部的不同通道/队列/功能上，实现真正的并行中断处理。”
-
-前一批我们已经说了“原理上可行、接口也就是那几个”，这一节要把它写成书稿级别的：为什么要多向量、向量是按谁分的、驱动怎么降级、devm 怎么写、和 irq_domain 怎么对应、常见错误是什么。
-
-#### (1)\_为什么一定要单设备多向量
-
-从内核的角度，多向量是为了解决这三个老问题：
-
-1. **中断上下文里不要再做设备内部的二次分发**
-    共享 INTx/单 MSI 时，ISR 进来要先看“到底是哪条队列发的”，还得清对应的 bit，浪费时间；多向量可以做到“进来就知道是谁”。
-2. **中断要能分到多个 CPU 上**
-    单中断只能绑一个 affinity，或者做 smp_affinity 的自动分摊，但粒度很粗；多向量可以一条绑一个 CPU，最适合高 PPS 场景。
-3. **每个功能要能独立控制中断开关**
-    典型如：数据面中断要开，错误/管理中断临时要关；如果都绑在一条中断上，关了就都没了。
-
-所以 MSI-X 的核心价值不是“更高级”，而是“粒度更细，更容易和 SMP/NUMA/多队列协议对上”。
-
-#### (2)\_分配流程再展开
-
-驱动里常用的流程是这样（对标 PCI 驱动）：
-
-1. enable / request regions / set_master
-2. **分配中断向量（MSI → MSI-X）**
-3. map bar / 分配 queue 结构
-4. 每条向量注册中断
-5. 设备初始化、开门
-
-步骤 2 是关键，代码骨架如下：
-
-```c
-int nvec;
-
-nvec = pci_alloc_irq_vectors(pdev,
-                             1,          /* 至少要 1 条，保证能工作 */
-                             LEAF_MAX_VECTORS,  /* 比如 8、16，看设备能给多少 */
-                             PCI_IRQ_MSIX | PCI_IRQ_MSI);
-if (nvec < 0)
-    return nvec;
-
-/* nvec 是实际给到的数，可能 < LEAF_MAX_VECTORS */
-```
-
-需要注意的点：
-
-- 一定要把 **min 和 max 分开写**，不要写成“我就要 8 条，要不到就失败”，嵌入式板子很可能给不了那么多；
-- `PCI_IRQ_MSIX | PCI_IRQ_MSI` 的意思是：**优先 MSI-X，其次 MSI，最后才会退 INTx**；
-- 这一步的失败不能直接让驱动崩掉，最好是退回“只用 1 条”的模式。
-
-#### (3)\_向量和通道的绑定策略
-
-最简单、最通用的一种策略是“向量序号 == 队列序号”，也就是：
-
-- `vector 0` → 管理面 / 控制中断 / fatal 中断
-- `vector 1..(nvec-1)` → 数据队列
-
-代码示例：
-
-```c
-for (i = 0; i < nvec; i++) {
-    int irq = pci_irq_vector(pdev, i);
-    struct leaf_queue *q = &leaf->queues[i];
-
-    ret = devm_request_irq(&pdev->dev, irq,
-                           leaf_queue_isr,
-                           0,
-                           "leaf-pcie-q",
-                           q);
-    if (ret) {
-        dev_err(&pdev->dev, "request irq %d failed\n", irq);
-        /* 这里不能只 return，要做回滚，见下节 */
-        goto err_irq;
+/* 仅在S4及必要的消费者同步完成后调用。 */
+static void queue_irqs_release(struct queue_irq_set *set)
+{
+    queue_irqs_unregister(set);
+    if (set->nvec)
+        pci_free_irq_vectors(set->pdev);
+    kfree(set->slots);
+    set->slots = NULL;
+    set->pdev = NULL;
+    set->nvec = 0;
+}
+
+/* set须零初始化且由调用方串行操作；contexts容量为max_vecs。 */
+static int queue_irqs_acquire(struct queue_irq_set *set,
+                             struct pci_dev *pdev,
+                             unsigned int min_vecs,
+                             unsigned int max_vecs,
+                             irq_handler_t handler,
+                             void *const *contexts)
+{
+    unsigned int i;
+    int ret;
+
+    if (set->pdev || set->slots || set->nvec || set->registered)
+        return -EBUSY;
+    if (!pdev || !handler || !contexts || !min_vecs ||
+        min_vecs > max_vecs)
+        return -EINVAL;
+    for (i = 0; i < max_vecs; i++)
+        if (!contexts[i])
+            return -EINVAL;
+
+    ret = pci_alloc_irq_vectors(pdev, min_vecs, max_vecs,
+                                PCI_IRQ_MSIX | PCI_IRQ_MSI);
+    if (ret < 0)
+        return ret;
+    set->pdev = pdev;
+    set->nvec = ret;
+    set->slots = kcalloc(set->nvec, sizeof(*set->slots), GFP_KERNEL);
+    if (!set->slots) {
+        ret = -ENOMEM;
+        goto fail;
     }
 
-    /* 可选：设置亲和性，后面 12.4.5 展开 */
-}
-```
+    for (i = 0; i < set->nvec; i++) {
+        struct queue_irq_slot *slot = &set->slots[i];
 
-这种“向量号直接当下标”的做法有两个好处：
+        ret = pci_irq_vector(pdev, i);
+        if (ret < 0)
+            goto fail;
+        slot->irq = ret;
+        slot->context = contexts[i];
+        snprintf(slot->name, sizeof(slot->name), "%s-v%u",
+                 pci_name(pdev), i);
+        ret = request_irq(slot->irq, handler, 0,
+                          slot->name, slot->context);
+        if (ret)
+            goto fail;
+        set->registered++;
+    }
+    return 0;
 
-1. ISR 一进来就知道自己是第几个向量，data 就是这个队列，不用查设备寄存器；
-2. 回收/错误路径好写，for 循环里有几条就回收几条。
-
-#### (4)\_错误路径与释放(含\_devres)
-
-有两个资源要分别释放：
-
-1. **中断 handler 本身**
-   - 用 `request_irq()` 的话，要在错误路径和 remove 里 `free_irq()`；
-   - 用 `devm_request_irq()` 的话，handler 会在设备释放时自动注销，**这一层你可以省**。
-2. **MSI/MSI-X 向量本身**
-   - 即使你用的是 devm 申请的 irq handler，**向量也还是你要主动 free 的**；
-   - 否则这块设备热插拔/重载驱动时就会出现向量泄漏。
-
-典型错误路径：
-
-```c
-err_irq:
-    pci_free_irq_vectors(pdev);
-err_regions:
-    pci_release_regions(pdev);
-err_disable:
-    pci_disable_device(pdev);
+fail:
+    queue_irqs_release(set);
     return ret;
-```
-
-要记住这一条：**devm_ 管的是“Linux 里挂的中断处理函数”，不管“PCI 框架里给你分的 MSI 向量”**。这也是你前面要求我以后都要说 devres 的原因——很多人会以为 devm_ 把所有东西都管了，其实 PCI/MSI 这一层还得你自己 free。
-
-#### (5)\_与中断亲和性(SMP)的配合
-
-有了多条向量以后，可以做这个事：
-
-```c
-cpumask_var_t mask;
-
-if (zalloc_cpumask_var(&mask, GFP_KERNEL)) {
-    cpumask_set_cpu(i % nr_cpu_ids, mask);
-    irq_set_affinity_hint(irq, mask);
-    free_cpumask_var(mask);
 }
 ```
 
-思路就是：**第 i 条中断绑到第 i 个 CPU 上**，这样 4 个队列 → 4 个中断 → 4 个 CPU，可以做到比较理想的负载分摊。
- 这一段其实和你第10章要写的内容是互补的：第10章讲“中断亲和性”是横向的，这里是说“有了多向量以后亲和性才真正有价值”。
+组件返回0以后，`set.nvec` 才是实际数量，`set.slots[i].irq` 是对应Linux IRQ。调用方在S2之后配置设备队列使用的向量索引，再启用DMA/业务通知；若后续启动失败，先执行S4，再回收，不能直接跳到释放对象。
 
-#### (6)\_与\_irq\_domain\_的对应关系
+这段组件给出了两个退出阶段：先调用 `queue_irqs_unregister()` 注销入口，再同步handler派生的work或其他消费者，最后调用 `queue_irqs_release()` 归还向量。release内部再次注销是无剩余登记时的空操作。调用方须在S4设置停止状态，使后续消费者不会重新打开通知；普通队列内存与BAR也要保留到全部消费者退出。
 
-你如果去看 `/proc/interrupts`，会看到这些 MSI-X 向量最后都是普通的 irq number，比如 74、75、76 ……
- 这是因为刚才那一套“MSI domain → parent domain → irq_desc”已经起作用了：**你在驱动里看到的是逻辑上的“第 i 条向量”，内核里看到的是“第 K 个 irq number”，这两个不是一回事，MSI 域完成了映射。**
+注册失败路径直接release的前提是S0保持设备停产、handler不会在准备阶段派生后续业务；如果具体设备可能留下陈旧通知，handler须识别准备状态并按设备协议处理，不启动新消费者。本例不提供虚构的硬件handler、不宣称是一份可独立加载的PCI模块，验证范围是资源配对及失败顺序。
 
-可以用一个小图说明：
+### 12.5.2\_devres改变谁收尾但不改变依赖顺序
 
-```mermaid
-graph TD
-    A["驱动看到的 MSI-X #0..#N"] --> B["MSI IRQ Domain 分配 irq"]
-    B --> C["父域 (GIC / IO-APIC) 建硬件中断"]
-    C --> D["irq_desc 中统一管理"]
+若换用 `devm_request_irq()`，失败返回或解绑时会自动注销已登记处理函数。但这发生在devres回收阶段，不能在probe错误出口或remove里先手动 `pci_free_irq_vectors()`，再等devres以后处理handler。需要提前拆除时，先对成功登记项调用 `devm_free_irq()`，然后释放向量；不要再用普通free_irq去留下同一份待执行的devres记录。
+
+“devm永远不管理MSI向量”也不准确。固定源码中，使用 `pcim_enable_device()` 的受管理PCI设备，会由MSI初始化路径登记 `pcim_msi_release`；其回收动作负责释放向量。普通 `pci_enable_device()` 路径没有自动获得这项保证。选择托管方案时，应按建立顺序核对devres的逆序回收，让后登记的handler先退出、消息资源随后回收；驱动仍必须在remove/错误路径完成S4，不能指望资源自动释放替它停止硬件。
+
+同样要检查名字与提示掩码：request_irq保存的名字和dev_id、亲和性hint保存的对象，都要活到相应引用结束。循环中的 `char name[32]` 在函数返回后失效，不能用来给长期IRQ命名；本组件将名字放在持续存在的slot里，直到free_irq后才释放。
+
+## 12.6\_平台怎样告诉内核这条消息会到哪里
+
+资源接口能统一，消息接收路径却不能靠一个DTS属性在任何板上凭空建立。先问真实硬件：端点消息经过哪一个根控制器，由内建MSI接收器还是外部控制器处理，写事务还携带什么设备身份？然后才选择相应固件描述与驱动。
+
+在设备树平台，`msi-controller` 标记接收MSI的控制器，`#msi-cells` 说明绑定所需的附加标识单元。`msi-parent` 按具体binding关联上级MSI提供者；PCI还可能使用 `msi-map`，把请求者ID映射到提供者及其设备标识。没有字面上的msi-parent，不自动证明平台不支持MSI：内建接收器、msi-map或ACPI等固件路径都可能承担该关系。
+
+**请求者ID RID（Requester ID）**用总线、设备、功能号标识PCI请求来源。通用binding按bits15:8表示总线、bits7:3表示设备、bits2:0表示功能。用户工具常将这三项称为 **BDF（Bus、Device、Function）**，并在前面加PCI域号。若根控制器对身份另有别名或映射，必须按实际集成核对；不能把BDF字符串不加条件地当成ITS的DeviceID。
+
+下面只演示映射属性的含义，假定根节点和ITS节点已由真实SoC描述建立，`its_controller` 是该提供者的标签；这不是可直接编译的整板DTS：
+
+```dts
+/* 放在相应根控制器节点内；仅当其binding与硬件身份转换支持此关系。 */
+msi-map = <0x100 &its_controller 0x200 0x100>;
 ```
 
-这样你在驱动里就不需要去想“这个中断到底是怎么从 PCIe 打到 GIC 上的”，它已经被域体系吸收了。
+这段把RID区间 `[0x100, 0x200)` 映射为控制器侧 `[0x200, 0x300)`：例如0x123变为0x223。它没有给设备写入MSI消息地址，也没有替代控制器初始化。若配置 `msi-map-mask`，先按该掩码处理RID再匹配；单元的具体意义仍由提供者binding规定。不要在没有真实IP的情况下添加 `vendor,my-msi-ctrl` 并期待内核找到驱动。
 
-#### (7)\_常见错误与排查要点
+PCI端点使用PCI/MSI接口，非PCI设备也可能使用平台消息中断机制。后者不意味着“把任意platform_device改写msi-parent就能发MSI”：设备必须具备消息发送能力，驱动和总线必须实现相应分配及消息配置接口。板载PCI端点与插槽端点都仍由PCI枚举，不因焊在板上就变成platform_device。
 
-1. **只写了 `request_irq(pdev->irq, ...)`**
-    → 实际用了 Legacy INTx，MSI/MSI-X 全浪费了。
-2. **`pci_alloc_irq_vectors()` 返回值没检查**
-    → 以为要到了 8 条，其实只要到了 1 条，结果代码访问了 `pci_irq_vector(pdev, 3)`，数组越界。
-3. **没 free 向量**
-    → 第一次能用，第二次 probe 失败。
-4. **平台 MSI 域没初始化**
-    → 申请 MSI 会失败，看 dmesg 会有 “failed to create MSI mapping” 之类的提示，要回到 DTS/平台代码修。
+系统配置至少要核对 `CONFIG_PCI`、`CONFIG_PCI_MSI` 及实际主控制器/MSI接收驱动。不要照抄旧版本Kconfig名称，或把某个SoC家族当成每个型号都有PCIe。比如本仓库的i.MX6ULL源码研究环境不能仅因使用i.MX厂商内核，就被用作本章PCIe硬件实验已经存在的证明。
 
-------
+## 12.7\_从实际模式与IRQ集合开始观察
 
-### 12.1.6\_嵌入式\_/\_SoC\_场景下的精简与限制
+调试先证明“当前分配了什么”，再讨论“为什么没有来”。能力栏存在MSI-X只证明设备支持它；没有某句dmesg日志，也不证明它未启用。日志文本受驱动与日志级别影响，不能要求每个设备都打印想象中的 `enabling MSI-X`。
 
-你现在做的板子（i.MX6ULL、RK356x 这一类）和 PC/服务器有个根本区别：**PC 那套 PCIe → IO-APIC → CPU 中断的通路比较“标准化”，而 SoC 上那一段 MSI 支持经常是“裁剪过的、只实现了一部分、还得靠 DTS 告诉内核怎么接”**。所以同一份 PCIe 驱动在 PC 上天然能拿到 MSI-X，但在 SoC 上就可能只能拿到 1 条，甚至退回 INTx。
-
-这一节就是讲这个“落差”应该怎么防御。
-
-#### (1)\_典型的\_SoC\_限制现象
-
-1. **DTS 里必须写 `msi-parent` 才能用**
-   - 不像 PC 上能自动探测；
-   - 写错 phandle、写成别的 GIC 节点，就会出现“分配成功但中断不来”。
-2. **MSI 控制器本身只给很少的向量**
-   - 有的实现就是一个简易版 GICv2m；
-   - 你要 8 条，它只能给 4 条，驱动必须接受这个事实。
-3. **BSP 把 MSI 默认关了**
-   - 出于内存、复杂度或者历史原因；
-   - 要你在 kernel config 里手动开 `CONFIG_PCI_MSI`，甚至要开某个 `*_MSI` 控制器驱动。
-4. **低功耗/挂起会把 MSI 一起关掉**
-   - 这一点和第11章的“为什么挂起后中断不来/一直来”是同一条线：MSI 门户硬件被 clock-gate 掉了，中断当然不来，恢复要重配。
-5. **Root Complex 没做完整的 MSI 转发**
-   - 有的 SoC 的 PCIe RC 驱动还在演进中，只支持 Legacy，不支持 MSI/MSI-X，或者只支持 MSI 不支持 MSI-X。
-
-#### (2)\_驱动里的防御性写法
-
-所以嵌入式场景下的 PCIe 驱动，分配 MSI 的写法应该是这样，而不是“我要 8 条，要不到就报错”：
-
-```c
-int nvec;
-
-/* 尽量多要，但能少不能没有 */
-nvec = pci_alloc_irq_vectors(pdev,
-                             1,      /* 至少 1 条，能活 */
-                             8,      /* 想要 8 条 */
-                             PCI_IRQ_MSIX | PCI_IRQ_MSI | PCI_IRQ_LEGACY);
-if (nvec < 0)
-    return nvec;   /* 真正失败再说 */
-
-/* 根据实际拿到的 nvec 初始化队列 */
-init_queues(dev, nvec);
-```
-
-注意我多加了一个 `PCI_IRQ_LEGACY`：
-
-- 意思是：**如果 MSI/MSI-X 都拿不到，就退到 INTx 也行**；
-- 这是 SoC 上非常常见、也是很务实的写法：**能中断就行，性能好坏再说**。
-
-#### (3)\_DTS\_里的定位和错误形态
-
-嵌入式下的 MSI 问题经常最后都落在 DTS 上，所以写书时要把它说清楚：
-
-1. **作用**
-   - `msi-parent = <&msi_ctrl>;` 的作用就是告诉内核：“这条 PCIe/这个设备的 MSI 要送到这个 MSI 控制器上”。
-2. **使用场景**
-   - SoC 上 PCIe 是一个 on-chip IP，它自己不等于 GIC；
-   - 要靠 DTS 把它连到真正的 GIC/ITS。
-3. **不写的后果**
-   - 驱动里能看到 MSI 能力，但申请向量失败；
-   - 或者分到向量，中断就是不来。
-4. **驱动里的使用逻辑**
-   - 驱动不直接看 DTS；
-   - 驱动只看 `pci_alloc_irq_vectors()` 的返回值，少了就少用。
-
-#### (4)\_与电源管理的配合(和第11章的钩子)
-
-MSI 是要靠那段硬件一直在线才能工作的，所以：
-
-- suspend 时如果把 PCIe RC / MSI 控制器 / GICv2m / ITS 关了，MSI 就进不来；
-- 唤醒一般是走 GPIO、外部中断、或者专门的 wakeup 源，不走 MSI；
-- resume 后要重新配置 MSI，这一步通常是 PCI core / MSI 层做的，驱动一般不用管，但要知道 **“挂起前还能进中断，挂起后不能进了” 这个情况在 MSI 上是正常的**。
-
-如果你要写“同时支持 MSI 和 GPIO 唤醒”的驱动，场景往往是：
-
-- 正常运行：用 MSI/MSI-X，性能好；
-- 待机/深睡：靠 GPIO 那条外部中断唤醒；
-- 恢复后：重新 init MSI，再切回高性能模式。
-
-这就是嵌入式下常见的“双中断通路”写法。
-
-#### (5)\_与\_devm\_的关系
-
-这里再强调一次你要求的点：
-
-- **devm_request_irq()**：管的是“Linux 里注册的中断处理函数”，推荐在 MSI 驱动里也用它，省得错综复杂的错误路径；
-- **pci_free_irq_vectors()**：必须你自己调，devm 不会帮你 free；
-- 所以典型组合是：**“MSI 向量手动 free” + “devm 申请每条中断”**，这也是现在上游很多 PCIe 驱动的写法。
-
-------
-
-### 12.1.7\_常用接口与使用逻辑对照表
-
-为了方便你以后做“模板 + 核对表”，这一节直接给成表格 + 简短说明，你可以照抄进后面的“实战模式”一章里。
-
-| 场景                       | 接口/配置                                                  | 作用                                               | 不写/写错的后果                                       | 驱动中的使用逻辑                                  |
-| -------------------------- | ---------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------- |
-| 申请 MSI/MSI-X（首选）     | `pci_alloc_irq_vectors(pdev, min, max, flags)`             | 向内核申请 N 条中断向量，底层自动选 MSI-X/MSI/INTx | 分不到向量，只能退回 legacy；或者申请到的数量比预期少 | probe 最前面调用，返回值决定后面要不要建 N 个队列 |
-| 取第 i 条向量的 irq number | `pci_irq_vector(pdev, i)`                                  | 把逻辑向量号映射成 Linux irq number                | 无法对每条向量 request_irq                            | for (i=0; i<nvec; i++) 里用                       |
-| 注册中断（非 devres）      | `request_irq(irq, handler, flags, name, dev_id)`           | 把中断号和 ISR 绑在一起                            | remove 要手动 free_irq                                | 老驱动/要精细控制 flags 时用                      |
-| 注册中断（devres）         | `devm_request_irq(dev, irq, handler, flags, name, dev_id)` | 同上，但跟设备生命周期绑定                         | 容易误以为它也会 free MSI 向量，其实不会              | 新驱动建议用它，省错误路径                        |
-| 释放 MSI 向量              | `pci_free_irq_vectors(pdev)`                               | 把前面申请的所有 MSI/MSI-X 向量还给内核            | 向量泄漏，热插拔/二次 probe 出问题                    | remove/错误路径必写                               |
-| 强制只用 legacy            | `pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_LEGACY)`        | 明确不需要 MSI，或者平台不支持                     | 共享中断、性能差                                      | 嵌入式裁剪、调试阶段可用                          |
-| 绑定 CPU 亲和性            | `irq_set_affinity_hint(irq, mask)`                         | 把某条中断固定到某个 CPU/一组 CPU                  | 中断全堆到一个核上，性能起不来                        | 多队列/多向量时建议配合用                         |
-| DTS 声明 MSI 控制器        | `msi-controller;` + `msi-parent = <&...>;`                 | 告诉内核这条 PCIe 的 MSI 要送到哪个域              | 驱动申请 MSI 失败，只能退 INTx                        | 平台/BSP 必须写对，驱动只看返回值                 |
-
-
-
-------
-
-### 12.1.8\_调试与验证
-
-这一节的目的，是给你一条**专门针对 MSI/MSI-X 的排查路径**。因为 MSI 的常见问题和 GPIO/外部中断那种“电平没配对、pinctrl 没放行”不一样，它更多是“分配成了，但是不打 / 打了到不了 CPU / suspend 后丢了 / vector 数量不对”。所以要单独写。
-
-#### (1)\_看日志\_内核有没有真的启用\_MSI
-
-第一步永远是看 dmesg。典型能看到这些行（不同平台略有差异）：
-
-- `pci 0000:01:00.0: enabling device (0000 -> 0002)`
-- `pci 0000:01:00.0: enabling MSI`
-- `pci 0000:01:00.0: enabling MSI-X`
-- `irq 74: allocated MSI for ...`
-- ARM/SoC 上可能还有 `its-msi` / `gicv2m: ...` 这样的字样，说明 MSI 域建起来了。
-
-**要点**：如果你一个“应该支持 MSI 的设备”在 dmesg 里完全看不到 “MSI”/“MSI-X” 相关的行，基本就是：
-
-1. 内核没开 MSI（Kconfig 没开）；
-2. DTS 没给 `msi-parent`；
-3. 平台的 MSI 控制器驱动没 probe；
-4. 驱动自己只用了 INTx。
-
-这一步看的是“有没有启用”。
-
-#### (2)\_看\_/proc/interrupts\_到底分到了几条向量
-
-第二步就是：
+在目标Linux安装有pciutils时执行以下只读命令，完整地址写成 **域:总线:设备.功能**；把示例替换成实际设备：
 
 ```bash
-cat /proc/interrupts
+# 目标Linux：列出设备及绑定驱动，再观察选定设备能力。
+lspci -D -nn -k
+sudo lspci -vv -s 0000:01:00.0
 ```
 
-你要确认三件事：
+`Enable+` 表示对应能力当前启用；MSI的 `Count=1/32` 区分启用数量与能力上限，MSI-X的 `TabSize=8` 是表容量。不要把一段同时写MSI Enable+与MSI-X Enable+的假输出当作正常样例；两种模式不能同时启用。
 
-1. 你的那个 PCIe 设备名字是不是出现了多行，像这样：
+保存下面为 `inspect_msi.sh`。它沿该设备的 `msi_irqs` 查找实际Linux IRQ，读取模式和CPU计数，不解绑设备、不写MSI表、不改变亲和性：
 
-   ```text
-   74:  1000  0  0  0  ...  MSI  leaf-pcie-q0
-   75:  0     900 0  0  ...  MSI  leaf-pcie-q1
-   76:  0     0   850 0  ...  MSI  leaf-pcie-q2
-   ```
-
-   有多行说明**多向量真的被内核注册了**。
-
-2. 这一组 IRQ 的类型是不是标了 `MSI` 或 `MSI-X`，而不是 `IO-APIC` / `GIC` / `edge` / `level` 这类传统标记。
-
-   - 出现 `MSI` 就说明这是一条消息型中断。
-   - 出现 `PCI-MSI` / `MSI-X` 更好，看平台。
-
-3. 多个 CPU 上的计数是不是都在动。
-
-   - 如果你给每条向量都绑了不同 CPU，应该看到它们是在不同列递增的；
-   - 如果全挤在一个 CPU 上，就要去看 affinity。
-
-这一步看的是“分到了没有、打到没有”。
-
-#### (3)\_用\_lspci\_-vvv\_看\_Capability
-
-`lspci -vvv -s 01:00.0`（按实际 BDF 填）能看到比较底层的 PCIe 能力，比如：
-
-```text
-Capabilities: [50] MSI: Enable+ Count=1/32 Maskable+ 64bit+
-Capabilities: [60] MSI-X: Enable+ TabSize=8 ...
+```bash
+#!/usr/bin/env bash
+set -eu
+if [ "$#" -ne 1 ] ||
+   [[ ! "$1" =~ ^[[:xdigit:]]{4}:[[:xdigit:]]{2}:[[:xdigit:]]{2}\.[0-7]$ ]]; then
+    printf '用法: %s dddd:bb:dd.f\n' "$0" >&2
+    exit 2
+fi
+device="/sys/bus/pci/devices/$1"
+[ -d "$device" ] || { printf '设备不存在\n' >&2; exit 1; }
+printf '设备: %s\n' "$1"
+if [ -r "$device/irq" ]; then
+    printf '兼容irq属性: '; cat "$device/irq"
+fi
+shopt -s nullglob
+entries=("$device"/msi_irqs/*)
+if [ "${#entries[@]}" -eq 0 ]; then
+    printf '未观察到MSI IRQ条目；继续核对绑定、配置与实际模式。\n'
+    exit 0
+fi
+for entry in "${entries[@]}"; do
+    irq=${entry##*/}
+    [[ "$irq" =~ ^[0-9]+$ ]] || continue
+    printf 'Linux IRQ %s 模式: ' "$irq"
+    cat "$entry"
+    # 精确匹配首列，不能让42误匹配142。
+    awk -v key="$irq:" '$1 == key { print; seen=1 }
+        END { if (!seen) print "该IRQ当前未出现在/proc/interrupts" }' /proc/interrupts
+    for item in smp_affinity_list effective_affinity_list; do
+        path="/proc/irq/$irq/$item"
+        if [ -r "$path" ]; then printf '%s: ' "$item"; cat "$path"; fi
+    done
+done
 ```
 
-其中关键字段有两个：
+在目标机执行 `bash inspect_msi.sh 0000:01:00.0`，施加已知设备负载后再次执行，比较对应IRQ列的增量。`msi_irqs/<N>` 的N是Linux IRQ，文件内容区分msi/msix；`device/irq` 在MSI时可表示首条MSI，而在MSI-X时仍可能是传统INTx值，不能拿它代替整组MSI-X查询。缺少条目还可能是设备未绑定、未申请、接口配置不可用或观察时发生解绑，不直接推出硬件不支持。
 
-1. `Enable+`：说明内核已经把它 enable 了；
-2. `Count=1/32` 或 `TabSize=8`：说明**设备最多能给你多少条**，这跟你驱动里要的 `max` 一起看，就能判断是不是“设备给得就不多”。
+这个读取不是原子快照。设备解绑、热插拔或IRQ重配可能使两次读取间的文件消失，应先确认设备生命周期稳定再比较。`/proc/interrupts` 的控制器名称因平台不同而变，不能仅按是否含字面MSI做判断。队列已合并、完成批处理或中断合并也会让数据包数量与IRQ增量不同。
 
-如果这里显示设备只有 4 条 MSI-X，你在驱动里非要 16 条，那就是驱动要改，不是平台的问题。
+| 已有证据 | 下一步要找的状态 | 不能直接跳到的结论 |
+| --- | --- | --- |
+| 申请返回少于max但不少于min | 设备容量、平台资源、亲和性分配与所选模式 | 平台故障，或可以继续访问原max范围 |
+| IRQ登记成功，计数不增加 | 设备队列映射、通知使能、完成状态、表项屏蔽与消息路径 | 分配成功等于设备已经发送并到达CPU |
+| 设备有pending或完成 | 消息是否生成、是否被屏蔽、路由/重映射是否允许 | pending位就是发送次数，或一定是ITS错误 |
+| 计数增加但业务不前进 | handler上下文、完成消费、DMA访问及后续队列 | 消息丢失，或增加向量就能修复 |
+| 多向量都集中一核 | 允许集合、effective目标、托管策略与实际负载 | MSI-X没有生效 |
 
-#### (4)\_典型问题\_1\_能分配但不触发
+错误恢复与系统恢复也沿同一链核对。PCI核心可恢复缓存的MSI配置，平台负责控制器/翻译状态，驱动仍需恢复设备队列、通知开关和DMA协议。“恢复后不来”是需要定位的失败，不能当成MSI正常特性；也不能现场只改一个flags就安全切到INTx。
 
-现象：`pci_alloc_irq_vectors()` 成功，`devm_request_irq()` 成功，`/proc/interrupts` 里能看到这一条，但是设备打中断就是不进 ISR。
+低功耗唤醒不一定另拉GPIO。PCIe有电源管理事件 **PME（Power Management Event）**，端口服务可处理并上报设备唤醒，固定 `pcie_pme_suspend()` 还会尝试为服务IRQ设置wake。具体睡眠深度下哪些电源与链路保留、端口服务使用何种IRQ，仍须平台证明。普通数据MSI路径可用不等于深睡可唤醒，反过来也不能断言“MSI系统绝不参与唤醒”；这与[第十一章的四层状态](P11_电源管理中的中断_suspendresume_与唤醒源.md#11.2_四种唤醒状态不能靠一个标志代替)一致。
 
-排查顺序建议这样：
+## 12.8\_用资源与队列关系检查设计是否成立
 
-1. **看平台 MSI 域是不是好用的**
-   - 同板子上别的 PCIe 设备能不能用 MSI？
-   - GICv2m / ITS 的驱动是不是 probe 了？
-   - DTS 里 `msi-parent` 有没有写、写得对不对？
-2. **看是不是设备没真的发 MSI**
-   - 有的设备有一个寄存器能看中断 pending / 状态；
-   - 如果设备自己认为“我打了”，那就是路由问题；
-   - 如果设备自己都没有 pending，就看驱动是不是忘了开中断、忘了 unmask。
-3. **看是不是 MSI 被防火墙/IOMMU 拦了**（ARM/SoC 场景常见）
-   - 有的 SoC 把外设的写事务做了过滤，MSI 没写到 GIC 那里；
-   - 这个时候往往还能看到设备上的 pending bit 在涨，但 CPU 上没有中断。
-4. **看是不是 IRQ 被屏蔽了**
-   - `/proc/interrupts` 那条是不是有 `IRQ_DISABLED`（看 sysfs 下）
-   - 中断是不是被 core 设成了 disabled，要看 request_irq 时的 flags。
+**练习一：** 四队列只分到两条MSI-X，是否丢掉队列2与3的中断？
 
-#### (5)\_典型问题\_2\_只能拿到\_1\_条
+**答案：** 不应根据向量数直接删除业务。若设备支持分组，可把四队列映射到两入口，每个handler检查自己负责的队列集合；若协议不支持，应减少可运行队列或提高min使分配失败。内核不会自动替驱动完成设备私有映射。
 
-现象：驱动里写了 `max=8`，但返回值是 1。
+**练习二：** flags只写MSI与MSI-X，为什么没有退到INTx？
 
-排查：
+**答案：** 驱动没有许可INTx。即使添加许可，还要满足min为1、传统IRQ可用以及驱动具备共享来源判断和单入口业务方案；fallback是完整模式，而不是一位配置。
 
-1. 设备的 MSI-X Table 里就只有 1 条（`TabSize=1`），这是硬件限制；
-2. 平台的 MSI 域配置得很小，只给 1 条，这要去看 MSI 控制器和 DTS；
-3. 内核判断这个平台的 MSI 不安全，自动降级（有的老平台会这样）；
-4. 你 flags 里没给 `PCI_IRQ_MSIX`，只有 MSI，能给的本来就少。
+**练习三：** 第三个devm_request_irq失败，在错误出口先free vectors，前两个handler等自动回收，可以吗？
 
-**驱动的正确做法**：把返回的 `nvec` 当成最终数量，写成“拿多少用多少”，不要硬编码“我就是 8 条”。
+**答案：** 顺序错误。处理入口依赖向量，必须先注销已登记handler，再归还向量。或者选定正确建立的受管理PCI资源方案，让逆序回收满足依赖，同时完成设备停产；两种方案都不能跳过S4。
 
-#### (6)\_典型问题\_3\_挂起/恢复后\_MSI\_不来了
+**练习四：** 表项1、Linux IRQ74、某个LPI恰好都指向队列2，设备应往消息数据填74吗？
 
-现象：开机后能进中断，suspend→resume 后不进了；同设备的 GPIO 唤醒却能进。
+**答案：** 不应。队列使用表项索引由驱动按设备协议配置，消息地址与数据由PCI/MSI及平台层生成。Linux IRQ是软件接口身份，不是通用设备消息格式。
 
-原因很可能是：**MSI 门户/GICv2m/ITS 在 suspend 时被关电了，resume 时底层没把 mapping/table 恢复好**。
-
-排查方式：
-
-1. 看 dmesg 里 resume 阶段有没有 “reprogramming MSI” / “ITS: ...” 之类的输出；
-2. 看是不是只有 MSI 不来，INTx 还来；
-3. 如果是你自己的平台代码，就要在 resume 里重新 init MSI 控制器，然后让 MSI 域做 re-map；
-4. 驱动这一层一般不需要动，但驱动要能退回到 INTx（比如给模块参数 msi=0）。
-
-这部分和你第11章的“电源管理中的中断”是要互相引用的。
-
-#### (7)\_典型问题\_4\_/proc/interrupts\_名字不好看
-
-有时候你会看到 `/proc/interrupts` 里写的是设备名 + 一个比较通用的字符串，不够区分各个向量。
- 解决方法就是在 `devm_request_irq()` 里把名字写得更细，比如带上队列号：
-
-```c
-char name[32];
-
-snprintf(name, sizeof(name), "leaf-pcie-q%d", i);
-ret = devm_request_irq(&pdev->dev, irq,
-                       leaf_queue_isr, 0,
-                       name, q);
-```
-
-这样一看就知道哪条中断不在涨、是哪条队列堵住了，排查性能问题更容易。
-
-------
-
-### 12.1.9\_小结
-
-1. **MSI/MSI-X 是把中断从“引脚事件”变成了“消息写事务”**，但在 Linux 里仍然要走统一的中断抽象：MSI domain → parent domain → irq_desc，这一点要和第3章、第9章保持口径一致。
-2. **单设备多通道并行中断处理是 MSI-X 唯一真正不可替代的场景**：共享 INTx 做得到“能中断”，做不到“多队列+多核分摊+互不影响”。
-3. **驱动写法的核心三步固定下来就不容易错**：
-   1. `pci_alloc_irq_vectors()` 要 min/max 分开写，flags 里同时给 MSI-X/MSI/LEGACY，便于嵌入式退化；
-   2. `for (i=0; i<nvec; i++) devm_request_irq(..., pci_irq_vector(...), ...)`，dev_id 传对应通道；
-   3. 错误路径和 remove 里记得 `pci_free_irq_vectors()`。
-4. **devm_ 只能管 handler，不管向量**，PCI/MSI 这一层仍然要你手动 free，这点要和你第23章（你说要统一 devm 写法的那章）保持一致。
-5. **嵌入式/SoC 场景的关键是把 MSI 域建起来**：DTS 要有 `msi-parent`，平台要真的注册 MSI 控制器，不然驱动再怎么写都只会退回 INTx。
-6. **调试看三处就够了**：dmesg 看“有没有启用 MSI”；`/proc/interrupts` 看“分到了几条、打没打进去”；`lspci -vvv` 看“设备能力到底是多少”。这是可以直接写进“中断排查模板”的三步。
-7. **本章要和第9/10/11章联动看**：
-   - 第9章告诉你“MSI 域也是挂到 GIC 的一层”；
-   - 第10章告诉你“有了多向量才能真正做中断亲和性”；
-   - 第11章告诉你“MSI 也会被电源管理关掉，所以很多板子要留 GPIO 唤醒那条线”。
-
-至此，第12章闭合。
-
-（本章完）
-
-------
+现在能够从队列通知需求推导向量数量，并沿分配、登记、运行、停产和回收核对每份状态。下一章讨论通知进入CPU时的特殊优先级与入口约束：通知如何传输，与能否绕过普通屏蔽，是两条不同的分类轴。
 
 上一篇：[P11 电源管理中的中断 suspendresume 与唤醒源](P11_电源管理中的中断_suspendresume_与唤醒源.md)。
 下一篇：[P13 特殊与高优先级中断 NMI 定时器 性能中断](P13_特殊与高优先级中断_NMI_定时器_性能中断.md)。

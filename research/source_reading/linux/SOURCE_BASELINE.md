@@ -1671,3 +1671,42 @@ gpio-keys解析按键子节点的wakeup-source、debounce-interval和wakeup-even
 输入常量路径include/dt-bindings/input/linux-event-codes.h在Git中为指向../../uapi/linux/input-event-codes.h的符号链接，表中对应blob是链接内容；KEY_WAKEUP实值143来自目标UAPI头，EV_ACT_ASSERTED为1来自gpio-keys.h。模板待替换板级引脚，不声称DTB构建或schema校验。
 
 pm_wakeup_irq暴露当前记录首槽，无记录时返回ENODATA，不是全部物理来源或最后事件历史。wakeup_count读取/写回握手可拒绝竞争活动。正文保留原有deep/IRQ46日志作为历史观察，未将其升级为本轮实测；不执行真实挂起，也不根据gpio-mxc多SoC分支推断i.MX6ULL有同样pad固件通路。
+
+## 1.191\_PCI消息中断的分配与生命周期
+
+2026-10-17 复审[MSI与MSI-X的软件框架](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P12_MSI_MSI-X_与_PCIe_设备的中断框架.md)。下列原始文件来自官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，Linux 6.12.20。当前文档网站仅用于交叉确认，接口和结构边界以固定源码为准；未使用不可访问的本地源码工作树冒充现场核验。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| Documentation/PCI/msi-howto.rst | 0692c9aec66fd48cb3d35af20d44b55101c2bcc8 |
+| drivers/pci/msi/api.c | b956ce591f964b41a7cac5e563dc7a2747026907 |
+| drivers/pci/msi/msi.c | 2f647cac4cae3484276ecdf658537d9006a7f3d7 |
+| drivers/pci/msi/irqdomain.c | d7ba8795d60f81622744c58f44db6dada5e8d7e9 |
+| drivers/pci/msi/legacy.c | db761adef652b63f256987ac2f2fcf8925c35a2c |
+| include/linux/msi.h | b10093c4d00ea5a2ce1c7ab10bab00a20bfca327 |
+| include/uapi/linux/pci_regs.h | 12323b3334a9c16beda9e13a039cd38ae2cacfad |
+| drivers/pci/Kconfig | 0d94e4a967d81d50b9a3f3aebda56d37b36fc271 |
+| drivers/pci/host-bridge.c | afa50b446567f77a1aacbf09ed5a0de9e8e81881 |
+| drivers/of/irq.c | 1fb329c0a55b8c0559b79b77a3f8f0cbc1101e1c |
+| Documentation/devicetree/bindings/pci/pci-msi.txt | b73d839657b6673827176a6a247b9111676a778d |
+| Documentation/devicetree/bindings/interrupt-controller/msi-controller.yaml | 449d6067ec88f36caf50e32bc2a8cece48f7aa9e |
+| drivers/pci/pcie/pme.c | a2daebd9806cd7273ee331406201402a758bd7b8 |
+| arch/x86/kernel/apic/msi.c | 340769242deaec10d03c462aa95f995ea4bafa23 |
+| kernel/irq/msi.c | a83fdc053c2b10519b00ab57633a6f0e3faab929 |
+| Documentation/ABI/testing/sysfs-bus-pci | 5da6a14dc326bd651d8cabb795d769f221daa81e |
+| include/linux/pci.h | ef8624ee459dec8b20bac3ff10db0a3dad2f6a74 |
+| drivers/pci/devres.c | 643f85849ef64b180e8f0c40a60a119272f1eb22 |
+| Documentation/PCI/pcieaer-howto.rst | f013f3b27c8274a65dd746e2c073061c365f408c |
+| drivers/pci/pcie/portdrv.c | 9700b211c821b17f18001d11f041702ae003b851 |
+| Documentation/PCI/pci.rst | f4d2662871ab1cc1554220cc074340e5e562f649 |
+| Documentation/devicetree/bindings/interrupt-controller/msi.txt | c20b51df7138a213111749c066c523477516b829 |
+
+pci_alloc_irq_vectors_affinity按许可尝试MSI-X、MSI、INTx；固定名称为PCI_IRQ_INTX，仅min=1且dev->irq有效时可走该fallback。pci_irq_vector区分MSI索引、MSI-X表索引和INTx唯一索引，越界返回错误；pdev->irq或sysfs irq不能代替MSI-X集合查询。
+
+PCI MSI-X能力头的Table/PBA字段在配置空间，完整表位于BAR窗口，每项16字节。pci_write_msg_msix在修改地址/数据时遵守mask协议。普通MSI描述符可包含多个nvec_used，MSI-X通常一项一描述符，不能把内核对象数量当成硬件向量的统一定律。
+
+pcim_enable_device设置受管理身份，pci_setup_msi_context会调用pcim_setup_msi_release登记向量回收动作；只有devm_request_irq并不足以证明向量也托管。无论是否托管，handler须先于其向量资源回收，硬件停产与DMA完成并非devres隐含保证。IRQ名字和affinity hint指针不得引用已失效临时对象，亲和性合同沿用1.189。
+
+pci_msi_setup_msi_irqs保留层级域与旧架构入口分支；域的parent关系不等于硬件串联。x86 MSI可修改APIC目标与向量，不能概括为必经IO-APIC。PCI的msi-map按RID区间和提供者标识映射，msi-parent不是所有平台唯一入口；msi-controller表示接收能力，不能给没有发送能力的设备增添硬件。
+
+端口服务按消息编号分配MSI/MSI-X，PME服务挂起可尝试enable_irq_wake；不能说所有唤醒必须另拉GPIO。PM恢复同时依赖PCI状态、平台消息接收与业务设备队列，不能把恢复后不通知写成正常结果。正文只读sysfs脚本、IRQ资源组件及映射示例不构成真实PCIe硬件、目标Kbuild或设备树schema验证。
