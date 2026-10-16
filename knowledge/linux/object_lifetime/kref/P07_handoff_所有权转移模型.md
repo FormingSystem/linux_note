@@ -31,7 +31,6 @@ domains:
 先复用前章已经建立的完整 [reference_ownership.c](../../../../labs/kernel/object_lifetime/materials/reference_ownership.c)，这次观察每个 owner 槽的移动。`owner.ptr` 非空表示该槽有一份须归还，空表示没有；真实 kref 不保存这些槽，下面是让责任可见的顺序教学程序。
 
 ```c
-#include <assert.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -46,9 +45,17 @@ struct object {
 struct owner { struct object *ptr; };
 static unsigned int released;
 
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("ownership invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
+
 static bool create(struct owner *dst)
 {
-    assert(!dst->ptr);
+    require_model(!dst->ptr);
     struct object *obj = malloc(sizeof(*obj));
     if (!obj)
         return false;
@@ -59,22 +66,22 @@ static bool create(struct owner *dst)
 
 static void share(struct owner *dst, const struct owner *src)
 {
-    assert(!dst->ptr && src->ptr);
-    assert(src->ptr->refs > 0 && src->ptr->refs < UINT_MAX);
+    require_model(!dst->ptr && src->ptr);
+    require_model(src->ptr->refs > 0 && src->ptr->refs < UINT_MAX);
     ++src->ptr->refs;
     dst->ptr = src->ptr;
 }
 
 static void move(struct owner *dst, struct owner *src)
 {
-    assert(!dst->ptr && src->ptr);
+    require_model(!dst->ptr && src->ptr);
     dst->ptr = src->ptr;
     src->ptr = NULL; /* 责任转交，计数不变。 */
 }
 
 static void drop(struct owner *slot)
 {
-    assert(slot->ptr && slot->ptr->refs > 0);
+    require_model(slot->ptr && slot->ptr->refs > 0);
     struct object *obj = slot->ptr;
     slot->ptr = NULL; /* 先结束本槽使用权，再执行可能的释放。 */
     if (--obj->refs == 0) {
@@ -92,7 +99,7 @@ static int borrow(const struct object *obj)
 static bool submit(struct owner *pending, struct owner *candidate,
                    bool accept)
 {
-    assert(!pending->ptr && candidate->ptr);
+    require_model(!pending->ptr && candidate->ptr);
     if (!accept)
         return false;
     move(pending, candidate);
@@ -103,7 +110,7 @@ static void consume(struct owner *pending)
 {
     struct owner worker = {0};
     move(&worker, pending);
-    assert(borrow(worker.ptr) == 42);
+    require_model(borrow(worker.ptr) == 42);
     drop(&worker);
 }
 
@@ -116,19 +123,19 @@ int main(void)
             fputs("allocation failed\n", stderr);
             return EXIT_FAILURE;
         }
-        assert(borrow(producer.ptr) == 42 && producer.ptr->refs == 1);
+        require_model(borrow(producer.ptr) == 42 && producer.ptr->refs == 1);
         share(&candidate, &producer);
-        assert(producer.ptr->refs == 2);
+        require_model(producer.ptr->refs == 2);
         bool queued = submit(&pending, &candidate, accept != 0);
         if (!queued)
             drop(&candidate); /* 发布失败，归还预留的那一份。 */
         drop(&producer);
         if (queued) {
-            assert(pending.ptr->refs == 1);
+            require_model(pending.ptr->refs == 1);
             consume(&pending);
         }
-        assert(!producer.ptr && !candidate.ptr && !pending.ptr);
-        assert(released == accept + 1);
+        require_model(!producer.ptr && !candidate.ptr && !pending.ptr);
+        require_model(released == accept + 1);
         printf("accept=%u released=%u\n", accept, released);
     }
     return EXIT_SUCCESS;

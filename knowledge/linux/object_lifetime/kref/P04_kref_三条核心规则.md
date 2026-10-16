@@ -20,9 +20,9 @@ domains:
 
 ------
 
-## 4.2\_规则\_1\_非临时拷贝指针之前\_必须先\_get
+## 4.2\_规则\_1\_独立份额必须在交付前建立
 
-标题中的 get 针对这种情形：原持有者还需要自己的份额，另一个接收者也将独立使用并负责归还。为了让两方都能按各自时间结束，应在接收者可能开始执行前把计数由 1 增到 2。
+先看需要 get 的情形：原持有者还需要自己的份额，另一个接收者也将独立使用并负责归还。为了让两方都能按各自时间结束，应在接收者可能开始执行前把计数由 1 增到 2。
 
 如果先发布，接收者运行后按协议 put，却没有为它准备份额，它就会消耗原持有者的那一份，甚至提前回收。错误不只是“两行顺序不美观”，而是接收方开始按两方协议行动时，实际账上还只有一份。
 
@@ -53,7 +53,7 @@ static void dump_id(const struct my_refobj *refobj)
 
 对象放入请求队列、工作、timer 或其他线程手中，通常需要跨过原调用者的使用期。可以新增一份、转交已有一份，或者证明有更长的外部保活期限；无论选哪种，都必须说明后续退出者。
 
-原 remember/forget 思路的核心——保存一份供以后使用并在清理时归还——仍然成立。但两行 global=obj 加一个 get 不是完整共享容器：还缺发布锁、替换旧对象时的责任处理，以及读者安全取得。前章[完整单槽容器](P02_源码入口与结构定义.md#2.30.1_设计_A_容器持有引用)明确拒绝占用槽的发布，并处理预留回滚；用它分析全局保存，可以避免覆盖旧指针造成泄漏。
+全局槽如果要保存一份供以后使用，就需要在撤下或替换时归还这份责任。但两行 global=obj 加一个 get 不是完整共享容器：还缺发布锁、替换旧对象时的责任处理，以及读者安全取得。前章[完整单槽容器](P02_源码入口与结构定义.md#2.30.1_设计_A_容器持有引用)明确拒绝占用槽的发布，并处理预留回滚；用它分析全局保存，可以避免覆盖旧指针造成泄漏。
 
 如果全局索引刻意不拥有引用，则不能直接套用“可见即为正引用”的查找策略。4.12 将比较这两个选择。
 
@@ -88,7 +88,7 @@ sequenceDiagram
 
 ------
 
-## 4.5\_规则\_1\_的最小错误模型
+## 4.5\_预留份额怎样处理投递失败
 
 对一个新工作实例，以下是有明确适用条件的调用片段；EBUSY 在这里是提交包装层选用的“未接受本次工作”错误码，queue_work 自身返回布尔接收结果：
 
@@ -108,9 +108,9 @@ timer 的启动、重排和取消契约与 queue_work 不完全相同，不能�
 
 ------
 
-## 4.6\_规则\_2\_使用完指针必须\_put
+## 4.6\_规则\_2\_仍归自己的份额必须有退出者
 
-这里的“使用完”指一份 **自己仍拥有且没有转交** 的责任结束。初始引用也要有最终去向，不能只统计 get 的次数；借用结束没有自己的份额可 put，转交成功则由接收方以后归还。
+一份 **自己仍拥有且没有转交** 的责任结束时，必须由当前路径归还。初始引用也要有最终去向，不能只统计 get 的次数；借用结束没有自己的份额可 put，转交成功则由接收方以后归还。
 
 若工作预留使总数由 1 到 2，成功回调忘记归还，提交者退出后计数停在 1，类型回调无法被正常最后归还触发。若提交从未成功却忘记收回预留，也会留下同样的孤立份额。两者的出口不同，靠“回调里有一个 put”只能检查前一种。
 
@@ -118,7 +118,7 @@ timer 的启动、重排和取消契约与 queue_work 不完全相同，不能�
 
 ## 4.7\_put\_不是\_可选清理动作
 
-put 是结束一份责任的操作，不能像释放可选日志缓冲一样凭“似乎不用了”随意加减。先写责任的来源，再看各分支把它归还还是转交。
+put 是结束一份责任的操作，每次调用都必须对应自己确实拥有的一份。先写责任的来源，再看各分支把它归还还是转交。
 
 ### 4.7.1\_少\_put
 
@@ -189,7 +189,8 @@ flowchart LR
     L -->|"保护仍在时get，建立新责任"| C
     L -->|"退出容器锁，携自己份额返回"| R["独立使用者"]
     R -->|"使用或拒绝收尾后put"| C
-    M["撤下者"] -->|"同锁关闭入口，锁外归还容器份额"| E
+    M["撤下者"] -->|"同锁关闭入口"| E
+    M -->|"解锁后归还原容器份额"| C
 ```
 
 图中的正引用依据来自“容器拥有一份”这个设计选择。删除这项假设，必须重新检查规则 3，不能只留下锁名和箭头。
@@ -284,10 +285,9 @@ RCU 也要证明成员存储在整个取得窗口保持有效，且清理遵循�
 
 ### 4.16.1\_传递给异步路径
 
-[reference_ownership.c](../../../../labs/kernel/object_lifetime/materials/reference_ownership.c)中的一个非空 owner 槽代表一份责任，普通指针别名不算新槽。share 新增，move 转交，submit 成功才接收候选；它没有真实线程和工作队列，只按指定顺序模拟交付。UINT_MAX 是 unsigned int 的最大值，断言在新增之前限制模型计数；EXIT_SUCCESS/EXIT_FAILURE 是程序成功/失败退出的标准常量，不是引用状态。
+[reference_ownership.c](../../../../labs/kernel/object_lifetime/materials/reference_ownership.c)中的一个非空 owner 槽代表一份责任，普通指针别名不算新槽。share 新增，move 转交，submit 成功才接收候选；它没有真实线程和工作队列，只按指定顺序模拟交付。UINT_MAX 是 unsigned int 的最大值，检查在新增之前限制模型计数；EXIT_SUCCESS/EXIT_FAILURE 是程序成功/失败退出的标准常量，不是引用状态。
 
 ```c
-#include <assert.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -302,9 +302,17 @@ struct object {
 struct owner { struct object *ptr; };
 static unsigned int released;
 
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("ownership invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
+
 static bool create(struct owner *dst)
 {
-    assert(!dst->ptr);
+    require_model(!dst->ptr);
     struct object *obj = malloc(sizeof(*obj));
     if (!obj)
         return false;
@@ -315,22 +323,22 @@ static bool create(struct owner *dst)
 
 static void share(struct owner *dst, const struct owner *src)
 {
-    assert(!dst->ptr && src->ptr);
-    assert(src->ptr->refs > 0 && src->ptr->refs < UINT_MAX);
+    require_model(!dst->ptr && src->ptr);
+    require_model(src->ptr->refs > 0 && src->ptr->refs < UINT_MAX);
     ++src->ptr->refs;
     dst->ptr = src->ptr;
 }
 
 static void move(struct owner *dst, struct owner *src)
 {
-    assert(!dst->ptr && src->ptr);
+    require_model(!dst->ptr && src->ptr);
     dst->ptr = src->ptr;
     src->ptr = NULL; /* 责任转交，计数不变。 */
 }
 
 static void drop(struct owner *slot)
 {
-    assert(slot->ptr && slot->ptr->refs > 0);
+    require_model(slot->ptr && slot->ptr->refs > 0);
     struct object *obj = slot->ptr;
     slot->ptr = NULL; /* 先结束本槽使用权，再执行可能的释放。 */
     if (--obj->refs == 0) {
@@ -348,7 +356,7 @@ static int borrow(const struct object *obj)
 static bool submit(struct owner *pending, struct owner *candidate,
                    bool accept)
 {
-    assert(!pending->ptr && candidate->ptr);
+    require_model(!pending->ptr && candidate->ptr);
     if (!accept)
         return false;
     move(pending, candidate);
@@ -359,7 +367,7 @@ static void consume(struct owner *pending)
 {
     struct owner worker = {0};
     move(&worker, pending);
-    assert(borrow(worker.ptr) == 42);
+    require_model(borrow(worker.ptr) == 42);
     drop(&worker);
 }
 
@@ -372,39 +380,46 @@ int main(void)
             fputs("allocation failed\n", stderr);
             return EXIT_FAILURE;
         }
-        assert(borrow(producer.ptr) == 42 && producer.ptr->refs == 1);
+        require_model(borrow(producer.ptr) == 42 && producer.ptr->refs == 1);
         share(&candidate, &producer);
-        assert(producer.ptr->refs == 2);
+        require_model(producer.ptr->refs == 2);
         bool queued = submit(&pending, &candidate, accept != 0);
         if (!queued)
             drop(&candidate); /* 发布失败，归还预留的那一份。 */
         drop(&producer);
         if (queued) {
-            assert(pending.ptr->refs == 1);
+            require_model(pending.ptr->refs == 1);
             consume(&pending);
         }
-        assert(!producer.ptr && !candidate.ptr && !pending.ptr);
-        assert(released == accept + 1);
+        require_model(!producer.ptr && !candidate.ptr && !pending.ptr);
+        require_model(released == accept + 1);
         printf("accept=%u released=%u\n", accept, released);
     }
     return EXIT_SUCCESS;
 }
 ```
 
-在材料目录编译运行，保持断言开启：
+在仓库根目录编译本节复用的完整模型：
 
 ```bash
-cc -std=c11 -Wall -Wextra -Werror -O2 reference_ownership.c -o reference_ownership
-./reference_ownership
+# Linux 主机，仓库根目录；已安装 C11 编译器。
+cc -std=c11 -Wall -Wextra -Werror -O2 labs/kernel/object_lifetime/materials/reference_ownership.c -o /tmp/reference_ownership
+```
+
+编译成功后运行生成的程序。`require_model()` 始终检查责任槽与计数关系，不会因添加 `-DNDEBUG` 而省略观察。
+
+```bash
+# 同一台 Linux 主机。
+/tmp/reference_ownership
 ```
 
 拒绝轮输出 accept=0 released=1，接收轮输出 accept=1 released=2；released 是对象外累计回收数，两轮各清理一次。拒绝不是“什么都没发生”：此前 share 已把计数加到 2，因此 candidate 仍须归还。
 
 ### 4.16.2\_使用完释放
 
-先做一个安全修改：成功提交后立即 consume，再 drop producer，代表接收者先结束。此时 consume 归还工作份额后原持有者仍在，最终仍每轮只释放一次。失败轮保持 candidate 的回滚；不要为了换序删除它。
+先做一个安全修改：把成功分支的 consume 移到 drop producer 之前，代表接收者先结束；同时将 consume 前的计数检查从 1 改为 2，因为这时创建者的份额还在。此时 consume 归还工作份额后原持有者仍在，最终仍每轮只释放一次。失败轮保持 candidate 的回滚；不要为了换序删除它。
 
-再试直接转交：省去 share，把 producer 直接作为 submit 的 candidate；成功后不要 drop 已清空的 producer，失败才 drop 它。计数始终只有一份，但成功与失败仍各有唯一归还者。这说明“没有 get 就一定错”不是规则的正确读法。现有责任槽夹具已覆盖两种策略、两种退出顺序和拒绝路径。
+再试直接转交：省去 share 调用及不再使用的静态 share 函数，把 producer 直接作为 submit 的 candidate；成功后不要 drop 已清空的 producer，失败才 drop 它。计数始终只有一份，但成功与失败仍各有唯一归还者。这说明“没有 get 就一定错”不是规则的正确读法。两种策略都要分别检查接收与拒绝；计数变化的正确性来自各出口的责任归属。
 
 最后预测反例而不执行失效访问：若复制 owner 结构体而不是调用 share，两槽看似非空，计数却没有增加，随后各 drop 会消耗同一份两次。模型不允许用结构赋值复制拥有者，普通 C 编译器不会自动替你维持这个约定。
 
@@ -420,11 +435,11 @@ cc -std=c11 -Wall -Wextra -Werror -O2 reference_ownership.c -o reference_ownersh
 
 用清单时应写下实际调用点和责任去向，单独勾选“有 get”“有锁”不足以结束审查。
 
-### 4.17.1\_规则\_1\_检查\_交出去之前是否\_get
+### 4.17.1\_规则\_1\_检查\_接收前的寿命依据是否成立
 
 对象交给线程、队列、工作、timer、全局保存或其他长于调用栈的使用者时，接收者依据什么继续访问？若新增一份，是否在它可能执行前准备，拒绝时谁回收？若直接转交，成功与失败是否分别消费责任？若借用，外层保证何时结束、如何确保使用者先退出？
 
-### 4.17.2\_规则\_2\_检查\_用完是否\_put
+### 4.17.2\_规则\_2\_检查\_每份责任是否归还或转交
 
 从初始份额开始，把每次新增和接管接到正常、错误与取消出口；指出哪些函数只借用，哪些成功时转出。最后一次使用、归还和日志的顺序是否正确？同一份是否可能在两个 cleanup 分支被重复处置？回调的锁状态和执行上下文是否满足类型清理要求？
 
