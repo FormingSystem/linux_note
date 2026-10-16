@@ -6096,9 +6096,9 @@
           "python_blocks": 1,
           "blocks_added_or_changed": 1,
           "previously_reviewed": true,
-          "state": "pending",
-          "decision": null,
-          "reason": null
+          "state": "reviewed",
+          "decision": "replaced_with_c",
+          "reason": "0a4d4c6将恢复模型替换为C11，双编译器验证四条正常序列、NDEBUG及删除身份保护后的预期失败；代码一致、9出链1入锚点和全仓链接通过。连续性长度提示来自同一恢复协议的完整程序，人工保留；SOURCE_BASELINE 1.209记录有限事件与非硬件证明边界。"
         },
         {
           "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P13_调试_验证与常见陷阱.md",
