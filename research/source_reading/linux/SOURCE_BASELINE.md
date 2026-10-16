@@ -1789,3 +1789,30 @@ gpio-mxc的imx35_gpio_hwdata给出IMR0x14与ISR0x18，irq_gc_mask_clr_bit及irq_
 NAPI文档说明napi_struct消费调度所有权、预算poll及设备队列通知mask；显式mask路径先schedule_prep再mask后提交，成功complete_done后才放行。budget为0、恰好耗尽及停止并发另有约束，不能以局部调用替代网卡完整生命周期。中断计数、设备业务量、缓冲积压和CPU执行时间分开解释。
 
 正文恢复程序是离散事件的完整可执行模型，验证重复故障、有限重试、旧探测结果与停止交错，不是内核锁或硬件驱动。只读快照脚本不修改IRQ状态；未实施真实风暴注入、硬件复位、目标Kbuild或板级滤波配置。irq_spurious_proc_show输出保存的last_unhandled时间值经jiffies_to_msecs转换，不是距当前时刻的差值。
+
+## 1.194\_fasync的订阅身份与标准信号合并
+
+2026-10-17 重写[异步通知入口](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P01_异步通知全景与知识地图.md)，读取官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，Linux 6.12.20。以下是首轮证据集合，不据此声明整个信号、epoll或evdev实现均已逐函数复审。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| fs/fcntl.c | 3d89de31066ae030ff3d4d3ca2cfe44e1c81539e |
+| include/linux/fs.h | b98f128c9afa78f02ea273a7f98b12c7761e7ae5 |
+| include/uapi/asm-generic/fcntl.h | 80f37a0d40d7d4efefe406f73598f0f150bd9973 |
+| include/uapi/asm-generic/siginfo.h | b7bc545ec3b2ceaaf373224c884a8bdc27a6e834 |
+| fs/pipe.c | 12b22c2723b7ead48f8ffcaecee869631c68dd05 |
+| kernel/signal.c | 2ae45e6eb6bb8ed9c9293efea2ee1c1b9fda00b5 |
+| fs/file_table.c | 18735dc8269a10d6e7085c9bb882a0788dd3e0ca |
+| fs/signalfd.c | 736bebf9359186c528e2310df395ba766e2739df |
+| fs/eventpoll.c | 1a06e462b6efba8824456cffebad040720c4226a |
+| drivers/input/evdev.c | b5cbb57ee5f60073a41d16da23a8d3fa6c09f04a |
+| include/linux/poll.h | fc641b50f1298eaf463b8c42251ee0df363a7eb3 |
+| include/uapi/asm-generic/poll.h | f9c520ce4bf4e4cd3128e298d0d06a415514046e |
+
+fs/fcntl.c的setfl仅在FASYNC变化且f_op->fasync存在时调用回调；回调负责该标志，不能凭F_SETFL成功证明任意文件支持通知。fasync_insert_entry按fa_file匹配同一file，已有项更新fa_fd，新项发布并设置FASYNC；fasync_remove_entry清fa_file、摘链并kfree_rcu。include/linux/fs.h声明fasync接口，固定file的f_owner为指针并经file_f_owner访问，不能直接复制其他版本内嵌布局。
+
+kill_fasync_rcu沿订阅取得file owner，经send_sigio检查目标和权限；所选signum来自owner配置，第三参数是POLL_IN等reason，不能把POLLIN位掩码或任意信号号混进参数。标准SIGIO与配置的实时信号有不同队列语义，后者发送失败存在回退SIGIO。kernel/signal.c的legacy_queue在同一种标准信号已pending时直接汇聚，不构成设备数据存储。
+
+fs/pipe.c的pipe_fasync登记读/写端订阅，pipe_write在写后向fasync_readers请求SIGIO/POLL_IN，字节保存在独立管道缓冲。fs/file_table.c最终__fput在FASYNC与回调条件成立时先fasync(-1,file,0)，再调用release；关闭一个共享fd不保证已发生最终fput。evdev的file_operations也包含fasync，说明标准子系统事件语义与信号通知不是互斥分类。
+
+首章完整实验仅使用进程自身管道：先屏蔽SIGIO并清除继承忽略处置，设置接收者/非阻塞/异步标志，三次小写入后同步接收一次信号，再读尽字节，最后撤销并关闭；进程退出前保持SIGIO屏蔽。未在当前Windows环境执行Linux信号内核路径，控制流模型和语法验证不能代替目标Linux运行或板级中断验证。
