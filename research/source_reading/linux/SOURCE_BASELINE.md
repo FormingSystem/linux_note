@@ -1899,3 +1899,27 @@ include/linux/net.h将fasync_list放在socket_wq内，socket含wq。sock_fasync�
 TTY新增订阅还有默认owner处理；n_tty.c规范行结束发布canon_head后通知，其他接收分支发布commit_head，输出唤醒使用POLL_OUT。ext4_file_operations、eventfd_fops与signalfd_fops均未提供fasync；evdev客户端在报告边界通知，不只是严重错误告警。正文比较只覆盖所列实现，不概括所有文件系统或网络协议。
 
 完整用户实验比较临时普通文件与管道的F_SETFL返回及回读O_ASYNC，恢复标志并关闭/删除自身资源；未设置owner、未写入数据，不验证信号交付。当前Windows下的编译与控制流模型验证不替代真实Linux ABI运行，也未进行目标内核Kbuild。
+
+## 1.199\_软件fasync设备的数据等待与寿命协议
+
+2026-10-17 重写[异步通知P06](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P06_字符设备中实现异步通知的基础模式.md)，以官方固定Linux 6.12.20提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 核对教学模块接口。复用前述fs/fcntl.c、fs/char_dev.c、fs/open.c、fs/file_table.c、include/linux/fs.h及poll.h，并增加以下原始字节证据：
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| include/linux/uaccess.h | 43844510d5d0facfcb08c7d32798fe7e0fdd804c |
+| include/linux/wait.h | 2b322a9b88a2bd122d30e70a3d6eaa12c5cec244 |
+| include/linux/mutex.h | 2bf91b57591b49e4668752e773419ae945f124da |
+| drivers/base/dd.c | bcc1f28b71f4f554ec8cf279934d13bdc6acce9c |
+| drivers/base/devres.c | 2152eec0c1352cc46bdef703123e9f2d718bf111 |
+| Documentation/kbuild/modules.rst | cd5a54d91e6d29b5eb62b6d5192650aad08ba8d8 |
+| Documentation/driver-api/driver-model/devres.rst | 5f2ee8d717b1deafb43a60b03dbc5d5bc6b4875a |
+
+教学模块为仓库自写代码，不作上游摘录。软件write是唯一生产源，256字节共享流队列用mutex保护；用户复制按未复制长度计算实际进度，短读前移剩余字节，短写不覆盖既有内容。空/满阻塞路径解锁后wait_event_interruptible，READ_ONCE等待条件只作提示，重新持锁检查；poll_wait先登记再取同一锁检查。成功写入解锁后唤醒读者并kill_fasync，成功消费唤醒写者；仅有读权限的file可登记读就绪信号。
+
+include/linux/uaccess.h的用户复制路径有might_fault并返回未复制量；copy_from_user短复制会补零未复制区域，但教学length只增加实际复制字节。不能将用户复制放在自旋锁内；mutex方案只适用于本章进程上下文，不外推硬中断。stream_open去除定位/位置串行语义，不代替数据锁。
+
+模块数据对象静态存活，独立cdev_alloc对象由核心引用释放负责；设备号申请失败、cdev分配失败和cdev_add失败分别清理已取得资源，未发布cdev用kobject_put，正常退出cdev_del后归还设备号。fops及cdev设置THIS_MODULE，正常打开引用阻止正常卸载；无硬件解绑入口、不支持强制卸载。最终fasync撤销依赖已核对__fput协议，不虚构必须重复release的要求。
+
+fs/char_dev.c的cdev_del说明既有file操作仍可调用。drivers/base/dd.c解绑先device_remove，再device_unbind_cleanup调用devres_release_all；托管内存不等待用户fd全部关闭才释放。正文比较手动/托管责任、跨解绑软件引用和生产者停止，未提供无寿命协议的伪platform模板。固定devres及Kbuild文档与正文在线官方说明交叉核对。
+
+本章完整内核代码在GCC和Clang模型中检查初始化失败回滚、空满、部分用户复制、阻塞重查、方向订阅及两万次独立队列序列；完整用户接收代码各25种控制流场景、容量Python程序12种正常/错误模型，Bash和Python语法检查通过。模型替换内核/系统接口，仅验证教学控制流和状态约束，不代表真实调度、信号ABI、内核头文件或模块链接验收；当前Windows环境未完成目标Kbuild与实际装载，正文给出Linux上完整构建、有限事务、容量及阻塞实验和清理步骤。
