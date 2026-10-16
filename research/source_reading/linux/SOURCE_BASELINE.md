@@ -1512,3 +1512,26 @@ GPIO输入先取得描述符并设置方向，再映射IRQ；cansleep读取放�
 完整irq_input_demo使用专用GPIO双边沿线程，所有依赖在登记前完成；移除先devm_free_irq同步并摘除记录，再读取最终调用计数，设备核心归还GPIO和内存。无额外work、timer、用户文件或重排路径；增加这些使用者后必须重新设计退出协议。DTS是标明控制器与索引占位符的板级模板，不声称对应实际板型或已通过dtc。
 
 提取正文完整C到GCC与Clang GNU11/O2宿主桩模型，覆盖四个probe失败、提前回调与移除窗口的四种组合、GPIO读取失败和资源逆序/不重复释放；删除同步或推迟上下文初始化两种反例均被拒绝。所有shell块仅作语法检查。桩替换了内核资源管理、IRQ线程与GPIO访问，不证明真实并发、目标Kbuild、模块装卸、设备树构建部署或板级电气行为。
+
+## 1.185\_触发条件与GPIO分层确认
+
+2026-10-17 复审[GPIO触发语义](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P05_GPIO_与触发语义_电平_边沿_DTS_与_只来一次一直来_为何出现.md)，复用上一节GPIO消费者、IRQ登记和释放证据，以下文件来自官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| drivers/gpio/gpio-mxc.c | d8d1ae23e0935f85548d61cdbdc8a0189f14dfb6 |
+| kernel/irq/generic-chip.c | 32ffcbb87fa126cc32c2cb45434415d08e79a4a7 |
+| Documentation/devicetree/bindings/gpio/fsl-imx-gpio.yaml | 6b06609c649ed805f646489de5463249a028dddd |
+| include/dt-bindings/gpio/gpio.h | b5d531237448241f1870e7d8d4cf1a6411877562 |
+| include/dt-bindings/interrupt-controller/irq.h | 9e3d183e138191fe5227cb5ffc5ff52d81036b15 |
+| kernel/trace/trace_printk.c | 29f6e95439b67c1949826f7ea9f1137665f49800 |
+| include/linux/jiffies.h | 5d21dacd62bc7d5187af9d96ec288c6517557475 |
+| include/linux/kernel.h | be2e8c0a187e4b26a704ee5e628b7afe404d9211 |
+
+GPIO逻辑有效与物理边沿/电平是不同接口语义。gpio-mxc的imx35布局在ICR中编码低、高、升、降，另由EDGE_SEL选择双边沿；无该寄存器的旧布局走切换检测方向分支。绑定允许imx6ul加imx35兼容项，但不能据此推出板级引脚和运行配置。
+
+mx3_gpio_irq_handler读取ISR与IMR交集并分派子来源；generic-chip的irq_gc_ack_set_bit只写本irq_data的mask到ack寄存器。消费驱动不应自行清整组GPIO状态；GPIO确认不替代外设消除持续请求，也不替代父控制器结束。正文嵌入该布局寄存器偏移、用途及访问责任，区分实现证据与物理板级证据。
+
+三个按键点灯实验合并为一个完整可选模式模块：硬回调、线程、首沿固定窗口门控；日志与线程人为延时另作变量。首次事件单独标志、get_jiffies_64与time_before64、参数上限、睡眠能力检查、硬件去抖失败返回和同步注销形成完整边界。64位时间避免32位长时间无事件后的半周期歧义；比较仍遵守半周期契约。trace_printk仅用于开发调试，缓冲写入和内存有成本，不保证不丢记录。硬件去抖参数为0只是不请求配置，不承诺清除以前配置。
+
+本轮未执行目标Kbuild、设备树编译部署、真实中断/波形或系统挂起唤醒。板级模板有明确占位符，程序不宣称为某开发板实测驱动；宿主模型只能检查抽取代码在桩约束下的分支和顺序。
