@@ -5771,6 +5771,17 @@
           "24条出链与5条标题入链通过，保留1.2和1.3既有入口；全仓9007有效链接及标题、元数据、路径和diff检查通过。"
         ],
         "limits": "大纲整理不增加softirq完整源码或目标板实验覆盖，不升级人工评审状态。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P01_异步通知全景与知识地图.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以数据、订阅和信号分离重写入口，建立共同S0至S6周期；用完整管道实验取代无法运行的驱动骨架，修正阻塞轮询、fd身份、devm寿命与平台边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "原稿全文冷读与内容去向蓝图，正文冷读、两图渲染目视、连续阅读严格检查通过。",
+          "双编译器各二十种控制流程模拟通过；全仓9010有效链接及标题、元数据、路径与diff检查通过。"
+        ],
+        "limits": "无可用Linux运行环境，模拟不证明Linux ABI或真实信号行为；固定源码和man手册形成语义证据。"
       }
     },
     "additional_documents": [
