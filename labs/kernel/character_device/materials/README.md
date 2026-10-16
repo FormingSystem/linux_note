@@ -17,6 +17,7 @@ domains:
 | --- | --- |
 | [decode_minor.c](decode_minor.c) | 普通 C 的连续/稀疏次号解码模型，不参与 Kbuild；[多实例设备的身份与组织](../../../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作基础.md) |
 | [inspect_null.c](inspect_null.c) | [第二章](../../../../knowledge/driver_model/character_device/P02_设备号_注册与设备节点.md#2.7_做一次只读的身份观察)：Linux 用户空间的 stat/fstat 与只读身份观察 |
+| [copy_commit_model.c](copy_commit_model.c) | [第五章](../../../../knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md#5.4_先选择字节进度还是整条替换)：普通 C 模拟部分复制与完整替换，不参与 Kbuild，也不模拟并发或真实缺页 |
 | [note_registration.h](note_registration.h) | 整组设备注册、失败回滚和卸载；[第十章](../../../../knowledge/driver_model/character_device/P10_字符设备驱动模板.md) |
 | [note_window.c](note_window.c) | 有限内存窗口，位置、覆盖、追加及部分复制；第十章 |
 | [Makefile](Makefile) | 两个独立模块的 Kbuild 目标；[第十一章](../../../../knowledge/driver_model/character_device/P11_构建运行与验证.md) |
