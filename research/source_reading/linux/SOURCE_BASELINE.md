@@ -1874,3 +1874,28 @@ kill_fasync_rcu在RCU读侧逐节点取fa_lock读锁，检查fa_file和owner，S
 fasync_remove_entry先节点写锁清fa_file，再摘链、kfree_rcu、清FASYNC，file和全局修改锁包围过程；未找到返回0。RCU保护节点存储、fa_lock保护file交接，各有职责。__fput在FASYNC与回调成立时先fasync(-1,file,0)，再release，随后file_f_owner_release；不是所有驱动都必须在release额外重复撤销。该协议不删除已生成pending，也不保活提前释放的驱动private_data。
 
 正文局部源码摘录通过去注释与空白后的原文匹配核对；图与纸面状态表只解释本路径，不声明完成目标Kbuild、真实信号运行或硬件验证。
+
+## 1.198\_VFS接入fasync的打开配置与最终释放
+
+2026-10-17 重写[异步通知P05](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P05_VFS_与文件系统中的异步通知支持.md)，继续使用官方固定Linux 6.12.20提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。复用1.194～1.197的open、file_table、char_dev、fcntl、pipe、socket、TTY、evdev与signalfd文件，并增加以下原始字节证据：
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| include/linux/fcntl.h | a332e79b3207957d0b8b614679a151e986a07544 |
+| fs/namei.c | 6795600c5738a56740bdeb2b4ec33f29545d918a |
+| fs/ext4/file.c | f14aed14b9cf3d944b8d6726362ee5a69a9a0597 |
+| fs/eventfd.c | 22c934f3a080effc1b838293c5a7932b900fda46 |
+| include/linux/net.h | b75bc534c1b351955ac2ada9da09c52bd3bdae3e |
+| drivers/tty/n_tty.c | 5e9ca4376d686e34395958d0e3595aab4df89be2 |
+
+include/linux/fcntl.h的VALID_OPEN_FLAGS包含FASYNC；fs/open.c整理open参数，fs/namei.c的path_openat以open_flag分配file，file_table初始化f_flags。通用打开不自动登记fasync，直接open带O_ASYNC不能当作订阅成立，后续同位请求还可能不触发回调。用户契约按open(2) BUGS核对。
+
+字符设备do_dentry_open先取得inode表，chrdev_open再按cdev->ops取得驱动表并replace_fops，然后调用驱动open。普通close在file_close_fd后执行filp_flush及__fput_sync，后者只有最终引用归零才进入__fput；filp_close的普通fput路径不能冒充所有close调用链。__fput的fasync条件清理先于release，正文相邻摘录与源文匹配。
+
+pipe_fasync按FMODE_READ/WRITE分别登记两链，写链登记失败且含读模式时撤销读链；pipe_release对相关对端变化使用POLL_IN/POLL_OUT通知，不捏造POLL_HUP原因。pipe_write通知不只以空变非空判断，read/poll重新观察可能被其他读者改变的数据。
+
+include/linux/net.h将fasync_list放在socket_wq内，socket含wq。sock_fasync在sk为空时EINVAL，之后调用helper却未传播返回值，以链是否为空更新SOCK_FASYNC并返回0。sock_wake_async参数为socket_wq指针、how、band，WAITD与SPACE检查标志，IO和URG分别走SIGIO/SIGURG，不是无条件通用封装。
+
+TTY新增订阅还有默认owner处理；n_tty.c规范行结束发布canon_head后通知，其他接收分支发布commit_head，输出唤醒使用POLL_OUT。ext4_file_operations、eventfd_fops与signalfd_fops均未提供fasync；evdev客户端在报告边界通知，不只是严重错误告警。正文比较只覆盖所列实现，不概括所有文件系统或网络协议。
+
+完整用户实验比较临时普通文件与管道的F_SETFL返回及回读O_ASYNC，恢复标志并关闭/删除自身资源；未设置owner、未写入数据，不验证信号交付。当前Windows下的编译与控制流模型验证不替代真实Linux ABI运行，也未进行目标内核Kbuild。
