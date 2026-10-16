@@ -1838,3 +1838,18 @@ fs/select.c的__pollwait登记文件引用、wait_address、key和pollwake回调
 task_struct含blocked及pending，signal_struct含shared_pending，sighand_struct含action数组；通常多线程共享动作但屏蔽按线程维护。fs/fcntl.c的band_table把六种POLL_原因转换为掩码，send_sigio_to_task在配置signum路径设置si_code、si_fd及si_band，默认及失败回退路径为普通SIGIO；不能传POLLIN组合掩码作为reason，也不能凭SA_SIGINFO假定普通SIGIO带有效fd/band。
 
 正文完整管道实验观察dup共享O_NONBLOCK、关闭一个引用后继续访问、空缓冲EAGAIN、POLLIN与POLLHUP并存、短读保留剩余字节与最终EOF。当前Windows环境未执行Linux ABI，控制流程模拟和编译检查不代替真实系统运行；用户契约另外以正文所列Linux man-pages核对。
+
+## 1.196\_fasync的文件类型与设计边界
+
+2026-10-17 重写[异步通知P03](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P03_fasync_机制的历史与设计动机.md)，在官方固定Linux 6.12.20提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 下复用1.194的fcntl、pipe和evdev证据，并核对以下文件：
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| drivers/tty/tty_io.c | dcb1769c3625cd0f7d1555260adfe6051139a305 |
+| net/socket.c | 042451f01c6520b85496213e6b3d8d2116ab2533 |
+
+tty_fasync持有tty锁，__tty_fasync按需要分配file owner并调用helper维护tty->fasync，新增订阅还走终端自己的owner处理。sock_fasync在socket锁下维护wq->fasync_list及SOCK_FASYNC标志，sock_wake_async按WAITDATA、NOSPACE、普通I/O和紧急条件选择是否发送及SIGIO/SIGURG；本章只用于证明文件类型的连接与差异，不作为完整终端或网络教程。
+
+evdev_fasync使用file->private_data取得evdev_client，链头为client->fasync；__pass_event先写客户端缓冲，在EV_SYN/SYN_REPORT更新packet_head后请求SIGIO/POLL_IN。这证明标准输入业务可与fasync共存，并提供批次边界实例，不证明任意设备都应复用input包边界。
+
+历史只保留Linux man-pages明确标注的SIGIO与4.2BSD关联、管道/FIFO自Linux2.6支持O_ASYNC，不虚构Linux内部helper的首次提交或阻塞、poll、fasync、input的单线演进。400条记录、3个稳定链项与4批处理为正文纸面推演，1200/12是给定完整遍历前提的访问机会，不是性能实测或完整内核成本。
