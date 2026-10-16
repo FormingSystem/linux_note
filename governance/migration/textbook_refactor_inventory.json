@@ -2625,6 +2625,138 @@
           "135个出链有效，格式、元数据、命名、707篇链接和diff通过；各实验沿用对应章节已完成的验证"
         ],
         "limits": "材料索引不新增真实目标构建、装卸、故障、RCU或调度运行证据；人工状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从两个CPU的本地旧副本引入一致性，补SMT/NUMA分类前提，限制失效式协议范围并增加跨行地址判断及答案。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读正文、隐藏外链及表格复核因果解释和练习；章节出入标题链接及连续性审计通过。",
+          "25张Mermaid图渲染并逐张目视，调整状态图重叠及NUMA分组；最终格式、元数据、命名、707篇链接与diff检查通过。",
+          "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
+        ],
+        "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/cache_coherence/P02_MESI_状态机与一致性事务.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从有效性、权限和脏责任推导状态；统一T0至T4周期与后备层边界，修正M到S的后备更新，补硬件瞬态责任和判断答案，并拆除重复总标题。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读正文、隐藏外链及表格复核因果解释和练习；章节出入标题链接及连续性审计通过。",
+          "25张Mermaid图渲染并逐张目视，调整状态图重叠及NUMA分组；最终格式、元数据、命名、707篇链接与diff检查通过。",
+          "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
+        ],
+        "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/cache_coherence/P03_缓存行所有权竞争与伪共享.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正单写者仍可能产生读写伪共享；补失效确认、授权、写入完整过程，以及原子串行化、分片汇总和布局A/B边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读正文、隐藏外链及表格复核因果解释和练习；章节出入标题链接及连续性审计通过。",
+          "25张Mermaid图渲染并逐张目视，调整状态图重叠及NUMA分组；最终格式、元数据、命名、707篇链接与diff检查通过。",
+          "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
+        ],
+        "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/cache_coherence/P04_ARM_ACE_CHI_与一致性域.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从节点间事务引入ACE/CHI职责；区分状态集合与定位方法，修正IOMMU推断和共享属性/屏障域混用；并列G.b与M.c的DMB版本变化，分开DVM消息与完成。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读正文、隐藏外链及表格复核因果解释和练习；章节出入标题链接及连续性审计通过。",
+          "25张Mermaid图渲染并逐张目视，调整状态图重叠及NUMA分组；最终格式、元数据、命名、707篇链接与diff检查通过。",
+          "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
+        ],
+        "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/cache_coherence/P05_Snooping_与_Directory_一致性.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正同一行M/S非法并存图；推导广播成本与目录记录位置、误报/漏报边界，补干净独占到共享的定向事务和同负载比较。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读正文、隐藏外链及表格复核因果解释和练习；章节出入标题链接及连续性审计通过。",
+          "25张Mermaid图渲染并逐张目视，调整状态图重叠及NUMA分组；最终格式、元数据、命名、707篇链接与diff检查通过。",
+          "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
+        ],
+        "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/cache_coherence/P06_MESIF_MOESI_与协议扩展.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从供数与脏责任分别推导F/O，修正O不等于唯一最新副本和可直接写；补完整脏共享时序、瞬态条件及练习答案。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读正文、隐藏外链及表格复核因果解释和练习；章节出入标题链接及连续性审计通过。",
+          "25张Mermaid图渲染并逐张目视，调整状态图重叠及NUMA分组；最终格式、元数据、命名、707篇链接与diff检查通过。",
+          "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
+        ],
+        "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/cache_coherence/P07_LLC_包含策略与缓存写策略.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从多级容量和访问现场推导包含、写传播与写分配三条轴；修正写直达必同步和写分配必读旧整行，补反向失效中的脏数据交接。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读正文、隐藏外链及表格复核因果解释和练习；章节出入标题链接及连续性审计通过。",
+          "25张Mermaid图渲染并逐张目视，调整状态图重叠及NUMA分组；最终格式、元数据、命名、707篇链接与diff检查通过。",
+          "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
+        ],
+        "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/cache_coherence/P08_ccNUMA_与多_Socket_一致性.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "区分NUMA节点与Socket及后备页/最新副本位置，补明确MOESI状态的远端读取和局部性选择反例，修复布局图文字遮挡。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读正文、隐藏外链及表格复核因果解释和练习；章节出入标题链接及连续性审计通过。",
+          "25张Mermaid图渲染并逐张目视，调整状态图重叠及NUMA分组；最终格式、元数据、命名、707篇链接与diff检查通过。",
+          "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
+        ],
+        "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/cache_coherence/P09_CXL.cache_与设备一致性.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "区分DMA一致性与设备缓存能力，修正CPU缓存绕过HA向设备供数的图；补确认、授权、生命周期和三协议方向的练习答案。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读正文、隐藏外链及表格复核因果解释和练习；章节出入标题链接及连续性审计通过。",
+          "25张Mermaid图渲染并逐张目视，调整状态图重叠及NUMA分组；最终格式、元数据、命名、707篇链接与diff检查通过。",
+          "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
+        ],
+        "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/cache_coherence/P10_缓存一致性协议边界与学习核对.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "把排他诊断树改为同时核对权限、顺序、设备、生命期，补三个综合现场及答案、参考版本边界和下一专题桥接。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读正文、隐藏外链及表格复核因果解释和练习；章节出入标题链接及连续性审计通过。",
+          "25张Mermaid图渲染并逐张目视，调整状态图重叠及NUMA分组；最终格式、元数据、命名、707篇链接与diff检查通过。",
+          "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
+        ],
+        "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/cache_coherence/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按同一X从旧副本、权限成本到设备参与建立因果地图，逐章交代先修、输出与未决问题，保留十篇真实阅读入口。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读正文、隐藏外链及表格复核因果解释和练习；章节出入标题链接及连续性审计通过。",
+          "25张Mermaid图渲染并逐张目视，调整状态图重叠及NUMA分组；最终格式、元数据、命名、707篇链接与diff检查通过。",
+          "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
+        ],
+        "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
       }
     }
   },
