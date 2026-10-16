@@ -5568,6 +5568,18 @@
           "全仓8939有效链接、章节/基线锚点、格式元数据路径与diff通过。"
         ],
         "limits": "属性、锁、队列与解析由宿主桩替代；不等于目标Kbuild、装载、DT Schema/DTB、sysfs并发或板级测试。GPIO1_3/1_18仍是原教学接线假设；配置实验不伪造硬件消抖或事务实现。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P10_与_devres_驱动生命周期和_PM_的关系.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按生产依赖、清理账本、停止门控和暂停恢复重构；提供完整timer/work互相重启模块，区分永久shutdown与临时delete，纠正现有devm辅助函数、or_reset、runtime PM引用与唤醒保护语义。",
+        "date": "2026-10-17",
+        "validation": [
+          "原文及成稿全文冷读；七份新增固定版本证据与既有timer/work/devres实现核对；三图目视，连续性及术语审查。",
+          "GCC/Clang GNU11/O2模型覆盖分配与登记失败、启动后回滚、四种清理窗口、暂停恢复、关闭后拒绝重排；三类错误反例被拒绝。",
+          "全仓8944有效链接、章节与基线锚点、格式元数据路径及diff检查通过；同步P01章节导航与P08现有辅助函数说明。"
+        ],
+        "limits": "宿主模型替代内核锁、计时器、队列和devres，不等于目标Kbuild、装载、弱内存并发、设备runtime PM或板级挂起唤醒验证。"
       }
     },
     "additional_documents": [
