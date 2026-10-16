@@ -21,7 +21,7 @@ bound workqueue 按 CPU 建立 pwq/pool 映射。CPU 下线期间，内核要停
 
 ## 8.3\_freezer与设备电源管理不是一回事
 
-`WQ_FREEZABLE` 让 workqueue 在系统冻结阶段停止启动普通 work，避免后台活动阻碍 suspend。但它不会自动：
+`WQ_FREEZABLE` 使队列参与系统冻结协议：先限制后续工作的激活，等待已有活动工作退出，冻结完成后不再开始新的工作，解冻时恢复推进。不能把“开始冻结”理解成已经运行的回调被瞬间强停。设备电源管理（Power Management，PM）还必须确定硬件何时可停止访问；队列属性不会自动：
 
 - 停止设备产生 IRQ；
 - 保存/恢复寄存器；
@@ -42,6 +42,7 @@ sequenceDiagram
     participant O as 设备对象
 
     R->>O: 设置stopping/disconnected
+    Note over R,P: 与提交检查及queue共用门控，关闭检查后提交的窗口
     R->>P: 撤销入口、disable并synchronize生产者
     P-->>R: 保证不会再queue
     R->>W: cancel_delayed_work_sync/cancel_work_sync
@@ -51,7 +52,9 @@ sequenceDiagram
     R->>O: 释放work所在对象
 ```
 
-顺序中的关键不变量是 **先阻止所有新提交，再等待旧 work**。若 work function 会自重排，stopping 检查必须发生在重排前；若 cancel 调用者持有 work 所需 mutex，应先释放或重构依赖。
+顺序中的关键不变量是 **先阻止所有新提交，再等待旧 work**。若 work function 会自重排，停止检查和重排必须与关门操作形成同一同步协议；仅在重排前读一次标志仍可能在读后被 remove 插入。第一章用 gate 锁串行这三步，并在同步取消前释放 gate。若 cancel 调用者持有 work 所需 mutex，同样应先释放或重构依赖。
+
+停止提交和停止硬件完成源不一定是同一个动作。若旧回调正在等待设备中断给出结果，应先保留完成路径让旧工作退出，或通过设备取消协议让它走错误出口；直接关闭唯一中断源再 cancel_sync 可能永远等不到返回。图中的“同步生产者”只指那些制造新 work 的入口，不能替所有设备决定 disable、关电和同步等待的固定顺序。
 
 ## 8.5\_错误与恢复路径
 
@@ -70,6 +73,8 @@ delayed work 的 timer、RCU work 的宽限期回调和跨 workqueue 链式提�
 | reclaim hang | WQ_MEM_RECLAIM 与依赖图 | 回收等待无 rescuer 队列或工作反向分配 |
 
 `/proc` worker 栈、workqueue tracepoint、lockdep 和 hung-task 报告可帮助定位已发生路径；未观测到 hang 不能证明 shutdown 协议完整。
+
+tracepoint 是内核预设的跟踪事件，lockdep 检查锁依赖，hung-task 报告长时间未推进的任务。它们分别给出某次路径或状态的证据，不自动穷尽全部交错。至少主动检查：工作尚未执行时停止、执行中又来事件、回调准备自重排时关门、等待完成源时停止、分配失败后有无入口残留。第二章顺序模型只能验证登记与事件的账目，无法替代这些目标运行场景。
 
 ## 8.7\_最终选择与验收
 

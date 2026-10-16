@@ -1248,3 +1248,11 @@ B05bk核对固定dfaf2136的kernel/locking/lockdep.c，blob 536bd471557f5b4412d6
 ## 1.169\_map初始化提前返回
 
 B05bl复查同一固定lockdep.c的lockdep_init_map_type，恢复统计CPU记录及debug_locks、lockdep_enabled提前返回。去注释空白后完整函数匹配；字段写入可能早于后续诊断失败，不能将map有值视为类登记成功。未执行目标配置矩阵或故障测试。
+
+## 1.170\_工作队列执行模型与取消版本边界
+
+2026-10-16 全篇复审使用仓库保存的固定版本 include/linux/workqueue.h 与 kernel/workqueue.c，LF归一后的Git blob分别匹配既有记录59c2695e12e7674d5bc4cdd1fb416074374f981c与a9d64e08dffc7c7aef2caae2f170268d83e99e23。核对WQ_BH不能睡眠、ordered分配宏、queue禁用分支、同队列非重入前提、临时disable取消协议、worker睡眠钩子、flush汇聚哨兵、mayday定时检查及冻结路径。
+
+[unbound正文](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P07_unbound_rescuer与回收前进性.md#7.2_属性传播关系)记录同树文档与实现差异：保存的Documentation/core-api/workqueue.rst仍称unbound额度总是per-CPU，而固定代码wq_update_node_max_active与pwq_tryinc_nr_active已采用节点共享账本。正文按实现解释，不把该文档句子当作当前实现保证。保存文档的LF归一blob为16f861c9791e4ae2914bbf517c1a1835263711bf，kernel/workqueue_internal.h为f6275944ada776814787ac5a1cfa01f891bfe934；后二者本次只记录本地副本摘要，未重新取得外部工作树对象比较。
+
+[异步状态C模型](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P02_异步执行的抽象状态机.md#2.4_用完整C模型区分pending与running)在GCC14.2/Clang18.1.8、严格C11、O0/O2及NDEBUG开关共八组通过；第三次事件提前到drain之前仍计数完整，错误清除后继pending则按预期失败，共十组编译运行。它是顺序模型，不实现线程、真实锁、调度或弱内存。第一章设备门控代码明确为协议片段，未编译或加载目标驱动；当前共享源码工作树不可访问，本次没有重新验证外部工作树身份。

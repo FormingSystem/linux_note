@@ -61,7 +61,7 @@ flowchart TD
 
 ## 1.6\_建议阅读顺序
 
-1. 先读[异步执行抽象状态机](../../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P02_异步执行的抽象状态机.md#2.4_S0到S8完整周期)，明确 work 不是业务事件计数器。
+1. 先读[异步执行抽象状态机](../../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P02_异步执行的抽象状态机.md#2.6_S0到S8完整周期)，明确 work 不是业务事件计数器。
 2. 进入 P02 摆出 work → pwq → pool/wq → worker 五层对象，再沿 `queue_work_on()` → `__queue_work()` → `insert_work()`。
 3. 进入 P03 追 `worker_thread()` → `process_one_work()` → `work->func()` → `pwq_dec_nr_in_flight()`，同时观察 manager 与 rescuer 慢路径。
 4. 进入 P04，先区分 `flush_work`、`flush_workqueue`、cancel 和 drain 的等待对象，再读 color 与 barrier。

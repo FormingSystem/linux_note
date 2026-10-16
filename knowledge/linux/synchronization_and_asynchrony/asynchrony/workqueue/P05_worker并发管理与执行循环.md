@@ -13,20 +13,24 @@ topics: [asynchrony, workqueue, worker_pool]
 
 若 pool 只有一个 worker，它在 work function 中睡眠时，后续工作全部停顿；若预先创建很多 worker，大多数时间又浪费线程和内存。cmwq 让调度器钩子和 pool 状态感知 worker 是否正在运行/睡眠，按需唤醒或创建执行者。
 
+沿用采样设备，A 的后处理正在等待一个可睡眠操作，池中另有独立的 B 已获得活动额度。A 的睡眠不应让 B 也无事可做。下面先看普通 bound 线程池的运行数调节：nr_running 记录参与这套调节的可运行 worker，不等于该设备的 active 工作数，也不等于所有线程数量；unbound、救援线程与 CPU-intensive 执行有不同记账条件。
+
 ## 5.2\_pool中的角色与状态
 
 ```mermaid
 flowchart LR
     L["pool.worklist"] --> K["当前worker"]
-    K -->|"开始/结束执行"| N["nr_running等并发状态"]
+    K -->|"设定执行状态与标志"| N["nr_running等并发状态"]
     K -->|"可能睡眠"| S["调度器worker钩子"]
-    S -->|"通知需要补充"| P["worker_pool"]
+    S -->|"sleeping/running钩子更新运行数"| P["worker_pool"]
     P -->|"唤醒idle worker"| I["idle_list"]
     P -->|"没有可用worker"| M["manager"]
     M -->|"创建新worker"| P
 ```
 
 worker pool 维护 worklist、worker 集合、idle 集合和管理者状态；每个 worker 记录 `current_work/current_pwq`，让 flush、冲突检测和诊断知道哪个任务正在代表哪个 work 执行。
+
+普通 worker 进入调度睡眠时，wq_worker_sleeping 钩子在检查排除标志后记录 sleeping，并在 pool 锁下减少 nr_running、尝试 kick_pool；恢复运行时，wq_worker_running 负责相应恢复。信息经调度路径主动更新，不是另一个线程反复轮询回调是否卡住。pool 中有可执行工作而普通运行数不足时，唤醒空闲 worker；创建与管理的代价留给必要时的管理路径。
 
 ## 5.3\_worker\_thread主循环
 
@@ -44,9 +48,10 @@ worker pool 维护 worklist、worker 集合、idle 集合和管理者状态；�
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant Q as pool.worklist
     participant K as kworker
-    participant P as worker_pool状态
+    participant P as pool与worker状态
     participant F as work function
     participant S as 调度器
 
@@ -57,7 +62,8 @@ sequenceDiagram
     S->>P: worker睡眠导致可运行数下降
     P->>P: 判断是否需要更多worker
     P-->>S: 唤醒idle或由manager创建
-    S-->>F: 原worker恢复并返回
+    S-->>F: 原worker恢复执行
+    F-->>K: 业务回调处理完成并返回
     K->>P: 清执行归属、减少in-flight
     P->>Q: 必要时激活inactive work
 ```
@@ -66,9 +72,13 @@ sequenceDiagram
 
 manager 只在 pool 需要创建/管理 worker 时介入；worker 创建可能涉及内存分配和 kthread 建立。若内存回收依赖本 workqueue 前进，而新 worker 又因内存压力创建失败，就出现循环依赖。WQ_MEM_RECLAIM 的 rescuer/mayday 路径专门解决这一异常慢路径，不能把它描述成所有 work 的常规调度者。
 
+manager 是由 worker 临时承担的管理角色，同一个 pool 同时至多一个管理者，并非每个 workqueue 旁固定驻留的专用调度线程。能直接唤醒空闲 worker 时不必重新分配线程；需要创建时才支付分配、初始化和调度成本。运行数调节帮助保持前进，也不承诺回调的开始时刻或最坏延迟。
+
 ## 5.6\_WQ\_CPU\_INTENSIVE的真实含义
 
-CPU-intensive work 运行时不计入普通并发管理对“正在运行 worker”的限制，避免长计算阻挡 pool 启动其他普通 work。它不会自动创建专用 CPU，也不提高调度优先级；多个计算工作仍会竞争 CPU。若需要严格隔离，应使用更明确的队列属性、CPU 绑定或专用线程设计。
+如果 A 不是睡眠而是持续计算，普通运行数可能一直表明“已有执行者”，池中 B 因此不能像睡眠场景那样获得补偿。WQ_CPU_INTENSIVE 让 bound 队列运行该回调时不计入普通运行数调节，从而不靠 A 结束才允许其他普通工作启动。
+
+它不豁免 workqueue 的 active 额度，开始执行前也仍受正常管理约束；对 unbound 队列，这个标志没有相同的作用。它不会自动创建专用 CPU，也不提高调度优先级；多个计算工作仍会竞争 CPU。若要求严格隔离，必须另行设计执行位置、调度与依赖，不能仅添加一个标志。
 
 ## 5.7\_工作函数的阻塞边界
 
