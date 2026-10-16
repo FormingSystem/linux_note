@@ -5859,6 +5859,17 @@
           "完整Python实跑与八种容量四万次操作、通知一万时刻及错误和公平路径通过；3出链无标题入链，全仓9030有效链接及格式元数据路径和diff通过。"
         ],
         "limits": "模型为串行状态模拟，不证明Linux锁并发、真实信号ABI、目标Kbuild或DMA硬件；实际接口ABI与源端反压仍需设备实现兑现。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P09_用户态编程_从_SIGIO_到_signalfdepoll.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从接收先行与已有数据检查推导handler、同步等待及signalfd，重建真实pending状态、文件共享和退出责任，补三种信号选择的有限pipe实验。",
+        "date": "2026-10-17",
+        "validation": [
+          "原稿4178行全文阅读与内容守恒冷读；两图渲染目视通过，完整接收程序长度提示经人工说明保留。",
+          "GCC与Clang各3模式54场景共162个接口模型测试、正文代码一致性和Bash语法通过；3出链无标题入链，全仓9032有效链接、格式元数据路径和diff通过。"
+        ],
+        "limits": "系统接口模型不证明Linux头文件编译、信号ABI或板上运行；正文提供目标Linux有限验证，Windows当前环境未运行这些目标步骤。"
       }
     },
     "additional_documents": [
