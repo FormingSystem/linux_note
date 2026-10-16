@@ -1997,3 +1997,27 @@ timerfd_read_iter以u64 ticks返回到期计数，周期重启补算积压，不
 用户接口交叉核对Linux man-pages的signalfd、sigaction、sigtimedwait、F_SETSIG、pselect及signal-safety说明。纠正旧稿先开启再屏蔽、counter++保证事件数、read非异步信号安全、只事件线程阻塞、ssi_tid为线程ID、关signalfd取消通知等错误；保留多线程队列/IPC分发与共享fd交接的具体责任，不声称任意节点只换路径即可复用。
 
 完整程序替换系统调用接口后，经GCC与Clang分别检查3种选择各54场景，包含部分数据读取、各阶段失败清理、EINTR/EAGAIN、回退SIGIO、短记录拒绝、EOF、定时积压、持续数据公平预算和超时。模型不能证明Linux libc ABI、真实信号调度或目标板行为；当前Windows环境未完成Linux头文件构建与实际运行，正文保留完整目标编译和有限运行命令。
+
+## 1.203\_异步通知的并发与对象寿命证据
+
+2026-10-17 重写[异步通知P10](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P10_并发_竞态与内存可见性问题.md)。继续使用官方固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，复用 fs/fcntl.c、fs/file_table.c、fs/char_dev.c、fs/select.c、include/linux/wait.h、include/linux/poll.h 与前章设备退场证据。新增原始字节如下。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| Documentation/memory-barriers.txt | 93d58d9a428b879194ff03ef1aa1ca7c9e01fa14 |
+| Documentation/core-api/wrappers/atomic_t.rst | ed109a964c778914d0b1641d201f65cb6e94ea8c |
+| Documentation/atomic_t.txt | bee3b1bca9a7b46bcf9911f036c3280e77b4405a |
+| Documentation/locking/locktypes.rst | 80c914f6eae7ab07476491c4eba96c004508e28d |
+| kernel/sched/wait.c | 51e38f5f47018c953e31c834dc6385c182359359 |
+| Documentation/dev-tools/kcsan.rst | d81c42d1063eab5db0cba1786de287406ca3ebe7 |
+| Documentation/locking/lockdep-design.rst | 56b90eea27312e0a438260eb10425e811f154c9a |
+
+atomic_t.rst仅通过include引用atomic_t.txt，语义核对来自后者。无返回值原子操作不提供一般的跨对象排序；内存屏障文档明确锁的获取和释放分别是单向约束，不能把任意acquire/release组合视为全屏障。READ_ONCE/WRITE_ONCE不替代其他负载的发布协议或对象保活。locktypes区分非RT的spinlock_t与PREEMPT_RT的可睡眠实现，raw_spinlock_t保留严格自旋语义；正文未把非RT上下文规则无条件推广。
+
+fasync_remove_entry在file锁和全局链表锁下，以节点写锁清空fa_file，再解除链接、kfree_rcu、清FASYNC；发送的RCU区间保护节点存储，fa_lock读侧协调file交接。这些机制不延长驱动dev或链表头地址寿命。fasync_helper启用先以GFP_KERNEL分配再检查旧节点，不能以更新为由放入原子上下文。__fput先执行启用中的fasync取消，再调用release；devres退场与最终file归还不是同一时刻。
+
+wait_event_interruptible内层先prepare_to_wait_event再检查条件并决定schedule，finish_wait清理。poll_wait先登记，fs/select.c的triggered与调度/唤醒配合处理交接；它们不预留设备数据。多个读者同时观察可读后，实际消费必须在自己的锁协议内重查；第二名读者看到空应重试或EAGAIN，不能一律判EIO。
+
+正文用数据、订阅、信号pending、边沿采样、等待登记和对象引用的正交状态重建S0至S6，补订阅删除与设备解绑两条时序。纠正只关本地中断等同跨CPU互斥、cancel_work_sync阻止未来重新排队、模块引用阻止设备解绑、devm自动等待旧fd、所有锁都是全屏障等旧说法。
+
+正文Python模型枚举正确等待的10种顺序一致性交错，构造先检查后登记和先通知后发布的丢唤醒反例；两读者6种交错中4种双方都先观察到就绪，实际仅一方消费。该模型验证逻辑交接，不是Linux调度、LKMM弱内存、硬件或Kbuild验证。lockdep/KCSAN等动态检查仅对已启用、未失效且实际执行的接入路径提供有限证据，未告警不构成完整正确性证明。
