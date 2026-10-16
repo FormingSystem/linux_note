@@ -2117,3 +2117,5 @@ DEBUG_ATOMIC_SLEEP分支中的might_sleep先调用__might_sleep检查，后续mi
 2026-10-17依据新增的C/C++教学要求，将[异步通知第十章交错模型](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P10_并发_竞态与内存可见性问题.md#10.7_用交错反例和有限测试检查证明边界)替换为完整C11程序。原有内核证据与逻辑责任不变，先前Python测试记录保留为历史；当前正文以C模型及编译命令为准。
 
 程序递归枚举保持各参与者内部顺序的交错：正确等待10条且零丢唤醒，错误登记10条含1条反例，提前通知10条含2条反例；双读者6条中4条双方均观察到就绪，每条只消费一次。GCC与Clang编译运行得到相同结果，GCC定义NDEBUG后仍执行require检查；把通知分支的wake置为false的练习变体在两编译器下均正常编译后以失败状态报告correct wait。代码提取一致，章节精确链接和全仓检查通过。此顺序模型仍不模拟Linux调度、弱内存、真实信号或设备，不能把语言替换后的通过视为新增硬件验证。
+
+[中断恢复协议模型](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P14_中断风暴_抖动与防御机制.md#14.5.2_用可执行模型找出重复禁用与旧结果复活)同样改为C11，保留重复故障、预算耗尽、探测中停止及工作前停止四条事件序列。GCC与Clang的严格警告构建、普通运行及NDEBUG构建均通过；去掉finish身份保护的练习变体在两编译器下均编译成功，并以退出码1报告stop during probe。正文明确禁用计数平衡不足以证明停止后的终态正确，并限定unsigned代次不回绕的短序列范围。源码与正文一致；没有新增内核调用、真实恢复I/O、多核或设备停机验证。
