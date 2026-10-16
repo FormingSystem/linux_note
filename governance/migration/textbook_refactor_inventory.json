@@ -468,6 +468,114 @@
           "专题结构、目标格式、全仓链接及 git diff --check 通过"
         ],
         "limits": "未执行目标内核构建、加载或 IRQ/信号并发实验；术语提示及完整实验节长度按阅读契约处置，未宣称严格零提示。"
+      },
+      "research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从设备锁事件定位读者任务，再进入模块与实现索引；完整冷读三层导航、配置边界及唯一实现入口，更新内部取得/释放标题锚点。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；9 篇连续性审计无风险，术语候选逐类核对而非宣称零提示",
+          "39 个函数体或配置分支去注释后与固定源码 token 一致；12 图渲染，修改图目视检查",
+          "目标标题/元数据/命名及全仓 707 篇链接检查通过；git diff --check 通过"
+        ],
+        "limits": "未构建或运行目标内核，未执行真实 IRQ、信号、容量耗尽或并发 RCU 回收测试；静态函数体核对不等于完整编译单元或运行验证。"
+      },
+      "research/source_reading/lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "校正 S0 初始化与 S1 事件入口的身份建立时机，使静态 key 首次登记、动态 key 持久注册与知识层阶段一致；完整冷读取得、回退和释放通信。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；9 篇连续性审计无风险，术语候选逐类核对而非宣称零提示",
+          "39 个函数体或配置分支去注释后与固定源码 token 一致；12 图渲染，修改图目视检查",
+          "目标标题/元数据/命名及全仓 707 篇链接检查通过；git diff --check 通过"
+        ],
+        "limits": "未构建或运行目标内核，未执行真实 IRQ、信号、容量耗尽或并发 RCU 回收测试；静态函数体核对不等于完整编译单元或运行验证。"
+      },
+      "research/source_reading/lockdep/navigation/P03_Linux_6.12_Lockdep依赖图与规则引擎模块导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读链、类图、规则和 IRQ 传播，补 DFS/BFS 名称及遍历策略职责，避免把通用图算法名称当作已知检查结论。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；9 篇连续性审计无风险，术语候选逐类核对而非宣称零提示",
+          "39 个函数体或配置分支去注释后与固定源码 token 一致；12 图渲染，修改图目视检查",
+          "目标标题/元数据/命名及全仓 707 篇链接检查通过；git diff --check 通过"
+        ],
+        "limits": "未构建或运行目标内核，未执行真实 IRQ、信号、容量耗尽或并发 RCU 回收测试；静态函数体核对不等于完整编译单元或运行验证。"
+      },
+      "research/source_reading/lockdep/navigation/P04_Linux_6.12_Lockdep查询适配与诊断模块导读.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读当前账本查询、注解适配、四层诊断状态和配置边界；已有问题到状态、事件和模块分工的解释闭合，保留正文。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；9 篇连续性审计无风险，术语候选逐类核对而非宣称零提示",
+          "39 个函数体或配置分支去注释后与固定源码 token 一致；12 图渲染，修改图目视检查",
+          "目标标题/元数据/命名及全仓 707 篇链接检查通过；git diff --check 通过"
+        ],
+        "limits": "未构建或运行目标内核，未执行真实 IRQ、信号、容量耗尽或并发 RCU 回收测试；静态函数体核对不等于完整编译单元或运行验证。"
+      },
+      "research/source_reading/lockdep/source_explanations/include/linux/lockdep_types.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先以同类两个实例和嵌套问题建立 map、key、class、held 的差别，再读结构；保留 union 重叠、八个子类与两个缓存槽、配置字段边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；9 篇连续性审计无风险，术语候选逐类核对而非宣称零提示",
+          "39 个函数体或配置分支去注释后与固定源码 token 一致；12 图渲染，修改图目视检查",
+          "目标标题/元数据/命名及全仓 707 篇链接检查通过；git diff --check 通过"
+        ],
+        "limits": "未构建或运行目标内核，未执行真实 IRQ、信号、容量耗尽或并发 RCU 回收测试；静态函数体核对不等于完整编译单元或运行验证。"
+      },
+      "research/source_reading/lockdep/source_explanations/kernel/locking/lockdep.c.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读身份注册、图锁、动态 key 与回收、链摘除和初始化；补问题入口，容量失败用退出分支表达，双批回收改用固定 pf[0]/pf[1] 槽位和可变 index，说明角色变化不搬移对象。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；9 篇连续性审计无风险，术语候选逐类核对而非宣称零提示",
+          "39 个函数体或配置分支去注释后与固定源码 token 一致；12 图渲染，修改图目视检查",
+          "目标标题/元数据/命名及全仓 707 篇链接检查通过；git diff --check 通过"
+        ],
+        "limits": "未构建或运行目标内核，未执行真实 IRQ、信号、容量耗尽或并发 RCU 回收测试；静态函数体核对不等于完整编译单元或运行验证。"
+      },
+      "research/source_reading/lockdep/source_explanations/P02_Linux_6.12_Lockdep取得释放与持锁账本源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "恢复 lock_acquire、__lock_acquire、__lock_release 完整可执行语句，补 NMI、合并引用、链提交后容量停检、非栈顶重建及返回值副作用，修正把 0 等同于状态未变的错误。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；9 篇连续性审计无风险，术语候选逐类核对而非宣称零提示",
+          "39 个函数体或配置分支去注释后与固定源码 token 一致；12 图渲染，修改图目视检查",
+          "目标标题/元数据/命名及全仓 707 篇链接检查通过；git diff --check 通过"
+        ],
+        "limits": "未构建或运行目标内核，未执行真实 IRQ、信号、容量耗尽或并发 RCU 回收测试；静态函数体核对不等于完整编译单元或运行验证。"
+      },
+      "research/source_reading/lockdep/source_explanations/P03_Linux_6.12_Lockdep依赖图与规则引擎源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "恢复五个规则函数完整分支，解释 BFS 返回、IRQ usage 位、既有边、冗余边、双向登记及失败停检；validate_chain 的锁失败检查还原到实际 else 分支，避免简化改变控制流。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；9 篇连续性审计无风险，术语候选逐类核对而非宣称零提示",
+          "39 个函数体或配置分支去注释后与固定源码 token 一致；12 图渲染，修改图目视检查",
+          "目标标题/元数据/命名及全仓 707 篇链接检查通过；git diff --check 通过"
+        ],
+        "limits": "未构建或运行目标内核，未执行真实 IRQ、信号、容量耗尽或并发 RCU 回收测试；静态函数体核对不等于完整编译单元或运行验证。"
+      },
+      "research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "纠正 typed assert 对 UNKNOWN 的判断，补完整 unpin 函数、cookie 累加与错误恢复，说明 pin 非唯一安全令牌；在配置和 proc 表前建立依赖及权限含义，保留条件编译边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "本轮逐篇作者冷读；9 篇连续性审计无风险，术语候选逐类核对而非宣称零提示",
+          "39 个函数体或配置分支去注释后与固定源码 token 一致；12 图渲染，修改图目视检查",
+          "目标标题/元数据/命名及全仓 707 篇链接检查通过；git diff --check 通过"
+        ],
+        "limits": "未构建或运行目标内核，未执行真实 IRQ、信号、容量耗尽或并发 RCU 回收测试；静态函数体核对不等于完整编译单元或运行验证。"
       }
     }
   },
