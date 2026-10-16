@@ -1300,3 +1300,13 @@ B05bl复查同一固定lockdep.c的lockdep_init_map_type，恢复统计CPU记录
 `include/linux/hrtimer.h` 沿用 1.171 的固定文件，核对 `hrtimer_start()` 返回 void、forward_now 的当前时钟取值与模式边界。普通 timer 与 work 的取消协议沿用既有固定实现证据，不把 hrtimer_cancel 写成永久关闭。模板中的 start/quiesce 是教学设备操作契约，不是上游通用函数；GPIO 绑定和物理引脚未得到本次板级验证。无目标 Kbuild、硬件去抖、IRQ、sysfs、事务或卸载竞争实测结果。
 
 毫秒转换提取固定头文件与运行时函数，在 HZ=100/250/1000 下用 GCC/Clang 的 C11/O2 各核对 0～5000 共 5001 个运行时输入，以及零值、15 ms、极大值常量和乘法溢出反例。另把正文去抖检查函数与事务共同终结函数放入顺序模型，核对提前检查、准点、采样期间新边沿/改参/停止、GPIO 负错误，以及三种结果的 27 种先后组合；两个编译器均通过。模型将锁、队列、GPIO 和通知替换为桩，只检验这些指定状态交错，不模拟 Linux 并发、内存序、硬件或完整模块构建。
+
+## 1.174\_hrtimer状态位置与周期计划
+
+2026-10-17 复审[高精度定时器](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P05_高精度定时器_hrtimer_的驱动用法.md#5.2_到期点与执行者仍然分开保存)，从同一官方固定提交下载 `include/linux/hrtimer_types.h`（Git blob `ad66a30817357e727e9005417d9edbebb7013492`）和 `include/linux/hrtimer_defs.h`（`84a5045f80f36f88cb47bf23a62a4d0afbd1a2c6`）。结合 1.173 的 hrtimer.c 核对 `__run_hrtimer()`、`hrtimer_forward()`、`hrtimer_cancel()` 与 `__hrtimer_init()`。
+
+同版本 hrtimer.h 的旧注释仍写 `timer->base->cpu_base->running`，但当前结构定义与执行函数实际使用 `timer->base->running`，属于 clock_base；正文按声明和执行代码说明。forward 以旧到期点推进，now 决定越过多少周期；小于 hrtimer_resolution 的周期会被提高，函数本身不排队。默认非实时配置与 SOFT/HARD 模式分别解释，不一概写成软中断。
+
+原有三份 LED 驱动合为共享初始化、统计和回收的三模式教学驱动；旧两组日志原样保留，并标记缺少配置、负载和驱动身份，不能作为本轮实测或优劣结论。板级 GPIO 和 pad 示例仍需实物与手册核对，未进行目标 Kbuild、模块运行或 GPIO 波形验证。
+
+固定 `hrtimer_forward()` 主体与正文手工锚点计算置入宿主数值模型，在 GCC/Clang C11/O2 下分别比较十万组相同输入，并检查未来期限、恰好到期、跨多周期、分辨率下限及已排队保护分支；两者在正文约束内一致。模型替换了内核时间与对象操作辅助，不模拟队列、锁、硬件事件或完整驱动执行。验证过程中补齐宿主桩的 unlikely 宏后编译通过，未把桩缺失误记为内核问题。
