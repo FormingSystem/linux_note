@@ -1,5 +1,4 @@
 /* C11顺序解释器：两份单槽待写状态，不是LKMM或处理器模拟器。 */
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -47,7 +46,10 @@ int main(void)
     struct results plain = {0}, fenced = {0};
     explore(initial, false, &plain);
     explore(initial, true, &fenced);
-    assert(plain.mask == 15U && fenced.mask == 14U);
+    if (plain.mask != 15U || fenced.mask != 14U) {
+        fputs("unexpected model result\n", stderr);
+        return 1; /* 校验不依赖assert，定义NDEBUG后也不能跳过。 */
+    }
     for (unsigned int pair = 0; pair < 4; ++pair)
         printf("%u/%u: plain=%s fenced=%s\n", pair / 2, pair % 2,
                plain.counts[pair] ? "possible" : "absent",

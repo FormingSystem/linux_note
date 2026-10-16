@@ -17,6 +17,8 @@ topics:
 
 ## 1.1\_实验目标
 
+生产者先写载荷 buf，再写就绪标志 flag；消费者先读 flag，再读 buf。只凭源码顺序，能否排除“flag 已为 1，buf 仍为 0”？本实验保持参与者、初值和坏结果不变，只改变顺序原语，检验哪一组约束使候选结果不再允许。它运行的是模型工具，不是在当前 CPU 上制造弱序结果。
+
 使用Linux 6.12.20保存的LKMM和herd7，对同一并发模式运行无序/有序成对测试。我们询问一个坏结果是否允许；以下是清单中的预期，只有实际执行工具后才能填写本次结果：
 
 1. MP：只有 ONCE 时坏结果允许，release/acquire 或 wmb/rmb 后禁止；
@@ -105,6 +107,33 @@ bash run.sh --filter MP
 
 ## 1.7\_逐项解释要求
 
+先用一份完整输入练习。以下内容就是清单中的发布取得版本，保存为 `tests/MP+pooncerelease+poacquireonce.litmus`；仓库已经提供，不需重复创建：
+
+```text
+C MP+pooncerelease+poacquireonce
+
+{}
+
+P0(int *buf, int *flag)
+{
+    WRITE_ONCE(*buf, 1);
+    smp_store_release(flag, 1);
+}
+
+P1(int *buf, int *flag)
+{
+    int r0;
+    int r1;
+
+    r0 = smp_load_acquire(flag);
+    r1 = READ_ONCE(*buf);
+}
+
+exists (1:r0=1 /\ 1:r1=0)
+```
+
+空初始化块在该测试中使共享整数初始为零，P0/P1 是参与者，`1:r0` 是 P1 的局部结果。坏结果要求 flag 读来自 P0 的发布写，buf 读却来自初始写。release 连接准备到发布，acquire 连接取得到消费；结合这两条读取来源，按固定 LKMM 可推导禁止关系。对照无序版本只将这两个原语换为 `WRITE_ONCE(*flag, 1)` 和 `READ_ONCE(*flag)`，其余条件不动。这里是预期推理，实际分类仍以成功运行记录为准。
+
 每次实验记录不能只贴 `Sometimes/Never`，还要回答：
 
 1. 每个寄存器从哪个 Write 取值；
@@ -129,7 +158,9 @@ bash run.sh --filter MP
 
 正式运行后，将以下内容保存到独立结果文档：herd7 版本、Linux 模型基线、完整命令、每个 generated 输出的 hash、结果矩阵和逐项事件解释。若执行 klitmus7，还需记录目标 CPU、内核版本/配置、迭代数和各结果次数。
 
-本批已经执行的是：八项输入静态检查，以及隔离目录中16项Bash驱动协议检查，覆盖全部八项解析、MP筛选、空筛选、工具缺失、工具版本失败、进程失败时两路输出保留、缺失/重复/错名Observation、计数矛盾、零允许执行、分类不符、重复清单和清理保留手工文件。工具替身明确输出“no LKMM execution”，这些检查验证实验装置，没有产生真实模型Observation；未运行herd7或klitmus7，不填写伪造的结果矩阵。
+2026-09-24 记录的是：八项输入静态检查，以及隔离目录中16项Bash驱动协议检查，覆盖全部八项解析、MP筛选、空筛选、工具缺失、工具版本失败、进程失败时两路输出保留、缺失/重复/错名Observation、计数矛盾、零允许执行、分类不符、重复清单和清理保留手工文件。工具替身明确输出“no LKMM execution”，这些检查验证实验装置，没有产生真实模型Observation；未运行herd7或klitmus7，不填写伪造的结果矩阵。
+
+2026-10-16 复审重新读取八份测试、清单及驱动，并将保存的五份模型文件与固定上游提交比对一致。当前编辑环境未发现 Bash 和 herd7，没有重跑历史驱动测试，也没有新的真实模型分类。后续实际运行必须建立自己的版本、摘要与输出记录。
 
 ## 1.10\_清理
 

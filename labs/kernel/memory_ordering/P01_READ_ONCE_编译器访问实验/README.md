@@ -16,11 +16,13 @@ topics:
 
 ## 1.1\_实验目标
 
-本实验只验证编译器层的三个结论：
+设软件需要重复查看一个会变化的状态。如果编译器把读操作放到循环外，CPU 执行得再忠实也只会反复检查旧的寄存器值。先观察机器访问是否存在，才能继续讨论 CPU 之间的顺序。本实验只验证编译器层的五个现象：
 
 1. 两次普通读取可能在优化后合并成一次；
 2. ONCE 形式要求保留两个访问实例；
 3. 普通轮询可能把共享值只读一次，ONCE 轮询会在循环中重新读取。
+4. 空内联汇编的 memory 约束也能改变轮询优化，但不生成硬件屏障；
+5. 普通连续写可能只保留最终写，局部 volatile 形式保留两次写入动作。
 
 它不验证 CPU 间可见性、硬件不撕裂或 acquire/release。对应理论见[编译器共享访问与 READ/WRITE_ONCE](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md)。
 
@@ -41,13 +43,12 @@ topics:
 - 支持 GNU `__typeof__` 扩展；
 - Windows、Linux 均可运行，结果需记录目标三元组。
 
-本轮结果见[2026-09-24编译器访问与屏障观察](expected/2026-09-24_compiler_access.md)；[2026-08-02历史结果](expected/2026-08-02_windows_x86_64.md)保持原样。两个目标三元组不同，不能用相同宿主操作系统代替目标身份。
+完整历史结果见[2026-09-24编译器访问与屏障观察](expected/2026-09-24_compiler_access.md)及[2026-08-02历史结果](expected/2026-08-02_windows_x86_64.md)。2026-10-16 复审使用 GCC 14.2.0 和 Clang 18.1.8 直接调用编译器，重做 O0/O2 四组生成并检查汇编；没有重跑 Bash 驱动。两个工具链的默认目标三元组不同，不能用相同宿主操作系统代替目标身份。
 
 ## 1.4\_运行步骤
 
 ```bash
 cd labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验
-bash run.sh --clean
 bash run.sh
 ```
 
@@ -67,6 +68,8 @@ generated/
 bash run.sh --compiler gcc
 bash run.sh --compiler clang
 ```
+
+`cd` 从仓库根目录执行，之后命令位于实验目录。源文件没有 `main()`，`-S` 只生成汇编，不需要执行那些轮询函数；不要为了观察循环而另建无同步的多线程 C 程序。同名汇编会覆盖，正式重跑前先另存需要保留的旧证据。
 
 ## 1.5\_观察方法
 
@@ -92,6 +95,10 @@ bash run.sh --compiler clang
 - `once_poll()` 在循环内持续读取。
 
 具体寄存器、助记符和标签因编译器/目标而异。若结果不同，应保存版本和完整汇编，而不是把本页预期当成编译器规范。
+
+以本次 Clang O2 为例，`plain_sum` 是 `movl shared(%rip), %eax` 后接 `addl %eax, %eax`，只有第一次读内存；`once_sum` 后一条变为 `addl shared(%rip), %eax`，第二次读取包含在加法中。`plain_poll` 的零值回边只剩跳回自身，`once_poll` 回边则重新执行 `cmpl $0, shared(%rip)`。这些例子说明应追踪内存操作数和跳转目标，不能只数 `mov`。
+
+若把两次 ONCE 改成先读取一次到局部变量，再把该局部值加倍，预期就应只有一次共享读取。若要求读者必定消费写入的每个中间值，仅保留两次写动作也不够；还需要确认或队列协议。它们分别检查“访问生成次数”和“业务交付次数”，不是同一个问题。
 
 ## 1.7\_失败现象与排查
 

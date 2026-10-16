@@ -81,7 +81,7 @@ if (READ_ONCE(flag)) {
 
 这一模式通常更适合用 `smp_store_release()` / `smp_load_acquire()` 表达，下一章会解释为什么它把顺序直接绑定到发布位置。
 
-## 3.5\_为什么\_SB\_需要全屏障而不是写屏障
+## 3.5\_SB\_缺少的是写后读顺序
 
 换一个约束：两路各设置自己的标志，然后查看对方是否设置。x和y初始都为0。我们想禁止两边都声称“对方尚未设置”。这不是前一节的生产者发布、消费者取得，而是两个对等参与者；通常称为存储缓冲（Store Buffering，SB）测试。
 
@@ -93,6 +93,8 @@ r0 = READ_ONCE(y);                 r1 = READ_ONCE(x);
 ```
 
 要禁止 `r0 == 0 && r1 == 0`，每边都要限制 Store→Load。`smp_wmb()` 只提供写→写方向，后面却是 Load；`smp_rmb()` 只提供读→读方向，前面却是 Store。接口选择来自事件方向，不来自“越轻越好”的性能直觉。
+
+两端使用 `smp_mb()` 是这个 Linux 片段的直接修复；不是说所有语言、指令集或改写后的协议都只能使用全屏障。某个目标的 release/acquire 指令可能额外保证写后读，但不能把超出 Linux 公共契约的实现强度当作可移植依据。上一专题已区分 AArch64 `STLR` 后接 `LDAR` 与 `LDAPR` 的不同保证。
 
 ### 3.5.1\_先用单槽待写模型重建坏结果
 
@@ -142,7 +144,6 @@ sequenceDiagram
 
 ```c
 /* C11顺序解释器：两份单槽待写状态，不是LKMM或处理器模拟器。 */
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -190,7 +191,10 @@ int main(void)
     struct results plain = {0}, fenced = {0};
     explore(initial, false, &plain);
     explore(initial, true, &fenced);
-    assert(plain.mask == 15U && fenced.mask == 14U);
+    if (plain.mask != 15U || fenced.mask != 14U) {
+        fputs("unexpected model result\n", stderr);
+        return 1; /* 校验不依赖assert，定义NDEBUG后也不能跳过。 */
+    }
     for (unsigned int pair = 0; pair < 4; ++pair)
         printf("%u/%u: plain=%s fenced=%s\n", pair / 2, pair % 2,
                plain.counts[pair] ? "possible" : "absent",
