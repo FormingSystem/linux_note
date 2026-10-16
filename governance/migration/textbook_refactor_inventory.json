@@ -1844,6 +1844,19 @@
           "元数据、标题、命名和全仓707篇链接检查通过；连续性检测的大节提示对应单一锁交接机制及完整模块，术语提示逐项结合前章和局部说明检查；git diff --check 通过"
         ],
         "limits": "未执行目标 Kbuild、MODPOST、模块装卸或真实并发验证。顺序替身不能证明实际锁、原子及内存序；固定源码夹具用 -fno-strict-overflow 与 -Wno-sign-compare，未改写上游函数。P08/P34仅同步材料仍待全篇复审。"
+      },
+      "knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "完整冷读管理者保活、非拥有索引、回调上下文、timer/work 退出和 RCU 双条件；保留因果主线，修复 timer 模型把状态推进藏入 assert 的问题，补齐间接中断锁等待环、时序图选定轨迹与模块实际执行的区别，规范构建及运行步骤并区分历史前端检查。",
+        "date": "2026-10-16",
+        "validation": [
+          "timer 模型 GCC/Clang 普通与优化 NDEBUG 四次运行，三项遗漏关闭/等待/工作排空负例、running 与 pending 并存场景、owned_work 九组顺序夹具通过，共九次构建运行",
+          "固定提交读取 timer.c、timer.h、workqueue.c 与 errno.h，核对改期返回、同步删除/关闭、锁上下文及停止后 ESHUTDOWN；workqueue 保存原件与固定提交一致",
+          "两份完整材料与正文一致；25个出站标题片段有效；六幅 Mermaid 渲染查看；全仓707篇链接、元数据与格式检查及 git diff --check 通过",
+          "连续性大节提示对应完整管理者借用实例，未拆碎程序；16项术语候选结合前章、枚举和局部说明人工检查"
+        ],
+        "limits": "宿主夹具使用显式顺序替身，不验证真实 timer 时钟、等待、线程、软硬中断或内存序；未执行目标 Kbuild、MODPOST 或装卸。材料 README 仅同步该条说明，未计为整篇完成。"
       }
     }
   },
