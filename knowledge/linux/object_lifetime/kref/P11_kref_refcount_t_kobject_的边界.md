@@ -1,6 +1,6 @@
 ---
 id: knowledge.linux.object_lifetime.kref.p11_kref_refcount_t_kobject_的边界
-title: "kref refcount t kobject 的边界"
+title: "kref、refcount_t 与 kobject 的边界"
 kind: mechanism
 status: evolving
 domains:
@@ -40,7 +40,7 @@ flowchart LR
 
 ### 11.2.1\_atomic\_t\_通用原子计数工具
 
-atomic_t 是内核的通用原子整数类型。它让相应操作不可被其他并发更新拆开观察，但不会知道这个整数表示完成次数、状态还是对象份额。若统计两个线程各完成一次，可以按统计协议原子增加；这个用途通常不需要“从1减到0后释放对象”。
+atomic_t 是内核的通用原子整数类型。针对同一个整数的相应原子操作，它保证更新不可被其他遵循协议的访问观察成只完成了一部分，但不会知道这个整数表示完成次数、状态还是对象份额。若统计两个线程各完成一次，可以按统计协议原子增加；这个用途通常不需要“从1减到0后释放对象”。
 
 引用计数则把数值变化接到了存储回收。假设一个错误的额外归还把零减成负值，或反复增加触及表示范围，普通整数更新本身不等于安全的所有权判断。即使用 atomic_dec_and_test 检查零，也仍要证明初始份额、有效地址、不能从零重新取得、异常处理和每个失败分支的责任。
 
@@ -105,7 +105,7 @@ sequenceDiagram
 
 再看 data 申请失败。外壳已经建立初始份额，所以失败路径通过同一个 put 进入 release；kzalloc 使 data 尚为空，应用清理允许这一部分初始化状态。kref 不替你判断“构造到第几步”，更不自动回收子资源，正确性来自应用回调支持这一状态。
 
-原程序及其已有验证记录保持不变，本批没有重新运行目标模块或增加行为覆盖。阅读练习是给每个调用标出“地址来自谁、归还哪份、是否可能最后一次”，而不是把所有出现 get 的地方都当成同一种查找。
+本节复用 P02 的同一程序及本轮已完成的对象成功与部分初始化失败检查，不重复增加一套实验。目标构建与装卸仍未执行。阅读练习是给每个调用标出“地址来自谁、归还哪份、是否可能最后一次”，而不是把所有出现 get 的地方都当成同一种查找。
 
 ### 11.2.4\_kref\_和\_refcount\_t\_的关系
 
@@ -155,6 +155,8 @@ kref 并未增加一套与 refcount 并行的引用数，也不是两次 get 或
 | K5 类型清理 | 类型release可以销毁外壳 | core处理其负责的名字与关系收尾 |
 
 完整 [note_kobject.c](../../../../labs/kernel/object_lifetime/materials/note_kobject.c) 只创建一个带固定值的对象，在 `/sys/kernel` 下短暂添加 `note_kref_lifetime` 目录，再在初始化期间撤下。它没有属性接口、外部用户或主动 ADD 事件，目的只是观察登记与存储期限的区别；不能用用户空间没来得及看见目录判断添加失败。
+
+运行前先确定配置边界：CONFIG_SYSFS 必须开启，CONFIG_DEBUG_KOBJECT_RELEASE 必须关闭。后者让框架延迟执行类型清理，而这个同步演示没有实现延迟回调的模块退出协议。代码用 IS_ENABLED 宏判断这些配置；不满足时返回表示不支持的 -EOPNOTSUPP，尚不分配对象。这个检查保护的是演示的适用范围，并非说启用调试延迟的内核不能正确使用 kobject。
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
@@ -218,13 +220,24 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("kobject撤下与最后引用分离的同步演示");
 ```
 
-本演示要求 CONFIG_SYSFS 开启且 CONFIG_DEBUG_KOBJECT_RELEASE 关闭，否则初始化直接返回 -EOPNOTSUPP，不建立对象。后一个选项会让框架延迟执行类型清理；演示没有实现那种情况下的模块代码退出协议，因此明确拒绝，而不是让模块先卸载再执行它的函数地址。
-
-Linux 目标构建和观察步骤如下，KDIR 应指向与运行内核相匹配的构建环境：
+在 Linux 构建主机准备与目标运行内核匹配的构建树，把绝对路径赋给 KERNEL_BUILD。交叉构建还须设置匹配的 ARCH 与 CROSS_COMPILE。从本仓库根目录执行，只构建本节模块：
 
 ```bash
-make -C "$KDIR" M="$PWD/labs/kernel/object_lifetime/materials" modules
-sudo insmod labs/kernel/object_lifetime/materials/note_kobject.ko
+kref_kobject_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_kobject.c "$kref_kobject_dir/"
+printf 'obj-m += note_kobject.o\n' > "$kref_kobject_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_kobject_dir" modules
+```
+
+临时目录保存源码、Makefile 与构建产物，M 指定外部模块位置。将 note_kobject.ko 复制到匹配目标 Linux，在模块所在目录加载；本机即目标时可直接进入上述临时目录：
+
+```bash
+sudo insmod ./note_kobject.ko
+```
+
+加载执行初始化中的整个同步周期。加载成功后卸载，再读取日志：
+
+```bash
 sudo rmmod note_kobject
 sudo dmesg | tail -n 20
 ```
@@ -239,7 +252,7 @@ note_kobject: release=1
 
 第二行中目录已经撤下，创建者也已归还，但观察者仍持一份，所以仍可读取发布前固定的 value。第三行说明最后观察者归还后才完成类型清理。对象可能在最后 put 内立即消失，程序没有再通过 reader 或 held 访问它。
 
-本次 ARM 前端和七组宿主检查通过；宿主执行固定九个 kobject 函数与既有普通引用链，命名、sysfs、分配等为显式替身。两类不支持配置、分配失败、添加失败、正常周期、隐式/显式撤下和 NULL 包装均检查；目标链接、装卸、实际 sysfs/事件、并发及调试延迟释放分支未执行。日志是预期目标结果，不冒充实际内核运行。
+本轮重新核对完整程序并运行七组宿主检查；历史 ARM 前端结果不作为本轮目标构建。宿主执行固定九个 kobject 函数与既有普通引用链，命名、sysfs、分配等为显式替身。两类不支持配置、分配失败、添加失败、正常周期、隐式/显式撤下和 NULL 包装均检查；目标链接、装卸、实际 sysfs/事件、并发及调试延迟释放分支未执行。日志是预期目标结果，不冒充实际内核运行。
 
 ### 11.3.2\_kobject\_的\_release\_和\_kref\_release\_的区别
 
@@ -376,14 +389,29 @@ MODULE_DESCRIPTION("设备注销与最终引用回收的同步演示");
 
 模块沿前节的同步限制：CONFIG_SYSFS开启、CONFIG_DEBUG_KOBJECT_RELEASE关闭，否则提前拒绝。它在初始化内短暂添加并注销名为note_device_lifetime的设备；device层可能按框架条件处理目录、属性与事件，例子不提供外部业务入口。完整driver core发布过程不能由三个日志概括成已经验证。
 
+沿用 11.3 的 Linux 构建主机、KERNEL_BUILD 与目标工具链准备，从本仓库根目录单独构建本节模块：
+
 ```bash
-make -C "$KDIR" M="$PWD/labs/kernel/object_lifetime/materials" modules
-sudo insmod labs/kernel/object_lifetime/materials/note_device.ko
+kref_device_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_device.c "$kref_device_dir/"
+printf 'obj-m += note_device.o\n' > "$kref_device_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_device_dir" modules
+```
+
+临时目录保存源码、Makefile 与构建产物，M 指定外部模块位置。将 note_device.ko 复制到匹配目标 Linux，在模块所在目录加载；本机即目标时可直接进入上述临时目录：
+
+```bash
+sudo insmod ./note_device.ko
+```
+
+加载执行初始化中的整个同步周期。加载成功后卸载，再读取日志：
+
+```bash
 sudo rmmod note_device
 sudo dmesg | tail -n 20
 ```
 
-KDIR应与目标运行内核匹配；预计支持配置下的日志是：
+预计支持配置下的日志是：
 
 ```text
 note_device: added value=7 release=0
@@ -393,7 +421,7 @@ note_device: release=1
 
 这里的第二行和kobject例子看似相同，归还动作却不同：kobject_del不归还本对象初始份额；device_unregister内部已经在device_del之后调用put_device。因此程序在unregister之后不能再为同一份初始责任额外put；它只在观察者结束时归还独立取得的held。
 
-本次ARM前端与八组宿主检查通过。宿主运行实际应用、五个固定device函数、前节九个固定kobject函数和普通引用链；初始化/命名/设备添加删除/sysfs/devres等是显式替身。检查覆盖配置拒绝、分配/命名/添加失败、正常周期、三个release选择优先级、register包装和NULL接口。未执行目标链接装卸、真实设备事件、绑定解绑、完整资源清理或并发；以上日志为预计目标输出。
+本轮重新核对完整程序并运行八组宿主检查；历史ARM前端结果不作为本轮目标构建。宿主运行实际应用、五个固定device函数、前节九个固定kobject函数和普通引用链；初始化/命名/设备添加删除/sysfs/devres等是显式替身。检查覆盖配置拒绝、分配/命名/添加失败、正常周期、三个release选择优先级、register包装和NULL接口。未执行目标链接装卸、真实设备事件、绑定解绑、完整资源清理或并发；以上日志为预计目标输出。
 
 版本化证据从[kref源码总索引](../../../../research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)进入[device模块导读](../../../../research/source_reading/kref/navigation/P08_device引用与资源退出导读.md#8.2_从D0到D5区分登记与存储)。以下结论按固定NXP Linux6.12.20的drivers/base/core.c和dd.c核对。
 
@@ -416,14 +444,15 @@ sequenceDiagram
     participant B as devm缓冲区
     S->>D: get_device保留设备份额
     S->>B: 之前保存了缓冲区地址
+    S->>S: 按驱动停止协议结束全部缓冲访问
     U->>U: 完成驱动规定的停止与解绑流程
+    Note over S,U: 释放前必须确认旧访问已结束，设备引用不建立这个顺序
     U->>B: devres清理释放资源
     Note over S,D: 设备引用仍在，不意味着缓冲区仍在
-    S->>S: 必须已停止访问旧缓冲区
     S->>D: 会话结束后put_device
 ```
 
-图中的“必须已停止”是驱动需要建立的条件，不是get_device自动做到的事。需要会话活过解绑时，可以让会话只保留独立寿命的数据，或让停止协议拒绝新操作并排空正在进行的访问；不能继续使用已失效的devm指针。设备引用也不保证硬件仍在、驱动仍绑定或业务队列仍接纳。
+图中的“释放前必须确认”是驱动需要建立的条件，不是get_device自动做到的事。需要会话活过解绑时，可以让会话只保留独立寿命的数据，或让停止协议拒绝新操作并排空正在进行的访问；不能继续使用已失效的devm指针。设备引用也不保证硬件仍在、驱动仍绑定或业务队列仍接纳。
 
 ### 11.4.3\_device\_release\_不是\_my\_obj\_release
 
@@ -465,6 +494,7 @@ device_unregister不是“等待所有人归还然后才返回”的同步回收
 用同一台设备来比较：设备实例描述“这一台”，`dev->class` 表达它归入哪种功能分类，`dev->bus` 表达它按哪套规则和驱动匹配，`dev->parent` 表达设备层次关系。分类相同的两台设备可以使用不同的连接方式。因此这些关系不能压成一条“class 拥有 device，device 拥有所有私有数据”的释放链。
 
 ```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 120, 'rankSpacing': 180}}}%%
 flowchart LR
     D[设备实例 dev] -->|dev.class 指向功能分类| C[公共 struct class 描述]
     D -->|dev.bus 指向匹配规则| B[公共 struct bus_type 描述]
@@ -777,22 +807,35 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("独立会话引用与设备份额的单向连接");
 ```
 
-在与运行内核匹配的 Linux 构建环境中，在材料目录执行：
+沿用 11.3 的 Linux 构建主机、KERNEL_BUILD 与目标工具链准备，从本仓库根目录单独构建本节模块：
 
 ```bash
-make -C /lib/modules/"$(uname -r)"/build M="$PWD" modules
-sudo insmod ./note_session.ko
-sudo rmmod note_session
-sudo dmesg | tail -n 12
+kref_session_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_session.c "$kref_session_dir/"
+printf 'obj-m += note_session.o\n' > "$kref_session_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_session_dir" modules
 ```
 
-第一行构建材料目录中的模块；加载时初始化函数执行整个周期，卸载时打印最终清理次数。构建需要该运行内核的开发头和构建树；错误应先按返回值与内核日志定位，不可把宿主编译前端结果当作已经生成可加载模块。若加载返回不支持，先检查上述两个配置限制。本例不是长期保持的设备服务，短暂登记的设备在初始化返回前已经撤下。
+临时目录保存源码、Makefile 与构建产物，M 指定外部模块位置。将 note_session.ko 复制到匹配目标 Linux，在模块所在目录加载；本机即目标时可直接进入上述临时目录：
+
+```bash
+sudo insmod ./note_session.ko
+```
+
+加载执行初始化中的整个同步周期。加载成功后卸载，再读取日志：
+
+```bash
+sudo rmmod note_session
+sudo dmesg | tail -n 20
+```
+
+若加载返回不支持，先检查 sysfs 与延迟调试清理的配置限制。本例不是长期保持的设备服务，短暂登记的设备在初始化返回前已经撤下。
 
 正常预期是 `before=0 completed=1`，关闭后 `after=-19 completed=1 device_release=0`，最后 `session_release=1 device_release=1`。这里 `-19` 是本版本 Linux 的 `-ENODEV`：本例用它报告服务已经关闭。设备清理暂未发生，不表示关闭失败，而是会话桥接引用仍在履行责任。最后一个会话拥有者归还后才完成两块存储的回收。
 
 检查重点是两条失败线：设备初始化以后命名或添加失败，统一 put 初始化份额；设备已添加但会话分配失败，则执行关闭和 unregister。会话在锁内发现关闭时还没有取得桥接份额，释放尚未交付的会话即可，不能多 put_device。正式调用者即使与关闭竞争，也必须先拥有有效设备份额；互斥锁无法修复传入悬空 owner 的错误。
 
-本批完成十组宿主控制路径检查，并通过 ARM 编译前端；372份头中360份非生成源码与固定提交无差异。宿主使用固定引用及设备包装函数，原子操作、锁、设备登记和sysfs等是顺序替身，不能证明多CPU同步、真实驱动退出或模块装卸。上面的目标步骤本批未执行。
+本轮重新核对完整程序并运行十组宿主控制路径检查。历史材料记录的 ARM 前端及头文件一致性结果不作为本轮目标构建。宿主使用固定引用及设备包装函数，原子操作、锁、设备登记和sysfs等是顺序替身，不能证明多CPU同步、真实驱动退出或模块装卸。上面的目标步骤本批未执行。
 
 练习先从预测开始：删去第二个 `kref_get` 却保留两次 put，会在哪一步失去合法访问资格？第一次 put 已可能销毁会话和设备，第二次连 ref 地址都不能读取。再改为创建两个独立会话：两次 open 各取得一份设备引用，注销后还有两份；第一个会话最后退出不会销毁第二个所需的设备。最后解释为何不能用 devm 分配这里希望跨解绑存在的会话：受管清理的触发时点不由会话 kref 决定，会把尚有拥有者的会话提前回收。
 
