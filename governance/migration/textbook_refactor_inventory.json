@@ -5580,6 +5580,18 @@
           "全仓8944有效链接、章节与基线锚点、格式元数据路径及diff检查通过；同步P01章节导航与P08现有辅助函数说明。"
         ],
         "limits": "宿主模型替代内核锁、计时器、队列和devres，不等于目标Kbuild、装载、弱内存并发、设备runtime PM或板级挂起唤醒验证。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P11_电源管理_系统挂起与定时唤醒.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按时间域、RTC硬件委托、系统恢复、事件保护与业务相位重构；完整alarm周期模块和RTC用户工具替换错误IRQ消费者、结构体强转与未闭环清理，补齐原生硬件实验与PM/QoS边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "原文成稿全文冷读，十三份新增固定版本文件和既有PM证据核对；两图目视，连续性零风险，术语候选按前章及本地定义复核。",
+          "GCC/Clang GNU11/O2模型覆盖930000相位组合、溢出、启动失败、四种停止窗口、事件保护、136日历组合及RTC参数/调用错误；三个错误反例被拒绝。",
+          "全仓8947有效链接、正文与基线锚点、格式元数据路径和diff通过。"
+        ],
+        "limits": "锁、计时器、工作、唤醒源、ioctl由宿主桩替代，日历库适配宿主；不是目标Kbuild、Linux用户工具实际构建、硬件RTC、板级挂起或真实并发测试。"
       }
     },
     "additional_documents": [
