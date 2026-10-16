@@ -5062,6 +5062,102 @@
           "五张图渲染并逐张目视；五篇出入锚点、连续性检查及全仓8860有效链接、格式元数据/路径/diff通过。"
         ],
         "limits": "当前共享盘不可访问，未复核外部工作树；Linux系统调用程序仍未运行，模型不证明并发或性能。术语告警逐项核对，主要是既有阶段组合、标准标志的中文定义或由前章精确回链承接的模式；不为脚本零风险重复所有定义。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P01_等待队列.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "区分就绪后竞争与协议不一致，补任务状态入口，保留单槽资源协议和错误清理责任。",
+        "date": "2026-10-16",
+        "validation": [
+          "八篇完整冷读，五份保存源码blob匹配固定记录。",
+          "二十组模型编译运行，包含GCC/Clang、O0/O2、NDEBUG和四种练习变体。",
+          "十七张图渲染并逐张目视；八篇出入锚点、连续性、全仓8860有效链接、格式/元数据/路径及diff检查通过。"
+        ],
+        "limits": "共享源码树当前不可访问，本次使用已保存的固定版本原文；未运行内核或驱动。术语扫描告警已逐项审查并修补状态、宏、NMI/DMA和UAF入口，既有阶段组合和前章已建立的名称不机械重复。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P02_completion_完成量.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修复消费置于assert内的模型，覆盖饱和边界及广播反例，补初始化宏和硬件上下文术语。",
+        "date": "2026-10-16",
+        "validation": [
+          "八篇完整冷读，五份保存源码blob匹配固定记录。",
+          "二十组模型编译运行，包含GCC/Clang、O0/O2、NDEBUG和四种练习变体。",
+          "十七张图渲染并逐张目视；八篇出入锚点、连续性、全仓8860有效链接、格式/元数据/路径及diff检查通过。"
+        ],
+        "limits": "共享源码树当前不可访问，本次使用已保存的固定版本原文；未运行内核或驱动。术语扫描告警已逐项审查并修补状态、宏、NMI/DMA和UAF入口，既有阶段组合和前章已建立的名称不机械重复。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P03_条件等待的统一状态机.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读四组状态、统一阶段和四窗口证明，保留已有充分推导。",
+        "date": "2026-10-16",
+        "validation": [
+          "八篇完整冷读，五份保存源码blob匹配固定记录。",
+          "二十组模型编译运行，包含GCC/Clang、O0/O2、NDEBUG和四种练习变体。",
+          "十七张图渲染并逐张目视；八篇出入锚点、连续性、全仓8860有效链接、格式/元数据/路径及diff检查通过。"
+        ],
+        "limits": "共享源码树当前不可访问，本次使用已保存的固定版本原文；未运行内核或驱动。术语扫描告警已逐项审查并修补状态、宏、NMI/DMA和UAF入口，既有阶段组合和前章已建立的名称不机械重复。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P04_wait_event入队与唤醒调用链.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读宏循环、条件优先和信号出口，保留与固定源码一致的调用链。",
+        "date": "2026-10-16",
+        "validation": [
+          "八篇完整冷读，五份保存源码blob匹配固定记录。",
+          "二十组模型编译运行，包含GCC/Clang、O0/O2、NDEBUG和四种练习变体。",
+          "十七张图渲染并逐张目视；八篇出入锚点、连续性、全仓8860有效链接、格式/元数据/路径及diff检查通过。"
+        ],
+        "limits": "共享源码树当前不可访问，本次使用已保存的固定版本原文；未运行内核或驱动。术语扫描告警已逐项审查并修补状态、宏、NMI/DMA和UAF入口，既有阶段组合和前章已建立的名称不机械重复。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P05_独占等待批量唤醒与公平性.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正领取业务资源的图示对象，补三种额度变体答案，明确分段扫描只是概念方案。",
+        "date": "2026-10-16",
+        "validation": [
+          "八篇完整冷读，五份保存源码blob匹配固定记录。",
+          "二十组模型编译运行，包含GCC/Clang、O0/O2、NDEBUG和四种练习变体。",
+          "十七张图渲染并逐张目视；八篇出入锚点、连续性、全仓8860有效链接、格式/元数据/路径及diff检查通过。"
+        ],
+        "limits": "共享源码树当前不可访问，本次使用已保存的固定版本原文；未运行内核或驱动。术语扫描告警已逐项审查并修补状态、宏、NMI/DMA和UAF入口，既有阶段组合和前章已建立的名称不机械重复。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P06_completion令牌状态与调用链.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "明确普通计数与饱和值消费差异、阶段编号范围和单等待者时序前提。",
+        "date": "2026-10-16",
+        "validation": [
+          "八篇完整冷读，五份保存源码blob匹配固定记录。",
+          "二十组模型编译运行，包含GCC/Clang、O0/O2、NDEBUG和四种练习变体。",
+          "十七张图渲染并逐张目视；八篇出入锚点、连续性、全仓8860有效链接、格式/元数据/路径及diff检查通过。"
+        ],
+        "limits": "共享源码树当前不可访问，本次使用已保存的固定版本原文；未运行内核或驱动。术语扫描告警已逐项审查并修补状态、宏、NMI/DMA和UAF入口，既有阶段组合和前章已建立的名称不机械重复。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/P07_swait生命周期调试与选型.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留swait与普通队列取舍、两种广播和退出依赖，补D状态与UAF诊断入口。",
+        "date": "2026-10-16",
+        "validation": [
+          "八篇完整冷读，五份保存源码blob匹配固定记录。",
+          "二十组模型编译运行，包含GCC/Clang、O0/O2、NDEBUG和四种练习变体。",
+          "十七张图渲染并逐张目视；八篇出入锚点、连续性、全仓8860有效链接、格式/元数据/路径及diff检查通过。"
+        ],
+        "limits": "共享源码树当前不可访问，本次使用已保存的固定版本原文；未运行内核或驱动。术语扫描告警已逐项审查并修补状态、宏、NMI/DMA和UAF入口，既有阶段组合和前章已建立的名称不机械重复。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/waiting_notification/大纲.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "完整冷读因果阅读路线、章节依赖与出口，保留已有导航。",
+        "date": "2026-10-16",
+        "validation": [
+          "八篇完整冷读，五份保存源码blob匹配固定记录。",
+          "二十组模型编译运行，包含GCC/Clang、O0/O2、NDEBUG和四种练习变体。",
+          "十七张图渲染并逐张目视；八篇出入锚点、连续性、全仓8860有效链接、格式/元数据/路径及diff检查通过。"
+        ],
+        "limits": "共享源码树当前不可访问，本次使用已保存的固定版本原文；未运行内核或驱动。术语扫描告警已逐项审查并修补状态、宏、NMI/DMA和UAF入口，既有阶段组合和前章已建立的名称不机械重复。"
       }
     },
     "additional_documents": [
