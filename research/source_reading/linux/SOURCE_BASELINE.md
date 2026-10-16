@@ -1489,3 +1489,26 @@ handle.c的普通事件分派遍历全部action并按位汇总返回值，不在
 manage.c检查共享等约束并按自动使能策略启动，普通路径可能在请求调用返回前进入处理。free路径按dev_id摘除action，必要时关闭最后消费者的线路，等待在途处理并停止相关线程；不替驱动排空独立work/timer。devres封装记录释放动作，不改变首次回调窗口。platform_get_irq返回负错误，不能转无符号后继续登记。
 
 正文提供对象成员与回调表、正常电平流程和退出边界；没有将示意映射号当作本机资源，也没有把机制图当作实际内核运行验证。本轮未执行目标内核编译、真实IRQ、强制线程化或设备卸载实验。
+
+## 1.184\_中断资源归属与GPIO线程登记
+
+2026-10-17 复审[中断注册与接口](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P04_Linux_驱动中的中断注册与接口.md)，复用上一节固定提交对象、manage、devres与platform证据，并核对官方不可变提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 以下文件。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| drivers/of/irq.c | 1fb329c0a55b8c0559b79b77a3f8f0cbc1101e1c |
+| drivers/char/misc.c | f7dd455dd0dd3c7c9956e772b5ab8bd83a67a4a6 |
+| include/linux/gpio/consumer.h | db2dfbae8edbd12059826183b1c0f73c7a58ff40 |
+| drivers/gpio/gpiolib.c | 209871c219d697d05ac12c9a20edeb68ba59c5d8 |
+| include/linux/platform_device.h | 7132623e4658576f0be2a80b493e445e0c9d4de6 |
+| include/linux/irqreturn.h | d426c7ad92bfdeb2c9df104f1c055ee684f84f81 |
+| include/linux/interrupt.h | 457151f9f263d9042625decde2c15822d860b134 |
+| Documentation/driver-api/gpio/consumer.rst | bb3366047fadb51bd9323f51d78cbf237a370d11 |
+
+misc_register创建字符接口设备，不自动赋予真实硬件的of_node或资源所有权。of_irq_get以正数成功、0映射失败和负错误表达不同结果；irq_of_parse_and_map返回无符号数并以0失败，不能丢掉节点引用与映射各自的生命周期。platform_get_irq和gpiod_to_irq提供负错误，保留EPROBE_DEFER。
+
+GPIO输入先取得描述符并设置方向，再映射IRQ；cansleep读取放在线程中，逻辑active-low与物理触发配置分开。ONESHOT保护线程阶段而不保证每边沿独立执行，不能消除共享线路长时间屏蔽代价。禁用/启用有层数，synchronize_irq不停止未来请求，控制器总线回调约束仍适用。平台remove在本版为void。
+
+完整irq_input_demo使用专用GPIO双边沿线程，所有依赖在登记前完成；移除先devm_free_irq同步并摘除记录，再读取最终调用计数，设备核心归还GPIO和内存。无额外work、timer、用户文件或重排路径；增加这些使用者后必须重新设计退出协议。DTS是标明控制器与索引占位符的板级模板，不声称对应实际板型或已通过dtc。
+
+提取正文完整C到GCC与Clang GNU11/O2宿主桩模型，覆盖四个probe失败、提前回调与移除窗口的四种组合、GPIO读取失败和资源逆序/不重复释放；删除同步或推迟上下文初始化两种反例均被拒绝。所有shell块仅作语法检查。桩替换了内核资源管理、IRQ线程与GPIO访问，不证明真实并发、目标Kbuild、模块装卸、设备树构建部署或板级电气行为。
