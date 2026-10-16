@@ -861,6 +861,66 @@
           "五篇连续性无风险，术语候选逐项按前置/私有标识/错误码解释核对；标题/元数据/命名、全仓链接及diff通过"
         ],
         "limits": "未运行目标内核 read/poll/SIGIO、fork映射、DMA或解绑实验；普通 C 模型只检验复制提交状态，不模拟真实用户缺页和并发。大纲与材料README仅同步对应入口，不重复计篇。"
+      },
+      "knowledge/driver_model/character_device/P10_字符设备驱动模板.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留整组发布、临时区写提交及完整窗口模块；初始化采用I0至I4并回指统一生命周期，解释发布前可见路径、失败回滚与使用引用归还的时序。",
+        "date": "2026-10-16",
+        "validation": [
+          "六份正文代码与材料一致；两份模块通过真实ARM头文件语法检查，454个实际头未偏离固定提交；八份固定源码核对",
+          "六张Mermaid完成渲染，修改时序和路线目视检查；systemd v257两份官方文档核对",
+          "连续性长节为完整模块，术语候选按前置和标识核对；标题/元数据/命名、全仓707篇链接及diff检查通过"
+        ],
+        "limits": "没有Kbuild/MODPOST、目标模块装卸、真实缺页、poll或udev运行。window_probe仅通过宿主MinGW语法；stream_probe因宿主缺少poll.h不能完成该检查，未用替身冒充Linux环境。"
+      },
+      "knowledge/driver_model/character_device/P11_构建运行与验证.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留四种设备号和节点组合及完整用户探针；增加实验路线，分开构建、加载、身份核对、创建设备、取证和恢复，每步说明位置、变量前提与观察意义。",
+        "date": "2026-10-16",
+        "validation": [
+          "六份正文代码与材料一致；两份模块通过真实ARM头文件语法检查，454个实际头未偏离固定提交；八份固定源码核对",
+          "六张Mermaid完成渲染，修改时序和路线目视检查；systemd v257两份官方文档核对",
+          "连续性长节为完整模块，术语候选按前置和标识核对；标题/元数据/命名、全仓707篇链接及diff检查通过"
+        ],
+        "limits": "没有Kbuild/MODPOST、目标模块装卸、真实缺页、poll或udev运行。window_probe仅通过宿主MinGW语法；stream_probe因宿主缺少poll.h不能完成该检查，未用替身冒充Linux环境。"
+      },
+      "knowledge/driver_model/character_device/P12_常见故障与排查.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "冷读普通文件误建、进制、日志与阻塞卸载的逐步排查，保留根因解释；补命令位置、udev规则文件编辑与逐步重载触发，区分等待事件完成与实际规则匹配。",
+        "date": "2026-10-16",
+        "validation": [
+          "六份正文代码与材料一致；两份模块通过真实ARM头文件语法检查，454个实际头未偏离固定提交；八份固定源码核对",
+          "六张Mermaid完成渲染，修改时序和路线目视检查；systemd v257两份官方文档核对",
+          "连续性长节为完整模块，术语候选按前置和标识核对；标题/元数据/命名、全仓707篇链接及diff检查通过"
+        ],
+        "limits": "没有Kbuild/MODPOST、目标模块装卸、真实缺页、poll或udev运行。window_probe仅通过宿主MinGW语法；stream_probe因宿主缺少poll.h不能完成该检查，未用替身冒充Linux环境。"
+      },
+      "knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留锁内环形流与完整程序；以R0至R4展开生命周期的等待和生产，解释每次唤醒后重查、poll按需登记、目标编译及双终端真实等待实验。",
+        "date": "2026-10-16",
+        "validation": [
+          "六份正文代码与材料一致；两份模块通过真实ARM头文件语法检查，454个实际头未偏离固定提交；八份固定源码核对",
+          "六张Mermaid完成渲染，修改时序和路线目视检查；systemd v257两份官方文档核对",
+          "连续性长节为完整模块，术语候选按前置和标识核对；标题/元数据/命名、全仓707篇链接及diff检查通过"
+        ],
+        "limits": "没有Kbuild/MODPOST、目标模块装卸、真实缺页、poll或udev运行。window_probe仅通过宿主MinGW语法；stream_probe因宿主缺少poll.h不能完成该检查，未用替身冒充Linux环境。"
+      },
+      "labs/kernel/character_device/materials/README.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "reason": "逐项核对九份材料及正文归属，保留仅组织材料而不复制实验手册的职责；独立冷读版本、执行和检查边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "六份正文代码与材料一致；两份模块通过真实ARM头文件语法检查，454个实际头未偏离固定提交；八份固定源码核对",
+          "六张Mermaid完成渲染，修改时序和路线目视检查；systemd v257两份官方文档核对",
+          "连续性长节为完整模块，术语候选按前置和标识核对；标题/元数据/命名、全仓707篇链接及diff检查通过"
+        ],
+        "limits": "没有Kbuild/MODPOST、目标模块装卸、真实缺页、poll或udev运行。window_probe仅通过宿主MinGW语法；stream_probe因宿主缺少poll.h不能完成该检查，未用替身冒充Linux环境。"
       }
     }
   },
