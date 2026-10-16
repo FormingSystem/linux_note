@@ -6069,9 +6069,9 @@
           "python_blocks": 1,
           "blocks_added_or_changed": 1,
           "previously_reviewed": true,
-          "state": "pending",
-          "decision": null,
-          "reason": null
+          "state": "reviewed",
+          "decision": "replaced_with_c",
+          "reason": "6f6c452将全部交错模型替换为C11并保留36条轨迹与反例，补齐命令和递归状态解释；双编译器正常/错误变体、NDEBUG检查和代码一致性通过。连续性脚本报告单节偏长，人工核对为一个不可拆的完整程序及其同一实验解释，未混入独立机制。SOURCE_BASELINE 1.209记录边界。"
         },
         {
           "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P11_调试_排错与性能分析.md",
