@@ -6,7 +6,7 @@
 #include <linux/slab.h>
 #include <linux/workqueue.h>
 
-enum request_phase { REQUEST_NEW, REQUEST_QUEUED, REQUEST_RUNNING };
+enum request_phase { REQUEST_NEW, REQUEST_QUEUED, REQUEST_TAKEN };
 struct queued_request {
     int result;
     enum request_phase phase;
@@ -85,7 +85,7 @@ static struct queued_request *dequeue_take(struct request_queue *queue)
     request = queue->slot;
     if (request) {
         queue->slot = NULL;
-        request->phase = REQUEST_RUNNING;
+        request->phase = REQUEST_TAKEN;
     }
     mutex_unlock(&queue->lock);
     return request;

@@ -142,14 +142,20 @@ int main(void)
 }
 ```
 
-在材料目录编译运行：
+在具有 C11 编译器的 Linux 宿主上，从仓库根目录编译到临时目录。require_model 始终执行，关闭标准 assert 不会跳过本模型的结果检查：
 
 ```bash
-cc -std=c11 -Wall -Wextra -Werror -O2 reference_ownership.c -o reference_ownership
-./reference_ownership
+cc -std=c11 -Wall -Wextra -Werror -O2 -DNDEBUG \
+    labs/kernel/object_lifetime/materials/reference_ownership.c -o /tmp/reference_ownership
 ```
 
-两次分别输出 `accept=0 released=1`、`accept=1 released=2`。`released` 是两次试验累计的对象外观察量，每次都只回收一个对象；不要在已 free 的对象里读取一个标志来“检查它已经释放”。本模型没有真实线程、原子计数或 Linux 饱和机制，assert 只检查这个受控账本，不证明任意并发程序正确。
+编译成功后运行，失败检查会输出错误并以非零状态退出：
+
+```bash
+/tmp/reference_ownership
+```
+
+两次分别输出 `accept=0 released=1`、`accept=1 released=2`。`released` 是两次试验累计的对象外观察量，每次都只回收一个对象；不要在已 free 的对象里读取一个标志来“检查它已经释放”。本模型没有真实线程、原子计数或 Linux 饱和机制，require_model 只检查这个受控账本，不证明任意并发程序正确。
 
 从 `share` 与 `move` 的区别开始读：share 增加计数，并把地址写入一个原本为空的独立槽；move 只把地址换到新槽并清空旧槽，计数不变。若使用结构赋值复制一个非空 owner，两个槽都会看似有权 drop，实际却只对应一份；模型明确禁止这样复制。
 
@@ -179,7 +185,7 @@ flowchart LR
 
 一个系统也可以把这些动作组合：当前完整程序先 share 得到候选，再把候选 take 给队列，队列又 take 给消费者。整个过程没有矛盾，因为每个接口对哪一份做什么都确定。所谓不能混用，指不能让同一调用的两端对它采用不同解释，而不是禁止系统同时存在多种所有权操作。
 
-### 7.2.3\_borrow\_只借用\_不长期保存
+### 7.2.3\_borrow\_只在约定的保护窗口内保存和使用
 
 最容易证明的借用是一次同步函数调用：`borrow(obj)` 只读 value，调用者在它返回以前保留自己的份额，函数不保存指针，也不 put。回到调用者时，归还责任从未离开 producer 槽。
 
@@ -226,13 +232,13 @@ sequenceDiagram
 
 状态或参数需要提交给消费者时，应在发布以前按协议准备好，或者由接收函数在其保护的状态切换中完成。成功以后再写“已排队”可能同时破坏存活期和字段顺序，不能靠一条内存屏障补回已经交出的责任。
 
-### 7.2.6\_handoff\_后能否访问\_取决于当前路径是否仍持有引用
+### 7.2.6\_handoff\_后能否访问\_先指出仍有效的保护依据
 
 判断时先问“凭哪项仍有效的保护访问”，不要只问“刚才是不是 take”。例如当前程序成功转交的是 candidate，而 producer 仍有自己的独立份额；生产者在归还 producer 以前仍可按字段同步协议使用对象。相反，若直接把 producer 唯一的一份转走，即使局部变量仍存着同一个地址，也不再提供保护。
 
 借用者则靠被证明的借用窗口，而非自己持有引用。窗口可以由同步调用、管理者等待或其他明确机制提供，超过窗口就不能继续用；这与“只要全局计数似乎仍大于零就能访问”完全不同。计数不是查询谁还替你保活的接口。
 
-在完整程序中做一次纸面变化：去掉 share，将 submit 的源槽直接换成 producer，且成功后删掉对 producer 的 drop；拒绝分支仍保留并归还它，接收分支由队列/消费者最终归还。这会少一次增加和减少，但也失去生产者同时观察的那一份。下一节把这些明确的语义接到真实异步接口，重点检查它们的接收、重排和完成规则是否与我们的假设一致。
+在完整程序中做一次纸面变化：去掉 candidate 和 share，将 submit 的源槽直接换成 producer；拒绝分支归还 producer，接收分支只由队列/消费者最终归还。相应删除“分享后为两份”的检查与末尾对 candidate 的检查；若严格编译完整修改后的程序，也删掉已不使用的静态 share 函数。这会少一次增加和减少，但也失去生产者同时观察的那一份。下一节把这些明确的语义接到真实异步接口，重点检查它们的接收、重排和完成规则是否与我们的假设一致。
 
 
 ## 7.3\_典型\_handoff\_场景\_异步路径\_队列和回调
@@ -407,14 +413,26 @@ sequenceDiagram
     S->>R: S5 等待者 put，最终 release
 ```
 
-在准备好且与目标运行内核匹配的可写构建环境中：
+在 Linux 构建主机上准备与目标运行内核匹配的构建树，将其绝对路径赋给 KERNEL_BUILD。从仓库根目录只构建本节模块；交叉构建时另按目标设置 ARCH 与 CROSS_COMPILE：
 
 ```bash
-# KDIR 指向匹配目标内核的构建目录；在仓库根目录运行。
-make -C "$KDIR" M="$PWD/labs/kernel/object_lifetime/materials" modules
-sudo insmod labs/kernel/object_lifetime/materials/note_kref_completion.ko
+kref_completion_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_kref_completion.c "$kref_completion_dir/"
+printf 'obj-m += note_kref_completion.o\n' > "$kref_completion_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_completion_dir" modules
+```
+
+将生成的 note_kref_completion.ko 复制到目标 Linux，在模块所在目录加载；若本机就是匹配目标，可直接进入上述临时目录：
+
+```bash
+sudo insmod ./note_kref_completion.ko
+```
+
+初始化会同步收束示例中的异步活动。加载成功后卸载，再读取日志，分别核对下面的过程结果与最终回收次数：
+
+```bash
 sudo rmmod note_kref_completion
-dmesg | tail -n 12
+sudo dmesg | tail -n 12
 ```
 
 等待上限是一个 jiffy，即内核节拍单位，不能脱离配置把它固定解释成某个毫秒数。可能观察到下面三组结果；早完成和等待中完成在日志上相同：
@@ -427,7 +445,7 @@ dmesg | tail -n 12
 
 卸载日志应为 `release=1`。本例故意在同步收尾以后读 result，这时不再有 worker 写入；它没有把 timeout 当作可并发读取业务字段的许可。无论哪组输出，等待者都保留初始份额到最后；若提前归还又继续访问嵌入的 done/result，就可能越过对象寿命。
 
-本轮 ARM 前端及宿主七组控制检查通过：队列/对象分配失败、拒绝发布、早完成、等待中完成、超时取消和超时后工作完成。宿主完成量、队列、锁/原子和分配是显式替身，未执行目标装卸、实际等待或硬件内存序；上面的命令是目标复现步骤，不是已运行记录。
+历史材料记录了 ARM 前端检查；本轮重新核对完整程序并运行宿主七组控制路径：队列/对象分配失败、拒绝发布、早完成、等待中完成、超时取消和超时后工作完成。宿主完成量、队列、锁/原子和分配是显式替身，未执行目标装卸、实际等待或硬件内存序；上面的命令是目标复现步骤，不是目标已运行记录。
 
 固定[等待与完成量总索引](../../../../research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)进入[完成量模块](../../../../research/source_reading/waiting_notification/navigation/P03_Linux_6.12_completion模块源码概念导读.md#3.2_状态所有权)，再到[等待与令牌消费](../../../../research/source_reading/waiting_notification/source_explanations/kernel/sched/completion.c.md#1.4_do_wait_for_common等待与消费)：timeout 返回路径没有替你取消完成者。状态同步与对象保活必须分别设计。
 
@@ -483,7 +501,7 @@ dmesg | tail -n 12
 | enqueue_ref 成功 | 内部追加并保留一份 | 原份额保留 | 队列一路和调用者一路分别归还 |
 | enqueue_ref 拒绝 | 内部预留已退回 | 原份额保留 | 调用者仍自行处理原份额 |
 
-本例拒绝是槽被占用或请求已经不处于 NEW 状态，返回 `-EBUSY`。每个拒绝发生在实际发布以前，不会出现“返回失败但另一个消费者已经拿走了这一份”的隐藏分支。若某 API 确实允许部分接收或失败仍消费，就必须另写状态和返回契约，不能套用本表。
+本例用 NEW 表示尚未入队的新请求；槽被占用或请求已不处于这个状态时，返回 `-EBUSY`。每个拒绝发生在实际发布以前，不会出现“返回失败但另一个消费者已经拿走了这一份”的隐藏分支。若某 API 确实允许部分接收或失败仍消费，就必须另写状态和返回契约，不能套用本表。
 
 还要把“入队成功”与“以后执行成功”分开。队列已经接管以后，消费者向 workqueue 的交付可能再失败；那时接管的是消费者手里的一份，由消费者按执行接口的失败约定归还，不能回头要求已经离开的生产者处理。
 
@@ -491,7 +509,7 @@ dmesg | tail -n 12
 
 追加式包装器先 get 候选，然后调用接管式底层接口。接管成功，候选已经属于队列；拒绝，包装器只退回自己刚追加的候选。调用者原份额在两种结果下都存在，因此包装器不能失败时顺便多 put 一次。
 
-回滚还包括业务状态。最容易证明的安排是先在队列锁内检查所有条件，再一起改变请求阶段和槽地址；如果检查失败，阶段保持原样。本章完整模块采用这个办法，不在发布前随意写 QUEUED，再在不知道是否已被别人观察时改回 NEW。
+回滚还包括业务状态。最容易证明的安排是先在队列锁内检查所有条件，再一起改变请求阶段和槽地址；如果检查失败，阶段保持原样。本章完整模块采用这个办法，不在发布前随意写“已入队”的 QUEUED 状态，再在不知道是否已被别人观察时改回 NEW。
 
 不要根据惯用写法猜返回值。`queue_work()` 用布尔值表示本次接收，0 是未接收；自有 `enqueue_take()` 则约定 0 成功、负数拒绝。应先把底层返回转换为当前接口自己的结果，再处理归属，避免把成功当失败而退回已交付的一份。
 
@@ -545,7 +563,7 @@ dmesg | tail -n 12
 
 ### 7.5.1\_handoff\_和状态字段的顺序
 
-完整模块采用 NEW、QUEUED、RUNNING 三个请求阶段：创建时写 NEW；入队锁内检查为 NEW 才能同时写 QUEUED 并发布槽；出队锁内清槽、写 RUNNING。每个请求只执行一次，因此 RUNNING 后即便还持有观察者引用，也不允许重新入队。这是本例的单次请求协议，不是 kref 自动限制。
+完整模块采用 REQUEST_NEW、REQUEST_QUEUED、REQUEST_TAKEN 三个请求阶段，依次表示“尚未入队”“在业务槽中”“已被消费者取走”。创建时写 NEW；入队锁内检查为 NEW 才能同时写 QUEUED 并发布槽；出队锁内清槽、写 TAKEN。TAKEN 不表示 worker 已经运行，后续工作投递甚至可能失败。每个请求只执行一次，因此 TAKEN 后即便还持有观察者引用，也不允许重新入队。这是本例的单次请求协议，不是 kref 自动限制。
 
 尚未发布的私有输入可以由创建者准备，已经共享的队列阶段则在指定队列锁下转换。take 成功以后，发送者若只交出了唯一份额，连设置“已提交”这种看似无害的写入也没有存活依据；若还有另一份，仍须遵守阶段字段的同步规则。
 
@@ -586,7 +604,7 @@ dmesg | tail -n 12
 #include <linux/slab.h>
 #include <linux/workqueue.h>
 
-enum request_phase { REQUEST_NEW, REQUEST_QUEUED, REQUEST_RUNNING };
+enum request_phase { REQUEST_NEW, REQUEST_QUEUED, REQUEST_TAKEN };
 struct queued_request {
     int result;
     enum request_phase phase;
@@ -665,7 +683,7 @@ static struct queued_request *dequeue_take(struct request_queue *queue)
     request = queue->slot;
     if (request) {
         queue->slot = NULL;
-        request->phase = REQUEST_RUNNING;
+        request->phase = REQUEST_TAKEN;
     }
     mutex_unlock(&queue->lock);
     return request;
@@ -751,35 +769,49 @@ sequenceDiagram
     participant P as 创建者
     participant Q as 业务槽与锁
     participant C as 消费者
+    participant X as 投递接口与工作队列
     participant W as worker
     P->>Q: S1 成功入队并交出初始份额
     C->>Q: S2 锁内摘除，取得队列份额
-    C->>W: S3 尝试交付
+    C->>X: S3 尝试交付
     alt 成功，worker 可以在提交返回前结束
+        X->>W: 接收工作，允许 worker 执行
         W->>W: 写 result，S4 put，S5 可立即回收
-        W-->>C: 返回接收成功，不再提供对象访问权
+        X-->>C: 返回接收成功，不再提供对象访问权
     else 本次未接收
-        W-->>C: 返回拒绝，没有接管参数的一份
+        X-->>C: 返回拒绝，没有接管参数的一份
         C->>C: S4 put 自己仍持有的一份
     end
-    P->>W: flush 确认执行退出，第一轮结束
+    P->>X: flush 确认执行退出，第一轮结束
 ```
 
 图中把逻辑角色分开画；当前模块由同一个初始化线程依次扮演创建者和业务队列消费者，work 由内核异步调度，不能把这张图当成已经实现多生产者/多消费者队列。
 
-在与目标运行内核匹配且已准备好的可写构建环境中：
+在 Linux 构建主机上准备与目标运行内核匹配的构建树，将其绝对路径赋给 KERNEL_BUILD。从仓库根目录只构建本节模块；交叉构建时另按目标设置 ARCH 与 CROSS_COMPILE：
 
 ```bash
-# KDIR 指向匹配目标内核的构建目录，在仓库根目录执行。
-make -C "$KDIR" M="$PWD/labs/kernel/object_lifetime/materials" modules
-sudo insmod labs/kernel/object_lifetime/materials/note_kref_queue.ko
+kref_queue_dir=$(mktemp -d)
+cp labs/kernel/object_lifetime/materials/note_kref_queue.c "$kref_queue_dir/"
+printf 'obj-m += note_kref_queue.o\n' > "$kref_queue_dir/Makefile"
+make -C "$KERNEL_BUILD" M="$kref_queue_dir" modules
+```
+
+将生成的 note_kref_queue.ko 复制到目标 Linux，在模块所在目录加载；若本机就是匹配目标，可直接进入上述临时目录：
+
+```bash
+sudo insmod ./note_kref_queue.ko
+```
+
+初始化会同步收束示例中的异步活动。加载成功后卸载，再读取日志，分别核对下面的过程结果与最终回收次数：
+
+```bash
 sudo rmmod note_kref_queue
-dmesg | tail -n 12
+sudo dmesg | tail -n 12
 ```
 
 正常情况下共享轮输出 `shared result=42`，卸载输出 `release=2`，表示两轮各清理一次。第一轮不能为了输出 result 而在 flush 后继续使用原 producer 地址：那一份早已交出，工作可能已经释放它。仅等待 work 退出不会重新创造对象引用。
 
-本轮 ARM 前端和宿主十组控制检查通过，包含创建失败、执行拒绝、提前/稍后执行、满槽拒绝、重复入队和已消费状态。宿主调度、锁、分配及原子为明确替身，提前执行由替身在 queue_work 返回以前运行回调来安排；未完成目标构建链接、装卸、实际线程竞争或内存序验证。
+历史材料记录了 ARM 前端检查；本轮核对完整程序并重新运行宿主十组控制路径，包含创建失败、执行拒绝、提前/稍后执行、满槽拒绝、重复入队和已取走状态。宿主调度、锁、分配及原子为明确替身，提前执行由替身在 queue_work 返回以前运行回调来安排；未完成目标构建链接、装卸、实际线程竞争或内存序验证。
 
 ### 7.6.2\_同一个场景也可以设计成共享引用模型
 
