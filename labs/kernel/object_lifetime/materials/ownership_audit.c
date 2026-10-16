@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-#include <assert.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -8,6 +8,15 @@ enum event_kind {
     CREATE, SHARE_WORK, TRANSFER_WORK, DROP_CREATOR, DROP_WORK, USE_WORK
 };
 enum verdict { BALANCED, INVALID_OWNER, LEFTOVER, INCOMPLETE, STILL_OPEN };
+
+/* 即使定义 NDEBUG，也要检查实验结论是否符合预期。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("责任账本结果与预期不符\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* 离线责任账本，不实现内核计数，也不实际释放或访问悬空内存。 */
 static enum verdict audit(const enum event_kind *events, size_t count,
@@ -95,7 +104,7 @@ int main(void)
     for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); ++i) {
         enum verdict result = audit(cases[i].events, cases[i].count,
                                     cases[i].complete, cases[i].closed);
-        assert(result == cases[i].expected);
+        require_model(result == cases[i].expected);
         printf("%s: %s\n", cases[i].name, names[result]);
     }
     return 0;
