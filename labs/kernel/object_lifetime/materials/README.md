@@ -304,4 +304,4 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 
 ## 1.56\_绑定退出与旧会话
 
-[集成教材](../../../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md#1.9_完整停机状态机)完整展示[binding_lifetime.c](binding_lifetime.c)。六条C11轨迹覆盖创建前失败、无旧文件、旧文件晚关闭、单/多活动和过期状态快照；模型真实分配ctx，逻辑模拟设备外壳，严格重编运行通过。真实锁、通知、devres记录建立失败、VMA与目标驱动未由该模型实现。
+[集成教材](../../../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md#1.9_用六条轨迹串起组合退出)完整展示[binding_lifetime.c](binding_lifetime.c)。六条C11轨迹覆盖创建前失败、无旧文件、旧文件晚关闭、单/多活动和过期状态快照；模型真实分配ctx，逻辑模拟设备外壳，严格重编运行通过。真实锁、通知、devres记录建立失败、VMA与目标驱动未由该模型实现。

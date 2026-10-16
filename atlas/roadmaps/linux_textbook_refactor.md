@@ -407,7 +407,7 @@ B04cl完成[用户态设备策略](../../knowledge/system_software/P01_设备事
 
 B04cm完成[跨层案例](../../knowledge/linux/object_lifetime/devres/P03_驱动资源与用户态访问的协作.md#3.4_用同一个只读设备追踪发布和打开)与接口查询收束，并完整拆出[P02退出](../../knowledge/linux/object_lifetime/devres/P02_托管资源与使用者退出.md#2.3_让中断退出早于时钟和内存结束)和[系统软件策略](../../knowledge/system_software/P01_设备事件与用户态策略.md#1.1_定义与分层位置)；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.154_B04cm跨层案例与正文职责拆分)保存守恒、证据和目标未运行边界。清单680项：279 validated、383 pending、18 supporting_pending；旧讨论各单元作者审查完成，继续生命周期集成。
 
-B04cn完成[生命周期集成](../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md#1.9_完整停机状态机)与[阅读大纲](../../knowledge/linux/object_lifetime/integration/大纲.md#1.1_从单项机制到组合退出)，六条C组合轨迹区分存储、业务接纳、资源与桥接；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.155_B04cn生命周期组合退出)保留真实同步及目标未执行边界。清单680项：281 validated、381 pending、18 supporting_pending；继续按清单检查B04余项及B05先修，不将全仓标为完成。
+B04cn完成[生命周期集成](../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md#1.9_用六条轨迹串起组合退出)与[阅读大纲](../../knowledge/linux/object_lifetime/integration/大纲.md#1.1_从单项机制到组合退出)，六条C组合轨迹区分存储、业务接纳、资源与桥接；[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.155_B04cn生命周期组合退出)保留真实同步及目标未执行边界。清单680项：281 validated、381 pending、18 supporting_pending；继续按清单检查B04余项及B05先修，不将全仓标为完成。
 
 B05a新增[执行路径先修](../../knowledge/linux/synchronization_and_asynchrony/P01_同一对象的多条执行路径.md#1.1_先把一次加一拆开)，完成总纲的因果阅读地图；纠正锁资料四处当前配置断言。清单681项：283 validated、380 pending、18 supporting_pending；新增材料不代表原125篇机制正文已经完成，下一项内存顺序入门。验证与未执行项见[工作记录](../../governance/migration/repository_textbook_refactor.md#1.4.156_B05a执行路径与上下文先修)。
 
