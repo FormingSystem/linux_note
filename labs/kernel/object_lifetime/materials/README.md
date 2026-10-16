@@ -272,7 +272,7 @@ ARM前端通过，372份头中360份非生成源码相对固定提交无差异�
 
 ## 1.48\_多归还与失效窗口
 
-[P40](../../../../knowledge/linux/object_lifetime/kref/P40_多归还与失效窗口实验.md#40.1_计数为正仍可能归还了别人的份额)完整展示[misuse_windows.c](misuse_windows.c)，C11五场景已执行；shares是模型额外拥有表，alive=false只标记逻辑退休，不执行真实free。另三条固定引用对照与六组既有表模块宿主检查通过，无目标UAF或refcount报告。该程序不注册到内核Makefile。
+[P40](../../../../knowledge/linux/object_lifetime/kref/P40_多归还与失效窗口实验.md#40.1_计数为正仍可能归还了别人的份额)完整展示[misuse_windows.c](misuse_windows.c)，归还动作独立执行，结果使用始终生效的检查；本轮 GCC/Clang 普通/NDEBUG 四种构建各通过五场景，两条负例按预期退出。shares 是模型额外拥有表，alive=false 只标记逻辑退休，不执行真实 free。三条固定引用对照重新通过，六组表协议复用本轮 P09 结果；无目标 UAF 或 refcount 报告。该程序不注册到内核 Makefile。
 
 ## 1.49\_实验收束与真实材料选择
 
