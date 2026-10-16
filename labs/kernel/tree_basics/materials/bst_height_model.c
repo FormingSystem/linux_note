@@ -1,3 +1,6 @@
+#ifdef NDEBUG
+#error "bst_height_model requires assertions"
+#endif
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
