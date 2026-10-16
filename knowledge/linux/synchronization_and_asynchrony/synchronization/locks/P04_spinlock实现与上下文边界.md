@@ -13,19 +13,20 @@ topics: [synchronization, locking, spinlock]
 
 本章先讨论非 PREEMPT_RT 的 `spinlock_t` 与严格自旋的 raw 分支。其 S5 不把任务交给调度器，而是让竞争 CPU 观察锁状态；架构也可能使用事件等待指令。因此它省掉了任务睡眠和唤醒切换，却仍占住这条执行路径，并带来共享状态通信和不可抢占延迟。只有临界区短、持锁者能很快继续执行时，这个交换才成立。
 
-上一章已经把“等待者能够继续”和“取得锁”分开。现在让 CPU0 修改第一章的采样对象，CPU1、CPU2 同时要求读取：它们究竟读哪个地址，释放者又怎样让下一位继续？本章先从给等待者编号的办法推导，再用固定 ARM SMP 实现兑现。这里的 SMP 是支持多 CPU 并行的构建分支；当前用于取证的工作配置并未启用它，源码存在不等于该分支已经运行。
+上一章已经把“等待者能够继续”和“取得锁”分开。现在让 CPU0 修改第一章的采样对象，CPU1、CPU2 同时要求读取：它们究竟读哪个地址，释放者又怎样让下一位继续？本章先从给等待者编号的办法推导，再用固定提交`arch/arm/`下的32位ARM SMP实现兑现，不外推到ARM64。这里的SMP是支持多CPU并行的构建分支；仓库既有配置记录并未启用它，本次也没有重新核验可用工作树，源码存在不等于该分支已经运行。
 
 ## 4.2\_Linux实现是多层组合
 
 ```mermaid
 flowchart TD
-    A["spin_lock()"] --> B["spinlock_t 包装层"]
-    B --> C["raw_spinlock_t 与 lockdep/debug"]
-    C --> D["_raw_spin_lock() 通用入口"]
-    D --> E["arch_spin_lock() 架构实现"]
-    E --> F["原子读改写与缓存一致性"]
-    A --> G["_irqsave/_bh 变体"]
-    G --> H["当前 CPU 的 IRQ/softirq 状态"]
+    A["调用者按共享现场选择接口"] -->|仅需普通获取| B["spin_lock()"]
+    A -->|还需本地重入约束| G["spin_lock_irqsave() 或 spin_lock_bh()"]
+    B -->|非RT包装转入对应raw入口| C["同一raw_spinlock_t锁对象"]
+    G -->|非RT包装转入对应raw入口| C
+    C -->|通用获取层维护| H["当前CPU抢占与必要IRQ/softirq约束"]
+    C -->|记录获取尝试| L["Lockdep与调试状态"]
+    C -->|do_raw_spin_lock调用| E["arch_spin_lock() 架构实现"]
+    E -->|原子更新并观察| F["共享锁字与缓存一致性"]
 ```
 
 Linux 6.12.20 的非 RT 分支让普通 `spin_lock()` 进入 raw 包装，最终由体系结构实现决定锁字怎样排队和原子更新。此分支的 `_irqsave` 和 `_bh` 不是另一把锁，而是先改变当前 CPU 的可重入上下文，再操作同一个跨 CPU 锁对象。以下本地 IRQ 时序也采用此边界；RT 普通锁的 `_irqsave` 不关闭硬中断，不能沿用该时序。
@@ -48,7 +49,7 @@ Linux 6.12.20 的非 RT 分支让普通 `spin_lock()` 进入 raw 包装，最终
 
 需要两个共享值：`next` 表示下一个待发号码，`owner` 表示目前允许进入的号码。等待者保留自己的票号；它不是指向任务的 owner 指针，也没有必要为每个任务建立睡眠等待节点。初始两值相等表示无人占用。CPU0 领取 0 后，`next=1,owner=0`；CPU1 领取 1 后，`next=2`，但只有 0 号可进入。CPU0 完成后把 `owner` 加一，CPU1 才取得资格。
 
-在固定版本的 ARM SMP 实现中，这两个值就是 `arch_spinlock_t.tickets` 内的两个 16 位字段，和 32 位 `slock` 联合存储。普通非RT锁通过内嵌 raw 对象最终访问这个地址。领取号码用 `ldrex/strex` 独占访问指令对整字尝试原子更新 `next`；失败重试直到成功，旧值中的 `next` 成为本次私有票号。因此“一次领号”指一次成功修改，不保证只执行一次指令尝试。
+在固定版本的 ARM SMP 实现中，这两个值就是 `arch_spinlock_t.tickets` 内的两个 16 位字段，和 32 位 `slock` 联合存储。普通非RT锁通过内嵌 raw 对象最终访问这个地址。领取号码用`ldrex/strex`独占访问指令对整字尝试原子更新`next`：前者读取并建立独占访问监视，后者尝试条件写入并返回成功或失败状态；失败就重新读取和重试，成功时旧值中的`next`成为本次私有票号。因此“一次领号”指一次成功修改，不保证只执行一次指令尝试，也不能把两条普通C读写当成等价替代。
 
 等待环节反复比较私有票号和共享 `owner`，不反复领取新号；释放者只推进 `owner`。字段排列还受大小端配置影响，不应把某个字节偏移写成跨架构接口。票号是有限宽度的模计数，不能把它当作永久任务身份；这里的三个参与者不讨论票号空间耗尽。
 
@@ -90,12 +91,12 @@ sequenceDiagram
     participant L as 全局锁字
     participant C as CPU1竞争者
 
-    P->>P: 保存并关闭本地IRQ
-    P->>L: spin_lock_irqsave取得锁
+    P->>P: irqsave调用内：保存并关闭本地IRQ
+    P->>L: 同一次调用继续取得锁
     C->>L: 竞争并在远端CPU自旋
     Note over P,I: 本地IRQ不能在持锁区重入
-    P->>L: spin_unlock释放锁
-    P->>P: 恢复进入前IRQ状态
+    P->>L: irqrestore调用内：先释放锁
+    P->>P: 同一次调用恢复进入前IRQ状态
     L-->>C: 观察可用并取得锁
 ```
 
@@ -151,7 +152,17 @@ int main(void)
 }
 ```
 
-用 `cc -std=c11 -Wall -Wextra -Werror -O2 ticket_model.c -o ticket_model` 编译，再执行生成的程序，应输出 `after A: B=1 C=0` 和 `finished: owner=3 next=3`。预测练习：若 A 释放后 B 迟迟不能执行，C 能否继续？不能，公平的票号顺序也引入了对下一位进展的依赖。若只检查“收到了事件”就进入，B、C会同时进入，破坏互斥。模型证明的是这些状态规则，不能测量真实锁延迟或证明内存屏障充分。
+在有普通C11编译器的Linux终端中，进入刚保存`ticket_model.c`的目录执行：
+
+```bash
+# 当前目录已有上面的ticket_model.c；只生成并执行普通用户程序。
+cc -std=c11 -Wall -Wextra -Werror -O2 ticket_model.c -o ticket_model
+./ticket_model
+```
+
+第一条命令选择C11并把编译警告视为错误，产物是当前目录的`ticket_model`；第二条运行产物，不加载模块。`take_ticket()`、`can_enter()`和模型结构体都是本例自定名称。程序应输出`after A: B=1 C=0`和`finished: owner=3 next=3`，其中1/0表示资格条件真/假。实验结束可以删除生成的可执行文件。
+
+预测练习：若 A 释放后 B 迟迟不能执行，C 能否继续？不能，公平的票号顺序也引入了对下一位进展的依赖。若只检查“收到了事件”就进入，B、C会同时进入，破坏互斥。模型证明的是这些状态规则，不能测量真实锁延迟或证明内存屏障充分。
 
 ## 4.5\_锁竞争如何形成硬件成本
 
@@ -173,7 +184,7 @@ int main(void)
 
 [SMP、UP 与 `CONFIG_SMP` 的公共定义](../../../../foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md#1.1.3_Linux中的CONFIG_SMP表示构建能力)是本节的构建前提。`CONFIG_SMP=n` 时没有远端 CPU 竞争，部分锁操作会退化为抢占或上下文约束；`_irqsave` 仍需保存本地 IRQ 状态。`CONFIG_PREEMPT_RT=y` 时，普通 `spinlock_t` 的实现语义会改变，严格原子上下文职责由 `raw_spinlock_t` 保留。不能从某个配置的内联展开外推所有内核。
 
-本轮标准工作树配置为`CONFIG_SMP`未启用、`CONFIG_PREEMPT_NONE=y`，不能用它宣称SMP或PREEMPT_RT路径已运行。本章的SMP实现依据固定提交中的条件分支阅读，配置存在与实际执行也须分别举证。实时分支在[PREEMPT_RT、生命周期与选型](P07_PREEMPT_RT生命周期与选型.md#7.2_PREEMPT_RT改变了哪段因果链)统一比较。
+仓库既有配置记录为`CONFIG_SMP`未启用、`CONFIG_PREEMPT_NONE=y`；本次标准工作树不可访问，没有重新确认当前配置，更不能宣称SMP或PREEMPT_RT路径已运行。本章的SMP实现依据固定提交中的条件分支阅读，配置选择与实际执行也须分别举证。实时分支在[PREEMPT_RT、生命周期与选型](P07_PREEMPT_RT生命周期与选型.md#7.2_PREEMPT_RT改变了哪段因果链)统一比较。
 
 ## 4.7\_源码入口与证据边界
 
