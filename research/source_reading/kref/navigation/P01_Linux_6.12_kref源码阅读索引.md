@@ -80,7 +80,7 @@ source_version: "6.12.20"
 | 取消或拒绝后谁归还 | [外层责任模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [工作票据推演](../../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#%287%29_所有权表要补充失败路径和取消路径)，普通 put 只消耗调用者负责的一份 |
 | 回调里的告警能证明什么 | [外层状态模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [类型清理前提](../../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#3.7.1_release_阶段_对象销毁点)，引用原语不维护节点状态 |
 | 初始份额与业务许可由谁定义 | [状态模块边界](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [init 实现](../source_explanations/include/linux/kref.h.md#1.2_建立初始引用)，与[P03 模型](../../../../knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md#3.3.1_用C模型观察仍持有却被拒绝)分层阅读 |
-| 查找与撤下谁先执行会怎样 | [拥有型窗口应用](../../../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.3.1_正确模型一_mutex/list_lookup_+_kref_get%28%29) → [容器与引用协作模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) |
+| 查找与撤下谁先执行会怎样 | [拥有型窗口应用](../../../../knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero%28%29.md#8.3.1_正确模型一_在拥有型槽内取得普通引用) → [容器与引用协作模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) |
 | 槽已撤下为何读者仍可用 | [容器状态模块](P02_普通引用与归零回调导读.md#2.8_容器入口与引用状态协作) → [普通 get](../source_explanations/include/linux/kref.h.md#1.3_为独立使用追加引用) 与 [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | 最后清理函数由谁选择 | [归零模块](P02_普通引用与归零回调导读.md#2.4_正常退出与异常收敛) → [put 的当次参数](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
 | release中的断言为何不能替代关闭与等待 | [契约与退出](P02_普通引用与归零回调导读.md#2.28_契约与退出不能由断言代替) → [最后归还](../source_explanations/include/linux/kref.h.md#1.4_最后归还调用清理) |
