@@ -1,5 +1,10 @@
+#if defined(NDEBUG)
+#error "This example requires assertions"
+#endif
+
 #include <cassert>
 #include <iostream>
+#include <initializer_list>
 
 /* 只统计从当前局部入口到空边界的黑节点数，不执行指针旋转。 */
 struct height_result {
