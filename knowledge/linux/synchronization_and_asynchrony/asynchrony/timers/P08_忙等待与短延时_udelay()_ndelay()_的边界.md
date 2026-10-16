@@ -10,803 +10,436 @@ domains:
 
 # 第8章\_忙等待与短延时\_udelay()\_ndelay()\_的边界
 
-## 8.1\_忙等待与短延时\_udelay()\_/\_ndelay()\_的边界
+上一章让等待任务离开 CPU，并用条件或截止时间决定何时继续。现在遇到另一个约束：驱动处于不能睡眠的路径，但设备协议要求两次操作之间留出一个很短的间隔。此时不能直接调用 `usleep_range()`；不过，“不能睡”也不意味着可以无限占着 CPU 等设备。
 
-### 8.1.1\_章节导读(编辑部体例\_阅读提示)
+本章从这个短间隔出发，区分 **等待时间流逝** 与 **反复读取状态**，再讨论短轮询失败后怎样把事务安全交给线程。沿用前文的 NXP Linux 6.12.20 固定提交；ARM32 实现细节只用于说明这种架构上的选择，不外推为所有处理器的实现。源码身份及本次核对文件见[源码基线](../../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.177_忙等待实现与轮询超时边界)。
 
-忙等待（busy-wait）是驱动里最容易“下手快、后患长”的手段：它以**占用 CPU**换取**短时延的相对确定性**。正确使用的关键，不在“会不会写 `udelay()`/`ndelay()`”，而在**知道它该出现在哪里、不该出现在哪里**。本章以“**能睡就不忙**、**不可睡只短忙**”为底线，系统展开：
+## 8.1\_设备需要短间隔为什么不能直接睡眠
 
-- 忙等待的**实现机理**与**参数上限**（开发者应知的边界条件）；
-- 为什么不能用忙等待“顶住”长时间窗口（系统副作用清单与替代方案）；
-- 与寄存器轮询/总线就绪检测的**组合写法**（`*_poll_timeout*()` 宏族的两种上下文路径）；
-- 在 **SMP / PREEMPT / PREEMPT_RT** 配置下的行为变化与风险收敛策略。
-
-读完本章，你应能：
-
-1. 为每一处短延时选择**最合适**的接口与上下文路径；
-2. 统一将“等待+超时”改造为**策略化**与**可回退**的模板；
-3. 对 RT(real-time) 环境给出**可预期**的延迟与证明材料（trace、回归用例）。
-
-------
-
-### 8.1.2\_忙等待的实现思路与适用范围
-
-#### (1)\_定义与边界陈述
-
-- **忙等待（busy-wait）**：在**当前 CPU 上自旋**至条件满足；不触发调度、不进入睡眠。
-- **常用接口**：
-  - `ndelay(nsec)`：纳秒级目标保持；
-  - `udelay(usec)`：微秒级目标保持；
-  - `cpu_relax()`：自旋中的提示性指令（体系结构相关），降低功耗/改善 SMT 资源占用；
-  - `readl_poll_timeout*()` / `readl_poll_timeout_atomic()`：带**条件**与**超时**的标准轮询封装。
-- **经验区间（建议）**：
-  - `ndelay()`：≤~500 ns 目标区间（非硬实时保证）；
-  - `udelay()`：**1–50 µs 推荐上限**，**≤100 µs 极限**；
-  - 若需求 ≥100 µs：考虑 `usleep_range()`（能睡路径）；若 ≥1 ms：考虑 `schedule_timeout*()`、`delayed_work`、或 `hrtimer`（不能睡但需高精度唤醒）。
-
-> 结论先行：**`udelay()` 不是“可用即用”的通用延时**；它是“**短、急、不可睡**”语境下的**权衡**。
-
-#### (2)\_内核实现要点(供开发者核对)
-
-- **循环校准**：启动期计算 `loops_per_jiffy`，`udelay()` 以此推导循环次数；在不同 **HZ**、不同 **cpufreq** 动态下，最终抖动会受限于平台。
-- **高精度不等于硬实时**：`ndelay()`/`udelay()`的延时是**目标**，非严格 SLA；中断、抢占、频率转换、温控限频都会造成偏差。
-- **编译/体系结构行为**：
-  - 自旋体内建议显式 `cpu_relax()`；
-  - 不要在忙循环中插入可能带来屏障语义变化的重负载操作（例如误用 `readl()` 作为“延时”，会造成总线侧效应）。
-- **功耗与温控耦合**：较长忙等将触发 DVFS/温控策略，反过来破坏“短延时稳定性”，这是**正反馈式变坏**的常见根因。
-
-#### (3)\_何时必须忙
-
-- **硬中断/不可睡**路径的极短等待窗口（如读取确认位后需保持若干微秒再清除）；
-- **位打拍（bit-banging）\**中无法外包给定时外设、且可接受一定抖动的\**亚微秒/微秒**保持；
-- **不可拆分的总线时序片段**（例如某些复位序列的紧邻保持），但应**证明**不可拆分，且**给出替代论证**（见 8.2.2）。
-
-------
+设想驱动刚写下启动命令，设备协议要求等待一个很短的稳定期再读取状态。如果这段代码在普通进程上下文、没有持有禁止睡眠的锁，上一章的睡眠方法仍然适用。若它必须处在硬中断或一个确实不可拆开的原子操作片段中，调度出去会违反上下文约束。这才出现 **忙等待（busy-wait）**：当前执行路径自己消耗指令或反复检查计时条件，达到目标后继续。
 
-### 8.1.3\_为何不能用\_busy-wait\_模拟长超时
-
-#### (1)\_系统副作用总表
+`udelay(n)` 用微秒表达等待目标，`ndelay(n)` 用纳秒表达目标；`mdelay(n)` 把较长的毫秒请求拆成适当的微秒忙等。它们自身不通过睡眠主动让出 CPU，但 **不会自动关闭中断或抢占**。如果调用环境允许，中断和更高优先级任务仍可能打断当前路径。函数不睡眠与函数从进入到返回绝不被打断，是两件事。
 
-| 副作用         | 触发条件                         | 典型表现                   | 对策                                                         |
-| -------------- | -------------------------------- | -------------------------- | ------------------------------------------------------------ |
-| 100% 占核      | `udelay()` >= 数百微秒或循环多次 | 可运行队列堆积、交互卡顿   | 改用可睡等待（`usleep_range()`/`*_poll_timeout()` 非 atomic） |
-| 可预期性下降   | PREEMPT/RT 环境                  | 高优先级线程 deadline miss | 缩短忙等；将等待转交工作队列                                 |
-| 频率/温控干扰  | 长忙等导致高功耗                 | CPU 降频后延时更不准       | 避免长忙等，使用事件/定时器                                  |
-| 中断延迟拉长   | IRQ 中重复忙等                   | 其他中断响应变慢           | 在 IRQ 里仅做极短阶段，立即下放                              |
-| 软件维护成本高 | 手写 while+时间判断              | 漏超时/重复逻辑            | 统一用 `*_poll_timeout*()` 宏族                              |
-
-> **编辑部提示**：任何“≥100 µs 且无不可分割时序理由”的忙等，均视为**需要重构**。
-
-#### (2)\_正确替代路径(按时间尺度与上下文)
+这解释了忙等待的价值，也解释了它的边界：很短的间隔中，建立定时器、切换任务再恢复的成本可能比直接等待还大；间隔变长后，这些忙等指令既没有处理设备数据，也没有让其他可运行任务获得这段执行时间。真正应比较的是具体路径的时间预算与调度成本，不能从 `udelay()` 的名字推出“任何小于 100 µs 的等待都安全”。
 
-1. **10–200 µs，且可睡**：
-   - 使用 `usleep_range(min, max)`。
-   - 选择窗口建议 `min=需求下界，max=min+10%~20%`，给调度器安排空间与省电收益。
-2. **≥1 ms，或需要周期性**：
-   - 使用 `schedule_timeout_*()` 或 `delayed_work`；如需更紧致周期抖动，可用 `hrtimer` 触发、再下放到工作队列处理。
-3. **等待“条件成立”而非“纯时间流逝”**：
-   - 使用 `readl_poll_timeout()`（能睡）/`readl_poll_timeout_atomic()`（不可睡），并**显式**给出 `delay_us` 和 `timeout_us`。
-4. **严格时序（纳秒级）**：
-   - 迁移至**硬件定时外设**（PWM、定时捕获、序列引擎、DMA 带等待槽位等），不要期待 `ndelay()` 提供硬实时保证。
-
-#### (3)\_从误用到重构\_两段式改写范式
+还要先问设备需要哪一种等待。用 READY 表示设备报告的“已经就绪”状态：若手册要求“启动后至少保持一段时间”，提前读到 READY 也未必能省掉稳定期；若要求“READY 一出现即可继续”，固定睡满一段时间又会错过提前完成的机会。后者需要本章稍后介绍的条件轮询。手册若同时规定最短保持和最长脉宽，则还要核对软件能否同时满足两端；单个延时函数没有包办这个保证。
 
-**误用（示意）**：
-
-```c
-/* 反例：IRQ 内忙等 1ms，系统退化明显 */
-static irqreturn_t bad_irq(int irq, void *d)
-{
-    /* ... */
-    udelay(1000);  /* 不可取 */
-    /* ... */
-    return IRQ_HANDLED;
-}
-```
+## 8.2\_纳秒参数为什么不等于纳秒精度
 
-**改写（建议）**：
+先看 `udelay()` 在哪里消耗时间。固定版本 ARM32 的 `arm_delay_ops` 保存三个延时操作入口，启动时默认连接到循环实现；合适的硬件计时器注册后，可以换成读取计数器的实现。因此，同一个调用名背后并不只有“按 CPU 主频数循环”这一种机制。
 
-```c
-/* 第 1 段：IRQ 内仅做极短确认（≤50~100us），失败则下放 */
-static irqreturn_t good_irq(int irq, void *data)
-{
-    struct my *m = data;
-    u32 v;
+| ARM32 实现 | 等待期间实际做什么 | 换算依据与限制 |
+| --- | --- | --- |
+| 默认循环 | 递减循环计数，直到结束 | 用 `loops_per_jiffy`、`HZ` 与请求微秒数估计次数；校准、缓存行为和频率变化可能影响时间 |
+| 注册后的计时器实现 | 反复读计数器，比较相对起点的增量 | 用计时器频率换算目标 tick；保存独立的 `ticks_per_jiffy`，避免直接跟随 CPU 调频修改循环校准值 |
 
-    if (readl_poll_timeout_atomic(m->base + STATUS, v, v & READY, 1, 50)) {
-        /* 未就绪：下放至工作队列（可睡） */
-        schedule_work(&m->wq);
-        return IRQ_HANDLED;
-    }
-    /* 快速路径：READY 已就绪，执行最小处理 */
-    /* ... */
-    return IRQ_HANDLED;
-}
+第二行依旧是忙等，因为 CPU 仍在循环读取计数器，没有转入睡眠。它改变的是计时依据，不是等待期间的执行者。是否真的选中了这条路径，要看目标启动信息和注册过程，不能凭板子采用 ARM 核就断言。
 
-/* 第 2 段：可睡上下文内进行最长 5ms 的等待与恢复 */
-static void my_work(struct work_struct *w)
-{
-    struct my *m = container_of(w, struct my, wq);
-    u32 v;
+此 ARM32 头文件定义 `MAX_UDELAY_MS=2`，常量 `udelay()` 参数大于 2000 µs 会走向故意未实现的 `__bad_udelay()`；相关换算按源码注明的 `HZ <= 1000` 边界设计。**这是实现的参数范围，不是允许驱动在关中断区忙等 2 ms 的性能许可。** 运行期变量不经过同样的常量检查，驱动仍要在乘法和调用以前检查范围。`mdelay()` 的拆分能避开一部分大参数换算问题，却不能消除毫秒忙等的占用成本。
 
-    if (readl_poll_timeout(m->base + STATUS, v, v & READY, 20, 5000)) {
-        dev_warn(m->dev, "hw not ready in 5ms, reset\n");
-        my_reset(m);
-    }
-    /* ... 后续处理 ... */
-}
-```
+在这套 ARM32 头文件没有覆盖 `ndelay()` 的情况下，通用实现把纳秒数向上取整为微秒，再调用 `udelay()`。例如 `ndelay(50)` 会转成 1 µs 的请求；这不是一次 50 ns 的精确保持。极端大的输入还要考虑取整表达式的整数范围，不能把无符号类型的整个范围当作可用延时。
 
-#### (4)\_参数选型与可证性(审稿用校核点)
+`cpu_relax()` 也不能当作另一种纳秒延时。它是体系结构提供的循环辅助操作：本版本 ARM32 常见分支只是编译器屏障，ARMv6 或特定勘误分支另有内存屏障和空指令。其他架构可能提供不同的处理器提示；不能统一宣称它会休眠、节能、让出调度权，或替代共享数据所需的 acquire/release 同步。
 
-- **是否给出**明确的 `delay_us` 与 `timeout_us`（而非裸 `while`）？
-- **是否区分**能睡与不可睡上下文，并采用对应宏族（非 `_atomic` vs `_atomic`）？
-- **是否提供**失败路径的**统一返回码**（普遍采用 `-ETIMEDOUT`）与**恢复动作**（复位/重试/上报）？
-- **是否说明**在 **PREEMPT_RT** 与**低频态**下的回归测试结果（8.9 节将给出建议用例）？
+通用 `delay.h` 明确提醒忙等可能提前返回，原因包括循环校准偏低、缓存和 CPU 频率变化；中断或抢占又可能把返回拖晚。因此，有严格电气时序上下界的位操作不能仅凭这些 API 的单位通过验收。需要稳定波形时，应先考察脉宽调制（Pulse Width Modulation，PWM）、硬件定时器或专门的序列引擎；直接内存访问（Direct Memory Access，DMA）只有在控制器确实提供相应触发和定时能力时才构成替代方案。
 
-------
+## 8.3\_同一段忙等会阻塞谁
 
-#### (5)\_实操速查表(本章前半建议随手翻)
+假设设备需要 1 ms 才能完成。驱动每次 `udelay(10)` 后读一次状态，连续做了许多次。每次调用看起来很短，但整个事务仍可能消耗接近毫秒量级的 CPU 执行时间，并重复访问总线；把大延时切成小片段不会自动降低总成本。
 
-| 目标            | 上下文    | 优先手段                                           | 典型参数（起步）               | 备注                        |
-| --------------- | --------- | -------------------------------------------------- | ------------------------------ | --------------------------- |
-| 保持 100–300 ns | 不可睡    | `ndelay()`                                         | 100–300                        | 抖动不可避免，谨慎评审      |
-| 保持 1–50 µs    | 不可睡    | `udelay()`                                         | 1–50                           | **≤100 µs 上限**            |
-| 轮询就绪 ≤5 ms  | 可睡      | `readl_poll_timeout()`                             | delay=10–50 µs, timeout=1–5 ms | 成功即返、统一 `-ETIMEDOUT` |
-| 10–200 µs 延时  | 可睡      | `usleep_range()`                                   | min=需求值, max=+10%~20%       | 省电与可预期性更优          |
-| ≥1 ms 延时/周期 | 可睡/分层 | `delayed_work` / `schedule_timeout*()` / `hrtimer` | 依据场景                       | hrtimer 回调中不可睡        |
+这段成本影响谁，取决于代码周围的约束。普通可抢占任务的忙循环可以被更高优先级任务抢走 CPU；如果当前关闭了中断，则本地中断处理也要等它恢复；如果持有共享锁，其他 CPU 即使有空闲执行能力，也可能在等待这把锁。多处理器系统（SMP）增加了可用执行者，没有消除锁持有者造成的等待。
 
-------
+| 所在路径 | 必须辨认的限制 | 选择的依据 |
+| --- | --- | --- |
+| 普通任务、未持有禁止睡眠的锁 | 能睡，但非常短的等待可能不值得调度 | 比较设备最短间隔、容许延后与实测调度成本 |
+| 硬中断、关闭中断、持有原始自旋锁等路径 | 不能睡；占用可能阻挡本地事件或其他锁使用者 | 检查是否真的需要等待，能否退出临界区或转移事务 |
+| 线程化 IRQ | 线程本身可调度，具体操作仍受所持锁等条件约束 | 按实际执行上下文选接口，不按函数名里有 IRQ 就选 atomic |
+| 实时抢占配置 PREEMPT_RT | 部分中断和锁的执行语义变化，原始锁与关中断区仍有约束 | 分别测量线程优先级、不可抢占区与设备响应；不能套一个固定微秒阈值 |
 
-### 8.1.4\_最小可粘贴模板(可直接替换魔数)
-
-**可睡轮询（推荐默认）**：
+忙等待可能增加功耗和温度，但是否触发降频、是否进一步影响该延时实现，要按平台和计时源核对。把抢占造成的时间抖动称为“亚稳态”也不合适：这里描述的是软件被延后执行，不是触发器采样电气信号的问题。
 
-```c
-#include <linux/iopoll.h>
+本版本 `timers-howto.rst` 用约 10 µs 附近讨论睡眠建立成本；这些是选择的起点，不是所有平台共用的精度保证。若只有时间目标且上下文能睡，可回到上一章选择 `usleep_range()` 等接口；若等待的是设备状态，则还需要决定怎样读取、何时停止。
 
-int wait_ready_sleepable(void __iomem *base, u32 mask,
-                         u32 delay_us, u32 timeout_us)
-{
-    u32 v;
-    return readl_poll_timeout(base, v, (v & mask), delay_us, timeout_us);
-}
-```
+## 8.4\_一次读取与两种超时怎样组成轮询
 
-**不可睡极短窗口**：
+设设备提供一个可重复读取的状态值。驱动把每次读取结果保存在局部变量 `val`，用条件表达式判断目标位是否满足；不满足才考虑等待下一次。这就是 `include/linux/iopoll.h` 的宏所组织的过程。
 
-```c
-#include <linux/iopoll.h>
+以下原型中的 `op` 是读取操作，`args...` 是传给它的参数；`cond` 是使用 `val` 的条件表达式。它们是宏参数，**不是普通 C 函数的函数指针原型**。后两行使用内存映射输入输出（Memory-Mapped I/O，MMIO），地址指向设备接口，而非普通内存变量；`-ETIMEDOUT` 沿用上一章的超时错误码。
 
-int wait_ready_atomic(void __iomem *base, u32 mask,
-                      u32 delay_us, u32 timeout_us)
-{
-    u32 v;
-    return readl_poll_timeout_atomic(base, v, (v & mask), delay_us, timeout_us);
-}
-```
+| 宏的调用形式 | 等待方式 | 返回与最后一次观测 |
+| --- | --- | --- |
+| `read_poll_timeout(op, val, cond, sleep_us, timeout_us, sleep_before_read, args...)` | 用单调时间建立截止；非零 `sleep_us` 调用范围睡眠 | 条件满足为 0，否则 `-ETIMEDOUT`；最后读值留在 `val` |
+| `read_poll_timeout_atomic(op, val, cond, delay_us, timeout_us, delay_before_read, args...)` | 用忙延时和循环次数扣减估算预算，不读取当前时间 | 同上；不因宏名 atomic 就保证 `op` 不睡眠 |
+| `readl_poll_timeout(addr, val, cond, sleep_us, timeout_us)` | 第一种宏搭配 `readl(addr)`，首次读取前不睡 | 读取 32 位 MMIO 状态 |
+| `readl_poll_timeout_atomic(addr, val, cond, delay_us, timeout_us)` | 第二种宏搭配 `readl(addr)`，首次读取前不延时 | 读取 32 位 MMIO 状态 |
 
-------
-
-### 8.1.5\_常见反模式与修正(工程化口径)
-
-| 反模式                           | 典型代码                                 | 修正                                                     |
-| -------------------------------- | ---------------------------------------- | -------------------------------------------------------- |
-| “先来个 1ms udelay 保险”         | `udelay(1000);`                          | 能睡：`usleep_range(1000,1100)`；不可睡：拆成短忙等+下放 |
-| 手写 while+时间戳                | `while (!ready && now<deadline) { ... }` | 用 `*_poll_timeout*()`，语义、超时与返回码统一           |
-| 期待 `ndelay(50)` 的 50ns 硬保证 | `ndelay(50);`                            | 改硬件：PWM/定时外设/序列引擎                            |
-| IRQ 内多轮 `udelay(100)`         | 循环 `udelay`                            | `_atomic` 轮询 ≤50–100 µs，余下交工作队列                |
-
-
-
-------
-
-### 8.1.6\_与寄存器轮询\_总线就绪检测的组合写法
-
-#### (1)\_编辑部引导
-
-驱动要等待的，往往不是“时间本身”，而是**事件条件**（寄存器位、状态机阶段、FIFO 水位）。因此，本节建议把“纯忙等的时间观”升级为“**事件就绪 + 有界超时**”的**统一轮询语义**：
-
-- **能睡**→ 使用可睡轮询（调度友好、低开销）；
-- **不可睡**→ 仅允许短窗口的不可睡轮询（忙等占核，但有上限）。
-   这种“条件+超时”的表达，请优先使用 `iopoll.h` 宏族，避免手搓 `while + udelay()`。
-
-#### (2)\_接口族谱与语义(以\_32\_位寄存器为例)
-
-| 接口                                                         | 语义/作用                                                    | 使用场景                          | 可睡        | 典型参数建议                         | 不写的后果                              |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | --------------------------------- | ----------- | ------------------------------------ | --------------------------------------- |
-| `readl_poll_timeout(addr, val, COND, delay_us, timeout_us)`  | 循环 `readl(addr)` 到 `val`，若 `COND` 成立返回 0；超时返回 `-ETIMEDOUT` | 进程上下文                        | 是          | `delay_us=10~50`，`timeout_us=1~5ms` | 手写循环易漏超时/返回码不一，调度不友好 |
-| `readl_poll_timeout_atomic(...)`                             | 与上相同，但**不可睡**，内部以 `udelay()`/`cpu_relax()` 间隔 | 硬中断、软中断、持锁等不可睡路径  | 否          | `delay_us=1`，`timeout_us≤50~100`    | 超出窗口会占核拉长 IRQ 延迟             |
-| `read_poll_timeout(op, addr, val, COND, delay_us, timeout_us, args...)` | 自定义读取函数的通用版本                                     | 需要包裹特定 `read_fn()` 或多步读 | 取决于 `op` | 同上                                 | 手写 while 导致重复逻辑与边界缺失       |
-
-> 说明：`readb/readw/readl/readq` 均有 `*_poll_timeout` 变体；`readq_*` 仅在平台提供 `readq()` 时可用。
-
-#### (3)\_组合写法\_就绪位轮询(可睡版本\_推荐)
-
-```c
-// SPDX-License-Identifier: GPL-2.0
-#include <linux/iopoll.h>
-#include <linux/io.h>
-
-#define REG_STATUS     0x10
-#define ST_READY       BIT(0)
-
-int my_wait_ready_sleepable(void __iomem *base)
-{
-    u32 v;
-    /* 每 20us 轮询，总超时 5ms；成功即返，失败 -ETIMEDOUT */
-    return readl_poll_timeout(base + REG_STATUS, v,
-                              (v & ST_READY),
-                              20, 5000);
-}
-```
-
-**驱动中的使用逻辑**
-
-- 进程上下文优先用此版本；
-- 返回 0：继续状态机；返回 `-ETIMEDOUT`：立刻走**统一恢复路径**（复位/重试/上报）。
-   **不写的后果**：改用 `while + usleep_range()` 容易遗漏“提前成功即返”的逻辑，导致**无谓等待**。
-
-#### (4)\_组合写法\_不可睡短轮询(IRQ/持锁路径)
-
-```c
-#include <linux/iopoll.h>
-int my_wait_ready_atomic(void __iomem *base)
-{
-    u32 v;
-    /* 每 1us 忙等，最多 50us；超过即交给可睡路径处理 */
-    return readl_poll_timeout_atomic(base + REG_STATUS, v,
-                                     (v & ST_READY),
-                                     1, 50);
-}
-```
-
-**驱动中的使用逻辑**
-
-- 在 IRQ 内或持有不可睡锁的代码段，只允许**≤50~100µs**的忙等窗口；超出立即**下放工作队列**。
-   **不写的后果**：把 1ms、5ms 等长等待强行塞进 IRQ，造成“系统整体迟滞”。
-
-#### (5)\_面向\_demo\_led\_key\_int@0\_的落地示例
-
-结合你给定的节点（`compatible = "nxp,imx6ull-led_key_int"`，GPIO 中断输入 + 去抖属性 `nxp,debounce-ms`）：
-
-```c
-// SPDX-License-Identifier: GPL-2.0
-#include <linux/module.h>
-#include <linux/platform_device.h>
-#include <linux/of.h>
-#include <linux/iopoll.h>
-#include <linux/gpio/consumer.h>
-#include <linux/interrupt.h>
-#include <linux/workqueue.h>
-
-#define REG_STATUS      0x10
-#define ST_KEY_STABLE   BIT(1)
-
-struct lk_dev {
-    struct device     *dev;
-    void __iomem      *base;
-    struct gpio_desc  *key;
-    unsigned int       irq;
-    unsigned int       debounce_ms; /* from DT: nxp,debounce-ms */
-    struct work_struct work;
-};
-
-static int lk_wait_stable_sleepable(struct lk_dev *d)
-{
-    u32 v;
-    /* 按 DT 去抖时间上限做超时（例如 10ms） */
-    return readl_poll_timeout(d->base + REG_STATUS, v,
-                              (v & ST_KEY_STABLE),
-                              50, d->debounce_ms * 1000);
-}
-
-static irqreturn_t lk_irq(int irq, void *data)
-{
-    struct lk_dev *d = data;
-    u32 v;
-
-    /* 尝试极短确认：≤50us */
-    if (readl_poll_timeout_atomic(d->base + REG_STATUS, v,
-                                  (v & ST_KEY_STABLE),
-                                  1, 50)) {
-        schedule_work(&d->work); /* 转入可睡等待 */
-    }
-    return IRQ_HANDLED;
-}
-
-static void lk_work(struct work_struct *w)
-{
-    struct lk_dev *d = container_of(w, struct lk_dev, work);
-    if (lk_wait_stable_sleepable(d)) {
-        dev_dbg(d->dev, "key not stable within debounce window\n");
-        return;
-    }
-    /* ...上报稳定态... */
-}
-
-/* 资源化说明：使用 devres 管理映射与中断，避免收尾遗漏 */
-```
-
-**devres 对比说明**
-
-- 本示例中 `devm_*`（如 `devm_ioremap_resource()`、`devm_request_threaded_irq()`）可避免在错误路径或 remove 阶段遗留映射/IRQ；虽然与 `iopoll` 宏族无直接从属关系，但**二者互补**：`devm_*` 负责生命周期，`iopoll` 负责“条件+超时”的等待语义。
-
-#### (6)\_可视化\_两路轮询的调度友好转换
-
-```mermaid
-flowchart LR
-  A["IRQ/持锁不可睡入口"] --> B{"短窗内稳定? (≤50~100µs)"}
-  B -- "是" --> C["atomic 轮询返回 0<br/>继续快速路径"]
-  B -- "否" --> D["schedule_work(&amp;work)"]
-  D --> E["进程上下文: readl_poll_timeout(..., 1~5ms)<br/>成功即返, 超时 -ETIMEDOUT"]
-```
-
-------
-
-### 8.1.7\_SMP\_/\_PREEMPT\_/\_PREEMPT\_RT\_下的注意事项
-
-#### (1)\_编辑部引导
-
-系统配置会改变忙等待的**副作用版图**：在多核（SMP）上，它独占一个硬件线程；在可抢占内核（PREEMPT）上，它可能被打断而**延时被拉长**；在实时化内核（PREEMPT_RT）上，长忙等会破坏高优先级线程的期限保证。本节给出**边界准绳**与**验证要点**。
-
-#### (2)\_行为差异与对策
-
-| 配置           | 关键差异                         | 风险                                     | 对策（落地化）                                             |
-| -------------- | -------------------------------- | ---------------------------------------- | ---------------------------------------------------------- |
-| **SMP**        | 忙等独占一个 CPU 线程            | 与同核高优线程竞争，导致迟滞             | 缩短忙等窗口；如需较长等待，交给可睡路径                   |
-| **PREEMPT**    | 忙等可被抢占                     | `udelay()` 实际耗时扩散，亚稳态更明显    | 不把忙等用于精确时序；事件转轮询或硬件定时                 |
-| **PREEMPT_RT** | IRQ 线程化、部分自旋锁转成可睡锁 | 高优线程 deadline miss；忙等抬升系统抖动 | IRQ 中仅短轮询；主处理移至工作队列/RT 线程；严格 ≤50~100µs |
-
-#### (3)\_参数标定与\_可证性\_清单
-
-- **忙等上限**：
-  - 单点 `udelay()`：建议 ≤50µs，极限 ≤100µs；
-  - 累计忙等（同一次调用栈）：建议 ≤100µs。
-- **轮询参数起步**：
-  - 可睡：`delay_us=10~50`，`timeout_us=1~5ms`；
-  - 不可睡：`delay_us=1`，`timeout_us≤50~100`。
-- **验证要点**：
-  - ftrace 观察中断延迟与你函数的时间关联；
-  - 在 **RT** 内核以更高优线程施压，确保没有 deadline miss；
-  - 低频态（DVFS 降频）下复现，记录抖动范围。
-
-#### (4)\_可视化\_RT\_内核下的\_短忙等\_to\_线程化处理\_路径
+`readb/readw/readq` 有相应宽度的包装，`readq` 是否可用还取决于平台。`relaxed` 变体改变访问排序约束，必须有设备和内存排序分析，不能仅因名字较短或可能更快就替换 `readl`。
+
+第一种宏把 `sleep_us` 当作请求睡眠范围的上端，实际调用范围是 `((sleep_us >> 2) + 1, sleep_us)`。所以参数 20 表达的是请求睡 6～20 µs，**不是每隔 20 µs 精确读一次**。读取耗时、被调度出去的时间还会拉长相邻读取间隔。固定头文件要求：使用非零睡眠参数或超时参数时，不在原子上下文调用普通版本；不要把 `sleep_us=0` 当作普通版本的通用原子使用许可。
+
+两种宏的 `timeout_us=0` 都表示 **永不因超时参数退出**。条件永远不成立时，这不是“一次读取后马上失败”，而是无限轮询。对设备可能失效的路径，通常应由驱动封装拒绝零超时。
+
+### 8.4.1\_最后一次读取可以把超时变成成功
+
+普通版本先读取并检查条件，再检查当前时间是否已经 **大于** 截止。检测到过期后，它还会多读一次，退出循环，再用最终 `val` 判断返回值。这意味着截止刚到时不会立即失败；即使已经过期，只要正常读取或最后补读得到满足条件的值，仍返回成功。
 
 ```mermaid
 sequenceDiagram
   autonumber
-  participant IRQ as IRQ 线程("RT 优先级高)
-  participant W as 工作队列("可睡")
-  participant HW as 硬件
-  IRQ->>HW: 读取状态(readl)
-  IRQ->>IRQ: readl_poll_timeout_atomic(..., 50us)
-  alt 状态就绪
-    IRQ-->>IRQ: 快速收尾(≤50us)
-  else 超时
-    IRQ->>W: schedule_work(&work)
-    W->>HW: readl_poll_timeout(..., 5ms)
-    alt 成功
-      W-->>W: 继续状态机
-    else 超时
-      W-->>W: 复位/上报(-ETIMEDOUT)
-    end
-  end
+  participant D as 驱动轮询
+  participant C as 单调时钟
+  participant H as 设备状态
+  D->>C: S0 记录截止 T
+  D->>H: S1 读取 val，条件不满足
+  D->>C: S2 检查当前时间
+  C-->>D: 已经大于 T
+  D->>H: S3 过期后再读一次
+  H-->>D: 此次 READY 已成立
+  D->>D: S4 再判断 cond，返回 0
 ```
 
-------
+图中第 5～7 步说明宏的策略是给设备最后一次机会。它适合“等到就绪或放弃”的许多驱动路径，却不能直接证明“在 T 以前完成”。如果业务必须拒绝截止后才观测到的成功，应使用上一章的[同钟截止轮询](P07_睡眠与超时调度接口.md)，并明确观测时点、读取跨过截止的处理和设备自己的时间戳能力。手写循环不是天然错误，关键是不要在不理解差异时把一种期限策略换成另一种。
 
-### 8.1.8\_hrtimer\_+\_工作队列\_把\_短忙等\_升级为\_高精度唤醒
+`cond` 在循环内和退出后会再次求值，所以应使用无副作用的纯判断。不要把 `retries++`、读取 FIFO 或确认中断这样的动作放进去。读取操作本身也必须允许重复和额外的最后一次访问；“读一次就清除”的状态、弹出数据的 FIFO 端口，不能未经协议分析就放入此模板。
 
-#### (1)\_编辑部引导
+### 8.4.2\_atomic版本扣的是估算预算
 
-当硬件需要**亚毫秒级**的精确唤醒，但回调里还要做**可睡**的重活时，单纯的 `udelay()`/`usleep_range()` 要么占核太多，要么抖动不可控。标准做法是：**hrtimer 负责准点唤醒（不可睡）**，**工作队列负责可睡处理**。这是一种**分层延时模型**。
+原子版本为了不依赖当前时间读取，把 `timeout_us` 换算成纳秒计数。每次 `udelay()` 后扣去请求的延时纳秒数，每轮另扣 1；余量小于零时，再执行最后一次读取。这允许在计时维护暂停等场景使用，但预算没有计入真实 MMIO 延迟、中断打断或全部循环指令成本。
 
-#### (2)\_是什么\_/\_干什么\_/\_怎么实现(三步要点)
+因此 `delay_us=1, timeout_us=50` **不保证函数 50 µs 内返回**。同样，`delay_us=0` 也不是立即失败：它会进行紧密读取，靠每轮扣 1 消耗估算预算。慢总线上的这些读取可能远比这个计数表达的时间昂贵。若总线访问本身卡住，循环外层的超时判断也无法抢先把这一条访问取消。
 
-- **是什么**：`hrtimer` 基于高精度时钟源的内核定时器；回调在硬中断语义（或软中断）下执行，**不可睡**。
-- **干什么**：在**几十微秒～数毫秒**的范围内提供**较稳定的唤醒点**，避免长忙等；
-- **怎么实现**：回调中仅做少量不可睡动作（如置位、快速采样、排队工作项），把可睡事务丢给 `workqueue`。
+固定头文件对原子版本建议把每次延时保持很短，文档提示约小于 10 µs；驱动还必须约束整个调用路径的读取次数和时间。超大参数的纳秒乘法、带符号余量和平台 `udelay()` 范围也有界，不能直接接收任意用户输入。
 
-#### (3)\_模板\_hrtimer\_触发\_+\_工作队列收尾
+## 8.5\_先确认寄存器契约再套模板
+
+现在已经知道宏控制的是“何时重复”，它不知道“重复读这个地址是否有意义”。接入真实设备前，至少要从对应版本手册建立下面这张表。此表是 **需要填入的接口信息**，没有虚构某块芯片的寄存器地址。
+
+| 需要确定的项目 | 怎样影响轮询 |
+| --- | --- |
+| 状态寄存器的所属块、偏移、宽度、访问属性 | 决定映射和使用 readb/readw/readl 等哪种访问 |
+| 目标位的含义、有效电平、复位值 | 决定等待任一位、全部位或某个编码；掩码不能随便选 |
+| 重复读、读清除、FIFO 弹出等副作用 | 决定普通轮询和过期后的补读是否允许 |
+| 时钟、电源与启动命令的先后要求 | 决定此刻访问是否有效，是否先满足稳定期 |
+| 错误位、清除/确认方法与失败恢复 | 决定是否提前结束，超时后怎样停止或复位事务 |
+
+下面是两个 **驱动内辅助函数**，调用者已经取得有效的 32 位状态地址；它们不完成映射，也不是某个完整平台驱动。这里选择“掩码中的位全部为 1”，保留最后读值给调用者分析。范围是本示例主动设置的输入政策，不是内核通用标准。
+
+```c
+#include <linux/io.h>
+#include <linux/iopoll.h>
+
+static int wait_bits_sleepable(void __iomem *addr, u32 mask,
+                               u32 interval_us, u32 timeout_us, u32 *last)
+{
+    /* 上下文必须可睡；拒绝零掩码、无限等待和过大的输入。 */
+    if (!mask || !interval_us || interval_us > 1000 ||
+        !timeout_us || timeout_us > 1000000 || !last)
+        return -EINVAL;
+    return readl_poll_timeout(addr, *last, ((*last & mask) == mask),
+                              interval_us, timeout_us);
+}
+
+static int wait_bits_atomic(void __iomem *addr, u32 mask,
+                            u32 interval_us, u32 timeout_us, u32 *last)
+{
+    /* 1～9 微秒间隔、1～100 微秒估算预算仍需按设备实测评估。 */
+    if (!mask || !interval_us || interval_us > 9 ||
+        !timeout_us || timeout_us > 100 || !last)
+        return -EINVAL;
+    return readl_poll_timeout_atomic(addr, *last, ((*last & mask) == mask),
+                                     interval_us, timeout_us);
+}
+```
+
+参数非法时返回 `-EINVAL`，没有读取设备，`last` 内容不变；合法参数仍不证明地址可访问、设备有电或当前允许睡眠。这些是调用者前置条件。把两种封装分开，调用位置比较容易审查；一个 `can_sleep=true` 的策略字段只能表达调用者的承诺，不能把硬中断变成可睡上下文。
+
+普通 `readl()` 没有用负错误码返回总线故障的统一契约。若自定义 `op` 返回带错误信息的值，应让条件同时识别错误和就绪，再在宏返回后转换业务错误；否则可能把读取错误反复当成“还没好”。最终 `-ETIMEDOUT` 只说明轮询策略放弃，复位、重试还是上报要由设备协议决定。
+
+GPIO 按键节点提供的 `key-gpios` 不会凭空产生 `REG_STATUS=0x10` 或 `ST_KEY_STABLE` 位。读到按下也不证明消抖窗口内一直稳定。真实按键应按[稳定窗口](P12_常用模式与代码模板.md)或[按下释放确认](P14_按键窗口合并与按下释放确认.md)的状态机处理，不能给没有 MMIO 资源的自定义节点补一个虚构寄存器驱动。
+
+## 8.6\_不用硬件也能观察两种预算
+
+先用一个完整模块观察调用过程，避免把真实设备访问副作用混入实验。它用单调时钟模拟 READY：经过 `ready_us` 后，读取函数返回 1；`fail=1` 则始终返回 0。`atomic_mode` 只选择宏版本，模块初始化本身仍在可睡上下文，**这个实验不会把 CPU 切换进原子上下文**。
+
+把下面代码保存为独立实验目录中的 `busy_poll_demo.c`。参数只读，加载后不再改变；`noinline` 是为了尽量保留可跟踪的轮询包装函数，不承担同步作用。
 
 ```c
 // SPDX-License-Identifier: GPL-2.0
-#include <linux/hrtimer.h>
-#include <linux/workqueue.h>
+#include <linux/module.h>
+#include <linux/iopoll.h>
 #include <linux/ktime.h>
 
-struct ht_ctx {
-    struct hrtimer      tmr;
-    struct work_struct  work;
-    ktime_t             period;   /* 周期或单次延迟 */
-    void __iomem       *base;
+static unsigned int ready_us = 20;
+static unsigned int timeout_us = 100;
+static unsigned int interval_us = 1;
+static bool atomic_mode;
+static bool fail;
+module_param(ready_us, uint, 0444);
+module_param(timeout_us, uint, 0444);
+module_param(interval_us, uint, 0444);
+module_param(atomic_mode, bool, 0444);
+module_param(fail, bool, 0444);
+
+struct poll_demo {
+    ktime_t ready_at;
+    unsigned int reads;
 };
 
-static enum hrtimer_restart ht_cb(struct hrtimer *t)
+static u32 sample_ready(struct poll_demo *d)
 {
-    struct ht_ctx *c = container_of(t, struct ht_ctx, tmr);
-
-    /* 在不可睡上下文做极短操作：例如打点或读一次寄存器 */
-    /* ... 快速路径 ... */
-
-    schedule_work(&c->work); /* 把重活交给可睡上下文 */
-    /* 若周期任务：重启周期 */
-    hrtimer_forward_now(&c->tmr, c->period);
-    return HRTIMER_RESTART;
+    d->reads++;
+    /* 只模拟观测，不读取设备，也没有另一个 CPU 写共享结果。 */
+    return !fail && ktime_compare(ktime_get(), d->ready_at) >= 0;
 }
 
-static void ht_work(struct work_struct *w)
+static noinline int run_poll(struct poll_demo *d, u32 *last)
 {
-    struct ht_ctx *c = container_of(w, struct ht_ctx, work);
-    u32 v;
-    /* 可睡轮询：最多 5ms，失败 -ETIMEDOUT 后走恢复 */
-    if (readl_poll_timeout(c->base + REG_STATUS, v, (v & ST_READY), 20, 5000)) {
-        /* 统一恢复路径 */
-        /* reset / retry / report */
-    }
+    if (atomic_mode)
+        return read_poll_timeout_atomic(sample_ready, *last, *last != 0,
+                                         interval_us, timeout_us, false, d);
+    return read_poll_timeout(sample_ready, *last, *last != 0,
+                             interval_us, timeout_us, false, d);
 }
 
-/* 初始化（建议与 devres 配套：在父设备 .probe 里 devm_add_action_or_reset 停止定时器） */
-static int ht_init(struct device *dev, struct ht_ctx *c, ktime_t first, ktime_t period)
+static int __init busy_poll_init(void)
 {
-    c->period = period;
-    INIT_WORK(&c->work, ht_work);
-    hrtimer_init(&c->tmr, CLOCK_MONOTONIC, HRTIMER_MODE_REL_PINNED);
-    c->tmr.function = ht_cb;
-    hrtimer_start(&c->tmr, first, HRTIMER_MODE_REL_PINNED);
-
-    /* devres 收尾：device 销毁或 probe 失败时自动停止 */
-    devm_add_action_or_reset(dev, (void(*)(void *))hrtimer_cancel, &c->tmr);
-    return 0;
-}
-```
-
-**使用逻辑与边界**
-
-- `hrtimer` 回调里**不要**睡；只做标志设置、极短读写；
-- 周期任务用 `hrtimer_forward_now()`，避免漂移；
-- 统一在 `devm_add_action_or_reset()` 里登记 `hrtimer_cancel`，保证资源化收尾（呼应你对 devres 的要求）。
-   **不写的后果**：把 1ms 级等待留在 `udelay()` 会极大抬升占核与抖动；把可睡操作写进 hrtimer 回调会**直接违规上下文规则**。
-
-#### (4)\_什么时候选\_hrtimer\_而不是\_udelay()\_/\_usleep\_range()
-
-| 需求                            | `udelay()`   | `usleep_range()` | `hrtimer + work` | 结论                               |
-| ------------------------------- | ------------ | ---------------- | ---------------- | ---------------------------------- |
-| 几十 µs 内精准唤醒 + 不可睡收尾 | 可用，但占核 | 否（可睡）       | 可用             | **选 hrtimer**，占核更低、可控     |
-| 纯微秒级保持（bit-bang）        | 可用         | 不合适           | 过度             | 选 `udelay()/ndelay()`             |
-| ≥1 ms 级调度型延时              | 不合适       | 合适             | 过度             | 选 `usleep_range()`/`delayed_work` |
-| 周期精确唤醒 + 可睡重活         | 占核严重     | 抖动较大         | 合适             | **选 hrtimer+work**                |
-
-#### (5)\_可视化\_分层延时模型(避免长忙等)
-
-```mermaid
-flowchart TD
-  A["需要亚毫秒级唤醒?"] -->|是| B["hrtimer 回调(不可睡): 轻量操作"]
-  B --> C["schedule_work()"]
-  C --> D["工作队列(可睡): readl_poll_timeout(...), 超时统一恢复"]
-  A -->|否| E["usleep_range() / delayed_work / schedule_timeout*()"]
-```
-
-
-
-------
-
-### 8.1.9\_用户视角\_接口速览与使用边界(一页速查)
-
-#### (1)\_结论先行(能睡就不忙\_不可睡只短忙)
-
-- **能睡路径**优先：`usleep_range()` 与 `readl_poll_timeout()` 等**可睡轮询**接口。
-- **不可睡路径**仅允许**极短窗口**：`ndelay()` / `udelay()` / `*_poll_timeout_atomic()`，**≤50~100µs** 为实用上限。
-- **≥1ms** 的等待一律改用**调度型**（`schedule_timeout*()` / `delayed_work`），或**hrtimer 分层**。
-
-#### (2)\_接口对照表(精度\_x\_开销\_x\_上下文)
-
-| 接口                          | 精度取向   | 上下文 | 典型区间             | 使用要点                     | 常见踩坑                              |
-| ----------------------------- | ---------- | ------ | -------------------- | ---------------------------- | ------------------------------------- |
-| `ndelay(n)`                   | ns 级目标  | 不可睡 | ≤~500ns              | 仅做极短保持；不可期望硬实时 | 在 DVFS/RT 下抖动明显，勿用作严格时序 |
-| `udelay(u)`                   | µs 级目标  | 不可睡 | 1–50µs（极限≤100µs） | 单点短忙等；累计时长也要受限 | 长忙等导致占核与中断延迟              |
-| `usleep_range(min,max)`       | µs→ms      | 可睡   | 10–200µs 起步        | 为调度器留出 10%~20% 窗口    | 用在 IRQ/持锁会违反上下文             |
-| `readl_poll_timeout()`        | 事件就绪   | 可睡   | 10µs–几 ms           | 成功即返，失败 `-ETIMEDOUT`  | 手搓 while 易漏边界                   |
-| `readl_poll_timeout_atomic()` | 事件就绪   | 不可睡 | ≤50~100µs            | 失败后**立刻下放**           | 误用成 1ms+ 忙轮询                    |
-| `hrtimer`（回调）             | 高精度唤醒 | 不可睡 | ≥几十µs              | 回调只做轻量操作             | 回调里睡眠会出错                      |
-| `delayed_work`                | 调度唤醒   | 可睡   | ≥1ms                 | 周期/退避/重试               | 退出路径忘记 cancel                   |
-
-------
-
-### 8.1.10\_可视化图示(行为与分流)
-
-#### (1)\_能睡/不可睡\_判定与等待分流
-
-```mermaid
-flowchart TD
-  A["进入等待点"] --> B{"当前上下文可睡吗?"}
-  B -- "是" --> C["优先: readl_poll_timeout(...)/usleep_range()"]
-  B -- "否" --> D["仅允许短忙等: ndelay()/udelay()/..._atomic()"]
-  D --> E{"是否超出 ≤50~100µs?"}
-  E -- "是" --> F["记录状态→schedule_work()/hrtimer 交付"]
-  E -- "否" --> G["成功/失败立即返回"]
-  C --> H{"条件满足或时间到?"}
-  H -- "满足" --> I["返回 0"]
-  H -- "超时" --> J["返回 -ETIMEDOUT 并执行恢复策略"]
-```
-
-#### (2)\_端到端事务(以\_demo\_led\_key\_int@0\_为例)
-
-```mermaid
-sequenceDiagram
-  autonumber
-  participant IRQ as IRQ/不可睡路径
-  participant W as 工作队列/可睡路径
-  participant DEV as 设备(寄存器)
-  participant U as 上层状态机
-
-  IRQ->>DEV: readl_poll_timeout_atomic(..., 50us)
-  alt 条件达成
-    IRQ-->>U: 快速返回(成功)
-  else 超时
-    IRQ->>W: schedule_work(&amp;work)
-    W->>DEV: readl_poll_timeout(..., 5ms)
-    alt 成功
-      W-->>U: 继续状态机
-    else 失败
-      W-->>U: -ETIMEDOUT → 复位/重试/上报
-    end
-  end
-```
-
-------
-
-### 8.1.11\_可粘贴模板(扩展版)
-
-> 目标：把“等待”抽象为策略，使**上下文可睡性**与**参数**解耦；确保**收尾资源化**，并附**端到端示例**。
-
-#### (1)\_策略化轮询\_Helper(统一\_sleep/atomic\_两路)
-
-```c
-// SPDX-License-Identifier: GPL-2.0
-#include <linux/iopoll.h>
-
-struct poll_policy {
-    bool can_sleep;     /* true: 用可睡轮询; false: 用 atomic 轮询 */
-    u32  delay_us;      /* 间隔 */
-    u32  timeout_us;    /* 超时上限 */
-};
-
-static inline int poll_ready32(void __iomem *addr, u32 mask,
-                               struct poll_policy p)
-{
-    u32 v;
-    if (p.can_sleep)
-        return readl_poll_timeout(addr, v, (v & mask), p.delay_us, p.timeout_us);
-    else
-        return readl_poll_timeout_atomic(addr, v, (v & mask), p.delay_us, p.timeout_us);
-}
-```
-
-#### (2)\_devres\_化收尾\_hrtimer\_与\_delayed\_work
-
-```c
-#include <linux/hrtimer.h>
-#include <linux/workqueue.h>
-
-/* delayed_work 的 devres 收尾：在 device 销毁/失败路径上确保取消 */
-static void __dw_cancel(void *dw)
-{
-    cancel_delayed_work_sync((struct delayed_work *)dw);
-}
-
-static int devm_init_delayed_work(struct device *dev, struct delayed_work *dw,
-                                  work_func_t func)
-{
-    INIT_DELAYED_WORK(dw, func);
-    return devm_add_action_or_reset(dev, __dw_cancel, dw);
-}
-
-/* hrtimer 的 devres 收尾 */
-static void __hr_cancel(void *ht)
-{
-    hrtimer_cancel((struct hrtimer *)ht);
-}
-
-static int devm_init_hrtimer(struct device *dev, struct hrtimer *t,
-                             clockid_t clk, enum hrtimer_mode mode,
-                             enum hrtimer_restart (*fn)(struct hrtimer *))
-{
-    hrtimer_init(t, clk, mode);
-    t->function = fn;
-    return devm_add_action_or_reset(dev, __hr_cancel, t);
-}
-```
-
-#### (3)\_端到端示例\_demo\_led\_key\_int@0(整合\_DT\_参数与两路轮询)
-
-```c
-// SPDX-License-Identifier: GPL-2.0
-#include <linux/module.h>
-#include <linux/platform_device.h>
-#include <linux/of.h>
-#include <linux/io.h>
-#include <linux/iopoll.h>
-#include <linux/gpio/consumer.h>
-#include <linux/interrupt.h>
-#include <linux/workqueue.h>
-#include <linux/hrtimer.h>
-
-#define REG_STATUS      0x10
-#define ST_KEY_STABLE   BIT(1)
-
-struct lk_dev {
-    struct device       *dev;
-    void __iomem        *base;
-    unsigned int         irq;
-    unsigned int         debounce_ms;  /* nxp,debounce-ms */
-    struct work_struct   work;
-};
-
-static int lk_wait_sleepable(struct lk_dev *d, u32 mask, u32 to_ms)
-{
-    u32 v;
-    return readl_poll_timeout(d->base + REG_STATUS, v, (v & mask),
-                              20, to_ms * 1000);
-}
-
-static irqreturn_t lk_irq(int irq, void *data)
-{
-    struct lk_dev *d = data;
-    u32 v;
-    /* IRQ 内仅允许 ≤50us 的短忙等 */
-    if (readl_poll_timeout_atomic(d->base + REG_STATUS, v, (v & ST_KEY_STABLE),
-                                  1, 50)) {
-        schedule_work(&d->work);
-    }
-    return IRQ_HANDLED;
-}
-
-static void lk_work(struct work_struct *w)
-{
-    struct lk_dev *d = container_of(w, struct lk_dev, work);
-    int ret = lk_wait_sleepable(d, ST_KEY_STABLE, d->debounce_ms ?: 10);
-    if (ret) {
-        dev_dbg(d->dev, "key not stable within %ums\n", d->debounce_ms);
-        /* 统一恢复: 可选复位/重试/上报 */
-        return;
-    }
-    /* 上报稳定键值... */
-}
-
-static int lk_probe(struct platform_device *pdev)
-{
-    struct lk_dev *d;
-    struct resource *res;
+    struct poll_demo d = { 0 };
+    ktime_t start;
+    u32 last = 0;
     int ret;
 
-    d = devm_kzalloc(&pdev->dev, sizeof(*d), GFP_KERNEL);
-    if (!d) return -ENOMEM;
-    d->dev = &pdev->dev;
-
-    of_property_read_u32(pdev->dev.of_node, "nxp,debounce-ms", &d->debounce_ms);
-
-    res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-    d->base = devm_ioremap_resource(&pdev->dev, res);
-    if (IS_ERR(d->base)) return PTR_ERR(d->base);
-
-    INIT_WORK(&d->work, lk_work);
-    /* devres 化: remove/失败路径自动 flush */
-    devm_add_action_or_reset(&pdev->dev,
-                             (void(*)(void *))flush_work, &d->work);
-
-    d->irq = platform_get_irq(pdev, 0);
-    if ((int)d->irq < 0) return d->irq;
-
-    ret = devm_request_irq(&pdev->dev, d->irq, lk_irq, IRQF_TRIGGER_FALLING,
-                           dev_name(&pdev->dev), d);
-    if (ret) return ret;
-
+    /* 限制乘法范围和实验成本；atomic 的参数仍不是墙钟上界。 */
+    if (!timeout_us || timeout_us > 1000000 || ready_us > 1000000 ||
+        !interval_us || interval_us > 1000 ||
+        (atomic_mode && (interval_us > 9 || timeout_us > 100)))
+        return -EINVAL;
+    start = ktime_get();
+    d.ready_at = ktime_add_us(start, ready_us);
+    ret = run_poll(&d, &last);
+    pr_info("busy_poll: atomic=%d ret=%d last=%u reads=%u elapsed_ns=%lld\n",
+            atomic_mode, ret, last, d.reads,
+            (long long)ktime_to_ns(ktime_sub(ktime_get(), start)));
+    /* 模拟轮询失败已输出；模块本身没有待清理的异步对象。 */
     return 0;
 }
 
-static const struct of_device_id lk_of_match[] = {
-    { .compatible = "nxp,imx6ull-led_key_int" },
-    { }
-};
-MODULE_DEVICE_TABLE(of, lk_of_match);
-
-static struct platform_driver lk_driver = {
-    .driver = {
-        .name = "lk_udelay_bounds",
-        .of_match_table = lk_of_match,
-    },
-    .probe = lk_probe,
-};
-module_platform_driver(lk_driver);
+static void __exit busy_poll_exit(void) { }
+module_init(busy_poll_init);
+module_exit(busy_poll_exit);
 MODULE_LICENSE("GPL");
 ```
 
-**要点回顾**
+在同目录创建 `Makefile`：
 
-- IRQ 内只做**短忙等**与**下放**；
-- 可睡路径用 `readl_poll_timeout()` 接 `nxp,debounce-ms`；
-- `flush_work` 通过 `devm_add_action_or_reset()` 资源化收尾；
-- 统一 `-ETIMEDOUT` 失败语义，便于上层恢复。
-
-------
-
-### 8.1.12\_调试与验证(可复制命令清单)
-
-> 目标：证明**没有**长忙等与系统迟滞；若存在，定位到具体调用栈与参数，并给出修正建议。
-
-#### (1)\_ftrace\_确认忙等窗口与中断延迟
-
-```bash
-# 1) 启用 function_graph，观察关键函数
-echo function_graph > /sys/kernel/debug/tracing/current_tracer
-echo 1 > /sys/kernel/debug/tracing/options/funcgraph-abstime
-# 只跟踪你的驱动与 iopoll
-echo lk_udelay_bounds* :readl_poll_timeout* > /sys/kernel/debug/tracing/set_ftrace_filter
-echo 1 > /sys/kernel/debug/tracing/tracing_on
-sleep 1; cat /sys/kernel/debug/tracing/trace > /tmp/trace.txt
+```makefile
+obj-m += busy_poll_demo.o
 ```
 
-**判定**：`readl_poll_timeout_atomic()` 单次停留不应超过 **~50µs**；若出现多次累加至 100µs 以上，需下放或缩短窗口。
-
-#### (2)\_irq\_事件与\_hrtimer/timer\_事件
+在 **匹配运行内核且提供构建目录的 Linux 实验机** 执行；交叉构建则沿用本专题的目标内核、工具链与部署步骤，不能拿宿主头文件替代目标内核。
 
 ```bash
-# irq/softirq 与 hrtimer 事件
-echo 1 > /sys/kernel/debug/tracing/events/irq/irq_handler_entry/enable
-echo 1 > /sys/kernel/debug/tracing/events/hrtimer/hrtimer_expire_entry/enable
+# 当前目录含 busy_poll_demo.c 和 Makefile。
+make -C /lib/modules/"$(uname -r)"/build M="$PWD" modules
+sudo insmod ./busy_poll_demo.ko ready_us=20 timeout_us=100 interval_us=1
+sudo dmesg | tail -n 10
+sudo rmmod busy_poll_demo
 ```
 
-**判定**：你的 IRQ 与其他关键 IRQ 之间的**间隔**是否因忙等拉长。
+默认运行可能因为调度而比 100 µs 晚得多才看到 READY，并仍返回 0。日志中的 `ret` 是轮询结果，`elapsed_ns` 是整个调用区间的观测耗时；模块加载成功不表示轮询成功，因为示例刻意把业务结果记录后返回 0。
 
-#### (3)\_PREEMPT\_RT\_回归与压力
+然后对照一次永不就绪和一次原子预算实验，每轮先卸载再重新加载：
 
-- 在 RT 内核上，把系统中某高优线程设为更高优先级；重复 8.9.1 的跟踪；
-- 若该线程出现 deadline miss，同时 trace 显示你的 IRQ 线程内存在多次 `udelay()` 片段，按 **8.4** 收缩窗口并下放。
+```bash
+sudo insmod ./busy_poll_demo.ko fail=1 timeout_us=100 interval_us=1
+sudo dmesg | tail -n 10
+sudo rmmod busy_poll_demo
+sudo insmod ./busy_poll_demo.ko atomic_mode=1 fail=1 timeout_us=50 interval_us=1
+sudo dmesg | tail -n 10
+sudo rmmod busy_poll_demo
+```
 
-#### (4)\_DVFS/低频态验证
+预测两次 `ret` 都为 `-ETIMEDOUT`，但不预测读取次数或耗时刚好相同。`fail=1` 时，`sample_ready()` 的短路条件直接返回 0；正常模拟 READY 时，它还会自行读取时钟，增加实际开销。两种情况下都不能把该耗时当作某款设备的 MMIO 成本。改变 `ready_us`、间隔与负载，观察哪些成功落在名义截止之后，便能看出“轮询策略超时”与“业务硬截止”的区别。这里提供的是可运行实验步骤，本次文档核对没有宣称已经在目标内核装载此模块。
 
-- 锁定低频或强制降频（平台相关工具），复现等待路径；
-- 记录 `udelay()`/`ndelay()` 周期抖动扩大情况；若抖动过大，迁移到 `hrtimer + work` 或硬件定时外设。
+## 8.7\_短轮询失败后怎样交出事务
 
-------
+如果真实设备常常需要较长时间，就不应不断扩大原子预算。可以在入口只做少量读取，确认仍未就绪后，把剩余事务交给普通工作队列。第六章已经说明工作排队与执行之间有延迟；这里新增的问题是：入口退出后，谁保存这次请求，设备是否仍不断触发中断？
 
-### 8.1.13\_常见陷阱与加深版对照表
+假定设备支持暂时屏蔽本事件源，并把待处理状态保留到后续读取。把驱动对象称为 `d`，其中 `d->phase` 保存事务阶段，`d->request_id` 区分请求，`d->deadline` 在启动本轮设备操作时记录总响应截止，`d->result` 保存最终结果。硬中断更新交接阶段，工作线程读取同一对象后接管，不在交接时重新获得一份完整预算。
 
-| 陷阱                            | 表现                       | 根因                   | 修复                                                  |
-| ------------------------------- | -------------------------- | ---------------------- | ----------------------------------------------------- |
-| 在 IRQ 中 `udelay(1000)`        | 系统明显卡顿、其他中断延迟 | 长忙等占核             | 拆成 `_atomic` ≤50µs + 下放工作队列                   |
-| 自己实现 `while(time<deadline)` | 偶发“永不返回”或漏判       | 时间基/屏障/抢占干扰   | 用 `*_poll_timeout*()` 统一超时与返回码               |
-| `ndelay(50)` 追求硬实时脉冲     | 时序散布大                 | 通用 CPU 无硬实时保证  | 迁移硬件外设（PWM/定序/定时器）                       |
-| PREEMPT_RT 下卡顿               | 高优线程被压制             | IRQ 线程内忙等累计过长 | 降忙等阈值，更多交付工作队列                          |
-| 忘记收尾                        | 卸载/失败路径残留定时任务  | 未资源化               | 用 `devm_add_action_or_reset()` 绑定 `*_cancel/flush` |
+这些短字段访问可由对象中的原始自旋锁 `state_lock` 保护；线程侧也使用保存并关闭本地中断的配对操作，防止本地 IRQ 抢占持锁线程后再等待同一把锁。临界区只更新或取得状态快照，设备轮询和同步取消放在锁外。这里建立的是一种明确的设计方案，实际驱动仍需与其他入口共同核对锁协议。下面是这种 **单个在途事务** 的关系，不是某个 GPIO 板级驱动。
 
-------
+```mermaid
+flowchart LR
+  H[设备：保留就绪与错误状态] -->|中断请求| I[IRQ 入口]
+  I -->|S1 屏蔽本事件源| H
+  I -->|S1 保存交接阶段| O[驱动对象：阶段、编号、截止、结果]
+  I -->|S2 排队一次| Q[普通工作队列]
+  W -->|S3 读取并接管| O
+  W[工作线程] -->|轮询状态或执行恢复| H
+  Q -->|执行| W
+  W -->|S4 发布结果并终结请求| O
+  X[移除路径] -->|关闭入口并同步，再取消工作| O
+```
 
-### 8.1.14\_小结与交付核对清单
+状态不在 `schedule_work()` 的布尔返回值里。排队合并意味着一个工作项不能天然记录任意多个请求；若设备允许多条并发事务，就需要请求队列或计数，而不是反复覆盖同一个 `last_event`。共享字段必须按实际上下文使用锁或明确的发布协议，工作队列本身不能替代所有状态保护。
 
-#### (1)\_小结(驱动口径)
+```mermaid
+sequenceDiagram
+  autonumber
+  participant I as IRQ 入口
+  participant O as 驱动事务对象
+  participant H as 设备
+  participant W as 工作线程
+  I->>H: S0 读状态，短预算未就绪
+  I->>H: S1 按手册屏蔽本事件源
+  I->>O: 保存交接阶段，继承本轮编号和截止
+  I->>W: S2 排队后退出入口
+  W->>O: S3 取得请求与剩余预算
+  W->>H: 有限等待并读取最终状态
+  H-->>W: 本轮仍未就绪
+  W->>H: S4 停止或复位本轮事务
+  W->>O: 发布失败，禁止旧轮次继续完成
+```
 
-- **原则**：能睡不用忙等；不可睡只做极短忙等。
-- **工具**：统一使用 `iopoll.h` 宏族表达“条件+超时”，成功即返、失败 `-ETIMEDOUT`。
-- **分层**：亚毫秒准点唤醒用 `hrtimer`，重活交 `workqueue`。
-- **资源化**：用 `devm_add_action_or_reset()` 为 `delayed_work` 与 `hrtimer` 绑定 `*_cancel/flush`。
-- **验证**：ftrace 与 irq/hrtimer 事件双证据，外加 RT/DVFS 压力回归。
+图中第 2 步必须按设备定义实现。若电平源持续有效，只排队后返回可能立即再次中断；如果读或确认动作会丢掉事件，则应先保存必要信息，再按协议确认。成功路径在第 6 步得到有效状态后发布成功、完成设备确认，再在允许接收下一轮时重新开放事件源；失败路径只有恢复完成后才能开放，不能一边复位一边让旧 IRQ 当作新请求。
 
-#### (2)\_交付核对清单(逐项打勾)
+也不能把“原子估算 50 µs，加工作线程轮询 5 ms”写成总响应上限 5 ms：排队时间、入口耗时和最后补读都在其外。如果要求一个总业务截止，就从事务开始保存同一时钟下的截止，在工作线程取得执行权时重新检查；过期则走失败协议。下一步等待还要继承剩余预算，并采用上一章讲过的截止后拒绝规则。软件只能停止继续等待，不能据此承诺线程一定在截止点获得 CPU。
 
--  等待点是否首先判断**可睡性**并选择合适接口？
--  **不可睡**路径的忙等是否**≤50~100µs** 且有**下放**？
--  是否用 `*_poll_timeout*()` 替代手搓 while，并给出**明确参数**？
--  失败语义是否统一为 `-ETIMEDOUT` 并有**恢复动作**（复位/重试/上报）？
--  `delayed_work` / `hrtimer` 是否通过 `devm_add_action_or_reset()` 资源化收尾？
--  是否提供 ftrace/irq/hrtimer 的**验证脚本**与记录样例？
--  在 **PREEMPT_RT** 与低频态下是否完成**抖动评估**与**修正**？
+移除则形成另一条退出路径：先阻止新事务，屏蔽并同步实际 IRQ 或其他生产者，再同步取消工作，最后释放对象、寄存器映射和电源。等待工作退出时不能持有它也需要取得的锁。具体错误恢复、IRQ 共享线和电源管理必须在设备驱动中补齐；这张图没有把这些未知条件伪装成已验证的通用驱动。
 
-—— **第 8 章完** ——
+## 8.8\_用hrtimer交付工作还需要什么收尾
 
-------
+有些等待本来就不是“设备状态何时变好”，而是“过一段时间再做一次可睡操作”。此时可以用第五章的 `hrtimer` 安排到期事件，再排队工作。它消除了等待期间的忙循环，但引入了定时器响应和工作线程调度两段延迟，不能称为“准点执行可睡事务”。普通延迟工作足够时，继续用第六章的方法即可。
+
+以下辅助代码演示 **一次性** hrtimer 到工作项的完整资源依赖。它可放进已有驱动，在 `probe()` 中调用 `start_deferred_notice()`；它只打印教学通知，没有虚构设备操作。`devm_*` 管理的资源按逆登记顺序释放，所以先分配对象，后登记取消动作，保证取消时对象仍在。
+
+```c
+#include <linux/device.h>
+#include <linux/slab.h>
+#include <linux/hrtimer.h>
+#include <linux/workqueue.h>
+
+struct deferred_notice {
+    struct device *dev;
+    struct hrtimer timer;
+    struct work_struct work;
+};
+
+static void notice_work(struct work_struct *work)
+{
+    struct deferred_notice *n = container_of(work, struct deferred_notice, work);
+    dev_info(n->dev, "deferred notice executed\n");
+}
+
+static enum hrtimer_restart notice_timer(struct hrtimer *timer)
+{
+    struct deferred_notice *n = container_of(timer, struct deferred_notice, timer);
+    schedule_work(&n->work);
+    return HRTIMER_NORESTART;
+}
+
+static void stop_notice(void *data)
+{
+    struct deferred_notice *n = data;
+    /* 唯一生产者是此一次性定时器；先等它退出，再处理已交付工作。 */
+    hrtimer_cancel(&n->timer);
+    cancel_work_sync(&n->work);
+}
+
+static int start_deferred_notice(struct device *dev, u32 first_us)
+{
+    struct deferred_notice *n;
+    int ret;
+
+    if (!first_us || first_us > 1000000)
+        return -EINVAL;
+    n = devm_kzalloc(dev, sizeof(*n), GFP_KERNEL);
+    if (!n)
+        return -ENOMEM;
+    n->dev = dev;
+    INIT_WORK(&n->work, notice_work);
+    hrtimer_init(&n->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+    n->timer.function = notice_timer;
+    ret = devm_add_action_or_reset(dev, stop_notice, n);
+    if (ret)
+        return ret;
+    hrtimer_start(&n->timer, ktime_set(0, (u64)first_us * 1000), HRTIMER_MODE_REL);
+    return 0;
+}
+```
+
+`stop_notice()` 的类型正好是 `void (*)(void *)`。不要通过强制类型转换把返回 `int` 的 `hrtimer_cancel()` 或返回 `bool` 的 `flush_work()` 冒充这种回调；也不能忽略登记失败。使用 `devm_add_action_or_reset()` 时，失败会立即调用清理函数，因此本例在登记以前就把 timer 和 work 都初始化完毕，登记成功以后才启动。
+
+取消定时器只收回定时器这一层，不会自动收回它已经投递的工作；这就是清理中两次同步的原因。本例没有外部启动接口，没有工作回调重启定时器，也没有周期重启。若加入这些生产者，必须先关闭它们；单靠当前函数的两次 cancel 不再足够。周期推进、遗漏周期和工作合并按第五、六章的状态模型分析，不能把 `hrtimer_forward_now()` 简写成“保证不漂移”。
+
+独立 `delayed_work` 也可用一个 `void (*)(void *)` 适配函数调用 `cancel_delayed_work_sync()`，再登记为设备清理动作。它同样要求先禁止 IRQ、sysfs 或其他入口重新排队。`flush_work()` 等待已提交的工作完成，与取消尚未执行的工作是不同策略；选择哪种取决于退出时是否还允许这项设备操作，而不是“用了 devres 就都安全”。
+
+## 8.9\_怎样观察耗时而不把宏当成函数
+
+前面的无硬件模块提供实际耗时和读取次数。若想进一步观察中断、调度与包装函数，可以使用 ftrace。`readl_poll_timeout()` 是宏，没有一个必然可跟踪的同名函数；应选自己的读取或轮询包装函数，并先在运行内核的 `available_filter_functions` 中确认它存在。
+
+以下在支持 function graph 跟踪、已挂载 `/sys/kernel/tracing` 的 Linux 实验机执行，使用独立实例。模块只在初始化时轮询，所以选内核的模块初始化入口 `do_init_module` 作为图跟踪根，捕获它调用的模块初始化与 `run_poll()`；不用在模块卸载后赌模块函数过滤器还保留有效地址。
+
+```bash
+# root shell；当前实验目录已有 busy_poll_demo.ko，此时模块尚未加载。
+set -eu
+trace_root=/sys/kernel/tracing
+trace_inst="$trace_root/instances/busy_poll_review"
+# 确认内核具有真实可跟踪入口；没有输出则停止此方法。
+grep -E '^do_init_module[[:space:]]' "$trace_root/available_filter_functions"
+test ! -e "$trace_inst"
+mkdir "$trace_inst"
+printf '0\n' > "$trace_inst/tracing_on"
+grep -w function_graph "$trace_inst/available_tracers"
+```
+
+第一条查询用于验证符号，第二条查询用于验证实例支持的跟踪器；内核配置不同可能缺少其中之一，不能直接照抄不存在的入口。函数图以这个入口为根记录其调用关系，包括可跟踪且未被编译器内联掉的子函数。接着开启事件并执行一次明确的加载操作。
+
+```bash
+printf '%s\n' function_graph > "$trace_inst/current_tracer"
+printf '%s\n' do_init_module > "$trace_inst/set_graph_function"
+# 高精度定时器事件属于 timer 组，不是 hrtimer 组。
+test -e "$trace_inst/events/irq/irq_handler_entry/enable"
+test -e "$trace_inst/events/timer/hrtimer_expire_entry/enable"
+printf '1\n' > "$trace_inst/events/irq/irq_handler_entry/enable"
+printf '1\n' > "$trace_inst/events/timer/hrtimer_expire_entry/enable"
+printf '1\n' > "$trace_inst/tracing_on"
+insmod ./busy_poll_demo.ko atomic_mode=1 fail=1 timeout_us=50 interval_us=1
+printf '0\n' > "$trace_inst/tracing_on"
+cat "$trace_inst/trace" > /tmp/busy_poll_trace.txt
+rmmod busy_poll_demo
+```
+
+在保存的图中寻找 `busy_poll_init`、`run_poll` 及其耗时，并对照内核日志。如果函数被裁剪、内联或跟踪深度限制，没有对应条目不能解释成“它没运行”。函数图本身也可能显著增加循环成本，因此前一节不跟踪的测量应单独保留。最后关闭事件并释放本次实例；前面任何命令中断后，也应检查已创建实例并完成这段清理。
+
+```bash
+printf '0\n' > "$trace_inst/tracing_on"
+printf '0\n' > "$trace_inst/events/irq/irq_handler_entry/enable"
+printf '0\n' > "$trace_inst/events/timer/hrtimer_expire_entry/enable"
+printf '%s\n' nop > "$trace_inst/current_tracer"
+rmdir "$trace_inst"
+```
+
+函数图耗时受跟踪选项、抢占和跟踪本身开销影响；两个 IRQ 入口之间的间隔也不是设备从发出中断到软件响应的完整延迟。要判断物理脉冲宽度，需要在目标引脚使用逻辑分析仪或示波器；要判断高优先级任务是否被阻挡，需要同时记录调度事件、任务优先级、CPU 亲和性与不可抢占区。
+
+在目标支持的普通/实时内核、空闲/压力负载、不同频率策略下分别记录版本、配置、参数、读取次数、返回码和实际耗时。不能预先断言低频一定让计时器型延时变长，也不能用有限次“没有超时”证明所有执行都满足期限。压力验证建立的是已覆盖条件下的证据；设备失效、零超时输入、取消与移除路径仍要分别检查。
+
+## 8.10\_从等待条件反推方案
+
+经过本章，选择接口时已经不必先猜一个“安全微秒数”。先辨认协议需要保持时间还是等待状态，再确定执行上下文、状态读取副作用和截止策略，最后才给参数。
+
+| 当前要求 | 可以选用的机制 | 选择仍需满足的条件 |
+| --- | --- | --- |
+| 不可睡片段中的极短保持 | `udelay()` 等忙等 | 架构参数合法，累计占用可接受，设备时序得到验证 |
+| 可睡上下文的纯时间间隔 | `usleep_range()` 或较长睡眠 | 容许调度造成的延后，范围符合协议最短保持 |
+| 可重复读取的设备就绪条件 | 普通轮询宏；必要时很短的原子轮询 | 接受最后补读与成功判定，输入有界，读取上下文安全 |
+| 总业务截止前必须观测成功 | 明确的同钟截止状态机 | 读取跨截止和晚到结果有处理，失败后能收回事务 |
+| 过一段时间做可睡工作 | 延迟工作，或有理由时用 hrtimer 交付 | 不承诺准点执行，源与消费者按依赖顺序停止 |
+| 严格波形或脉宽上下界 | 适用的硬件定时能力 | 手册、集成配置与实际波形共同支持 |
+
+练习：普通轮询的最后一次补读在截止以后返回 READY，返回 0 是否违反它的契约？答案是不违反，但它不能替业务证明截止以前完成。再把 `timeout_us` 改成 0 并令条件永不满足，会发生什么？两种宏都不再因超时退出，所以封装需要主动拒绝这种输入。最后，若仅取消 hrtimer 后立刻释放驱动对象，哪里仍可能使用它？已经排队或正在运行的工作仍可能持有对象，必须先阻止新生产，再同步收回消费者。
+
+现在能解释短忙等为何有用、为何不足以承诺硬截止，以及怎样把长等待交给有清理协议的可睡路径。下一章继续把这些时间参数接入设备树和平台数据：参数来自哪里、单位怎样确定、非法值在哪一层拒绝。
 
 上一篇：[P07 睡眠与超时调度接口](P07_睡眠与超时调度接口.md)。
 下一篇：[P09 时间与设备树平台数据的对接](P09_时间与设备树平台数据的对接.md)。

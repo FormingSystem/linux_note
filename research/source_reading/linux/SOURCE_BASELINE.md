@@ -1338,3 +1338,23 @@ GPIO get/set 接口采用逻辑极性，get 负错误在 active-low 翻转以前
 ssleep 的秒到毫秒乘法、usleep_range 的 unsigned long 参数及不可中断封装，kthread_stop 的停止位、唤醒与等待退出分别核对。剩余为零、hrtimeout 返回-EINTR和当前信号状态不能提供唯一物理唤醒来源；普通complete/wait配对消费后不要求每轮机械reinit，广播及迟到完成仍需轮次协议。正文用release/acquire发布单写者结果，完整模拟模块所有返回路径均排空实际执行源；未验证目标构建、装载、硬件、信号或冻结行为。
 
 正文的稳定期封装、截止轮询和等待模块提取到 GCC/Clang C11/O2 顺序模型，覆盖提前/延后恢复、读取跨过截止、读取错误、信号与输入边界，以及两类等待对象、可中断配置、完成/超时/信号/边界结果、业务失败和晚到完成的64组组合。另提取线程循环与事件生产函数，核对设任务状态以前、以后、计数检查以后、调度期间到来的事件及停止窗口。三个反例分别因接受截止后观测、缺少源同步、检查后才设睡眠状态而被拒绝。模型不验证release/acquire的真实弱内存行为，也不代替内核调度与Kbuild；验证时修正过宿主时钟桩可能倒退的问题，未把桩错误归因于正文算法。
+
+## 1.177\_忙等待实现与轮询超时边界
+
+2026-10-17 复审[忙等待与短延时](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P08_忙等待与短延时_udelay()_ndelay()_的边界.md)，从官方 NXP 仓库不可变提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 取得以下原始文件；结合 1.176 的通用 delay.h 核对 ARM32 的循环/计时器分派、参数换算、ndelay 回退与 cpu_relax 分支。
+
+| 上游路径 | 原始字节 Git blob |
+| --- | --- |
+| include/linux/iopoll.h | 19a7b00baff43595fe320ab45109697f9d492157 |
+| arch/arm/include/asm/delay.h | 1d069e558d8debcbb261f490e78edc1726e5f3d4 |
+| arch/arm/lib/delay.c | b7fe84f68bf19eca6910afbac627435cf0d6cd6b |
+| arch/arm/lib/delay-loop.S | 33b08ca1c2422d40896ef5ee260dc11a2e272028 |
+| arch/arm/include/asm/processor.h | 326864f79d18fe035a1e3b499b7185f8ca53caa7 |
+| arch/arm/include/asm/vdso/processor.h | 45efb3ff511c9c64a7540ffe7163bdb07e316fdb |
+| Documentation/timers/timers-howto.rst | ef7a4652ccc9dc2b84851d1c1166d140b3de4d8a |
+
+普通 iopoll 宏先检查条件，再检查单调时间是否大于截止，过期还补读一次；最后条件成立仍返回成功。atomic 宏不读取时间，用请求延时和每轮递减估算预算，不能证明墙钟耗时上限。两者零超时均表示不超时；条件重复求值，读取必须允许重复和补读。ARM32 常量 udelay 的 2000 微秒边界是实现限制，不是不可抢占区的延迟许可；ndelay 参数单位不能证明实际纳秒精度。
+
+原始 iopoll.h 去掉内核 include 后，以受控时间、睡眠、延时和读取桩编译实际宏，连同正文 MMIO 封装及无硬件模块初始化在 GCC/Clang GNU11/O2 下执行。覆盖最后补读、恰好到期、睡眠延后、200 组零超时最终就绪、原子预算低估与零间隔、条件重复求值、294 组参数边界和模块结果路径；删除补读、把大于改为大于等于、允许零预算三个反例均被拒绝。该模型不模拟总线、IRQ 或调度，不等于目标内核构建和装载。
+
+正文取消没有芯片依据的 GPIO 稳定位与 MMIO 地址，用接口契约表和真实宏实验替代；IRQ 交接保留为有明确设备前提的协议，hrtimer 到 work 提供一次性、有类型的 devres 取消辅助。后者提取到两编译器的顺序桩模型，核对参数、分配/登记失败以及未到期、已投递、已执行和取消中投递四种清理窗口；不证明真实并发。没有进行设备时序、PREEMPT_RT、调频、移除竞争或 ftrace 运行验证。
