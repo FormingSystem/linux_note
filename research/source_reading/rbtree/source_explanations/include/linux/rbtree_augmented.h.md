@@ -1,12 +1,12 @@
 ---
 id: research.source_reading.rbtree.parent_implementation
-title: "rbtree_augmented.h 父槽与结构删除实现"
+title: "rbtree_augmented.h 父槽删除与增强回调实现"
 kind: source
 status: evolving
 domains: [linux, source_reading]
 ---
 
-# 第1章\_rbtree\_augmented.h父槽与结构删除实现
+# 第1章\_rbtree\_augmented.h父槽删除与增强回调实现
 
 一个节点记录“谁是我的父”，父节点又记录“谁是我的孩子”，这两种存储地址不会互相自动更新。先看[插入模块的地址关系](../../../navigation/P03_红叶接入与冲突修复导读.md#3.1_空槽与修复游标各归谁所有)，核对两种小操作的赋值方向；再沿[删除周期](../../../navigation/P04_对象摘除与缺黑修复导读.md#4.2_从对象到缺黑父槽)追踪后继移位和缺黑父槽。
 
@@ -17,11 +17,13 @@ domains: [linux, source_reading]
 | 插入的调用位置 | [公共收尾](../../lib/rbtree.c.md#1.2_父槽与颜色收尾) |
 | 另一个使用场景 | [P11 结构删除](../../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md#11.2_rbtree_删除前半段_rb_erase%28%29_与结构删除) |
 
+结构正确以后，带子树统计的业务还有第二项责任：让摘要随同一轮接入、摘除和旋转变化。后半部分因此继续核对三个回调、生成模板和缓存包装，说明它们怎样接到前半部分的改边过程；不能仅按文件名把这里都理解为独立的“增强树算法”。
+
 中文 Doxygen 与中文行内注释为仓库补充、非上游原文。函数体保持固定语句；这里是内部辅助层，不是供调用者跳过插入/删除接口直接修坏树的公共契约。
 
 ## 1.1\_父色打包写入
 
-一般取父会去掉低两位，颜色取最低一位。该版本红为 0、黑为 1；Linux 的节点对齐为打包提供低位空间。这里一次写入的是新父地址加给定颜色，旧父/色都会被覆盖。
+一般取父会去掉低两位，颜色取最低一位。该版本红为 0、黑为 1；Linux 的节点对齐为打包提供低位空间。RB_RED 与 RB_BLACK 是分别表示红 0、黑 1 的颜色宏。这里一次写入的是新父地址加给定颜色，旧父/色都会被覆盖。
 
 ```c
 /**
@@ -45,7 +47,7 @@ static inline void rb_set_parent_color(struct rb_node *rb,
 
 ## 1.2\_替换父节点或根的入口槽
 
-调用者已经知道 old 占哪个外部位置，现在只把那个位置改指向 new。new 可以是有效节点，也可以是 NULL，表示把这个槽清空。这正是插入旋转和删除回接都需要的公共动作。
+调用者已经知道 old 占哪个外部位置，现在只把那个位置改指向 new。new 可以是有效节点，也可以是 NULL，表示把这个槽清空。这正是插入旋转和删除回接都需要的公共动作。下面 WRITE_ONCE 宏约束指定槽的单次写入，不提供整轮操作的互斥或原子性。
 
 ```c
 /**
@@ -84,6 +86,8 @@ __rb_change_child(struct rb_node *old, struct rb_node *new,
 ## 1.3\_结构摘除与缺黑父槽
 
 取消的是业务对象 node，移动的是同一棵树中的 successor；copy 只复制增强值，不复制业务对象。先在[删除模块 D1/D2](../../../navigation/P04_对象摘除与缺黑修复导读.md#4.2_从对象到缺黑父槽)定位两种地址，再读以下固定函数。上游位置仍为本页表格的 include/linux/rbtree_augmented.h。
+
+注释用 BST 指二叉搜索树（Binary Search Tree），用 NIL 表示概念上的空叶子；Linux 实际以 NULL 孩子指针表示空叶，不分配独立 NIL 对象。
 
 以下中文 Doxygen 与行内说明为仓库补充、非上游原文。保留原教材逐步图解，函数语句与固定对象一致。注释中的“原位置”必须区分两种后继：深后继留下 parent.left；直接右孩子移到 node 位置后，留下的是 successor.right，所以 parent 设为 successor。删除唯一黑根得到空树时，parent=NULL，返回 NULL，不进入颜色修复。
 
@@ -661,7 +665,7 @@ static inline void rb_set_parent(struct rb_node *rb, struct rb_node *p)
 
 ## 1.5\_RCU外部入口发布
 
-此助手与 1.2 选择同一条外部槽，但通过 rcu_assign_pointer 发布。需要先理解[RCU 公共接口索引](../../../../rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)的匹配读写和寿命前提；发布宏本体只在[RCU 唯一实现](../../../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.1_rcu_assign_pointer发布实现)展开。本函数仍来自上游 include/linux/rbtree_augmented.h。
+这里 RCU 指读复制更新（Read-Copy Update）。此助手与 1.2 选择同一条外部槽，但通过 rcu_assign_pointer 发布。需要先理解[RCU 公共接口索引](../../../../rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)的匹配读写和寿命前提；发布宏本体只在[RCU 唯一实现](../../../../rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.1_rcu_assign_pointer发布实现)展开。本函数仍来自上游 include/linux/rbtree_augmented.h。
 
 ```c
 /**
@@ -723,6 +727,8 @@ __rb_change_child_rcu(struct rb_node *old, struct rb_node *new,
 
 ## 1.7\_三个回调的结构契约
 
+只改链接能维持排序，却不会自动改变外围对象里的子树统计。例如摘掉最大值对象以后，祖先保存的最大值仍可能是旧值。公共树代码不知道业务字段在哪，因此在路径变化、位置接替和旋转三类事件上交给业务回调处理，回调再从嵌入节点还原摘要所属对象。
+
 propagate 的 stop 由调用位置给出；通用模板不包含 stop，copy 不复制业务载荷，rotate 不管理对象寿命。回调操作的摘要地址属于具体业务结构体，公共层只传 rb_node 地址。
 
 ```c
@@ -744,7 +750,9 @@ struct rb_augment_callbacks {
 
 ## 1.8\_通用模板的停止与移交
 
-RBSTATIC 控制回调表可见性，RBNAME 命名表及函数；RBSTRUCT/RBFIELD 用于还原对象，RBAUGMENTED 是摘要字段，RBCOMPUTE(node,exit) 写计算值并返回是否可停止。propagate 传 true，while 排除 stop；copy 只写摘要；rotate 将 old 的旧整体值交给 new，再以 false 强制重算 old。旋转继承要求摘要对同一对象集合不因树形改变。A2 在子摘要有效的前提下上推，A3 利用整体集合不变移交，A5 的 copy 则只提供删除接替的临时起点。
+三种回调经常只在“业务对象类型、嵌入成员、摘要字段和重算规则”上不同。RB_DECLARE_CALLBACKS 宏把共同的传播与移交骨架生成出来，避免每个调用者手写一份父链循环；代价是业务重算器必须严格遵守停止契约。
+
+RBSTATIC 控制回调表可见性，RBNAME 命名表及函数；RBSTRUCT 是业务结构体类型参数，RBFIELD 是其中的嵌入节点成员名参数，两者用于还原对象，RBAUGMENTED 是摘要字段，RBCOMPUTE(node,exit) 写计算值并返回是否可停止。propagate 传 true，while 排除 stop；copy 只写摘要；rotate 将 old 的旧整体值交给 new，再以 false 强制重算 old。旋转继承要求摘要对同一对象集合不因树形改变。A2 在子摘要有效的前提下上推，A3 利用整体集合不变移交，A5 的 copy 则只提供删除接替的临时起点。
 
 ```c
 /**
@@ -792,7 +800,9 @@ RBSTATIC const struct rb_augment_callbacks RBNAME = {			\
 
 ## 1.9\_从本节点标量生成最大值
 
-这里 RBCOMPUTE(node) 返回本节点原始标量，与通用宏的双参数重算器不是同一契约。生成的 RBNAME_compute_max 负责读取存在的孩子、计算最大值、比较旧缓存和写入；随后把这个计算器交给通用模板。叶子初始化仍归业务方；预写缓存会破坏 A2 对旧结果的比较。
+若摘要恰好是整棵子树的最大标量，就能把重算规则进一步固定为“本节点值、左摘要、右摘要取最大”。RB_DECLARE_CALLBACKS_MAX 是生成这种特定计算器的宏，不是任意增强量都能套用的模板。
+
+RBTYPE 是最大值的类型参数，需要能正确表示业务原始值和子树摘要。这里 RBCOMPUTE(node) 返回本节点原始标量，与通用宏的双参数重算器不是同一契约。生成的 RBNAME_compute_max 负责读取存在的孩子、计算最大值、比较旧缓存和写入；随后把这个计算器交给通用模板。叶子初始化仍归业务方；预写缓存会破坏 A2 对旧结果的比较。
 
 ```c
 /**
@@ -831,7 +841,7 @@ RB_DECLARE_CALLBACKS(RBSTATIC, RBNAME,					      \
 
 ## 1.10\_增强插入只接入旋转回调
 
-本包装只访问 augment->rotate，不调用 propagate。A1、A2 必须由完整业务插入负责；之后无旋转也不意味着祖先摘要自动更新。底层修复仍沿既有 lib/rbtree.c 的插入状态机。
+节点挂接会改变祖先包含的对象集合，旋转又会改变局部子树边界，这两件事不能只靠一个通知混在一起处理。rb_insert_augmented 接入的是第二件事：本包装只访问 augment->rotate，不调用 propagate。A1、A2 必须由完整业务插入负责；之后无旋转也不意味着祖先摘要自动更新。底层修复仍沿既有 lib/rbtree.c 的插入状态机。
 
 ```c
 /**
@@ -853,11 +863,11 @@ rb_insert_augmented(struct rb_node *node, struct rb_root *root,
 
 ## 1.11\_缓存增强插入的挂接与传播
 
-rb_insert_augmented_cached 只按 newleft 写最左槽后调用增强插入。辅助搜索维护 link/parent/leftmost；向右后 leftmost 变 false。挂接后传播从 parent 开始，所以叶子摘要必须在调用前有效。此函数不拒绝等价键，返回 NULL 只说明新节点不是最左，不代表插入失败。suboptimal 注释针对路径维护策略，不允许省略传播。
+同时需要最左对象和子树摘要的调用者，要在一次插入中维护两份派生状态：一个是根对象里的缓存地址，另一个是各业务节点里的摘要。rb_insert_augmented_cached 只按 newleft 写最左槽后调用增强插入。rb_add_augmented_cached 才把搜索、挂接和传播串起来：搜索维护 link/parent/leftmost，向右后 leftmost 变 false；挂接后传播从 parent 开始，所以叶子摘要必须在调用前有效。这个辅助插入函数不拒绝等价键，返回 NULL 只说明新节点不是最左，不代表插入失败。suboptimal 注释针对路径维护策略，不允许省略传播。
 
 ```c
 /**
- * rb_add_augmented_cached - 搜索、挂接后从 parent 传播，再执行缓存与增强插入收尾。
+ * rb_insert_augmented_cached - 更新最左缓存后进入增强插入收尾。
  *
  * 仓库补充的中文 Doxygen 阅读说明，非上游原文。
  * 上游位置：include/linux/rbtree_augmented.h。
@@ -872,6 +882,7 @@ rb_insert_augmented_cached(struct rb_node *node,
 	rb_insert_augmented(node, &root->rb_root, augment);
 }
 
+/** 仓库补充：搜索、挂接后从 parent 传播，再执行缓存与增强插入收尾。 */
 static __always_inline struct rb_node *
 rb_add_augmented_cached(struct rb_node *node, struct rb_root_cached *tree,
 			bool (*less)(struct rb_node *, const struct rb_node *),
@@ -900,6 +911,20 @@ rb_add_augmented_cached(struct rb_node *node, struct rb_root_cached *tree,
 ```
 
 对应[增强 A0～A5](../../../navigation/P09_子树摘要与增强回调导读.md#9.2_沿A0到A5维护同一份摘要)，版本与入口见[总索引](../../../navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.1_固定提交与阅读边界)。
+
+把模板和包装放回[增强状态关系图](../../../navigation/P09_子树摘要与增强回调导读.md#9.1_内核提供事件而业务定义摘要)：回调表是共同的函数入口，真正被更新的摘要分散在各个业务对象里。1.8/1.9 对应 A2 的上行计算与 A3 的局部移交；1.10/1.11 组织 A1～A3；1.12/1.13 组织 A5。它们复用[同一轮时序](../../../navigation/P09_子树摘要与增强回调导读.md#9.2_沿A0到A5维护同一份摘要)，并没有另起一套后台维护流程。
+
+修改模板时，应先拿同一组对象比较“重新遍历整棵子树算出的值”与“缓存摘要”，再检查以下分歧；只验证红黑颜色无法发现摘要错误。
+
+| 修改位置 | 必须同时成立的条件 | 应检查的分支 |
+| --- | --- | --- |
+| propagate 与重算器 | 子摘要先有效；返回 true 确实表示祖先结果无需再变；stop 不被更新 | 值变化继续上行、值不变早停、到达 stop |
+| copy 与 rotate | copy 只准备接替摘要；rotate 的整体值可按对象集合移交，再重算下沉端 | 深后继/直接后继、内侧与外侧旋转 |
+| 最大值模板 | 原始值和摘要类型相容；空孩子不提供虚构的零值；叶子已初始化 | 负值、最大值删除、相同最大值仍存在 |
+| 插入与缓存包装 | 叶子、祖先摘要、拓扑及最左地址在同一保护窗口完成 | 不旋转插入、空树插入、非最左插入 |
+| 删除包装 | 先按旧拓扑找后继，结构删除之后再按需修复颜色；普通/增强返回类型不同 | 删除最左/非最左/最后节点及零旋转路径 |
+
+独立检查的具体方法见[有界快照检查器](../../../../../../knowledge/linux/data_structures/红黑树_rb-tree/P46_独立验证树形与派生状态.md#46.10.1_运行有界快照检查器)。这些模板与包装都不自动提供锁、引用或回收等待，摘要检查通过也不能证明并发寿命协议正确。
 
 
 ## 1.12\_增强删除的两段收尾
