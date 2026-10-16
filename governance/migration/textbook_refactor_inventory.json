@@ -5793,6 +5793,17 @@
           "双编译器各17种控制流程模拟与Bash语法通过；全仓9012有效链接、元数据、标题、路径和diff检查通过。"
         ],
         "limits": "无真实Linux运行；模拟不证明Linux ABI。固定源码只核对本章相关路径，不声明全部VFS或epoll实现覆盖。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P03_fasync_机制的历史与设计动机.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "用多个打开者、共享file和退出缺口推导订阅连接层，区分历史证据与设计推演；同场景比较等待与信号，核对实际文件类型并展开批量成本及尾批活性。",
+        "date": "2026-10-17",
+        "validation": [
+          "原稿全文与内容去向记录、正文冷读、两图渲染目视及连续阅读严格检查通过。",
+          "终端/socket/管道/evdev固定源码核对；3条出链无标题入链，全仓9014有效链接及元数据、标题、路径和diff检查通过。"
+        ],
+        "limits": "批量计数是给定前提的纸面推演，不是性能测试；未推断helper首次提交或设备频率适用阈值。"
       }
     },
     "additional_documents": [
