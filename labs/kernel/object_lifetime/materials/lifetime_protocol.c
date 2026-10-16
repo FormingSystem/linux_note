@@ -1,6 +1,15 @@
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+/* 模型检查始终求值，不由 NDEBUG 决定是否执行。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("lifetime invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 enum owner {
     OWNER_CREATOR = 1u,
@@ -19,16 +28,16 @@ struct model {
 
 static void take(struct model *m, unsigned int owner)
 {
-    assert(m->storage_exists && m->owners && !(m->owners & owner));
+    require_model(m->storage_exists && m->owners && !(m->owners & owner));
     m->owners |= owner; /* 外部账本记录新增的一份责任。 */
 }
 
 static void drop(struct model *m, unsigned int owner)
 {
-    assert(m->storage_exists && (m->owners & owner));
+    require_model(m->storage_exists && (m->owners & owner));
     m->owners &= ~owner;
     if (!m->owners) {
-        assert(!m->visible && !m->accepting);
+        require_model(!m->visible && !m->accepting);
         m->storage_exists = false;
         ++m->releases; /* 模型记录直接回收，没有真实 free。 */
     }
@@ -38,14 +47,14 @@ static bool lookup(struct model *m)
 {
     if (!m->visible)
         return false;
-    assert(m->owners & OWNER_CONTAINER);
+    require_model(m->owners & OWNER_CONTAINER);
     take(m, OWNER_READER);
     return true;
 }
 
 static bool read_value(const struct model *m, int *value)
 {
-    assert(m->storage_exists && (m->owners & OWNER_READER));
+    require_model(m->storage_exists && (m->owners & OWNER_READER));
     if (!m->accepting)
         return false;
     *value = 42;
@@ -54,7 +63,7 @@ static bool read_value(const struct model *m, int *value)
 
 static void close_entry(struct model *m)
 {
-    assert(m->visible && (m->owners & OWNER_CONTAINER));
+    require_model(m->visible && (m->owners & OWNER_CONTAINER));
     m->visible = false;
     m->accepting = false;
     drop(m, OWNER_CONTAINER);
@@ -68,16 +77,22 @@ int main(void)
         take(&m, OWNER_CONTAINER);
         m.visible = m.accepting = true;
         drop(&m, OWNER_CREATOR);
-        assert(lookup(&m));
+        bool found = lookup(&m);
+        require_model(found);
         int value = -1;
-        if (!close_first)
-            assert(read_value(&m, &value) && value == 42);
+        bool accepted = false;
+        if (!close_first) {
+            accepted = read_value(&m, &value);
+            require_model(accepted && value == 42);
+        }
         close_entry(&m);
-        assert(!lookup(&m));
-        assert(m.storage_exists && m.owners == OWNER_READER);
-        assert(!read_value(&m, &value)); /* 有引用仍可能被业务拒绝。 */
+        found = lookup(&m);
+        require_model(!found);
+        require_model(m.storage_exists && m.owners == OWNER_READER);
+        accepted = read_value(&m, &value);
+        require_model(!accepted); /* 有引用仍可能被业务拒绝。 */
         drop(&m, OWNER_READER);
-        assert(!m.storage_exists && m.releases == 1);
+        require_model(!m.storage_exists && m.releases == 1);
         printf("close_first=%u releases=%u\n", close_first, m.releases);
     }
     return 0;

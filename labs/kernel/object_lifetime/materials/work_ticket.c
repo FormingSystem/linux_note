@@ -1,6 +1,15 @@
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+/* 模型检查始终求值，不由 NDEBUG 决定是否执行。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("lifetime invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 enum work_state {
     IDLE,       /* 尚未预留 */
@@ -23,13 +32,13 @@ struct ledger {
 /* 外部观察账本，不是真实 work_struct，也不分配或释放业务对象。 */
 static void check(const struct ledger *book)
 {
-    assert(book->refs == (book->creator ? 1u : 0u) + (book->ticket ? 1u : 0u));
-    assert(book->releases == (book->refs ? 0u : 1u));
+    require_model(book->refs == (book->creator ? 1u : 0u) + (book->ticket ? 1u : 0u));
+    require_model(book->releases == (book->refs ? 0u : 1u));
 }
 
 static void put_one(struct ledger *book, bool *owner)
 {
-    assert(*owner && book->refs);
+    require_model(*owner && book->refs);
     *owner = false;
     if (--book->refs == 0)
         ++book->releases;
@@ -38,7 +47,7 @@ static void put_one(struct ledger *book, bool *owner)
 
 static void reserve(struct ledger *book)
 {
-    assert(book->creator && !book->ticket && book->state == IDLE);
+    require_model(book->creator && !book->ticket && book->state == IDLE);
     book->ticket = true;
     ++book->refs;
     book->state = RESERVED;
@@ -47,7 +56,7 @@ static void reserve(struct ledger *book)
 
 static void submit(struct ledger *book, bool accept)
 {
-    assert(book->state == RESERVED && book->ticket);
+    require_model(book->state == RESERVED && book->ticket);
     book->state = accept ? PENDING : REJECTED;
     if (!accept)
         put_one(book, &book->ticket); /* 提交者收回本次未交出的预留。 */
@@ -55,21 +64,21 @@ static void submit(struct ledger *book, bool accept)
 
 static void start_work(struct ledger *book)
 {
-    assert(book->state == PENDING && book->ticket);
+    require_model(book->state == PENDING && book->ticket);
     book->state = RUNNING;
     ++book->runs;
 }
 
 static void finish_work(struct ledger *book)
 {
-    assert(book->state == RUNNING);
+    require_model(book->state == RUNNING);
     book->state = DONE;
     put_one(book, &book->ticket); /* 执行者归还这一实例的责任。 */
 }
 
 static bool cancel_sync_model(struct ledger *book)
 {
-    assert(book->creator); /* 管理者在取消过程中保留自己的份额。 */
+    require_model(book->creator); /* 管理者在取消过程中保留自己的份额。 */
     if (book->state == PENDING) {
         book->state = CANCELED;
         return true; /* 待执行实例被取消；函数本身不代替调用者 put。 */
@@ -104,9 +113,9 @@ int main(void)
                 put_one(&book, &book.ticket); /* 只接管明确取消的那一实例。 */
             put_one(&book, &book.creator);
         }
-        assert(canceled == (path == 1));
-        assert(book.runs == (path >= 2 ? 1u : 0u));
-        assert(book.releases == 1 && book.refs == 0);
+        require_model(canceled == (path == 1));
+        require_model(book.runs == (path >= 2 ? 1u : 0u));
+        require_model(book.releases == 1 && book.refs == 0);
         printf("path=%u canceled=%u runs=%u releases=%u\n",
                path, canceled ? 1u : 0u, book.runs, book.releases);
     }

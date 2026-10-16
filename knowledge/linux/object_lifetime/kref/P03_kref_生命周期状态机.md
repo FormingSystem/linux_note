@@ -35,10 +35,16 @@ domains:
 
 ```mermaid
 stateDiagram-v2
+    direction LR
+    state "准备中" as Preparing
+    state "已发布且接纳业务" as Available
+    state "关闭中" as Closing
+    state "清理中" as Cleaning
+    state "本周期结束" as Ended
     [*] --> Preparing: S0存储与初始责任已建立
     Preparing --> Available: S1/S2责任就绪并按协议发布
     Preparing --> Cleaning: 创建失败后归还已有责任
-    Available --> Available: S3或S4部分持有者退出
+    Available --> Available: S3/S4部分份额退出
     Available --> Closing: S4关闭业务并撤下入口
     Closing --> Closing: 已有持有者收尾并归还
     Closing --> Cleaning: S5最后正常归还
@@ -46,7 +52,7 @@ stateDiagram-v2
     Ended --> [*]
 ```
 
-这张图是本章先研究的直接回收协议，并非 kref 里的一个枚举字段。Closing 可以仍有引用和存储；Cleaning 也不必在所有设计中立即进入 Ended，例如静态外壳与延迟回收就有不同安排。release 在最后归还者的上下文被调用，是清理协议入口；不能不看类型回调就断言“函数一返回所有存储必定消失”。
+这张图是本章先研究的直接回收协议，并非 kref 里的一个枚举字段。“关闭中”可以仍有引用和存储；“清理中”也不必在所有设计中立即进入“本周期结束”，例如静态外壳与延迟回收就有不同安排。release 在最后归还者的上下文被调用，是清理协议入口；不能不看类型回调就断言“函数一返回所有存储必定消失”。
 
 ------
 
@@ -75,9 +81,18 @@ flowchart LR
 每个函数在指定顺序中完成一个协议步骤。这样可以先预测两种先后：旧读者在关闭之前执行一次操作，或者关闭先发生；两者最后都应完成一次清理。完整材料为 [lifetime_protocol.c](../../../../labs/kernel/object_lifetime/materials/lifetime_protocol.c)：
 
 ```c
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+/* 模型检查始终求值，不由 NDEBUG 决定是否执行。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("lifetime invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 enum owner {
     OWNER_CREATOR = 1u,
@@ -96,16 +111,16 @@ struct model {
 
 static void take(struct model *m, unsigned int owner)
 {
-    assert(m->storage_exists && m->owners && !(m->owners & owner));
+    require_model(m->storage_exists && m->owners && !(m->owners & owner));
     m->owners |= owner; /* 外部账本记录新增的一份责任。 */
 }
 
 static void drop(struct model *m, unsigned int owner)
 {
-    assert(m->storage_exists && (m->owners & owner));
+    require_model(m->storage_exists && (m->owners & owner));
     m->owners &= ~owner;
     if (!m->owners) {
-        assert(!m->visible && !m->accepting);
+        require_model(!m->visible && !m->accepting);
         m->storage_exists = false;
         ++m->releases; /* 模型记录直接回收，没有真实 free。 */
     }
@@ -115,14 +130,14 @@ static bool lookup(struct model *m)
 {
     if (!m->visible)
         return false;
-    assert(m->owners & OWNER_CONTAINER);
+    require_model(m->owners & OWNER_CONTAINER);
     take(m, OWNER_READER);
     return true;
 }
 
 static bool read_value(const struct model *m, int *value)
 {
-    assert(m->storage_exists && (m->owners & OWNER_READER));
+    require_model(m->storage_exists && (m->owners & OWNER_READER));
     if (!m->accepting)
         return false;
     *value = 42;
@@ -131,7 +146,7 @@ static bool read_value(const struct model *m, int *value)
 
 static void close_entry(struct model *m)
 {
-    assert(m->visible && (m->owners & OWNER_CONTAINER));
+    require_model(m->visible && (m->owners & OWNER_CONTAINER));
     m->visible = false;
     m->accepting = false;
     drop(m, OWNER_CONTAINER);
@@ -145,27 +160,40 @@ int main(void)
         take(&m, OWNER_CONTAINER);
         m.visible = m.accepting = true;
         drop(&m, OWNER_CREATOR);
-        assert(lookup(&m));
+        bool found = lookup(&m);
+        require_model(found);
         int value = -1;
-        if (!close_first)
-            assert(read_value(&m, &value) && value == 42);
+        bool accepted = false;
+        if (!close_first) {
+            accepted = read_value(&m, &value);
+            require_model(accepted && value == 42);
+        }
         close_entry(&m);
-        assert(!lookup(&m));
-        assert(m.storage_exists && m.owners == OWNER_READER);
-        assert(!read_value(&m, &value)); /* 有引用仍可能被业务拒绝。 */
+        found = lookup(&m);
+        require_model(!found);
+        require_model(m.storage_exists && m.owners == OWNER_READER);
+        accepted = read_value(&m, &value);
+        require_model(!accepted); /* 有引用仍可能被业务拒绝。 */
         drop(&m, OWNER_READER);
-        assert(!m.storage_exists && m.releases == 1);
+        require_model(!m.storage_exists && m.releases == 1);
         printf("close_first=%u releases=%u\n", close_first, m.releases);
     }
     return 0;
 }
 ```
 
-进入材料目录编译运行：
+在仓库根目录编译这份顺序模型：
 
 ```bash
-cc -std=c11 -Wall -Wextra -Werror -O2 lifetime_protocol.c -o lifetime_protocol
-./lifetime_protocol
+# Linux 主机，仓库根目录；已安装 C11 编译器。
+cc -std=c11 -Wall -Wextra -Werror -O2 labs/kernel/object_lifetime/materials/lifetime_protocol.c -o /tmp/lifetime_protocol
+```
+
+编译成功后得到 `/tmp/lifetime_protocol`。`require_model()` 在条件不符时报告失败并退出；即使添加 `-DNDEBUG`，协议动作与检查仍会执行。
+
+```bash
+# 同一台 Linux 主机，运行刚生成的模型。
+/tmp/lifetime_protocol
 ```
 
 输出为 `close_first=0 releases=1` 和 `close_first=1 releases=1`。第一轮在关闭前读取成功，关闭后再读被拒绝；第二轮从未获准执行读取。两轮的旧读者在关闭之后都仍持一份，因此模型里的 storage_exists 保持真，直到它最后 drop 才转为假。最终检查读取的是观察模型的元数据，不是在真实 free 后读对象。
@@ -174,7 +202,7 @@ cc -std=c11 -Wall -Wextra -Werror -O2 lifetime_protocol.c -o lifetime_protocol
 
 ### 3.3.2\_把反例转换成设计问题
 
-先预测将 accepting 置为 false、暂不撤下 visible 的效果：新 lookup 仍可能成功取得引用，但业务调用会被拒绝。这不一定立即造成内存错误，却可能违背“关闭后不再接纳新句柄”的产品要求。只有明确区别查找入口与业务许可，才能判断需关闭哪条路径。
+先预测在首次 lookup 之前将 accepting 置为 false、暂不撤下 visible 的效果：这次 lookup 仍成功取得引用，但业务调用会被拒绝。修改实验时把首次读取的预期改为拒绝，其他责任仍正常退出。模型只有一个 OWNER_READER 槽，若要同时观察两个读者，应先增加独立的责任位，不能对已占用的同一槽重复 take。这不一定立即造成内存错误，却可能违背“关闭后不再接纳新句柄”的产品要求。只有明确区别查找入口与业务许可，才能判断需关闭哪条路径。
 
 再预测撤下 visible、却忘记把 accepting 关闭：新查找失败，旧持有者仍可操作。对于允许旧请求做完的协议，这可能正是需求；对于立即拒绝后续操作的协议，就缺了业务关闭步骤。引用计数无法替你选择这两种语义。
 
@@ -426,9 +454,18 @@ workqueue 管理工作执行，不认识外层请求的引用责任。若回调�
 下面的完整 [work_ticket.c](../../../../labs/kernel/object_lifetime/materials/work_ticket.c)使用外部账本模拟这份协议。ticket 表示本次提交预留或被接收的一份，state 表示它处于预留、排队、执行、完成或取消哪个阶段；它不是 Linux work_struct 的实现。模型取消函数若遇到 RUNNING，会显式安排执行者结束来代表等待结果，没有真实线程或内核等待。
 
 ```c
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+/* 模型检查始终求值，不由 NDEBUG 决定是否执行。 */
+static void require_model(bool condition)
+{
+    if (!condition) {
+        fputs("lifetime invariant failed\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+}
 
 enum work_state {
     IDLE,       /* 尚未预留 */
@@ -451,13 +488,13 @@ struct ledger {
 /* 外部观察账本，不是真实 work_struct，也不分配或释放业务对象。 */
 static void check(const struct ledger *book)
 {
-    assert(book->refs == (book->creator ? 1u : 0u) + (book->ticket ? 1u : 0u));
-    assert(book->releases == (book->refs ? 0u : 1u));
+    require_model(book->refs == (book->creator ? 1u : 0u) + (book->ticket ? 1u : 0u));
+    require_model(book->releases == (book->refs ? 0u : 1u));
 }
 
 static void put_one(struct ledger *book, bool *owner)
 {
-    assert(*owner && book->refs);
+    require_model(*owner && book->refs);
     *owner = false;
     if (--book->refs == 0)
         ++book->releases;
@@ -466,7 +503,7 @@ static void put_one(struct ledger *book, bool *owner)
 
 static void reserve(struct ledger *book)
 {
-    assert(book->creator && !book->ticket && book->state == IDLE);
+    require_model(book->creator && !book->ticket && book->state == IDLE);
     book->ticket = true;
     ++book->refs;
     book->state = RESERVED;
@@ -475,7 +512,7 @@ static void reserve(struct ledger *book)
 
 static void submit(struct ledger *book, bool accept)
 {
-    assert(book->state == RESERVED && book->ticket);
+    require_model(book->state == RESERVED && book->ticket);
     book->state = accept ? PENDING : REJECTED;
     if (!accept)
         put_one(book, &book->ticket); /* 提交者收回本次未交出的预留。 */
@@ -483,21 +520,21 @@ static void submit(struct ledger *book, bool accept)
 
 static void start_work(struct ledger *book)
 {
-    assert(book->state == PENDING && book->ticket);
+    require_model(book->state == PENDING && book->ticket);
     book->state = RUNNING;
     ++book->runs;
 }
 
 static void finish_work(struct ledger *book)
 {
-    assert(book->state == RUNNING);
+    require_model(book->state == RUNNING);
     book->state = DONE;
     put_one(book, &book->ticket); /* 执行者归还这一实例的责任。 */
 }
 
 static bool cancel_sync_model(struct ledger *book)
 {
-    assert(book->creator); /* 管理者在取消过程中保留自己的份额。 */
+    require_model(book->creator); /* 管理者在取消过程中保留自己的份额。 */
     if (book->state == PENDING) {
         book->state = CANCELED;
         return true; /* 待执行实例被取消；函数本身不代替调用者 put。 */
@@ -532,9 +569,9 @@ int main(void)
                 put_one(&book, &book.ticket); /* 只接管明确取消的那一实例。 */
             put_one(&book, &book.creator);
         }
-        assert(canceled == (path == 1));
-        assert(book.runs == (path >= 2 ? 1u : 0u));
-        assert(book.releases == 1 && book.refs == 0);
+        require_model(canceled == (path == 1));
+        require_model(book.runs == (path >= 2 ? 1u : 0u));
+        require_model(book.releases == 1 && book.refs == 0);
         printf("path=%u canceled=%u runs=%u releases=%u\n",
                path, canceled ? 1u : 0u, book.runs, book.releases);
     }
@@ -542,11 +579,18 @@ int main(void)
 }
 ```
 
-进入材料目录运行：
+在仓库根目录编译这份工作票据模型：
 
 ```bash
-cc -std=c11 -Wall -Wextra -Werror -O2 work_ticket.c -o work_ticket
-./work_ticket
+# Linux 主机，仓库根目录；已安装 C11 编译器。
+cc -std=c11 -Wall -Wextra -Werror -O2 labs/kernel/object_lifetime/materials/work_ticket.c -o /tmp/work_ticket
+```
+
+编译成功后得到 `/tmp/work_ticket`。`require_model()` 在条件不符时报告失败并退出；即使添加 `-DNDEBUG`，协议动作与检查仍会执行。
+
+```bash
+# 同一台 Linux 主机，运行刚生成的模型。
+/tmp/work_ticket
 ```
 
 每条输出最后都是 releases=1；各路径应与下表对应，而不能只检查程序没有崩溃：
@@ -564,7 +608,7 @@ cc -std=c11 -Wall -Wextra -Werror -O2 work_ticket.c -o work_ticket
 
 将本模型推广到延迟工作、重新投递或多个生产者时，要先增加实例身份及对应份额的账本，并遵循各自取消接口。具体内核等待路径见[工作队列总索引](../../../../research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md)与[cancel 模块](../../../../research/source_reading/workqueue/navigation/P04_Linux_6.12_flush取消与生命周期模块源码概念导读.md#4.4_cancel调用链)。
 
-#### (8)\_重构后的所有权表
+#### (8)\_按退出条件汇总各方责任
 
 | 持有者或阶段 | 取得与覆盖区间 | 正常退出 | 拒绝、失败或取消 |
 | --- | --- | --- | --- |
@@ -696,12 +740,12 @@ sequenceDiagram
         M->>O: 取得锁，accepting=false，再解锁
     else 管理者先完成状态切换
         M->>O: 锁内写accepting=false
-        R->>O: 锁内读false，返回ESHUTDOWN
+        R->>O: 锁内读false，返回-ESHUTDOWN
     end
     Note over R,O: 拒绝业务不等于读者引用消失，仍须归还
 ```
 
-ESHUTDOWN 是本例用来表示服务已关闭的错误码。失败时不更新 value，也不写调用者的结果槽。读者的引用覆盖取锁、检查、解锁和收尾；它不能在检查失败时直接 return 而遗忘 put。3.16 给出完整程序，先按这张图预测它的两次输出。
+`ESHUTDOWN` 是本例用来表示服务已关闭的错误常量，函数返回它的负值 `-ESHUTDOWN`。失败时不更新 value，也不写调用者的结果槽。读者的引用覆盖取锁、检查、解锁和收尾；它不能在检查失败时直接 return 而遗忘 put。3.16 给出完整程序，先按这张图预测它的两次输出。
 
 ### 3.11.2\_对象发布和对象销毁的对称关系
 
@@ -719,7 +763,7 @@ ESHUTDOWN 是本例用来表示服务已关闭的错误码。失败时不更新 
 
 把刚才的状态地址放进一次完整生命周期。为展示前节的直接转交，这里让发布成功时入口接管初始引用；与前章“预留一份给容器”的方案相比，它减少一次 get/put，但发布成功后创建者就不能继续借自己的旧份额访问。
 
-### 3.12.1\_生命周期完整流程示例
+### 3.12.1\_把六个阶段对应到具体状态地址
 
 本例只有一个发布管理者，关闭期间不重新发布，不包含工作队列、设备 I/O 或回调自重排。服务操作是锁内的一次计数更新，本实验仅进行少量有限操作，不把 int 计数器当成可无限递增的生产接口。这些限制让我们先验证关闭与引用退出的组合，再讨论扩大协议所需的额外状态。
 
@@ -767,7 +811,7 @@ flowchart LR
 
 ### 3.12.3\_kref\_让\_不可被新找到\_和\_可以被旧引用使用\_同时成立
 
-现在可以精确解释“旧引用仍能使用”：它可以安全进入对象的软件收尾协议，并不意味着服务必须接受新操作。设备移除后，旧 file/private_data 可以保留状态与错误信息到 close，但不能仅凭 kref 保证硬件还在、DMA 已结束或中断已退出。那些资源各自需要停止和排空条件。
+现在可以精确解释“旧引用仍能使用”：它可以安全进入对象的软件收尾协议，并不意味着服务必须接受新操作。设备移除后，旧 file/private_data 可以保留状态与错误信息到 close，但不能仅凭 kref 保证硬件还在、中断已退出，或设备自行发起的 **直接内存访问（Direct Memory Access，DMA）** 已结束。那些资源各自需要停止和排空条件。
 
 直接在撤下入口时 kfree，会让 A/B 的下一次检查连读取 accepting 都成为悬空访问。相反，一直等所有句柄消失才标记业务关闭，又可能让服务在等待期间继续接收请求。把入口关闭、业务停止和存储回收分开，才能允许旧持有者得到明确错误并有序归还。
 
@@ -1018,16 +1062,56 @@ MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("业务关闭与引用退出分层实验");
 ```
 
-材料 Makefile 已登记本模块；在 Linux 的材料目录中，将 KDIR 设置为与运行内核匹配且已准备好的模块构建树，再构建和观察：
+继续使用前两章约定的 `KERNEL_BUILD`，指向与目标机匹配、已配置且准备好的内核构建目录；ARM 交叉工具链的 `ARCH` 和 `CROSS_COMPILE` 已在当前 shell 设置。这里建立独立目录，只选择本节模块。
 
 ```bash
-make -C "$KDIR" M="$PWD" modules
+# Linux 构建主机，仓库根目录；后续构建留在同一 shell。
+kref_shutdown_dir=$(mktemp -d /tmp/kref_shutdown.XXXXXX)
+```
+
+创建成功后，变量保存新目录的实际路径。不要把用户态 C 模型或全部后续模块一起交给内核构建系统。
+
+```bash
+# 同一构建主机，仓库根目录。
+cp labs/kernel/object_lifetime/materials/note_kref_shutdown.c "$kref_shutdown_dir/"
+```
+
+复制本节完整源码，再为它写入单模块清单。
+
+```bash
+# 同一构建主机，新建的实验目录内。
+printf '%s\n' 'obj-m += note_kref_shutdown.o' > "$kref_shutdown_dir/Makefile"
+```
+
+`obj-m` 让内核构建系统选择这个外部模块对象，不修改材料目录中的总 Makefile。
+
+```bash
+# 同一构建主机，使用已准备好的目标内核与工具链。
+make -C "$KERNEL_BUILD" M="$kref_shutdown_dir" modules
+```
+
+构建成功后取得实验目录内的 `note_kref_shutdown.ko`；构建主机与运行目标不同时，将它传到匹配的目标 Linux，进入文件所在目录。
+
+```bash
+# 匹配的目标 Linux，note_kref_shutdown.ko 所在目录。
 sudo insmod ./note_kref_shutdown.ko
+```
+
+加载过程依次取得旧读者引用、执行一次业务、关闭服务、尝试再次执行，并归还读者份额。初始化返回前，本例的全部责任已经结束。
+
+```bash
+# 同一目标 Linux；上一步加载成功后卸载。
 sudo rmmod note_kref_shutdown
+```
+
+卸载只打印对象外的 `release_calls`，不会再次释放已经清理的外壳。
+
+```bash
+# 同一目标 Linux，观察本次实验日志。
 sudo dmesg | tail -n 12
 ```
 
-这些是目标操作步骤，本轮实际完成的宿主和 ARM 前端检查及未执行项见材料说明。目标环境加载时，先预测正常结果：第一次返回 0，value=1；关闭后返回 -ESHUTDOWN，after_value 仍为 -1；卸载报告 release_calls=1。失败操作保留 -1，正好说明它没有写输出槽。错误码的负整数打印值由目标头文件决定，不应靠死记数字判断协议。
+按 `note_shutdown:` 前缀找本次结果；其他日志挤出窗口时扩大观察范围。先预测正常结果：第一次返回 0，value=1；关闭后返回 -ESHUTDOWN，after_value 仍为 -1；卸载报告 release_calls=1。失败操作保留 -1，说明它没有写输出槽。错误码的负整数打印值由目标头文件决定，不应靠死记数字判断协议。这些是待观察结果；既有宿主和 ARM 前端检查不等同于目标模块构建、链接与装卸。
 
 注意 publish_take 成功后 creator=NULL 只是清除本地别名，真正的责任转交来自接口契约。lookup 返回的 reader 则持独立份额，覆盖两次操作与关闭后的错误观察。shutdown 放下入口份额时不能回收对象，因为 reader 尚未归还；最后 service_put(reader) 才执行本例的回收。
 
@@ -1047,21 +1131,29 @@ sudo dmesg | tail -n 12
 
 ```mermaid
 stateDiagram-v2
+    direction LR
+    state "未发布" as Private
+    state "入口可见" as Published
+    state "已撤下入口" as Detached
+    state "业务已停" as Stopped
+    state "旧责任退出中" as Draining
+    state "清理中" as Cleanup
+    state "已回收" as Freed
     [*] --> Private: S0创建并初始化
     Private --> Published: S1/S2发布成功并转交初始份额
     Private --> Cleanup: 未发布成功，归还初始份额
-    Published --> Published: S3创建者退出；lookup增加独立份额
+    Published --> Published: S3退出或lookup取得
     Published --> Detached: S4锁内清槽，关闭者接管入口份额
     Detached --> Stopped: S4对象锁内写accepting=false
     Stopped --> Draining: S4解锁并归还入口份额，尚有旧引用
     Stopped --> Cleanup: S5归还入口份额恰为最后一份
-    Draining --> Draining: 旧持有者收尾并归还非最后份额
+    Draining --> Draining: 非最后份额归还
     Draining --> Cleanup: S5最后正常归还
     Cleanup --> Freed: 本例回调直接kfree
     Freed --> [*]
 ```
 
-Published 不能直接因为“别的路径都退出”而归零：入口还拥有一份。Detached 也不会立即回收：关闭者接管了入口责任，正在修改停止状态。直到入口责任与读者责任都被正确处置，最后清理才成立。未发布成功的对象无需经过业务关闭阶段，因为它没有向外建立可访问入口。
+“入口可见”不能直接因为“别的路径都退出”而归零：入口还拥有一份。“已撤下入口”也不会立即回收：关闭者接管了入口责任，正在修改停止状态。直到入口责任与读者责任都被正确处置，最后清理才成立。未发布成功的对象无需经过业务关闭阶段，因为它没有向外建立可访问入口。
 
 一旦换成不持引用的索引、RCU 延迟清理或对象池，图中的保证和退出边都要重建。不能把一张画得完整的图当作所有生命周期设计共用的定律。
 
