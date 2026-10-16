@@ -1,0 +1,6 @@
+config HELLO_NOTE
+    tristate "Hello note teaching example"
+    help
+      启用最小日志实验，用于学习配置与构建的连接。
+      选择 M 生成可加载模块；选择 Y 将代码内建到内核。
+      本实验不注册设备，不控制板上外设。

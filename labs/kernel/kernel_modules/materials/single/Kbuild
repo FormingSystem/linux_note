@@ -1,0 +1,2 @@
+# 由 hello_note.c 构建可加载模块 hello_note.ko。
+obj-m := hello_note.o

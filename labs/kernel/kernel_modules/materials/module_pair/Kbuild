@@ -1,0 +1,1 @@
+obj-m := note_provider.o note_consumer.o
