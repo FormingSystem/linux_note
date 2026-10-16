@@ -2757,6 +2757,126 @@
           "Arm DDI0487 G.b/M.c原件SHA与manifest一致，核对共享属性及DMB对应页；gem5、Arm、Intel和CXL一手资料核对适用职责。"
         ],
         "limits": "教学模型与文档证据，不新增真实缓存协议、性能计数器、目标屏障、DMA、CXL或NUMA运行验证；人工评审状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/memory_ordering/P01_为什么需要体系结构内存模型.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "区分源码、抽象事件与机器次序，修正顺序一致性必须同步等待的误解，补事件图与答案。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读十篇；14张Mermaid图渲染并逐张目视，全部出入标题链接和连续性审计通过。",
+          "Clang 18.1.8编译两组目标得到STLR/LDAR与STLR/LDAPR；GCC 14.2.0及Arm GCC 10.3.1重跑访问宽度实验，正文C与实验源文件对应。",
+          "独立穷举六组抽象SC交错验证坏结果均不可达；Arm G.b 138、152至154页及一手论文核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "SC枚举不是herd7；本轮没有运行硬件并发、目标屏障或压力测试，编译结果不证明硬件原子性；人工状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/memory_ordering/P02_访问粒度_对齐与撕裂.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正撕裂值从未存在的错误，拆开原子性层次，内嵌Cortex-A7实际指令及屏障反例。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读十篇；14张Mermaid图渲染并逐张目视，全部出入标题链接和连续性审计通过。",
+          "Clang 18.1.8编译两组目标得到STLR/LDAR与STLR/LDAPR；GCC 14.2.0及Arm GCC 10.3.1重跑访问宽度实验，正文C与实验源文件对应。",
+          "独立穷举六组抽象SC交错验证坏结果均不可达；Arm G.b 138、152至154页及一手论文核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "SC枚举不是herd7；本轮没有运行硬件并发、目标屏障或压力测试，编译结果不证明硬件原子性；人工状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/memory_ordering/P03_乱序执行_Store_Buffer与观察时机.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "建立Store Buffer硬件状态所有权、S阶段与双CPU时间线，修正全屏障和容量边界，补单边屏障反例。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读十篇；14张Mermaid图渲染并逐张目视，全部出入标题链接和连续性审计通过。",
+          "Clang 18.1.8编译两组目标得到STLR/LDAR与STLR/LDAPR；GCC 14.2.0及Arm GCC 10.3.1重跑访问宽度实验，正文C与实验源文件对应。",
+          "独立穷举六组抽象SC交错验证坏结果均不可达；Arm G.b 138、152至154页及一手论文核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "SC枚举不是herd7；本轮没有运行硬件并发、目标屏障或压力测试，编译结果不证明硬件原子性；人工状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/memory_ordering/P04_一致性序_传播与多副本原子性.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "区分co/rf/fr及非多副本原子场景，修正裸IRIW可直接判断MCA的错误，保留架构版本边界。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读十篇；14张Mermaid图渲染并逐张目视，全部出入标题链接和连续性审计通过。",
+          "Clang 18.1.8编译两组目标得到STLR/LDAR与STLR/LDAPR；GCC 14.2.0及Arm GCC 10.3.1重跑访问宽度实验，正文C与实验源文件对应。",
+          "独立穷举六组抽象SC交错验证坏结果均不可达；Arm G.b 138、152至154页及一手论文核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "SC枚举不是herd7；本轮没有运行硬件并发、目标屏障或压力测试，编译结果不证明硬件原子性；人工状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/memory_ordering/P05_屏障_Acquire_Release与依赖顺序.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "区分语言release/acquire最低保证和STLR/LDAR额外保证，加入RCpc差别及发布场景答案。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读十篇；14张Mermaid图渲染并逐张目视，全部出入标题链接和连续性审计通过。",
+          "Clang 18.1.8编译两组目标得到STLR/LDAR与STLR/LDAPR；GCC 14.2.0及Arm GCC 10.3.1重跑访问宽度实验，正文C与实验源文件对应。",
+          "独立穷举六组抽象SC交错验证坏结果均不可达；Arm G.b 138、152至154页及一手论文核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "SC枚举不是herd7；本轮没有运行硬件并发、目标屏障或压力测试，编译结果不证明硬件原子性；人工状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/memory_ordering/P06_Litmus_Test_并发交错推演.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补SB六种SC交错，修正LB、IRIW与ISA2推论，区分教学伪代码与实际模型输入。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读十篇；14张Mermaid图渲染并逐张目视，全部出入标题链接和连续性审计通过。",
+          "Clang 18.1.8编译两组目标得到STLR/LDAR与STLR/LDAPR；GCC 14.2.0及Arm GCC 10.3.1重跑访问宽度实验，正文C与实验源文件对应。",
+          "独立穷举六组抽象SC交错验证坏结果均不可达；Arm G.b 138、152至154页及一手论文核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "SC枚举不是herd7；本轮没有运行硬件并发、目标屏障或压力测试，编译结果不证明硬件原子性；人工状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/memory_ordering/P07_反汇编_压力测试与形式化验证边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补完整C11发布编译探针、两种Arm目标的实测映射及各层证据限制，禁止从有限样本推断真实队列正确。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读十篇；14张Mermaid图渲染并逐张目视，全部出入标题链接和连续性审计通过。",
+          "Clang 18.1.8编译两组目标得到STLR/LDAR与STLR/LDAPR；GCC 14.2.0及Arm GCC 10.3.1重跑访问宽度实验，正文C与实验源文件对应。",
+          "独立穷举六组抽象SC交错验证坏结果均不可达；Arm G.b 138、152至154页及一手论文核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "SC枚举不是herd7；本轮没有运行硬件并发、目标屏障或压力测试，编译结果不证明硬件原子性；人工状态不变。"
+      },
+      "knowledge/foundations/computer_architecture/memory_ordering/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正SC与内部优化的因果关系，保持八篇由访问完整性到顺序及验证的阅读链。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读十篇；14张Mermaid图渲染并逐张目视，全部出入标题链接和连续性审计通过。",
+          "Clang 18.1.8编译两组目标得到STLR/LDAR与STLR/LDAPR；GCC 14.2.0及Arm GCC 10.3.1重跑访问宽度实验，正文C与实验源文件对应。",
+          "独立穷举六组抽象SC交错验证坏结果均不可达；Arm G.b 138、152至154页及一手论文核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "SC枚举不是herd7；本轮没有运行硬件并发、目标屏障或压力测试，编译结果不证明硬件原子性；人工状态不变。"
+      },
+      "labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补完整源文件、输出定位、版本命令、覆盖/清理边界及问题答案；重跑host与ARM编译。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读十篇；14张Mermaid图渲染并逐张目视，全部出入标题链接和连续性审计通过。",
+          "Clang 18.1.8编译两组目标得到STLR/LDAR与STLR/LDAPR；GCC 14.2.0及Arm GCC 10.3.1重跑访问宽度实验，正文C与实验源文件对应。",
+          "独立穷举六组抽象SC交错验证坏结果均不可达；Arm G.b 138、152至154页及一手论文核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "SC枚举不是herd7；本轮没有运行硬件并发、目标屏障或压力测试，编译结果不证明硬件原子性；人工状态不变。"
+      },
+      "labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/expected/2026-08-02_compiler_observation.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留历史结果身份，增加复现回链与本轮相同版本重跑范围，明确不新增硬件原子性证据。",
+        "date": "2026-10-16",
+        "validation": [
+          "完整冷读十篇；14张Mermaid图渲染并逐张目视，全部出入标题链接和连续性审计通过。",
+          "Clang 18.1.8编译两组目标得到STLR/LDAR与STLR/LDAPR；GCC 14.2.0及Arm GCC 10.3.1重跑访问宽度实验，正文C与实验源文件对应。",
+          "独立穷举六组抽象SC交错验证坏结果均不可达；Arm G.b 138、152至154页及一手论文核对；格式、元数据、命名、707篇链接与diff通过。"
+        ],
+        "limits": "SC枚举不是herd7；本轮没有运行硬件并发、目标屏障或压力测试，编译结果不证明硬件原子性；人工状态不变。"
       }
     }
   },
