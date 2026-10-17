@@ -6508,6 +6508,17 @@
           "Sparse实际三预期诊断及两无诊断类型样例；两图目视、精确链接和严格连续性通过"
         ],
         "limits": "没有执行坏代码、目标Kbuild或动态Lockdep；类型检查不证明裸指针逃逸安全。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P24_RCU_调试验证与集成误用.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修复工作项重复投递前覆盖引用的骨架漏洞，补timer最终关停、旧读区阶段区别及trace证据能力，采集使用独立实例。",
+        "date": "2026-10-17",
+        "validation": [
+          "固定timer、RCU回调和trace接口核对",
+          "两编译器宿主顺序交接检查、两图目视与严格连续性/链接检查通过"
+        ],
+        "limits": "未执行坏代码或目标tracefs/内核；采集段无Bash运行验证，宿主替身不证明并发。"
       }
     },
     "additional_documents": [
