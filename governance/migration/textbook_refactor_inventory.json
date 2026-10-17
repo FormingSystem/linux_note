@@ -19,7 +19,8 @@
       "knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md": "knowledge/linux/data_structures/红黑树_rb-tree/P14_从地址查询到VMA范围修改.md",
       "knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md": "knowledge/linux/data_structures/红黑树_rb-tree/P15_Maple固定实现的阅读路线.md",
       "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md",
-      "knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md": "knowledge/driver_model/device_tree/P01_GPIO连接命名占用与按键事件.md"
+      "knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md": "knowledge/driver_model/device_tree/P01_GPIO连接命名占用与按键事件.md",
+      "knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md": "knowledge/driver_model/device_tree/P02_引脚配置怎样连接外设与焊盘.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -7080,6 +7081,94 @@
           "两图渲染并目视；完整冷读、严格连续性、标题链接及实际格式/元数据/命名/全仓链接检查通过。"
         ],
         "limits": "未运行目标dtbs_check、Kbuild、驱动/电平/按键/唤醒或动态overlay实验；0x10b0未作板级推荐值。"
+      },
+      "knowledge/driver_model/device_tree/P02_引脚配置怎样连接外设与焊盘.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "原4462行全文冷读后重构配置职责、状态引用与厂商格式，保留有效主题并纠正六cell、PAD字段和编号混用。",
+        "validation": [
+          "固定提交源码与绑定核对；13次DTC/fdtget调用及恢复无警告，10个源码摘录的有序token与固定文件一致。",
+          "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
+      },
+      "knowledge/driver_model/device_tree/P03_引脚状态切换与GPIO占用交接.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "建立P0至P6状态周期与完整消费者模块，核对init/default、PM调用、非原子恢复和GPIO占用边界。",
+        "validation": [
+          "固定提交源码与绑定核对；13次DTC/fdtget调用及恢复无警告，10个源码摘录的有序token与固定文件一致。",
+          "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
+      },
+      "knowledge/driver_model/device_tree/P04_沿状态与寄存器定位引脚问题.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "按真实DT、debugfs、调用日志、寄存器和信号组织诊断，替换伪造路径与操作并给出只读采集脚本。",
+        "validation": [
+          "固定提交源码与绑定核对；13次DTC/fdtget调用及恢复无警告，10个源码摘录的有序token与固定文件一致。",
+          "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
+      },
+      "research/source_reading/pinctrl/navigation/P01_Linux_6.12_pinctrl源码阅读索引.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "建立固定NXP版本总索引，枚举全部模块导读和唯一实现标题，区分源码、离线编码与目标验证。",
+        "validation": [
+          "固定提交源码与绑定核对；13次DTC/fdtget调用及恢复无警告，10个源码摘录的有序token与固定文件一致。",
+          "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
+      },
+      "research/source_reading/pinctrl/navigation/P02_从描述到选择与硬件落点导读.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "以状态持有者和P0至P6组织模块合作，精确链接实现与观察入口，不复制函数体。",
+        "validation": [
+          "固定提交源码与绑定核对；13次DTC/fdtget调用及恢复无警告，10个源码摘录的有序token与固定文件一致。",
+          "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
+      },
+      "research/source_reading/pinctrl/source_explanations/P01_状态映射选择与探测交接.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "核对真实结构、DT映射、选择、失败恢复、probe和PM调用；中文源码说明与修改影响面闭合。",
+        "validation": [
+          "固定提交源码与绑定核对；13次DTC/fdtget调用及恢复无警告，10个源码摘录的有序token与固定文件一致。",
+          "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
+      },
+      "research/source_reading/pinctrl/source_explanations/P02_iMX6UL配置解析与寄存器落点.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "核对i.MX6UL解析、map、MUX/PAD写入及GPIO范围/请求/释放，建立本地字段表与时序。",
+        "validation": [
+          "固定提交源码与绑定核对；13次DTC/fdtget调用及恢复无警告，10个源码摘录的有序token与固定文件一致。",
+          "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
+      },
+      "research/source_reading/pinctrl/大纲.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "按描述未生效的问题组织阅读地图、前置知识和源码职责，连接全部真实章节与GPIO边界。",
+        "validation": [
+          "固定提交源码与绑定核对；13次DTC/fdtget调用及恢复无警告，10个源码摘录的有序token与固定文件一致。",
+          "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
       }
     },
     "additional_documents": [
@@ -7110,7 +7199,14 @@
       "knowledge/driver_model/device_tree/设备树+platform开发/P07_供电关系电压约束与启停责任.md",
       "knowledge/driver_model/device_tree/设备树+platform开发/P08_时钟连接频率请求与使能计数.md",
       "knowledge/driver_model/device_tree/设备树+platform开发/P09_OF属性读取与节点引用生命周期.md",
-      "knowledge/driver_model/device_tree/大纲.md"
+      "knowledge/driver_model/device_tree/大纲.md",
+      "knowledge/driver_model/device_tree/P03_引脚状态切换与GPIO占用交接.md",
+      "knowledge/driver_model/device_tree/P04_沿状态与寄存器定位引脚问题.md",
+      "research/source_reading/pinctrl/navigation/P01_Linux_6.12_pinctrl源码阅读索引.md",
+      "research/source_reading/pinctrl/navigation/P02_从描述到选择与硬件落点导读.md",
+      "research/source_reading/pinctrl/source_explanations/P01_状态映射选择与探测交接.md",
+      "research/source_reading/pinctrl/source_explanations/P02_iMX6UL配置解析与寄存器落点.md",
+      "research/source_reading/pinctrl/大纲.md"
     ],
     "language_review": {
       "status": "complete",
