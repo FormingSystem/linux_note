@@ -6629,6 +6629,17 @@
           "篇幅3380字词；实际格式元数据命名及全仓9385本地链接检查通过"
         ],
         "limits": "未执行目标热插拔、模块卸载或barrier压力实验。"
+      },
+      "research/source_reading/rcu/navigation/P09_Linux_6.12_Tree_SRCU模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "修正srcu_idx字段归属、双扫描观察顺序、小域回调选择及同步等待交付，统一U0至U6并补迁移练习。",
+        "validation": [
+          "固定源码核对；三图渲染目视；17出链6标题入链与严格连续性通过",
+          "篇幅3542字词；实际格式元数据命名及全仓9387本地链接检查通过"
+        ],
+        "limits": "未运行目标SRCU实例、迁移或域销毁实验。"
       }
     },
     "additional_documents": [
