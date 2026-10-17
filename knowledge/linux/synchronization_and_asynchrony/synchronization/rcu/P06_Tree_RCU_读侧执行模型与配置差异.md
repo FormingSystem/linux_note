@@ -314,7 +314,7 @@ PREEMPT_RCU 解决的是调度器在任意点 **非自愿** 换出 reader 后如
 | 要核对的问题 | 版本化位置 | 唯一实现讲解 |
 | --- | --- | --- |
 | 非抢占配置怎样把调度事件转成 CPU QS | `kernel/rcu/tree_plugin.h`、`tree.c` | [`rcu_note_context_switch` 与 `rcu_qs` 记录静止态](../../../../../research/source_reading/rcu/source_explanations/P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.5_rcu_note_context_switch与rcu_qs记录静止态) |
-| 读侧嵌套怎样保存在任务中 | `tree_plugin.h`、`include/linux/sched.h` | [`__rcu_read_lock` 与 `__rcu_read_unlock` 实现](../../../../../research/source_reading/rcu/source_explanations/P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md#3.3___rcu_read_lock与__rcu_read_unlock实现) |
+| 读侧嵌套怎样保存在任务中 | `tree_plugin.h`、`include/linux/sched.h` | [`__rcu_read_lock` 与 `__rcu_read_unlock` 实现](../../../../../research/source_reading/rcu/source_explanations/P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md#3.3_读侧嵌套怎样触发特殊退出) |
 | context switch 怎样登记 blocked task | `rcu_note_context_switch()` 及其插件分支 | [`rcu_note_context_switch` 转移读侧债务](../../../../../research/source_reading/rcu/source_explanations/P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md#3.4_rcu_note_context_switch转移读侧债务) |
 | 最外层 unlock 怎样删除任务并恢复传播 | `rcu_read_unlock_special()` 等路径 | [最外层退出删除任务并恢复传播](../../../../../research/source_reading/rcu/source_explanations/P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md#3.8_最外层退出删除任务并恢复传播) |
 
