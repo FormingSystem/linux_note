@@ -8836,6 +8836,66 @@
           "全仓856篇链接无缺失。"
         ],
         "limits": "没有目标Linux编译运行、坏地址注入、冻结竞争或异步完成实测。"
+      },
+      "knowledge/kernel_subsystems/vfs/P15_address_space_folio与页缓存.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿C0至C5追踪缓存成员、内容有效、填充等待和写入接纳，修正单状态链与完成即成功的误解。",
+        "validation": [
+          "十四函数与固定原件逐token一致，十份原件核对Git对象。",
+          "五篇冷读、十一图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓860篇链接无缺失；pagemap原件保留空白并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、缓存命中、设备I/O、分配竞争、并发truncate或故障注入实测。"
+      },
+      "research/source_reading/vfs/navigation/P14_页缓存的数据有效性与修改交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿C0至C5追踪缓存成员、内容有效、填充等待和写入接纳，修正单状态链与完成即成功的误解。",
+        "validation": [
+          "十四函数与固定原件逐token一致，十份原件核对Git对象。",
+          "五篇冷读、十一图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓860篇链接无缺失；pagemap原件保留空白并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、缓存命中、设备I/O、分配竞争、并发truncate或故障注入实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P34_页缓存归属索引与竞争插入.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿C0至C5追踪缓存成员、内容有效、填充等待和写入接纳，修正单状态链与完成即成功的误解。",
+        "validation": [
+          "十四函数与固定原件逐token一致，十份原件核对Git对象。",
+          "五篇冷读、十一图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓860篇链接无缺失；pagemap原件保留空白并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、缓存命中、设备I/O、分配竞争、并发truncate或故障注入实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P35_缓存读的填充等待与有效范围.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿C0至C5追踪缓存成员、内容有效、填充等待和写入接纳，修正单状态链与完成即成功的误解。",
+        "validation": [
+          "十四函数与固定原件逐token一致，十份原件核对Git对象。",
+          "五篇冷读、十一图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓860篇链接无缺失；pagemap原件保留空白并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、缓存命中、设备I/O、分配竞争、并发truncate或故障注入实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P36_缓冲写的准备接纳与标脏.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿C0至C5追踪缓存成员、内容有效、填充等待和写入接纳，修正单状态链与完成即成功的误解。",
+        "validation": [
+          "十四函数与固定原件逐token一致，十份原件核对Git对象。",
+          "五篇冷读、十一图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓860篇链接无缺失；pagemap原件保留空白并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、缓存命中、设备I/O、分配竞争、并发truncate或故障注入实测。"
       }
     },
     "additional_documents": [
