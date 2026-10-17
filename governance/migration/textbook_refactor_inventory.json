@@ -8901,7 +8901,11 @@
       "research/source_reading/vfs/source_explanations/P27_描述符预留扩容与发布协议.md",
       "research/source_reading/vfs/source_explanations/P28_描述符查询的引用验证与轻量借用.md",
       "research/source_reading/vfs/source_explanations/P29_描述符复制与表共享的两层引用.md",
-      "research/source_reading/vfs/source_explanations/P30_描述符脱离与最后file引用的释放.md"
+      "research/source_reading/vfs/source_explanations/P30_描述符脱离与最后file引用的释放.md",
+      "research/source_reading/vfs/navigation/P13_读写请求的位置缓冲与结果交接.md",
+      "research/source_reading/vfs/source_explanations/P31_读写入口的位置选择与结果回填.md",
+      "research/source_reading/vfs/source_explanations/P32_读写资格检查与文件操作分派.md",
+      "research/source_reading/vfs/source_explanations/P33_同步迭代请求与向量缓冲区的交接.md"
     ],
     "language_review": {
       "status": "complete",

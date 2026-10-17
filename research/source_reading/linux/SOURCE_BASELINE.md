@@ -3019,3 +3019,23 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 十二份原件中新增fork、task_work、task_work头文件与fcntl，分别定位共享入口、最终清理登记和标志分层。files.rst的旧辅助名、指针名及笼统更新锁规则与当前实现分开说明。配置为ARM、Tiny RCU、SMP关闭；文件锁、EPOLL、DNOTIFY与锁依赖检查开启，没有据此宣称多核实测。
 
 六篇冷读、十二图渲染目视、长度、标题元数据、锚点、源码及正文/C材料一致性完成。没有目标Linux编译运行记录，也未进行扩容/复用并发压力、预留冲突、任务退出队列或release跟踪。
+
+## 1.293\_同步读写的位置缓冲与返回契约
+
+2026-10-18，重写 [read/write分派](../../../knowledge/kernel_subsystems/vfs/P14_VFS_read_write分派.md#14.1_一次读写同时携带位置与缓冲区)，新增 [模块导读](../vfs/navigation/P13_读写请求的位置缓冲与结果交接.md#13.1_把请求状态放回一次同步周期) 与位置、资格、缓冲三篇实现，沿I0～I5核对同步请求。固定提交仍为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，十六个函数摘录逐token一致。标量优先传统方法，向量优先迭代方法，不能用一个统一优先级替代两类入口。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| fs/read_write.c | `befec0b5c537a73b09df80118318293060fd6dfa` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| include/linux/uio.h | `853f9de5aa05ab4dc8127ae21d825946f31d4f7c` |
+| lib/iov_iter.c | `bdb37d572e97ca7ae9ba87cdbf10ba794f3d087c` |
+| include/linux/uaccess.h | `43844510d5d0facfcb08c7d32798fe7e0fdd804c` |
+| arch/arm/include/asm/uaccess.h | `f90be312418e87b53ab99d6059617c121b85825e` |
+| include/asm-generic/access_ok.h | `2866ae61b1cd8eef0b238022c526b08fdb8dbd12` |
+| mm/filemap.c | `05adf0392625da1402d288eef9d9b6107a40fef4` |
+| include/linux/fsnotify.h | `278620e063ab2239f996069458c0adbb97a3c36b` |
+
+九份原件中新增迭代器导入实现、ARM用户访问头及通用地址范围检查。ARM启用MMU，SECURITY和FANOTIFY未启用；access_ok只形成范围证据，不能证明实际复制成功。同步栈请求拒绝排队完成，普通文件写侧保护在分派层配对，权限事件、结果通知、任务统计与持久化分别说明。
+
+五篇冷读、十图渲染目视、长度、标题元数据、锚点及完整C材料一致性完成。未在目标Linux编译运行，也未执行坏地址注入、冻结竞争或异步完成验证；正文实验输出标注为预期。
