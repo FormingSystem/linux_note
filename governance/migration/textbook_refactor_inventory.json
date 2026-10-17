@@ -8056,7 +8056,10 @@
       "research/source_reading/input/source_explanations/P05_能力轮询重复与输出的边界.md",
       "research/source_reading/input/navigation/P04_接触身份怎样跨帧保留.md",
       "research/source_reading/input/source_explanations/P06_多点槽状态与帧收尾.md",
-      "research/source_reading/input/source_explanations/P07_槽位映射与位置匹配.md"
+      "research/source_reading/input/source_explanations/P07_槽位映射与位置匹配.md",
+      "research/source_reading/input/navigation/P05_失步与停机分别恢复哪份状态.md",
+      "research/source_reading/input/source_explanations/P08_状态重同步与事件时间.md",
+      "research/source_reading/input/source_explanations/P09_PM状态恢复与硬件停止边界.md"
     ],
     "language_review": {
       "status": "complete",
