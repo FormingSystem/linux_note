@@ -838,6 +838,11 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [名称修改怎样锁定检查与交付](../../research/source_reading/vfs/navigation/P10_名称修改怎样锁定检查与交付.md)
+        - 🔴 [末项创建的检查与资源交接](../../research/source_reading/vfs/source_explanations/P19_末项创建的检查与资源交接.md)
+        - 🔴 [名称链接的增加撤销与通知](../../research/source_reading/vfs/source_explanations/P20_名称链接的增加撤销与通知.md)
+        - 🔴 [重命名的拓扑检查与锁顺序](../../research/source_reading/vfs/source_explanations/P21_重命名的拓扑检查与锁顺序.md)
+        - 🔴 [缓存名称移动与读侧序列交接](../../research/source_reading/vfs/source_explanations/P22_缓存名称移动与读侧序列交接.md)
         - 🔴 [快速观察怎样转为引用并协调慢查询](../../research/source_reading/vfs/navigation/P09_快速观察怎样转为引用并协调慢查询.md)
         - 🔴 [候选读取与快速路径验证](../../research/source_reading/vfs/source_explanations/P16_候选读取与快速路径验证.md)
         - 🔴 [从RCU观察交接到路径引用](../../research/source_reading/vfs/source_explanations/P17_从RCU观察交接到路径引用.md)

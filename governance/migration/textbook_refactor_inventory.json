@@ -8664,7 +8664,12 @@
       "research/source_reading/vfs/navigation/P09_快速观察怎样转为引用并协调慢查询.md",
       "research/source_reading/vfs/source_explanations/P16_候选读取与快速路径验证.md",
       "research/source_reading/vfs/source_explanations/P17_从RCU观察交接到路径引用.md",
-      "research/source_reading/vfs/source_explanations/P18_并行查询的登记等待与结果发布.md"
+      "research/source_reading/vfs/source_explanations/P18_并行查询的登记等待与结果发布.md",
+      "research/source_reading/vfs/navigation/P10_名称修改怎样锁定检查与交付.md",
+      "research/source_reading/vfs/source_explanations/P19_末项创建的检查与资源交接.md",
+      "research/source_reading/vfs/source_explanations/P20_名称链接的增加撤销与通知.md",
+      "research/source_reading/vfs/source_explanations/P21_重命名的拓扑检查与锁顺序.md",
+      "research/source_reading/vfs/source_explanations/P22_缓存名称移动与读侧序列交接.md"
     ],
     "language_review": {
       "status": "complete",
