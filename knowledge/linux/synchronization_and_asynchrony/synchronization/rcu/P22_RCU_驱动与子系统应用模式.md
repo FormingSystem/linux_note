@@ -13,7 +13,9 @@ topics:
 
 # 第22章\_RCU\_驱动与子系统应用模式
 
-掌握最小模板后，再把同一套生命期规则放进真实驱动场景。本章关注设备链表、状态表和异步销毁中的结构差异，同时观察 RCU 何时必须与更新锁、kref 或卸载同步协作。
+上一章解决了根、共享块和长期用户各自持有哪份引用。本章把这些规则放进设备驱动：一次热拔出既会撤销软件查找入口，又可能停止真实硬件，文件实例和工作队列还可能继续存在。即使RCU已经证明旧CPU读者退出，也不能据此断言DMA已经停止或旧文件已关闭。
+
+先观察不涉及硬件访问的注册表和状态快照，再引入长期上下文和复合配置；最后把它们接回一次设备关闭。示例是教学驱动骨架，不冒充某个上游驱动的实测实现。
 
 ## 22.1\_RCU\_在驱动场景中的典型应用模式
 
@@ -28,7 +30,7 @@ topics:
 3. **单对象引用与延迟销毁** —— 解决“对象逃出 RCU 读区后仍需存活”的问题；
 4. **复合配置快照** —— 解决“一代旧照由多个可共享分散块组成”的逐层退休问题。
 
-示例只表达平台无关的生命期骨架；错误处理、模块初始化和具体业务字段需要按实际驱动补齐。
+**讲解层次：应用协议层。** 示例依赖前文已解释的Linux接口，未提供模块入口、设备注册或完整文件操作。普通RCU读区只做短且不阻塞的访问；kmalloc/kzalloc与mutex调用位于允许睡眠的过程上下文。以下四种场景相互独立，不共享同名对象的释放权。具体接口实现从 [RCU源码总索引](../../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md) 和上一章的kref索引追溯。
 
 ------
 
@@ -54,7 +56,9 @@ struct dev_entry {
 - **读者**：频繁遍历链表（如 sysfs、监控任务）；
 - **写者**：插入或删除节点。
 
-若读者也取得同一把 `spin_lock`，每个 CPU 的遍历都会写锁缓存行；CPU 越多、遍历越频繁，这条缓存行越频繁在 CPU 间转移。RCU 的改变是让普通遍历不写这把共享更新锁，把跨 CPU 通信推迟到删除后的 GP。代价是节点不能立即释放，写者仍须串行化链表修改。
+若读者也取得同一把 `spin_lock`，CPU A遍历期间B不能进入；B随后取得锁还可能需要取得该锁缓存行的写权限。不同CPU频繁交替取得时，这种序列化与缓存行所有权转移会成为代价。RCU让普通遍历不再修改该共享更新锁，删除者另以GP取得旧遍历退出证据；并不取消读侧标记和后端通信。列表很小、读取很少或必须串行执行设备操作时，原锁方案仍更直接。
+
+下面固定一个 **设备对象由外层保活** 的范围：注册表拥有者在加入节点之前已有有效设备引用，并在停止本表所有读写入口、摘除节点及完成旧遍历排空之前保留它。`dev_entry`只借用 `dev`，不取得也不归还设备引用；设备名在示例观察期间不被并发重命名。无此范围的真实驱动必须给节点另建设备引用与合适的归还上下文，不能直接套用本例。
 
 ------
 
@@ -65,18 +69,19 @@ LIST_HEAD(dev_list);
 DEFINE_SPINLOCK(dev_lock);
 
 /* 写侧：添加新设备 */
-void dev_add(struct device *d)
+int dev_add(struct device *d)
 {
 	struct dev_entry *e = kmalloc(sizeof(*e), GFP_KERNEL);
 
 	if (!e)
-		return;
+		return -ENOMEM;
 	e->dev = d;
 	e->online = 1;
 
 	spin_lock(&dev_lock);
 	list_add_rcu(&e->list, &dev_list);
 	spin_unlock(&dev_lock);
+	return 0;
 }
 
 /* 写侧：删除设备（延迟释放） */
@@ -108,8 +113,7 @@ void dev_show_all(void)
 
 这个最小示例只回收 `dev_entry` 节点，并假定节点中的 `struct device *` 在对应 GP 结束前仍然有效。实际驱动若不能从设备核心的注销顺序得到该保证，节点还必须为设备取得独立引用，并在允许执行设备 release 的后续上下文中归还；RCU 只保护链表节点，不会自动延长被节点指向的设备生命期。
 
-> `[INV]`：读区内禁止修改链表结构。
->  `[MIX]`：写侧仍需自行互斥；读侧不获取传统共享读锁，但仍执行配置相关的生命周期标记和 RCU 指针访问。
+示例要求同一设备只加入一次，所有增删者都遵循 `dev_lock`，也不在硬IRQ中调用这些过程上下文入口。若真正有IRQ写者，须重新设计分配及锁的IRQ保护；不能只把现有普通spin_lock原样搬过去。这里的只读遍历不修改节点；RCU本身并不普遍禁止读区内的合规写者操作，结构修改仍由写侧协议决定。
 
 ------
 
@@ -121,7 +125,7 @@ void dev_show_all(void)
 | 删除节点 | RCU 删除 + 延迟释放    | 允许旧读者继续访问已摘除节点而不发生 UAF |
 | 遍历     | `rcu_read_lock()` 保护 | 在生命周期保护区内遍历；不自动形成字段快照 |
 
-`list_add_rcu()` / `list_del_rcu()` 与 `list_for_each_entry_rcu()` 实现了完整的 RCU 链表支持。
+`list_add_rcu()` / `list_del_rcu()` 与 `list_for_each_entry_rcu()` 分别承担发布、摘链及读取路径，释放时机仍由调用者安排。旧遍历可能经过刚摘除节点；一次遍历也不是全链的原子快照。例中的 `online` 发布后不变，不能把它读成“硬件此刻仍可访问”的授权检查。打印只用于演示，不能拿每节点打印的耗时衡量RCU查找性能。
 
 ------
 
@@ -145,7 +149,7 @@ struct drv_status {
 - **读者**：文件操作函数 (`read`, `poll`) 高频访问；
 - **写者**：状态变化（如掉电、复位）低频更新。
 
-这种“高读低写”的模式非常适合 RCU。
+若这三个标志是一组需要一致读取的诊断信息，原地分别赋值会让无锁读者混合两次更新；持同一把锁可以解决，但每次只读也要参与锁竞争。不可变快照把三个字段先在私有内存写完，再用一次入口发布选择版本。代价是每次更新要分配并延期回收，读者允许拿到旧的完整版本。高频统计计数通常不适合每次增加都复制快照，应另选原子、每CPU计数或锁；“读多写少”只是候选条件。
 
 ------
 
@@ -156,13 +160,13 @@ struct drv_status __rcu *gstat;
 static DEFINE_MUTEX(status_lock);
 
 /* 写者：更新状态 */
-void update_status(bool ready)
+int update_status(bool ready)
 {
 	struct drv_status *old, *new;
 
 	new = kmalloc(sizeof(*new), GFP_KERNEL);
 	if (!new)
-		return;
+		return -ENOMEM;
 
 	mutex_lock(&status_lock);
 	old = rcu_dereference_protected(gstat,
@@ -174,22 +178,37 @@ void update_status(bool ready)
 	mutex_unlock(&status_lock);
 	if (old)
 		kfree_rcu(old, rcu);  /* 宽限期后释放旧状态 */
+	return 0;
 }
 
-/* 读者：访问状态 */
-ssize_t drv_read(struct file *f, char __user *buf, size_t len, loff_t *off)
+struct status_view {
+	bool online;
+	bool ready;
+	bool fault;
+};
+
+/* 只复制软件快照，不宣称已读取硬件或向用户交付数据。 */
+bool read_status_view(struct status_view *view)
 {
 	struct drv_status *s;
+	bool found = false;
+
 	rcu_read_lock();
 	s = rcu_dereference(gstat);
-	if (!s || !s->ready) {
-		rcu_read_unlock();
-		return -EAGAIN;
+	if (s) {
+		view->online = s->online;
+		view->ready = s->ready;
+		view->fault = s->fault;
+		found = true;
 	}
 	rcu_read_unlock();
-	return len;
+	return found;
 }
 ```
+
+`view`是调用者有效且独占的输出存储；返回false时不读取其中未写字段。读者在同一次读区内复制全部字段，退出后使用的是值，不是旧快照地址。该函数不能代替 `read()` 文件操作：真实read要在许可协议下取得数据、处理长度及错误，并在允许缺页/睡眠的上下文向用户复制；没有复制数据就返回len会虚报成功。
+
+同样，`ready=true`只是观察结果。poll需要向设备自己的等待队列登记等待者，随后检查条件，条件改变的生产者按协议唤醒；RCU发布新指针不会自动发出poll唤醒。open取得长期上下文后还须验证设备业务许可，close则归还该文件实例的引用。硬件复位与读写操作的排斥由设备状态锁、在途计数或设备框架协议完成，不能以一次快照读取代替。
 
 ------
 
@@ -202,7 +221,7 @@ ssize_t drv_read(struct file *f, char __user *buf, size_t len, loff_t *off)
 | 实际延迟 | 必须通过基准测试 | 必须通过基准测试 |
 | 读取模型 | 新旧版本可并存，读者不重试 | 读者取得锁保护的当前状态 |
 
-> 适合：设备状态表、统计计数、策略标志等 **“读多写少”路径**。
+若需要“检查ready和提交设备操作不可被关闭插入”的原子业务过程，仍须使用能覆盖这两个动作的许可协议；若只是显示最近一代软件状态，则本快照模型可以成立。
 
 ------
 
@@ -214,7 +233,7 @@ ssize_t drv_read(struct file *f, char __user *buf, size_t len, loff_t *off)
 struct dev_ctx {
 	struct kref ref;
 	struct rcu_head rcu;
-	struct device *dev;
+	unsigned int generation;  /* 示例只保存发布后不变的软件代号。 */
 };
 
 static struct dev_ctx __rcu *gctx;
@@ -269,6 +288,8 @@ static void ctx_replace(struct dev_ctx *new)
             -> GP 后释放 dev_ctx
 ```
 
+对象按kmalloc家族分配且只发布一次，`ctx_replace(NULL)`用于撤销；不得重新发布同一个在用或退休对象。查找成功只保证软件内存存活，不表示仍是当前代或允许硬件I/O。若真实上下文持有 `struct device *`、DMA映射、时钟或队列，这些资源还需逐项建独立获取/释放协议，不能在本例的kfree前随便补一次可能睡眠的设备release。
+
 ## 22.6\_场景四\_一代设备配置由多个分散块组成
 
 设备配置可能不是一个连续结构，而是一个根节点组合队列限制、DMA 策略和过滤表等独立分配。不同代配置还可能共享未变化的 block：
@@ -318,7 +339,7 @@ static struct dev_config *config_clone(struct dev_config *old)
 }
 ```
 
-`config_clone()` 返回的新 root 尚不可见，所以失败清理可以直接逐块 put；一旦发布，root 对 block 的引用就必须一直保留到该 root 自己的 GP 回调。
+调用者必须在 `config_lock` 下从当前入口取得old，不能传入无保护的历史裸指针。clone返回的新根尚不可见；若后续修改失败，须逐块put再释放根；替换某个非NULL槽前也须归还clone为该槽取得的原份额。若两个槽恰好指向同一块，它们分别代表两份引用，不能只get一次却在退休时put两次。完整构造/回滚约束沿上一章C0，而不把clone误当作完整更新事务。
 
 ```c
 static void config_block_release(struct kref *ref)
@@ -341,19 +362,21 @@ static void config_retire_rcu(struct rcu_head *rcu)
 	kfree(config);
 }
 
-static void config_publish(struct dev_config *new)
+static void config_publish_locked(struct dev_config *new)
 {
 	struct dev_config *old;
 
-	mutex_lock(&config_lock);
+	/* 与取old、clone及私有修改处于同一更新事务。 */
+	lockdep_assert_held(&config_lock);
 	old = rcu_replace_pointer(current_config, new,
 				  lockdep_is_held(&config_lock));
-	mutex_unlock(&config_lock);
 
 	if (old)
 		call_rcu(&old->rcu, config_retire_rcu);
 }
 ```
+
+调用顺序是：取 `config_lock` → protected读取当前old → clone → 完成私有修改或失败回滚 → 成功时 `config_publish_locked(new)` → 解锁。这样两个控制面写者不会各自从同一旧版构造后覆盖对方；此mutex允许过程上下文构造中的睡眠。发布函数不再自行加锁，避免调用者已持锁时重复加锁。入口关闭与失败返回仍由外层驱动实现。
 
 普通短 reader 只需借用根已经持有的 block 引用：
 
@@ -372,12 +395,12 @@ static void read_current_config(void)
 }
 ```
 
-`use_queue_limits()` 和 `use_dma_policy()` 在这个模板中必须只做不阻塞、且不保存裸指针的短访问。reader 不需要每次读取都对两个 block 执行 get／put；只有某个 block 要交给异步任务并逃出 RCU 读区时，reader 才在临界区内为该 block 增加自己的长期引用。
+`use_queue_limits()` 和 `use_dma_policy()` 是业务占位函数：须接受NULL表示未配置，只做不阻塞且不保存裸指针的软件访问。名字含DMA不表示本模板已安全改写正在运行的设备。reader不需要每次读取都对两个block执行get/put；交给异步任务的块则在读区内取得长期引用，交付失败与取消也要归还。
 
 ```mermaid
 flowchart LR
-    E["RCU共享入口<br/>current_config"] -->|"更新前可达"| R0["旧root<br/>GP前仍可被reader访问"]
-    E -->|"更新后可达"| R1["新root"]
+    E["RCU共享入口<br/>current_config"] -->|"新版本发布后当前可达"| R1["新root"]
+    Reader["旧reader局部指针"] -->|"借用仍有效"| R0["旧root<br/>GP前仍可被reader访问"]
     R0 -->|"一份kref"| B0["queue_limits block"]
     R0 -->|"一份kref"| B1["dma_policy block"]
     R1 -->|"复用时另取一份kref"| B0
@@ -387,6 +410,7 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant R as "旧 reader"
     participant W as "配置更新者"
     participant Old as "旧 config root"
@@ -405,6 +429,8 @@ sequenceDiagram
 ```
 
 这类复合快照的顺序是“GP 后逐块 put”，与上一场景的“最后 put 后 `kfree_rcu()`”不同。详细所有权不变量和逃逸 block 模板统一见 [RCU、kref 与复合对象生命周期](P21_RCU_kref与复合对象生命周期.md)。
+
+图中步骤2先取得新根的块份额，步骤3才发布并登记旧根；步骤4结束借用，步骤5由后端在GP完成后交付callback，步骤6归还旧根的一份。没有任何一步把软件GP当作DMA完成信号。
 
 ## 22.7\_按问题特征选择组合
 
@@ -427,22 +453,51 @@ sequenceDiagram
 | [CHECK] 延迟释放      | 是否使用 `call_rcu()` / `kfree_rcu()` | □    |
 | [CHECK] 读路径最短    | 快照访问，不睡眠                      | □    |
 | [CHECK] SRCU 场景识别 | 可睡读路径迁移至 SRCU                 | □    |
-| [CHECK] 回调安全      | 回调中不再访问旧对象                  | □    |
+| [CHECK] 回调安全      | 可清理仍归自己所有的旧对象；释放后不再访问，且不阻塞 | □ |
 | [CHECK] 复合快照所有权 | 旧 root 是否保持每个 block 到 GP 后 | □ |
 | [CHECK] 逃逸子块引用 | 带出 RCU 前是否取得 block 独立引用 | □ |
 
 ------
 
-## 22.9\_小结
+## 22.9\_为什么一次GP不能完成设备关闭
 
-| 要点                                                   | 说明 |
-| ------------------------------------------------------ | ---- |
-| RCU 是 **读侧加速机制**，写侧仍需互斥。                 |      |
-| 在驱动开发中，它广泛用于链表、状态表、上下文指针管理。 |      |
-| 延迟释放是关键安全点：`call_rcu()` / `kfree_rcu()`。   |      |
-| 可与 `kref`、`mutex`、`workqueue` 等安全组合。         |      |
-| 适合“读多写少”的路径：状态读取、设备扫描、资源共享。   |      |
-| 单对象和“root + 多 block”必须使用不同的所有权模板。 | |
+用设备关闭检验前面的组合。以下D0～D5是责任顺序示例，不是对所有总线都成立的固定remove调用顺序；实际驱动还须遵循总线与设备框架的入口注销规则。
+
+| 阶段 | 责任状态与写入者 | 等待者依据什么继续 |
+| --- | --- | --- |
+| D0 关闭接纳 | 关闭者在业务锁下改变许可，禁止新的open、更新及工作生产 | 后续入口检查同一许可，而非旧RCU快照 |
+| D1 收回入口 | 注销框架入口、停止在途生产者，再撤下RCU节点/指针 | 不能再有本模块callback或工作新登记 |
+| D2 停止设备活动 | 按硬件协议停止DMA和新IRQ来源，使用对应同步接口收敛在途handler | 设备/IRQ协议的完成证据，不是普通RCU GP |
+| D3 等待旧软件使用 | 取得旧RCU遍历退出证据，并按协议处理旧文件、长期引用与工作 | 引用最终归还、工作完成或业务退出通知 |
+| D4 排空异步清理 | 无新生产者后等待模块callback，再排空其转交的工作 | barrier与工作完成分别证明对应阶段已返回 |
+| D5 最终销毁 | 所有资源的使用者退出后释放上下文、映射和模块私有资源 | 不留仍会执行模块代码的回调或工作 |
+
+D2与D3的具体先后要由硬件操作对软件状态的依赖决定；不能在仍运行的handler会访问该资源时提前释放，也不能持有handler所需的锁去等待它退出。若callback会排work，先barrier后排work；若work又会排callback，必须先关闭反馈生产环，不能只各等一次就宣称全部完成。
+
+下面固定“callback只向清理work单向转交，不再产生新callback”的结束分支；硬件停止与旧软件使用已经分别取得D2/D3证据。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Stop as 关闭者
+    participant Gate as 业务许可与入口状态
+    participant CB as RCU callback队列
+    participant Work as 私有清理工作队列
+    Stop->>Gate: D0关闭接纳，D1停止并等待在途生产者
+    Gate-->>Stop: 所有新增登记路径已经停止
+    Stop->>CB: D4 rcu_barrier等待先前callback
+    CB->>Work: callback移交旧对象清理责任
+    CB-->>Stop: callback全部返回，barrier完成
+    Note over Stop,Work: 此时工作仍可能未执行，不能卸载
+    Stop->>Work: 排空清理工作
+    Work->>Work: 释放仍由工作拥有的资源
+    Work-->>Stop: 工作完成，执行路径不再使用模块代码
+    Stop->>Stop: D5最终销毁
+```
+
+步骤2必须先成立，步骤3才能覆盖一个不再增长的callback集合；步骤5只关闭第一段异步链。步骤6～8另行等待工作，解释了为什么“RCU回调已经跑完”仍可能不是驱动的最终退出条件。
+
+三道推演用来检查职责边界：读到ready后设备立即关闭，RCU能阻止关闭吗？ctx引用仍为正时DMA可否继续访问已解除映射的内存？callback执行结束而它排出的work尚未运行，模块可否卸载？答案依次是 **不能**、**不能据引用数保证**、**不能**；分别缺少业务操作许可、硬件停止/映射生命期和后续工作的完成证据。
 
 
 
@@ -453,6 +508,8 @@ sequenceDiagram
 本章只保留驱动场景中的组合方式，不重复维护通用接口说明。接口契约统一查阅[RCU API 速查](P03_RCU_通用API与最小使用闭环.md)，可直接复用的最小调用链统一查阅[RCU 模板、选型与核对](P21_RCU_kref与复合对象生命周期.md)。
 
 审查驱动代码时，应把注意力放在场景新增的责任上：写者由谁串行化、对象能否逃出读侧区间、版本根与分散 block 之间各由谁持有引用、GP 前后在哪一层归还引用、回调是否引用模块代码，以及卸载路径是否阻止了新回调产生。
+
+本轮以宿主顺序替身编译并运行九段C骨架，检查分配失败、状态复制、长期引用及同一块占两个槽的计数交接；两种编译器的严格检查通过。该检查不实现Linux RCU或硬件，只覆盖片段类型及安排好的所有权顺序。没有执行目标Kbuild、真实热拔出、DMA停止或模块卸载实验，D0～D5仍需在具体驱动中落实为可验证的接口协议。
 
 上一篇：[RCU、kref 与复合对象生命周期](P21_RCU_kref与复合对象生命周期.md)。
 
