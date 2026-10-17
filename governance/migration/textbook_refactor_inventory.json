@@ -8434,6 +8434,66 @@
           "全仓829篇链接无缺失，复用完整名称实验而不重复维护。"
         ],
         "limits": "无目标命中追踪、并发rename或内存压力验证；外部ENOENT不能代替负缓存命中证明。"
+      },
+      "knowledge/kernel_subsystems/vfs/P09_路径查找状态机.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿L0至L5连接起点、前导与末项、挂载链接转向和结果持有交付。",
+        "validation": [
+          "二十二函数及nameidata声明与固定fs/namei.c逐token一致，五份原件核对Git对象。",
+          "五篇冷读、十图渲染目视、连续性、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓833篇链接无缺失，公开RESOLVE与内部LOOKUP以及普通openat边界分开。"
+        ],
+        "limits": "没有目标Linux编译运行、链接循环、并发rename、受限解析压力或分配失败注入记录。"
+      },
+      "research/source_reading/vfs/navigation/P08_路径怎样从起点推进到结果交付.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿L0至L5连接起点、前导与末项、挂载链接转向和结果持有交付。",
+        "validation": [
+          "二十二函数及nameidata声明与固定fs/namei.c逐token一致，五份原件核对Git对象。",
+          "五篇冷读、十图渲染目视、连续性、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓833篇链接无缺失，公开RESOLVE与内部LOOKUP以及普通openat边界分开。"
+        ],
+        "limits": "没有目标Linux编译运行、链接循环、并发rename、受限解析压力或分配失败注入记录。"
+      },
+      "research/source_reading/vfs/source_explanations/P13_路径起点与结果持有的交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿L0至L5连接起点、前导与末项、挂载链接转向和结果持有交付。",
+        "validation": [
+          "二十二函数及nameidata声明与固定fs/namei.c逐token一致，五份原件核对Git对象。",
+          "五篇冷读、十图渲染目视、连续性、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓833篇链接无缺失，公开RESOLVE与内部LOOKUP以及普通openat边界分开。"
+        ],
+        "limits": "没有目标Linux编译运行、链接循环、并发rename、受限解析压力或分配失败注入记录。"
+      },
+      "research/source_reading/vfs/source_explanations/P14_前导分量与单步位置推进.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿L0至L5连接起点、前导与末项、挂载链接转向和结果持有交付。",
+        "validation": [
+          "二十二函数及nameidata声明与固定fs/namei.c逐token一致，五份原件核对Git对象。",
+          "五篇冷读、十图渲染目视、连续性、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓833篇链接无缺失，公开RESOLVE与内部LOOKUP以及普通openat边界分开。"
+        ],
+        "limits": "没有目标Linux编译运行、链接循环、并发rename、受限解析压力或分配失败注入记录。"
+      },
+      "research/source_reading/vfs/source_explanations/P15_符号链接的文本栈与路径跳转.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿L0至L5连接起点、前导与末项、挂载链接转向和结果持有交付。",
+        "validation": [
+          "二十二函数及nameidata声明与固定fs/namei.c逐token一致，五份原件核对Git对象。",
+          "五篇冷读、十图渲染目视、连续性、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓833篇链接无缺失，公开RESOLVE与内部LOOKUP以及普通openat边界分开。"
+        ],
+        "limits": "没有目标Linux编译运行、链接循环、并发rename、受限解析压力或分配失败注入记录。"
       }
     },
     "additional_documents": [
