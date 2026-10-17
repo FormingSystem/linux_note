@@ -6596,6 +6596,17 @@
           "篇幅3345字词；实际格式元数据命名及全仓9379本地链接检查通过"
         ],
         "limits": "未运行目标内核或故意制造stall；无告警不能替代相关配置和路径覆盖证据。"
+      },
+      "research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "分清leader与推进worker、CPU位与原叶任务责任，修正漏斗快速路径和exp_wake_mutex边界，统一X阶段。",
+        "validation": [
+          "固定源码条件和调用顺序核对；两图渲染目视；17出链4标题入链及严格连续性通过",
+          "篇幅3507字词；实际格式元数据命名及全仓9381本地链接检查通过"
+        ],
+        "limits": "未运行目标IPI、真实任务迁移或加速延迟测量。"
       }
     },
     "additional_documents": [
