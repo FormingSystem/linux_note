@@ -94,79 +94,43 @@ linux sdk的文件包括有：
 
 现在基本文件已经具备了。还是编译环境方面的搭建。
 
-# 第3章\_python2.7下载
+# 第3章\_先核对SDK工具需要哪一版Python
 
-在ubuntu22.04下载python2.7，因为泰山派的原生编译环境是ubuntu18，默认采用python2.7版本。
+这里的Python是SDK已有构建工具的运行依赖。repo和部分构建脚本本身由Python实现，C编译器不能直接执行这些脚本；因此这个依赖应按上游工具版本保留，不能为了统一教学语言把它替换成一段未经验证的C程序。本章只说明怎样识别和运行已有工具，不引入Python机制模型。
 
-```shell
-sudo apt update
-sudo apt-get install -y python2
+旧笔记记录过Ubuntu 22.04环境下安装Python 2.7的处理，但没有保存当时SDK内部每个脚本的提交与解释器要求。它不能证明整个SDK必须统一使用Python 2，更不能证明所有新版SDK也如此。2026-10-17核对的[立创旧版Linux编译说明](https://wiki.lckfb.com/zh-hans/tspi-rk3566/sdk-compilation/linux-compilation.html)展示Ubuntu 18.04.6环境，但页面本身没有给出“全部工具必须Python 2”的结论。
+
+## 3.1\_先找到实际调用者再选择解释器
+
+在解包并确认身份的SDK根目录，先查看所带repo入口的首行与现有解释器位置：
+
+```sh
+# Linux终端，当前目录是含.repo的本次SDK根目录。
+head -n 1 .repo/repo/repo
+command -v python python2 python3
 ```
 
-在ubuntu24.04里，python2.7已经删除了，无法直接通过包管理apt直接下载，需要下载重装。
+首行若以 `#!`开头，就是脚本声明的解释器入口；`/usr/bin/env python`还会依赖当前PATH。`command -v`只列本机可找到的命令，缺失时应检查安装条件，不凭一个同名python推断版本。对实际存在的版本分别查询，例如：
 
-可以，用 Ubuntu 的 **update-alternatives** 做系统级“可切换”的 `python` 指向。但一定要注意：这会影响**所有**调用 `/usr/bin/python` 的脚本（可能有些脚本默认要 Python3）。更稳的是只在项目里用虚拟环境切换；不过如果你就是要系统级切换，按下面做。
-
-## 3.1\_用\_update-alternatives\_切换到\_Python\_2.7(Ubuntu\_22.04)
-
-1. 安装 Python2（如果还没装）
-
-```bash
-sudo apt update
-sudo apt install -y python2
-# 如果提示找不到，先启用 universe:
-# sudo add-apt-repository universe && sudo apt update
+```sh
+python3 --version
 ```
 
-2)（可选但推荐）卸载会强行把 `python` 指向 py3 的包
+若SDK证据确实要求Python 2，再查询 `python2 --version`；不存在该命令不等于应把系统python3改名。还要阅读该版本repo及失败脚本的版本要求，因为启动器可能重新选择解释器，首行本身不是全部证据。
 
-```bash
-sudo apt remove -y python-is-python3
-```
+[repo官方Python支持说明](https://gerrit.googlesource.com/git-repo/+/stable/docs/python-support.md)区分repo 2.0开始的Python 3.6要求与面向旧Python的repo 1.x分支；所核对页面明确不再支持旧Python。这个对照说明 **repo版本与解释器需要成对确定**，不能证明当前压缩包恰好带哪一个repo版本，也不能擅自升级包内repo后继续沿用旧构建结论。
 
-1. 把 python2/3 都注册为“候选项”
+若只有一个已核对的脚本需要Python 2，而repo需要Python 3，应按各自契约显式指定解释器或使用厂商验证的独立环境。遇到缺模块、语法错误或Python主版本提示，先保留完整报错、脚本路径、SDK版本及解释器版本；不要对所有脚本强行套同一解释器。
 
-```bash
-sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
-sudo update-alternatives --install /usr/bin/python python /usr/bin/python2 20
-```
+## 3.2\_把旧工具依赖限制在对应构建环境
 
-> 末尾的数字是优先级；越大优先级越高。上面示例默认会把 `python` 指向 **python2**。
+系统级改写 `/usr/bin/python`会影响所有使用该入口的脚本，而这个SDK只是其中一个调用者。本节不再把卸载python-is-python3、注册全局alternatives或切换全局python作为构建前置。旧脚本的依赖应放在对应版本的独立构建环境，或由已核对脚本的显式解释器调用承担。更换发行版、编译器或解释器属于新环境，需要重新验证构建，不能由旧日志推导已经支持。
 
-1. 手动选择（可随时切回）
+若在隔离的旧版构建机上确实需要安装Python 2，先用 `apt-cache policy python2`核对该发行版当前仓库是否提供候选及其来源，再按已确认的软件包方案安装；候选缺失时转回厂商环境要求，不混入其他发行版的软件源来凑包。这里没有在本机安装解释器、修改系统软链接或验证整个SDK构建。
 
-```bash
-sudo update-alternatives --config python
-# 按提示选 /usr/bin/python2 或 /usr/bin/python3
-```
+下图保留为旧记录的解释器截图，只能说明当时终端输出，不能证明现在所有SDK脚本已经选用了它：
 
-1. 验证
-
-```bash
-python -V
-readlink -f /usr/bin/python
-readlink -f /etc/alternatives/python
-```
-
-1. 以后想快速切回 Python3：
-
-```bash
-sudo update-alternatives --set python /usr/bin/python3
-```
-
-------
-
-## 3.2\_重要提醒(别踩坑)
-
-- **apt 与系统工具**基本都显式用 `python3`，切换 `python` 通常不会“炸 apt”，但第三方脚本若写的是 `#!/usr/bin/env python`，切到 2.7 后就会在 2.7 下跑——可能报语法错。
-- 如果只是为了某个老项目跑在 2.7，**更安全做法**是：
-  - `virtualenv -p python2 .venv27 && source .venv27/bin/activate`（仅当前 shell/项目生效），或
-  - 用 **pyenv** 在项目目录做 `pyenv local 2.7.18`。
-- Python2 已停止维护，新包兼容性与 HTTPS 支持都有限；需要 `pip` 时可能得固定旧版本或用离线 wheel。
-
-需要的话，我可以帮你写一个两行脚本：一键切到 2.7（含检测/备份），再一键切回 3.x。
-
-![image](../../../../../assets/images/buildroot/taishanpi/python_version.png)
+![旧环境的Python版本输出](../../../../../assets/images/buildroot/taishanpi/python_version.png)
 
 # 第4章\_编译环境安装
 
