@@ -94,12 +94,13 @@ flowchart LR
 | [P10 同步等待与 barrier](../source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.2_源码符号覆盖账本) | `synchronize_rcu()`、哨兵、entrain 与全队列扫描 |
 | [P11 Tree SRCU](../source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.2_源码符号覆盖账本) | reader 累计账本、双扫描、callback 与 barrier |
 | [P12 `rcu_init()` 启动初始化](../source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.11_直接符号覆盖账本) | `start_kernel()` 调用现场、Tree/Tiny 分派、I0～I13、boot CPU 发布、workqueue 与后继 initcall 边界 |
-| [P13 Tiny RCU](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.2_源码符号覆盖账本) | UP 非抢占 reader 边界、二级指针 callback 分界、QS、softirq、同步、poll、barrier 与初始化 |
+| [P13 Tiny RCU](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.17_源码符号覆盖账本) | UP 非抢占 reader 边界、二级指针 callback 分界、QS、softirq、同步、poll、barrier 与初始化 |
 | [P14 同步等待批处理](../source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.1_GP已经完成为什么调用者还在等) | 可选SRS登记、dummy划批、GP限额完成与worker交付 |
 | [P15 NOCB 队列与执行交接](../source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.1_本地回调处理怎样变成远端协作) | bypass、通知、GP/CB 双线程与动态成员交接 |
 | [P16 Tree SRCU 实例生命周期](../source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md#16.1_一轮GP之外还有实例寿命) | 初始化发布、小域扩展、停止使用与资源释放 |
 | [P17 RCU 配置与树形容量](../source_explanations/P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md#17.1_先决定编译什么再决定初始化多大) | 构建选择、启动参数与静态容量中的实际树 |
 | [P18 早期请求与执行模式交接](../source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md#18.1_没有执行者时登记的请求由谁接管) | 早期责任保留、自检、Tasks 分片及 SMP 后运行态 |
+| [P19 ARM 中断保存与 Tiny 队列互斥](../source_explanations/P19_Linux_6.12_ARM中断状态保存与Tiny队列互斥源码实现.md#19.1_两次指针写入之间为什么不能插入IRQ) | 从双指针更新反例解释保存宏、CPSR 和配对恢复 |
 
 P02 与 P03 是同一读侧模块中的公共 CPU 路径和 PREEMPT_RCU 增量，不是非抢占 / 抢占两套完整系统。
 
@@ -153,3 +154,5 @@ P02 与 P03 是同一读侧模块中的公共 CPU 路径和 PREEMPT_RCU 增量�
 ## 1.9\_职责边界
 
 总索引只负责分流读者任务，不承担某个函数体的第二份解释。模块导读必须先就地讲清参与者、状态地址和调用协作；实现文档再提供裁剪源码、中文 Doxygen、上下文和副作用。若某个函数尚无唯一实现标题，应明确记录证据缺口，不能用一串原始源码链接替代讲解。
+
+Tiny 的配置生成、Bear 截获和镜像核对见 [工程步骤](../../../../engineering/build/P01_Tiny_RCU配置与构建证据核对.md#1.1_源码能跳转不代表镜像用了这条路径)；它与机制源码讲解承担不同阅读任务。

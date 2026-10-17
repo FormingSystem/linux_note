@@ -478,7 +478,7 @@ MODULE_DESCRIPTION("同键替换与旧对象寿命观察");
 
 `run_rcu_replay()` 先申请两个对象，再进入读侧取得旧地址。在同一个读侧区间里执行不等待的替换，并重新取得新入口。这不是两个 CPU 的并发测试，而是对“地址在交接前后分别指向谁”的确定性重放。随后先退出读侧，停止使用私有树，再调用 `synchronize_rcu()`，最后释放两个对象。若第二次申请失败，只释放已经申请成功的旧对象；尚未建立树，无须执行删除或宽限期等待。
 
-不能把等待移进 `rcu_read_lock()` 与 `rcu_read_unlock()` 之间。公共使用约束要求在允许等待的上下文调用；在当前记录的 UP、非抢占 Tiny RCU 配置中，[具体实现可能立即完成](../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.12_synchronize_rcu立即返回不等于没有宽限期语义)，但这不取消读侧约束，也不意味着该示例观察到了跨 CPU 等待。
+不能把等待移进 `rcu_read_lock()` 与 `rcu_read_unlock()` 之间。公共使用约束要求在允许等待的上下文调用；在当前记录的 UP、非抢占 Tiny RCU 配置中，[具体实现可能立即完成](../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.11_synchronize_rcu立即返回不等于没有宽限期语义)，但这不取消读侧约束，也不意味着该示例观察到了跨 CPU 等待。
 
 在匹配目标内核的构建环境中，从仓库根执行：
 

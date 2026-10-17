@@ -137,7 +137,7 @@ domains:
 | `kernel/rcu/Kconfig.debug` | `PROVE_RCU`、RCU 列表 Lockdep 和其他 RCU 调试配置 |
 | [`include/linux/irqflags.h`](include/linux/irqflags.h) | `local_irq_save/restore` 与 raw 宏的完整定义、中断状态检查包装 |
 | [`include/linux/typecheck.h`](include/linux/typecheck.h) | 核对 `flags` 类型而不读取其未初始化数值的编译期类型检查 |
-| [`arch/arm/include/asm/irqflags.h`](arch/arm/include/asm/irqflags.h) | ARM 中断状态保存/恢复的原始架构分支、CPSR 与屏蔽指令；[Tiny 队列中的使用解释](../rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.6.3_flags怎样保存和恢复中断状态) |
+| [`arch/arm/include/asm/irqflags.h`](arch/arm/include/asm/irqflags.h) | ARM 中断状态保存/恢复的原始架构分支、CPSR 与屏蔽指令；[Tiny 队列中的使用解释](../rcu/source_explanations/P19_Linux_6.12_ARM中断状态保存与Tiny队列互斥源码实现.md#19.2_flags先由保存宏写入再交给恢复宏读取) |
 | `include/linux/rculist.h` | list/hlist 的 RCU 访问封装 |
 | `include/linux/rcu_segcblist.h` | callback 分段列表结构和接口 |
 | `include/linux/srcu.h`、`srcutree.h`、`kernel/rcu/srcutree.c` | Tree SRCU 公共接口、状态和实现 |
@@ -172,7 +172,9 @@ domains:
 - [Tree RCU `rcu_init()` 启动初始化源码实现](../rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.11_直接符号覆盖账本)
 - [RCU 配置选择与树形容量](../rcu/source_explanations/P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md#17.1_先决定编译什么再决定初始化多大)
 - [RCU 早期请求与执行模式交接](../rcu/source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md#18.1_没有执行者时登记的请求由谁接管)
-- [Tiny RCU 源码实现](../rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.2_源码符号覆盖账本)
+- [Tiny RCU 源码实现](../rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.17_源码符号覆盖账本)
+- [ARM 中断状态与 Tiny 队列互斥](../rcu/source_explanations/P19_Linux_6.12_ARM中断状态保存与Tiny队列互斥源码实现.md#19.1_两次指针写入之间为什么不能插入IRQ)
+- [Tiny 构建证据核对](../../../engineering/build/P01_Tiny_RCU配置与构建证据核对.md#1.1_源码能跳转不代表镜像用了这条路径)
 
 ### 1.5.2\_Lockdep证据
 
@@ -2458,3 +2460,15 @@ P09为18条出链/18条标题入链，P15为10/17。两篇约7000和7700字词�
 补完整PM通知、poll worker、几何展开、测试完成检查、Tasks分片及后期monitor接管函数。明确配置种子不能代替最终配置、编译期容量与运行时布局不同、producer暂存与两个释放批次不同。新增固定提交证据kernel/Kconfig.preempt、kernel/rcu/Makefile、arch/arm/configs/imx_v7_defconfig、include/linux/suspend.h，其Git对象依次为fe782cd77388592b0c1b4197ae0d1e20b837b553、0cfb009a99b9f7e9e063d690cf889d44c6ec3ad6、1680d7d78f5569e9360e604d77f6c491a9dbf9e1、da6ebca3ff774c8bf59353aac08fe17106682b6d。init/main.c的本地证据对象仍为c4778edae7972f512d5eefe8400075ac35a70d1c。
 
 三篇合计23个完整函数或配置分支通过C词法一致检查，五图渲染并目视。P12为40条出链/12条标题入链，P17为6/12，P18为11/12；三篇约9700、4600、5700字词，均低于篇幅阈值，严格连续性无风险项。同步唯一实现调用方、总索引、大纲、人工评审地图红色节点和当前出版清单，7卷57来源均存在且唯一；冻结发行清单保持历史身份。实际格式、元数据、命名及全仓737篇9519条本地链接检查通过。当前目标工作树配置、内核构建与实际启动执行未验证，不将历史配置或源码静态检查冒充运行结果。
+
+## 1.253\_Tiny回调周期与构建证据及ARM互斥边界复核
+
+2026-10-17，冷读Tiny实现P13。把板级配置生成、Bear截获和镜像核对移到工程篇，把ARM保存/恢复中断宏移到实现P19；P13保留T0～T5贯通入队、QS、成熟前缀摘取和回调执行。将9月配置记录统一限定为历史样本，公共非抢占读侧函数回链P02唯一实现。补周期报告宏、偏移编码入口、条件同步包装、有限cookie边界以及共享链为空仍有在途批次的反例。
+
+纠正softirq通知不只是孤立写位、同步poll进展不代表callback成熟、Tiny的长处理包装不报告Tasks QS等解释。P19补CPSR寄存器查用表、状态归属图与嵌套恢复反例；工程篇纠正重新加载defconfig会覆盖临时配置、olddefconfig实际读取生成配置，以及同名nm符号不能单独区分后端。保持固定标签与历史自定义种子的身份区别，未修改外部源码工作树。
+
+新增核对固定提交的kernel/softirq.c、include/linux/preempt.h、include/linux/irqflags.h、arch/arm/include/asm/irqflags.h、arch/arm/include/uapi/asm/ptrace.h、include/linux/interrupt.h与arch/arm/include/asm/hardirq.h；Git对象依次为8c4524ce65fafe508c3b4ee1ccb371f29b2dd6d5、ce76f1a45722529832a5eaefc077356cc0124c9f、3f003d5fde5341bd789d0d1286109563624090d3、aeec7f24eb75beb505c885973efe8c7d4f50c0b3、8896c23ccba78ed7e10c7d1b9955124314496dc6、457151f9f263d9042625decde2c15822d860b134、706efafbf9722ce8d00b522fef845490f133d9a7。23个函数或条件分支、10个宏定义分支及控制块类型/初值共35项与固定源码C词法一致；宏检查覆盖反斜线续行，非仅首行。
+
+八图渲染并目视；P13为43条出链/24条标题入链，P19为5/9，工程篇为4/11。P13约12400字词，拆分后保留超阈值的理由是剩余内容闭合同一Tiny回调周期及同步、poll、barrier和错误诊断的交付区别，保留完整函数与地址推演，不再按API切碎同一证明；严格连续性无风险项。P19约2300字词、无风险；工程篇约4700字词，配置核对H2有190行长节提示，已按五个三级标题区分输入、生成结果、派生与链接，仍服务同一证据链，人工复核后保留。
+
+同步实际入链、总索引、专题大纲、Atlas内容入口、人工评审地图红色节点和当前出版清单，7卷59来源均有效且唯一。实际格式、元数据、命名及全仓739篇9536条本地链接检查通过。未进行目标内核构建、Bear截获、ARM运行或Tiny压力测试，静态源码一致不等于这些运行验证已完成。

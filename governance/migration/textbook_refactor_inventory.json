@@ -6892,7 +6892,9 @@
       "research/source_reading/rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md",
       "research/source_reading/rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md",
       "research/source_reading/rcu/source_explanations/P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md",
-      "research/source_reading/rcu/source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md"
+      "research/source_reading/rcu/source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md",
+      "research/source_reading/rcu/source_explanations/P19_Linux_6.12_ARM中断状态保存与Tiny队列互斥源码实现.md",
+      "engineering/build/P01_Tiny_RCU配置与构建证据核对.md"
     ],
     "language_review": {
       "status": "complete",

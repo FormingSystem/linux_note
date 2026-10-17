@@ -90,7 +90,7 @@ softirq_init();             /* 初始化 tasklet 队列并登记 tasklet 软件�
 
 源码身份为 NXP `linux-imx` 官方发布标签 `lf-6.12.20-2.0.0`，解引用提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，Linux 6.12.20。既有证据按该固定提交保存；本轮重新对照固定提交的源码内容与相关 Git blob，包括 `init/main.c`、`tree.c`、`tree.h`、`tree_plugin.h`、`tree_nocb.h`、`tree_exp.h`、`update.c`、`rcu.h` 与 `rcupdate.h`；不依据本机目录名称推断版本。
 
-既有配置快照只确认 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y`。本章分析 **可抢占 Tree RCU** 的条件路径，不把历史配置当作本次目标配置；2026-09-05 保存的另一份历史快照记录为 `CONFIG_TINY_RCU=y`、`CONFIG_SMP=n`、`CONFIG_PREEMPT_NONE=y`，对应实现入口见 [Linux 6.12 Tiny RCU 源码实现](P13_Linux_6.12_Tiny_RCU源码实现.md#13.14_rcu_init的三个动作不是Tiny的全部实现)。当前外部工作树不可访问，本次配置与运行核对未完成；以下条件分支均不宣称在当前目标上实测。
+既有配置快照只确认 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y`。本章分析 **可抢占 Tree RCU** 的条件路径，不把历史配置当作本次目标配置；2026-09-05 保存的另一份历史快照记录为 `CONFIG_TINY_RCU=y`、`CONFIG_SMP=n`、`CONFIG_PREEMPT_NONE=y`，对应实现入口见 [Linux 6.12 Tiny RCU 源码实现](P13_Linux_6.12_Tiny_RCU源码实现.md#13.13_rcu_init的三个动作不是Tiny的全部实现)。当前外部工作树不可访问，本次配置与运行核对未完成；以下条件分支均不宣称在当前目标上实测。
 
 关联入口：
 

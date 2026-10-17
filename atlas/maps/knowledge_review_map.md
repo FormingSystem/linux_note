@@ -577,6 +577,7 @@ mindmap-plugin: basic
 
 分组评审标记：🟢
 - 工程方法
+    - 🔴 [Tiny RCU 配置与构建证据核对](../../engineering/build/P01_Tiny_RCU配置与构建证据核对.md#1.1_源码能跳转不代表镜像用了这条路径)
     - 🔴 内核模块构建与部署
         - 🔴 [专题大纲](../../engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)
         - 🔴 [P01 从 C 文件到匹配目标内核的模块](../../engineering/build/kernel_modules/P01_从C文件到匹配目标内核的模块.md)
@@ -905,12 +906,13 @@ mindmap-plugin: basic
             - 🔴 [P11 Linux 6.12 Tree SRCU 源码实现](../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md)
             - 🔴 [P12 Linux 6.12 Tree RCU rcu_init 启动初始化源码实现](../../research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md)
             - 🔴 [P13 Linux 6.12 Tiny RCU 源码实现](../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.1_实现所有权与本章读者任务)
-                - 🔴 [13.6.3 flags保存恢复与ARM本地中断保护](../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.6.3_flags怎样保存和恢复中断状态)
+                - 🔴 [13.6.3 flags保存恢复与ARM本地中断保护](../../research/source_reading/rcu/source_explanations/P19_Linux_6.12_ARM中断状态保存与Tiny队列互斥源码实现.md#19.2_flags先由保存宏写入再交给恢复宏读取)
             - 🔴 [P14 Linux 6.12 Tree RCU 同步等待批处理源码实现](../../research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.1_GP已经完成为什么调用者还在等)
             - 🔴 [P15 Linux 6.12 Tree RCU NOCB 队列与执行交接源码实现](../../research/source_reading/rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.1_本地回调处理怎样变成远端协作)
             - 🔴 [P16 Linux 6.12 Tree SRCU 实例建立扩展与销毁源码实现](../../research/source_reading/rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md#16.1_一轮GP之外还有实例寿命)
             - 🔴 [P17 Linux 6.12 RCU 配置选择参数与树形容量源码实现](../../research/source_reading/rcu/source_explanations/P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md#17.1_先决定编译什么再决定初始化多大)
             - 🔴 [P18 Linux 6.12 RCU 早期请求与执行模式交接源码实现](../../research/source_reading/rcu/source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md#18.1_没有执行者时登记的请求由谁接管)
+            - 🔴 [P19 Linux 6.12 ARM 中断状态保存与 Tiny 队列互斥](../../research/source_reading/rcu/source_explanations/P19_Linux_6.12_ARM中断状态保存与Tiny队列互斥源码实现.md#19.1_两次指针写入之间为什么不能插入IRQ)
 
 ## 1.9\_参考与出版物
 

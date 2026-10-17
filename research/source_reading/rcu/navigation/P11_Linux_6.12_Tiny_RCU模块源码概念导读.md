@@ -43,7 +43,7 @@ CONFIG_PROVE_RCU=y
 
 应用仍从 `include/linux/rcupdate.h` 使用普通 `rcu_read_lock()`、`call_rcu()` 和 `synchronize_rcu()`。读侧经过公共头文件的配置展开；Kconfig 与 Makefile 让 `tiny.o` 提供 `call_rcu()`、`synchronize_rcu()` 等后端符号，不是每个公共接口都在 `tiny.c` 定义，也不是某个对象在运行时选择 Tiny。
 
-阅读时先从公共 API 确认语义，再进入 Tiny 的本地回调控制状态，避免把实现短小误读为契约为空。配置与链接选择的唯一实现讲解见 [13.3 配置怎样在链接期选择 Tiny](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.3_配置怎样在链接期选择Tiny)。
+阅读时先从公共 API 确认语义，再进入 Tiny 的本地回调控制状态，避免把实现短小误读为契约为空。配置与链接选择的唯一实现讲解见 [13.3 配置怎样在链接期选择 Tiny](../../../../engineering/build/P01_Tiny_RCU配置与构建证据核对.md#1.2_配置怎样在链接期选择Tiny)。
 
 ## 11.3\_角色状态与通信关系
 
@@ -83,7 +83,7 @@ flowchart LR
 | T4 | softirq 摘下 `donetail` 之前的成熟前缀 | QS 后新入队项仍留在等待后缀 |
 | T5 | `rcu_reclaim_tiny()` 调用 callback 或 `kvfree()` | 现在才完成异步回收结果交付 |
 
-端到端函数与指针变化见 [13.11 一次异步回收的统一阶段](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.11_一次异步回收的统一阶段)。
+端到端函数与指针变化见 [13.11 一次异步回收的统一阶段](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.10_一次异步回收的统一阶段)。
 
 ```mermaid
 sequenceDiagram
@@ -112,18 +112,18 @@ sequenceDiagram
 
 ## 11.5\_只看Tiny时的源码阅读顺序
 
-1. [13.3 配置与链接选择](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.3_配置怎样在链接期选择Tiny)：先确认当前构建确实链接 `tiny.o`；
-2. [13.4 单 CPU 的真实交错](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.4_单CPU仍然会出现旧reader与更新者的时间交错)：先看到为什么 callback 不能立即运行；
-3. [13.5 reader 边界](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.5_reader不登记名单但不能跨过调度边界)：确认非抢占执行约束怎样变成 QS 前提；
-4. [13.6 控制块](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.6_一个链表和两个二级指针怎样表达三种状态)：画出 `rcucblist`、`donetail` 和 `curtail`；
-5. [13.7～13.10 入队、QS 与 softirq](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.7_call_rcu只入队不宣布安全)：沿实际运行链追一次 callback；
-6. [13.12 同步与 poll](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.12_synchronize_rcu立即返回不等于没有宽限期语义)：解释同步路径为何能退化；
-7. [13.13 barrier](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.13_rcu_barrier等待的是旧callback实际执行)：区分等 reader 与等 callback；
-8. [13.14 初始化](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.14_rcu_init的三个动作不是Tiny的全部实现)：最后再看为什么 `rcu_init()` 很短。
+1. [13.3 配置与链接选择](../../../../engineering/build/P01_Tiny_RCU配置与构建证据核对.md#1.2_配置怎样在链接期选择Tiny)：先确认当前构建确实链接 `tiny.o`；
+2. [13.4 单 CPU 的真实交错](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.3_单CPU仍然会出现旧reader与更新者的时间交错)：先看到为什么 callback 不能立即运行；
+3. [13.5 reader 边界](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.4_reader不登记名单但不能跨过调度边界)：确认非抢占执行约束怎样变成 QS 前提；
+4. [13.6 控制块](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.5_一个链表和两个二级指针怎样表达三种状态)：画出 `rcucblist`、`donetail` 和 `curtail`；
+5. [13.7～13.10 入队、QS 与 softirq](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.6_call_rcu只入队不宣布安全)：沿实际运行链追一次 callback；
+6. [13.12 同步与 poll](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.11_synchronize_rcu立即返回不等于没有宽限期语义)：解释同步路径为何能退化；
+7. [13.13 barrier](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.12_rcu_barrier等待的是旧callback实际执行)：区分等 reader 与等 callback；
+8. [13.14 初始化](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.13_rcu_init的三个动作不是Tiny的全部实现)：最后再看为什么 `rcu_init()` 很短。
 
 ## 11.6\_Bear跳转与验收
 
-若已经为同一配置完成一次由 Bear 捕获的有效构建，可以在 `compile_commands.json` 检查 `kernel/rcu/tiny.c`，并结合配置和链接产物确认后端。数据库来自另一配置、只捕获增量编译或保留旧条目时，单凭某文件出现/缺失不能作证。本轮没有重新构建或生成该数据库；使用命令及预期见 [13.16 用 Bear 和构建产物核对实际编译路径](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.16_用Bear和构建产物核对实际编译路径)。源码跳转仍可按 `call_rcu()` → `curtail` → `rcu_qs()` → `donetail` → `rcu_process_callbacks()` 追踪。
+若已经为同一配置完成一次由 Bear 捕获的有效构建，可以在 `compile_commands.json` 检查 `kernel/rcu/tiny.c`，并结合配置和链接产物确认后端。数据库来自另一配置、只捕获增量编译或保留旧条目时，单凭某文件出现/缺失不能作证。本轮没有重新构建或生成该数据库；使用命令及预期见 [13.16 用 Bear 和构建产物核对实际编译路径](../../../../engineering/build/P01_Tiny_RCU配置与构建证据核对.md#1.3_用Bear和构建产物核对实际编译路径)。源码跳转仍可按 `call_rcu()` → `curtail` → `rcu_qs()` → `donetail` → `rcu_process_callbacks()` 追踪。
 
 完成后应能独立回答：
 

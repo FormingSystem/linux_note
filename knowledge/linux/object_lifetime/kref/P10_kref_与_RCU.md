@@ -616,7 +616,7 @@ object_unpublish 接收的是调用者已经拥有的地址；它不是任意裸
 
 只需回收单块内存时可采用 kfree_rcu，避免维护一个只调用 kfree 的私有回调。本例故意保留回调计数来观察 S4/S5，并展示代码生命周期：模块要先停止新来源、收束所有仍可能登记回调的持有者，再用 rcu_barrier 等已有回调真正完成。只用 synchronize_rcu 等过一次旧读区，并不保证以前排队的 callback 已经执行。
 
-当前 Tiny 配置的这一区别可从[模块源码导读](../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md)进入，再定位[rcu_barrier 的唯一实现](../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.13_rcu_barrier等待的是旧callback实际执行)。其他配置依公共契约选择自己的实现，不把 Tiny 的短函数体推成所有后端相同。
+当前 Tiny 配置的这一区别可从[模块源码导读](../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md)进入，再定位[rcu_barrier 的唯一实现](../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.12_rcu_barrier等待的是旧callback实际执行)。其他配置依公共契约选择自己的实现，不把 Tiny 的短函数体推成所有后端相同。
 
 若选择同步等待再 free，所有可能最后归还路径必须允许该等待，并且不能持有被旧读者退出所需的锁，也不能在自己的普通 RCU 读区内等待自己退出。若采用发布份额跨 GP 的另一套完整协议，最终 release 可以直接 free；因为负责临时读者的等待已经在归还发布份额以前完成。不能把这种直接 free 移植到当前主协议。
 

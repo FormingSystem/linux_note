@@ -66,7 +66,7 @@ flowchart TB
     E -->|"恢复IRQ后逐项调用"| F["callback函数或编码释放动作"]
 ```
 
-本地 IRQ 保护用于避免同一 CPU 上的入队、边界更新和摘链互相打断；它不是跨 CPU 锁，也不意味着 callback 全程关中断执行。进入固定源码可从 [RCU 源码总阅读索引](../../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md) 继续查 [Tiny 控制块与指针槽](../../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.6_一个链表和两个二级指针怎样表达三种状态)。
+本地 IRQ 保护用于避免同一 CPU 上的入队、边界更新和摘链互相打断；它不是跨 CPU 锁，也不意味着 callback 全程关中断执行。进入固定源码可从 [RCU 源码总阅读索引](../../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md) 继续查 [Tiny 控制块与指针槽](../../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.5_一个链表和两个二级指针怎样表达三种状态)。
 
 ## 20.3\_一次Tiny回调周期
 
@@ -124,7 +124,7 @@ sequenceDiagram
 
 还有一个容易遗漏的区别：这个同步函数更新poll序号，但不会像 `rcu_qs()` 那样移动 `donetail` 或直接运行callback。因此调用它以后，即使轮询观察到进展，也不能声称此前排队的回收函数已执行。`get_state_synchronize_rcu()` 只取cookie，`poll_state_synchronize_rcu()` 检查完成标记或序号变化；`start_poll_synchronize_rcu()` 另在idle调用时催促调度。
 
-`rcu_barrier()` 则通过 `wait_rcu_gp(call_rcu_hurry)` 在单条队列尾部登记唤醒节点并等待其completion，取得此前callback已实际执行的证据；销毁者仍须先关闭新的生产者。Tiny的加急同步入口直接复用普通同步函数，没有另建IPI加急证明。具体落点见 [同步与poll](../../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.12_synchronize_rcu立即返回不等于没有宽限期语义) 和 [barrier交付](../../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.13_rcu_barrier等待的是旧callback实际执行)。
+`rcu_barrier()` 则通过 `wait_rcu_gp(call_rcu_hurry)` 在单条队列尾部登记唤醒节点并等待其completion，取得此前callback已实际执行的证据；销毁者仍须先关闭新的生产者。Tiny的加急同步入口直接复用普通同步函数，没有另建IPI加急证明。具体落点见 [同步与poll](../../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.11_synchronize_rcu立即返回不等于没有宽限期语义) 和 [barrier交付](../../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.12_rcu_barrier等待的是旧callback实际执行)。
 
 ## 20.5\_Tiny与其他名称不能怎样互换
 
@@ -146,7 +146,7 @@ Linux 6.12.20 的典型构建关系是：[SMP 构建](../../../../foundations/co
 grep -E '^(CONFIG_(SMP|TREE_RCU|TINY_RCU|PREEMPT_RCU|PREEMPT_NONE)=|# CONFIG_(SMP|TREE_RCU|TINY_RCU|PREEMPT_RCU|PREEMPT_NONE) is not set)' .config
 ```
 
-Tiny 核心实现位于 `kernel/rcu/tiny.c`，公共接口仍来自 `include/linux/rcupdate.h` 和 RCU 公共更新路径。先用 [Tiny RCU 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md#11.1_模块问题与当前配置前提)建立角色与阅读顺序，再进入 [Linux 6.12 Tiny RCU 源码实现](../../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.2_源码符号覆盖账本)核对控制块、`call_rcu()`、QS、softirq、同步、poll、barrier 与初始化函数。
+Tiny 核心实现位于 `kernel/rcu/tiny.c`，公共接口仍来自 `include/linux/rcupdate.h` 和 RCU 公共更新路径。先用 [Tiny RCU 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md#11.1_模块问题与当前配置前提)建立角色与阅读顺序，再进入 [Linux 6.12 Tiny RCU 源码实现](../../../../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.17_源码符号覆盖账本)核对控制块、`call_rcu()`、QS、softirq、同步、poll、barrier 与初始化函数。
 
 在目标内核源码根目录运行这条只读命令，分别记录启用项和 `is not set` 项。没有匹配某项时先核查该版本的 Kconfig，不把空输出当作禁用证据；也不要拿宿主机发行版的配置替代待构建目标。运行时只剩一个 online CPU 的 SMP 内核仍然采用构建时选择的 Tree 实现。
 
