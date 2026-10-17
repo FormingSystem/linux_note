@@ -6431,6 +6431,17 @@
           "篇幅9506字词；全仓实际727篇Markdown扫描9260有效本地链接无缺失"
         ],
         "limits": "未执行目标构建、隔离部署或跟踪实验；并行GIC拆分待结构稳定后单独重新核对和登记。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_CPU热插拔与回调迁移.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "冷读热插拔参与集合、任务与队列责任，补H0至H9及交错图；修正GP逐叶吸收时间、未成熟回调合并、短路推进和NOCB放置边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "固定NXP tree/cpu及相关原件核对；两图渲染目视、严格连续性与精确链接通过",
+          "格式、元数据、命名及全仓727篇9277个有效本地链接检查通过"
+        ],
+        "limits": "未执行目标热插拔、内核构建或跟踪；源码页事实修补不计整页复核完成。"
       }
     },
     "additional_documents": [
