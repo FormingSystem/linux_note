@@ -9136,6 +9136,90 @@
           "全仓877篇链接无缺失；确认首次私有写和已有PTE写保护的不同入口。"
         ],
         "limits": "没有目标Linux编译运行、并发故障、性能或掉电实测。"
+      },
+      "knowledge/kernel_subsystems/vfs/P19_权限凭据与安全钩子.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿A0至A5区分当前凭据、打开身份、inode规则与安全检查时点，补齐ACL加载竞争和能力作用域。",
+        "validation": [
+          "三十二个函数、五个宏和一个初始化区域逐token一致，三十四份原件核对Git对象。",
+          "七篇冷读、十五图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓883篇链接无缺失；明确临时身份恢复、ACL失败传播与LSM关闭配置的边界。"
+        ],
+        "limits": "没有目标Linux编译运行、ACL或namespace隔离及LSM策略实测。"
+      },
+      "research/source_reading/vfs/navigation/P18_访问身份与权限检查的时间边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿A0至A5区分当前凭据、打开身份、inode规则与安全检查时点，补齐ACL加载竞争和能力作用域。",
+        "validation": [
+          "三十二个函数、五个宏和一个初始化区域逐token一致，三十四份原件核对Git对象。",
+          "七篇冷读、十五图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓883篇链接无缺失；明确临时身份恢复、ACL失败传播与LSM关闭配置的边界。"
+        ],
+        "limits": "没有目标Linux编译运行、ACL或namespace隔离及LSM策略实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P51_当前身份与access临时凭据.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿A0至A5区分当前凭据、打开身份、inode规则与安全检查时点，补齐ACL加载竞争和能力作用域。",
+        "validation": [
+          "三十二个函数、五个宏和一个初始化区域逐token一致，三十四份原件核对Git对象。",
+          "七篇冷读、十五图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓883篇链接无缺失；明确临时身份恢复、ACL失败传播与LSM关闭配置的边界。"
+        ],
+        "limits": "没有目标Linux编译运行、ACL或namespace隔离及LSM策略实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P52_inode权限的基本检查与分派.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿A0至A5区分当前凭据、打开身份、inode规则与安全检查时点，补齐ACL加载竞争和能力作用域。",
+        "validation": [
+          "三十二个函数、五个宏和一个初始化区域逐token一致，三十四份原件核对Git对象。",
+          "七篇冷读、十五图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓883篇链接无缺失；明确临时身份恢复、ACL失败传播与LSM关闭配置的边界。"
+        ],
+        "limits": "没有目标Linux编译运行、ACL或namespace隔离及LSM策略实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P53_挂载身份换算与ACL判断.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿A0至A5区分当前凭据、打开身份、inode规则与安全检查时点，补齐ACL加载竞争和能力作用域。",
+        "validation": [
+          "三十二个函数、五个宏和一个初始化区域逐token一致，三十四份原件核对Git对象。",
+          "七篇冷读、十五图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓883篇链接无缺失；明确临时身份恢复、ACL失败传播与LSM关闭配置的边界。"
+        ],
+        "limits": "没有目标Linux编译运行、ACL或namespace隔离及LSM策略实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P54_capability的命名空间与对象边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿A0至A5区分当前凭据、打开身份、inode规则与安全检查时点，补齐ACL加载竞争和能力作用域。",
+        "validation": [
+          "三十二个函数、五个宏和一个初始化区域逐token一致，三十四份原件核对Git对象。",
+          "七篇冷读、十五图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓883篇链接无缺失；明确临时身份恢复、ACL失败传播与LSM关闭配置的边界。"
+        ],
+        "limits": "没有目标Linux编译运行、ACL或namespace隔离及LSM策略实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P55_VFS安全钩子的登记与调用.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿A0至A5区分当前凭据、打开身份、inode规则与安全检查时点，补齐ACL加载竞争和能力作用域。",
+        "validation": [
+          "三十二个函数、五个宏和一个初始化区域逐token一致，三十四份原件核对Git对象。",
+          "七篇冷读、十五图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓883篇链接无缺失；明确临时身份恢复、ACL失败传播与LSM关闭配置的边界。"
+        ],
+        "limits": "没有目标Linux编译运行、ACL或namespace隔离及LSM策略实测。"
       }
     },
     "additional_documents": [
