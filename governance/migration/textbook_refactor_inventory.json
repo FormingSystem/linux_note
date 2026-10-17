@@ -6398,6 +6398,17 @@
           "两图渲染目视、严格连续性、精确链接及全仓9225有效本地链接检查通过。"
         ],
         "limits": "业务函数为有明确契约的协议占位，未执行目标构建、模块卸载、热插拔或trace采集。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P14_Tree_RCU_force_QS迟延与Stall.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以FQS子循环区分主状态快照欠债和催促，修正返回0及离线WARN语义，展开urgent消费与boost，区分三类迟延诊断。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交8ae1c696；固定NXP tree_stall.h及相关原件核对。",
+          "两图渲染目视、严格连续性、精确链接和全仓9228有效本地链接检查通过。"
+        ],
+        "limits": "关中断循环仅静态反例，未运行故障注入、目标构建或trace采集；配置与事件命令只提供只读观察步骤。"
       }
     },
     "additional_documents": [
