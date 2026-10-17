@@ -6530,6 +6530,17 @@
           "policy双编译器严格宿主检查、三图目视、精确链接及严格连续性通过"
         ],
         "limits": "未执行LKMM、目标架构汇编或真实内核并发验证，宿主顺序模型不证明弱内存顺序。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以读者问题改写作者式开篇，对齐二十五章阶段、配置选择、实验和源码入口，出版配置限定历史快照。",
+        "date": "2026-10-17",
+        "validation": [
+          "阅读地图渲染目视、34条出链及6条标题入链核对，七卷52来源存在且不重复",
+          "结构元数据命名及全仓9337有效本地链接检查通过；严格连续性报告链接密度一项，因本页为track导航且逐章链接必要而保留"
+        ],
+        "limits": "未重新发布月度冻结产物，也不将源码层与实验材料自动记为已复审。"
       }
     },
     "additional_documents": [
