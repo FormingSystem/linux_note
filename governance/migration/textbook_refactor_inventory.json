@@ -9388,6 +9388,78 @@
           "全仓895篇链接无缺失；修正LRU移除与释放、时间戳脏位及等待键的解释。"
         ],
         "limits": "没有目标Linux编译运行、压力回收或后端故障注入实测。"
+      },
+      "knowledge/kernel_subsystems/vfs/P22_freeze_unmount与故障退出.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿Z0至Z5推导分级冻结准入与持有，分别解释解冻、挂载脱离及后端故障停止服务。",
+        "validation": [
+          "三十四段函数体逐token一致，十六份原件核对Git对象，新增七份。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "MinGW GCC 14.2.0严格编译运行准入模型；全仓900篇链接无缺失。"
+        ],
+        "limits": "C模型不代表Linux内核实测；没有真实冻结、卸载、并发压力或设备故障注入结果。"
+      },
+      "research/source_reading/vfs/navigation/P21_冻结卸载与故障状态的边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿Z0至Z5推导分级冻结准入与持有，分别解释解冻、挂载脱离及后端故障停止服务。",
+        "validation": [
+          "三十四段函数体逐token一致，十六份原件核对Git对象，新增七份。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "MinGW GCC 14.2.0严格编译运行准入模型；全仓900篇链接无缺失。"
+        ],
+        "limits": "C模型不代表Linux内核实测；没有真实冻结、卸载、并发压力或设备故障注入结果。"
+      },
+      "research/source_reading/vfs/source_explanations/P66_冻结写入的分级准入.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿Z0至Z5推导分级冻结准入与持有，分别解释解冻、挂载脱离及后端故障停止服务。",
+        "validation": [
+          "三十四段函数体逐token一致，十六份原件核对Git对象，新增七份。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "MinGW GCC 14.2.0严格编译运行准入模型；全仓900篇链接无缺失。"
+        ],
+        "limits": "C模型不代表Linux内核实测；没有真实冻结、卸载、并发压力或设备故障注入结果。"
+      },
+      "research/source_reading/vfs/source_explanations/P67_冻结阶段推进与失败回退.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿Z0至Z5推导分级冻结准入与持有，分别解释解冻、挂载脱离及后端故障停止服务。",
+        "validation": [
+          "三十四段函数体逐token一致，十六份原件核对Git对象，新增七份。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "MinGW GCC 14.2.0严格编译运行准入模型；全仓900篇链接无缺失。"
+        ],
+        "limits": "C模型不代表Linux内核实测；没有真实冻结、卸载、并发压力或设备故障注入结果。"
+      },
+      "research/source_reading/vfs/source_explanations/P68_解冻持有与后端恢复.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿Z0至Z5推导分级冻结准入与持有，分别解释解冻、挂载脱离及后端故障停止服务。",
+        "validation": [
+          "三十四段函数体逐token一致，十六份原件核对Git对象，新增七份。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "MinGW GCC 14.2.0严格编译运行准入模型；全仓900篇链接无缺失。"
+        ],
+        "limits": "C模型不代表Linux内核实测；没有真实冻结、卸载、并发压力或设备故障注入结果。"
+      },
+      "research/source_reading/vfs/source_explanations/P69_设备失效与文件系统停止服务.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿Z0至Z5推导分级冻结准入与持有，分别解释解冻、挂载脱离及后端故障停止服务。",
+        "validation": [
+          "三十四段函数体逐token一致，十六份原件核对Git对象，新增七份。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "MinGW GCC 14.2.0严格编译运行准入模型；全仓900篇链接无缺失。"
+        ],
+        "limits": "C模型不代表Linux内核实测；没有真实冻结、卸载、并发压力或设备故障注入结果。"
       }
     },
     "additional_documents": [
