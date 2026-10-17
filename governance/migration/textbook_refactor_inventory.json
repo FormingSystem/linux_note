@@ -6709,6 +6709,18 @@
           "实际格式元数据命名及全仓9413本地链接检查通过"
         ],
         "limits": "未构建抢占RCU内核或执行目标抢占、迁移、延后退出实验。"
+      },
+      "research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补RCU诊断有效性、断言求值与在线退化，区分类身份和实例，纠正目标配置证据。",
+        "validation": [
+          "20处函数配置及对象定义C词法一致，callback顺序人工核对；三图渲染目视",
+          "26出链28标题入链、严格连续性及约8100字词检查通过",
+          "实际格式元数据命名及全仓9419本地链接检查通过"
+        ],
+        "limits": "未执行目标内核构建或Lockdep误用注入。"
       }
     },
     "additional_documents": [
