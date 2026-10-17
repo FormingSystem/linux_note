@@ -2973,3 +2973,24 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 | Documentation/filesystems/directory-locking.rst | `6fdf0b02df430f8dcadc96a69a7926992534f47c` |
 
 六篇冷读、十三图渲染目视、长度、标题元数据与锚点检查完成。连续性审计保留模块导读一项链接密度提示：其23个链接用于唯一实现入口和固定原件定位，导读自身的W0～W5与时序说明完整，不为通过阈值删减必要导航。正文和C材料逐字一致，未在目标Linux编译运行，也未执行跨目录并发、委托、通知消费或掉电验证。
+
+## 1.291\_打开事务的阶段状态与失败责任
+
+2026-10-18，重写 [open状态机](../../../knowledge/kernel_subsystems/vfs/P12_open状态机.md#12.1_同一个路径需要不同的打开意图)，新增 [打开模块导读](../vfs/navigation/P11_打开请求怎样变成可发布的file.md#11.1_先区分意图构造与公开状态) 和四篇实现讲解。沿O0～O6区分名称创建、file打开和fd发布，解释组合方法、路径句柄、无名称临时对象及后置失败；完整C程序观察排他创建、O_PATH和截断。
+
+固定提交仍为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。二十三函数和一个结构体与原件逐token一致，增加中文行内阅读注释与实现修改边界。十份原件核对Git对象，新增安全和审计头文件以区分可选配置钩子与实际功能动作。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| fs/open.c | `5da4df2f9b18a637ed83cde8f2fe52f9034f5290` |
+| fs/namei.c | `6795600c5738a56740bdeb2b4ec33f29545d918a` |
+| fs/file.c | `4cb952541dd036a57177b3ce29587cdffa186aaa` |
+| fs/file_table.c | `18735dc8269a10d6e7085c9bb882a0788dd3e0ca` |
+| fs/internal.h | `8c1b7acbbe8faadef678e5aa2dc3588a0d8140b1` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| include/uapi/linux/openat2.h | `a5feb7604948791c7a34ec0876c24a97eb5a375b` |
+| include/linux/security.h | `2ec8f3014757cd78ef0d961e77f42db409db3b1c` |
+| include/linux/audit.h | `0050ef288ab3cef002a4aaf02c8fe6cf039ed67d` |
+| include/linux/file.h | `f98de143245abc1361f6e7118bc415ba0206d28a` |
+
+六篇冷读、十二图渲染目视、长度、标题元数据、锚点及正文/C材料一致性检查完成。当前工作配置未启用CONFIG_SECURITY和CONFIG_AUDIT，不能把相关条件分支写成实际拒绝或审计观察。没有在目标Linux编译运行本实验，也未进行资源耗尽、组合打开、后置安全拒绝、直接I/O或截断故障注入。

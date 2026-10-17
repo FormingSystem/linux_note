@@ -8747,7 +8747,12 @@
       "research/source_reading/vfs/source_explanations/P19_末项创建的检查与资源交接.md",
       "research/source_reading/vfs/source_explanations/P20_名称链接的增加撤销与通知.md",
       "research/source_reading/vfs/source_explanations/P21_重命名的拓扑检查与锁顺序.md",
-      "research/source_reading/vfs/source_explanations/P22_缓存名称移动与读侧序列交接.md"
+      "research/source_reading/vfs/source_explanations/P22_缓存名称移动与读侧序列交接.md",
+      "research/source_reading/vfs/navigation/P11_打开请求怎样变成可发布的file.md",
+      "research/source_reading/vfs/source_explanations/P23_打开参数与描述符发布的外层事务.md",
+      "research/source_reading/vfs/source_explanations/P24_打开末项的查询创建与再检查.md",
+      "research/source_reading/vfs/source_explanations/P25_组合打开与特殊路径的交接契约.md",
+      "research/source_reading/vfs/source_explanations/P26_file初始化与打开后失败清理.md"
     ],
     "language_review": {
       "status": "complete",

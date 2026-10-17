@@ -838,6 +838,11 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [打开请求怎样变成可发布的file](../../research/source_reading/vfs/navigation/P11_打开请求怎样变成可发布的file.md)
+        - 🔴 [打开参数与描述符发布的外层事务](../../research/source_reading/vfs/source_explanations/P23_打开参数与描述符发布的外层事务.md)
+        - 🔴 [打开末项的查询创建与再检查](../../research/source_reading/vfs/source_explanations/P24_打开末项的查询创建与再检查.md)
+        - 🔴 [组合打开与特殊路径的交接契约](../../research/source_reading/vfs/source_explanations/P25_组合打开与特殊路径的交接契约.md)
+        - 🔴 [file初始化与打开后失败清理](../../research/source_reading/vfs/source_explanations/P26_file初始化与打开后失败清理.md)
         - 🔴 [名称修改怎样锁定检查与交付](../../research/source_reading/vfs/navigation/P10_名称修改怎样锁定检查与交付.md)
         - 🔴 [末项创建的检查与资源交接](../../research/source_reading/vfs/source_explanations/P19_末项创建的检查与资源交接.md)
         - 🔴 [名称链接的增加撤销与通知](../../research/source_reading/vfs/source_explanations/P20_名称链接的增加撤销与通知.md)
