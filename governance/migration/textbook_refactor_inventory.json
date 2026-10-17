@@ -6087,9 +6087,9 @@
           "python_blocks": 1,
           "blocks_added_or_changed": 1,
           "previously_reviewed": true,
-          "state": "pending",
-          "decision": null,
-          "reason": null
+          "state": "reviewed",
+          "decision": "replaced_with_c",
+          "reason": "973c5fa以C11保留select/poll/epoll的AB/C周期，明确登记、fd_set范围与清理；双编译器系统调用替身各89次运行通过（包含超过调用数的正常重复），代码一致、5出链2入锚点及全仓检查通过。完整比较实验的长度提示经人工保留；SOURCE_BASELINE 1.209标记无Linux原生构建或接口实测。"
         },
         {
           "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P14_中断风暴_抖动与防御机制.md",
