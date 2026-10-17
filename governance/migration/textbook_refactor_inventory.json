@@ -6607,6 +6607,17 @@
           "篇幅3507字词；实际格式元数据命名及全仓9381本地链接检查通过"
         ],
         "limits": "未运行目标IPI、真实任务迁移或加速延迟测量。"
+      },
+      "research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "校正NOCB等待队列地址、旁路与在途总数、回调执行和返回边界，补隔离affinity及统一N/C阶段映射。",
+        "validation": [
+          "固定源码核对；两图渲染目视；26出链8标题入链与严格连续性通过",
+          "篇幅3804字词；实际格式元数据命名及全仓9383本地链接检查通过"
+        ],
+        "limits": "未执行目标NOCB切换、回调压测或线程迁移。"
       }
     },
     "additional_documents": [
