@@ -2480,3 +2480,14 @@ P09为18条出链/18条标题入链，P15为10/17。两篇约7000和7700字词�
 说明补状态地址与门闩所有权、并行退出/返回时序、生成配置与运行抢占模式区别、专用trace实例及清理；不清空系统dmesg，也不把GP返回早于解锁后的采样误报为错误。Makefile用CURDIR传递模块目录并保留路径引用；对隔离假Kbuild入口执行all/clean的GNU Make dry-run，两个目标均正确传递目录，这只验证包装参数，不是模块编译。ktime_get_ns按固定include/linux/timekeeping.h核对，Git对象fc12a9ba2c884271a75608211a72173b7ebaa24c。
 
 两图渲染目视，4条出链/6条标题入链、严格连续性及实际格式元数据命名检查通过；全仓739篇9537条本地链接无缺失。本次未完成目标Kbuild、MODPOST、模块加载、抢占、timer或trace运行验证，正文明确保留这项边界。
+
+## 1.255\_平台资源登记绑定与无硬件实验复核
+
+2026-10-17 为设备树入门的板级资源章重新读取 NXP 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的官方原始文件，并与本轮已保存的源码逐字节比较一致。当前外部标准工作树仍不可用，本节不确认目标内核配置或运行结果。
+
+| 上游路径 | Git blob SHA-1 | 核对内容 |
+| --- | --- | --- |
+| `drivers/base/platform.c` | `6f2a33722c5203ac196a6e36e153648d0fe6c6d4` | MEM/IO 资源在设备注册阶段插入资源树及失败回滚；匹配次序；IRQ 固件获取与描述回退；设备最终释放 |
+| `include/linux/platform_device.h` | `7132623e4658576f0be2a80b493e445e0c9d4de6` | 设备字段、注册辅助接口、错误指针及 void remove 回调 |
+
+[板级资源章](../../../knowledge/driver_model/device_tree/设备树+platform开发/P01_旧式平台设备与资源机制.md) 改用无 MEM/IRQ 的设备与驱动配对实验，避免把 LED consumer 当作整个 GPIO 控制器的所有者。源码接口核对不等于模块构建或运行验证；本轮未执行目标 Kbuild、MODPOST、模块加载或硬件访问。
