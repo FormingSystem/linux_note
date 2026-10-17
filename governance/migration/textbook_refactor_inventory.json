@@ -6519,6 +6519,17 @@
           "两编译器宿主顺序交接检查、两图目视与严格连续性/链接检查通过"
         ],
         "limits": "未执行坏代码或目标tracefs/内核；采集段无Bash运行验证，宿主替身不证明并发。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P25_RCU_内存序_误用与选择边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以L0至L6及policy修复骨架区分初始化可见性与旧对象回收，补SRCU锁循环、条件get适用前提和释放接口形式。",
+        "date": "2026-10-17",
+        "validation": [
+          "固定rcupdate.h与srcu.h核对",
+          "policy双编译器严格宿主检查、三图目视、精确链接及严格连续性通过"
+        ],
+        "limits": "未执行LKMM、目标架构汇编或真实内核并发验证，宿主顺序模型不证明弱内存顺序。"
       }
     },
     "additional_documents": [
