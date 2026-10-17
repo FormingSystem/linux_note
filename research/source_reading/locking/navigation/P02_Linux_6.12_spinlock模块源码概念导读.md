@@ -13,11 +13,17 @@ source_version: "6.12.20"
 
 ## 2.1\_模块问题与配置边界
 
-本章不重复 spinlock 使用教程，而是回答一次 `spin_lock_irqsave()` 如何同时改变当前 CPU IRQ 状态和共享锁状态。固定源码为 `dfaf2136...`；本轮标准工作树配置为UP、非RT，下面SMP分支来自固定提交的条件源码，不代表当前构建选择，ARM 具体原子实现只作为该架构载体，不外推到 x86/ARM64/RISC-V。
+一次 `spin_lock_irqsave()` 同时约束本地执行路径和远端竞争者，但这两种效果并不写入同一个状态地址：关中断改变当前 CPU，互斥资格则由共享锁对象承载。本章追踪这些动作怎样由公共包装送到架构实现，不重复使用教程。
 
 读者已在[实现与上下文正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P04_spinlock实现与上下文边界.md#4.3.1_从反复抢夺改为领号等待)建立票号和本地重入模型。现在面对源码里的多层同名包装，任务是追踪业务传入的锁地址怎样到达架构锁字，并分清调试记录、抢占状态、IRQ保存值分别由谁维护。不能看见名为spin_lock的函数就跳过中间配置分叉。
 
+固定证据是[总索引声明的 NXP Linux 6.12.20 提交](P01_Linux_6.12_锁源码总阅读索引.md#1.1_版本边界与阅读任务) `dfaf2136deb2af2e60b994421281ba42f1c087e0`。本章选取非 RT、SMP 的常规包装分支，再以 ARM32 票号锁承接架构层。仓库保存过 UP、非 RT 配置记录，但本次外部工作树不可访问，不能把历史记录称为当前配置核验，也不能声称本章分支就是目标正在执行的代码。
+
 ## 2.2\_接口层次与状态地址
+
+先沿调用者传入的同一个对象向内找。非 RT 分支中，业务 `spinlock_t` 内的 `rlock` 保存 raw 对象，后者的 `raw_lock` 保存 `arch_spinlock_t`。这条嵌套链解释了为什么包装函数不断取得成员地址：它们最终要让所有竞争 CPU 访问同一份架构锁状态。
+
+本地约束和诊断记录另有载体。IRQ 保存值由调用者的 `flags` 变量保留；抢占约束属于当前执行路径。`CONFIG_DEBUG_SPINLOCK` 可额外提供 magic、owner_cpu 和调试 owner；关闭调试并不会消除互斥。Lockdep 的 dep_map 又属于另一组检查状态，不能拿调试 owner 字段当作 ARM 票号算法的取得资格。按这个区别再看各层职责：
 
 | 层 | 入口/状态 | 所有权 |
 | --- | --- | --- |
@@ -26,8 +32,6 @@ source_version: "6.12.20"
 | raw 包装 | `raw_spin_lock*`、`do_raw_spin_lock()` | debug/Lockdep、raw 锁协议 |
 | 架构层 | `arch_spin_lock(&lock->raw_lock)` | 具体原子锁字与排队算法 |
 | I/O 顺序辅助 | `mmiowb_spin_lock/unlock()` | 锁保护 MMIO 写的架构排序边界 |
-
-非RT分支中，业务 `spinlock_t` 内的 `rlock` 保存raw对象，后者的 `raw_lock` 保存 `arch_spinlock_t`。`CONFIG_DEBUG_SPINLOCK` 可额外提供magic、owner_cpu和调试owner；它们不是架构获取资格的唯一状态，关闭调试并不会消除互斥。Lockdep的dep_map又属于另一组检查状态，不能拿调试owner字段当作ARM票号机制的任务所有者。
 
 ```mermaid
 flowchart LR
@@ -54,7 +58,7 @@ spin_lock(lock)
             → mmiowb_spin_lock()
 ```
 
-释放按相反方向进入 `mmiowb_spin_unlock()` 和 `arch_spin_unlock()`。具体实现和裁剪代码见[spinlock 包装与 raw 路径源码实现](../source_explanations/include/linux/spinlock.h.md#1.4_spin_lock到raw包装)。
+释放走对应的 unlock 包装。在未启用 DEBUG_SPINLOCK 的 `do_raw_spin_unlock()` 中，先执行 `mmiowb_spin_unlock()`，再调用 `arch_spin_unlock()` 发布锁的可取得状态；外层随后解除本地抢占约束。它不是把获取调用链逐行倒放。具体实现和裁剪代码见[spinlock 包装与 raw 路径源码实现](../source_explanations/include/linux/spinlock.h.md#1.4_spin_lock到raw包装)。
 
 这是一条明确选择的阅读路径，不能声称所有构建都逐层产生函数调用：`_raw_*`可以被内联映射，`kernel/locking/spinlock.c`也提供非内联入口；GENERIC_LOCKBREAK与调试配置会改变所用包装分支。`LOCK_CONTENDED`可先尝试再进入竞争路径，不是额外业务锁。此处只组织调用职责，宏体留给实现讲解。
 
@@ -64,23 +68,35 @@ spin_lock(lock)
 
 ## 2.4\_irqsave分支的通信顺序
 
+普通 `spin_lock()` 不保存 IRQ 状态；调用者选择 irqsave 变体以后，才增加保存和恢复动作。下面固定由两个 CPU 上的任务竞争同一把锁，画出一次成功取得与释放。检查事件不授予锁资格，恢复本地 IRQ 也不是远端进入的前置条件。
+
 ```mermaid
 sequenceDiagram
     autonumber
     participant T as 当前任务
-    participant C as 当前CPU IRQ状态
+    participant C as 当前CPU IRQ与抢占状态
     participant L as raw锁字
     participant R as 远端竞争CPU
 
-    T->>C: 保存flags并关闭本地IRQ
-    T->>L: raw_spin_lock_irqsave获取
-    R->>L: 竞争同一锁字
-    T->>L: raw_spin_unlock_irqrestore释放
-    T->>C: 恢复保存的flags
-    L-->>R: 远端取得
+    T->>T: S1 调用spin_lock_irqsave
+    T->>C: 保存flags并关闭IRQ，preempt_disable
+    T->>T: spin_acquire登记检查事件
+    T->>L: 尝试并完成架构获取
+    L-->>T: S2 取得资格，包装返回flags
+    R->>L: S3至S5 竞争并等待资格
+    T->>T: 访问受保护数据
+    T->>T: 调用unlock_irqrestore，spin_release报告检查释放
+    T->>L: S6 do_raw_spin_unlock发布释放
+    par 本CPU恢复路径
+        T->>C: S7 local_irq_restore，再preempt_enable
+        T->>T: 解锁包装返回
+    and 远端竞争路径
+        R->>L: 复查架构资格
+        L-->>R: S2 可以取得并访问数据
+    end
 ```
 
-flags 属于调用栈和当前 CPU，不能跨 CPU 或错误配对。锁字属于共享锁对象，其他 CPU 始终可竞争。
+图中的 flags 保存在调用者的局部变量中，描述保存时那一个 CPU 的 IRQ 状态，恢复必须遵守同 CPU 与正确配对要求；它不属于共享锁字。其他 CPU 可以并发访问锁字争取资格，而当前 CPU 的关 IRQ 不会屏蔽远端 CPU。
 
 图采用 `spinlock_api_smp.h` 的常规非lockbreak路径：保存IRQ状态后施加抢占约束，登记检查事件，再完成架构锁获取；释放端先报告检查释放、释放架构锁，再恢复IRQ和抢占状态。因而远端可能在本CPU尚未完成全部恢复时取得锁，不能把图中纵向先后误当作远端必须等待本地函数返回。
 
@@ -90,7 +106,7 @@ flags 属于调用栈和当前 CPU，不能跨 CPU 或错误配对。锁字属�
 
 `include/linux/spinlock_types.h` 在非 RT 分支把 `spinlock_t` 映射为 raw；RT 分支改为 `rt_mutex_base`。因此不能从非 RT `spin_lock()` 直接内联到 raw 的代码，推断 RT 也必然忙等。严格 raw 语义仍从 `raw_spinlock_t` 路径阅读。
 
-还要更早检查SMP/UP分叉：`spinlock_types_raw.h` 在SMP下包含架构类型，UP下包含 `spinlock_types_up.h`；`spinlock.h` 分别选择架构操作与 `spinlock_up.h`，通用API还区分UP调试/非调试。当前工作配置非SMP，因此不能用ARM票号函数体冒充本地实际宏展开。RT普通锁的irqsave也不关硬中断，本节图只属于已声明的非RT分支。
+还要更早检查SMP/UP分叉：`spinlock_types_raw.h` 在SMP下包含架构类型，UP下包含 `spinlock_types_up.h`；`spinlock.h` 分别选择架构操作与 `spinlock_up.h`，通用API还区分UP调试/非调试。因此，阅读 ARM 票号函数体只能说明所选 SMP 分支，不能冒充历史 UP 配置的实际宏展开。RT 普通锁的 irqsave 也不关硬中断，上一节图只属于已声明的非 RT 分支。
 
 ## 2.6\_源码阅读顺序
 
@@ -105,7 +121,7 @@ flags 属于调用栈和当前 CPU，不能跨 CPU 或错误配对。锁字属�
 ## 2.7\_复核问题
 
 - 共享锁状态和本地 IRQ 状态分别保存在哪里？
-- `spin_lock()` 为什么不是 Linux 自己实现完整原子算法？
+- 公共 `spin_lock()` 包装为什么还要调用架构实现，两层分别负责什么？
 - PREEMPT_RT 下哪一个类型仍表示严格 raw 语义？
 - `mmiowb_spin_*` 为什么不能被概括成锁本身完成所有 MMIO 顺序？
 

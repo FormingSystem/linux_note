@@ -15,11 +15,13 @@ source_version: "6.12.20"
 
 上一份[自旋模块导读](P02_Linux_6.12_spinlock模块源码概念导读.md)沿包装层追到了架构锁字。这里换一个约束：任务可以让出处理器，临界区也可能跨越调度。我们不再只问“谁能更新锁字”，还要问“等待者登记在哪里、谁使它继续、继续以后是否已经取得”。
 
-先有 mutex 的单一持有者，再看 rwsem 为什么不能照搬同一套通知。mutex 定向交接给某个任务，目标必须确认接收；rwsem 可以同时授予多名读者，却只通知写者重新竞争。两者都能睡眠，不意味着同一个状态机换了名称。机制推导与应用先读[mutex 知识正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P05_mutex慢路径与所有权交接.md)和[rwsem 知识正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P06_rwsem读写汇聚与唤醒.md)；本页负责 Linux 6.12.20 的入口、状态落点和阅读顺序，不展开函数体。
+先有 mutex 的单一持有者，再看 rwsem 为什么不能照搬同一套通知。mutex 可以普通释放后让任务竞争，也可以定向交接给某个任务，此时目标必须确认接收；rwsem 的队列推进可以同时授予多名读者，却只通知写者重新竞争。两者都能睡眠，不意味着同一个状态机换了名称。机制推导与应用先读[mutex 知识正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P05_mutex慢路径与所有权交接.md)和[rwsem 知识正文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/locks/P06_rwsem读写汇聚与唤醒.md)；本页负责 Linux 6.12.20 的入口、状态落点和阅读顺序，不展开函数体。
 
 版本固定为 NXP linux-imx 的 dfaf2136deb2af2e60b994421281ba42f1c087e0，标签 lf-6.12.20-2.0.0。先按[总索引](P01_Linux_6.12_锁源码总阅读索引.md#1.1_版本边界与阅读任务)确认配置，以下主线都是非 PREEMPT_RT 的普通路径，不混入 WW 多锁协议。
 
 ## 3.2\_文件与对象
+
+设 A 正在持有，B 在获取时失败。如果 B 要睡眠，系统必须把“B 在等哪把锁”保存到睡眠后仍能被找到的位置。这里用锁对象中的 `wait_list` 作入口，用 B 栈上的 waiter 作节点；队列维护由内部 `wait_lock` 串行化。恢复 B 执行还需要调度状态，真正授予资格又需要 owner 或 count。因此它是多组状态协作的协议，不能把“被唤醒”直接当成“已持有”。源码按声明、公共包装和慢路径实现拆分，下面这张表用于沿职责定位。
 
 | 文件 | 阅读任务 |
 | --- | --- |
@@ -29,7 +31,7 @@ source_version: "6.12.20"
 | include/linux/rwsem.h | 分开 count、owner、队列与观察接口；RT 则换成 rwbase |
 | kernel/locking/rwsem.c | 跟踪请求类型、读者预授、写者竞争及取消后的队列推进 |
 
-先分开五类状态：功能所有权、排队关系、等待者私有记录、调度状态和检查器记录。它们组成分布式协议，并非某一个字段枚举出全部情况。例如任务已经被唤醒但仍未取得写位，是合法的中间状态。
+读具体字段时，再把功能所有权、排队关系、等待者记录、调度状态和检查器记录分开。waiter 虽分配在 B 的栈上，发布后却可由其他任务读取，不能把“栈上”误解为始终私有。任务已被唤醒但仍未取得写位，就是这些状态不同步变化的合法中间情况。
 
 | 具体地址 | 写入者与读取者 | 能说明什么 |
 | --- | --- | --- |
@@ -57,6 +59,8 @@ flowchart LR
 
 先沿普通 mutex_lock 入口到 __mutex_lock_common。调试配置会改变是否单列快速入口，但不改变“实际取得必须由功能原子操作确认”的要求。WAITERS 表示队列工作，HANDOFF 是交接请求，PICKUP 是定向发布后等待目标确认；先记住这三种含义，再往下跟字段。
 
+下表 M0～M5 是这一慢路径的局部阅读点，回到知识正文的统一周期时，M0 对应 S1 尝试，M1 对应 S3 登记，M2 对应 S4/S5 等待与复查，M3 连接旧持有者 S6 和等待者 S5，M4 成功进入 S2；M5 则在未取得时退出。它们不是所有任务都会逐项经过的直线步骤。
+
 | 阶段 | 要找的函数协作 | 阅读时检查的状态 |
 | --- | --- | --- |
 | M0 尝试 | 快速尝试；共同路径中的 __mutex_trylock 与可选自旋 | 是否真的把 owner 改为 current，还是只看到旧身份 |
@@ -77,25 +81,33 @@ sequenceDiagram
     participant A as 持有者 A
     B->>O: M0 尝试失败
     B->>L: M1 锁内重试失败后入队
-    B->>L: M2 设置等待状态并释放队列锁
+    B->>B: M2 设置任务等待状态
+    B->>L: 释放wait_lock
+    B->>B: 调度，获得执行机会后再尝试
     B->>O: M3 队首后续尝试设置 HANDOFF
     O-->>B: 仍未取得，继续等待
-    A->>L: 释放路径选择当前队首
+    A->>L: 持wait_lock选择当前队首
     A->>O: release 发布 B 身份及 PICKUP
+    A->>L: 释放wait_lock
     A-->>B: 队列锁外唤醒
     B->>O: M4 acquire 清 PICKUP
-    B->>L: 摘队，恢复运行状态并返回成功
+    B->>L: 取得wait_lock
+    B->>B: 恢复TASK_RUNNING
+    B->>L: 摘队，再释放wait_lock
+    B->>B: 解除本层抢占约束，返回成功
 ```
 
 共同获取循环把 trylock 放在信号检查前，正是为了保护 M4 与 M5 的边界：若 owner 仍是属于 B 的 PICKUP，正常协议应先接收，而不是先按信号取消。没有取得才进入错误检查；取消在 wait_lock 下摘队，释放者随后选的是仍在队列里的真实首节点。
 
 普通解锁没有 HANDOFF 时，可以先清 owner 再处理队列，新到达者可能利用窗口取得；有 HANDOFF 时则跳出普通释放循环，在 wait_lock 下选择目标。两条路径都必须看实际原子更新，不能用“队首被唤醒”代替证明。mutex_unlock 清 owner 后仍可能触碰队列字段，外围对象必须存活到解锁函数返回。
 
-OSQ 是可选的乐观自旋排队结构。未进入睡眠队列的自旋者与已经入队的队首并非同一路径：后者可绕过 OSQ 与其队首并行尝试。它限制的是某些自旋竞争，不是把所有任务统一塞入 wait_list；未启用配置时，自旋调用点不能被描述为已经发生的运行过程。
+OSQ 是可选的乐观自旋排队结构。它把队尾标识放在锁对象的 osq 中，将自旋节点放在每 CPU 的存储中；这与任务栈上的睡眠 waiter 是两套记录。未进入睡眠队列的自旋者与已经入队的队首并非同一路径：后者可绕过 OSQ 与其队首并行尝试。它限制的是某些自旋竞争，不是把所有任务统一塞入 wait_list；未启用配置时，自旋调用点不能被描述为已经发生的运行过程。
 
 ## 3.4\_rwsem完整调用链
 
 从 [rwsem.h 的对象布局](../source_explanations/include/linux/rwsem.h.md#1.2_非RT对象的状态落点)进入。读者份额在 count，观察 count 非零不等于 current 已取得。接下来把读写两条路径放在同一组阶段中比较。
+
+这里的 R0 对应统一周期 S1 失败后的入口，R1 对应 S3 登记，R2 是 S6 释放或其他队列推进引起的授予，R3 在 S5 复查后决定能否进入 S2。R4/R5 是未取得时取消并推进后继的分支。读者与写者的 S2 入口不同，正是下面要追踪的重点。
 
 | 阶段 | 读请求 | 写请求 |
 | --- | --- | --- |
@@ -114,22 +126,26 @@ sequenceDiagram
     participant R as 读请求 R
     participant G as 队列推进者
     participant C as count 与 waiter.task
+    participant L as wait_lock 与等待队列
     participant W as 写请求 W
-    G->>C: R2 先登记选中读者全部份额
-    G->>C: release 清选中读者 task
-    G-->>R: 锁外唤醒
-    alt 正常接收
-        R->>C: R3 acquire 看到 NULL，成功
-    else 信号同时出现
-        R->>G: R4 取得 wait_lock 复查授予
-        G-->>R: 已授予则成功；未授予才删除
+    alt 推进者先授予
+        G->>C: R2 持wait_lock记足选中读者份额
+        G->>C: release清选中读者task
+        G-->>R: 锁外唤醒
+        R->>C: R3 acquire看到NULL，成功
+        Note over R,C: 即使同时有信号，也不能遗弃已授予份额
+    else 信号先到且尚未授予
+        R->>L: R4 取得wait_lock
+        R->>C: 锁内复查task仍非NULL
+        R->>L: 删除请求并推进后继，释放wait_lock
     end
     G-->>W: 另一轮队首写者仅获唤醒
+    W->>L: 持有wait_lock再尝试
     W->>C: R3 acquire cmpxchg 争取写位
     alt 取得
-        W->>G: 摘队后成功返回
+        W->>L: 在队列锁下摘队并释放队列锁
     else 仍有占有
-        W->>G: 等待或按 R4 取消并推进后继
+        W->>L: 释放队列锁再等待，或按R4取消并推进后继
     end
 ```
 
@@ -139,7 +155,7 @@ rwsem 的 HANDOFF 在 count 中，和 mutex 的“任务身份+PICKUP”不是�
 
 ## 3.5\_共同配置边界
 
-固定提交提供可选自旋与 RT 替代实现，但当前核对配置是非 SMP、PREEMPT_NONE、TINY_RCU，未启用 mutex/rwsem owner spinning。即使启用，是否自旋也取决于 owner 是否运行、调度请求及队列情况。本文解释源码条件，不表示已在目标运行。
+固定提交提供可选自旋与 RT 替代实现。仓库历史配置记录为非 SMP、PREEMPT_NONE、TINY_RCU，未启用 mutex/rwsem owner spinning；本次外部工作树不可访问，没有重新核验当前配置。即使启用自旋，是否实际执行也取决于 owner 是否运行、调度请求及队列情况。本文解释固定提交中的条件源码，不表示已在目标运行。
 
 mutex_types.h 的 RT 基础载体是 rt_mutex_base；rwsem.h 则改用 rwbase。这里不把非 RT 字段布局外推到 RT，也不展开 WW、多锁死锁处理、OSQ 内部及实时优先级传播。Lockdep 记录是检查状态，功能取得仍以原子操作与授予协议为准；配置关闭或检查器失效时“无告警”更不能作为正确性证明。
 
@@ -151,7 +167,7 @@ mutex_types.h 的 RT 基础载体是 rt_mutex_base；rwsem.h 则改用 rwbase。
 4. 为什么读者遇到信号必须复查 task，而写者取消不能照搬这个 NULL 判断？
 5. 哪些结论来自固定提交中的条件分支，哪些需要另行目标编译和竞争实测？
 
-可核对的回答是：栈节点入队后跨任务可见；mutex 还需释放者发布目标、目标 acquire 接收；rwsem 读者已有预授，写者还要争取写位；两类 waiter 没有统一的 NULL 完成协议；自旋、RT 和性能结论不能由当前非 SMP 配置的源码阅读直接验证。
+可核对的回答是：栈节点入队后跨任务可见；mutex 还需释放者发布目标、目标 acquire 接收；rwsem 读者已有预授，写者还要争取写位；两类 waiter 没有统一的 NULL 完成协议；自旋、RT 和性能结论不能由历史非 SMP 配置记录及条件源码阅读直接验证。
 
 总索引：[Linux 6.12 锁源码总阅读索引](P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)。
 
