@@ -3348,3 +3348,22 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 二十份原件中新增七份。当前ARM配置BLOCK、EVENTFD、NET、PROC_FS、SYSFS开启，SECURITY关闭。socket目录节点保留no_open_fops，不是普通open通信端点；字符类型先进入公共open再取得驱动表。内部伪file仍持有path，alloc_file_pseudo失败补回inode责任；匿名共享inode不合并不同file的private_data。
 
 五篇冷读、十图渲染目视、长度、标题元数据、精确锚点及C材料一致性完成。两个eventfd加复制fd的程序用于观察独立创建与共享计数，不以inode编号作为跨版本断言；当前没有目标Linux编译运行、设备热移除、配置组合或故障注入实测。procfs、sysfs、pipe及socket仅记录VFS交接，不复制其子系统算法。
+
+## 1.304\_VFS调试的对象观察与跟踪边界
+
+2026-10-18，重写 [VFS调试与源码追踪](../../../knowledge/kernel_subsystems/vfs/P25_VFS调试与源码追踪.md#25.1_先找到最早没有成立的条件)，以临时文件unlink后的旧fd读取连接接口结果、proc字段和内核观察。固定源码提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。本章不新增重复实现讲解，通用引用、打开、映射及退出继续从 [VFS索引](../vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)进入。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| Documentation/filesystems/proc.rst | `e834779d961153393d2963fc8657f875bd31a54f` |
+| Documentation/trace/ftrace.rst | `4073ca48af4ad2639c2289eb28c691a5c3538850` |
+| Documentation/trace/events.rst | `759907c20e7591ce3f03ac191cbc14a29b242f8a` |
+| fs/proc/fd.c | `5e391cbca7a3be0cb02f55e96d6728ad98e3ea16` |
+| fs/proc_namespace.c | `e133b507ddf3941525c1a2b70cd82846569dfa20` |
+| include/trace/events/syscalls.h | `b6e0cbc2c71f16df87380860e88544acb6d80a40` |
+
+六份原件中新增三份。fdinfo合并file标志与本描述符CLOEXEC，mnt_id只能结合进程挂载视图及观察时间解释；多次proc读取不是原子系统快照。
+
+本次只读核对的ARM配置开启TRACING、BPF、DEBUG_FS、HAVE_SYSCALL_TRACEPOINTS，但未开启FTRACE与BPF_SYSCALL；不把基础能力符号外推为所有工具可用。正文条件实验先检查目标事件和实例权限，仅在本次独占tracefs实例中登记被观察PID并保存丢失统计。
+
+正文冷读、两图渲染目视、标题元数据、长度、链接与C及Bash材料一致性完成。Bash脚本以本机Git附带Bash执行-n语法检查通过；未将Git Bash用于仓库format入口。当前没有目标Linux C编译运行、strace采集或tracefs实际执行结果。外部工具参数另参照strace官方项目手册，命令输出与读数不写成已实测结果。

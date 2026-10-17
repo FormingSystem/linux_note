@@ -90,6 +90,8 @@ flowchart TD
 
 [特殊文件与匿名对象导读](P23_特殊文件与匿名对象的VFS交接.md#23.1_沿建立发布使用退出定位状态) 沿U0～U5连接 [类型与打开分派](../source_explanations/P73_特殊inode的类型选择与打开分派.md#73.1_类型位决定初始入口而非最终服务)、[内部path与file](../source_explanations/P74_伪路径file的建立与失败归还.md#74.1_内部path仍有真实持有责任) 和 [匿名inode](../source_explanations/P75_匿名inode的共享与私有对象交接.md#75.2_共享inode不共享每次创建的私有状态)，把命名方式与后备对象分开。
 
+[VFS调试与源码追踪](../../../../knowledge/kernel_subsystems/vfs/P25_VFS调试与源码追踪.md#25.2_把进程视图和打开对象对应起来) 将已建立的对象模型对应到proc字段、系统调用记录与有条件的tracefs实验；它说明观察范围，不把一次空跟踪当成某机制没有执行。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |
