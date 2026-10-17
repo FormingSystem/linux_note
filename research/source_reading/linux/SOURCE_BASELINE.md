@@ -2228,3 +2228,9 @@ GP 模块以 G0～G10 对应公共周期，修正 `rcu_gp_init()` 内部建债�
 2026-10-17，冷读第十四章。固定 NXP 提交补取 `kernel/rcu/tree_stall.h`，Git blob 为 `4432db6d0b99b3bfd79194abfe3be478e8929f59`；并核对已取得的 `tree.c`、`tree_plugin.h` 与 context tracking 原件。F0～F5 子循环分开目标主状态、GP 扫描快照、叶节点欠债位与局部 mask/rsmask，修正 recheck 返回 0 仍可设置 urgent，以及已视为 offline 却仍欠位时先 WARN 的异常分支。
 
 正文区分 tick 对 urgent 的消费、解锁后直接重调度请求、诊断 irq_work 与可选 rt_mutex 优先级继承；boost 不能代替旧任务退出。诊断拆分进行中 GP、GP 线程/定时器进展及需求迟迟未启动，保留时间异常、虚拟机暂停和检查者执行机会的边界。两图渲染目视、严格连续性、精确锚点及全仓 9228 有效本地链接检查通过。错误关中断循环仅作静态反例，没有运行故障注入；配置和事件检查仅提供只读步骤，未执行目标构建、stall 复现或跟踪采集。
+
+## 1.219\_RCU加急请求与远端报告条件复核
+
+2026-10-17，冷读第十五章。补取固定 NXP 提交的 `kernel/rcu/tree_exp.h`，Git blob 为 `fb664d3a01c957ad3bb78a9cf4e1da36af4eefed`，并结合已核对的 `tree_plugin.h`、`tree.h` 与 `update.c` 检查。MMIO 示例明确 RCU 只保护软件读者，DMA、设备事务和关闭握手由业务协议另行完成。X0～X8 区分 leader 调用任务、推进 worker、叶选择工作与节点等待者；漏斗快速路径在内部开始代次，根等待与公开调用者的节点等待不混写。
+
+远端 handler 补深度为零但抢占/BH 仍禁用的延期分支，显式读者分开每 CPU exp 位与任务 exp_hint，并说明被抢占任务责任在 CPU 位解除后仍然存在。选择阶段保留曾上线集合、发请求前二次 EQS 检查及 hotplug 重试；同代搭车时序明确两个调用者在代次开始前取得相同目标快照。公开 API 可受 normal 策略覆盖，end 与 endwake 也分开。两图渲染目视、严格连续性、精确链接及全仓 9229 有效本地链接检查通过；没有执行硬件窗口撤销、目标构建、加急压力测试或 trace 采集。
