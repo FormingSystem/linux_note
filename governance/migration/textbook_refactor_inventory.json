@@ -7821,6 +7821,61 @@
           "三图渲染目视、冷读、连续性及长度检查和有效链接核对。"
         ],
         "limits": "离线协议模型不等于内核或硬件验证；继续Input结构和其余章节。"
+      },
+      "knowledge/driver_model/input/P02_体系结构与事件传递.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿S4-S5分开设备事实、暂存批次、handle连接和每客户端历史，补完整等待通知与失效边界。",
+        "validation": [
+          "五篇冷读，十四段固定源码执行语句核对，十图渲染目视。",
+          "连续性、长度、范围标题/元数据/唯一ID、标题锚点通过；全仓796篇链接无缺失。"
+        ],
+        "limits": "无目标内核构建、真实输入、溢出或拔插实验；全差量其他文档标题问题尚待后续处理。"
+      },
+      "research/source_reading/input/navigation/P01_Linux_6.12_Input源码阅读索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿S4-S5分开设备事实、暂存批次、handle连接和每客户端历史，补完整等待通知与失效边界。",
+        "validation": [
+          "五篇冷读，十四段固定源码执行语句核对，十图渲染目视。",
+          "连续性、长度、范围标题/元数据/唯一ID、标题锚点通过；全仓796篇链接无缺失。"
+        ],
+        "limits": "无目标内核构建、真实输入、溢出或拔插实验；全差量其他文档标题问题尚待后续处理。"
+      },
+      "research/source_reading/input/navigation/P02_事件状态怎样到达各客户端.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿S4-S5分开设备事实、暂存批次、handle连接和每客户端历史，补完整等待通知与失效边界。",
+        "validation": [
+          "五篇冷读，十四段固定源码执行语句核对，十图渲染目视。",
+          "连续性、长度、范围标题/元数据/唯一ID、标题锚点通过；全仓796篇链接无缺失。"
+        ],
+        "limits": "无目标内核构建、真实输入、溢出或拔插实验；全差量其他文档标题问题尚待后续处理。"
+      },
+      "research/source_reading/input/source_explanations/P01_事件接受与批量分发.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿S4-S5分开设备事实、暂存批次、handle连接和每客户端历史，补完整等待通知与失效边界。",
+        "validation": [
+          "五篇冷读，十四段固定源码执行语句核对，十图渲染目视。",
+          "连续性、长度、范围标题/元数据/唯一ID、标题锚点通过；全仓796篇链接无缺失。"
+        ],
+        "limits": "无目标内核构建、真实输入、溢出或拔插实验；全差量其他文档标题问题尚待后续处理。"
+      },
+      "research/source_reading/input/source_explanations/P02_evdev独立队列与读取边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿S4-S5分开设备事实、暂存批次、handle连接和每客户端历史，补完整等待通知与失效边界。",
+        "validation": [
+          "五篇冷读，十四段固定源码执行语句核对，十图渲染目视。",
+          "连续性、长度、范围标题/元数据/唯一ID、标题锚点通过；全仓796篇链接无缺失。"
+        ],
+        "limits": "无目标内核构建、真实输入、溢出或拔插实验；全差量其他文档标题问题尚待后续处理。"
       }
     },
     "additional_documents": [
