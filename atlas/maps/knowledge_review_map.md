@@ -838,6 +838,13 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [文件映射的缺页与状态交接](../../research/source_reading/vfs/navigation/P17_文件映射的缺页与状态交接.md)
+        - 🔴 [文件映射的发布与引用归还](../../research/source_reading/vfs/source_explanations/P45_文件映射的发布与引用归还.md)
+        - 🔴 [文件缺页的缓存验证与重试](../../research/source_reading/vfs/source_explanations/P46_文件缺页的缓存验证与重试.md)
+        - 🔴 [文件页到进程页表的安装](../../research/source_reading/vfs/source_explanations/P47_文件页到进程页表的安装.md)
+        - 🔴 [私有文件映射的写时复制](../../research/source_reading/vfs/source_explanations/P48_私有文件映射的写时复制.md)
+        - 🔴 [共享映射的写入准备与脏页登记](../../research/source_reading/vfs/source_explanations/P49_共享映射的写入准备与脏页登记.md)
+        - 🔴 [映射同步与截断撤销](../../research/source_reading/vfs/source_explanations/P50_映射同步与截断撤销.md)
         - 🔴 [直接IO请求与完成责任](../../research/source_reading/vfs/navigation/P16_直接IO请求与完成责任.md)
         - 🔴 [直接IO的缓存交接与实现入口](../../research/source_reading/vfs/source_explanations/P41_直接IO的缓存交接与实现入口.md)
         - 🔴 [iomap直接IO的请求建立与提交](../../research/source_reading/vfs/source_explanations/P42_iomap直接IO的请求建立与提交.md)

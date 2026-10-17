@@ -3119,3 +3119,34 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 二十份原件中新增九份，覆盖iomap声明与迭代、ext4入口、bio页面契约和构建配置。FS_IOMAP、BLOCK、AIO、IO_URING启用，FS_ENCRYPTION、FS_VERITY和DAX关闭；没有把编译配置当作运行分支证据。通用direct_IO入口与ext4的iomap入口分开，明确写后失效失败既登记EIO也产生限速日志。
 
 六篇冷读、十三图渲染目视、长度、标题元数据、锚点、唯一ID与完整C材料一致性完成。区分提交引用、bio引用、inode计数和外层请求生命期，补足回调可能早于提交返回、缓冲区pin与借用、文件系统后处理及后置同步。没有目标Linux编译运行、性能、缓存旁路、异步故障、设备轮询或掉电实测；实验只查询对齐并检查一次同步读写与fsync。
+
+## 1.297\_文件映射的缺页与状态交接
+
+2026-10-18，重写 [文件mmap正文](../../../knowledge/kernel_subsystems/vfs/P18_文件mmap与page_fault.md#18.3_第一次访问为什么可能睡眠和重试)，新增 [模块导读](../vfs/navigation/P17_文件映射的缺页与状态交接.md#17.1_沿一次映射访问找到状态落点) 和六篇实现。固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，三十二个函数或系统调用体逐token一致；删去上游长注释，保留执行语句并加入仓库中文阅读说明。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| mm/mmap.c | `6183805f6f9e6ef1a6d3204834ff1c367d0376b1` |
+| mm/vma.c | `c9ddc06b672a5235eb7365d2197856537ce6d143` |
+| mm/vma.h | `d58068c0ff2eaa38161c5bac2f27ee145ec1a2f6` |
+| mm/memory.c | `525f96ad65b8d77fe9d1feb5c7db1dc70d39647f` |
+| mm/filemap.c | `05adf0392625da1402d288eef9d9b6107a40fef4` |
+| mm/truncate.c | `0668cd340a46304f62525597374e5928a51d3f0f` |
+| mm/msync.c | `ac4c9bfea2e7faff18c3cf3bd8b74766cdbee166` |
+| include/linux/mm.h | `8617adc6becd1f9325e7217b885c4cc4124c5cc3` |
+| include/linux/mm_types.h | `6894de506b364fa7f3396146f53216d0d40b80d2` |
+| include/linux/mm_types_task.h | `bff5706b76e14f71d238ebacbe8f49e36c1bd272` |
+| include/linux/pagemap.h | `68a5f1ff3301c6cfba823cab8a418d9ca6f25893` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| arch/arm/mm/fault.c | `ab01b51de5590bff6c2acaf446d01c589a5f7987` |
+| mm/Kconfig | `33fa51d608dc517490c47790ad053816a1baf57a` |
+| fs/ext4/file.c | `f14aed14b9cf3d944b8d6726362ee5a69a9a0597` |
+| mm/internal.h | `398633d6b6c9f09f56e628dd08249b5390b90d7f` |
+| include/linux/mmap_lock.h | `de9dc20b01ba7471d288c58a3b0d600e3b1eaa62` |
+| include/linux/userfaultfd_k.h | `75342022d144145eaebfe7b534fc9021bef7318a` |
+| mm/init-mm.c | `24c809379274503ac4f261fe7cfdbab3cb1ed1e7` |
+| kernel/fork.c | `e192bdbc9adebbd6472ed4bb3e3f77260e98c673` |
+
+二十份原件中新增九份，覆盖VMA操作、映射同步、fault锁契约、配置与ARM异常处理入口。MMU开启，SMP、USERFAULTFD和DAX未启用；PER_VMA_LOCK依赖SMP，本次构建不启用，透明大页也不启用。保留其他配置分支的接口边界，不声称这些分支已经运行。
+
+八篇冷读、十六图渲染目视、长度、标题元数据、锚点、唯一ID与完整C材料一致性完成。修正文件回调与MM安装PTE的职责混淆，区分首次私有写和已有PTE的写保护入口，补足file引用不保护VMA、EOF复查、页表竞争、脏状态与截断双次撤销。没有目标Linux编译运行、并发故障、性能或掉电验证；实验仅设计观察关闭fd、共享与私有写、truncate到零后的SIGBUS。

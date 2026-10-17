@@ -76,6 +76,8 @@ flowchart TD
 
 [直接I/O导读](P16_直接IO请求与完成责任.md#16.1_先分清请求对象与执行上下文) 沿D0～D5连接 [缓存交接](../source_explanations/P41_直接IO的缓存交接与实现入口.md#41.1_提交以前先处理同范围缓存)、[提交引用](../source_explanations/P42_iomap直接IO的请求建立与提交.md#42.2_提交引用封住子请求提前完成的窗口)、[bio组装](../source_explanations/P43_iomap直接IO的数据映射与bio组装.md#43.2_为已映射范围建立有生命期的bio) 与 [完成通知](../source_explanations/P44_iomap直接IO的完成汇聚与通知.md#44.1_最后一个bio决定怎样继续收尾)。
 
+[文件映射导读](P17_文件映射的缺页与状态交接.md#17.1_沿一次映射访问找到状态落点) 沿M0～M6连接 [VMA引用](../source_explanations/P45_文件映射的发布与引用归还.md#45.1_新VMA先取得后备文件再发布)、[文件页重试](../source_explanations/P46_文件缺页的缓存验证与重试.md#46.1_等待文件页之前先决定保留哪种生命期)、[PTE安装](../source_explanations/P47_文件页到进程页表的安装.md#47.2_拿到文件页以后在PTE锁下再次确认)、[私有COW](../source_explanations/P48_私有文件映射的写时复制.md#48.3_复制期间PTE可能已变化所以发布前再比较)、[共享写准备](../source_explanations/P49_共享映射的写入准备与脏页登记.md#49.1_让文件系统先准备可写页面) 与 [同步及截断](../source_explanations/P50_映射同步与截断撤销.md#50.2_截断在缓存删除前后各撤销一次页表)。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |
