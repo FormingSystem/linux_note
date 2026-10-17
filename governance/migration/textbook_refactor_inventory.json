@@ -6782,6 +6782,28 @@
           "实际格式元数据命名及全仓9449本地链接检查通过"
         ],
         "limits": "未运行目标IPI、迁移或加速GP压力实验。"
+      },
+      "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补回调分段资格、发布所有权、完整批次与core重排，区分保守总数和实际函数执行。",
+        "validation": [
+          "21处完整函数C词法一致；两图渲染目视，18出链18标题入链；长H2经冷读保留完整批次。",
+          "两篇均低于10000字词；实际格式元数据命名及全仓9461本地链接检查通过"
+        ],
+        "limits": "未运行目标内核构建、回调压力或动态offload实验；严格连续性长H2风险已人工裁决。"
+      },
+      "research/source_reading/rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从P09拆出NOCB协作，补旁路flush计数、通知、两类GP等待和动态成员交接边界。",
+        "validation": [
+          "27处完整函数C词法一致；两图渲染目视，10出链17标题入链；长H2已有三级分工并保留锁协议。",
+          "两篇均低于10000字词；实际格式元数据命名及全仓9461本地链接检查通过"
+        ],
+        "limits": "未运行目标内核构建、回调压力或动态offload实验；严格连续性长H2风险已人工裁决。"
       }
     },
     "additional_documents": [
