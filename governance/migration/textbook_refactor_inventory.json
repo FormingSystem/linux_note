@@ -6105,9 +6105,9 @@
           "python_blocks": 1,
           "blocks_added_or_changed": 1,
           "previously_reviewed": true,
-          "state": "pending",
-          "decision": null,
-          "reason": null
+          "state": "reviewed",
+          "decision": "replaced_with_cpp",
+          "reason": "baa6a54以完整C++17替换解析工具，整数时间与数值对象键保留独立waiting/running；双编译器构造文本与命令行、溢出/隐藏地址/配对断裂测试通过，代码一致、4出链1入锚点及全仓检查通过。完整工具造成长度提示，经人工核对保留；SOURCE_BASELINE 1.209注明无新增真实跟踪。"
         },
         {
           "path": "labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md",
