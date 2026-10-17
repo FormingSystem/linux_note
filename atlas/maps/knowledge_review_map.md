@@ -147,13 +147,14 @@ mindmap-plugin: basic
         - 🔴 [P07 GPIO 中断桥接与事件传播](../../knowledge/driver_model/gpio/P07_GPIO_中断桥接与事件传播.md)
         - 🔴 [P08 用户空间 ABI、迁移与方案选择](../../knowledge/driver_model/gpio/P08_用户空间_ABI_迁移与方案选择.md)
     - 🔴 [标准 GPIO Consumer 专题](../../knowledge/driver_model/gpio_consumers/大纲.md)
-        - 章节评审：6 章未评审
+        - 章节评审：7 章未评审
         - 🔴 [P01 为什么优先使用标准 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/P01_为什么优先使用标准_GPIO_Consumer.md)
         - 🔴 [P02 输入、指示、电源与控制类 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/P02_输入_指示_电源与控制类_GPIO_Consumer.md)
         - 🔴 [P03 GPIO按键怎样接入输入事件](../../knowledge/driver_model/gpio_consumers/P03_GPIO按键怎样接入输入事件.md)
         - 🔴 [P04 GPIO指示与背光怎样接入亮度接口](../../knowledge/driver_model/gpio_consumers/P04_GPIO指示与背光怎样接入亮度接口.md)
         - 🔴 [P05 GPIO供电怎样进入电源依赖](../../knowledge/driver_model/gpio_consumers/P05_GPIO供电怎样进入电源依赖.md)
         - 🔴 [P06 GPIO选择线怎样保护一段事务](../../knowledge/driver_model/gpio_consumers/P06_GPIO选择线怎样保护一段事务.md)
+        - 🔴 [P07 GPIO关机与重启为何要核对最后阶段](../../knowledge/driver_model/gpio_consumers/P07_GPIO关机与重启为何要核对最后阶段.md)
     - 🔴 [Linux Input 子系统专题](../../knowledge/driver_model/input/大纲.md)
         - 章节评审：6 章未评审
         - 🔴 [P01 从硬件样本到统一输入事件](../../knowledge/driver_model/input/P01_从硬件样本到统一输入事件.md)
@@ -855,6 +856,7 @@ mindmap-plugin: basic
             - 🔴 [指示灯与背光的GPIO适配](../../research/source_reading/gpiolib/source_explanations/P09_指示灯与背光的GPIO适配.md)
             - 🔴 [固定电源的使能计数与GPIO交接](../../research/source_reading/gpiolib/source_explanations/P10_固定电源的使能计数与GPIO交接.md)
             - 🔴 [选择器占用与GPIO编码](../../research/source_reading/gpiolib/source_explanations/P11_选择器占用与GPIO编码.md)
+            - 🔴 [系统末期GPIO回调与通知链](../../research/source_reading/gpiolib/source_explanations/P12_系统末期GPIO回调与通知链.md)
             - 🔴 [标准功能驱动怎样承接GPIO状态](../../research/source_reading/gpiolib/navigation/P06_标准功能驱动怎样承接GPIO状态.md)
     - 编译器与静态分析注解
         - 模块概念导读

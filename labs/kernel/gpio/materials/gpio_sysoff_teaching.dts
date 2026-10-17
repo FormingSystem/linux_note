@@ -1,0 +1,31 @@
+/dts-v1/;
+
+/ {
+    compatible = "linux-note,gpio-sys-off-teaching";
+
+    teaching_gpio: gpio-controller {
+        compatible = "linux-note,teaching-gpio";
+        gpio-controller;
+        #gpio-cells = <2>;
+    };
+
+    poweroff {
+        compatible = "gpio-poweroff";
+        gpios = <&teaching_gpio 6 0>; /* 逻辑有效对应物理高。 */
+        input; /* 请求时输入，到最终动作才切输出。 */
+        active-delay-ms = <100>;
+        inactive-delay-ms = <100>;
+        timeout-ms = <3000>;
+        priority = <0>;
+    };
+
+    restart {
+        compatible = "gpio-restart";
+        gpios = <&teaching_gpio 7 1>; /* 逻辑有效对应物理低。 */
+        open-source; /* 此驱动用它选择初始输入。 */
+        active-delay = <100>;
+        inactive-delay = <100>;
+        wait-delay = <3000>;
+        priority = <129>;
+    };
+};

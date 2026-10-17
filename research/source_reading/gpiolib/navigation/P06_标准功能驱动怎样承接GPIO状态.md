@@ -115,7 +115,26 @@ R0有重要失败分界：regulator_register接管前后的引用各有标志和
 
 软件缓存不是外部通路回读，gpio-mux本版本还忽略数组setter返回。M1～M4阻止软件使用者交错，但无法消除同一次数组写的物理中间编码；若电路不允许中间连接，必须有真实的门控或锁存协议。本地完整描述和位序练习见 [选择线正文](../../../../knowledge/driver_model/gpio_consumers/P06_GPIO选择线怎样保护一段事务.md#6.5_用完整描述确认控制器身份与空闲策略)。
 
-## 6.6\_从适配层继续追踪时保留边界
+## 6.6\_系统末期控制先核对执行阶段再看电平
+
+选择器在设备活动期间保持通路，整机断电与重启处理者则在正常设备服务逐步停止后发出最后信号。gpio_poweroff/gpio_restart私有对象保存GPIO描述符及等待时间；sys_off_handler保存回调、私有指针、优先级、所属链与模式，通知时由sys_off_notify把cb_data交还驱动。
+
+| 本地阶段 | 状态与通信 | 退出条件或边界 |
+| --- | --- | --- |
+| F0 注册 | probe取得GPIO、初始化时间，登记handler | GPIO保持请求，回调可由链找到；不是已完成关机 |
+| F1 设备准备 | 常规入口先device_shutdown，再调用sys-off prepare | prepare可阻塞，但设备依赖已可能变化 |
+| F2 系统收尾 | 迁移reboot CPU、syscore_shutdown | 不能假定所有运行期服务仍有效 |
+| F3 最终派发 | 本版本ARM32禁本地IRQ、停止其他CPU，再进入最终atomic链 | 按优先级调用，回调不得阻塞 |
+| F4 输出 | GPIO回调方向输出1，忙等；0，忙等；1，再等待 | 电路若已断电/复位，后续语句不再正常执行 |
+| F5 仍在运行 | 超时后WARN并返回NOTIFY_DONE | 允许后续处理者，不能当成功完成码 |
+
+F0对应GPIO公共请求配置，F4使用值访问，但F1～F3给相同访问施加了新的上下文与供电约束。poweroff使用cansleep后缀不改变其最终atomic模式，也不创建工作线程；restart普通setter同样不能支持会睡眠的Provider。prepare发生在device_shutdown之后，不能把它当作任意设备都仍正常运行的保证。
+
+按 [模式与对象](../source_explanations/P12_系统末期GPIO回调与通知链.md#12.1_注册模式怎样决定回调上下文)、[ARM阶段](../source_explanations/P12_系统末期GPIO回调与通知链.md#12.2_常规ARM路径在何时进入最终链)、[输出回调](../source_explanations/P12_系统末期GPIO回调与通知链.md#12.3_最终回调的逻辑序列与返回证明了什么) 连接F0到F5；[poweroff配置](../source_explanations/P12_系统末期GPIO回调与通知链.md#12.4_poweroff怎样取得线路并登记最终模式) 与 [restart差量](../source_explanations/P12_系统末期GPIO回调与通知链.md#12.5_restart怎样处理初值优先级和默认时间) 分别核对属性、默认值与错误。相似名称不能掩盖wait-delay原件内部冲突、priority错误处理差异和初始方向含义。
+
+驱动普通退出另沿 [托管注销](../source_explanations/P12_系统末期GPIO回调与通知链.md#12.6_托管注销怎样先撤下回调再释放GPIO) 撤下handler再归还线路；该生命期不是整机关闭的F1～F5，也不主动触发关机波形。正文 [离线描述练习](../../../../knowledge/driver_model/gpio_consumers/P07_GPIO关机与重启为何要核对最后阶段.md#7.5_在离线描述中检查极性和时间单位) 只检查字段与逻辑极性，不在目标板执行最终动作。
+
+## 6.7\_从适配层继续追踪时保留边界
 
 本页只核对固定驱动的状态交接。GPIO Provider是否会睡眠、是否有硬件去抖、IRQ能否唤醒目标系统，都需要沿真实平台核对。输入核心如何把报告分发给多个客户端、如何处理队列溢出，则继续进入 [Input源码入口](../../linux/drivers/input/README.md#1.4_关键调用链索引)。把这些问题拆开并不表示省略：适配层先给出何时交付什么状态，再由接收层解释下一段保证。
 

@@ -2764,3 +2764,11 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 沿用NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；gpio.c、core.c、两份mux头文件与gpio-mux binding身份列于实现页，补核对MUX_GPIO配置及idle常量。明确成功选择仍占用、失败选择不得释放第二次、空闲恢复失败也up，以及gpio-mux忽略数组setter返回的限制。初始OUT_LOW与AS_IS空闲策略分开，注销不冒充停止外部传输。
 
 两篇新文和导读冷读；七段源码逐定义与语句匹配，五图渲染目视，0/3/4三种idle输入经DTC/fdtget核对，4可解析但按源码范围应拒绝。正文连续性、长度和锚点通过；导读41链接的密度风险按本地K/L/R/M周期与唯一实现导航职责保留。没有dtbs_check、内核构建、解绑、选通或时序实测。
+
+## 1.274\_GPIO系统末期控制与atomic回调边界
+
+2026-10-17，新增 [末期控制正文](../../../knowledge/driver_model/gpio_consumers/P07_GPIO关机与重启为何要核对最后阶段.md#7.1_白天能写的GPIO为什么在关机末期可能失效) 与 [唯一实现](../gpiolib/source_explanations/P12_系统末期GPIO回调与通知链.md#12.1_注册模式怎样决定回调上下文)，扩展 [模块导读](../gpiolib/navigation/P06_标准功能驱动怎样承接GPIO状态.md#6.6_系统末期控制先核对执行阶段再看电平)。从最后写线所依赖的电源、时钟、总线、IRQ与调度推导阶段约束，再展开1→0→1逻辑序列和两种属性。
+
+固定证据仍为NXP提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，核对两驱动、kernel/reboot.c、ARM32 reboot.c、notifier实现与契约、两份binding及Kconfig。实现页列路径与blob；include/linux/reboot.h补核对优先级0，blob `abcdde4df697969a8027bcb052efc00daabbbf6a`。明确最终POWER_OFF和RESTART均为atomic，cansleep后缀不改变上下文，prepare也在device_shutdown之后；ARM末期顺序不外推其他架构。
+
+保留restart wait-delay文字3000、Schema default100、C初始化3000的差异；初始open-source仅按此驱动选择输入，不冒充电气配置。普通注销与整机关机生命周期分开。八段源码逐定义/语句核对，五图渲染目视，两种极性和缺失wait-delay三个离线DTS输入核对。正文连续性、长度与锚点通过，导读48链接风险按已本地闭合K/L/R/M/F周期及导航职责保留。无dtbs_check、内核构建、真实关机重启、末期可访问性或脉冲实测。
