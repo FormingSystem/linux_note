@@ -9220,6 +9220,114 @@
           "全仓883篇链接无缺失；明确临时身份恢复、ACL失败传播与LSM关闭配置的边界。"
         ],
         "limits": "没有目标Linux编译运行、ACL或namespace隔离及LSM策略实测。"
+      },
+      "knowledge/kernel_subsystems/vfs/P20_fsnotify_inotify与fanotify.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿N0至N5建立观察索引、队列、通知读取与许可回答，按状态分开取消和退出的资源归属。",
+        "validation": [
+          "六十二段函数体逐token一致，二十一份原件核对Git对象，新增十五份。",
+          "九篇冷读、十九图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓891篇链接无缺失；保留配额失败回退缺陷，区分Tiny SRCU配置和许可各失败分支。"
+        ],
+        "limits": "没有目标Linux编译运行、通知压力及fanotify许可竞态实测。"
+      },
+      "research/source_reading/vfs/navigation/P19_事件观察与许可响应的交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿N0至N5建立观察索引、队列、通知读取与许可回答，按状态分开取消和退出的资源归属。",
+        "validation": [
+          "六十二段函数体逐token一致，二十一份原件核对Git对象，新增十五份。",
+          "九篇冷读、十九图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓891篇链接无缺失；保留配额失败回退缺陷，区分Tiny SRCU配置和许可各失败分支。"
+        ],
+        "limits": "没有目标Linux编译运行、通知压力及fanotify许可竞态实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P56_inotify实例与观察编号的建立.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿N0至N5建立观察索引、队列、通知读取与许可回答，按状态分开取消和退出的资源归属。",
+        "validation": [
+          "六十二段函数体逐token一致，二十一份原件核对Git对象，新增十五份。",
+          "九篇冷读、十九图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓891篇链接无缺失；保留配额失败回退缺陷，区分Tiny SRCU配置和许可各失败分支。"
+        ],
+        "limits": "没有目标Linux编译运行、通知压力及fanotify许可竞态实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P57_观察标记的连接撤销与延后回收.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿N0至N5建立观察索引、队列、通知读取与许可回答，按状态分开取消和退出的资源归属。",
+        "validation": [
+          "六十二段函数体逐token一致，二十一份原件核对Git对象，新增十五份。",
+          "九篇冷读、十九图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓891篇链接无缺失；保留配额失败回退缺陷，区分Tiny SRCU配置和许可各失败分支。"
+        ],
+        "limits": "没有目标Linux编译运行、通知压力及fanotify许可竞态实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P58_fsnotify事件匹配与分派.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿N0至N5建立观察索引、队列、通知读取与许可回答，按状态分开取消和退出的资源归属。",
+        "validation": [
+          "六十二段函数体逐token一致，二十一份原件核对Git对象，新增十五份。",
+          "九篇冷读、十九图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓891篇链接无缺失；保留配额失败回退缺陷，区分Tiny SRCU配置和许可各失败分支。"
+        ],
+        "limits": "没有目标Linux编译运行、通知压力及fanotify许可竞态实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P59_事件合并排队与溢出.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿N0至N5建立观察索引、队列、通知读取与许可回答，按状态分开取消和退出的资源归属。",
+        "validation": [
+          "六十二段函数体逐token一致，二十一份原件核对Git对象，新增十五份。",
+          "九篇冷读、十九图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓891篇链接无缺失；保留配额失败回退缺陷，区分Tiny SRCU配置和许可各失败分支。"
+        ],
+        "limits": "没有目标Linux编译运行、通知压力及fanotify许可竞态实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P60_通知读取与监听实例退出.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿N0至N5建立观察索引、队列、通知读取与许可回答，按状态分开取消和退出的资源归属。",
+        "validation": [
+          "六十二段函数体逐token一致，二十一份原件核对Git对象，新增十五份。",
+          "九篇冷读、十九图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓891篇链接无缺失；保留配额失败回退缺陷，区分Tiny SRCU配置和许可各失败分支。"
+        ],
+        "limits": "没有目标Linux编译运行、通知压力及fanotify许可竞态实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P61_fanotify许可等待与观察持有.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿N0至N5建立观察索引、队列、通知读取与许可回答，按状态分开取消和退出的资源归属。",
+        "validation": [
+          "六十二段函数体逐token一致，二十一份原件核对Git对象，新增十五份。",
+          "九篇冷读、十九图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓891篇链接无缺失；保留配额失败回退缺陷，区分Tiny SRCU配置和许可各失败分支。"
+        ],
+        "limits": "没有目标Linux编译运行、通知压力及fanotify许可竞态实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P62_fanotify响应状态与退出收尾.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿N0至N5建立观察索引、队列、通知读取与许可回答，按状态分开取消和退出的资源归属。",
+        "validation": [
+          "六十二段函数体逐token一致，二十一份原件核对Git对象，新增十五份。",
+          "九篇冷读、十九图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓891篇链接无缺失；保留配额失败回退缺陷，区分Tiny SRCU配置和许可各失败分支。"
+        ],
+        "limits": "没有目标Linux编译运行、通知压力及fanotify许可竞态实测。"
       }
     },
     "additional_documents": [
