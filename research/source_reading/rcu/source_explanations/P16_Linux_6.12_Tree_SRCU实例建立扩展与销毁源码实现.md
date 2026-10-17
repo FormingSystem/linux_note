@@ -343,7 +343,7 @@ static bool init_srcu_struct_nodes(struct srcu_struct *ssp, gfp_t gfp_flags)
 
 最后的 release 把 `srcu_size_state` 变成 WAIT_BARRIER，和请求、barrier 路径的 acquire 配对；看到该阶段的执行者才能读取树链接。分配失败在发布以前返回 false，运行中扩展留在 ALLOC，之后有 GP 完成时可再次尝试。没有新 GP 时它也不会凭空启动独立“扩展线程”。
 
-本函数调用的 `rcu_init_geometry/rcu_init_levelspread` 复用 Tree RCU 的几何计算，只决定层数和节点分布；没有把 SRCU reader 证明变成 `qsmask` 上报。几何建立的唯一展开见 [启动初始化实现](P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.10.2_几何计算的完整决策顺序)。
+本函数调用的 `rcu_init_geometry/rcu_init_levelspread` 复用 Tree RCU 的几何计算，只决定层数和节点分布；没有把 SRCU reader 证明变成 `qsmask` 上报。几何建立的唯一展开见 [配置与几何实现](P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md#17.4.2_几何计算的完整决策顺序)。
 
 ## 16.6\_为什么扩展必须跨过多轮GP
 

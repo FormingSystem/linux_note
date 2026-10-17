@@ -166,7 +166,7 @@ static void __init rcu_init_one(void)
 
 `for_each_possible_cpu()` 在启动时为尚未 online 的 CPU也建立映射，因此 hotplug 不需要运行期分配节点或改父子拓扑。代价是 `node[]` 与全部 `rcu_data` 按 possible CPU 规模预留。`exp_wq[4]`、poll work、NOCB 等状态也在此时预埋，但相应 kthread/worker 仍要等 `kthreadd` 与 workqueue 进入后续阶段；初始化承载地址不等于启动执行者。
 
-进入本函数前，几何初始化已经算出各层节点数和运行期层数；`rcu_state.level[0]` 的静态初值指向 `node[0]`。两者由[启动事务实现](P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.10_I5从编译期容量中裁出本次启动真正使用的树)负责。假设教学几何为8个CPU、每叶4个CPU、根连接2片叶，CPU5的 `mynode` 指向覆盖4～7的叶，本位是 `BIT(5-4)=BIT(1)`；该叶在根中的 `grpmask` 也可能为 `BIT(1)`，但它表示一整片叶，二者不能互换。实际范围以 `levelspread` 和 `nr_cpu_ids` 为准。
+进入本函数前，几何初始化已经算出各层节点数和运行期层数；`rcu_state.level[0]` 的静态初值指向 `node[0]`。两者由[配置与几何实现](P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md#17.4_I5从编译期容量中裁出本次启动真正使用的树)负责。假设教学几何为8个CPU、每叶4个CPU、根连接2片叶，CPU5的 `mynode` 指向覆盖4～7的叶，本位是 `BIT(5-4)=BIT(1)`；该叶在根中的 `grpmask` 也可能为 `BIT(1)`，但它表示一整片叶，二者不能互换。实际范围以 `levelspread` 和 `nr_cpu_ids` 为准。
 
 `RCU_NODE_NAME_INIT/RCU_FQS_NAME_INIT` 和静态key数组给节点锁按层分类命名；它们服务于锁诊断，不决定CPU路由。`ACCESS_PRIVATE`取出节点锁，`BUILD_BUG_ON`与panic检查容量和层数不变量。`barrier_head.next`先指向自己，作为尚未接入回调链的初始化状态。四个expedited等待槽按 `rcu_seq_ctr(s) & 3` 选择，使用的是去掉状态位后的代数，不能直接取完整序列的最低两位。
 

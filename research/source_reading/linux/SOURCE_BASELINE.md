@@ -169,7 +169,9 @@ domains:
 - [Tree RCU 同步等待与 rcu_barrier 源码实现](../rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.2_源码符号覆盖账本)
 - [Tree SRCU 源码实现](../rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.2_源码符号覆盖账本)
 - [Tree SRCU 实例生命周期](../rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md#16.1_一轮GP之外还有实例寿命)
-- [Tree RCU `rcu_init()` 启动初始化源码实现](../rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.19_直接符号覆盖账本)
+- [Tree RCU `rcu_init()` 启动初始化源码实现](../rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.11_直接符号覆盖账本)
+- [RCU 配置选择与树形容量](../rcu/source_explanations/P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md#17.1_先决定编译什么再决定初始化多大)
+- [RCU 早期请求与执行模式交接](../rcu/source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md#18.1_没有执行者时登记的请求由谁接管)
 - [Tiny RCU 源码实现](../rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.2_源码符号覆盖账本)
 
 ### 1.5.2\_Lockdep证据
@@ -2439,7 +2441,7 @@ P09为18条出链/18条标题入链，P15为10/17。两篇约7000和7700字词�
 
 以R0～R6贯通取票、登记、局部哨兵报告、全局归零与发布；明确follower取票时刻、NOCB flush前后pending条件，以及扫描者和哨兵两种完成者。八处函数C词法序列与固定源码一致，两图渲染目视；19条出链和19条标题入链通过，严格连续性无风险项，约5434字词。实际格式、元数据、命名及全仓734篇9463条本地链接检查通过。未执行目标barrier/hotplug/NOCB压力实验。
 
-## 1.251\_Tree_SRCU完整周期与实例生命周期复核
+## 1.251\_Tree\_SRCU完整周期与实例生命周期复核
 
 2026-10-17，冷读RCU实现P11及固定srcutree.c、srcu.h、srcutree.h，恢复完整结构体与函数控制分支。纠正一次计数配平被理解成全域无读者、SCAN2参数2被理解成必须两次成功、小域到大域期间一直使用boot队列等边界；补公开读侧、NMI安全配置、snap先于advance的反例、四槽索引、加急漏斗、定时器到work交接以及同步入口的空闲启发式。
 
@@ -2448,3 +2450,11 @@ P09为18条出链/18条标题入链，P15为10/17。两篇约7000和7700字词�
 两篇合计52个完整函数、四个完整结构体及一组静态初始化宏通过C词法一致检查，四图渲染并目视。P11为19条出链/21条标题入链，P16为16/6；P16约7096字词、严格连续性无风险。P11约10914字词，经拆分审查保留略超阈值：实例生命周期已独立，剩余内容共同闭合一次请求从登记到双扫描、交付和barrier的相互约束，完整函数及共享阶段需要连读；不删必要分支压低计数。其327行完成交付H2已分三级标题区分发布、callback和重试，保留一个长节提示，无其他连续性风险。
 
 同步模块导读、总索引、专题大纲、人工评审地图红色节点与当前出版清单，7卷55来源均存在且唯一；既有首页和Atlas专题入口仍有效，无须改动冻结发行清单。实际格式、元数据、命名及全仓735篇9482条本地链接检查通过。未执行目标内核构建、SRCU压力、模块加载卸载或NMI实验，不升级开发者人工评审状态。
+
+## 1.252\_RCU启动主事务与配置及执行交接复核
+
+2026-10-17，冷读原实现P12并拆为主事务P12、配置与树容量P17、早期请求与执行模式交接P18，保留I0～I13统一定位。对照固定tree.c、tree_exp.h、update.c、tasks.h、rcu.h和init/main.c，纠正RUNNING发生在SMP与调度器初始化之后、CPU starting可在下一次bring-up再次执行、poll请求在开始领取后再循环复查，以及自检只由两条测试callback计数等边界。
+
+补完整PM通知、poll worker、几何展开、测试完成检查、Tasks分片及后期monitor接管函数。明确配置种子不能代替最终配置、编译期容量与运行时布局不同、producer暂存与两个释放批次不同。新增固定提交证据kernel/Kconfig.preempt、kernel/rcu/Makefile、arch/arm/configs/imx_v7_defconfig、include/linux/suspend.h，其Git对象依次为fe782cd77388592b0c1b4197ae0d1e20b837b553、0cfb009a99b9f7e9e063d690cf889d44c6ec3ad6、1680d7d78f5569e9360e604d77f6c491a9dbf9e1、da6ebca3ff774c8bf59353aac08fe17106682b6d。init/main.c的本地证据对象仍为c4778edae7972f512d5eefe8400075ac35a70d1c。
+
+三篇合计23个完整函数或配置分支通过C词法一致检查，五图渲染并目视。P12为40条出链/12条标题入链，P17为6/12，P18为11/12；三篇约9700、4600、5700字词，均低于篇幅阈值，严格连续性无风险项。同步唯一实现调用方、总索引、大纲、人工评审地图红色节点和当前出版清单，7卷57来源均存在且唯一；冻结发行清单保持历史身份。实际格式、元数据、命名及全仓737篇9519条本地链接检查通过。当前目标工作树配置、内核构建与实际启动执行未验证，不将历史配置或源码静态检查冒充运行结果。

@@ -105,6 +105,14 @@
           "role": "chapter"
         },
         {
+          "path": "research/source_reading/rcu/source_explanations/P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md",
+          "role": "chapter"
+        },
+        {
           "path": "research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md",
           "role": "chapter"
         },

@@ -6857,7 +6857,9 @@
       "tools/ai/codex/skills/build-linux-note-topic/references/concept_implementation_mapping.md",
       "research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md",
       "research/source_reading/rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md",
-      "research/source_reading/rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md"
+      "research/source_reading/rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md",
+      "research/source_reading/rcu/source_explanations/P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md",
+      "research/source_reading/rcu/source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md"
     ],
     "language_review": {
       "status": "complete",

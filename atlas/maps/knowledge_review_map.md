@@ -909,6 +909,8 @@ mindmap-plugin: basic
             - 🔴 [P14 Linux 6.12 Tree RCU 同步等待批处理源码实现](../../research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.1_GP已经完成为什么调用者还在等)
             - 🔴 [P15 Linux 6.12 Tree RCU NOCB 队列与执行交接源码实现](../../research/source_reading/rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.1_本地回调处理怎样变成远端协作)
             - 🔴 [P16 Linux 6.12 Tree SRCU 实例建立扩展与销毁源码实现](../../research/source_reading/rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md#16.1_一轮GP之外还有实例寿命)
+            - 🔴 [P17 Linux 6.12 RCU 配置选择参数与树形容量源码实现](../../research/source_reading/rcu/source_explanations/P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md#17.1_先决定编译什么再决定初始化多大)
+            - 🔴 [P18 Linux 6.12 RCU 早期请求与执行模式交接源码实现](../../research/source_reading/rcu/source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md#18.1_没有执行者时登记的请求由谁接管)
 
 ## 1.9\_参考与出版物
 

@@ -162,7 +162,7 @@ sequenceDiagram
 
 | 阅读目标 | 源文件 | 唯一实现讲解 |
 | --- | --- | --- |
-| `start_kernel()` 中 `rcu_init()` 的完整启动事务、配置分派和后继阶段 | [`init/main.c`](../../linux/init/main.c)、[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P12：`rcu_init()` I0～I13](../source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.6_I0到I13的初始化阶段账本) |
+| `start_kernel()` 中 `rcu_init()` 的完整启动事务、配置分派和后继阶段 | [`init/main.c`](../../linux/init/main.c)、[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P12：`rcu_init()` I0～I13](../source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.5_I0到I13的初始化阶段账本) |
 | `node[]/level[]`、父子关系与 CPU 绑定 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`tree.h`](../../linux/kernel/rcu/tree.h) | [P06：`rcu_init_one()`](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点) |
 | boot per-CPU 初值与 CPU prepare | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P06：boot 与 prepare](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.5_boot初始化与prepare为何仍未让CPU加入当前GP) |
 | CPU starting/dead 的 current/next 交接 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P06：starting/dead](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮) |
@@ -172,7 +172,7 @@ sequenceDiagram
 
 ## 4.9\_建议阅读顺序与验收
 
-1. 先读 `start_kernel()` 中的 [`rcu_init()` 完整启动事务](../source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.4_进入rcu_init以前内核已经保证了什么)，确定调用现场和后半程尚未发生的动作；
+1. 先读 `start_kernel()` 中的 [`rcu_init()` 完整启动事务](../source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.3_进入rcu_init以前内核已经保证了什么)，确定调用现场和后半程尚未发生的动作；
 2. 在 `tree.h` 找到 `rcu_state.node[]/level[]`、`rcu_node.qsmask*` 和 `rcu_data.mynode/grpmask`；
 3. 再读 `rcu_init_one()`，只回答静态地址怎样建立；
 4. 沿 `rcutree_prepare_cpu()` 到 `rcutree_report_cpu_starting()`，区分“数据准备好”和“加入未来参与集合”；

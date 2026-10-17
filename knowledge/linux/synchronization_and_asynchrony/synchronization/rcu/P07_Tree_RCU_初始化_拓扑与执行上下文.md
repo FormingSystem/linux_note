@@ -59,7 +59,7 @@ rcu_test_sync_prims();
 tasks_cblist_init_generic();
 ```
 
-这段顺序同时建立早期契约测试、`kfree_rcu` 批处理、参数派生、固定拓扑、boot CPU 身份、softirq/PM 入口、工作队列基础设施、callback 过载门闩、过早 poll 修复和 Tasks RCU callback 分片。完整版本化调用账本、配置分支、失败语义和后半程接力见 [Linux 6.12 Tree RCU `rcu_init()` 启动初始化源码实现](../../../../../research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.6_I0到I13的初始化阶段账本)。
+这段顺序同时建立早期契约测试、`kfree_rcu` 批处理、参数派生、固定拓扑、boot CPU 身份、softirq/PM 入口、工作队列基础设施、callback 过载门闩、过早 poll 修复和 Tasks RCU callback 分片。完整版本化调用账本、配置分支、失败语义和后半程接力见 [Linux 6.12 Tree RCU `rcu_init()` 启动初始化源码实现](../../../../../research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.5_I0到I13的初始化阶段账本)。
 
 这段顺序有启动约束：`rcu_init()` 很早执行，此时源码断言在线 CPU 数不超过一个；其他 CPU 以后通过 CPU hotplug/bring-up 钩子逐个准备。GP kthread、boost/nocb/expedited 工作线程还受 `kthreadd` 和对应初始化阶段是否就绪的限制，不能把“`rcu_init()` 一次创建全部执行者”当作事实。早期 `synchronize_rcu()` 采用单启动任务语义，workqueue 对象虽可创建/排队，完整 worker 执行仍要等待 `workqueue_init()`。
 
@@ -95,7 +95,7 @@ tasks_cblist_init_generic();
 | B5 CPU online | I9 的 `starting/online` 部分；次级 CPU 以后复用 hotplug 协议 | 保护域参与集合及下一轮债务位 | 后续 GP 在 P05 S4 封闭本轮参与集合 |
 | B6 工作线程就绪 | I10 先建立 workqueue；GP/core/NOCB 等线程由后继 initcall 创建 | GP 请求协调者、慢路径执行者和结果交付者 | P05 S3 接收需求、S4～S7 推进 GP、S8 交付结果 |
 
-这张表也解释了为什么不能只读 `rcu_init()` 函数体：I5～I10 主要建立地址、入口和排队能力，实际 GP kthread、完整 workqueue worker 与次级 CPU 都在函数返回以后继续接力。完整源码交叉账本见 [`rcu_init()` 的 I 阶段到运行期职责映射](../../../../../research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.6.1_I阶段怎样回接公共实现抽象与运行周期)。
+这张表也解释了为什么不能只读 `rcu_init()` 函数体：I5～I10 主要建立地址、入口和排队能力，实际 GP kthread、完整 workqueue worker 与次级 CPU 都在函数返回以后继续接力。完整源码交叉账本见 [`rcu_init()` 的 I 阶段到运行期职责映射](../../../../../research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.5.1_I阶段怎样回接公共实现抽象与运行周期)。
 
 ## 7.4\_rcu\_node怎样由叶到根建立
 
