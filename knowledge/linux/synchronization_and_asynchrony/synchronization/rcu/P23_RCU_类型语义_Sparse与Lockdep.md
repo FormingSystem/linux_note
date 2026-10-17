@@ -17,6 +17,8 @@ topics:
 
 前面的例子都依赖一条人工约定：共享入口必须用 RCU 发布/取得，取得动作必须位于正确保护条件中。本章用一个会编译、却可能 UAF 的错误驱动说明三层检查怎样分工：Sparse 检查指针类型，lockdep 检查运行时保护条件，业务代码仍须证明对象生命周期。
 
+上一章已经分开软件快照、业务许可和硬件完成；本章再问：哪些约定能交给工具检查，哪些仍必须由设计者证明？类型、运行时影子记录和对象真正的生命周期是三组不同状态，不能用一个“检查通过”互相替代。下面先构造失败交错，再分别接入工具，最后回到同一个查找周期检查它们能覆盖多少。
+
 ## 23.2\_具体问题\_普通赋值掩盖了哪两项错误
 
 定义一个可替换的设备状态：
@@ -45,9 +47,13 @@ static int bad_read_status(void)
 同时发生更新时：
 
 ```c
+/* 更新者片段：new已独立分配并初始化，更新锁真实持有。 */
+mutex_lock(&state_lock);
 old = rcu_replace_pointer(gstate, new,
 			  lockdep_is_held(&state_lock));
-kfree_rcu(old, rcu);
+mutex_unlock(&state_lock);
+if (old)
+	kfree_rcu(old, rcu);
 ```
 
 错误因果链是：
@@ -63,13 +69,11 @@ kfree_rcu(old, rcu);
 
 Sparse 能发现第一项类型错误，却无法证明最后是否真的发生 UAF；lockdep 能发现某些“在错误保护上下文中取得”的问题，却也不知道业务所有权是否完整。二者是互补证据，不是内存安全证明器。
 
+这段坏代码也可能因gstate为NULL直接崩溃；讨论UAF交错时假定它最初非NULL。更关键的是，普通赋值没有调用RCU访问器的诊断hook，因此即便启用了Lockdep，它也不会自动检查任意一次C加载。把检查接口加入代码是获得动态证据的前提；这些反例只供静态阅读，不应加载到工作内核执行。
+
 ## 23.3\_rcu在Linux\_6.12中究竟是什么
 
-`include/linux/compiler_types.h` 在 Sparse 定义 `__CHECKER__` 时声明：
-
-```c
-#define __rcu __attribute__((noderef, address_space(__rcu)))
-```
+**讲解层次：固定Linux 6.12.20的注解与接口实现。** `include/linux/compiler_types.h` 在Sparse定义 `__CHECKER__` 时，将 `__rcu` 展开为带 `noderef` 和 `address_space(__rcu)` 的属性；普通编译路径另有BTF标签选择。实现入口先从 [RCU源码总阅读索引](../../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md) 定位，正文只解释调用契约，宏体保留在唯一实现讲解中。
 
 含义是：
 
@@ -81,16 +85,22 @@ Sparse 能发现第一项类型错误，却无法证明最后是否真的发生 
 
 ```mermaid
 flowchart LR
-    S["共享入口<br/>struct obj __rcu *"] -->|"Sparse类型检查"| T["是否通过RCU宏<br/>跨越address space"]
-    T -->|"rcu_dereference_check"| L["lockdep检查<br/>读侧或更新锁条件"]
-    L --> M["READ_ONCE／依赖顺序<br/>或protected访问"]
-    M --> U["调用者使用普通指针"]
-    U -->|"仍由业务代码负责"| O["对象不逃逸<br/>GP/引用计数后回收"]
+    S["同一份C源文件"] -->|"Sparse预处理与类型分析"| T["分析器内的address-space<br/>类型与静态context账本"]
+    T -->|"类型或配对失配"| D["构建诊断"]
+    S -->|"普通编译生成代码"| R["运行中的调用者"]
+    R -->|"真实读侧建立/撤销"| F["RCU功能状态与GP后端"]
+    R -->|"启用时acquire/release"| L["current的held_locks影子账本"]
+    R -->|"访问器加载入口"| P["gstate与局部指针p"]
+    L -->|"held查询供诊断使用"| W["RCU_LOCKDEP_WARN条件判断"]
+    E["debug_locks、递归状态<br/>及调用点__warned"] -->|"决定是否报告"| W
+    W -->|"满足报告条件"| O["可疑用法报告"]
 ```
+
+图中没有从Sparse账本通向运行中锁状态的箭头：二者是不同执行阶段的证据。运行时的局部指针是否还能使用，仍由发布、读区和回收协议决定；报告也不会替业务代码取得锁。
 
 ## 23.4\_正确的完整代码闭环
 
-修复不能停在把普通赋值替换成一个访问器。发布者、读者和退出路径必须同时满足类型契约、动态保护条件和对象生命周期；下面用一段完整代码标明三类证明分别落在哪一行。
+修复不能停在把普通赋值替换成一个访问器。下面给出成套调用骨架，依赖RCU、mutex及slab内核头文件，未包含可加载模块入口。它固定状态发布后不变，更新过程允许睡眠；退出时外层先停止并等待所有读写入口，再在state_lock下把gstate替换为NULL并按相同协议退休旧对象。没有这一步，单靠下面三个函数不能宣称模块生命周期完整。
 
 ### 23.4.1\_发布者
 
@@ -168,18 +178,7 @@ static int read_status_while_updating(void)
 
 Sparse 是一个面向 C 语义的静态分析器。它会参与内核构建，对目标 `.c` 文件经过预处理后的翻译单元进行解析，理解类型、表达式、控制流和上下文注解；它不是用文本搜索去寻找 `rcu_check_sparse`、`rcu_dereference` 等字符串。
 
-调用 Sparse 分析器时，它会自行定义 `__CHECKER__`。这不是 Kconfig，也不表示运行中的内核开启了某个功能。`include/linux/compiler_types.h` 据此把 Linux 注解展开为 Sparse 能理解的属性：
-
-```c
-#ifdef __CHECKER__
-#define __rcu       __attribute__((noderef, address_space(__rcu)))
-#define __acquire(x) __context__(x, 1)
-#define __release(x) __context__(x, -1)
-#else
-#define __acquire(x) (void)0
-#define __release(x) (void)0
-#endif
-```
+调用Sparse分析器时，它会自行定义 `__CHECKER__`。这不是Kconfig，也不表示运行中的内核开启了某个功能。`compiler_types.h` 据此选择分析器可理解的属性：`__acquire(x)`/`__release(x)`分别向静态context账本增加/减少一份；普通编译中这两项为空操作。精确语法和分支由前述注解专题维护，不把GNU编译器人为定义 `__CHECKER__` 当作运行Sparse。
 
 因此，Sparse 看到的关键事实是：
 
@@ -197,12 +196,7 @@ rcu_read_lock()/rcu_read_unlock()
 
 ### 23.5.2\_rcu\_check\_sparse把宏参数交给类型系统
 
-Linux 6.12 的 `rcupdate.h` 在 `__CHECKER__` 下定义：
-
-```c
-#define rcu_check_sparse(p, space) \
-	((void)(((typeof(*p) space *)p) == p))
-```
+Linux 6.12的 `rcupdate.h` 只在 `__CHECKER__` 分支让 `rcu_check_sparse(p, space)` 构造类型比较表达式；普通编译分支为空。宏体及其逐项说明统一见 [静态类型桥接实现](../../../../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.3_rcu_check_sparse静态类型桥接)。
 
 `rcu_check_sparse` **不是 Sparse 关键字**。Sparse 不会因为看见这个名字就启动 RCU 专用规则；它只分析宏展开后留下的 C 类型表达式。若调用 `rcu_check_sparse(p, __rcu)`，这段表达式会：
 
@@ -213,7 +207,7 @@ Linux 6.12 的 `rcupdate.h` 在 `__CHECKER__` 下定义：
 
 宏名即使改变，只要类型表达式保持不变，Sparse 仍会按相同规则检查；反过来，保留宏名却删掉类型约束，检查能力也会消失。真正的语义入口是 `__rcu` 展开的 `address_space` 与 `noderef`，`rcu_check_sparse()` 只是把 RCU API 参数送入这套类型系统。
 
-`rcu_assign_pointer()`、`RCU_INIT_POINTER()`、`rcu_dereference*()` 和 `unrcu_pointer()` 都通过这条通路检查共享入口。验证通过后，底层宏才用 `__force` 有意跨越 address-space 边界，向调用者返回可用的普通局部指针。这里的 `__force` 是 RCU 公共入口内部的受控转换，不是调用者绕过类型协议的通行证。
+`rcu_assign_pointer()`、`RCU_INIT_POINTER()`、普通check/protected访问器和 `unrcu_pointer()` 用这条通路检查共享入口；raw变体有意绕过部分检查，不能笼统称所有 `rcu_dereference*` 都等价。底层宏同时包含 `__force` 转换，允许工具识别显式address-space跨越；这不是运行时先验证成功再解锁权限的闸门，源码排列也不保证转换一定在检查表达式之后。调用者自行强转可以压掉诊断，却不会补出生命期保护。
 
 例如，下面的入口缺少 `__rcu`：
 
@@ -247,6 +241,8 @@ make C=1 M=drivers/example
 make C=2 M=drivers/example
 ```
 
+这里的 `drivers/example` 是示意目录，必须换成实际存在且有Kbuild规则的目标；外置模块使用目标配置匹配的内核构建树和模块路径。两次命令是不同覆盖范围的选择，不要求机械连跑。记录Sparse版本、目标配置、实际分析文件及完整输出，才能判断“无告警”覆盖了什么。
+
 典型输出包含：
 
 ```text
@@ -263,20 +259,7 @@ Lockdep 自身的锁实例、锁类、current 持锁账本、全局依赖图和 
 
 ### 23.6.1\_同一rcu\_read\_lock中的功能与检查分层
 
-重新观察公共入口：
-
-```c
-static __always_inline void rcu_read_lock(void)
-{
-	__rcu_read_lock();
-	__acquire(RCU);
-	rcu_lock_acquire(&rcu_lock_map);
-	RCU_LOCKDEP_WARN(!rcu_is_watching(),
-			 "rcu_read_lock() used illegally while idle");
-}
-```
-
-四行代码属于四个不同层次：
+重新观察公共入口中的四种动作。下表保留阅读所需的先后顺序和作用，具体函数体在 [RCU Lockdep适配层](../../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.2_源码符号覆盖账本) 唯一展开：
 
 | 语句 | 执行阶段 | 状态或结果 | 关闭检查后的边界 |
 | --- | --- | --- | --- |
@@ -289,18 +272,7 @@ static __always_inline void rcu_read_lock(void)
 
 ### 23.6.2\_配置决定rcu\_lock\_map是否进入运行时
 
-Linux 6.12 在 `CONFIG_DEBUG_LOCK_ALLOC=y` 时把：
-
-```c
-rcu_lock_acquire(&rcu_lock_map)
-```
-
-展开为对 `lock_acquire()` 的真实调用；在配置关闭时则直接定义为：
-
-```c
-#define rcu_lock_acquire(a) do { } while (0)
-#define rcu_lock_release(a) do { } while (0)
-```
+Linux 6.12在 `CONFIG_DEBUG_LOCK_ALLOC=y` 时，通过 `rcu_lock_acquire(&rcu_lock_map)` 调用通用 `lock_acquire()`；配置关闭时acquire/release包装为空操作。启用配置也不保证每次都能登记：Lockdep还受运行时开关、递归抑制及自身容量等条件约束。
 
 所以“源码里看见调用”不能推出“目标内核正在维护这份记录”。配置关系应分开判断：
 
@@ -313,10 +285,10 @@ rcu_lock_acquire(&rcu_lock_map)
 可以在目标构建树中核对：
 
 ```bash
-grep -E 'CONFIG_(LOCKDEP|DEBUG_LOCK_ALLOC|PROVE_LOCKING|PROVE_RCU)=' .config
+grep -E '^(CONFIG_(LOCKDEP|DEBUG_LOCK_ALLOC|PROVE_LOCKING|PROVE_RCU|PROVE_RCU_LIST)=|# CONFIG_(LOCKDEP|DEBUG_LOCK_ALLOC|PROVE_LOCKING|PROVE_RCU|PROVE_RCU_LIST) is not set)' .config
 ```
 
-检查运行内核时，可核对对应的 `/boot/config-$(uname -r)` 或系统提供的 `/proc/config.gz`。本仓库 Linux 6.12.20 源码基线只确认 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y`，没有确认目标板启用了 Lockdep 配置，因此这里只能证明这些检查分支怎样实现，不能宣称目标板正在运行它们。完整退化路径见[配置关闭时对象和查询怎样退化](../../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.8_配置关闭时对象和查询怎样退化)。
+检查运行内核时，可核对与其身份匹配的 `/boot/config-$(uname -r)` 或系统提供的 `/proc/config.gz`；文件不存在不表示选项关闭。本轮只核对固定Linux 6.12.20源码分支，未取得当前目标的生成配置和运行日志。仓库2026-09-05记录的是Tiny/非SMP历史配置，其他Tree/PREEMPT快照也各有日期，不能据其中任一记录宣称当前板上检查器启用。完整退化路径见 [配置关闭时对象和查询怎样退化](../../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.8_配置关闭时对象和查询怎样退化)。
 
 若要先确认自己是否有资格运行这类动态验证、Lockdep 报告怎样产生以及 `debug_locks` 是否仍有效，可进入 [Lockdep 配置、亲手实验与报告解读](../lockdep/P08_配置_亲手实验与报告解读.md#8.1_先把使用资格变成环境检查)，再完成[锁顺序反转与报告解读实验](../../../../../labs/kernel/lockdep/P01_锁顺序反转与报告解读/README.md#1.1_本实验把哪条推理交给读者完成)。该实验验证的是通用 Lockdep 组件链，不会自动覆盖 RCU；回到 RCU 场景后仍须确认 `CONFIG_PROVE_RCU=y`，并实际执行目标访问器、读侧、callback 或同步等待路径。
 
@@ -339,14 +311,16 @@ RCU 把普通、BH 和 sched 读侧分别映射为 `rcu_lock_map`、`rcu_bh_lock
 
 ### 23.6.4\_访问器怎样消费读侧或业务锁条件
 
-`rcu_dereference(p)` 展开到：
+`rcu_dereference(p)` 选择普通check访问器。固定版本中运行时加载与诊断的实际先后为：
 
 ```text
 rcu_dereference_check(p, 0)
-    → 检查 rcu_read_lock_held()
     → READ_ONCE(p)
-    → Sparse类型检查
+    → RCU_LOCKDEP_WARN按配置和检查器状态选择是否查询held并报告
+    → 返回局部普通指针
 ```
+
+Sparse类型表达式在分析阶段被处理，不插入上述运行时队列。即使报告可疑访问，访问器也不会自动返回NULL、补锁或撤销已经取得的值。它是诊断，调用者不能用它代替先建立保护。
 
 `rcu_dereference_check(p, c)` 则接受两条合法路径的析取：
 
@@ -360,17 +334,60 @@ static struct dev_state *lookup_under_either_lock(void)
 
 它表达：调用者要么在普通 RCU 读侧，要么持有 `state_lock`。`lockdep_is_held(&state_lock)` 不是 RCU 同步动作，而是把业务代码的保护理由变成可动态核对的布尔条件。
 
+这个helper本身不加锁，调用者必须在调用前进入两种保护之一，并把返回的p限制在同一个保护区内。不能把“函数返回一个普通指针”误解为已经取得长期引用。
+
 `rcu_dereference_protected(p, c)` 更严格：它只接受调用者传入的 `c`，不会隐式追加 `rcu_read_lock_held()`。因此常见更新侧写法应传入 `lockdep_is_held(&state_lock)`；写成常量 `1` 仍要求调用者自己证明更新已被阻止，只是放弃了对这个理由的 Lockdep 核对。
 
 ### 23.6.5\_告警只报告已经观察到的误用
 
 Linux 6.12 的底层 `__rcu_dereference_check()` 和 `__rcu_dereference_protected()` 都用 `RCU_LOCKDEP_WARN(!(c), ...)` 报告可疑调用。`CONFIG_PROVE_RCU=y` 时，它先确认 Lockdep 已处于可用状态，再检查条件，并用该宏展开点的静态 `__warned` 对这个调用点只报告一次，报告内容由 `lockdep_rcu_suspicious()` 输出；`CONFIG_PROVE_RCU=n` 时，同名宏为空操作。
 
+有效性判定包含调度器已启动、全局 `debug_locks` 仍开以及当前任务未处于Lockdep递归；宏还在条件求值后复查有效性。`__warned`是调用点抑制状态，并非对象错误计数，也不是所有CPU之间严格原子的一次性协议。更隐蔽的是，检查被关闭或不可用时，普通 `rcu_read_lock_held()` 可能保守返回真以避免诊断误报；业务代码不得据此决定是否可以解引用对象。只有功能保护协议能提供这个资格。
+
 关闭检查只移除了诊断路径，不会让调用约束消失，也不会改变后续 `READ_ONCE()`、指针返回、GP 或 callback 功能路径。反过来，告警宏本身也不提供锁、发布顺序、宽限期或对象生命期保证。它最准确的定位是：**RCU 对通用 Lockdep 框架的检查适配层**。
 
 Lockdep 是动态检查，只能观察实际执行到的路径。一次测试没有告警，不能证明未覆盖分支、未来交错或临界区外裸指针一定安全。RCU 源码材料的家族分流和建议顺序见 [Linux 6.12 RCU 源码总阅读索引](../../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)；四个 map 的声明、定义、key、wait type、事件配对、held 查询、callback 消费和关闭配置见[RCU Lockdep适配层源码实现](../../../../../research/source_reading/rcu/source_explanations/P04_Linux_6.12_RCU_Lockdep适配层源码实现.md#4.2_源码符号覆盖账本)，公共告警宏体见 [`RCU_LOCKDEP_WARN` 检查适配层](../../../../../research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_LOCKDEP_WARN检查适配层)。
 
 RCU 链表宏也使用同一思路。例如带额外条件的 `list_for_each_entry_rcu()` 能表达遍历由指定 SRCU 域或更新锁保护；条件为假且没有任何认可的 RCU 读锁时，`CONFIG_PROVE_RCU_LIST` 路径会报告。
+
+### 23.6.6\_用一次读取周期对齐功能状态与检查状态
+
+下表固定“合法普通读者、检查配置启用且检查器有效”的正常路径。V0～V6同时跟踪三类状态；它们相互约束，但不是一个统一的锁计数器。
+
+| 阶段 | 执行者与状态变化 | 谁读取及下一步条件 |
+| --- | --- | --- |
+| V0 静态分析 | Sparse在自己的类型/context账本中解析共享入口与调用点 | 分析结果作为构建诊断，不传给运行内核 |
+| V1 建立保护 | 当前任务执行__rcu_read_lock，修改构建后端规定的真实读侧状态 | RCU后端依该功能状态判断读区及后续进展 |
+| V2 登记影子 | 当前任务经rcu_lock_acquire把map身份记入held_locks | 后续访问器的held查询读取本任务记录 |
+| V3 取得并诊断 | 访问器加载gstate；诊断在有效性允许时检查held条件 | 合法调用继续使用p；告警不替代保护也不阻断返回 |
+| V4 消费数据 | 任务在保护内读取status并复制为标量 | 不让裸指针离开保护区，不靠检查器保活 |
+| V5 撤销影子 | unlock先检查适用条件，再释放map影子记录 | 此时功能保护仍未撤销，release诊断仍有上下文 |
+| V6 退出功能 | __rcu_read_unlock撤销相应真实读侧状态 | 后端按其协议取得进展；不表示本次unlock直接完成GP |
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Task as 当前任务
+    participant Func as 真实RCU读侧状态
+    participant Shadow as current.held_locks
+    participant Entry as gstate与对象
+    participant Check as 检查器有效性与调用点状态
+    Task->>Func: V1建立真实读侧约束
+    Task->>Shadow: V2登记rcu_lock_map
+    Task->>Entry: V3 READ_ONCE取得入口值
+    Task->>Check: 判断是否可执行诊断
+    alt 检查器有效且需要检查
+        Task->>Shadow: 查询普通读侧是否登记
+        Shadow-->>Task: 返回本次held证据
+    else 检查关闭或递归抑制
+        Note over Task,Check: 不产生有效诊断证据，功能契约仍成立
+    end
+    Task->>Entry: V4在保护内复制status
+    Task->>Shadow: V5撤销逻辑登记
+    Task->>Func: V6撤销真实读侧约束
+```
+
+步骤1先于2，步骤8先于9：影子范围被真实功能范围包住。步骤3又先于4～6，说明诊断不是读取许可闸门。静态V0不在这张运行时序图中；静态context的配对也不会向GP线程发送报告。
 
 ## 23.7\_三类检查不能互相替代
 
@@ -394,6 +411,10 @@ static struct dev_state *bad_escape(void)
 	return p;                    /* 生命周期错误：裸指针逃逸。 */
 }
 ```
+
+可以做一次不执行坏内核代码的对照练习：先预测“普通指针接收gstate”“只换成rcu_dereference却不建立读区”“bad_escape”“完整read_status”四种写法的证据。第一种可能产生Sparse类型诊断，且没有访问器hook；第二种类型可对而动态保护条件错，须检查实际配置与执行覆盖才可能报告；第三种类型与动态检查都可通过，但返回指针失去保护；第四种只在其发布、回收与调用前提成立时完成安全值读取。工具没有一种单项结果可以跳过最后这些前提。
+
+想实际观察address space与静态context，可以运行 [Sparse注解实验](../../../../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md) 中的完整C样例。它只验证分析器规则，不启动Lockdep或RCU后端。本轮另用Sparse 0.6.4的宿主构建检查固定RCU类型桥接表达式；目标Kbuild与动态Lockdep路径未运行，不能把宿主类型诊断当作板上RCU验收。
 
 ## 23.8\_容易写错的绝对化结论
 
