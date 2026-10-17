@@ -6640,6 +6640,17 @@
           "篇幅3542字词；实际格式元数据命名及全仓9387本地链接检查通过"
         ],
         "limits": "未运行目标SRCU实例、迁移或域销毁实验。"
+      },
+      "research/source_reading/rcu/navigation/P10_Linux_6.12_Tasks_RCU模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补旧代码轨迹场景、三种flavor的状态地址和K0至K6，纠正Trace集合及退出通信，保留Rude失败边界。",
+        "validation": [
+          "固定源码核对；两图渲染目视；10本地出链3标题入链与严格连续性通过",
+          "篇幅3295字词；实际格式元数据命名及全仓9395本地链接检查通过"
+        ],
+        "limits": "未执行目标Tasks线程、IPI或动态代码卸载实验；本页维持模块导读职责。"
       }
     },
     "additional_documents": [
