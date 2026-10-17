@@ -6079,8 +6079,8 @@
           "blocks_added_or_changed": 3,
           "previously_reviewed": true,
           "state": "pending",
-          "decision": null,
-          "reason": null
+          "decision": "partial_cpp_migration",
+          "reason": "27a37e2将proc快照与CSV统计改为C++17，双编译器解析/数值/错误输入及正文一致性通过，4出链4入锚点、全仓链接通过；长度提示属于完整工具。专用tracefs采集器仍为Python，须继续迁移和验证，不能计整章语言审查完成。"
         },
         {
           "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P12_fasync_与其他通知机制的对比与整合.md",
