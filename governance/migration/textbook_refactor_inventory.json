@@ -8896,6 +8896,78 @@
           "全仓860篇链接无缺失；pagemap原件保留空白并设置文件级检查例外。"
         ],
         "limits": "没有目标Linux编译运行、缓存命中、设备I/O、分配竞争、并发truncate或故障注入实测。"
+      },
+      "knowledge/kernel_subsystems/vfs/P16_writeback_fsync与错误传播.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿B0至B5追踪脏责任、调度、范围完成、文件系统同步与每file错误游标，补齐目录同步边界。",
+        "validation": [
+          "二十四函数与固定原件逐token一致，十七份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓865篇链接无缺失；buffer.c与writeback.h原件保留空白并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、写回压力、错误注入、设备缓存或掉电恢复实测。"
+      },
+      "research/source_reading/vfs/navigation/P15_写回提交完成与错误观察.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿B0至B5追踪脏责任、调度、范围完成、文件系统同步与每file错误游标，补齐目录同步边界。",
+        "validation": [
+          "二十四函数与固定原件逐token一致，十七份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓865篇链接无缺失；buffer.c与writeback.h原件保留空白并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、写回压力、错误注入、设备缓存或掉电恢复实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P37_脏状态登记与写回调度.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿B0至B5追踪脏责任、调度、范围完成、文件系统同步与每file错误游标，补齐目录同步边界。",
+        "validation": [
+          "二十四函数与固定原件逐token一致，十七份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓865篇链接无缺失；buffer.c与writeback.h原件保留空白并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、写回压力、错误注入、设备缓存或掉电恢复实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P38_写回标记与范围完成等待.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿B0至B5追踪脏责任、调度、范围完成、文件系统同步与每file错误游标，补齐目录同步边界。",
+        "validation": [
+          "二十四函数与固定原件逐token一致，十七份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓865篇链接无缺失；buffer.c与writeback.h原件保留空白并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、写回压力、错误注入、设备缓存或掉电恢复实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P39_同步入口与文件系统持久化.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿B0至B5追踪脏责任、调度、范围完成、文件系统同步与每file错误游标，补齐目录同步边界。",
+        "validation": [
+          "二十四函数与固定原件逐token一致，十七份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓865篇链接无缺失；buffer.c与writeback.h原件保留空白并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、写回压力、错误注入、设备缓存或掉电恢复实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P40_写回错误序列与每file观察.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿B0至B5追踪脏责任、调度、范围完成、文件系统同步与每file错误游标，补齐目录同步边界。",
+        "validation": [
+          "二十四函数与固定原件逐token一致，十七份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓865篇链接无缺失；buffer.c与writeback.h原件保留空白并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、写回压力、错误注入、设备缓存或掉电恢复实测。"
       }
     },
     "additional_documents": [
