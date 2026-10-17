@@ -6453,6 +6453,17 @@
           "篇幅5691字词；格式及全仓727篇9293个有效本地链接检查通过"
         ],
         "limits": "未执行目标构建或通知注销并发；业务骨架不冒充可加载模块，账本练习为纸面推演。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P19_Tasks_RCU_任务轨迹宽限期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "建立K0至K6公共交付周期，区分三flavor独立控制对象和实际队列；展开经典任务/退出链、Rude调度边界、Trace current与blocked集合及IPI握手，修正unlock通知和导出API误解。",
+        "date": "2026-10-17",
+        "validation": [
+          "固定tasks.h、rcupdate_trace.h、workqueue.c及相关头文件核对",
+          "角色图与三时序图渲染目视、严格连续性和精确链接通过；实际全仓732篇9315有效本地链接无缺失"
+        ],
+        "limits": "未执行目标内核、跳板修改、跟踪或分配失败注入；保留Rude辅助接口分配失败未处理的源码边界。"
       }
     },
     "additional_documents": [
