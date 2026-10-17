@@ -9328,6 +9328,66 @@
           "全仓891篇链接无缺失；保留配额失败回退缺陷，区分Tiny SRCU配置和许可各失败分支。"
         ],
         "limits": "没有目标Linux编译运行、通知压力及fanotify许可竞态实测。"
+      },
+      "knowledge/kernel_subsystems/vfs/P21_file_dentry_inode与superblock回收.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿R0至R5区分名称、使用、缓存候选、驱逐和最终释放，核对实例持有及后端清理边界。",
+        "validation": [
+          "二十四段函数体逐token一致，十八份原件核对Git对象，新增五份。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓895篇链接无缺失；修正LRU移除与释放、时间戳脏位及等待键的解释。"
+        ],
+        "limits": "没有目标Linux编译运行、压力回收或后端故障注入实测。"
+      },
+      "research/source_reading/vfs/navigation/P20_对象退出与缓存回收的条件.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿R0至R5区分名称、使用、缓存候选、驱逐和最终释放，核对实例持有及后端清理边界。",
+        "validation": [
+          "二十四段函数体逐token一致，十八份原件核对Git对象，新增五份。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓895篇链接无缺失；修正LRU移除与释放、时间戳脏位及等待键的解释。"
+        ],
+        "limits": "没有目标Linux编译运行、压力回收或后端故障注入实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P63_最后inode引用与缓存保留.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿R0至R5区分名称、使用、缓存候选、驱逐和最终释放，核对实例持有及后端清理边界。",
+        "validation": [
+          "二十四段函数体逐token一致，十八份原件核对Git对象，新增五份。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓895篇链接无缺失；修正LRU移除与释放、时间戳脏位及等待键的解释。"
+        ],
+        "limits": "没有目标Linux编译运行、压力回收或后端故障注入实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P64_inode驱逐与最终释放.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿R0至R5区分名称、使用、缓存候选、驱逐和最终释放，核对实例持有及后端清理边界。",
+        "validation": [
+          "二十四段函数体逐token一致，十八份原件核对Git对象，新增五份。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓895篇链接无缺失；修正LRU移除与释放、时间戳脏位及等待键的解释。"
+        ],
+        "limits": "没有目标Linux编译运行、压力回收或后端故障注入实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P65_空闲inode扫描与卸载驱逐.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿R0至R5区分名称、使用、缓存候选、驱逐和最终释放，核对实例持有及后端清理边界。",
+        "validation": [
+          "二十四段函数体逐token一致，十八份原件核对Git对象，新增五份。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、锚点与C材料一致性完成。",
+          "全仓895篇链接无缺失；修正LRU移除与释放、时间戳脏位及等待键的解释。"
+        ],
+        "limits": "没有目标Linux编译运行、压力回收或后端故障注入实测。"
       }
     },
     "additional_documents": [
