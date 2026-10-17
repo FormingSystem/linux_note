@@ -838,6 +838,10 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [页缓存的数据有效性与修改交接](../../research/source_reading/vfs/navigation/P14_页缓存的数据有效性与修改交接.md)
+        - 🔴 [页缓存归属索引与竞争插入](../../research/source_reading/vfs/source_explanations/P34_页缓存归属索引与竞争插入.md)
+        - 🔴 [缓存读的填充等待与有效范围](../../research/source_reading/vfs/source_explanations/P35_缓存读的填充等待与有效范围.md)
+        - 🔴 [缓冲写的准备接纳与标脏](../../research/source_reading/vfs/source_explanations/P36_缓冲写的准备接纳与标脏.md)
         - 🔴 [读写请求的位置缓冲与结果交接](../../research/source_reading/vfs/navigation/P13_读写请求的位置缓冲与结果交接.md)
         - 🔴 [读写入口的位置选择与结果回填](../../research/source_reading/vfs/source_explanations/P31_读写入口的位置选择与结果回填.md)
         - 🔴 [读写资格检查与文件操作分派](../../research/source_reading/vfs/source_explanations/P32_读写资格检查与文件操作分派.md)

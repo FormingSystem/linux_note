@@ -13,6 +13,7 @@ research/source_reading/linux/**/*.rst text eol=lf
 research/source_reading/linux/fs/readdir.c whitespace=-blank-at-eol
 research/source_reading/linux/fs/fcntl.c whitespace=-blank-at-eol,-space-before-tab
 research/source_reading/linux/include/linux/poll.h whitespace=-blank-at-eol
+research/source_reading/linux/include/linux/pagemap.h whitespace=-blank-at-eol
 research/source_reading/linux/include/uapi/linux/fs.h whitespace=-blank-at-eol
 research/source_reading/linux/Documentation/filesystems/path-lookup.rst whitespace=-blank-at-eol
 # Upstream RST uses tabbed indentation and seven-character heading underlines.

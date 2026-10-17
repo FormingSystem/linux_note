@@ -3039,3 +3039,24 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 九份原件中新增迭代器导入实现、ARM用户访问头及通用地址范围检查。ARM启用MMU，SECURITY和FANOTIFY未启用；access_ok只形成范围证据，不能证明实际复制成功。同步栈请求拒绝排队完成，普通文件写侧保护在分派层配对，权限事件、结果通知、任务统计与持久化分别说明。
 
 五篇冷读、十图渲染目视、长度、标题元数据、锚点及完整C材料一致性完成。未在目标Linux编译运行，也未执行坏地址注入、冻结竞争或异步完成验证；正文实验输出标注为预期。
+
+## 1.294\_页缓存的成员有效性与修改交接
+
+2026-10-18，重写 [页缓存正文](../../../knowledge/kernel_subsystems/vfs/P15_address_space_folio与页缓存.md#15.2_共享索引与folio的几组独立状态)，新增 [模块导读](../vfs/navigation/P14_页缓存的数据有效性与修改交接.md#14.1_把共享缓存与单次请求分开追踪) 与成员、缓存读、缓冲写三篇实现。固定提交为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，十四个函数摘录逐token一致；成员、引用、锁、有效、脏与写回分开建模，不再画成单一状态链。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| mm/filemap.c | `05adf0392625da1402d288eef9d9b6107a40fef4` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| include/linux/pagemap.h | `68a5f1ff3301c6cfba823cab8a418d9ca6f25893` |
+| include/linux/mm_types.h | `6894de506b364fa7f3396146f53216d0d40b80d2` |
+| include/linux/page-flags.h | `48c66b84668281fc0fb314b9eb5a817911c3f693` |
+| fs/inode.c | `8dabb224f941c0b95e7a0e154592bb9137e5bc2c` |
+| fs/libfs.c | `b0f262223b5351a57a9662a018c6f1127cfa5814` |
+| mm/page-writeback.c | `fcd4c1439cb9c3b89e8ec79a4404d728826cf586` |
+| mm/truncate.c | `0668cd340a46304f62525597374e5928a51d3f0f` |
+| Documentation/filesystems/vfs.rst | `0b18af3f954eb75e72805a04cc486f609dd02b43` |
+
+十份原件中新增pagemap.h、page-flags.h与truncate.c。ARM启用MMU、MEMCG，PSI与DEBUG_VM关闭；没有据此推断实际使用大folio。ram_aops的零填充、脏位与无设备写回边界独立说明，libfs旧注释中的i_mutex与本版本i_rwsem分开解释。
+
+五篇冷读、十一图渲染目视、长度、标题元数据、锚点及完整C材料一致性完成。未在目标Linux编译运行，没有缓存命中率、设备I/O次数、并发truncate、分配竞争或故障注入实测。实验输出标注为预期，不作为缓存命中或持久化证据。
