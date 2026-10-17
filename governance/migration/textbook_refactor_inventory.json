@@ -6288,6 +6288,39 @@
           "十五图目视、章节出入锚点及全仓9213有效链接检查通过；完整模块与正文一致，GCC/Clang普通和NDEBUG共60次宿主替身运行含8次预期失败。"
         ],
         "limits": "第一章161行成本链及第三章250行完整实验长度提示经人工保留。替身只验证控制流与资源归属，未执行目标Kbuild、MODPOST、装卸、真实多核或弱内存验证。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P04_RCU_分类坐标与内核配置.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从业务契约、CPU规模和成本位置引出分类，再汇总名称与选择责任，修复SRCU静态初始化和配置观察边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交8d266e6；固定官方代码/config证据及四份新增原件已核对。",
+          "九图渲染目视、三章出入锚点、全仓9213有效链接、标题元数据命名及diff检查通过。"
+        ],
+        "limits": "分类章85个内部查询链接经人工冷读保留密度提示。纸面推演不是内核运行；未执行目标构建、调度/中断跟踪或真实RCU实验。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按请求、证明和结果交付重建公共周期，分开全局与各CPU认识新GP，明确等待桥配置及实际回调执行者。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交8d266e6；固定官方代码/config证据及四份新增原件已核对。",
+          "九图渲染目视、三章出入锚点、全仓9213有效链接、标题元数据命名及diff检查通过。"
+        ],
+        "limits": "分类章85个内部查询链接经人工冷读保留密度提示。纸面推演不是内核运行；未执行目标构建、调度/中断跟踪或真实RCU实验。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "用迁移和延后退出清理说明CPU/任务责任，修正调度钩子QS时序及EQS采样含义，补原节点关系图和完整纸面推演。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交8d266e6；固定官方代码/config证据及四份新增原件已核对。",
+          "九图渲染目视、三章出入锚点、全仓9213有效链接、标题元数据命名及diff检查通过。"
+        ],
+        "limits": "分类章85个内部查询链接经人工冷读保留密度提示。纸面推演不是内核运行；未执行目标构建、调度/中断跟踪或真实RCU实验。"
       }
     },
     "additional_documents": [
