@@ -2684,3 +2684,19 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 | `include/linux/gpio/driver.h` | `2dd7cb9cc270a68ddedbcdd5d44e0d0f88dfa785` | Provider能力与可睡眠契约 |
 
 验证：14段发布源码逐段与固定源码有序C token比对，另核对摘录与实际正文一致；六张Mermaid渲染逐图目视，修订后的请求图再次检查；七篇冷读、严格连续性、长度、唯一ID、完整标题锚点以及全仓775篇链接检查通过。执行环境缺少MSYS2 Bash，使用仓库格式/元数据/路径/链接脚本内嵌Python主体执行等价检查，未宣称运行format.sh。标题、真实调用方和Atlas已同步，新源码节点保持未校正。当前标准工作树和目标配置未确认，未执行目标Kbuild、GPIO-sim或板上验证。Consumer、Provider、IRQ和用户ABI主线的后续重构继续进行，不据本批完成宣称全专题结束。
+
+## 1.265\_GPIO消费者完整生命周期与模拟器实验
+
+2026-10-17，重构 [Consumer请求与使用](../../../knowledge/driver_model/gpio/P05_GPIO_Consumer_请求与使用.md)：从必需/可选功能、协议初值、逻辑/raw及执行上下文进入错误处理与业务停机，补齐返回类型、关闭GPIOLIB时optional桩和方向部分成功边界。把原孤立probe替换为完整的GPIO模拟器模块、连接表、构建、正常退出、启动后故障和仅清理本实验对象的流程。正文完整展示代码，材料位于 `labs/kernel/gpio/materials/`；没有把教程交给外链补足。
+
+固定内核仍为官方NXP提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。本批新核对：
+
+| 上游相对路径 | Git blob | 核对内容 |
+| --- | --- | --- |
+| `include/linux/gpio/machine.h` | `44e5f162973eb6f6e85188f56ec34e1e3e2beab6` | 连接表字段、宏及登记接口 |
+| `drivers/gpio/Kconfig` | `8bc94165ff33c14c1b1b44d8e0415f11c37e0a40` | GPIO_SIM及configfs/IRQ_SIM依赖 |
+| `drivers/gpio/gpio-sim.c` | `f83a8b5a51d0dc8d093011945260ffa296f2ba2a` | label配置、位图、可睡眠回调、value观察与free恢复pull行为 |
+
+同时复用已核对的consumer.h、gpiolib、devres和platform-device固定声明。通过官方 [libgpiod 2.3.1命令文档](https://libgpiod.readthedocs.io/en/v2.3.1/gpio_tools.html) 核对gpiodetect的身份查询及输出格式，去掉对gpiochip设备目录必有label属性的假设。实验用configfs实际返回的dev_name/chip_name核对模拟器归属；停机日志只声明发出写请求，释放后的模拟值按gpio_sim_free另行解释。
+
+实际执行七次DTC/fdtget，验证教学连接片段的phandle、offset与极性编码；完整C/Makefile与正文逐字一致，生命周期、失败清理和命令范围人工核对，一图渲染目视，严格连续性、长度、锚点、全仓775篇链接及格式检查通过。未执行目标Kbuild/MODPOST、模块装入、configfs、Linux shell或硬件实验，所有运行输出在正文标为预期；没有用桩接口或宿主模型冒充内核运行。Provider、IRQ和用户ABI继续复审。
