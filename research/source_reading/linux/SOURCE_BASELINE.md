@@ -3195,3 +3195,37 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 三十四份原件中新增二十五份，覆盖凭据、ACL、身份映射、capability与LSM静态调用槽。MULTIUSER、USER_NS、FS_POSIX_ACL、EXT4_FS_POSIX_ACL、KEYS、CGROUP_DEVICE开启；CONFIG_SECURITY和FANOTIFY关闭。权限包装桩与仍然执行的基础capability检查分别记录；未把SECURITYFS或静态调用优化能力当作安全策略已启用。
 
 七篇冷读、十五图渲染目视、长度、标题元数据、锚点、唯一ID和C材料一致性完成。区分无ACL、未缓存与真正拒绝，纠正权限快速标志含义、凭据恢复目标和ACL失败时序，补足LSM槽位初始化与实际检查点。没有目标Linux编译运行、ACL或namespace隔离测试及LSM策略实测；程序提供chmod后旧fd与新open的待验证对照。
+
+## 1.299\_事件观察与许可响应的交接
+
+2026-10-18，重写 [文件通知正文](../../../knowledge/kernel_subsystems/vfs/P20_fsnotify_inotify与fanotify.md#20.3_从登记到读取追踪同一次变化)，新增 [模块导读](../vfs/navigation/P19_事件观察与许可响应的交接.md#19.1_沿通知周期定位状态与执行者) 及七篇实现。固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；六十二段函数体保留执行语句并逐token核对，省去上游长注释，补充中文阅读及分支说明。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| fs/notify/fsnotify.c | `f976949d2634a10cbc89a5be8dce099d3d6083e9` |
+| fs/notify/mark.c | `4981439e62092a0acb5d92461b7f4a905a611c5f` |
+| fs/notify/group.c | `18446b7b0d495d64af470e0b598c6f2c492939ce` |
+| fs/notify/notification.c | `9022ae650cf863ea5276027204fcae754024cf62` |
+| fs/notify/inotify/inotify_user.c | `0794dcaf1e471e278e5aa82257ca38cd50c6b453` |
+| fs/notify/inotify/inotify_fsnotify.c | `993375f0db673112808bab6fe787bfbcc2a4a238` |
+| fs/notify/inotify/inotify.h | `7d5df7a21539794f15943374516c46037b09cbaf` |
+| fs/notify/fanotify/fanotify.c | `224bccaab4cc3fc6c54107975363a35894d4e917` |
+| fs/notify/fanotify/fanotify_user.c | `8e2d43fc6f7c1f6007d8532ae2abc5ad9b03196b` |
+| fs/notify/fanotify/fanotify.h | `e5ab33cae6a7698fa6b91c08ecacb498241869ac` |
+| fs/notify/Kconfig | `c6c72c90fd253f7860ea0dd456a788201bd14254` |
+| fs/notify/inotify/Kconfig | `1cc8be25df7e0e75496a17430d0a4731218d22a8` |
+| fs/notify/fanotify/Kconfig | `a511f9d8677ba02076e5a71a755b77e87db2d843` |
+| include/linux/fsnotify_backend.h | `3ecf7768e577940f9ea79393c38bc2550ce7ddb8` |
+| include/linux/fsnotify.h | `278620e063ab2239f996069458c0adbb97a3c36b` |
+| include/linux/inotify.h | `8d20caa1b2687b76ac3399ae1006f90d3026dbe3` |
+| include/linux/fanotify.h | `89ff45bd6f01baad88eb8328675e27133fc797a6` |
+| include/uapi/linux/inotify.h | `d94f20e38e5d31d4791840cda3c6f82eb9b99c6e` |
+| include/uapi/linux/fanotify.h | `34f221d3a1b957acad130ab35f6fbac52fee5dbd` |
+| fs/anon_inodes.c | `42bd1cb7c9cdd4af9db8617d8fbc7f7b8aa254a8` |
+| fs/notify/fsnotify.h | `663759ed6fbc1b87144471f53faef6ea55ad6f7a` |
+
+二十一份原件中新增十五份。FSNOTIFY、INOTIFY_USER与TINY_SRCU开启，FANOTIFY和SECURITY关闭；许可实现作为可选分支分析，不写成目标运行观察。区分普通通知与访问前许可、对象索引与队列、SRCU遍历与显式mark持有，以及INIT/REPORTED/ANSWERED/CANCELED的释放责任。
+
+固定版本inotify_new_watch在观察配额增加后连接inode失败时缺少配额归还；原件保留，详见 [登记实现中的缺陷与后续修复依据](../vfs/source_explanations/P56_inotify实例与观察编号的建立.md#56.2_把路径解析结果变成实例内的观察编号)。许可事件分配失败、队列未接纳、读取失败、信号取消和最终关闭分别核对，不能统一描述为失败即拒绝。
+
+九篇冷读、十九图渲染目视、长度、标题元数据、锚点及C材料一致性完成。图中修正对象链入口与汇总mask字段、取消后延迟事件释放的时序，并明确Tiny SRCU与延伸阅读Tree SRCU的配置边界。没有目标Linux编译运行、通知压力及fanotify许可竞态实测；C程序提供受控文件变化与事件字段对照。

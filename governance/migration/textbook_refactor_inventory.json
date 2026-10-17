@@ -9376,7 +9376,15 @@
       "research/source_reading/vfs/source_explanations/P52_inode权限的基本检查与分派.md",
       "research/source_reading/vfs/source_explanations/P53_挂载身份换算与ACL判断.md",
       "research/source_reading/vfs/source_explanations/P54_capability的命名空间与对象边界.md",
-      "research/source_reading/vfs/source_explanations/P55_VFS安全钩子的登记与调用.md"
+      "research/source_reading/vfs/source_explanations/P55_VFS安全钩子的登记与调用.md",
+      "research/source_reading/vfs/navigation/P19_事件观察与许可响应的交接.md",
+      "research/source_reading/vfs/source_explanations/P56_inotify实例与观察编号的建立.md",
+      "research/source_reading/vfs/source_explanations/P57_观察标记的连接撤销与延后回收.md",
+      "research/source_reading/vfs/source_explanations/P58_fsnotify事件匹配与分派.md",
+      "research/source_reading/vfs/source_explanations/P59_事件合并排队与溢出.md",
+      "research/source_reading/vfs/source_explanations/P60_通知读取与监听实例退出.md",
+      "research/source_reading/vfs/source_explanations/P61_fanotify许可等待与观察持有.md",
+      "research/source_reading/vfs/source_explanations/P62_fanotify响应状态与退出收尾.md"
     ],
     "language_review": {
       "status": "complete",

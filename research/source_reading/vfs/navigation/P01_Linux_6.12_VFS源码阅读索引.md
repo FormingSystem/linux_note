@@ -80,6 +80,8 @@ flowchart TD
 
 [访问身份与权限导读](P18_访问身份与权限检查的时间边界.md#18.1_先找本次使用的身份与对象) 沿A0～A5连接 [临时凭据](../source_explanations/P51_当前身份与access临时凭据.md#51.2_预检按自己的身份语义临时覆盖)、[权限分派](../source_explanations/P52_inode权限的基本检查与分派.md#52.1_先检查写入限制再选择权限实现)、[身份映射及ACL](../source_explanations/P53_挂载身份换算与ACL判断.md#53.1_先把文件身份放到当前挂载视图)、[能力范围](../source_explanations/P54_capability的命名空间与对象边界.md#54.1_DAC越权也要确认能力作用范围) 和 [LSM登记及调用](../source_explanations/P55_VFS安全钩子的登记与调用.md#55.1_先为每类检查建立可登记的回调槽)。
 
+[事件观察与许可响应导读](P19_事件观察与许可响应的交接.md#19.1_沿通知周期定位状态与执行者) 沿N0～N5连接 [实例与编号](../source_explanations/P56_inotify实例与观察编号的建立.md#56.1_通知fd先绑定独立group)、[mark生命周期](../source_explanations/P57_观察标记的连接撤销与延后回收.md#57.1_对象侧与group侧分别建立索引)、[事件分派](../source_explanations/P58_fsnotify事件匹配与分派.md#58.2_按group汇合不同对象的观察)、[队列交接](../source_explanations/P59_事件合并排队与溢出.md#59.2_队列容量与记录所有权一起交接)、[读取与退出](../source_explanations/P60_通知读取与监听实例退出.md#60.1_先取得完整记录再复制给用户)、[许可等待](../source_explanations/P61_fanotify许可等待与观察持有.md#61.2_等待用户以前先转移观察责任) 和 [响应收尾](../source_explanations/P62_fanotify响应状态与退出收尾.md#62.3_回答与取消决定谁释放事件)。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |
