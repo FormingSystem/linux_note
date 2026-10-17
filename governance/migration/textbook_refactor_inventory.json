@@ -6871,6 +6871,39 @@
           "实际格式元数据命名及全仓9519条本地链接通过，7卷57来源有效唯一。"
         ],
         "limits": "约5700字词。当前目标配置、内核构建和启动执行未验证。"
+      },
+      "research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "按T0至T5贯通Tiny回调成熟与交付，补poll、条件同步、偏移编码及诊断分支。",
+        "validation": [
+          "43出链24标题入链，五图目视，严格连续性无风险。",
+          "本组35项函数宏与控制块定义C词法一致；实际格式元数据命名及9536条本地链接通过，7卷59来源有效唯一。"
+        ],
+        "limits": "约12400字词；已移出构建和ARM互斥，剩余同一周期与结果判别需要连读，保留完整源码及地址推导。 未执行目标构建、Bear截获、ARM运行或Tiny压力测试。"
+      },
+      "research/source_reading/rcu/source_explanations/P19_Linux_6.12_ARM中断状态保存与Tiny队列互斥源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从队列双指针交错推导本地IRQ互斥，补CPSR字段、保存赋值和嵌套恢复。",
+        "validation": [
+          "5出链9标题入链，两图目视，严格连续性无风险。",
+          "本组35项函数宏与控制块定义C词法一致；实际格式元数据命名及9536条本地链接通过，7卷59来源有效唯一。"
+        ],
+        "limits": "约2300字词。 未执行目标构建、Bear截获、ARM运行或Tiny压力测试。"
+      },
+      "engineering/build/P01_Tiny_RCU配置与构建证据核对.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "把配置种子、生成配置、编译数据库与同次镜像组成可复核证据链，修正临时配置被覆盖风险。",
+        "validation": [
+          "4出链11标题入链，一图目视；配置H2的190行风险经五个三级步骤人工复核后保留。",
+          "本组35项函数宏与控制块定义C词法一致；实际格式元数据命名及9536条本地链接通过，7卷59来源有效唯一。"
+        ],
+        "limits": "约4700字词。 未执行目标构建、Bear截获、ARM运行或Tiny压力测试。"
       }
     },
     "additional_documents": [
