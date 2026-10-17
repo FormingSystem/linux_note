@@ -18,7 +18,8 @@
       "knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md": "knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_rbtree_工程扩展的阅读路线.md",
       "knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md": "knowledge/linux/data_structures/红黑树_rb-tree/P14_从地址查询到VMA范围修改.md",
       "knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md": "knowledge/linux/data_structures/红黑树_rb-tree/P15_Maple固定实现的阅读路线.md",
-      "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md"
+      "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md",
+      "knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md": "knowledge/driver_model/device_tree/P01_GPIO连接命名占用与按键事件.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -7068,6 +7069,17 @@
           "入口与完整标题链接检查通过，导航按职责冷读；专题地图渲染目视；实际文档检查通过。"
         ],
         "limits": "不把所链接的未复审补充文章自动计为完成，不提升人工评审状态。"
+      },
+      "knowledge/driver_model/device_tree/P01_GPIO连接命名占用与按键事件.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "完整冷读原三章后，重建连接、命名、hog占用、pinctrl映射与按键事件链；纠正GPIO/GIC cell、极性、引脚宏和重复申请等错误，按章节规范更名并维护真实入口。",
+        "validation": [
+          "固定NXP源码、GPIO/按键/引脚绑定逐项核对，离线DTS的12次工具调用无警告并验证恢复。",
+          "两图渲染并目视；完整冷读、严格连续性、标题链接及实际格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未运行目标dtbs_check、Kbuild、驱动/电平/按键/唤醒或动态overlay实验；0x10b0未作板级推荐值。"
       }
     },
     "additional_documents": [
