@@ -6042,9 +6042,9 @@
           "python_blocks": 1,
           "blocks_added_or_changed": 1,
           "previously_reviewed": true,
-          "state": "pending",
-          "decision": null,
-          "reason": null
+          "state": "reviewed",
+          "decision": "replaced_with_c",
+          "reason": "26a2440将容量测试改为C11并解释errno、有限读取与统一清理，GCC/Clang各21种显式系统调用替身场景通过；代码一致、5出链5入锚点及全仓检查通过。长度提示仍是未改的完整内核模块，不是新增独立机制；SOURCE_BASELINE 1.209区分替身编译与尚未执行的Linux原生运行。"
         },
         {
           "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P07_中断驱动设备的异步通知实践.md",
