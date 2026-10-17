@@ -6114,9 +6114,9 @@
           "python_blocks": 0,
           "blocks_added_or_changed": 0,
           "previously_reviewed": true,
-          "state": "pending",
-          "decision": null,
-          "reason": null
+          "state": "reviewed",
+          "decision": "removed_unnecessary_python_runner",
+          "reason": "a6fa26a将两条C编译器调用直接置于正文，删除run.py及其调用；终端只启动工具，不另用其他语言实现教学模型。PowerShell实测GCC14.2/ARM GCC10.3两目标汇编，与改写前摘要分别一致；连续性零风险、3出链和全仓检查通过。历史观察与人工状态保留，没有ARM执行或硬件验证。"
         },
         {
           "path": "platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md",
