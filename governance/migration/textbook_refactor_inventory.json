@@ -6078,9 +6078,9 @@
           "python_blocks": 3,
           "blocks_added_or_changed": 3,
           "previously_reviewed": true,
-          "state": "pending",
-          "decision": "partial_cpp_migration",
-          "reason": "27a37e2将proc快照与CSV统计改为C++17，双编译器解析/数值/错误输入及正文一致性通过，4出链4入锚点、全仓链接通过；长度提示属于完整工具。专用tracefs采集器仍为Python，须继续迁移和验证，不能计整章语言审查完成。"
+          "state": "reviewed",
+          "decision": "replaced_with_cpp",
+          "reason": "27a37e2与9854773将proc快照、CSV统计和专用采集器全部改为C++17。解析/数值/错误输入与两编译器各15项显式进程、tracefs模型通过；代码一致、4出链5入锚点和全仓链接通过。长度提示来自完整工具及同一观测问题，人工保留；SOURCE_BASELINE 1.209明确无真实proc、fork/exec子分支、信号、tracefs与原生Linux验证。"
         },
         {
           "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P12_fasync_与其他通知机制的对比与整合.md",
