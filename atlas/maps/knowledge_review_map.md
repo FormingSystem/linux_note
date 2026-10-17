@@ -838,6 +838,9 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [名称结果怎样发布失效与回收](../../research/source_reading/vfs/navigation/P07_名称结果怎样发布失效与回收.md)
+        - 🔴 [名称候选的建立发布与持有](../../research/source_reading/vfs/source_explanations/P11_名称候选的建立发布与持有.md)
+        - 🔴 [名称失效与最后使用者退出](../../research/source_reading/vfs/source_explanations/P12_名称失效与最后使用者退出.md)
         - 🔴 [挂载视图怎样接入传播与退出](../../research/source_reading/vfs/navigation/P06_挂载视图怎样接入传播与退出.md)
         - 🔴 [挂载视图复制与目录接入](../../research/source_reading/vfs/source_explanations/P08_挂载视图复制与目录接入.md)
         - 🔴 [传播关系与挂载记录](../../research/source_reading/vfs/source_explanations/P09_传播关系与挂载记录.md)

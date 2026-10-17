@@ -8485,7 +8485,10 @@
       "research/source_reading/vfs/navigation/P06_挂载视图怎样接入传播与退出.md",
       "research/source_reading/vfs/source_explanations/P08_挂载视图复制与目录接入.md",
       "research/source_reading/vfs/source_explanations/P09_传播关系与挂载记录.md",
-      "research/source_reading/vfs/source_explanations/P10_挂载脱离与最后引用退出.md"
+      "research/source_reading/vfs/source_explanations/P10_挂载脱离与最后引用退出.md",
+      "research/source_reading/vfs/navigation/P07_名称结果怎样发布失效与回收.md",
+      "research/source_reading/vfs/source_explanations/P11_名称候选的建立发布与持有.md",
+      "research/source_reading/vfs/source_explanations/P12_名称失效与最后使用者退出.md"
     ],
     "language_review": {
       "status": "complete",
