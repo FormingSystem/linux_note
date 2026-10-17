@@ -34,6 +34,8 @@ flowchart LR
 
 普通bind复制选中视图，递归bind还需要复制其下相应的挂载拓扑；它们都不意味着复制后端文件数据。unbindable与锁定子挂载等条件会限制复制，不能把递归bind理解成无条件复制任何可见对象。
 
+新视图如何取得共享实例、根及ID映射的持有，见 [clone_mnt实现](../../../research/source_reading/vfs/source_explanations/P08_挂载视图复制与目录接入.md#8.2_复制视图时取得共享后端的持有)。
+
 ## 7.2\_任务怎样持有一棵自己的挂载拓扑
 
 如果所有任务只有一张全局挂载表，一个测试进程临时换入的树就会改变其他任务的路径解释。挂载命名空间把“哪些mount连接在一起”组织成可分别持有的拓扑。任务经nsproxy找到mnt_namespace，后者保存根、挂载集合和事件状态；任务的fs_struct另存自己的root与pwd路径，所以挂载命名空间根不等于每个任务当下用于路径解析的根目录。
@@ -51,6 +53,8 @@ flowchart LR
 | namespace.event、poll | 拓扑变化观察计数与等待队列 | 提交变化时更新/唤醒，proc挂载记录的poll路径读取 |
 
 复制一棵拓扑也有成本：新mount、命名空间记录、引用和后续传播关系都需要维护。它不自动复制数据、不提供写入隔离，也不直接替代文件权限。新user namespace还会影响权限和共享降为slave等规则；不能把“创建了新mount namespace”当作获得任意挂载权限的证据。
+
+命名空间复制与新任务起点重接的代码见 [copy_mnt_ns实现](../../../research/source_reading/vfs/source_explanations/P08_挂载视图复制与目录接入.md#8.3_复制命名空间时重新连接任务的路径)，其中旧、新mount持有分别配对。
 
 ## 7.3\_接入操作改变哪些共享状态
 
@@ -83,7 +87,9 @@ sequenceDiagram
 
 最后两条箭头不是“先发通知再由用户程序完成挂载”。拓扑修改由内核当前执行路径完成；poll通知只是让观察者知道记录可能变化。读取路径还必须按自身锁、序列验证与引用协议观察，具体快速查找在后面展开。
 
-固定实现从 [挂载视图导读](../../../research/source_reading/vfs/navigation/P06_挂载视图怎样接入传播与退出.md#6.1_先区分视图对象和传播连接) 进入，按M0～M5定位对象复制、接入和退出，不把函数名排列当成状态已经交付的证明。
+固定版本身份见 [VFS源码总索引](../../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md#1.1_先固定源码身份与运行证据)。本模块实现从 [挂载视图导读](../../../research/source_reading/vfs/navigation/P06_挂载视图怎样接入传播与退出.md#6.1_先区分视图对象和传播连接) 进入，按M0～M5定位对象复制、接入和退出，不把函数名排列当成状态已经交付的证明。
+
+源与目标准入、候选准备和各连接的实际写入见 [bind检查](../../../research/source_reading/vfs/source_explanations/P08_挂载视图复制与目录接入.md#8.4_绑定请求先验证源与目标再接入) 与 [拓扑提交](../../../research/source_reading/vfs/source_explanations/P08_挂载视图复制与目录接入.md#8.5_提交同时更新父连接查找入口和集合)。
 
 ## 7.4\_为什么新命名空间还需要传播策略
 
@@ -112,9 +118,11 @@ flowchart LR
 
 命名空间克隆可能保留共享联系；跨user namespace时还有shared降为slave及锁住某些挂载树的约束。所以实验先unshare，再把新视图递归改为private，之后才挂入临时树。不能在宿主原视图上先修改传播类型，再声称只是改变测试进程。
 
+传播副本先准备后提交的实现见 [接入协调](../../../research/source_reading/vfs/source_explanations/P09_传播关系与挂载记录.md#9.1_先准备传播副本再提交拓扑)；传播类型改变怎样重组同伴和上下游，见 [关系变更](../../../research/source_reading/vfs/source_explanations/P09_传播关系与挂载记录.md#9.3_改变传播类型必须重组已有关系)。
+
 ## 7.5\_在mountinfo中区分实例根与视图入口
 
-`/proc/self/mountinfo`描述当前读取者相应视图中的挂载记录。下面两行是字段讲解用的构造例子，号码与路径不来自本次机器运行：
+`/proc/PID/mountinfo`描述目标PID的挂载视图；打开时内核保存该目标任务的namespace和root，接入路径按这个根解释。`/proc/self/mountinfo`中的目标恰好是打开它的进程；读取其他PID时不能把路径坐标换成读取工具自己的根。下面两行是字段讲解用的构造例子，号码与路径不来自本次机器运行：
 
 ```text
 100 42 0:52 / /demo/tree rw - tmpfs tmpfs rw,size=1024k
@@ -129,7 +137,7 @@ flowchart LR
 | parent ID | 父挂载身份 | 两者都接在42；父记录可能不在当前可见输出中 |
 | major:minor | 实例设备号 | 这里是相同匿名设备号；不能仅凭数字跳过其他身份核对 |
 | root | 此视图在文件系统内部的根 | `/`与`/sub`，对应不同mnt_root |
-| mount point | 相对读取者根视角的接入路径 | `/demo/tree`与`/demo/view` |
+| mount point | 相对proc目标任务根视角的接入路径 | `/demo/tree`与`/demo/view` |
 | mount options | 该视图属性 | 分隔符前的ro/rw与mount的只读属性相关 |
 | 可选字段 | 如shared、master、propagate_from、unbindable | 数量可变，shared后的数是peer group ID，不是mount ID |
 | ` - ` | 固定分隔符 | 不能假定可选字段永远占固定列数 |
@@ -137,6 +145,8 @@ flowchart LR
 | super options | 实例级标志及具体选项 | 分隔符后的ro/rw与实例状态相关，不等于前面的视图属性 |
 
 真实路径还可能用转义表示空白等字符，解析器应遵守记录格式。看到两个记录也不能直接断言两个superblock，看到相同类型更不能断言共享同一个实例。相同实例能有多个视图，分离挂载又不在本例的目标树中；观察结果必须结合创建路径解释。
+
+记录字段和proc目标根的实际来源见 [mountinfo输出](../../../research/source_reading/vfs/source_explanations/P09_传播关系与挂载记录.md#9.5_mountinfo把两个坐标和两层选项分别输出)；变化提示如何登记与比较见 [poll事件](../../../research/source_reading/vfs/source_explanations/P09_传播关系与挂载记录.md#9.4_记录变化通过事件值与等待队列交接)。
 
 ## 7.6\_退出拓扑为什么不等于结束所有旧使用者
 
@@ -164,6 +174,8 @@ sequenceDiagram
 在本版本，退出路径维护命名空间集合、父子及查找连接、传播关系和事件，再按RCU保护归还原拓扑持有。lazy子树的某些内部连接可因相应约束保留，不能画成一次性将每条指针全清零。mount最后计数归零后，还可能经task_work或延后工作清理根与实例持有，最终结构释放另有RCU阶段。
 
 这条链和上一章的实例关闭仍然分层：一个mount结束不保证共享的superblock也结束；实例最后活动引用结束又不等于内存立即free。MNT_FORCE也不是通用“无视所有引用并杀掉文件对象”，它只能请求文件系统提供的相应中止动作，并仍受实际退出协议约束。
+
+普通卸载的基准引用检查见 [准入实现](../../../research/source_reading/vfs/source_explanations/P10_挂载脱离与最后引用退出.md#10.1_普通卸载先判断是否允许结束可见使用)，lazy后的旧观察保护见 [拓扑持有交接](../../../research/source_reading/vfs/source_explanations/P10_挂载脱离与最后引用退出.md#10.3_退出拓扑的那份持有要等旧观察者安全越过)，最终退出见 [最后计数路径](../../../research/source_reading/vfs/source_explanations/P10_挂载脱离与最后引用退出.md#10.4_最后计数归还才选择真正的清理路径)。
 
 ## 7.7\_在一个完整程序里观察旧fd与新路径
 

@@ -3410,3 +3410,18 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 当前配置PROVE_LOCKING、DEBUG_LOCK_ALLOC、LOCKDEP、MEMCG、FSNOTIFY、BUG开启；SMP、SECURITY、FS_ENCRYPTION、BUG_ON_DATA_CORRUPTION关闭，RCU为TINY_RCU。类型锁类key与具体锁实例分别解释，SB_BORN/DYING/DEAD、s_active、s_count及两套集合不能合并为单一状态。未公开候选直接清理与公开实例RCU后投递工作的边界明确保留。
 
 本次没有并发挂载/卸载压力、分配故障注入或损坏告警实测，不以图示顺序充当运行日志。
+
+
+## 1.308\_挂载复制传播与退出的状态承载复核
+
+2026-10-18，复核实现P08～P10与挂载视图正文，补充中文注释、namespace初始化、三套拓扑索引、传播临时上下文、事件观察和两阶段RCU清理边界；三十段声明/函数保留非注释token。正文精确连接复制、接入、传播、记录与退出实现。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| include/linux/seq_file.h | `2fb266ea69fa4dbbd2536d225461b7fbb5c6c5fe` |
+
+原件固定于提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 并核对Git对象摘要。mounts_open_common依据proc inode取得目标任务namespace与root，不能写成任意读取工具自身的根；poll中的有限宽度标记不能作为完整u64事件历史。IS_MNT_NEW实际检查空namespace或匿名namespace归属，而不是创建时间。
+
+既有fs/namespace.c、fs/pnode.c、fs/pnode.h、fs/mount.h、fs/proc_namespace.c及task_work证据沿用固定版本。当前非SMP直接计数与源码SMP每CPU汇总分支分别说明；mnt_rcu先作task_work存储、cleanup后再交RCU，不把两种用途并列成同时登记。延后工作参数1为jiffy，不是固定一毫秒完成承诺。
+
+本轮未执行跨namespace传播、poll时序、并发卸载、task_work拒绝或分配故障注入；图和代码核对不替代运行证据。
