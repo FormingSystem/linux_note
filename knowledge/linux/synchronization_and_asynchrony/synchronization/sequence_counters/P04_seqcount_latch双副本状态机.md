@@ -35,19 +35,21 @@ flowchart LR
 
 被移除的“writer 不可被 reader 打断”约束由双倍存储、两次更新和重定向屏障替代。
 
-## 4.3\_S0到S6状态周期
+## 4.3\_L0到L6状态周期
+
+普通单副本的 S2/S4 用奇偶表示写窗口；这里同一个最低位改为选择副本，不能继续套用相同状态含义。因此本章及对应源码导读用 L0～L6 标识 latch 周期。两份数据、选择计数和读者局部起点共同构成协议，读者可以在任一写阶段开始，不是等写者走到 L5 才读取。
 
 | 阶段 | sequence选择 | writer动作 | reader可用副本 |
 | --- | --- | --- | --- |
-| S0 初始稳定 | 0 | 两副本一致 | data[0] |
-| S1 第一次翻转 | 1 | 完整sequence从2n变2n+1，发布重定向 | data[1] |
-| S2 更新副本0 | 1 | 非原子修改 data[0] | data[1] 仍稳定 |
-| S3 第二次翻转 | 0 | 完整sequence从2n+1变2n+2，发布已完成的data[0] | data[0] |
-| S4 更新副本1 | 0 | 非原子修改 data[1] | data[0] 仍稳定 |
-| S5 结束 | 0 | 两副本再次一致 | data[0] |
-| S6 reader验证 | 前后完整 sequence 相同 | 无 | 接受，否则重试 |
+| L0 初始稳定 | 0 | 两副本一致 | data[0] |
+| L1 第一次翻转 | 1 | 完整sequence从2n变2n+1，发布重定向 | data[1] |
+| L2 更新副本0 | 1 | 非原子修改 data[0] | data[1] 仍稳定 |
+| L3 第二次翻转 | 0 | 完整sequence从2n+1变2n+2，发布已完成的data[0] | data[0] |
+| L4 更新副本1 | 0 | 非原子修改 data[1] | data[0] 仍稳定 |
+| L5 结束 | 0 | 两副本再次一致 | data[0] |
+| L6 reader验证 | 前后完整 sequence 相同 | 无 | 接受，否则重试 |
 
-表中的选择0/1不是把计数重置为0/1，而是完整计数的最低位。固定Linux接口中write_seqcount_latch_begin承担S1，write_seqcount_latch承担S3；两次业务更新由调用者执行。write_seqcount_latch_end在S5结束检查器写区标记，不进行第三次翻转。每次重定向的写屏障分别约束前面的副本完成和后面的另一副本更新，读侧还要保留依赖选择和末尾验证的顺序。
+表中的选择0/1不是把计数重置为0/1，而是完整计数的最低位。固定Linux接口中write_seqcount_latch_begin承担L1，write_seqcount_latch承担L3；两次业务更新由调用者执行。write_seqcount_latch_end在L5结束检查器写区标记，不进行第三次翻转。每次重定向的写屏障分别约束前面的副本完成和后面的另一副本更新，读侧还要保留依赖选择和末尾验证的顺序。
 
 ## 4.4\_writer被NMI打断的时序
 
@@ -60,13 +62,13 @@ sequenceDiagram
     participant D1 as data1
     participant N as NMI reader
 
-    W->>S: S1完整sequence从0变1，reader选data1
+    W->>S: L1完整sequence从0变1，reader选data1
     W->>D0: 更新到一半
     N->>S: 读取sequence=1
     N->>D1: 读取仍稳定的旧副本
     N->>S: retry确认仍为1并返回
     W->>D0: NMI返回后完成更新
-    W->>S: S3完整sequence从1变2，reader选data0
+    W->>S: L3完整sequence从1变2，reader选data0
     W->>D1: 补齐新版本
 ```
 
@@ -79,9 +81,18 @@ sequenceDiagram
 下面仍使用单线程有序模型。第一组把写者停在六个动作前后共七个位置，检查此时选中副本始终完整；第二组枚举六个写动作和四个读动作的210种交错，对比完整计数与最低位验证。它模拟访问顺序，不运行真实NMI、线程或Linux屏障。
 
 ```c
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+/* 验证不随NDEBUG关闭，失败时返回非零退出状态。 */
+static void require(bool condition, const char *message)
+{
+    if (!condition) {
+        fprintf(stderr, "%s\n", message);
+        exit(EXIT_FAILURE);
+    }
+}
 
 struct latch_state {
     unsigned sequence;
@@ -154,16 +165,16 @@ int main(void)
     /* 同CPU读者打断写者时，写者暂停，验证当前选中副本完整。 */
     for (unsigned step = 0; step <= 6u; step++) {
         unsigned index = state.sequence & 1u;
-        assert(state.a[index] == state.b[index]);
+        require(state.a[index] == state.b[index], "state.a[index] == state.b[index]");
         paused_windows++;
         if (step < 6u)
             state = write_step(state, step);
     }
     state = (struct latch_state){0};
     explore(0, 0, state, &totals);
-    assert(totals.schedules == 210u);
-    assert(totals.full_mixed == 0u);
-    assert(totals.bit_mixed > 0u);
+    require(totals.schedules == 210u, "totals.schedules == 210u");
+    require(totals.full_mixed == 0u, "totals.full_mixed == 0u");
+    require(totals.bit_mixed > 0u, "totals.bit_mixed > 0u");
     printf("paused_windows=%u schedules=%u full_mixed=%u bit_mixed=%u\n",
            paused_windows, totals.schedules,
            totals.full_mixed, totals.bit_mixed);
@@ -171,7 +182,15 @@ int main(void)
 }
 ```
 
-保存为latch_model.c，用`cc -std=c11 -Wall -Wextra -Werror -O2 latch_model.c -o latch_model`编译并运行。宿主GCC14.2和Clang18.1.8本轮输出一致：
+保存为 `latch_model.c`，在源码所在目录编译并运行：
+
+```bash
+# 宿主C11模型，不需要内核头文件或NMI环境。
+cc -std=c11 -Wall -Wextra -Werror -O2 latch_model.c -o latch_model
+./latch_model
+```
+
+PowerShell 下生成 `latch_model.exe` 后运行 `./latch_model.exe`。require 在失败时报告条件并非零退出，即使定义 NDEBUG 也保留检查。预期输出是：
 
 ```text
 paused_windows=7 schedules=210 full_mixed=0 bit_mixed=21

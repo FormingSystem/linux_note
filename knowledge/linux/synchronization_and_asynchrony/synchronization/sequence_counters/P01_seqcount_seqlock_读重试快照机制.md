@@ -31,11 +31,14 @@ sequenceDiagram
     autonumber
     participant R as 读者
     participant S as sequence
+    participant D as base_ns与mult
     participant W as 写者
     R->>S: read_seqcount_begin() = 2
+    R->>D: 复制旧base_ns
     W->>S: write begin，2→3
-    W->>W: 更新多个字段
+    W->>D: 更新base_ns和mult
     W->>S: write end，3→4
+    R->>D: 复制新mult，形成尚未使用的候选
     R->>S: read_seqcount_retry(2)
     S-->>R: true，丢弃快照并重读
 ```
@@ -115,7 +118,7 @@ static struct clock_values read_clock(struct clock_snapshot *c)
 
 写者进入 `write_seqcount_begin()` 后，读者会等待奇数序号结束或不断重试。如果写者被高优先级读者抢占，而读者持续等待写者把序号恢复为偶数，就可能形成实时 livelock。
 
-因此写侧必须：
+因此，下面这些要求针对上例的普通单副本 `seqcount_t` 写侧；后续关联锁和 latch 章节会分别改变进展协议：
 
 1. 严格串行化多个写者；
 2. 在整个奇数窗口内不可被抢占；
@@ -126,7 +129,7 @@ static struct clock_values read_clock(struct clock_snapshot *c)
 
 ## 1.5\_关联锁的\_seqcount\_类型
 
-现代内核提供带关联锁信息的 seqcount 类型，例如 `seqcount_spinlock_t`、`seqcount_mutex_t` 等。关联锁主要用于 lockdep 验证和在需要时满足写侧不可抢占条件；它不替调用者自动获取外部锁。
+上例把 seqcount 和写者锁分别保存在对象中，但 plain seqcount 不知道哪把锁负责串行更新。Linux 6.12.20 提供 `seqcount_spinlock_t`、`seqcount_mutex_t` 等关联类型，让接口知道外部锁的身份和类型：检查器据此检查写者是否持锁，配置相关路径还据此处理进展约束。关联不是自动获取，写者仍须先自行取得外部锁。
 
 ```c
 seqcount_spinlock_t seq;
@@ -136,11 +139,11 @@ spin_lock_init(&lock);
 seqcount_spinlock_init(&seq, &lock);
 ```
 
-具体初始化宏和可用变体应以当前内核 `include/linux/seqlock.h` 为准。
+这里先构造外部锁，再把其地址交给关联初始化；两者在使用期间都必须有效。普通、raw、rwlock 和 mutex 的属性及 RT 读侧补偿在第5章逐项展开。固定版本的 `include/linux/seqlock.h` 是这些接口的核对依据，不把其他版本的类型名直接混入当前示例。
 
 ## 1.6\_seqlock
 
-`seqlock_t` 把 seqcount 与写侧 spinlock 封装在一起，适合写者使用自旋锁串行化的传统场景：
+若每次都用同一把 spinlock 串行写者，调用者需要反复配对“取得锁—开窗—更新—关窗—释放锁”。`seqlock_t` 把关联 seqcount 与实际 spinlock 放进同一对象，并用写侧包装完成这些配对。它减少手工组合步骤，代价是锁的种类和所有权随封装固定下来：
 
 ```c
 seqlock_t lock;
@@ -148,14 +151,14 @@ seqlock_t lock;
 seqlock_init(&lock);
 
 write_seqlock(&lock);
-state.a = new_a;
-state.b = new_b;
+WRITE_ONCE(state.a, new_a);
+WRITE_ONCE(state.b, new_b);
 write_sequnlock(&lock);
 
 do {
     seq = read_seqbegin(&lock);
-    a = state.a;
-    b = state.b;
+    a = READ_ONCE(state.a);
+    b = READ_ONCE(state.b);
 } while (read_seqretry(&lock, seq));
 ```
 
@@ -176,13 +179,13 @@ sequenceDiagram
     R->>R: 最后验证失败已经太晚
 ```
 
-需要替换并回收对象时使用 RCU、引用计数或锁保护生命周期。seqcount 可以与这些机制组合，但不能替代它们。
+需要替换并回收对象时，先用 RCU、覆盖访问的锁或已合法取得的引用保证整个候选读取期间对象存活。不能在取得可能失效的裸指针后才盲目增加引用，那次加引用本身也可能访问释放后的内存。seqcount 可以与这些机制组合，但不能替代它们；第6章继续推导引用取得窗口。
 
 ## 1.8\_适用与不适用场景
 
 | 场景 | 结论 |
 | --- | --- |
-| 时间基准、统计组合、坐标或参数快照 | 适合，字段可安全复制且写少 |
+| 时间基准、统计组合、坐标或参数快照 | 字段可安全复制、写少且更新符合串行和上下文条件时适合 |
 | 指针链表、树、可释放对象 | 不单独使用 seqcount |
 | 写入很频繁、读窗口很长 | 读者可能饥饿，应换锁或重新设计 |
 | 读操作有 I/O 或不可回滚副作用 | 不适合重试模型 |

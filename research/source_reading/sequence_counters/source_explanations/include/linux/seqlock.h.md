@@ -13,7 +13,9 @@ source_version: "6.12.20"
 
 ## 1.1\_实现讲解边界
 
-本页按固定NXP linux-imx提交dfaf2136deb2af2e60b994421281ba42f1c087e0，Linux 6.12.20展开include/linux/seqlock.h；blob 5298765d6ca4827eb7bf8a9dca020f1383d3b901。中文Doxygen由仓库补充，省去原英文注释、相邻未选择接口，保留所选宏和函数的真实控制流。概念性假类型和associated_lock占位函数不再作为实现证据。
+模块导读已经把起点、候选复制和末尾验证连接起来。现在逐层进入函数：公共宏先按对象类型选择属性，属性可能触发等待，底层操作才读写 sequence 和放置顺序约束。分清这些层，才能判断删去一条调用究竟改变了诊断、进展还是数据一致性。
+
+本页按固定NXP linux-imx提交dfaf2136deb2af2e60b994421281ba42f1c087e0，Linux 6.12.20展开include/linux/seqlock.h；blob 5298765d6ca4827eb7bf8a9dca020f1383d3b901。中文Doxygen由仓库补充，省去原英文注释、相邻未选择接口，保留所选宏和函数的真实控制流。
 
 [总索引](../../../navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.4_阅读入口)组织阅读目标，[模块导读](../../../navigation/P02_Linux_6.12_seqcount与seqlock模块源码概念导读.md#2.1_模块问题与职责分支)组织状态及协作；[类型实现](seqlock_types.h.md#1.2_plain计数与条件检查字段)解释声明和配置。以下实现回到模块中的普通、关联锁与latch阶段，不把它们混成同一个状态机。
 
@@ -31,6 +33,8 @@ source_version: "6.12.20"
 这些是本次所选实现，不宣称覆盖每个IRQ/BH包装、嵌套子类接口或raw_write_seqcount_barrier。通用spinlock、调度器和KCSAN内部实现不在这里重复展开。
 
 ### 1.2.1\_初始化与关联建立
+
+对象必须先有稳定初值，才允许读者把偶数当作有效起点。初始化清 sequence，并在配置需要时构造检查身份；关联初始化还保存已有外部锁的地址。这些动作发生在发布前，不是并发使用中的重置或回收协议。
 
 ```c
 /**
@@ -62,6 +66,8 @@ __seqcount_init先初始化Lockdep映射，再清sequence。公共seqcount_init�
 关联初始化宏先初始化内嵌seqcount，再经__SEQ_LOCK保存外部锁地址。具体seqcount_mutex_init等只是选择对应lockname的包装；外部锁本身要由调用者先初始化。这里没有取得锁，也不排除旧访问者。
 
 ## 1.3\_普通读侧begin与retry
+
+begin 必须交付一个可开始复制的起点，因此普通路径会等到偶数；retry 则必须在复制结束后读取证据，判断期间是否发生变化。下面先从稳定循环向外读到公共入口，再转到末尾验证，检查状态与功能等待分别在哪里出现。
 
 ```c
 /**
@@ -151,6 +157,8 @@ raw_read_seqcount保留属性读取和KCSAN标记，但不等待或掩掉奇数�
 
 ## 1.4\_普通写侧begin与end
 
+外部串行权已由调用者取得，但不同类型对抢占的前提不同。外层先检查和补足所需本地条件，内层再改变 sequence、约束字段顺序；结束时按相反职责收尾。观察代码时把 sequence 的真正写入找出来，不能把检查器的 acquire/release 当作开窗关窗。
+
 ```c
 /**
  * @brief 仓库阅读说明：write_seqcount_begin：s的写者串行协议由调用者先建立。
@@ -181,7 +189,7 @@ do {									\
 
 ```c
 /**
- * @brief 仓库阅读说明：do_write_seqcount_begin：s为底层序号，嵌套接口的subclass用于检查器记账，不是功能锁。
+ * @brief 仓库阅读说明：do_write_seqcount_begin：以默认检查子类0进入写窗口，调用者已建立写者串行与上下文条件。
  */
 static inline void do_write_seqcount_begin(seqcount_t *s)
 {
@@ -202,7 +210,7 @@ static inline void do_write_seqcount_begin_nested(seqcount_t *s, int subclass)
 
 ```c
 /**
- * @brief 仓库阅读说明：do_raw_write_seqcount_begin：s为底层序号，嵌套接口的subclass用于检查器记账，不是功能锁。
+ * @brief 仓库阅读说明：do_raw_write_seqcount_begin：开始KCSAN写区，增加sequence开窗，再约束后续数据写入。
  */
 static inline void do_raw_write_seqcount_begin(seqcount_t *s)
 {
@@ -214,7 +222,7 @@ static inline void do_raw_write_seqcount_begin(seqcount_t *s)
 
 ```c
 /**
- * @brief 仓库阅读说明：do_write_seqcount_end：s为底层序号，嵌套接口的subclass用于检查器记账，不是功能锁。
+ * @brief 仓库阅读说明：do_write_seqcount_end：报告seqcount检查释放，再调用核心关窗操作。
  */
 static inline void do_write_seqcount_end(seqcount_t *s)
 {
@@ -225,7 +233,7 @@ static inline void do_write_seqcount_end(seqcount_t *s)
 
 ```c
 /**
- * @brief 仓库阅读说明：do_raw_write_seqcount_end：s为底层序号，嵌套接口的subclass用于检查器记账，不是功能锁。
+ * @brief 仓库阅读说明：do_raw_write_seqcount_end：约束之前的数据写入，增加sequence关窗，最后结束KCSAN写区。
  */
 static inline void do_raw_write_seqcount_end(seqcount_t *s)
 {
@@ -241,7 +249,7 @@ static inline void do_raw_write_seqcount_end(seqcount_t *s)
 
 ```c
 /**
- * @brief 仓库阅读说明：do_write_seqcount_invalidate：s为目标序号，推进两代使尚在进行的旧读区失效。
+ * @brief 仓库阅读说明：do_write_seqcount_invalidate：s为目标序号，加2使尚在进行的旧读区失效。
  */
 static inline void do_write_seqcount_invalidate(seqcount_t *s)
 {
@@ -255,6 +263,8 @@ static inline void do_write_seqcount_invalidate(seqcount_t *s)
 失效操作先写屏障，再把sequence加2。它让尚在进行的旧读区比较失败，不是任意多字段写入的开窗/关窗，也不追回已交付的副本。KCSAN嵌套范围只包住这里的计数动作，不扩大成外围业务事务。
 
 ## 1.5\_关联锁属性与RT补偿
+
+公共宏接受 plain 与关联对象，必须按实际类型找到其 sequence 地址，并决定写侧是否需要禁抢占、读侧是否可能等待外部锁。下面的生成宏一次生成一组这样的属性函数。参数中的 lockbase 决定实际 lock/unlock 名称，例如 rwlock 关联采用读锁操作帮助等待写者完成，并不把整个候选复制区变成持读锁区。
 
 ```c
 /**
@@ -360,6 +370,8 @@ plain读取同样用acquire，但没有关联锁地址；其断言检查抢占�
 
 ## 1.6\_latch重定向与双副本更新
 
+普通 begin 遇奇数就等待，这对暂停在同 CPU NMI 下面的写者没有帮助。latch 把起点读取改为副本选择：最低位决定地址，完整计数决定候选是否跨过重定向。因此它既需要另一套入口，也仍需要末尾验证；双份业务数据由调用者保存。
+
 ```c
 /**
  * @brief 仓库阅读说明：仅存储序号，业务双副本由调用者提供。
@@ -419,7 +431,7 @@ read_seqcount_latch_retry(const seqcount_latch_t *s, unsigned start)
 
 ```c
 /**
- * @brief 仓库阅读说明：raw_write_seqcount_latch：s为latch序号；retry的start必须是完整起点计数。
+ * @brief 仓库阅读说明：raw_write_seqcount_latch：以两个写屏障包住一次序号递增，把读者导向另一副本；不复制业务数据。
  */
 static __always_inline void raw_write_seqcount_latch(seqcount_latch_t *s)
 {
@@ -431,7 +443,7 @@ static __always_inline void raw_write_seqcount_latch(seqcount_latch_t *s)
 
 ```c
 /**
- * @brief 仓库阅读说明：write_seqcount_latch_begin：s为latch序号；retry的start必须是完整起点计数。
+ * @brief 仓库阅读说明：write_seqcount_latch_begin：开启KCSAN写区并第一次重定向，随后由调用者更新副本0。
  */
 static __always_inline void write_seqcount_latch_begin(seqcount_latch_t *s)
 {
@@ -442,7 +454,7 @@ static __always_inline void write_seqcount_latch_begin(seqcount_latch_t *s)
 
 ```c
 /**
- * @brief 仓库阅读说明：write_seqcount_latch：s为latch序号；retry的start必须是完整起点计数。
+ * @brief 仓库阅读说明：write_seqcount_latch：第二次重定向到已完成的副本0，随后由调用者更新副本1。
  */
 static __always_inline void write_seqcount_latch(seqcount_latch_t *s)
 {
@@ -452,7 +464,7 @@ static __always_inline void write_seqcount_latch(seqcount_latch_t *s)
 
 ```c
 /**
- * @brief 仓库阅读说明：write_seqcount_latch_end：s为latch序号；retry的start必须是完整起点计数。
+ * @brief 仓库阅读说明：write_seqcount_latch_end：结束KCSAN写区，不再递增序号或修改副本。
  */
 static __always_inline void write_seqcount_latch_end(seqcount_latch_t *s)
 {
@@ -462,9 +474,11 @@ static __always_inline void write_seqcount_latch_end(seqcount_latch_t *s)
 
 读起点使用READ_ONCE取得完整计数，随后以最低位产生对业务副本的依赖选择；这里不是普通seqcount的acquire稳定循环。raw_write_seqcount_latch在增量前后各放wmb：先约束此前副本写完成，再把重定向排在下一份副本写入之前。读末尾rmb后比较完整计数，不能只比较最低位。
 
-begin和write分别调用一次重定向，调用者在两者之间更新data0，之后更新data1；end只结束KCSAN写范围，没有第三次翻转。对应模块latch S1/S3与S2/S4业务动作。旧读者仍可能选中随后被改的副本，只有完整计数验证才能拒绝其候选；动态对象仍需要独立回收协议。
+begin和write分别调用一次重定向，调用者在两者之间更新data0，之后更新data1；end只结束KCSAN写范围，没有第三次翻转。对应模块 latch L1/L3 重定向与 L2/L4 业务动作。旧读者仍可能选中随后被改的副本，只有完整计数验证才能拒绝其候选；动态对象仍需要独立回收协议。
 
 ## 1.7\_seqlock封装与加锁读者
+
+已有的计数机制不会替写者取锁。seqlock 的写包装把“取得内嵌锁—开窗”以及“关窗—释放锁”配对；重试读者仍走计数路径。另一个入口允许读者直接取得内嵌锁，二者不能因都叫 reader 就当成同一种执行方式。
 
 ```c
 /**
@@ -499,7 +513,7 @@ static inline unsigned read_seqretry(const seqlock_t *sl, unsigned start)
 
 ```c
 /**
- * @brief 仓库阅读说明：write_seqlock：sl为组合对象；重试接口的start是之前取得的计数。
+ * @brief 仓库阅读说明：write_seqlock：先取得内嵌写者锁，再对内嵌seqcount开窗。
  */
 static inline void write_seqlock(seqlock_t *sl)
 {
@@ -510,7 +524,7 @@ static inline void write_seqlock(seqlock_t *sl)
 
 ```c
 /**
- * @brief 仓库阅读说明：write_sequnlock：sl为组合对象；重试接口的start是之前取得的计数。
+ * @brief 仓库阅读说明：write_sequnlock：先对内嵌seqcount关窗，再释放内嵌写者锁。
  */
 static inline void write_sequnlock(seqlock_t *sl)
 {
@@ -521,7 +535,7 @@ static inline void write_sequnlock(seqlock_t *sl)
 
 ```c
 /**
- * @brief 仓库阅读说明：read_seqlock_excl：sl为组合对象；重试接口的start是之前取得的计数。
+ * @brief 仓库阅读说明：read_seqlock_excl：直接取得内嵌锁，排斥写者和其他加锁读者，不推进序号。
  */
 static inline void read_seqlock_excl(seqlock_t *sl)
 {
@@ -531,7 +545,7 @@ static inline void read_seqlock_excl(seqlock_t *sl)
 
 ```c
 /**
- * @brief 仓库阅读说明：read_sequnlock_excl：sl为组合对象；重试接口的start是之前取得的计数。
+ * @brief 仓库阅读说明：read_sequnlock_excl：归还加锁读者取得的内嵌锁，不执行序号验证。
  */
 static inline void read_sequnlock_excl(seqlock_t *sl)
 {
@@ -539,9 +553,9 @@ static inline void read_sequnlock_excl(seqlock_t *sl)
 }
 ```
 
-初始化同时构造实际spinlock与关联seqcount。write_seqlock先取得内嵌锁再开窗，write_sequnlock先关窗后解锁；内部直接调用do_write核心，避免对已由包装取得的同一锁重复作通用属性断言。read_seqbegin/retry转交关联seqcount读路径，因此RT属性仍可参与进展。
+初始化同时构造实际spinlock与关联seqcount。write_seqlock先取得内嵌锁再开窗，write_sequnlock先关窗后解锁；内部直接调用do_write核心，没有再经过write_seqcount_begin按类型选择的外层。read_seqbegin/retry转交关联seqcount读路径，因此RT属性仍可参与进展。
 
-read_seqlock_excl/对应解锁只取得/释放内嵌锁，不改变sequence。它排斥写者和其他加锁读者，却不让普通重试读者登记或等待这把锁。不能拿着这个读锁修改受保护字段而不推进sequence；普通读者可能接受未被标记的变化。中断/BH包装另有上下文契约，本页不假称逐个展开。
+read_seqlock_excl/对应解锁只取得/释放内嵌锁，不改变sequence。它排斥写者和其他加锁读者，却不会让普通重试读者改成全程持锁；RT 读者遇奇数时仍可能通过关联属性短暂等待这把锁。不能拿着加锁读区修改受保护字段而不推进sequence，普通读者可能接受未被标记的变化。中断/BH包装另有上下文契约，本页不假称逐个展开。
 
 ## 1.8\_复核与实际验证范围
 

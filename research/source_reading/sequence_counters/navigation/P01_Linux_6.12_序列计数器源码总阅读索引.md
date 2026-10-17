@@ -13,6 +13,8 @@ source_version: "6.12.20"
 
 ## 1.1\_版本边界与阅读任务
 
+知识正文已经区分“候选可接受”与“写者能继续”：前者依靠序号和字段访问顺序，后者依靠上下文约束或替代协议。进入源码后，任务是找到这两类保证分别落在哪个对象和分支，不能看见函数都在 seqlock.h 中，就把普通计数、RT 补偿和双副本当成同一个流程。
+
 实现证据固定到 NXP `linux-imx` 标签 `lf-6.12.20-2.0.0` 的提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。序列计数器的大部分核心实现在单个 [`include/linux/seqlock.h`](../../linux/include/linux/seqlock.h) 中，但应按普通 seqcount、关联锁、latch 与 seqlock 四种职责阅读，不能从文件共址推断为一个状态机。
 
 结构和配置字段另位于include/linux/seqlock_types.h。先知道sequence、可选lock指针与实际内嵌锁的位置，再跟操作路径；“一个头文件里的接口”不是所有类型都共享相同等待和抢占规则的证明。
@@ -20,6 +22,8 @@ source_version: "6.12.20"
 跨版本模型先读[序列计数器专题](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/大纲.md#1.1_专题定位)。
 
 ## 1.2\_源码分支地图
+
+先跟普通单副本读取，确认起点和末尾验证怎样包住候选复制；已有外部锁时再看关联属性，读者需要打断写者时再看 latch。seqlock 则是在已经建立的计数与锁之上组合包装。按这些问题分支定位如下：
 
 | 分支 | 关键符号 | 解决的问题 |
 | --- | --- | --- |
@@ -37,7 +41,8 @@ flowchart LR
     W -->|"非原子写"| D["业务数据"]
     R["reader局部栈"] -->|"start/end读取"| S
     R -->|"暂存快照"| D
-    L["关联writer锁"] -->|"持锁断言/RT推进"| S
+    L["关联writer锁"] -->|"串行化写者"| W
+    R -->|"RT适用类型遇奇数时取得并释放"| L
     K["KCSAN/Lockdep"] -.->|"影子检查"| S
 ```
 
@@ -63,7 +68,7 @@ sequence 是功能状态；关联锁本身完成 writer 串行；检查器只验
 
 ## 1.6\_配置边界
 
-当前开发工作树未启用 PREEMPT_RT，因此关联锁属性中的 RT lock/unlock 补偿只能作为条件编译实现核对，不能声称已运行验证。KCSAN/Lockdep 是否有效还取决于各自配置和路径覆盖。
+历史配置记录未启用 PREEMPT_RT；本次外部工作树不可访问，未重新核验当前配置。关联锁属性中的 RT lock/unlock 补偿是固定提交的条件源码证据，不能声称已在目标运行验证。KCSAN/Lockdep 是否有效还取决于各自配置、检查器状态和路径覆盖。
 
 ## 1.7\_复核问题
 

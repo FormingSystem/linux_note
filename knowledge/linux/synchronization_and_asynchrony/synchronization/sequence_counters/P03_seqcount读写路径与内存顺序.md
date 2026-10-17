@@ -23,8 +23,8 @@ flowchart TD
     R2 -->|局部保存start| D["调用者复制受保护数据"]
     D -->|复制结束| R3["read_seqcount_retry()"]
     R3 -->|rmb后再读| R4["比较sequence与start"]
-    W1["write_seqcount_begin()"] -->|按类型检查/处理抢占| W2["调用者已持写者锁"]
-    W2 -->|开始写窗口| W3["sequence变奇"]
+    W0["调用者先取得外部写者锁"] -->|已建立串行前提| W1["write_seqcount_begin()"]
+    W1 -->|按类型检查/处理抢占，再开窗| W3["sequence变奇"]
     W3 -->|wmb隔开开窗和数据写| WD["调用者更新数据"]
     WD -->|wmb隔开数据写和关窗| W4["write_seqcount_end()：sequence变偶"]
 ```
@@ -90,7 +90,7 @@ raw不是一个统一的“去掉全部保护”开关。按固定头文件区�
 | raw_read_seqcount | 属性读取含acquire，保留KCSAN标记 | 不等待偶数，也不修改最低位；调用者须自己处理奇偶资格 |
 | raw_seqcount_begin | 取得序号后清最低位，再交给末尾retry | 不在开头等偶数；若实际读到奇数，清位值与后续版本不等，拒绝本轮 |
 | __read_seqcount_retry | 结束KCSAN读范围，读取并比较计数 | 不提供普通retry的smp_rmb，必须证明等价顺序来自哪里 |
-| raw_write_seqcount_begin/end | 核心奇偶变化、写屏障及按属性处理抢占 | 省略普通入口的Lockdep检查/记账，不自动省去数据顺序 |
+| raw_write_seqcount_begin/end | 核心奇偶变化、写屏障及按属性处理抢占 | 省略普通入口的持锁断言和seqcount获取/释放记账；抢占包装可能仍有自身检查，不自动省去数据顺序 |
 
 例如raw_seqcount_begin读到11却记录10，在没有完整回绕的前提下，末尾读11或后续12都不相等。它允许无效候选走到末尾，但绝不允许用这个办法解决单副本被NMI读者中断的问题：读者仍可能反复失败，写者仍被压在下面。头文件把它定位于读区很小且外部条件使成功概率高的特殊热路径，不是“不能等就换raw”的通用方案。
 

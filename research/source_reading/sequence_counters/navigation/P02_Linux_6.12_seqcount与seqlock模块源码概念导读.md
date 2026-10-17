@@ -13,13 +13,13 @@ source_version: "6.12.20"
 
 ## 2.1\_模块问题与职责分支
 
-本章按四条调用链读 `include/linux/seqlock.h`，不按文件声明顺序逐宏罗列。固定提交中的 sequence 为有限宽度无符号字段；行号只用于该版本定位。
+读者已经知道复制后需要验证，现在要追踪一次真实调用：begin 从哪里取得起点，retry 怎样拒绝候选，write begin 又如何知道调用者的写者锁类型？这些问题分属普通读取、关联属性和写侧包装；若把几个相似宏名都当作“读一个整数”，就会漏掉等待与检查分支。本章按四条调用链阅读 `include/linux/seqlock.h`，将上述职责落到具体地址。
 
 固定到总索引所列NXP提交dfaf2136；当前任务是把知识侧快照、进展和双副本模型落到具体地址与函数协作。普通路径先读，遇到已有外部锁和RT配置才进入关联分支；读者必须能打断单副本更新时再读latch。后面的seqlock只是组合封装，不另创造快照证明。
 
 ## 2.2\_公共对象与检查状态
 
-`seqcount_t` 保存 `sequence`，调试配置下还保存 `dep_map`。`seqcount_init()` 把 sequence 清零并初始化 Lockdep map。KCSAN 在读区标记最多一定数量的后续原子访问，这属于检查器覆盖，不改变真实 sequence。
+`seqcount_t` 保存有限宽度的无符号 `sequence`，调试配置下还保存 `dep_map`。`seqcount_init()` 把 sequence 清零并按配置初始化 Lockdep map。KCSAN 将有限数量的后续内存访问按原子区域建模，这属于检查器覆盖，不改变真实 sequence，也不把多个字段变成硬件原子访问。
 
 结构、配置裁剪和内嵌锁见[类型实现](../source_explanations/include/linux/seqlock_types.h.md#1.2_plain计数与条件检查字段)，构造步骤见[初始化与关联建立](../source_explanations/include/linux/seqlock.h.md#1.2.1_初始化与关联建立)。业务字段仍属于调用者，初始化和回收都不能只依靠sequence是否偶数。
 
@@ -58,11 +58,13 @@ sequenceDiagram
 
 源码入口：`__read_seqcount_begin()`/`read_seqcount_begin()` 在约 266～300 行，retry 在约 348～388 行，writer begin/end 在约 449～503 行。唯一实现见[普通读侧 begin 与 retry](../source_explanations/include/linux/seqlock.h.md#1.3_普通读侧begin与retry)。
 
-S0为发布前初始化；S1读取属性后只保存局部start；S2/S4由写者修改共享sequence；S3业务赋值由调用者完成；S5只读取共享证据，不把读者注册进任何名单；S6只消费局部副本。因此局部证据不会汇聚成“所有读者都结束”的全局结论，也没有按读者逐个通知的唤醒路径。具体写核心见[普通写侧实现](../source_explanations/include/linux/seqlock.h.md#1.4_普通写侧begin与end)。
+S0为初始化完成并发布后的稳定状态；S1读取属性后只保存局部start；S2/S4由写者修改共享sequence；S3业务赋值由调用者完成；S5只读取共享证据，不把读者注册进任何名单；S6只消费局部副本。因此局部证据不会汇聚成“所有读者都结束”的全局结论，也没有按读者逐个通知的唤醒路径。具体写核心见[普通写侧实现](../source_explanations/include/linux/seqlock.h.md#1.4_普通写侧begin与end)。
 
 普通Lockdep读访问是短暂的检查器获取/释放记账；它不在业务复制期间持有读锁。KCSAN范围标记也只服务检查，不把实际字段修改变成硬件原子事务。
 
 ## 2.4\_关联锁与PREEMPT\_RT
+
+普通计数只有 sequence，无法凭空找到工程使用的写者锁。关联类型保存所需地址，并通过类型选择相应属性函数：写侧用它检查前提，RT 的适用读侧用它等待被抢占的写者。初始化没有取得这把锁，调用者仍负责写侧加锁。
 
 `SEQCOUNT_LOCKNAME(lockname, locktype, preemptible, lockbase)` 生成四类属性访问：
 
@@ -82,27 +84,28 @@ sequenceDiagram
     participant S as 关联sequence
     participant R as reader
     participant L as 外部锁
-    W->>L: S1先取得串行锁
-    W->>S: S2开窗变奇后被抢占
-    R->>S: S3属性读取奇数
+    W->>L: A1先取得串行锁
+    W->>S: A2开窗变奇后被抢占
+    R->>S: A3属性读取奇数
     alt RT且锁类型需要补偿
-        R->>L: S4沿保存指针尝试取得锁并等待
-        W->>S: S5获调度机会完成字段并关窗
+        R->>L: A4沿保存指针尝试取得锁并等待
+        W->>S: A5获调度机会完成字段并关窗
         W->>L: 释放锁
-        L-->>R: 取得成功后立即释放
-        R->>S: S6重新acquire读取
+        L-->>R: 取得成功
+        R->>L: 立即释放关联锁
+        R->>S: A6重新acquire读取
     else 无该补偿分支
         R->>S: 按普通规则等待偶数，调用者须已保证writer进展
     end
 ```
 
-这里S编号对应关联锁章节的协作阶段。普通阶段与关联阶段是不同观察角度，前者解释数据一致性，后者解释锁和调度如何避免写者被读者阻止；不能拿后一张图替代前者的字段顺序证明。
+这里A编号对应关联锁章节的协作阶段。普通阶段与关联阶段是不同观察角度，前者解释数据一致性，后者解释锁和调度如何避免写者被读者阻止；不能拿后一张图替代前者的字段顺序证明。
 
 ## 2.5\_latch双副本分支
 
 `raw_write_seqcount_latch()`在sequence增量前后放置写屏障；begin和write两次重定向，end结束KCSAN标记而不再翻转。data[0]/data[1]由调用者保存，reader用最低位选副本，用完整sequence在末尾验证。具体实现见[latch重定向与双副本更新](../source_explanations/include/linux/seqlock.h.md#1.6_latch重定向与双副本更新)；[210条交错模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P04_seqcount_latch双副本状态机.md#4.4.1_用C区分暂停写者与跨CPU交错)解释只比最低位为何失败，不代表内核弱内存已经验证。
 
-按latch的S0～S6读取：S0两份初始化一致；S1先导向副本1；S2调用者更新副本0；S3导回完整副本0；S4更新副本1；S5结束检查范围；S6读者比较完整计数。读者若在S2打断同CPU写者，能选择旧副本1；跨CPU旧读者可能此前已选择副本0，必须靠S6重试。状态和时序见[双副本周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P04_seqcount_latch双副本状态机.md#4.3_S0到S6状态周期)，本模块负责把每一步对应到固定函数，不复制函数体。
+按latch的L0～L6读取：L0两份初始化一致；L1先导向副本1；L2调用者更新副本0；L3导回完整副本0；L4更新副本1；L5结束检查范围；L6读者比较完整计数。读者若在L2打断同CPU写者，能选择旧副本1；跨CPU旧读者可能此前已选择副本0，必须靠L6重试。状态和时序见[双副本周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P04_seqcount_latch双副本状态机.md#4.3_L0到L6状态周期)，本模块负责把每一步对应到固定函数，不复制函数体。
 
 ## 2.6\_seqlock封装与locking\_reader
 
