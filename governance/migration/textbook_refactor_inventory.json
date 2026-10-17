@@ -6475,6 +6475,17 @@
           "两图渲染目视、严格连续性、精确链接和文档检查通过；实际全仓732篇9321有效本地链接无缺失"
         ],
         "limits": "未执行目标内核构建或运行，当前配置未核验；历史配置明确标注日期，三题为纸面状态推演。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P21_RCU_kref与复合对象生命周期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补C0至C6复合所有权周期，修正入口图与模型B的put包装，说明构造回滚、多写者发布和工作交付责任。",
+        "date": "2026-10-17",
+        "validation": [
+          "固定kref/refcount接口重新核对",
+          "正文13个C块组成三类宿主顺序夹具，GCC及Clang六次严格构建运行通过；两图目视、连续性和链接检查通过"
+        ],
+        "limits": "宿主替身只验证类型和顺序所有权，不验证Linux并发、原子操作或内存序；未执行目标Kbuild。"
       }
     },
     "additional_documents": [
