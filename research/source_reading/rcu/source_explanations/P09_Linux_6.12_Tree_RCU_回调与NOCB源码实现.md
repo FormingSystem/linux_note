@@ -26,7 +26,7 @@ source_version: "6.12.20"
 
 上游相对位置：[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`kernel/rcu/tree_nocb.h`](../../linux/kernel/rcu/tree_nocb.h)、[`kernel/rcu/rcu_segcblist.c`](../../linux/kernel/rcu/rcu_segcblist.c)、[`include/linux/rcu_segcblist.h`](../../linux/include/linux/rcu_segcblist.h)。
 
-概念入口：[回调与 NOCB 模块源码概念导读](../navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#7.1_GP完成为什么还不等于callback执行)。稳定正文：[P11 callback 分段](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_rcu_segcblist回调状态机.md#11.2_四段不是四条链表)、[P12 批处理](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_回调执行_批处理与限流.md#12.2_先区分四个时刻)、[P16 NOCB](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_NOCB回调卸载.md#16.2_卸载前后责任对比)。
+概念入口：[回调与 NOCB 模块源码概念导读](../navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#7.1_GP完成为什么还不等于callback执行)。稳定正文：[P11 callback 分段](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_rcu_segcblist回调状态机.md#11.2_四段不是四条链表)、[P12 批处理](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_回调执行_批处理与限流.md#12.2_资格取得与执行完成之间还隔着什么)、[P16 NOCB](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_NOCB回调卸载.md#16.2_卸载前后责任对比)。
 
 ## 9.2\_源码符号覆盖账本
 

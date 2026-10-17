@@ -149,7 +149,7 @@ Linux 6.12 的 `struct rcu_state` 还同时容纳拓扑、`rcu_barrier()`、expe
     → 需要CPU集合边界时再加入ofl_lock
 
 callback屏障、expedited、NOCB
-    → 分别转入P20、P16、P19
+    → 分别转入P13、P15、P16
 ```
 
 完整的字段域、读写者和权威章节去向见 [Linux 6.12 `rcu_state` 完整字段域与权威去向](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.3.1_完整字段域与权威去向)。这个入口用于保证源码里没有“只出现、不解释”的沉默字段；当前章节仍只证明普通 GP 的稳定机制。
@@ -178,7 +178,7 @@ synchronize_rcu()
 
 ### 8.6.2\_异步callback只登记动作不阻塞调用者
 
-`call_rcu()` 把 callback 放入对应 CPU 的回调组织。常规路径使用 `rcu_data.cblist`，NOCB 还可能先经过 bypass 队列；加速路径给 callback 分配目标 `gp_seq`，并在必要时提出新 GP 请求。调用者不等待 GP 完成就返回；callback 真正执行由 P11/P12 的分段和批处理状态机决定，卸载差量在 P19 展开。
+`call_rcu()` 把 callback 放入对应 CPU 的回调组织。常规路径使用 `rcu_data.cblist`，NOCB 还可能先经过 bypass 队列；加速路径给 callback 分配目标 `gp_seq`，并在必要时提出新 GP 请求。调用者不等待 GP 完成就返回；callback 真正执行由 P11/P12 的分段和批处理状态机决定，卸载差量在 P16 展开。
 
 ### 8.6.3\_轮询接口保存的是目标序列
 
