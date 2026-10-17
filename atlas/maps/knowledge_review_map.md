@@ -852,6 +852,8 @@ mindmap-plugin: basic
                 - 🔴 [失步与停机分别恢复哪份状态](../../research/source_reading/input/navigation/P05_失步与停机分别恢复哪份状态.md)
                 - 🔴 [状态重同步与事件时间](../../research/source_reading/input/source_explanations/P08_状态重同步与事件时间.md)
                 - 🔴 [PM状态恢复与硬件停止边界](../../research/source_reading/input/source_explanations/P09_PM状态恢复与硬件停止边界.md)
+                - 🔴 [触摸帧怎样接到坐标与发布路径](../../research/source_reading/input/navigation/P06_触摸帧怎样接到坐标与发布路径.md)
+                - 🔴 [触摸属性怎样改变坐标与轴参数](../../research/source_reading/input/source_explanations/P10_触摸属性怎样改变坐标与轴参数.md)
         - 🔴 [gpiolib源码阅读大纲](../../research/source_reading/gpiolib/大纲.md#1.1_沿一次请求进入固定实现)
             - 🔴 [Linux_6.12_GPIO源码阅读索引](../../research/source_reading/gpiolib/navigation/P01_Linux_6.12_GPIO源码阅读索引.md)
             - 🔴 [线路对象怎样完成请求与退出](../../research/source_reading/gpiolib/navigation/P02_线路对象怎样完成请求与退出.md)

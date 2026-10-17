@@ -39,6 +39,8 @@ flowchart LR
     mt -->|"报告与匹配"| mtimpl["槽状态和映射实现"]
     k -->|"失步与S6停止"| fail["异常与停止导读<br/>区分样本、队列与供电"]
     fail -->|"查询和PM职责"| failimpl["状态重同步、时间<br/>逻辑PM与芯片边界"]
+    k -->|"芯片帧接入标准事件"| touch["触摸适配导读<br/>协议、坐标与发布窗口"]
+    touch -->|"属性和每点变换"| coordinates["touchscreen.c实现讲解"]
     k -->|"S0、S1、S2与S6"| life["生命周期模块导读<br/>发布、计数、停止与引用"]
     life -->|"定位配对与延迟动作"| impl["分配注册、打开退出<br/>轮询重复及输出实现"]
     n -->|"S4接受与批处理"| c["input.c实现讲解"]
@@ -57,6 +59,7 @@ flowchart LR
 | 满槽换人或没有硬件 ID 怎样处理 | [完整帧顺序](P04_接触身份怎样跨帧保留.md#4.2_把映射更新与帧收尾排成同一条路径) | [映射与位置匹配](../source_explanations/P07_槽位映射与位置匹配.md#7.1_按key找槽为何会在本帧释放后仍失败) |
 | 队列失步怎样恢复，查询是否有副作用 | [故障与状态](P05_失步与停机分别恢复哪份状态.md#5.1_从故障位置选择需要恢复的状态) | [状态查询与时间](../source_explanations/P08_状态重同步与事件时间.md#8.1_位图查询为何还会清理客户端队列) |
 | 挂起是否自动清全部触点和关闭硬件 | [停止与逻辑清理](P05_失步与停机分别恢复哪份状态.md#5.3_把停止等待与逻辑状态清理接回S6) | [PM职责与芯片边界](../source_explanations/P09_PM状态恢复与硬件停止边界.md#9.1_系统挂起先处理哪些Input逻辑状态) |
+| 面板反转交换怎样改变轴信息与每个报告值 | [触摸协议与接合](P06_触摸帧怎样接到坐标与发布路径.md#6.1_先把芯片协议与Input状态分开) | [触摸属性与坐标](../source_explanations/P10_触摸属性怎样改变坐标与轴参数.md#10.1_属性先修改哪些轴参数) |
 
 这些是已落地的源码讲解入口。协议含义在知识章节本地解释，模块导读说明状态所有权与执行顺序，实现页展开唯一函数体。
 
@@ -67,6 +70,9 @@ flowchart LR
 | [drivers/input/input.c](../../linux/drivers/input/input.c) | 设备/handler匹配、能力检查、状态更新、批次、打开关闭、inhibit和devres |
 | [drivers/input/evdev.c](../../linux/drivers/input/evdev.c) | 连接、各client队列、read/poll、ioctl、失步和断开 |
 | [drivers/input/input-mt.c](../../linux/drivers/input/input-mt.c) | slot初始化、接触状态、点匹配与帧辅助接口 |
+| [drivers/input/touchscreen.c](../../linux/drivers/input/touchscreen.c) | 通用触摸属性读取、轴参数调整与报告值变换 |
+| [include/linux/input/touchscreen.h](../../linux/include/linux/input/touchscreen.h) | touchscreen_properties、报告与位置变换接口 |
+| [touchscreen.yaml](../../linux/Documentation/devicetree/bindings/input/touchscreen/touchscreen.yaml) | 通用固件属性含义；允许的字段不等于通用helper全部消费 |
 | [include/linux/input.h](../../linux/include/linux/input.h) | input_dev、input_handler、input_handle及内核API声明 |
 | [include/linux/input/mt.h](../../linux/include/linux/input/mt.h) | MT字段、标志和辅助接口 |
 | [include/uapi/linux/input.h](../../linux/include/uapi/linux/input.h) | 用户事件、轴参数和ioctl ABI |
