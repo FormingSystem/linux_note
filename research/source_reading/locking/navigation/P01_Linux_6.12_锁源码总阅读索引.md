@@ -21,6 +21,8 @@ source_version: "6.12.20"
 
 ## 1.2\_源码文件地图
 
+同样写作spin_lock，目标内核可能选择不同的类型、包装与架构实现；可睡锁也可能按配置包含或省略owner spinning。先沿类型头确定这一份对象实际含有什么，再沿公共包装找到所选操作，最后进入真正读写锁字或排队状态的实现。下面的文件地图标明每层负责回答的问题，不表示这些文件在所有配置中都会同时执行。
+
 | 分支 | 文件 | 职责 |
 | --- | --- | --- |
 | spinlock | [`include/linux/spinlock_types.h`](../../linux/include/linux/spinlock_types.h) | 普通与 RT 配置下 `spinlock_t` 类型映射 |
@@ -34,15 +36,15 @@ source_version: "6.12.20"
 
 ```mermaid
 flowchart TD
-    A["先写执行上下文与允许等待方式"] --> S["spinlock分支"]
-    A --> M["mutex分支"]
-    A --> R["rwsem分支"]
-    S --> S1["P02包装、raw、IRQ与架构边界"]
-    M --> M1["P03 owner、OSQ、waiter与handoff"]
-    R --> R1["P03 count、读写waiter与mark_wake"]
-    S1 --> I1["include/linux包装与arch/arm实现"]
-    M1 --> I2["kernel/locking/mutex.c实现"]
-    R1 --> I3["include/linux/rwsem.h与kernel/locking/rwsem.c"]
+    A["记录执行上下文、等待方式与构建配置"] -->|先核对普通锁的类型映射| S["spinlock分支"]
+    A -->|可睡的独占访问| M["mutex分支"]
+    A -->|可睡的多读单写访问| R["rwsem分支"]
+    S -->|沿本地约束找到所选入口| S1["P02包装、raw、IRQ与架构边界"]
+    M -->|追踪所有者和排队进度| M1["P03 owner、OSQ、waiter与handoff"]
+    R -->|追踪读份额与写者资格| R1["P03 count、读写waiter与mark_wake"]
+    S1 -->|非RT且选中相应SMP架构路径| I1["include/linux包装与arch/arm实现"]
+    M1 -->|按配置进入具体函数| I2["kernel/locking/mutex.c实现"]
+    R1 -->|按配置进入具体字段与函数| I3["include/linux/rwsem.h与kernel/locking/rwsem.c"]
 ```
 
 - [spinlock 模块源码概念导读](P02_Linux_6.12_spinlock模块源码概念导读.md#2.1_模块问题与配置边界)
@@ -57,14 +59,16 @@ flowchart TD
 
 ## 1.4\_状态所有权总表
 
+选定非RT实现后，再区分哪些状态承担资格、哪些只帮助等待。raw锁字决定架构自旋者能否进入；mutex把任务指针与等待标志结合；rwsem用count汇总持有份额和等待条件，owner另供自旋与诊断使用。等待链表还记录谁可以被唤醒，不能用owner字段替代。以下是导航摘要，字段的配置条件、写入时机和完整操作周期分别由模块导读与唯一实现讲解展开。
+
 | 状态 | 地址 | 正常写入者 | 后续读取者 |
 | --- | --- | --- | --- |
 | raw 锁字 | `raw_spinlock_t.raw_lock` | arch lock/unlock | 竞争 CPU |
 | mutex 所有者/标志 | `mutex.owner` | trylock、handoff、unlock | 快路径与慢路径 |
-| mutex waiter | `mutex.wait_list` | `wait_lock` 下慢路径 | unlock 选择首 waiter |
+| mutex waiter | 锁对象的 `mutex.wait_list`链头与等待任务栈上的 `mutex_waiter` | `wait_lock` 下慢路径 | unlock 选择首 waiter |
 | rwsem 持有/等待编码 | `rw_semaphore.count` | down/up 与 mark-wake | 所有读写竞争者 |
 | rwsem owner | `rw_semaphore.owner` | 读写取得/释放路径 | 乐观自旋与诊断 |
-| rwsem waiter | `rw_semaphore.wait_list` | `wait_lock` 下慢路径 | wake 选择写者或读者批次 |
+| rwsem waiter | 锁对象的 `rw_semaphore.wait_list`链头与等待任务栈上的 `rwsem_waiter` | `wait_lock` 下慢路径 | wake 选择写者或读者批次 |
 
 ## 1.5\_配置与证明边界
 
