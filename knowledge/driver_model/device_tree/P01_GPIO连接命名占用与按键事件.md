@@ -233,7 +233,7 @@ hog、LED 和用户态请求都涉及同一组逐线占用状态，但各自只�
 
 例如 Rockchip 的 `<0 3 0 &pcfg_pull_up>` 指 bank 0 的 pin 3、GPIO 复用及一个配置节点。`pcfg_pull_up` 节点里可以按绑定写 `bias-pull-up;`，它不是一个要直接写入某寄存器的数字宏。通用 `drive-strength` 通常以 mA 表达；`slew-rate` 的编码由控制器规定，不能一概解释为 0 慢、1 快。`input-enable` 控制输入缓冲，`bias-disable` 禁止拉偏置，`output-high/low` 则是 pinconf 请求；不要把 pinconf 的物理输出要求与上一节 hog 的描述符逻辑极性直接套用。
 
-> 依据：[pinctrl-bindings.txt 的 client states 与 pin configuration](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt)；[rockchip,pinctrl.yaml 的 rockchip,pins](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/devicetree/bindings/pinctrl/rockchip,pinctrl.yaml)。完整引脚组配置继续阅读 [pinctrl 专项](设备树语法专题-02-pinctrl.md)。
+> 依据：[pinctrl-bindings.txt 的 client states 与 pin configuration](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt)；[rockchip,pinctrl.yaml 的 rockchip,pins](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/devicetree/bindings/pinctrl/rockchip,pinctrl.yaml)。完整引脚组配置继续阅读 [pinctrl 专项](P02_引脚配置怎样连接外设与焊盘.md)。
 
 ## 1.5\_按键需要从电平变化得到输入事件
 
@@ -471,4 +471,4 @@ dtc -I dtb -O dts -o boot_received.dts /sys/firmware/fdt
 
 **练习五：** 只加入 `pinctrl-names = "default", "sleep"` 就证明休眠时线进入低电平吗？没有。还缺状态引用、实际选择路径、配置内容以及输出方向和极性责任；一个名字无法替代这些动作。
 
-现在可以从连接描述追到占用，再从按键电平追到应用事件；还不能仅靠这些描述证明板级电气参数和电源状态正确。需要深入引脚组与状态选择时，进入 [pinctrl 专项](设备树语法专题-02-pinctrl.md)；需要 GPIO 框架内部角色和生命周期时，按 [GPIO 专题阅读地图](../gpio/大纲.md#1.2_阅读地图) 继续。
+现在可以从连接描述追到占用，再从按键电平追到应用事件；还不能仅靠这些描述证明板级电气参数和电源状态正确。需要深入引脚组与状态选择时，进入 [pinctrl 专项](P02_引脚配置怎样连接外设与焊盘.md)；需要 GPIO 框架内部角色和生命周期时，按 [GPIO 专题阅读地图](../gpio/大纲.md#1.2_阅读地图) 继续。

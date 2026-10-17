@@ -2563,3 +2563,40 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 离线 DTS 的 12 次 DTC 1.6.1/fdtget 调用验证提供者 phandle、三 cell consumer 与两 cell hog 的差异、键码/去抖值、布尔属性和修改后恢复，全部退出成功且无警告。两张 Mermaid 图经渲染目视检查，正文完整冷读、严格连续性和标题链接检查通过。保留 0x10b0 的字段拆解用于纠正旧解释：SPEED 编码 2 未由所引绑定给出具名速度，不将其推断成板级推荐值或已核对的手册结论。
 
 未运行目标板驱动、input 事件、GPIO 电压与唤醒实验，也未运行目标 dtbs_check、Kbuild 或动态 overlay。教学提供者没有真实硬件驱动；离线 DTB 不能被作为可启动板级树。主机编译只证明描述编码，不能替代上述运行证据。
+
+## 1.259\_pinctrl描述选择与硬件落点复核
+
+2026-10-17，完整冷读原pinctrl补充文4462行后，将有效内容重组为配置描述、状态切换与诊断三篇正文，并建立独立源码总索引、模块导读和两个实现讲解。保留原稳定ID到配置篇，新增页使用独立ID，修复真实调用方；人工评审状态不提升。
+
+修正pinctrl-N参数解析、伪造字段/函数、错误GPIO范围与pin编号、i.MX六cell与PAD数值解释、跨厂商属性混写、GPIO申请/释放必然切换复用、PM自动选择、全量原子回滚、虚构debugfs写口及日志等结论。补齐P0～P6操作周期，区分软件当前state、pin占用、实际寄存器与设备I/O；说明probe后的init交接错误在该版本调用处未传播，不能从绑定成功反推切换成功。
+
+统一入口为 [pinctrl源码总索引](../pinctrl/navigation/P01_Linux_6.12_pinctrl源码阅读索引.md#1.1_版本边界与阅读路线)，模块职责见 [描述到选择导读](../pinctrl/navigation/P02_从描述到选择与硬件落点导读.md#2.1_一条配置如何经过三个持有者)。源码来自官方NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，当前标准工作树配置未重新确认。此次重新取得的文件及Git blob如下；i.MX6UL pinfunc和i.MX/Rockchip绑定沿用同提交的上一节证据。
+
+| 上游相对路径 | Git blob SHA-1 |
+| --- | --- |
+| `drivers/pinctrl/core.c` | `b3eec63c00ba044da37d8f75ac1eb94ede13fc14` |
+| `drivers/pinctrl/core.h` | `d6c24978e7081a663b8a0fa6cb9314670575b1bc` |
+| `drivers/pinctrl/devicetree.c` | `aeba5d8f7435155076968eb3f7b5cb6cf33cfae0` |
+| `drivers/pinctrl/pinmux.c` | `0743190da59e819d1c72c1ed1ece72f206d60d65` |
+| `drivers/pinctrl/pinconf.c` | `dca963633b5d136b9459d8389a509c8874f518b5` |
+| `drivers/base/pinctrl.c` | `c22864458511c10194e7f334219da5603df360c1` |
+| `drivers/base/dd.c` | `bcc1f28b71f4f554ec8cf279934d13bdc6acce9c` |
+| `include/linux/pinctrl/consumer.h` | `73de70362b9881569ff64800c195538935ffc939` |
+| `include/linux/pinctrl/pinctrl.h` | `9a8189ffd0f2c28c88640280deee194d17d18400` |
+| `include/linux/pinctrl/pinmux.h` | `d6f7b58d6ad0cce421aad80463529c9ccc65d68e` |
+| `include/linux/pinctrl/pinconf.h` | `770ec2221156ceefcd57c1278ef24193aa0dcb76` |
+| `include/linux/pinctrl/machine.h` | `673e96df453b3bf3405d4dde93364694689974c4` |
+| `drivers/pinctrl/freescale/pinctrl-imx.c` | `d05c2c478e7950d3a251cb7d41bc5cf3671b030d` |
+| `drivers/pinctrl/freescale/pinctrl-imx.h` | `f65ff45b40038d416544c9e76ce4e5a1faafad0f` |
+| `drivers/pinctrl/freescale/pinctrl-imx6ul.c` | `9cb02444f8aa2485e24b7627f28b7e54a08b7adb` |
+| `drivers/pinctrl/pinctrl-rockchip.c` | `5c1bc4d5b662ed403ea5c8e57a8e1cad913a31a5` |
+| `drivers/pinctrl/sunxi/pinctrl-sunxi.c` | `bde67ee31417f01fc95224ebdd707c4979e550bd` |
+| `Documentation/driver-api/pin-control.rst` | `27ea1236307e84965598c69d5e687055153823d1` |
+| `Documentation/devicetree/bindings/pinctrl/allwinner,sun4i-a10-pinctrl.yaml` | `45024057031456306ba32188dfdaec1ab43d13f8` |
+| `arch/arm/boot/dts/nxp/imx/imx6ul.dtsi` | `0926ea811f61cf9c7280635b4843d8658d71b6ad` |
+| `arch/arm64/boot/dts/rockchip/rk3568-pinctrl.dtsi` | `0a979bfb63d9d8770a685a2c135393a2421ca194` |
+| `drivers/tty/serial/imx.c` | `d5d24b00de00fb369ed93f80266be376070cc089` |
+
+本次离线DTS的13次DTC 1.6.1/fdtget调用均成功、无警告，核对工作/静默引用、十二cell内容、空属性与修改后恢复；重新编译可能改变phandle分配，比较限定在同一DTB内。十张Mermaid图渲染并目视核对，时序图固定失败发生位置，避免让早期失败仍经过后续配置。各篇经完整冷读、严格连续性、长度和精确标题链接检查；源码裁剪按固定文件核对。
+
+未运行目标内核Kbuild、dtbs_check、GPIO/UART电气测试、PM或唤醒实验；主机无POSIX sh，采集脚本按正文与控制流静态核对，未声称在debugfs执行。教学模块仅消费已验证状态，不能代替真实外设的停机与恢复协议。本文用绑定字段解释PAD值，没有将它们标为实板推荐配置。
