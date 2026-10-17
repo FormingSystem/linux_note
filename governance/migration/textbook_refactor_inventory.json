@@ -22,7 +22,8 @@
       "knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md": "knowledge/driver_model/device_tree/P01_GPIO连接命名占用与按键事件.md",
       "knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md": "knowledge/driver_model/device_tree/P02_引脚配置怎样连接外设与焊盘.md",
       "knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md": "knowledge/driver_model/device_tree/P05_GPIO输入怎样成为中断与按键事件.md",
-      "knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt示例.md": "knowledge/driver_model/device_tree/P06_从供电复位到SDIO无线设备枚举.md"
+      "knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt示例.md": "knowledge/driver_model/device_tree/P06_从供电复位到SDIO无线设备枚举.md",
+      "knowledge/driver_model/device_tree/设备树语法专题-05-设备节点和驱动的绑定操作说明.md": "knowledge/driver_model/device_tree/P11_从设备描述到驱动服务怎样逐层确认.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -7317,6 +7318,83 @@
           "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
         ],
         "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "knowledge/driver_model/device_tree/P11_从设备描述到驱动服务怎样逐层确认.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "完整冷读原绑定长文后，分开描述/枚举/匹配/服务证据；修正字段、compatible排序、加载与probe误解，补本地表和统一阶段。",
+        "validation": [
+          "固定官方源码与规范核对；26次DTC/fdtget调用及八块源码有序token验证。",
+          "七图渲染逐图目视；完整冷读、长度、ID、完整标题锚点及全仓770篇链接/文档检查通过。"
+        ],
+        "limits": "P12的12.3节199行提示经冷读保留完整驱动实验，其余严格连续性无风险；未执行目标Kbuild/MODPOST、Linux脚本、Schema与板上验证。"
+      },
+      "knowledge/driver_model/device_tree/P12_设备别名怎样参与多实例识别.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "由多实例识别问题引出aliases路径与消费者责任，提供完整DTS/驱动/构建/单实例解绑恢复，替换虚构API与旧fd/全局清理缺陷。",
+        "validation": [
+          "固定官方源码与规范核对；26次DTC/fdtget调用及八块源码有序token验证。",
+          "七图渲染逐图目视；完整冷读、长度、ID、完整标题锚点及全仓770篇链接/文档检查通过。"
+        ],
+        "limits": "P12的12.3节199行提示经冷读保留完整驱动实验，其余严格连续性无风险；未执行目标Kbuild/MODPOST、Linux脚本、Schema与板上验证。"
+      },
+      "research/source_reading/of_binding/navigation/P01_OF绑定与别名源码阅读索引.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "建立固定版本、配置边界、全部模块和唯一实现入口，区分OF身份与Driver Core职责。",
+        "validation": [
+          "固定官方源码与规范核对；26次DTC/fdtget调用及八块源码有序token验证。",
+          "七图渲染逐图目视；完整冷读、长度、ID、完整标题锚点及全仓770篇链接/文档检查通过。"
+        ],
+        "limits": "P12的12.3节199行提示经冷读保留完整驱动实验，其余严格连续性无风险；未执行目标Kbuild/MODPOST、Linux脚本、Schema与板上验证。"
+      },
+      "research/source_reading/of_binding/navigation/P02_描述身份怎样交给匹配与编号消费者.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "沿S1/S2/S3解释能力选择及编号记录的读写者、地址、通信和消费者完成条件，覆盖失败和撤销。",
+        "validation": [
+          "固定官方源码与规范核对；26次DTC/fdtget调用及八块源码有序token验证。",
+          "七图渲染逐图目视；完整冷读、长度、ID、完整标题锚点及全仓770篇链接/文档检查通过。"
+        ],
+        "limits": "P12的12.3节199行提示经冷读保留完整驱动实验，其余严格连续性无风险；未执行目标Kbuild/MODPOST、Linux脚本、Schema与板上验证。"
+      },
+      "research/source_reading/of_binding/source_explanations/P01_OF节点怎样选出驱动能力条目.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "按固定定义展开节点与匹配表、得分、平台候选与data读取，保留配置/锁/表寿命和of_node_reused边界。",
+        "validation": [
+          "固定官方源码与规范核对；26次DTC/fdtget调用及八块源码有序token验证。",
+          "七图渲染逐图目视；完整冷读、长度、ID、完整标题锚点及全仓770篇链接/文档检查通过。"
+        ],
+        "limits": "P12的12.3节199行提示经冷读保留完整驱动实验，其余严格连续性无风险；未执行目标Kbuild/MODPOST、Linux脚本、Schema与板上验证。"
+      },
+      "research/source_reading/of_binding/source_explanations/P02_别名路径怎样成为编号查询记录.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "按固定源码展开别名记录、启动扫描与mutex查询，说明路径编码、缺失值、非分配职责及源码实际引用边界。",
+        "validation": [
+          "固定官方源码与规范核对；26次DTC/fdtget调用及八块源码有序token验证。",
+          "七图渲染逐图目视；完整冷读、长度、ID、完整标题锚点及全仓770篇链接/文档检查通过。"
+        ],
+        "limits": "P12的12.3节199行提示经冷读保留完整驱动实验，其余严格连续性无风险；未执行目标Kbuild/MODPOST、Linux脚本、Schema与板上验证。"
+      },
+      "research/source_reading/of_binding/大纲.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "以读者修改任务组织真实源码入口、前置依赖与后续消费者验证，保留跨专题权威位置。",
+        "validation": [
+          "固定官方源码与规范核对；26次DTC/fdtget调用及八块源码有序token验证。",
+          "七图渲染逐图目视；完整冷读、长度、ID、完整标题锚点及全仓770篇链接/文档检查通过。"
+        ],
+        "limits": "P12的12.3节199行提示经冷读保留完整驱动实验，其余严格连续性无风险；未执行目标Kbuild/MODPOST、Linux脚本、Schema与板上验证。"
       }
     },
     "additional_documents": [
@@ -7365,7 +7443,13 @@
       "research/source_reading/peripheral_integration/source_explanations/P02_OV5640怎样建立时钟供电与复位时序.md",
       "research/source_reading/peripheral_integration/source_explanations/P03_PCA953x怎样比较输入并分派嵌套中断.md",
       "research/source_reading/peripheral_integration/source_explanations/P04_iMX串口怎样在发送完成后释放方向.md",
-      "research/source_reading/peripheral_integration/大纲.md"
+      "research/source_reading/peripheral_integration/大纲.md",
+      "knowledge/driver_model/device_tree/P12_设备别名怎样参与多实例识别.md",
+      "research/source_reading/of_binding/navigation/P01_OF绑定与别名源码阅读索引.md",
+      "research/source_reading/of_binding/navigation/P02_描述身份怎样交给匹配与编号消费者.md",
+      "research/source_reading/of_binding/source_explanations/P01_OF节点怎样选出驱动能力条目.md",
+      "research/source_reading/of_binding/source_explanations/P02_别名路径怎样成为编号查询记录.md",
+      "research/source_reading/of_binding/大纲.md"
     ],
     "language_review": {
       "status": "complete",
