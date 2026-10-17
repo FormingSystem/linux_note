@@ -93,7 +93,7 @@ mindmap-plugin: basic
         - 🔴 [P13 流式字符设备与等待通知模板](../../knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md)
     - 🔴 [设备树与 Platform](../../knowledge/driver_model/device_tree/readme.md)
         - 🔴 [设备树与平台资源学习大纲](../../knowledge/driver_model/device_tree/大纲.md#1.1_沿描述怎样成为可用资源逐步阅读)
-        - 🔴 [设备树中的 GPIO 语法(Kernel 6.1+)](../../knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md)
+        - 🔴 [GPIO连接命名占用与按键事件](../../knowledge/driver_model/device_tree/P01_GPIO连接命名占用与按键事件.md)
         - 🔴 [pinctrl 总体概念与语法框架(Linux Kernel ≥ 6.1)](../../knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md)
         - 🔴 [GPIO + pinctrl + interrupt 的设备树语法与应用](../../knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md)
         - 🔴 [系统结构总览与工程语义基础](../../knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt示例.md)

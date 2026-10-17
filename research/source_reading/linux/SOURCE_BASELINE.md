@@ -2543,3 +2543,23 @@ Linux 树中的 clock-bindings.txt 已转向 dt-schema。通用 clock Schema 另
 DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补齐根节点的描述：基础属性/标签、删除属性、overlay 合并、地址原始 reg、固定供电、时钟连接和通道片段均得到预期结果，无编译警告。补齐根节点仅用于通道片段的编码验证，不声称它成为完整可启动板级树。15 张 Mermaid 图已渲染并目视；七篇正文及三个导航入口严格连续性检查、完整标题出入链检查通过，均低于 10000 字词。
 
 这些验证不包含 binding Schema 全量校验、目标 Kbuild/MODPOST、模块部署/加载、IRQ/GPIO/电源/时钟实验或动态 overlay 生命周期测试。源码 API 核对不能替代这些运行证据。本文拆分未改变已有固定出版物，未找到需要迁移的原 P03 外部标题锚点；Atlas、专题大纲和平台入口同步到新学习路线，人工评审状态仍保持红色。
+
+## 1.258\_GPIO连接hog与按键补充正文复核
+
+2026-10-17，冷读原 GPIO 语法补充文的三个章段后，以连接、占用、引脚配置、按键事件和验证阶段重写，保留线命名、多线用途、hog、LED、pinctrl 状态、平台格式、GPIO 中断和 gpio-keys 的有效信息。修正 GPIO 与 GIC cell 格式混用、hog 缺失标记及低有效初值颠倒、IRQ 编号线性公式、GPIO_PULL_UP 被判非法、假引脚宏字段、Rockchip 配置引用被当 flags，以及已占用按键再次用 gpioget 请求的错误。改为 P01 章节文件名，稳定 ID 不变，真实入口同步；未提升人工评审状态。
+
+实现依据仍固定为 NXP Linux 6.12.20 提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，本次重新从官方原始入口取得以下文件；GPIO 通用绑定、consumer 文档和 i.MX GPIO 绑定复用此前同提交证据。未验证标准工作树的当前配置。libgpiod 命令差异参考其 2.3.1 官方工具文档，不把用户态工具版本当内核版本。
+
+| 源码相对路径 | Git blob SHA-1 |
+| --- | --- |
+| `drivers/gpio/gpiolib-of.c` | `880f1efcaca5345af5b57eb18f11c538041ebcb9` |
+| `drivers/gpio/gpiolib.c` | `209871c219d697d05ac12c9a20edeb68ba59c5d8` |
+| `drivers/input/keyboard/gpio_keys.c` | `380fe8dab3b06379f9744e8190a4afcc0aee20b4` |
+| `Documentation/devicetree/bindings/input/gpio-keys.yaml` | `cc78c2152921308fe0cad3e29ca78a5fad08f066` |
+| `arch/arm/boot/dts/nxp/imx/imx6ul-pinfunc.h` | `380d2db13a9be2f3ac31f65155ad2417ac0bdaba` |
+| `Documentation/devicetree/bindings/pinctrl/fsl,imx6ul-pinctrl.yaml` | `906b264a9e3cda9f09ff4a42d8e7b0838515ea6e` |
+| `Documentation/devicetree/bindings/pinctrl/rockchip,pinctrl.yaml` | `6a23d845f1f2c5d2d4aeeb59fba06bed1ccfbc3b` |
+
+离线 DTS 的 12 次 DTC 1.6.1/fdtget 调用验证提供者 phandle、三 cell consumer 与两 cell hog 的差异、键码/去抖值、布尔属性和修改后恢复，全部退出成功且无警告。两张 Mermaid 图经渲染目视检查，正文完整冷读、严格连续性和标题链接检查通过。保留 0x10b0 的字段拆解用于纠正旧解释：SPEED 编码 2 未由所引绑定给出具名速度，不将其推断成板级推荐值或已核对的手册结论。
+
+未运行目标板驱动、input 事件、GPIO 电压与唤醒实验，也未运行目标 dtbs_check、Kbuild 或动态 overlay。教学提供者没有真实硬件驱动；离线 DTB 不能被作为可启动板级树。主机编译只证明描述编码，不能替代上述运行证据。
