@@ -6838,6 +6838,39 @@
           "实际格式元数据命名及全仓9482条本地链接检查通过，当前出版清单55来源有效唯一。"
         ],
         "limits": "约7096字词，低于篇幅阈值。 未运行目标内核构建、SRCU压力、模块加载卸载或NMI实验。"
+      },
+      "research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "保留I0至I13启动主事务，补PM通知与poll请求交接，纠正CPU发布和再上线边界。",
+        "validation": [
+          "40出链12标题入链；两图目视。三篇合计23处完整函数或配置分支C词法一致，严格连续性无风险。",
+          "实际格式元数据命名及全仓9519条本地链接通过，7卷57来源有效唯一。"
+        ],
+        "limits": "约9700字词。当前目标配置、内核构建和启动执行未验证。"
+      },
+      "research/source_reading/rcu/source_explanations/P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "独立推导配置种子、派生后端、链接对象与实际树形容量，补数值演算和参数净化。",
+        "validation": [
+          "6出链12标题入链；两图目视。三篇合计23处完整函数或配置分支C词法一致，严格连续性无风险。",
+          "实际格式元数据命名及全仓9519条本地链接通过，7卷57来源有效唯一。"
+        ],
+        "limits": "约4600字词。当前目标配置、内核构建和启动执行未验证。"
+      },
+      "research/source_reading/rcu/source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从早期责任保存解释自检、释放批次、Tasks分片和SMP之后切换运行态。",
+        "validation": [
+          "11出链12标题入链；一图目视。三篇合计23处完整函数或配置分支C词法一致，严格连续性无风险。",
+          "实际格式元数据命名及全仓9519条本地链接通过，7卷57来源有效唯一。"
+        ],
+        "limits": "约5700字词。当前目标配置、内核构建和启动执行未验证。"
       }
     },
     "additional_documents": [
