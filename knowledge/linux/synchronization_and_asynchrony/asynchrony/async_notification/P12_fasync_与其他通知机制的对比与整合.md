@@ -72,82 +72,130 @@ poll 这个名字不表示应用必须定时忙查：给出等待时间后，它
 
 ### 12.2.1\_用同样的AB与C观察三种就绪接口
 
-下面在 Linux 上用真实 pipe 分别验证 select、poll 和默认 LT epoll。LT（Level-triggered，电平触发式就绪报告）在条件仍成立时可以继续报告；ET（Edge-triggered，边沿触发式报告）要求读者自行保留排空责任。本实验只做有限的立即检查，**不测睡眠唤醒延迟**。保存为 `compare_ready.py`：
+下面在Linux上用真实pipe分别验证select、poll和默认LT epoll。LT（Level-triggered，电平触发式就绪报告）在条件仍成立时可以继续报告；ET（Edge-triggered，边沿触发式报告）要求读者自行保留排空责任。本实验只做有限的立即检查，**不测睡眠唤醒延迟**。保存为 `compare_ready.c`：
 
-```python
-import os
-import select
+`ready()`把三种查询结果统一为1、0、-1，分别表示可尝试读取、暂时不就绪和查询失败。select每次重建fd_set并先检查数值范围；poll每次传数组；epoll只登记一次兴趣项，再多次wait。`watcher`只是本例保存这些参数的结构体，业务字节仍在pipe中，不会被查询函数消费。程序不重试EINTR，遇到非预期错误就清理并失败退出。
 
+```c
+#define _GNU_SOURCE
+#include <errno.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <stdio.h>
+#include <sys/epoll.h>
+#include <sys/select.h>
+#include <unistd.h>
 
-def require(condition, message):
-    if not condition:
-        raise RuntimeError(message)
+enum wait_kind { USE_SELECT, USE_POLL, USE_EPOLL };
+struct watcher { enum wait_kind kind; int reader, epoll_fd; };
 
+/* 返回1表示值得尝试读取，0表示当前不就绪，-1表示查询失败。 */
+static int ready(const struct watcher *w)
+{
+    if (w->kind == USE_SELECT) {
+        fd_set readers;
+        struct timeval timeout = {0};
+        if (w->reader < 0 || w->reader >= FD_SETSIZE) {
+            fprintf(stderr, "reader outside fd_set range\n");
+            return -1;
+        }
+        FD_ZERO(&readers);
+        FD_SET(w->reader, &readers);
+        int n = select(w->reader + 1, &readers, NULL, NULL, &timeout);
+        if (n < 0) { perror("select"); return -1; }
+        return n > 0 && FD_ISSET(w->reader, &readers);
+    }
+    if (w->kind == USE_POLL) {
+        struct pollfd entry = {.fd = w->reader, .events = POLLIN};
+        if (poll(&entry, 1, 0) < 0) { perror("poll"); return -1; }
+        if (entry.revents & POLLNVAL) {
+            fprintf(stderr, "poll: invalid descriptor\n");
+            return -1;
+        }
+        return !!(entry.revents & (POLLIN | POLLHUP | POLLERR));
+    }
+    struct epoll_event event;
+    int n = epoll_wait(w->epoll_fd, &event, 1, 0);
+    if (n < 0) { perror("epoll_wait"); return -1; }
+    if (n == 0) return 0;
+    if (event.data.fd != w->reader) {
+        fprintf(stderr, "epoll: unexpected descriptor\n");
+        return -1;
+    }
+    return !!(event.events & (EPOLLIN | EPOLLHUP | EPOLLERR));
+}
 
-def run(kind):
-    reader, writer = os.pipe2(os.O_NONBLOCK | os.O_CLOEXEC)
-    watcher = None
-    try:
-        if kind == "select":
-            def ready():
-                return bool(select.select([reader], [], [], 0)[0])
-        elif kind == "poll":
-            watcher = select.poll()
-            watcher.register(reader, select.POLLIN)
-            def ready():
-                events = watcher.poll(0)
-                if any(mask & select.POLLNVAL for _, mask in events):
-                    raise RuntimeError("poll 返回无效 fd")
-                return bool(events)
-        else:
-            watcher = select.epoll()
-            watcher.register(reader, select.EPOLLIN)  # 默认 LT，不启用 ET
-            def ready():
-                return bool(watcher.poll(0, 1))
-        require(not ready(), "空队列不应就绪")
-        require(os.write(writer, b"AB") == 2, "写入 AB 失败")
-        require(ready(), "应当就绪")
-        first = os.read(reader, 1)
-        require(first == b"A" and ready(), "取得 A 后应仍有 B")  # B 仍在队列，就绪不被前一次等待消费
-        second = os.read(reader, 1)
-        require(second == b"B" and not ready(), "取得 B 后应暂时不可读")
-        try:
-            os.read(reader, 1)
-        except BlockingIOError:
-            pass
-        else:
-            raise AssertionError("写端仍打开且队列空，应为 EAGAIN")
-        require(os.write(writer, b"C") == 1, "写入 C 失败")
-        closing_writer = writer
-        writer = -1  # close 报错也不盲目重试可能已经释放的 fd 数字
-        os.close(closing_writer)
-        require(ready(), "应当就绪")
-        last = os.read(reader, 1)
-        require(last == b"C", "应取得 C")
-        require(ready(), "应当就绪")  # EOF/HUP 仍需处理；不要继续空转等待数据
-        require(os.read(reader, 1) == b"", "排空后应为 EOF")
-    finally:
-        try:
-            if kind == "epoll" and watcher is not None:
-                watcher.close()
-        finally:
-            try:
-                if writer >= 0:
-                    os.close(writer)
-            finally:
-                os.close(reader)
-    print(kind, "PASS", first + second + last, "再读得到 EOF")
+static int close_owned(int *fd)
+{
+    if (*fd < 0) return 0;
+    int old_fd = *fd;
+    *fd = -1; /* Linux close报错也不盲目重试可能已被复用的数字。 */
+    if (close(old_fd) == -1) { perror("close"); return -1; }
+    return 0;
+}
 
+#define CHECK(test, message) do { \
+    if (!(test)) { fprintf(stderr, "FAIL: %s\n", message); goto out; } \
+} while (0)
 
-if __name__ == "__main__":
-    for mode in ("select", "poll", "epoll"):
-        run(mode)
+static int run(enum wait_kind kind, const char *name)
+{
+    int ends[2] = {-1, -1}, result = 1;
+    struct watcher w = {.kind = kind, .reader = -1, .epoll_fd = -1};
+    char first = 0, second = 0, last = 0, unused;
+    if (pipe2(ends, O_NONBLOCK | O_CLOEXEC) == -1) { perror("pipe2"); return 1; }
+    w.reader = ends[0];
+    if (kind == USE_EPOLL) {
+        w.epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+        CHECK(w.epoll_fd >= 0, "epoll_create1");
+        struct epoll_event event = {.events = EPOLLIN, .data.fd = w.reader};
+        CHECK(epoll_ctl(w.epoll_fd, EPOLL_CTL_ADD, w.reader, &event) == 0, "epoll_ctl");
+    }
+    CHECK(ready(&w) == 0, "empty queue");
+    CHECK(write(ends[1], "AB", 2) == 2, "write AB");
+    CHECK(ready(&w) == 1, "AB ready");
+    CHECK(read(w.reader, &first, 1) == 1 && first == 'A' && ready(&w) == 1, "B remains");
+    CHECK(read(w.reader, &second, 1) == 1 && second == 'B' && ready(&w) == 0, "AB drained");
+    ssize_t count = read(w.reader, &unused, 1);
+    CHECK(count == -1 && errno == EAGAIN, "empty with writer alive");
+    CHECK(write(ends[1], "C", 1) == 1, "write C");
+    CHECK(close_owned(&ends[1]) == 0, "close writer");
+    CHECK(ready(&w) == 1, "C or hangup ready");
+    CHECK(read(w.reader, &last, 1) == 1 && last == 'C', "read C");
+    CHECK(ready(&w) == 1, "EOF remains ready");
+    CHECK(read(w.reader, &unused, 1) == 0, "EOF after drain");
+    result = 0;
+out:
+    /* 每项独立清理，一项close失败不能跳过其余两项。 */
+    if (close_owned(&w.epoll_fd) != 0) result = 1;
+    if (close_owned(&ends[1]) != 0) result = 1;
+    if (close_owned(&ends[0]) != 0) result = 1;
+    if (result == 0) printf("%s PASS %c%c%c EOF\n", name, first, second, last);
+    return result;
+}
+
+int main(void)
+{
+    const char *const names[] = {"select", "poll", "epoll"};
+    for (int kind = USE_SELECT; kind <= USE_EPOLL; ++kind)
+        if (run((enum wait_kind)kind, names[kind]) != 0) return 1;
+    return 0;
+}
 ```
+
+在Linux实验目录编译，使用本机的系统调用头文件：
 
 ```sh
-# Linux 实验目录，Python 3 提供 select.poll、select.epoll 与 os.pipe2。
-python3 compare_ready.py
+cc -std=c11 -O2 -Wall -Wextra -Werror compare_ready.c -o compare_ready
 ```
+
+`_GNU_SOURCE`让本机头文件声明pipe2等Linux接口；命令生成 `compare_ready`。运行不需要设备节点或管理员权限：
+
+```sh
+./compare_ready
+```
+
+`CHECK`是本例的检查宏，失败跳到统一清理；它不依赖assert，NDEBUG不会删去检查。`close_owned()`在调用close之前清除所持数字，避免Linux关闭失败后重复关闭可能已被复用的描述符；三项清理分别执行，某项失败仍处理其余资源。只有操作与清理都成功才打印PASS。
 
 三轮应各输出 ABC 和 EOF 的通过结果。读走 A 后，B 仍让接口报告就绪；写端关闭后，读空得到 EOF，不能把 EOF 当“暂时没有数据”再次无休止等待。poll/epoll 可能通过 HUP 表示关闭，因此真实事件循环也必须处理错误和挂断，而非只看 IN。
 
