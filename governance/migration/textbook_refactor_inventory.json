@@ -8281,7 +8281,9 @@
       "research/source_reading/input/大纲.md",
       "research/source_reading/vfs/navigation/P02_同一次打开怎样跨越对象状态.md",
       "research/source_reading/vfs/source_explanations/P01_描述符表与打开对象的状态归属.md",
-      "research/source_reading/vfs/source_explanations/P02_路径名称与实例的字段关系.md"
+      "research/source_reading/vfs/source_explanations/P02_路径名称与实例的字段关系.md",
+      "research/source_reading/vfs/navigation/P03_类型描述怎样交给配置请求.md",
+      "research/source_reading/vfs/source_explanations/P03_文件系统类型表的发布与持有.md"
     ],
     "language_review": {
       "status": "complete",

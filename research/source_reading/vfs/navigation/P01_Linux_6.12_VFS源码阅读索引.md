@@ -48,6 +48,8 @@ flowchart TD
 
 [对象周期模块导读](P02_同一次打开怎样跨越对象状态.md#2.1_先确认观察的是哪一条状态轴) 将S0～S6落到公开、名称变化和最终归还，分别进入 [描述符与打开字段](../source_explanations/P01_描述符表与打开对象的状态归属.md#1.1_表项状态与打开状态的边界) 和 [路径名称与实例字段](../source_explanations/P02_路径名称与实例的字段关系.md#2.1_任务的查找上下文不是描述符表)。两份实现页保留声明及明确裁剪边界，导读不重复定义。
 
+[类型交接模块导读](P03_类型描述怎样交给配置请求.md#3.1_先分开类型表与实例集合) 则沿T0～T5解释类型登记、锁内取得owner持有、锁外模块请求与注销边界，对应 [类型表唯一实现](../source_explanations/P03_文件系统类型表的发布与持有.md#3.1_类型表在锁内怎样找到插入位置)。它为配置事务提供入口，不把注册成功当作实例已挂载。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |
@@ -61,6 +63,8 @@ flowchart TD
 | 内部挂载拓扑在哪 | [fs/mount.h](../../linux/fs/mount.h)、[fs/namespace.c](../../linux/fs/namespace.c) | 内嵌vfsmount、父挂载、接入点和命名空间 |
 | 实现类型与实例怎样分离 | [fs/filesystems.c](../../linux/fs/filesystems.c)、[fs/super.c](../../linux/fs/super.c) | 注册表、实例取得与释放；不是每次mount都新增superblock |
 | 挂载参数和半成品在哪里 | [fs/fs_context.c](../../linux/fs/fs_context.c) | 配置事务、操作入口与清理 |
+| 参数描述验证在哪里 | [include/linux/fs_parser.h](../../linux/include/linux/fs_parser.h)、[fs/fs_parser.c](../../linux/fs/fs_parser.c)、[fs/Kconfig](../../linux/fs/Kconfig) | 描述与参数值分开，验证配置关闭时的替代体 |
+| 代码持有与按需装入有哪些配置边界 | [include/linux/module.h](../../linux/include/linux/module.h)、[include/linux/kmod.h](../../linux/include/linux/kmod.h) | 模块引用契约与request_module退化，不等于类型已登记 |
 | 名称怎样进入打开或修改 | [fs/namei.c](../../linux/fs/namei.c)、[fs/open.c](../../linux/fs/open.c) | 起点、遍历、最后分量与打开检查，先找实际分支再追回调 |
 | 打开对象怎样结束 | [fs/file_table.c](../../linux/fs/file_table.c) | file引用与最终释放工作，不等于所有close返回前完成全部回收 |
 | 数据操作怎样派发 | [fs/read_write.c](../../linux/fs/read_write.c) | 文件模式、位置、操作表与返回，随后进入具体实现 |

@@ -2844,3 +2844,11 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 仍从固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 读取。十二个结构声明及NR_OPEN_DEFAULT宏按定义身份核对；完整声明逐token一致，裁剪声明只删除已标注成员/布局内容，保留字段及顺序与原件一致。新增include/linux/nsproxy.h原件，blob `dab6a1734a2265d4e75997a9da00810a7ef832ec`。沿用上一节已核对的fs.h、fdtable.h、fs_struct.h、path.h、mount.h、dcache.h、sched.h及fs/mount.h，并读open.c、file.c、dcache.c和file_table.c的相应路径校正阶段边界。
 
 正文与导读不重复函数体；现有close同步清理说明保持唯一位置。九图渲染目视、四篇冷读及连续性、标题元数据、长度、锚点检查完成。字段声明核对不等于目标并发压力测试；没有执行内核中的rename、fd复用、扩容、卸载或回收实验。VFS总索引31条内部链接按原件与实现定位职责保留密度提示。
+
+## 1.283\_VFS类型登记与代码持有
+
+2026-10-18，重写 [文件系统类型注册](../../../knowledge/kernel_subsystems/vfs/P04_文件系统类型注册.md#4.1_先用名字找到代码再谈建立实例)，新增 [类型交接导读](../vfs/navigation/P03_类型描述怎样交给配置请求.md#3.1_先分开类型表与实例集合) 与 [唯一实现说明](../vfs/source_explanations/P03_文件系统类型表的发布与持有.md#3.1_类型表在锁内怎样找到插入位置)。区分T0～T5的描述准备、表内可见、模块持有、配置交接和登记撤销，补同名、参数描述配置、模块装入重查及子类型拒绝分支。
+
+原件均取固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。新增include/linux/fs_parser.h（blob `6cf713a7e6c6fc2402a68c87036264eaed921432`）、fs/fs_parser.c（`24727ec34e5aa434364e87879cccf9fe1ec19d37`）、include/linux/module.h（`88ecc5e9f523073f640ef83f7f6ec0f1f4d21d4c`）、include/linux/kmod.h（`68f69362d427caaaefc2565127a7a4158433e5f5`）及fs/Kconfig（`aae170fc2795246a09c4f95ed2acf9fb6d5c4a82`）。沿用已核对的fs/filesystems.c，读fs_context.c和super.c确认不同所有者各自持有与归还的位置。
+
+十个函数及一个配置关闭替代体与固定原件逐token一致，三篇冷读、六图渲染目视、连续性、长度、标题元数据和锚点检查通过。类型表仍由读写锁保护，不因注销含synchronize_rcu就推断为无锁RCU表。没有执行目标模块装卸、故障注入或proc查询实验，静态核对不替代这些运行证据。
