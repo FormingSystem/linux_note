@@ -2668,3 +2668,19 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 | `Documentation/driver-api/gpio/consumer.rst` | `bb3366047fadb51bd9323f51d78cbf237a370d11` |
 
 标准工作树仍未用于本轮核对，目标配置未确认。宿主模型经GCC C11严格构建和优化/NDEBUG构建运行，去掉占用检查的负例按预期返回失败，共六次构建/执行；正文嵌入与配套C完全一致。前三章及更新的大纲十图渲染逐图目视，角色图简化重复箭头后重新检查；前三章严格连续性、长度、锚点及全仓链接检查通过。模型只包含串行输出与故障注入，不包含真实寄存器、GPIO-sim、并发或目标内核运行。后续Linux实现、Provider、IRQ与用户ABI仍按独立章节继续复核。
+
+## 1.264\_gpiolib对象与请求退出实现复核
+
+2026-10-17，把GPIO第四章重构为 [对象与状态交接](../../../knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md)，由占用冲突和残留句柄问题建立desc、gdev与chip分工，再沿S1～S7解释请求、配置、运行、释放和注销。原单页证据迁移到 [gpiolib阅读索引](../gpiolib/navigation/P01_Linux_6.12_GPIO源码阅读索引.md#1.1_版本身份与阅读路线)，保留稳定ID与IRQ/字符设备已核对边界，另建生命周期模块导读、三个唯一实现页及大纲。
+
+核对仍使用官方NXP发布提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，未修改外部源码树。登记发布阶段、三类SRCU用途、原子请求位与长引用、devres分配失败、方向/bias部分成功、开漏模拟的输出用途、void setter及释放不复原硬件均按实际实现解释。request回调成功后标签失败的出口没有Provider free，正文明确保留这一固定版本边界，不美化为完全事务。
+
+| 上游相对路径 | Git blob | 本批用途 |
+| --- | --- | --- |
+| `drivers/gpio/gpiolib.c` | `209871c219d697d05ac12c9a20edeb68ba59c5d8` | 登记、撤销、请求、方向、值与释放 |
+| `drivers/gpio/gpiolib.h` | `87ce3753500e4bf73e511d4dc2c0a5c08063e5c7` | 对象、flags和能力访问guard |
+| `drivers/gpio/gpiolib-devres.c` | `08205f355cebe57e9f61b3947b71ab08ec1d9fc2` | 托管记录与释放动作 |
+| `drivers/gpio/gpiolib-cdev.c` | `78c9d9ed3d687fd268620cd07cb236dce078fa30` | 保留并修正事件/ABI边界摘要 |
+| `include/linux/gpio/driver.h` | `2dd7cb9cc270a68ddedbcdd5d44e0d0f88dfa785` | Provider能力与可睡眠契约 |
+
+验证：14段发布源码逐段与固定源码有序C token比对，另核对摘录与实际正文一致；六张Mermaid渲染逐图目视，修订后的请求图再次检查；七篇冷读、严格连续性、长度、唯一ID、完整标题锚点以及全仓775篇链接检查通过。执行环境缺少MSYS2 Bash，使用仓库格式/元数据/路径/链接脚本内嵌Python主体执行等价检查，未宣称运行format.sh。标题、真实调用方和Atlas已同步，新源码节点保持未校正。当前标准工作树和目标配置未确认，未执行目标Kbuild、GPIO-sim或板上验证。Consumer、Provider、IRQ和用户ABI主线的后续重构继续进行，不据本批完成宣称全专题结束。

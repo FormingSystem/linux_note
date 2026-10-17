@@ -141,7 +141,7 @@ mindmap-plugin: basic
         - 🔴 [P01 从寄存器位到 GPIO 连接抽象](../../knowledge/driver_model/gpio/P01_从寄存器位到_GPIO_连接抽象.md)
         - 🔴 [P02 GPIO 角色、状态与完整操作周期](../../knowledge/driver_model/gpio/P02_GPIO_角色_状态与完整操作周期.md)
         - 🔴 [P03 从朴素模型到可用 GPIO 机制](../../knowledge/driver_model/gpio/P03_从朴素模型到可用_GPIO_机制.md)
-        - 🔴 [P04 Linux gpiolib 核心实现](../../knowledge/driver_model/gpio/P04_Linux_gpiolib_核心实现.md)
+        - 🔴 [P04 Linux gpiolib的对象与状态交接](../../knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md)
         - 🔴 [P05 GPIO Consumer 请求与使用](../../knowledge/driver_model/gpio/P05_GPIO_Consumer_请求与使用.md)
         - 🔴 [P06 GPIO Provider 控制器实现](../../knowledge/driver_model/gpio/P06_GPIO_Provider_控制器实现.md)
         - 🔴 [P07 GPIO 中断桥接与事件传播](../../knowledge/driver_model/gpio/P07_GPIO_中断桥接与事件传播.md)
@@ -834,8 +834,12 @@ mindmap-plugin: basic
         - 🔴 [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md)
         - 驱动实验
             - 🔴 [Linux 6.12.20 Input 子系统源码导读](../../research/source_reading/linux/drivers/input/README.md)
-        - GPIO
-            - 🔴 [Linux 6.12 GPIO 核心路径源码证据](../../research/source_reading/linux/gpio/linux_6.12_gpio_核心路径.md)
+        - 🔴 [gpiolib源码阅读大纲](../../research/source_reading/gpiolib/大纲.md#1.1_沿一次请求进入固定实现)
+            - 🔴 [Linux_6.12_GPIO源码阅读索引](../../research/source_reading/gpiolib/navigation/P01_Linux_6.12_GPIO源码阅读索引.md)
+            - 🔴 [线路对象怎样完成请求与退出](../../research/source_reading/gpiolib/navigation/P02_线路对象怎样完成请求与退出.md)
+            - 🔴 [控制器登记与能力撤销](../../research/source_reading/gpiolib/source_explanations/P01_控制器登记与能力撤销.md)
+            - 🔴 [描述符请求与托管释放](../../research/source_reading/gpiolib/source_explanations/P02_描述符请求与托管释放.md)
+            - 🔴 [逻辑值怎样变成方向与电平](../../research/source_reading/gpiolib/source_explanations/P03_逻辑值怎样变成方向与电平.md)
     - 编译器与静态分析注解
         - 模块概念导读
             - 🔴 [P01 Linux 6.12 编译器与 Sparse 注解源码导读](../../research/source_reading/compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务)

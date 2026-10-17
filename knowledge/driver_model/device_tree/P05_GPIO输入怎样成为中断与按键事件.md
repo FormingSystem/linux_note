@@ -46,7 +46,7 @@ Linux中提供者驱动注册 `gpio_chip`、`pinctrl_dev` 或IRQ域，消费者�
 | 一套PAD设置 | `pinctrl-names/pinctrl-N` | pinctrl core与提供者 | 不替驱动排空I/O或建立GPIO方向 |
 | 独立事件输入 | `interrupts` 或 `interrupts-extended` | IRQ解析与相应域，随后由驱动申请 | 不自动生成input键码或调用某个处理函数 |
 
-结构和占用细节分别见 [GPIO核心证据](../../../research/source_reading/linux/gpio/linux_6.12_gpio_核心路径.md#1.1_核心对象) 与 [pinctrl源码索引](../../../research/source_reading/pinctrl/navigation/P01_Linux_6.12_pinctrl源码阅读索引.md#1.1_版本边界与阅读路线)。当前只需记住各自状态归属，不凭几段裁剪结构体推断全部注册行为。
+结构和占用细节分别见 [GPIO核心证据](../../../research/source_reading/gpiolib/source_explanations/P01_控制器登记与能力撤销.md#1.1_框架对象怎样把描述符和硬件能力分开) 与 [pinctrl源码索引](../../../research/source_reading/pinctrl/navigation/P01_Linux_6.12_pinctrl源码阅读索引.md#1.1_版本边界与阅读路线)。当前只需记住各自状态归属，不凭几段裁剪结构体推断全部注册行为。
 
 ## 5.2\_先用LED检验逻辑值与物理电平
 
