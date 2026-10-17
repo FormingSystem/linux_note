@@ -6915,6 +6915,28 @@
           "GNU Make隔离入口all/clean dry-run正确传递参数；实际文档检查和9537条本地链接通过。"
         ],
         "limits": "未执行目标Kbuild/MODPOST、模块加载、抢占、timer或trace运行；参数dry-run不是模块构建。"
+      },
+      "markbook/README.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "按生成器源码和CI核对发布流程，补分支、当前来源一致性与哈希追溯边界。",
+        "validation": [
+          "全文冷读、实际格式元数据及全仓链接检查通过。",
+          "两个旧期执行只读verify；2026.09四个差异文件Git blob哈希与台账一致。"
+        ],
+        "limits": "旧期verify未全通过：2026.09工作树CRLF差异，2026.08旧Lockdep外链失效；未改冻结产物，未执行发布。"
+      },
+      "markbook/topics/rcu/README.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "区分59篇当前编排与51篇冻结月刊，提供新源码索引并记录旧期真实验证限制。",
+        "validation": [
+          "全文冷读、实际格式元数据及全仓链接检查通过。",
+          "两个旧期执行只读verify；2026.09四个差异文件Git blob哈希与台账一致。"
+        ],
+        "limits": "旧期verify未全通过：2026.09工作树CRLF差异，2026.08旧Lockdep外链失效；未改冻结产物，未执行发布。"
       }
     },
     "additional_documents": [
