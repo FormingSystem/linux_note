@@ -17,10 +17,10 @@
     "config": [
       "历史 Tree 配置快照：CONFIG_TREE_RCU=y",
       "历史 Tree 配置快照：CONFIG_PREEMPT_RCU=y",
-      "2026-09-05 当前 Tiny 生成配置：CONFIG_TINY_RCU=y",
-      "2026-09-05 当前 Tiny 生成配置：CONFIG_SMP=n",
-      "2026-09-05 当前 Tiny 生成配置：CONFIG_PREEMPT_NONE=y",
-      "当前 Tiny 生成配置来自尚未提交的 arch/arm/configs/imx_v7_test_defconfig 差量，不是固定标签默认配置"
+      "2026-09-05 历史 Tiny 生成配置：CONFIG_TINY_RCU=y",
+      "2026-09-05 历史 Tiny 生成配置：未启用CONFIG_SMP",
+      "2026-09-05 历史 Tiny 生成配置：CONFIG_PREEMPT_NONE=y",
+      "该历史生成配置来自当时尚未提交的 arch/arm/configs/imx_v7_test_defconfig 差量，不是固定标签默认配置；本轮未核验当前目标配置"
     ],
     "reference": "research/source_reading/linux/SOURCE_BASELINE.md"
   },
