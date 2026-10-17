@@ -8386,6 +8386,54 @@
           "全仓826篇链接无缺失；普通数据共享与拓扑传播分层。"
         ],
         "limits": "无目标Linux编译运行及传播卸载压力验证；正文7.7因完整C实验及配对清理共225行，已冷读决定保留，非多机制堆叠。"
+      },
+      "knowledge/kernel_subsystems/vfs/P08_dcache与名称状态.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿D0至D5区分名称结果、查询进度、索引可达性、引用与缓存保留。",
+        "validation": [
+          "二十个函数与固定fs/dcache.c逐token一致，四份原件重新核对Git对象。",
+          "四篇冷读、九图渲染目视、连续性、长度、标题元数据和锚点检查完成。",
+          "全仓829篇链接无缺失，复用完整名称实验而不重复维护。"
+        ],
+        "limits": "无目标命中追踪、并发rename或内存压力验证；外部ENOENT不能代替负缓存命中证明。"
+      },
+      "research/source_reading/vfs/navigation/P07_名称结果怎样发布失效与回收.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿D0至D5区分名称结果、查询进度、索引可达性、引用与缓存保留。",
+        "validation": [
+          "二十个函数与固定fs/dcache.c逐token一致，四份原件重新核对Git对象。",
+          "四篇冷读、九图渲染目视、连续性、长度、标题元数据和锚点检查完成。",
+          "全仓829篇链接无缺失，复用完整名称实验而不重复维护。"
+        ],
+        "limits": "无目标命中追踪、并发rename或内存压力验证；外部ENOENT不能代替负缓存命中证明。"
+      },
+      "research/source_reading/vfs/source_explanations/P11_名称候选的建立发布与持有.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿D0至D5区分名称结果、查询进度、索引可达性、引用与缓存保留。",
+        "validation": [
+          "二十个函数与固定fs/dcache.c逐token一致，四份原件重新核对Git对象。",
+          "四篇冷读、九图渲染目视、连续性、长度、标题元数据和锚点检查完成。",
+          "全仓829篇链接无缺失，复用完整名称实验而不重复维护。"
+        ],
+        "limits": "无目标命中追踪、并发rename或内存压力验证；外部ENOENT不能代替负缓存命中证明。"
+      },
+      "research/source_reading/vfs/source_explanations/P12_名称失效与最后使用者退出.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿D0至D5区分名称结果、查询进度、索引可达性、引用与缓存保留。",
+        "validation": [
+          "二十个函数与固定fs/dcache.c逐token一致，四份原件重新核对Git对象。",
+          "四篇冷读、九图渲染目视、连续性、长度、标题元数据和锚点检查完成。",
+          "全仓829篇链接无缺失，复用完整名称实验而不重复维护。"
+        ],
+        "limits": "无目标命中追踪、并发rename或内存压力验证；外部ENOENT不能代替负缓存命中证明。"
       }
     },
     "additional_documents": [
