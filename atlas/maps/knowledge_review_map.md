@@ -97,7 +97,7 @@ mindmap-plugin: basic
         - 🔴 [引脚配置怎样连接外设与焊盘](../../knowledge/driver_model/device_tree/P02_引脚配置怎样连接外设与焊盘.md)
         - 🔴 [引脚状态切换与GPIO占用交接](../../knowledge/driver_model/device_tree/P03_引脚状态切换与GPIO占用交接.md)
         - 🔴 [沿状态与寄存器定位引脚问题](../../knowledge/driver_model/device_tree/P04_沿状态与寄存器定位引脚问题.md)
-        - 🔴 [GPIO + pinctrl + interrupt 的设备树语法与应用](../../knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md)
+        - 🔴 [GPIO输入怎样成为中断与按键事件](../../knowledge/driver_model/device_tree/P05_GPIO输入怎样成为中断与按键事件.md)
         - 🔴 [系统结构总览与工程语义基础](../../knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt示例.md)
         - 🔴 [设备树到设备节点的绑定流程(从 DTB 到 driver probe)](../../knowledge/driver_model/device_tree/设备树语法专题-05-设备节点和驱动的绑定操作说明.md)
         - 设备树与 Platform 开发

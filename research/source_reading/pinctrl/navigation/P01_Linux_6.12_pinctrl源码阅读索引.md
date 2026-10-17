@@ -39,6 +39,7 @@ flowchart LR
 | 为什么错误后不能假定原状 | `core.c:pinctrl_select_state/commit_state` | [选择与恢复](../source_explanations/P01_状态映射选择与探测交接.md#1.3_选择过程为何不是原子事务) |
 | default/init是谁调用 | `drivers/base/pinctrl.c`、`drivers/base/dd.c`、`core.c:pinctrl_init_done` | [probe交接](../source_explanations/P01_状态映射选择与探测交接.md#1.4_设备探测怎样交接init与default) |
 | sleep是否自动执行 | `core.c:pinctrl_pm_select_*`；`drivers/tty/serial/imx.c`调用点 | [PM责任](../source_explanations/P01_状态映射选择与探测交接.md#1.5_PM辅助接口只执行被调用的选择) |
+| 控制器自身配置何时选择 | `core.c:pinctrl_enable/pinctrl_claim_hogs` | [自身状态消费者](../source_explanations/P01_状态映射选择与探测交接.md#1.6_控制器怎样成为自己的状态消费者) |
 | 六cell、pin编号和SION如何解释 | `freescale/pinctrl-imx.c:imx_pinctrl_parse_groups/parse_pin_mmio` | [组与逐pin数据](../source_explanations/P02_iMX6UL配置解析与寄存器落点.md#2.1_六个cell怎样成为组和逐pin配置) |
 | 提供者的map包含什么 | `imx_dt_node_to_map/imx_dt_free_map` | [map建立](../source_explanations/P02_iMX6UL配置解析与寄存器落点.md#2.2_映射回调生成设置而没有执行选择) |
 | 何时写哪个地址 | `imx_pmx_set/one_pin_mmio`、`imx_pinconf_set_mmio` | [寄存器落点](../source_explanations/P02_iMX6UL配置解析与寄存器落点.md#2.3_选择时分别写MUX输入选择与PAD) |

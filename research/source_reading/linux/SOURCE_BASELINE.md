@@ -2600,3 +2600,13 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 本次离线DTS的13次DTC 1.6.1/fdtget调用均成功、无警告，核对工作/静默引用、十二cell内容、空属性与修改后恢复；重新编译可能改变phandle分配，比较限定在同一DTB内。十张Mermaid图渲染并目视核对，时序图固定失败发生位置，避免让早期失败仍经过后续配置。各篇经完整冷读、严格连续性、长度和精确标题链接检查；源码裁剪按固定文件核对。
 
 未运行目标内核Kbuild、dtbs_check、GPIO/UART电气测试、PM或唤醒实验；主机无POSIX sh，采集脚本按正文与控制流静态核对，未声称在debugfs执行。教学模块仅消费已验证状态，不能代替真实外设的停机与恢复协议。本文用绑定字段解释PAD值，没有将它们标为实板推荐配置。
+
+## 1.260\_GPIO输入中断与按键组合复核
+
+2026-10-17，完整冷读原GPIO/pinctrl/interrupt组合文977行与三个章段后，重构为 [GPIO输入怎样成为中断与按键事件](../../../knowledge/driver_model/device_tree/P05_GPIO输入怎样成为中断与按键事件.md#5.1_同一根线为什么需要几种不同的描述)。保留LED、普通与IRQ-only按键、状态切换、GPIO/pinctrl hog、级联、参数继承、多中断与验证主题，按各自任务引用已有权威解释；修正伪造结构/调用、极性反转、自动复用、自动PM、IRQ编号、域父子关系和调试命令。
+
+源码沿用固定NXP提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，重新逐段核对gpio-mxc.c的imx35布局、legacy域与chained入口，以及gpio_keys.c的GPIO/显式IRQ/IRQ-only分支；文件Git blob分别为 `d8d1ae23e0935f85548d61cdbdc8a0189f14dfb6`、`380fe8dab3b06379f9744e8190a4afcc0aee20b4`。pinctrl core.c证据与第1.259节相同，新增 [控制器自身状态消费者](../pinctrl/source_explanations/P01_状态映射选择与探测交接.md#1.6_控制器怎样成为自己的状态消费者) 的唯一讲解及索引互链，说明它不同于GPIO hog，也不是通用hog布尔属性。
+
+本例离线DT的11次DTC 1.6.1/fdtget调用全部成功且无警告，验证GPIO引用、两条汇聚SPI、两提供者extended输入、局部线修改与恢复。关系图及K1到K4时序图渲染并目视检查；正文、源码增量冷读及连续性/链接/格式检查通过。现有路线和大纲入口同步；人工评审状态不变。
+
+未执行目标驱动、input/LED、GPIO电气、IRQ硬件、PM或唤醒测试，也未运行目标Kbuild及dtbs_check。教学控制器仅声明编码契约，没有硬件驱动与资源，不能作为可启动板级DTB。寄存器表来自固定驱动布局，不把静态值推导包装成实测。

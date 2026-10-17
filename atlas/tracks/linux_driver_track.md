@@ -44,7 +44,7 @@ domains:
 2. 按序完成[Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)，继续研究匹配、依赖、热拔插和完整生命周期；小型入口不能代替这部分协议。
    第 11 章进入[class 与 sysfs 分支](../../knowledge/linux/device_model/class_sysfs/大纲.md#1.1_从分类观察到可控数据入口)，先观察无节点的两个分类实例，再运行属性控制字符读取，解释输入失败、权限和撤销边界。
 3. 按序完成[设备树与 Platform 开发](../../knowledge/driver_model/device_tree/设备树+platform开发)。
-4. 选读[GPIO 与 pinctrl 设备树示例](../../knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md)。
+4. 选读[GPIO输入与按键事件](../../knowledge/driver_model/device_tree/P05_GPIO输入怎样成为中断与按键事件.md)。
 
 阶段验收：能解释 device、driver、bus 的匹配过程，并把寄存器、中断和 GPIO 等硬件资源从设备树传递给驱动。
 
