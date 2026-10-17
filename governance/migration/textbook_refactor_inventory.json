@@ -7632,6 +7632,28 @@
           "连续性审计仅P08完整程序小节行数提示，按同一请求和清理周期保留，未声称无风险通过。"
         ],
         "limits": "未执行目标Linux编译、GPIO-sim及硬件运行；事件输出为预期，不以序号连续证明前端无损。"
+      },
+      "engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "按目标身份、只读快照、运行树、一次动作、局部日志恢复、事件与PM条件重建工程取证，保留两类迁移和交付模板。",
+        "validation": [
+          "两篇完整冷读、严格连续性、长度和标题锚点；工程图渲染目视。",
+          "固定gpiolib打印及trace采样点核对，完整shell与正文一致，原flags恢复静态检查；全仓782篇链接无缺失。"
+        ],
+        "limits": "未执行目标Linux shell脚本、调试控制文件或板上验证；未将观察点存在等同于机制结果。"
+      },
+      "knowledge/driver_model/gpio/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "完整核对八篇阅读依赖与贯穿设备，补读者起点、实验环境入口和固定源码身份，修正只给观察点等旧职责描述。",
+        "validation": [
+          "两篇完整冷读、严格连续性、长度和标题锚点；工程图渲染目视。",
+          "固定gpiolib打印及trace采样点核对，完整shell与正文一致，原flags恢复静态检查；全仓782篇链接无缺失。"
+        ],
+        "limits": "未执行目标Linux shell脚本、调试控制文件或板上验证；未将观察点存在等同于机制结果。"
       }
     },
     "additional_documents": [
