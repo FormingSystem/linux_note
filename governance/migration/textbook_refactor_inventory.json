@@ -9556,7 +9556,12 @@
       "research/source_reading/vfs/navigation/P20_对象退出与缓存回收的条件.md",
       "research/source_reading/vfs/source_explanations/P63_最后inode引用与缓存保留.md",
       "research/source_reading/vfs/source_explanations/P64_inode驱逐与最终释放.md",
-      "research/source_reading/vfs/source_explanations/P65_空闲inode扫描与卸载驱逐.md"
+      "research/source_reading/vfs/source_explanations/P65_空闲inode扫描与卸载驱逐.md",
+      "research/source_reading/vfs/navigation/P21_冻结卸载与故障状态的边界.md",
+      "research/source_reading/vfs/source_explanations/P66_冻结写入的分级准入.md",
+      "research/source_reading/vfs/source_explanations/P67_冻结阶段推进与失败回退.md",
+      "research/source_reading/vfs/source_explanations/P68_解冻持有与后端恢复.md",
+      "research/source_reading/vfs/source_explanations/P69_设备失效与文件系统停止服务.md"
     ],
     "language_review": {
       "status": "complete",

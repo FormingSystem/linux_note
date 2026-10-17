@@ -385,3 +385,5 @@ sequenceDiagram
 ext4写入口另有共享/独占锁选择、非对齐写与扩展检查、未写区间转换、必要强制等待和缓冲尾部回退，不能用本页读锁推断其写锁。具体写入口仍在原件ext4/file.c；本页证明的是“ext4可直接进入iomap，不能假设必经generic_file_direct_write”。本次主线从iomap共同请求开始继续。
 
 **实现原理与修改边界**：改变ext4_should_use_dio会同时影响读写入口和用户可观察的EINVAL/回退行为，应与ext4_getattr报告的STATX_DIOALIGN一致复核。改变回退时不能遗留IOCB_DIRECT；改变锁粒度须检查写、truncate、内联数据变化及异步返回后谁继续保护状态。关闭FS_DAX只移除对应编译分支，不能把DAX算法并入普通DIO。
+
+ext4_file_read_iter的完整入口及先于空请求的shutdown判断，见 [停止服务后的读入口](P69_设备失效与文件系统停止服务.md#69.2_停止服务位如何改变后续入口)。本篇继续负责直接IO分派之后的缓存与锁交接。

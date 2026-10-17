@@ -838,6 +838,11 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [冻结卸载与故障状态的边界](../../research/source_reading/vfs/navigation/P21_冻结卸载与故障状态的边界.md)
+        - 🔴 [冻结写入的分级准入](../../research/source_reading/vfs/source_explanations/P66_冻结写入的分级准入.md)
+        - 🔴 [冻结阶段推进与失败回退](../../research/source_reading/vfs/source_explanations/P67_冻结阶段推进与失败回退.md)
+        - 🔴 [解冻持有与后端恢复](../../research/source_reading/vfs/source_explanations/P68_解冻持有与后端恢复.md)
+        - 🔴 [设备失效与文件系统停止服务](../../research/source_reading/vfs/source_explanations/P69_设备失效与文件系统停止服务.md)
         - 🔴 [对象退出与缓存回收的条件](../../research/source_reading/vfs/navigation/P20_对象退出与缓存回收的条件.md)
         - 🔴 [最后inode引用与缓存保留](../../research/source_reading/vfs/source_explanations/P63_最后inode引用与缓存保留.md)
         - 🔴 [inode驱逐与最终释放](../../research/source_reading/vfs/source_explanations/P64_inode驱逐与最终释放.md)

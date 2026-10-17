@@ -3258,3 +3258,32 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 十八份原件中新增五份。当前ARM配置开启HIGHMEM、TINY_RCU、FSNOTIFY与FS_POSIX_ACL，关闭FS_ENCRYPTION和SECURITY。通用引用、缓存候选、写回等待与后端回调分别核对，ext4私有回调仅用于说明分配器、诊断与最终释放的区别，不把缓存驱逐推导成磁盘文件删除。
 
 区分LRU移除数与已释放对象数，保留I_LRU_ISOLATING放锁窗口与唤醒责任，明确inode.i_sb不构成每个inode各持一份s_active的证据。五篇冷读、十图渲染目视、长度、标题元数据、锚点和C材料一致性完成；没有目标Linux编译运行、压力回收或后端故障注入实测，示例仅验证名称与持有的可观察区别。
+
+## 1.301\_冻结卸载与故障状态的边界
+
+2026-10-18，重写 [冻结与退出正文](../../../knowledge/kernel_subsystems/vfs/P22_freeze_unmount与故障退出.md#22.3_一次冻结怎样走到稳定区间)，新增 [模块导读](../vfs/navigation/P21_冻结卸载与故障状态的边界.md#21.1_按冻结周期定位状态与参与者) 及四篇实现。固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；三十四段函数体保留执行语句并逐token核对，省去上游长注释，补充中文阅读及分支说明。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| include/linux/jbd2.h | `8aef9bb6ad573518d6f8e0fa76af8530db02b2e8` |
+| fs/jbd2/journal.c | `97f487c3d8fcf0aca61d43aeb3007d068a76963f` |
+| fs/super.c | `c9c7223bc2a2e9cb5391a1b3a291f724416289c2` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| fs/ioctl.c | `6e0c954388d478a1e734072a78895b7d4e5e521c` |
+| fs/sync.c | `67df255eb189d835adbd2ccd163930ec40a01b98` |
+| fs/namespace.c | `73da51ac5a0349f2cebb300aeb979574e6cc37cf` |
+| fs/ext4/super.c | `940ac1a49b729e5837b2c082294fb52e9246c478` |
+| fs/ext4/ioctl.c | `1c77400bd88e13236f47b5e7a2e1437ef02aebbd` |
+| fs/ext4/ext4.h | `bbffb76d9a9049090698af5d2d8a0414fdfbb19f` |
+| fs/ext4/file.c | `f14aed14b9cf3d944b8d6726362ee5a69a9a0597` |
+| include/linux/percpu-rwsem.h | `c012df33a9f0753d53f23aff5c3a569d15703622` |
+| kernel/locking/percpu-rwsem.c | `6083883c4fe09444a5f770eb7ee0f092d1ad8d4e` |
+| include/linux/rcu_sync.h | `3860dbb9107a2117aa0078c18550aed42d36e241` |
+| include/uapi/linux/fs.h | `7539717707337a8cb22396a869baba3bafa08371` |
+| fs/internal.h | `8c1b7acbbe8faadef678e5aa2dc3588a0d8140b1` |
+
+十六份原件中新增七份。当前ARM配置采用TINY_RCU，开启BLOCK、EXT4、JBD2、PROVE_LOCKING与DEBUG_LOCK_ALLOC。区分frozen阶段、三层实际准入、类别持有及lockdep检查记录，通用同步位于第二层与第三层之间；只读路径不取得三层排他，所有冻结持有共享一份活动引用。
+
+固定版本的非最后解冻可减少类别计数后返回-EINVAL，ext4_unfreeze不传出superblock提交结果且不会清除shutdown；这些事实按所选提交保留，不推导成其他版本接口。错误日志中的只读描述也不替代SB_RDONLY实际写入证据。
+
+六篇冷读、十三图渲染目视、长度、标题元数据、锚点与模型材料一致性完成。C准入模型用Windows MinGW GCC 14.2.0、C11及-Wall -Wextra -Werror编译运行通过，仅验证确定的收口与失败回退顺序；没有真实Linux冻结、卸载、并发压力或设备故障注入结果。
