@@ -8005,7 +8005,10 @@
       "research/source_reading/input/navigation/P03_设备怎样公开启停和退出.md",
       "research/source_reading/input/source_explanations/P03_分配发布与两步资源撤销.md",
       "research/source_reading/input/source_explanations/P04_使用计数失败回滚与断开.md",
-      "research/source_reading/input/source_explanations/P05_能力轮询重复与输出的边界.md"
+      "research/source_reading/input/source_explanations/P05_能力轮询重复与输出的边界.md",
+      "research/source_reading/input/navigation/P04_接触身份怎样跨帧保留.md",
+      "research/source_reading/input/source_explanations/P06_多点槽状态与帧收尾.md",
+      "research/source_reading/input/source_explanations/P07_槽位映射与位置匹配.md"
     ],
     "language_review": {
       "status": "complete",

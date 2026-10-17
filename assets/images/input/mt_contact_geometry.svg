@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="580" viewBox="0 0 1000 580">
+<rect width="1000" height="580" fill="#f8fafc"/>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto-start-reverse"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#334155"/></marker></defs>
+<g font-family="Microsoft YaHei, sans-serif" fill="#172554">
+<text x="40" y="45" font-size="26" font-weight="bold">接触区域与工具投影：两组尺寸、两个中心</text>
+<text x="40" y="78" font-size="18">教学俯视图；长度与偏移仅作示意，不能从图中推出传感器测量能力。</text>
+<path d="M85 150 H190" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M85 150 V255" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="195" y="158" font-size="20">X</text><text x="70" y="280" font-size="20">Y</text>
+<ellipse cx="390" cy="300" rx="120" ry="185" transform="rotate(-25 390 300)" fill="#ffedd5" stroke="#c2410c" stroke-width="3" stroke-dasharray="10 5"/>
+<ellipse cx="425" cy="340" rx="65" ry="110" transform="rotate(-25 425 340)" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="3"/>
+<g transform="rotate(-25 425 340)" stroke="#1d4ed8" stroke-width="2"><path d="M425 230 V450 M360 340 H490"/></g>
+<g transform="rotate(-25 390 300)" stroke="#c2410c" stroke-width="1.5" stroke-dasharray="4 5"><path d="M390 115 V485 M270 300 H510"/></g>
+<circle cx="390" cy="300" r="5" fill="#c2410c"/><circle cx="425" cy="340" r="5" fill="#1d4ed8"/>
+<path d="M395 298 L620 210 M430 342 L620 340" fill="none" stroke="#334155" stroke-width="1.5"/>
+<text x="640" y="198" font-size="22" fill="#9a3412">b：工具投影中心</text>
+<text x="640" y="230" font-size="18">ABS_MT_TOOL_X / Y</text>
+<text x="640" y="262" font-size="18">橙色长短轴：WIDTH_MAJOR / MINOR</text>
+<text x="640" y="330" font-size="22" fill="#1d4ed8">a：接触区域中心</text>
+<text x="640" y="362" font-size="18">ABS_MT_POSITION_X / Y</text>
+<text x="640" y="394" font-size="18">蓝色长短轴：TOUCH_MAJOR / MINOR</text>
+<text x="40" y="540" font-size="20">两中心可以偏移；面积不直接等于压力，投影宽度也不等于真实接触宽度。</text>
+</g></svg>
