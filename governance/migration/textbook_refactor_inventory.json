@@ -6697,6 +6697,18 @@
           "实际格式元数据命名及全仓9410本地链接检查通过"
         ],
         "limits": "未构建内核或执行目标QS、GP调度与同步等待实验。"
+      },
+      "research/source_reading/rcu/source_explanations/P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补任务初始化、普通与加速等待后缀、延后退出和原节点摘链，按R0至R7贯通状态。",
+        "validation": [
+          "10处裁剪源码有序词法子序列与人工控制流核对；两图渲染目视",
+          "12出链17标题入链、严格连续性及约6800字词检查通过",
+          "实际格式元数据命名及全仓9413本地链接检查通过"
+        ],
+        "limits": "未构建抢占RCU内核或执行目标抢占、迁移、延后退出实验。"
       }
     },
     "additional_documents": [
