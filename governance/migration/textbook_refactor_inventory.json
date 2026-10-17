@@ -8421,7 +8421,11 @@
       "research/source_reading/vfs/source_explanations/P05_建树与分离挂载的阶段交接.md",
       "research/source_reading/vfs/navigation/P05_实例怎样在构造与关闭之间交接.md",
       "research/source_reading/vfs/source_explanations/P06_实例匹配与构造完成的交接.md",
-      "research/source_reading/vfs/source_explanations/P07_实例关闭通知与最终内存回收.md"
+      "research/source_reading/vfs/source_explanations/P07_实例关闭通知与最终内存回收.md",
+      "research/source_reading/vfs/navigation/P06_挂载视图怎样接入传播与退出.md",
+      "research/source_reading/vfs/source_explanations/P08_挂载视图复制与目录接入.md",
+      "research/source_reading/vfs/source_explanations/P09_传播关系与挂载记录.md",
+      "research/source_reading/vfs/source_explanations/P10_挂载脱离与最后引用退出.md"
     ],
     "language_review": {
       "status": "complete",

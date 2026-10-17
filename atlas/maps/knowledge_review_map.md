@@ -838,6 +838,10 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [挂载视图怎样接入传播与退出](../../research/source_reading/vfs/navigation/P06_挂载视图怎样接入传播与退出.md)
+        - 🔴 [挂载视图复制与目录接入](../../research/source_reading/vfs/source_explanations/P08_挂载视图复制与目录接入.md)
+        - 🔴 [传播关系与挂载记录](../../research/source_reading/vfs/source_explanations/P09_传播关系与挂载记录.md)
+        - 🔴 [挂载脱离与最后引用退出](../../research/source_reading/vfs/source_explanations/P10_挂载脱离与最后引用退出.md)
         - 🔴 [实例怎样在构造与关闭之间交接](../../research/source_reading/vfs/navigation/P05_实例怎样在构造与关闭之间交接.md)
         - 🔴 [实例匹配与构造完成的交接](../../research/source_reading/vfs/source_explanations/P06_实例匹配与构造完成的交接.md)
         - 🔴 [实例关闭通知与最终内存回收](../../research/source_reading/vfs/source_explanations/P07_实例关闭通知与最终内存回收.md)

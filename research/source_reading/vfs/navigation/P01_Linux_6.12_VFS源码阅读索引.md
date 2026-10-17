@@ -54,6 +54,8 @@ flowchart TD
 
 [实例构造与关闭导读](P05_实例怎样在构造与关闭之间交接.md#5.1_把阶段落到两种引用和三个标志) 沿B0～B5区分候选发布、就绪交接、活动使用与最后回收，进入 [匹配与构造实现](../source_explanations/P06_实例匹配与构造完成的交接.md#6.1_候选先建立锁和基础持有) 和 [关闭及内存回收实现](../source_explanations/P07_实例关闭通知与最终内存回收.md#7.1_最后活动引用把流程交给关闭回调)。
 
+[挂载视图导读](P06_挂载视图怎样接入传播与退出.md#6.1_先区分视图对象和传播连接) 沿M0～M5解释复制、接入、传播、观察与退出，进入 [复制及接入实现](../source_explanations/P08_挂载视图复制与目录接入.md#8.1_先区分命名空间集合与任务的起点)、[传播及记录实现](../source_explanations/P09_传播关系与挂载记录.md#9.1_先准备传播副本再提交拓扑) 和 [退出及引用实现](../source_explanations/P10_挂载脱离与最后引用退出.md#10.1_普通卸载先判断是否允许结束可见使用)。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |
@@ -69,6 +71,7 @@ flowchart TD
 | 挂载参数和半成品在哪里 | [include/linux/fs_context.h](../../linux/include/linux/fs_context.h)、[fs/fs_context.c](../../linux/fs/fs_context.c)、[fs/fsopen.c](../../linux/fs/fsopen.c)、[fs/internal.h](../../linux/fs/internal.h) | 声明、资源持有、用户阶段与内部入口 |
 | 用户配置命令与实验结果由什么支撑 | [include/uapi/linux/mount.h](../../linux/include/uapi/linux/mount.h)、[mm/shmem.c](../../linux/mm/shmem.c)、[fs/statfs.c](../../linux/fs/statfs.c) | 命令/属性、tmpfs参数与允许O_PATH的fd查询；源码核对不等于运行 |
 | 实例等待由什么承载 | [include/linux/wait_bit.h](../../linux/include/linux/wait_bit.h)、[kernel/sched/wait_bit.c](../../linux/kernel/sched/wait_bit.c) | 按s_flags地址定位共享等待桶，等待项保存地址键，发布与唤醒配对 |
+| 挂载传播和记录如何兑现 | [fs/pnode.c](../../linux/fs/pnode.c)、[fs/pnode.h](../../linux/fs/pnode.h)、[fs/proc_namespace.c](../../linux/fs/proc_namespace.c) | 同伴及下游连接、传播副本、mountinfo和事件观察 |
 | 参数描述验证在哪里 | [include/linux/fs_parser.h](../../linux/include/linux/fs_parser.h)、[fs/fs_parser.c](../../linux/fs/fs_parser.c)、[fs/Kconfig](../../linux/fs/Kconfig) | 描述与参数值分开，验证配置关闭时的替代体 |
 | 代码持有与按需装入有哪些配置边界 | [include/linux/module.h](../../linux/include/linux/module.h)、[include/linux/kmod.h](../../linux/include/linux/kmod.h) | 模块引用契约与request_module退化，不等于类型已登记 |
 | 名称怎样进入打开或修改 | [fs/namei.c](../../linux/fs/namei.c)、[fs/open.c](../../linux/fs/open.c) | 起点、遍历、最后分量与打开检查，先找实际分支再追回调 |

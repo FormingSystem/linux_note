@@ -2884,3 +2884,22 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 | kernel/sched/wait_bit.c | `134d7112ef71a08a1484126ea2243bf25cb7db9d` |
 
 等待项按s_flags地址定位共享桶，唤醒比较地址键；与release/acquire及等待登记屏障配对，不以固定等待时间替代。四篇冷读、八图渲染目视及连续性、长度、标题元数据、锚点检查完成。没有目标并发挂载、卸载压力或低内存故障注入记录；时序图为源码契约的教学展开，不是实际调度日志。
+
+## 1.286\_挂载视图的复制传播与引用退出
+
+2026-10-18，重写 [挂载与命名空间](../../../knowledge/kernel_subsystems/vfs/P07_mount与mount_namespace.md#7.1_同一棵子树为什么需要不同的挂载对象)，新增 [视图周期导读](../vfs/navigation/P06_挂载视图怎样接入传播与退出.md#6.1_先区分视图对象和传播连接) 及复制、传播、退出三篇实现。沿M0～M5分开后端共享、拓扑复制、传播关系、退出可见入口和最后持有；正文就地提供mountinfo表与完整C实验。
+
+固定提交仍为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。二十九个函数和一份结构声明与固定原件逐token一致，原件与Git对象核对如下；已有原件复用，新入口均从模块导读到唯一实现。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| fs/namespace.c | `73da51ac5a0349f2cebb300aeb979574e6cc37cf` |
+| fs/pnode.c | `a799e0315cc9a3bab0492b4c39d0d5c7172449ea` |
+| fs/pnode.h | `0b02a63938911e89c724fe8e6b9a6e886f70ce9f` |
+| fs/mount.h | `179f690a0c7223f04b57be181b7f0412ce6a7946` |
+| fs/proc_namespace.c | `e133b507ddf3941525c1a2b70cd82846569dfa20` |
+| include/linux/mnt_namespace.h | `70b366b64816056618702e418a80d181fa51a746` |
+| Documentation/filesystems/sharedsubtree.rst | `1cf56489ed484dcf77581e6be1faa490e600a3ab` |
+| Documentation/filesystems/proc.rst | `e834779d961153393d2963fc8657f875bd31a54f` |
+
+五篇冷读、十二图渲染目视、长度、标题元数据和锚点检查完成。连续性检查仅正文完整实验小节超过160行提示线：该节保持一份可复制程序的初始化、观察及配对清理，不含第二个独立机制，决定保留。全文在10000字限制内。C材料与正文逐字一致，未在目标Linux编译或运行，也未执行传播、并发卸载压力或故障注入；预期观察不写成实际日志。
