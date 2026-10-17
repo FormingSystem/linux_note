@@ -6464,6 +6464,17 @@
           "角色图与三时序图渲染目视、严格连续性和精确链接通过；实际全仓732篇9315有效本地链接无缺失"
         ],
         "limits": "未执行目标内核、跳板修改、跟踪或分配失败注入；保留Rude辅助接口分配失败未处理的源码边界。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P20_Tiny_RCU_单CPU实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从单CPU读者被IRQ更新者打断推导等待必要性，以T0至T5和指针槽解释成熟前缀；区分同步进展、callback完成及构建与运行时CPU数量。",
+        "date": "2026-10-17",
+        "validation": [
+          "固定tiny.c、rcutiny.h与公共头文件及Kconfig核对",
+          "两图渲染目视、严格连续性、精确链接和文档检查通过；实际全仓732篇9321有效本地链接无缺失"
+        ],
+        "limits": "未执行目标内核构建或运行，当前配置未核验；历史配置明确标注日期，三题为纸面状态推演。"
       }
     },
     "additional_documents": [
