@@ -7584,6 +7584,54 @@
           "六图渲染逐图目视，并行图修订后重验；三篇完整冷读、严格连续性、长度、ID及锚点，全仓779篇链接无缺失。"
         ],
         "limits": "未执行目标Kbuild、模块装载、GPIO-sim与硬件测试；不把当前值采样日志视为完整边沿历史。"
+      },
+      "knowledge/driver_model/gpio/P08_用户空间_ABI_迁移与方案选择.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "重建chip入口与请求引用、槽位配置和事件队列的因果链，补完整UAPI模拟程序、失败恢复、迁移与选择。",
+        "validation": [
+          "13段固定源码定义和有序token、UAPI符号、完整C与正文一致，引用与退出静态复核。",
+          "七图渲染目视；四篇完整冷读、长度、ID与锚点，全仓782篇链接无缺失。",
+          "连续性审计仅P08完整程序小节行数提示，按同一请求和清理周期保留，未声称无风险通过。"
+        ],
+        "limits": "未执行目标Linux编译、GPIO-sim及硬件运行；事件输出为预期，不以序号连续证明前端无损。"
+      },
+      "research/source_reading/gpiolib/navigation/P05_用户请求怎样持有线路与事件.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "按S2/S3/S4/S5/S6/S7串起文件持有、共享状态、事件读写与退出依赖，链接唯一实现。",
+        "validation": [
+          "13段固定源码定义和有序token、UAPI符号、完整C与正文一致，引用与退出静态复核。",
+          "七图渲染目视；四篇完整冷读、长度、ID与锚点，全仓782篇链接无缺失。",
+          "连续性审计仅P08完整程序小节行数提示，按同一请求和清理周期保留，未声称无风险通过。"
+        ],
+        "limits": "未执行目标Linux编译、GPIO-sim及硬件运行；事件输出为预期，不以序号连续证明前端无损。"
+      },
+      "research/source_reading/gpiolib/source_explanations/P06_用户请求的发布与回收.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "唯一展开linereq、创建、release/free与SET_CONFIG，明确发布边界、正向清理及部分配置。",
+        "validation": [
+          "13段固定源码定义和有序token、UAPI符号、完整C与正文一致，引用与退出静态复核。",
+          "七图渲染目视；四篇完整冷读、长度、ID与锚点，全仓782篇链接无缺失。",
+          "连续性审计仅P08完整程序小节行数提示，按同一请求和清理周期保留，未声称无风险通过。"
+        ],
+        "limits": "未执行目标Linux编译、GPIO-sim及硬件运行；事件输出为预期，不以序号连续证明前端无损。"
+      },
+      "research/source_reading/gpiolib/source_explanations/P07_事件缓冲与读取.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "唯一展开检测建立、时间与边沿生成、FIFO覆盖、poll/read及停止生产者，保留采样和错误边界。",
+        "validation": [
+          "13段固定源码定义和有序token、UAPI符号、完整C与正文一致，引用与退出静态复核。",
+          "七图渲染目视；四篇完整冷读、长度、ID与锚点，全仓782篇链接无缺失。",
+          "连续性审计仅P08完整程序小节行数提示，按同一请求和清理周期保留，未声称无风险通过。"
+        ],
+        "limits": "未执行目标Linux编译、GPIO-sim及硬件运行；事件输出为预期，不以序号连续证明前端无损。"
       }
     },
     "additional_documents": [
@@ -7647,7 +7695,10 @@
       "research/source_reading/gpiolib/navigation/P03_GPIO模拟器如何兑现控制器能力.md",
       "research/source_reading/gpiolib/source_explanations/P04_模拟控制器的状态与回调.md",
       "research/source_reading/gpiolib/navigation/P04_GPIO事件怎样从线路到达处理者.md",
-      "research/source_reading/gpiolib/source_explanations/P05_GPIO映射与模拟事件怎样交接.md"
+      "research/source_reading/gpiolib/source_explanations/P05_GPIO映射与模拟事件怎样交接.md",
+      "research/source_reading/gpiolib/navigation/P05_用户请求怎样持有线路与事件.md",
+      "research/source_reading/gpiolib/source_explanations/P06_用户请求的发布与回收.md",
+      "research/source_reading/gpiolib/source_explanations/P07_事件缓冲与读取.md"
     ],
     "language_review": {
       "status": "complete",
