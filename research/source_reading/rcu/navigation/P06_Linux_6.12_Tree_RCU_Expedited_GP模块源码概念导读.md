@@ -156,7 +156,7 @@ sequenceDiagram
     N-->>A: 根槽唤醒且目标满足，释放exp_mutex
 ```
 
-第4～5步留下未来处理的提示，并未完成证明。第7步是直接退出分支；第8～10步是被抢占分支，关键是 **先保存任务责任，再允许CPU报告**。迁移后的持久责任由 `rcu_blocked_node` 和原叶任务登记承载，`exp_hint` 只是触发特殊退出检查的提示，不能独自替原CPU清位。
+图中的follower已在本轮start前取得相同目标，稍后才进入漏斗；若在start后取票，不能直接复用这一轮。第4～5步留下未来处理的提示，并未完成证明。第7步是直接退出分支；第8～10步是被抢占分支，关键是 **先保存任务责任，再允许CPU报告**。迁移后的持久责任由 `rcu_blocked_node` 和原叶任务登记承载，`exp_hint` 只是触发特殊退出检查的提示，不能独自替原CPU清位。
 
 第12步在 `exp_wake_mutex` 内结束序列，第13步按广度顺序唤醒节点。根槽先被访问，leader可在第15步释放 `exp_mutex`，从而下一轮开始与上一轮剩余叶唤醒重叠；`exp_wake_mutex` 防止两轮结束/唤醒过程重叠，并不禁止这种开始与收尾的重叠。图中第14、15步的实际返回先后不固定，取决于各任务被调度的时机。
 
@@ -176,6 +176,7 @@ sequenceDiagram
 
 | 阅读目标 | 源文件 | 唯一实现讲解 |
 | --- | --- | --- |
+| 根完成与CPU/任务联合汇聚 | [`kernel/rcu/tree_exp.h`](../../linux/kernel/rcu/tree_exp.h) | [P08：节点完成与报告](../source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.3_权威完成条件) |
 | expedited sequence 与公共 poll 交接 | [`kernel/rcu/tree_exp.h`](../../linux/kernel/rcu/tree_exp.h) | [P08：sequence](../source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.4_expedited_sequence怎样独立计代并共同推进poll观察) |
 | funnel leader/follower | [`kernel/rcu/tree_exp.h`](../../linux/kernel/rcu/tree_exp.h) | [P08：`exp_funnel_lock()`](../source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.5_exp_funnel_lock怎样合并并发调用者) |
 | hotplug reset 与本轮 `expmask` | [`kernel/rcu/tree_exp.h`](../../linux/kernel/rcu/tree_exp.h) | [P08：reset tree](../source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.6_sync_exp_reset_tree怎样建立本轮债务) |
