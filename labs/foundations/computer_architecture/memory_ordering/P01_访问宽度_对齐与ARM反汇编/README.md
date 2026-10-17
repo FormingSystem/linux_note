@@ -29,29 +29,47 @@ topics:
 
 ## 1.2\_环境
 
-- Python 3.10 或更新版本；
 - host GCC（可选）；
 - `arm-none-eabi-gcc`（推荐）；
 - ARM 目标固定为 `-mcpu=cortex-a7 -marm -O2`，对应 i.MX6ULL 的具体观察载体。
 
-先执行 `python --version`、`gcc --version`、`arm-none-eabi-gcc --version` 核对可用工具；只要求生成其中一个目标时，对应编译器可用即可。不需要开发板、交叉链接库或内核源码，因为 `-S` 在生成汇编后停止，不链接、不执行。
+先执行 `gcc --version`、`arm-none-eabi-gcc --version` 核对可用工具；只要求生成其中一个目标时，对应编译器可用即可。不需要开发板、交叉链接库、Python或内核源码，因为 `-S` 在生成汇编后停止，不链接、不执行。正文直接调用C编译器，终端只承担启动工具的职责，没有另加一种语言实现教学模型。
 
 本实验的 ARM 输出只是编译器证据。它不代替 ARMv7 架构手册对原子性、对齐和内存类型的正式保证。
 
 ## 1.3\_运行
 
-```bash
+以下先进入实验目录，命令从仓库根目录执行；之后所有命令都在该实验目录中运行：
+
+```sh
 cd labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编
-python run.py
 ```
 
-只生成 ARM 输出：
+先创建保存汇编的目录。Linux或Bash终端使用：
 
 ```bash
-python run.py --target arm
+mkdir -p generated
 ```
 
-第一条 `cd` 从仓库根目录执行；之后命令均在实验目录执行。默认运行会生成当前能找到的目标，不能因为退出成功就认为两个编译器都已运行。核对终端打印的目标、版本和命令，打开 `generated/host_gcc_O2.s` 与 `generated/cortex_a7_gcc_O2.s` 中实际存在的文件。没有 `generated/` 时脚本会创建，有同名输出时会覆盖，所以要保留比较结果应先另存。
+Windows PowerShell使用下面这一条替代mkdir命令，其余两条编译命令可以原样执行：
+
+```powershell
+New-Item -ItemType Directory -Force -Path ./generated | Out-Null
+```
+
+两种创建方式都允许目录已经存在。接下来的同名输出会覆盖，所以要保留上次比较结果，应先另存对应汇编文件。先生成host输出：
+
+```sh
+gcc -O2 -S -fno-asynchronous-unwind-tables -fno-ident src/access_width.c -o generated/host_gcc_O2.s
+```
+
+`-O2`启用优化，`-S`要求生成汇编后停止，两个`-fno-`选项减少非核心的展开表与编译器标识，`-o`给出输出文件。host指编译器自身的默认目标，不能仅凭在某台机器启动就推断其目标ABI；用 `gcc -dumpmachine`核对。再生成本实验的Cortex-A7输出：
+
+```sh
+arm-none-eabi-gcc -O2 -mcpu=cortex-a7 -marm -S -fno-asynchronous-unwind-tables -fno-ident src/access_width.c -o generated/cortex_a7_gcc_O2.s
+```
+
+`-mcpu=cortex-a7`指定处理器，`-marm`选择ARM指令状态；这里没有链接或下载到开发板。只观察一个目标时，只执行对应编译命令。每条命令都须检查退出状态；失败后不要打开同名旧文件冒充本轮结果。成功后分别打开 `generated/host_gcc_O2.s`和 `generated/cortex_a7_gcc_O2.s`中本轮实际生成的文件，并保存编译器版本及上述参数。
 
 ## 1.4\_观察函数
 
@@ -110,21 +128,31 @@ void store_packed_u64(volatile struct packed_record *record, u64 value)
 
 2026-10-16 重新运行两个目标：host GCC 14.2.0 生成 packed 字段的一条 `movq`；GNU Arm Embedded GCC 10.3.1 为对齐 u32 生成 `ldr`，为对齐 u64 生成 `ldrd`，为 packed u64 生成偏移 `1`、`5` 的两条 `ldr` 或 `str`。这与 [历史观察中的裁剪汇编](expected/2026-08-02_compiler_observation.md)一致。正文中的结论以这两个指定编译配置为界；未来输出不同，应保留实际结果，不必强行改成记录中的样子。
 
+2026-10-17改为正文直接调用后，在PowerShell重新执行两条命令；目标分别为 `x86_64-w64-mingw32`和 `arm-none-eabi`，编译器仍为上述版本。两份汇编与改写前保存结果的SHA-256分别一致，说明移除运行器没有改变本次编译输入与输出。未执行ARM指令或硬件并发测试。
+
 先预测再解释：若给两条 32 位写之间插入屏障，能否把 packed 赋值变成一次 64 位原子写？不能；屏障约束先后，不能把两条独立访问合并成一个原子事务。若 host 只有一条 `movq`，能否宣布它在任意地址都不会撕裂？也不能；还要核对目标架构的宽度、地址边界和内存属性保证。
 
 ## 1.6\_失败现象与排查
 
 | 现象 | 排查 |
 | --- | --- |
-| 找不到 ARM 编译器 | 安装 GNU Arm Embedded Toolchain 或只运行 `--target host` |
+| 找不到 ARM 编译器 | 安装 GNU Arm Embedded Toolchain 并配置PATH，或只执行host编译命令 |
 | packed 访问仍像单条指令 | 核对目标选项、汇编地址偏移和编译器版本 |
 | 编译失败 | 保存完整命令，确认编译器支持 Cortex-A7 |
 | 输出与记录不同 | 这是允许的研究结果，记录版本后按架构手册重新解释 |
 
 ## 1.7\_清理
 
+清理不是运行前置步骤。如需保留编译结果作证据，先另存；只删除本实验约定的两个输出文件，不递归清空目录。Linux或Bash终端使用：
+
 ```bash
-python run.py --clean
+rm -f -- generated/host_gcc_O2.s generated/cortex_a7_gcc_O2.s
 ```
 
-只删除本实验的 `generated/`；如需保留编译结果作证据，先另存该目录内的文件。清理不是运行前置步骤。
+PowerShell使用：
+
+```powershell
+Remove-Item -LiteralPath ./generated/host_gcc_O2.s, ./generated/cortex_a7_gcc_O2.s
+```
+
+PowerShell在某份输出不存在时会报告该路径缺失；只生成一个目标时，可只列它的路径。以上命令保留generated目录及其中其他手工保存的文件，避免把实验目录中的额外证据一起删除。
