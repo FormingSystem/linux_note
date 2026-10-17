@@ -8776,6 +8776,66 @@
           "全仓852篇链接无缺失；fcntl原件空白保留并设置文件级检查例外。"
         ],
         "limits": "没有目标Linux编译运行、扩容或复用并发压力、预留冲突、最后release或任务退出队列跟踪。"
+      },
+      "knowledge/kernel_subsystems/vfs/P14_VFS_read_write分派.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿I0至I5贯通位置、缓冲、分派与结果，修正标量及向量优先级并补齐同步完成边界。",
+        "validation": [
+          "十六函数与固定原件逐token一致，九份原件核对Git对象。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓856篇链接无缺失。"
+        ],
+        "limits": "没有目标Linux编译运行、坏地址注入、冻结竞争或异步完成实测。"
+      },
+      "research/source_reading/vfs/navigation/P13_读写请求的位置缓冲与结果交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿I0至I5贯通位置、缓冲、分派与结果，修正标量及向量优先级并补齐同步完成边界。",
+        "validation": [
+          "十六函数与固定原件逐token一致，九份原件核对Git对象。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓856篇链接无缺失。"
+        ],
+        "limits": "没有目标Linux编译运行、坏地址注入、冻结竞争或异步完成实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P31_读写入口的位置选择与结果回填.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿I0至I5贯通位置、缓冲、分派与结果，修正标量及向量优先级并补齐同步完成边界。",
+        "validation": [
+          "十六函数与固定原件逐token一致，九份原件核对Git对象。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓856篇链接无缺失。"
+        ],
+        "limits": "没有目标Linux编译运行、坏地址注入、冻结竞争或异步完成实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P32_读写资格检查与文件操作分派.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿I0至I5贯通位置、缓冲、分派与结果，修正标量及向量优先级并补齐同步完成边界。",
+        "validation": [
+          "十六函数与固定原件逐token一致，九份原件核对Git对象。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓856篇链接无缺失。"
+        ],
+        "limits": "没有目标Linux编译运行、坏地址注入、冻结竞争或异步完成实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P33_同步迭代请求与向量缓冲区的交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿I0至I5贯通位置、缓冲、分派与结果，修正标量及向量优先级并补齐同步完成边界。",
+        "validation": [
+          "十六函数与固定原件逐token一致，九份原件核对Git对象。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓856篇链接无缺失。"
+        ],
+        "limits": "没有目标Linux编译运行、坏地址注入、冻结竞争或异步完成实测。"
       }
     },
     "additional_documents": [
