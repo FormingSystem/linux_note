@@ -6051,9 +6051,9 @@
           "python_blocks": 1,
           "blocks_added_or_changed": 1,
           "previously_reviewed": true,
-          "state": "pending",
-          "decision": null,
-          "reason": null
+          "state": "reviewed",
+          "decision": "replaced_with_c",
+          "reason": "fd0ea79将完整按键接收器改为C11，逐字节解码并分开EAGAIN等待与预算耗尽继续消费；双编译器接口替身各80次运行覆盖故障和边界（含正常重复），代码一致、4出链7入锚点及全仓检查通过。既有完整驱动的长度提示保留；SOURCE_BASELINE 1.209注明非Linux原生/GPIO测试。"
         },
         {
           "path": "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P08_流式设备与高级场景中的异步通知.md",
