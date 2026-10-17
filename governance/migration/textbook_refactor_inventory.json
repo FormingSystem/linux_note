@@ -6497,6 +6497,17 @@
           "九段C骨架的GCC/Clang宿主严格构建运行、三图目视和连续性/链接检查通过"
         ],
         "limits": "宿主替身仅验证类型与顺序所有权，未进行目标构建、DMA停止、热拔出或卸载实验。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "分开Sparse、功能状态与Lockdep影子状态，按V0至V6校正先加载后诊断及退出顺序，补无hook、检查停用和held保守值的边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "固定公共头文件、update.c与Kconfig分支核对",
+          "Sparse实际三预期诊断及两无诊断类型样例；两图目视、精确链接和严格连续性通过"
+        ],
+        "limits": "没有执行坏代码、目标Kbuild或动态Lockdep；类型检查不证明裸指针逃逸安全。"
       }
     },
     "additional_documents": [
