@@ -6031,7 +6031,7 @@
       "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md"
     ],
     "language_review": {
-      "status": "in_progress",
+      "status": "complete",
       "requirement_date": "2026-10-17",
       "requirement": "教学示例、机制模型和配套测试默认C/C++，其他语言须有具体任务必要性；补充复审先前引入内容。",
       "coverage": "当前720份已跟踪Markdown中的Python围栏及技术正文/实验中的Python执行命令；同时核对labs等目录中的配套.py材料。",
@@ -6123,9 +6123,9 @@
           "python_blocks": 0,
           "blocks_added_or_changed": 0,
           "previously_reviewed": false,
-          "state": "pending",
-          "decision": null,
-          "reason": null
+          "state": "reviewed",
+          "decision": "retained_versioned_tool_dependency",
+          "reason": "51671ea核对repo官方Python版本说明，将已有SDK工具依赖与教学模型分开；改为按实际脚本和版本核对，移除全局切换python的默认步骤，不宣称已确认整个旧SDK需要Python2。12出链及全仓检查通过；此候选只完成语言边界审查，整篇旧构建流程仍不计主reviews。技术正文无Python围栏，labs/knowledge/engineering/platforms/research无配套.py残留。"
         }
       ]
     }
