@@ -2189,3 +2189,18 @@ DEBUG_ATOMIC_SLEEP分支中的might_sleep先调用__might_sleep检查，后续mi
 初始化 B0～B6 与运行期 S 周期分开，说明 possible、online、编号上界和扇出；`n_online_cpus` 在 prepare 阶段增加，不是任意瞬间的 online mask 计数。`rcutree.use_softirq` 默认随 PREEMPT_RT 构建改变，线程分支的待办标志与条件唤醒不能合并为无条件启动线程。配置、启动参数、日志和任务观察按顺序就地讲解，未声称在目标环境执行。
 
 GP 模块以 G0～G10 对应公共周期，修正 `rcu_gp_init()` 内部建债先于成功返回的顺序，以及各消费者交付可与下一 GP 重叠的关系。请求漏斗遇到进行中 GP 可留下需求由 cleanup 接手，get-state 快照本身不发起 GP，NOCB 回调也可能先经 bypass。跟踪事件区分 `rcu_callback` 的登记与 `rcu_invoke_callback` 的调用。五图渲染目视、两章严格连续性与精确锚点检查通过，全仓 9214 个有效链接无缺失；只修改入口的其他 RCU 文档不计入全文复核完成。没有新增目标内核构建、实际启动、CPU 热插拔或跟踪运行证据。
+
+## 1.215\_RCU执行环境快照与节点证明复核
+
+2026-10-17，冷读第九、十章。固定 NXP 提交继续为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，补取下列上下文跟踪原件；`tree.c`、任务插件与 trace 事件依据沿用前述已核对原件。
+
+| 上游相对路径 | Git blob |
+| --- | --- |
+| `kernel/context_tracking.c` | `938c48952d26533a1daf77bb743384a833246ef3` |
+| `include/linux/context_tracking.h` | `af9fe87a092251348df0a2a2e7f13bf63388eb5a` |
+| `include/linux/context_tracking_state.h` | `7b8433d5a8efe5bc0d7ff84fb22ea5de9a34d464` |
+| `include/linux/context_tracking_irq.h` | `c50b5670c4a52fd905da5a7b70b581d6a88959b2` |
+
+用户态 EQS 路径以目标 CPU 的 context tracking 已激活为前提；主状态在 `context_tracking.state`，GP 扫描者将远端原子读取值保存在对应 `rcu_data.watching_snap`。正文分开当前状态、历史快照、任务登记与本轮 CPU 位，补 IRQ/NMI 嵌套和“两次都 watching 但中间经过 EQS”的反例。旧版本仅以官方上游 v5.10 的 `kernel/rcu/tree.c` 对照字段访问与入口，Git blob 为 `bd04b09b84b327cde1aa8472986dfc0a5ff39719`；该版本 `tree.h` 下载两次收到 429，未将其记作已核对原件，比较依据限于已取得的每 CPU 初始化、原子访问及函数实现。
+
+节点章用多机器字位图承载 256 CPU 示例，按 A0～A5 说明报告者、锁交接、代际核对、零掩码分支和根通知，补完整四 CPU 时序与任务清理后恢复汇聚。五图渲染目视、两章严格连续性和精确链接检查通过；全仓 9216 有效本地链接无缺失。快照、重复报告和过期报告练习属于纸面推演，观察命令只读检查目标能力；没有实际开启 trace、执行 nohz 工作负载、目标构建或热插拔实验。
