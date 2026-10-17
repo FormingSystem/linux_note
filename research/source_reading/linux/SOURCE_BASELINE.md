@@ -2852,3 +2852,22 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 原件均取固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。新增include/linux/fs_parser.h（blob `6cf713a7e6c6fc2402a68c87036264eaed921432`）、fs/fs_parser.c（`24727ec34e5aa434364e87879cccf9fe1ec19d37`）、include/linux/module.h（`88ecc5e9f523073f640ef83f7f6ec0f1f4d21d4c`）、include/linux/kmod.h（`68f69362d427caaaefc2565127a7a4158433e5f5`）及fs/Kconfig（`aae170fc2795246a09c4f95ed2acf9fb6d5c4a82`）。沿用已核对的fs/filesystems.c，读fs_context.c和super.c确认不同所有者各自持有与归还的位置。
 
 十个函数及一个配置关闭替代体与固定原件逐token一致，三篇冷读、六图渲染目视、连续性、长度、标题元数据和锚点检查通过。类型表仍由读写锁保护，不因注销含synchronize_rcu就推断为无锁RCU表。没有执行目标模块装卸、故障注入或proc查询实验，静态核对不替代这些运行证据。
+
+## 1.284\_VFS配置上下文与分离挂载交接
+
+2026-10-18，重写 [fs_context挂载事务](../../../knowledge/kernel_subsystems/vfs/P05_fs_context挂载事务.md#5.1_把多步准备放进一个尚未公开的上下文)，新增 [配置阶段导读](../vfs/navigation/P04_配置状态怎样变成可挂载的根.md#4.1_先确认四个不同的交付物) 及资源、阶段两篇唯一实现。沿C0～C5区分配置fd、root、mount与目标连接，说明参数失败没有通用整体回滚，初始化失败不能依赖尚未设置的need_free，以及fsmount晚期失败可能已改变phase。
+
+全部原件取固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。三份完整结构、十四个普通函数和一个完整系统调用体与原件逐token核对。既有include/linux/fs_context.h（blob `4b4bfef6f053a49557118c3592ef64fc7ce1ab39`）、fs/fs_context.c、fs/super.c与fs/namespace.c逐一复核。新增原件如下：
+
+| 上游位置 | Git blob |
+| --- | --- |
+| fs/fsopen.c | `6cef3deccdedfa10c95a3bdffac049194747ebe7` |
+| fs/internal.h | `8c1b7acbbe8faadef678e5aa2dc3588a0d8140b1` |
+| include/uapi/linux/mount.h | `225bc366ffcbf0319929e2f55f1fbea88e4d7b81` |
+| Documentation/filesystems/mount_api.rst | `d92c276f1575af11370dcd4a5d5d0ac97c4d7f4c` |
+| fs/statfs.c | `9c7bb27e79324e1f484363708ddd98d248426f9d` |
+| mm/shmem.c | `5960e5035f983571fb806313855f74c61abf8354` |
+
+mount_api.rst的历史字段示意与实际头文件差异已在索引和导读注明。实验原件支持tmpfs未知参数拒绝、容量解析及O_PATH挂载fd的fstatfs查询；配套C程序完整嵌入正文，参数错误、阶段错误和两份句柄退出均有解释。当前环境没有目标Linux编译/运行记录，不把静态一致性当成实验通过。
+
+四篇冷读、八图渲染目视、连续性、标题元数据、长度和锚点检查完成。未执行真实目标接入、并发卸载或低内存故障注入；声明与函数一致性只证明引用忠实，不能证明所有具体文件系统或安全模块组合的运行正确性。

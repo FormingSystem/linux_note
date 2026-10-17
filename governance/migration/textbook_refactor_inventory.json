@@ -8319,7 +8319,10 @@
       "research/source_reading/vfs/source_explanations/P01_描述符表与打开对象的状态归属.md",
       "research/source_reading/vfs/source_explanations/P02_路径名称与实例的字段关系.md",
       "research/source_reading/vfs/navigation/P03_类型描述怎样交给配置请求.md",
-      "research/source_reading/vfs/source_explanations/P03_文件系统类型表的发布与持有.md"
+      "research/source_reading/vfs/source_explanations/P03_文件系统类型表的发布与持有.md",
+      "research/source_reading/vfs/navigation/P04_配置状态怎样变成可挂载的根.md",
+      "research/source_reading/vfs/source_explanations/P04_配置上下文的资源取得与释放.md",
+      "research/source_reading/vfs/source_explanations/P05_建树与分离挂载的阶段交接.md"
     ],
     "language_review": {
       "status": "complete",

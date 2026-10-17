@@ -838,6 +838,9 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [配置状态怎样变成可挂载的根](../../research/source_reading/vfs/navigation/P04_配置状态怎样变成可挂载的根.md)
+        - 🔴 [配置上下文的资源取得与释放](../../research/source_reading/vfs/source_explanations/P04_配置上下文的资源取得与释放.md)
+        - 🔴 [建树与分离挂载的阶段交接](../../research/source_reading/vfs/source_explanations/P05_建树与分离挂载的阶段交接.md)
         - 🔴 [类型描述怎样交给配置请求](../../research/source_reading/vfs/navigation/P03_类型描述怎样交给配置请求.md)
         - 🔴 [文件系统类型表的发布与持有](../../research/source_reading/vfs/source_explanations/P03_文件系统类型表的发布与持有.md)
         - 🔴 [同一次打开怎样跨越对象状态](../../research/source_reading/vfs/navigation/P02_同一次打开怎样跨越对象状态.md)

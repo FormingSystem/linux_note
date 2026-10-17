@@ -50,6 +50,8 @@ flowchart TD
 
 [类型交接模块导读](P03_类型描述怎样交给配置请求.md#3.1_先分开类型表与实例集合) 则沿T0～T5解释类型登记、锁内取得owner持有、锁外模块请求与注销边界，对应 [类型表唯一实现](../source_explanations/P03_文件系统类型表的发布与持有.md#3.1_类型表在锁内怎样找到插入位置)。它为配置事务提供入口，不把注册成功当作实例已挂载。
 
+[配置状态模块导读](P04_配置状态怎样变成可挂载的根.md#4.1_先确认四个不同的交付物) 沿C0～C5区分配置fd、root、分离挂载和目录连接，分别进入 [资源取得与释放](../source_explanations/P04_配置上下文的资源取得与释放.md#4.1_字段怎样区分配置和已取得的根) 和 [建树及交付阶段](../source_explanations/P05_建树与分离挂载的阶段交接.md#5.1_命令检查先于状态推进)。参数错误、建树错误和fd交付失败有不同剩余状态。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |
@@ -62,7 +64,8 @@ flowchart TD
 | 名称缓存保存哪些关系 | [include/linux/dcache.h](../../linux/include/linux/dcache.h)、[fs/dcache.c](../../linux/fs/dcache.c) | 父对象、名称、inode关联、哈希与引用；不存在名称与已脱链名称不同 |
 | 内部挂载拓扑在哪 | [fs/mount.h](../../linux/fs/mount.h)、[fs/namespace.c](../../linux/fs/namespace.c) | 内嵌vfsmount、父挂载、接入点和命名空间 |
 | 实现类型与实例怎样分离 | [fs/filesystems.c](../../linux/fs/filesystems.c)、[fs/super.c](../../linux/fs/super.c) | 注册表、实例取得与释放；不是每次mount都新增superblock |
-| 挂载参数和半成品在哪里 | [fs/fs_context.c](../../linux/fs/fs_context.c) | 配置事务、操作入口与清理 |
+| 挂载参数和半成品在哪里 | [include/linux/fs_context.h](../../linux/include/linux/fs_context.h)、[fs/fs_context.c](../../linux/fs/fs_context.c)、[fs/fsopen.c](../../linux/fs/fsopen.c)、[fs/internal.h](../../linux/fs/internal.h) | 声明、资源持有、用户阶段与内部入口 |
+| 用户配置命令与实验结果由什么支撑 | [include/uapi/linux/mount.h](../../linux/include/uapi/linux/mount.h)、[mm/shmem.c](../../linux/mm/shmem.c)、[fs/statfs.c](../../linux/fs/statfs.c) | 命令/属性、tmpfs参数与允许O_PATH的fd查询；源码核对不等于运行 |
 | 参数描述验证在哪里 | [include/linux/fs_parser.h](../../linux/include/linux/fs_parser.h)、[fs/fs_parser.c](../../linux/fs/fs_parser.c)、[fs/Kconfig](../../linux/fs/Kconfig) | 描述与参数值分开，验证配置关闭时的替代体 |
 | 代码持有与按需装入有哪些配置边界 | [include/linux/module.h](../../linux/include/linux/module.h)、[include/linux/kmod.h](../../linux/include/linux/kmod.h) | 模块引用契约与request_module退化，不等于类型已登记 |
 | 名称怎样进入打开或修改 | [fs/namei.c](../../linux/fs/namei.c)、[fs/open.c](../../linux/fs/open.c) | 起点、遍历、最后分量与打开检查，先找实际分支再追回调 |
@@ -77,6 +80,8 @@ flowchart TD
 本轮同时核对固定提交的 [VFS概览](../../linux/Documentation/filesystems/vfs.rst)、[路径查找说明](../../linux/Documentation/filesystems/path-lookup.rst) 和 [描述符管理说明](../../linux/Documentation/filesystems/files.rst)。概览适合建立术语，但其中历史表述或示意片段仍要与当前声明和调用路径比较。
 
 例如概览用mount方法概括挂载，而本版本还包含fs_context初始化路径；具体文件系统究竟接入哪条路径，应检查该实现。描述符说明中的锁外读示例也不能直接变成驱动自己按下标解引用表项的许可：边界、RCU、引用取得和再验证必须结合真实辅助函数。阅读顺序应是“要证明的保证—当前状态—实际写读路径—说明文档对照”，不是从文档截一句话覆盖实现差异。
+
+[挂载API说明](../../linux/Documentation/filesystems/mount_api.rst) 给出配置阶段背景，但其中参数描述类型和subtype字段示意与实际头文件有差异；精确声明、用户phase与失败清理由当前执行路径确定。
 
 已有其他专题负责的实现保持单一展开。字符特殊文件接入链见 [字符设备打开路径](../../../../knowledge/driver_model/character_device/P03_打开路径与文件操作.md)；VFS这里只解释它从名称与打开关系接入的边界。文件操作接口的查询和驱动语义见 [file_operations专题](../../../../knowledge/driver_model/file_operations/大纲.md)，不把驱动侧与VFS整体状态模型混成同一份教程。
 
