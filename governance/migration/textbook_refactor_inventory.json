@@ -6409,6 +6409,17 @@
           "两图渲染目视、严格连续性、精确链接和全仓9228有效本地链接检查通过。"
         ],
         "limits": "关中断循环仅静态反例，未运行故障注入、目标构建或trace采集；配置与事件命令只提供只读观察步骤。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_Expedited_GP.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补加急独立通道背景和MMIO责任边界，以X阶段区分leader与worker，修正隐式读侧约束、同快照合并、选择重查及normal策略覆盖。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交d081f847；固定NXP tree_exp.h及关联源码核对。",
+          "两图渲染目视、严格连续性、精确链接及全仓9229有效本地链接检查通过。"
+        ],
+        "limits": "设备关闭为限定前提的业务占位；未执行硬件撤销、目标构建、加急压力测试或trace采集。"
       }
     },
     "additional_documents": [
