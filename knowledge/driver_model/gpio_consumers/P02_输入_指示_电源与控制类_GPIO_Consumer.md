@@ -46,11 +46,15 @@ source_version: "6.12.20"
 
 active-low 由描述符转换，因此 LED core 的 brightness 语义不应关心物理高低。硬件 blink 回调存在时可下沉闪烁，否则 LED core/工作路径承担定时切换成本。
 
+从用途、对象与完整状态过程进入 [指示与背光章节](P04_GPIO指示与背光怎样接入亮度接口.md#4.1_都是点亮为什么需要两种对象)。该固定版本GPIO LED最大亮度为1；固件子节点创建没有传入平台硬件blink回调，不能仅凭源码存在blink函数推断任意DTS灯都支持硬件闪烁。
+
 ## 2.4\_gpio-backlight\_只有开和关的背光
 
 `gpio_backlight.c` 用 `devm_gpiod_get(..., GPIOD_ASIS)` 取得 line，结合初始 brightness 后调用 `gpiod_direction_output()`；更新路径使用 `gpiod_set_value_cansleep()`。
 
 它适合 GPIO 只控制背光使能的二值设备。需要 PWM 亮度等级时应使用 PWM backlight 等模型，不能用高频用户态翻转 GPIO 模拟稳定调光。
+
+背光会把期望brightness与power、blank/suspend条件合成有效输出，详见 [brightness为1仍输出0的原因](P04_GPIO指示与背光怎样接入亮度接口.md#4.4_背光为何在brightness为1时仍应输出0)；有phandle时的初值分支也不能仅靠default-on推断。
 
 ## 2.5\_fixed\_regulator\_GPIO\_进入电源依赖图
 

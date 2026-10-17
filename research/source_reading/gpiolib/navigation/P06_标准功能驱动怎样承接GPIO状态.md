@@ -56,7 +56,26 @@ K1不是在IRQ里忙等去抖窗口，K2也不是读取IRQ发生瞬间保存的�
 
 无GPIO的IRQ-only分支改变了K2的证据来源：无法采样释放，只能用key_pressed和release_timer合成一个周期；见 [合成释放实现](../source_explanations/P08_按键取样与输入报告.md#8.3_缺少松开信号时怎样合成释放)。它不是为同一条正常GPIO路径额外增加一道更精确的去抖。
 
-## 6.3\_从适配层继续追踪时保留边界
+## 6.3\_灯与背光把期望值交给不同的状态管理者
+
+按键把GPIO输入解释为领域报告，灯与背光则从领域请求走向GPIO输出。LED对象保存brightness、触发来源和设置work；背光对象额外把power与显示blank/suspend条件纳入有效值计算。适配驱动均只提供二值GPIO能力，但上层状态及使用者不同。
+
+本地周期以L0～L3串起两个实现，公共阶段仍对应GPIO主线的配置、运行和退出。
+
+| 本地阶段 | LED的状态交接 | 背光的状态交接 | 公共阶段 |
+| --- | --- | --- | --- |
+| L0 接管 | 取得gpiod，选择can_sleep回调和初值，登记cdev | 取得gpiod，登记backlight对象，计算初始power与有效值 | [S2～S4请求与配置](../../../../knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md#4.3_S2至S4把私有需求写成公共占用和配置) |
+| L1 接收 | LED核心保存brightness及待设置work_flags | 核心保存props.brightness、power、state | [S5访问](../../../../knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md#4.4_S5的软件方向不总是当前输出驱动开关) |
+| L2 输出 | 普通回调或设置work消费待执行状态，gpio_led_set提交逻辑值 | update_status用backlight_get_brightness计算后写GPIO | [S5与S6交互](../../../../knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md#4.5_S6的事件和电源状态继续保存在各自的承载者中) |
+| L3 撤销 | 解除触发器、停止闪烁与设置任务，再归还线路 | 撤销ops能力与类设备，再归还线路 | [S7结束使用](../../../../knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md#4.6_S7先结束使用再撤销能力和对象) |
+
+L1与L2不能合并成“写完即亮”：可睡眠LED可能经work延期，背光可能因blank条件把期望1压低为0，底层setter也不一定返回硬件错误。L3同样不等于恢复固件初值；backlight注销没有统一请求一次熄灭。
+
+源码按这四个阶段阅读：[LED回调适配](../source_explanations/P09_指示灯与背光的GPIO适配.md#9.1_灯对象怎样选择可睡眠或普通回调) 与 [接管初值](../source_explanations/P09_指示灯与背光的GPIO适配.md#9.5_接管LED初值为什么先读再设置方向) 建立L0；[请求登记](../source_explanations/P09_指示灯与背光的GPIO适配.md#9.2_亮度请求如何经过工作队列与GPIO回调) 与 [work消费](../source_explanations/P09_指示灯与背光的GPIO适配.md#9.3_设置work怎样消费状态而不是重放所有写入) 连接L1～L2；[背光有效值](../source_explanations/P09_指示灯与背光的GPIO适配.md#9.4_背光怎样把亮度意图与显示状态合成) 解释不同状态模型；最后看 [注销边界](../source_explanations/P09_指示灯与背光的GPIO适配.md#9.7_接管初值与撤销入口怎样影响最后输出)。本节组织模块关系，函数体只在这些唯一标题展开。
+
+背光L0还需单独核对 [phandle与default-on分支](../source_explanations/P09_指示灯与背光的GPIO适配.md#9.6_背光的default-on为何不是所有路径的最终答案)。相同属性文字不能代替实际分支；正文的 [离线描述练习](../../../../knowledge/driver_model/gpio_consumers/P04_GPIO指示与背光怎样接入亮度接口.md#4.6_用一份离线描述看出两种连接) 只验证引用与数据，不推断运行时电平。
+
+## 6.4\_从适配层继续追踪时保留边界
 
 本页只核对固定驱动的状态交接。GPIO Provider是否会睡眠、是否有硬件去抖、IRQ能否唤醒目标系统，都需要沿真实平台核对。输入核心如何把报告分发给多个客户端、如何处理队列溢出，则继续进入 [Input源码入口](../../linux/drivers/input/README.md#1.4_关键调用链索引)。把这些问题拆开并不表示省略：适配层先给出何时交付什么状态，再由接收层解释下一段保证。
 

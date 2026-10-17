@@ -1,0 +1,32 @@
+/dts-v1/;
+
+/ {
+    compatible = "linux-note,gpio-light-teaching";
+
+    teaching_gpio: gpio-controller {
+        /* 离线教学Provider，无匹配的真实硬件驱动。 */
+        compatible = "linux-note,teaching-gpio";
+        gpio-controller;
+        #gpio-cells = <2>;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        led-0 {
+            gpios = <&teaching_gpio 0 1>; /* offset0，低有效。 */
+            default-state = "off";
+        };
+    };
+
+    teaching_backlight: backlight {
+        compatible = "gpio-backlight";
+        gpios = <&teaching_gpio 1 0>; /* offset1，高有效。 */
+        default-on;
+    };
+
+    display {
+        /* 只练习phandle引用，不模拟真实显示控制器或面板。 */
+        compatible = "linux-note,teaching-display";
+        backlight = <&teaching_backlight>;
+    };
+};

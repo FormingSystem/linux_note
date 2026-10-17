@@ -2740,3 +2740,11 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 证据为NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`：`drivers/input/keyboard/gpio_keys.c` blob `380fe8dab3b06379f9744e8190a4afcc0aee20b4`，`drivers/input/input.c` blob `c51858f1cdc556939c2ee1bd21669c71c169d84e`，`drivers/input/keyboard/Kconfig` blob `3bb67dc9ea0facb16d22527db50b5f6181a06ea2`，`include/uapi/linux/input-event-codes.h` blob `5a199f3d4a26a22a94e51d4b53aeed3767c97bce`，结合固定gpio-keys绑定。复核硬件去抖失败回退、零时间保留work分支、负读取不报告键值、IRQ-only合成释放以及先停IRQ再同步取消任务的devres顺序。
 
 四篇完整冷读、七段源码按定义身份与语句顺序核对、九图渲染目视并修正一处箭头标注重叠；完整教学DTS与正文一致，DTC及fdtget验证低有效和高有效两例的offset、flags、键码与时间。严格连续性、长度、锚点、元数据和全仓链接检查。未执行dtbs_check、目标内核构建、硬件按键或唤醒实验；离线教学Provider没有匹配硬件驱动，不把解析成功当作设备上线。
+
+## 1.271\_GPIO指示与背光的领域状态和输出
+
+2026-10-17，新增 [指示与背光正文](../../../knowledge/driver_model/gpio_consumers/P04_GPIO指示与背光怎样接入亮度接口.md#4.1_都是点亮为什么需要两种对象) 与 [唯一实现](../gpiolib/source_explanations/P09_指示灯与背光的GPIO适配.md#9.1_灯对象怎样选择可睡眠或普通回调)，扩展 [功能适配导读](../gpiolib/navigation/P06_标准功能驱动怎样承接GPIO状态.md#6.3_灯与背光把期望值交给不同的状态管理者)。从显示关闭推导brightness意图、power与blank/suspend条件，解释可睡眠LED的work交接、二值能力、初值与注销，分别画LED和backlight退出路径。
+
+沿用NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，核对leds-gpio、led-core、led-class、gpio_backlight、backlight核心及头文件，六份原件blob与相对路径保存在实现页。核对LED与背光binding和Kconfig；保留default-on/phandle实际分支及负读取未单独处理的事实，指出GPIO背光actual_brightness在缺回读回调时返回软件属性，不等于物理反馈。
+
+两篇新正文及扩展导读冷读；九段源码按定义与语句核对、七图渲染目视；完整DTS与正文一致，DTC/fdtget检查off/keep两种输入、GPIO参数及显示端phandle引用。长度与锚点检查通过，连续性审计仅对模块导读报告LINK_DENSITY：25个入口对应已本地讲清的K/L周期与唯一实现，按导航职责保留必要链接，不伪称审计无风险。全仓链接、元数据与Git差异检查完成。未进行dtbs_check、目标内核构建、休眠/解绑或光输出实测；教学Provider和显示节点不宣称有真实驱动。
