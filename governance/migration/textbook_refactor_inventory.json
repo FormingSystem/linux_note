@@ -6651,6 +6651,17 @@
           "篇幅3295字词；实际格式元数据命名及全仓9395本地链接检查通过"
         ],
         "limits": "未执行目标Tasks线程、IPI或动态代码卸载实验；本页维持模块导读职责。"
+      },
+      "research/source_reading/rcu/navigation/P11_Linux_6.12_Tiny_RCU模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补单CPU硬中断交错、尾指针槽位和T0至T5时序；区分历史配置、当前证据与同步接口退化。",
+        "validation": [
+          "固定源码核对；两图渲染目视；18出链6标题入链与严格连续性通过",
+          "篇幅2337字词；实际格式元数据命名及全仓9398本地链接检查通过"
+        ],
+        "limits": "未重新构建内核、生成Bear数据库或执行目标中断实验。"
       }
     },
     "additional_documents": [
