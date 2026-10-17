@@ -6134,6 +6134,127 @@
           "模块五图、实现六图目视通过；精确标题链接和全仓9095有效链接及格式检查通过。mutex共同函数258行长度提示人工保留，其余严格连续性零风险。"
         ],
         "limits": "未执行目标内核构建、真实信号、SMP或RT运行；完整函数保留，静态一致性不等于预处理编译或运行验证。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P01_seqcount_seqlock_读重试快照机制.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正外部写锁与快照复制顺序，先解释关联锁和seqlock出现的重复协议，并补指针引用取得窗口。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交dd4b016；三份固定源码/文档Git摘要核对，42个C摘录块静态一致。",
+          "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
+        ],
+        "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P02_一致快照的证明模型.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "复用时钟参数场景，区分正交状态与单一流水线，给出完整C交错枚举及不会随NDEBUG消失的检验。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交dd4b016；三份固定源码/文档Git摘要核对，42个C摘录块静态一致。",
+          "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
+        ],
+        "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P03_seqcount读写路径与内存顺序.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "明确先持写锁再开窗，解释普通、raw及屏障路径各自承担的作用。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交dd4b016；三份固定源码/文档Git摘要核对，42个C摘录块静态一致。",
+          "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
+        ],
+        "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P04_seqcount_latch双副本状态机.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以L周期区分双副本选择和普通奇偶窗口，保留完整可运行模型及两次重定向反例。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交dd4b016；三份固定源码/文档Git摘要核对，42个C摘录块静态一致。",
+          "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
+        ],
+        "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P05_关联锁变体与实时性边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从写者被抢占推出关联锁补偿，明确RT读者立即释放、外部锁寿命和NMI边界，校正文档与实现差异。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交dd4b016；三份固定源码/文档Git摘要核对，42个C摘录块静态一致。",
+          "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
+        ],
+        "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/P06_生命周期误用诊断与选型.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先由失效窗口解释寿命协议、重试分类和选型，补回绕模型完整命令及127次对照。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交dd4b016；三份固定源码/文档Git摘要核对，42个C摘录块静态一致。",
+          "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
+        ],
+        "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/sequence_counters/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "按前置问题与未决问题连接六章，明确S/L/A周期语义并定位锁前置。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交dd4b016；三份固定源码/文档Git摘要核对，42个C摘录块静态一致。",
+          "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
+        ],
+        "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
+      },
+      "research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以读者问题组织固定源码身份与阅读入口，修正状态图和历史配置边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交dd4b016；三份固定源码/文档Git摘要核对，42个C摘录块静态一致。",
+          "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
+        ],
+        "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
+      },
+      "research/source_reading/sequence_counters/navigation/P02_Linux_6.12_seqcount与seqlock模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "统一普通S、关联A及latch L阶段，补状态落点、RT释放和KCSAN检查边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交dd4b016；三份固定源码/文档Git摘要核对，42个C摘录块静态一致。",
+          "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
+        ],
+        "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
+      },
+      "research/source_reading/sequence_counters/source_explanations/include/linux/seqlock.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "在代码前展开读写、双副本与关联补偿的问题，逐函数修正Doxygen含义及参数，保留原件语义。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交dd4b016；三份固定源码/文档Git摘要核对，42个C摘录块静态一致。",
+          "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
+        ],
+        "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
+      },
+      "research/source_reading/sequence_counters/source_explanations/include/linux/seqlock_types.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先解释为什么需要不同状态载体，再展开条件字段与初始化，核对固定类型原件。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交dd4b016；三份固定源码/文档Git摘要核对，42个C摘录块静态一致。",
+          "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
+        ],
+        "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
       }
     },
     "additional_documents": [
