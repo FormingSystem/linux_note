@@ -2726,3 +2726,9 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 13段结构/函数定义与原件作有序token及定义身份核对；完整C与正文一致、UAPI符号存在、引用与清理顺序静态复核。七图渲染目视，四篇完整冷读，元数据、ID、标题、链接检查。严格连续性检查仅提示P08的完整程序小节超过160行风险阈值；复核后保留同一请求周期的完整代码，避免把错误出口和释放依赖拆开，全文未超过10000字词。此人工保留判断不伪装成审计无风险。清理命令重新建立变量，可在原set-e shell失败退出后恢复。
 
 本轮无目标Linux用户程序编译、GPIO-sim装载或实机事件测试；没有用宿主替身头文件代替目标编译。运行输出均为预期，普通双边沿线程采样、nested时间戳、FIFO覆盖和多读者消费边界明确保留。
+
+## 1.269\_GPIO工程取证与专题阅读入口
+
+2026-10-17，重构 [GPIO工程页](../../../engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md)，把只读登记/占用查询、启动FDT与live tree、单次动作、GPIO trace采样位置、局部动态打印恢复、事件及PM条件串成取证路径。补可直接保存的请求失败日志脚本，先存原flags，仅撤销本次新增p；缺日志点、缺debugfs与未运行都不写成硬件成功/失败。同步 [GPIO大纲](../../../knowledge/driver_model/gpio/大纲.md) 的读者起点、教学设备边界、四类实验入口及固定版本身份。
+
+复用NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的gpiolib、`include/trace/events/gpio.h` 和 `Documentation/admin-guide/dynamic-debug-howto.rst`，复核gpiod_request失败打印、raw读后trace与raw写前trace的实际位置。libgpiod工具选项核对官方2.3.1文档，不混用major版本。配套脚本与正文一致，原状态保留、trap清理及单日志点范围静态检查；两篇完整冷读、严格连续性、长度与标题锚点检查，工程图渲染目视。无目标Linux shell、trace/debug控制文件或硬件执行，操作方法不记作板上验证。
