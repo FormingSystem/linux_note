@@ -6420,6 +6420,17 @@
           "两图渲染目视、严格连续性、精确链接及全仓9229有效本地链接检查通过。"
         ],
         "limits": "设备关闭为限定前提的业务占位；未执行硬件撤销、目标构建、加急压力测试或trace采集。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_NOCB回调卸载.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "冷读卸载问题与运行周期，补N0至N7状态所有权、旁路计数与通知分支；明确线程放置、NO_HZ有效集合及动态切换限制，纠正总len已包含bypass。",
+        "date": "2026-10-17",
+        "validation": [
+          "固定NXP源码及参数文档核对；四图渲染目视、严格连续性和精确链接通过",
+          "篇幅9506字词；全仓实际727篇Markdown扫描9260有效本地链接无缺失"
+        ],
+        "limits": "未执行目标构建、隔离部署或跟踪实验；并行GIC拆分待结构稳定后单独重新核对和登记。"
       }
     },
     "additional_documents": [
