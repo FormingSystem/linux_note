@@ -21,7 +21,8 @@
       "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md",
       "knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md": "knowledge/driver_model/device_tree/P01_GPIO连接命名占用与按键事件.md",
       "knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md": "knowledge/driver_model/device_tree/P02_引脚配置怎样连接外设与焊盘.md",
-      "knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md": "knowledge/driver_model/device_tree/P05_GPIO输入怎样成为中断与按键事件.md"
+      "knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md": "knowledge/driver_model/device_tree/P05_GPIO输入怎样成为中断与按键事件.md",
+      "knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt示例.md": "knowledge/driver_model/device_tree/P06_从供电复位到SDIO无线设备枚举.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -7184,6 +7185,138 @@
           "关系图与含逻辑转换的时序图渲染目视，严格连续性、长度、精确链接和实际文档检查通过。"
         ],
         "limits": "未运行目标硬件、input/LED、PM/唤醒、Kbuild及dtbs_check；教学DT仅验证编码。"
+      },
+      "knowledge/driver_model/device_tree/P06_从供电复位到SDIO无线设备枚举.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "原1954行七章完整冷读后，按供电、pwrseq、SDIO枚举和HOST_WAKE重构职责，保留实际绑定支持与时序边界。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "knowledge/driver_model/device_tree/P07_摄像头控制连接怎样成为图像数据流.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "按控制与图像数据通路重构OV5640，补齐供电时钟GPIO端点、上电周期，修正虚构帧IRQ。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "knowledge/driver_model/device_tree/P08_扩展GPIO与共享中断怎样找到事件来源.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "解释扩展器历史采样、慢总线线程、嵌套分派、多IRQ和共享线条件，补寄存器表并修正编号/上下文。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "knowledge/driver_model/device_tree/P09_RS485方向控制为什么必须等待发送完成.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "用最后停止位推出RS485方向状态，核对实际绑定、完成寄存器和iMX定时器，提供完整查询程序。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "knowledge/driver_model/device_tree/P10_组合外设怎样换板并逐层定位故障.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "按真实iMX与RK3568差量迁移连接，补离线模型和独立trace实例，区别部署、驱动与物理证据。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "research/source_reading/peripheral_integration/navigation/P01_组合外设源码阅读索引.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "建立固定版本、条件性配置、全部模块与实现入口的总索引。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "research/source_reading/peripheral_integration/navigation/P02_资源准备与事件完成怎样交接.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "用W/C/E/T周期组织执行者、状态位置、通信和失败，精确链接唯一实现。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "research/source_reading/peripheral_integration/source_explanations/P01_MMC简单时序怎样跨过枚举前准备.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "以固定源码解释pwrseq句柄/可选资源、GPIO数组、时钟延时及未传播错误。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "research/source_reading/peripheral_integration/source_explanations/P02_OV5640怎样建立时钟供电与复位时序.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "展开OV5640取得、上电/回退、PWDN缺失分支与电源生命周期，区分传感器与接收器。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "research/source_reading/peripheral_integration/source_explanations/P03_PCA953x怎样比较输入并分派嵌套中断.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "展开PCA953x线程配置、bitmap比较和嵌套分派，保留实际返回值及读错误边界。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "research/source_reading/peripheral_integration/source_explanations/P04_iMX串口怎样在发送完成后释放方向.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "展开iMX端口状态、DMA/TXDC条件及锁内定时器，说明新数据/关闭/配置修改影响。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
+      },
+      "research/source_reading/peripheral_integration/大纲.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "建立应用到源码的阅读地图与范围边界，全部链接对应已落地正文。",
+        "validation": [
+          "固定提交24份文件及既有源码/绑定核对；36次离线DTC/fdtget调用无警告，6个源码摘录有序token一致。",
+          "18图逐图渲染目视；完整冷读、严格连续性、长度、ID唯一、完整标题锚点与实际文档/全仓链接检查通过。"
+        ],
+        "limits": "未运行Linux查询C程序、POSIX trace脚本、目标Kbuild、dtbs_check或板上功能/PM；环境无可用POSIX shell和WSL。"
       }
     },
     "additional_documents": [
@@ -7221,7 +7354,18 @@
       "research/source_reading/pinctrl/navigation/P02_从描述到选择与硬件落点导读.md",
       "research/source_reading/pinctrl/source_explanations/P01_状态映射选择与探测交接.md",
       "research/source_reading/pinctrl/source_explanations/P02_iMX6UL配置解析与寄存器落点.md",
-      "research/source_reading/pinctrl/大纲.md"
+      "research/source_reading/pinctrl/大纲.md",
+      "knowledge/driver_model/device_tree/P07_摄像头控制连接怎样成为图像数据流.md",
+      "knowledge/driver_model/device_tree/P08_扩展GPIO与共享中断怎样找到事件来源.md",
+      "knowledge/driver_model/device_tree/P09_RS485方向控制为什么必须等待发送完成.md",
+      "knowledge/driver_model/device_tree/P10_组合外设怎样换板并逐层定位故障.md",
+      "research/source_reading/peripheral_integration/navigation/P01_组合外设源码阅读索引.md",
+      "research/source_reading/peripheral_integration/navigation/P02_资源准备与事件完成怎样交接.md",
+      "research/source_reading/peripheral_integration/source_explanations/P01_MMC简单时序怎样跨过枚举前准备.md",
+      "research/source_reading/peripheral_integration/source_explanations/P02_OV5640怎样建立时钟供电与复位时序.md",
+      "research/source_reading/peripheral_integration/source_explanations/P03_PCA953x怎样比较输入并分派嵌套中断.md",
+      "research/source_reading/peripheral_integration/source_explanations/P04_iMX串口怎样在发送完成后释放方向.md",
+      "research/source_reading/peripheral_integration/大纲.md"
     ],
     "language_review": {
       "status": "complete",
