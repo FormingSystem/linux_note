@@ -6574,6 +6574,17 @@
           "篇幅4942字词；实际格式元数据命名及全仓9375本地链接检查通过"
         ],
         "limits": "未运行目标内核或trace；历史月度冻结出版物保持原发布内容。"
+      },
+      "research/source_reading/rcu/navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "校正逐叶集合吸收、RCU私有计数与CPU死亡交接，分开任务责任和队列迁移，统一H阶段并解释barrier漏扫窗口。",
+        "validation": [
+          "固定源码及迁移调用现场核对；两图渲染目视；22出链10标题入链与严格连续性通过",
+          "篇幅3814字词；实际格式元数据命名及全仓9377本地链接检查通过"
+        ],
+        "limits": "未执行目标CPU热插拔、真实队列迁移或barrier并发实验。"
       }
     },
     "additional_documents": [
