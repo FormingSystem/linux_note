@@ -15,7 +15,7 @@ source_version: "6.12.20"
 
 [mutex 与 rwsem 模块导读](../../../navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md#3.4_rwsem完整调用链)把读份额、写独占和等待队列串成一条获取链。本篇先检查承载它们的对象，再读几个名字容易使人误判的观察函数。观察到“忙”与自己取得所有权，是两种不同证据。
 
-上游位置 include/linux/rwsem.h；证据来自 NXP 官方 linux-imx 的固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，发布标签 lf-6.12.20-2.0.0、Linux 6.12.20，blob c8b543d428b0a8d4662183f3342e88ec61d10189。详见[源码基线](../../../../linux/SOURCE_BASELINE.md)。下面是原文件的完整类型或函数单元，中文 Doxygen 为仓库补充，英文注释保留。公共 down/up 函数体与初始化实现不在本头文件，本篇不冒充整份头文件的逐项展开。
+上游位置 include/linux/rwsem.h；证据来自 NXP 官方 linux-imx 的固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，发布标签 lf-6.12.20-2.0.0、Linux 6.12.20，blob c8b543d428b0a8d4662183f3342e88ec61d10189。详见[源码基线](../../../../linux/SOURCE_BASELINE.md)。下面是原文件的完整类型或函数单元，中文 Doxygen 为仓库补充，英文注释保留。公共 down/up 函数体与 __init_rwsem 函数体位于 rwsem.c；本头文件仍定义初始化宏，本篇未展开这些宏，不冒充整份头文件的逐项讲解。
 
 ## 1.2\_非RT对象的状态落点
 
@@ -63,7 +63,7 @@ struct rw_semaphore {
 };
 ```
 
-本篇只核对这个替代布局；rwbase 内部读者计数、等待与优先级处理要另沿 linux/rwbase_rt.h 阅读。当前工作配置为非 SMP、PREEMPT_NONE、TINY_RCU，未启用 RT 或 rwsem owner 自旋，不能把以下静态分支比较说成两种配置的运行测试。
+本篇只核对这个替代布局；rwbase 内部读者计数、等待与优先级处理要另沿 linux/rwbase_rt.h 阅读。历史配置记录为非 SMP、PREEMPT_NONE、TINY_RCU，未启用 RT 或 rwsem owner 自旋；本次外部工作树不可访问，没有重新核验当前配置，不能把以下静态分支比较说成两种配置的运行测试。
 
 ## 1.4\_is\_locked与is\_contended没有替你加锁
 

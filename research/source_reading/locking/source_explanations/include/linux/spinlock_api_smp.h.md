@@ -13,11 +13,15 @@ source_version: "6.12.20"
 
 ## 1.1\_公共包装之后还发生什么
 
-上页的spin_lock只把地址交给raw入口。本页进入上游 `include/linux/spinlock_api_smp.h`，回答本地抢占、IRQ保存、检查事件与功能取得的先后。证据固定于dfaf2136deb2af2e60b994421281ba42f1c087e0，Linux 6.12.20；中文Doxygen和中文注释为仓库补充。
+[公共包装](spinlock.h.md#1.4_spin_lock到raw包装)只把地址交给 raw 入口。拿到这个地址以后，还不能立刻只做架构原子操作：当前任务可能被抢占，所选 irqsave 变体还要防止本地硬中断重入。哪些约束必须在争取资格前建立，失败时又由谁恢复，正是本页要追踪的顺序。
+
+上游位置为 `include/linux/spinlock_api_smp.h`，证据固定于 dfaf2136deb2af2e60b994421281ba42f1c087e0，Linux 6.12.20；中文 Doxygen 和中文注释为仓库补充。
 
 以下获取函数选择 `!CONFIG_GENERIC_LOCKBREAK || CONFIG_DEBUG_LOCK_ALLOC` 分支。其他lockbreak实现不在本页展开，UP也不能直接假定选择这些操作。外层_raw名称可能按内联配置映射到这里，也可能经过非内联包装；不能把阅读层次当作必然的运行时调用次数。
 
 ## 1.2\_普通获取和释放的顺序
+
+先看不保存 IRQ 的普通配对。获取端建立抢占约束并向检查器报告尝试，再进入实际取得；释放端报告检查释放、归还共享资格，最后解除本层抢占约束。这三个层次的顺序不能由 acquire/release 这样的函数名互相替代。
 
 ```c
 /**
@@ -45,6 +49,8 @@ static inline void __raw_spin_unlock(raw_spinlock_t *lock)
 preempt_enable发生在架构释放之后，所以远端取得同锁不需要等当前调用完全返回。本页不展开LOCK_CONTENDED宏体，其不同诊断配置不是另一把业务锁；do_raw的唯一实现见[架构边界](spinlock.h.md#1.5_do_raw_spin_lock到架构边界)。
 
 ## 1.3\_irqsave把哪份状态带回调用者
+
+若本地硬中断也会取同锁，单有抢占约束仍不够：硬中断可以暂停当前任务，而当前任务恰好可能是它等待的解锁者。irqsave 分支先保存并关闭 IRQ，再进入原有获取过程；保存值作为返回结果留给调用者，以便退出时恢复进入前状态。
 
 ```c
 /**
@@ -96,6 +102,8 @@ sequenceDiagram
 
 ## 1.4\_trylock失败为什么不能留下约束
 
+阻塞获取直到成功才返回，trylock 却允许没有资格就退出。因此失败路径必须归还本次建立的本地约束，且不能报告已经持锁。下面比较检查事件放在分支的哪一侧：
+
 ```c
 /**
  * @brief 仓库阅读说明：trylock仅在成功后登记持锁检查状态。
@@ -121,4 +129,4 @@ static inline int __raw_spin_trylock(raw_spinlock_t *lock)
 
 本页完整展开五个函数，覆盖普通配对、irqsave配对及trylock失败恢复。未展开bh、无保存IRQ包装、lockbreak、检查宏实现和架构原子算法，不把所列函数的静态一致性当作全配置编译验证。
 
-公共入口见[spinlock.h](spinlock.h.md#1.4_spin_lock到raw包装)，角色与配置地图见[spinlock模块导读](../../../navigation/P02_Linux_6.12_spinlock模块源码概念导读.md#2.3_普通获取调用链)，总路线见[锁源码索引](../../../navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.3_三条实现分支)。当前配置非SMP、非RT，本页不报告目标运行结果。
+公共入口见[spinlock.h](spinlock.h.md#1.4_spin_lock到raw包装)，角色与配置地图见[spinlock模块导读](../../../navigation/P02_Linux_6.12_spinlock模块源码概念导读.md#2.3_普通获取调用链)，总路线见[锁源码索引](../../../navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.3_三条实现分支)。历史配置记录为非 SMP、非 RT；本次外部工作树不可访问，未核验当前配置，也未执行目标构建或运行。

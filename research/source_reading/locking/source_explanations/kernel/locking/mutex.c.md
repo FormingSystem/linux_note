@@ -17,7 +17,7 @@ source_version: "6.12.20"
 
 源码为 NXP 官方 linux-imx 发布标签 lf-6.12.20-2.0.0 的固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，Linux 6.12.20；上游位置是 kernel/locking/mutex.c，blob 为 cbae8c0b89ab2b8074a387ebf1cca86951362cc2。身份与配置见[源码基线](../../../../linux/SOURCE_BASELINE.md)。
 
-以下函数位于 !CONFIG_PREEMPT_RT 分支，普通 mutex 路径令 use_ww_ctx 为 false。共同函数中的 WW 分支保留原样，以免裁剪改变跳转关系；WW 是处理多锁获取冲突的另一套协议，其排序与回退算法不在本篇展开。CONFIG_MUTEX_SPIN_ON_OWNER 控制可选自旋实现；当前核对的非 SMP 工作配置未启用它。因此能够阅读自旋调用点，并不表示本机实际运行过该分支。
+以下函数位于 !CONFIG_PREEMPT_RT 分支，普通 mutex 路径令 use_ww_ctx 为 false。共同函数中的 WW 分支保留原样，以免裁剪改变跳转关系；WW 是处理多锁获取冲突的另一套协议，其排序与回退算法不在本篇展开。CONFIG_MUTEX_SPIN_ON_OWNER 控制可选自旋实现；历史非 SMP 配置记录未启用它。本次外部工作树不可访问，未重新核验当前配置；能够阅读固定源码中的自旋调用点，并不表示目标实际运行过该分支。
 
 代码块按完整函数抽取，不是可独立编译的替代实现。中文 Doxygen 与中文行内注释由仓库补充，原有英文注释保留。调度器、Lockdep、wake_q 和 OSQ 的内部实现仍由对应源码负责。
 
@@ -190,18 +190,18 @@ __mutex_remove_waiter(struct mutex *lock, struct mutex_waiter *waiter)
 
 最后一个节点退出时，WAITERS、HANDOFF、PICKUP 都不再有排队者需要延续，清理掩码因此是 MUTEX_FLAGS，而不是只清 WAITERS。成功取得者的任务指针仍保留在 owner 中，摘队并不等于解锁。
 
-现在沿一个操作周期读共同获取函数。这里的 S0～S5 是本篇定位代码的阶段名，分别对应知识正文中的尝试、登记、等待、交接、接收与退出：
+现在沿一个操作周期读共同获取函数。本篇沿用模块导读的 M0～M5：M0 对应统一周期 S1/S3 的尝试与分类，M1 对应 S4 登记，M2 对应 S5 等待，M3 连接释放者的 S6 与等待者的 S5，M4 是进入 S2 后的 S7 获取收尾，M5 是未取得时的 S7 退出。下表把这些局部阅读点落到实际地址：
 
 | 阶段 | 触发与写入者 | 状态地址和变化 | 退出条件 |
 | --- | --- | --- | --- |
-| S0 尝试 | B 进入获取函数 | 禁抢占，尝试 owner；可选自旋未入睡眠队列 | 成功返回；否则取得 wait_lock 后重试 |
-| S1 登记 | 再次尝试失败的 B | 初始化栈上 waiter.task，尾插 wait_list，必要时设置 WAITERS | 设置本任务等待状态 |
-| S2 等待 | B 仍未取得 | 先尝试 owner，再查信号；释放 wait_lock 后调度 | 被唤醒或其他调度条件使其继续 |
-| S3 请求与发布 | 队首 B、随后解锁者 A | B 尝试或设置 HANDOFF；A 在释放路径写 B 身份及 PICKUP | B 再次尝试接收 |
-| S4 成功退出等待 | 取得者 B | acquire 更新 owner，恢复 TASK_RUNNING，持 wait_lock 摘队 | 清理检查状态、解 wait_lock、恢复抢占，返回 0 |
-| S5 取消等待 | 未取得且遇到有效信号的 B | 持 wait_lock 恢复运行状态并摘队，撤销检查登记 | 恢复抢占，返回 -EINTR |
+| M0 尝试 | B 进入获取函数 | 禁抢占，尝试 owner；可选自旋未入睡眠队列 | 成功返回；否则取得 wait_lock 后重试 |
+| M1 登记 | 再次尝试失败的 B | 初始化栈上 waiter.task，尾插 wait_list，必要时设置 WAITERS | 设置本任务等待状态 |
+| M2 等待 | B 仍未取得 | 先尝试 owner，再查信号；释放 wait_lock 后调度 | 被唤醒或其他调度条件使其继续 |
+| M3 请求与发布 | 队首 B、随后解锁者 A | B 尝试或设置 HANDOFF；A 在释放路径写 B 身份及 PICKUP | B 再次尝试接收 |
+| M4 成功退出等待 | 取得者 B | acquire 更新 owner，恢复 TASK_RUNNING，持 wait_lock 摘队 | 清理检查状态、解 wait_lock、恢复抢占，返回 0 |
+| M5 取消等待 | 未取得且遇到有效信号的 B | 持 wait_lock 恢复运行状态并摘队，撤销检查登记 | 恢复抢占，返回 -EINTR |
 
-不是每次调用都经过所有阶段：S0 可直接成功，S2 可在普通竞争中成功而跳过 S3，S5 只属于失败分支。下面保留完整共同函数，先把 use_ww_ctx=false、ww_ctx=NULL 代入阅读，再识别可选分支。trace_contention_begin/end 记录竞争区间，LCB_F_MUTEX 与 LCB_F_SPIN 是追踪事件的类型标志；它们没有替代 owner 更新。WW 分支中的 READ_ONCE 读取上下文指针，-EALREADY 表示相同获取上下文已经登记；普通路径不进入这个分支。FIFO 注释描述普通等待者按先入先出方式入队，不保证所有到达者都严格按此顺序取得锁。
+不是每次调用都经过所有阶段：M0 可直接成功，M2 可在普通竞争中成功而跳过 M3，M5 只属于失败分支。下面保留完整共同函数，先把 use_ww_ctx=false、ww_ctx=NULL 代入阅读，再识别可选分支。trace_contention_begin/end 记录竞争区间，LCB_F_MUTEX 与 LCB_F_SPIN 是追踪事件的类型标志；它们没有替代 owner 更新。WW 分支中的 READ_ONCE 读取上下文指针，-EALREADY 表示相同获取上下文已经登记；普通路径不进入这个分支。FIFO 注释描述普通等待者按先入先出方式入队，不保证所有到达者都严格按此顺序取得锁。
 
 ```c
 /**
@@ -242,7 +242,7 @@ __mutex_lock_common(struct mutex *lock, unsigned int state, unsigned int subclas
 #endif
 	}
 
-	/* 中文阅读注 S0：检查器登记尝试，不代表功能锁已经取得。 */
+	/* 中文阅读注 M0：检查器登记尝试，不代表功能锁已经取得。 */
 	preempt_disable();
 	mutex_acquire_nest(&lock->dep_map, subclass, 0, nest_lock, ip);
 
@@ -269,7 +269,7 @@ __mutex_lock_common(struct mutex *lock, unsigned int state, unsigned int subclas
 		goto skip_wait;
 	}
 
-	/* 中文阅读注 S1：到这里才建立栈上等待记录。 */
+	/* 中文阅读注 M1：到这里才建立栈上等待记录。 */
 	debug_mutex_lock_common(lock, &waiter);
 	waiter.task = current;
 	if (use_ww_ctx)
@@ -320,7 +320,7 @@ __mutex_lock_common(struct mutex *lock, unsigned int state, unsigned int subclas
 				goto err;
 		}
 
-		/* 中文阅读注 S2：不能带着保护队列的 raw 锁去睡眠。 */
+		/* 中文阅读注 M2：不能带着保护队列的 raw 锁去睡眠。 */
 		raw_spin_unlock(&lock->wait_lock);
 		schedule_preempt_disabled();
 
@@ -346,7 +346,7 @@ __mutex_lock_common(struct mutex *lock, unsigned int state, unsigned int subclas
 	}
 	raw_spin_lock(&lock->wait_lock);
 acquired:
-	/* 中文阅读注 S4：已经取得 owner，现在退出共享等待队列。 */
+	/* 中文阅读注 M4：已经取得 owner，现在退出共享等待队列。 */
 	__set_current_state(TASK_RUNNING);
 
 	if (ww_ctx) {
@@ -376,7 +376,7 @@ skip_wait:
 	return 0;
 
 err:
-	/* 中文阅读注 S5：没有取得 owner，按失败路径摘队。 */
+	/* 中文阅读注 M5：没有取得 owner，按失败路径摘队。 */
 	__set_current_state(TASK_RUNNING);
 	__mutex_remove_waiter(lock, &waiter);
 err_early_kill:
@@ -393,11 +393,11 @@ err_early_kill:
 
 再看两次自旋调用的实参。第一次传 NULL，发生在加入 wait_list 之前；第二次传 &waiter，且只在 first 为真时发生。在启用 owner 自旋的实现中，后者是已入队的队首，允许绕过 OSQ 与 OSQ 队首并行尝试。这里不展开 OSQ 算法，也不能据第一处调用概括“任何时候只有一个 mutex 竞争者”。
 
-preempt_disable 也没有把 mutex 变成不可睡的锁：代码明确通过 schedule_preempt_disabled 执行受控调度。真正不能跨睡眠保留的是 wait_lock；每次调度前都先释放它，让解锁者有机会检查队列。睡醒后重新设置等待状态再尝试，配合唤醒方的状态更新，避免“刚错过唤醒就永久睡下”的窗口。
+might_sleep 是可睡前提的诊断检查点，不等于任务已经睡眠；诊断关闭或未报告也不授权原本不合法的上下文。preempt_disable 也没有把 mutex 变成不可睡的锁：代码明确通过 schedule_preempt_disabled 执行受控调度。真正不能跨睡眠保留的是 wait_lock；每次调度前都先释放它，让解锁者有机会检查队列。睡醒后重新设置等待状态再尝试，配合唤醒方的状态更新，避免“刚错过唤醒就永久睡下”的窗口。
 
 ## 1.5\_mutex\_unlock\_slowpath的交接
 
-S3 的后半段发生在 A，而不是 B。先看定向发布的辅助函数：next 有值时，写入目标身份和 PICKUP；next 为 NULL 时退化为普通释放。两种情况都保留 WAITERS、清除 HANDOFF，并通过 release 发布临界区写入。调用者用 DEFINE_WAKE_Q 声明并初始化栈上的延后唤醒队列：在 wait_lock 内收集目标，在锁外实施唤醒。
+M3 的后半段发生在 A，而不是 B。先看定向发布的辅助函数：next 有值时，写入目标身份和 PICKUP；next 为 NULL 时退化为普通释放。两种情况都保留 WAITERS、清除 HANDOFF，并通过 release 发布临界区写入。调用者用 DEFINE_WAKE_Q 声明并初始化栈上的延后唤醒队列：在 wait_lock 内收集目标，在锁外实施唤醒。
 
 ```c
 /**
@@ -500,7 +500,7 @@ sequenceDiagram
     participant A as 持有者 A
     participant L as wait_lock 与 wait_list
     participant Q as wake_q 与调度器
-    B->>O: S3 trylock_or_handoff(true)
+    B->>O: M3 trylock_or_handoff(true)
     O-->>B: 仍属 A，设置 HANDOFF，不算取得
     A->>O: 解锁读到 HANDOFF，保留身份并退出循环
     A->>L: 获取 wait_lock，读取当前队首
@@ -508,16 +508,16 @@ sequenceDiagram
         A->>O: release 写 B + WAITERS + PICKUP
         A->>Q: 解 wait_lock 后 wake_up_q(B)
         Q-->>B: 允许继续运行
-        B->>O: S4 acquire 清 PICKUP
+        B->>O: M4 acquire 清 PICKUP
         B->>L: 摘除自己的 waiter，必要时清协议位
-    else B 在交接前按 S5 取消并已摘队
+    else B 在交接前按 M5 取消并已摘队
         L-->>A: 现在队首为 C，或队列为空
         A->>O: release 写 C + PICKUP，或写无身份状态
         A->>Q: 仅对实际选中的任务安排唤醒
     end
 ```
 
-图中的取消分支发生在 A 选目标之前。若 A 已经在 wait_lock 内把 B 写成接收者，B 就不能再依据旧观察随意取消：获取循环先尝试接收，然后才检查错误。这正是 S4 与 S5 必须在同一流程中阅读的原因。
+图中的取消分支发生在 A 选目标之前。若 A 已经在 wait_lock 内把 B 写成接收者，B 就不能再依据旧观察随意取消：获取循环先尝试接收，然后才检查错误。这正是 M4 与 M5 必须在同一流程中阅读的原因。
 
 最后检查一个容易被原子发布掩盖的寿命问题：普通分支可能已经清掉 owner，但 A 随后仍访问 lock.wait_lock 和 lock.wait_list。因此其他线程看到“锁已空闲”，不代表可以立即释放包含 mutex 的对象；调用者必须保证 mutex_unlock 返回前对象仍然存活。锁负责受保护访问的顺序，对象的最终释放还要有外层寿命协议。
 
