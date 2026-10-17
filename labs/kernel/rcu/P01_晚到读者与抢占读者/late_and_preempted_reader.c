@@ -19,6 +19,7 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/timer.h>
+#include <linux/timekeeping.h>
 
 #define LAB_PREFIX "rcu_lifetime_lab: "
 
@@ -36,7 +37,7 @@ MODULE_PARM_DESC(target_cpu,
 
 static unsigned int hold_ms = 300;
 module_param(hold_ms, uint, 0444);
-MODULE_PARM_DESC(hold_ms, "How long the FIFO task keeps the reader preempted");
+MODULE_PARM_DESC(hold_ms, "Release timer delay in milliseconds, not a promised GP duration");
 
 static DECLARE_COMPLETION(late_reader_ready);
 static DECLARE_COMPLETION(start_late_reader);
@@ -49,6 +50,10 @@ static DECLARE_COMPLETION(disturber_running);
 static DECLARE_COMPLETION(disturber_done);
 static atomic_t release_preempt_reader = ATOMIC_INIT(0);
 static struct timer_list release_timer;
+/* 时间戳只作事件边界观察；完整读者退出由completion交接。 */
+static u64 old_unlock_enter_ns;
+static u64 old_unlock_exit_ns;
+static u64 release_ns;
 
 static struct task_struct *late_reader_task;
 static struct task_struct *old_reader_task;
@@ -116,7 +121,9 @@ static int old_reader_fn(void *unused)
 		cpu_relax();
 	}
 
+	WRITE_ONCE(old_unlock_enter_ns, ktime_get_ns());
 	rcu_read_unlock();
+	WRITE_ONCE(old_unlock_exit_ns, ktime_get_ns());
 	pr_info(LAB_PREFIX "old reader unlocked generation=%d checksum=%lu on cpu=%d\n",
 		generation, checksum, task_cpu(current));
 	complete(&old_reader_done);
@@ -147,6 +154,7 @@ static int disturber_fn(void *unused)
 
 static void release_timer_fn(struct timer_list *timer)
 {
+	WRITE_ONCE(release_ns, ktime_get_ns());
 	atomic_set(&release_preempt_reader, 1);
 }
 
@@ -198,6 +206,8 @@ static int run_preempt_reader_phase(int cpu)
 	struct demo_obj *old_obj;
 	ktime_t started;
 	s64 elapsed_us;
+	u64 gp_return_ns;
+	bool window_open_at_gp_start;
 
 	old_reader_task = kthread_create(old_reader_fn, NULL, "rcu_lifetime_old");
 	if (IS_ERR(old_reader_task))
@@ -222,16 +232,30 @@ static int run_preempt_reader_phase(int cpu)
 	complete(&start_disturber);
 	wait_for_completion(&disturber_running);
 
+	/* 若定时器已放行，本次没有建立可观察的抢占等待窗口。 */
+	window_open_at_gp_start = !atomic_read(&release_preempt_reader);
 	started = ktime_get();
 	synchronize_rcu();
+	gp_return_ns = ktime_get_ns();
 	elapsed_us = ktime_us_delta(ktime_get(), started);
+	/* 先保存GP实际返回时刻，再等日志生产者；不拿打印先后冒充事件先后。 */
 	wait_for_completion(&old_reader_done);
-	pr_info(LAB_PREFIX "preempt GP returned after %lld us\n", elapsed_us);
-
-	/* 到这里，旧读者必须已经退出其最外层读侧。 */
-	kfree(old_obj);
 	wait_for_completion(&disturber_done);
 	del_timer_sync(&release_timer);
+	pr_info(LAB_PREFIX "preempt GP returned after %lld us window_open_at_start=%d\n",
+		elapsed_us, window_open_at_gp_start);
+	pr_info(LAB_PREFIX "event_ns release=%llu unlock_enter=%llu unlock_exit=%llu gp_return=%llu\n",
+		(unsigned long long)READ_ONCE(release_ns),
+		(unsigned long long)READ_ONCE(old_unlock_enter_ns),
+		(unsigned long long)READ_ONCE(old_unlock_exit_ns),
+		(unsigned long long)gp_return_ns);
+	if (!window_open_at_gp_start)
+		pr_warn(LAB_PREFIX "preempt window not established; result is inconclusive\n");
+	if (gp_return_ns < READ_ONCE(old_unlock_enter_ns))
+		pr_err(LAB_PREFIX "GP returned before reader reached unlock; inspect trace and timing\n");
+
+	/* 额外等待读者完成后才释放，异常观测时也不故意制造UAF。 */
+	kfree(old_obj);
 	return 0;
 }
 
@@ -269,8 +293,8 @@ static int __init rcu_lifetime_lab_init(void)
 	if (ret)
 		goto fail;
 
-	if (!IS_ENABLED(CONFIG_PREEMPT_RCU)) {
-		pr_warn(LAB_PREFIX "PREEMPT_RCU disabled; preempt phase skipped\n");
+	if (!IS_ENABLED(CONFIG_PREEMPT_RCU) || IS_ENABLED(CONFIG_PREEMPT_RT)) {
+		pr_warn(LAB_PREFIX "requires PREEMPT_RCU without PREEMPT_RT; preempt phase skipped\n");
 		return 0;
 	}
 
