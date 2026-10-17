@@ -8278,6 +8278,54 @@
           "全仓819篇链接无缺失；旧官方字段示意与当前声明差异已说明。"
         ],
         "limits": "C示例未在目标Linux编译运行，未执行目标连接、并发卸载或低内存故障注入。"
+      },
+      "knowledge/kernel_subsystems/vfs/P06_superblock实例状态与生命周期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿B0至B5解释候选发布、等待交接、两种引用与最后关闭回收。",
+        "validation": [
+          "二十三个函数与固定super.c逐token一致，等待承载与相关原件复核。",
+          "四篇冷读、八图渲染目视及连续性、长度、标题元数据、锚点检查完成。",
+          "全仓822篇链接无缺失；不重复已有建树和创建mount实现。"
+        ],
+        "limits": "没有目标并发挂载、卸载压力或低内存故障注入；图为教学交错而非运行日志。"
+      },
+      "research/source_reading/vfs/navigation/P05_实例怎样在构造与关闭之间交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿B0至B5解释候选发布、等待交接、两种引用与最后关闭回收。",
+        "validation": [
+          "二十三个函数与固定super.c逐token一致，等待承载与相关原件复核。",
+          "四篇冷读、八图渲染目视及连续性、长度、标题元数据、锚点检查完成。",
+          "全仓822篇链接无缺失；不重复已有建树和创建mount实现。"
+        ],
+        "limits": "没有目标并发挂载、卸载压力或低内存故障注入；图为教学交错而非运行日志。"
+      },
+      "research/source_reading/vfs/source_explanations/P06_实例匹配与构造完成的交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿B0至B5解释候选发布、等待交接、两种引用与最后关闭回收。",
+        "validation": [
+          "二十三个函数与固定super.c逐token一致，等待承载与相关原件复核。",
+          "四篇冷读、八图渲染目视及连续性、长度、标题元数据、锚点检查完成。",
+          "全仓822篇链接无缺失；不重复已有建树和创建mount实现。"
+        ],
+        "limits": "没有目标并发挂载、卸载压力或低内存故障注入；图为教学交错而非运行日志。"
+      },
+      "research/source_reading/vfs/source_explanations/P07_实例关闭通知与最终内存回收.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿B0至B5解释候选发布、等待交接、两种引用与最后关闭回收。",
+        "validation": [
+          "二十三个函数与固定super.c逐token一致，等待承载与相关原件复核。",
+          "四篇冷读、八图渲染目视及连续性、长度、标题元数据、锚点检查完成。",
+          "全仓822篇链接无缺失；不重复已有建树和创建mount实现。"
+        ],
+        "limits": "没有目标并发挂载、卸载压力或低内存故障注入；图为教学交错而非运行日志。"
       }
     },
     "additional_documents": [
