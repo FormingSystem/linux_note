@@ -23,7 +23,7 @@ source_version: "6.12.20"
 
 源码基线：NXP `linux-imx`，标签 `lf-6.12.20-2.0.0`，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，配置包含 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`。上游相对位置为 [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h) 和 [`include/linux/rcutree.h`](../../linux/include/linux/rcutree.h)。
 
-先读模块模型：[拓扑与 CPU 热插拔模块源码概念导读](../navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.1_本模块究竟解决什么问题)。稳定知识正文：[P07 初始化与拓扑](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md#7.3_B0到B6_拓扑建立的统一阶段)、[P17 CPU 热插拔](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_CPU热插拔与回调迁移.md#17.6_S0到S9_CPU4离线周期)。
+先读模块模型：[拓扑与 CPU 热插拔模块源码概念导读](../navigation/P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.1_本模块究竟解决什么问题)。稳定知识正文：[P07 初始化与拓扑](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md#7.3_B0到B6_拓扑建立的统一阶段)、[P17 CPU 热插拔](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_CPU热插拔与回调迁移.md#17.6_H0到H9_CPU4离线周期)。
 
 ## 6.2\_源码符号覆盖账本
 
@@ -34,7 +34,7 @@ source_version: "6.12.20"
 | `rcutree_prepare_cpu()` | 同上 | [6.5](#6.5_boot初始化与prepare为何仍未让CPU加入当前GP) | 恢复 cblist、本地 GP/core 状态、创建相关 kthread |
 | `rcutree_report_cpu_starting()` | 同上 | [6.6](#6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮) | 加入未来普通/expedited 参与集合并发布 online 初值 |
 | `rcutree_report_cpu_dead()` | 同上 | [6.6](#6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮) | 还清当前债务、移出未来集合、记录 offline 边界 |
-| `rcutree_migrate_callbacks()` | 同上 | [6.7](#6.7_rcutree_migrate_callbacks保留callback代际与barrier证明) | entrain barrier、推进并合并分段队列、必要时唤醒 GP |
+| `rcutree_migrate_callbacks()` | 同上 | [6.7](#6.7_rcutree_migrate_callbacks保持成熟边界与barrier证明) | entrain barrier、推进并合并分段队列、必要时唤醒 GP |
 | `rcutree_dead_cpu()`、`rcutree_dying_cpu()`、`rcutree_offline_cpu()` | 同上 | [6.8](#6.8_CPUHP其余回调分别更新什么) | 计数、trace、FQS mask/tick 依赖收尾 |
 
 `rcu_gp_init()`、`rcu_report_qs_rnp()`、`rcu_barrier_entrain()`、`rcu_advance_cbs()` 只作为跨模块被调用者出现；函数体分别归 P05、P02、P10、P09。
@@ -224,7 +224,7 @@ int rcutree_prepare_cpu(unsigned int cpu)
 
 ## 6.6\_report\_cpu\_starting与report\_cpu\_dead怎样隔离当前轮和下一轮
 
-上线 CPU 只能加入下一轮参与集合；下线 CPU 若仍欠当前轮债务，则要先完成当前轮交接，再退出未来集合。两个方向看似都在改 online 位，实际写入顺序相反，下面分别核对。
+上线 CPU 写入缓冲的 next 集合，由 GP 初始化按锁保护的先后吸收，不直接给已经建立的当前 `qsmask` 增加欠位。全局代次启动先于逐叶吸收，所以不能把“next”机械解释为全局序号已经加一后的再下一轮。下线 CPU 若仍欠当前轮债务，则先报告当前位，再退出未来集合。两个方向的写入顺序分别核对如下。
 
 ### 6.6.1\_starting只写下一轮集合
 
@@ -315,11 +315,11 @@ void rcutree_report_cpu_dead(void)
 }
 ```
 
-上面裁剪保留了顺序不变量；固定源码还在 `barrier_lock`、watching offline、expedited 清理和节点传播上执行更多动作。不能把裁剪当可编译替代实现。
+这段保持了 report-dead 的主要顺序；barrier 协调和其他热插拔动作分布在各自入口，不能宣称它们全部发生在这个函数体内。裁剪不是可编译替代实现。
 
 实现原理：中断从进入这段路径到 CPU死亡都必须保持关闭，否则 CPU 已经从普通 next mask 移除后，中断仍可能开启一个新的普通 RCU reader，破坏“离线 CPU 不再产生新旧 reader”的证明。当前 `qsmask` 位先报告，是为了让正在进行的 GP 不等待一个即将消失的执行者；普通 next 位随后删除，是为了未来普通 GP 不再纳入它。Expedited 的 `expmaskinitnext` 刻意不清，selection 会按实时 online 状态消除离线位。
 
-## 6.7\_rcutree\_migrate\_callbacks保留callback代际与barrier证明
+## 6.7\_rcutree\_migrate\_callbacks保持成熟边界与barrier证明
 
 ```c
 /**
@@ -351,7 +351,7 @@ void rcutree_migrate_callbacks(int cpu)
 	WARN_ON_ONCE(!rcu_nocb_flush_bypass(my_rdp, NULL, jiffies, false));
 	raw_spin_lock_rcu_node(my_rnp);
 
-	/* 先利用已完成 GP 推进两边分段，再保持段语义合并。 */
+	/* 条件推进；|| 有短路。合并保留DONE，源未成熟项进入NEXT。 */
 	needwake = rcu_advance_cbs(my_rnp, rdp) ||
 		   rcu_advance_cbs(my_rnp, my_rdp);
 	rcu_segcblist_merge(&my_rdp->cblist, &rdp->cblist);
@@ -373,9 +373,9 @@ void rcutree_migrate_callbacks(int cpu)
 }
 ```
 
-实现原理：直接把一条单链表接到另一条尾部不足以保存 DONE/WAIT/NEXT 的分界和目标 GP。`rcu_segcblist_merge()` 在两边已根据目标节点最新 GP 推进以后合并分段状态；源 `cblist` 随后 disable，阻止未来 producer 误用死亡 CPU 的普通队列。
+实现原理：`rcu_segcblist_merge()` 保留源 DONE 的成熟资格，把源未成熟部分加入目标 NEXT；原目标代际不会逐项原样保存，后续须重新取得安全的等待目标。推进调用受 `||` 短路影响，并非每次都先推进两边。源 `cblist` 随后 disable，阻止后续路径误用死亡 CPU 的普通队列；迁移协议同时要求源已不再接受普通生产者。
 
-`barrier_entrain(rdp)` 必须发生在搬运前且持 `barrier_lock`：若 barrier 已经扫描过源 CPU、迁移又把业务 callback 搬到已扫描过的目标 CPU，没有源队尾哨兵就会漏等这批 callback。
+`rcu_barrier_entrain(rdp)` 在搬运前且持 `barrier_lock` 执行：若本轮 barrier 尚未登记源 CPU，而迁移把 callback 搬到已扫描过的目标 CPU，就需要先在源链上接入本轮哨兵，再连同业务 callback 一起搬走。函数用全局代次和源 CPU 快照判断是否需要登记；源已有本轮哨兵时不会重复计数。
 
 ## 6.8\_CPUHP其余回调分别更新什么
 
@@ -383,7 +383,7 @@ void rcutree_migrate_callbacks(int cpu)
 | --- | --- | --- | --- |
 | `rcutree_offline_cpu()` | 离线早期，CPU仍可运行 | 清 `ffmask`、设置 tick 依赖、调整 affinity | 清 current GP 债务 |
 | `rcutree_dying_cpu()` | 接近死亡 | 根据 `qsmask` 记录 `cpuofl`/`cpuofl-bgp` trace | callback 迁移 |
-| `rcutree_report_cpu_dead()` | outgoing CPU 精确死亡点 | QS/next mask/expedited/watching 交接 | 全局 online 数收尾 |
+| `rcutree_report_cpu_dead()` | outgoing CPU 精确死亡点 | 延期唤醒/QS、当前位报告、普通next位清除 | 全局 online 数收尾 |
 | `rcutree_migrate_callbacks()` | stop-machine 后由存活 CPU执行 | 搬迁非 NOCB callback | NOCB callback 搬迁 |
 | `rcutree_dead_cpu()` | CPU 完全移除后的 process context | `n_online_cpus--`、清 tick 依赖 | 改静态 `node[]` 拓扑 |
 

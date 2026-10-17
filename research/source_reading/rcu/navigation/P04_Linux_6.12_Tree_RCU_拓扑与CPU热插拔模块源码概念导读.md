@@ -153,7 +153,7 @@ sequenceDiagram
 | `node[]/level[]`、父子关系与 CPU 绑定 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`tree.h`](../../linux/kernel/rcu/tree.h) | [P06：`rcu_init_one()`](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.4_rcu_init_one建立固定汇聚树并绑定每CPU叶节点) |
 | boot per-CPU 初值与 CPU prepare | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P06：boot 与 prepare](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.5_boot初始化与prepare为何仍未让CPU加入当前GP) |
 | CPU starting/dead 的 current/next 交接 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P06：starting/dead](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮) |
-| callback 迁移与 barrier 交界 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P06：callback migration](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.7_rcutree_migrate_callbacks保留callback代际与barrier证明) |
+| callback 迁移与 barrier 交界 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P06：callback migration](../source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.7_rcutree_migrate_callbacks保持成熟边界与barrier证明) |
 | GP init 如何消费 next 集合 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P05：`rcu_gp_init()`](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.9_rcu_gp_init开始代际并建立证明债务) |
 | `rcu_barrier()` 如何与迁移互锁 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P10：barrier 与 hotplug 交界](../source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.7_barrier_lock怎样封住CPU热插拔与迁移竞态) |
 
