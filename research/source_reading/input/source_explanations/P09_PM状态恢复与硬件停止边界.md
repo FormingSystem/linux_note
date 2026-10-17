@@ -18,6 +18,15 @@ domains:
 
 Input对象既有键和槽的逻辑状态，又关联真实控制器。系统挂起回调处理前者中的一部分，不等于芯片已经断电。以下suspend释放按键，必要时发同步，然后关闭活动输出；resume恢复输出。两个函数均持event_lock，不允许设备event回调睡眠。
 
+```mermaid
+flowchart LR
+    pm["Input设备PM回调"] -->|"event_lock内释放键"| key["input_dev.key"]
+    pm -->|"读取逻辑期望"| out["input_dev.led、snd、rep"]
+    out -->|"input_dev_toggle调用event"| driver["设备输出回调"]
+    control["芯片驱动控制路径"] -->|"按板级依赖操作"| hw["电源、复位、IRQ与采样"]
+    release["内部全槽释放或驱动报告结束"] -->|"仅相应显式路径清理"| mt["input_dev.mt.slots"]
+```
+
 ```c
 /**
  * @brief 仓库补充阅读说明：释放逻辑按键并切换输出，不控制触摸芯片供电或全槽清理。
@@ -62,6 +71,8 @@ static int input_dev_resume(struct device *dev)
 这里没有input_mt_release_slots。不能因为inhibit路径调用了它，就声称system suspend也自动清空MT；也不能把resume返回0解释为regulator、总线和芯片复位已经由Input core完成。
 
 freeze只释放键，poweroff只切换输出；PM操作表把restore映射到同一个resume函数。这些差异服务于系统睡眠阶段，不能随意把所有回调替换成一个“大复位”。
+
+改变某个阶段的逻辑清理，要共同检查系统睡眠、休眠freeze/poweroff/restore以及父设备驱动的状态保持策略。这里的PM回调是Input设备类型内部入口，不供普通驱动直接调用；设备驱动负责自己的PM操作，不能通过调用这些函数跳过框架时序。
 
 ```c
 /**
@@ -175,6 +186,8 @@ static void input_dev_toggle(struct input_dev *dev, bool activate)
 
 设备event回调的返回值在这段切换中没有用于回滚逻辑位图，故EVIOCGLED得到的期望值不能证明物理灯已完成动作。若需要可睡总线，回调需使用自身的异步输出协议，停止时也要同步排空它。
 
+修改输出遍历或错误处理时，检查能力位图与当前值位图的差别、关闭时不活动项、开启时恢复0值、重复参数以及event为空的设备。新增可睡动作不能直接放进这段事件锁临界区。
+
 ## 9.3\_重置接口与多点释放有不同边界
 
 input_reset_device取dev.mutex和event_lock，重放输出并释放按键；它不等于芯片reset引脚操作，也不自动重建硬件key映射。
@@ -230,6 +243,8 @@ void input_mt_release_slots(struct input_dev *dev)
 ```
 
 这个函数不在公开input/mt.h中提供给普通设备驱动作为随意调用的全槽重置API。驱动需要报告结束时，应按自己的串行化协议用公开选槽/状态/同步接口表达；不能从上游内部调用点抄出函数名就当通用契约。
+
+修改全槽释放时，要验证frame推进与未见槽清理、兼容压力、外层同步之间的配对，还要检查inhibit调用者。若改变input_reset_device的清理范围，会影响已有调用者的身份连续性，不能只因名字有reset就顺手加入所有轴归零。
 
 ## 9.4\_逻辑清理怎样接回真实硬件停止
 
