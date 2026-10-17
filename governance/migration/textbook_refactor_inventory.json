@@ -6486,6 +6486,17 @@
           "正文13个C块组成三类宿主顺序夹具，GCC及Clang六次严格构建运行通过；两图目视、连续性和链接检查通过"
         ],
         "limits": "宿主替身只验证类型和顺序所有权，不验证Linux并发、原子操作或内存序；未执行目标Kbuild。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P22_RCU_驱动与子系统应用模式.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "改正未复制数据却返回len的read骨架，补状态快照与业务许可、设备引用及硬件完成的边界；复合发布保持完整事务，D0至D5展开异步关闭。",
+        "date": "2026-10-17",
+        "validation": [
+          "固定rculist、poll及workqueue接口核对",
+          "九段C骨架的GCC/Clang宿主严格构建运行、三图目视和连续性/链接检查通过"
+        ],
+        "limits": "宿主替身仅验证类型与顺序所有权，未进行目标构建、DMA停止、热拔出或卸载实验。"
       }
     },
     "additional_documents": [
