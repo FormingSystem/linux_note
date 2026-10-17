@@ -6585,6 +6585,17 @@
           "篇幅3814字词；实际格式元数据命名及全仓9377本地链接检查通过"
         ],
         "limits": "未执行目标CPU热插拔、真实队列迁移或barrier并发实验。"
+      },
+      "research/source_reading/rcu/navigation/P05_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "修正watching状态落点、离线异常分支和Stall调用入口，按F阶段区分合法证据、异步催促与独立诊断。",
+        "validation": [
+          "固定源码分支核对；两图渲染目视；17出链8标题入链与严格连续性通过",
+          "篇幅3345字词；实际格式元数据命名及全仓9379本地链接检查通过"
+        ],
+        "limits": "未运行目标内核或故意制造stall；无告警不能替代相关配置和路径覆盖证据。"
       }
     },
     "additional_documents": [
