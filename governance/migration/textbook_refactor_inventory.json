@@ -7518,6 +7518,39 @@
           "完整冷读、严格连续性、长度、图示渲染目视和全仓775篇链接检查通过。"
         ],
         "limits": "未执行目标Kbuild、GPIO-sim或板上运行；静态检查不等同实验观测。"
+      },
+      "knowledge/driver_model/gpio/P06_GPIO_Provider_控制器实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从合法不同线路仍丢更新的交错推导Provider事务，补完整C模型、初值顺序、回调和硬件边界，替换未定义骨架。",
+        "validation": [
+          "宿主C11严格警告O2编译运行，正文材料一致；八段源码按有序C token匹配固定官方版本。",
+          "五图渲染逐图目视，三篇完整冷读、严格连续性、长度、ID与锚点检查，全仓777篇链接无缺失。"
+        ],
+        "limits": "无目标Kbuild、GPIO-sim或板上验证；宿主串行模型不证明真实锁和电气时序。"
+      },
+      "research/source_reading/gpiolib/navigation/P03_GPIO模拟器如何兑现控制器能力.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "沿Consumer三线实验映射bank状态、函数协作和S1至S7，解释pull、正常退出、失败发布与模型限制。",
+        "validation": [
+          "宿主C11严格警告O2编译运行，正文材料一致；八段源码按有序C token匹配固定官方版本。",
+          "五图渲染逐图目视，三篇完整冷读、严格连续性、长度、ID与锚点检查，全仓777篇链接无缺失。"
+        ],
+        "limits": "无目标Kbuild、GPIO-sim或板上验证；宿主串行模型不证明真实锁和电气时序。"
+      },
+      "research/source_reading/gpiolib/source_explanations/P04_模拟控制器的状态与回调.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "唯一展开模拟器结构与回调，明确输入不重采样pull、free改变value、IRQ设置失败返回边界及bank分阶段登记。",
+        "validation": [
+          "宿主C11严格警告O2编译运行，正文材料一致；八段源码按有序C token匹配固定官方版本。",
+          "五图渲染逐图目视，三篇完整冷读、严格连续性、长度、ID与锚点检查，全仓777篇链接无缺失。"
+        ],
+        "limits": "无目标Kbuild、GPIO-sim或板上验证；宿主串行模型不证明真实锁和电气时序。"
       }
     },
     "additional_documents": [
@@ -7577,7 +7610,9 @@
       "research/source_reading/gpiolib/source_explanations/P01_控制器登记与能力撤销.md",
       "research/source_reading/gpiolib/source_explanations/P02_描述符请求与托管释放.md",
       "research/source_reading/gpiolib/source_explanations/P03_逻辑值怎样变成方向与电平.md",
-      "research/source_reading/gpiolib/大纲.md"
+      "research/source_reading/gpiolib/大纲.md",
+      "research/source_reading/gpiolib/navigation/P03_GPIO模拟器如何兑现控制器能力.md",
+      "research/source_reading/gpiolib/source_explanations/P04_模拟控制器的状态与回调.md"
     ],
     "language_review": {
       "status": "complete",
