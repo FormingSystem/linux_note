@@ -75,7 +75,28 @@ L1与L2不能合并成“写完即亮”：可睡眠LED可能经work延期，背
 
 背光L0还需单独核对 [phandle与default-on分支](../source_explanations/P09_指示灯与背光的GPIO适配.md#9.6_背光的default-on为何不是所有路径的最终答案)。相同属性文字不能代替实际分支；正文的 [离线描述练习](../../../../knowledge/driver_model/gpio_consumers/P04_GPIO指示与背光怎样接入亮度接口.md#4.6_用一份离线描述看出两种连接) 只验证引用与数据，不推断运行时电平。
 
-## 6.4\_从适配层继续追踪时保留边界
+## 6.4\_固定供电把多个使用关系汇总到一个使能出口
+
+灯与背光接收输出意图，供电对象还要防止一个使用者退出时切断另一个使用者的电源。两个设备各持regulator句柄，句柄rdev指向同一regulator_dev；核心汇总需求，fixed驱动提供固定电压身份与可选GPIO使能。直接写线丢失的是消费关系，不是少执行了一次锁操作。
+
+本地R0～R5限定普通可关闭供电、无额外引用、操作成功。嵌套enable在单句柄内另记次数，不因此增加新的活跃句柄；always-on等约束则需要按实现分支解释。
+
+| 本地阶段 | 进入与状态交接 | GPIO公共阶段 |
+| --- | --- | --- |
+| R0 准备 | fixed取得非托管可选gpiod，经regulator注册交给共享ena_pin管理 | [S2～S4请求配置](../../../../knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md#4.3_S2至S4把私有需求写成公共占用和配置) |
+| R1 A开始 | A的enable_count由0到1，首次需求先处理上游、使能与稳定等待，use_count成为1 | [S5输出](../../../../knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md#4.4_S5的软件方向不总是当前输出驱动开关) |
+| R2 B开始 | B的enable_count由0到1，use_count成为2，维持已有供电 | 同一S5持有期 |
+| R3 A结束 | A最后一次disable使该句柄退出，use_count成为1，B仍有需求 | 同一S5持有期 |
+| R4 B结束 | B最后一次disable且允许关闭，撤销GPIO使能，再撤销相应上游需求 | [S6电源协作](../../../../knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md#4.5_S6的事件和电源状态继续保存在各自的承载者中) |
+| R5 提供者退出 | 消费者结束后撤销供电登记；共享记录最后request_count归零才put线路 | [S7退出](../../../../knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md#4.6_S7先结束使用再撤销能力和对象) |
+
+R1/R4在依赖锁下维护计数，setter执行和等待有自己的失败边界，不能让设备直接修改enable_count。上游供电、启动稳定时间与关闭后重启间隔是同一启停协议的不同时间点；成功计数不是实际电压回读。
+
+沿 [消费句柄与供电对象](../source_explanations/P10_固定电源的使能计数与GPIO交接.md#10.1_消费句柄与电源对象分别记录什么)、[首末启停](../source_explanations/P10_固定电源的使能计数与GPIO交接.md#10.2_首次启用与最后释放怎样连接GPIO和上游供电) 阅读R1～R4；[共享使能记录](../source_explanations/P10_固定电源的使能计数与GPIO交接.md#10.3_共享使能线的登记计数与运行计数如何分开) 另解释多rdev共用同一引脚的特殊差量。登记计数request_count和运行enable_count不能合并，登记列表锁也不能被误写成运行控制函数已经持有的锁。
+
+R0有重要失败分界：regulator_register接管前后的引用各有标志和释放路径，但外层devm记录分配失败尚未进入这套接管。固定版本的调用者该分支未见put，见 [描述符交接](../source_explanations/P10_固定电源的使能计数与GPIO交接.md#10.4_描述符交接成功前后怎样选择释放责任)。最后用 [配置与极性](../source_explanations/P10_固定电源的使能计数与GPIO交接.md#10.5_固定电压与OF极性怎样进入配置) 核对equal min/max、boot-on与always-on、enable-active-high例外；不把DTC解析成功当成驱动或硬件成功。
+
+## 6.5\_从适配层继续追踪时保留边界
 
 本页只核对固定驱动的状态交接。GPIO Provider是否会睡眠、是否有硬件去抖、IRQ能否唤醒目标系统，都需要沿真实平台核对。输入核心如何把报告分发给多个客户端、如何处理队列溢出，则继续进入 [Input源码入口](../../linux/drivers/input/README.md#1.4_关键调用链索引)。把这些问题拆开并不表示省略：适配层先给出何时交付什么状态，再由接收层解释下一段保证。
 

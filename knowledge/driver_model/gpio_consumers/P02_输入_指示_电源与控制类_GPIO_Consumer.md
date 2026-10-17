@@ -62,6 +62,8 @@ active-low 由描述符转换，因此 LED core 的 brightness 语义不应关�
 
 直接在设备驱动中拉 enable 只能改变电平，无法自动协调多个 regulator consumer、延时和电源拓扑。电源线语义匹配固定稳压器时，应让 regulator core 拥有 GPIO。
 
+完整推导见 [共享供电的使用关系](P05_GPIO供电怎样进入电源依赖.md#5.1_最后一次写线不能代表最后一个使用者)。句柄嵌套次数、rdev总体使用与共享使能记录分别计数；核心接管前后的失败出口也需单独核对，不能把devm前缀当作所有路径已自动清理的证明。
+
 ## 2.6\_gpio-mux\_一组\_line\_共同编码选择状态
 
 `drivers/mux/gpio.c` 先用 `gpiod_count(dev, "mux")` 得到位数，再用 `devm_gpiod_get_array(..., GPIOD_OUT_LOW)` 请求数组，选择路径调用 `gpiod_set_array_value_cansleep()`。

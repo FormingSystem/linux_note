@@ -2748,3 +2748,11 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 沿用NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，核对leds-gpio、led-core、led-class、gpio_backlight、backlight核心及头文件，六份原件blob与相对路径保存在实现页。核对LED与背光binding和Kconfig；保留default-on/phandle实际分支及负读取未单独处理的事实，指出GPIO背光actual_brightness在缺回读回调时返回软件属性，不等于物理反馈。
 
 两篇新正文及扩展导读冷读；九段源码按定义与语句核对、七图渲染目视；完整DTS与正文一致，DTC/fdtget检查off/keep两种输入、GPIO参数及显示端phandle引用。长度与锚点检查通过，连续性审计仅对模块导读报告LINK_DENSITY：25个入口对应已本地讲清的K/L周期与唯一实现，按导航职责保留必要链接，不伪称审计无风险。全仓链接、元数据与Git差异检查完成。未进行dtbs_check、目标内核构建、休眠/解绑或光输出实测；教学Provider和显示节点不宣称有真实驱动。
+
+## 1.272\_固定电源的共享需求与描述符交接
+
+2026-10-17，新增 [固定供电正文](../../../knowledge/driver_model/gpio_consumers/P05_GPIO供电怎样进入电源依赖.md#5.1_最后一次写线不能代表最后一个使用者) 与 [唯一实现](../gpiolib/source_explanations/P10_固定电源的使能计数与GPIO交接.md#10.1_消费句柄与电源对象分别记录什么)，扩展 [供电模块导读](../gpiolib/navigation/P06_标准功能驱动怎样承接GPIO状态.md#6.4_固定供电把多个使用关系汇总到一个使能出口)。从两个设备共享同一电源的失电交错推导消费关系，分开句柄嵌套计数、供电对象使用状态、共享引脚登记与运行计数，再解释上游和启动等待。
+
+沿用NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；fixed.c、regulator core.c/devres.c和gpiolib-of.c的路径与blob列于实现页，另核对驱动头文件、内部对象、Kconfig及fixed/regulator binding。明确OF enable-active-high覆盖规则、boot-on与always-on区别；保留devm包装记录分配失败尚未进入core且fixed调用者未见put的静态事实，不宣称所有失败均被托管。
+
+两篇正文与扩展导读冷读，九段裁剪源码逐定义、执行语句核对；六图已渲染目视，DTC与fdtget检查相等及不等电压两个输入，后者可编译不等于驱动接受。长度与锚点检查通过；导读唯一LINK_DENSITY风险按K/L/R过程在本地完整、34条必要入口定位唯一实现的导航职责保留。无dtbs_check、内核构建、OOM注入、电源启停或电压实测，教学Provider和消费者不宣称有匹配驱动。

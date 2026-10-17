@@ -1,0 +1,41 @@
+/dts-v1/;
+
+/ {
+    compatible = "linux-note,gpio-power-teaching";
+
+    teaching_gpio: gpio-controller {
+        compatible = "linux-note,teaching-gpio";
+        gpio-controller;
+        #gpio-cells = <2>;
+    };
+
+    input_5v: regulator-5v0 {
+        compatible = "regulator-fixed";
+        regulator-name = "teaching-input-5v";
+        regulator-min-microvolt = <5000000>;
+        regulator-max-microvolt = <5000000>;
+        regulator-always-on;
+    };
+
+    shared_3v3: regulator-3v3 {
+        compatible = "regulator-fixed";
+        regulator-name = "teaching-shared-3v3";
+        regulator-min-microvolt = <3300000>;
+        regulator-max-microvolt = <3300000>;
+        vin-supply = <&input_5v>;
+        gpios = <&teaching_gpio 2 0>; /* offset2，保持与高有效属性一致。 */
+        enable-active-high;
+        startup-delay-us = <1000>; /* 教学时间，真实值由电源器件确定。 */
+        off-on-delay-us = <5000>;
+    };
+
+    device-a {
+        compatible = "linux-note,teaching-power-client";
+        vdd-supply = <&shared_3v3>;
+    };
+
+    device-b {
+        compatible = "linux-note,teaching-power-client";
+        vdd-supply = <&shared_3v3>;
+    };
+};
