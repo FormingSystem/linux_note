@@ -844,6 +844,9 @@ mindmap-plugin: basic
             - 🔴 [模拟控制器的状态与回调](../../research/source_reading/gpiolib/source_explanations/P04_模拟控制器的状态与回调.md)
             - 🔴 [GPIO事件怎样从线路到达处理者](../../research/source_reading/gpiolib/navigation/P04_GPIO事件怎样从线路到达处理者.md)
             - 🔴 [GPIO映射与模拟事件怎样交接](../../research/source_reading/gpiolib/source_explanations/P05_GPIO映射与模拟事件怎样交接.md)
+            - 🔴 [用户请求怎样持有线路与事件](../../research/source_reading/gpiolib/navigation/P05_用户请求怎样持有线路与事件.md)
+            - 🔴 [用户请求的发布与回收](../../research/source_reading/gpiolib/source_explanations/P06_用户请求的发布与回收.md)
+            - 🔴 [事件缓冲与读取](../../research/source_reading/gpiolib/source_explanations/P07_事件缓冲与读取.md)
     - 编译器与静态分析注解
         - 模块概念导读
             - 🔴 [P01 Linux 6.12 编译器与 Sparse 注解源码导读](../../research/source_reading/compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务)

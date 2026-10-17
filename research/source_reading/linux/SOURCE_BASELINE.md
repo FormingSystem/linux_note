@@ -2716,3 +2716,13 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 固定提交仍为官方NXP `dfaf2136deb2af2e60b994421281ba42f1c087e0`。新读取 `kernel/irq/irq_sim.c`，blob为 `1a3d483548e2f303c0d15fa8e9b9214c656d2a49`；复用gpiolib、gpio-sim、driver.h与官方GPIO驱动文档。IRQ管理的 `kernel/irq/manage.c` blob为 `f0803d6bd2969820443f25b5b508ec553f4cb9a2`，托管IRQ的 `kernel/irq/devres.c` 为 `b3e98668f4dd87e725626ad55f48a34d117e1c67`，用于核对NULL主处理函数、ONESHOT与free_irq等待边界。
 
 五段发布源码与固定原件进行有序C token及函数定义身份检查；冷读发现初次提取误选调用语句后已改为完整函数定义并重验，未把单纯token存在视为解释正确。完整C/Makefile与正文一致，初始化先于IRQ注册、错误返回和退出依赖逐项复核。六图渲染目视，模拟irq_work与输入更新的并行区修订后再次检查；三篇完整冷读、严格连续性、长度、唯一ID、完整标题锚点及全仓文档检查。无目标Kbuild、模块装入、GPIO-sim或板上实验；运行步骤标为预期，不以静态核对替代实测。继续用户空间请求缓冲与最终文件引用生命周期。
+
+## 1.268\_GPIO用户请求的文件引用与事件缓冲
+
+2026-10-17，重构 [用户空间ABI](../../../knowledge/driver_model/gpio/P08_用户空间_ABI_迁移与方案选择.md)，从进程持有线路与迟到读取推导request文件、槽位mask、FIFO和等待。纠正任意close即释放、失败逆序回滚、INIT_KFIFO已分配存储和序号连续等于物理无损等误述，区分创建交付、SET_CONFIG部分生效与硬件动作。补完整Linux UAPI v2模拟程序，观察dup后的占用、关闭chip入口后的运行、逻辑事件及最后引用释放后重新申请。
+
+新增 [用户请求导读](../gpiolib/navigation/P05_用户请求怎样持有线路与事件.md#5.1_先从两个文件对象区分入口和持有者)、[请求发布与回收](../gpiolib/source_explanations/P06_用户请求的发布与回收.md#6.1_共享请求状态怎样连接多根线路) 和 [事件缓冲与读取](../gpiolib/source_explanations/P07_事件缓冲与读取.md#7.1_建立事件检测时先准备哪些共享状态)。复用官方NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`：`drivers/gpio/gpiolib-cdev.c` blob为 `78c9d9ed3d687fd268620cd07cb236dce078fa30`，`include/uapi/linux/gpio.h` 为 `f7cb8ae87df72cc3f35b0619f3c3c95798009c5a`。模拟器与公共核心证据沿用前述批次。
+
+13段结构/函数定义与原件作有序token及定义身份核对；完整C与正文一致、UAPI符号存在、引用与清理顺序静态复核。七图渲染目视，四篇完整冷读，元数据、ID、标题、链接检查。严格连续性检查仅提示P08的完整程序小节超过160行风险阈值；复核后保留同一请求周期的完整代码，避免把错误出口和释放依赖拆开，全文未超过10000字词。此人工保留判断不伪装成审计无风险。清理命令重新建立变量，可在原set-e shell失败退出后恢复。
+
+本轮无目标Linux用户程序编译、GPIO-sim装载或实机事件测试；没有用宿主替身头文件代替目标编译。运行输出均为预期，普通双边沿线程采样、nested时间戳、FIFO覆盖和多读者消费边界明确保留。

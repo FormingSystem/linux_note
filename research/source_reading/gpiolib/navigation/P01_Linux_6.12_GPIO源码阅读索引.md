@@ -52,6 +52,8 @@ S6 会把线路交给新的状态载体。先读 [GPIO事件模块导读](P04_GP
 
 字符设备 v2 的创建由 `gpiolib-cdev.c` 中 `linereq_create()` 承担：校验请求、分配 `linereq`、取得 gdev 引用、初始化每线 delayed work、配置 mutex、等待队列和 FIFO 元数据，再逐线请求与配置。真正的事件 FIFO 存储由需要边沿事件的设置路径分配，不能把 `INIT_KFIFO` 写成已经分配了事件容量。设备注销 notifier 和文件对象把后续事件读取、不可用通知与最后引用释放连接起来。
 
+这条路径从 [用户请求模块导读](P05_用户请求怎样持有线路与事件.md#5.1_先从两个文件对象区分入口和持有者) 进入：先沿 [共享状态](../source_explanations/P06_用户请求的发布与回收.md#6.1_共享请求状态怎样连接多根线路)、[创建与错误出口](../source_explanations/P06_用户请求的发布与回收.md#6.2_为什么先配置线路再发布文件) 追踪持有，再沿 [边沿生成](../source_explanations/P07_事件缓冲与读取.md#7.2_时间与边沿怎样变成一条记录)、[FIFO入队](../source_explanations/P07_事件缓冲与读取.md#7.3_满队列怎样改变可观察的历史) 和 [poll/read](../source_explanations/P07_事件缓冲与读取.md#7.4_可读通知为何不能替代取出记录) 追踪事件。总索引组织模块，实现函数体只在对应页展开。
+
 `line_fileops` 提供 `release/read/poll/unlocked_ioctl`。创建失败会释放已取得的请求资源，`linereq_free()` 按数组正序逐项清理；它不保证已发生的方向或电平变化逆转。成功后再配置多线也不提供全部线路的事务回滚。请求文件最后引用消失才调用 release，单独关闭一个被 dup 的 fd 并不释放线路。
 
 沿这两条路径继续追踪时，应分别观察 IRQ 映射和请求文件，不能用“取得 GPIO”概括它们的生命周期。事件交接回到 [GPIO中断主线](../../../../knowledge/driver_model/gpio/P07_GPIO_中断桥接与事件传播.md) 和 [字符设备主线](../../../../knowledge/driver_model/gpio/P08_用户空间_ABI_迁移与方案选择.md)。原始核对位置为固定版本 [gpiolib.c](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/drivers/gpio/gpiolib.c#L3690) 与 [gpiolib-cdev.c](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/drivers/gpio/gpiolib-cdev.c#L1733)。
