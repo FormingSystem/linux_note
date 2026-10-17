@@ -8632,6 +8632,78 @@
           "全仓842篇链接无缺失；保留原件空白并按文件配置检查例外。"
         ],
         "limits": "没有目标Linux编译运行、跨目录并发、委托等待、通知消费或掉电验证。"
+      },
+      "knowledge/kernel_subsystems/vfs/P12_open状态机.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿O0至O6区分创建、打开、发布，解释组合与特殊路径、后置失败和已取得资源的归还。",
+        "validation": [
+          "二十三函数和一个结构体与固定原件逐token一致，十份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓847篇链接无缺失；配置关闭钩子与功能动作分别说明。"
+        ],
+        "limits": "没有目标Linux编译运行、资源耗尽、组合打开跟踪、后置安全拒绝、直接I/O或截断故障注入。"
+      },
+      "research/source_reading/vfs/navigation/P11_打开请求怎样变成可发布的file.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿O0至O6区分创建、打开、发布，解释组合与特殊路径、后置失败和已取得资源的归还。",
+        "validation": [
+          "二十三函数和一个结构体与固定原件逐token一致，十份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓847篇链接无缺失；配置关闭钩子与功能动作分别说明。"
+        ],
+        "limits": "没有目标Linux编译运行、资源耗尽、组合打开跟踪、后置安全拒绝、直接I/O或截断故障注入。"
+      },
+      "research/source_reading/vfs/source_explanations/P23_打开参数与描述符发布的外层事务.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿O0至O6区分创建、打开、发布，解释组合与特殊路径、后置失败和已取得资源的归还。",
+        "validation": [
+          "二十三函数和一个结构体与固定原件逐token一致，十份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓847篇链接无缺失；配置关闭钩子与功能动作分别说明。"
+        ],
+        "limits": "没有目标Linux编译运行、资源耗尽、组合打开跟踪、后置安全拒绝、直接I/O或截断故障注入。"
+      },
+      "research/source_reading/vfs/source_explanations/P24_打开末项的查询创建与再检查.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿O0至O6区分创建、打开、发布，解释组合与特殊路径、后置失败和已取得资源的归还。",
+        "validation": [
+          "二十三函数和一个结构体与固定原件逐token一致，十份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓847篇链接无缺失；配置关闭钩子与功能动作分别说明。"
+        ],
+        "limits": "没有目标Linux编译运行、资源耗尽、组合打开跟踪、后置安全拒绝、直接I/O或截断故障注入。"
+      },
+      "research/source_reading/vfs/source_explanations/P25_组合打开与特殊路径的交接契约.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿O0至O6区分创建、打开、发布，解释组合与特殊路径、后置失败和已取得资源的归还。",
+        "validation": [
+          "二十三函数和一个结构体与固定原件逐token一致，十份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓847篇链接无缺失；配置关闭钩子与功能动作分别说明。"
+        ],
+        "limits": "没有目标Linux编译运行、资源耗尽、组合打开跟踪、后置安全拒绝、直接I/O或截断故障注入。"
+      },
+      "research/source_reading/vfs/source_explanations/P26_file初始化与打开后失败清理.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿O0至O6区分创建、打开、发布，解释组合与特殊路径、后置失败和已取得资源的归还。",
+        "validation": [
+          "二十三函数和一个结构体与固定原件逐token一致，十份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓847篇链接无缺失；配置关闭钩子与功能动作分别说明。"
+        ],
+        "limits": "没有目标Linux编译运行、资源耗尽、组合打开跟踪、后置安全拒绝、直接I/O或截断故障注入。"
       }
     },
     "additional_documents": [
