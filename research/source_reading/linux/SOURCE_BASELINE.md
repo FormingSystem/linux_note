@@ -2732,3 +2732,11 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 2026-10-17，重构 [GPIO工程页](../../../engineering/driver_development/gpio/GPIO_调试迁移与工程模板.md)，把只读登记/占用查询、启动FDT与live tree、单次动作、GPIO trace采样位置、局部动态打印恢复、事件及PM条件串成取证路径。补可直接保存的请求失败日志脚本，先存原flags，仅撤销本次新增p；缺日志点、缺debugfs与未运行都不写成硬件成功/失败。同步 [GPIO大纲](../../../knowledge/driver_model/gpio/大纲.md) 的读者起点、教学设备边界、四类实验入口及固定版本身份。
 
 复用NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的gpiolib、`include/trace/events/gpio.h` 和 `Documentation/admin-guide/dynamic-debug-howto.rst`，复核gpiod_request失败打印、raw读后trace与raw写前trace的实际位置。libgpiod工具选项核对官方2.3.1文档，不混用major版本。配套脚本与正文一致，原状态保留、trap清理及单日志点范围静态检查；两篇完整冷读、严格连续性、长度与标题锚点检查，工程图渲染目视。无目标Linux shell、trace/debug控制文件或硬件执行，操作方法不记作板上验证。
+
+## 1.270\_标准GPIO功能选择与按键输入适配
+
+2026-10-17，重构 [标准Consumer入口](../../../knowledge/driver_model/gpio_consumers/P01_为什么优先使用标准_GPIO_Consumer.md#1.1_控制了一根线还没有定义一盏灯)，分开线路占用、领域状态、产品策略与实际硬件访问成本。新增 [按键章节](../../../knowledge/driver_model/gpio_consumers/P03_GPIO按键怎样接入输入事件.md#3.1_一次机械按下为何可能产生多次中断)、[功能适配模块导读](../gpiolib/navigation/P06_标准功能驱动怎样承接GPIO状态.md#6.2_按键把采样时机与输入报告分开) 与 [按键唯一实现](../gpiolib/source_explanations/P08_按键取样与输入报告.md#8.1_每键状态怎样决定采样路径)。保留原总览入口，后续家族按独立问题继续展开；先修正其中通过cansleep名称推断sys-off可睡眠上下文的错误。
+
+证据为NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`：`drivers/input/keyboard/gpio_keys.c` blob `380fe8dab3b06379f9744e8190a4afcc0aee20b4`，`drivers/input/input.c` blob `c51858f1cdc556939c2ee1bd21669c71c169d84e`，`drivers/input/keyboard/Kconfig` blob `3bb67dc9ea0facb16d22527db50b5f6181a06ea2`，`include/uapi/linux/input-event-codes.h` blob `5a199f3d4a26a22a94e51d4b53aeed3767c97bce`，结合固定gpio-keys绑定。复核硬件去抖失败回退、零时间保留work分支、负读取不报告键值、IRQ-only合成释放以及先停IRQ再同步取消任务的devres顺序。
+
+四篇完整冷读、七段源码按定义身份与语句顺序核对、九图渲染目视并修正一处箭头标注重叠；完整教学DTS与正文一致，DTC及fdtget验证低有效和高有效两例的offset、flags、键码与时间。严格连续性、长度、锚点、元数据和全仓链接检查。未执行dtbs_check、目标内核构建、硬件按键或唤醒实验；离线教学Provider没有匹配硬件驱动，不把解析成功当作设备上线。

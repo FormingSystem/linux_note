@@ -38,6 +38,8 @@ source_version: "6.12.20"
 
 事件路径根据 `gpiod_cansleep()` 选择 `gpiod_get_value()` 或 `_cansleep()`；去抖可由硬件配置或 timer/delayed work 承担；稳定值经 `input_event()`/同步路径上报。这里至少有三层状态：GPIO line 电平、button 去抖状态、input key 状态，不能把一次 IRQ 直接等同一次按键事件。
 
+完整过程见 [GPIO按键怎样接入输入事件](P03_GPIO按键怎样接入输入事件.md#3.1_一次机械按下为何可能产生多次中断)，包括硬件去抖失败的回退、零时间分支、IRQ-only合成释放和先停来源再取消任务的退出顺序。
+
 ## 2.3\_gpio-leds\_brightness\_转换成逻辑电平
 
 `leds-gpio.c` 的 `struct gpio_led_data` 保存 LED class device、描述符、`can_sleep` 和 blink 状态。创建时读取 `gpiod_cansleep()`；brightness 更新据此选择 `gpiod_set_value()` 或 `_cansleep()`。初始状态最终通过 `gpiod_direction_output(desc, state)` 建立。
@@ -64,7 +66,7 @@ active-low 由描述符转换，因此 LED core 的 brightness 语义不应关�
 
 ## 2.7\_gpio-poweroff\_和\_gpio-restart
 
-两者向 sys-off 框架注册处理者，在关机或重启阶段按配置产生 GPIO 电平序列。Linux 6.12.20 的 poweroff 路径使用 `_cansleep` 写值，restart 路径使用普通 `gpiod_set_value()`；这反映两种回调上下文和 Provider 约束不同。
+两者向 sys-off 框架注册处理者，在关机或重启阶段按配置产生 GPIO 电平序列。Linux 6.12.20 的 poweroff 路径使用 `_cansleep` 写值，restart 路径使用普通 `gpiod_set_value()`，但不能由接口后缀推断回调上下文不同：两者实际登记的最终 `SYS_OFF_MODE_POWER_OFF` 与 `SYS_OFF_MODE_RESTART` 都进入atomic通知链，prepare模式才走blocking链。`_cansleep` 不会把回调自动搬到可睡眠上下文，不能据此批准需要睡眠等待的Provider。
 
 选择前必须核对控制器在系统关机/重启末期是否仍有时钟和电源，以及回调上下文是否允许目标 Provider 访问。把 reset 接到会睡眠且可能先被关闭的扩展器，可能在最后阶段失去控制能力。
 

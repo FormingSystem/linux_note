@@ -147,9 +147,10 @@ mindmap-plugin: basic
         - 🔴 [P07 GPIO 中断桥接与事件传播](../../knowledge/driver_model/gpio/P07_GPIO_中断桥接与事件传播.md)
         - 🔴 [P08 用户空间 ABI、迁移与方案选择](../../knowledge/driver_model/gpio/P08_用户空间_ABI_迁移与方案选择.md)
     - 🔴 [标准 GPIO Consumer 专题](../../knowledge/driver_model/gpio_consumers/大纲.md)
-        - 章节评审：2 章未评审
+        - 章节评审：3 章未评审
         - 🔴 [P01 为什么优先使用标准 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/P01_为什么优先使用标准_GPIO_Consumer.md)
         - 🔴 [P02 输入、指示、电源与控制类 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/P02_输入_指示_电源与控制类_GPIO_Consumer.md)
+        - 🔴 [P03 GPIO按键怎样接入输入事件](../../knowledge/driver_model/gpio_consumers/P03_GPIO按键怎样接入输入事件.md)
     - 🔴 [Linux Input 子系统专题](../../knowledge/driver_model/input/大纲.md)
         - 章节评审：6 章未评审
         - 🔴 [P01 从硬件样本到统一输入事件](../../knowledge/driver_model/input/P01_从硬件样本到统一输入事件.md)
@@ -847,6 +848,8 @@ mindmap-plugin: basic
             - 🔴 [用户请求怎样持有线路与事件](../../research/source_reading/gpiolib/navigation/P05_用户请求怎样持有线路与事件.md)
             - 🔴 [用户请求的发布与回收](../../research/source_reading/gpiolib/source_explanations/P06_用户请求的发布与回收.md)
             - 🔴 [事件缓冲与读取](../../research/source_reading/gpiolib/source_explanations/P07_事件缓冲与读取.md)
+            - 🔴 [按键取样与输入报告](../../research/source_reading/gpiolib/source_explanations/P08_按键取样与输入报告.md)
+            - 🔴 [标准功能驱动怎样承接GPIO状态](../../research/source_reading/gpiolib/navigation/P06_标准功能驱动怎样承接GPIO状态.md)
     - 编译器与静态分析注解
         - 模块概念导读
             - 🔴 [P01 Linux 6.12 编译器与 Sparse 注解源码导读](../../research/source_reading/compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务)

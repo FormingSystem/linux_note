@@ -1,0 +1,25 @@
+/dts-v1/;
+
+/ {
+    compatible = "linux-note,gpio-key-teaching";
+
+    teaching_gpio: gpio-controller {
+        /* 仅供离线解析：没有与此compatible匹配的硬件驱动。 */
+        compatible = "linux-note,teaching-gpio";
+        gpio-controller;
+        #gpio-cells = <2>;
+    };
+
+    keys {
+        compatible = "gpio-keys";
+        label = "teaching-confirm-key";
+
+        key-confirm {
+            label = "confirm";
+            /* 两个参数依次为控制器内offset=2、低有效flag=1。 */
+            gpios = <&teaching_gpio 2 1>;
+            linux,code = <28>; /* KEY_ENTER，Linux输入事件代码。 */
+            debounce-interval = <10>; /* 毫秒。 */
+        };
+    };
+};
