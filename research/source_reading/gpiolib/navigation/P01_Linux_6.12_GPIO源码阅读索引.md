@@ -30,7 +30,7 @@ flowchart TD
     e -->|"Provider随后退出"| f["撤销查找与能力，等待读者及引用"]
 ```
 
-图中失败箭头只表示放下已经取得的请求，不承诺硬件恢复。先读 [线路对象怎样完成请求与退出](P02_线路对象怎样完成请求与退出.md)，再按当前问题进入下面的实现标题。
+图中失败箭头只表示放下已经取得的请求，不承诺硬件恢复。先读 [线路对象怎样完成请求与退出](P02_线路对象怎样完成请求与退出.md)，再按当前问题进入下面的实现标题。要继续追踪回调以下的状态，读 [GPIO模拟器如何兑现控制器能力](P03_GPIO模拟器如何兑现控制器能力.md#3.1_从Consumer的三根线追到一个bank)：它以真实Provider串起位图、mutex、登记和释放。
 
 | 当前问题 | 上游位置 | 唯一实现入口 |
 | --- | --- | --- |
@@ -42,6 +42,7 @@ flowchart TD
 | put 后哪些状态消失，哪些不保证恢复 | `drivers/gpio/gpiolib.c` | [释放与硬件边界](../source_explanations/P02_描述符请求与托管释放.md#2.4_释放撤销占用而不是恢复寄存器快照) |
 | 方向、active-low、开漏模拟如何组合 | 同上 | [输入失败边界](../source_explanations/P03_逻辑值怎样变成方向与电平.md#3.1_输入方向成功以后为什么仍可能返回失败)、[输出转换](../source_explanations/P03_逻辑值怎样变成方向与电平.md#3.2_逻辑输出怎样选择主动驱动或释放线路)、[raw提交](../source_explanations/P03_逻辑值怎样变成方向与电平.md#3.3_raw提交怎样交给Provider并记录结果) |
 | 普通/可睡眠 setter 的差别与错误限制 | 同上及 `include/linux/gpio/driver.h` | [运行访问](../source_explanations/P03_逻辑值怎样变成方向与电平.md#3.4_运行时setter沿用逻辑语义却不返回写错误) |
+| 模拟Provider怎样保存状态并兑现回调 | `drivers/gpio/gpio-sim.c` | [私有位图](../source_explanations/P04_模拟控制器的状态与回调.md#4.1_位图怎样承接每线状态)、[读写事务](../source_explanations/P04_模拟控制器的状态与回调.md#4.2_锁怎样保护读写方向与批量更新)、[pull与释放](../source_explanations/P04_模拟控制器的状态与回调.md#4.3_为什么释放后读到的值可能改变)、[bank登记](../source_explanations/P04_模拟控制器的状态与回调.md#4.4_怎样在发布回调前准备好它们依赖的状态) |
 
 ## 1.2\_已经核对的IRQ与字符设备边界
 

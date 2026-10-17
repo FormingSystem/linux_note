@@ -840,6 +840,8 @@ mindmap-plugin: basic
             - 🔴 [控制器登记与能力撤销](../../research/source_reading/gpiolib/source_explanations/P01_控制器登记与能力撤销.md)
             - 🔴 [描述符请求与托管释放](../../research/source_reading/gpiolib/source_explanations/P02_描述符请求与托管释放.md)
             - 🔴 [逻辑值怎样变成方向与电平](../../research/source_reading/gpiolib/source_explanations/P03_逻辑值怎样变成方向与电平.md)
+            - 🔴 [GPIO模拟器如何兑现控制器能力](../../research/source_reading/gpiolib/navigation/P03_GPIO模拟器如何兑现控制器能力.md)
+            - 🔴 [模拟控制器的状态与回调](../../research/source_reading/gpiolib/source_explanations/P04_模拟控制器的状态与回调.md)
     - 编译器与静态分析注解
         - 模块概念导读
             - 🔴 [P01 Linux 6.12 编译器与 Sparse 注解源码导读](../../research/source_reading/compiler_annotations/navigation/P01_Linux_6.12_编译器与Sparse注解源码导读.md#1.1_基线与阅读任务)

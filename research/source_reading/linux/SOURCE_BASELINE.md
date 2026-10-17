@@ -2700,3 +2700,11 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 同时复用已核对的consumer.h、gpiolib、devres和platform-device固定声明。通过官方 [libgpiod 2.3.1命令文档](https://libgpiod.readthedocs.io/en/v2.3.1/gpio_tools.html) 核对gpiodetect的身份查询及输出格式，去掉对gpiochip设备目录必有label属性的假设。实验用configfs实际返回的dev_name/chip_name核对模拟器归属；停机日志只声明发出写请求，释放后的模拟值按gpio_sim_free另行解释。
 
 实际执行七次DTC/fdtget，验证教学连接片段的phandle、offset与极性编码；完整C/Makefile与正文逐字一致，生命周期、失败清理和命令范围人工核对，一图渲染目视，严格连续性、长度、锚点、全仓775篇链接及格式检查通过。未执行目标Kbuild/MODPOST、模块装入、configfs、Linux shell或硬件实验，所有运行输出在正文标为预期；没有用桩接口或宿主模型冒充内核运行。Provider、IRQ和用户ABI继续复审。
+
+## 1.266\_GPIO提供者的事务与模拟器实现
+
+2026-10-17，重构 [Provider正文](../../../knowledge/driver_model/gpio/P06_GPIO_Provider_控制器实现.md)，从不同线路合法占用仍会覆盖共享寄存器的交错，引出事务保护、方向初值、睡眠和发布撤销；保留批量、pinctrl、缓存及电源边界。原来缺失回调定义的驱动骨架由可运行宿主C模型和真实gpio-sim实现替换。新增 [模拟器模块导读](../gpiolib/navigation/P03_GPIO模拟器如何兑现控制器能力.md#3.1_从Consumer的三根线追到一个bank) 与 [唯一实现](../gpiolib/source_explanations/P04_模拟控制器的状态与回调.md#4.1_位图怎样承接每线状态)，对齐公共S1～S7。
+
+仍核对NXP官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`：`drivers/gpio/gpio-sim.c` 的blob为 `f83a8b5a51d0dc8d093011945260ffa296f2ba2a`，`include/linux/gpio/driver.h` 为 `2dd7cb9cc270a68ddedbcdd5d44e0d0f88dfa785`。明确request位与公共占用分离、方向输入不在回调中重采样pull、free用pull改value且不清方向位，以及apply_pull在模拟IRQ设置错误分支仍返回0的实际行为。模拟器位图同步不外推为真实MMIO电气顺序。
+
+验证：宿主C11模型以GCC严格警告和O2编译运行，复现丢更新并观察错误/正确初值顺序；发布材料与正文一致。8个源码块按C token有序比对固定原件；5张图渲染并逐图目视，三篇完整冷读、严格连续性、长度、完整标题锚点与文档格式/链接检查。没有目标Kbuild、gpio-sim运行或真实硬件测量，也不把宿主串行交错模型当作锁的并发测试。继续IRQ与用户空间ABI。
