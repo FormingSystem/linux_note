@@ -3060,3 +3060,31 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 十份原件中新增pagemap.h、page-flags.h与truncate.c。ARM启用MMU、MEMCG，PSI与DEBUG_VM关闭；没有据此推断实际使用大folio。ram_aops的零填充、脏位与无设备写回边界独立说明，libfs旧注释中的i_mutex与本版本i_rwsem分开解释。
 
 五篇冷读、十一图渲染目视、长度、标题元数据、锚点及完整C材料一致性完成。未在目标Linux编译运行，没有缓存命中率、设备I/O次数、并发truncate、分配竞争或故障注入实测。实验输出标注为预期，不作为缓存命中或持久化证据。
+
+## 1.295\_写回责任完成与延后错误观察
+
+2026-10-18，重写 [写回正文](../../../knowledge/kernel_subsystems/vfs/P16_writeback_fsync与错误传播.md#16.2_一次修改怎样变成可发现的写回责任)，新增 [模块导读](../vfs/navigation/P15_写回提交完成与错误观察.md#15.1_沿同一周期区分责任与结果) 和四篇实现。固定提交为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，二十四个函数摘录逐token一致；Dirty与Writeback分开建模，连接后台调度、范围等待、ext4同步分支和每file错误游标。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| mm/filemap.c | `05adf0392625da1402d288eef9d9b6107a40fef4` |
+| mm/page-writeback.c | `fcd4c1439cb9c3b89e8ec79a4404d728826cf586` |
+| fs/fs-writeback.c | `2391b09f4cedec1c03b339f513e8a7de19352d99` |
+| fs/sync.c | `67df255eb189d835adbd2ccd163930ec40a01b98` |
+| fs/ext4/fsync.c | `b40d3b29f7e5c5b88694794c28198afc2f951aa4` |
+| lib/errseq.c | `93e9b94358dc63dcc911fd45a01ccf38d2104ecf` |
+| include/linux/errseq.h | `fc27777707688781d7f0ef38751dd2d9286fa919` |
+| include/linux/pagemap.h | `68a5f1ff3301c6cfba823cab8a418d9ca6f25893` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| include/linux/backing-dev-defs.h | `2ad261082bba5f6f0049fa1c642b6ff057f32b5a` |
+| include/linux/writeback.h | `641a057e0413291396f50bb25fcada64fd6100b6` |
+| Documentation/core-api/errseq.rst | `ff332e272405e7ae1cd167b6ece45deb3b04fb0f` |
+| Documentation/filesystems/vfs.rst | `0b18af3f954eb75e72805a04cc486f609dd02b43` |
+| mm/backing-dev.c | `e61bbb1bd62218f8e97640c5018ee5287b8ee4a0` |
+| fs/ext4/ext4.h | `bbffb76d9a9049090698af5d2d8a0414fdfbb19f` |
+| fs/ext4/ext4_jbd2.h | `0c77697d5e90d075364bb67dbc281a7fde89ea9d` |
+| fs/buffer.c | `32bd0f4c422360abeddb9faf324471c656144e74` |
+
+十七份原件中新增十份，覆盖ext4、errseq、写回声明、设备写回实例初始化与缓冲元数据同步。当前BLOCK、BUFFER_HEAD、EXT4_FS、JBD2启用，BLK_CGROUP与JBD2_DEBUG关闭；没有据此推断实际挂载模式或设备barrier行为。通用errseq核心按契约引用，VFS实例包装在本专题唯一展开。
+
+六篇冷读、十二图渲染目视、长度、标题元数据、锚点及完整C材料一致性完成。范围提交EIO跳过等待、空范围提前返回与错误分层登记在图中分开呈现。没有目标Linux编译运行、写回压力、错误注入、掉电恢复或设备缓存实测，实验只演示返回处理与局部发布顺序。

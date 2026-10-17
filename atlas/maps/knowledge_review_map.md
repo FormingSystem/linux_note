@@ -838,6 +838,11 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [写回提交完成与错误观察](../../research/source_reading/vfs/navigation/P15_写回提交完成与错误观察.md)
+        - 🔴 [脏状态登记与写回调度](../../research/source_reading/vfs/source_explanations/P37_脏状态登记与写回调度.md)
+        - 🔴 [写回标记与范围完成等待](../../research/source_reading/vfs/source_explanations/P38_写回标记与范围完成等待.md)
+        - 🔴 [同步入口与文件系统持久化](../../research/source_reading/vfs/source_explanations/P39_同步入口与文件系统持久化.md)
+        - 🔴 [写回错误序列与每file观察](../../research/source_reading/vfs/source_explanations/P40_写回错误序列与每file观察.md)
         - 🔴 [页缓存的数据有效性与修改交接](../../research/source_reading/vfs/navigation/P14_页缓存的数据有效性与修改交接.md)
         - 🔴 [页缓存归属索引与竞争插入](../../research/source_reading/vfs/source_explanations/P34_页缓存归属索引与竞争插入.md)
         - 🔴 [缓存读的填充等待与有效范围](../../research/source_reading/vfs/source_explanations/P35_缓存读的填充等待与有效范围.md)
