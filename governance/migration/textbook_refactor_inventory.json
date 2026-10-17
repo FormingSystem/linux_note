@@ -6321,6 +6321,28 @@
           "九图渲染目视、三章出入锚点、全仓9213有效链接、标题元数据命名及diff检查通过。"
         ],
         "limits": "分类章85个内部查询链接经人工冷读保留密度提示。纸面推演不是内核运行；未执行目标构建、调度/中断跟踪或真实RCU实验。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从运行时直接寻址推导启动依赖，分开possible/online与生命周期计数，解释softirq和线程成本并展开逐步观察。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交5d40708a；固定源码及三个补取原件已核对。",
+          "五图目视，两章严格连续性、精确出入锚点和全仓9214有效链接检查通过；相关阶段与导航同步。"
+        ],
+        "limits": "观察命令未在目标Linux执行；没有新增目标构建、实际启动、热插拔或跟踪证据。仅同步入口的其他文档不计全文完成。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "区分GP请求、物理周期和交付，修正init内部顺序、请求漏斗及轮询行为，说明交付与后续周期重叠，区分回调登记和调用事件。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交5d40708a；固定源码及三个补取原件已核对。",
+          "五图目视，两章严格连续性、精确出入锚点和全仓9214有效链接检查通过；相关阶段与导航同步。"
+        ],
+        "limits": "观察命令未在目标Linux执行；没有新增目标构建、实际启动、热插拔或跟踪证据。仅同步入口的其他文档不计全文完成。"
       }
     },
     "additional_documents": [
