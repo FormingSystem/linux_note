@@ -8076,6 +8076,16 @@
           "范围内标题元数据、长度与锚点通过，全仓808篇链接无缺失。"
         ],
         "limits": "6.3大节提示源自单个完整可复制程序，保留以维持实验闭环；总索引35条链接按导航职责保留。没有目标内核或面板运行。"
+      },
+      "knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_class.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "保留查询页职责，补功能分类背景及find、回调遍历、手工迭代的返回和引用区别。",
+        "validation": [
+          "对照已保存固定版本class.h、class.c与core.c成员及路径；本地冷读、连续性、长度、标题元数据和锚点检查。"
+        ],
+        "limits": "引用保活不证明硬件在线；未运行目标内核或设备热拔插。"
       }
     },
     "additional_documents": [

@@ -16,7 +16,9 @@ domains: [linux, kernel, driver]
 
 基线为 NXP 官方 linux-imx 的标签 lf-6.12.20-2.0.0、固定提交 dfaf2136deb2af2e60b994421281ba42f1c087e0，对应 Linux 6.12.20。先从[源码总索引](../../../../../research/source_reading/driver_entries/navigation/P01_Linux_6.12_驱动入口源码阅读索引.md#1.1_版本与范围)确认身份，再查[include/linux/device/class.h](../../../../../research/source_reading/linux/include/linux/device/class.h)。
 
-公开的 class 提供策略；内部 subsys_private 管理 kset、设备集合和锁。不能套用旧稿的 owner、p、devices、subsys 字段。class 不是 cdev，也不是 kset 的别名；一个 device 的 class 指针描述一个分类，多功能硬件可以关联多个功能 device。
+class 从功能角度组织设备，例如同属一种功能的设备可以通过不同总线连接。总线仍负责发现与驱动匹配，class 提供分类属性、设备节点命名等策略，不能代替读写分派的 cdev。
+
+公开的 class 提供策略；内部 subsys_private 管理 kset、设备集合和锁。不能套用旧稿的 owner、p、devices、subsys 字段。class 也不是 kset 的别名；一个 device 的 class 指针描述一个分类，多功能硬件可以关联多个功能 device。本页按成员和配对查询，不重复连续教材中的完整模块实验。
 
 ## 1.2\_按职责查询当前成员
 
@@ -45,13 +47,16 @@ domains: [linux, kernel, driver]
 | 登记调用者提供的类描述 | class_register(const struct class *)：0 或负错误 | class_unregister；调用者提供正确释放和描述寿命 |
 | 创建分类设备 | device_create / device_create_with_groups：指针或错误指针 | 成功后 device_unregister，或用唯一 devt 的 device_destroy |
 | 初始化并加入自有 device | device_initialize + device_add，或 device_register | 严格按引用协议清理，不能重复初始化 |
-| 查询类内设备 | class_find_device 及按名字/号等辅助 | 成功返回持有的设备引用，用完 put_device |
-| 遍历设备 | class_for_each_device 或 class_dev_iter_* | 使用迭代器时 init/next/exit 成对；额外长期保存要另持引用 |
+| 查询类内设备 | class_find_device 及按名字/号等辅助：设备指针或NULL | 成功返回持有的设备引用，用完 put_device；不是错误指针返回契约 |
+| 回调遍历 | class_for_each_device：0或回调返回值，错误参数可返回负错误 | 回调返回非零即停止并原样返回；回调中保存到外部的设备要另持引用 |
+| 手工迭代 | class_dev_iter_init/next/exit；next返回设备指针或NULL | 迭代器保护当前设备直到推进或退出，提前结束也必须exit |
 | 类属性 | class_create_file / class_remove_file | class_attribute 接收 class，不是 device_attribute 回调 |
 | 设备属性 | DEVICE_ATTR_* 与 groups，或 device_create_file/remove_file | 优先将初始属性随注册发布，避免事后补属性的事件窗口 |
 | 属性通知 | sysfs_notify | 提醒支持通知的读者重读，不携带无丢失事件历史 |
 
 class_create 的错误保留在错误指针中；device_create 的 class 不能为空，但 parent 可以为空。devt=0 是合法的纯属性对象，不建立设备号节点。多个零 devt 实例按保存的具体指针注销，不能靠 device_destroy(class, 0) 指定目标。具体创建与属性适配直达[唯一实现讲解](../../../../../research/source_reading/driver_entries/source_explanations/drivers/base/core.c.md#1.1_设备创建便利函数的所有权)。
+
+迭代和查找的引用不能混用：next给出的当前设备由迭代器暂时保护，不要求调用者为这份保护逐次put_device；下一次next或exit会归还它。find在匹配时另取一份引用，因此离开迭代过程后仍可把设备返回给调用者，调用者才负责put_device。两者都只保证对象存储尚在，不保证物理硬件仍在线或业务状态不会变化；访问这些状态仍需相应驱动协议。对应契约与实现见固定原件 [drivers/base/class.c](../../../../../research/source_reading/linux/drivers/base/class.c) 的 class_dev_iter_next、class_dev_iter_exit、class_for_each_device 和 class_find_device。
 
 ## 1.4\_原接口速查的权威去向
 
