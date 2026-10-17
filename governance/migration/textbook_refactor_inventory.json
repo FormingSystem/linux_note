@@ -6816,6 +6816,28 @@
           "实际格式元数据命名及全仓9463条本地链接检查通过"
         ],
         "limits": "未运行目标barrier、CPU迁移或NOCB压力实验。"
+      },
+      "research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补完整双扫描、NMI配置、回调交付和barrier边界，按S0至S6修正采样与队列模型。",
+        "validation": [
+          "34个函数和四个结构体精确C词法一致，19出链21标题入链；两图目视。",
+          "实际格式元数据命名及全仓9482条本地链接检查通过，当前出版清单55来源有效唯一。"
+        ],
+        "limits": "约10914字词与327行长H2经冷读保留，以完整S0至S6闭合；实例生命周期已独立。 未运行目标内核构建、SRCU压力、模块加载卸载或NMI实验。"
+      },
+      "research/source_reading/rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "以L0至L7补齐动态静态实例发布、分阶段扩展、模块资源归属和关闭后销毁。",
+        "validation": [
+          "18个函数与静态宏组精确C词法一致，16出链6标题入链；两图目视，严格连续性无风险。",
+          "实际格式元数据命名及全仓9482条本地链接检查通过，当前出版清单55来源有效唯一。"
+        ],
+        "limits": "约7096字词，低于篇幅阈值。 未运行目标内核构建、SRCU压力、模块加载卸载或NMI实验。"
       }
     },
     "additional_documents": [
