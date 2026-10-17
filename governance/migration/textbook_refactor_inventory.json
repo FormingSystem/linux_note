@@ -6255,6 +6255,39 @@
           "十九图渲染目视、十一篇章节链接与严格连续性通过；三个C模型及反例在GCC/Clang普通和NDEBUG配置共32次运行通过。"
         ],
         "limits": "未执行目标Kbuild、真实多核、弱内存、RT或NMI运行；工作树不可访问。全仓格式检查通过，链接检查暂受并行GIC图片编辑影响，本批链接无缺失。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P01_为什么需要_RCU.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从共享读锁成本推导版本共存与回收责任，把实现字段还给后续模块，补普通/抢占交接图与选择练习，修正锁类型混用和缓存行更新顺序。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交5879c8a；五份代码/配置与固定官方原件一致，另核对三份官方文档与GP顺序要求。",
+          "十五图目视、章节出入锚点及全仓9213有效链接检查通过；完整模块与正文一致，GCC/Clang普通和NDEBUG共60次宿主替身运行含8次预期失败。"
+        ],
+        "limits": "第一章161行成本链及第三章250行完整实验长度提示经人工保留。替身只验证控制流与资源归属，未执行目标Kbuild、MODPOST、装卸、真实多核或弱内存验证。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P02_RCU_抽象机制推演.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "明确顺序可见模型与真实发布传播边界，区分必须覆盖与可保守等待的读区，补回调责任背景并修正退休箭头指向对象。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交5879c8a；五份代码/配置与固定官方原件一致，另核对三份官方文档与GP顺序要求。",
+          "十五图目视、章节出入锚点及全仓9213有效链接检查通过；完整模块与正文一致，GCC/Clang普通和NDEBUG共60次宿主替身运行含8次预期失败。"
+        ],
+        "limits": "第一章161行成本链及第三章250行完整实验长度提示经人工保留。替身只验证控制流与资源归属，未执行目标Kbuild、MODPOST、装卸、真实多核或弱内存验证。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修复异步更新睡眠上下文与候选所有权，分离u32结果和错误返回，补完整配置模块、逐步构建观察、退出和失败清理练习。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交5879c8a；五份代码/配置与固定官方原件一致，另核对三份官方文档与GP顺序要求。",
+          "十五图目视、章节出入锚点及全仓9213有效链接检查通过；完整模块与正文一致，GCC/Clang普通和NDEBUG共60次宿主替身运行含8次预期失败。"
+        ],
+        "limits": "第一章161行成本链及第三章250行完整实验长度提示经人工保留。替身只验证控制流与资源归属，未执行目标Kbuild、MODPOST、装卸、真实多核或弱内存验证。"
       }
     },
     "additional_documents": [
