@@ -6442,6 +6442,17 @@
           "格式、元数据、命名及全仓727篇9277个有效本地链接检查通过"
         ],
         "limits": "未执行目标热插拔、内核构建或跟踪；源码页事实修补不计整页复核完成。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_SRCU_私有域与双_index_状态机.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从通知锁的串行代价推导私有域，修正共享index、possible CPU计数扫描和小大形态；U0至U6补齐安全完成到callback/completion交付，区分可睡业务与不可阻塞回收函数。",
+        "date": "2026-10-17",
+        "validation": [
+          "固定srcutree.c及头文件核对；两图渲染目视、严格连续性和精确链接通过",
+          "篇幅5691字词；格式及全仓727篇9293个有效本地链接检查通过"
+        ],
+        "limits": "未执行目标构建或通知注销并发；业务骨架不冒充可加载模块，账本练习为纸面推演。"
       }
     },
     "additional_documents": [
