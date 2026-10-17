@@ -23,7 +23,9 @@
       "knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md": "knowledge/driver_model/device_tree/P02_引脚配置怎样连接外设与焊盘.md",
       "knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md": "knowledge/driver_model/device_tree/P05_GPIO输入怎样成为中断与按键事件.md",
       "knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt示例.md": "knowledge/driver_model/device_tree/P06_从供电复位到SDIO无线设备枚举.md",
-      "knowledge/driver_model/device_tree/设备树语法专题-05-设备节点和驱动的绑定操作说明.md": "knowledge/driver_model/device_tree/P11_从设备描述到驱动服务怎样逐层确认.md"
+      "knowledge/driver_model/device_tree/设备树语法专题-05-设备节点和驱动的绑定操作说明.md": "knowledge/driver_model/device_tree/P11_从设备描述到驱动服务怎样逐层确认.md",
+      "knowledge/driver_model/gpio/P04_Linux_gpiolib_核心实现.md": "knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md",
+      "research/source_reading/linux/gpio/linux_6.12_gpio_核心路径.md": "research/source_reading/gpiolib/navigation/P01_Linux_6.12_GPIO源码阅读索引.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -7428,6 +7430,83 @@
           "十图渲染逐图目视，前三章严格连续性/长度/锚点、全仓链接与diff检查通过。"
         ],
         "limits": "教学模型只覆盖串行内存状态，不代表gpiolib、并发、GPIO-sim或目标硬件验证；后续实现章节仍继续复审。"
+      },
+      "knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从共享占用与残留句柄问题推导三层对象，贯穿S1至S7，纠正方向位、配置失败与释放电平过度保证，补带编号时序和推理练习。",
+        "validation": [
+          "14段发布源码与固定官方版本有序C token比对，六图渲染逐图目视，修订图重新检查。",
+          "七篇完整冷读、严格连续性、长度、唯一ID、完整标题锚点和全仓775篇链接检查通过。"
+        ],
+        "limits": "未完成目标Kbuild、GPIO-sim和硬件运行；Consumer/Provider/IRQ/ABI主线继续处理，不以本批源码核对代替后续章节。"
+      },
+      "research/source_reading/gpiolib/navigation/P01_Linux_6.12_GPIO源码阅读索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "迁移旧证据全部事实及待核对边界，建立固定版本、配置、唯一实现入口和IRQ/cdev状态区分。",
+        "validation": [
+          "14段发布源码与固定官方版本有序C token比对，六图渲染逐图目视，修订图重新检查。",
+          "七篇完整冷读、严格连续性、长度、唯一ID、完整标题锚点和全仓775篇链接检查通过。"
+        ],
+        "limits": "未完成目标Kbuild、GPIO-sim和硬件运行；Consumer/Provider/IRQ/ABI主线继续处理，不以本批源码核对代替后续章节。"
+      },
+      "research/source_reading/gpiolib/navigation/P02_线路对象怎样完成请求与退出.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "沿一次reset请求解释字段归属、保护向引用交接、失败位置、devres和两类撤销读者。",
+        "validation": [
+          "14段发布源码与固定官方版本有序C token比对，六图渲染逐图目视，修订图重新检查。",
+          "七篇完整冷读、严格连续性、长度、唯一ID、完整标题锚点和全仓775篇链接检查通过。"
+        ],
+        "limits": "未完成目标Kbuild、GPIO-sim和硬件运行；Consumer/Provider/IRQ/ABI主线继续处理，不以本批源码核对代替后续章节。"
+      },
+      "research/source_reading/gpiolib/source_explanations/P01_控制器登记与能力撤销.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "以固定字段和注册/注销源码解释对象建立、分阶段失败、短期能力保护与最终引用释放。",
+        "validation": [
+          "14段发布源码与固定官方版本有序C token比对，六图渲染逐图目视，修订图重新检查。",
+          "七篇完整冷读、严格连续性、长度、唯一ID、完整标题锚点和全仓775篇链接检查通过。"
+        ],
+        "limits": "未完成目标Kbuild、GPIO-sim和硬件运行；Consumer/Provider/IRQ/ABI主线继续处理，不以本批源码核对代替后续章节。"
+      },
+      "research/source_reading/gpiolib/source_explanations/P02_描述符请求与托管释放.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "展开查找、原子占用、module/gdev引用、devres与put，保留request标签失败的实际不完全清理边界。",
+        "validation": [
+          "14段发布源码与固定官方版本有序C token比对，六图渲染逐图目视，修订图重新检查。",
+          "七篇完整冷读、严格连续性、长度、唯一ID、完整标题锚点和全仓775篇链接检查通过。"
+        ],
+        "limits": "未完成目标Kbuild、GPIO-sim和硬件运行；Consumer/Provider/IRQ/ABI主线继续处理，不以本批源码核对代替后续章节。"
+      },
+      "research/source_reading/gpiolib/source_explanations/P03_逻辑值怎样变成方向与电平.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "展开输入/bias部分成功、active-low与开漏模拟、raw提交和void setter，区分软件用途与硬件方向。",
+        "validation": [
+          "14段发布源码与固定官方版本有序C token比对，六图渲染逐图目视，修订图重新检查。",
+          "七篇完整冷读、严格连续性、长度、唯一ID、完整标题锚点和全仓775篇链接检查通过。"
+        ],
+        "limits": "未完成目标Kbuild、GPIO-sim和硬件运行；Consumer/Provider/IRQ/ABI主线继续处理，不以本批源码核对代替后续章节。"
+      },
+      "research/source_reading/gpiolib/大纲.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "以请求周期组织真实的索引、模块导读和三篇唯一实现，保留主线与平台工程边界。",
+        "validation": [
+          "14段发布源码与固定官方版本有序C token比对，六图渲染逐图目视，修订图重新检查。",
+          "七篇完整冷读、严格连续性、长度、唯一ID、完整标题锚点和全仓775篇链接检查通过。"
+        ],
+        "limits": "未完成目标Kbuild、GPIO-sim和硬件运行；Consumer/Provider/IRQ/ABI主线继续处理，不以本批源码核对代替后续章节。"
       }
     },
     "additional_documents": [
@@ -7482,7 +7561,12 @@
       "research/source_reading/of_binding/navigation/P02_描述身份怎样交给匹配与编号消费者.md",
       "research/source_reading/of_binding/source_explanations/P01_OF节点怎样选出驱动能力条目.md",
       "research/source_reading/of_binding/source_explanations/P02_别名路径怎样成为编号查询记录.md",
-      "research/source_reading/of_binding/大纲.md"
+      "research/source_reading/of_binding/大纲.md",
+      "research/source_reading/gpiolib/navigation/P02_线路对象怎样完成请求与退出.md",
+      "research/source_reading/gpiolib/source_explanations/P01_控制器登记与能力撤销.md",
+      "research/source_reading/gpiolib/source_explanations/P02_描述符请求与托管释放.md",
+      "research/source_reading/gpiolib/source_explanations/P03_逻辑值怎样变成方向与电平.md",
+      "research/source_reading/gpiolib/大纲.md"
     ],
     "language_review": {
       "status": "complete",
