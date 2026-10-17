@@ -6035,6 +6035,105 @@
           "严格连续性零风险；10/21条出链与1/24条标题入链、全仓9092有效链接及格式检查通过。"
         ],
         "limits": "内容提交3c0a5e4；未执行目标内核构建或锁竞争实验，历史配置不表示本次工作树核验。"
+      },
+      "research/source_reading/locking/navigation/P02_Linux_6.12_spinlock模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "分开本地IRQ和共享资格，修正远端取得与本地恢复时序，明确非RT/SMP源码选择和历史配置边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交b042915及b506152；固定原件Git摘要匹配，七实现页44个C块的55个单元静态一致。",
+          "模块五图、实现六图目视通过；精确标题链接和全仓9095有效链接及格式检查通过。mutex共同函数258行长度提示人工保留，其余严格连续性零风险。"
+        ],
+        "limits": "未执行目标内核构建、真实信号、SMP或RT运行；完整函数保留，静态一致性不等于预处理编译或运行验证。"
+      },
+      "research/source_reading/locking/navigation/P03_Linux_6.12_mutex与rwsem模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先由睡眠需求推出共享waiter与调度职责，补M/R到统一周期映射，修正授予取消交错和OSQ状态地址。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交b042915及b506152；固定原件Git摘要匹配，七实现页44个C块的55个单元静态一致。",
+          "模块五图、实现六图目视通过；精确标题链接和全仓9095有效链接及格式检查通过。mutex共同函数258行长度提示人工保留，其余严格连续性零风险。"
+        ],
+        "limits": "未执行目标内核构建、真实信号、SMP或RT运行；完整函数保留，静态一致性不等于预处理编译或运行验证。"
+      },
+      "research/source_reading/locking/source_explanations/include/linux/spinlock_types.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "从成员地址差异引出配置表示，解释union视图偏移和逐层初始化，区分功能与诊断初值。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交b042915及b506152；固定原件Git摘要匹配，七实现页44个C块的55个单元静态一致。",
+          "模块五图、实现六图目视通过；精确标题链接和全仓9095有效链接及格式检查通过。mutex共同函数258行长度提示人工保留，其余严格连续性零风险。"
+        ],
+        "limits": "未执行目标内核构建、真实信号、SMP或RT运行；完整函数保留，静态一致性不等于预处理编译或运行验证。"
+      },
+      "research/source_reading/locking/source_explanations/include/linux/spinlock.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "补公共对象到raw成员的调用背景，解释静态类别身份与初始化作用，保留架构和MMIO辅助的先后边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交b042915及b506152；固定原件Git摘要匹配，七实现页44个C块的55个单元静态一致。",
+          "模块五图、实现六图目视通过；精确标题链接和全仓9095有效链接及格式检查通过。mutex共同函数258行长度提示人工保留，其余严格连续性零风险。"
+        ],
+        "limits": "未执行目标内核构建、真实信号、SMP或RT运行；完整函数保留，静态一致性不等于预处理编译或运行验证。"
+      },
+      "research/source_reading/locking/source_explanations/include/linux/spinlock_api_smp.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "在源码前解释本地约束和失败恢复问题，分开检查与实际获取，修正历史配置被当作当前验证的措辞。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交b042915及b506152；固定原件Git摘要匹配，七实现页44个C块的55个单元静态一致。",
+          "模块五图、实现六图目视通过；精确标题链接和全仓9095有效链接及格式检查通过。mutex共同函数258行长度提示人工保留，其余严格连续性零风险。"
+        ],
+        "limits": "未执行目标内核构建、真实信号、SMP或RT运行；完整函数保留，静态一致性不等于预处理编译或运行验证。"
+      },
+      "research/source_reading/locking/source_explanations/arch/arm/include/asm/spinlock.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "在汇编前建立原子领号与资格等待两段职责，补释放状态与事件的区别，限定ARM32/SMP及未运行边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交b042915及b506152；固定原件Git摘要匹配，七实现页44个C块的55个单元静态一致。",
+          "模块五图、实现六图目视通过；精确标题链接和全仓9095有效链接及格式检查通过。mutex共同函数258行长度提示人工保留，其余严格连续性零风险。"
+        ],
+        "limits": "未执行目标内核构建、真实信号、SMP或RT运行；完整函数保留，静态一致性不等于预处理编译或运行验证。"
+      },
+      "research/source_reading/locking/source_explanations/include/linux/rwsem.h.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "核对字段、缓存行推导和观察断言边界，修正初始化宏位置及历史配置叙述。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交b042915及b506152；固定原件Git摘要匹配，七实现页44个C块的55个单元静态一致。",
+          "模块五图、实现六图目视通过；精确标题链接和全仓9095有效链接及格式检查通过。mutex共同函数258行长度提示人工保留，其余严格连续性零风险。"
+        ],
+        "limits": "未执行目标内核构建、真实信号、SMP或RT运行；完整函数保留，静态一致性不等于预处理编译或运行验证。"
+      },
+      "research/source_reading/locking/source_explanations/kernel/locking/mutex.c.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "局部阶段与模块导读统一为M编号并映射S0至S7，补might_sleep诊断意义，核对交接取消和对象寿命。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交b042915及b506152；固定原件Git摘要匹配，七实现页44个C块的55个单元静态一致。",
+          "模块五图、实现六图目视通过；精确标题链接和全仓9095有效链接及格式检查通过。mutex共同函数258行长度提示人工保留，其余严格连续性零风险。"
+        ],
+        "limits": "未执行目标内核构建、真实信号、SMP或RT运行；完整函数保留，静态一致性不等于预处理编译或运行验证。"
+      },
+      "research/source_reading/locking/source_explanations/kernel/locking/rwsem.c.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "统一R阶段及其与S周期的对应，补等待记录的问题背景和tick期限边界，修正读者授予后仍能取消的错误图示。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交b042915及b506152；固定原件Git摘要匹配，七实现页44个C块的55个单元静态一致。",
+          "模块五图、实现六图目视通过；精确标题链接和全仓9095有效链接及格式检查通过。mutex共同函数258行长度提示人工保留，其余严格连续性零风险。"
+        ],
+        "limits": "未执行目标内核构建、真实信号、SMP或RT运行；完整函数保留，静态一致性不等于预处理编译或运行验证。"
       }
     },
     "additional_documents": [
