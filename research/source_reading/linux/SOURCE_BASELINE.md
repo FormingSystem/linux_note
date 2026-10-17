@@ -2147,3 +2147,22 @@ DEBUG_ATOMIC_SLEEP分支中的might_sleep先调用__might_sleep检查，后续mi
 普通序列计数的 S 周期、latch 的 L 周期和关联锁的 A 周期分别命名；修正先取得外部写锁再开窗、RT 读者取得后立即释放关联锁，以及禁止把普通关中断当作阻止 NMI 的条件。源码中文说明逐项对应实际函数参数和状态作用，不再把读起点描述套给写入口。19 张图全部渲染并目视检查，11 篇的精确章节链接与严格连续性检查通过。
 
 正文三个完整 C 模型经 GCC 14.2 与 Clang 18.1.8 严格警告构建，普通及 NDEBUG 配置共 32 次运行。快照模型枚举末尾比较 35 条交错（接受 16 条，其中 5 条混合）及奇偶协议 70 条交错（接受 2 条，无混合）；latch 模型覆盖 7 个暂停窗口及 210 条交错，完整序号无混合，只有选择位的变体出现 21 条混合。8 位回绕模型说明 128 次更新可伪装相同序号，127 次的对照未回绕；删除奇偶、版本或任一次重定向的四种变体均按预期报告失败。检查使用始终有效的 require，不因 NDEBUG 消失。这些是宿主单线程枚举与静态源码核对，不证明真实多核、弱内存、RT/NMI、目标内核构建或硬件行为；本次源码工作树仍不可访问。
+
+## 1.212\_RCU入门边界与配置模块复核
+
+2026-10-17，重读 RCU 前三章，用固定提交的原件核对发布、读区、GP 和异步回收的保证。以下 Git blob 来自 NXP 官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的原始文件；五份代码/配置与仓库已保存副本按 LF 规范化比较一致，三份文档仅作为本次取证缓存，不替代正文解释。
+
+| 上游相对路径 | Git blob |
+| --- | --- |
+| `include/linux/rcupdate.h` | `48e5c03df1dd83c246a61d0fcc8aa638adcd7654` |
+| `kernel/rcu/tree.c` | `8e52c1dd06284cc8e9cfb0416c38798e5003079a` |
+| `kernel/rcu/tree_plugin.h` | `1c7cbd145d5e3766c1cfd67e99ffb8a69ce8adc5` |
+| `kernel/rcu/Kconfig` | `3e079de0f5b434bd394033f08a38a00228c07432` |
+| `kernel/rcu/Kconfig.debug` | `9b0b52e1836fa42b60539edcd33f0c70358b74f2` |
+| `Documentation/RCU/Design/Requirements/Requirements.rst` | `6125e7068d2ce9dc7fc7bb3d7758d8f5b1eef77a` |
+| `Documentation/RCU/whatisRCU.rst` | `1ef5784c1b84e272a7f8eaa90137b04a1f73b2fb` |
+| `Documentation/locking/percpu-rw-semaphore.rst` | `247de64108557a85a9096ec56de4855cd19bdec7` |
+
+前三章区分顺序可见模型与真实跨 CPU 传播，不能从“写者已执行发布”推出所有并发读者立即取得新指针，也不能把不必等待后来读者解释成绝不保守地等待。详细任务/CPU 字段仍在后续读侧模型章展开，入门章保留正常与抢占分支的角色交接。配置模块把业务 `u32` 输出与错误返回分开，异步更新仍明确要求可睡眠的 mutex 上下文，逐对象选定唯一退休路径。
+
+[完整配置实验](../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md#3.7_运行一次配置发布到退出的完整闭环) 与材料逐字一致。GCC 14.2、Clang 18.1.8 的严格警告及 NDEBUG 构建共 60 次宿主替身运行通过预期：覆盖正常/立即或延迟回调、三处分配失败、空入口输出保持、最大无符号值、业务代次回绕、退出后查询及两个练习；其中 8 次为移除 GP 或 barrier 的预期失败。替身显式替换 Linux 头文件、锁、RCU 与分配接口，只检查控制流和资源归属，不模拟真实 RCU 并发、内存屏障、回调调度、Kbuild/MODPOST 或内核装卸。15 张图渲染目视通过；第一章读写锁成本链 161 行、第三章完整实验 250 行的长度提示分别经人工保留，未以拆散因果链或完整程序降低计数。
