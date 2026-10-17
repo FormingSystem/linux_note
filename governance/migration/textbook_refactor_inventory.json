@@ -6662,6 +6662,17 @@
           "篇幅2337字词；实际格式元数据命名及全仓9398本地链接检查通过"
         ],
         "limits": "未重新构建内核、生成Bear数据库或执行目标中断实验。"
+      },
+      "research/source_reading/rcu/navigation/P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补逻辑map的问题背景、功能与检查分层、V1至V6及查询实际分支，修正先加载后诊断和配置退化边界。",
+        "validation": [
+          "固定源码核对；三图渲染目视；19出链6标题入链与严格连续性通过",
+          "篇幅3088字词；实际格式元数据命名及全仓9400本地链接检查通过"
+        ],
+        "limits": "未执行目标Lockdep误用注入或新构建。"
       }
     },
     "additional_documents": [
