@@ -6937,6 +6937,18 @@
           "两个旧期执行只读verify；2026.09四个差异文件Git blob哈希与台账一致。"
         ],
         "limits": "旧期verify未全通过：2026.09工作树CRLF差异，2026.08旧Lockdep外链失效；未改冻结产物，未执行发布。"
+      },
+      "knowledge/driver_model/device_tree/设备树+platform开发/P01_旧式平台设备与资源机制.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "重写为实例描述、登记、申请映射、绑定和退出的连续过程；以无硬件实验替换错误LED控制器资源示例。",
+        "validation": [
+          "固定提交两个官方文件重取并逐字节匹配缓存；核对资源插入、匹配、IRQ与remove签名。",
+          "两张图渲染目视；3出链0标题入链；实际文档检查通过。",
+          "连续性仅保留168行实验节长度提示：两个完整模块、构建和同一绑定退出周期需连续阅读；5538字词未超篇幅门槛。"
+        ],
+        "limits": "未执行目标内核Kbuild、MODPOST、模块加载或硬件验证。"
       }
     },
     "additional_documents": [
