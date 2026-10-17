@@ -6673,6 +6673,18 @@
           "篇幅3088字词；实际格式元数据命名及全仓9400本地链接检查通过"
         ],
         "limits": "未执行目标Lockdep误用注入或新构建。"
+      },
+      "research/source_reading/rcu/source_explanations/P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "以替换场景贯通公共宏，补类型桥接、参数求值、修改约束及诊断顺序，修正protected未使用local的解释。",
+        "validation": [
+          "14处宏词法序列与固定源码一致；三图渲染目视；41出链33标题入链通过",
+          "严格连续性1项LINK_DENSITY经人工复核保留必要唯一实现链接；篇幅5990字词",
+          "实际格式元数据命名及全仓9404本地链接检查通过"
+        ],
+        "limits": "未重新构建内核、运行目标诊断或重跑此前Sparse实验。"
       }
     },
     "additional_documents": [
