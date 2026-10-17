@@ -149,7 +149,7 @@ mindmap-plugin: basic
     - 🔴 [标准 GPIO Consumer 专题](../../knowledge/driver_model/gpio_consumers/大纲.md)
         - 章节评审：7 章未评审
         - 🔴 [P01 为什么优先使用标准 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/P01_为什么优先使用标准_GPIO_Consumer.md)
-        - 🔴 [P02 输入、指示、电源与控制类 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/P02_输入_指示_电源与控制类_GPIO_Consumer.md)
+        - 🔴 [P02 按设备功能选择GPIO实现](../../knowledge/driver_model/gpio_consumers/P02_按设备功能选择GPIO实现.md)
         - 🔴 [P03 GPIO按键怎样接入输入事件](../../knowledge/driver_model/gpio_consumers/P03_GPIO按键怎样接入输入事件.md)
         - 🔴 [P04 GPIO指示与背光怎样接入亮度接口](../../knowledge/driver_model/gpio_consumers/P04_GPIO指示与背光怎样接入亮度接口.md)
         - 🔴 [P05 GPIO供电怎样进入电源依赖](../../knowledge/driver_model/gpio_consumers/P05_GPIO供电怎样进入电源依赖.md)
