@@ -70,6 +70,8 @@ active-low 由描述符转换，因此 LED core 的 brightness 语义不应关�
 
 数组 API 可让同一 Provider 使用批量回调，但跨 chip 或不支持批量的硬件不保证所有选择位同时变化。若外部 mux 对中间编码敏感，需要 enable/gate 信号或硬件锁存保证，而不能仅凭 array API 宣称无毛刺。
 
+完整问题与协议见 [选择线保护一段事务](P06_GPIO选择线怎样保护一段事务.md#6.1_选择以后为什么还需要保留通道)。select成功后占用持续到deselect，空闲恢复错误仍会释放，默认保持也不意味着启动保留原电平。
+
 ## 2.7\_gpio-poweroff\_和\_gpio-restart
 
 两者向 sys-off 框架注册处理者，在关机或重启阶段按配置产生 GPIO 电平序列。Linux 6.12.20 的 poweroff 路径使用 `_cansleep` 写值，restart 路径使用普通 `gpiod_set_value()`，但不能由接口后缀推断回调上下文不同：两者实际登记的最终 `SYS_OFF_MODE_POWER_OFF` 与 `SYS_OFF_MODE_RESTART` 都进入atomic通知链，prepare模式才走blocking链。`_cansleep` 不会把回调自动搬到可睡眠上下文，不能据此批准需要睡眠等待的Provider。

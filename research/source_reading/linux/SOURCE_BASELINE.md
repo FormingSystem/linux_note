@@ -2756,3 +2756,11 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 沿用NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；fixed.c、regulator core.c/devres.c和gpiolib-of.c的路径与blob列于实现页，另核对驱动头文件、内部对象、Kconfig及fixed/regulator binding。明确OF enable-active-high覆盖规则、boot-on与always-on区别；保留devm包装记录分配失败尚未进入core且fixed调用者未见put的静态事实，不宣称所有失败均被托管。
 
 两篇正文与扩展导读冷读，九段裁剪源码逐定义、执行语句核对；六图已渲染目视，DTC与fdtget检查相等及不等电压两个输入，后者可编译不等于驱动接受。长度与锚点检查通过；导读唯一LINK_DENSITY风险按K/L/R过程在本地完整、34条必要入口定位唯一实现的导航职责保留。无dtbs_check、内核构建、OOM注入、电源启停或电压实测，教学Provider和消费者不宣称有匹配驱动。
+
+## 1.273\_GPIO选择器的事务占用与物理编码
+
+2026-10-17，新增 [选择器正文](../../../knowledge/driver_model/gpio_consumers/P06_GPIO选择线怎样保护一段事务.md#6.1_选择以后为什么还需要保留通道) 和 [唯一实现](../gpiolib/source_explanations/P11_选择器占用与GPIO编码.md#11.1_控制器状态由谁保存和修改)，扩展 [模块导读](../gpiolib/navigation/P06_标准功能驱动怎样承接GPIO状态.md#6.5_选择器把占用从设置时延长到传输完成)。从只锁写线导致错误通道数据推导select至deselect占用，再区分稳定等待与物理中间编码。
+
+沿用NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；gpio.c、core.c、两份mux头文件与gpio-mux binding身份列于实现页，补核对MUX_GPIO配置及idle常量。明确成功选择仍占用、失败选择不得释放第二次、空闲恢复失败也up，以及gpio-mux忽略数组setter返回的限制。初始OUT_LOW与AS_IS空闲策略分开，注销不冒充停止外部传输。
+
+两篇新文和导读冷读；七段源码逐定义与语句匹配，五图渲染目视，0/3/4三种idle输入经DTC/fdtget核对，4可解析但按源码范围应拒绝。正文连续性、长度和锚点通过；导读41链接的密度风险按本地K/L/R/M周期与唯一实现导航职责保留。没有dtbs_check、内核构建、解绑、选通或时序实测。

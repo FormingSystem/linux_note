@@ -1,0 +1,29 @@
+/dts-v1/;
+
+/ {
+    compatible = "linux-note,gpio-mux-teaching";
+
+    teaching_gpio: gpio-controller {
+        compatible = "linux-note,teaching-gpio";
+        gpio-controller;
+        #gpio-cells = <2>;
+    };
+
+    route_mux: mux-controller {
+        compatible = "gpio-mux";
+        #mux-control-cells = <0>; /* 仅一个控制器，引用不带索引。 */
+        mux-gpios = <&teaching_gpio 4 0>, /* 第一根是逻辑最低位。 */
+                    <&teaching_gpio 5 0>;
+        idle-state = <0>; /* 空闲选择通道0，不表示全部断开。 */
+    };
+
+    client-a {
+        compatible = "linux-note,teaching-mux-client";
+        mux-controls = <&route_mux>;
+    };
+
+    client-b {
+        compatible = "linux-note,teaching-mux-client";
+        mux-controls = <&route_mux>;
+    };
+};
