@@ -8230,6 +8230,54 @@
           "全仓816篇链接无缺失；失败初始化的两份持有按实际顺序归还。"
         ],
         "limits": "没有执行目标模块装卸、故障注入或proc查询，静态证据不替代运行结果。"
+      },
+      "knowledge/kernel_subsystems/vfs/P05_fs_context挂载事务.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿C0至C5区分配置、根、分离挂载与目标连接，展开参数转移和阶段失败。",
+        "validation": [
+          "三结构、十四普通函数及一个系统调用体与固定原件逐token一致。",
+          "四篇冷读、八图渲染目视及文档检查完成，完整C材料与正文一致。",
+          "全仓819篇链接无缺失；旧官方字段示意与当前声明差异已说明。"
+        ],
+        "limits": "C示例未在目标Linux编译运行，未执行目标连接、并发卸载或低内存故障注入。"
+      },
+      "research/source_reading/vfs/navigation/P04_配置状态怎样变成可挂载的根.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿C0至C5区分配置、根、分离挂载与目标连接，展开参数转移和阶段失败。",
+        "validation": [
+          "三结构、十四普通函数及一个系统调用体与固定原件逐token一致。",
+          "四篇冷读、八图渲染目视及文档检查完成，完整C材料与正文一致。",
+          "全仓819篇链接无缺失；旧官方字段示意与当前声明差异已说明。"
+        ],
+        "limits": "C示例未在目标Linux编译运行，未执行目标连接、并发卸载或低内存故障注入。"
+      },
+      "research/source_reading/vfs/source_explanations/P04_配置上下文的资源取得与释放.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿C0至C5区分配置、根、分离挂载与目标连接，展开参数转移和阶段失败。",
+        "validation": [
+          "三结构、十四普通函数及一个系统调用体与固定原件逐token一致。",
+          "四篇冷读、八图渲染目视及文档检查完成，完整C材料与正文一致。",
+          "全仓819篇链接无缺失；旧官方字段示意与当前声明差异已说明。"
+        ],
+        "limits": "C示例未在目标Linux编译运行，未执行目标连接、并发卸载或低内存故障注入。"
+      },
+      "research/source_reading/vfs/source_explanations/P05_建树与分离挂载的阶段交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿C0至C5区分配置、根、分离挂载与目标连接，展开参数转移和阶段失败。",
+        "validation": [
+          "三结构、十四普通函数及一个系统调用体与固定原件逐token一致。",
+          "四篇冷读、八图渲染目视及文档检查完成，完整C材料与正文一致。",
+          "全仓819篇链接无缺失；旧官方字段示意与当前声明差异已说明。"
+        ],
+        "limits": "C示例未在目标Linux编译运行，未执行目标连接、并发卸载或低内存故障注入。"
       }
     },
     "additional_documents": [
