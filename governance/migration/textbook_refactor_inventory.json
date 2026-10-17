@@ -6563,6 +6563,17 @@
           "篇幅4424字词；实际格式元数据命名及全仓9364本地链接检查通过"
         ],
         "limits": "未执行目标内核构建、真实抢占交错或trace；当前目标配置未现场核验。"
+      },
+      "research/source_reading/rcu/navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "统一G0至G10源码阶段，明确请求漏斗、逐节点初始化、多种完成发布和回调交付，清理旧编号导航。",
+        "validation": [
+          "固定tree.c核对；两图渲染目视；33出链14标题入链与严格连续性通过",
+          "篇幅4942字词；实际格式元数据命名及全仓9375本地链接检查通过"
+        ],
+        "limits": "未运行目标内核或trace；历史月度冻结出版物保持原发布内容。"
       }
     },
     "additional_documents": [
