@@ -8086,6 +8086,66 @@
           "对照已保存固定版本class.h、class.c与core.c成员及路径；本地冷读、连续性、长度、标题元数据和锚点检查。"
         ],
         "limits": "引用保活不证明硬件在线；未运行目标内核或设备热拔插。"
+      },
+      "knowledge/kernel_subsystems/vfs/P01_为什么需要_VFS.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从名字与打开实验推导独立共享范围，建立固定VFS源码入口，并补齐Input源码目录阅读地图。",
+        "validation": [
+          "正文与完整C材料一致；按场景、操作顺序、失败清理和练习答案冷读。",
+          "25份固定原件身份及已有副本核对，九图渲染目视；标题元数据、长度和锚点检查。",
+          "全仓811篇链接无缺失；path-lookup原有尾随空白以单文件属性保留。"
+        ],
+        "limits": "Linux/POSIX实验未经目标编译运行，输出明确标为预期；VFS源码索引按原件定位职责保留链接密度提示。"
+      },
+      "knowledge/kernel_subsystems/vfs/P02_VFS抽象机制推演.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从名字与打开实验推导独立共享范围，建立固定VFS源码入口，并补齐Input源码目录阅读地图。",
+        "validation": [
+          "正文与完整C材料一致；按场景、操作顺序、失败清理和练习答案冷读。",
+          "25份固定原件身份及已有副本核对，九图渲染目视；标题元数据、长度和锚点检查。",
+          "全仓811篇链接无缺失；path-lookup原有尾随空白以单文件属性保留。"
+        ],
+        "limits": "Linux/POSIX实验未经目标编译运行，输出明确标为预期；VFS源码索引按原件定位职责保留链接密度提示。"
+      },
+      "research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从名字与打开实验推导独立共享范围，建立固定VFS源码入口，并补齐Input源码目录阅读地图。",
+        "validation": [
+          "正文与完整C材料一致；按场景、操作顺序、失败清理和练习答案冷读。",
+          "25份固定原件身份及已有副本核对，九图渲染目视；标题元数据、长度和锚点检查。",
+          "全仓811篇链接无缺失；path-lookup原有尾随空白以单文件属性保留。"
+        ],
+        "limits": "Linux/POSIX实验未经目标编译运行，输出明确标为预期；VFS源码索引按原件定位职责保留链接密度提示。"
+      },
+      "research/source_reading/vfs/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从名字与打开实验推导独立共享范围，建立固定VFS源码入口，并补齐Input源码目录阅读地图。",
+        "validation": [
+          "正文与完整C材料一致；按场景、操作顺序、失败清理和练习答案冷读。",
+          "25份固定原件身份及已有副本核对，九图渲染目视；标题元数据、长度和锚点检查。",
+          "全仓811篇链接无缺失；path-lookup原有尾随空白以单文件属性保留。"
+        ],
+        "limits": "Linux/POSIX实验未经目标编译运行，输出明确标为预期；VFS源码索引按原件定位职责保留链接密度提示。"
+      },
+      "research/source_reading/input/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从名字与打开实验推导独立共享范围，建立固定VFS源码入口，并补齐Input源码目录阅读地图。",
+        "validation": [
+          "正文与完整C材料一致；按场景、操作顺序、失败清理和练习答案冷读。",
+          "25份固定原件身份及已有副本核对，九图渲染目视；标题元数据、长度和锚点检查。",
+          "全仓811篇链接无缺失；path-lookup原有尾随空白以单文件属性保留。"
+        ],
+        "limits": "Linux/POSIX实验未经目标编译运行，输出明确标为预期；VFS源码索引按原件定位职责保留链接密度提示。"
       }
     },
     "additional_documents": [
