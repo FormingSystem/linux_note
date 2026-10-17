@@ -168,6 +168,7 @@ domains:
 - [Tree RCU NOCB 队列与执行交接源码实现](../rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.1_本地回调处理怎样变成远端协作)
 - [Tree RCU 同步等待与 rcu_barrier 源码实现](../rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.2_源码符号覆盖账本)
 - [Tree SRCU 源码实现](../rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.2_源码符号覆盖账本)
+- [Tree SRCU 实例生命周期](../rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md#16.1_一轮GP之外还有实例寿命)
 - [Tree RCU `rcu_init()` 启动初始化源码实现](../rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.19_直接符号覆盖账本)
 - [Tiny RCU 源码实现](../rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.2_源码符号覆盖账本)
 
@@ -2437,3 +2438,13 @@ P09为18条出链/18条标题入链，P15为10/17。两篇约7000和7700字词�
 2026-10-17，冷读RCU实现P10，对照固定tree.c、rcu_segcblist.c、tree.h和update.c。区分同步等待complete交接与唤醒函数返回、业务回调完成与内部哨兵尾声，纠正早期退化GP的运行条件被误写成编译配置。补保守总数非零而主链空时的DONE哨兵、锁内登记去重、RCU在线视图、释放锁后发同步IPI及迁移防漏窗口。
 
 以R0～R6贯通取票、登记、局部哨兵报告、全局归零与发布；明确follower取票时刻、NOCB flush前后pending条件，以及扫描者和哨兵两种完成者。八处函数C词法序列与固定源码一致，两图渲染目视；19条出链和19条标题入链通过，严格连续性无风险项，约5434字词。实际格式、元数据、命名及全仓734篇9463条本地链接检查通过。未执行目标barrier/hotplug/NOCB压力实验。
+
+## 1.251\_Tree_SRCU完整周期与实例生命周期复核
+
+2026-10-17，冷读RCU实现P11及固定srcutree.c、srcu.h、srcutree.h，恢复完整结构体与函数控制分支。纠正一次计数配平被理解成全域无读者、SCAN2参数2被理解成必须两次成功、小域到大域期间一直使用boot队列等边界；补公开读侧、NMI安全配置、snap先于advance的反例、四槽索引、加急漏斗、定时器到work交接以及同步入口的空闲启发式。
+
+以S0～S6贯通请求、双扫描、完成发布和实际回调；明确回调不得睡眠、在途批次保留总数、invoking保证哨兵顺序，以及follower取票代次和completion交接边界。新增P16以L0～L7独立解释实例建立、争用驱动扩展和停止使用后销毁，补静态与模块资源所有权、初始化发布、WAIT_BARRIER早于WAIT_CALL和cleanup失败保留资源。alloc_percpu的初始清零另核对固定include/linux/percpu.h与mm/percpu.c，Git对象分别为52b5ea663b9f092a9628dc71009e1e9ffd3724bc、da21680ff294cb53dfb42bf0d3b3bbd2654d2cfa。
+
+两篇合计52个完整函数、四个完整结构体及一组静态初始化宏通过C词法一致检查，四图渲染并目视。P11为19条出链/21条标题入链，P16为16/6；P16约7096字词、严格连续性无风险。P11约10914字词，经拆分审查保留略超阈值：实例生命周期已独立，剩余内容共同闭合一次请求从登记到双扫描、交付和barrier的相互约束，完整函数及共享阶段需要连读；不删必要分支压低计数。其327行完成交付H2已分三级标题区分发布、callback和重试，保留一个长节提示，无其他连续性风险。
+
+同步模块导读、总索引、专题大纲、人工评审地图红色节点与当前出版清单，7卷55来源均存在且唯一；既有首页和Atlas专题入口仍有效，无须改动冻结发行清单。实际格式、元数据、命名及全仓735篇9482条本地链接检查通过。未执行目标内核构建、SRCU压力、模块加载卸载或NMI实验，不升级开发者人工评审状态。

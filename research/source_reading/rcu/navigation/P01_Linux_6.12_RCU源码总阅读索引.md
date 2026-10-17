@@ -97,6 +97,7 @@ flowchart LR
 | [P13 Tiny RCU](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.2_源码符号覆盖账本) | UP 非抢占 reader 边界、二级指针 callback 分界、QS、softirq、同步、poll、barrier 与初始化 |
 | [P14 同步等待批处理](../source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.1_GP已经完成为什么调用者还在等) | 可选SRS登记、dummy划批、GP限额完成与worker交付 |
 | [P15 NOCB 队列与执行交接](../source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.1_本地回调处理怎样变成远端协作) | bypass、通知、GP/CB 双线程与动态成员交接 |
+| [P16 Tree SRCU 实例生命周期](../source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md#16.1_一轮GP之外还有实例寿命) | 初始化发布、小域扩展、停止使用与资源释放 |
 
 P02 与 P03 是同一读侧模块中的公共 CPU 路径和 PREEMPT_RCU 增量，不是非抢占 / 抢占两套完整系统。
 

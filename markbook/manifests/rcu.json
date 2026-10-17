@@ -222,6 +222,10 @@
         {
           "path": "research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md",
           "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md",
+          "role": "chapter"
         }
       ]
     },

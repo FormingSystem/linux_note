@@ -6834,7 +6834,8 @@
       "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md",
       "tools/ai/codex/skills/build-linux-note-topic/references/concept_implementation_mapping.md",
       "research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md",
-      "research/source_reading/rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md"
+      "research/source_reading/rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md",
+      "research/source_reading/rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md"
     ],
     "language_review": {
       "status": "complete",

@@ -908,6 +908,7 @@ mindmap-plugin: basic
                 - 🔴 [13.6.3 flags保存恢复与ARM本地中断保护](../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.6.3_flags怎样保存和恢复中断状态)
             - 🔴 [P14 Linux 6.12 Tree RCU 同步等待批处理源码实现](../../research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.1_GP已经完成为什么调用者还在等)
             - 🔴 [P15 Linux 6.12 Tree RCU NOCB 队列与执行交接源码实现](../../research/source_reading/rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.1_本地回调处理怎样变成远端协作)
+            - 🔴 [P16 Linux 6.12 Tree SRCU 实例建立扩展与销毁源码实现](../../research/source_reading/rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md#16.1_一轮GP之外还有实例寿命)
 
 ## 1.9\_参考与出版物
 

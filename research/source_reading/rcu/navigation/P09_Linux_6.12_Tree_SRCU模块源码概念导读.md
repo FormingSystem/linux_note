@@ -205,7 +205,9 @@ sequenceDiagram
 - callback 入队、目标序列与 `srcu_node` 漏斗见 [callback 请求实现](../source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.7_callback怎样登记并提出GP需求)；
 - GP 完成、callback work、同步等待与 barrier 见 [完成交付](../source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.8_GP完成怎样交付callback并承接下一代)、[同步等待](../source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.9_synchronize_srcu怎样把异步callback变成同步等待)和 [SRCU barrier](../source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.10_srcu_barrier为什么要在每条非空队列后追加哨兵)。
 
-这些链接的职责是让模块问题直达唯一实现标题；遇到裁剪掉的尺寸转换、调试或自适应延时分支，再从实现讲解回到固定版本源文件核对。不能临时借用普通 Tree RCU GP 实现充当 SRCU 证据。
+核心实现保留所展开函数的完整控制分支。实例初始化、静态声明、争用驱动的布局扩展与销毁另见 [SRCU 生命周期实现](../source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md#16.1_一轮GP之外还有实例寿命)；其 L0～L7 描述整个实例寿命，不与本章 U0～U6 的单次业务注销混为同一轮状态。
+
+这些链接让模块问题直达唯一实现标题，外部源码用于继续核验；不能临时借用普通 Tree RCU GP 实现充当 SRCU 证据。
 
 ## 9.10\_源码阅读验收
 
