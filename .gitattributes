@@ -28,3 +28,7 @@ research/source_reading/linux/security/Kconfig whitespace=-blank-at-eof
 research/source_reading/linux/Documentation/filesystems/proc.rst whitespace=-space-before-tab conflict-marker-size=1000
 research/source_reading/linux/Documentation/filesystems/sharedsubtree.rst whitespace=-space-before-tab
 markbook/topics/*/releases/** text eol=lf
+
+research/source_reading/linux/fs/eventfd.c whitespace=-blank-at-eof
+research/source_reading/linux/include/linux/anon_inodes.h whitespace=-blank-at-eof
+research/source_reading/linux/include/linux/eventfd.h whitespace=-blank-at-eof

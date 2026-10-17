@@ -88,6 +88,8 @@ flowchart TD
 
 [ramfs接入导读](P22_ramfs把缓存对象变成文件系统.md#22.1_沿一次实例使用定位状态) 沿T0～T5连接 [配置与根](../source_explanations/P70_ramfs配置根与实例生命期.md#70.1_类型描述只注册能力而不保存实例状态)、[名称驻留](../source_explanations/P71_ramfs名称操作与驻留责任.md#71.1_创建成功以后把名字留在内存) 与 [页数据](../source_explanations/P72_ramfs页数据与文件操作表.md#72.1_MMU构建选择具体文件操作表)，解释没有后备存储时的名字和内容责任。
 
+[特殊文件与匿名对象导读](P23_特殊文件与匿名对象的VFS交接.md#23.1_沿建立发布使用退出定位状态) 沿U0～U5连接 [类型与打开分派](../source_explanations/P73_特殊inode的类型选择与打开分派.md#73.1_类型位决定初始入口而非最终服务)、[内部path与file](../source_explanations/P74_伪路径file的建立与失败归还.md#74.1_内部path仍有真实持有责任) 和 [匿名inode](../source_explanations/P75_匿名inode的共享与私有对象交接.md#75.2_共享inode不共享每次创建的私有状态)，把命名方式与后备对象分开。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |

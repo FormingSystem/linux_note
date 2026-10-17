@@ -838,6 +838,10 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [特殊文件与匿名对象的VFS交接](../../research/source_reading/vfs/navigation/P23_特殊文件与匿名对象的VFS交接.md)
+        - 🔴 [特殊inode的类型选择与打开分派](../../research/source_reading/vfs/source_explanations/P73_特殊inode的类型选择与打开分派.md)
+        - 🔴 [伪路径file的建立与失败归还](../../research/source_reading/vfs/source_explanations/P74_伪路径file的建立与失败归还.md)
+        - 🔴 [匿名inode的共享与私有对象交接](../../research/source_reading/vfs/source_explanations/P75_匿名inode的共享与私有对象交接.md)
         - 🔴 [ramfs把缓存对象变成文件系统](../../research/source_reading/vfs/navigation/P22_ramfs把缓存对象变成文件系统.md)
         - 🔴 [ramfs配置根与实例生命期](../../research/source_reading/vfs/source_explanations/P70_ramfs配置根与实例生命期.md)
         - 🔴 [ramfs名称操作与驻留责任](../../research/source_reading/vfs/source_explanations/P71_ramfs名称操作与驻留责任.md)

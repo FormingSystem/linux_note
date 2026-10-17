@@ -3317,3 +3317,34 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 正文先说明没有后备存储时缓存就是实际内容，再解释dentry额外持有、inode关联和页数据；mode以外未知选项的接受不建立容量限制，noop_dirty_folio仍更新脏位，noop_fsync不提供磁盘持久性。ramfs的正常close、unlink、截断和实例退出分别承担不同责任。
 
 五篇冷读、十图渲染目视、长度、标题元数据、精确锚点和C材料一致性完成；程序限定少量字节并只清理自己建立的临时目录，命名空间挂载命令作为完整子进程单元。当前没有目标Linux编译运行、实际挂载、内存压力或故障注入结果。
+
+## 1.303\_特殊文件与匿名对象的VFS交接
+
+2026-10-18，重写 [特殊文件接入](../../../knowledge/kernel_subsystems/vfs/P24_特殊文件与伪文件系统接入.md#24.1_把命名方式与数据来源分开)，新增 [模块导读](../vfs/navigation/P23_特殊文件与匿名对象的VFS交接.md#23.1_沿建立发布使用退出定位状态) 及三篇实现。固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；二十五段函数及五张静态初始化表保留执行token，省去上游长注释并补充中文说明。通用fd发布与最后file退出继续沿既有唯一实现。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| fs/anon_inodes.c | `42bd1cb7c9cdd4af9db8617d8fbc7f7b8aa254a8` |
+| include/linux/anon_inodes.h | `edef565c2a1a141409b6c6984a695226f9697bf7` |
+| fs/file_table.c | `18735dc8269a10d6e7085c9bb882a0788dd3e0ca` |
+| fs/inode.c | `8dabb224f941c0b95e7a0e154592bb9137e5bc2c` |
+| fs/char_dev.c | `57cc096c498a29fc3bc2278a142a494ffbe5f3fd` |
+| fs/pipe.c | `12b22c2723b7ead48f8ffcaecee869631c68dd05` |
+| include/linux/pipe_fs_i.h | `8ff23bf5a81972f9280d09dbc277f4e33dd38683` |
+| fs/libfs.c | `b0f262223b5351a57a9662a018c6f1127cfa5814` |
+| include/linux/pseudo_fs.h | `730f77381d55f1816ef14adf7dd2cf1d62bb912c` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| net/socket.c | `042451f01c6520b85496213e6b3d8d2116ab2533` |
+| fs/proc/inode.c | `626ad7bd94f244e7e1bd25365e5a31908cb4d72a` |
+| fs/sysfs/file.c | `d1995e2d6c943a644ff9f34cf2488864d57daf81` |
+| fs/kernfs/file.c | `8502ef68459b9842d090a4ac338591778d1b3b24` |
+| fs/eventfd.c | `22c934f3a080effc1b838293c5a7932b900fda46` |
+| include/linux/eventfd.h | `e32bee4345fb9fedfad3821fbbd1d8e3925fb97a` |
+| include/linux/security.h | `2ec8f3014757cd78ef0d961e77f42db409db3b1c` |
+| include/linux/file.h | `f98de143245abc1361f6e7118bc415ba0206d28a` |
+| include/linux/cdev.h | `0e8cd6293debbaa177d9ae232e61bbb500b40c7d` |
+| fs/super.c | `c9c7223bc2a2e9cb5391a1b3a291f724416289c2` |
+
+二十份原件中新增七份。当前ARM配置BLOCK、EVENTFD、NET、PROC_FS、SYSFS开启，SECURITY关闭。socket目录节点保留no_open_fops，不是普通open通信端点；字符类型先进入公共open再取得驱动表。内部伪file仍持有path，alloc_file_pseudo失败补回inode责任；匿名共享inode不合并不同file的private_data。
+
+五篇冷读、十图渲染目视、长度、标题元数据、精确锚点及C材料一致性完成。两个eventfd加复制fd的程序用于观察独立创建与共享计数，不以inode编号作为跨版本断言；当前没有目标Linux编译运行、设备热移除、配置组合或故障注入实测。procfs、sysfs、pipe及socket仅记录VFS交接，不复制其子系统算法。
