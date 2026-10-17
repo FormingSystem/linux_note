@@ -6804,6 +6804,18 @@
           "两篇均低于10000字词；实际格式元数据命名及全仓9461本地链接检查通过"
         ],
         "limits": "未运行目标内核构建、回调压力或动态offload实验；严格连续性长H2风险已人工裁决。"
+      },
+      "research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补栈完成交接、在途DONE哨兵和热插拔防漏，区分早期运行条件与配置、取票代次与哨兵尾声。",
+        "validation": [
+          "8处完整函数C词法一致，两图渲染目视",
+          "19出链19标题入链、严格连续性及5434字词检查通过",
+          "实际格式元数据命名及全仓9463条本地链接检查通过"
+        ],
+        "limits": "未运行目标barrier、CPU迁移或NOCB压力实验。"
       }
     },
     "additional_documents": [
