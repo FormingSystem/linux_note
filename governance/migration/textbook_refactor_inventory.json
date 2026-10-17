@@ -7932,6 +7932,54 @@
           "完整C/Makefile与正文一致；范围内标题元数据、长度和锚点通过，全仓800篇链接无缺失。"
         ],
         "limits": "无目标模块构建加载或真实输入测试；总索引22链接密度按原件和唯一实现导航职责保留。"
+      },
+      "knowledge/driver_model/input/P04_事件帧与多点触控.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从两指连续性推导槽、tracking身份和完整帧规则，补满槽换人、几何语义与辅助函数实际边界。",
+        "validation": [
+          "四篇冷读，十五段函数定义身份和原件执行语句核对；十张Mermaid及一张SVG渲染目视。",
+          "完整C接收程序GCC/Clang编译运行，正常五帧与漏释放反例符合预期；原函数简化算法试验复现负槽边界。",
+          "范围内标题元数据、长度和锚点通过；全仓803篇链接无缺失。"
+        ],
+        "limits": "没有目标内核或触摸硬件运行；总索引26条链接按索引职责保留密度提示。"
+      },
+      "research/source_reading/input/navigation/P04_接触身份怎样跨帧保留.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从两指连续性推导槽、tracking身份和完整帧规则，补满槽换人、几何语义与辅助函数实际边界。",
+        "validation": [
+          "四篇冷读，十五段函数定义身份和原件执行语句核对；十张Mermaid及一张SVG渲染目视。",
+          "完整C接收程序GCC/Clang编译运行，正常五帧与漏释放反例符合预期；原函数简化算法试验复现负槽边界。",
+          "范围内标题元数据、长度和锚点通过；全仓803篇链接无缺失。"
+        ],
+        "limits": "没有目标内核或触摸硬件运行；总索引26条链接按索引职责保留密度提示。"
+      },
+      "research/source_reading/input/source_explanations/P06_多点槽状态与帧收尾.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从两指连续性推导槽、tracking身份和完整帧规则，补满槽换人、几何语义与辅助函数实际边界。",
+        "validation": [
+          "四篇冷读，十五段函数定义身份和原件执行语句核对；十张Mermaid及一张SVG渲染目视。",
+          "完整C接收程序GCC/Clang编译运行，正常五帧与漏释放反例符合预期；原函数简化算法试验复现负槽边界。",
+          "范围内标题元数据、长度和锚点通过；全仓803篇链接无缺失。"
+        ],
+        "limits": "没有目标内核或触摸硬件运行；总索引26条链接按索引职责保留密度提示。"
+      },
+      "research/source_reading/input/source_explanations/P07_槽位映射与位置匹配.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从两指连续性推导槽、tracking身份和完整帧规则，补满槽换人、几何语义与辅助函数实际边界。",
+        "validation": [
+          "四篇冷读，十五段函数定义身份和原件执行语句核对；十张Mermaid及一张SVG渲染目视。",
+          "完整C接收程序GCC/Clang编译运行，正常五帧与漏释放反例符合预期；原函数简化算法试验复现负槽边界。",
+          "范围内标题元数据、长度和锚点通过；全仓803篇链接无缺失。"
+        ],
+        "limits": "没有目标内核或触摸硬件运行；总索引26条链接按索引职责保留密度提示。"
       }
     },
     "additional_documents": [
