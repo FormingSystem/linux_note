@@ -3395,3 +3395,18 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 既有fs/filesystems.c、fs/fs_parser.c、fs/fs_context.c、fs/fsopen.c、fs/super.c、fs/namespace.c与相应头文件沿用固定证据。当前配置MODULES、MODULE_UNLOAD、PROC_FS、USER_NS、BUG开启，VALIDATE_FS_PARSER、SECURITY关闭；参数描述检查与安全选项的完整分支不可冒充目标已执行路径。invalf产生EINVAL、参数字符串转移、need_free成功设置时点、fsmount较晚失败不复原phase均在源码旁解释。
 
 本轮是固定源码与文档核对，没有执行模块卸载压力、内核分配故障、安全模块组合或panic测试。
+
+
+## 1.307\_VFS实例构造与退出的状态归属复核
+
+2026-10-18，复核源码实现P06、P07与实例生命周期正文，补充中文行内注释、具体集合和等待地址图、初始化及配置边界、辅助符号职责与修改验证范围。既有二十三段完整函数保留非注释token；正文增加精确实现入口。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| include/linux/bug.h | `348acf2558f3c1a6d6cecc6382a7561721efaabf` |
+
+新增原件来自固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，Git对象摘要核对通过。CHECK_DATA_CORRUPTION的返回条件会控制残留inode的毒值分支；BUG_ON_DATA_CORRUPTION决定BUG或WARN诊断，WARN仍受panic策略影响，不能描述为单纯无副作用打印。
+
+当前配置PROVE_LOCKING、DEBUG_LOCK_ALLOC、LOCKDEP、MEMCG、FSNOTIFY、BUG开启；SMP、SECURITY、FS_ENCRYPTION、BUG_ON_DATA_CORRUPTION关闭，RCU为TINY_RCU。类型锁类key与具体锁实例分别解释，SB_BORN/DYING/DEAD、s_active、s_count及两套集合不能合并为单一状态。未公开候选直接清理与公开实例RCU后投递工作的边界明确保留。
+
+本次没有并发挂载/卸载压力、分配故障注入或损坏告警实测，不以图示顺序充当运行日志。

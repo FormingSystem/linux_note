@@ -46,6 +46,8 @@ flowchart LR
 
 前三种辅助路径汇入vfs_get_super：取得实例后，仅在没有s_root时调用fill_super建立根，再把根持有交给fc。因此“每次请求都执行fill_super”也不成立。底层匹配、具体实例初始化、用户参数是否能在既有实例上成立，是三个需要分别检查的问题。
 
+匹配回调如何选择、何时填充根，见 [选择策略实现](../../../research/source_reading/vfs/source_explanations/P06_实例匹配与构造完成的交接.md#6.3_匹配规则与根填充各有职责)。
+
 ## 6.3\_先公开候选再等待就绪解决了什么
 
 假设请求A和B应共享同一身份的实例。若A必须等所有初始化完成才登记，B在这段时间查表看不到A，可能也开始创建一份相同身份的实例。把所有初始化放在全局自旋锁内同样不可行：初始化可能分配内存、等待设备或执行其他可睡眠工作。
@@ -65,7 +67,9 @@ flowchart LR
 | s_flags中的BORN、DYING、DEAD | 建树和关闭路径发布，等待者读取 | 传递就绪或退出进度，还须结合锁和引用判断 |
 | s_root、s_op、s_fs_info | 公共层与具体实现按构造/关闭协议维护 | 根、实例操作及私有状态，不以非空单独替代生命周期检查 |
 
-固定源码入口见 [实例交接导读](../../../research/source_reading/vfs/navigation/P05_实例怎样在构造与关闭之间交接.md#5.1_把阶段落到两种引用和三个标志)。新对象并非只存在“未发布→已发布”两个状态；公开给内部发现者与公开为可使用实例是不同承诺。
+固定版本身份见 [VFS源码总索引](../../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md#1.1_先固定源码身份与运行证据)。本模块入口见 [实例交接导读](../../../research/source_reading/vfs/navigation/P05_实例怎样在构造与关闭之间交接.md#5.1_把阶段落到两种引用和三个标志)。新对象并非只存在“未发布→已发布”两个状态；公开给内部发现者与公开为可使用实例是不同承诺。
+
+候选初始化、锁外分配后的重查与私有数据转移，见 [分配器](../../../research/source_reading/vfs/source_explanations/P06_实例匹配与构造完成的交接.md#6.1_候选先建立锁和基础持有) 和 [sget_fc发布路径](../../../research/source_reading/vfs/source_explanations/P06_实例匹配与构造完成的交接.md#6.2_发布前重查避免重复候选)。
 
 ## 6.4\_等待者怎样得知构造完成或退出
 
@@ -108,6 +112,8 @@ sequenceDiagram
 
 为什么醒来后还要查一次？B看到BORN到取得锁之间，实例可能进入关闭。甚至BORN刚发布，A随后的安全检查也可能失败。锁后的复查和非零增加阻止“把零计数重新加活”。若不能得到活动引用，B等待DEAD再重新查找，避免旧实例的后端清理尚未完成就开始替代实例。
 
+等待、唤醒与锁后复查的实现见 [状态通信](../../../research/source_reading/vfs/source_explanations/P06_实例匹配与构造完成的交接.md#6.4_等待条件与实例锁完成两次确认)；临时持有如何交接为活动持有见 [grab_super](../../../research/source_reading/vfs/source_explanations/P06_实例匹配与构造完成的交接.md#6.5_取得活动引用失败就等待旧实例退出)。
+
 ## 6.5\_最后活动引用结束后为何还不能立即free
 
 第五章已说明配置上下文与mount各自持有实例。一个mount退出时仍可能有别的mount或配置上下文使用同一实例，因此deactivate只归还自己的活动关系；只有最后一份才进入关闭。对旧file或path是否还使一个mount处于busy状态，需要下一章的视图引用规则，不能直接在这里数fd。
@@ -126,6 +132,8 @@ sequenceDiagram
 generic_shutdown_super发布DYING并释放实例写锁，后端关闭与类型实例集合摘除再按相应kill路径推进到DEAD。有的辅助关闭路径较早完成通知，公共路径会避免重复通知。最后活动持有结束后，仍有等待或遍历者的临时s_count，内存必须继续保留。
 
 当s_count也到零，公共层从全局实例集合移除，经过RCU回调再安排工作队列，最后释放安全关联、用户命名空间与结构内存。工作队列承担可以延后的实际清理，不是用固定延时“猜其他CPU应该用完了”。尚未公开的多余候选则走destroy_unused_super，无须等待从未存在的外部观察者。这解释了为什么不能把所有错误分支都写成同一种kfree。
+
+最后活动归还、关闭通知与内存释放分别见 [deactivate路径](../../../research/source_reading/vfs/source_explanations/P07_实例关闭通知与最终内存回收.md#7.1_最后活动引用把流程交给关闭回调)、[DYING与DEAD](../../../research/source_reading/vfs/source_explanations/P07_实例关闭通知与最终内存回收.md#7.2_先结束公共使用再通知旧实例已退出) 和 [最后临时归还](../../../research/source_reading/vfs/source_explanations/P07_实例关闭通知与最终内存回收.md#7.3_最后临时引用与实际释放仍然分开)。
 
 ## 6.6\_用三种交错检验自己的判断
 
