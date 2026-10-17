@@ -9040,6 +9040,102 @@
           "全仓870篇链接无缺失；ext4/file.c保留上游末尾空行，Kconfig与Makefile固定LF。"
         ],
         "limits": "没有目标Linux编译运行、性能、缓存旁路、异步故障、设备轮询或掉电实测。"
+      },
+      "knowledge/kernel_subsystems/vfs/P18_文件mmap与page_fault.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿M0至M6区分VMA、文件页和PTE，补齐两类写入、缺页重试及截断撤销。",
+        "validation": [
+          "三十二个函数或系统调用体逐token一致，二十份原件核对Git对象。",
+          "八篇冷读、十六图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓877篇链接无缺失；确认首次私有写和已有PTE写保护的不同入口。"
+        ],
+        "limits": "没有目标Linux编译运行、并发故障、性能或掉电实测。"
+      },
+      "research/source_reading/vfs/navigation/P17_文件映射的缺页与状态交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿M0至M6区分VMA、文件页和PTE，补齐两类写入、缺页重试及截断撤销。",
+        "validation": [
+          "三十二个函数或系统调用体逐token一致，二十份原件核对Git对象。",
+          "八篇冷读、十六图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓877篇链接无缺失；确认首次私有写和已有PTE写保护的不同入口。"
+        ],
+        "limits": "没有目标Linux编译运行、并发故障、性能或掉电实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P45_文件映射的发布与引用归还.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿M0至M6区分VMA、文件页和PTE，补齐两类写入、缺页重试及截断撤销。",
+        "validation": [
+          "三十二个函数或系统调用体逐token一致，二十份原件核对Git对象。",
+          "八篇冷读、十六图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓877篇链接无缺失；确认首次私有写和已有PTE写保护的不同入口。"
+        ],
+        "limits": "没有目标Linux编译运行、并发故障、性能或掉电实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P46_文件缺页的缓存验证与重试.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿M0至M6区分VMA、文件页和PTE，补齐两类写入、缺页重试及截断撤销。",
+        "validation": [
+          "三十二个函数或系统调用体逐token一致，二十份原件核对Git对象。",
+          "八篇冷读、十六图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓877篇链接无缺失；确认首次私有写和已有PTE写保护的不同入口。"
+        ],
+        "limits": "没有目标Linux编译运行、并发故障、性能或掉电实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P47_文件页到进程页表的安装.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿M0至M6区分VMA、文件页和PTE，补齐两类写入、缺页重试及截断撤销。",
+        "validation": [
+          "三十二个函数或系统调用体逐token一致，二十份原件核对Git对象。",
+          "八篇冷读、十六图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓877篇链接无缺失；确认首次私有写和已有PTE写保护的不同入口。"
+        ],
+        "limits": "没有目标Linux编译运行、并发故障、性能或掉电实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P48_私有文件映射的写时复制.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿M0至M6区分VMA、文件页和PTE，补齐两类写入、缺页重试及截断撤销。",
+        "validation": [
+          "三十二个函数或系统调用体逐token一致，二十份原件核对Git对象。",
+          "八篇冷读、十六图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓877篇链接无缺失；确认首次私有写和已有PTE写保护的不同入口。"
+        ],
+        "limits": "没有目标Linux编译运行、并发故障、性能或掉电实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P49_共享映射的写入准备与脏页登记.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿M0至M6区分VMA、文件页和PTE，补齐两类写入、缺页重试及截断撤销。",
+        "validation": [
+          "三十二个函数或系统调用体逐token一致，二十份原件核对Git对象。",
+          "八篇冷读、十六图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓877篇链接无缺失；确认首次私有写和已有PTE写保护的不同入口。"
+        ],
+        "limits": "没有目标Linux编译运行、并发故障、性能或掉电实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P50_映射同步与截断撤销.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿M0至M6区分VMA、文件页和PTE，补齐两类写入、缺页重试及截断撤销。",
+        "validation": [
+          "三十二个函数或系统调用体逐token一致，二十份原件核对Git对象。",
+          "八篇冷读、十六图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓877篇链接无缺失；确认首次私有写和已有PTE写保护的不同入口。"
+        ],
+        "limits": "没有目标Linux编译运行、并发故障、性能或掉电实测。"
       }
     },
     "additional_documents": [
