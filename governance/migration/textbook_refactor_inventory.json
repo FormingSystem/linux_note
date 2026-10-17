@@ -6685,6 +6685,18 @@
           "实际格式元数据命名及全仓9404本地链接检查通过"
         ],
         "limits": "未重新构建内核、运行目标诊断或重跑此前Sparse实验。"
+      },
+      "research/source_reading/rcu/source_explanations/P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补等待对象与S3至S9交付，区分本地QS与树上责任，纠正exp报告及根完成边界。",
+        "validation": [
+          "10处函数裁剪有序词法子序列与人工控制流核对；两图渲染目视",
+          "23出链12标题入链、严格连续性和约5300字词检查通过",
+          "实际格式元数据命名及全仓9410本地链接检查通过"
+        ],
+        "limits": "未构建内核或执行目标QS、GP调度与同步等待实验。"
       }
     },
     "additional_documents": [
