@@ -7551,6 +7551,39 @@
           "五图渲染逐图目视，三篇完整冷读、严格连续性、长度、ID与锚点检查，全仓777篇链接无缺失。"
         ],
         "limits": "无目标Kbuild、GPIO-sim或板上验证；宿主串行模型不证明真实锁和电气时序。"
+      },
+      "knowledge/driver_model/gpio/P07_GPIO_中断桥接与事件传播.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从当前值和事件历史分离推导检测映射与处理者，比较chained和nested线程，补完整模拟模块、故障注入及退出流程。",
+        "validation": [
+          "五段固定源码有序token与定义身份核对，完整C/Makefile与正文一致，初始化/错误/清理路径静态核对。",
+          "六图渲染逐图目视，并行图修订后重验；三篇完整冷读、严格连续性、长度、ID及锚点，全仓779篇链接无缺失。"
+        ],
+        "limits": "未执行目标Kbuild、模块装载、GPIO-sim与硬件测试；不把当前值采样日志视为完整边沿历史。"
+      },
+      "research/source_reading/gpiolib/navigation/P04_GPIO事件怎样从线路到达处理者.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "把配置与通知方向分开，对齐公共S4/S6/S7，给出位图与irq_work的并行时序及处理者依赖退出。",
+        "validation": [
+          "五段固定源码有序token与定义身份核对，完整C/Makefile与正文一致，初始化/错误/清理路径静态核对。",
+          "六图渲染逐图目视，并行图修订后重验；三篇完整冷读、严格连续性、长度、ID及锚点，全仓779篇链接无缺失。"
+        ],
+        "limits": "未执行目标Kbuild、模块装载、GPIO-sim与硬件测试；不把当前值采样日志视为完整边沿历史。"
+      },
+      "research/source_reading/gpiolib/source_explanations/P05_GPIO映射与模拟事件怎样交接.md": {
+        "state": "reviewed",
+        "result": "created",
+        "date": "2026-10-17",
+        "reason": "唯一展开gpiod_to_irq和irq_sim关键结构/函数，说明能力保护、错误、pending合并、使能丢弃与映射/action差别。",
+        "validation": [
+          "五段固定源码有序token与定义身份核对，完整C/Makefile与正文一致，初始化/错误/清理路径静态核对。",
+          "六图渲染逐图目视，并行图修订后重验；三篇完整冷读、严格连续性、长度、ID及锚点，全仓779篇链接无缺失。"
+        ],
+        "limits": "未执行目标Kbuild、模块装载、GPIO-sim与硬件测试；不把当前值采样日志视为完整边沿历史。"
       }
     },
     "additional_documents": [
@@ -7612,7 +7645,9 @@
       "research/source_reading/gpiolib/source_explanations/P03_逻辑值怎样变成方向与电平.md",
       "research/source_reading/gpiolib/大纲.md",
       "research/source_reading/gpiolib/navigation/P03_GPIO模拟器如何兑现控制器能力.md",
-      "research/source_reading/gpiolib/source_explanations/P04_模拟控制器的状态与回调.md"
+      "research/source_reading/gpiolib/source_explanations/P04_模拟控制器的状态与回调.md",
+      "research/source_reading/gpiolib/navigation/P04_GPIO事件怎样从线路到达处理者.md",
+      "research/source_reading/gpiolib/source_explanations/P05_GPIO映射与模拟事件怎样交接.md"
     ],
     "language_review": {
       "status": "complete",
