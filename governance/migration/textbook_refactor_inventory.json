@@ -7654,6 +7654,50 @@
           "固定gpiolib打印及trace采样点核对，完整shell与正文一致，原flags恢复静态检查；全仓782篇链接无缺失。"
         ],
         "limits": "未执行目标Linux shell脚本、调试控制文件或板上验证；未将观察点存在等同于机制结果。"
+      },
+      "knowledge/driver_model/gpio_consumers/P01_为什么优先使用标准_GPIO_Consumer.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从同一低有效灯推导领域对象与标准接口，保留私有方案价值、GPIO访问成本和产品策略边界。",
+        "validation": [
+          "四篇冷读、严格连续性、长度及完整标题锚点；九图渲染目视。",
+          "七段源码按定义核对；DTC和fdtget验证两种极性教学输入；全仓785篇链接检查无缺失。"
+        ],
+        "limits": "未执行dtbs_check、目标内核构建、GPIO按键或唤醒实验；其他Consumer家族继续重构。"
+      },
+      "knowledge/driver_model/gpio_consumers/P03_GPIO按键怎样接入输入事件.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从机械抖动到采样、输入状态、IRQ-only释放及退出，补完整DTS和时间线练习。",
+        "validation": [
+          "四篇冷读、严格连续性、长度及完整标题锚点；九图渲染目视。",
+          "七段源码按定义核对；DTC和fdtget验证两种极性教学输入；全仓785篇链接检查无缺失。"
+        ],
+        "limits": "未执行dtbs_check、目标内核构建、GPIO按键或唤醒实验；其他Consumer家族继续重构。"
+      },
+      "research/source_reading/gpiolib/source_explanations/P08_按键取样与输入报告.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "固定版本按定义展开每键状态、去抖调度、取样报告、合成释放及逆序退出，逐簇给修改边界。",
+        "validation": [
+          "四篇冷读、严格连续性、长度及完整标题锚点；九图渲染目视。",
+          "七段源码按定义核对；DTC和fdtget验证两种极性教学输入；全仓785篇链接检查无缺失。"
+        ],
+        "limits": "未执行dtbs_check、目标内核构建、GPIO按键或唤醒实验；其他Consumer家族继续重构。"
+      },
+      "research/source_reading/gpiolib/navigation/P06_标准功能驱动怎样承接GPIO状态.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "建立标准功能适配的模块边界与按键K0至K4周期，链接公共GPIO阶段和唯一实现。",
+        "validation": [
+          "四篇冷读、严格连续性、长度及完整标题锚点；九图渲染目视。",
+          "七段源码按定义核对；DTC和fdtget验证两种极性教学输入；全仓785篇链接检查无缺失。"
+        ],
+        "limits": "未执行dtbs_check、目标内核构建、GPIO按键或唤醒实验；其他Consumer家族继续重构。"
       }
     },
     "additional_documents": [
