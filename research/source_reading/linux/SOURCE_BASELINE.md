@@ -2633,3 +2633,25 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 绑定按同一提交的 `Documentation/devicetree/bindings/mmc/mmc-pwrseq-simple.yaml`、`net/wireless/brcm,bcm4329-fmac.yaml`、`media/i2c/ovti,ov5640.yaml`、`gpio/gpio-pca95xx.yaml`、`serial/rs485.yaml`及已核对fixed-regulator文件验证；配置入口PWRSEQ_SIMPLE、VIDEO_OV5640也由固定Kconfig确认。GPIO和IRQ事件定义、events.rst与ftrace.rst用于校验跟踪入口和实例清理。PCA9539硬件表依据NXP `PCA9539_PCA9539R` Rev.9.1（2025-10-10）第6.2节/表4与6.6.3节，正文保留官方取得入口和本地必要表格。
 
 验证范围：完整离线连接模型的36次DTC 1.6.1/fdtget调用通过且无警告，覆盖两GPIO提供者、复位与HOST_WAKE分离、两端endpoint、修改及恢复。六个裁剪源码块的有序token与固定文件匹配；18图渲染并逐图目视，逐篇冷读及严格连续性、长度、完整标题锚点、格式/元数据/命名和全仓链接检查通过。未运行Linux用户态查询程序、trace采集脚本、目标Kbuild、dtbs_check或板上电气/出流/PM/唤醒；主机无可用POSIX shell与WSL运行环境，不以宿主替身冒充目标接口验证。
+
+## 1.262\_OF匹配与别名查询复核
+
+2026-10-17，完整冷读原设备绑定长文后，重构为 [描述到驱动服务](../../../knowledge/driver_model/device_tree/P11_从设备描述到驱动服务怎样逐层确认.md) 和 [别名多实例实验](../../../knowledge/driver_model/device_tree/P12_设备别名怎样参与多实例识别.md)，配套 [OF绑定与别名源码索引](../of_binding/navigation/P01_OF绑定与别名源码阅读索引.md#1.1_版本与阅读任务)、模块导读、两篇唯一实现及大纲。修正所有节点均变平台设备、每节点必须reg、表项首匹配、别名phandle编码、自动编号/探测顺序和虚构查询API；用每实例只读sysfs替换存在未初始化指针、全局删除及旧fd寿命缺陷的字符设备示例，字符设备责任回链权威专题。
+
+标准外部工作树本轮仍不可用，采用官方NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 文件快照。以下为实际核对文件身份；展开及平台枚举沿既有第1.255～1.257节证据，i.MX串口消费者沿第1.259节固定文件。目标配置尚未确认，OF、OF_DYNAMIC、OF_KOBJ等作为条件性实现边界说明。
+
+| 上游相对路径 | Git blob |
+| --- | --- |
+| `drivers/of/of_private.h` | `106988622525723df644c0d0fde5975a8db03103` |
+| `drivers/of/device.c` | `edf3be1972658f6dc165f577da53b10c7eebc116` |
+| `include/linux/platform_device.h` | `7132623e4658576f0be2a80b493e445e0c9d4de6` |
+| `include/linux/mod_devicetable.h` | `4338b1b4ac444817e7a64376d49dbdd12d61106f` |
+| `drivers/of/base.c` | `4bb87e0cbaf179d6128b61fbafbdbb410e345ebf` |
+| `include/linux/of.h` | `85b60ac9eec50bb202aa774cab273e1d947e394d` |
+| `drivers/base/platform.c` | `6f2a33722c5203ac196a6e36e153648d0fe6c6d4` |
+| `drivers/base/dd.c` | `bcc1f28b71f4f554ec8cf279934d13bdc6acce9c` |
+| `drivers/base/bus.c` | `657c93c38b0dc2a2247e5f482fadd3a9376a58e8` |
+
+规范补充为Devicetree Specification稳定网页第3.3节 `/aliases node`：属性值为节点路径字符串；Linux编号查询另有stem与数字尾缀的实现约定。正文就地提供编码区别、数据表、所有权图和操作时间线，外链只承担溯源。
+
+验证记录：26次DTC 1.6.1/fdtget调用覆盖原树、路径与phandle比较、别名互换、缺失、参数超界、兼容降级与恢复；缺失属性查询的非零退出为预期反例，DTC编译均无警告。八个源码块与固定文件做有序C token比对，完整函数、结构片段和循环裁剪边界均标出。七图渲染并逐图目视，实例所有权图调整后重新检查。逐篇冷读、长度、ID、完整标题锚点及格式/元数据/命名、全仓链接检查通过；严格连续性审计仅保留12.3节199行提示，该节承载完整驱动、Makefile、部署与观察的同一实验，代码本身约120行，为避免拆散可执行单元按人工冷读保留，不宣称严格零警告。未运行目标Kbuild、MODPOST、模块加载、Linux shell操作、实际编号/解绑或Schema验证；驱动与运行列是按源码核对的待执行教学实验。
