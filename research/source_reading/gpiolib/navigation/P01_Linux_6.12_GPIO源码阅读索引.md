@@ -46,7 +46,9 @@ flowchart TD
 
 ## 1.2\_已经核对的IRQ与字符设备边界
 
-S6 会把线路交给新的状态载体。GPIO 侧可通过 `gpio_chip.irq` 中的 `gpio_irq_chip` 关联 irqdomain、父 IRQ 和 irq_chip 回调；具体拓扑取决于 Provider。`gpiod_to_irq()` 校验描述符、保护 `gdev->chip`、计算 offset 并调用 `to_irq`，返回 0 时转为 `-ENXIO`。Provider 已撤销时返回 `-ENODEV`；有 gpio irqchip 而 `to_irq` 尚未就绪时还可能返回 `-EPROBE_DEFER`。其结果不包含 handler 请求、输入方向设置或触发类型配置，且 Provider 的映射回调可能创建映射，不能概括为无副作用的纯查询。
+S6 会把线路交给新的状态载体。先读 [GPIO事件模块导读](P04_GPIO事件怎样从线路到达处理者.md#4.1_先分开配置路径与通知路径)，把配置、来源状态、域映射和处理者串起来。GPIO侧可通过 `gpio_chip.irq` 中的 `gpio_irq_chip` 关联irqdomain、父IRQ和irq_chip回调，具体拓扑取决于Provider。
+
+`gpiod_to_irq()` 校验描述符、保护 `gdev->chip`、计算offset并调用to_irq，回调返回0时转为 `-ENXIO`。Provider撤销返回 `-ENODEV`；irqchip尚未就绪时可能返回 `-EPROBE_DEFER`。它不建立输入方向或handler，映射回调还可能创建映射。唯一实现已落在 [IRQ映射](../source_explanations/P05_GPIO映射与模拟事件怎样交接.md#5.1_取得IRQ为何仍需保护可撤销的Provider)；模拟事件怎样经pending与irq_work进入核心，见 [模拟事件交接](../source_explanations/P05_GPIO映射与模拟事件怎样交接.md#5.2_模拟中断把待处理状态放在哪里)。
 
 字符设备 v2 的创建由 `gpiolib-cdev.c` 中 `linereq_create()` 承担：校验请求、分配 `linereq`、取得 gdev 引用、初始化每线 delayed work、配置 mutex、等待队列和 FIFO 元数据，再逐线请求与配置。真正的事件 FIFO 存储由需要边沿事件的设置路径分配，不能把 `INIT_KFIFO` 写成已经分配了事件容量。设备注销 notifier 和文件对象把后续事件读取、不可用通知与最后引用释放连接起来。
 

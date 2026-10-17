@@ -2708,3 +2708,11 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 仍核对NXP官方固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`：`drivers/gpio/gpio-sim.c` 的blob为 `f83a8b5a51d0dc8d093011945260ffa296f2ba2a`，`include/linux/gpio/driver.h` 为 `2dd7cb9cc270a68ddedbcdd5d44e0d0f88dfa785`。明确request位与公共占用分离、方向输入不在回调中重采样pull、free用pull改value且不清方向位，以及apply_pull在模拟IRQ设置错误分支仍返回0的实际行为。模拟器位图同步不外推为真实MMIO电气顺序。
 
 验证：宿主C11模型以GCC严格警告和O2编译运行，复现丢更新并观察错误/正确初值顺序；发布材料与正文一致。8个源码块按C token有序比对固定原件；5张图渲染并逐图目视，三篇完整冷读、严格连续性、长度、完整标题锚点与文档格式/链接检查。没有目标Kbuild、gpio-sim运行或真实硬件测量，也不把宿主串行交错模型当作锁的并发测试。继续IRQ与用户空间ABI。
+
+## 1.267\_GPIO事件映射与处理者生命周期
+
+2026-10-17，重构 [GPIO中断桥接](../../../knowledge/driver_model/gpio/P07_GPIO_中断桥接与事件传播.md)，从读当前值不能提供变化历史推导检测、映射与处理者，分开快速chained和可睡眠nested线程，复用PCA9539已有唯一实现。补完整gpio-sim输入Consumer、IRQ申请后故障注入、正常卸载与重新申请流程，区分物理边沿、逻辑采样、ONESHOT、去抖和wake边界。新增 [事件模块导读](../gpiolib/navigation/P04_GPIO事件怎样从线路到达处理者.md#4.1_先分开配置路径与通知路径) 和 [映射与模拟事件实现](../gpiolib/source_explanations/P05_GPIO映射与模拟事件怎样交接.md#5.1_取得IRQ为何仍需保护可撤销的Provider)。
+
+固定提交仍为官方NXP `dfaf2136deb2af2e60b994421281ba42f1c087e0`。新读取 `kernel/irq/irq_sim.c`，blob为 `1a3d483548e2f303c0d15fa8e9b9214c656d2a49`；复用gpiolib、gpio-sim、driver.h与官方GPIO驱动文档。IRQ管理的 `kernel/irq/manage.c` blob为 `f0803d6bd2969820443f25b5b508ec553f4cb9a2`，托管IRQ的 `kernel/irq/devres.c` 为 `b3e98668f4dd87e725626ad55f48a34d117e1c67`，用于核对NULL主处理函数、ONESHOT与free_irq等待边界。
+
+五段发布源码与固定原件进行有序C token及函数定义身份检查；冷读发现初次提取误选调用语句后已改为完整函数定义并重验，未把单纯token存在视为解释正确。完整C/Makefile与正文一致，初始化先于IRQ注册、错误返回和退出依赖逐项复核。六图渲染目视，模拟irq_work与输入更新的并行区修订后再次检查；三篇完整冷读、严格连续性、长度、唯一ID、完整标题锚点及全仓文档检查。无目标Kbuild、模块装入、GPIO-sim或板上实验；运行步骤标为预期，不以静态核对替代实测。继续用户空间请求缓冲与最终文件引用生命周期。
