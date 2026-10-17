@@ -6618,6 +6618,17 @@
           "篇幅3804字词；实际格式元数据命名及全仓9383本地链接检查通过"
         ],
         "limits": "未执行目标NOCB切换、回调压测或线程迁移。"
+      },
+      "research/source_reading/rcu/navigation/P08_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "修正barrier迁移扫描窗口、离线队列交接与SRS交付，补末段哨兵、在途总长度、R0至R6和模块退出协议。",
+        "validation": [
+          "固定源码核对；两图渲染目视；20出链5标题入链与严格连续性通过",
+          "篇幅3380字词；实际格式元数据命名及全仓9385本地链接检查通过"
+        ],
+        "limits": "未执行目标热插拔、模块卸载或barrier压力实验。"
       }
     },
     "additional_documents": [
