@@ -9592,6 +9592,17 @@
           "Git附带Bash仅执行脚本-n语法检查通过；全仓908篇链接无缺失。"
         ],
         "limits": "没有目标Linux C编译运行、strace采集或tracefs实测；当前ARM未开启FTRACE与BPF_SYSCALL。"
+      },
+      "knowledge/kernel_subsystems/vfs/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "以因果阅读地图和章节接续问题组织25章，区分正文模型、固定源码入口与相邻专题职责。",
+        "validation": [
+          "完整章节链接与阶段依赖冷读；导航图渲染目视。",
+          "标题、元数据、长度、精确锚点及全仓908篇链接无缺失。"
+        ],
+        "limits": "导航页保留全部真实章节，LINK_DENSITY提示经职责复核保留；前序源码P03-P22仍需继续质量收口。"
       }
     },
     "additional_documents": [
