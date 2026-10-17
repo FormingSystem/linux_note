@@ -2258,3 +2258,11 @@ GP 模块以 G0～G10 对应公共周期，修正 `rcu_gp_init()` 内部建债�
 状态图把共享 `srcu_idx` 与每 CPU 计数分开，小形态的集中 callback 队列与大形态的树汇聚分别说明；possible CPU 求和、先 unlock 后 lock 的屏障扫描和晚到增量不能压成一次普通计数比较。U0～U6 分开入口撤销、两轮扫描、完成序列、callback work 和 completion 通知；加急策略、normal 覆盖及清理告警边界据原件核对。
 
 两图渲染目视、严格连续性与精确链接检查通过，篇幅为 5691 字词；全仓实际扫描 727 篇 Markdown、9293 个有效本地链接无缺失。跨 CPU 配平与三个变体仅作纸面练习；业务骨架明确不是可加载完整模块，没有执行目标构建、通知注销并发或 SRCU 跟踪实验。
+
+## 1.223\_Tasks家族观察集合与完成交付复核
+
+2026-10-17，冷读第十九章，补取固定 NXP 提交的 `kernel/rcu/tasks.h`、`include/linux/rcupdate_trace.h`、`kernel/workqueue.c`，Git blob 依次为 `4d7ee95df06e6792fa06207997d57cd4bb306f7a`、`eda493200663faf15780bff26c9ddc797afe9434`、`a9d64e08dffc7c7aef2caae2f170268d83e99e23`。以 K0～K6 区分共同代码与各 flavor 独立对象、序号、线程和队列，按实际函数体核对通知、聚合队列与 callback 交付。
+
+经典 Tasks 保留被抢占而仍可运行的任务，以 nvcsw 快照、静止点状态、退出链及前后普通 GP 形成证据；Trace 使用在线 current 快照加 possible CPU 的 blocked 链，区分两类链、need_qs 握手、负深度、迁移与在途 IPI。unlock 特殊路径不直接唤醒 GP，由周期复查取得已发布状态。Rude 的同步入口与内部 static callback 入口分开，记录 `schedule_on_each_cpu()` 可分配失败而调用处未检查返回值的固定实现边界，不把成功路径图外推成失败保证。
+
+角色图与三条时序图完成渲染目视，严格连续性、精确链接与格式检查通过；实际全仓扫描 732 篇 Markdown、9315 个有效本地链接无缺失，其他并行新增仍待覆盖登记。没有运行目标内核、修改跳板、进行故障注入或采集 Tasks 跟踪；线程和配置命令只是只读观察步骤。
