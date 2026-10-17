@@ -45,6 +45,7 @@ domains:
    第 11 章进入[class 与 sysfs 分支](../../knowledge/linux/device_model/class_sysfs/大纲.md#1.1_从分类观察到可控数据入口)，先观察无节点的两个分类实例，再运行属性控制字符读取，解释输入失败、权限和撤销边界。
 3. 按序完成[设备树与 Platform 开发](../../knowledge/driver_model/device_tree/设备树+platform开发)。
 4. 选读[GPIO输入与按键事件](../../knowledge/driver_model/device_tree/P05_GPIO输入怎样成为中断与按键事件.md)。
+5. 从[无线模块启动](../../knowledge/driver_model/device_tree/P06_从供电复位到SDIO无线设备枚举.md#6.1_模块还没出现时谁来准备它的电源与复位)进入复杂外设组合，继续摄像头、扩展GPIO、RS-485及换板诊断；需要修改能力时进入[组合外设源码索引](../../research/source_reading/peripheral_integration/navigation/P01_组合外设源码阅读索引.md#1.1_版本与证据范围)。
 
 阶段验收：能解释 device、driver、bus 的匹配过程，并把寄存器、中断和 GPIO 等硬件资源从设备树传递给驱动。
 

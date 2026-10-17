@@ -2610,3 +2610,26 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 本例离线DT的11次DTC 1.6.1/fdtget调用全部成功且无警告，验证GPIO引用、两条汇聚SPI、两提供者extended输入、局部线修改与恢复。关系图及K1到K4时序图渲染并目视检查；正文、源码增量冷读及连续性/链接/格式检查通过。现有路线和大纲入口同步；人工评审状态不变。
 
 未执行目标驱动、input/LED、GPIO电气、IRQ硬件、PM或唤醒测试，也未运行目标Kbuild及dtbs_check。教学控制器仅声明编码契约，没有硬件驱动与资源，不能作为可启动板级DTB。寄存器表来自固定驱动布局，不把静态值推导包装成实测。
+
+## 1.261\_组合外设的供电数据与事件交接复核
+
+2026-10-17，完整冷读原GPIO/pinctrl/interrupt工程示例约1950行七章后，按五个实际问题重构为 [SDIO模块启动](../../../knowledge/driver_model/device_tree/P06_从供电复位到SDIO无线设备枚举.md#6.1_模块还没出现时谁来准备它的电源与复位)、[摄像头控制与数据](../../../knowledge/driver_model/device_tree/P07_摄像头控制连接怎样成为图像数据流.md#7.1_读到身份只说明控制路径有回应)、[扩展GPIO与共享IRQ](../../../knowledge/driver_model/device_tree/P08_扩展GPIO与共享中断怎样找到事件来源.md#8.1_用一根通知线换取多路输入的代价)、[RS-485方向交接](../../../knowledge/driver_model/device_tree/P09_RS485方向控制为什么必须等待发送完成.md#9.1_共享差分线为什么需要明确的发送窗口) 和 [换板与诊断](../../../knowledge/driver_model/device_tree/P10_组合外设怎样换板并逐层定位故障.md#10.1_换板保留外设协议重新建立每个连接)。LED、hog、pinctrl状态及普通按键保留精确职责回链，不重复维护通用教程。
+
+新增 [组合外设源码阅读索引](../peripheral_integration/navigation/P01_组合外设源码阅读索引.md#1.1_版本与证据范围)、一篇模块导读、四篇唯一实现讲解及阅读大纲。正文先建立问题与完整周期，随后用源码核对状态位置、返回值和回退；修正虚构摄像头帧IRQ、SPI设备强套platform API、RK GPIO地址/参数/域关系、regulator用户接口和trace命令。保留此版本确实允许的无线reset-gpios与rs485-rts-active-high，不凭经验误删。
+
+本轮标准源码工作树仍不可访问，固定官方提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的文件快照用于只读验证；当前目标配置未确认。新增核心文件的Git blob如下，i.MX UART沿用第1.259节的 `d5d24b00de00fb369ed93f80266be376070cc089`：
+
+| 上游相对路径 | Git blob |
+| --- | --- |
+| `drivers/mmc/core/pwrseq_simple.c` | `154a8921ae7598334163057c91af407ae97fea22` |
+| `drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c` | `22c064848124d83c8de3eef0cf1b10f391c5c4af` |
+| `drivers/media/i2c/ov5640.c` | `185f4996896943ff950516a0a1a49c651d3379b3` |
+| `drivers/gpio/gpio-pca953x.c` | `7a9a856208a4e7389a0613d941fcea2bc8f54836` |
+| `drivers/gpio/gpio-rockchip.c` | `365ab947983cafa998f8c2188044046b4829da8a` |
+| `arch/arm64/boot/dts/rockchip/rk356x.dtsi` | `bc0f57a26c2ff8e19b546354f84ffaa44ebd9229` |
+| `drivers/mmc/core/core.c` | `327029f5c59b7943a418afb7d807fc41e10a7ee6` |
+| `drivers/tty/serial/serial_core.c` | `d94d73e45fb6ded18ed45e0b1077fd4170168907` |
+
+绑定按同一提交的 `Documentation/devicetree/bindings/mmc/mmc-pwrseq-simple.yaml`、`net/wireless/brcm,bcm4329-fmac.yaml`、`media/i2c/ovti,ov5640.yaml`、`gpio/gpio-pca95xx.yaml`、`serial/rs485.yaml`及已核对fixed-regulator文件验证；配置入口PWRSEQ_SIMPLE、VIDEO_OV5640也由固定Kconfig确认。GPIO和IRQ事件定义、events.rst与ftrace.rst用于校验跟踪入口和实例清理。PCA9539硬件表依据NXP `PCA9539_PCA9539R` Rev.9.1（2025-10-10）第6.2节/表4与6.6.3节，正文保留官方取得入口和本地必要表格。
+
+验证范围：完整离线连接模型的36次DTC 1.6.1/fdtget调用通过且无警告，覆盖两GPIO提供者、复位与HOST_WAKE分离、两端endpoint、修改及恢复。六个裁剪源码块的有序token与固定文件匹配；18图渲染并逐图目视，逐篇冷读及严格连续性、长度、完整标题锚点、格式/元数据/命名和全仓链接检查通过。未运行Linux用户态查询程序、trace采集脚本、目标Kbuild、dtbs_check或板上电气/出流/PM/唤醒；主机无可用POSIX shell与WSL运行环境，不以宿主替身冒充目标接口验证。
