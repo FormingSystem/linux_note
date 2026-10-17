@@ -2181,3 +2181,11 @@ DEBUG_ATOMIC_SLEEP分支中的might_sleep先调用__might_sleep检查，后续mi
 `rcu_note_context_switch()` 在登记读区内任务后调用 `rcu_qs()`；这个动作发生在调度钩子内，不能写成实际切换完成后才记录。普通 QS 本地锁存与清除节点位分开；`rcu_read_unlock_special()` 在不适宜的上下文可保留责任并请求后续处理，任务逻辑退出不等于共享登记已经移除。正文增加原叶节点、迁移后任务与延后清理的关系图及逐步纸面推演。EQS 快照证明当前或两次采样间经过静止状态，不要求整个观察窗口始终空闲。
 
 第五章把默认普通同步路径限定在调度器正常运行、普通 GP、`rcutree.rcu_normal_wake_from_gp=0`，同时说明另一等待请求链的存在；区分根条件、全局完成序列、回调资格与实际执行者。九张图渲染并目视检查，三章入链/出链及全仓 9213 个有效链接检查通过。第四章的 85 个内部链接主要承担分类矩阵和深化查询，逐节已有本地解释，按人工冷读保留该密度提示。此轮没有执行目标内核构建、调度/中断跟踪或真实 RCU 实验；纸面状态推演不作为运行证据。
+
+## 1.214\_RCU启动依赖与GP交付复核
+
+2026-10-17，冷读第七、八章，继续使用固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的 `tree.c`、`tree_plugin.h` 等已核对原件。另取同提交 `kernel/rcu/rcu.h`、`kernel/rcu/tree_nocb.h`、`include/trace/events/rcu.h`，Git blob 依次为 `feb3ac1dc5d59030db1131677dda08fa9caa41a7`、`2605dd234a13c8aec5b74ebf5e006005ce98ea0f`、`e81431deaa50b21725b08ad7c1a2992a0074065a`。
+
+初始化 B0～B6 与运行期 S 周期分开，说明 possible、online、编号上界和扇出；`n_online_cpus` 在 prepare 阶段增加，不是任意瞬间的 online mask 计数。`rcutree.use_softirq` 默认随 PREEMPT_RT 构建改变，线程分支的待办标志与条件唤醒不能合并为无条件启动线程。配置、启动参数、日志和任务观察按顺序就地讲解，未声称在目标环境执行。
+
+GP 模块以 G0～G10 对应公共周期，修正 `rcu_gp_init()` 内部建债先于成功返回的顺序，以及各消费者交付可与下一 GP 重叠的关系。请求漏斗遇到进行中 GP 可留下需求由 cleanup 接手，get-state 快照本身不发起 GP，NOCB 回调也可能先经 bypass。跟踪事件区分 `rcu_callback` 的登记与 `rcu_invoke_callback` 的调用。五图渲染目视、两章严格连续性与精确锚点检查通过，全仓 9214 个有效链接无缺失；只修改入口的其他 RCU 文档不计入全文复核完成。没有新增目标内核构建、实际启动、CPU 热插拔或跟踪运行证据。

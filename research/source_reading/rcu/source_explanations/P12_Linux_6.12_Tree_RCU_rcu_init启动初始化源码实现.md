@@ -415,20 +415,20 @@ flowchart LR
 
 ### 12.6.1\_I阶段怎样回接公共实现抽象与运行周期
 
-I0～I13 描述的是一次 **启动初始化事务**，不是一轮宽限期。为了让源码不脱离原理，下面把每组 I 阶段映射回 [P04 的七项实现抽象](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P04_RCU_分类坐标与内核配置.md#4.1.4_先提炼跨类型实现都必须回答的七个问题)、[P07 的 S0～S6 初始化模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md#7.3_S0到S6_拓扑建立的统一阶段)和 [P05 的运行期 S0～S9 周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md#5.5_S0到S9的一次完整周期)：
+I0～I13 描述的是一次 **启动初始化事务**，不是一轮宽限期。为了让源码不脱离原理，下面把每组 I 阶段映射回 [P04 的七项实现抽象](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P04_RCU_分类坐标与内核配置.md#4.1.4_先提炼跨类型实现都必须回答的七个问题)、[P07 的 B0～B6 初始化模型](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md#7.3_B0到B6_拓扑建立的统一阶段)和 [P05 的运行期 S0～S9 周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md#5.5_S0到S9的一次完整周期)：
 
 | 源码阶段 | 建立或检查的抽象职责 | 对应 P07 初始化阶段 | 后续运行期意义 |
 | --- | --- | --- | --- |
-| I0、I3、I4 | 固定启动执行者、公布构建/参数选择并净化后续线程条件 | S0 以前的启动边界 | 限定后续状态属于哪个实现和执行配置，本身不产生 GP 完成证据 |
+| I0、I3、I4 | 固定启动执行者、公布构建/参数选择并净化后续线程条件 | B0 以前的启动边界 | 限定后续状态属于哪个实现和执行配置，本身不产生 GP 完成证据 |
 | I1、I12 | 检查公共 API 在早期状态下没有越过契约 | 不建立功能状态 | 只增加诊断证据；检查通过不能代替运行期 reader、GP 与 callback 证明 |
-| I2 | 建立延迟释放的容器、批次与异步工作入口 | 与 S3 和 S6 的结果交付基础设施相邻 | 为 P05 S8～S9 的释放交付准备地址，但此时没有执行目标 callback |
-| I5 | 计算汇聚拓扑的实际容量与层级 | S0 | 让 P05 S4 可以只对本次启动实际存在的节点建债 |
-| I6 | 初始化 `rcu_node`、每 CPU `rcu_data` 及其直接映射 | S1～S2 | 为 P05 S4～S7 提供建债、局部证据和分层汇聚地址，并为 S8 保留本地 callback 状态 |
-| I7 | 登记 softirq core 入口或明确选择线程分支 | S3 | 让后续本地证据检查和 callback 推进拥有消费执行上下文 |
-| I8 | 把系统睡眠事件接到 RCU 生命周期入口 | S3 的系统事件边界 | suspend/hibernate 到来时能够调整运行状态；它不是普通 GP 的完成路径 |
-| I9 | 依次准备、发布并 online 启动 CPU | S4～S5 | 让后续 GP 在 P05 S4 从正确参与集合建债，并让本 CPU 在 S5 记录证据 |
-| I10 | 建立异步 workqueue 与 callback 过载计算条件 | S6 的一部分 | 为 GP 请求、轮询、SRS cleanup 和 callback 管理提供排队能力；完整 worker 仍在后继阶段开放 |
-| I11 | 把过早提出的 expedited poll 请求接回稍后可运行的 work | S6 的请求修复分支 | 维护请求代际与未来完成之间的连续性，不直接宣布 P05 S7 已完成 |
+| I2 | 建立延迟释放的容器、批次与异步工作入口 | 与 B3 和 B6 的结果交付基础设施相邻 | 为 P05 S8～S9 的释放交付准备地址，但此时没有执行目标 callback |
+| I5 | 计算汇聚拓扑的实际容量与层级 | B0 | 让 P05 S4 可以只对本次启动实际存在的节点建债 |
+| I6 | 初始化 `rcu_node`、每 CPU `rcu_data` 及其直接映射 | B1～B2 | 为 P05 S4～S7 提供建债、局部证据和分层汇聚地址，并为 S8 保留本地 callback 状态 |
+| I7 | 登记 softirq core 入口或明确选择线程分支 | B3 | 让后续本地证据检查和 callback 推进拥有消费执行上下文 |
+| I8 | 把系统睡眠事件接到 RCU 生命周期入口 | B3 的系统事件边界 | suspend/hibernate 到来时能够调整运行状态；它不是普通 GP 的完成路径 |
+| I9 | 依次准备、发布并 online 启动 CPU | B4～B5 | 让后续 GP 在 P05 S4 从正确参与集合建债，并让本 CPU 在 S5 记录证据 |
+| I10 | 建立异步 workqueue 与 callback 过载计算条件 | B6 的一部分 | 为 GP 请求、轮询、SRS cleanup 和 callback 管理提供排队能力；完整 worker 仍在后继阶段开放 |
+| I11 | 把过早提出的 expedited poll 请求接回稍后可运行的 work | B6 的请求修复分支 | 维护请求代际与未来完成之间的连续性，不直接宣布 P05 S7 已完成 |
 | I13 | 建立 Tasks flavor 的 callback 运输账本 | 不属于普通 Tree 的 reader/QS 初始化 | 只为 Tasks RCU 的结果交付预留 per-CPU 队列；其 reader 定义、GP 线程和完成证据在独立类型中建立 |
 
 因此，读初始化源码时先问“这一行让哪项职责以后成为可能”，再进入运行期调用者；不能因为字段已经初始化，就提前断言对应 GP、callback 或 Tasks flavor 已经运行。

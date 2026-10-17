@@ -145,7 +145,7 @@ flowchart TB
 | 状态机 | 本章只需记住的交接 | 独立运行原理 |
 | --- | --- | --- |
 | 对象发布 | 新入口封闭未来旧对象取得 | [P03 同步更新者的替换等待与释放](P03_RCU_通用API与最小使用闭环.md#3.3.3_同步更新者_替换后等待并释放) |
-| GP 请求与全局周期 | 接收目标代际，建债后发布完成 | [P08 一轮物理 GP 的 S0～S10 生命周期](P08_Tree_RCU_GP请求与全局生命周期.md#8.9_S0到S10_一轮物理GP的统一生命周期) |
+| GP 请求与全局周期 | 接收目标代际，建债后发布完成 | [P08 一轮物理 GP 的 G0～G10 生命周期](P08_Tree_RCU_GP请求与全局生命周期.md#8.9_G0到G10_一轮物理GP的统一生命周期) |
 | 证明债务 | 本地产生 QS 或 EQS，叶节点再汇聚 CPU 与任务债务 | [P09 CPU 当前 GP 债务](P09_Tree_RCU_QS_EQS与Context_Tracking.md#9.4.1_CPU的当前GP债务) → [P10 节点逐层向根清位](P10_Tree_RCU_rcu_node树与分层汇聚.md#10.6_节点怎样逐层向根清位) |
 | callback 代际与执行 | GP 完成只让回调成熟，执行上下文再真正调用它 | [P11 回调状态推进](P11_Tree_RCU_rcu_segcblist回调状态机.md#11.4_S0到S5_回调状态推进) → [P12 一次批处理周期](P12_Tree_RCU_回调执行_批处理与限流.md#12.4_S0到S6_一次批处理周期) |
 | 等待者与关闭 | 回调或哨兵把完成结果交给同步调用者 | [P13 默认 synchronize_rcu 的等待对象](P13_Tree_RCU_同步等待与rcu_barrier.md#13.5_默认synchronize_rcu的等待对象) |
@@ -178,7 +178,7 @@ CPU0 在取消发布以后提交回收需求。GP 内核线程把需求合并到
 | S6 分层汇聚 | CPU 或任务清债 | 叶到根的 `qsmask` / blocked-task 条件 | 父节点和 GP kthread | 根完成条件成立 |
 | S7 发布GP完成 | GP cleanup | 节点序列与全局 `gp_seq` | callback、poll、等待路径 | 完成代际全局可见 |
 
-这一段依次由 [P08 GP 统一生命周期](P08_Tree_RCU_GP请求与全局生命周期.md#8.9_S0到S10_一轮物理GP的统一生命周期)、[P09 本地证据时序](P09_Tree_RCU_QS_EQS与Context_Tracking.md#9.9_本地事件与远端观察的完整时序) 和 [P10 节点四 CPU 报告时序](P10_Tree_RCU_rcu_node树与分层汇聚.md#10.9_完整四CPU报告时序) 分段放大。
+这一段依次由 [P08 GP 统一生命周期](P08_Tree_RCU_GP请求与全局生命周期.md#8.9_G0到G10_一轮物理GP的统一生命周期)、[P09 本地证据时序](P09_Tree_RCU_QS_EQS与Context_Tracking.md#9.9_本地事件与远端观察的完整时序) 和 [P10 节点四 CPU 报告时序](P10_Tree_RCU_rcu_node树与分层汇聚.md#10.9_完整四CPU报告时序) 分段放大。
 
 ### 5.5.3\_S8到S9\_callback交付与生命周期关闭
 

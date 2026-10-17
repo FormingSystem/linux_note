@@ -16,9 +16,11 @@ topics:
 
 ## 8.1\_本章先回答GP究竟是什么
 
-`GP` 是 **Grace Period（宽限期）** 的缩写。它首先是一个正确性概念，而不是某个线程、计时器或函数：更新者先在时刻 T 切断旧对象的未来可达入口，随后等待所有 **可能在 T 之前取得旧对象地址** 的 reader 离开受保护访问窗口；从 T 到这项证明成立之间的逻辑区间，就是该 RCU 域的一轮 GP。
+上一章已经建立节点地址和执行者，但“线程已存在”还不能告诉更新者该等哪一轮。现在让两个更新者相继撤下对象：它们能否共用一次证明，第二个请求是否来得太晚，完成又怎样送回各自调用者？
 
-抽象 GP 为什么只等待旧 reader、为什么晚到 reader 不属于本轮集合，见 [RCU 抽象机制推演](P02_RCU_抽象机制推演.md#2.6_第四步_定义宽限期要等待的集合)。本章只把这个结论映射到 **普通 Tree RCU** 的全局请求和执行实现。SRCU、Tasks RCU 和 expedited GP 各有不同的 reader 定义或控制路径，不能把本章字段直接套过去；分类边界见 [RCU 的七条正交坐标轴](P04_RCU_分类坐标与内核配置.md#4.2_七条正交坐标轴)。
+`GP` 仍指前文的宽限期：它完成时，必须能够排除该周期开始前已存在的目标读区。更新者先撤下旧入口，再请求一个足够新的完成边界；等待可以包含排队、实际 GP 和结果交付，不能把“撤下入口到函数返回”的全部时间都叫作一轮物理 GP。实现也可以保守地多等部分并发进入的读者，不承诺只等待一份精确的对象访问者名单。
+
+发布可见性和等待范围沿用 [RCU 抽象机制推演](P02_RCU_抽象机制推演.md#2.6_第四步_定义宽限期要等待的集合)。本章把它映射到 **普通 Tree RCU** 的全局请求和执行实现。SRCU、Tasks RCU 和 expedited GP 各有不同的 reader 定义或控制路径，不能把本章字段直接套过去；分类边界见 [RCU 的七条正交坐标轴](P04_RCU_分类坐标与内核配置.md#4.2_七条正交坐标轴)。
 
 先排除四个常见误解：
 
@@ -29,9 +31,11 @@ topics:
 
 ## 8.2\_六个必须分开的专有名词
 
+CPU0 可以在等待旧配置的同时睡眠，CPU1 又为另一个对象登记回调；系统只需记住两个需求各自必须覆盖的时间边界，而不必创建两套扫描者。由此要分开调用者的请求、实际执行的一轮 GP，以及长期推进这些周期的线程。完成以后，请求者还要各自收到结果。下表把这些已经出现的对象放回对应层次：
+
 | 名词 | 本章中的精确定义 | 它不是什么 |
 | --- | --- | --- |
-| GP / 宽限期 | 从旧入口边界封闭到旧 reader 债务全部被证明清偿的逻辑区间 | 固定延时、线程或回调 |
+| GP / 宽限期 | 足以保证该周期之前已存在的目标读区全部结束的证明周期 | 从任意业务撤下时刻开始计时的固定延迟、线程或回调 |
 | GP 请求 | 调用者声明“至少需要完成到某个未来代际”的需求 | 一次独占的物理扫描 |
 | 物理 GP | Tree RCU 全局状态机实际开始、等待并 cleanup 的一轮执行 | 某个调用者私有的 GP |
 | GP 代际 | `gp_seq` 对物理 GP 开始、进行中和完成边界的版本化表达 | 只能表示 true/false 的布尔值 |
@@ -43,6 +47,10 @@ topics:
 “请求”和“物理 GP”必须分开。三个调用者可以提出三个逻辑需求，但只要同一轮物理 GP 的时间边界足以覆盖它们，它们就共享这一轮：
 
 ```c
+/* 接口片段：ptr_a/ptr_b 各只有一个更新者，故保护条件可写 true。
+ * 新对象已私有初始化；old_a/old_b 非空；同步等待发生在可睡眠上下文。
+ * 多更新者场景必须恢复第三章的串行化协议。
+ */
 /* CPU0：同步等待。 */
 old_a = rcu_replace_pointer(ptr_a, new_a, true);
 synchronize_rcu();
@@ -82,21 +90,23 @@ flowchart LR
     Q["请求状态<br/>gp_seq_needed与gp_flags"]
     K["长期GP kthread<br/>一个task_struct"]
     N["证明状态<br/>rcu_node.qsmask<br/>与blocked tasks"]
-    D["完成消费者<br/>callback段、completion、poll"]
+    D["完成消费者<br/>回调执行者、等待者与轮询者"]
 
     W0 -->|"提交需要的代际"| Q
     W1 -->|"callback加速"| Q
-    P -->|"取得/检查目标序列"| Q
+    P -.->|"start_poll才主动推进需求"| Q
     Q -->|"INIT命令并唤醒gp_wq"| K
     K -->|"初始化与等待"| N
     N -->|"根债务清零并唤醒"| K
     K -->|"cleanup发布完成代际"| D
     D -->|"唤醒、执行或返回true"| W0
     D -->|"稍后执行callback"| W1
-    D -->|"完成状态可见"| P
+    D -->|"get_state取快照，poll观察是否完成"| P
 ```
 
 ## 8.4\_请求执行与交付是三层而不是一条函数链
+
+同步调用者睡眠后，其内部等待对象仍存在；异步调用者返回后，callback 节点仍排在队列中。两者都可以被同一轮 GP 覆盖，但它们恢复执行的动作不同。因此“请求已登记”“证明已完成”“调用者已得知”必须用不同状态表达：
 
 | 层 | 解决的问题 | 主要状态 | 典型执行者 |
 | --- | --- | --- | --- |
@@ -150,7 +160,7 @@ callback屏障、expedited、NOCB
 
 ### 8.6.1\_默认同步等待也先登记callback
 
-Linux 6.12.20 中，`synchronize_rcu()` 进入 `synchronize_rcu_normal()`。默认 `rcu_normal_wake_from_gp=0` 时：
+在 Linux 6.12.20 调度器正常运行且选择普通 GP 的路径中，`synchronize_rcu()` 进入 `synchronize_rcu_normal()`；早期启动和 expedited 选择另有分支。默认 `rcutree.rcu_normal_wake_from_gp=0` 时：
 
 ```text
 synchronize_rcu()
@@ -168,7 +178,7 @@ synchronize_rcu()
 
 ### 8.6.2\_异步callback只登记动作不阻塞调用者
 
-`call_rcu()` 把 callback 放入当前 CPU 的 `rcu_data.cblist`。加速路径给 callback 分配目标 `gp_seq`，并在必要时提出新 GP 请求。调用者随后返回；callback 真正执行由 P17/P18 的分段和批处理状态机决定。
+`call_rcu()` 把 callback 放入对应 CPU 的回调组织。常规路径使用 `rcu_data.cblist`，NOCB 还可能先经过 bypass 队列；加速路径给 callback 分配目标 `gp_seq`，并在必要时提出新 GP 请求。调用者不等待 GP 完成就返回；callback 真正执行由 P11/P12 的分段和批处理状态机决定，卸载差量在 P19 展开。
 
 ### 8.6.3\_轮询接口保存的是目标序列
 
@@ -183,11 +193,11 @@ synchronize_rcu()
 callback 加速路径计算目标 `gp_seq_req`，随后 `rcu_start_this_gp()` 从本 CPU 的叶 `rcu_node` 向根推进：
 
 1. 请求者进入时持有叶节点锁；
-2. 每一层比较 `gp_seq_needed`、本层 GP 是否已经开始以及是否已有进行中 GP；
-3. 若本层已经记录相同或更远目标，立即停止，不重复写根；
-4. 否则写入本层 `gp_seq_needed` 并继续向父节点；
+2. 每层比较已记录目标、本层序列和是否已有进行中的 GP；
+3. 已有相同或更远目标、目标已开始，或上层已有进行中 GP 足以让 cleanup 接手检查时，可提前停止；
+4. 否则记录本层 `gp_seq_needed`。若本层已有进行中 GP，就保留该需求交给 cleanup；没有才继续向父节点；
 5. 到根且当前没有物理 GP 时，设置 `RCU_GP_FLAG_INIT`；
-6. 调用者在释放相关节点锁后唤醒 GP kthread。
+6. 只有函数返回“需要唤醒”，调用者才在退出相应锁范围后请求唤醒 GP kthread；线程尚未建立的早期需求也可以先保存在状态中。
 
 这是一条 **需求通信链**，不是安全证明链。`gp_seq_needed` 从叶向根表达未来需求；`qsmask` 清位则从叶向根汇聚本轮已经得到的证据。两条链方向相似，但字段、时机和含义完全不同。
 
@@ -211,43 +221,49 @@ Linux 6.12.20 用 `rcu_seq_*` 辅助函数维护序列：
 
 低位具体编码属于内部实现。正文不能用“奇数就是进行中、偶数就是完成”代替辅助函数契约，更不能把某个低位布局传播成 RCU API 保证。
 
-## 8.9\_S0到S10\_一轮物理GP的统一生命周期
+## 8.9\_G0到G10\_一轮物理GP的统一生命周期
+
+本章用 G0～G10 放大第五章的全局 S 周期：G0～G2 对应接收与安排需求，G3～G4 对应 S4 建立周期，G5～G8 对应 S5～S6 收集和汇聚，G9 对应 S7 发布完成，G10 对应 S8～S9 的各消费者交付。G3/G4 是 `rcu_gp_init()` 内部的动作，不是它返回成功以后才执行。G10 与下一轮 GP 可以重叠，不能让全局线程等待所有回调执行完才继续。
 
 | 阶段 | 进入触发 | 修改前后状态 | 写入者与地址 | 后续读取者 | 退出条件 |
 | --- | --- | --- | --- | --- | --- |
-| S0 线程待命 | 初始化已创建 GP kthread | `gp_state→WAIT_GPS`，线程睡在 `gp_wq` | GP kthread / `rcu_state` | 请求路径、trace | `gp_flags` 出现 INIT |
-| S1 提出需求 | callback、同步或 poll 需要未来代际 | 叶到根 `gp_seq_needed` 前推；根 `gp_flags|=INIT` | 请求 CPU / `rcu_node`、`rcu_state` | GP kthread | 请求者发出 wake |
-| S2 接受请求 | GP kthread 被调度运行 | 消费命令；伪唤醒则回 S0 | GP kthread / `gp_flags` | GP 主循环 | `rcu_gp_init()` 成功返回 true |
-| S3 开始代际 | 确认没有正在进行的普通 GP | `rcu_seq_start(rcu_state.gp_seq)` | GP kthread / 全局序列 | 节点、CPU、poll | 新代际已全局开始 |
-| S4 封闭参与集合 | 协调 CPU hotplug 后遍历节点 | `qsmaskinit→qsmask`，写节点 `gp_seq`，接管旧 blocked tasks | GP kthread / 各 `rcu_node` | CPU core、汇聚路径 | 全树初始化完成 |
-| S5 等待证明 | 参与集合已建立 | `gp_state→WAIT_FQS`，线程在 `gp_wq` 超时等待 | GP kthread / `rcu_state` | 根报告、stall | 根债务清零或到 FQS 时机 |
-| S6 正常清债 | scheduler、EQS、任务退出等事件 | 本地证据写 `rcu_data`，再清叶与父节点位/任务债务 | 各 CPU、任务退出路径 / per-CPU 与节点 | 父节点、GP kthread | 根完成条件成立 |
-| S7 FQS 慢路 | 等待超时、显式 FQS 或 callback 过载 | 观察 watching、催促重调度/urgent、必要时 IPI 或 boost | GP kthread与远端路径 | 参与 CPU、后续扫描 | 得到更多真实证据后回 S5/S6 |
-| S8 根完成通知 | 最后一条债务清除 | 根路径设置 FQS 命令并唤醒 `gp_wq` | 最后报告者 / `gp_flags`、`gp_wq` | GP kthread | GP kthread复核根条件 |
-| S9 cleanup发布 | FQS 循环确认根债务为零 | 节点完成序列→全局 `rcu_seq_end()`；检查下一代需求 | GP kthread / 节点和全局状态 | callback、poll、下一轮主循环 | 当前代际完整发布 |
-| S10 交付结果 | 完成代际被各 CPU 感知 | callback 分段前推、completion 唤醒、poll 成功 | core/callback/等待路径 | 原请求者 | 各自消费完成结论 |
+| G0 线程待命 | 初始化已创建 GP kthread | `gp_state→WAIT_GPS`，线程睡在 `gp_wq` | GP kthread / `rcu_state` | 请求路径、trace | `gp_flags` 出现 INIT |
+| G1 提出需求 | callback、同步或 poll 需要未来代际 | 叶到根 `gp_seq_needed` 前推；根 `gp_flags|=INIT` | 请求 CPU / `rcu_node`、`rcu_state` | GP kthread | 请求者发出 wake |
+| G2 检查请求 | GP kthread 被调度运行 | 进入 `rcu_gp_init()` 检查命令；无实际请求则回 G0 | GP kthread / `gp_flags` | GP 主循环 | 确认启动后在函数内部继续 G3/G4 |
+| G3 开始代际 | 确认没有正在进行的普通 GP | `rcu_seq_start(rcu_state.gp_seq)` | GP kthread / 全局序列 | 节点、CPU、poll | 新代际已全局开始 |
+| G4 封闭参与集合 | 协调 CPU hotplug 后遍历节点 | `qsmaskinit→qsmask`，写节点 `gp_seq`，划定旧 blocked tasks | GP kthread / 各 `rcu_node` | CPU core、汇聚路径 | 全树初始化完成，`rcu_gp_init()` 返回 true |
+| G5 等待证明 | 参与集合已建立 | `gp_state→WAIT_FQS`，线程在 `gp_wq` 超时等待 | GP kthread / `rcu_state` | 根报告、stall | 根债务清零或到 FQS 时机 |
+| G6 正常清债 | scheduler、EQS、任务退出等事件 | 本地证据写 `rcu_data`，再清叶与父节点位/任务债务 | 各 CPU、任务退出路径 / per-CPU 与节点 | 父节点、GP kthread | 根完成条件成立 |
+| G7 FQS 慢路 | 等待超时、显式 FQS 或 callback 过载 | 观察 watching、催促重调度/urgent、必要时 IPI 或 boost | GP kthread与远端路径 | 参与 CPU、后续扫描 | 得到更多真实证据后回 G5/G6 |
+| G8 根完成通知 | 最后一条债务清除 | 根路径设置 FQS 命令并唤醒 `gp_wq` | 最后报告者 / `gp_flags`、`gp_wq` | GP kthread | GP kthread复核根条件 |
+| G9 cleanup发布 | FQS 循环确认根债务为零 | 结束对应 poll 观察区间，发布各节点完成序列，再结束全局序列并检查下一代需求 | GP kthread / 节点和全局状态 | callback、poll、下一轮主循环 | 当前代际完整发布 |
+| G10 交付结果 | 完成代际被各 CPU 感知 | callback 分段前推、completion 唤醒、poll 成功 | core/callback/等待路径 | 原请求者 | 各自消费完成结论 |
 
-S8 只是“叫醒控制线程来复核并 cleanup”，不是根报告路径自己结束 GP。S10 也不是 GP kthread 直接调用所有业务 callback：GP kthread 发布代际，callback 执行器稍后消费这一结论。
+G8 只是“叫醒控制线程来复核并 cleanup”，不是根报告路径自己结束 GP。G10 也不是 GP kthread 直接调用所有业务 callback：GP kthread 发布代际，callback 执行器稍后消费这一结论。
 
 ```mermaid
 stateDiagram-v2
-    [*] --> S0_WAIT_GPS
-    S0_WAIT_GPS --> S1_REQUEST: gp_seq_needed前推并设置INIT
-    S1_REQUEST --> S2_ACCEPT: 唤醒gp_wq
-    S2_ACCEPT --> S0_WAIT_GPS: 伪唤醒或请求已被满足
-    S2_ACCEPT --> S3_START: rcu_gp_init返回true
-    S3_START --> S4_BUILD_DEBT: rcu_seq_start
-    S4_BUILD_DEBT --> S5_WAIT_PROOF: qsmask与任务边界建立
-    S5_WAIT_PROOF --> S6_REPORT: 正常QS/EQS/任务退出
-    S5_WAIT_PROOF --> S7_FQS: 超时或FQS命令
-    S7_FQS --> S5_WAIT_PROOF: 只能催促或观察
-    S6_REPORT --> S5_WAIT_PROOF: 根仍有债务
-    S6_REPORT --> S8_ROOT_WAKE: 根债务清零
-    S8_ROOT_WAKE --> S9_CLEANUP: GP kthread复核完成
-    S9_CLEANUP --> S10_DELIVER: 发布完成代际
-    S9_CLEANUP --> S1_REQUEST: 已存在下一代需求
-    S10_DELIVER --> S0_WAIT_GPS: 无后续需求
+    direction LR
+    [*] --> G0_WAIT_GPS
+    G0_WAIT_GPS --> G1_REQUEST: gp_seq_needed前推并设置INIT
+    G1_REQUEST --> G2_ACCEPT: 唤醒gp_wq
+    G2_ACCEPT --> G0_WAIT_GPS: 伪唤醒或请求已被满足
+    G2_ACCEPT --> G3_START: init确认请求并开始全局代际
+    G3_START --> G4_BUILD_DEBT: init继续建立节点状态
+    G4_BUILD_DEBT --> G5_WAIT_PROOF: init完成并返回true
+    G5_WAIT_PROOF --> G6_REPORT: 正常QS/EQS/任务退出
+    G5_WAIT_PROOF --> G7_FQS: 超时或FQS命令
+    G7_FQS --> G5_WAIT_PROOF: 只能催促或观察
+    G6_REPORT --> G5_WAIT_PROOF: 根仍有债务
+    G6_REPORT --> G8_ROOT_WAKE: 根债务清零
+    G8_ROOT_WAKE --> G9_CLEANUP: GP kthread复核完成
+    G9_CLEANUP --> G10_DELIVER: 消费者可独立交付结果
+    G9_CLEANUP --> G1_REQUEST: 已存在下一代需求
+    G9_CLEANUP --> G0_WAIT_GPS: 无后续需求
+    G10_DELIVER --> [*]: 当前消费者完成
 ```
+
+图中 G9 到 G10 是把结果交给其他执行路径；同时 GP 线程可回 G0 或安排下一代。各节点的完成序列在 cleanup 中逐个发布，消费者可以通过自己负责的状态观察结果，并非等待一次对所有 CPU 同时生效的广播赋值。
 
 ## 8.10\_GP\_kthread的创建睡眠与主循环
 
@@ -283,7 +299,7 @@ for (;;) {
 }
 ```
 
-这里必须是 `rcu_gp_init()` 返回 **true** 才退出内层等待循环。旧版本文曾把分支写成“成功后 continue”，会错误跳过本轮 FQS 和 cleanup；那与 Linux 6.12.20 实现相反。
+这是控制流伪代码，`wait_for_gp_init_request()` 是对等待语句的教学概括，不是内核函数。只有 `rcu_gp_init()` 返回 **true**，才退出内层等待循环并处理本轮 FQS 与 cleanup；若没有实际接受并初始化一轮 GP，就应继续等请求。
 
 请求者与 GP kthread 通过共享状态和等待队列通信：请求者先在相应锁保护下写 `gp_seq_needed/gp_flags`，再 `swake_up_one()`；GP kthread 醒来重新读取状态。根完成报告也走同一 `gp_wq`，但设置的是 FQS 唤醒原因。正常路径没有“每个 CPU 都向 GP kthread 发送一个消息”；CPU 证据先写本地状态并沿 `rcu_node` 汇聚，只有根条件改变才需要唤醒全局线程。
 
@@ -312,7 +328,7 @@ sequenceDiagram
     autonumber
     participant S as CPU0同步writer
     participant A as CPU1异步writer
-    participant C as per-CPU callback列表
+    participant C as 本地回调管理路径及队列
     participant N as rcu_node请求/证明树
     participant G as GP kthread
     participant R as CPU与任务报告路径
@@ -331,13 +347,18 @@ sequenceDiagram
     N-->>G: 根债务清零<br/>设置FQS原因并唤醒
     G->>N: cleanup先发布各节点完成序列
     G->>G: rcu_seq_end(N)<br/>检查是否需要N+1
-    G-->>C: N对应callback可向DONE推进
+    C->>N: 观察节点完成序列，推进N对应callback
+    C->>X: 交出可执行回调批次
     X->>A: 稍后调用free_b_rcu()
     X->>S: 调用wakeme_after_rcu()<br/>complete()
     S->>S: synchronize_rcu()返回
 ```
 
+第 1～4 步登记需求，第 5～10 步推进证明，第 11～15 步交付结果。第 13 步指向异步 writer 的箭头表示执行它先前登记的动作；函数实际由 X 调用，不是在已经返回的 writer 调用栈上运行，也不要求唤醒那个 writer。图选取两项需求都能被 N 覆盖的情况，省略 poll 和加速分支。
+
 ## 8.13\_不要把其他RCU家族的GP线程套进来
+
+两个 writer 共用的是普通 RCU 的完成证明。若其中一个实际等待可睡眠私有域，就不能因两个线程名字都带 GP 而合并：其读者记账根本不是同一份。另一些名字只改变谁管理回调或怎样催促普通读者，保护域仍相同。以等待对象为轴，才能区分下表：
 
 | 名称 | reader定义与域 | 推进对象 | 与本章关系 |
 | --- | --- | --- | --- |
@@ -360,7 +381,7 @@ sequenceDiagram
 
 ## 8.15\_源码阅读和观察入口
 
-稳定概念与版本实现分开阅读：
+固定版本身份与模块关系先见 [RCU 源码总阅读索引](../../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md)，再按当前问题进入下列证据：
 
 | 阅读目标 | 权威入口 |
 | --- | --- |
@@ -371,7 +392,9 @@ sequenceDiagram
 | 节点债务怎样逐层汇聚 | [Tree RCU rcu_node 树与分层汇聚](P10_Tree_RCU_rcu_node树与分层汇聚.md#10.1_问题_为什么不让所有CPU清一个全局位图) |
 | callback 怎样绑定和消费 GP 代际 | [Tree RCU rcu_segcblist 回调状态机](P11_Tree_RCU_rcu_segcblist回调状态机.md#11.1_场景_三个callback对应哪一轮GP) |
 
-运行时可以从 `rcu_grace_period` 和 `rcu_callback` trace event 观察请求、开始、FQS、结束与 callback 推进。事件是否存在取决于目标内核 tracing 配置；未开启事件或路径未执行时，“没有 trace”不能证明 GP 没有发生。
+先做一次代次练习：A、B 在 N 开始前都已经提出足够早的需求，C 则在 N 开始后撤下另一个对象并请求新的证明。N 完成时，A/B 可以取得交付资格，C 仍可能要等 N+1。即使 A 的同步等待已经返回，也不能推出 B 的释放回调已经执行；交换两条交付路径的调度顺序不会改变 GP 的安全性。若有人声称只看一次 `synchronize_rcu()` 返回就能卸载所有回调代码，缺的正是交付层的屏障证明。
+
+运行观察时要把“入队”与“执行”分开：`rcu_grace_period` 记录 GP 阶段，`rcu_callback` 记录回调登记，实际调用另看 `rcu_invoke_callback` 等执行事件。先检查目标内核提供的事件及其字段，再按同一 GP 序列或回调地址配对；单条登记记录不能证明函数已执行。事件是否存在取决于 tracing 配置，未开启或路径未执行时，“没有 trace”也不能证明 GP 没有发生。
 
 上一篇：[Tree RCU 初始化、拓扑与执行上下文](P07_Tree_RCU_初始化_拓扑与执行上下文.md)。
 
