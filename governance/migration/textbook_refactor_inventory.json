@@ -8968,6 +8968,78 @@
           "全仓865篇链接无缺失；buffer.c与writeback.h原件保留空白并设置文件级检查例外。"
         ],
         "limits": "没有目标Linux编译运行、写回压力、错误注入、设备缓存或掉电恢复实测。"
+      },
+      "knowledge/kernel_subsystems/vfs/P17_Direct_IO与异步完成.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿D0至D5追踪缓存交接、提交引用、bio组装与最后完成责任，区分数据路径、等待方式和同步语义。",
+        "validation": [
+          "三十三函数与请求结构逐token一致，二十份原件核对Git对象。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓870篇链接无缺失；ext4/file.c保留上游末尾空行，Kconfig与Makefile固定LF。"
+        ],
+        "limits": "没有目标Linux编译运行、性能、缓存旁路、异步故障、设备轮询或掉电实测。"
+      },
+      "research/source_reading/vfs/navigation/P16_直接IO请求与完成责任.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿D0至D5追踪缓存交接、提交引用、bio组装与最后完成责任，区分数据路径、等待方式和同步语义。",
+        "validation": [
+          "三十三函数与请求结构逐token一致，二十份原件核对Git对象。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓870篇链接无缺失；ext4/file.c保留上游末尾空行，Kconfig与Makefile固定LF。"
+        ],
+        "limits": "没有目标Linux编译运行、性能、缓存旁路、异步故障、设备轮询或掉电实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P41_直接IO的缓存交接与实现入口.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿D0至D5追踪缓存交接、提交引用、bio组装与最后完成责任，区分数据路径、等待方式和同步语义。",
+        "validation": [
+          "三十三函数与请求结构逐token一致，二十份原件核对Git对象。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓870篇链接无缺失；ext4/file.c保留上游末尾空行，Kconfig与Makefile固定LF。"
+        ],
+        "limits": "没有目标Linux编译运行、性能、缓存旁路、异步故障、设备轮询或掉电实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P42_iomap直接IO的请求建立与提交.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿D0至D5追踪缓存交接、提交引用、bio组装与最后完成责任，区分数据路径、等待方式和同步语义。",
+        "validation": [
+          "三十三函数与请求结构逐token一致，二十份原件核对Git对象。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓870篇链接无缺失；ext4/file.c保留上游末尾空行，Kconfig与Makefile固定LF。"
+        ],
+        "limits": "没有目标Linux编译运行、性能、缓存旁路、异步故障、设备轮询或掉电实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P43_iomap直接IO的数据映射与bio组装.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿D0至D5追踪缓存交接、提交引用、bio组装与最后完成责任，区分数据路径、等待方式和同步语义。",
+        "validation": [
+          "三十三函数与请求结构逐token一致，二十份原件核对Git对象。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓870篇链接无缺失；ext4/file.c保留上游末尾空行，Kconfig与Makefile固定LF。"
+        ],
+        "limits": "没有目标Linux编译运行、性能、缓存旁路、异步故障、设备轮询或掉电实测。"
+      },
+      "research/source_reading/vfs/source_explanations/P44_iomap直接IO的完成汇聚与通知.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿D0至D5追踪缓存交接、提交引用、bio组装与最后完成责任，区分数据路径、等待方式和同步语义。",
+        "validation": [
+          "三十三函数与请求结构逐token一致，二十份原件核对Git对象。",
+          "六篇冷读、十三图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓870篇链接无缺失；ext4/file.c保留上游末尾空行，Kconfig与Makefile固定LF。"
+        ],
+        "limits": "没有目标Linux编译运行、性能、缓存旁路、异步故障、设备轮询或掉电实测。"
       }
     },
     "additional_documents": [
