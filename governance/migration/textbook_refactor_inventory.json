@@ -6904,6 +6904,17 @@
           "本组35项函数宏与控制块定义C词法一致；实际格式元数据命名及9536条本地链接通过，7卷59来源有效唯一。"
         ],
         "limits": "约4700字词。 未执行目标构建、Bear截获、ARM运行或Tiny压力测试。"
+      },
+      "labs/kernel/rcu/P01_晚到读者与抢占读者/README.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "修正以打印顺序证明GP等待的循环证据，补时间戳边界、窗口有效性与非RT放行前提。",
+        "validation": [
+          "两图渲染目视，4出链6标题入链及严格连续性通过。",
+          "GNU Make隔离入口all/clean dry-run正确传递参数；实际文档检查和9537条本地链接通过。"
+        ],
+        "limits": "未执行目标Kbuild/MODPOST、模块加载、抢占、timer或trace运行；参数dry-run不是模块构建。"
       }
     },
     "additional_documents": [
