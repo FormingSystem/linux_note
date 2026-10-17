@@ -3380,3 +3380,18 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 新原件从固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 取得并核对Git对象摘要；没有从当前较新的外部工作树复制。该文件兑现root/pwd更新的“先取得新持有、锁与seq保护内替换、后归还旧持有”，以及复制、共享和退出上下文的边界；kernel/fork.c、fs/file.c及各声明原件沿用已保存的固定版本。
 
 本轮补充用于字段与调用关系核对，不构成已执行的内核并发、分配失败或配置组合测试。VFS大纲同时改为因果阅读地图，章节关系与唯一实现入口同步。
+
+
+## 1.306\_VFS登记与配置交接的检查和清理边界
+
+2026-10-18，补充源码实现P03～P05的中文行内注释、声明与辅助接口责任、配置退化、修改范围及对象持有图。正文类型注册和配置事务增加就近的精确实现入口；既有函数体与声明保持非注释token不变。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| kernel/panic.c | `fbc59b3b64d0b5434f8b75fa39fd73dc784479f1` |
+
+新增原件固定于提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，Git对象摘要核对通过。该原件只作为告警策略边界证据：WARN在vfs_get_tree调用点不自动形成普通错误返回，但panic_on_warn及告警限制可终止执行；本轮不复制panic框架的实现讲解。
+
+既有fs/filesystems.c、fs/fs_parser.c、fs/fs_context.c、fs/fsopen.c、fs/super.c、fs/namespace.c与相应头文件沿用固定证据。当前配置MODULES、MODULE_UNLOAD、PROC_FS、USER_NS、BUG开启，VALIDATE_FS_PARSER、SECURITY关闭；参数描述检查与安全选项的完整分支不可冒充目标已执行路径。invalf产生EINVAL、参数字符串转移、need_free成功设置时点、fsmount较晚失败不复原phase均在源码旁解释。
+
+本轮是固定源码与文档核对，没有执行模块卸载压力、内核分配故障、安全模块组合或panic测试。
