@@ -2121,3 +2121,5 @@ DEBUG_ATOMIC_SLEEP分支中的might_sleep先调用__might_sleep检查，后续mi
 [中断恢复协议模型](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P14_中断风暴_抖动与防御机制.md#14.5.2_用可执行模型找出重复禁用与旧结果复活)同样改为C11，保留重复故障、预算耗尽、探测中停止及工作前停止四条事件序列。GCC与Clang的严格警告构建、普通运行及NDEBUG构建均通过；去掉finish身份保护的练习变体在两编译器下均编译成功，并以退出码1报告stop during probe。正文明确禁用计数平衡不足以证明停止后的终态正确，并限定unsigned代次不回绕的短序列范围。源码与正文一致；没有新增内核调用、真实恢复I/O、多核或设备停机验证。
 
 [流式队列与补发模型](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P08_流式设备与高级场景中的异步通知.md#8.4.1_运行一个同时检查队列与延迟补发的模型)改为C11，正文保留完整数组队列、队列外丢失确认、数据轮次与固定期限补发。GCC/Clang严格警告及NDEBUG构建运行一致；配套C检查以独立线性队列对照40000步入队、成功读取和失败复制，并检查持续丢失下的数据机会、补发期限、过时提示和零间隔。容量改为2、数据复制失败、到期已读空三个正文练习均通过；删除数据轮次保证的变体按预期失败。代码与正文一致。检查未覆盖真实信号、Linux文件操作、DMA、并发或计数回绕，通知日志16格的上限仅属于教学模型。
+
+[字符设备容量实验](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P06_字符设备中实现异步通知的基础模式.md#6.5_用同一周期检查唤醒竞争与容量边界)改为Linux用户态C11程序，保留零长度操作、EAGAIN、容量256、短写、短读顺序与poll条件，并显式拒绝POLLERR/HUP/NVAL。宿主测试替换系统调用和Linux声明，直接编译正文函数体；GCC/Clang严格警告、NDEBUG下各通过21种情形，覆盖单字节短读、错误EOF、错误容量或就绪、尾部丢失、额外数据、调用错误和关闭失败，核对所有已打开fd的关闭责任。该结果不是Linux头文件原生编译、系统调用或模块运行；原内核模块和信号接收程序没有因语言迁移改写。
