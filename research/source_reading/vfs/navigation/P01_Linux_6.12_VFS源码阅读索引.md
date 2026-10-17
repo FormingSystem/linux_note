@@ -74,6 +74,8 @@ flowchart TD
 
 [写回导读](P15_写回提交完成与错误观察.md#15.1_沿同一周期区分责任与结果) 沿B0～B5连接 [登记与调度](../source_explanations/P37_脏状态登记与写回调度.md#37.1_从folio脏位汇聚到inode待处理状态)、[本轮完成](../source_explanations/P38_写回标记与范围完成等待.md#38.3_完成方先结束本轮状态再唤醒)、[同步分派](../source_explanations/P39_同步入口与文件系统持久化.md#39.1_系统调用先取得file再交给其同步方法) 与 [每file错误观察](../source_explanations/P40_写回错误序列与每file观察.md#40.3_检查者怎样推进自己的观察进度)。
 
+[直接I/O导读](P16_直接IO请求与完成责任.md#16.1_先分清请求对象与执行上下文) 沿D0～D5连接 [缓存交接](../source_explanations/P41_直接IO的缓存交接与实现入口.md#41.1_提交以前先处理同范围缓存)、[提交引用](../source_explanations/P42_iomap直接IO的请求建立与提交.md#42.2_提交引用封住子请求提前完成的窗口)、[bio组装](../source_explanations/P43_iomap直接IO的数据映射与bio组装.md#43.2_为已映射范围建立有生命期的bio) 与 [完成通知](../source_explanations/P44_iomap直接IO的完成汇聚与通知.md#44.1_最后一个bio决定怎样继续收尾)。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |

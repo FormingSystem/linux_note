@@ -838,6 +838,11 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [直接IO请求与完成责任](../../research/source_reading/vfs/navigation/P16_直接IO请求与完成责任.md)
+        - 🔴 [直接IO的缓存交接与实现入口](../../research/source_reading/vfs/source_explanations/P41_直接IO的缓存交接与实现入口.md)
+        - 🔴 [iomap直接IO的请求建立与提交](../../research/source_reading/vfs/source_explanations/P42_iomap直接IO的请求建立与提交.md)
+        - 🔴 [iomap直接IO的数据映射与bio组装](../../research/source_reading/vfs/source_explanations/P43_iomap直接IO的数据映射与bio组装.md)
+        - 🔴 [iomap直接IO的完成汇聚与通知](../../research/source_reading/vfs/source_explanations/P44_iomap直接IO的完成汇聚与通知.md)
         - 🔴 [写回提交完成与错误观察](../../research/source_reading/vfs/navigation/P15_写回提交完成与错误观察.md)
         - 🔴 [脏状态登记与写回调度](../../research/source_reading/vfs/source_explanations/P37_脏状态登记与写回调度.md)
         - 🔴 [写回标记与范围完成等待](../../research/source_reading/vfs/source_explanations/P38_写回标记与范围完成等待.md)

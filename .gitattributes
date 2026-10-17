@@ -9,7 +9,10 @@
 research/source_reading/linux/**/*.c text eol=lf
 research/source_reading/linux/**/*.h text eol=lf
 research/source_reading/linux/**/*.rst text eol=lf
+research/source_reading/linux/**/Kconfig text eol=lf
+research/source_reading/linux/**/Makefile text eol=lf
 # Preserve whitespace in these verified upstream source copies.
+research/source_reading/linux/fs/ext4/file.c whitespace=-blank-at-eof
 research/source_reading/linux/fs/readdir.c whitespace=-blank-at-eol
 research/source_reading/linux/fs/buffer.c whitespace=-blank-at-eol
 research/source_reading/linux/include/linux/writeback.h whitespace=-blank-at-eol

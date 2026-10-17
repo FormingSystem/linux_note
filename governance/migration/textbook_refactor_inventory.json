@@ -9106,7 +9106,12 @@
       "research/source_reading/vfs/source_explanations/P37_脏状态登记与写回调度.md",
       "research/source_reading/vfs/source_explanations/P38_写回标记与范围完成等待.md",
       "research/source_reading/vfs/source_explanations/P39_同步入口与文件系统持久化.md",
-      "research/source_reading/vfs/source_explanations/P40_写回错误序列与每file观察.md"
+      "research/source_reading/vfs/source_explanations/P40_写回错误序列与每file观察.md",
+      "research/source_reading/vfs/navigation/P16_直接IO请求与完成责任.md",
+      "research/source_reading/vfs/source_explanations/P41_直接IO的缓存交接与实现入口.md",
+      "research/source_reading/vfs/source_explanations/P42_iomap直接IO的请求建立与提交.md",
+      "research/source_reading/vfs/source_explanations/P43_iomap直接IO的数据映射与bio组装.md",
+      "research/source_reading/vfs/source_explanations/P44_iomap直接IO的完成汇聚与通知.md"
     ],
     "language_review": {
       "status": "complete",

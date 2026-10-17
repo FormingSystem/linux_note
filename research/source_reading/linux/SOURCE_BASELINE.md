@@ -3088,3 +3088,34 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 十七份原件中新增十份，覆盖ext4、errseq、写回声明、设备写回实例初始化与缓冲元数据同步。当前BLOCK、BUFFER_HEAD、EXT4_FS、JBD2启用，BLK_CGROUP与JBD2_DEBUG关闭；没有据此推断实际挂载模式或设备barrier行为。通用errseq核心按契约引用，VFS实例包装在本专题唯一展开。
 
 六篇冷读、十二图渲染目视、长度、标题元数据、锚点及完整C材料一致性完成。范围提交EIO跳过等待、空范围提前返回与错误分层登记在图中分开呈现。没有目标Linux编译运行、写回压力、错误注入、掉电恢复或设备缓存实测，实验只演示返回处理与局部发布顺序。
+
+## 1.296\_直接IO缓存交接与完成责任
+
+2026-10-18，重写 [直接I/O正文](../../../knowledge/kernel_subsystems/vfs/P17_Direct_IO与异步完成.md#17.3_一个请求为什么需要独立的完成责任)，新增 [模块导读](../vfs/navigation/P16_直接IO请求与完成责任.md#16.1_先分清请求对象与执行上下文) 和四篇实现。固定提交为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，三十三函数与iomap_dio结构摘录逐token一致；保留执行语句并裁去两处长函数的部分上游注释，以中文讲解解释不变量。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| mm/filemap.c | `05adf0392625da1402d288eef9d9b6107a40fef4` |
+| fs/iomap/direct-io.c | `f637aa0706a3125e62bc057b5809b593b270c8de` |
+| fs/direct-io.c | `bbd05f1a21453b931f9e6f7547abbc3b577ff9f9` |
+| fs/ext4/file.c | `f14aed14b9cf3d944b8d6726362ee5a69a9a0597` |
+| include/linux/iomap.h | `d204dcd35063d72bdb18dfa134c5e95df35235c4` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| include/linux/pagemap.h | `68a5f1ff3301c6cfba823cab8a418d9ca6f25893` |
+| fs/inode.c | `8dabb224f941c0b95e7a0e154592bb9137e5bc2c` |
+| Documentation/filesystems/iomap/design.rst | `b0d0188a095e55a869bd293f2a5b9cf19162baf3` |
+| fs/Kconfig | `aae170fc2795246a09c4f95ed2acf9fb6d5c4a82` |
+| fs/super.c | `c9c7223bc2a2e9cb5391a1b3a291f724416289c2` |
+| fs/ext4/inode.c | `67a5b937f5a92dc52513f8ef121111e2185b98c0` |
+| fs/ext4/Kconfig | `e20d59221fc05b162bb72ebabdefb2b83d3cb26d` |
+| fs/iomap/Makefile | `381d76c5c2325887f39683b197407b5fdcad08cc` |
+| fs/iomap/iter.c | `79a0614eaab777e71767a9148ca105e571b509e8` |
+| block/bio.c | `43d4ae26f47587e6d53ee5a647125b06857c1859` |
+| include/linux/bio.h | `66b7620a1b5333c5d525891b487425d3b9e208dc` |
+| lib/iov_iter.c | `bdb37d572e97ca7ae9ba87cdbf10ba794f3d087c` |
+| include/linux/uio.h | `853f9de5aa05ab4dc8127ae21d825946f31d4f7c` |
+| fs/internal.h | `8c1b7acbbe8faadef678e5aa2dc3588a0d8140b1` |
+
+二十份原件中新增九份，覆盖iomap声明与迭代、ext4入口、bio页面契约和构建配置。FS_IOMAP、BLOCK、AIO、IO_URING启用，FS_ENCRYPTION、FS_VERITY和DAX关闭；没有把编译配置当作运行分支证据。通用direct_IO入口与ext4的iomap入口分开，明确写后失效失败既登记EIO也产生限速日志。
+
+六篇冷读、十三图渲染目视、长度、标题元数据、锚点、唯一ID与完整C材料一致性完成。区分提交引用、bio引用、inode计数和外层请求生命期，补足回调可能早于提交返回、缓冲区pin与借用、文件系统后处理及后置同步。没有目标Linux编译运行、性能、缓存旁路、异步故障、设备轮询或掉电实测；实验只查询对齐并检查一次同步读写与fsync。
