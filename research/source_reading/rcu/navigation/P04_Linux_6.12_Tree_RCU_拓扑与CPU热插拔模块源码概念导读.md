@@ -22,25 +22,29 @@ source_version: "6.12.20"
 普通 Tree RCU 要把很多 CPU 的局部 QS 证据汇聚成一次全局 GP 完成结论。源码首先必须回答三个问题：
 
 1. 每个 CPU 的证据应该写入哪一个叶 `rcu_node`、哪一位；
-2. 当前 GP 已经冻结的参与集合，与 CPU 上下线为下一轮准备的集合怎样隔离；
+2. 当前 GP 已建立的等待责任，与 CPU 上下线准备的参与集合怎样隔离；
 3. CPU 离线以后，留在该 CPU 上的 callback、barrier 哨兵和被抢占 reader 债务由谁继续承担。
 
 这三个问题共同构成 **Tree RCU 拓扑与 CPU 参与生命周期**。它不是普通 GP 主线程的一个小分支，也不是“热插拔时把一个位清零”这么简单。拓扑在启动阶段建立；CPU 参与集合在每次上线、下线和 GP 初始化之间交接；callback 所有权还要在 CPU 真正死亡以后迁移。
 
 稳定机制模型先读 [Tree RCU 初始化、拓扑与执行上下文](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md#7.1_具体问题_CPU的QS究竟要写进哪一个节点) 和 [Tree RCU CPU 热插拔与回调迁移](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_CPU热插拔与回调迁移.md#17.1_场景_CPU4在GP中途下线)。本章只负责 Linux 6.12.20 的模块边界、状态地址和源码阅读顺序。
 
+本篇核对 NXP 发布标签 `lf-6.12.20-2.0.0`、固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，分析 `CONFIG_TREE_RCU` 与 `CONFIG_HOTPLUG_CPU` 分支，任务债务另需 `CONFIG_PREEMPT_RCU`。这是源码条件，不是当前目标配置验证；来源和缓存身份见 [源码基线](../../linux/SOURCE_BASELINE.md#1.5.1_RCU家族证据)。
+
 ## 4.2\_先定义六个容易被默认理解的名词
+
+设 CPU4 已在本轮等待集合中，它的队列还有未执行回调，而一个曾在它上面运行的旧reader已经迁往CPU2。此时让CPU4离线，不能简单删除“CPU4”的全部记录：CPU等待位可以按退出协议清除，回调需要接管执行，CPU2上的任务则仍须自己结束读区。下面这些名称分别定位这三种责任，不能当作同一个online状态的别名。
 
 | 名词 | 在本模块中的准确含义 | 不能误解成 |
 | --- | --- | --- |
 | RCU topology | `rcu_state.node[]` 及 `level[]` 构成的固定汇聚树 | Linux 调度域或 NUMA 拓扑的直接镜像 |
 | possible CPU | 启动配置允许存在、因而预先拥有 `rcu_data` 与叶节点位的 CPU | 当前正在运行的 CPU |
-| online CPU | 已进入 RCU 参与协议、可运行普通 RCU reader 的 CPU | 必然属于当前正在进行的 GP 快照 |
-| current-GP mask | GP 初始化时从下一轮集合冻结出的 `qsmask` | 随 CPU 上下线实时变化的在线掩码 |
+| online CPU | CPU热插拔框架中的在线身份；RCU另在starting/dead等边界维护自己的参与状态 | online mask、RCU私有计数和当前GP等待集合完全相同 |
+| current-GP mask | GP 初始化建立、随后随合法报告逐位清除的 `qsmask` | 不变的快照，或实时复制的在线掩码 |
 | next-GP mask | `qsmaskinitnext` 等为未来 GP 保存的参与集合 | 当前 GP 尚未报告 QS 的 CPU 集合 |
-| callback migration | 把离线 CPU 的分段 callback 队列合并到当前 CPU，保留代际语义 | 重新调用所有 callback 或只改队列头指针 |
+| callback migration | 把非offload源队列合入接管CPU，保留DONE资格，未成熟部分重新归并等待 | 保留全部原分段标签，或直接执行所有callback |
 
-`ncpus` 与 `n_online_cpus` 也必须分开：固定版本中，前者由 CPU starting 路径以 release 语义发布“expedited 初始化树是否见过新 CPU”的变化；后者记录 RCU 当前 online CPU 数。它们都不是当前普通 GP 的权威完成条件。
+`ncpus` 与 `n_online_cpus` 也必须分开：固定版本中，前者由 CPU starting 路径以 release 语义发布“expedited 初始化树是否见过新 CPU”的变化；后者在 prepare 增加、dead 减少，是 RCU 维护的生命周期计数，不是随时等于 `cpu_online_mask` 的实时位数。它们都不是当前普通 GP 的权威完成条件。
 
 ## 4.3\_参与者状态地址与所有权
 
@@ -50,11 +54,11 @@ flowchart LR
     BOOT -->|"绑定 mynode/grpmask"| RD["每 CPU rcu_data"]
     START["incoming CPU<br/>中断关闭"] -->|"写 qsmaskinitnext/expmaskinitnext"| LEAF["叶 rcu_node"]
     START -->|"发布 beenonline"| RD
-    GP["GP kthread"] -->|"冻结下一轮集合"| LEAF
+    GP["GP kthread"] -->|"逐叶吸收next，随后建立本轮qsmask"| LEAF
     DEAD["outgoing CPU<br/>中断关闭"] -->|"先报告当前债务<br/>再移出下一轮集合"| LEAF
     MIG["存活 CPU 的 hotplug 回调"] -->|"合并 cblist"| DST["目标 CPU rcu_data"]
-    MIG -->|"barrier 哨兵交接"| RS
-    LEAF -->|"qsmask 归零后逐层上报"| ROOT["根 rcu_node"]
+    MIG -->|"barrier_lock下检查本轮扫描边界"| BAR["rcu_state barrier状态<br/>源rdp barrier_head/seq"]
+    LEAF -->|"qsmask及本轮任务责任都清除后上报"| ROOT["根 rcu_node"]
 ```
 
 | 状态地址 | 主要写入者 | 主要读取者 | 同步边界 |
@@ -62,7 +66,7 @@ flowchart LR
 | `rcu_state.node[]/level[]` | `rcu_init_one()` | 所有树遍历与每 CPU 绑定路径 | 启动期建立，运行期拓扑形状不变 |
 | `rdp->mynode/grpmask` | `rcu_init_one()`、boot per-CPU 初始化 | QS、FQS、hotplug、callback 路径 | CPU 启动前确定 |
 | `rnp->qsmaskinitnext` | CPU starting/dead 路径 | 下一次 `rcu_gp_init()` | `ofl_lock`、叶锁；barrier 交界还用 `barrier_lock` |
-| `rnp->qsmaskinit/qsmask` | GP 初始化 | QS 上报、FQS、stall | 节点锁；一轮 GP 内是冻结债务 |
+| `rnp->qsmaskinit/qsmask` | GP初始化吸收初始参与关系；合法报告清除 `qsmask` 位 | QS 上报、FQS、stall | 节点锁；本轮剩余责任不能由online mask覆盖 |
 | `rnp->expmaskinitnext/expmaskinit/expmask` | CPU starting 只增 ever-online 基础位；expedited reset/报告推进后两者 | expedited CPU 选择和报告 | 各节点锁，另由 `ncpus` 检测是否出现从未加入过的新 CPU |
 | `rdp->cblist` | `call_rcu()`、GP 推进、执行与迁移路径 | core、NOCB、barrier | 本地 IRQ/NOCB 锁、节点锁、`barrier_lock` 按操作组合 |
 | `rnp->blkd_tasks` | 抢占式 reader 阻塞/解阻路径 | 普通与 expedited GP | 叶节点锁；CPU 离线不能删除任务债务 |
@@ -79,33 +83,40 @@ flowchart LR
 
 ### 4.4.2\_CPU参与集合状态机
 
-CPU starting 只把 CPU 加入 `qsmaskinitnext`。当前 GP 若已开始，新 CPU 不应凭空成为该轮必须等待的新债务；下一次 GP init 才把 next 集合传播并冻结成当前 `qsmask`。
+普通参与集合这一侧，CPU starting 先将本位加入 `qsmaskinitnext`，不直接向已有的 `qsmask` 添加等待责任。必须进一步区分全局开始和叶节点吸收：`rcu_gp_init()` 先推进全局序列，再逐叶把next吸收到init，最后建立各节点本轮等待位。如果starting先于本叶的吸收，新位可以被这次初始化看到；如果晚于本叶吸收，则留给后续轮次。不能仅拿全局 `rcu_seq_start()` 的时刻判断“本轮还是下一轮”。
 
-CPU dead 的普通 GP 顺序相反：如果当前 `qsmask` 仍在等它，必须先把这份当前债务作为 QS 报告；然后再从 `qsmaskinitnext` 移除，避免下一轮继续等待已经不存在的 CPU。这里若先删 next 位、后处理 current 位，当前 GP 可能永久等待；若把上线 CPU直接加入 current 位，已经接近完成的 GP 会被晚到 CPU 改写证明集合。
+CPU dead 在这份实现中先处理当前债务，再删除next位：如果 `qsmask` 仍在等它，先调用上报函数；该函数会释放叶锁，返回后重新取得叶锁，才修改 `qsmaskinitnext`。整个交接还由 `ofl_lock` 与GP初始化协调。最后阶段持续关闭IRQ，防止已经退出参与集合后又由中断进入新读区。只删next而不履行当前报告会留下无人偿还的等待位；反过来，starting也不能随意修改已建立的current位。
+
+一片叶的CPU都离线时，还可能有已经迁走的被抢占任务。`wait_blkd_tasks` 让后续初始化保留这条有任务责任的分支；任务按原登记节点退出以后，再由初始化协调未来参与关系。CPU位清零、任务责任清零和未来拓扑参与位调整是不同动作。
 
 Expedited 的基础位采用另一策略：`expmaskinitnext` 不在 CPU offline 时清除，而保存“曾经 online 的 CPU”并集；每轮 CPU selection 再识别当前 offline CPU并直接报告。这样重新上线不必反复向上重建初始化树。`ncpus` 也只在首次把一个 CPU 位加入这个并集时增长。
 
 ### 4.4.3\_回调所有权状态机
 
-非 NOCB CPU 离线后，`rdp->cblist` 不能留在不再运行 core 的 CPU 上。迁移路径先与 `rcu_barrier()` 序列化，必要时把 barrier 哨兵 entrain 到源队列，再把源、目标队列各自推进到最新可知 GP 代际，最后执行 `rcu_segcblist_merge()`。
+非 NOCB CPU 离线后，`rdp->cblist` 不能留在不再运行 core 的 CPU 上。迁移路径先与 `rcu_barrier()` 的扫描边界协调，必要时把哨兵接到源队列，再尝试利用可知代际推进队列并执行 `rcu_segcblist_merge()`。这里“推进源和目标”是职责概括，不能伪造为两个函数必定无条件依次执行：源码用短路 `||` 合并唤醒需求，源推进返回true时可以跳过同一表达式中的目标推进；合并后还有按条件执行的目标推进。
+
+合并把源DONE接入目标DONE，保留它们已经取得的执行资格；源尚未成熟的回调重新进入目标NEXT，不能提前执行，也不保证保留原有WAIT/NEXT_READY标签。代价可能是额外等待，换来无需让两个独立队列的所有代际标签一一对应。目标若由NOCB执行器管理，迁入后还要走相应唤醒路径。
+
+barrier哨兵解决一个具体窗口：barrier已经扫描了目标CPU，却尚未扫描源CPU，此时若直接迁走源回调，扫描者可能两边都漏掉它们。迁移在 `barrier_lock` 下检查并为该批责任安排哨兵，使回调移动后仍计入这次等待；不是每次迁移都无条件插一个哨兵，也不是用普通GP替代回调完成证明。
 
 NOCB CPU 的 callback 本来就由 offload kthread 管理，因此 hotplug 迁移路径直接返回；这不表示 callback 被丢弃，而是其执行所有权没有随物理 CPU 下线消失。
 
-## 4.5\_S0到S10\_一颗CPU从预留位置到离线清理
+## 4.5\_H0到H9\_从固定位置追踪CPU离线周期
+
+启动前提是 `rcu_init_one()` 为possible CPU绑定固定叶节点及本位，prepare建立本地执行数据，starting发布参与信息。下面沿用正文的 [H0～H9](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_CPU热插拔与回调迁移.md#17.6_H0到H9_CPU4离线周期) 追踪离线；H6任务退出可以与队列迁移交错，H8/H9是后续吸收和再次上线，不是必须逐行串行发生。
 
 | 阶段 | 触发 | 写入地址 | 后续读取者 | 退出条件 |
 | --- | --- | --- | --- | --- |
-| S0 possible | 启动枚举 | `rcu_data[cpu]` 存在 | 初始化路径 | CPU 获得固定 per-CPU 槽位 |
-| S1 bind | `rcu_init_one()` | `mynode/grpmask` | 全部本地 RCU 路径 | CPU 位映射确定 |
-| S2 prepare | CPUHP prepare | per-CPU GP/callback/core 状态 | incoming CPU 与 core | 本地数据可安全使用 |
-| S3 starting | incoming CPU、中断关闭 | `qsmaskinitnext`、`expmaskinitnext`、`ncpus` | 下一轮 GP/expedited reset | `beenonline` release 发布 |
-| S4 GP snapshot | 普通 GP init | `qsmaskinit/qsmask` | QS、FQS、stall | 当前轮参与集合冻结 |
-| S5 reader/QS | CPU 运行 | `rdp` 本地证据、节点清位 | 根完成路径 | 当前 CPU 债务清除 |
-| S6 offline begin | CPUHP offline | `ffmask`、tick 依赖 | FQS/hotplug | 不再作为正常未来执行者 |
-| S7 report dead | outgoing CPU、中断关闭 | 当前 `qsmask` 与普通 `qsmaskinitnext` | 当前/下一轮普通 GP | 当前债务处理完且普通 next 位移除；expedited ever-online 位保留 |
-| S8 migrate | 存活 CPU | 源/目标 `cblist`、barrier 哨兵 | callback core/barrier | 非 offload callback 全部转移 |
-| S9 dead | CPUHP dead | `n_online_cpus` | 诊断与全局策略 | RCU online 计数递减 |
-| S10 reusable | 后续重新上线 | 从 S2 重新进入 | 同上 | 不重建静态树 |
+| H0 在线运行 | 完成上线协议 | next集合含CPU；可能还有当前 `qsmask` 位 | GP/QS路径 | 收到offline请求 |
+| H1 早期offline | `rcutree_offline_cpu()` | 清 `ffmask` 位，调整线程affinity，设置tick依赖 | FQS、hotplug | 后续stop-machine可推进；此时CPU仍然活跃 |
+| H2 dying | `rcutree_dying_cpu()` | trace记录当前是否仍被等待 | 诊断者 | 不靠trace清除任何债务 |
+| H3 最后本地报告 | outgoing CPU、IRQ关闭 | 延后唤醒/QS收尾，记录诊断序列并报告当前位 | 当前GP | CPU责任已处理，任务责任独立 |
+| H4 删除未来参与 | 同一report-dead路径 | 清普通next位、`cpu_started=false` | 后续GP初始化 | IRQ持续关闭到CPU死亡；expedited ever-online位保留 |
+| H5 接管回调 | 存活CPU执行迁移 | 源/目标 `cblist`、必要barrier哨兵 | core/NOCB/barrier | 非空非offload源完成合并并禁用；空源或NOCB提前返回 |
+| H6 任务退出 | 迁走任务最外层unlock及必要延期 | 原叶任务登记与本轮边界 | 节点汇聚 | 本任务不再阻塞当前轮 |
+| H7 dead收尾 | 其他CPU进程上下文 | `n_online_cpus` 减一，解除tick依赖 | RCU诊断/策略 | 本次控制路径完成 |
+| H8 后续吸收 | `rcu_gp_init()` | next→init，按任务情况调整父位及 `wait_blkd_tasks` | 后续GP | 形成一致参与关系 |
+| H9 再上线 | prepare/starting/online | 重建所需本地状态、发布next位 | 后续GP及本地读者 | 不重建静态树 |
 
 ## 4.6\_端到端时序\_GP中途CPU4下线
 
@@ -118,22 +129,24 @@ sequenceDiagram
     participant HP as 存活CPU hotplug路径
     participant C0 as CPU0 rcu_data
     participant B as rcu_barrier状态
+    participant T as 迁到CPU2的旧reader
 
-    GP->>N: GP init冻结qsmask，包含CPU4位
-    C4->>C4: 关闭中断，阻止新增普通reader现场
-    C4->>N: 若qsmask仍含本位，先rcu_report_qs_rnp()
-    N-->>GP: 位清零；必要时逐层向根报告
-    C4->>N: 从qsmaskinitnext移除CPU4
-    C4->>C4: 记录offline时的gp_seq/gp_state
-    HP->>B: 获取barrier_lock并检查源队列
-    HP->>B: 必要时把barrier哨兵挂到CPU4队尾
-    HP->>N: advance源与目标callback代际
-    HP->>C0: merge CPU4 cblist到CPU0
-    HP->>C4: disable源cblist
-    HP-->>GP: 若合并后需要新GP则唤醒
+    GP->>N: 本叶已建立qsmask，包含CPU4位及旧任务边界
+    C4->>C4: H3 保持IRQ关闭，收尾延期QS并记录离线序列
+    C4->>N: 若qsmask含本位，报告当前QS；上报路径释放叶锁
+    C4->>N: H4 重取叶锁，清qsmaskinitnext本位
+    par H5 非空且非offload源队列
+        HP->>B: barrier_lock下检查，必要时为源队列接哨兵
+        HP->>C0: 目标NOCB/叶锁下推进并merge源队列
+        HP->>C4: 合并后禁用源cblist；源队列及计数归零
+        HP-->>GP: 必要时唤醒GP；目标offload另通知执行器
+    and H6 旧任务在其他CPU结束
+        T->>N: 按rcu_blocked_node摘除原叶任务登记
+        N-->>GP: CPU和本轮任务责任都清除后，逐层汇聚
+    end
 ```
 
-第 2～5 步只处理 CPU4 对当前/未来 CPU 集合的证明债务，第 7～11 步另行迁移 callback 所有权；两组状态不能互相替代。被抢占 reader 是关键分支：任务可能在 CPU4 上进入普通 RCU 临界区，随后被抢占并迁移到其他 CPU。CPU4 下线只清 CPU 位，不能清 `blkd_tasks` 中的任务债务；该任务最终解阻时仍沿其记录的叶节点路径报告。
+第 2～4 步只处理 CPU4 对当前/未来集合的责任，第 5～8 步另行迁移 callback 所有权；迁移在 `kernel/cpu.c` 等到CPU死亡的相应边界后执行，不是发出offline请求就能搬走队列。第 9～10 步说明独立任务分支：CPU位清除不会替这个任务退出读侧。实际调度可使H6更早或更晚，图中par表示它不必等待H5结束；最终仍以原叶的全部本轮责任为准。
 
 ## 4.7\_正常路径特殊路径与强制慢路径
 
@@ -166,6 +179,8 @@ sequenceDiagram
 5. 回到普通 GP `rcu_gp_init()`，观察 next 集合何时变成 current 债务；
 6. 最后沿 `rcutree_report_cpu_dead()` 与 `rcutree_migrate_callbacks()`，分别追踪证明债务和 callback 所有权。
 
-验收时应能不看函数名回答：CPU4 在 GP 中途上线为何不加入该轮；CPU4 在 GP 中途离线为何必须先还当前债务；被抢占 reader 为什么不随 CPU 位清除；`barrier_lock` 为什么出现在 callback 迁移而不是 QS 证明中。
+先推演两个边界题。若全局GP已开始、但本叶尚未吸收next，CPU4此时starting，会不会进入此次初始化？可以，关键是本叶吸收与starting的锁序。如果本叶已建立本轮等待位，再发生starting，就不能直接补入current位。
+
+再设CPU4源队列有一项DONE和一项尚未成熟回调，目标CPU0已经被barrier扫描。迁移后DONE保留执行资格，未成熟项进入NEXT重新安排，必要的barrier哨兵使源批次仍被本次等待覆盖；这些动作都不能消除迁往CPU2的旧任务债务。能分别沿三种责任指出写入者、状态位置和退出条件，才算读懂这次离线。
 
 总入口：[Linux 6.12 RCU 源码总阅读索引](P01_Linux_6.12_RCU源码总阅读索引.md#1.4_模块概念导读入口)。
