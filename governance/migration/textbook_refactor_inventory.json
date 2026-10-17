@@ -8494,6 +8494,66 @@
           "全仓833篇链接无缺失，公开RESOLVE与内部LOOKUP以及普通openat边界分开。"
         ],
         "limits": "没有目标Linux编译运行、链接循环、并发rename、受限解析压力或分配失败注入记录。"
+      },
+      "knowledge/kernel_subsystems/vfs/P10_RCU-walk与ref-walk.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从共享引用写入推导快速观察，解释保护内引用交接及同名慢查询的登记与完成。",
+        "validation": [
+          "二十四函数与固定原件逐token一致，八份原件核对Git对象。",
+          "五篇冷读、十一图渲染目视、连续性、长度、标题元数据和锚点完成。",
+          "全仓837篇链接无缺失，模式与缓存和I/O证据分开。"
+        ],
+        "limits": "没有目标路径追踪、性能测量、并发缺失压力、后端错误或转换失败注入。"
+      },
+      "research/source_reading/vfs/navigation/P09_快速观察怎样转为引用并协调慢查询.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从共享引用写入推导快速观察，解释保护内引用交接及同名慢查询的登记与完成。",
+        "validation": [
+          "二十四函数与固定原件逐token一致，八份原件核对Git对象。",
+          "五篇冷读、十一图渲染目视、连续性、长度、标题元数据和锚点完成。",
+          "全仓837篇链接无缺失，模式与缓存和I/O证据分开。"
+        ],
+        "limits": "没有目标路径追踪、性能测量、并发缺失压力、后端错误或转换失败注入。"
+      },
+      "research/source_reading/vfs/source_explanations/P16_候选读取与快速路径验证.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从共享引用写入推导快速观察，解释保护内引用交接及同名慢查询的登记与完成。",
+        "validation": [
+          "二十四函数与固定原件逐token一致，八份原件核对Git对象。",
+          "五篇冷读、十一图渲染目视、连续性、长度、标题元数据和锚点完成。",
+          "全仓837篇链接无缺失，模式与缓存和I/O证据分开。"
+        ],
+        "limits": "没有目标路径追踪、性能测量、并发缺失压力、后端错误或转换失败注入。"
+      },
+      "research/source_reading/vfs/source_explanations/P17_从RCU观察交接到路径引用.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从共享引用写入推导快速观察，解释保护内引用交接及同名慢查询的登记与完成。",
+        "validation": [
+          "二十四函数与固定原件逐token一致，八份原件核对Git对象。",
+          "五篇冷读、十一图渲染目视、连续性、长度、标题元数据和锚点完成。",
+          "全仓837篇链接无缺失，模式与缓存和I/O证据分开。"
+        ],
+        "limits": "没有目标路径追踪、性能测量、并发缺失压力、后端错误或转换失败注入。"
+      },
+      "research/source_reading/vfs/source_explanations/P18_并行查询的登记等待与结果发布.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从共享引用写入推导快速观察，解释保护内引用交接及同名慢查询的登记与完成。",
+        "validation": [
+          "二十四函数与固定原件逐token一致，八份原件核对Git对象。",
+          "五篇冷读、十一图渲染目视、连续性、长度、标题元数据和锚点完成。",
+          "全仓837篇链接无缺失，模式与缓存和I/O证据分开。"
+        ],
+        "limits": "没有目标路径追踪、性能测量、并发缺失压力、后端错误或转换失败注入。"
       }
     },
     "additional_documents": [
