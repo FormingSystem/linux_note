@@ -20,7 +20,7 @@ source_version: "6.12.20"
 
 ## 9.1\_实现所有权与版本边界
 
-本章唯一展开 Linux 6.12.20 普通 Tree RCU callback 从 enqueue、分段、绑定 GP、成熟、批处理执行，到 NOCB bypass/GP thread/CB thread 和动态 offload 的源码实现。普通 GP 的长期任务、请求、init/FQS/cleanup 由 [P05 GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)唯一展开；本章只解释 callback 怎样提出需求和消费完成代际。`rcu_barrier_entrain()` 也操作 callback 分段，但其哨兵证明由 P10唯一展开；CPU offline 队列 merge 由 P06唯一展开。
+本章唯一展开 Linux 6.12.20 普通 Tree RCU callback 从 enqueue、分段、绑定 GP、成熟、批处理执行，到 NOCB bypass/GP thread/CB thread 和动态 offload 的源码实现。普通 GP 的长期任务、请求、init/FQS/cleanup 由 [P05 GP 全局生命周期源码实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_端到端源码时序)唯一展开；本章只解释 callback 怎样提出需求和消费完成代际。`rcu_barrier_entrain()` 也操作 callback 分段，但其哨兵证明由 P10唯一展开；CPU offline 队列 merge 由 P06唯一展开。
 
 源码基线：NXP `linux-imx` 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，配置包含 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`；NOCB 分支仅在 `CONFIG_RCU_NOCB_CPU` 下存在，lazy callback 还受 `CONFIG_RCU_LAZY` 控制。
 

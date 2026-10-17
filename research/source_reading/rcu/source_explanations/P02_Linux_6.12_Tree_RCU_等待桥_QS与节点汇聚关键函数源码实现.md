@@ -382,7 +382,7 @@ static void rcu_report_qs_rsp(unsigned long flags)
 }
 ```
 
-这里的 FQS 标志让 GP 线程重新检查进展；根责任已清时，它可以进入 cleanup，而不必真的再催一个 CPU。节点完成、全局序列发布和 callback 被调度执行仍是不同阶段。线程等待条件与 cleanup 的唯一实现放在 [GP 全局生命周期](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)。
+这里的 FQS 标志让 GP 线程重新检查进展；根责任已清时，它可以进入 cleanup，而不必真的再催一个 CPU。节点完成、全局序列发布和 callback 被调度执行仍是不同阶段。线程等待条件与 cleanup 的唯一实现放在 [GP 全局生命周期](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_端到端源码时序)。
 
 **可修改性说明：** 所有早退都必须释放当前持锁层并恢复匹配的 IRQ flags；不能在调用已消费锁的 `rcu_report_qs_rnp/rsp()` 后再解一次。改清位条件要同时核对零 mask、任务债务、代际变化和 hotplug 路径；改根出口不得提前完成同步者或直接执行业务回调。
 

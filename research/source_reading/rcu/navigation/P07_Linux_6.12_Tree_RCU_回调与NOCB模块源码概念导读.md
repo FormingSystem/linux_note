@@ -31,7 +31,7 @@ source_version: "6.12.20"
 
 还要区别函数开始执行与函数返回：回调内可能释放对象，实际返回以后才能证明该次回调已经结束。这些事件的顺序不等于生产者一定先从 `call_rcu()` 返回、其他CPU才允许运行回调；交出节点后就应遵守所有权边界。
 
-普通GP提供从第2到第3步所需的安全证明，实际advance仍由队列管理路径执行，第4步还取决于执行者得到运行机会。NOCB改变推进和执行者，不改变目标GP条件。普通GP的开始到cleanup见 [全局生命周期源码时序](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)；本章从其完成值继续追callback。
+普通GP提供从第2到第3步所需的安全证明，实际advance仍由队列管理路径执行，第4步还取决于执行者得到运行机会。NOCB改变推进和执行者，不改变目标GP条件。普通GP的开始到cleanup见 [全局生命周期源码时序](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_端到端源码时序)；本章从其完成值继续追callback。
 
 稳定机制分别见 [rcu_segcblist 回调状态机](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_rcu_segcblist回调状态机.md#11.1_场景_三个callback对应哪一轮GP)、[回调执行、批处理与限流](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_回调执行_批处理与限流.md#12.1_场景_一次GP后突然成熟五万个callback) 和 [NOCB 回调卸载](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_NOCB回调卸载.md#16.1_场景_隔离CPU不希望执行回调批次)。
 

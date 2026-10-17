@@ -27,7 +27,7 @@ source_version: "6.12.20"
 - 主动选择 CPU，并在需要时发送 IPI 或迫使 tick/reschedule；
 - 不等待普通 GP kthread 把 `gp_seq` 推进一轮。
 
-它改变的是取得 QS 证据的控制路径与等待延迟，不改变“所有调用前旧 reader 必须结束”的语义。稳定模型先读 [Tree RCU Expedited GP](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_Expedited_GP.md#15.1_场景_控制路径愿意用系统扰动换更短等待)；若普通 GP 控制主线还不清楚，先用 [普通 GP 端到端源码时序](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)建立比较基线，再读本章的独立 sequence、worker 和 IPI 路径。
+它改变的是取得 QS 证据的控制路径与等待延迟，不改变“所有调用前旧 reader 必须结束”的语义。稳定模型先读 [Tree RCU Expedited GP](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_Expedited_GP.md#15.1_场景_控制路径愿意用系统扰动换更短等待)；若普通 GP 控制主线还不清楚，先用 [普通 GP 端到端源码时序](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_端到端源码时序)建立比较基线，再读本章的独立 sequence、worker 和 IPI 路径。
 
 源码固定为NXP提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的Tree RCU分支；下文IPI遇到reader的案例采用 `CONFIG_PREEMPT_RCU=y`。非抢占、早期启动和normal策略分支在对应位置另行说明，不代表当前目标已启用这些配置。来源见 [源码基线](../../linux/SOURCE_BASELINE.md#1.5.1_RCU家族证据)。
 

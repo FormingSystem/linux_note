@@ -6737,7 +6737,8 @@
       "knowledge/linux/data_structures/红黑树_rb-tree/P53_VMA游标怎样翻译范围请求.md",
       "knowledge/linux/data_structures/红黑树_rb-tree/P54_同一地址的四种VMA查询结果.md",
       "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md",
-      "tools/ai/codex/skills/build-linux-note-topic/references/concept_implementation_mapping.md"
+      "tools/ai/codex/skills/build-linux-note-topic/references/concept_implementation_mapping.md",
+      "research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md"
     ],
     "language_review": {
       "status": "complete",

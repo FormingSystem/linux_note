@@ -174,7 +174,7 @@ synchronize_rcu()
 
 原任务睡在自己的 `completion` 上，不是睡在 `rcu_state.gp_wq`。相关 GP 完成后，callback 进入可执行阶段；callback 执行器调用 `wakeme_after_rcu()`，其中的 `complete()` 才唤醒原任务。
 
-6.12 还提供 `rcu_normal_wake_from_gp` 非零时的直接等待者批处理优化，请求进入 `rcu_state.srs_next` 等状态，由 GP init/cleanup 批量推进。它是可选分支，不能覆盖默认 callback 模型；Linux 5.10 也没有这组 6.12 状态。字段分工与裁剪源码分别见 [SRS 请求登记与批次冻结](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_SRS怎样登记请求并冻结本轮批次)和 [cleanup/workqueue 完成交付](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_SRS怎样在cleanup与workqueue之间交付等待者)。
+6.12 还提供 `rcu_normal_wake_from_gp` 非零时的直接等待者批处理优化，请求进入 `rcu_state.srs_next` 等状态，由 GP init/cleanup 批量推进。它是可选分支，不能覆盖默认 callback 模型；Linux 5.10 也没有这组 6.12 状态。字段分工与裁剪源码分别见 [SRS 请求登记与批次冻结](../../../../../research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.3_请求登记与dummy节点怎样划定本轮)和 [cleanup/workqueue 完成交付](../../../../../research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.4_cleanup与workqueue怎样分担交付)。
 
 ### 8.6.2\_异步callback只登记动作不阻塞调用者
 
@@ -387,7 +387,7 @@ sequenceDiagram
 | --- | --- |
 | GP、请求、物理 GP 与 GP kthread 的模块协作 | [Linux 6.12 Tree RCU GP 全局生命周期模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.1_模块问题与版本边界) |
 | 内核启动、early initcall 分派、创建与任务发布 | [启动链定位](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.1_先从内核启动链定位early_initcall) → [`rcu_spawn_gp_kthread()`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.5.2_rcu_spawn_gp_kthread怎样创建并发布任务) |
-| 请求、唤醒、init、FQS、cleanup 与再次休眠 | [普通物理 GP 端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序) |
+| 请求、唤醒、init、FQS、cleanup 与再次休眠 | [普通物理 GP 端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_端到端源码时序) |
 | CPU QS/EQS 怎样产生 | [Tree RCU QS、EQS 与 Context Tracking](P09_Tree_RCU_QS_EQS与Context_Tracking.md#9.1_上一章建立了债务却还没有解释证据从哪里来) |
 | 节点债务怎样逐层汇聚 | [Tree RCU rcu_node 树与分层汇聚](P10_Tree_RCU_rcu_node树与分层汇聚.md#10.1_问题_为什么不让所有CPU清一个全局位图) |
 | callback 怎样绑定和消费 GP 代际 | [Tree RCU rcu_segcblist 回调状态机](P11_Tree_RCU_rcu_segcblist回调状态机.md#11.1_场景_三个callback对应哪一轮GP) |

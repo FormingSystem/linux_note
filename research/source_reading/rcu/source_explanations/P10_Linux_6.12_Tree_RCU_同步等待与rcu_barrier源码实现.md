@@ -24,7 +24,7 @@ source_version: "6.12.20"
 为了保持一个函数体一个权威位置：
 
 - `wakeme_after_rcu()` 与通用 `__wait_rcu_gp()` 函数体仍由 [P02 等待桥](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.3_同步调用怎样借回调等待GP结束)展开；
-- SRS 直接 GP wake 的请求划批由 [P05 SRS 请求入口](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_SRS怎样登记请求并冻结本轮批次)展开，cleanup 与 workqueue 交付由 [P05 SRS 完成路径](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_SRS怎样在cleanup与workqueue之间交付等待者)展开；
+- SRS 直接 GP wake 的请求划批由 [P14 SRS 请求入口](P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.3_请求登记与dummy节点怎样划定本轮)展开，cleanup 与 workqueue 交付由 [P14 SRS 完成路径](P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.4_cleanup与workqueue怎样分担交付)展开；
 - callback 分段、NOCB bypass 与执行由 [P09 callback/NOCB](P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.3_一条链表怎样表达四段)展开；
 - 本章只在调用点解释它们如何组成同步/barrier 协议。
 
@@ -119,7 +119,7 @@ void synchronize_rcu(void)
 
 ## 10.5\_默认分支为何等待调用者自己的completion
 
-下面是调用关系示意，不是第二份裁剪源码；`synchronize_rcu_normal()` 的唯一函数体在 [P05 SRS 实现](P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.13_SRS怎样登记请求并冻结本轮批次)：
+下面是调用关系示意，不是第二份裁剪源码；`synchronize_rcu_normal()` 的唯一函数体在 [P14 SRS 实现](P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.3_请求登记与dummy节点怎样划定本轮)：
 
 ```text
 synchronize_rcu_normal()

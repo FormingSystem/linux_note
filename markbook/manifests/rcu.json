@@ -153,6 +153,10 @@
           "role": "chapter"
         },
         {
+          "path": "research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md",
+          "role": "chapter"
+        },
+        {
           "path": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P14_Tree_RCU_force_QS迟延与Stall.md",
           "role": "chapter"
         },

@@ -512,7 +512,7 @@ NOCB 的正确收益描述是 **减少 callback 带来的一个可识别抖动�
 - 版本与模块地图先见 [RCU 源码总阅读索引](../../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md)。本章计数、切换和线程分支以固定 NXP Linux 6.12.20 为准；启动参数还对应同提交 `Documentation/admin-guide/kernel-parameters.txt`，有效 tick 集合由 `kernel/time/tick-sched.c` 等实现校正。
 - [RCU 分类坐标与 Kconfig 映射](P04_RCU_分类坐标与内核配置.md#4.9.2_本章名称到API配置和启动参数的完整映射)：确认 NOCB 是 Tree RCU 的 callback 执行策略，而不是独立 RCU 实现。
 - [普通回调批次为何会实际占用 CPU，以及怎样受数量/时间预算限制](P12_Tree_RCU_回调执行_批处理与限流.md#12.6_数量预算和时间预算)：先确认问题来自 callback 执行阶段，而不是把 GP 等待时间误算成 CPU 执行时间。
-- [普通 GP 长期线程的端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)：它创建并发布普通 Tree RCU 的权威完成代际；NOCB GP kthread只是等待、观察并推进 offloaded callback，不创建另一套普通 GP。
+- [普通 GP 长期线程的端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_端到端源码时序)：它创建并发布普通 Tree RCU 的权威完成代际；NOCB GP kthread只是等待、观察并推进 offloaded callback，不创建另一套普通 GP。
 - [回调与 NOCB 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#7.6_NOCB为何拆成GP线程与CB线程)：先分清 producer、GP 观察者与 callback 执行者。
 - [`call_rcu_nocb()`、bypass、flush 与防搁浅唤醒](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.8_nocb_bypass怎样降低生产者锁竞争又避免搁浅)。
 - [`nocb_gp_wait()` 的目标代际推进](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.9_NOCB_GP线程怎样推进队列并等待最早目标代际)与 [`nocb_cb_wait()` 的成熟批次执行](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.10_NOCB_CB线程只执行成熟批次)。

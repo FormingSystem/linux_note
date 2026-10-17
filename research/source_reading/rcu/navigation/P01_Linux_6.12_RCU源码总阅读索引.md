@@ -95,6 +95,7 @@ flowchart LR
 | [P11 Tree SRCU](../source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.2_源码符号覆盖账本) | reader 累计账本、双扫描、callback 与 barrier |
 | [P12 `rcu_init()` 启动初始化](../source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.19_直接符号覆盖账本) | `start_kernel()` 调用现场、Tree/Tiny 分派、I0～I13、boot CPU 发布、workqueue 与后继 initcall 边界 |
 | [P13 Tiny RCU](../source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.2_源码符号覆盖账本) | UP 非抢占 reader 边界、二级指针 callback 分界、QS、softirq、同步、poll、barrier 与初始化 |
+| [P14 同步等待批处理](../source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.1_GP已经完成为什么调用者还在等) | 可选SRS登记、dummy划批、GP限额完成与worker交付 |
 
 P02 与 P03 是同一读侧模块中的公共 CPU 路径和 PREEMPT_RCU 增量，不是非抢占 / 抢占两套完整系统。
 

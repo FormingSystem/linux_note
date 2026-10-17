@@ -234,7 +234,7 @@ expedited 会更积极，但仍可能受以下因素拖延：
 
 版本化模块先从 [Expedited GP 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P06_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md#6.1_Expedited不是普通GP的加速档)进入，再按问题直达唯一实现：
 
-- 与之比较的普通 GP 控制线程、等待/FQS/cleanup 主线见 [普通 GP 端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)，不要把 expedited worker 当成普通 GP kthread 的“加速模式”；
+- 与之比较的普通 GP 控制线程、等待/FQS/cleanup 主线见 [普通 GP 端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.14_端到端源码时序)，不要把 expedited worker 当成普通 GP kthread 的“加速模式”；
 - [`expedited_sequence` 与 poll 交接](../../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.4_expedited_sequence怎样独立计代并共同推进poll观察)；
 - [`exp_funnel_lock()` 合并并发请求](../../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.5_exp_funnel_lock怎样合并并发调用者)；
 - [`sync_exp_reset_tree()` 建立 `expmask`](../../../../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.6_sync_exp_reset_tree怎样建立本轮债务)；

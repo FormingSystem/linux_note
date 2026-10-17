@@ -20,15 +20,27 @@ source_version: "6.12.20"
 
 ## 5.1\_实现所有权与关联入口
 
-本章是 Linux 6.12.20 普通 Tree RCU GP 全局控制实现的唯一函数体讲解，负责从内核启动期注册并创建 GP kthread，到 `rcu_state` 的 GP 控制字段、`rcu_seq_*`、需求漏斗、唤醒、主循环、init、FQS **调度循环** 和 cleanup。CPU 怎样产生并逐层报告 QS，仍由 [非抢占式 Tree RCU 关键函数源码实现](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.2_函数实现索引)负责；被抢占 reader 怎样进入任务债务，仍由 [抢占式 Tree RCU 关键函数源码实现](P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md#3.2_任务与节点的共享状态实现)负责；watching snapshot、叶扫描、urgent/resched 和 stall 分类由 [force-QS 与 Stall 源码实现](P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)唯一展开。
+一次 `call_rcu()` 只登记未来回调，不会立刻执行GP；数百个CPU同时登记时，也不需要创建数百个GP线程。真正需要解释的是：这些请求存在哪里，哪个长期执行者看见它们，怎样确认分散的旧读者已经结束，以及下一轮请求如何穿过本轮cleanup而不丢失。本章从这些交接追踪普通Tree RCU控制实现，负责从内核启动期注册并创建 GP kthread，到 `rcu_state` 的 GP 控制字段、`rcu_seq_*`、需求漏斗、唤醒、主循环、init、FQS **调度循环** 和 cleanup。CPU 怎样产生并逐层报告 QS，仍由 [非抢占式 Tree RCU 关键函数源码实现](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.2_函数实现索引)负责；被抢占 reader 怎样进入任务债务，仍由 [抢占式 Tree RCU 关键函数源码实现](P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md#3.2_任务与节点的共享状态实现)负责；watching snapshot、叶扫描、urgent/resched 和 stall 分类由 [force-QS 与 Stall 源码实现](P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)唯一展开。
 
 模块协作、参与者与阅读顺序见 [GP 全局生命周期模块源码概念导读](../navigation/P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.3_源码文件与状态所有权)，跨版本概念见 [Tree RCU GP 请求与全局生命周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.2_六个必须分开的专有名词)。
 
 下列 `/** ... */` 块都是本仓库为阅读补充的中文 Doxygen 说明，不是上游源码原注释。RCU 函数体裁剪自仓库保存并经固定提交核对的文件；启动调度顺序另外对照同一不可变提交的本地 [`init/main.c`](../../linux/init/main.c)。只删除不改变主状态机的 trace、torture、重复诊断，以及已明确转入独立章节的 NOCB/boost/strict 测试细节，所有影响启动次序、请求、CPU 集合、证明债务、完成发布和等待者交付的动作都保留或在紧邻小节展开。完整实现仍以链接的固定源码文件为准。
 
+代码身份固定为NXP Linux 6.12.20提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；本文解释Tree分支与相关可选配置，未重新取得目标板运行配置。同步等待者的可选批处理已独立为[P14实现](P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.1_GP已经完成为什么调用者还在等)，本篇在init/cleanup调用点解释它接入何处。
+
 每个源码标题都按同一组 **实现原理** 复核：进入前持有什么锁或代际，语句写入哪个具体地址，谁在后续路径读取，以及该顺序防止哪一种请求丢失、跨代报告或完成发布竞态。
 
 ## 5.2\_源码符号覆盖账本
+
+先沿模块导读的同一周期定位下面的函数，后续时序图也使用G编号：
+
+| 阶段 | 当前交接 | 退出条件 |
+| --- | --- | --- |
+| G0～G2 待命、请求、检查 | 请求者更新节点目标并写INIT，GP线程在gp_wq等待并重新检查 | init接受一项真实请求 |
+| G3～G4 开始与建债 | 全局序列先start，随后协调CPU集合、逐节点建立qsmask和任务边界 | 所有节点初始化完毕 |
+| G5～G8 等待、报告、复查与根通知 | CPU/任务路径交证据，FQS按条件读取或催促 | 根CPU与任务责任同时为空 |
+| G9 发布与后继安排 | 先poll、再逐节点完成、最后普通全局完成；保留后继INIT | 下一轮可以开始 |
+| G10 各消费者交付 | 本地队列推进、callback执行、poll观察或可选SRS complete | 各自接口所承诺的条件成立，不要求同一时刻 |
 
 | 符号 | 上游相对位置 | 唯一讲解标题 | 状态副作用 |
 | --- | --- | --- | --- |
@@ -40,11 +52,11 @@ source_version: "6.12.20"
 | `rcu_gp_kthread_wake()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.7](#5.7_rcu_gp_kthread_wake把共享命令变成调度唤醒) | 唤醒 `gp_wq` 并记录诊断值 |
 | `rcu_gp_kthread()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.8](#5.8_rcu_gp_kthread串联一轮物理GP) | 串联等待、init、FQS、cleanup |
 | `rcu_gp_init()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.9](#5.9_rcu_gp_init开始代际并建立证明债务) | 开始全局/节点代际并建立等待集合 |
-| `rcu_gp_fqs_loop()`、`rcu_report_qs_rsp()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.10](#5.10_FQS循环与根完成通知) | 等待/催促证据并在根完成时唤醒 |
+| `rcu_gp_fqs_loop()`、`rcu_gp_fqs_check_wake()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.10](#5.10_FQS循环与根完成通知) | 等待/催促证据并在根完成时唤醒 |
 | `rcu_gp_cleanup()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.11](#5.11_rcu_gp_cleanup发布完成并承接下一代) | 发布节点/全局完成并保留后继请求 |
 | `rcu_poll_gp_seq_start/end()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.12](#5.12_poll公共序列怎样由普通与expedited_GP共同推进) | 把两类真实 GP 映射为 poll API 的公共完成证据 |
-| `synchronize_rcu_normal()`、`rcu_sr_is/get/put_wait_head()`、`rcu_sr_normal_add_req/gp_init()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.13](#5.13_SRS怎样登记请求并冻结本轮批次) | 用 dummy 节点把栈上等待者按物理 GP 划定批次 |
-| `rcu_sr_normal_complete/gp_cleanup/cleanup_work()` | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [5.14](#5.14_SRS怎样在cleanup与workqueue之间交付等待者) | 限额完成本轮等待者，并把剩余节点交给 workqueue 清尾 |
+| SRS登记和批次冻结 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P14请求实现](P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.3_请求登记与dummy节点怎样划定本轮) | GP init借dummy划定本轮等待者 |
+| SRS完成与worker交付 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P14交付实现](P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.4_cleanup与workqueue怎样分担交付) | 完成发布之后限额交付，worker处理剩余后缀 |
 
 以后修改 GP 相关文档时，先查本表。其他正文或模块导读只解释调用上下文与结论，不再复制这些函数体。
 
@@ -208,6 +220,10 @@ static struct rcu_state rcu_state = {
 
 ## 5.4\_rcu\_seq辅助函数怎样维护开始目标与完成
 
+序列的低2位留作状态，`RCU_SEQ_CTR_SHIFT=2`、`RCU_SEQ_STATE_MASK=3`。本章普通GP用低位0表示空闲、1表示进行中，`rcu_seq_state()`取低位，`rcu_seq_current()`用READ_ONCE取当前值。以便于计算的0为例，start写1，end把低位补成3再加1得到4；真实实例从有偏值启动，不能用教学数字替代它。
+
+snapshot需要一个保证“快照之后完整经过一轮”的目标：空闲值0取目标4；进行态1取目标8，不能把已经进行了一部分的当前轮完成值4当作足够。`rcu_seq_started()`判断该目标对应的轮是否已开始，`rcu_seq_completed_gp(old,new)`判断两次观察间是否跨过完成边界；这些都不同于本地回调已经执行。源码的 `ULONG_CMP_*` 按无符号序列回绕设计比较，不能简单替换成普通大小比较，也不能把有限位序列当成无限历史计数。
+
 ```c
 /**
  * @brief 发布一轮更新侧操作开始。
@@ -339,7 +355,7 @@ flowchart TD
 ```c
 /**
  * @brief 创建普通 Tree RCU GP kthread，并发布其 task_struct 指针。
- * @return 初始化调用始终返回 0；创建失败会告警。
+ * @return 初始化调用始终返回 0；创建失败会告警并早退，不表示RCU服务已成功建立。
  * @note 本 Doxygen 由仓库补充；函数裁剪自 kernel/rcu/tree.c。
  */
 static int __init rcu_spawn_gp_kthread(void)
@@ -373,9 +389,13 @@ early_initcall(rcu_spawn_gp_kthread);
 
 `kthread_create()` 返回一个尚未运行入口主体的任务，`wake_up_process()` 使其可运行。发布到 `rcu_state.gp_kthread` 发生在二者之间，并使用 release 语义，使此前 `gp_activity/gp_req_activity` 的重置不能排到指针发布之后。请求路径用 `READ_ONCE()` 检查任务是否存在；这里不要把 release store 单独解释成“任意读者都获得了所有初始化字段的 acquire 快照”。请求若在线程创建前到达，会保留请求状态但不能唤醒空指针；线程发布和启动以后再消费。
 
+若 `kthread_create()` 返回ERR_PTR，本函数告警后仍返回0，且前面已经设置 `rcu_scheduler_fully_active=1`；因此initcall成功返回码或这个阶段标志都不能单独证明GP任务存在。实际修改须覆盖失败路径，不能把后续OOM等异常当正常可恢复状态。
+
 任务对象的生命周期跨越许多 GP。主循环结束条件是系统生命周期，而不是某个请求完成，因此入口标为 `__noreturn`。到这里，启动期一次性创建已经结束；从下一节开始，所有请求都复用同一个长期任务。
 
 ## 5.6\_rcu\_start\_this\_gp漏斗记录未来需求
+
+回调加速路径已经算好目标 `gp_seq_req`，现在要让控制线程知道“至少推进到这里”。起始叶锁由调用者持有；向父层走时，暂取当前祖先锁，必要时释放它继续上行，起始叶锁始终保留到返回。它不是每个reader都走的路径，而是回调/请求需求的合并点。
 
 ```c
 /**
@@ -436,7 +456,9 @@ unlock_out:
 
 函数不直接调用 `rcu_gp_kthread_wake()`，因为调用者进入时必须持有叶节点锁，返回后还要按调用上下文正确释放锁。把“记录请求”和“执行唤醒”拆开，可以避免在不合适的锁状态下触发调度唤醒。
 
-提前退出是扩展性的核心：一条已有的更强 `gp_seq_needed` 能代表多个较弱请求。代价是节点之间保存重复的目标快照，cleanup 必须遍历这些状态并处理迟到请求。
+提前退出是扩展性的核心：一条已有的更强 `gp_seq_needed` 能代表多个较弱请求。代价是节点之间保存重复的目标快照，cleanup必须遍历这些状态并处理迟到请求。返回false也不等于请求没有记录：可能已有更远目标，或当前GP正在推进、cleanup将消费新目标。`unlock_out`还把遇见的更强目标回写起始叶和本地 `gp_seq_needed`，使后续请求能更早停止上推。
+
+修改时保留三条不变量：目标不能退后，起始叶锁的所有权不转移给本函数，记录INIT先于退出锁区后的wake。已有GP分支依赖cleanup的逐节点扫描；删掉扫描再保留这里的早退，会丢掉后继需求。
 
 ## 5.7\_rcu\_gp\_kthread\_wake把共享命令变成调度唤醒
 
@@ -608,6 +630,27 @@ init 依次形成两次冻结。`ONOFF` 阶段在 `ofl_lock + 叶锁` 下把持�
 
 ## 5.10\_FQS循环与根完成通知
 
+等待谓词先决定是否值得离开睡眠：过载提示、外部FQS请求和根证明成立都可以让它返回true；只有最后一种意味着可结束本轮。参数 `gfp` 既接收本地过载提示，也输出观察到的共享命令快照。
+
+```c
+/** @brief 为FQS等待选择唤醒条件；true不等于GP已完成。 */
+static bool rcu_gp_fqs_check_wake(int *gfp)
+{
+	struct rcu_node *rnp = rcu_get_root();
+
+	if (*gfp & RCU_GP_FLAG_OVLD)
+		return true;
+	*gfp = READ_ONCE(rcu_state.gp_flags);
+	if (*gfp & RCU_GP_FLAG_FQS)
+		return true;
+	if (!READ_ONCE(rnp->qsmask) && !rcu_preempt_blocked_readers_cgp(rnp))
+		return true;
+	return false;
+}
+```
+
+随后循环无论因何离开等待，都先重查根责任；超时和命令只授权观察/催促，不授权忽略旧读者。
+
 ```c
 /**
  * @brief 反复等待或催促真实 QS 证据，直到根完成条件成立。
@@ -664,7 +707,7 @@ static noinline_for_stack void rcu_gp_fqs_loop(void)
 			ret = 0; /* 下一次执行完整等待。 */
 			j = READ_ONCE(jiffies_till_next_fqs);
 		} else {
-			/* 信号或伪唤醒后保留原 FQS 到期时间。 */
+			/* 未到期且没有FQS原因时保留原到期时间，并检查意外信号。 */
 			cond_resched_tasks_rcu_qs();
 			WRITE_ONCE(rcu_state.gp_activity, jiffies);
 			WARN_ON(signal_pending(current));
@@ -679,27 +722,16 @@ static noinline_for_stack void rcu_gp_fqs_loop(void)
 	}
 }
 
-/**
- * @brief 根节点债务清零后，通知 GP kthread重新检查并 cleanup。
- * @param flags 进入时保存的中断状态；本函数释放根节点锁。
- */
-static void rcu_report_qs_rsp(unsigned long flags)
-	__releases(rcu_get_root()->lock)
-{
-	raw_lockdep_assert_held_rcu_node(rcu_get_root());
-	WARN_ON_ONCE(!rcu_gp_in_progress());
-	WRITE_ONCE(rcu_state.gp_flags,
-		   rcu_state.gp_flags | RCU_GP_FLAG_FQS);
-	raw_spin_unlock_irqrestore_rcu_node(rcu_get_root(), flags);
-	rcu_gp_kthread_wake();
-}
+
 ```
 
-FQS 循环有两种正常离开睡眠的原因：到时间主动扫描，或根条件已经变化。无论哪一种都要重新读证明状态。`rcu_gp_fqs()` 可以保存/复查 watching 快照并催促 CPU，但真正退出循环仍以根债务清零为准。
+FQS等待可以因到期、命令、过载或根完成条件离开，随后都要重新读证明状态。`ret`并非等待宏返回值（源码显式丢弃该返回值），而是循环自己维护的“重设完整间隔还是保留旧到期值”状态；`j`的单位是jiffies。第一次扫描使用 `first_gp_fqs=true` 保存远端快照，之后复查；过载可缩短间隔并促成早扫描。`signal_pending`只是异常诊断，不应把idle等待写成普通可中断睡眠。`rcu_gp_fqs()` 可以保存/复查 watching 快照并催促 CPU，但真正退出循环仍以根债务清零为准。
 
-`rcu_report_qs_rsp()` 设置 FQS 而非 INIT，因为当前物理 GP 已经存在；线程应从等待证据阶段醒来完成本轮，而不是开始另一轮。该函数释放根锁后再 wake，避免唤醒线程立刻争用仍被调用者持有的同一根锁。
+[根通知 `rcu_report_qs_rsp()`](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.6_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据) 设置 FQS 而非 INIT，因为当前物理 GP 已经存在；线程应从等待证据阶段醒来完成本轮，而不是开始另一轮。该函数释放根锁后再 wake，避免唤醒线程立刻争用仍被调用者持有的同一根锁。
 
 ## 5.11\_rcu\_gp\_cleanup发布完成并承接下一代
+
+根证明成立后，cleanup还有两个不同任务：把本轮完成传播给消费者，同时把未满足的未来目标留下。`rcu_future_gp_cleanup()`比较节点的完成值与needed；没有更远目标时把needed追平完成值，避免旧快照长期滞留带来回绕问题。它返回“还要新GP”，不代表callback已经执行。
 
 ```c
 /**
@@ -751,6 +783,8 @@ static noinline void rcu_gp_cleanup(void)
 	rcu_seq_end(&rcu_state.gp_seq);
 	WRITE_ONCE(rcu_state.gp_state, RCU_GP_IDLE);
 
+	/* 重新取得当前CPU，不能沿用遍历中其他CPU的rdp。 */
+	rdp = this_cpu_ptr(&rcu_data);
 	/* 防止遍历期间到达的新需求被遗漏。 */
 	if (!needgp && ULONG_CMP_LT(rnp->gp_seq, rnp->gp_seq_needed))
 		needgp = true;
@@ -772,9 +806,11 @@ static noinline void rcu_gp_cleanup(void)
 }
 ```
 
-真实源码中 `rcu_accelerate_cbs()` 可能已经设置 INIT，NOCB CPU 还要避免在没有 `nocb_lock` 时直接访问 offload callback 列表。因此末尾分支比上面的主线裁剪更细；共同不变量是：仍有未来需求时，cleanup 必须确保 INIT 留给下一轮。
+末尾已经保留 `rcu_accelerate_cbs()` 与offload分支：加速路径可能自己设置INIT；offload CPU因未持nocb_lock而跳过直接访问其cblist，由needgp兜底留下INIT。遍历中的过载检查可能临时把rdp指向其他CPU，末尾必须重新取当前CPU，不能把这个赋值当成多余语句省略。上游注释有一处把INIT写入位置称为gp_state，实际语句是gp_flags，应以代码字段为准。
 
-先节点后全局的发布顺序解决一个具体竞态：若全局先显示 N 完成并允许 N+1 开始，而某叶仍显示 N 进行中，该叶 CPU 的 callback 加速和 QS 代际判断会面对相互矛盾的状态。广度优先完成传播和锁/屏障把这个窗口封闭。
+先节点后全局的发布顺序解决一个具体竞态：若全局先显示 N 完成并允许 N+1 开始，而某叶仍显示 N 进行中，该叶 CPU 的 callback 加速和 QS 代际判断会面对相互矛盾的状态。广度优先完成传播和锁/屏障把这个窗口封闭。但这不意味着所有消费者必须等到最后的全局end才行动：poll公共序列在cleanup开头就可能发布完成；某叶更新完成值后，本地回调队列也可继续推进；SRS直接交付在全局end之后调用。安全证明已经成立，剩下是不同消费通道的发布时间差。
+
+修改时用两个交错验证请求不丢失：请求在某叶cleanup前到达，由该叶needed扫描发现；请求在该叶cleanup后到达，此叶已空闲，可以继续向根传播，最终根锁内复查接住它。不要仅用“所有节点一次性更新”这种不存在的原子事务解释正确性。
 
 ## 5.12\_poll公共序列怎样由普通与expedited\_GP共同推进
 
@@ -811,182 +847,9 @@ static void rcu_poll_gp_seq_end(unsigned long *snap)
 
 普通 `rcu_gp_init()/cleanup()` 传入 `gp_seq_polled_snap`，expedited 开始/结束路径传入 `gp_seq_polled_exp_snap`。假设普通 GP 先打开公共区间，expedited 随后保存同一个快照并先完成；expedited 可以合法结束公共序列，因为一轮真实 expedited GP 已经满足 poll 证明。普通 GP 稍后结束时发现自己的快照不再匹配，只清自己的快照而不会重复发布完成。
 
-因此 `gp_seq_polled` 不是正在运行的某个 GP 对象，而是 **poll API 对“至少一轮合格 GP 已过去”的公共观察通道**。调用者取得 cookie 后仍要使用 `rcu_seq_done()` 一类辅助判断，不能比较三个 snap 字段猜测完成。
+因此 `gp_seq_polled` 不是正在运行的某个 GP 对象，而是 **poll API 对“至少一轮合格 GP 已过去”的公共观察通道**。调用者取得cookie后须使用对应poll API及它规定的完成/内存序协议，不能比较三个snap字段猜测完成。底层 `rcu_seq_done()` 本身只是序列比较，不单独承诺所有调用者需要的完成屏障。修改poll桥时要测试普通先结束、加速先结束、两轮开始交错以及快照已经被另一方清零的情况。
 
-## 5.13\_SRS怎样登记请求并冻结本轮批次
-
-`SRS` 是这组源码字段采用的内部前缀；源码没有为它声明可供 API 依赖的正式全称。本章把它称为 **同步等待者直接批处理分支**，避免杜撰缩写展开。该分支默认由模块参数 `rcu_normal_wake_from_gp=0` 关闭。
-
-```c
-/**
- * @brief 在默认 callback 等待与可选直接批处理之间选择。
- * @note 中文说明由仓库补充；源码裁剪自 kernel/rcu/tree.c，仅省略上游块注释。
- */
-static void synchronize_rcu_normal(void)
-{
-	struct rcu_synchronize rs;
-
-	trace_rcu_sr_normal(rcu_state.name, &rs.head, TPS("request"));
-	if (!READ_ONCE(rcu_normal_wake_from_gp)) {
-		wait_rcu_gp(call_rcu_hurry); /* 默认：用 callback 完成栈上 completion。 */
-		goto trace_complete_out;
-	}
-
-	init_rcu_head_on_stack(&rs.head);
-	init_completion(&rs.completion);
-	if (IS_ENABLED(CONFIG_PROVE_RCU))
-		rs.head.func = (void *)get_state_synchronize_rcu();
-	rcu_sr_normal_add_req(&rs);
-	(void)start_poll_synchronize_rcu(); /* 确保需要的 GP 会被推进。 */
-	wait_for_completion(&rs.completion);
-	destroy_rcu_head_on_stack(&rs.head);
-
-trace_complete_out:
-	trace_rcu_sr_normal(rcu_state.name, &rs.head, TPS("complete"));
-}
-
-/**
- * @brief 在可选直接等待分支中，把当前调用者的栈上请求加入全局入口。
- */
-static void rcu_sr_normal_add_req(struct rcu_synchronize *rs)
-{
-	llist_add((struct llist_node *)&rs->head, &rcu_state.srs_next);
-}
-
-/** @brief 用地址范围区分固定dummy节点和调用者的栈上请求节点。 */
-static bool rcu_sr_is_wait_head(struct llist_node *node)
-{
-	return &rcu_state.srs_wait_nodes[0].node <= node &&
-		node <= &rcu_state.srs_wait_nodes[
-			SR_NORMAL_GP_WAIT_HEAD_MAX - 1].node;
-}
-
-/** @brief 从固定数组借一个批次分隔dummy节点；它不承载调用者completion。 */
-static struct llist_node *rcu_sr_get_wait_head(void)
-{
-	struct sr_wait_node *sr_wn;
-	int i;
-
-	for (i = 0; i < SR_NORMAL_GP_WAIT_HEAD_MAX; i++) {
-		sr_wn = &rcu_state.srs_wait_nodes[i];
-		if (!atomic_cmpxchg_acquire(&sr_wn->inuse, 0, 1))
-			return &sr_wn->node;
-	}
-	return NULL;
-}
-
-/** @brief cleanup不再引用dummy节点后，以release语义归还。 */
-static void rcu_sr_put_wait_head(struct llist_node *node)
-{
-	struct sr_wait_node *sr_wn =
-		container_of(node, struct sr_wait_node, node);
-
-	atomic_set_release(&sr_wn->inuse, 0);
-}
-
-/**
- * @brief GP init 用 dummy wait-head 锁存本轮要覆盖的请求批次。
- * @return dummy 节点暂时耗尽时，要求再启动一轮重试。
- */
-static bool rcu_sr_normal_gp_init(void)
-{
-	struct llist_node *first = READ_ONCE(rcu_state.srs_next.first);
-	struct llist_node *wait_head;
-
-	if (!first || rcu_sr_is_wait_head(first))
-		return false;
-	wait_head = rcu_sr_get_wait_head();
-	if (!wait_head)
-		return true;
-	llist_add(wait_head, &rcu_state.srs_next); /* 划定当前 GP 批次边界。 */
-	WARN_ON_ONCE(rcu_state.srs_wait_tail != NULL);
-	rcu_state.srs_wait_tail = wait_head;
-	return false;
-}
-```
-
-`synchronize_rcu_normal()` 在分支开启时先初始化调用者栈上的 `struct rcu_synchronize` 和 `completion`，再 `rcu_sr_normal_add_req(&rs)`、`start_poll_synchronize_rcu()`，最后睡在 **自己的 completion**。`srs_next` 只承载请求节点，不是调用者睡眠的等待队列。
-
-`CONFIG_PROVE_RCU` 开启时，这条直接分支不会把 `head.func` 当 callback 函数调用，而是临时保存 `get_state_synchronize_rcu()` 的旧状态；`rcu_sr_normal_complete()` 在真正 `complete()` 前用它检查完整 GP 是否已经过去。该字段复用属于诊断证明，关闭 `CONFIG_PROVE_RCU` 不会移除 SRS 的功能等待协议。
-
-## 5.14\_SRS怎样在cleanup与workqueue之间交付等待者
-
-cleanup 取得 `srs_wait_tail` 后完成有限数量调用者，把尚未完成的批次通过 release store 交给 `srs_done_tail`，再由 `srs_cleanup_work` 继续处理：
-
-```c
-/** @brief 把llist请求节点还原为调用者的栈对象并唤醒。 */
-static void rcu_sr_normal_complete(struct llist_node *node)
-{
-	struct rcu_synchronize *rs = container_of(
-		(struct rcu_head *)node, struct rcu_synchronize, head);
-	unsigned long oldstate = (unsigned long)rs->head.func;
-
-	WARN_ONCE(IS_ENABLED(CONFIG_PROVE_RCU) &&
-		  !poll_state_synchronize_rcu(oldstate),
-		  "A full grace period is not passed yet: %lu",
-		  rcu_seq_diff(get_state_synchronize_rcu(), oldstate));
-	complete(&rs->completion);
-}
-
-/** @brief GP cleanup 先限额交付本轮直接等待批次，再发布剩余尾部。 */
-static void rcu_sr_normal_gp_cleanup(void)
-{
-	struct llist_node *wait_tail, *next = NULL, *rcu = NULL;
-	int done = 0;
-
-	wait_tail = rcu_state.srs_wait_tail;
-	if (!wait_tail)
-		return;
-	rcu_state.srs_wait_tail = NULL;
-
-	llist_for_each_safe(rcu, next, wait_tail->next) {
-		if (rcu_sr_is_wait_head(rcu))
-			break;
-		rcu_sr_normal_complete(rcu);
-		wait_tail->next = next;
-		if (++done == SR_MAX_USERS_WAKE_FROM_GP)
-			break;
-	}
-
-	/* 没有并发cleanup work时，可在fastpath归还相邻dummy节点。 */
-	if (wait_tail->next && wait_tail->next->next == NULL &&
-	    rcu_sr_is_wait_head(wait_tail->next) &&
-	    !atomic_read_acquire(&rcu_state.srs_cleanups_pending)) {
-		rcu_sr_put_wait_head(wait_tail->next);
-		wait_tail->next = NULL;
-	}
-	smp_store_release(&rcu_state.srs_done_tail, wait_tail);
-	if (wait_tail->next) {
-		atomic_inc(&rcu_state.srs_cleanups_pending);
-		if (!queue_work(sync_wq, &rcu_state.srs_cleanup_work))
-			atomic_dec(&rcu_state.srs_cleanups_pending);
-	}
-}
-
-/** @brief 异步完成限额以后剩余的调用者，并归还旧dummy节点。 */
-static void rcu_sr_normal_gp_cleanup_work(struct work_struct *work)
-{
-	struct llist_node *done, *rcu, *next, *head;
-
-	done = smp_load_acquire(&rcu_state.srs_done_tail);
-	if (WARN_ON_ONCE(!done))
-		return;
-	head = done->next;
-	done->next = NULL;
-	llist_for_each_safe(rcu, next, head) {
-		if (!rcu_sr_is_wait_head(rcu)) {
-			rcu_sr_normal_complete(rcu);
-			continue;
-		}
-		rcu_sr_put_wait_head(rcu);
-	}
-	atomic_dec_return_release(&rcu_state.srs_cleanups_pending);
-}
-```
-
-预分配的 `srs_wait_nodes[]` 只提供 dummy 分隔节点，并用 `inuse` 原子状态借出/归还。它解决“并发调用者不断无锁加入时，GP init 怎样冻结本轮截止位置”的问题。修改这条路径必须同时保持：栈上请求在 completion 前仍存活、dummy 节点不会过早复用、`srs_done_tail` 的 release/acquire 交接以及 workqueue 单实例执行语义。
-
-## 5.15\_对象关系图\_哪些地址承载通信
+## 5.13\_对象关系图\_哪些地址承载通信
 
 ```mermaid
 flowchart LR
@@ -1013,9 +876,9 @@ flowchart LR
     RS -->|"普通或expedited GP发布公共完成"| PO
 ```
 
-图中没有 reader 直接向 `task_struct` 发消息的边。高频 reader 路径的低开销正来自通信改写：正常 reader 不逐次登记到 GP kthread；scheduler、context tracking 和任务退出路径在必要事件上形成证据，节点树再把局部证据压成根结论。
+图中没有reader逐次向GP任务发消息的边。高频 reader 路径的低开销正来自通信改写：正常 reader 不逐次登记到 GP kthread；scheduler、context tracking 和任务退出路径在必要事件上形成证据，节点树再把局部证据压成根结论。
 
-## 5.16\_端到端源码时序
+## 5.14\_端到端源码时序
 
 下图从 **任务已经按 [5.5.1](#5.5.1_先从内核启动链定位early_initcall) 完成启动和发布** 的时刻开始，描述任意一轮普通物理 GP。它不是另一条线程创建时序。
 
@@ -1029,21 +892,24 @@ sequenceDiagram
     participant Q as QS/任务报告路径
     participant D as callback/poll/等待者
 
-    C->>L: rcu_start_this_gp(gp_seq_req)
+    C->>L: G1 rcu_start_this_gp(gp_seq_req)
     L->>R: 未被覆盖时逐层写gp_seq_needed
     R->>R: gp_flags|=INIT
-    C->>K: rcu_gp_kthread_wake()<br/>swake_up_one(gp_wq)
-    K->>R: rcu_gp_init()<br/>消费命令并rcu_seq_start
-    K->>L: 广度优先写gp_seq/qsmask<br/>接管blocked tasks
+    C->>K: G1 rcu_gp_kthread_wake<br/>swake_up_one_online(gp_wq)
+    K->>R: G2-G3 init检查命令并开始全局序列
+    K->>L: G4 协调hotplug后广度优先建债
     loop 直到根债务清零
-        Q-->>L: 本地证据和任务退出
+        Q-->>L: G6 本地证据和任务退出
         L-->>R: rcu_report_qs_rnp逐层清位
-        K->>L: 超时则FQS观察/催促
+        K->>L: G7 到期或命令触发FQS观察/催促
     end
-    R-->>K: rcu_report_qs_rsp()<br/>设置FQS并唤醒
-    K->>L: cleanup发布节点完成值<br/>检查gp_seq_needed
-    K->>R: rcu_seq_end(global gp_seq)
-    K-->>D: 完成代际可消费
+    R-->>K: G8 根完成通知设置FQS并唤醒
+    K->>R: G9 先结束公共poll观察区间
+    R-->>D: 合格poll调用者可以观察完成
+    K->>L: G9 逐节点完成发布并检查needed
+    L-->>D: G10 本地队列可消费对应节点完成值
+    K->>R: G9 最后结束普通全局gp_seq并留后继INIT
+    K-->>D: G10 可选SRS直接交付或排work；callback另行执行
     alt 仍有后继需求
         K->>K: 下一次循环继续INIT
     else 无需求
@@ -1051,7 +917,7 @@ sequenceDiagram
     end
 ```
 
-## 5.17\_修改边界与实现复核
+## 5.15\_修改边界与实现复核
 
 修改这一组实现时必须同时检查：
 
