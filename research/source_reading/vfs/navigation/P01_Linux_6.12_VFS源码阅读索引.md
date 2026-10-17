@@ -78,6 +78,8 @@ flowchart TD
 
 [文件映射导读](P17_文件映射的缺页与状态交接.md#17.1_沿一次映射访问找到状态落点) 沿M0～M6连接 [VMA引用](../source_explanations/P45_文件映射的发布与引用归还.md#45.1_新VMA先取得后备文件再发布)、[文件页重试](../source_explanations/P46_文件缺页的缓存验证与重试.md#46.1_等待文件页之前先决定保留哪种生命期)、[PTE安装](../source_explanations/P47_文件页到进程页表的安装.md#47.2_拿到文件页以后在PTE锁下再次确认)、[私有COW](../source_explanations/P48_私有文件映射的写时复制.md#48.3_复制期间PTE可能已变化所以发布前再比较)、[共享写准备](../source_explanations/P49_共享映射的写入准备与脏页登记.md#49.1_让文件系统先准备可写页面) 与 [同步及截断](../source_explanations/P50_映射同步与截断撤销.md#50.2_截断在缓存删除前后各撤销一次页表)。
 
+[访问身份与权限导读](P18_访问身份与权限检查的时间边界.md#18.1_先找本次使用的身份与对象) 沿A0～A5连接 [临时凭据](../source_explanations/P51_当前身份与access临时凭据.md#51.2_预检按自己的身份语义临时覆盖)、[权限分派](../source_explanations/P52_inode权限的基本检查与分派.md#52.1_先检查写入限制再选择权限实现)、[身份映射及ACL](../source_explanations/P53_挂载身份换算与ACL判断.md#53.1_先把文件身份放到当前挂载视图)、[能力范围](../source_explanations/P54_capability的命名空间与对象边界.md#54.1_DAC越权也要确认能力作用范围) 和 [LSM登记及调用](../source_explanations/P55_VFS安全钩子的登记与调用.md#55.1_先为每类检查建立可登记的回调槽)。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |

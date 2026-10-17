@@ -9286,7 +9286,13 @@
       "research/source_reading/vfs/source_explanations/P47_文件页到进程页表的安装.md",
       "research/source_reading/vfs/source_explanations/P48_私有文件映射的写时复制.md",
       "research/source_reading/vfs/source_explanations/P49_共享映射的写入准备与脏页登记.md",
-      "research/source_reading/vfs/source_explanations/P50_映射同步与截断撤销.md"
+      "research/source_reading/vfs/source_explanations/P50_映射同步与截断撤销.md",
+      "research/source_reading/vfs/navigation/P18_访问身份与权限检查的时间边界.md",
+      "research/source_reading/vfs/source_explanations/P51_当前身份与access临时凭据.md",
+      "research/source_reading/vfs/source_explanations/P52_inode权限的基本检查与分派.md",
+      "research/source_reading/vfs/source_explanations/P53_挂载身份换算与ACL判断.md",
+      "research/source_reading/vfs/source_explanations/P54_capability的命名空间与对象边界.md",
+      "research/source_reading/vfs/source_explanations/P55_VFS安全钩子的登记与调用.md"
     ],
     "language_review": {
       "status": "complete",

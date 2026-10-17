@@ -3150,3 +3150,48 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 二十份原件中新增九份，覆盖VMA操作、映射同步、fault锁契约、配置与ARM异常处理入口。MMU开启，SMP、USERFAULTFD和DAX未启用；PER_VMA_LOCK依赖SMP，本次构建不启用，透明大页也不启用。保留其他配置分支的接口边界，不声称这些分支已经运行。
 
 八篇冷读、十六图渲染目视、长度、标题元数据、锚点、唯一ID与完整C材料一致性完成。修正文件回调与MM安装PTE的职责混淆，区分首次私有写和已有PTE的写保护入口，补足file引用不保护VMA、EOF复查、页表竞争、脏状态与截断双次撤销。没有目标Linux编译运行、并发故障、性能或掉电验证；实验仅设计观察关闭fd、共享与私有写、truncate到零后的SIGBUS。
+
+## 1.298\_访问身份与权限检查的时间边界
+
+2026-10-18，重写 [权限凭据正文](../../../knowledge/kernel_subsystems/vfs/P19_权限凭据与安全钩子.md#19.5_LSM为什么还要在打开以后再检查)，新增 [模块导读](../vfs/navigation/P18_访问身份与权限检查的时间边界.md#18.1_先找本次使用的身份与对象) 及五篇实现。固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；三十二个函数体、五个宏及一个初始化器区域共三十八段源码逐token一致，移除原长注释并补充中文分支与生命周期说明。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| fs/namei.c | `6795600c5738a56740bdeb2b4ec33f29545d918a` |
+| fs/open.c | `5da4df2f9b18a637ed83cde8f2fe52f9034f5290` |
+| fs/read_write.c | `befec0b5c537a73b09df80118318293060fd6dfa` |
+| fs/file_table.c | `18735dc8269a10d6e7085c9bb882a0788dd3e0ca` |
+| fs/namespace.c | `73da51ac5a0349f2cebb300aeb979574e6cc37cf` |
+| fs/posix_acl.c | `6c66a37522d00161c1a8a4a476b1b1d9449fdf16` |
+| fs/internal.h | `8c1b7acbbe8faadef678e5aa2dc3588a0d8140b1` |
+| include/linux/cred.h | `2976f534a7a32f050410125df97e9880cc429296` |
+| kernel/cred.c | `075cfa7c896f978f68477e1a93f5f17944cf963a` |
+| kernel/groups.c | `9b43da22647d69eabf17ba4765b81bbaf208c41a` |
+| kernel/capability.c | `dac4df77e376ec01268528f1464c52064861f89a` |
+| security/commoncap.c | `cefad323a0b1b76908d28d1d4335471db0c796ea` |
+| security/security.c | `c5981e558bc2643b485778edf5c5c20f725ccb00` |
+| include/linux/security.h | `2ec8f3014757cd78ef0d961e77f42db409db3b1c` |
+| include/linux/mnt_idmapping.h | `b1b219bc3422417e2ec1776413c039dab821fd02` |
+| include/linux/uidgid.h | `f85ec5613721fe1b4fc6c51b80c9a32cc617c19b` |
+| include/linux/posix_acl.h | `0e65b3d634d9afd330ccfff3263142ffa1457aec` |
+| include/linux/capability.h | `0c356a5179917e9ff1d9015c1398df8e4243e5a3` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| include/linux/fsnotify.h | `278620e063ab2239f996069458c0adbb97a3c36b` |
+| include/linux/lsm_hook_defs.h | `9eca013aa5e1f654050d8981d71543943c347a47` |
+| include/linux/lsm_hooks.h | `090d1d3e19fed6647e91f07e80360286cb2d703c` |
+| security/Kconfig | `28e685f53bd1a1d85f9e62a8ff86abd7d45f4123` |
+| fs/mnt_idmapping.c | `7b1df8cc2821d4fce7108db3654c90709a8e52d5` |
+| include/linux/lsm_count.h | `16eb49761b253e64e4fc72cdc99eb7381c0c07e9` |
+| include/linux/static_call.h | `78a77a4ae0ea87916d24c29b750080d581d75cc8` |
+| include/linux/static_call_types.h | `5a00b8b2cf9fcceb1fa247a4da5fe2f330f378ce` |
+| include/linux/jump_label.h | `f5a2727ca4a9a9a8d675656632cfad4ff045c231` |
+| include/linux/unroll.h | `d42fd6366373efa9d2edf4948a89cbecfc8b9a0d` |
+| fs/exec.c | `67513bd606c24976eb89f2b6c42278b47eb354d9` |
+| include/linux/user_namespace.h | `7183e5aca28291a02cb186bcd8adba81b635b58f` |
+| include/linux/device_cgroup.h | `d02f32b7514e647c7a16efa3cbf01e35b9e8066e` |
+| Documentation/security/credentials.rst | `357328d566c803d3d7cde4536185b73a472309bb` |
+| Documentation/filesystems/idmappings.rst | `77930c77fcfe6ecc29154c3cf1b6f465810784af` |
+
+三十四份原件中新增二十五份，覆盖凭据、ACL、身份映射、capability与LSM静态调用槽。MULTIUSER、USER_NS、FS_POSIX_ACL、EXT4_FS_POSIX_ACL、KEYS、CGROUP_DEVICE开启；CONFIG_SECURITY和FANOTIFY关闭。权限包装桩与仍然执行的基础capability检查分别记录；未把SECURITYFS或静态调用优化能力当作安全策略已启用。
+
+七篇冷读、十五图渲染目视、长度、标题元数据、锚点、唯一ID和C材料一致性完成。区分无ACL、未缓存与真正拒绝，纠正权限快速标志含义、凭据恢复目标和ACL失败时序，补足LSM槽位初始化与实际检查点。没有目标Linux编译运行、ACL或namespace隔离测试及LSM策略实测；程序提供chmod后旧fd与新open的待验证对照。

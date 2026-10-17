@@ -21,6 +21,8 @@ research/source_reading/linux/include/linux/poll.h whitespace=-blank-at-eol
 research/source_reading/linux/include/linux/pagemap.h whitespace=-blank-at-eol
 research/source_reading/linux/include/uapi/linux/fs.h whitespace=-blank-at-eol
 research/source_reading/linux/Documentation/filesystems/path-lookup.rst whitespace=-blank-at-eol
+research/source_reading/linux/security/commoncap.c whitespace=-blank-at-eol
+research/source_reading/linux/security/Kconfig whitespace=-blank-at-eof
 # Upstream RST uses tabbed indentation and seven-character heading underlines.
 research/source_reading/linux/Documentation/filesystems/proc.rst whitespace=-space-before-tab conflict-marker-size=1000
 research/source_reading/linux/Documentation/filesystems/sharedsubtree.rst whitespace=-space-before-tab

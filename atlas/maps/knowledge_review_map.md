@@ -838,6 +838,12 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [访问身份与权限检查的时间边界](../../research/source_reading/vfs/navigation/P18_访问身份与权限检查的时间边界.md)
+        - 🔴 [当前身份与access临时凭据](../../research/source_reading/vfs/source_explanations/P51_当前身份与access临时凭据.md)
+        - 🔴 [inode权限的基本检查与分派](../../research/source_reading/vfs/source_explanations/P52_inode权限的基本检查与分派.md)
+        - 🔴 [挂载身份换算与ACL判断](../../research/source_reading/vfs/source_explanations/P53_挂载身份换算与ACL判断.md)
+        - 🔴 [capability的命名空间与对象边界](../../research/source_reading/vfs/source_explanations/P54_capability的命名空间与对象边界.md)
+        - 🔴 [VFS安全钩子的登记与调用](../../research/source_reading/vfs/source_explanations/P55_VFS安全钩子的登记与调用.md)
         - 🔴 [文件映射的缺页与状态交接](../../research/source_reading/vfs/navigation/P17_文件映射的缺页与状态交接.md)
         - 🔴 [文件映射的发布与引用归还](../../research/source_reading/vfs/source_explanations/P45_文件映射的发布与引用归还.md)
         - 🔴 [文件缺页的缓存验证与重试](../../research/source_reading/vfs/source_explanations/P46_文件缺页的缓存验证与重试.md)
