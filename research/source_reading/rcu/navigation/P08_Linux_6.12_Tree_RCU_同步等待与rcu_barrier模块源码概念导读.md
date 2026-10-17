@@ -103,6 +103,8 @@ Barrier leader 初始化 completion 后把 `barrier_cpu_count` 设为 2，而不
 
 这里的 2 不是 CPU 数，也不是两个固定 callback，而是登记阶段的防过早完成护栏。
 
+并发调用者的复用还受取票时刻约束：在当前轮 start 以后才取得目标，可能需要下一轮，不能仅因已有 leader 就借当前轮返回。具体序列例子见 [leader 与 follower](../source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.8.1_leader与follower)。
+
 ## 8.6\_在线离线与NOCB为何不能分开处理
 
 在线 CPU 的队列可能正由该 CPU 的中断/core 修改，barrier 先释放 `barrier_lock`，再用同步的 `smp_call_function_single(..., 1)` 让目标 CPU 在 IRQ 禁用的本地 handler 中重新拿锁登记哨兵。不能持锁发起并等待这个 handler，否则接收方会等调用者释放同一把锁。若 CPU 状态变化导致发送失败，调用者等待一个 tick 后重试并重新判断状态。
@@ -161,7 +163,7 @@ sequenceDiagram
 | --- | --- | --- |
 | 公开 `synchronize_rcu()` 分流 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P10：同步等待分流](../source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.4_synchronize_rcu怎样选择普通expedited或早期空GP) |
 | 默认 callback wake bridge | [`kernel/rcu/update.c`](../../linux/kernel/rcu/update.c)、[`tree.c`](../../linux/kernel/rcu/tree.c) | [P02：`wakeme_after_rcu()`](../source_explanations/P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.3_同步调用怎样借回调等待GP结束) 与 [P10：默认等待对象](../source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.5_默认分支为何等待调用者自己的completion) |
-| SRS 直接 GP wake | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P05：SRS 完成交付](../source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.4_cleanup与workqueue怎样分担交付) |
+| SRS 直接 GP wake | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P14：SRS 完成交付](../source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.4_cleanup与workqueue怎样分担交付) |
 | barrier callback 与 entrain | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P10：哨兵证明](../source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.6_barrier_callback与entrain如何证明队列前序已执行) |
 | 全局 barrier 扫描与计数 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P10：`rcu_barrier()`](../source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.8_rcu_barrier怎样扫描所有队列并等待真实执行) |
 | hotplug/migration 竞态 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P10：`barrier_lock`](../source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.7_barrier_lock怎样封住CPU热插拔与迁移竞态) |
