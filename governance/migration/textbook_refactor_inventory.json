@@ -9460,6 +9460,66 @@
           "MinGW GCC 14.2.0严格编译运行准入模型；全仓900篇链接无缺失。"
         ],
         "limits": "C模型不代表Linux内核实测；没有真实冻结、卸载、并发压力或设备故障注入结果。"
+      },
+      "knowledge/kernel_subsystems/vfs/P23_具体文件系统接入VFS.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿T0至T5从无后备存储推导ramfs名称和内容驻留，解释类型能力、实例状态与退出责任。",
+        "validation": [
+          "三十四段函数和九张初始化表逐token一致，十七份原件核对Git对象，新增六份。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、精确锚点及C材料一致性完成。",
+          "全仓904篇链接无缺失。"
+        ],
+        "limits": "没有目标Linux编译运行、实际挂载、内存压力或故障注入结果。"
+      },
+      "research/source_reading/vfs/navigation/P22_ramfs把缓存对象变成文件系统.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿T0至T5从无后备存储推导ramfs名称和内容驻留，解释类型能力、实例状态与退出责任。",
+        "validation": [
+          "三十四段函数和九张初始化表逐token一致，十七份原件核对Git对象，新增六份。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、精确锚点及C材料一致性完成。",
+          "全仓904篇链接无缺失。"
+        ],
+        "limits": "没有目标Linux编译运行、实际挂载、内存压力或故障注入结果。"
+      },
+      "research/source_reading/vfs/source_explanations/P70_ramfs配置根与实例生命期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿T0至T5从无后备存储推导ramfs名称和内容驻留，解释类型能力、实例状态与退出责任。",
+        "validation": [
+          "三十四段函数和九张初始化表逐token一致，十七份原件核对Git对象，新增六份。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、精确锚点及C材料一致性完成。",
+          "全仓904篇链接无缺失。"
+        ],
+        "limits": "没有目标Linux编译运行、实际挂载、内存压力或故障注入结果。"
+      },
+      "research/source_reading/vfs/source_explanations/P71_ramfs名称操作与驻留责任.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿T0至T5从无后备存储推导ramfs名称和内容驻留，解释类型能力、实例状态与退出责任。",
+        "validation": [
+          "三十四段函数和九张初始化表逐token一致，十七份原件核对Git对象，新增六份。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、精确锚点及C材料一致性完成。",
+          "全仓904篇链接无缺失。"
+        ],
+        "limits": "没有目标Linux编译运行、实际挂载、内存压力或故障注入结果。"
+      },
+      "research/source_reading/vfs/source_explanations/P72_ramfs页数据与文件操作表.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿T0至T5从无后备存储推导ramfs名称和内容驻留，解释类型能力、实例状态与退出责任。",
+        "validation": [
+          "三十四段函数和九张初始化表逐token一致，十七份原件核对Git对象，新增六份。",
+          "五篇冷读、十图渲染目视、长度、标题元数据、精确锚点及C材料一致性完成。",
+          "全仓904篇链接无缺失。"
+        ],
+        "limits": "没有目标Linux编译运行、实际挂载、内存压力或故障注入结果。"
       }
     },
     "additional_documents": [
