@@ -6013,6 +6013,28 @@
           "三章七图目视、严格连续性零风险、精确章节链接与全仓9081有效链接及格式元数据路径diff通过。"
         ],
         "limits": "没有目标锁竞争、RT调度、解绑或检查器运行验证；历史配置不代表本次工作树核验。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/locks/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以执行上下文为前置，按契约、统一阶段、票号、交接、读者汇聚与寿命串起七章，阅读地图每条箭头说明剩余问题。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读并核对固定源码的waiter声明；两图渲染目视通过。",
+          "严格连续性零风险；10/21条出链与1/24条标题入链、全仓9092有效链接及格式检查通过。"
+        ],
+        "limits": "内容提交3c0a5e4；未执行目标内核构建或锁竞争实验，历史配置不表示本次工作树核验。"
+      },
+      "research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先解释类型与配置选择，再组织文件与状态地址，明确等待链表头和任务栈上的waiter节点分属不同地址。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读并核对固定源码的waiter声明；两图渲染目视通过。",
+          "严格连续性零风险；10/21条出链与1/24条标题入链、全仓9092有效链接及格式检查通过。"
+        ],
+        "limits": "内容提交3c0a5e4；未执行目标内核构建或锁竞争实验，历史配置不表示本次工作树核验。"
       }
     },
     "additional_documents": [
