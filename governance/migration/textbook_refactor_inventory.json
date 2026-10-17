@@ -8704,6 +8704,78 @@
           "全仓847篇链接无缺失；配置关闭钩子与功能动作分别说明。"
         ],
         "limits": "没有目标Linux编译运行、资源耗尽、组合打开跟踪、后置安全拒绝、直接I/O或截断故障注入。"
+      },
+      "knowledge/kernel_subsystems/vfs/P13_fd_table与file生命周期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿F0至F5区分容器共享、槽位持有、查询验证、号码复用与最终清理，修正共享表和close路径的错误概括。",
+        "validation": [
+          "二十五函数与固定原件逐token一致，十二份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓852篇链接无缺失；fcntl原件空白保留并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、扩容或复用并发压力、预留冲突、最后release或任务退出队列跟踪。"
+      },
+      "research/source_reading/vfs/navigation/P12_描述符共享查询与关闭的交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿F0至F5区分容器共享、槽位持有、查询验证、号码复用与最终清理，修正共享表和close路径的错误概括。",
+        "validation": [
+          "二十五函数与固定原件逐token一致，十二份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓852篇链接无缺失；fcntl原件空白保留并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、扩容或复用并发压力、预留冲突、最后release或任务退出队列跟踪。"
+      },
+      "research/source_reading/vfs/source_explanations/P27_描述符预留扩容与发布协议.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿F0至F5区分容器共享、槽位持有、查询验证、号码复用与最终清理，修正共享表和close路径的错误概括。",
+        "validation": [
+          "二十五函数与固定原件逐token一致，十二份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓852篇链接无缺失；fcntl原件空白保留并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、扩容或复用并发压力、预留冲突、最后release或任务退出队列跟踪。"
+      },
+      "research/source_reading/vfs/source_explanations/P28_描述符查询的引用验证与轻量借用.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿F0至F5区分容器共享、槽位持有、查询验证、号码复用与最终清理，修正共享表和close路径的错误概括。",
+        "validation": [
+          "二十五函数与固定原件逐token一致，十二份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓852篇链接无缺失；fcntl原件空白保留并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、扩容或复用并发压力、预留冲突、最后release或任务退出队列跟踪。"
+      },
+      "research/source_reading/vfs/source_explanations/P29_描述符复制与表共享的两层引用.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿F0至F5区分容器共享、槽位持有、查询验证、号码复用与最终清理，修正共享表和close路径的错误概括。",
+        "validation": [
+          "二十五函数与固定原件逐token一致，十二份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓852篇链接无缺失；fcntl原件空白保留并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、扩容或复用并发压力、预留冲突、最后release或任务退出队列跟踪。"
+      },
+      "research/source_reading/vfs/source_explanations/P30_描述符脱离与最后file引用的释放.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿F0至F5区分容器共享、槽位持有、查询验证、号码复用与最终清理，修正共享表和close路径的错误概括。",
+        "validation": [
+          "二十五函数与固定原件逐token一致，十二份原件核对Git对象。",
+          "六篇冷读、十二图渲染目视、长度、标题元数据、锚点及C材料一致性完成。",
+          "全仓852篇链接无缺失；fcntl原件空白保留并设置文件级检查例外。"
+        ],
+        "limits": "没有目标Linux编译运行、扩容或复用并发压力、预留冲突、最后release或任务退出队列跟踪。"
       }
     },
     "additional_documents": [
