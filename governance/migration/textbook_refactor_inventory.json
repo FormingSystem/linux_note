@@ -6343,6 +6343,28 @@
           "五图目视，两章严格连续性、精确出入锚点和全仓9214有效链接检查通过；相关阶段与导航同步。"
         ],
         "limits": "观察命令未在目标Linux执行；没有新增目标构建、实际启动、热插拔或跟踪证据。仅同步入口的其他文档不计全文完成。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P09_Tree_RCU_QS_EQS与Context_Tracking.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "区分context tracking主状态、扫描快照、CPU与任务责任，补用户激活前提、IRQ/NMI及跨EQS推演，改为就地只读观察和版本对照。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交f73465fd；固定NXP原件及上游v5.10 tree.c已核对并记录摘要。",
+          "五图渲染目视，两章严格连续性、精确锚点和全仓9216有效本地链接检查通过。"
+        ],
+        "limits": "v5.10 tree.h下载429，未作为已核对原件。练习为纸面推演；未执行nohz负载、trace采集、目标构建或热插拔实验。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P10_Tree_RCU_rcu_node树与分层汇聚.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "由共享写热点推导叶汇聚，修复256位容量，建立A阶段锁交接与代际证明，补完整四CPU及任务清理后重启汇聚的时序。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交f73465fd；固定NXP原件及上游v5.10 tree.c已核对并记录摘要。",
+          "五图渲染目视，两章严格连续性、精确锚点和全仓9216有效本地链接检查通过。"
+        ],
+        "limits": "v5.10 tree.h下载429，未作为已核对原件。练习为纸面推演；未执行nohz负载、trace采集、目标构建或热插拔实验。"
       }
     },
     "additional_documents": [
