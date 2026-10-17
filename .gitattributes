@@ -12,4 +12,5 @@ research/source_reading/linux/**/*.rst text eol=lf
 # Preserve whitespace in these verified upstream source copies.
 research/source_reading/linux/fs/readdir.c whitespace=-blank-at-eol
 research/source_reading/linux/include/linux/poll.h whitespace=-blank-at-eol
+research/source_reading/linux/Documentation/filesystems/path-lookup.rst whitespace=-blank-at-eol
 markbook/topics/*/releases/** text eol=lf

@@ -2826,3 +2826,13 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 完整程序通过宿主GCC与Clang严格C11编译运行，测试手工小端包、短包、越界、重复key、满槽换人、回绕、跳号和强制重建，并验证错误不修改旧状态及已有计划。原坐标计算函数的独立宿主测试覆盖角点、先反转后交换和非零最小值；不把它当作固件属性读取或硬件实测。
 
 四篇冷读、九张图渲染目视及标题、元数据、长度和锚点检查完成。连续性脚本对正文6.3的276行提示大节：该节提供一个可复制运行的完整程序及输出解释，拆开会使一次解析规划实验依赖多个文件，故保留；源码总索引按查询职责保留链接密度。全仓808篇链接无缺失。没有目标内核构建或真实触摸面板的IRQ、总线、解绑和PM实测。
+
+## 1.281\_VFS问题推演与原件入口
+
+2026-10-18，重写 [VFS开篇](../../../knowledge/kernel_subsystems/vfs/P01_为什么需要_VFS.md#1.1_统一函数入口先解决什么问题) 和抽象推演，从两个名称、dup与独立open、unlink后旧打开继续读取建立对象分层需求。正文完整提供Linux/POSIX C程序，材料与正文一致；程序和预期输出未经目标Linux编译运行，不将Windows编辑环境当成实验平台。
+
+重新确认源码远端为NXP linux-imx，标签lf-6.12.20-2.0.0解析为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；分支头 `7b60e547d2783f8fee61ff7d7be3e066825b9c3a` 在其后3个提交。本轮读取固定Git对象，核对22份VFS原件，另复核class参考使用的3份原件。工作树CONFIG_ARM、CONFIG_TINY_RCU、CONFIG_EXT4_FS、CONFIG_TMPFS、CONFIG_PROC_FS、CONFIG_INOTIFY_USER和CONFIG_NAMESPACES启用，仅记录配置，不证明目标运行。
+
+新增保存原件：Documentation/filesystems/vfs.rst blob `0b18af3f954eb75e72805a04cc486f609dd02b43`、path-lookup.rst blob `2b2df6aa54324bfe82ae14eb20444f249f36b3ec`、files.rst blob `eb770f891b275f3e8b905f1bb794494a61dde54d`；include/linux/fdtable.h blob `b1c5722f2b3ce4ba82e89716d5e27f85c67a8afd`、fs_struct.h blob `783b48dedb723f159a822cd8debcd533d713457f`、path.h blob `7ea389dc764bbbd9f2279fd0d2ae00b5d4ad34e5`。均保持上游内容与路径。path-lookup.rst第1189行原有尾随空格按原件保留，沿既有做法为该文件设置精确的Git空白检查属性，不修改原件摘要。
+
+新增 [VFS源码大纲](../vfs/大纲.md) 与唯一总索引，补齐Input源码目录的大纲入口。九图渲染目视，正文冷读、代码一致性、标题元数据、长度和锚点检查；源码索引的链接密度提示按定位原件的职责保留。Obsidian实际旧VFS对象拓扑入口同步到现存第三章，不改变人工评审状态。

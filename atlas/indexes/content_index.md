@@ -37,7 +37,7 @@ domains:
 
 | 领域 | 当前内容入口 |
 | --- | --- |
-| VFS | [VFS 子系统专题](../../knowledge/kernel_subsystems/vfs/大纲.md) |
+| VFS | [VFS 子系统专题](../../knowledge/kernel_subsystems/vfs/大纲.md) · [源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md#1.2_从状态变化选择阅读方向) |
 | 日志与跟踪 | [Linux 内核日志](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md) |
 | 驱动基础 | [框架学习地图](../../knowledge/driver_model/fundamentals/framework_model/大纲.md#1.1_四个问题怎样接起来)、[只读属性实验](../../knowledge/driver_model/fundamentals/framework_model/kobject讲解.md#1.3_完整的只读属性模块)、[固定版本入口源码](../../research/source_reading/driver_entries/navigation/P01_Linux_6.12_驱动入口源码阅读索引.md#1.2_从现象进入文件) |
 | pinctrl配置与状态 | [引脚配置](../../knowledge/driver_model/device_tree/P02_引脚配置怎样连接外设与焊盘.md#2.1_内部信号接对以后还需要电气条件)、[状态交接](../../knowledge/driver_model/device_tree/P03_引脚状态切换与GPIO占用交接.md#3.3_沿一次切换规定谁先停止谁后继续)、[诊断](../../knowledge/driver_model/device_tree/P04_沿状态与寄存器定位引脚问题.md#4.1_先定位配置在哪一步停止推进)、[固定版本源码索引](../../research/source_reading/pinctrl/navigation/P01_Linux_6.12_pinctrl源码阅读索引.md#1.1_版本边界与阅读路线) |

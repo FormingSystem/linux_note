@@ -835,9 +835,13 @@ mindmap-plugin: basic
         - 🔴 [文件操作与打开寿命导读](../../research/source_reading/character_device/navigation/P03_文件操作与打开寿命导读.md)
         - 🔴 [文件关闭入口实现](../../research/source_reading/character_device/source_explanations/fs/open.c.md#1.1_filp_close归还文件引用)
         - 🔴 [读取分派与同步适配](../../research/source_reading/character_device/source_explanations/fs/read_write.c.md#1.1_vfs_read选择回调)
+    - 🔴 VFS版本源码
+        - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
+        - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
     - Linux 通用机制
         - 🔴 [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md)
         - 驱动实验
+            - 🔴 [Input源码阅读大纲](../../research/source_reading/input/大纲.md)
             - 🔴 [Linux 6.12 Input源码阅读索引](../../research/source_reading/input/navigation/P01_Linux_6.12_Input源码阅读索引.md)
                 - 🔴 [事件状态怎样到达各客户端](../../research/source_reading/input/navigation/P02_事件状态怎样到达各客户端.md)
                 - 🔴 [事件接受与批量分发](../../research/source_reading/input/source_explanations/P01_事件接受与批量分发.md)

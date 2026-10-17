@@ -235,7 +235,7 @@
     "knowledge/driver_model/character_device/P12_常见故障与排查.md",
     "knowledge/driver_model/character_device/P11_构建运行与验证.md",
     "knowledge/driver_model/character_device/P10_字符设备驱动模板.md",
-    "knowledge/kernel_subsystems/vfs/P02_VFS_状态与对象拓扑.md",
+    "knowledge/kernel_subsystems/vfs/P03_VFS_状态与对象拓扑.md",
     "knowledge/kernel_subsystems/vfs/大纲.md",
     "knowledge/kernel_subsystems/vfs/P01_为什么需要_VFS.md",
     "atlas/roadmaps/linux_io_driver_subsystems.md",

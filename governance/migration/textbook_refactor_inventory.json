@@ -8167,7 +8167,10 @@
       "research/source_reading/input/source_explanations/P08_状态重同步与事件时间.md",
       "research/source_reading/input/source_explanations/P09_PM状态恢复与硬件停止边界.md",
       "research/source_reading/input/navigation/P06_触摸帧怎样接到坐标与发布路径.md",
-      "research/source_reading/input/source_explanations/P10_触摸属性怎样改变坐标与轴参数.md"
+      "research/source_reading/input/source_explanations/P10_触摸属性怎样改变坐标与轴参数.md",
+      "research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md",
+      "research/source_reading/vfs/大纲.md",
+      "research/source_reading/input/大纲.md"
     ],
     "language_review": {
       "status": "complete",
