@@ -7945,7 +7945,11 @@
       "research/source_reading/gpiolib/source_explanations/P07_事件缓冲与读取.md",
       "research/source_reading/input/navigation/P02_事件状态怎样到达各客户端.md",
       "research/source_reading/input/source_explanations/P01_事件接受与批量分发.md",
-      "research/source_reading/input/source_explanations/P02_evdev独立队列与读取边界.md"
+      "research/source_reading/input/source_explanations/P02_evdev独立队列与读取边界.md",
+      "research/source_reading/input/navigation/P03_设备怎样公开启停和退出.md",
+      "research/source_reading/input/source_explanations/P03_分配发布与两步资源撤销.md",
+      "research/source_reading/input/source_explanations/P04_使用计数失败回滚与断开.md",
+      "research/source_reading/input/source_explanations/P05_能力轮询重复与输出的边界.md"
     ],
     "language_review": {
       "status": "complete",

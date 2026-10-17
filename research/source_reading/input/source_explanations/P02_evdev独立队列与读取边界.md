@@ -96,8 +96,8 @@ static void evdev_pass_values(struct evdev_client *client,
 
 		if (v->type == EV_SYN && v->code == SYN_REPORT) {
 
-			/* 没有新增记录就丢弃空同步 */
-	if (client->packet_head == client->head)
+			/* 没有新增记录时丢弃空同步。 */
+			if (client->packet_head == client->head)
 				continue;
 
 			wakeup = true;
@@ -109,7 +109,6 @@ static void evdev_pass_values(struct evdev_client *client,
 		__pass_event(client, &event);
 	}
 
-	/* 队列更新完成后再唤醒，等待者会重新检查条件 */
 	spin_unlock(&client->buffer_lock);
 
 	if (wakeup)
@@ -139,7 +138,7 @@ static void __pass_event(struct evdev_client *client,
 	client->buffer[client->head++] = *event;
 	client->head &= client->bufsize - 1;
 
-	/* 追尾只损坏本client的历史；保留失步标志与最新记录 */
+	/* 覆盖未读记录后，只为这个client建立失步证据。 */
 	if (unlikely(client->head == client->tail)) {
 
 		client->tail = (client->head - 2) & (client->bufsize - 1);
@@ -156,8 +155,7 @@ static void __pass_event(struct evdev_client *client,
 	}
 
 	if (event->type == EV_SYN && event->code == SYN_REPORT) {
-		/* 同步记录也已写入，可读区间推进到其后 */
-	client->packet_head = client->head;
+		client->packet_head = client->head;
 		kill_fasync(&client->fasync, SIGIO, POLL_IN);
 	}
 }
@@ -185,6 +183,7 @@ static int evdev_fetch_next_event(struct evdev_client *client,
 
 	spin_lock_irq(&client->buffer_lock);
 
+	/* 可读窗口以完整帧边界为准，而不是仅比较head。 */
 	have_event = client->packet_head != client->tail;
 	if (have_event) {
 		*event = client->buffer[client->tail++];
