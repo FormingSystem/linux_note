@@ -395,7 +395,7 @@ synchronize_rcu()
 
 精确断言故意要求调用者实际经过相应 RCU API。例如仅执行 `local_bh_disable()` 不等于调用了 `rcu_read_lock_bh()`，因此 `lockdep_assert_in_rcu_read_lock_bh()` 仍要求 `rcu_bh_lock_map` 记录。相反，`rcu_read_lock_bh_held()` 作为较宽的调试谓词接受功能上下文。两组接口的证明目标不同，不能因为返回条件相似就合并。
 
-`synchronize_rcu()` 的三-map 检查只负责报告已经执行到的非法自等待调用。真正阻塞、推进 GP 和唤醒等待者的功能链仍由 [`synchronize_rcu()` 接口实现](P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.4_synchronize_rcu接口实现)和[非抢占式 Tree RCU 关键函数](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.3___wait_rcu_gp与wakeme_after_rcu连接等待者)承担。
+`synchronize_rcu()` 的三-map 检查只负责报告已经执行到的非法自等待调用。真正阻塞、推进 GP 和唤醒等待者的功能链仍由 [`synchronize_rcu()` 接口实现](P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.4_synchronize_rcu接口实现)和[非抢占式 Tree RCU 关键函数](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.3_同步调用怎样借回调等待GP结束)承担。
 
 ## 4.7\_rcu\_callback\_map怎样标记延迟动作上下文
 
