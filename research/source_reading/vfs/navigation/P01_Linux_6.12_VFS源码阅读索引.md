@@ -52,6 +52,8 @@ flowchart TD
 
 [配置状态模块导读](P04_配置状态怎样变成可挂载的根.md#4.1_先确认四个不同的交付物) 沿C0～C5区分配置fd、root、分离挂载和目录连接，分别进入 [资源取得与释放](../source_explanations/P04_配置上下文的资源取得与释放.md#4.1_字段怎样区分配置和已取得的根) 和 [建树及交付阶段](../source_explanations/P05_建树与分离挂载的阶段交接.md#5.1_命令检查先于状态推进)。参数错误、建树错误和fd交付失败有不同剩余状态。
 
+[实例构造与关闭导读](P05_实例怎样在构造与关闭之间交接.md#5.1_把阶段落到两种引用和三个标志) 沿B0～B5区分候选发布、就绪交接、活动使用与最后回收，进入 [匹配与构造实现](../source_explanations/P06_实例匹配与构造完成的交接.md#6.1_候选先建立锁和基础持有) 和 [关闭及内存回收实现](../source_explanations/P07_实例关闭通知与最终内存回收.md#7.1_最后活动引用把流程交给关闭回调)。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |
@@ -66,6 +68,7 @@ flowchart TD
 | 实现类型与实例怎样分离 | [fs/filesystems.c](../../linux/fs/filesystems.c)、[fs/super.c](../../linux/fs/super.c) | 注册表、实例取得与释放；不是每次mount都新增superblock |
 | 挂载参数和半成品在哪里 | [include/linux/fs_context.h](../../linux/include/linux/fs_context.h)、[fs/fs_context.c](../../linux/fs/fs_context.c)、[fs/fsopen.c](../../linux/fs/fsopen.c)、[fs/internal.h](../../linux/fs/internal.h) | 声明、资源持有、用户阶段与内部入口 |
 | 用户配置命令与实验结果由什么支撑 | [include/uapi/linux/mount.h](../../linux/include/uapi/linux/mount.h)、[mm/shmem.c](../../linux/mm/shmem.c)、[fs/statfs.c](../../linux/fs/statfs.c) | 命令/属性、tmpfs参数与允许O_PATH的fd查询；源码核对不等于运行 |
+| 实例等待由什么承载 | [include/linux/wait_bit.h](../../linux/include/linux/wait_bit.h)、[kernel/sched/wait_bit.c](../../linux/kernel/sched/wait_bit.c) | 按s_flags地址定位共享等待桶，等待项保存地址键，发布与唤醒配对 |
 | 参数描述验证在哪里 | [include/linux/fs_parser.h](../../linux/include/linux/fs_parser.h)、[fs/fs_parser.c](../../linux/fs/fs_parser.c)、[fs/Kconfig](../../linux/fs/Kconfig) | 描述与参数值分开，验证配置关闭时的替代体 |
 | 代码持有与按需装入有哪些配置边界 | [include/linux/module.h](../../linux/include/linux/module.h)、[include/linux/kmod.h](../../linux/include/linux/kmod.h) | 模块引用契约与request_module退化，不等于类型已登记 |
 | 名称怎样进入打开或修改 | [fs/namei.c](../../linux/fs/namei.c)、[fs/open.c](../../linux/fs/open.c) | 起点、遍历、最后分量与打开检查，先找实际分支再追回调 |

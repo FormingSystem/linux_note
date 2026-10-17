@@ -8370,7 +8370,10 @@
       "research/source_reading/vfs/source_explanations/P03_文件系统类型表的发布与持有.md",
       "research/source_reading/vfs/navigation/P04_配置状态怎样变成可挂载的根.md",
       "research/source_reading/vfs/source_explanations/P04_配置上下文的资源取得与释放.md",
-      "research/source_reading/vfs/source_explanations/P05_建树与分离挂载的阶段交接.md"
+      "research/source_reading/vfs/source_explanations/P05_建树与分离挂载的阶段交接.md",
+      "research/source_reading/vfs/navigation/P05_实例怎样在构造与关闭之间交接.md",
+      "research/source_reading/vfs/source_explanations/P06_实例匹配与构造完成的交接.md",
+      "research/source_reading/vfs/source_explanations/P07_实例关闭通知与最终内存回收.md"
     ],
     "language_review": {
       "status": "complete",
