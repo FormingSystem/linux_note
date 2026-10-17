@@ -15,7 +15,9 @@ topics:
 
 ## 1.1\_版本边界与总索引职责
 
-本目录以 NXP `linux-imx` 官方发布标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`、Linux 6.12.20 为固定源码身份。历史 RCU 快照曾确认 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`；2026-09-05 重新核对的当前标准工作树则确认 `CONFIG_TINY_RCU=y`、`CONFIG_SMP=n`、`CONFIG_PREEMPT_NONE=y`。两份配置用于验证同一固定源码的不同条件分支，不得混成一个运行结果；当前 Tiny 配置种子还是工作树差量，也不得倒推成固定标签默认配置。详见源码基线的配置快照表。
+已经理解普通RCU的发布、借用和回收后，追源码常遇到第二个困难：同名接口为何有多个实现，某个GP为何同时涉及任务、CPU、节点和callback队列？本索引先定位当前问题所属的保护域与功能模块，再引向该模块的状态协作和具体实现。它是源码阅读导航，不要求读者先把所有优化分支通读一遍。
+
+本目录固定于NXP `linux-imx` 官方标签 `lf-6.12.20-2.0.0`、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`、Linux 6.12.20。历史快照包括Tree/PREEMPT_RCU，以及2026-09-05的Tiny、非SMP、PREEMPT_NONE生成配置；后者来自当时未提交的配置种子差量，不是固定标签默认配置。本轮以固定源码核对条件分支，未取得当前目标生成配置，不能把这些历史记录写成今天的板上运行结果。
 
 总索引承担三项职责：
 
@@ -33,7 +35,7 @@ topics:
 | --- | --- | --- |
 | 保护域 | 普通对象 reader、SRCU 私有域还是任务 / trace 轨迹 | `tree*`、`srcutree.c`、`tasks.h` |
 | 底层实现 | 普通 RCU 在 [SMP 构建](../../../../knowledge/foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md#1.1.3_Linux中的CONFIG_SMP表示构建能力) 上走 Tree，还是在 `CONFIG_SMP=n`、`!PREEMPT_RCU` 构建中走 Tiny | `tree.c` / `tiny.c` 与 Kconfig |
-| Tree 读侧模型 | reader 被抢占时只欠 CPU 证据，还是增加任务债务 | `tree_plugin.h`、`sched.h` |
+| Tree 读侧模型 | 非抢占读区怎样以CPU边界证明退出；PREEMPT_RCU怎样保存被换出的旧任务责任 | `tree_plugin.h`、`sched.h` |
 | GP 策略 | normal 还是 expedited | `tree.c` / `tree_exp.h` |
 | callback 策略 | 普通 per-CPU 还是 NOCB | `tree.c`、`tree_nocb.h`、`rcu_segcblist.c` |
 | 检查层 | 功能状态还是 Lockdep/Sparse 影子状态 | `update.c`、`rcupdate.h`、`Kconfig.debug` |
@@ -44,35 +46,35 @@ topics:
 
 ```mermaid
 flowchart LR
-    A["公共接口与读侧模型"] --> B["普通Tree GP生命周期"]
-    B --> C["拓扑与hotplug"]
-    B --> D["FQS/Stall"]
-    B --> E["Expedited"]
-    B --> F["Callback/NOCB"]
-    F --> G["同步等待/barrier"]
-    A --> H["SRCU"]
-    A --> I["Tasks"]
-    A --> J["Tiny"]
-    A --> K["Lockdep适配"]
+    A["公共接口与读侧模型"] -->|"选择Tree后跟踪请求和完成"| B["普通Tree GP生命周期"]
+    B -->|"参与集合从何建立和变更"| C["拓扑与hotplug"]
+    B -->|"证据迟迟不来时如何观察"| D["FQS/Stall"]
+    B -->|"另一完成策略如何组织"| E["Expedited"]
+    B -->|"完成证据怎样交给回调"| F["Callback/NOCB"]
+    F -->|"等待者到底等哪段责任"| G["同步等待/barrier"]
+    A -->|"改为可睡眠私有域"| H["SRCU"]
+    A -->|"改为任务执行轨迹"| I["Tasks"]
+    A -->|"普通RCU在单CPU构建如何简化"| J["Tiny"]
+    A -->|"区分功能与诊断状态"| K["Lockdep适配"]
 ```
 
-普通 Tree RCU 的非抢占 / 抢占分支只在 A 以及节点完成条件中比较。GP、callback、barrier、NOCB 等公共模块不按配置复制整条调用链。
+这张图表示阅读问题的分流，不是函数调用图。普通Tree的两种读侧模型先在A建立，再在节点完成、加急及hotplug等涉及旧任务责任的位置回看差异；公共GP与callback骨架不必按配置重复学习。
 
 ## 1.4\_模块概念导读入口
 
 | 顺序 | 模块导读 | 读者任务 | 对应知识正文 |
 | --- | --- | --- | --- |
-| P02 | [公共接口与读侧模型](P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md#2.1_模块问题与配置边界) | 公共 API 在哪里分流；CPU 债务与任务债务怎样比较并合流 | [P03 公共接口闭环](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md#3.3_完整同步实现)、[P06 R0～R7 读侧阶段](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md#6.6_一组统一阶段怎样覆盖两种配置) |
-| P03 | [Tree RCU GP 全局生命周期](P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.1_模块问题与版本边界) | 请求漏斗、长期 GP kthread、S0～S9 和完成发布 | [P05 公共 S0～S9](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md#5.5_S0到S9的一次完整周期)、[P08 物理 GP 生命周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.9_G0到G10_一轮物理GP的统一生命周期) |
-| P04 | [拓扑与 CPU 热插拔](P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.1_本模块究竟解决什么问题) | 静态树、CPU 参与集合和 callback 所有权怎样交接 | P07、P10、P17 |
-| P05 | [force-QS 与 Stall](P05_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#5.1_为什么GP已经在等还要有force_QS) | 被动观察、催促和三类 stall 时间线 | P14 |
-| P06 | [Expedited GP](P06_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md#6.1_Expedited不是普通GP的加速档) | 独立序列、漏斗、CPU 选择、IPI 与共享安全条件 | P15 |
-| P07 | [Callback 与 NOCB](P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#7.1_GP完成为什么还不等于callback执行) | 分段、执行、bypass 和 GP/CB 线程交接 | P11、P12、P16 |
-| P08 | [同步等待与 rcu_barrier](P08_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md#8.1_等RCU至少有三种不同对象) | 等 GP、等一个 callback 与等历史 callback 的区别 | P13 |
-| P09 | [Tree SRCU](P09_Linux_6.12_Tree_SRCU模块源码概念导读.md#9.1_先分清Tree_RCU与Tree_SRCU) | 私有域、双 index reader 证明和 callback 需求树 | P18 |
-| P10 | [Tasks RCU](P10_Linux_6.12_Tasks_RCU模块源码概念导读.md#10.1_模块问题与三个flavor) | 共享控制骨架与 Tasks/Rude/Trace 的 flavor 证据 | P19 |
-| P11 | [Tiny RCU](P11_Linux_6.12_Tiny_RCU模块源码概念导读.md#11.1_模块问题与当前配置前提) | 单 CPU 怎样保留普通 RCU 的 QS 与 callback 边界 | P20 |
-| P12 | [RCU Lockdep 适配](P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#12.1_模块问题与实现所有权) | 功能状态、检查器影子状态和配置退化 | P23、P24 |
+| [P02](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P02_RCU_抽象机制推演.md) | [公共接口与读侧模型](P02_Linux_6.12_RCU公共接口与读侧模型模块源码概念导读.md#2.1_模块问题与配置边界) | 公共 API 在哪里分流；CPU 债务与任务债务怎样比较并合流 | [P03 公共接口闭环](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md#3.3_完整同步实现)、[P06 R0～R7 读侧阶段](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md#6.6_一组统一阶段怎样覆盖两种配置) |
+| [P03](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P03_RCU_通用API与最小使用闭环.md) | [Tree RCU GP 全局生命周期](P03_Linux_6.12_Tree_RCU_GP全局生命周期模块源码概念导读.md#3.1_模块问题与版本边界) | 请求漏斗、长期 GP kthread、S0～S9 和完成发布 | [P05 公共 S0～S9](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md#5.5_S0到S9的一次完整周期)、[P08 物理 GP 生命周期](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.9_G0到G10_一轮物理GP的统一生命周期) |
+| [P04](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P04_RCU_分类坐标与内核配置.md) | [拓扑与 CPU 热插拔](P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.1_本模块究竟解决什么问题) | 静态树、CPU 参与集合和 callback 所有权怎样交接 | [P07](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md)、[P10](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P10_Tree_RCU_rcu_node树与分层汇聚.md)、[P17](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P17_Tree_RCU_CPU热插拔与回调迁移.md) |
+| [P05](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md) | [force-QS 与 Stall](P05_Linux_6.12_Tree_RCU_force_QS与Stall模块源码概念导读.md#5.1_为什么GP已经在等还要有force_QS) | 被动观察、催促和三类 stall 时间线 | [P14](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P14_Tree_RCU_force_QS迟延与Stall.md) |
+| [P06](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md) | [Expedited GP](P06_Linux_6.12_Tree_RCU_Expedited_GP模块源码概念导读.md#6.1_Expedited不是普通GP的加速档) | 独立序列、漏斗、CPU 选择、IPI 与共享安全条件 | [P15](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P15_Tree_RCU_Expedited_GP.md) |
+| [P07](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P07_Tree_RCU_初始化_拓扑与执行上下文.md) | [Callback 与 NOCB](P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#7.1_GP完成为什么还不等于callback执行) | 分段、执行、bypass 和 GP/CB 线程交接 | [P11](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_rcu_segcblist回调状态机.md)、[P12](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_回调执行_批处理与限流.md)、[P16](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P16_Tree_RCU_NOCB回调卸载.md) |
+| [P08](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md) | [同步等待与 rcu_barrier](P08_Linux_6.12_Tree_RCU_同步等待与rcu_barrier模块源码概念导读.md#8.1_等RCU至少有三种不同对象) | 等 GP、等一个 callback 与等历史 callback 的区别 | [P13](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P13_Tree_RCU_同步等待与rcu_barrier.md) |
+| [P09](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P09_Tree_RCU_QS_EQS与Context_Tracking.md) | [Tree SRCU](P09_Linux_6.12_Tree_SRCU模块源码概念导读.md#9.1_先分清Tree_RCU与Tree_SRCU) | 私有域、双 index reader 证明和 callback 需求树 | [P18](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P18_SRCU_私有域与双_index_状态机.md) |
+| [P10](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P10_Tree_RCU_rcu_node树与分层汇聚.md) | [Tasks RCU](P10_Linux_6.12_Tasks_RCU模块源码概念导读.md#10.1_模块问题与三个flavor) | 共享控制骨架与 Tasks/Rude/Trace 的 flavor 证据 | [P19](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P19_Tasks_RCU_任务轨迹宽限期.md) |
+| [P11](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_rcu_segcblist回调状态机.md) | [Tiny RCU](P11_Linux_6.12_Tiny_RCU模块源码概念导读.md#11.1_模块问题与当前配置前提) | 单 CPU 怎样保留普通 RCU 的 QS 与 callback 边界 | [P20](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P20_Tiny_RCU_单CPU实现.md) |
+| [P12](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_回调执行_批处理与限流.md) | [RCU Lockdep 适配](P12_Linux_6.12_RCU_Lockdep适配模块源码概念导读.md#12.1_模块问题与实现所有权) | 功能状态、检查器影子状态和配置退化 | [P23](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md)、[P24](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P24_RCU_调试验证与集成误用.md) |
 
 表中“对应知识正文”只是读者任务映射，不要求两层文档逐句同步。知识正文建立稳定因果模型；模块导读固定版本化文件、状态地址和函数协作。
 
@@ -96,20 +98,22 @@ flowchart LR
 
 P02 与 P03 是同一读侧模块中的公共 CPU 路径和 PREEMPT_RCU 增量，不是非抢占 / 抢占两套完整系统。
 
+表内13篇是当前实际存在的实现页；Tasks家族目前只有模块概念导读，没有逐函数实现页。遇到Tasks的精确实现问题，应承认这一展开范围，而不是把其他flavor的函数体当作它的替代证据。
+
 ## 1.6\_建议的源码阅读顺序
 
 首次阅读普通 Tree RCU：
 
 ```text
-知识正文P01-P06
-    → 本索引P01
-    → P02公共接口与读侧模型
-    → P12 rcu_init启动事务
-    → P03 GP生命周期
-    → P04拓扑与hotplug
-    → P07 callback/NOCB
-    → P08同步等待/barrier
-    → 按问题选P05/P06慢路径
+知识正文P01-P07，先建立普通契约、读侧与初始化问题
+    → navigation/P01本索引
+    → navigation/P02公共接口与读侧模型
+    → source_explanations/P12 rcu_init启动事务
+    → navigation/P03 GP生命周期
+    → navigation/P04拓扑与hotplug
+    → navigation/P07 callback/NOCB
+    → navigation/P08同步等待/barrier
+    → 按问题选navigation/P05和P06慢路径
 ```
 
 比较其他家族时，从分类坐标直接进入 P09 SRCU、P10 Tasks 或 P11 Tiny，不必先读完普通 Tree 的所有优化模块。
@@ -118,10 +122,12 @@ P02 与 P03 是同一读侧模块中的公共 CPU 路径和 PREEMPT_RCU 增量�
 
 ```text
 本索引P01
-    → P11 Tiny模块概念导读
-    → P13 Tiny源码实现
-    → 用当前.config与Bear编译数据库核对tiny.c
+    → navigation/P11 Tiny模块概念导读
+    → source_explanations/P13 Tiny源码实现
+    → 用目标生成配置核对是否选择tiny.c
 ```
+
+两个目录各自编号，因此单写P12可能指Lockdep模块导读，也可能指启动实现；以上路径前缀用于消除这个歧义。目标构建树存在时先核验源码身份与生成配置，再检查实际编译入口。Bear生成的编译数据库可以帮助定位命令，但必须来自同一次有效构建；没有数据库不影响阅读固定源码，有旧数据库也不能替当前配置作证。
 
 ## 1.7\_实验与观察入口
 
