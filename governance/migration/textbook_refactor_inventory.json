@@ -6721,6 +6721,30 @@
           "实际格式元数据命名及全仓9419本地链接检查通过"
         ],
         "limits": "未执行目标内核构建或Lockdep误用注入。"
+      },
+      "research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补G0到G10状态、漏斗请求和完成发布，修正cleanup当前CPU取值，独立批处理实现。",
+        "validation": [
+          "23处函数裁剪有序词法子序列与人工省略核对；六图渲染目视",
+          "精确出入链与严格连续性通过；P05略超一万字词保留完整周期，理由见基线记录",
+          "当前出版7卷53来源唯一存在；全仓733篇9434本地链接检查通过"
+        ],
+        "limits": "未执行目标内核构建或GP与worker压力实验。"
+      },
+      "research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "由普通GP篇拆出同步等待批处理，补批次截止、栈生命期、dummy归还与worker交错。",
+        "validation": [
+          "23处函数裁剪有序词法子序列与人工省略核对；六图渲染目视",
+          "精确出入链与严格连续性通过；P05略超一万字词保留完整周期，理由见基线记录",
+          "当前出版7卷53来源唯一存在；全仓733篇9434本地链接检查通过"
+        ],
+        "limits": "未执行目标内核构建或GP与worker压力实验。"
       }
     },
     "additional_documents": [
