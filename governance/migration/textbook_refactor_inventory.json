@@ -6769,6 +6769,18 @@
           "实际格式元数据命名及全仓9440本地链接检查通过"
         ],
         "limits": "未执行目标stall注入或实时调度实验。"
+      },
+      "research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补加速GP联合汇聚与worker配置路径，纠正迁移责任及结束唤醒锁，明确取票合并前提。",
+        "validation": [
+          "30处函数及配置展开C词法一致，两图渲染目视",
+          "25出链18标题入链、严格连续性及7274字词检查通过",
+          "实际格式元数据命名及全仓9449本地链接检查通过"
+        ],
+        "limits": "未运行目标IPI、迁移或加速GP压力实验。"
       }
     },
     "additional_documents": [
