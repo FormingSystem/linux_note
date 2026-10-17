@@ -838,6 +838,10 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [快速观察怎样转为引用并协调慢查询](../../research/source_reading/vfs/navigation/P09_快速观察怎样转为引用并协调慢查询.md)
+        - 🔴 [候选读取与快速路径验证](../../research/source_reading/vfs/source_explanations/P16_候选读取与快速路径验证.md)
+        - 🔴 [从RCU观察交接到路径引用](../../research/source_reading/vfs/source_explanations/P17_从RCU观察交接到路径引用.md)
+        - 🔴 [并行查询的登记等待与结果发布](../../research/source_reading/vfs/source_explanations/P18_并行查询的登记等待与结果发布.md)
         - 🔴 [路径怎样从起点推进到结果交付](../../research/source_reading/vfs/navigation/P08_路径怎样从起点推进到结果交付.md)
         - 🔴 [路径起点与结果持有的交接](../../research/source_reading/vfs/source_explanations/P13_路径起点与结果持有的交接.md)
         - 🔴 [前导分量与单步位置推进](../../research/source_reading/vfs/source_explanations/P14_前导分量与单步位置推进.md)

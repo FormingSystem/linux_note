@@ -2934,3 +2934,22 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 | Documentation/filesystems/path-lookup.rst | `2b2df6aa54324bfe82ae14eb20444f249f36b3ec` |
 
 五篇冷读、十图渲染目视、连续性、长度、标题元数据和锚点检查完成。完整C实验以相对链接反证a/..的提前文本化简，正文与材料逐字一致；未在目标Linux编译或运行，未执行链接循环、并发rename、受限解析压力或分配失败注入。源码支持操作协议，实验输出仍标为预期。
+
+## 1.289\_快速观察的引用交接与同名查询协调
+
+2026-10-18，重写 [RCU-walk与ref-walk](../../../knowledge/kernel_subsystems/vfs/P10_RCU-walk与ref-walk.md#10.1_先有带引用遍历再考虑减少共享写入)，新增 [快慢遍历导读](../vfs/navigation/P09_快速观察怎样转为引用并协调慢查询.md#9.1_把观察凭据与持有交接分开) 以及候选验证、引用交接和并行查询三篇实现。纠正先退出RCU再取引用的错误顺序，区分模式、缓存与I/O，说明最终结果仍需引用及部分失败的归还责任。
+
+固定提交仍为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。二十四个函数与原件逐token一致；新增lockref头与实现用于核对零引用可再取得、dead拒绝及条件性cmpxchg路径，等待队列原件用于核对一次查询中的登记与唤醒。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| fs/namei.c | `6795600c5738a56740bdeb2b4ec33f29545d918a` |
+| fs/dcache.c | `0f6b16ba30d082b7613b084a23f6a01ed6436b1f` |
+| fs/namespace.c | `73da51ac5a0349f2cebb300aeb979574e6cc37cf` |
+| include/linux/dcache.h | `bff956f7b2b984b2c7ca17728ea2cbeb6347e7d5` |
+| include/linux/wait.h | `2b322a9b88a2bd122d30e70a3d6eaa12c5cec244` |
+| kernel/sched/wait.c | `51e38f5f47018c953e31c834dc6385c182359359` |
+| include/linux/lockref.h | `c3a1f78bc884d26282238ac6e590e6894458af25` |
+| lib/lockref.c | `2afe4c5d8919102b99f2931dd51ed457a9aa89ca` |
+
+五篇冷读、十一图渲染目视、连续性、长度、标题元数据和锚点检查完成。本次没有目标路径跟踪、并行缺失压力、后端错误或转换失败注入；固定配置未启用SMP，多CPU缓存行成本只作为条件性设计模型，不记为实测。
