@@ -7720,6 +7720,28 @@
           "全仓787篇链接检查无缺失，长度和锚点通过；导读LINK_DENSITY按导航职责人工保留，未伪称无风险。"
         ],
         "limits": "无dtbs_check、目标内核构建、PM/解绑或光输出实测；继续固定电源、mux和sys-off。"
+      },
+      "knowledge/driver_model/gpio_consumers/P05_GPIO供电怎样进入电源依赖.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从共享电源误关闭推导需求计数、上游依赖、启动时间与资源交接，精确区分锁范围和前置失败出口。",
+        "validation": [
+          "两篇新文和扩展导读冷读，九段固定源码、六图与两组DTS输入核对。",
+          "全仓789篇链接无缺失，长度与锚点通过；导读密度按职责人工保留。"
+        ],
+        "limits": "未运行dtbs_check、目标内核、OOM注入或电压测量；继续mux和sys-off。"
+      },
+      "research/source_reading/gpiolib/source_explanations/P10_固定电源的使能计数与GPIO交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从共享电源误关闭推导需求计数、上游依赖、启动时间与资源交接，精确区分锁范围和前置失败出口。",
+        "validation": [
+          "两篇新文和扩展导读冷读，九段固定源码、六图与两组DTS输入核对。",
+          "全仓789篇链接无缺失，长度与锚点通过；导读密度按职责人工保留。"
+        ],
+        "limits": "未运行dtbs_check、目标内核、OOM注入或电压测量；继续mux和sys-off。"
       }
     },
     "additional_documents": [
