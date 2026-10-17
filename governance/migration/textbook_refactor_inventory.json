@@ -7507,6 +7507,17 @@
           "七篇完整冷读、严格连续性、长度、唯一ID、完整标题锚点和全仓775篇链接检查通过。"
         ],
         "limits": "未完成目标Kbuild、GPIO-sim和硬件运行；Consumer/Provider/IRQ/ABI主线继续处理，不以本批源码核对代替后续章节。"
+      },
+      "knowledge/driver_model/gpio/P05_GPIO_Consumer_请求与使用.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从功能连接和设备协议推出描述符请求、初值、睡眠与错误契约，提供gpio-sim完整模块及正常退出和probe失败实验，区分停机请求、资源释放与释放后模拟电平。",
+        "validation": [
+          "固定版本接口与模拟器实现核对，七项DTC/fdtget检查、完整源码和材料一致性通过。",
+          "完整冷读、严格连续性、长度、图示渲染目视和全仓775篇链接检查通过。"
+        ],
+        "limits": "未执行目标Kbuild、GPIO-sim或板上运行；静态检查不等同实验观测。"
       }
     },
     "additional_documents": [
