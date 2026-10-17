@@ -205,7 +205,7 @@ static bool __note_gp_changes(struct rcu_node *rnp, struct rcu_data *rdp)
 }
 ```
 
-**实现原理：** 普通 GP 不要求开始时逐 CPU 发一条专用消息。RCU core 等路径可以主动比较本地序列与叶序列；只有叶 `qsmask` 仍包含 `rdp->grpmask` 时，才把两项本地责任置为待偿。完成旧 GP 时调用 `rcu_advance_cbs()` 推进成熟资格，没有完成时可调用 `rcu_accelerate_cbs()` 给回调更准确的目标；这里的 accelerate 不等于 expedited GP，算法见 [队列目标与成熟推进](P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.5_accelerate与advance怎样连接callback和GP)。offload 队列由 NOCB 路径处理，因而跳过这两项普通队列操作。
+**实现原理：** 普通 GP 不要求开始时逐 CPU 发一条专用消息。RCU core 等路径可以主动比较本地序列与叶序列；只有叶 `qsmask` 仍包含 `rdp->grpmask` 时，才把两项本地责任置为待偿。完成旧 GP 时调用 `rcu_advance_cbs()` 推进成熟资格，没有完成时可调用 `rcu_accelerate_cbs()` 给回调更准确的目标；这里的 accelerate 不等于 expedited GP，算法见 [队列目标与成熟推进](P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.5_accelerate与advance怎样连接callback和GP)。offload 队列由 NOCB 路径处理，因而跳过这两项普通队列操作。
 
 `ret` 被普通包装 `note_gp_changes()` 用于解锁后决定是否唤醒 GP 线程，并非表示“可以立即调用某个 callback”。该包装先禁用本地 IRQ，再尝试叶锁，失败可以留待下次处理；GP init/cleanup 等持锁场景也会直接调用内部函数，不能把内部函数的所有调用者都写成当前 CPU 的 core。
 

@@ -39,7 +39,7 @@ source_version: "6.12.20"
 | `rcutree_migrate_callbacks()` | 同上 | [6.7](#6.7_rcutree_migrate_callbacks保持成熟边界与barrier证明) | entrain barrier、推进并合并分段队列、必要时唤醒 GP |
 | `rcutree_dead_cpu()`、`rcutree_dying_cpu()`、`rcutree_offline_cpu()` | 同上 | [6.8](#6.8_CPUHP其余回调分别更新什么) | 计数、trace、FQS mask/tick 依赖收尾 |
 
-`rcu_gp_init()`沿前述P05入口阅读；其余跨模块被调用者分别链接[QS逐层汇聚](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.6_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据)、[barrier队尾entrain](P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.6.2_队尾entrain)、[callback代际推进](P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.5_accelerate与advance怎样连接callback和GP)。本篇保留它们在热插拔中的交接含义，不复制函数体。
+`rcu_gp_init()`沿前述P05入口阅读；其余跨模块被调用者分别链接[QS逐层汇聚](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.6_rcu_report_qs_rdp与rcu_report_qs_rnp汇聚证据)、[barrier队尾entrain](P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.6.2_队尾entrain)、[callback代际推进](P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.5_accelerate与advance怎样连接callback和GP)。本篇保留它们在热插拔中的交接含义，不复制函数体。
 
 ## 6.3\_实现前先把三套位图摆在一起
 

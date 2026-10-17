@@ -479,7 +479,7 @@ for (; rhp; rhp = rcu_cblist_dequeue(&rcl)) {
 }
 ```
 
-`rcu_cblist_dequeue()` 从已经提取的本地待执行链取下一项，`rhp->func`暂存为f并清空后才调用，map的release在f返回后。GP成熟和队列提取见[回调队列实现](P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.6_rcu_do_batch为何先抽取再锁外执行)，这里的裁剪只回答annotation包围顺序，不把debug head检查或预算控制当成可删除功能。
+`rcu_cblist_dequeue()` 从已经提取的本地待执行链取下一项，`rhp->func`暂存为f并清空后才调用，map的release在f返回后。GP成熟和队列提取见[回调队列实现](P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.6_rcu_do_batch为何先抽取再锁外执行)，这里的裁剪只回答annotation包围顺序，不把debug head检查或预算控制当成可删除功能。
 
 同一文件的批量 `kfree_rcu` 与 `kvfree_rcu` 实际释放路径也在释放动作前后取得和释放 `rcu_callback_map`。这使这些普通函数callback和直接释放路径对检查器呈现一致身份。不能据此外推所有SRCU、Tasks或其他回调家族都包同一个map，新增消费者必须核对它真正经过的调用路径。
 

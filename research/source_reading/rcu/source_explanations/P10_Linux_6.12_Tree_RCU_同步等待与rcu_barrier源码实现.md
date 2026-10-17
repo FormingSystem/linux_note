@@ -25,7 +25,7 @@ source_version: "6.12.20"
 
 - `wakeme_after_rcu()` 与通用 `__wait_rcu_gp()` 函数体仍由 [P02 等待桥](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.3_同步调用怎样借回调等待GP结束)展开；
 - SRS 直接 GP wake 的请求划批由 [P14 SRS 请求入口](P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.3_请求登记与dummy节点怎样划定本轮)展开，cleanup 与 workqueue 交付由 [P14 SRS 完成路径](P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.4_cleanup与workqueue怎样分担交付)展开；
-- callback 分段、NOCB bypass 与执行由 [P09 callback/NOCB](P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.3_一条链表怎样表达四段)展开；
+- callback 分段与批次由 [P09 回调实现](P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.3_一条链表怎样表达四段)展开，旁路与卸载交接见 [P15 NOCB](P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.3_nocb_bypass怎样降低生产者锁竞争又避免搁浅)；
 - 本章只在调用点解释它们如何组成同步/barrier 协议。
 
 源码基线：NXP Linux 6.12.20 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，配置包含 `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y`。上游相对位置：[`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`kernel/rcu/update.c`](../../linux/kernel/rcu/update.c)、[`kernel/rcu/tree.h`](../../linux/kernel/rcu/tree.h)。

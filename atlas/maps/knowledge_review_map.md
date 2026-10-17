@@ -900,13 +900,14 @@ mindmap-plugin: basic
             - 🔴 [P06 Linux 6.12 Tree RCU 拓扑与 CPU 热插拔源码实现](../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md)
             - 🔴 [P07 Linux 6.12 Tree RCU force-QS 与 Stall 源码实现](../../research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md)
             - 🔴 [P08 Linux 6.12 Tree RCU Expedited GP 源码实现](../../research/source_reading/rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md)
-            - 🔴 [P09 Linux 6.12 Tree RCU 回调与 NOCB 源码实现](../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md)
+            - 🔴 [P09 Linux 6.12 Tree RCU 回调分段与批处理源码实现](../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md)
             - 🔴 [P10 Linux 6.12 Tree RCU 同步等待与 rcu_barrier 源码实现](../../research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md)
             - 🔴 [P11 Linux 6.12 Tree SRCU 源码实现](../../research/source_reading/rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md)
             - 🔴 [P12 Linux 6.12 Tree RCU rcu_init 启动初始化源码实现](../../research/source_reading/rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md)
             - 🔴 [P13 Linux 6.12 Tiny RCU 源码实现](../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.1_实现所有权与本章读者任务)
                 - 🔴 [13.6.3 flags保存恢复与ARM本地中断保护](../../research/source_reading/rcu/source_explanations/P13_Linux_6.12_Tiny_RCU源码实现.md#13.6.3_flags怎样保存和恢复中断状态)
             - 🔴 [P14 Linux 6.12 Tree RCU 同步等待批处理源码实现](../../research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md#14.1_GP已经完成为什么调用者还在等)
+            - 🔴 [P15 Linux 6.12 Tree RCU NOCB 队列与执行交接源码实现](../../research/source_reading/rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.1_本地回调处理怎样变成远端协作)
 
 ## 1.9\_参考与出版物
 

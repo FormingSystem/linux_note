@@ -223,10 +223,10 @@ CPU offline 时，未完成工作必须交给别处。`rcu_segcblist_merge(dst, 
 
 版本化模块先进入 [回调与 NOCB 模块源码概念导读](../../../../../research/source_reading/rcu/navigation/P07_Linux_6.12_Tree_RCU_回调与NOCB模块源码概念导读.md#7.1_GP完成为什么还不等于callback执行)。实现直达入口为：
 
-- [`call_rcu()` 与每 CPU queue 所有权交接](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.4_call_rcu怎样把所有权交给每CPU队列)；
-- [`rcu_segcblist_accelerate/advance()` 与 Tree RCU GP 连接](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.5_accelerate与advance怎样连接callback和GP)；
+- [`call_rcu()` 与每 CPU queue 所有权交接](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.4_call_rcu怎样把所有权交给每CPU队列)；
+- [`rcu_segcblist_accelerate/advance()` 与 Tree RCU GP 连接](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.5_accelerate与advance怎样连接callback和GP)；
 - 普通 GP 怎样在 cleanup 先发布节点完成代际、再结束全局序列，见 [`rcu_gp_cleanup()`](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11_rcu_gp_cleanup发布完成并承接下一代)；本章从该完成值继续解释 callback 进入 DONE；
-- DONE 抽取、回插与执行见 [`rcu_do_batch()`](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.6_rcu_do_batch为何先抽取再锁外执行)；
+- DONE 抽取、回插与执行见 [`rcu_do_batch()`](../../../../../research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.6_rcu_do_batch为何先抽取再锁外执行)；
 - `entrain()` 的 barrier 语义见 [P10 哨兵证明](../../../../../research/source_reading/rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.6_barrier_callback与entrain如何证明队列前序已执行)，`merge()` 的 CPU hotplug 调用点见 [P06 callback 迁移](../../../../../research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.7_rcutree_migrate_callbacks保持成熟边界与barrier证明)。
 
 先用纸面推演检查边界。令 `head=A`，A→B→C→NULL，DONE 为空，WAIT 为 A、B，NEXT_READY 为空，NEXT 为 C。四个 tail 依次指向哪里？观察目标完成并推进后，哪些指针槽中的值实际需要改变？

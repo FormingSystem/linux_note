@@ -189,7 +189,11 @@
           "role": "chapter"
         },
         {
-          "path": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md",
+          "path": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md",
+          "role": "chapter"
+        },
+        {
+          "path": "research/source_reading/rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md",
           "role": "chapter"
         },
         {

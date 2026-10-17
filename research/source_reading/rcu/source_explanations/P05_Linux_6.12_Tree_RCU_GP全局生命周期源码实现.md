@@ -104,7 +104,7 @@ flowchart TB
 | 名称与 trace 身份 | `name`、`abbr` | 静态初始化，日志与 trace 消费 | 只承担诊断标识，不参与安全证明 |
 | CPU offline/GP 初始化互斥 | `ofl_lock` | GP pre-init、CPU starting/dying 路径共同获取 | [P06 hotplug 实现](P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.6_report_cpu_starting与report_cpu_dead怎样隔离当前轮和下一轮)、[5.9 GP init](#5.9_rcu_gp_init开始代际并建立证明债务) |
 | `synchronize_rcu()` 可选直接等待批次 | `srs_next`、`srs_wait_tail`、`srs_done_tail`、`srs_wait_nodes[]`、`srs_cleanup_work`、`srs_cleanups_pending` | 调用者无锁加入，GP init 划定批次，cleanup/workqueue 完成等待者 | [P08 同步请求分支](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P08_Tree_RCU_GP请求与全局生命周期.md#8.6.1_默认同步等待也先登记callback)、[P13 等待对象](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P13_Tree_RCU_同步等待与rcu_barrier.md#13.5_默认synchronize_rcu的等待对象) |
-| NOCB 配置协调 | `nocb_mutex`、`nocb_is_setup` | offload/deoffload、启动和 shrinker 相关路径读取或串行修改；只在 `CONFIG_RCU_NOCB_CPU` 下存在 | [P09 callback 与 NOCB 源码实现](P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.11_动态offload为何只允许offline_CPU并等待状态交接) |
+| NOCB 配置协调 | `nocb_mutex`、`nocb_is_setup` | offload/deoffload、启动和 shrinker 相关路径读取或串行修改；只在 `CONFIG_RCU_NOCB_CPU` 下存在 | [P15 callback 与 NOCB 源码实现](P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.6_动态offload为何只允许offline_CPU并等待状态交接) |
 
 这张表的阅读规则是：**第一次只沿当前问题所在的行继续读。** 研究普通 GP kthread 时需要普通 GP、poll、部分 FQS/hotplug/SRS 字段；`barrier`、expedited 和 NOCB 字段虽然物理上相邻，却属于别的子状态机，不应插入普通 GP 主循环硬背。
 

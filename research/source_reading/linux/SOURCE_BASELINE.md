@@ -164,7 +164,8 @@ domains:
 - [Tree RCU 拓扑与 CPU 热插拔源码实现](../rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md#6.2_源码符号覆盖账本)
 - [Tree RCU force-QS 与 Stall 源码实现](../rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md#7.2_源码符号覆盖账本)
 - [Tree RCU Expedited GP 源码实现](../rcu/source_explanations/P08_Linux_6.12_Tree_RCU_Expedited_GP源码实现.md#8.2_源码符号覆盖账本)
-- [Tree RCU 回调与 NOCB 源码实现](../rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.2_源码符号覆盖账本)
+- [Tree RCU 回调分段与批处理源码实现](../rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.2_源码入口与本章分工)
+- [Tree RCU NOCB 队列与执行交接源码实现](../rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.1_本地回调处理怎样变成远端协作)
 - [Tree RCU 同步等待与 rcu_barrier 源码实现](../rcu/source_explanations/P10_Linux_6.12_Tree_RCU_同步等待与rcu_barrier源码实现.md#10.2_源码符号覆盖账本)
 - [Tree SRCU 源码实现](../rcu/source_explanations/P11_Linux_6.12_Tree_SRCU源码实现.md#11.2_源码符号覆盖账本)
 - [Tree RCU `rcu_init()` 启动初始化源码实现](../rcu/source_explanations/P12_Linux_6.12_Tree_RCU_rcu_init启动初始化源码实现.md#12.19_直接符号覆盖账本)
@@ -2420,3 +2421,13 @@ P05拆分后约10260字词，保留略超阈值的理由是剩余内容共同闭
 2026-10-17，冷读RCU实现P08，对照固定tree_exp.h及tree.h/tree.c初值。补CPU与任务联合完成、逐层报告及强制tick撤销，展开完成屏障、全局/叶worker包装、非抢占handler和等待策略。修正将exp_hint单独视为迁移责任、将exp_wake_mutex视为阻止下一轮开始的说法；按X0～X8区分调用者、全局推进者和叶执行者。
 
 补follower同目标需在本轮start前取票、IPI提交不等于QS、早期直接执行和normal策略等边界，并同步模块导读与任务实现的唯一汇聚入口。30处函数及配置展开的C词法序列与固定源码一致，两图渲染目视；25条出链、18条标题入链、严格连续性及7274字词检查通过。实际格式元数据命名及全仓733篇9449本地链接检查通过。未运行目标IPI、迁移或加速GP压力实验。
+
+## 1.249\_回调分段与NOCB执行交接复核
+
+2026-10-17，冷读原RCU实现P09，将普通回调分段与批处理、NOCB远端协作分别整理为P09和新P15。对照固定tree.c、tree_nocb.h、rcu_segcblist.c及结构定义，纠正tail指向槽地址、发布时所有权转移、普通入队不必每次唤醒、core启动迟滞与一般stall检查的区别。补完整enqueue、advance/accelerate包装、DONE提取回插、预算辅助和core执行者。
+
+NOCB补flush计数、锁与返回值交接、立即/延期/poll通知、两类GP等待队列、CB睡眠条件及模式回执。动态撤销明确barrier→park→成员移除回执，重新卸载只支持启动期已有组关系的CPU；区分运行时offline条件、早期无线程分支，以及旧头文件注释图与当前flag定义的差别。48处函数C词法序列与固定源码一致，四图渲染并目视复核；未进行目标内核构建、offload切换或回调压力实验。
+
+P09为18条出链/18条标题入链，P15为10/17。两篇约7000和7700字词，均低于篇幅阈值；严格连续性扫描各余一个长H2风险，经冷读保留：P09的208行共同解释同一批次提取、锁外调用、回插结算；P15的443行已用三级标题分开producer、flush和通知，保留完整函数便于核对锁返回协议，不以删语句压低行数。已补时序编号，没有其他扫描风险。
+
+同步真实调用方、源码导航、大纲、人工评审地图红色节点、路径迁移记录和当前出版清单；冻结发行清单保留历史来源路径。实际格式、元数据、命名及全仓734篇9461条本地链接检查通过。该复核不升级开发者人工评审状态。

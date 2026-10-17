@@ -188,7 +188,7 @@ sequenceDiagram
 
 ## 7.10\_配置切换与热插拔边界
 
-`rcu_nocb_cpu_offload()/deoffload()` 在固定版本只允许目标 CPU offline 时转换，使用 `cpus_read_lock()`、全局 `nocb_mutex`、组 GP kthread mutex、per-CPU `nocb_lock` 和 `nocb_state_wq` 完成所有权交接。它不是简单翻转 `SEGCBLIST_OFFLOADED`：转换必须确保 producer 看到新模式以前，旧执行者已停止访问该 `rdp`，还要 park/unpark callback kthread。
+`rcu_nocb_cpu_offload()/deoffload()` 在固定版本只允许目标 CPU offline 时进行实际模式转换；重新 offload 还要求启动期已建立的组关系和 GP 线程，因此不是任意 CPU 都能动态加入。入口使用 `cpus_read_lock()`、全局 `nocb_mutex`、组 GP kthread mutex、per-CPU `nocb_lock` 和 `nocb_state_wq` 完成所有权交接。撤销卸载依次等待 barrier、park CB 线程、提交成员移除并等待 GP 管理者回执；重新卸载则等成员加入后才 unpark CB。启动期尚无 GP 线程时，撤销辅助另有直接处理分支。不能把这些不同责任压成一次 `SEGCBLIST_OFFLOADED` 翻转。
 
 CPU hotplug 的普通 callback 迁移见 [拓扑与 CPU 热插拔模块导读](P04_Linux_6.12_Tree_RCU_拓扑与CPU热插拔模块源码概念导读.md#4.4.3_回调所有权状态机)。NOCB `rdp` 不走普通迁移，因为其 kthread 所有权仍存在。
 
@@ -196,14 +196,14 @@ CPU hotplug 的普通 callback 迁移见 [拓扑与 CPU 热插拔模块导读](P
 
 | 阅读目标 | 源文件 | 唯一实现讲解 |
 | --- | --- | --- |
-| `call_rcu()` 分流与普通 enqueue | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P09：enqueue](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.4_call_rcu怎样把所有权交给每CPU队列) |
-| callback accelerate/advance | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`rcu_segcblist.c`](../../linux/kernel/rcu/rcu_segcblist.c) | [P09：代际推进](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.5_accelerate与advance怎样连接callback和GP) |
+| `call_rcu()` 分流与普通 enqueue | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P09：enqueue](../source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.4_call_rcu怎样把所有权交给每CPU队列) |
+| callback accelerate/advance | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c)、[`rcu_segcblist.c`](../../linux/kernel/rcu/rcu_segcblist.c) | [P09：代际推进](../source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.5_accelerate与advance怎样连接callback和GP) |
 | 普通 GP cleanup 怎样发布可供 callback 消费的完成代际 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P05：cleanup 与下一代](../source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.11_rcu_gp_cleanup发布完成并承接下一代) |
-| DONE 抽取、锁外执行与限流 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P09：`rcu_do_batch()`](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.6_rcu_do_batch为何先抽取再锁外执行) |
-| normal core 选择 softirq/rcuc | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P09：core 执行者](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.7_普通CPU怎样选择softirq或rcuc执行者) |
-| bypass/flush/wake | [`kernel/rcu/tree_nocb.h`](../../linux/kernel/rcu/tree_nocb.h) | [P09：NOCB producer](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.8_nocb_bypass怎样降低生产者锁竞争又避免搁浅) |
-| NOCB GP 与 callback kthread | [`kernel/rcu/tree_nocb.h`](../../linux/kernel/rcu/tree_nocb.h) | [P09：GP 线程](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.9_NOCB_GP线程怎样推进队列并等待最早目标代际)、[P09：CB 线程](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.10_NOCB_CB线程只执行成熟批次) |
-| 动态 offload/deoffload | [`kernel/rcu/tree_nocb.h`](../../linux/kernel/rcu/tree_nocb.h) | [P09：转换](../source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.11_动态offload为何只允许offline_CPU并等待状态交接) |
+| DONE 抽取、锁外执行与限流 | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P09：`rcu_do_batch()`](../source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.6_rcu_do_batch为何先抽取再锁外执行) |
+| normal core 选择 softirq/rcuc | [`kernel/rcu/tree.c`](../../linux/kernel/rcu/tree.c) | [P09：core 执行者](../source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md#9.7_普通CPU怎样选择softirq或rcuc执行者) |
+| bypass/flush/wake | [`kernel/rcu/tree_nocb.h`](../../linux/kernel/rcu/tree_nocb.h) | [P15：NOCB producer](../source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.3_nocb_bypass怎样降低生产者锁竞争又避免搁浅) |
+| NOCB GP 与 callback kthread | [`kernel/rcu/tree_nocb.h`](../../linux/kernel/rcu/tree_nocb.h) | [P15：GP 线程](../source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.4_NOCB_GP线程怎样推进队列并等待最早目标代际)、[P15：CB 线程](../source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.5_NOCB_CB线程只执行成熟批次) |
+| 动态 offload/deoffload | [`kernel/rcu/tree_nocb.h`](../../linux/kernel/rcu/tree_nocb.h) | [P15：转换](../source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md#15.6_动态offload为何只允许offline_CPU并等待状态交接) |
 
 ## 7.12\_验收不变量
 
