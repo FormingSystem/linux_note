@@ -6961,6 +6961,113 @@
           "固定NXP官方文件核对节点枚举、IRQ、哨兵、of_match_ptr、构建别名和LED binding。"
         ],
         "limits": "未执行binding Schema验证、目标Kbuild/MODPOST、部署、模块加载或硬件运行。"
+      },
+      "knowledge/driver_model/device_tree/设备树+platform开发/P03_设备树语法与标准示例.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "以编码、引用和编译交接重写语法章，区分status、compatible及运行行为。",
+        "validation": [
+          "DTC/fdtget/fdtoverlay验证标签、字节、覆盖、删除与离线合并；两图目视。",
+          "完整冷读原信息单元并保留有效学习目标；严格连续性、精确标题出入链及实际格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未执行binding Schema全量校验、目标Kbuild/MODPOST、部署、模块加载或板上/动态overlay运行验证。"
+      },
+      "knowledge/driver_model/device_tree/设备树+platform开发/P04_地址单元与总线窗口转换.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "按父总线cell规则推导reg/ranges、多层窗口、I2C/CPU与PCI空间身份。",
+        "validation": [
+          "完整DTS编译/反编译，reg保留子地址；PCI位标志按固定源码核对；两图目视。",
+          "完整冷读原信息单元并保留有效学习目标；严格连续性、精确标题出入链及实际格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未执行binding Schema全量校验、目标Kbuild/MODPOST、部署、模块加载或板上/动态overlay运行验证。"
+      },
+      "knowledge/driver_model/device_tree/设备树+platform开发/P05_中断连接怎样成为驱动可用的IRQ.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "分清中断提供者specifier、GIC INTID、GPIO级联、Linux IRQ与action生命周期。",
+        "validation": [
+          "按GICv3/i.MX GPIO binding及OF IRQ返回契约核对；两图目视。",
+          "完整冷读原信息单元并保留有效学习目标；严格连续性、精确标题出入链及实际格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未执行binding Schema全量校验、目标Kbuild/MODPOST、部署、模块加载或板上/动态overlay运行验证。"
+      },
+      "knowledge/driver_model/device_tree/设备树+platform开发/P06_GPIO连接引脚复用与编号空间.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "修正gpio-ranges编号空间、逻辑极性和子节点取得方式，替换伪全局编号与不完整provider代码。",
+        "validation": [
+          "描述符数组完整模块与gpio-leds片段按官方接口/binding静态核对；两图目视。",
+          "完整冷读原信息单元并保留有效学习目标；严格连续性、精确标题出入链及实际格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未执行binding Schema全量校验、目标Kbuild/MODPOST、部署、模块加载或板上/动态overlay运行验证。"
+      },
+      "knowledge/driver_model/device_tree/设备树+platform开发/P07_供电关系电压约束与启停责任.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "建立供电连接、约束、共享启用责任与回滚过程，修正速率单位及boot-on误解。",
+        "validation": [
+          "固定供电DTS编译与phandle/电压读取；regulator core及binding核对；两图目视。",
+          "完整冷读原信息单元并保留有效学习目标；严格连续性、精确标题出入链及实际格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未执行binding Schema全量校验、目标Kbuild/MODPOST、部署、模块加载或板上/动态overlay运行验证。"
+      },
+      "knowledge/driver_model/device_tree/设备树+platform开发/P08_时钟连接频率请求与使能计数.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "建立时钟来源、consumer输入、assigned默认配置与共享准备使能的区别。",
+        "validation": [
+          "固定比例DTS编译与属性读取；独立固定dt-schema版本及6.12 clk-conf核对；两图目视。",
+          "完整冷读原信息单元并保留有效学习目标；严格连续性、精确标题出入链及实际格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未执行binding Schema全量校验、目标Kbuild/MODPOST、部署、模块加载或板上/动态overlay运行验证。"
+      },
+      "knowledge/driver_model/device_tree/设备树+platform开发/P09_OF属性读取与节点引用生命周期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "核对device_node字段与借用关系，修正子节点循环重复put并提供完整读取模块。",
+        "validation": [
+          "通道片段补齐实验根后DTC验证；正常/提前退出和属性长度按固定源码核对；两图目视。",
+          "完整冷读原信息单元并保留有效学习目标；严格连续性、精确标题出入链及实际格式/元数据/命名/全仓链接检查通过。"
+        ],
+        "limits": "未执行binding Schema全量校验、目标Kbuild/MODPOST、部署、模块加载或板上/动态overlay运行验证。"
+      },
+      "knowledge/driver_model/device_tree/readme.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "重写过时三章文件列表，按阅读任务指向九章与真实实验。",
+        "validation": [
+          "入口与完整标题链接检查通过，导航按职责冷读；专题地图渲染目视；实际文档检查通过。"
+        ],
+        "limits": "不把所链接的未复审补充文章自动计为完成，不提升人工评审状态。"
+      },
+      "knowledge/driver_model/device_tree/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "新增因果学习地图、前提和未决问题，关联五篇现有补充文及相邻专题。",
+        "validation": [
+          "入口与完整标题链接检查通过，导航按职责冷读；专题地图渲染目视；实际文档检查通过。"
+        ],
+        "limits": "不把所链接的未复审补充文章自动计为完成，不提升人工评审状态。"
+      },
+      "knowledge/driver_model/platform_bus/readme.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补齐原仅元数据的空入口，解释平台总线职责与唯一正文路径。",
+        "validation": [
+          "入口与完整标题链接检查通过，导航按职责冷读；专题地图渲染目视；实际文档检查通过。"
+        ],
+        "limits": "不把所链接的未复审补充文章自动计为完成，不提升人工评审状态。"
       }
     },
     "additional_documents": [
