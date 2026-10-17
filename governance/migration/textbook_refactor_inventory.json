@@ -7395,6 +7395,39 @@
           "七图渲染逐图目视；完整冷读、长度、ID、完整标题锚点及全仓770篇链接/文档检查通过。"
         ],
         "limits": "P12的12.3节199行提示经冷读保留完整驱动实验，其余严格连续性无风险；未执行目标Kbuild/MODPOST、Linux脚本、Schema与板上验证。"
+      },
+      "knowledge/driver_model/gpio/P01_从寄存器位到_GPIO_连接抽象.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从实际传感器控制线建立GPIO/PAD/提供者身份，分开功能、全局编号、同线占用和跨线寄存器同步，补图及推理练习。",
+        "validation": [
+          "宿主GCC C11严格及优化/NDEBUG构建运行、删除占用检查的负例，共六次构建/执行；正文与配套源码一致。",
+          "十图渲染逐图目视，前三章严格连续性/长度/锚点、全仓链接与diff检查通过。"
+        ],
+        "limits": "教学模型只覆盖串行内存状态，不代表gpiolib、并发、GPIO-sim或目标硬件验证；后续实现章节仍继续复审。"
+      },
+      "knowledge/driver_model/gpio/P02_GPIO_角色_状态与完整操作周期.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "保留S0至S7并明确多组状态、读写责任和事件路径；完整C模型演示占用冲突、逻辑转换、释放与硬件变化分离。",
+        "validation": [
+          "宿主GCC C11严格及优化/NDEBUG构建运行、删除占用检查的负例，共六次构建/执行；正文与配套源码一致。",
+          "十图渲染逐图目视，前三章严格连续性/长度/锚点、全仓链接与diff检查通过。"
+        ],
+        "limits": "教学模型只覆盖串行内存状态，不代表gpiolib、并发、GPIO-sim或目标硬件验证；后续实现章节仍继续复审。"
+      },
+      "knowledge/driver_model/gpio/P03_从朴素模型到可用_GPIO_机制.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "以串行模型为起点补延迟重试通信、并发交错、初值窗口、睡眠与错误边界、业务停机和元数据/硬件双生命期。",
+        "validation": [
+          "宿主GCC C11严格及优化/NDEBUG构建运行、删除占用检查的负例，共六次构建/执行；正文与配套源码一致。",
+          "十图渲染逐图目视，前三章严格连续性/长度/锚点、全仓链接与diff检查通过。"
+        ],
+        "limits": "教学模型只覆盖串行内存状态，不代表gpiolib、并发、GPIO-sim或目标硬件验证；后续实现章节仍继续复审。"
       }
     },
     "additional_documents": [
