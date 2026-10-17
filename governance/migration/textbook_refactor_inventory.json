@@ -6757,6 +6757,18 @@
           "实际格式元数据命名及全仓9438本地链接检查通过"
         ],
         "limits": "未执行目标CPU上下线或回调迁移压力实验。"
+      },
+      "research/source_reading/rcu/source_explanations/P07_Linux_6.12_Tree_RCU_force_QS与Stall源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补F阶段、watching辅助、探针和boost配置，恢复stall过滤复查，区分功能与诊断保证。",
+        "validation": [
+          "14处函数及配置分支C词法一致，两图渲染目视",
+          "21出链16标题入链、严格连续性和6504字词检查通过",
+          "实际格式元数据命名及全仓9440本地链接检查通过"
+        ],
+        "limits": "未执行目标stall注入或实时调度实验。"
       }
     },
     "additional_documents": [
