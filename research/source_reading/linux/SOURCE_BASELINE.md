@@ -2234,3 +2234,11 @@ GP 模块以 G0～G10 对应公共周期，修正 `rcu_gp_init()` 内部建债�
 2026-10-17，冷读第十五章。补取固定 NXP 提交的 `kernel/rcu/tree_exp.h`，Git blob 为 `fb664d3a01c957ad3bb78a9cf4e1da36af4eefed`，并结合已核对的 `tree_plugin.h`、`tree.h` 与 `update.c` 检查。MMIO 示例明确 RCU 只保护软件读者，DMA、设备事务和关闭握手由业务协议另行完成。X0～X8 区分 leader 调用任务、推进 worker、叶选择工作与节点等待者；漏斗快速路径在内部开始代次，根等待与公开调用者的节点等待不混写。
 
 远端 handler 补深度为零但抢占/BH 仍禁用的延期分支，显式读者分开每 CPU exp 位与任务 exp_hint，并说明被抢占任务责任在 CPU 位解除后仍然存在。选择阶段保留曾上线集合、发请求前二次 EQS 检查及 hotplug 重试；同代搭车时序明确两个调用者在代次开始前取得相同目标快照。公开 API 可受 normal 策略覆盖，end 与 endwake 也分开。两图渲染目视、严格连续性、精确链接及全仓 9229 有效本地链接检查通过；没有执行硬件窗口撤销、目标构建、加急压力测试或 trace 采集。
+
+## 1.220\_RCU回调卸载与隔离部署边界复核
+
+2026-10-17，冷读第十六章，继续核对固定 NXP 提交的 `tree_nocb.h`、`tree.c`、Kconfig 与回调链表原件。补取 `kernel/time/tick-sched.c` 和 `Documentation/admin-guide/kernel-parameters.txt`，Git blob 分别为 `f203f000da1ad803deef3bcc05eea022b648be91`、`8874a9da71b7cb1dbcfc24152c453044a1ca4891`。
+
+从 CPU 时间干扰推导卸载与执行位置选择，按 N0～N7 区分生产者、旁路、分段主链、普通 GP、GP/CB 线程及通知条件。修正 `cblist.len` 已计入 bypass 的事实，并回改第十一章总数定义；flush 不得重复增加总数。补 lazy、高频入队、轮询和延期通知的实际条件，以及 CB 线程也可推进已完成分段的分支。启动配置按有效 mask 解释，动态改变卸载状态须目标 CPU 离线，重新卸载还受启动期组织限制；普通 IRQ、managed IRQ、实时优先级、线程放置与回调安全性分别处理。
+
+四图渲染目视、严格连续性与精确链接检查通过，篇幅审计为 9506 字词；全仓实际文件扫描为 727 篇 Markdown、9260 个有效本地链接无缺失，包含其他并行编辑的新 GIC 结构。没有执行目标内核构建、启动参数修改、CPU 隔离部署或实际 trace 采集；纸面队列练习与只读检查步骤不作为运行证据。

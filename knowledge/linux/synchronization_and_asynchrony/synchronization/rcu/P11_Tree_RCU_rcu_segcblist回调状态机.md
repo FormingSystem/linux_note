@@ -100,7 +100,7 @@ static void free_obj_rcu(struct rcu_head *head)
 | 链表链接 | `rcu_head.next` | enqueue/分段操作 | callback提取和执行 |
 | 分段边界 | `rcu_data.cblist.tails[]` | 本CPU或NOCB锁保护路径 | 加速、推进、提取、barrier |
 | 目标代际 | `cblist.gp_seq[]` | accelerate | advance与GP需求路径 |
-| 总数 | `cblist.len` | 登记增加，执行后结算减少 | 包括已提取但尚未结算的回调；供过载、barrier、诊断使用 |
+| 总数 | `cblist.len` | 登记增加，执行后结算减少 | 包括在途回调，NOCB 下还包括 bypass 节点；供过载、barrier、诊断使用 |
 | 分段数 | `cblist.seglen[]` | 入队、分段移动、提取与回插 | 描述仍挂在共享分段链表中的节点 |
 
 普通本地队列路径借助中断状态排除同 CPU 并发修改；卸载路径还需要相应的 NOCB 锁。下文“管理者”指当前取得队列修改权限的执行路径，不是链表自己在运行。

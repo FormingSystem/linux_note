@@ -16,15 +16,22 @@ topics:
 
 ## 16.1\_场景\_隔离CPU不希望执行回调批次
 
-本章所称 NOCB，是 Tree RCU 把 callback 侧处理交给专用 kthread 的 no-callbacks 卸载策略；`NO_HZ_FULL` 是允许指定运行中 CPU 动态省略周期调度 tick 的 full-dynticks 模式；housekeeping CPU 是承接被迁移内核工作的非隔离 CPU；RT task 是受实时 deadline 与优先级约束的任务。
+前两章讨论怎样更快取得安全证据，但另一个延迟来源仍在：已经成熟的回调会占用 CPU 执行时间。若某个 CPU 专门承担对抖动敏感的任务，仅缩短 GP 并不能移走这段工作。本章因此改问“回调由谁管理、在哪个 CPU 执行”。
 
-先采用这组机制最典型的模型：CPU3 专门运行一个长时间停留在用户态的计算任务，CPU0～CPU2 作为 housekeeping CPU 承担 I/O、普通内核线程和后台工作。目标不是让 CPU3 更快接收外设中断，而是让它获得尽量连续、可预测的计算窗口。
+NOCB 是 Tree RCU 把 callback 侧处理交给专用内核线程的 no-callbacks 卸载策略。先记住这个职责，下面再从具体隔离场景引出动态 tick 与线程放置，避免把几个配置当成一个总开关。
+
+采用四 CPU 的教学布局：CPU3 长时间运行用户态计算，CPU0～CPU2 承担 I/O、普通内核线程和后台工作。这些承接公共工作的 CPU 称为 housekeeping CPU。目标是让 CPU3 获得连续、可预测的计算窗口；周期调度 tick 仍可能打断它，所以系统还可采用 `NO_HZ_FULL`（full dynticks）在条件允许时停掉指定 CPU 的周期 tick。若任务具有必须满足的截止时间，本章称其为实时任务（RT task）；这不自动意味着内核已启用 PREEMPT_RT。
 
 即使 CPU3 的业务代码不直接使用 RCU，Linux 内核仍然有自己的 per-CPU RCU 状态。若 CPU3 上的某条内核路径产生 callback，例如内核态数据面更新对象：
 
 ```c
-old = rcu_replace_pointer(flow_slot, new, true);
-call_rcu(&old->rcu, flow_free_rcu);
+/* 片段：flow_slot 的所有写者都用同一把写侧锁串行化。 */
+mutex_lock(&flow_update_lock);
+old = rcu_replace_pointer(flow_slot, new,
+			  lockdep_is_held(&flow_update_lock));
+mutex_unlock(&flow_update_lock);
+if (old)
+	call_rcu(&old->rcu, flow_free_rcu);
 ```
 
 普通非 offload 路径最终可能在 CPU3 的 `rcu_core()` 中调用 `rcu_do_batch()`。即使每个 callback 很短，一次大批量也会扰动 CPU3；一个耗时很长的 callback 或连续出现的多个小批次也能产生同类问题。callback 为什么成批执行、单批怎样限流，见 [Tree RCU 回调执行、批处理与限流](P12_Tree_RCU_回调执行_批处理与限流.md#12.1_场景_一次GP后突然成熟五万个callback)。
@@ -42,18 +49,19 @@ NOCB 把指定 CPU 的 **callback GP 管理与执行** 交给 kthread；它没�
 
 ```mermaid
 flowchart LR
-    D["设备事件"] --> G["中断控制器路由<br/>ARM上如GIC"]
-    G --> A["布局A：RT CPU处理IRQ"]
-    A --> AT["同CPU上的RT task"]
-    G --> B["布局B：housekeeping/I/O CPU处理IRQ"]
-    B --> R["共享内存/ring写入<br/>release发布"]
-    R --> W["唤醒/IPI/事件通知"]
-    W --> CT["隔离CPU用户态计算<br/>acquire读取"]
+    D -->|"中断请求"| G["中断控制器路由<br/>ARM上如GIC"]
+    D["设备事件"]
+    G -->|"交付IRQ"| A["布局A：RT CPU处理IRQ"]
+    A -->|"读取设备并交付任务"| AT["同CPU上的RT task"]
+    G -->|"交付IRQ"| B["布局B：housekeeping/I/O CPU处理IRQ"]
+    B -->|"读取设备并保存数据"| R["共享内存/ring写入<br/>release发布"]
+    R -->|"发布后通知"| W["唤醒/IPI/事件通知"]
+    W -->|"获得调度并消费数据"| CT["隔离CPU用户态计算<br/>acquire读取"]
 ```
 
 布局 B 并不免费：它增加了缓存行所有权迁移、内存屏障、唤醒/IPI 和调度交接。对最紧的外部事件 deadline，布局 A 可能更短；对长时间计算和尾延迟控制，布局 B 往往更可控。是否“把可转嫁工作都转嫁”必须按完整最坏时延链决定，不能只追求某个 CPU 表面上没有 IRQ。
 
-中断控制器只负责路由和分发，不缓存业务动作；ARM 平台上的 GIC 也是如此。若采用分离布局，通常是 **I/O CPU 接收和初步处理事件，再把数据交给计算 CPU**；不是把“实时接收”留在计算 CPU、再莫名把反应动作发回其他 CPU。
+中断控制器维护中断请求状态并进行路由和交付，实际读取设备数据、处理业务的是 CPU 上的驱动代码。图中分离布局由 I/O CPU 接收和初步处理事件，再将数据交给计算 CPU；共享缓冲区的存活、发布和背压仍须由通信协议保证，NOCB 不会替它传送业务数据。
 
 ### 16.1.2\_隔离计算核为什么仍要处理RCU责任
 
@@ -81,15 +89,15 @@ flowchart LR
 
 `NO_HZ_FULL` 的动态 tick 状态与 NOCB 的 callback 队列属性是两组相关但不同的状态。前者会随运行条件反复切换，后者使未来 callback 不再要求本地 CPU 承担同一套执行路径。
 
-### 16.1.3\_把三个判断改成可以落地的版本
+### 16.1.3\_用三个运行时问题检查隔离边界
 
-| 原判断 | 合理性 | 精确版本 |
+| 现场问题 | 应观察的状态 | 能够得出的结论 |
 | --- | --- | --- |
-| 进入 `NO_HZ_FULL` 前，RT CPU 的 RCU 账单要有处理方案，所以 NOCB 合理 | **方向正确，时间顺序要改** | 不是每次停 tick 前临时清空 callback；而是在启动/配置期让该 CPU 的 callback 队列长期进入 offload 协议，使运行期未来 callback 也不要求本地批量执行 |
-| 计算函数里可能出现“不守规矩的 RCU”，所以仍需 NOCB 转接 | **内核态情形正确，纯用户态说法不成立** | 用户态算法不会直接调用内核 RCU；系统调用、缺页、调度、设备路径或同 CPU 上的内核代码仍可能涉及 RCU。NOCB 只转移 callback 侧管理与调用，不转移 reader/QS，也不是业务 IPC |
-| `NO_HZ_FULL` 理想上只做计算，能转嫁的中断和后台工作都尽量转嫁 | **作为隔离目标合理，但不能绝对化** | 应迁移会破坏目标 CPU jitter 且允许迁移的工作；不可迁移 IRQ、必要 IPI、异常、缺页和少量内核路径仍可能发生。分核还会增加缓存一致性和通知成本，必须以端到端 deadline 决策 |
+| CPU3 刚恢复 tick，是否失去 callback 卸载？ | 有效 offload 状态与当前 tick 依赖分别检查 | tick 恢复本身不撤销长期 offload 协议 |
+| 用户计算没有内核 RCU 调用，是否没有 RCU 责任？ | 系统调用、缺页等内核路径及 QS/EQS 状态 | 用户算法不直接用内核 API，但 CPU 仍参与内核的 reader 与 GP 协议 |
+| 已迁走多数工作，是否证明满足 deadline？ | IRQ、调度、缓存通信与业务计算的完整时间线 | 迁移只能减少特定干扰，还须计算交接成本和剩余不可迁移活动 |
 
-这三条定稿后，NOCB 的位置就很清楚：它不是外部事件分发器，也不是核间业务数据通道，而是 CPU isolation 方案里专门处理 **RCU callback 执行位置** 的一块。
+这三个问题把长期队列策略、瞬时执行环境和端到端时延分开。NOCB 在隔离方案中承担的是 callback 侧管理与执行位置这一部分。
 
 ### 16.1.4\_先纠正RCU\_IRQ\_callback这个说法
 
@@ -135,7 +143,7 @@ I_other IRQ、timer、workqueue、迁移任务等其他干扰
 
 批处理本来是在两个成本之间折中：一次处理多个 callback 可以摊薄调度、锁和唤醒开销，数量/时间限流又能防止单批无限占用 CPU。对没有专用隔离 CPU、更新量较低或延迟余量较大的通用系统，本地批处理通常比额外的跨 CPU 唤醒和线程切换更经济。
 
-只有当系统确实需要把某组 CPU 留给 NO_HZ_FULL、HPC 数据面或实时任务，并且能够给 housekeeping CPU 预留 callback 处理能力时，NOCB 的额外机制成本才有清晰收益。它是 **执行位置与抖动控制策略**，不是普通 Tree RCU 路径的无条件升级。NO_HZ 的完整动态 tick 模型见 [Linux 时间基础与 timekeeping 框架速览](../../asynchrony/timers/P02_Linux_时间基础与_timekeeping_框架速览.md#2.5_NO_HZ_/_高精度定时器配置对驱动的影响)。
+明确的 NO_HZ_FULL、HPC 数据面或实时隔离目标，加上足够的 housekeeping 处理能力，是典型适用条件；非对称多处理器还可能希望把回调放到更节能的 CPU，这也是 Kconfig 给出的用途。它是 **执行位置与成本选择策略**，不是普通路径的无条件升级。NO_HZ 的完整动态 tick 模型见 [Linux 时间基础与 timekeeping 框架速览](../../asynchrony/timers/P02_Linux_时间基础与_timekeeping_框架速览.md#2.5_NO_HZ_/_高精度定时器配置对驱动的影响)。
 
 ## 16.2\_卸载前后责任对比
 
@@ -188,17 +196,17 @@ NOCB 的名字表达的是 no-CBs CPU / no-callbacks-on-this-CPU 这一工程目
 flowchart LR
     subgraph I["隔离CPU3拥有的per-CPU状态"]
         P["CPU3上的内核生产路径（若出现）<br/>call_rcu()登记callback"]
-        B["rdp->nocb_bypass<br/>高频临时入口"]
+        B["rdp->nocb_bypass<br/>高频或lazy暂存"]
         C["rdp->cblist<br/>权威分段状态"]
     end
-    subgraph H["NOCB执行者<br/>期望放在housekeeping CPU"]
+    subgraph H["NOCB执行线程"]
         G["rcuog NOCB GP kthread<br/>合并、加速、等待、推进"]
         X["rcuo NOCB CB kthread<br/>rcu_do_batch()"]
     end
     GP["普通Tree RCU GP<br/>发布权威完成代际"]
 
-    P -->|"高频先聚集"| B
-    P -->|"低频直接登记"| C
+    P -->|"按频率和lazy条件聚集"| B
+    P -->|"允许直接登记时"| C
     B -->|"flush合入"| C
     C -->|"最早所需gp_seq"| G
     G -->|"提出/等待GP"| GP
@@ -211,10 +219,10 @@ flowchart LR
 
 - **生产者** 仍在 `call_rcu()` 所在上下文写入 `rcu_head`、队列长度和唤醒状态；
 - **NOCB GP kthread** 读取 `nocb_bypass`/`cblist`，把 callback 绑定到普通 GP，观察完成代际并推进到 DONE；
-- **NOCB CB kthread** 读取 DONE 段，在锁外调用 callback 函数并更新批次记账；
+- **NOCB CB kthread** 读取 DONE 段，在锁外调用函数并结算；本版本执行后还可在适用锁条件下推进已经完成目标的其他段，不是绝不接触 GP 进度；
 - **普通 Tree RCU GP** 继续汇聚 QS 并发布 `gp_seq`，它不被 `rcuog` 取代。
 
-实际线程可按组共享：`rcu_nocb_gp_kthread()` 可代表一组 offload CPU 管理 GP；每个 offloaded `rcu_data` 有对应 callback kthread/关联。线程布局取决于 grouping、CPU 数与配置，不能从一个线程名推导固定一对一关系。
+实际线程可按组共享：GP 线程通过组首 `rcu_data.nocb_head_rdp` 链表管理一组 offload CPU，每个成员的 `nocb_gp_rdp` 指向组首；每个 offloaded `rcu_data` 有对应 CB 线程。`nocb_lock` 保护该队列，`nocb_bypass_lock` 保护旁路，组首的 `nocb_gp_lock` 协调 GP 线程睡眠、延迟通知和组状态。因此“两个线程”描述两类职责，不表示系统固定只创建两个线程。
 
 ### 16.3.1\_卸载责任不等于自动完成CPU隔离
 
@@ -236,17 +244,19 @@ flowchart LR
 `call_rcu_nocb()` 大致在以下条件间选择：
 
 ```text
-早期启动或低频、主锁容易取得
-    → 直接进入cblist
+早期启动，或运行期仍低于本jiffy直入限额且不是lazy回调
+    → 必要时先flush旧bypass，再由调用者直接入cblist
 
-bypass已经非空或单位时间入队过多
+bypass需要保持顺序，或者高频/lazy策略选择暂存
     → 进入nocb_bypass
 
-bypass太旧、太满、出现非lazy callback或需推进
-    → 取得两类锁并flush到cblist
+bypass达到老化/长度条件，或其他路径要求推进
+    → 在主队列与旁路保护下flush到cblist
 ```
 
-旁路移除的是每次高频入队争用主锁的成本，换来额外链表、长度记账、flush时机和一致性协议。
+这里的 lazy 是允许为批量化和节能暂缓推动回调的策略，不是弱化 GP 安全条件。它依赖 `CONFIG_RCU_LAZY` 等实际配置；双参数释放、`call_rcu()` 与 hurry 路径也不能仅凭名字猜测本次是否按 lazy 处理。非 lazy 回调进入全 lazy 的旁路时，需要重新考虑通知期限，但不意味着每次都由生产者立即 flush。
+
+旁路减少高频生产者争用主锁的频率，增加自己的锁和链表并保留顺序。它不是免同步队列：主 `cblist.len` 在节点挂到 bypass 之前就增加，flush 时通常只转移链表归属而不重复加总数。这样 barrier 从总数仍能知道有工作存在。
 
 ## 16.5\_bypass不是第二个权威GP队列
 
@@ -256,24 +266,28 @@ callback 只有并入 `cblist` 后，才能由 `rcu_segcblist` 的 accelerate/ad
 - `rcu_barrier_entrain()` 在尾随 callback 前 flush；
 - CPU deoffload/hotplug 前 flush；
 - bypass 老化或达到阈值时 flush；
-- 新的非 lazy callback 需要避免被长 lazy 定时拖延时 flush。
+- 新的非 lazy callback 到来时重新考虑通知/推进期限，不能让它一直沿用仅为 lazy 节点安排的长等待；这不等于每次立即 flush。
 
-若只读 `cblist` 长度而忽略 bypass，会漏掉已经由 `call_rcu()` 交付、但尚未进入分段队列的 callback。
+本版本 **`cblist.len` 已包含 bypass 的节点**，也包含提取后尚未结算的回调；不能再把旁路长度机械加到总数上。真正会漏看的是只遍历 `cblist.head` 或只看 `seglen[]`，然后误认为已经掌握全部节点资格。
 
-## 16.6\_S0到S7\_一次offload\_callback生命周期
+例如 A、B 在 bypass，主链为空，总 `len=2`。flush 后 A、B 进入 NEXT，`len` 仍为 2；advance 后进入 DONE，提取到 CB 线程临时链表后 `len` 仍为 2，执行结算才减少。总数说明尚有责任，分段说明资格，旁路和临时链表说明实际存放位置，三者不能互相替代。
 
-NOCB 不是单一开关状态，而是 **per-CPU 回调队列状态、NOCB 分组线程状态和普通 GP 代际状态** 协作形成的分布式状态机。把一个 callback 的完整周期统一编号后，各处字段和线程才不会被误认为彼此独立：
+## 16.6\_N0到N7\_一次offload\_callback生命周期
+
+NOCB 不是单一开关状态，而是 **per-CPU 队列、分组线程、普通 GP 代际** 协作。本章用 N0～N7 表示一次卸载回调周期：N0～N3 承接 P11 的登记与代际分配，N4 依赖普通 GP 证明，N5～N7 承接分段成熟与 P12 的执行周期；它不替代公共 S 周期。
 
 | 阶段 | 触发与写入者 | 状态与存储位置 | 后续读取者/通信 | 退出条件 |
 | --- | --- | --- | --- | --- |
-| S0 登记 | offloaded CPU 上的 `call_rcu()` 生产者 | callback 进入该 CPU `rcu_data` 的 `nocb_bypass` 或 `cblist`，总长度增加 | 生产者留下共享队列状态 | callback 所有权已交给 RCU |
-| S1 唤醒判断 | 新 callback、时间或长度阈值触发生产者/本地 core 更新 | NOCB deferred-wake 状态与 `nocb_gp_wq` 条件 | 直接唤醒或延迟唤醒 GP 线程 | GP 线程不会永久漏看新工作 |
-| S2 flush | NOCB GP kthread 的等待/扫描路径 | `nocb_bypass` 批量合入同一 `rcu_data.cblist` | GP 线程在对应锁下恢复权威队列全貌 | 待推进 callback 已进入分段队列 |
-| S3 加速 | NOCB GP kthread 检查最早 pending callback | `rcu_segcblist` 段边界绑定目标 `gp_seq` | 向普通 Tree RCU 提出/维持 GP 需求 | 已知最早需要等待哪轮 GP |
-| S4 等 GP | 普通 Tree RCU 汇聚 reader/QS 证据并推进全局代际 | callback 仍在 WAIT/NEXT_READY，普通 `rcu_state`/`rcu_node` 保存 GP 权威状态 | NOCB GP kthread 观察完成代际 | 目标 `gp_seq` 已完成 |
-| S5 advance | NOCB GP/锁保护路径读到 GP 完成 | `rcu_segcblist` 把符合条件的 callback 推进到 DONE | DONE 非空成为 CB 线程条件 | 至少一个 callback 已安全可执行 |
-| S6 唤醒 CB | NOCB GP kthread 发现 DONE | CB kthread 等待条件/唤醒状态改变 | 等待队列把状态变化传给 CB 线程 | CB 线程开始取得批次 |
-| S7 执行 | NOCB CB kthread 经 `nocb_cb_wait()` 进入 `rcu_do_batch()` | 从 DONE 摘取 callback，锁外调用 `func`，再更新长度和批次状态 | callback 释放对象；后续路径观察队列余量 | 达到批次完成、数量预算或时间预算 |
+| N0 登记 | offloaded CPU 的生产者 | 节点进入对应 bypass 或主链，总 `cblist.len` 增加 | 队列留下可观察工作 | 执行责任已交给 RCU |
+| N1 通知判断 | 生产者或延后通知路径 | 组首 `nocb_gp_sleep`、`nocb_defer_wakeup`、`nocb_timer` | 直接唤醒、定时检查或 poll | 已安排后续检查；不保证固定调度时延 |
+| N2 flush | GP 线程扫描，或其他受保护推进路径 | bypass 合入同一 `rcu_data.cblist`，总数不重复增加 | 分段算法接管节点 | 当前节点已在 NEXT |
+| N3 分配 | NOCB GP 管理路径 | 主链段边界及目标 `gp_seq` | 向普通 Tree RCU 提出/维持需求 | 已知需要等待的目标 |
+| N4 等 GP | 普通 GP 汇聚 reader/QS | 节点完成代际；组首记录最早等待目标 | GP 线程等待节点 `nocb_gp_wq[]` 或 poll | 目标完成值可以被观察 |
+| N5 advance | 取得相应保护的 NOCB 路径 | 符合目标的段进入 DONE | GP/CB 线程检查 ready | 当前节点可执行 |
+| N6 交付 CB | GP 线程发现 DONE 且 CB 原在睡眠 | `nocb_cb_sleep=false`，随后唤醒 `nocb_cb_wq` | CB 线程复查条件 | 线程取得执行机会 |
+| N7 执行 | CB 线程的 `nocb_cb_wait()` | 提取 DONE、锁外执行、结算 `len`，必要时继续推进 | 执行函数，复查 ready 和睡眠状态 | 本批结束；线程可在回调之间重调度 |
+
+NOCB 的批次不能机械套用普通 softirq 的数量/时间退出条件。P12 已说明 CB 线程在两项之间允许重调度，回调本身仍在所要求的 BH 禁用环境中运行，不得睡眠；一次超长回调依然会拖住执行者。
 
 ## 16.7\_端到端时序
 
@@ -287,20 +301,29 @@ sequenceDiagram
     participant B as CPU3 nocb_bypass
     participant C as CPU3 cblist
     participant G as housekeeping上的rcuog
+    participant D as 延后通知或轮询路径
     participant R as 普通RCU GP
     participant X as housekeeping上的rcuo
 
-    P->>B: call_rcu(head, func)<br/>高频入bypass
-    P->>P: 立即返回原内核路径
-    G->>B: 到flush条件<br/>取得bypass锁
-    B->>C: 批量并入分段cblist
-    G->>C: accelerate并读取目标gp_seq
-    G->>R: 请求/等待普通GP=N
-    R-->>G: GP=N完成
-    G->>C: advance(N)<br/>callback进入DONE
-    G->>X: 唤醒callback线程
-    X->>C: rcu_do_batch()<br/>提取DONE
-    X->>X: 调用func释放旧对象
+    P->>C: N0 增加总len
+    P->>B: 本例把新节点挂到bypass
+    alt 本次需要且允许直接唤醒
+        P->>G: N1 更新睡眠条件并请求唤醒
+    else 延后唤醒或poll模式
+        P->>D: N1 留下延后通知状态<br/>poll模式由既有周期扫描负责
+        D->>G: 定时通知或GP线程定期恢复扫描
+    end
+    P->>P: 不等待GP完成即可返回<br/>与后台执行可交错
+    G->>B: N2 到flush条件，在队列与旁路保护下取出
+    G->>C: 节点合入分段主链，总len不重复增加
+    G->>C: N3 accelerate并读取目标gp_seq
+    G->>R: N4 请求/等待普通GP=N
+    R-->>G: 节点完成代际可见
+    G->>C: N5 advance(N)，节点进入DONE
+    G->>X: N6 修改nocb_cb_sleep<br/>需要时唤醒CB线程
+    X->>C: N7 rcu_do_batch提取DONE，总数暂保留
+    X->>X: 锁外调用func，可能释放对象
+    X->>C: 结算完成数，复查ready<br/>继续或设置睡眠条件
     Note over P,X: CPU3仍负责reader与QS<br/>NOCB线程正确放置后由housekeeping执行批次
 ```
 
@@ -328,7 +351,7 @@ CPU3上的内核路径产生callback并完成必要入队/唤醒记账
 
 ### 16.8.1\_先分开三类配置
 
-启动参数示例：
+以下仅是本章 CPU0～CPU3 布局的参数示例，不直接修改启动配置。实际部署须先确认内核选项、有效 CPU 编号和剩余 housekeeping 容量：
 
 ```text
 rcu_nocbs=3 nohz_full=3 isolcpus=managed_irq,3
@@ -336,21 +359,25 @@ rcu_nocbs=3 nohz_full=3 isolcpus=managed_irq,3
 
 三者不是同义参数，不能把一条启动命令误读成一个不可拆分的“实时开关”：
 
+其中 `isolcpus=managed_irq,3` 只对 managed IRQ 做尽力隔离，不等于普通任务已被 cpuset 隔离，也不控制全部 IRQ。官方文档建议优先考虑 cpuset 管理调度域隔离；本例不把 `isolcpus` 当成通用实时部署配方。
+
 | 层次 | 典型配置 | 解决的问题 | 没有保证什么 |
 | --- | --- | --- | --- |
 | RCU callback 职责 | `rcu_nocbs=3` | CPU3 对应 callback 队列进入 NOCB 协议 | 不自动绑定 NOCB kthread，也不迁走其他内核工作 |
 | full dynticks | `nohz_full=3` | CPU3 只有一个用户态 runnable task 且没有 tick 依赖时，尽量停止周期调度 tick | 不等于永久停 tick，也不等于所有 timer、IRQ 和调度活动消失 |
 | 任务/中断/线程放置 | affinity、cpuset/cgroup、housekeeping 规划，必要时结合 `isolcpus` | 指定哪些执行者能够落到哪些 CPU | 每类 IRQ、内核线程和工作队列仍需按自身接口核查 |
 
-在编译了 `CONFIG_RCU_NOCB_CPU` 的本专题 Linux 6.12 实现中，`rcu_init_nohz()` 会把非空的 `tick_nohz_full_mask` 并入 `rcu_nocb_mask`，因此 `nohz_full` CPU 会进入 callback offload 集合；它还会合并显式 `rcu_nocbs` 或“默认全部卸载”策略，给对应 `rcu_data.cblist` 设置 offloaded 标志并组织 NOCB 线程分组。这里的“组织”不等于立即创建线程，真正的 GP/CB kthread 在后续启动阶段建立。
+在编译了 `CONFIG_RCU_NOCB_CPU` 的本专题 Linux 6.12 实现中，`rcu_init_nohz()` 会将有效非空 `tick_nohz_full_mask` 并入 NOCB 集合，允许与显式 `rcu_nocbs` 合并。`CONFIG_RCU_NOCB_CPU_DEFAULT_ALL` 则只在尚无显式 NOCB 设置、也没有本次 nohz_full 集合选择时使用全部 possible CPU，不会无条件覆盖用户已经指定的集合。分配等初始化成功后，才为对应主链设置 offloaded 标志并组织线程分组；分组也不等于立即创建线程，真正的 GP/CB kthread 在后续启动阶段建立。
 
 这段初始化建立的是 **CPU3 callback 队列的长期 offload 属性**，不是“在 CPU3 每次停 tick 前先搬走当前 callback”的运行时清账动作。运行期即使 CPU3 因 IRQ 或系统调用进入内核，或者因新的 tick 依赖而恢复周期 tick，它的 callback 队列也不会因此自动退回普通本地执行；反过来，NOCB 属性成立也不能保证 CPU3 此刻一定处于停 tick 状态。
 
-还要保留至少一个非 `nohz_full` 的 housekeeping CPU。启动 CPU 会被排除在 `nohz_full` 集合外；实际部署还要确保 housekeeping 集合有能力承接 RCU、timer、workqueue、IRQ 和调度工作，不能只把 CPU3 从各类 mask 中删掉而不为被迁走的工作准备执行资源。
+还要保留能承担 timekeeping 等职责的 housekeeping CPU。内核会按体系结构和启动条件校正有效集合；例如本版 `tick_nohz_init()` 在相应系统睡眠配置分支会将启动 CPU 从集合移除，不支持所需 irq_work 中断能力时还会禁用 full dynticks。不要只看参数字符串，应核对启动日志和实际 nohz_full 集合，并为 RCU、timer、workqueue、IRQ 和调度工作留下执行资源。
 
 ### 16.8.2\_rcu\_nocb\_poll改变谁主动通知
 
-默认模式下，no-CBs CPU 把 callback 放进原先为空的队列时，会 `wake_up()` 对应 NOCB GP kthread。启用 `rcu_nocb_poll` 后，生产者不再承担这次唤醒，GP kthread 主动轮询自己管理的 CPU 队列：
+默认模式下，队列从无待推进工作变成有工作时，需要确保 GP 线程不会无限睡眠。可安全直接通知时唤醒；原 IRQ 状态、离线情形或 lazy 策略要求延后时，设置组首的延后状态和定时器。只要旁路仍有未推进节点，就不能依赖“以后总会再来一次 `call_rcu()`”来救活它。
+
+启用 `rcu_nocb_poll` 后，生产者的这条 GP 唤醒路径提前返回，由 GP 线程主动定期扫描所管理队列：
 
 ```text
 默认唤醒模式
@@ -364,24 +391,67 @@ offloaded CPU入队
     → GP线程周期性主动检查队列
 ```
 
-被移除的唤醒成本没有消失，而是转换为 polling、调度活动和能耗；所以它只适合对 offloaded CPU 抖动极其敏感、并且愿意为此承担能效代价的配置。它减少的是 no-CBs CPU 对 **NOCB GP kthread** 的通知开销，不应笼统说成“让 callback kthread 自动轮询”。
+本版本有成员队列时，poll 分支使用 `schedule_timeout_idle(1)` 让出并等待一个 jiffy 后再检查；这不是硬实时唤醒期限。若组里已经没有成员，它仍可等待新的 offload 成员，而非永不睡眠。被移除的生产者通知成本变成周期活动和能耗；CB 线程的成熟条件通知仍存在，所以不能写成“整个 NOCB 无需唤醒”或“所有回调线程自动轮询”。
 
 ### 16.8.3\_运行时观察
 
+先只读检查实际启动参数与有效 tick 集合，不改亲和性或启动项：
+
 ```bash
+# Linux 目标机；CPU编号应与本机拓扑对应。
+uname -r
 cat /proc/cmdline
-cat /sys/devices/system/cpu/nohz_full 2>/dev/null
-ps -eLo pid,psr,cls,rtprio,comm | grep -E 'rcuo|rcuog|rcuop'
-grep -E 'CONFIG_RCU_NOCB_CPU=' /boot/config-"$(uname -r)"
+if test -r /sys/devices/system/cpu/nohz_full; then
+    cat /sys/devices/system/cpu/nohz_full
+else
+    printf '没有可读的nohz_full接口，须核对内核配置与权限\n'
+fi
 ```
 
-观察时至少要同时回答四个问题：目标 CPU 是否确实进入 offload mask、NOCB 线程是否存在、这些线程当前/允许运行在哪些 CPU、callback 是否仍在积压。只看到 `rcuo*` 线程名不能证明它已经离开 RT CPU，只看到 `nohz_full` 也不能证明其他抖动源已经迁走。
+`cmdline` 是请求的参数，sysfs 是当前可见的集合，两者职责不同。启动日志中的 `Offload RCU callbacks from CPUs:` 可以核对初始化结果；若以后执行过动态切换，还须结合切换记录与当前状态，不能拿启动日志充当任意时刻的 offload 快照。
+
+随后确认构建能力；看不到配置文件时，不把缺失当作选项关闭：
+
+```bash
+# Linux 目标机，只读配置；未部署此文件时应从该内核构建产物取得。
+config_file="/boot/config-$(uname -r)"
+if test -r "$config_file"; then
+    grep -E '^(CONFIG_(RCU_NOCB_CPU|RCU_NOCB_CPU_CB_BOOST|RCU_LAZY|NO_HZ_FULL)=|# CONFIG_(RCU_NOCB_CPU|RCU_NOCB_CPU_CB_BOOST|RCU_LAZY|NO_HZ_FULL) is not set)' "$config_file"
+else
+    printf '配置文件不可读，当前未完成配置核对\n'
+fi
+```
+
+最后观察执行者，下面使用 procps 的 `ps` 和常见 `awk`。`psr` 是线程最近执行的 CPU，不是允许集合；`cls`、`rtprio` 分别给出调度类别与实时优先级。
+
+```bash
+# Linux 目标机，列出NOCB线程及其调度位置。
+ps -eLo pid,lwp,psr,cls,rtprio,comm | awk 'NR == 1 || $6 ~ /^rcuo/'
+```
+
+用每个线程的 TID（上面 `lwp` 列）读取允许集合，才能判断它是否仍能落到 CPU3：
+
+```bash
+# 只读/proc；线程可能在两次观察之间退出，读失败不代表配置为零。
+for tid in $(ps -eLo lwp=,comm= | awk '$2 ~ /^rcuo/ {print $1}'); do
+    printf '\nTID=%s\n' "$tid"
+    if test -r "/proc/$tid/status"; then
+        grep -E '^(Name|Cpus_allowed_list):' "/proc/$tid/status"
+    else
+        printf '该线程状态已不可读\n'
+    fi
+done
+```
+
+如果看到线程最近在 CPU0、允许集合却含 CPU3，只能说明这次采样没有在 CPU3，不能证明隔离。线程存在也不证明对应 CPU 当前仍 offloaded：动态切换后线程可能已 park。还须结合 P12 的批次统计区分队列积压与执行机会；这里的命令不提供回调吞吐测量。它们是部署观察步骤，本次正文核对没有在目标机执行。
 
 线程名和 affinity 随版本/配置变化，源码中的 `rcu_nocb_gp_kthread()`、`rcu_nocb_cb_kthread()` 才是职责锚点。
 
 ## 16.9\_动态offload/deoffload为何复杂
 
-Linux 6.12.20 提供 `rcu_nocb_cpu_offload(cpu)` 和 `rcu_nocb_cpu_deoffload(cpu)`。切换至少要同步：
+Linux 6.12.20 提供两个内核管理接口，但其边界比“任意 CPU 随时改模式”窄：需要实际改变状态时，`rcu_nocb_cpu_offload(cpu)` 与 `rcu_nocb_cpu_deoffload(cpu)` 要求目标 CPU 已离线，否则返回 `-EINVAL`；本版本重新 offload 还要求该 CPU 在启动时曾被组织进 NOCB，已有分组与线程关联。已处于所需状态时可以直接返回，不代表在线切换获准。
+
+这些不是供用户程序直接调用的系统调用。切换至少要同步：
 
 ```text
 cblist的offloaded标志
@@ -392,7 +462,7 @@ GP/CB kthread是否已创建、park或唤醒
 barrier是否正在给队列entrain哨兵callback
 ```
 
-它不是改一个 cpumask 后立即完成的无状态操作。用户通常应优先用启动参数建立稳定隔离配置，只有明确的运行时管理场景才动态切换。
+外层以 CPU 热插拔读锁和 `nocb_mutex` 串行化管理，内层还需与 GP 线程握手，等待状态条件并 park/unpark CB 线程；deoffload 需要处理在途回调及 barrier 后再交还责任。它不是修改 cpumask 后立即完成的无状态操作。本章不把 CPU 下线作为普通观察步骤，稳定部署优先在启动配置中完成设计。
 
 `rcu_state` 中只有两项 NOCB 全局配置协调字段，但它们不能代表 per-CPU callback 状态：
 
@@ -407,7 +477,7 @@ barrier是否正在给队列entrain哨兵callback
 | --- | --- | --- |
 | callback 批次由 CB kthread 调用 | 正确放置线程后，不再由本地 `rcu_core()` 消耗这段服务时间 | housekeeping CPU 承担 callback 本体和批处理开销 |
 | GP/CB 职责分离 | 大块 callback 工作变得可调度、可单独设 affinity | 增加线程、等待队列、唤醒和 context switch |
-| offloaded `call_rcu()` 入队 | 生产者快速返回，不同步等待 callback | 仍有本地/共享记账、锁、缓存行通信和可能的 GP 线程唤醒 |
+| offloaded `call_rcu()` 入队 | 生产者不等待目标 GP 或回调完成；没有固定返回时延 | 仍有本地/共享记账、锁、缓存行通信和可能的 GP 线程唤醒 |
 | bypass 聚合高频入队 | 降低生产者争用主 `nocb_lock` 的频率 | 增加暂存、flush 延迟、状态协议和内存峰值 |
 | `rcu_nocb_poll` 主动轮询 | 进一步减少 no-CBs CPU 的 GP 线程唤醒工作 | 增加 polling 活动和能耗 |
 | callback 集中到 housekeeping CPU | 减少计算 CPU 的 OS jitter | 可能集中缓存污染、内存回收和调度压力 |
@@ -418,7 +488,7 @@ NOCB 也不承担 I/O CPU 与计算 CPU 之间的业务数据传递。共享内�
 
 ### 16.10.1\_实时优先级不是免费保障
 
-Linux 6.12 还允许在适用配置下把 offloaded CB kthread 设为 `SCHED_FIFO`，用于避免它被大量 `SCHED_OTHER` 后台负载饿死。这解决了“callback 永远得不到 CPU、内存持续积压”的一面，却会制造相反风险：callback flood 时，`rcuo` 线程可能长时间占用它所在的 CPU。
+本版本启用 `CONFIG_RCU_NOCB_CPU_CB_BOOST` 且 `kthread_prio` 非零时，会把 CB kthread 设为 `SCHED_FIFO`，以免被大量 `SCHED_OTHER` 后台负载饿死；该选项依赖 NOCB 与 RCU_BOOST，PREEMPT_RT 下默认启用。这里提升的是回调执行线程，与 P14 提升被抢占旧 reader 的协议不是同一对象。回调 flood 时，FIFO 线程也可能长期占用所在 CPU，因此避免积压的措施会反过来影响其他任务。
 
 因此需要同时满足：
 
@@ -439,6 +509,7 @@ NOCB 的正确收益描述是 **减少 callback 带来的一个可识别抖动�
 
 ## 16.11\_源码和trace入口
 
+- 版本与模块地图先见 [RCU 源码总阅读索引](../../../../../research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md)。本章计数、切换和线程分支以固定 NXP Linux 6.12.20 为准；启动参数还对应同提交 `Documentation/admin-guide/kernel-parameters.txt`，有效 tick 集合由 `kernel/time/tick-sched.c` 等实现校正。
 - [RCU 分类坐标与 Kconfig 映射](P04_RCU_分类坐标与内核配置.md#4.9.2_本章名称到API配置和启动参数的完整映射)：确认 NOCB 是 Tree RCU 的 callback 执行策略，而不是独立 RCU 实现。
 - [普通回调批次为何会实际占用 CPU，以及怎样受数量/时间预算限制](P12_Tree_RCU_回调执行_批处理与限流.md#12.6_数量预算和时间预算)：先确认问题来自 callback 执行阶段，而不是把 GP 等待时间误算成 CPU 执行时间。
 - [普通 GP 长期线程的端到端源码时序](../../../../../research/source_reading/rcu/source_explanations/P05_Linux_6.12_Tree_RCU_GP全局生命周期源码实现.md#5.16_端到端源码时序)：它创建并发布普通 Tree RCU 的权威完成代际；NOCB GP kthread只是等待、观察并推进 offloaded callback，不创建另一套普通 GP。
