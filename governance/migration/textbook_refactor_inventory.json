@@ -7698,6 +7698,28 @@
           "七段源码按定义核对；DTC和fdtget验证两种极性教学输入；全仓785篇链接检查无缺失。"
         ],
         "limits": "未执行dtbs_check、目标内核构建、GPIO按键或唤醒实验；其他Consumer家族继续重构。"
+      },
+      "knowledge/driver_model/gpio_consumers/P04_GPIO指示与背光怎样接入亮度接口.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从指示与显示照明的用途差异推导领域状态，完整核对LED排队、背光有效值、初始分支和注销，区分软件状态与硬件观察。",
+        "validation": [
+          "两篇新文与扩展导读完整冷读；九段固定源码与七图核对；off/keep两例DTC与fdtget验证。",
+          "全仓787篇链接检查无缺失，长度和锚点通过；导读LINK_DENSITY按导航职责人工保留，未伪称无风险。"
+        ],
+        "limits": "无dtbs_check、目标内核构建、PM/解绑或光输出实测；继续固定电源、mux和sys-off。"
+      },
+      "research/source_reading/gpiolib/source_explanations/P09_指示灯与背光的GPIO适配.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从指示与显示照明的用途差异推导领域状态，完整核对LED排队、背光有效值、初始分支和注销，区分软件状态与硬件观察。",
+        "validation": [
+          "两篇新文与扩展导读完整冷读；九段固定源码与七图核对；off/keep两例DTC与fdtget验证。",
+          "全仓787篇链接检查无缺失，长度和锚点通过；导读LINK_DENSITY按导航职责人工保留，未伪称无风险。"
+        ],
+        "limits": "无dtbs_check、目标内核构建、PM/解绑或光输出实测；继续固定电源、mux和sys-off。"
       }
     },
     "additional_documents": [
