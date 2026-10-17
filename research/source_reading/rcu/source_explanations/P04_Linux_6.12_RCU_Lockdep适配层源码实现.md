@@ -20,7 +20,9 @@ source_version: "6.12.20"
 
 ## 4.1\_实现所有权与读者目标
 
-本章只解释 **RCU 怎样使用 Lockdep**，不复制 Lockdep 核心算法，也不把四个 `lockdep_map` 误写成真正提供互斥的锁。
+假设驱动漏掉 `rcu_read_lock()`，却仍通过 `rcu_dereference()` 取得共享指针。GP机制没有逐个记录每次对象访问，因此不能自动知道这个调用点违反了读侧协议。要给出诊断，还需要一份“当前任务经过了哪些逻辑入口”的记录，并在取得指针等位置查询它。这是本章追踪的 RCU Lockdep 适配层：功能状态负责保护，检查状态负责发现已执行路径中的协议错误。
+
+以下按“给范围取身份 → 登记进入/退出 → 查询并诊断 → 检查不可用时退化”的顺序阅读，只展开RCU的接入参数和消费方式。Lockdep通用算法仍由下列唯一实现负责。
 
 | 实现问题 | 权威位置 |
 | --- | --- |
@@ -32,9 +34,11 @@ source_version: "6.12.20"
 
 RCU 稳定机制入口见 [RCU 类型语义、Sparse 与 Lockdep](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md#23.6_Lockdep检查的是哪一个运行时条件)，版本化源码总入口见 [Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)。Lockdep 侧怎样看待 RCU 这种逻辑保护域，见 [RCU 与子系统检查适配](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/lockdep/P07_RCU与子系统检查适配.md#7.5_从通用Lockdep到RCU实现的证据边界)。
 
-本章使用 NXP Linux 6.12.20、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的已核对源码副本。基线只确认 `CONFIG_TREE_RCU=y` 与 `CONFIG_PREEMPT_RCU=y`，没有确认目标板启用 `CONFIG_PROVE_LOCKING`、`CONFIG_DEBUG_LOCK_ALLOC` 或 `CONFIG_PROVE_RCU`；因此下面解释的是该版本的 **可选检查分支**，不宣称目标板正在运行它。
+本章使用 NXP Linux 6.12.20、提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的已核对源码副本。本轮核对固定提交的源文件和Kconfig，没有取得当前目标板的运行配置；不把阅读Tree/PREEMPT_RCU分支等同于实机已启用它。下面解释该版本的 **可选检查分支**，是否具备检查能力仍须核对实际构建的 `CONFIG_DEBUG_LOCK_ALLOC`、`CONFIG_PROVE_LOCKING`、`CONFIG_PROVE_RCU` 及运行期有效性。
 
 ## 4.2\_源码符号覆盖账本
+
+先把诊断所需的状态分层：RCU功能侧有嵌套、CPU/节点责任和GP序列；Lockdep当前任务侧有 `held_locks[]/lockdep_depth`；全局框架有锁类及已观察的链信息；`debug_locks`、启动阶段和递归状态决定当前检查是否可信。四个map只是把RCU范围接入这些状态的身份对象，既不是GP字段，也不是检查器总开关。
 
 四个名字共享 `lockdep_map` 类型，但它们表示四种不同的 RCU 逻辑范围：
 
@@ -45,7 +49,7 @@ RCU 稳定机制入口见 [RCU 类型语义、Sparse 与 Lockdep](../../../../kn
 | `rcu_sched_lock_map` | `rcu_read_lock_sched()` 读侧范围 | `rcu_read_lock_sched()` | `rcu_read_unlock_sched()` | sched-held、any-held、断言、自等待检查 | 当前任务的 Lockdep 影子状态 |
 | `rcu_callback_map` | 正在调用 RCU callback 或执行 RCU 延迟释放 | `rcu_do_batch()` 等 callback 执行路径 | 对应 callback 返回之后 | callback 内部的保护条件，例如 Maple Tree dead-node walk | 当前任务的 Lockdep 影子状态 |
 
-**实现原理：** RCU 用全局 map 地址表达稳定逻辑身份，用 `rcu_lock_acquire()`/`rcu_lock_release()` 把进入和退出事件投影到 `current->held_locks[]`，再由 held 查询、断言或保护条件消费。RCU 功能状态与 Lockdep 影子状态并行推进，前者建立正确性，后者验证已经覆盖的调用协议。
+**实现原理：** RCU 用全局 map 地址表达稳定逻辑身份，用 `rcu_lock_acquire()`/`rcu_lock_release()` 把进入和退出事件投影到 `current->held_locks[]`，再由 held 查询、断言或保护条件消费。RCU 功能状态与 Lockdep 影子状态并行推进，前者建立正确性，后者在配置与有效性条件成立时检查已经覆盖的调用协议。
 
 这四个对象都 **不保存 RCU 功能状态**：
 
@@ -77,7 +81,7 @@ extern struct lockdep_map rcu_callback_map;
 
 `extern` 只告诉编译器“定义位于其他翻译单元”。公共 RCU inline API、`tree.c`、`srcutree.c` 和子系统调用点都可以取得同一个 map 地址；真正的存储由 `kernel/rcu/update.c` 在检查配置下提供。
 
-声明无条件存在，而定义受 `CONFIG_DEBUG_LOCK_ALLOC` 控制并不矛盾。配置关闭时，`rcu_lock_acquire()`、`rcu_lock_release()` 和相关告警宏退化为空操作或保守 inline，编译结果不会生成对这些对象的有效引用，因此链接器不需要不存在的定义。若新增一条配置关闭后仍直接取 `&rcu_lock_map` 的代码路径，就会破坏这个不变量并暴露为链接错误。
+声明无条件存在，而定义受 `CONFIG_DEBUG_LOCK_ALLOC` 控制并不矛盾。配置关闭时，`rcu_lock_acquire()`、`rcu_lock_release()` 和相关告警宏退化为空操作或保守 inline，编译结果不会生成对这些对象的有效引用，因此链接器不需要不存在的定义。若新增一条配置关闭后仍实际输出对象引用的代码路径，就会破坏这个不变量并暴露为链接错误。
 
 ### 4.3.2\_四个key和map怎样定义
 
@@ -124,7 +128,7 @@ struct lockdep_map rcu_callback_map =
 EXPORT_SYMBOL_GPL(rcu_callback_map);
 ```
 
-四个 key 必须分开。如果复用同一个 key，Lockdep 会把不同 RCU 逻辑域归入同一锁类，查询和诊断就失去区分能力。key 和 map 都具有内核全生命周期，因而不会出现历史锁类仍引用已经释放身份的问题。
+四个 key 分开定义，使不同RCU域拥有不同锁类。若误复用key，类级等待属性和诊断会被混在一起；但不能由此推断所有实例查询也必然合并，普通held匹配仍先比较map地址。名字用于可读报告，key用于类身份，map地址用于实例身份，这三者不能互相代替。key 和 map 都具有内核全生命周期，因而不会出现历史锁类仍引用已经释放身份的问题。
 
 `EXPORT_SYMBOL_GPL()` 与 `extern` 的职责不同：前者把已定义对象加入 GPL-only 内核符号导出表，允许符合条件的模块引用；后者只完成 C 语言编译期声明。删除导出不会改变内核内建调用点，却可能破坏外部 GPL 模块的链接。
 
@@ -179,13 +183,15 @@ static inline void rcu_lock_release(struct lockdep_map *map)
 | `nest_lock` | `NULL` | 没有外部嵌套锁实例 |
 | `ip` | `_THIS_IP_` | 保存实际登记调用点，供失配诊断使用 |
 
-`read=2` 只改变 Lockdep 对嵌套和依赖类型的建模，不会使 RCU reader 获得共享锁，也不会维护 RCU 的功能嵌套计数。`check=0` 仍会经过 map 注册、wait-context 检查和 held record 提交；只是 `validate_chain()` 不执行完整依赖图验证。
+`read=2` 只改变 Lockdep 对嵌套和依赖类型的建模，不会使 RCU reader 获得共享锁，也不会维护 RCU 的功能嵌套计数。在检查器有效且登记成功时，`check=0` 仍经过map注册和held record提交；`CONFIG_PROVE_LOCKING` 下还可执行wait-context检查，但 `validate_chain()` 不执行这次取得的完整依赖链验证。关闭PROVE_LOCKING后wait-context自身也退化。因此不能从源码中出现 `lock_acquire` 就宣称RCU map与普通互斥锁一样建立了所有死锁依赖边。
 
 相邻的 `rcu_try_lock_acquire()` 把 `trylock` 改为 1，Linux 6.12 的已保存源码中由 NMI-safe SRCU 读侧入口使用。四个全局 map 的常规路径使用 `rcu_lock_acquire()`，因此本章不把 SRCU 域实例的生命期重复展开。
 
 ### 4.4.2\_三种读侧API为何按这个顺序配对
 
-公共读侧包装把功能动作和检查动作并列放置：
+公共读侧包装来自 `include/linux/rcupdate.h`，功能动作和检查动作并列放置。`__acquire(RCU)/__release(RCU)` 供Sparse静态上下文分析，不是Lockdep事件，也不在运行时推进GP；本篇使用它们的位置，静态注解的职责见[类型语义与Sparse](../../../../knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P23_RCU_类型语义_Sparse与Lockdep.md#23.5_Sparse具体检查什么)。`__rcu_read_lock/unlock` 按配置落入[非抢占读侧](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.5_rcu_note_context_switch与rcu_qs记录静止态)或[抢占读侧](P03_Linux_6.12_Tree_RCU_抢占读者债务关键函数源码实现.md#3.3_读侧嵌套怎样触发特殊退出)；本章不重复函数体。
+
+
 
 ```c
 /** @brief 普通RCU读侧：先进入功能范围，再登记检查范围。 */
@@ -237,23 +243,29 @@ rcu_read_unlock_sched()
 sequenceDiagram
     autonumber
 
-    participant T as "当前任务"
-    participant F as "RCU功能状态"
-    participant M as "rcu_lock_map"
-    participant H as "current held_locks[]"
-    participant Q as "RCU查询或断言"
+    participant T as 当前任务
+    participant F as RCU功能状态
+    participant M as rcu_lock_map
+    participant H as current held_locks[]
+    participant Q as RCU查询或断言
 
-    T->>F: "__rcu_read_lock()建立当前配置的功能约束"
-    T->>M: "rcu_lock_acquire(map)"
-    M->>H: "lock_acquire read=2 check=0登记影子持有记录"
-    Q->>H: "lock_is_held(map)查询精确实例"
-    H-->>Q: "返回held或not-held"
-    T->>M: "rcu_lock_release(map)"
-    M->>H: "删除匹配记录并恢复链键"
-    T->>F: "__rcu_read_unlock()撤销功能约束"
+    T->>F: V1 __rcu_read_lock建立功能约束
+    T->>M: V2 rcu_lock_acquire(map)
+    M->>H: lock_acquire read=2 check=0登记影子持有记录
+    alt V3 查询时检查器仍有效
+        Q->>H: 查询map实例及相应上下文
+        H-->>Q: V4 消费调试答案，必要时诊断
+    else 登记后检查器已停用
+        Q->>Q: 保守答案或跳过诊断，功能路径继续
+    end
+    T->>M: V5 rcu_lock_release(map)
+    M->>H: 检查器有效时撤销匹配记录
+    T->>F: V6 __rcu_read_unlock撤销功能约束
 ```
 
-这张图刻意画出两条状态轴：`F` 是 RCU 正确性依赖的功能状态，`H` 是 Lockdep 的当前影子状态。只有两条轴的事件顺序和配对忠实，查询结果才具有诊断意义。
+本图沿模块导读的V阶段：V1功能进入，V2检查登记，V3取得/查询，V4按条件诊断，V5撤销登记，V6功能退出。诊断若发现错误只报告，不代替补锁、等待或撤销已经发生的指针加载。普通 `rcu_dereference` 的加载与告警先后见[公共取得宏](P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.3.2_rcu_dereference取得实现)。
+
+这张图刻意画出两条状态轴：`F` 是 RCU 正确性依赖的功能状态，`H` 是 Lockdep 的当前影子状态。只有两条轴的事件顺序和配对忠实，查询结果才具有诊断意义。若框架中途停检，后续release也不保证继续更新影子账本；这些残留不能作为功能仍持有的证据，实际RCU退出仍须照常执行。
 
 ## 4.5\_四个map怎样落到Lockdep当前账本
 
@@ -263,23 +275,23 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    K1["rcu_lock_key<br/>静态锁类身份"] --> M1["rcu_lock_map<br/>全局实例地址"]
-    K2["rcu_bh_lock_key"] --> M2["rcu_bh_lock_map"]
-    K3["rcu_sched_lock_key"] --> M3["rcu_sched_lock_map"]
-    K4["rcu_callback_key"] --> M4["rcu_callback_map"]
+    K1["rcu_lock_key<br/>静态锁类身份"] -->|作为key字段| M1["rcu_lock_map<br/>全局实例地址"]
+    K2["rcu_bh_lock_key"] -->|作为key字段| M2["rcu_bh_lock_map"]
+    K3["rcu_sched_lock_key"] -->|作为key字段| M3["rcu_sched_lock_map"]
+    K4["rcu_callback_key"] -->|作为key字段| M4["rcu_callback_map"]
 
-    M1 --> A["rcu_lock_acquire/release"]
-    M2 --> A
-    M3 --> A
-    M4 --> A
-    A --> C["Lockdep lock class<br/>按key登记或复用"]
-    C --> H["current held_locks[]<br/>记录instance等于map地址"]
-    H --> Q["lock_is_held(map)<br/>RCU held查询与断言"]
+    M1 -->|传入实例地址| A["rcu_lock_acquire/release"]
+    M2 -->|登记或撤销| A
+    M3 -->|登记或撤销| A
+    M4 -->|包围延迟动作| A
+    A -->|查询或建立类| C["Lockdep lock class<br/>按key登记或复用"]
+    C -->|有效登记写入实例| H["current held_locks[]<br/>记录instance等于map地址"]
+    H -->|检查路径读取| Q["lock_is_held(map)<br/>RCU held查询与断言"]
 ```
 
 首次遇到某个 map 时，Lockdep 可由 key 建立或查找对应 lock class；每次进入则把具体 `map` 地址写进当前任务的 `held_lock.instance`。查询按 map 实例匹配当前账本，不是读取 map 内部的“已加锁位”。
 
-所以 `struct lockdep_map` 的全局对象本身基本是 **身份载体**：状态变化主要发生在 `current->held_locks[]` 和 Lockdep 全局类/历史结构中。两个任务同时进入普通 RCU 读侧时，它们各自拥有一条指向同一个 `rcu_lock_map` 的 current 记录，不会争抢 map，也不会互相阻塞。
+所以 `struct lockdep_map` 的全局对象本身基本是 **身份载体**：状态变化主要发生在 `current->held_locks[]` 和 Lockdep 全局类/历史结构中。两个任务同时进入普通RCU读侧时，各自维护指向同一map的current记录，不以该map实现功能互斥。检查器首次注册锁类等操作仍可能涉及框架全局同步，启用检查也有账本维护成本；“map不是功能锁”不等于诊断零成本。这里常规包装传 `nest_lock=NULL`，不依赖通用Lockdep的同类nest_lock引用折叠。
 
 ### 4.5.2\_嵌套读侧为何不能只用一个布尔值
 
@@ -302,7 +314,21 @@ rcu_read_unlock()
 
 ### 4.6.1\_rcu\_read\_lock\_held\_common先决定能否相信Lockdep
 
-[`kernel/rcu/update.c`](../../linux/kernel/rcu/update.c) 先用公共前置函数处理检查器不可用、EQS 和 CPU offline：
+[`kernel/rcu/update.c`](../../linux/kernel/rcu/update.c) 的有效性函数先组合三个条件：
+
+```c
+/**
+ * @brief 判断RCU的Lockdep调试查询当前能否作为可靠检查输入。
+ * @note 这是检查器门控，不是功能RCU开启状态。
+ */
+noinstr int notrace debug_lockdep_rcu_enabled(void)
+{
+	return rcu_scheduler_active != RCU_SCHEDULER_INACTIVE && READ_ONCE(debug_locks) &&
+	       current->lockdep_recursion == 0;
+}
+```
+
+`rcu_scheduler_active`排除RCU调度基础尚未建立的阶段，`debug_locks`允许框架在严重诊断、容量等问题后停检，`lockdep_recursion`避免检查器自身再次递归检查。`noinstr/notrace`限制插桩，不会给RCU业务增加同步保证。三项全成立后，公共前置函数才继续看RCU watching与在线条件：
 
 ```c
 /**
@@ -328,11 +354,16 @@ static bool rcu_read_lock_held_common(bool *ret)
 }
 ```
 
-这说明 `*_held()` 是 **调试谓词**，不是绝对精确的功能状态读取器。早期启动、Lockdep 已关闭或检查器递归时，它宁可返回保守的 true 以避免虚假告警；只有检查器可依赖时才查询 map。EQS 和 offline 判断则防止把非法上下文误报成合法读侧。
+这说明 `*_held()` 是 **调试谓词**，不是绝对精确的功能状态读取器。早期启动、Lockdep 已关闭或检查器递归时，它宁可返回保守的 true 以避免虚假告警；只有检查器可依赖时才查询 map。只有通过第一道有效性门控，才会走EQS和offline判断；不能把源文件注释概括成“离线总返回false”。`rcu_is_watching()` 查询RCU是否把本CPU计入活动上下文，不等于CPU是否在执行指令。
+
+在线检查还带有自己的退化条件。`HOTPLUG_CPU`与`PROVE_RCU`同时开启才使用 `tree.c` 的 `rcu_lockdep_current_cpu_online()`；否则头文件直接返回true。实际函数在NMI或调度尚未完全启用时保守返回true，其他情况短暂禁止抢占以固定本CPU，通过 `rcu_rdp_cpu_online(rdp)` 检查节点在线位；若全局 `ofl_lock` 处于锁定状态也放行，以避免启动/热插拔更新窗口误报。后一个条件甚至可能观察到其他CPU持锁，代价是漏掉一次警告，不是获得严格在线证明。该函数供诊断使用，不能拿来决定硬件CPU是否可以收中断。
+
+修改有效性或共同前置检查时，必须检查保守答案的极性：这里返回true意为“不用负结果触发误报”，不是授权调用方释放对象。
 
 ### 4.6.2\_四个查询为何不都直接读取同一个map
 
 ```c
+/** @brief 有效检查环境下查询普通RCU map，其余遵守common的保守答案。 */
 int rcu_read_lock_held(void)
 {
 	bool ret;
@@ -342,6 +373,7 @@ int rcu_read_lock_held(void)
 	return lock_is_held(&rcu_lock_map);
 }
 
+/** @brief 接受sched map或不可抢占的功能上下文。 */
 int rcu_read_lock_sched_held(void)
 {
 	bool ret;
@@ -351,6 +383,7 @@ int rcu_read_lock_sched_held(void)
 	return lock_is_held(&rcu_sched_lock_map) || !preemptible();
 }
 
+/** @brief 以BH/IRQ状态检查相应功能上下文。 */
 int rcu_read_lock_bh_held(void)
 {
 	bool ret;
@@ -361,23 +394,45 @@ int rcu_read_lock_bh_held(void)
 }
 ```
 
-普通查询必须看到精确的 `rcu_lock_map` 记录。sched 查询还接受功能上下文可直接证明的 `!preemptible()`。BH 查询最终使用 `in_softirq() || irqs_disabled()`，而不是直接查询 `rcu_bh_lock_map`；上游注释说明这条功能上下文判断同时覆盖启用与关闭 `CONFIG_PROVE_RCU` 的情形。`rcu_bh_lock_map` 仍然用于精确断言、any-held 和失配诊断，不能因此删除。
+有效性共同前置条件通过后，普通查询检查 `rcu_lock_map` 记录。sched 查询还接受功能上下文可直接证明的 `!preemptible()`。BH 查询最终使用 `in_softirq() || irqs_disabled()`，而不是直接查询 `rcu_bh_lock_map`；上游注释说明这条功能上下文判断同时覆盖启用与关闭 `CONFIG_PROVE_RCU` 的情形。`rcu_bh_lock_map` 仍然用于精确断言、any-held 和失配诊断，不能因此删除。
 
 `rcu_read_lock_any_held()` 依次检查三个 map，最后用 `!preemptible()` 作为更宽的功能上下文证据：
 
 ```c
-if (lock_is_held(&rcu_lock_map) ||
-    lock_is_held(&rcu_bh_lock_map) ||
-    lock_is_held(&rcu_sched_lock_map))
-	return 1;
-return !preemptible();
+/** @brief 查询三种普通RCU保护域，仍先经过共同有效性门控。 */
+int rcu_read_lock_any_held(void)
+{
+	bool ret;
+
+	if (rcu_read_lock_held_common(&ret))
+		return ret;
+	if (lock_is_held(&rcu_lock_map) ||
+	    lock_is_held(&rcu_bh_lock_map) ||
+	    lock_is_held(&rcu_sched_lock_map))
+		return 1;
+	return !preemptible();
+}
 ```
 
 `rcu_callback_map` 不属于任何 reader-held 查询。callback 已经过 GP 并进入延迟动作执行阶段，它与“当前正在借用受 RCU 保护对象的 reader”是不同逻辑域。
 
 ### 4.6.3\_断言和自等待检查怎样使用map
 
-RCU 公共头文件和同步等待入口直接查询 map：
+断言要回答“明确要求的API范围是否存在”，不能用比它更宽的held谓词替代。`include/linux/rcupdate.h` 的共同helper还把非法watching/online条件纳入判断，并在判定前后检查有效性：
+
+```c
+/** @brief 为RCU断言组合违规条件与运行期有效性；true表示可以告警。 */
+static inline bool lockdep_assert_rcu_helper(bool c)
+{
+	return debug_lockdep_rcu_enabled() &&
+	       (c || !rcu_is_watching() || !rcu_lockdep_current_cpu_online()) &&
+	       debug_lockdep_rcu_enabled();
+}
+```
+
+参数 `c`在调用helper前求值，所以第一次有效性测试并不阻止实参中的held查询本身。helper确保不会因为检查器已停用而把该结果用于告警；第二次测试防止检查过程中被并发停用造成误报。外层使用 `WARN_ON_ONCE`；同步等待等位置使用的 `RCU_LOCKDEP_WARN` 另有每展开点的一次报告标志，完整宏见[告警接口](P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.6_RCU_LOCKDEP_WARN检查适配层)。
+
+RCU公共头文件和同步等待入口消费map的关系如下：
 
 ```text
 lockdep_assert_in_rcu_read_lock()
@@ -395,7 +450,7 @@ synchronize_rcu()
 
 精确断言故意要求调用者实际经过相应 RCU API。例如仅执行 `local_bh_disable()` 不等于调用了 `rcu_read_lock_bh()`，因此 `lockdep_assert_in_rcu_read_lock_bh()` 仍要求 `rcu_bh_lock_map` 记录。相反，`rcu_read_lock_bh_held()` 作为较宽的调试谓词接受功能上下文。两组接口的证明目标不同，不能因为返回条件相似就合并。
 
-`synchronize_rcu()` 的三-map 检查只负责报告已经执行到的非法自等待调用。真正阻塞、推进 GP 和唤醒等待者的功能链仍由 [`synchronize_rcu()` 接口实现](P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.4_synchronize_rcu接口实现)和[非抢占式 Tree RCU 关键函数](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.3_同步调用怎样借回调等待GP结束)承担。
+`synchronize_rcu()` 的三-map 检查只负责报告已经执行到的非法自等待调用。真正阻塞、推进 GP 和唤醒等待者的功能链仍由 [`synchronize_rcu()` 接口实现](P01_Linux_6.12_RCU_公共接口与检查机制源码详解.md#1.4_synchronize_rcu接口实现)和[通用等待桥](P02_Linux_6.12_Tree_RCU_等待桥_QS与节点汇聚关键函数源码实现.md#2.3_同步调用怎样借回调等待GP结束)承担。
 
 ## 4.7\_rcu\_callback\_map怎样标记延迟动作上下文
 
@@ -424,7 +479,9 @@ for (; rhp; rhp = rcu_cblist_dequeue(&rcl)) {
 }
 ```
 
-同一文件的批量 `kfree_rcu` 与 `kvfree_rcu` 实际释放路径也在释放动作前后取得和释放 `rcu_callback_map`。这使普通函数 callback 和优化后的直接释放路径对检查器呈现一致的“RCU 延迟动作正在执行”身份。
+`rcu_cblist_dequeue()` 从已经提取的本地待执行链取下一项，`rhp->func`暂存为f并清空后才调用，map的release在f返回后。GP成熟和队列提取见[回调队列实现](P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md#9.6_rcu_do_batch为何先抽取再锁外执行)，这里的裁剪只回答annotation包围顺序，不把debug head检查或预算控制当成可删除功能。
+
+同一文件的批量 `kfree_rcu` 与 `kvfree_rcu` 实际释放路径也在释放动作前后取得和释放 `rcu_callback_map`。这使这些普通函数callback和直接释放路径对检查器呈现一致身份。不能据此外推所有SRCU、Tasks或其他回调家族都包同一个map，新增消费者必须核对它真正经过的调用路径。
 
 ### 4.7.2\_MapleTree怎样消费callback身份
 
@@ -435,7 +492,7 @@ next = rcu_dereference_protected(slots[offset],
 				 lock_is_held(&rcu_callback_map));
 ```
 
-这里的 `lock_is_held(&rcu_callback_map)` 是传给 `rcu_dereference_protected()` 的 **可检查保护理由**。它只能证明当前路径确实由带 annotation 的 RCU callback 执行范围调用；dead node 为什么可以在该阶段被受保护地遍历，还依赖 Maple Tree 自己的对象状态、入口封闭和 callback 生命周期协议。map 不会自动锁住 `slots`，也不会为任意 callback 内的任意指针提供安全性。
+这里的 `lock_is_held(&rcu_callback_map)` 是传给 `rcu_dereference_protected()` 的 **可检查保护理由**。在检查器有效且记录可信的前提下，它用于检查当前路径是否位于带annotation的RCU callback范围；dead node 为什么可以在该阶段被受保护地遍历，还依赖 Maple Tree 自己的对象状态、入口封闭和 callback 生命周期协议。map 不会自动锁住 `slots`，也不会为任意 callback 内的任意指针提供安全性。
 
 ### 4.7.3\_callback执行时序
 
@@ -443,26 +500,26 @@ next = rcu_dereference_protected(slots[offset],
 sequenceDiagram
     autonumber
 
-    participant G as "GP与segcblist"
-    participant B as "rcu_do_batch"
-    participant M as "rcu_callback_map"
-    participant H as "current held_locks[]"
-    participant C as "callback函数"
-    participant P as "受保护条件消费者"
+    participant G as GP与segcblist
+    participant B as rcu_do_batch
+    participant M as rcu_callback_map
+    participant H as current held_locks[]
+    participant C as callback函数
+    participant P as 受保护条件消费者
 
-    G-->>B: "callback进入DONE并被提取"
-    B->>M: "rcu_lock_acquire"
-    M->>H: "登记callback逻辑范围"
-    B->>C: "调用rhp->func"
-    C->>P: "lock_is_held(rcu_callback_map)"
-    P->>H: "查询精确map实例"
-    H-->>P: "held"
-    C-->>B: "callback返回"
-    B->>M: "rcu_lock_release"
-    M->>H: "撤销callback记录"
+    G-->>B: callback进入DONE并被提取
+    B->>M: rcu_lock_acquire
+    M->>H: 登记callback逻辑范围
+    B->>C: 调用rhp->func
+    C->>P: lock_is_held(rcu_callback_map)
+    P->>H: 查询精确map实例
+    H-->>P: held
+    C-->>B: callback返回
+    B->>M: rcu_lock_release
+    M->>H: 撤销callback记录
 ```
 
-`rcu_callback_map` 的进入点必须在 callback 之前，退出点必须在 callback 返回之后。若只包住 trace 或 debug 调用，callback 内的保护条件会错误失败；若 release 遗漏，后续同一任务执行的无关代码会错误地被认为仍在 callback 范围内。
+`rcu_callback_map` 的进入点必须在 callback 之前，退出点必须在 callback 返回之后。本图以检查器有效为前提；配置关闭或登记失败不会阻止功能callback执行。若只包住 trace 或 debug 调用，callback 内的保护条件会错误失败；若 release 遗漏，后续同一任务执行的无关代码会错误地被认为仍在 callback 范围内。
 
 ## 4.8\_配置关闭时对象和查询怎样退化
 
@@ -555,21 +612,21 @@ static inline int debug_lockdep_rcu_enabled(void) { return 0; }
     → acquire/release深度最终回到入口前状态
 ```
 
-本仓库知识整理任务不修改外部源码树，也未在本次执行这些内核构建；上表是读者实际修改 Linux 源码后的验证要求。
+本仓库知识整理任务不修改外部源码树，也未在本次执行这些内核构建；上表是读者实际修改Linux源码后的验证要求。合法用例未告警，只能说明已覆盖且检查器持续有效的路径没有触发相应条件；还要记录启动配置、是否出现停检信息、测试路径是否真的到达，而不能只统计终端有没有红字。
 
 ## 4.10\_本章结论与复核问题
 
 四个对象不是四把 RCU 功能锁，而是四个 **RCU 专属 Lockdep 身份**。RCU 负责选择身份、wait type、事件位置和消费者；Lockdep 负责把事件变成 current 影子记录、锁类和查询结果。两层缺一不可，但实现所有权不能混在同一篇里重复维护。
 
-复核时应能回答：
+复核时先自己回答，再与下面的判断对照：
 
-1. `extern`、全局定义、静态 key 和 `EXPORT_SYMBOL_GPL()` 各自解决什么问题？
-2. 为什么普通/BH/sched map 需要不同名称和 key，为什么 callback 不能复用 reader map？
-3. `read=2`、`check=0` 和三个 wait type 参数分别怎样改变 Lockdep 建模？
-4. 为什么 `rcu_read_lock_bh_held()` 不直接查询 `rcu_bh_lock_map`，但 BH map 仍不可删除？
-5. `rcu_callback_map` 能证明什么，为什么它不能单独证明 callback 中任意指针访问安全？
-6. 若把 `rcu_lock_release()` 移到功能退出之后，哪些检查窗口会失真？
-7. `CONFIG_DEBUG_LOCK_ALLOC=n` 时为什么不会产生四个 extern 的链接错误？
+1. `extern`给其他翻译单元声明，定义分配存储，key确定类身份，map地址确定实例，GPL导出允许符合条件的模块解析符号。只改名字不会创建新的类。
+2. 四个map分开表示三种reader范围与callback范围。共用key会混淆类属性，共用map还会直接丢失范围身份；callback身份也不代表任意指针都安全。
+3. `read=2`表示可递归读取得，`check=0`跳过该取得的完整依赖链验证，wait type另行表达进入与内部约束。它们都不实现功能锁。
+4. 仅关闭BH时，较宽的 `rcu_read_lock_bh_held()`可以成立，而要求实际BH API登记的断言仍可能失败；两者检查的问题不同。
+5. 把release移到功能退出之后，会留下功能已结束但影子仍在的窗口；遗漏release还会污染之后同任务的查询。反之遗漏acquire不会替功能侧取消保护，但会使诊断记录缺失。
+6. `DEBUG_LOCK_ALLOC=n`时wrapper宏丢弃参数，不生成map有效引用；普通/BH的held返回1只是保守调试答案，不能据此绕过 `rcu_read_lock()`。
+7. 检查器因早期启动、递归或 `debug_locks=0` 不可用时，common先保守返回，后续watching/online条件未必执行。“未告警”因此不是读者协议正确的充分证据。
 
 源码总入口：[Linux 6.12 RCU 源码总阅读索引](../navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)。
 
