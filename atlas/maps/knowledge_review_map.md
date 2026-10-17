@@ -838,6 +838,9 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [同一次打开怎样跨越对象状态](../../research/source_reading/vfs/navigation/P02_同一次打开怎样跨越对象状态.md)
+        - 🔴 [描述符表与打开对象的状态归属](../../research/source_reading/vfs/source_explanations/P01_描述符表与打开对象的状态归属.md)
+        - 🔴 [路径名称与实例的字段关系](../../research/source_reading/vfs/source_explanations/P02_路径名称与实例的字段关系.md)
     - Linux 通用机制
         - 🔴 [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md)
         - 驱动实验

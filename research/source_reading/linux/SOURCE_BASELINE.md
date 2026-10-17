@@ -2836,3 +2836,11 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 新增保存原件：Documentation/filesystems/vfs.rst blob `0b18af3f954eb75e72805a04cc486f609dd02b43`、path-lookup.rst blob `2b2df6aa54324bfe82ae14eb20444f249f36b3ec`、files.rst blob `eb770f891b275f3e8b905f1bb794494a61dde54d`；include/linux/fdtable.h blob `b1c5722f2b3ce4ba82e89716d5e27f85c67a8afd`、fs_struct.h blob `783b48dedb723f159a822cd8debcd533d713457f`、path.h blob `7ea389dc764bbbd9f2279fd0d2ae00b5d4ad34e5`。均保持上游内容与路径。path-lookup.rst第1189行原有尾随空格按原件保留，沿既有做法为该文件设置精确的Git空白检查属性，不修改原件摘要。
 
 新增 [VFS源码大纲](../vfs/大纲.md) 与唯一总索引，补齐Input源码目录的大纲入口。九图渲染目视，正文冷读、代码一致性、标题元数据、长度和锚点检查；源码索引的链接密度提示按定位原件的职责保留。Obsidian实际旧VFS对象拓扑入口同步到现存第三章，不改变人工评审状态。
+
+## 1.282\_VFS对象状态与阶段交接
+
+2026-10-18，重写 [VFS对象拓扑](../../../knowledge/kernel_subsystems/vfs/P03_VFS_状态与对象拓扑.md#3.1_先把一个文件的状态拆成几条独立轴)，新增 [对象周期导读](../vfs/navigation/P02_同一次打开怎样跨越对象状态.md#2.1_先确认观察的是哪一条状态轴) 与两篇唯一字段说明。沿S0～S6区分上下文、未公开准备、表项发布、共享读取、删名、fd移除和最后归还；把负dentry、哈希脱链、名称链接数和内存存续分别解释，不再混画成单一状态机。
+
+仍从固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 读取。十二个结构声明及NR_OPEN_DEFAULT宏按定义身份核对；完整声明逐token一致，裁剪声明只删除已标注成员/布局内容，保留字段及顺序与原件一致。新增include/linux/nsproxy.h原件，blob `dab6a1734a2265d4e75997a9da00810a7ef832ec`。沿用上一节已核对的fs.h、fdtable.h、fs_struct.h、path.h、mount.h、dcache.h、sched.h及fs/mount.h，并读open.c、file.c、dcache.c和file_table.c的相应路径校正阶段边界。
+
+正文与导读不重复函数体；现有close同步清理说明保持唯一位置。九图渲染目视、四篇冷读及连续性、标题元数据、长度、锚点检查完成。字段声明核对不等于目标并发压力测试；没有执行内核中的rename、fd复用、扩容、卸载或回收实验。VFS总索引31条内部链接按原件与实现定位职责保留密度提示。

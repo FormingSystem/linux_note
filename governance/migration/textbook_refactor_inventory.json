@@ -8230,7 +8230,10 @@
       "research/source_reading/input/source_explanations/P10_触摸属性怎样改变坐标与轴参数.md",
       "research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md",
       "research/source_reading/vfs/大纲.md",
-      "research/source_reading/input/大纲.md"
+      "research/source_reading/input/大纲.md",
+      "research/source_reading/vfs/navigation/P02_同一次打开怎样跨越对象状态.md",
+      "research/source_reading/vfs/source_explanations/P01_描述符表与打开对象的状态归属.md",
+      "research/source_reading/vfs/source_explanations/P02_路径名称与实例的字段关系.md"
     ],
     "language_review": {
       "status": "complete",

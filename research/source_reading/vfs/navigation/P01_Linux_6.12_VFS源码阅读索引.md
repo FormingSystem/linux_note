@@ -46,6 +46,8 @@ flowchart TD
 
 第一轮不要同时展开全部目录。先读 [为什么需要VFS](../../../../knowledge/kernel_subsystems/vfs/P01_为什么需要_VFS.md#1.3_在一个完整程序中观察名字与打开关系) 的完整实验和 [抽象机制推演](../../../../knowledge/kernel_subsystems/vfs/P02_VFS抽象机制推演.md#2.1_一张操作表能先做出什么)，明确自己要解释的是哪个共享关系，再用下表定位声明和路径。后续章节按问题逐步细化实现，不能用本索引的一行文件名代替某条路径的完整学习。
 
+[对象周期模块导读](P02_同一次打开怎样跨越对象状态.md#2.1_先确认观察的是哪一条状态轴) 将S0～S6落到公开、名称变化和最终归还，分别进入 [描述符与打开字段](../source_explanations/P01_描述符表与打开对象的状态归属.md#1.1_表项状态与打开状态的边界) 和 [路径名称与实例字段](../source_explanations/P02_路径名称与实例的字段关系.md#2.1_任务的查找上下文不是描述符表)。两份实现页保留声明及明确裁剪边界，导读不重复定义。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |
@@ -53,6 +55,7 @@ flowchart TD
 | 文件系统、本体与一次打开分别在哪里 | [include/linux/fs.h](../../linux/include/linux/fs.h) | file_system_type、super_block、inode、file的字段类型和关系；声明不证明更新顺序 |
 | fd数字怎样找到打开对象 | [include/linux/fdtable.h](../../linux/include/linux/fdtable.h)、[fs/file.c](../../linux/fs/file.c) | files_struct、fdtable、分配发布与关闭，不把FD标志混成file状态标志 |
 | 当前目录与根如何保存 | [include/linux/fs_struct.h](../../linux/include/linux/fs_struct.h) | root、pwd及对应锁和序列状态 |
+| 挂载命名空间怎样从任务到达 | [include/linux/nsproxy.h](../../linux/include/linux/nsproxy.h) | 命名空间关联容器及mnt_ns；与fs_struct的root/pwd分开 |
 | 路径为何有两部分 | [include/linux/path.h](../../linux/include/linux/path.h)、[include/linux/mount.h](../../linux/include/linux/mount.h) | path中的vfsmount与dentry，视图根和实例归属 |
 | 名称缓存保存哪些关系 | [include/linux/dcache.h](../../linux/include/linux/dcache.h)、[fs/dcache.c](../../linux/fs/dcache.c) | 父对象、名称、inode关联、哈希与引用；不存在名称与已脱链名称不同 |
 | 内部挂载拓扑在哪 | [fs/mount.h](../../linux/fs/mount.h)、[fs/namespace.c](../../linux/fs/namespace.c) | 内嵌vfsmount、父挂载、接入点和命名空间 |
