@@ -2352,3 +2352,9 @@ L0～L6将私有初始化、发布、旧指针消费、撤销、GP资格与实�
 2026-10-17，冷读RCU源码导航P09，对照固定 `srcutree.c`、`srcutree.h` 的累计计数、双扫描、尺寸状态、回调和同步等待。修正图中srcu_idx归属为srcu_struct，明确GP work的真实字段为srcu_usage.work；扫描先取所有possible CPU的unlock总数、屏障、再取lock总数。小域集中boot CPU队列，大域才分散，srcu_node组织需求而非读者退出证明。
 
 对齐U0～U6，补未配平重试、flip不是独立编码、callback唤醒栈上completion及返回屏障。强调读侧可睡眠不授权回调阻塞。三图渲染目视，17条出链、6条标题入链、严格连续性与篇幅3542字词检查通过；全仓732篇、9387有效本地链接无缺失。未运行目标SRCU实例、迁移或销毁实验。
+
+## 1.238\_Tasks源码导读的取证集合与交付复核
+
+2026-10-17，冷读RCU源码导航P10，核对固定 `tasks.h`、`rcupdate_trace.h` 和 `kernel/workqueue.c`。由旧代码执行背景建立三种flavor，补控制实例、per-CPU队列选择、经典holdout引用与调度快照、退出补充路径。Trace按在线current快照再possible CPU阻塞链建立集合；特殊unlock写共享状态，后续GP扫描结合IPI结束才摘除holdout，不把旧注释当作直接唤醒证据。
+
+统一K0～K6，补GP序列与回调completion的交付、早期启动和回调不阻塞条件。保留Rude辅助函数分配失败而调用者未检查的固定版本边界。两图渲染目视，10条本地出链、3条标题入链、严格连续性和篇幅3295字词检查通过；全仓732篇、9395有效本地链接无缺失。未执行目标Tasks线程、IPI或动态代码卸载实验，也未新增逐函数实现页。
