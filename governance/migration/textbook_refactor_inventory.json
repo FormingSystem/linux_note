@@ -6745,6 +6745,18 @@
           "当前出版7卷53来源唯一存在；全仓733篇9434本地链接检查通过"
         ],
         "limits": "未执行目标内核构建或GP与worker压力实验。"
+      },
+      "research/source_reading/rcu/source_explanations/P06_Linux_6.12_Tree_RCU_拓扑与CPU热插拔源码实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "补热插拔H0到H9与CPUHP配对，区分CPU、任务和callback责任，修正代数索引及配置边界。",
+        "validation": [
+          "九处函数裁剪有序词法核对及人工省略审查，三图渲染目视",
+          "20出链20标题入链、严格连续性及约6000字词检查通过",
+          "实际格式元数据命名及全仓9438本地链接检查通过"
+        ],
+        "limits": "未执行目标CPU上下线或回调迁移压力实验。"
       }
     },
     "additional_documents": [
