@@ -838,6 +838,11 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [描述符共享查询与关闭的交接](../../research/source_reading/vfs/navigation/P12_描述符共享查询与关闭的交接.md)
+        - 🔴 [描述符预留扩容与发布协议](../../research/source_reading/vfs/source_explanations/P27_描述符预留扩容与发布协议.md)
+        - 🔴 [描述符查询的引用验证与轻量借用](../../research/source_reading/vfs/source_explanations/P28_描述符查询的引用验证与轻量借用.md)
+        - 🔴 [描述符复制与表共享的两层引用](../../research/source_reading/vfs/source_explanations/P29_描述符复制与表共享的两层引用.md)
+        - 🔴 [描述符脱离与最后file引用的释放](../../research/source_reading/vfs/source_explanations/P30_描述符脱离与最后file引用的释放.md)
         - 🔴 [打开请求怎样变成可发布的file](../../research/source_reading/vfs/navigation/P11_打开请求怎样变成可发布的file.md)
         - 🔴 [打开参数与描述符发布的外层事务](../../research/source_reading/vfs/source_explanations/P23_打开参数与描述符发布的外层事务.md)
         - 🔴 [打开末项的查询创建与再检查](../../research/source_reading/vfs/source_explanations/P24_打开末项的查询创建与再检查.md)

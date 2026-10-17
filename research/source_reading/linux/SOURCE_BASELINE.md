@@ -2994,3 +2994,28 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 | include/linux/file.h | `f98de143245abc1361f6e7118bc415ba0206d28a` |
 
 六篇冷读、十二图渲染目视、长度、标题元数据、锚点及正文/C材料一致性检查完成。当前工作配置未启用CONFIG_SECURITY和CONFIG_AUDIT，不能把相关条件分支写成实际拒绝或审计观察。没有在目标Linux编译运行本实验，也未进行资源耗尽、组合打开、后置安全拒绝、直接I/O或截断故障注入。
+
+## 1.292\_描述符两层引用与关闭清理边界
+
+2026-10-18，重写 [fd表与file生命周期](../../../knowledge/kernel_subsystems/vfs/P13_fd_table与file生命周期.md#13.1_共享号码表与共享打开关系是两回事)，新增 [模块导读](../vfs/navigation/P12_描述符共享查询与关闭的交接.md#12.1_沿同一生命周期区分表与file) 和扩容、查询、复制、清理四篇实现。沿F0～F5区分容器共享与逐项持有，补充位置/标志/号码复用完整C实验。
+
+固定提交仍为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，二十五函数摘录逐token核对。重查工作树HEAD仍为 `7b60e547d2783f8fee61ff7d7be3e066825b9c3a`，本次继续读取固定提交对象，未混用当前HEAD实现。源码明确用户close采用filp_flush与__fput_sync，内部filp_close使用fput；不能将二者写成统一的延后清理。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| fs/file.c | `4cb952541dd036a57177b3ce29587cdffa186aaa` |
+| fs/file_table.c | `18735dc8269a10d6e7085c9bb882a0788dd3e0ca` |
+| fs/open.c | `5da4df2f9b18a637ed83cde8f2fe52f9034f5290` |
+| fs/internal.h | `8c1b7acbbe8faadef678e5aa2dc3588a0d8140b1` |
+| include/linux/fdtable.h | `b1c5722f2b3ce4ba82e89716d5e27f85c67a8afd` |
+| include/linux/file.h | `f98de143245abc1361f6e7118bc415ba0206d28a` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| kernel/fork.c | `e192bdbc9adebbd6472ed4bb3e3f77260e98c673` |
+| kernel/task_work.c | `c969f1f26be58a87babfb7f05464e612bec1bc98` |
+| include/linux/task_work.h | `2964171856e00d2c97a2af04c44e0f3aa16c2ce6` |
+| Documentation/filesystems/files.rst | `eb770f891b275f3e8b905f1bb794494a61dde54d` |
+| fs/fcntl.c | `3d89de31066ae030ff3d4d3ca2cfe44e1c81539e` |
+
+十二份原件中新增fork、task_work、task_work头文件与fcntl，分别定位共享入口、最终清理登记和标志分层。files.rst的旧辅助名、指针名及笼统更新锁规则与当前实现分开说明。配置为ARM、Tiny RCU、SMP关闭；文件锁、EPOLL、DNOTIFY与锁依赖检查开启，没有据此宣称多核实测。
+
+六篇冷读、十二图渲染目视、长度、标题元数据、锚点、源码及正文/C材料一致性完成。没有目标Linux编译运行记录，也未进行扩容/复用并发压力、预留冲突、任务退出队列或release跟踪。

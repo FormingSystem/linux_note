@@ -8824,7 +8824,12 @@
       "research/source_reading/vfs/source_explanations/P23_打开参数与描述符发布的外层事务.md",
       "research/source_reading/vfs/source_explanations/P24_打开末项的查询创建与再检查.md",
       "research/source_reading/vfs/source_explanations/P25_组合打开与特殊路径的交接契约.md",
-      "research/source_reading/vfs/source_explanations/P26_file初始化与打开后失败清理.md"
+      "research/source_reading/vfs/source_explanations/P26_file初始化与打开后失败清理.md",
+      "research/source_reading/vfs/navigation/P12_描述符共享查询与关闭的交接.md",
+      "research/source_reading/vfs/source_explanations/P27_描述符预留扩容与发布协议.md",
+      "research/source_reading/vfs/source_explanations/P28_描述符查询的引用验证与轻量借用.md",
+      "research/source_reading/vfs/source_explanations/P29_描述符复制与表共享的两层引用.md",
+      "research/source_reading/vfs/source_explanations/P30_描述符脱离与最后file引用的释放.md"
     ],
     "language_review": {
       "status": "complete",
