@@ -6365,6 +6365,28 @@
           "五图渲染目视，两章严格连续性、精确锚点和全仓9216有效本地链接检查通过。"
         ],
         "limits": "v5.10 tree.h下载429，未作为已核对原件。练习为纸面推演；未执行nohz负载、trace采集、目标构建或热插拔实验。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P11_Tree_RCU_rcu_segcblist回调状态机.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "修正tail指针槽图、目标分配、在途len与entrain边界，说明merge丢弃未成熟目标并补边界推演。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交49694aaf；固定NXP原件核对，三个新增blob记录于SOURCE_BASELINE。",
+          "四图渲染目视，两章严格连续性与精确锚点、全仓9222有效本地链接检查通过。"
+        ],
+        "limits": "未执行目标内核构建、回调压力负载或trace采集。练习为对照源码的纸面推演；源码入口页仅同步锚点，不计全文复审。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P12_Tree_RCU_回调执行_批处理与限流.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "闭合资格到执行交接，核对预算条件、NOCB不可阻塞契约及释放宏，补部分执行计数练习。",
+        "date": "2026-10-17",
+        "validation": [
+          "全文冷读，内容提交49694aaf；固定NXP原件核对，三个新增blob记录于SOURCE_BASELINE。",
+          "四图渲染目视，两章严格连续性与精确锚点、全仓9222有效本地链接检查通过。"
+        ],
+        "limits": "未执行目标内核构建、回调压力负载或trace采集。练习为对照源码的纸面推演；源码入口页仅同步锚点，不计全文复审。"
       }
     },
     "additional_documents": [
@@ -6380,7 +6402,8 @@
       "knowledge/linux/data_structures/红黑树_rb-tree/P52_按字段区分Maple编码与错误状态.md",
       "knowledge/linux/data_structures/红黑树_rb-tree/P53_VMA游标怎样翻译范围请求.md",
       "knowledge/linux/data_structures/红黑树_rb-tree/P54_同一地址的四种VMA查询结果.md",
-      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md"
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md",
+      "tools/ai/codex/skills/build-linux-note-topic/references/concept_implementation_mapping.md"
     ],
     "language_review": {
       "status": "complete",
