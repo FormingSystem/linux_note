@@ -2772,3 +2772,9 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 固定证据仍为NXP提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`，核对两驱动、kernel/reboot.c、ARM32 reboot.c、notifier实现与契约、两份binding及Kconfig。实现页列路径与blob；include/linux/reboot.h补核对优先级0，blob `abcdde4df697969a8027bcb052efc00daabbbf6a`。明确最终POWER_OFF和RESTART均为atomic，cansleep后缀不改变上下文，prepare也在device_shutdown之后；ARM末期顺序不外推其他架构。
 
 保留restart wait-delay文字3000、Schema default100、C初始化3000的差异；初始open-source仅按此驱动选择输入，不冒充电气配置。普通注销与整机关机生命周期分开。八段源码逐定义/语句核对，五图渲染目视，两种极性和缺失wait-delay三个离线DTS输入核对。正文连续性、长度与锚点通过，导读48链接风险按已本地闭合K/L/R/M/F周期及导航职责保留。无dtbs_check、内核构建、真实关机重启、末期可访问性或脉冲实测。
+
+## 1.275\_Input事件语义与帧边界入门
+
+2026-10-18，重写 [Input入门](../../../knowledge/driver_model/input/P01_从硬件样本到统一输入事件.md)，从私有样本接口的价值及多应用解释成本引出统一事件、持久状态与同步帧。事件类型、独立客户端和协议边界依据NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的 `Documentation/input/event-codes.rst`（blob `b4557462edd7b3fef9e9cd6c2c3cb2d05bb531ab`）、UAPI及evdev实现核对。
+
+正文提供完整离线C模型，明确它不使用真实input_event二进制布局；首次包含两个轴是模型输入前提，不是新打开evdev的保证。GCC与Clang以严格警告编译，分别核对1、2、7记录读取块的相同帧结果、非法块长及末帧缺同步标记的失败路径。三图渲染目视，冷读核对变化记录与完整状态、read分块与协议分帧的区别。未执行目标内核构建或真实输入设备测试。
