@@ -26,7 +26,8 @@
       "knowledge/driver_model/device_tree/设备树语法专题-05-设备节点和驱动的绑定操作说明.md": "knowledge/driver_model/device_tree/P11_从设备描述到驱动服务怎样逐层确认.md",
       "knowledge/driver_model/gpio/P04_Linux_gpiolib_核心实现.md": "knowledge/driver_model/gpio/P04_Linux_gpiolib的对象与状态交接.md",
       "research/source_reading/linux/gpio/linux_6.12_gpio_核心路径.md": "research/source_reading/gpiolib/navigation/P01_Linux_6.12_GPIO源码阅读索引.md",
-      "knowledge/driver_model/gpio_consumers/P02_输入_指示_电源与控制类_GPIO_Consumer.md": "knowledge/driver_model/gpio_consumers/P02_按设备功能选择GPIO实现.md"
+      "knowledge/driver_model/gpio_consumers/P02_输入_指示_电源与控制类_GPIO_Consumer.md": "knowledge/driver_model/gpio_consumers/P02_按设备功能选择GPIO实现.md",
+      "research/source_reading/linux/drivers/input/README.md": "research/source_reading/input/navigation/P01_Linux_6.12_Input源码阅读索引.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -7886,7 +7887,10 @@
       "research/source_reading/gpiolib/source_explanations/P05_GPIO映射与模拟事件怎样交接.md",
       "research/source_reading/gpiolib/navigation/P05_用户请求怎样持有线路与事件.md",
       "research/source_reading/gpiolib/source_explanations/P06_用户请求的发布与回收.md",
-      "research/source_reading/gpiolib/source_explanations/P07_事件缓冲与读取.md"
+      "research/source_reading/gpiolib/source_explanations/P07_事件缓冲与读取.md",
+      "research/source_reading/input/navigation/P02_事件状态怎样到达各客户端.md",
+      "research/source_reading/input/source_explanations/P01_事件接受与批量分发.md",
+      "research/source_reading/input/source_explanations/P02_evdev独立队列与读取边界.md"
     ],
     "language_review": {
       "status": "complete",

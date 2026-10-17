@@ -838,7 +838,10 @@ mindmap-plugin: basic
     - Linux 通用机制
         - 🔴 [Linux 源码阅读基线](../../research/source_reading/linux/SOURCE_BASELINE.md)
         - 驱动实验
-            - 🔴 [Linux 6.12.20 Input 子系统源码导读](../../research/source_reading/linux/drivers/input/README.md)
+            - 🔴 [Linux 6.12 Input源码阅读索引](../../research/source_reading/input/navigation/P01_Linux_6.12_Input源码阅读索引.md)
+                - 🔴 [事件状态怎样到达各客户端](../../research/source_reading/input/navigation/P02_事件状态怎样到达各客户端.md)
+                - 🔴 [事件接受与批量分发](../../research/source_reading/input/source_explanations/P01_事件接受与批量分发.md)
+                - 🔴 [evdev独立队列与读取边界](../../research/source_reading/input/source_explanations/P02_evdev独立队列与读取边界.md)
         - 🔴 [gpiolib源码阅读大纲](../../research/source_reading/gpiolib/大纲.md#1.1_沿一次请求进入固定实现)
             - 🔴 [Linux_6.12_GPIO源码阅读索引](../../research/source_reading/gpiolib/navigation/P01_Linux_6.12_GPIO源码阅读索引.md)
             - 🔴 [线路对象怎样完成请求与退出](../../research/source_reading/gpiolib/navigation/P02_线路对象怎样完成请求与退出.md)

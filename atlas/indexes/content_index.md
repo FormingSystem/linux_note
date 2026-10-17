@@ -45,7 +45,7 @@ domains:
 | 字符设备 | [专题大纲](../../knowledge/driver_model/character_device/大纲.md)、[读写契约与复制状态模型](../../knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md)、[有限窗口模板](../../knowledge/driver_model/character_device/P10_字符设备驱动模板.md)、[环形流与等待模板](../../knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md)、[实验材料](../../labs/kernel/character_device/materials/README.md)、[固定版本 I/O 源码入口](../../research/source_reading/character_device/navigation/P01_Linux_6.12_字符设备源码阅读索引.md#1.2_由问题进入模块导读) |
 | 设备树与 Platform | [device_tree](../../knowledge/driver_model/device_tree)、[platform_bus](../../knowledge/driver_model/platform_bus/readme.md) |
 | GPIO | [GPIO 专题](../../knowledge/driver_model/gpio/大纲.md)、[标准 GPIO Consumer](../../knowledge/driver_model/gpio_consumers/大纲.md)、[gpiolib源码索引](../../research/source_reading/gpiolib/navigation/P01_Linux_6.12_GPIO源码阅读索引.md#1.1_版本身份与阅读路线) |
-| Input | [专题大纲](../../knowledge/driver_model/input/大纲.md) |
+| Input | [专题大纲](../../knowledge/driver_model/input/大纲.md) · [源码阅读索引](../../research/source_reading/input/navigation/P01_Linux_6.12_Input源码阅读索引.md#1.2_按当前问题进入模块与实现) |
 | misc 设备 | [完整问候服务与文件寿命](../../knowledge/driver_model/misc/readme.md#1.3_完整程序与返回契约)、[实验材料](../../labs/kernel/driver_entries/materials/README.md) |
 | 文件操作 | [打开、迭代与映射教材](../../knowledge/driver_model/file_operations/大纲.md#1.1_沿对象寿命逐步增加约束)、[版本成员参考](../../knowledge/driver_model/fundamentals/kernel_driver_mechanisms/data_strcuture_说明/struct_file_operations.md#1.2_按需求查询当前成员)、[完整实验材料](../../labs/kernel/file_operations/materials/README.md)、[源码导读](../../research/source_reading/character_device/navigation/P03_文件操作与打开寿命导读.md) |
 

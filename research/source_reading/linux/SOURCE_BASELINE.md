@@ -238,7 +238,7 @@ domains:
 | `Documentation/input/input-programming.rst` | Input 驱动编程说明 |
 | `Documentation/input/multi-touch-protocol.rst` | 多点触控 Protocol A/B 契约 |
 
-专题导读见 [`drivers/input/README.md`](drivers/input/README.md)。
+专题导读见 [Input源码阅读索引](../input/navigation/P01_Linux_6.12_Input源码阅读索引.md)。
 
 ## 1.7\_内存顺序证据
 
@@ -2778,3 +2778,11 @@ DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补�
 2026-10-18，重写 [Input入门](../../../knowledge/driver_model/input/P01_从硬件样本到统一输入事件.md)，从私有样本接口的价值及多应用解释成本引出统一事件、持久状态与同步帧。事件类型、独立客户端和协议边界依据NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的 `Documentation/input/event-codes.rst`（blob `b4557462edd7b3fef9e9cd6c2c3cb2d05bb531ab`）、UAPI及evdev实现核对。
 
 正文提供完整离线C模型，明确它不使用真实input_event二进制布局；首次包含两个轴是模型输入前提，不是新打开evdev的保证。GCC与Clang以严格警告编译，分别核对1、2、7记录读取块的相同帧结果、非法块长及末帧缺同步标记的失败路径。三图渲染目视，冷读核对变化记录与完整状态、read分块与协议分帧的区别。未执行目标内核构建或真实输入设备测试。
+
+## 1.276\_Input批量分发与独立客户端状态
+
+2026-10-18，重写 [体系结构正文](../../../knowledge/driver_model/input/P02_体系结构与事件传递.md#2.1_一份设备事实为什么需要多份读取进度)，将旧Input源码README迁入 [总阅读索引](../input/navigation/P01_Linux_6.12_Input源码阅读索引.md#1.1_固定版本与阅读任务)，保留稳定ID及原件路径，新增事件模块导读与两篇唯一实现。分别定位设备当前值、vals批次、handle连接、evdev实例、client环形队列和等待关系。
+
+固定证据为NXP提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`：input.c blob `c51858f1cdc556939c2ee1bd21669c71c169d84e`，evdev.c blob `b5cbb57ee5f60073a41d16da23a8d3fa6c09f04a`，内核与UAPI头文件身份列于实现页。修正每事件立即handler、handle_events返回已消费数、容量flush不改变可见帧边界、断开后必定排空读EOF等错误；区分两级grab、handler filter、client mask与inhibit。
+
+五篇完整冷读，十四段原件函数执行语句匹配，十图渲染目视，长度、连续性、完整标题锚点、元数据与范围内标题检查通过。全仓链接扫描无缺失；初次全差量标题检查还报告其他未完成文档问题，不以本批通过冒充全仓格式无误。未执行目标内核构建、真实设备输入、溢出或拔插测试。纸上游标推演不替代运行验证。
