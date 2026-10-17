@@ -9580,6 +9580,18 @@
           "全仓908篇链接无缺失，维护字符设备与GPIO请求的通用交接入口。"
         ],
         "limits": "没有目标Linux编译运行、设备热移除、配置组合或故障注入实测。"
+      },
+      "knowledge/kernel_subsystems/vfs/P25_VFS调试与源码追踪.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "以unlink后旧fd存续串联proc、系统调用与内核跟踪，区分目标能力、观察范围与证据限度。",
+        "validation": [
+          "六份固定原件核对Git对象，新增三份；proc字段、配置和跟踪条件冷读。",
+          "正文两图渲染目视、标题元数据、长度、锚点及C/Bash材料一致性完成。",
+          "Git附带Bash仅执行脚本-n语法检查通过；全仓908篇链接无缺失。"
+        ],
+        "limits": "没有目标Linux C编译运行、strace采集或tracefs实测；当前ARM未开启FTRACE与BPF_SYSCALL。"
       }
     },
     "additional_documents": [
