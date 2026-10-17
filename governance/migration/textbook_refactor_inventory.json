@@ -6984,7 +6984,14 @@
       "research/source_reading/rcu/source_explanations/P17_Linux_6.12_RCU配置选择参数与树形容量源码实现.md",
       "research/source_reading/rcu/source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md",
       "research/source_reading/rcu/source_explanations/P19_Linux_6.12_ARM中断状态保存与Tiny队列互斥源码实现.md",
-      "engineering/build/P01_Tiny_RCU配置与构建证据核对.md"
+      "engineering/build/P01_Tiny_RCU配置与构建证据核对.md",
+      "knowledge/driver_model/device_tree/设备树+platform开发/P04_地址单元与总线窗口转换.md",
+      "knowledge/driver_model/device_tree/设备树+platform开发/P05_中断连接怎样成为驱动可用的IRQ.md",
+      "knowledge/driver_model/device_tree/设备树+platform开发/P06_GPIO连接引脚复用与编号空间.md",
+      "knowledge/driver_model/device_tree/设备树+platform开发/P07_供电关系电压约束与启停责任.md",
+      "knowledge/driver_model/device_tree/设备树+platform开发/P08_时钟连接频率请求与使能计数.md",
+      "knowledge/driver_model/device_tree/设备树+platform开发/P09_OF属性读取与节点引用生命周期.md",
+      "knowledge/driver_model/device_tree/大纲.md"
     ],
     "language_review": {
       "status": "complete",

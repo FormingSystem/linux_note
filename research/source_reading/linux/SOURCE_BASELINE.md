@@ -2507,3 +2507,39 @@ P09为18条出链/18条标题入链，P15为10/17。两篇约7000和7700字词�
 | `Documentation/devicetree/bindings/leds/leds-gpio.yaml` | `7e11703acbd69b6427961db3f1055c57435bc41b` |
 
 [设备树驱动方式章](../../../knowledge/driver_model/device_tree/设备树+platform开发/P02_设备树驱动开发方式.md) 的独立教学 DTS 已用 DTC 1.6.1 编译与反编译，关键属性往返保留；该结果不是上游 binding Schema 通过。教学模块未执行目标内核构建、MODPOST、部署、加载或热插拔；当前标准工作树配置未确认。
+
+## 1.257\_设备树语法地址连接与引用周期拆分复核
+
+2026-10-17，完整冷读原设备树语法长篇后按信息单元拆成语法、地址、中断、GPIO、供电、时钟和 OF 引用七篇，保留平台配对与完整消费者实验的入口。修正 gpio-ranges 被当作全局 GPIO 分配、GIC 类型内索引与 INTID 混用、PPI 参数越界、PCI prefetch 标志、regulator 速率单位、clock 默认配置时机，以及子节点循环重复 put 等问题。旧完整 GPIO provider/LED 代码中的伪接口与生命周期缺陷改为遵守真实 consumer 契约的例子，不以未实现的硬件回调冒充可运行驱动。
+
+Linux 部分继续固定为 NXP 提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。以下文件从官方原始入口取得，DTSpec 文件单独固定为 devicetree-org/devicetree-specification 的 v0.4，不把规范版本当作内核版本。已有 OF/平台核心、regulator core 证据继续复用其固定提交内容；标准外部工作树当前配置与硬件运行仍未核对。
+
+| 来源内相对路径 | Git blob SHA-1 |
+| --- | --- |
+| `Documentation/devicetree/usage-model.rst` | `0717426856b229be1c52efc79b18dbc617d4c92f` |
+| `Documentation/devicetree/bindings/writing-schema.rst` | `7e71cdd1d6ded6cb3b6b4ae76d6249e2504a1cd5` |
+| `Documentation/devicetree/bindings/dts-coding-style.rst` | `8a68331075a098ab8f0a1fece9525c7a2f7d6ddc` |
+| `Documentation/devicetree/bindings/gpio/gpio.txt` | `d82c32217fff33620778132c84992aa53a1e9fe3` |
+| `Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt` | `d13b0cacdb3c693ee91b18dae680f6dba34135d1` |
+| `Documentation/devicetree/bindings/interrupt-controller/arm,gic.yaml` | `a2846e4934972168e287b4aad108eff30bf9e278` |
+| `Documentation/devicetree/bindings/interrupt-controller/arm,gic-v3.yaml` | `5f051c666cbe5ff86e243893ab414242ef35d3c9` |
+| `Documentation/devicetree/bindings/regulator/regulator.yaml` | `1ef380d1515ec7a5238d1fe541b204a96984c7b5` |
+| `Documentation/devicetree/bindings/regulator/fixed-regulator.yaml` | `51e2f6fb7a5a93f39a503072c0f5d26495064655` |
+| `Documentation/devicetree/bindings/clock/clock-bindings.txt` | `6fe541368889ec530c1a8a5a73ddecc44d18031e` |
+| `Documentation/devicetree/bindings/clock/fixed-clock.yaml` | `90fb1066068470943b09920f42176b7940b4a1c5` |
+| `Documentation/devicetree/bindings/clock/fixed-factor-clock.yaml` | `4afdb1c98f5fb60eea1de255851a215198e36a23` |
+| `Documentation/driver-api/gpio/consumer.rst` | `bb3366047fadb51bd9323f51d78cbf237a370d11` |
+| `Documentation/power/regulator/consumer.rst` | `9d2416f63f6e36ff47466a072a4dd101275f3983` |
+| `drivers/clk/clk-conf.c` | `303a0bb26e54a95655ce094a35b989c97ebc6fd8` |
+| `chapter2-devicetree-basics.rst` | `5ab9e6e53e0063785af31df5b72e8e2e2ee8e3ae` |
+| `chapter3-devicenodes.rst` | `958257ea4426acafeb79d6f25a6387f61e65a216` |
+| `chapter6-source-language.rst` | `7b74846b76fd9d7fe7cba4bd45c50280b9a28979` |
+| `drivers/of/property.c` | `c79d3645bee3be6d30baab3469d4c2e64a8c3dcc` |
+| `include/linux/gpio/consumer.h` | `db2dfbae8edbd12059826183b1c0f73c7a58ff40` |
+| `include/linux/clk.h` | `851a0f2cf42c8c1bbada49d991bc185587942155` |
+
+Linux 树中的 clock-bindings.txt 已转向 dt-schema。通用 clock Schema 另外固定为 dt-schema 提交 `5687115902ba74c1cd80bdab4772cc2cdfa75778` 的 `dtschema/schemas/clock/clock.yaml`，Git blob 为 `6d5b536daaef286904080301d705a5ebec3a0909`；只用其公共连接与 assigned 规则，Linux 6.12 是否执行由该版本 clk-conf.c 和 clk.h 核对，不把新 Schema 的全部属性自动下放为旧内核能力。
+
+DTC 1.6.1 与 fdtget/fdtoverlay 的 35 次离线调用验证五份独立或补齐根节点的描述：基础属性/标签、删除属性、overlay 合并、地址原始 reg、固定供电、时钟连接和通道片段均得到预期结果，无编译警告。补齐根节点仅用于通道片段的编码验证，不声称它成为完整可启动板级树。15 张 Mermaid 图已渲染并目视；七篇正文及三个导航入口严格连续性检查、完整标题出入链检查通过，均低于 10000 字词。
+
+这些验证不包含 binding Schema 全量校验、目标 Kbuild/MODPOST、模块部署/加载、IRQ/GPIO/电源/时钟实验或动态 overlay 生命周期测试。源码 API 核对不能替代这些运行证据。本文拆分未改变已有固定出版物，未找到需要迁移的原 P03 外部标题锚点；Atlas、专题大纲和平台入口同步到新学习路线，人工评审状态仍保持红色。
