@@ -2918,3 +2918,19 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 | Documentation/filesystems/path-lookup.rst | `2b2df6aa54324bfe82ae14eb20444f249f36b3ec` |
 
 四篇冷读、九图渲染目视、连续性、长度、标题元数据及锚点检查完成。引用实验复用名称与打开对象程序，未新增重复实现。没有目标缓存命中、并发rename或内存压力追踪；用户态ENOENT和旧fd继续读取只能说明外部语义，不能代替内部缓存路径和性能证明。
+
+## 1.288\_路径遍历的起点分量与结果交接
+
+2026-10-18，重写 [路径查找状态机](../../../knowledge/kernel_subsystems/vfs/P09_路径查找状态机.md#9.1_为什么不能先把路径当字符串化简)，新增 [完整路径导读](../vfs/navigation/P08_路径怎样从起点推进到结果交付.md#8.1_把位置文本与约束放进同一周期) 及起点、分量、链接三篇实现。沿L0～L5解释起点坐标、最后分量分流、链接后缀栈与结果持有转移；普通查询、父查询和打开末项保持职责区分。
+
+固定提交仍为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。二十二个函数和nameidata声明与fs/namei.c逐token一致；重新核对原件，新增两个接口头文件以区分公开RESOLVE和内部LOOKUP标志。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| fs/namei.c | `6795600c5738a56740bdeb2b4ec33f29545d918a` |
+| fs/open.c | `5da4df2f9b18a637ed83cde8f2fe52f9034f5290` |
+| include/linux/namei.h | `8ec8fed3bce81d9d73de17a2c4496a89c50b5652` |
+| include/uapi/linux/openat2.h | `a5feb7604948791c7a34ec0876c24a97eb5a375b` |
+| Documentation/filesystems/path-lookup.rst | `2b2df6aa54324bfe82ae14eb20444f249f36b3ec` |
+
+五篇冷读、十图渲染目视、连续性、长度、标题元数据和锚点检查完成。完整C实验以相对链接反证a/..的提前文本化简，正文与材料逐字一致；未在目标Linux编译或运行，未执行链接循环、并发rename、受限解析压力或分配失败注入。源码支持操作协议，实验输出仍标为预期。

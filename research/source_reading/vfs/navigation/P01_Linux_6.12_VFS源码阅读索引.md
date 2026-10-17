@@ -58,6 +58,8 @@ flowchart TD
 
 [名称缓存导读](P07_名称结果怎样发布失效与回收.md#7.1_把名称结果拆成几组可独立变化的状态) 沿D0～D5区分候选、正负结果、哈希可达性和引用，进入 [建立及发布](../source_explanations/P11_名称候选的建立发布与持有.md#11.1_分配候选只建立内存身份) 与 [失效及回收](../source_explanations/P12_名称失效与最后使用者退出.md#12.1_撤销正常名称索引不会自动释放对象)。
 
+[完整路径导读](P08_路径怎样从起点推进到结果交付.md#8.1_把位置文本与约束放进同一周期) 沿L0～L5解释起点、前导、转向、末项和结果交接，进入 [起点及持有](../source_explanations/P13_路径起点与结果持有的交接.md#13.1_本次遍历状态与任务中的嵌套上下文)、[单步推进](../source_explanations/P14_前导分量与单步位置推进.md#14.1_拆分时保留最后名字而不是提前执行末项操作) 与 [链接栈](../source_explanations/P15_符号链接的文本栈与路径跳转.md#15.1_跟随预算与保存后缀需要两种状态)。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |
@@ -74,6 +76,7 @@ flowchart TD
 | 用户配置命令与实验结果由什么支撑 | [include/uapi/linux/mount.h](../../linux/include/uapi/linux/mount.h)、[mm/shmem.c](../../linux/mm/shmem.c)、[fs/statfs.c](../../linux/fs/statfs.c) | 命令/属性、tmpfs参数与允许O_PATH的fd查询；源码核对不等于运行 |
 | 实例等待由什么承载 | [include/linux/wait_bit.h](../../linux/include/linux/wait_bit.h)、[kernel/sched/wait_bit.c](../../linux/kernel/sched/wait_bit.c) | 按s_flags地址定位共享等待桶，等待项保存地址键，发布与唤醒配对 |
 | 挂载传播和记录如何兑现 | [fs/pnode.c](../../linux/fs/pnode.c)、[fs/pnode.h](../../linux/fs/pnode.h)、[fs/proc_namespace.c](../../linux/fs/proc_namespace.c) | 同伴及下游连接、传播副本、mountinfo和事件观察 |
+| 公开解析限制如何映射到内部 | [include/uapi/linux/openat2.h](../../linux/include/uapi/linux/openat2.h)、[include/linux/namei.h](../../linux/include/linux/namei.h)、[fs/open.c](../../linux/fs/open.c) | RESOLVE与LOOKUP分开，普通openat不自动取得范围限制 |
 | 参数描述验证在哪里 | [include/linux/fs_parser.h](../../linux/include/linux/fs_parser.h)、[fs/fs_parser.c](../../linux/fs/fs_parser.c)、[fs/Kconfig](../../linux/fs/Kconfig) | 描述与参数值分开，验证配置关闭时的替代体 |
 | 代码持有与按需装入有哪些配置边界 | [include/linux/module.h](../../linux/include/linux/module.h)、[include/linux/kmod.h](../../linux/include/linux/kmod.h) | 模块引用契约与request_module退化，不等于类型已登记 |
 | 名称怎样进入打开或修改 | [fs/namei.c](../../linux/fs/namei.c)、[fs/open.c](../../linux/fs/open.c) | 起点、遍历、最后分量与打开检查，先找实际分支再追回调 |

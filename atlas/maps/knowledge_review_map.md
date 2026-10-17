@@ -838,6 +838,10 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [路径怎样从起点推进到结果交付](../../research/source_reading/vfs/navigation/P08_路径怎样从起点推进到结果交付.md)
+        - 🔴 [路径起点与结果持有的交接](../../research/source_reading/vfs/source_explanations/P13_路径起点与结果持有的交接.md)
+        - 🔴 [前导分量与单步位置推进](../../research/source_reading/vfs/source_explanations/P14_前导分量与单步位置推进.md)
+        - 🔴 [符号链接的文本栈与路径跳转](../../research/source_reading/vfs/source_explanations/P15_符号链接的文本栈与路径跳转.md)
         - 🔴 [名称结果怎样发布失效与回收](../../research/source_reading/vfs/navigation/P07_名称结果怎样发布失效与回收.md)
         - 🔴 [名称候选的建立发布与持有](../../research/source_reading/vfs/source_explanations/P11_名称候选的建立发布与持有.md)
         - 🔴 [名称失效与最后使用者退出](../../research/source_reading/vfs/source_explanations/P12_名称失效与最后使用者退出.md)
