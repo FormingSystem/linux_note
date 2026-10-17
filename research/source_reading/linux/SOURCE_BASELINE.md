@@ -3287,3 +3287,33 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 固定版本的非最后解冻可减少类别计数后返回-EINVAL，ext4_unfreeze不传出superblock提交结果且不会清除shutdown；这些事实按所选提交保留，不推导成其他版本接口。错误日志中的只读描述也不替代SB_RDONLY实际写入证据。
 
 六篇冷读、十三图渲染目视、长度、标题元数据、锚点与模型材料一致性完成。C准入模型用Windows MinGW GCC 14.2.0、C11及-Wall -Wextra -Werror编译运行通过，仅验证确定的收口与失败回退顺序；没有真实Linux冻结、卸载、并发压力或设备故障注入结果。
+
+## 1.302\_ramfs的实例名称与页数据责任
+
+2026-10-18，重写 [具体文件系统接入](../../../knowledge/kernel_subsystems/vfs/P23_具体文件系统接入VFS.md#23.1_先决定文件数据的权威位置)，新增 [模块导读](../vfs/navigation/P22_ramfs把缓存对象变成文件系统.md#22.1_沿一次实例使用定位状态) 及三篇实现。固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；三十四段函数与九张静态初始化表保留执行token，省去上游长注释并补中文说明。通用名称发布、页复制、映射及驱逐沿用已有唯一实现。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| fs/ramfs/inode.c | `8006faaaf0ec7d99fb7e49b2e677a07325c68a43` |
+| fs/ramfs/file-mmu.c | `b45c7edc3225e4cfbeff17e28c2c2b0b8c17bd06` |
+| fs/ramfs/file-nommu.c | `7a6d980e614dbe3a1de7d9018e6e004fae1fd311` |
+| fs/ramfs/Makefile | `d1198adb562e957dea04e7eb0c5c688933ee8dd0` |
+| fs/ramfs/internal.h | `3257fc1809d96181d5c6a7e508844ee2bec8d977` |
+| include/linux/ramfs.h | `d506dc63dd47c5ff3d6f0961506a3e039d64b6ea` |
+| fs/libfs.c | `b0f262223b5351a57a9662a018c6f1127cfa5814` |
+| fs/super.c | `c9c7223bc2a2e9cb5391a1b3a291f724416289c2` |
+| fs/inode.c | `8dabb224f941c0b95e7a0e154592bb9137e5bc2c` |
+| fs/dcache.c | `0f6b16ba30d082b7613b084a23f6a01ed6436b1f` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| mm/filemap.c | `05adf0392625da1402d288eef9d9b6107a40fef4` |
+| mm/page-writeback.c | `fcd4c1439cb9c3b89e8ec79a4404d728826cf586` |
+| include/linux/pagemap.h | `68a5f1ff3301c6cfba823cab8a418d9ca6f25893` |
+| Documentation/filesystems/ramfs-rootfs-initramfs.rst | `447f767c646276551570baa9de4dd19ccda95c61` |
+| include/linux/security.h | `2ec8f3014757cd78ef0d961e77f42db409db3b1c` |
+| include/linux/dcache.h | `bff956f7b2b984b2c7ca17728ea2cbeb6347e7d5` |
+
+十七份原件中新增六份。当前ARM配置MMU、USER_NS、SHMEM、TMPFS、HIGHMEM开启，SECURITY关闭；MMU选择file-mmu.c的表，安全初始化的关闭配置退化明确区分于可失败的完整路径。
+
+正文先说明没有后备存储时缓存就是实际内容，再解释dentry额外持有、inode关联和页数据；mode以外未知选项的接受不建立容量限制，noop_dirty_folio仍更新脏位，noop_fsync不提供磁盘持久性。ramfs的正常close、unlink、截断和实例退出分别承担不同责任。
+
+五篇冷读、十图渲染目视、长度、标题元数据、精确锚点和C材料一致性完成；程序限定少量字节并只清理自己建立的临时目录，命名空间挂载命令作为完整子进程单元。当前没有目标Linux编译运行、实际挂载、内存压力或故障注入结果。

@@ -838,6 +838,10 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [ramfs把缓存对象变成文件系统](../../research/source_reading/vfs/navigation/P22_ramfs把缓存对象变成文件系统.md)
+        - 🔴 [ramfs配置根与实例生命期](../../research/source_reading/vfs/source_explanations/P70_ramfs配置根与实例生命期.md)
+        - 🔴 [ramfs名称操作与驻留责任](../../research/source_reading/vfs/source_explanations/P71_ramfs名称操作与驻留责任.md)
+        - 🔴 [ramfs页数据与文件操作表](../../research/source_reading/vfs/source_explanations/P72_ramfs页数据与文件操作表.md)
         - 🔴 [冻结卸载与故障状态的边界](../../research/source_reading/vfs/navigation/P21_冻结卸载与故障状态的边界.md)
         - 🔴 [冻结写入的分级准入](../../research/source_reading/vfs/source_explanations/P66_冻结写入的分级准入.md)
         - 🔴 [冻结阶段推进与失败回退](../../research/source_reading/vfs/source_explanations/P67_冻结阶段推进与失败回退.md)
