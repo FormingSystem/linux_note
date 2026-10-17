@@ -7742,6 +7742,28 @@
           "全仓789篇链接无缺失，长度与锚点通过；导读密度按职责人工保留。"
         ],
         "limits": "未运行dtbs_check、目标内核、OOM注入或电压测量；继续mux和sys-off。"
+      },
+      "knowledge/driver_model/gpio_consumers/P06_GPIO选择线怎样保护一段事务.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从写线锁不能保护传输的交错推导通路占用，分别核对选择失败、数据失败、空闲恢复和物理中间编码。",
+        "validation": [
+          "两篇正文与扩展导读冷读，七段固定源码、五图、三种DTS输入核对。",
+          "全仓791篇链接无缺失，连续性、长度与锚点通过；导读密度按导航职责人工保留。"
+        ],
+        "limits": "没有dtbs_check、目标内核、实际选通或稳定时间实测；继续sys-off。"
+      },
+      "research/source_reading/gpiolib/source_explanations/P11_选择器占用与GPIO编码.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "从写线锁不能保护传输的交错推导通路占用，分别核对选择失败、数据失败、空闲恢复和物理中间编码。",
+        "validation": [
+          "两篇正文与扩展导读冷读，七段固定源码、五图、三种DTS输入核对。",
+          "全仓791篇链接无缺失，连续性、长度与锚点通过；导读密度按导航职责人工保留。"
+        ],
+        "limits": "没有dtbs_check、目标内核、实际选通或稳定时间实测；继续sys-off。"
       }
     },
     "additional_documents": [
