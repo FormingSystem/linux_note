@@ -20,7 +20,8 @@
       "knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md": "knowledge/linux/data_structures/红黑树_rb-tree/P15_Maple固定实现的阅读路线.md",
       "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md",
       "knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md": "knowledge/driver_model/device_tree/P01_GPIO连接命名占用与按键事件.md",
-      "knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md": "knowledge/driver_model/device_tree/P02_引脚配置怎样连接外设与焊盘.md"
+      "knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md": "knowledge/driver_model/device_tree/P02_引脚配置怎样连接外设与焊盘.md",
+      "knowledge/driver_model/device_tree/设备树语法专题-04-gpio+pinctrl+interrupt.md": "knowledge/driver_model/device_tree/P05_GPIO输入怎样成为中断与按键事件.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -7124,7 +7125,8 @@
           "固定提交源码与绑定核对；13次DTC/fdtget调用及恢复无警告，10个源码摘录的有序token与固定文件一致。",
           "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
         ],
-        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
+        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。",
+        "followup": "组合篇复核时补齐控制器自身hog路径与错误边界，11个源码摘录有序token核对，精确互链及冷读通过；内容提交6c55dd9e。"
       },
       "research/source_reading/pinctrl/navigation/P02_从描述到选择与硬件落点导读.md": {
         "state": "reviewed",
@@ -7135,7 +7137,8 @@
           "固定提交源码与绑定核对；13次DTC/fdtget调用及恢复无警告，10个源码摘录的有序token与固定文件一致。",
           "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
         ],
-        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
+        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。",
+        "followup": "组合篇复核时补齐控制器自身hog路径与错误边界，11个源码摘录有序token核对，精确互链及冷读通过；内容提交6c55dd9e。"
       },
       "research/source_reading/pinctrl/source_explanations/P01_状态映射选择与探测交接.md": {
         "state": "reviewed",
@@ -7146,7 +7149,8 @@
           "固定提交源码与绑定核对；13次DTC/fdtget调用及恢复无警告，10个源码摘录的有序token与固定文件一致。",
           "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
         ],
-        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
+        "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。",
+        "followup": "组合篇复核时补齐控制器自身hog路径与错误边界，11个源码摘录有序token核对，精确互链及冷读通过；内容提交6c55dd9e。"
       },
       "research/source_reading/pinctrl/source_explanations/P02_iMX6UL配置解析与寄存器落点.md": {
         "state": "reviewed",
@@ -7169,6 +7173,17 @@
           "10图渲染并逐图目视；完整冷读、严格连续性、长度、精确标题链接及格式/元数据/命名/全仓链接检查通过。"
         ],
         "limits": "未运行目标Kbuild、dtbs_check、PAD电气/PM/唤醒；主机无POSIX sh，采集脚本未执行，未将静态核对当成硬件验证。"
+      },
+      "knowledge/driver_model/device_tree/P05_GPIO输入怎样成为中断与按键事件.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "完整冷读原977行三个章段，按LED、按键、汇聚与多IRQ场景重构；保留有效信息，修正极性、GPIO/pin/IRQ编号、irqdomain关系、两种hog与虚构操作。",
+        "validation": [
+          "固定gpio-mxc、gpio-keys及pinctrl hog路径核对；11次离线DTC/fdtget调用通过且无警告。",
+          "关系图与含逻辑转换的时序图渲染目视，严格连续性、长度、精确链接和实际文档检查通过。"
+        ],
+        "limits": "未运行目标硬件、input/LED、PM/唤醒、Kbuild及dtbs_check；教学DT仅验证编码。"
       }
     },
     "additional_documents": [
