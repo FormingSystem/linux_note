@@ -2491,3 +2491,19 @@ P09为18条出链/18条标题入链，P15为10/17。两篇约7000和7700字词�
 | `include/linux/platform_device.h` | `7132623e4658576f0be2a80b493e445e0c9d4de6` | 设备字段、注册辅助接口、错误指针及 void remove 回调 |
 
 [板级资源章](../../../knowledge/driver_model/device_tree/设备树+platform开发/P01_旧式平台设备与资源机制.md) 改用无 MEM/IRQ 的设备与驱动配对实验，避免把 LED consumer 当作整个 GPIO 控制器的所有者。源码接口核对不等于模块构建或运行验证；本轮未执行目标 Kbuild、MODPOST、模块加载或硬件访问。
+
+## 1.256\_设备树枚举IRQ延后获取与模块别名复核
+
+2026-10-17 继续按 NXP 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 核对设备树章，以下文件从官方原始入口取得。与已有 `drivers/of/platform.c`、`drivers/of/device.c` 和平台核心证据结合，区分节点展开、各总线枚举、地址资源与延后 IRQ 获取、运行期匹配和构建期模块别名。
+
+| 上游路径 | Git blob SHA-1 |
+| --- | --- |
+| `drivers/of/base.c` | `4bb87e0cbaf179d6128b61fbafbdbb410e345ebf` |
+| `drivers/of/fdt.c` | `8c80f4dc8b3fae5b08b2485a74a79b4f99e8bea2` |
+| `drivers/of/address.c` | `0e708a863e4aa3b2d894d3f3cbd4ab782c4f5769` |
+| `drivers/of/irq.c` | `1fb329c0a55b8c0559b79b77a3f8f0cbc1101e1c` |
+| `include/linux/of.h` | `85b60ac9eec50bb202aa774cab273e1d947e394d` |
+| `scripts/mod/file2alias.c` | `721e0e9f17cada2cc6e94364c97aac6f60e986cc` |
+| `Documentation/devicetree/bindings/leds/leds-gpio.yaml` | `7e11703acbd69b6427961db3f1055c57435bc41b` |
+
+[设备树驱动方式章](../../../knowledge/driver_model/device_tree/设备树+platform开发/P02_设备树驱动开发方式.md) 的独立教学 DTS 已用 DTC 1.6.1 编译与反编译，关键属性往返保留；该结果不是上游 binding Schema 通过。教学模块未执行目标内核构建、MODPOST、部署、加载或热插拔；当前标准工作树配置未确认。
