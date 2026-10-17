@@ -3229,3 +3229,32 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 固定版本inotify_new_watch在观察配额增加后连接inode失败时缺少配额归还；原件保留，详见 [登记实现中的缺陷与后续修复依据](../vfs/source_explanations/P56_inotify实例与观察编号的建立.md#56.2_把路径解析结果变成实例内的观察编号)。许可事件分配失败、队列未接纳、读取失败、信号取消和最终关闭分别核对，不能统一描述为失败即拒绝。
 
 九篇冷读、十九图渲染目视、长度、标题元数据、锚点及C材料一致性完成。图中修正对象链入口与汇总mask字段、取消后延迟事件释放的时序，并明确Tiny SRCU与延伸阅读Tree SRCU的配置边界。没有目标Linux编译运行、通知压力及fanotify许可竞态实测；C程序提供受控文件变化与事件字段对照。
+
+## 1.300\_对象退出与缓存回收的条件
+
+2026-10-18，重写 [对象回收正文](../../../knowledge/kernel_subsystems/vfs/P21_file_dentry_inode与superblock回收.md#21.3_用同一次退出串起六个阶段)，新增 [模块导读](../vfs/navigation/P20_对象退出与缓存回收的条件.md#20.1_按退出阶段找持有与状态) 及三篇实现。固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；二十四段函数体保留执行语句并逐token核对，省去上游长注释，补充中文阅读及分支说明。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| include/linux/fscrypt.h | `772f822dc6b82e92903e030b0d5c35512ffc9f55` |
+| include/linux/writeback.h | `641a057e0413291396f50bb25fcada64fd6100b6` |
+| fs/inode.c | `8dabb224f941c0b95e7a0e154592bb9137e5bc2c` |
+| fs/dcache.c | `0f6b16ba30d082b7613b084a23f6a01ed6436b1f` |
+| fs/file_table.c | `18735dc8269a10d6e7085c9bb882a0788dd3e0ca` |
+| fs/super.c | `c9c7223bc2a2e9cb5391a1b3a291f724416289c2` |
+| fs/internal.h | `8c1b7acbbe8faadef678e5aa2dc3588a0d8140b1` |
+| include/linux/fs.h | `b98f128c9afa78f02ea273a7f98b12c7761e7ae5` |
+| include/linux/pagemap.h | `68a5f1ff3301c6cfba823cab8a418d9ca6f25893` |
+| include/linux/list_lru.h | `5099a8ccd5f4c70ae85bc146b44bfd2e9911bd08` |
+| include/linux/shrinker.h | `1a00be90d93a9fa0f6234dd4854b59027d1e0ffe` |
+| mm/list_lru.c | `9b7ff06e9d326bb0da9f486da6c05a56c77d786c` |
+| fs/ext4/inode.c | `67a5b937f5a92dc52513f8ef121111e2185b98c0` |
+| fs/ext4/super.c | `940ac1a49b729e5837b2c082294fb52e9246c478` |
+| fs/ext4/ext4.h | `bbffb76d9a9049090698af5d2d8a0414fdfbb19f` |
+| mm/truncate.c | `0668cd340a46304f62525597374e5928a51d3f0f` |
+| include/linux/rcupdate.h | `48e5c03df1dd83c246a61d0fcc8aa638adcd7654` |
+| include/linux/rcutiny.h | `0ee270b3f5ed2fb8cb8aa5dc4d11e7a24c9675f3` |
+
+十八份原件中新增五份。当前ARM配置开启HIGHMEM、TINY_RCU、FSNOTIFY与FS_POSIX_ACL，关闭FS_ENCRYPTION和SECURITY。通用引用、缓存候选、写回等待与后端回调分别核对，ext4私有回调仅用于说明分配器、诊断与最终释放的区别，不把缓存驱逐推导成磁盘文件删除。
+
+区分LRU移除数与已释放对象数，保留I_LRU_ISOLATING放锁窗口与唤醒责任，明确inode.i_sb不构成每个inode各持一份s_active的证据。五篇冷读、十图渲染目视、长度、标题元数据、锚点和C材料一致性完成；没有目标Linux编译运行、压力回收或后端故障注入实测，示例仅验证名称与持有的可观察区别。

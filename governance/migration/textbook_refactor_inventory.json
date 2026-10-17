@@ -9492,7 +9492,11 @@
       "research/source_reading/vfs/source_explanations/P59_事件合并排队与溢出.md",
       "research/source_reading/vfs/source_explanations/P60_通知读取与监听实例退出.md",
       "research/source_reading/vfs/source_explanations/P61_fanotify许可等待与观察持有.md",
-      "research/source_reading/vfs/source_explanations/P62_fanotify响应状态与退出收尾.md"
+      "research/source_reading/vfs/source_explanations/P62_fanotify响应状态与退出收尾.md",
+      "research/source_reading/vfs/navigation/P20_对象退出与缓存回收的条件.md",
+      "research/source_reading/vfs/source_explanations/P63_最后inode引用与缓存保留.md",
+      "research/source_reading/vfs/source_explanations/P64_inode驱逐与最终释放.md",
+      "research/source_reading/vfs/source_explanations/P65_空闲inode扫描与卸载驱逐.md"
     ],
     "language_review": {
       "status": "complete",

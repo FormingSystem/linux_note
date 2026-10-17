@@ -838,6 +838,10 @@ mindmap-plugin: basic
     - 🔴 VFS版本源码
         - 🔴 [VFS源码阅读大纲](../../research/source_reading/vfs/大纲.md)
         - 🔴 [Linux 6.12 VFS源码阅读索引](../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)
+        - 🔴 [对象退出与缓存回收的条件](../../research/source_reading/vfs/navigation/P20_对象退出与缓存回收的条件.md)
+        - 🔴 [最后inode引用与缓存保留](../../research/source_reading/vfs/source_explanations/P63_最后inode引用与缓存保留.md)
+        - 🔴 [inode驱逐与最终释放](../../research/source_reading/vfs/source_explanations/P64_inode驱逐与最终释放.md)
+        - 🔴 [空闲inode扫描与卸载驱逐](../../research/source_reading/vfs/source_explanations/P65_空闲inode扫描与卸载驱逐.md)
         - 🔴 [事件观察与许可响应的交接](../../research/source_reading/vfs/navigation/P19_事件观察与许可响应的交接.md)
         - 🔴 [inotify实例与观察编号的建立](../../research/source_reading/vfs/source_explanations/P56_inotify实例与观察编号的建立.md)
         - 🔴 [观察标记的连接撤销与延后回收](../../research/source_reading/vfs/source_explanations/P57_观察标记的连接撤销与延后回收.md)

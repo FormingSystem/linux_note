@@ -82,6 +82,8 @@ flowchart TD
 
 [事件观察与许可响应导读](P19_事件观察与许可响应的交接.md#19.1_沿通知周期定位状态与执行者) 沿N0～N5连接 [实例与编号](../source_explanations/P56_inotify实例与观察编号的建立.md#56.1_通知fd先绑定独立group)、[mark生命周期](../source_explanations/P57_观察标记的连接撤销与延后回收.md#57.1_对象侧与group侧分别建立索引)、[事件分派](../source_explanations/P58_fsnotify事件匹配与分派.md#58.2_按group汇合不同对象的观察)、[队列交接](../source_explanations/P59_事件合并排队与溢出.md#59.2_队列容量与记录所有权一起交接)、[读取与退出](../source_explanations/P60_通知读取与监听实例退出.md#60.1_先取得完整记录再复制给用户)、[许可等待](../source_explanations/P61_fanotify许可等待与观察持有.md#61.2_等待用户以前先转移观察责任) 和 [响应收尾](../source_explanations/P62_fanotify响应状态与退出收尾.md#62.3_回答与取消决定谁释放事件)。
 
+[对象退出与缓存回收导读](P20_对象退出与缓存回收的条件.md#20.1_按退出阶段找持有与状态) 沿R0～R5连接 [最后引用与缓存](../source_explanations/P63_最后inode引用与缓存保留.md#63.1_最后使用引用先进入缓存或驱逐决策)、[驱逐与内存归还](../source_explanations/P64_inode驱逐与最终释放.md#64.1_先退出工作集合再让后端清理) 及 [候选扫描与卸载](../source_explanations/P65_空闲inode扫描与卸载驱逐.md#65.2_扫描候选仍要重新检查引用与缓存)，复用既有file、dentry和实例退出实现。
+
 ## 1.3\_对象声明与操作原件各自证明什么
 
 | 状态问题 | 固定原件 | 首先检查的内容 |
