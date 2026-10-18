@@ -49,7 +49,8 @@
       "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_key_led_interrupt_move_shake_01.md": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_确认稳定按键状态再翻转LED.md",
       "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_从运行中断到按键唤醒.md",
       "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md": "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/P01_从稳定按键到Input事件.md",
-      "platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md": "platforms/arm/nxp/imx8/P01_imx_v8配置与ARM64内核构建.md"
+      "platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md": "platforms/arm/nxp/imx8/P01_imx_v8配置与ARM64内核构建.md",
+      "platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md": "platforms/arm/rockchip/rk3566/environment/P01_从SDK归档到可追溯构建环境.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -10585,6 +10586,50 @@
           "命令语法、构造镜像头与gzip检查、图和历史截图目视、元数据格式长度严格连续及锚点通过；952篇全仓链接无缺失。"
         ],
         "limits": "未下载运行完整工具链、整核构建或目标板启动；通用imx_v8配置不确定具体板型，构造头不是真实内核产物；未改动通用6.12.20源码基线。"
+      },
+      "platforms/arm/rockchip/rk3566/environment/P01_从SDK归档到可追溯构建环境.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "重建归档、repo本地检出、下载缓存与宿主依赖的因果关系，修正旧包名和宿主版本断言，保留Python真实工具依赖。",
+        "validation": [
+          "SquashFS固定3de1687及Buildroot2018.02-rc3文件核对；官方repo/GCC/FIT/立创文档；固定NXP Linux6.12.20 binding只用于IO-domain职责，未混成旧SDK版本。",
+          "27个命令用例：实际C编译链接的三状态及去掉唯一定义失败、git apply检查和应用真实头文件、原Bash生成器正常与缺父目录失败、命令语法；正文材料一致；4图与12原图目视；格式元数据、955篇链接、严格连续零风险、长度均通过。"
+        ],
+        "limits": "MSYS2没有GNU patch，以Git补丁检查验证；没有下载完整SDK、整套工具/镜像构建、板卡原理图配对、电气测量或部署启动。"
+      },
+      "platforms/arm/rockchip/rk3566/environment/P02_从板级配置到系统镜像.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "由板卡身份推导配置与IO电压域核对，完整保留七张电压菜单和FIT日志，分清构建、打包、部署的证明边界。",
+        "validation": [
+          "SquashFS固定3de1687及Buildroot2018.02-rc3文件核对；官方repo/GCC/FIT/立创文档；固定NXP Linux6.12.20 binding只用于IO-domain职责，未混成旧SDK版本。",
+          "27个命令用例：实际C编译链接的三状态及去掉唯一定义失败、git apply检查和应用真实头文件、原Bash生成器正常与缺父目录失败、命令语法；正文材料一致；4图与12原图目视；格式元数据、955篇链接、严格连续零风险、长度均通过。"
+        ],
+        "limits": "MSYS2没有GNU patch，以Git补丁检查验证；没有下载完整SDK、整套工具/镜像构建、板卡原理图配对、电气测量或部署启动。"
+      },
+      "platforms/arm/rockchip/rk3566/environment/P03_从构建首错定位宿主工具与输出状态.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "以完整两翻译单元C模型解释重复定义，核对旧SquashFS补丁和Buildroot生成片段路径，纠正截图归因及前错必然导致后错的断言。",
+        "validation": [
+          "SquashFS固定3de1687及Buildroot2018.02-rc3文件核对；官方repo/GCC/FIT/立创文档；固定NXP Linux6.12.20 binding只用于IO-domain职责，未混成旧SDK版本。",
+          "27个命令用例：实际C编译链接的三状态及去掉唯一定义失败、git apply检查和应用真实头文件、原Bash生成器正常与缺父目录失败、命令语法；正文材料一致；4图与12原图目视；格式元数据、955篇链接、严格连续零风险、长度均通过。"
+        ],
+        "limits": "MSYS2没有GNU patch，以Git补丁检查验证；没有下载完整SDK、整套工具/镜像构建、板卡原理图配对、电气测量或部署启动。"
+      },
+      "platforms/arm/rockchip/rk3566/environment/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "新增真实三章阅读地图、依赖与后续问题，连接权威设备树及U-Boot专题。",
+        "validation": [
+          "SquashFS固定3de1687及Buildroot2018.02-rc3文件核对；官方repo/GCC/FIT/立创文档；固定NXP Linux6.12.20 binding只用于IO-domain职责，未混成旧SDK版本。",
+          "27个命令用例：实际C编译链接的三状态及去掉唯一定义失败、git apply检查和应用真实头文件、原Bash生成器正常与缺父目录失败、命令语法；正文材料一致；4图与12原图目视；格式元数据、955篇链接、严格连续零风险、长度均通过。"
+        ],
+        "limits": "MSYS2没有GNU patch，以Git补丁检查验证；没有下载完整SDK、整套工具/镜像构建、板卡原理图配对、电气测量或部署启动。"
       }
     },
     "additional_documents": [
@@ -10810,7 +10855,10 @@
       "labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/大纲.md",
       "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/大纲.md",
       "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/P02_读取Input事件并恢复丢失状态.md",
-      "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/大纲.md"
+      "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/大纲.md",
+      "platforms/arm/rockchip/rk3566/environment/P02_从板级配置到系统镜像.md",
+      "platforms/arm/rockchip/rk3566/environment/P03_从构建首错定位宿主工具与输出状态.md",
+      "platforms/arm/rockchip/rk3566/environment/大纲.md"
     ],
     "language_review": {
       "status": "complete",
