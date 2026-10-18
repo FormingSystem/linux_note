@@ -10393,6 +10393,50 @@
           "四篇格式元数据长度及锚点检查通过，两篇严格连续审计通过；三图渲染目视通过，948篇链接零缺失。"
         ],
         "limits": "概念与导航重构，未声称新增内核模块、模拟器或实板运行；人工评审状态未升级。"
+      },
+      "labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P01_LED点灯+ioremap.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从寄存器条件与共享位更新推导提供者所有权；补完整PAD拆位、本地地址表和C模型，纠正原无检查直接MMIO模块及不对应代码的日志。",
+        "validation": [
+          "IMX6ULLRM Rev1具体字段与固定Linux源码核对；寄存器模型及错误位清除变异检出，真实解析器18边界与抽取生命周期分支通过。",
+          "ARM前端458实际头文件与固定基线无相关已跟踪漂移；正文4代码块与材料一致，7图渲染目视，格式元数据长度锚点通过，949篇全仓链接无缺失。"
+        ],
+        "limits": "未完整Kbuild或目标板加载、烧写、电气测量、真实用户拷贝故障和并发压力；P03完整代码节332行按可复制闭环保留，未宣称严格连续/术语审计零提示。"
+      },
+      "labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "以标准gpio-leds串起板级接线、pinctrl与GPIO提供者，纠正有效极性二次反转、gpio-ranges与全局编号混淆，区分DT源、部署和运行观察。",
+        "validation": [
+          "IMX6ULLRM Rev1具体字段与固定Linux源码核对；寄存器模型及错误位清除变异检出，真实解析器18边界与抽取生命周期分支通过。",
+          "ARM前端458实际头文件与固定基线无相关已跟踪漂移；正文4代码块与材料一致，7图渲染目视，格式元数据长度锚点通过，949篇全仓链接无缺失。"
+        ],
+        "limits": "未完整Kbuild或目标板加载、烧写、电气测量、真实用户拷贝故障和并发压力；P03完整代码节332行按可复制闭环保留，未宣称严格连续/术语审计零提示。"
+      },
+      "labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P03_字符设备_LED与设备树完整实验.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "完整数组消费者按S0-S5分离绑定、文件引用与GPIO资源，补严格协议、模块、Kbuild和跨解绑用户程序，纠正错误API、静态全局复用和devm悬空访问。",
+        "validation": [
+          "IMX6ULLRM Rev1具体字段与固定Linux源码核对；寄存器模型及错误位清除变异检出，真实解析器18边界与抽取生命周期分支通过。",
+          "ARM前端458实际头文件与固定基线无相关已跟踪漂移；正文4代码块与材料一致，7图渲染目视，格式元数据长度锚点通过，949篇全仓链接无缺失。"
+        ],
+        "limits": "未完整Kbuild或目标板加载、烧写、电气测量、真实用户拷贝故障和并发压力；P03完整代码节332行按可复制闭环保留，未宣称严格连续/术语审计零提示。"
+      },
+      "labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "新增真实三章问题链与材料入口，标明模型、源码核对和目标板证据边界，连接通用权威专题。",
+        "validation": [
+          "IMX6ULLRM Rev1具体字段与固定Linux源码核对；寄存器模型及错误位清除变异检出，真实解析器18边界与抽取生命周期分支通过。",
+          "ARM前端458实际头文件与固定基线无相关已跟踪漂移；正文4代码块与材料一致，7图渲染目视，格式元数据长度锚点通过，949篇全仓链接无缺失。"
+        ],
+        "limits": "未完整Kbuild或目标板加载、烧写、电气测量、真实用户拷贝故障和并发压力；P03完整代码节332行按可复制闭环保留，未宣称严格连续/术语审计零提示。"
       }
     },
     "additional_documents": [
@@ -10614,7 +10658,8 @@
       "research/source_reading/uboot/navigation/P11_镜像解析与Linux交接导读.md",
       "research/source_reading/uboot/source_explanations/P11_镜像范围与Linux交接实现.md",
       "knowledge/foundations/computer_architecture/address_space_and_capacity.md",
-      "knowledge/foundations/computer_architecture/boot_storage_paths.md"
+      "knowledge/foundations/computer_architecture/boot_storage_paths.md",
+      "labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/大纲.md"
     ],
     "language_review": {
       "status": "complete",
