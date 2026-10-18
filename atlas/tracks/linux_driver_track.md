@@ -67,7 +67,7 @@ domains:
 
 1. [LED 实验路线](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/大纲.md)：先看寄存器与资源归属，运行宿主位更新模型。
 2. [标准 GPIO LED 设备树集成](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md)，再按学习需要完成 [自定义字符设备与解绑实验](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P03_字符设备_LED与设备树完整实验.md)。
-3. [BEEP 的设备树实现](../../labs/platforms/nxp/imx6ull/drivers/P02_BEEP/P01_beep+dts.md)。
+3. [蜂鸣器类型判断与条件实验](../../labs/platforms/nxp/imx6ull/drivers/P02_BEEP/P01_beep+dts.md)。
 4. [KEY 中断](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_key_led_interrupt.md)及[中断唤醒内核](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md)。
 5. [Input 按键实验](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md)。
 
