@@ -3436,3 +3436,18 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 WARN条件中的list_lru操作、count错误分支、Sparse解锁注解、Lockdep嵌套类别与真实状态修改分别解释。d_wait和d_lru、查询节点/别名/RCU回调的存储复用要求旧角色先退出；负化不自动重新发布原本unhashed的对象。
 
 本次未执行并发rename、名字快照压力、回收压力、内存分配失败注入或内核告警测试。
+
+
+## 1.310\_路径起点分量推进与链接资源复核
+
+2026-10-18，复核VFS实现P13～P15与路径查找正文，补齐二十三段声明/函数的中文注释、任务栈上下文和saved记录地址图、起点持有、候选转移、根边界及链接清理责任；函数有效token保持固定版本。正文按接口精确连接唯一实现。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| include/linux/delayed_call.h | `a26c3b95b5cf5b63a06efc95c694e5feeca16ecd` |
+
+新增头文件取自固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。delayed_call只保存fn/arg，do_delayed_call在当前栈同步执行，不是调度后台工作。root预设、自己取得的root持有、RCU观察及最终path转移分别说明；保留reserve_stack在新link持有失败后仍执行unlazy以建立清理状态的短路顺序。
+
+当前ARM配置DCACHE_WORD_ACCESS开启、CPU_BIG_ENDIAN/SMP/SECURITY/AUDIT关闭；名字扫描的字/逐字节分支、安全hook及审计桩不混写为同一执行路径。set_root的WARN条件控制ENOTRECOVERABLE返回，不能只当纯日志删除。LOOKUP_CACHED在最终持有交接时清除，不授权此前的后端慢查询。
+
+本轮没有Linux路径实验新运行记录，也未执行并发rename、受限路径逃逸压力、链接栈分配失败或安全模块组合测试。
