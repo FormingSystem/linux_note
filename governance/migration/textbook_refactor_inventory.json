@@ -10250,6 +10250,39 @@
         ],
         "limits": "未进行完整内核、U-Boot或目标板启动；相邻P03仍待迁移，未以新桥接章替代其复核。",
         "commit": "930c5a6a"
+      },
+      "knowledge/system_software/uboot/P10_自动引导如何选择命令与保留维护入口.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从无人值守与维护窗口的冲突推出A0-A4，区分命令选择、输入检查、执行与返回；提供完整C模型和两条并列时序。",
+        "validation": [
+          "C模型有键、无键、错误条件变体对照通过；直接提取三个固定源码函数的14个分支用例通过。",
+          "三原件工作树与提交SHA一致；六篇格式元数据长度锚点通过，新增三篇严格连续审计通过；三图渲染目视，943篇链接零缺失。"
+        ],
+        "limits": "仅宿主模型及源码控制流验证，未执行目标板启动；旧读书P03仍待独有内容迁移。"
+      },
+      "research/source_reading/uboot/navigation/P10_自动引导选择与交互退路导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按同一阶段定位环境、静态变量和主循环，登记环境后端及配置原件，说明宿主验证边界。",
+        "validation": [
+          "C模型有键、无键、错误条件变体对照通过；直接提取三个固定源码函数的14个分支用例通过。",
+          "三原件工作树与提交SHA一致；六篇格式元数据长度锚点通过，新增三篇严格连续审计通过；三图渲染目视，943篇链接零缺失。"
+        ],
+        "limits": "仅宿主模型及源码控制流验证，未执行目标板启动；旧读书P03仍待独有内容迁移。"
+      },
+      "research/source_reading/uboot/source_explanations/P10_自动引导选择与执行门实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "核对自动引导特殊值、菜单键分支、控制树覆盖及CLI返回链，纠正名称推断和注释与实际行为混淆。",
+        "validation": [
+          "C模型有键、无键、错误条件变体对照通过；直接提取三个固定源码函数的14个分支用例通过。",
+          "三原件工作树与提交SHA一致；六篇格式元数据长度锚点通过，新增三篇严格连续审计通过；三图渲染目视，943篇链接零缺失。"
+        ],
+        "limits": "仅宿主模型及源码控制流验证，未执行目标板启动；旧读书P03仍待独有内容迁移。"
       }
     },
     "additional_documents": [
@@ -10463,7 +10496,10 @@
       "research/source_reading/uboot/navigation/P09_命令字符串解析与失败边界导读.md",
       "research/source_reading/uboot/source_explanations/P09_命令解析缓冲区与失败传播实现.md",
       "research/investigations/uboot_vendor_baselines.md",
-      "governance/migration/uboot_textbook_migration.md"
+      "governance/migration/uboot_textbook_migration.md",
+      "knowledge/system_software/uboot/P10_自动引导如何选择命令与保留维护入口.md",
+      "research/source_reading/uboot/navigation/P10_自动引导选择与交互退路导读.md",
+      "research/source_reading/uboot/source_explanations/P10_自动引导选择与执行门实现.md"
     ],
     "language_review": {
       "status": "complete",
