@@ -10630,6 +10630,66 @@
           "27个命令用例：实际C编译链接的三状态及去掉唯一定义失败、git apply检查和应用真实头文件、原Bash生成器正常与缺父目录失败、命令语法；正文材料一致；4图与12原图目视；格式元数据、955篇链接、严格连续零风险、长度均通过。"
         ],
         "limits": "MSYS2没有GNU patch，以Git补丁检查验证；没有下载完整SDK、整套工具/镜像构建、板卡原理图配对、电气测量或部署启动。"
+      },
+      "reference/README.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "参考入口去除过期GIC篇数；调查入口区分待证调查与未核验历史源；协作参考恢复当前授权与连续推进；Mermaid规范把语义、布局、原生转义和渲染证据分层，扩展工作流不再假定工具必然可调用。",
+        "validation": [
+          "官方扩展package.json声明2.8.2，正文列出的命令ID全部存在；Mermaid官方语法核对；7张图渲染目视（3新例+4标签一致性更新），8份正式文档格式元数据长度与6入口锚点通过，955篇全仓链接无缺失。两份.github配置按宿主原生格式维护。"
+        ],
+        "limits": "未安装运行Mermaid Chart或调用其云服务；未宣称Typora/VSCode/GitHub全部验证；调查页导航不能代替两份历史长稿的后续事实审查。"
+      },
+      "research/investigations/README.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "参考入口去除过期GIC篇数；调查入口区分待证调查与未核验历史源；协作参考恢复当前授权与连续推进；Mermaid规范把语义、布局、原生转义和渲染证据分层，扩展工作流不再假定工具必然可调用。",
+        "validation": [
+          "官方扩展package.json声明2.8.2，正文列出的命令ID全部存在；Mermaid官方语法核对；7张图渲染目视（3新例+4标签一致性更新），8份正式文档格式元数据长度与6入口锚点通过，955篇全仓链接无缺失。两份.github配置按宿主原生格式维护。"
+        ],
+        "limits": "未安装运行Mermaid Chart或调用其云服务；未宣称Typora/VSCode/GitHub全部验证；调查页导航不能代替两份历史长稿的后续事实审查。"
+      },
+      "tools/ai/application/gemini_ask_method.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "参考入口去除过期GIC篇数；调查入口区分待证调查与未核验历史源；协作参考恢复当前授权与连续推进；Mermaid规范把语义、布局、原生转义和渲染证据分层，扩展工作流不再假定工具必然可调用。",
+        "validation": [
+          "官方扩展package.json声明2.8.2，正文列出的命令ID全部存在；Mermaid官方语法核对；7张图渲染目视（3新例+4标签一致性更新），8份正式文档格式元数据长度与6入口锚点通过，955篇全仓链接无缺失。两份.github配置按宿主原生格式维护。"
+        ],
+        "limits": "未安装运行Mermaid Chart或调用其云服务；未宣称Typora/VSCode/GitHub全部验证；调查页导航不能代替两份历史长稿的后续事实审查。"
+      },
+      "tools/ai/application/mermaid_require.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "参考入口去除过期GIC篇数；调查入口区分待证调查与未核验历史源；协作参考恢复当前授权与连续推进；Mermaid规范把语义、布局、原生转义和渲染证据分层，扩展工作流不再假定工具必然可调用。",
+        "validation": [
+          "官方扩展package.json声明2.8.2，正文列出的命令ID全部存在；Mermaid官方语法核对；7张图渲染目视（3新例+4标签一致性更新），8份正式文档格式元数据长度与6入口锚点通过，955篇全仓链接无缺失。两份.github配置按宿主原生格式维护。"
+        ],
+        "limits": "未安装运行Mermaid Chart或调用其云服务；未宣称Typora/VSCode/GitHub全部验证；调查页导航不能代替两份历史长稿的后续事实审查。"
+      },
+      ".github/instructions/mermaid.instructions.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "参考入口去除过期GIC篇数；调查入口区分待证调查与未核验历史源；协作参考恢复当前授权与连续推进；Mermaid规范把语义、布局、原生转义和渲染证据分层，扩展工作流不再假定工具必然可调用。",
+        "validation": [
+          "官方扩展package.json声明2.8.2，正文列出的命令ID全部存在；Mermaid官方语法核对；7张图渲染目视（3新例+4标签一致性更新），8份正式文档格式元数据长度与6入口锚点通过，955篇全仓链接无缺失。两份.github配置按宿主原生格式维护。"
+        ],
+        "limits": "未安装运行Mermaid Chart或调用其云服务；未宣称Typora/VSCode/GitHub全部验证；调查页导航不能代替两份历史长稿的后续事实审查。"
+      },
+      ".github/copilot-instructions.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "参考入口去除过期GIC篇数；调查入口区分待证调查与未核验历史源；协作参考恢复当前授权与连续推进；Mermaid规范把语义、布局、原生转义和渲染证据分层，扩展工作流不再假定工具必然可调用。",
+        "validation": [
+          "官方扩展package.json声明2.8.2，正文列出的命令ID全部存在；Mermaid官方语法核对；7张图渲染目视（3新例+4标签一致性更新），8份正式文档格式元数据长度与6入口锚点通过，955篇全仓链接无缺失。两份.github配置按宿主原生格式维护。"
+        ],
+        "limits": "未安装运行Mermaid Chart或调用其云服务；未宣称Typora/VSCode/GitHub全部验证；调查页导航不能代替两份历史长稿的后续事实审查。"
       }
     },
     "additional_documents": [
