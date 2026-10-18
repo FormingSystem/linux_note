@@ -90,7 +90,7 @@ https://github.com/FormingSystem/linux_note.git
 
 
 
-面向 RK3588 的硬件中断控制器学习，从 [GICv3 物理中断专题大纲](platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)进入：十一篇连续教材从外设事件逐步讲到状态、配置、消息翻译与软件交接，最后以 UART 完成综合复盘，另有 RK3588 集成记录。各章配有纸面推演、主机算例或目标板观察步骤，关键概念附中英文术语与官方章节对照；GICv3 虚拟化、GICv4、逐函数源码与板上实验后续展开。与 Linux IRQ 管理的分工见[交叉阅读入口](atlas/roadmaps/gic_learning_plan.md#1.7_与现有中断章节的交叉阅读)。
+面向 RK3588 的硬件中断控制器学习，从 [GICv3 物理中断专题大纲](platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)进入：十七篇连续教材从外设事件逐步讲到状态、配置、消息翻译与软件交接，最后以 UART 完成综合复盘，另有 RK3588 集成记录。正文先标明概念与实现层次，完成规范角色到物理载体的映射后，再解释配置和输入输出。各章配有纸面推演、主机算例或目标板观察步骤，关键概念附中英文术语与官方章节对照；寄存器采用[手册原位布局与访问表、中文字段对照、读表推导](platforms/arm/architecture/gic/P03_多核角色与架构编程接口.md#3.4_软件怎样访问GIC_地址访问与系统寄存器)的阅读顺序。GICv3 虚拟化、GICv4、逐函数源码与板上实验后续展开。与 Linux IRQ 管理的分工见[交叉阅读入口](atlas/roadmaps/gic_learning_plan.md#1.7_与现有中断章节的交叉阅读)。
 
 ## 1.5\_内容说明
 

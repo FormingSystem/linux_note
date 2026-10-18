@@ -14,7 +14,7 @@ domains:
 
 ## 1.1\_范围与基线
 
-2026-10-16，教材历史恢复后，开发者明确将本轮范围确认为 **全仓现有说明文档**，要求采用补全后的 skill 持续重构至完成。本轮独立盘点以提交 `393e2e5f02e0794f81bacd5d954865cdbd245fed` 为起点，并继续纳入新增与拆分文档；这是长时间执行的当前任务。历史恢复过程见[恢复与 GIC 修订记录](../../governance/migration/repository_textbook_refactor.md#1.1.1_20261016历史恢复与GIC修订)。
+2026-10-16，教材历史恢复后，开发者明确将本轮范围确认为 **全仓现有说明文档**，要求采用补全后的 skill 持续重构至完成。本轮独立盘点以提交 `393e2e5f02e0794f81bacd5d954865cdbd245fed` 为起点，并继续纳入新增与拆分文档；任务按连续执行方式推进，未建立定时任务。历史恢复过程见[恢复与 GIC 修订记录](../../governance/migration/repository_textbook_refactor.md#1.1.1_20261016历史恢复与GIC修订)，本轮收尾范围、验证和交付边界见[全仓复审收尾](../../governance/migration/repository_textbook_refactor.md#1.1.4_20261018全仓复审收尾)。
 
 本页保留学习依赖和旧批次摘要；**当前逐篇状态只看清单的 `current_pass`**，当前工作与验证见[重构记录](../../governance/migration/repository_textbook_refactor.md#1.1_范围与恢复入口)。下文旧批次的 `validated`、剩余数量和“下一项”仅描述当时进度，不是当前续接指令，更不能替代本轮完整冷读与改写。
 

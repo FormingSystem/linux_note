@@ -5,7 +5,7 @@
   "scope": "全仓 Markdown；技术正文按教材职责改写，研究、实验、导航和治理分别验收",
   "current_pass": {
     "id": "20261016_skill_full_rewrite",
-    "status": "active",
+    "status": "complete",
     "authorization": "2026-10-16 用户明确选择全仓说明文档，要求使用补全后的 skill 全量重构并持续运行至完成，不创建定时任务。",
     "mode": "rewrite",
     "baseline_commit": "393e2e5f02e0794f81bacd5d954865cdbd245fed",
@@ -18,6 +18,15 @@
       "knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_6.12_内核_rbtree_工程扩展_并发与验证.md": "knowledge/linux/data_structures/红黑树_rb-tree/P12_Linux_rbtree_工程扩展的阅读路线.md",
       "knowledge/linux/data_structures/红黑树_rb-tree/P14_Maple_Tree_与_VMA_管理.md": "knowledge/linux/data_structures/红黑树_rb-tree/P14_从地址查询到VMA范围修改.md",
       "knowledge/linux/data_structures/红黑树_rb-tree/P15_Linux_6.12_Maple_Tree_源码结构与_API_分层.md": "knowledge/linux/data_structures/红黑树_rb-tree/P15_Maple固定实现的阅读路线.md",
+      "platforms/arm/architecture/gic/P03_多核控制器的角色_寄存器与编号.md": "platforms/arm/architecture/gic/P03_多核角色与架构编程接口.md",
+      "platforms/arm/architecture/gic/P04_一次中断的状态转换与完成协议.md": "platforms/arm/architecture/gic/P06_一次中断的状态转换与完成协议.md",
+      "platforms/arm/architecture/gic/P05_优先级_屏蔽与嵌套处理.md": "platforms/arm/architecture/gic/P07_优先级数值_门槛与分组.md",
+      "platforms/arm/architecture/gic/P06_权限_安全分组与初始化闭环.md": "platforms/arm/architecture/gic/P09_权限_安全分组与异常路由.md",
+      "platforms/arm/architecture/gic/P07_目标选择_核间通知与电源交接.md": "platforms/arm/architecture/gic/P11_SPI目标选择与每PE状态.md",
+      "platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md": "platforms/arm/architecture/gic/P13_从消息请求到内存中的中断状态.md",
+      "platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md": "platforms/arm/architecture/gic/P14_设备事件身份与ITS实现映射.md",
+      "platforms/arm/architecture/gic/P10_软件交接_部署与分层排障.md": "platforms/arm/architecture/gic/P16_软件交接_部署与分层排障.md",
+      "platforms/arm/architecture/gic/P11_UART中断的端到端流程复盘.md": "platforms/arm/architecture/gic/P17_UART中断的端到端流程复盘.md",
       "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md",
       "knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md": "knowledge/driver_model/device_tree/P01_GPIO连接命名占用与按键事件.md",
       "knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md": "knowledge/driver_model/device_tree/P02_引脚配置怎样连接外设与焊盘.md",
@@ -65,126 +74,213 @@
       "platforms/arm/architecture/gic/P01_从外设事件到中断请求.md": {
         "state": "reviewed",
         "result": "revised",
-        "reason": "冷读完整事件、轮询与请求主线，保留缓冲反例、数据所有权和两种时序视角；改正将流程图称为伪代码的文案，补清两幅时序表示的不同阅读任务。",
-        "date": "2026-10-16",
+        "reason": "区分教学推演与架构规则，保留完整外设事件、轮询及请求职责链。",
+        "date": "2026-10-17",
         "validation": [
-          "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
         ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
       "platforms/arm/architecture/gic/P02_从控制器规则到芯片与软件身份.md": {
         "state": "reviewed",
-        "result": "retained",
-        "reason": "冷读规则、产品、核、SoC、板与软件的身份链；2.6.1 已给两份原件分别证明什么的答案，表前有定位过程，表中有具体修订与能力，未用型号数字裁决冲突，保留正文。",
-        "date": "2026-10-16",
+        "result": "revised",
+        "reason": "区分规范、产品、芯片与软件模块，按职责说明实际交接，避免身份名称混用。",
+        "date": "2026-10-17",
         "validation": [
-          "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
         ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P03_多核控制器的角色_寄存器与编号.md": {
+      "platforms/arm/architecture/gic/P03_多核角色与架构编程接口.md": {
         "state": "reviewed",
         "result": "revised",
-        "reason": "冷读三类来源、组件路径、两种访问及 PPI 物理分块；保留布线与电源约束到功能、配置、接口和私有状态的因果链。将来源分类与架构编号约定分开命名，统一整数商记号；索引实验改为完整 C11，补输入失败与退出状态。",
-        "date": "2026-10-16",
+        "reason": "建立逻辑角色、逐PE来源与两种寄存器访问；原位布局和原访问表先于归纳。",
+        "date": "2026-10-17",
         "validation": [
-          "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过",
-          "GCC C11 严格编译、边界/非法输入、五场景、优化构建及练习失败与恢复等27项检查通过；正文与C文件一致"
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
         ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P04_一次中断的状态转换与完成协议.md": {
+      "platforms/arm/architecture/gic/P04_GIC600的物理实现_从逻辑映射到输入输出.md": {
         "state": "reviewed",
         "result": "revised",
-        "reason": "冷读设备、Pending/Active、运行优先级与异常现场四层；保留清源/停用两种传播路径及再次确认分支。标题将再次进入与软件重入区分；状态模型改为 C11，五种场景和练习失败/恢复保留，普通检查不因关闭断言跳过。",
-        "date": "2026-10-16",
+        "reason": "将逻辑Redistributor逐项映射到GIC-600的Distributor/PPI物理块，以配置、读返回、请求、核侧反馈解释同一份状态；分清硬件集成分组与软件配置。",
+        "date": "2026-10-17",
         "validation": [
-          "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过",
-          "GCC C11 严格编译、边界/非法输入、五场景、优化构建及练习失败与恢复等27项检查通过；正文与C文件一致"
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
         ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P05_优先级_屏蔽与嵌套处理.md": {
-        "state": "reviewed",
-        "result": "retained",
-        "reason": "完整冷读门槛、运行优先级、组/子优先级与嵌套保存链；核对教学数值视图和 GIC-600 五有效位限制均有本地说明。寄存器表跟随问题与过程，逆序 EOIR、现场保存和锁反例能共同解释嵌套边界，保留正文。",
-        "date": "2026-10-16",
-        "validation": [
-          "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
-        ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
-      },
-      "platforms/arm/architecture/gic/P06_权限_安全分组与初始化闭环.md": {
-        "state": "reviewed",
-        "result": "retained",
-        "reason": "完整冷读权限/安全归属、全局/每核/来源许可、IRQ/FIQ 与 EL 路由、SRE、唤醒及 RWP。状态所有权、架构/产品选择、启动超时与回滚均有局部因果；配置作用范围没有被画成 PPI 必经请求路径，保留正文。",
-        "date": "2026-10-16",
-        "validation": [
-          "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
-        ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
-      },
-      "platforms/arm/architecture/gic/P07_目标选择_核间通知与电源交接.md": {
+      "platforms/arm/architecture/gic/P05_寄存器位图与编号索引.md": {
         "state": "reviewed",
         "result": "revised",
-        "reason": "完整冷读固定/1-of-N、私有来源、SGI 多目标及关核；补软件共享 work_queue 的记录、数量、锁和本地批次，明确发布、领取、执行三个时刻以及容量、抢占、生命周期边界，避免用抽象队列协议掩盖通信。",
-        "date": "2026-10-16",
+        "reason": "分离原位布局与索引算例；一张前后对照表直接说明SPI接收目标改变而INTID保持，不附加使能操作或Linux编号比较。",
+        "date": "2026-10-17",
         "validation": [
-          "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过",
+          "两份配套C11算例以-Wall -Wextra -Werror -pedantic编译；状态模型自检和索引边界/非法输入通过"
         ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md": {
+      "platforms/arm/architecture/gic/P06_一次中断的状态转换与完成协议.md": {
         "state": "reviewed",
         "result": "revised",
-        "reason": "完整冷读 LPI 状态、两张表的所有权/地址/布局、两层缓存和整体关闭。标题改为实际解释的确认与优先级义务，增加同一次 LPI 的端到端时序图，明确图不规定内部更新先后；统一 RWP 译名并去掉无关 Python 前提。",
-        "date": "2026-10-16",
+        "reason": "沿S0-S6区分来源Active、CPU Interface运行优先级和设备数据，保留完整C实验与条件分支。",
+        "date": "2026-10-17",
         "validation": [
-          "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过",
-          "LPI 状态与优先级义务对照 IHI0069 H.b 4.1.1/4.1.2；新增 Mermaid 使用仓库11.17运行时渲染并目视检查"
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过",
+          "两份配套C11算例以-Wall -Wextra -Werror -pedantic编译；状态模型自检和索引边界/非法输入通过"
         ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。",
+        "length_review": "完整S0至S6状态周期、C模型及再次来事件反例共同解释完成义务；保留整段程序与运行说明。"
       },
-      "platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md": {
-        "state": "reviewed",
-        "result": "retained",
-        "reason": "完整冷读设备/事件/集合、架构与芯片物理连接、映射表、命令队列和同步迁移。必要产品图、寄存器表、命令字段、环形算例已在正文；MAPC/MOVALL 对旧目标 SYNC 的规范与指南差异明确，保留当前展开。",
-        "date": "2026-10-16",
-        "validation": [
-          "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
-        ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
-      },
-      "platforms/arm/architecture/gic/P10_软件交接_部署与分层排障.md": {
+      "platforms/arm/architecture/gic/P07_优先级数值_门槛与分组.md": {
         "state": "reviewed",
         "result": "revised",
-        "reason": "完整冷读软件所有权、证据链、部署与只读观察。移除本轮不导入函数体的作者任务文案，改为版本取证职责；每个 shell 块标明目标板与同一会话前提，更新软件映射入口锚点。",
-        "date": "2026-10-16",
+        "reason": "把优先级数值、门槛和组优先级作为独立问题闭合，下一章再进入PE屏蔽。",
+        "date": "2026-10-17",
         "validation": [
-          "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
         ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P11_UART中断的端到端流程复盘.md": {
+      "platforms/arm/architecture/gic/P08_处理器屏蔽与嵌套恢复.md": {
         "state": "reviewed",
         "result": "revised",
-        "reason": "完整冷读 S0～S6、寄存器索引、来源确认和三类返回动作；各节本地解释成立，39 个内链用于复用前章详细条件及阶段导航，没有取代主线。同步 LPI 新标题锚点，其他正文与导出图源保留。",
-        "date": "2026-10-16",
+        "reason": "明确控制器资格与处理器屏蔽的关系，按嵌套周期说明现场和完成义务。",
+        "date": "2026-10-17",
         "validation": [
-          "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
         ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
+      },
+      "platforms/arm/architecture/gic/P09_权限_安全分组与异常路由.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "将安全归属、配置对象、组许可和异常目标连成完整推导；实际配置图明确物理端点和读返回。",
+        "date": "2026-10-17",
+        "validation": [
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
+        ],
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。",
+        "length_review": "初始化已独立；来源安全归属、组控制和IRQ/FIQ到异常级构成一条连续路由推导，保留原图对照及就地字段。"
+      },
+      "platforms/arm/architecture/gic/P10_初始化顺序与硬件完成握手.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "独立组织全局、每PE和每来源初始化，区分写入顺序、可见性和硬件完成。",
+        "date": "2026-10-17",
+        "validation": [
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
+        ],
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
+      },
+      "platforms/arm/architecture/gic/P11_SPI目标选择与每PE状态.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "围绕硬件亲和坐标、SPI固定目标和1-of-N解释选择条件，不混入Linux CPU编号管理。",
+        "date": "2026-10-17",
+        "validation": [
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
+        ],
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
+      },
+      "platforms/arm/architecture/gic/P12_SGI核间通知与电源交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "以真实发送端、共享PPI块与目标PE说明SGI；区分通知和共享工作、逐PE握手和块级电源协议。",
+        "date": "2026-10-17",
+        "validation": [
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
+        ],
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
+      },
+      "platforms/arm/architecture/gic/P13_从消息请求到内存中的中断状态.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "先讲LPI内存状态契约再映射GIC-600集中处理功能，明确状态与缓存交接。",
+        "date": "2026-10-17",
+        "validation": [
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
+        ],
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。",
+        "length_review": "约10331字词，只略超阈值；属性表、Pending和缓存同步属于同一协议，不拆少量尾部说明。"
+      },
+      "platforms/arm/architecture/gic/P14_设备事件身份与ITS实现映射.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "设备身份与ITS职责建立后再映射产品与芯片互连；请求、编程入口和返回方向分别说明。",
+        "date": "2026-10-17",
+        "validation": [
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
+        ],
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
+      },
+      "platforms/arm/architecture/gic/P15_ITS翻译表_命令队列与完成.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "独立闭合翻译表、命令发布与完成、迁移和队列绕回，保留原图与就地字段解释。",
+        "date": "2026-10-17",
+        "validation": [
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
+        ],
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。",
+        "length_review": "约10619字词，命令发布、消费和目标同步闭合同一映射及迁移周期，不将完成条件移到另一篇。"
+      },
+      "platforms/arm/architecture/gic/P16_软件交接_部署与分层排障.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "在软件交接边界明确固件、控制器驱动与设备驱动职责及负责专题入口，保留目标板只读观察与证明边界。",
+        "date": "2026-10-17",
+        "validation": [
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
+        ],
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
+      },
+      "platforms/arm/architecture/gic/P17_UART中断的端到端流程复盘.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "reason": "保留同一UART事件的完整S0-S6复盘，修正拆章后的精确回链；物理路径与必要软件动作不混成Linux管理教程。",
+        "date": "2026-10-17",
+        "validation": [
+          "本轮按连续教材逐篇冷读并裁决术语/连续性扫描风险；不等同于开发者人工评审",
+          "原检查器的标题、元数据、命名、链接与专题ID检查通过；本机无Bash，直接执行仓库脚本内Python实现",
+          "76份原图校验与引用、24个非Mermaid代码块及用户样式保留；Mermaid与图片/表格渲染检查通过；git diff --check通过"
+        ],
+        "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。",
+        "length_review": "完整UART事件从S0至S6复盘，同一设备、状态和观察点必须连续对应；保留完整交接而不缩成阶段提纲。"
       },
       "platforms/arm/architecture/gic/大纲.md": {
         "state": "reviewed",
@@ -239,7 +335,8 @@
           "本轮逐篇作者冷读；不等同于开发者人工评审",
           "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
         ],
-        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
+        "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。",
+        "length_review": "从GPIO级联的两次来源识别走到软件身份和注册退出，保持一次端到端交接与故障定位；硬件GIC内部已放在独立专题。"
       },
       "knowledge/linux/device_model/class_sysfs/P01_两个没有设备节点的分类实例.md": {
         "state": "reviewed",
@@ -1829,7 +1926,8 @@
           "五幅 Mermaid 渲染并目视检查，五个本地标题片段有效；标题、元数据、命名、全仓链接及 diff 检查通过",
           "连续性大节保留完整程序，术语提示按连续教材前置及就地解释逐项核对"
         ],
-        "limits": "未执行 Kbuild、MODPOST、模块装卸或目标工作队列实验；主机模型不证明内核并发。未提升人工评审状态。"
+        "limits": "未执行 Kbuild、MODPOST、模块装卸或目标工作队列实验；主机模型不证明内核并发。未提升人工评审状态。",
+        "length_review": "完整错误模型由裸指针危险推导临时访问、持有和交付责任，保留完整程序及反例；后续API和组合机制已有独立章节。"
       },
       "knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md": {
         "state": "reviewed",
@@ -1842,7 +1940,8 @@
           "九幅 Mermaid 渲染并目视检查，五十个标题片段有效；标题、元数据、命名、全仓链接及 diff 检查通过",
           "连续性大节承载完整单槽实验和两类持有方案比较；术语提示按前置与当场解释复核，并补 INT_MAX/INT_MIN、ABI 和槽锁入口"
         ],
-        "limits": "Clang C++ 默认 MSVC 目标因本机标准库要求 Clang 20 或更新而未通过，没有掩盖为程序通过。内核夹具使用串行原子、锁与分配替身，不证明并发或目标行为；本轮未执行 ARM 前端、Kbuild、MODPOST 和目标装卸，既有结果单独标记，未提升人工评审。"
+        "limits": "Clang C++ 默认 MSVC 目标因本机标准库要求 Clang 20 或更新而未通过，没有掩盖为程序通过。内核夹具使用串行原子、锁与分配替身，不证明并发或目标行为；本轮未执行 ARM 前端、Kbuild、MODPOST 和目标装卸，既有结果单独标记，未提升人工评审。",
+        "length_review": "布局、计数边界、回调类型及单槽发布实验共同兑现一份对象责任；保留完整模型和两类持有方案对照，不拆断创建到清理的操作。"
       },
       "knowledge/linux/object_lifetime/kref/P03_kref_生命周期状态机.md": {
         "state": "reviewed",
@@ -1855,7 +1954,8 @@
           "固定 list.h 与保存副本一致，核对 list_del/list_del_init/list_empty；计数函数沿用本会话刚核对的固定实现",
           "三份内嵌程序与材料一致；八幅 Mermaid 渲染并目视检查；十三个出链与三十个入链标题片段有效，全仓链接、标题、元数据、命名及 diff 检查通过"
         ],
-        "limits": "长节承载工作票据完整程序及逐参与方责任推导，未按阈值拆碎；术语脚本的阶段组合、枚举中文注释及前置接口逐项人工复核，仍有启发式提示。主机串行替身不验证内核竞争，本轮未执行 ARM 前端、Kbuild、MODPOST、目标模块装卸或真实设备；未提升人工评审。"
+        "limits": "长节承载工作票据完整程序及逐参与方责任推导，未按阈值拆碎；术语脚本的阶段组合、枚举中文注释及前置接口逐项人工复核，仍有启发式提示。主机串行替身不验证内核竞争，本轮未执行 ARM 前端、Kbuild、MODPOST、目标模块装卸或真实设备；未提升人工评审。",
+        "length_review": "四组正交状态以S0至S5贯穿工作票据、关闭与归还；完整模型和逐参与方推导需要连读，不能将状态表与程序拆散。"
       },
       "knowledge/linux/object_lifetime/kref/P04_kref_三条核心规则.md": {
         "state": "reviewed",
@@ -1880,7 +1980,8 @@
           "九个 helper 函数体与本轮核验的固定提交源码一致；四处完整材料展示一致；26个出站标题片段有效；三幅 Mermaid 已渲染查看",
           "元数据、标题、命名和全仓707篇链接检查通过；连续性检测的大节提示对应单一锁交接机制及完整模块，术语提示逐项结合前章和局部说明检查；git diff --check 通过"
         ],
-        "limits": "未执行目标 Kbuild、MODPOST、模块装卸或真实并发验证。顺序替身不能证明实际锁、原子及内存序；固定源码夹具用 -fno-strict-overflow 与 -Wno-sign-compare，未改写上游函数。P08/P34仅同步材料仍待全篇复审。"
+        "limits": "未执行目标 Kbuild、MODPOST、模块装卸或真实并发验证。顺序替身不能证明实际锁、原子及内存序；固定源码夹具用 -fno-strict-overflow 与 -Wno-sign-compare，未改写上游函数。P08/P34仅同步材料仍待全篇复审。",
+        "length_review": "同一引用协议下比较初始化、普通增加、条件取得及最后归还前提；查询表与完整对照程序留在同篇，避免将接口名与合法前提拆开。"
       },
       "knowledge/linux/object_lifetime/kref/P06_release_回调与复杂销毁模式.md": {
         "state": "reviewed",
@@ -1893,7 +1994,8 @@
           "两份完整材料与正文一致；25个出站标题片段有效；六幅 Mermaid 渲染查看；全仓707篇链接、元数据与格式检查及 git diff --check 通过",
           "连续性大节提示对应完整管理者借用实例，未拆碎程序；16项术语候选结合前章、枚举和局部说明人工检查"
         ],
-        "limits": "宿主夹具使用显式顺序替身，不验证真实 timer 时钟、等待、线程、软硬中断或内存序；未执行目标 Kbuild、MODPOST 或装卸。材料 README 仅同步该条说明，未计为整篇完成。"
+        "limits": "宿主夹具使用显式顺序替身，不验证真实 timer 时钟、等待、线程、软硬中断或内存序；未执行目标 Kbuild、MODPOST 或装卸。材料 README 仅同步该条说明，未计为整篇完成。",
+        "length_review": "管理者保活、timer/work停止和延迟释放围绕同一销毁责任的不同执行条件比较；保留完整退出程序及回调上下文推导。"
       },
       "knowledge/linux/object_lifetime/kref/P07_handoff_所有权转移模型.md": {
         "state": "reviewed",
@@ -1906,7 +2008,8 @@
           "三份完整程序与正文一致；13个出站标题片段有效；更名标题无外部锚点调用方、旧 REQUEST_RUNNING 无跟踪残留；六幅 Mermaid 已渲染查看",
           "全仓707篇链接和当前文档元数据、标题、命名及 diff 检查通过；大节含完整可构建队列对照程序，术语候选按前章及局部解释人工处理"
         ],
-        "limits": "顺序替身不证明真实线程、等待与内存序；历史 ARM 前端记录与本轮宿主检查区分，未执行目标 Kbuild、MODPOST、模块装卸。"
+        "limits": "顺序替身不证明真实线程、等待与内存序；历史 ARM 前端记录与本轮宿主检查区分，未执行目标 Kbuild、MODPOST、模块装卸。",
+        "length_review": "同一请求对象的两种交付设计直接比较成功、失败和接管时点；完整程序和归还账本保持一处，避免跨页配对。"
       },
       "knowledge/linux/object_lifetime/kref/P08_lookup_场景与_kref_get_unless_zero().md": {
         "state": "reviewed",
@@ -1919,7 +2022,8 @@
           "五幅 Mermaid 渲染查看并补时序编号，全仓707篇链接检查无缺失，当前元数据、格式、命名及 git diff --check 通过",
           "大节为已建立同一拥有型协议在各容器的比较，保留完整 XArray 程序；链接用于追溯局部已解释契约，术语候选结合前章和局部说明复核"
         ],
-        "limits": "XArray 节点、分配、锁、RCU 与原子是顺序替身，不证明真实容器并发；IDR/哈希片段只作固定源码契约核对，未运行完整模块。未执行目标构建、装卸；六个锚点调用方仅同步入口，不算整篇复审。"
+        "limits": "XArray 节点、分配、锁、RCU 与原子是顺序替身，不证明真实容器并发；IDR/哈希片段只作固定源码契约核对，未运行完整模块。未执行目标构建、装卸；六个锚点调用方仅同步入口，不算整篇复审。",
+        "length_review": "同一拥有型查找协议对照不同容器及关闭分支，保留完整XArray程序；容器内部教程仍链接各自权威专题。"
       },
       "knowledge/linux/object_lifetime/kref/P09_kref_与锁的组合.md": {
         "state": "reviewed",
@@ -1931,7 +2035,8 @@
           "9个出链与33个入链的完整标题匹配，13图全部渲染及目视检查；格式、元数据、命名、全仓707篇链接和git diff --check通过",
           "人工批注及对象锁插入注释与修改前逐字核对；长节提示已冷读，重复remove解释合并，双状态接口按同一对象生命周期连续保留"
         ],
-        "limits": "宿主锁、原子与链表部分操作为顺序替身，不证明真实并发或内存序；历史ARM前端结果没有冒充本轮目标构建，目标链接、装卸未执行。人工评审状态未升级。"
+        "limits": "宿主锁、原子与链表部分操作为顺序替身，不证明真实并发或内存序；历史ARM前端结果没有冒充本轮目标构建，目标链接、装卸未执行。人工评审状态未升级。",
+        "length_review": "三种锁与引用协议按同一对象生命周期比较；重复remove、双锁交接及完整模块是关键反例和兑现过程，保留操作闭环。"
       },
       "knowledge/linux/object_lifetime/kref/P10_kref_与_RCU.md": {
         "state": "reviewed",
@@ -1943,7 +2048,8 @@
           "固定提交kref.rst与rculist.h和保存副本一致，list_del_rcu夹具与固定实现一致；三处内嵌程序一致，13个出链与20个入链完整标题匹配",
           "三图渲染和目视检查，格式/元数据/命名、全仓707篇链接和git diff --check通过；长节含完整模块及分支解释，经冷读保留，术语候选按前置API、示例字段和补充的原子统计说明复核"
         ],
-        "limits": "RCU账本没有真实分配、线程或内存序；宿主模块夹具的锁、排队和GP推进为显式替身。历史ARM前端不充当本轮目标构建，目标链接装卸、真实GP调度和并发未执行；P36与材料README仅同步本次改动，不算整篇复审。"
+        "limits": "RCU账本没有真实分配、线程或内存序；宿主模块夹具的锁、排队和GP推进为显式替身。历史ARM前端不充当本轮目标构建，目标链接装卸、真实GP调度和并发未执行；P36与材料README仅同步本次改动，不算整篇复审。",
+        "length_review": "首次取得、取消发布、归零及宽限期共同限定同一对象回收；完整程序及双条件时序保持一处，避免把单个保护条件误作充分条件。"
       },
       "knowledge/linux/object_lifetime/kref/P11_kref_refcount_t_kobject_的边界.md": {
         "state": "reviewed",
@@ -1956,7 +2062,8 @@
           "28个出链、34个入链完整标题匹配；12图全部渲染及目视检查，格式/元数据/命名、全仓707篇链接及git diff --check通过",
           "连续阅读的长节和链接密度提示按完整会话实例及就近来源核对；术语候选中配置宏已补，前置API和阶段编号不杜撰全称"
         ],
-        "limits": "原子、锁、sysfs、命名、资源和登记等底层仍为顺序替身；未执行目标构建装卸、真实事件/绑定/资源清理、并发或调试延迟分支。复用P02本轮对象程序检查，不新增无关重复实验。"
+        "limits": "原子、锁、sysfs、命名、资源和登记等底层仍为顺序替身；未执行目标构建装卸、真实事件/绑定/资源清理、并发或调试延迟分支。复用P02本轮对象程序检查，不新增无关重复实验。",
+        "length_review": "按实际分配与公开接口比较私有引用、命名对象和设备框架；保留完整独立会话程序以兑现分层责任，不仅保留比较表。"
       },
       "knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md": {
         "state": "reviewed",
@@ -1969,7 +2076,8 @@
           "固定提交重新读取四份诊断文档及两份文件源码；工作树诊断配置重新核对并注明日期；格式、元数据、命名、707篇链接和git diff --check通过",
           "长节按同一责任模型的诊断分类保留，链接均对应本地已有解释的深入证据；术语提示中枚举入口已补，其余前置术语和日志标签不杜撰全称"
         ],
-        "limits": "宿主模型没有真实分配释放或并发，内核夹具的原子/锁/调度为顺序替身；未执行目标Kbuild、装卸、真实诊断告警或并发覆盖。P33和材料说明只同步受影响程序，不计入整篇复审。"
+        "limits": "宿主模型没有真实分配释放或并发，内核夹具的原子/锁/调度为顺序替身；未执行目标Kbuild、装卸、真实诊断告警或并发覆盖。P33和材料说明只同步受影响程序，不计入整篇复审。",
+        "length_review": "围绕统一责任账本组织诊断现场、反例和完整实验；保留首次取得、最后清理及字段保护之间的区别，按内部问题标题查询。"
       },
       "knowledge/linux/object_lifetime/kref/P13_工程模板.md": {
         "state": "reviewed",
@@ -2007,7 +2115,8 @@
           "22个入口及16个入链完整标题有效，四图渲染及目视检查；连续阅读审计零风险提示，术语候选均按前章已建立机制复核",
           "格式、元数据、命名、707篇链接及git diff --check通过；没有需同步的改名标题调用"
         ],
-        "limits": "基础模块使用顺序分配及原子替身；未执行目标构建装卸、真实并发或诊断。新增请求责任核算是明确假定协议，不声称存在已实现的硬件驱动；人工状态保持原值。"
+        "limits": "基础模块使用顺序分配及原子替身；未执行目标构建装卸、真实并发或诊断。新增请求责任核算是明确假定协议，不声称存在已实现的硬件驱动；人工状态保持原值。",
+        "length_review": "专题综合验收围绕同一请求责任从取得到退出复盘，完整代码与问答用于迁移验证；作为参考验收章保留查询结构。"
       },
       "knowledge/linux/object_lifetime/kref/P16_对象创建与失败清理模板.md": {
         "state": "reviewed",
@@ -2353,7 +2462,8 @@
           "127个出链和140个入链标题有效；两图渲染目视通过，链接密度按模块查询职责保留。",
           "格式、元数据、命名、707篇链接及diff检查通过；沿用已验证固定函数体与模型，未新增目标运行。"
         ],
-        "limits": "宿主顺序替身不证明真实并发、内存序或目标装卸；历史ARM记录未重跑，人工状态不变。"
+        "limits": "宿主顺序替身不证明真实并发、内存序或目标装卸；历史ARM记录未重跑，人工状态不变。",
+        "length_review": "约10500字词，固定版本模块导读按责任场景查询同一组原语的协作；具体函数体已单独维护，不再拆出小量导航尾部。"
       },
       "research/source_reading/kref/navigation/P03_条件取得与查找窗口导读.md": {
         "state": "reviewed",
@@ -3332,7 +3442,8 @@
           "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
           "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
         ],
-        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。",
+        "length_review": "约11229字词，地址域、禁止普通解引用及有意转换共同限定同一个指针契约；保留调用检查和完整对照程序，不拆出缺少前提的短尾。"
       },
       "knowledge/foundations/c_language/kernel_static_annotations/P04_Sparse上下文与控制流记账.md": {
         "state": "reviewed",
@@ -3356,7 +3467,8 @@
           "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
           "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
         ],
-        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。",
+        "length_review": "约10835字词，普通分支、类型标签与实际消费者共同回答同一注解最终产生何种效果；保留对照观察路径，避免把元数据误当运行保证。"
       },
       "knowledge/foundations/c_language/kernel_static_annotations/P06_在Linux内核中使用Sparse与设计注解.md": {
         "state": "reviewed",
@@ -3368,7 +3480,8 @@
           "GCC14.2与Clang18.1.8的普通编译、正反例执行、预处理及DWARF三组对照共40条命令符合预期；验证脚本5种替身场景和shell语法检查通过，替身仅证明脚本控制逻辑。",
           "固定dfaf2136内核7份保存源码匹配，另读Kbuild；Sparse v0.6.4提交c4706aa7核对聚合context与调用线性化；格式、元数据、命名、707篇链接及diff检查通过。"
         ],
-        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。"
+        "limits": "没有Sparse受支持环境诊断实跑、pahole转BTF或Kbuild模块构建/加载。连续性脚本剩余三处长节为同一任务的完整代码/多路径对照，源码实现篇入口为职责导航，均已人工冷读；未因阈值删除有效材料，人工评审状态不变。",
+        "length_review": "完整注解工程保留检查、普通编译与误用对照的程序和操作；各长节属于同一实验的多路径比较，拆开将迫使读者跨页拼装输入与预期。"
       },
       "knowledge/foundations/c_language/kernel_static_annotations/大纲.md": {
         "state": "reviewed",
@@ -4151,7 +4264,8 @@
           "每种模式验证5040插入排列、20000次混合请求、极值及初始例子；逐次检查容量计划、全部失败节点字段快照、独立键集合、严格祖先区间、叶深及池所有权。",
           "12图渲染目视，标题入出链接、全仓链接、格式元数据及diff检查通过。"
         ],
-        "limits": "长30.2按两个H3完整呈现相同场景的两套算法与分裂传播解释，保留已有逐步图和片段，不因阈值拆散比较单元。容量验证使用固定池，不模拟堆分配异常或共享更新。"
+        "limits": "长30.2按两个H3完整呈现相同场景的两套算法与分裂传播解释，保留已有逐步图和片段，不因阈值拆散比较单元。容量验证使用固定池，不模拟堆分配异常或共享更新。",
+        "length_review": "约11578字词，两种分裂时机使用同一输入比较，完整代码与逐步图直接支撑差异；保留比较单元而不拆成难以对照的两篇。"
       },
       "knowledge/linux/data_structures/红黑树_rb-tree/P31_2-3-4树预修复删除.md": {
         "state": "reviewed",
@@ -4187,7 +4301,8 @@
           "独立检查64979种七节点以内的带色形状，67种合法；1000种多层编码还原检查组容量、祖先区间、叶深及输入对象不变。",
           "31图渲染目视，章节入出锚点、全仓707篇链接、格式元数据及diff检查通过；核对LLRB原论文和作者源码。"
         ],
-        "limits": "840行长度提示覆盖逐形映射图、左倾变体边界与完整还原实验，保持连续推导。静态有限输入验证不证明并发更新、悬空地址或全部算法。"
+        "limits": "840行长度提示覆盖逐形映射图、左倾变体边界与完整还原实验，保持连续推导。静态有限输入验证不证明并发更新、悬空地址或全部算法。",
+        "length_review": "完整组内编码、反向还原、黑高证明和可运行检查器沿同一映射关系推进；保留逐形图解与两份完整程序，不以删图或代码换取阈值。"
       },
       "knowledge/linux/data_structures/红黑树_rb-tree/P35_红黑插入与红红冲突上推.md": {
         "state": "reviewed",
@@ -4209,7 +4324,8 @@
           "16命令通过；5040种删除顺序、67种合法带色小树及500次多层删除周期，独立检查存活对象、父链、排序、黑贡献、未命中快照、三旋上限和禁止分配下删除，核对深后继身份。",
           "完整程序与材料一致，GCC14.2/Clang18.1.8的O0/O2和NDEBUG拒绝验证；三篇共78图渲染目视，标题入出锚点、全仓707篇链接、格式元数据及diff检查通过。"
         ],
-        "limits": "长度提示对应完整算法分支的原图、一般子树证明和同阶段比较，保留其阅读闭环。有限独占模型不证明并发实现或损坏指针安全；算术程序不代替结构验证。"
+        "limits": "长度提示对应完整算法分支的原图、一般子树证明和同阶段比较，保留其阅读闭环。有限独占模型不证明并发实现或损坏指针安全；算术程序不代替结构验证。",
+        "length_review": "对象摘除、缺口传播与各借位合并分支共同完成一次删除；保留一般子树证明、同阶段图和完整删除实验。"
       },
       "knowledge/linux/data_structures/红黑树_rb-tree/P33_从多路删除到红黑缺口.md": {
         "state": "reviewed",
@@ -4231,7 +4347,8 @@
           "6份源码副本与固定发布提交逐一一致；6份完整程序与正文一致，共61项命令通过，含GCC/Clang的O0/O2、NDEBUG拒绝、错误成员类型编译拒绝及ARM ILP32静态布局检查。",
           "两篇共49张Mermaid图渲染并目视核对；出入标题锚点、全仓707篇链接、格式、元数据和diff检查通过。"
         ],
-        "limits": "宿主程序只验证值、成员地址与串行引用模型，不执行真实内核并发、RCU或性能测量；ARM仅编译期断言。连续性提示为已有长篇结构解释及证据链接，保留宏语法与实验的完整推导；链接不再代替本地字段定义。"
+        "limits": "宿主程序只验证值、成员地址与串行引用模型，不执行真实内核并发、RCU或性能测量；ARM仅编译期断言。连续性提示为已有长篇结构解释及证据链接，保留宏语法与实验的完整推导；链接不再代替本地字段定义。",
+        "length_review": "从业务对象到根、父色编码和成员布局的完整工程模型，含必要宏语法及布局对照实验；当前章节已按内部层次推进，不拆断同一结构的表示证明。"
       },
       "knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md": {
         "state": "reviewed",
@@ -4242,7 +4359,8 @@
           "6份源码副本与固定发布提交逐一一致；6份完整程序与正文一致，共61项命令通过，含GCC/Clang的O0/O2、NDEBUG拒绝、错误成员类型编译拒绝及ARM ILP32静态布局检查。",
           "两篇共49张Mermaid图渲染并目视核对；出入标题锚点、全仓707篇链接、格式、元数据和diff检查通过。"
         ],
-        "limits": "宿主程序只验证值、成员地址与串行引用模型，不执行真实内核并发、RCU或性能测量；ARM仅编译期断言。连续性提示为已有长篇结构解释及证据链接，保留宏语法与实验的完整推导；链接不再代替本地字段定义。"
+        "limits": "宿主程序只验证值、成员地址与串行引用模型，不执行真实内核并发、RCU或性能测量；ARM仅编译期断言。连续性提示为已有长篇结构解释及证据链接，保留宏语法与实验的完整推导；链接不再代替本地字段定义。",
+        "length_review": "成员地址、对象还原和嵌入式接口是同一地址关系的完整推导；保留宏和对照程序，后续完整调用者框架已有独立章节。"
       },
       "knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md": {
         "state": "reviewed",
@@ -4253,7 +4371,8 @@
           "12项GCC/Clang构建运行命令通过；完整模块和直接提取的教学片段使用固定源码函数的显式宿主适配，验证36组插入/删除顺序、4处分配失败、重复/忙节点、复制输出、清理与独立父链/键序/黑高检查。",
           "30张图全部渲染目视，完整程序与材料一致；标题入出锚点、全仓707篇链接和格式元数据diff检查通过。P12仅同步37.4标题链接，未据此登记该篇完成。"
         ],
-        "limits": "本轮未重跑历史ARM前端或目标Kbuild/MODPOST装卸；宿主以uintptr_t适配父色字段，锁和单次访问为串行替身，不证明实际并发/RCU或目标ABI。长度提示对应完整模块及逐步运行说明，保留可执行闭环。"
+        "limits": "本轮未重跑历史ARM前端或目标Kbuild/MODPOST装卸；宿主以uintptr_t适配父色字段，锁和单次访问为串行替身，不证明实际并发/RCU或目标ABI。长度提示对应完整模块及逐步运行说明，保留可执行闭环。",
+        "length_review": "从业务比较规则到查找、插入、删除和释放是一个完整可执行调用者框架；源码及运行练习留在同篇，避免多页拼装模板。"
       },
       "knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找与返回边界.md": {
         "state": "reviewed",
@@ -4275,7 +4394,8 @@
           "完整模块与正文一致，GCC/Clang O0/O2共8项构建运行通过，固定源码显式串行适配覆盖24组键序的手写、rb_add、find_add和RCU发布变体；独立核对键序、父链、红红、黑高、重复返回及发布次数。",
           "三张图渲染并目视，章节锚点、全仓707篇链接、格式元数据与diff检查通过。"
         ],
-        "limits": "未重跑历史ARM头环境、完整Kbuild或目标装卸；发布仅为计数替身，不验证并发与内存序。长度/链接提示来自完整分支推导、程序与固定证据，各接口职责和状态已在正文就地解释。"
+        "limits": "未重跑历史ARM头环境、完整Kbuild或目标装卸；发布仅为计数替身，不验证并发与内存序。长度/链接提示来自完整分支推导、程序与固定证据，各接口职责和状态已在正文就地解释。",
+        "length_review": "约11027字词，搜索落点、红叶挂接、修复及父槽收尾必须闭合同一次插入；保留完整分支推导与程序。"
       },
       "knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md": {
         "state": "reviewed",
@@ -4286,7 +4406,8 @@
           "正文完整模块与材料一致，GCC/Clang O0/O2共8项构建运行检查通过；固定源码串行适配核对576组插入删除次序的对象身份、键序、父链、黑高及游离标记，另观察Case3和Case4回调现场真实颜色和父地址。",
           "三张图渲染目视、章节标题锚点、全仓707篇链接、格式元数据及diff检查通过。"
         ],
-        "limits": "未执行目标Kbuild/MODPOST、装卸、真实并发或RCU；宿主父色字段显式适配uintptr_t。长度与链接风险已按同一取消周期核对，保留完整分支证明及模块，外链用于追溯而非替代本地解释。"
+        "limits": "未执行目标Kbuild/MODPOST、装卸、真实并发或RCU；宿主父色字段显式适配uintptr_t。长度与链接风险已按同一取消周期核对，保留完整分支证明及模块，外链用于追溯而非替代本地解释。",
+        "length_review": "约11386字词，结构摘除到缺黑修复构成同一取消周期；保留分支证明和完整模块，遍历与替换已由独立章节承担。"
       },
       "knowledge/linux/data_structures/红黑树_rb-tree/P27_Linux有序遍历与整树销毁.md": {
         "state": "reviewed",
@@ -5035,7 +5156,8 @@
           "三篇出入锚点通过；复用上一批已渲染目视的角色及端到端图，明确实现对应阶段。",
           "全仓719篇8855有效链接无缺失，格式元数据/路径及diff通过；术语剩余3项为已有阶段与角色组合。"
         ],
-        "limits": "外部共享盘在本批不可访问，未完成当前工作树复核，使用已保存且hash匹配固定基线的证据。两个超长H2各为一个完整核心函数及既有详细注释，人工冷读后保留。未运行目标内核或并发测试。"
+        "limits": "外部共享盘在本批不可访问，未完成当前工作树复核，使用已保存且hash匹配固定基线的证据。两个超长H2各为一个完整核心函数及既有详细注释，人工冷读后保留。未运行目标内核或并发测试。",
+        "length_review": "约10122字词，只略超阈值；插入和缺黑两个完整核心函数连同中文注释及原文件调用关系保留，不拆断函数体。"
       },
       "knowledge/linux/io_model/blocking_io/P01_poll登记与就绪复查.md": {
         "state": "reviewed",
@@ -5881,7 +6003,8 @@
           "原稿全文、内容去向与冷读；角色图及完整S0-S6时序图渲染目视通过，完整模块长度提示经人工解释保留。",
           "GCC/Clang控制流模型、Python18种正常与错误路径及Bash/Python语法通过；4出链无标题入链，全仓9028有效链接及格式元数据路径和diff通过。"
         ],
-        "limits": "教学DTS明确需要实际板级映射；模型不替代Linux ABI、内核Kbuild、真实并发和目标板电气验证，当前环境未完成这些运行。"
+        "limits": "教学DTS明确需要实际板级映射；模型不替代Linux ABI、内核Kbuild、真实并发和目标板电气验证，当前环境未完成这些运行。",
+        "length_review": "约10303字词，只略超阈值；采样、文件协议、完整驱动与接收器构成同一GPIO观察实验，不把代码或退场步骤拆到附件。"
       },
       "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P08_流式设备与高级场景中的异步通知.md": {
         "state": "reviewed",
@@ -5925,7 +6048,8 @@
           "原稿全文、内容去向和冷读完成；三图渲染目视；连续阅读仅完整采集程序较长一项提示经人工保留。",
           "正文三Python程序提取一致，proc9/trace33/CSV12共54模拟场景通过；4出链无标题入链，全仓9039有效链接及格式元数据路径和diff通过。"
         ],
-        "limits": "替代接口模拟不证明Linux proc/tracefs、真实信号或目标硬件；CSV为明确标注的合成练习，实际内核采集与延迟测量尚未运行。"
+        "limits": "替代接口模拟不证明Linux proc/tracefs、真实信号或目标硬件；CSV为明确标注的合成练习，实际内核采集与延迟测量尚未运行。",
+        "length_review": "约10664字词，同一通知链的采集、统计和延迟对照需完整工具与输入；保留可执行闭环，不拆出缺少数据来源的性能结论。"
       },
       "knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P12_fasync_与其他通知机制的对比与整合.md": {
         "state": "reviewed",
@@ -6332,7 +6456,8 @@
           "全文冷读，内容提交8d266e6；固定官方代码/config证据及四份新增原件已核对。",
           "九图渲染目视、三章出入锚点、全仓9213有效链接、标题元数据命名及diff检查通过。"
         ],
-        "limits": "分类章85个内部查询链接经人工冷读保留密度提示。纸面推演不是内核运行；未执行目标构建、调度/中断跟踪或真实RCU实验。"
+        "limits": "分类章85个内部查询链接经人工冷读保留密度提示。纸面推演不是内核运行；未执行目标构建、调度/中断跟踪或真实RCU实验。",
+        "length_review": "分类参考按同一组坐标比较保护域、等待对象和部署实现；保留各类身份及查询矩阵，具体状态机已有独立篇章。"
       },
       "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P05_Tree_RCU_公共骨架与完整周期.md": {
         "state": "reviewed",
@@ -6498,6 +6623,60 @@
           "角色图与三时序图渲染目视、严格连续性和精确链接通过；实际全仓732篇9315有效本地链接无缺失"
         ],
         "limits": "未执行目标内核、跳板修改、跟踪或分配失败注入；保留Rude辅助接口分配失败未处理的源码边界。"
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/concept_implementation_mapping.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "专题写作规则按职责拆分；主入口给出必读触发，保留原义务，并明确概念到实现的映射、变化的动作与时点及图表不能扩大当前问题。",
+        "validation": [
+          "skill结构验证通过；108条本地链接无缺失；原11个围栏代码完整保留；迁移内容逐块核对。"
+        ]
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/delivery_validation.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "专题写作规则按职责拆分；主入口给出必读触发，保留原义务，并明确概念到实现的映射、变化的动作与时点及图表不能扩大当前问题。",
+        "validation": [
+          "skill结构验证通过；108条本地链接无缺失；原11个围栏代码完整保留；迁移内容逐块核对。"
+        ]
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/official_source_reading.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "专题写作规则按职责拆分；主入口给出必读触发，保留原义务，并明确概念到实现的映射、变化的动作与时点及图表不能扩大当前问题。",
+        "validation": [
+          "skill结构验证通过；108条本地链接无缺失；原11个围栏代码完整保留；迁移内容逐块核对。"
+        ]
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/reader_continuity_review.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "专题写作规则按职责拆分；主入口给出必读触发，保留原义务，并明确概念到实现的映射、变化的动作与时点及图表不能扩大当前问题。",
+        "validation": [
+          "skill结构验证通过；108条本地链接无缺失；原11个围栏代码完整保留；迁移内容逐块核对。"
+        ]
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/reader_first_writing.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "专题写作规则按职责拆分；主入口给出必读触发，保留原义务，并明确概念到实现的映射、变化的动作与时点及图表不能扩大当前问题。",
+        "validation": [
+          "skill结构验证通过；108条本地链接无缺失；原11个围栏代码完整保留；迁移内容逐块核对。"
+        ]
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/source_documentation_workflow.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-17",
+        "reason": "专题写作规则按职责拆分；主入口给出必读触发，保留原义务，并明确概念到实现的映射、变化的动作与时点及图表不能扩大当前问题。",
+        "validation": [
+          "skill结构验证通过；108条本地链接无缺失；原11个围栏代码完整保留；迁移内容逐块核对。"
+        ]
       },
       "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P20_Tiny_RCU_单CPU实现.md": {
         "state": "reviewed",
@@ -6766,7 +6945,8 @@
           "精确出入链与严格连续性通过；P05略超一万字词保留完整周期，理由见基线记录",
           "当前出版7卷53来源唯一存在；全仓733篇9434本地链接检查通过"
         ],
-        "limits": "未执行目标内核构建或GP与worker压力实验。"
+        "limits": "未执行目标内核构建或GP与worker压力实验。",
+        "length_review": "约10260字词，只略超阈值；GP请求、开始、汇聚、清理和下一代交接闭合一个全局周期，保留统一地址与阶段。"
       },
       "research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md": {
         "state": "reviewed",
@@ -6859,7 +7039,8 @@
           "34个函数和四个结构体精确C词法一致，19出链21标题入链；两图目视。",
           "实际格式元数据命名及全仓9482条本地链接检查通过，当前出版清单55来源有效唯一。"
         ],
-        "limits": "约10914字词与327行长H2经冷读保留，以完整S0至S6闭合；实例生命周期已独立。 未运行目标内核构建、SRCU压力、模块加载卸载或NMI实验。"
+        "limits": "约10914字词与327行长H2经冷读保留，以完整S0至S6闭合；实例生命周期已独立。 未运行目标内核构建、SRCU压力、模块加载卸载或NMI实验。",
+        "length_review": "约10914字词，以S0至S6闭合双扫描、callback与同步等待；实例生命周期已独立，保留剩余同一周期。"
       },
       "research/source_reading/rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md": {
         "state": "reviewed",
@@ -6914,7 +7095,8 @@
           "43出链24标题入链，五图目视，严格连续性无风险。",
           "本组35项函数宏与控制块定义C词法一致；实际格式元数据命名及9536条本地链接通过，7卷59来源有效唯一。"
         ],
-        "limits": "约12400字词；已移出构建和ARM互斥，剩余同一周期与结果判别需要连读，保留完整源码及地址推导。 未执行目标构建、Bear截获、ARM运行或Tiny压力测试。"
+        "limits": "约12400字词；已移出构建和ARM互斥，剩余同一周期与结果判别需要连读，保留完整源码及地址推导。 未执行目标构建、Bear截获、ARM运行或Tiny压力测试。",
+        "length_review": "构建和ARM互斥已经移出，剩余T0至T5周期及结果判别需连读；保留完整源码和两级指针地址推导。"
       },
       "research/source_reading/rcu/source_explanations/P19_Linux_6.12_ARM中断状态保存与Tiny队列互斥源码实现.md": {
         "state": "reviewed",
@@ -11072,7 +11254,8 @@
         "validation": [
           "完整阅读与改后冷读；元数据、标题、路径检查通过；962篇全仓链接检查无缺失、歧义或本地绝对路径。"
         ],
-        "limits": "人工评审状态不自动升级；不将历史配置、宿主模型或自动检查冒充硬件实测。"
+        "limits": "人工评审状态不自动升级；不将历史配置、宿主模型或自动检查冒充硬件实测。",
+        "length_review": "仓库协作入口须在首次进入时提供完整适用规则；当前约11664字词，保留治理、取证和提交边界，详细写法仍由skill承担。"
       },
       "README.md": {
         "state": "reviewed",
@@ -11103,7 +11286,8 @@
           "全部正文与支撑文档的地图覆盖核对，补齐MarkBook总入口；其余唯一表面缺项是正则对路径内括号的误截，实际入口存在。",
           "元数据、标题、路径及962篇全仓链接检查通过；核查暂存差异只含本批修订，保留独立GIC工作。"
         ],
-        "limits": "没有进行新的人工评审，不将AI核对或历史完成标记传播到新增内容。"
+        "limits": "没有进行新的人工评审，不将AI核对或历史完成标记传播到新增内容。",
+        "length_review": "唯一人工评审地图按目录查询全部节点；分散为多份会破坏唯一状态入口，保留层级导航和逐节点状态。"
       },
       "atlas/roadmaps/linux_textbook_refactor.md": {
         "state": "reviewed",
@@ -11114,7 +11298,8 @@
           "原批次记录保留，依赖表不再重复过期完成状态；逐项核对更新差异。",
           "元数据、标题、路径与962篇全仓链接检查通过。"
         ],
-        "limits": "历史批次的validated和续接提示仅描述当时，不作本轮教材质量或人工评审完成证据。"
+        "limits": "历史批次的validated和续接提示仅描述当时，不作本轮教材质量或人工评审完成证据。",
+        "length_review": "工作蓝图连同旧批次摘要用于按批次追溯；保留历史计数与限制，当前状态由current_pass单独解释，不按教材章节阈值拆散证据。"
       },
       "research/source_reading/linux/SOURCE_BASELINE.md": {
         "state": "reviewed",
@@ -11125,7 +11310,20 @@
           "391份已跟踪原件与各自固定Git对象逐字节一致，其中387份NXP6.12.20、4份上游v6.1。",
           "标题、元数据、路径、511条出链与149条标题入链检查通过；历史批次结果和未执行项保留。"
         ],
-        "limits": "本次原件比较不构成目标编译、部署或运行验证；只读取证缓存和未保存文件不计入391份。"
+        "limits": "本次原件比较不构成目标编译、部署或运行验证；只读取证缓存和未保存文件不计入391份。",
+        "length_review": "固定源码身份与逐批取证记录供查询和追溯；前部已增加任务入口及证据层次，保留各批配置和运行限制，不将旧记录移散或冒充当前结果。"
+      },
+      "governance/migration/repository_textbook_refactor.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "复核本轮流水、旧批次边界、标题和查询入口；修正旧状态与当前结果混用、历史计划标题及过期续接提示。228组历史批次与交付记录保留原文。",
+        "validation": [
+          "正式文档标题、元数据、路径检查通过；执行记录出入标题锚点核对，228组历史批次及交付记录规范化换行后逐字未变。",
+          "当前962篇文件与基线迁移及新增清单逐项相等，无清单外文档、缺失路径或旧路径审查记录。"
+        ],
+        "limits": "历史技术记录按来源与时点保存，不代表本次重新运行其中的实验；AI职责复审不构成开发者人工评审。",
+        "length_review": "历史执行流水账保留每批内容去向、验证与未执行项及原有锚点；前部增加任务查询入口，228组旧记录不重排为现行教程或拆散交付上下文。"
       }
     },
     "additional_documents": [
@@ -11143,6 +11341,17 @@
       "knowledge/linux/data_structures/红黑树_rb-tree/P54_同一地址的四种VMA查询结果.md",
       "knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P14_按键窗口合并与按下释放确认.md",
       "tools/ai/codex/skills/build-linux-note-topic/references/concept_implementation_mapping.md",
+      "platforms/arm/architecture/gic/P04_GIC600的物理实现_从逻辑映射到输入输出.md",
+      "platforms/arm/architecture/gic/P05_寄存器位图与编号索引.md",
+      "platforms/arm/architecture/gic/P08_处理器屏蔽与嵌套恢复.md",
+      "platforms/arm/architecture/gic/P10_初始化顺序与硬件完成握手.md",
+      "platforms/arm/architecture/gic/P12_SGI核间通知与电源交接.md",
+      "platforms/arm/architecture/gic/P15_ITS翻译表_命令队列与完成.md",
+      "tools/ai/codex/skills/build-linux-note-topic/references/delivery_validation.md",
+      "tools/ai/codex/skills/build-linux-note-topic/references/official_source_reading.md",
+      "tools/ai/codex/skills/build-linux-note-topic/references/reader_continuity_review.md",
+      "tools/ai/codex/skills/build-linux-note-topic/references/reader_first_writing.md",
+      "tools/ai/codex/skills/build-linux-note-topic/references/source_documentation_workflow.md",
       "research/source_reading/rcu/source_explanations/P14_Linux_6.12_Tree_RCU_同步等待批处理源码实现.md",
       "research/source_reading/rcu/source_explanations/P15_Linux_6.12_Tree_RCU_NOCB队列与执行交接源码实现.md",
       "research/source_reading/rcu/source_explanations/P16_Linux_6.12_Tree_SRCU实例建立扩展与销毁源码实现.md",
@@ -11472,6 +11681,21 @@
           "reason": "51671ea核对repo官方Python版本说明，将已有SDK工具依赖与教学模型分开；改为按实际脚本和版本核对，移除全局切换python的默认步骤，不宣称已确认整个旧SDK需要Python2。12出链及全仓检查通过；此候选只完成语言边界审查，整篇旧构建流程仍不计主reviews。技术正文无Python围栏，labs/knowledge/engineering/platforms/research无配套.py残留。"
         }
       ]
+    },
+    "completion": {
+      "date": "2026-10-18",
+      "documents": 962,
+      "reviewed": 962,
+      "pending": 0,
+      "scope_check": "基线707篇经路径迁移，加255篇新增或拆分文档，与当前962篇Markdown逐项一致。",
+      "formal_documents": 945,
+      "native_format_documents": 17,
+      "long_documents_reviewed": 42,
+      "source_files_exact": 391,
+      "snapshot_branch": "codex/backup-full-document-refactor-20261018",
+      "snapshot_scope": "完整已复审工作区文档、关联图资产和规则，包含既有GIC与skill差量；原工作区状态保留，不纳入无关未跟踪U-Boot原件。",
+      "validation": "正式文档标题元数据、唯一ID、路径、全仓链接及标题片段通过；历史材料摘要不变；skill安装镜像零差异。具体实验与图示验证按逐篇记录，不重复声称目标运行。",
+      "limits": "本轮作者复审及必要重构完成，不是人工评审或全部目标环境实验通过；未推送远端或再次移动master。"
     }
   },
   "quality_reassessment": {
