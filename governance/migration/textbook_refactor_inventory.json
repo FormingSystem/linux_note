@@ -11714,7 +11714,15 @@
           "codex/backup-full-document-refactor-20261018": "52d6630a17c24df5abec890aa30918d081fb550e"
         },
         "scope": "正文、图资产、规则及全部真实入口与复审记录；无关的8份未跟踪U-Boot原件保留",
-        "note": "这是正文与规则推送成功后的已核对回执，本回执自身的记录提交接续其后。"
+        "note": "这是正文与规则推送成功后的已核对回执，本回执自身的记录提交接续其后。",
+        "supplemental_evidence": {
+          "date": "2026-10-18",
+          "files": 8,
+          "source_commit": "4debc57a3da6c3f4d3f89a637e99206f4cea0a96",
+          "verification": "八份原件与官方固定提交逐字节一致；补交原件、来源摘要和本地索引。",
+          "correction": "此前以无关材料排除的判断依据不足；scope字段记录的是首次交付范围，本条修正后续范围。",
+          "manifest": "research/source_reading/uboot/supplemental_source_manifest.json"
+        }
       }
     }
   },

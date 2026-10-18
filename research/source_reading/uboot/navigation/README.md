@@ -33,3 +33,18 @@ domains:
 ## 1.2\_证据怎样用于自己的工程
 
 先核对官方来源、不可变提交与板配置，再查看构建产物和运行日志。已有阶段相同、文件名相同或函数名相同，都不能证明两个 SDK 走同一分支。各模块明确区分主机实验、源码求值和目标执行；当前没有完整 U-Boot 或硬件启动验收。[专题大纲](../../../../knowledge/system_software/uboot/大纲.md) 给出连续阅读顺序；[历史配置与图片记录](../../../investigations/uboot_vendor_baselines.md) 单独保存厂商材料的身份和差量，不属于本索引的 v2022.10 原件。
+
+## 1.3\_补充原件的本地查阅入口
+
+以下原件补充启动环境、地址映射与命令分派的查证上下文，仍使用本索引开头的同一固定提交。它们保留上游内容，不添加教学注释；机制说明与裁剪实现继续从上面的模块入口阅读。2026-10-18 已逐字节对照官方固定提交；[来源与 SHA-256 清单](../supplemental_source_manifest.json) 保存这八份文件的地址、字节数和摘要，便于复核。
+
+| 查证上下文 | 本地上游原件 |
+| --- | --- |
+| ARMv7 低级初始化入口 | [arch/arm/cpu/armv7/lowlevel_init.S](../upstream/v2022.10/arch/arm/cpu/armv7/lowlevel_init.S) |
+| ARMv8 地址映射接口 | [arch/arm/include/asm/armv8/mmu.h](../upstream/v2022.10/arch/arm/include/asm/armv8/mmu.h) |
+| ARM 处理器系统接口声明 | [arch/arm/include/asm/system.h](../upstream/v2022.10/arch/arm/include/asm/system.h) |
+| C 布局生成汇编偏移 | [arch/arm/lib/asm-offsets.c](../upstream/v2022.10/arch/arm/lib/asm-offsets.c) |
+| ARM SPL 阶段交接 | [arch/arm/lib/spl.c](../upstream/v2022.10/arch/arm/lib/spl.c) |
+| help 命令注册实例 | [cmd/help.c](../upstream/v2022.10/cmd/help.c) |
+| 公共功能配置依赖 | [common/Kconfig](../upstream/v2022.10/common/Kconfig) |
+| 上游命令开发接口说明 | [doc/develop/commands.rst](../upstream/v2022.10/doc/develop/commands.rst) |

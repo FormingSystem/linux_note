@@ -1,0 +1,65 @@
+{
+  "repository": "https://github.com/u-boot/u-boot.git",
+  "tag": "v2022.10",
+  "commit": "4debc57a3da6c3f4d3f89a637e99206f4cea0a96",
+  "verified_on": "2026-10-18",
+  "scope": "补交的八份上游证据原件，路径相对于 upstream/v2022.10；非整个源码目录清单。",
+  "files": [
+    {
+      "path": "arch/arm/cpu/armv7/lowlevel_init.S",
+      "url": "https://raw.githubusercontent.com/u-boot/u-boot/4debc57a3da6c3f4d3f89a637e99206f4cea0a96/arch/arm/cpu/armv7/lowlevel_init.S",
+      "sha256": "f289d8c2897ad6a7520b6f5cd98e6ea92bde687507cd297afe5c47bb01b4cffc",
+      "bytes": 1524,
+      "exact_match": true
+    },
+    {
+      "path": "arch/arm/include/asm/armv8/mmu.h",
+      "url": "https://raw.githubusercontent.com/u-boot/u-boot/4debc57a3da6c3f4d3f89a637e99206f4cea0a96/arch/arm/include/asm/armv8/mmu.h",
+      "sha256": "688358f464905536f5ec9109fefd832d729618d7cd82392c5ce1828e87be1f83",
+      "bytes": 3567,
+      "exact_match": true
+    },
+    {
+      "path": "arch/arm/include/asm/system.h",
+      "url": "https://raw.githubusercontent.com/u-boot/u-boot/4debc57a3da6c3f4d3f89a637e99206f4cea0a96/arch/arm/include/asm/system.h",
+      "sha256": "cf243df0fd804ecfa7da322693d7916db52b1bb38cd9919f50b57107618a4b53",
+      "bytes": 21589,
+      "exact_match": true
+    },
+    {
+      "path": "arch/arm/lib/asm-offsets.c",
+      "url": "https://raw.githubusercontent.com/u-boot/u-boot/4debc57a3da6c3f4d3f89a637e99206f4cea0a96/arch/arm/lib/asm-offsets.c",
+      "sha256": "e0379ceaed1eb1e78621d5343c5d0781a85ce47833d58dcc261d1ac004e17b03",
+      "bytes": 5147,
+      "exact_match": true
+    },
+    {
+      "path": "arch/arm/lib/spl.c",
+      "url": "https://raw.githubusercontent.com/u-boot/u-boot/4debc57a3da6c3f4d3f89a637e99206f4cea0a96/arch/arm/lib/spl.c",
+      "sha256": "3a90b545e24aeee0b542e32a84c9f828f9330705381a3b84913193caad13b1af",
+      "bytes": 2610,
+      "exact_match": true
+    },
+    {
+      "path": "cmd/help.c",
+      "url": "https://raw.githubusercontent.com/u-boot/u-boot/4debc57a3da6c3f4d3f89a637e99206f4cea0a96/cmd/help.c",
+      "sha256": "db5433813ae90148351e661191aebb1245a844cb30b4af89f98769f799d7d881",
+      "bytes": 996,
+      "exact_match": true
+    },
+    {
+      "path": "common/Kconfig",
+      "url": "https://raw.githubusercontent.com/u-boot/u-boot/4debc57a3da6c3f4d3f89a637e99206f4cea0a96/common/Kconfig",
+      "sha256": "d78775f862ffbdf650aeff5d6d7c56dffcb7a263cebd25351447312a3aee2ae1",
+      "bytes": 32029,
+      "exact_match": true
+    },
+    {
+      "path": "doc/develop/commands.rst",
+      "url": "https://raw.githubusercontent.com/u-boot/u-boot/4debc57a3da6c3f4d3f89a637e99206f4cea0a96/doc/develop/commands.rst",
+      "sha256": "95f620a51a8a2fc477780b39660c167d0b379caac447e310f0994a858e3e4a0c",
+      "bytes": 6237,
+      "exact_match": true
+    }
+  ]
+}
