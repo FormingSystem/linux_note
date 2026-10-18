@@ -34,7 +34,8 @@
       "knowledge/system_software/buildroot/P04_工具链的调试与问题排查.md": "knowledge/system_software/buildroot/P04_沿编译链接与运行边界定位失败.md",
       "knowledge/system_software/buildroot/P05_文件系统构建与定制.md": "knowledge/system_software/buildroot/P05_从安装目录到可验证的根文件系统.md",
       "knowledge/system_software/buildroot/P06_包集成与系统服务.md": "knowledge/system_software/buildroot/P06_把应用接入构建并交给初始化系统.md",
-      "knowledge/system_software/buildroot/P07_镜像生成与部署.md": "knowledge/system_software/buildroot/P07_把构建产物整理为可核对的交付包.md"
+      "knowledge/system_software/buildroot/P07_镜像生成与部署.md": "knowledge/system_software/buildroot/P07_把构建产物整理为可核对的交付包.md",
+      "knowledge/system_software/buildroot/P08_高级定制与集成.md": "knowledge/system_software/buildroot/P08_把项目输入迁到外部树并隔离构建.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -9707,6 +9708,17 @@
           "两图渲染目视、连续性长度格式锚点通过；全仓909篇链接无缺失。"
         ],
         "limits": "未执行Linux Buildroot构建、真实文件系统或QEMU启动；同时修正P05自定义defconfig恢复的查询参数。"
+      },
+      "knowledge/system_software/buildroot/P08_把项目输入迁到外部树并隔离构建.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "以同一C应用和板材料完成外部树迁移，解释发现契约、配置与输出分离、CI失败传播及维护边界。",
+        "validation": [
+          "79份固定原件逐字节和摘要一致；上游外部树脚本四例与CI替身四例通过。",
+          "两图渲染目视，Bash语法、连续性长度格式锚点与全仓909篇链接通过。"
+        ],
+        "limits": "未执行Linux全量构建、真实Kconfig解析或AArch64运行；替身验证仅覆盖CI脚本控制流。"
       }
     },
     "additional_documents": [
