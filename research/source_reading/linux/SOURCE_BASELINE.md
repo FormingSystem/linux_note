@@ -13,7 +13,7 @@ domains:
 
 ## 1.1\_当前来源
 
-本目录保存知识正文实际引用的 Linux 源码证据，不是完整内核镜像。
+本目录保存知识正文实际引用的 Linux 源码证据，不是完整内核镜像。本页先解释如何辨认源码、配置和验证结果，再保留各批次的取证记录；学习机制请从对应专题的阅读索引进入。后文每条记录中的“本次”“当前”“未保存”均以该条记录的日期为准，不能直接作为今天的文件清单或运行状态。
 
 | 项目 | 当前值 |
 | --- | --- |
@@ -34,17 +34,50 @@ domains:
 
 | 配置快照 | 已核对状态 | 使用边界 |
 | --- | --- | --- |
-| 既有 RCU 研究快照 | `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y` | 支撑现有抢占式 Tree RCU 主分支导读；不外推到本次工作树 |
-| 2026-08-24 开发工作树 | `CONFIG_TREE_RCU=y`、`CONFIG_SMP=y`、`CONFIG_MUTEX_SPIN_ON_OWNER=y`、`CONFIG_RWSEM_SPIN_ON_OWNER=y`；未启用普通 `CONFIG_PREEMPT`，未启用 `CONFIG_WQ_WATCHDOG` | 支撑本次锁、等待、序列计数器和工作队列的可运行分支判断 |
-| 2026-09-02 建立、2026-09-05 复核的 Tiny RCU 工作树 | `CONFIG_TINY_RCU=y`、`CONFIG_TINY_SRCU=y`、`CONFIG_PREEMPT_NONE=y`、`CONFIG_PROVE_LOCKING=y`、`CONFIG_PROVE_RCU=y`；`CONFIG_SMP=n` | 支撑普通 Tiny RCU 当前编译路径、Lockdep 接入和 early-test 条件判断；配置种子含尚未提交到 `lf-6.12.y` 的工作树差量，不外推到固定标签、Tree RCU 或 Tasks flavor |
+| 既有 RCU 研究快照 | `CONFIG_TREE_RCU=y`、`CONFIG_PREEMPT_RCU=y` | 用于当时抢占式 Tree RCU 分支的阅读；不外推到后续工作树或实际运行镜像 |
+| 2026-08-24 开发工作树 | `CONFIG_TREE_RCU=y`、`CONFIG_SMP=y`、`CONFIG_MUTEX_SPIN_ON_OWNER=y`、`CONFIG_RWSEM_SPIN_ON_OWNER=y`；未启用普通 `CONFIG_PREEMPT`，未启用 `CONFIG_WQ_WATCHDOG` | 用于该日锁、等待、序列计数器和工作队列的配置分支判断；不证明这些分支已经执行 |
+| 2026-09-02 建立、2026-09-05 复核的 Tiny RCU 工作树 | `CONFIG_TINY_RCU=y`、`CONFIG_TINY_SRCU=y`、`CONFIG_PREEMPT_NONE=y`、`CONFIG_PROVE_LOCKING=y`、`CONFIG_PROVE_RCU=y`；`CONFIG_SMP=n` | 用于该次 Tiny RCU 编译路径、Lockdep 接入和 early-test 条件判断；配置种子含当时尚未提交到 `lf-6.12.y` 的工作树差量，不外推到固定标签、Tree RCU 或 Tasks flavor |
 
 2026-08-24 重新发现的候选工作树已核对官方远端与 `lf-6.12.y` 分支；其 `HEAD=7b60e547d2783f8fee61ff7d7be3e066825b9c3a`，以固定发布提交为 merge-base 并前进 3 个提交。工作树 `Makefile` 仍为 Linux 6.12.20。本文新增源码导读全部通过该工作树中的标签对象读取固定提交内容，不把分支头的后续变化混入实现讲解。
 
-2026-09-06 对上述 Tiny 工作树的 `.config`、`include/config/auto.conf` 和 `include/generated/autoconf.h` 进一步核对：`CONFIG_PREEMPT_COUNT=y`、`CONFIG_DEBUG_LOCK_ALLOC=y`，但 `CONFIG_DEBUG_OBJECTS=n`、`CONFIG_DEBUG_OBJECTS_RCU_HEAD=n`、`CONFIG_RCU_TRACE=n`、`CONFIG_TASKS_RCU_GENERIC=n`。因此当前 `debug_rcu_head_queue()` 恒返 0，配套 `debug_rcu_head_unqueue()` 与 Tasks 初始化帮助器为空操作；Lockdep 接入与节点生命周期检查必须分别判断。涉及的 `kernel/rcu/rcu.h`、`kernel/rcu/tiny.c`、`include/linux/rcupdate.h`、`include/linux/rcutiny.h`、`include/linux/preempt.h`、`include/trace/events/rcu.h` 和 `lib/Kconfig.debug` 已确认与固定提交无差异；这些配置结论仍只描述本次开发构建，不是所有 Tiny 构建的固定属性。
+2026-09-06 对上述 Tiny 工作树的 `.config`、`include/config/auto.conf` 和 `include/generated/autoconf.h` 进一步核对：`CONFIG_PREEMPT_COUNT=y`、`CONFIG_DEBUG_LOCK_ALLOC=y`，但 `CONFIG_DEBUG_OBJECTS=n`、`CONFIG_DEBUG_OBJECTS_RCU_HEAD=n`、`CONFIG_RCU_TRACE=n`、`CONFIG_TASKS_RCU_GENERIC=n`。在该次配置下，`debug_rcu_head_queue()` 恒返 0，配套 `debug_rcu_head_unqueue()` 与 Tasks 初始化帮助器为空操作；Lockdep 接入与节点生命周期检查必须分别判断。涉及的 `kernel/rcu/rcu.h`、`kernel/rcu/tiny.c`、`include/linux/rcupdate.h`、`include/linux/rcutiny.h`、`include/linux/preempt.h`、`include/trace/events/rcu.h` 和 `lib/Kconfig.debug` 当时已确认与固定提交无差异；这些配置结论只描述该次开发构建，不是所有 Tiny 构建的固定属性。
 
 同日核对 Tiny 队列的中断保护路径：`CONFIG_CPU_V7=y`、`CONFIG_CPU_32v7=y`、`CONFIG_TRACE_IRQFLAGS=y`，未启用 `CONFIG_CPU_V7M` 和 `CONFIG_DEBUG_IRQFLAGS`。`arch/arm/Makefile` 设置 `__LINUX_ARM_ARCH__=7`，对应保存 CPSR、屏蔽普通 IRQ 并按旧值恢复控制字段的 ARM 路径；该结论不外推到 Cortex-M 或其他架构。下表新增的三个头文件按固定提交保存并核对 Git blob，原工作树中的对应文件以及 `arch/arm/Makefile`、`arch/arm/include/uapi/asm/ptrace.h` 与固定提交无差异。
 
 本基线标识的是 NXP `linux-imx` 仓库中的一份确定源码快照，不是某个用户名、目录名、共享地址或挂载点。以后补充或复核源码时，应先验证候选工作树的官方远端、分支、`HEAD`、`Makefile` 和相关 Kconfig，再引用上游相对路径；本地绝对路径不得写入已跟踪文档。
+
+### 1.1.1\_怎样从版本身份走到运行结论
+
+一个函数出现在源码里，只能说明这个版本提供了相应实现。它是否进入镜像，还取决于配置与构建；目标机器是否真的走过它，还要核对部署的镜像和运行路径。比如 `.config` 中开启 Lockdep，并不能保证运行中的内核就是这次构建，也不能保证检查器没有提前停检。因此读每条证据时，先确定它回答的是哪一个问题，再使用后面的结果。
+
+| 要回答的问题 | 本页提供的证据 | 仍不能据此推出什么 |
+| --- | --- | --- |
+| 这段实现属于哪个版本 | 官方仓库、不可变提交、上游相对路径与文件 Git blob | 分支名相同或目录名含版本号，不保证内容相同 |
+| 仓库保存的原件是否忠实 | 文件字节与固定 Git 对象的比较 | 摘录忠实不等于对调用上下文的解释正确 |
+| 哪些配置分支可能进入构建 | 具日期的 `.config`、生成头或构建产物核对 | 未查生成结果时，配置种子不等于最终配置；配置不等于已部署 |
+| 示例检查到了什么 | 各批次分别记录语法、宿主模型、原生构建或运行的实际范围 | 宿主替身不验证真实调度、弱内存、Linux ABI 或硬件 |
+| 动态检查为何没有告警 | 需同时确认配置、检查器有效、接口接入与路径执行 | 本页的源码核对不能单独证明目标运行正确 |
+
+版本不同、配置不同和观测时点不同的结论可以同时成立。发生冲突时，保留各自字段、路径和日期，回到承担该结论的材料比较，不用“版本号更大”或“最新记录”代替具体核对。
+
+### 1.1.2\_20261018原件复核与记录查找
+
+本轮将本目录已跟踪的 **391 份非 Markdown 源码证据** 与各自固定 Git 对象逐字节比较：387 份属于上述 NXP 发布提交，另 4 份位于 `upstream_versions/v6.1/`，属于上游 Linux v6.1 提交 `830b3c68c1fb1e9176028d02ef86f3cf76aa2476`。初检发现三份仅有 CRLF/LF 差异、`kernel/locking/lockdep_proc.c` 少一个末尾空行；恢复原始字节并设置精确的 Git 换行/空白属性后，391 份全部一致。该结果只覆盖本目录已跟踪的原件，不包括只读后未保存的取证缓存、教学代码或整个内核树。
+
+核对使用固定提交中的 blob 内容，没有复制较新的工作树 `HEAD`。如需复查一个文件，先按仓库协作规则验证候选源码树身份，再在该树中用 `git rev-parse <固定提交>:<上游相对路径>` 取得对象身份，以 `git cat-file blob <对象身份>` 导出原始字节，与本目录对应文件比较；输出必须按字节保存，不能让终端文本管道改写换行。新文件的内容、版本和日期应随新增记录一同核对。
+
+前述配置表是历史快照；2026-10-18 的工作树身份与 ARM/Tiny RCU 配置观察另见 [内核入口核对](#1.315_ARM内核入口与地址范围的交接证据)。它不补做此前明确未执行的目标实验。各条历史记录中的文件数、链接数、环境缺失和待办保留原时点含义；全仓本轮逐篇进度以 [重构工作清单](../../../governance/migration/textbook_refactor_inventory.json) 的 `current_pass` 为准。
+
+下面按阅读任务提供记录入口；每组后续小节继续保留具体文件和验证限制，不把长清单当作必须顺序读完的教材。
+
+| 要追溯的任务 | 从哪里开始 |
+| --- | --- |
+| 字符设备、RCU 与早期机制原件 | [字符设备证据](#1.3_字符设备与_VFS_证据)、[其他机制证据](#1.5_已有其他机制证据) |
+| 中断及异步通知的接口与退出 | [中断通知与 GPIO 级联](#1.182_中断通知与GPIO级联的职责边界)、[fasync 订阅](#1.194_fasync的订阅身份与标准信号合并) |
+| 锁、序列计数器和 RCU 的复审 | [锁应用契约](#1.207_锁应用契约与历史配置复核)、[序列计数器](#1.211_序列计数器的快照与实时补偿复核)、[RCU 入门](#1.212_RCU入门边界与配置模块复核) |
+| 设备树、GPIO 与 Input | [平台资源](#1.255_平台资源登记绑定与无硬件实验复核)、[GPIO 模型](#1.263_GPIO抽象模型的占用与硬件状态边界)、[Input 入门](#1.275_Input事件语义与帧边界入门) |
+| VFS 的对象、操作与退出 | [VFS 取证起点](#1.281_VFS问题推演与原件入口) |
+| 日志、配置工具与架构入口 | [日志路径](#1.313_内核日志产生消费与调用点控制复核)、[Kconfig 工具](#1.314_Kconfig规则求值与宿主工具实验)、[ARM 入口](#1.315_ARM内核入口与地址范围的交接证据) |
 
 ## 1.2\_保存规则
 
@@ -103,7 +136,7 @@ domains:
 
 ## 1.5\_已有其他机制证据
 
-本目录还保存 RCU、kobject、引用计数、内存管理和数据结构等已有源码。后续会根据实际来源逐步核对其版本；在完成核对前，不应仅凭目录共存就断言所有旧文件都来自本章记录的 6.12.20 基线。
+本目录还保存 RCU、kobject、引用计数、内存管理和数据结构等源码。下文保留它们逐批核对的经过；本轮全量原件比较结果见 [20261018 复核](#1.1.2_20261018原件复核与记录查找)。其中明确隔离的四份 v6.1 文件不能仅因目录共存就被当作 6.12.20 原件。
 
 2026-08-30 对全仓 Linux 源码 URL 做离线入口审计后，已确认下列原有或新增副本的 Git blob 与固定提交一致。rbtree 与 `security/Kconfig.hardening` 的这些 blob 还与上游 Linux 6.12 发布提交 `adc218676eef25575469234709c2d87185ca223a` 逐文件一致。它们可以直接承担本仓库中的源码阅读链接，不再依赖 GitHub `blob` 或 raw 页面：
 
@@ -192,7 +225,7 @@ domains:
 | `kernel/rcu/Kconfig.debug` | `PROVE_RCU` 与 `PROVE_LOCKING` 的选择关系 |
 | `Documentation/locking/lockdep-design.rst` | 锁类、IRQ 状态、依赖规则、注解、闭包、成本与故障排查设计 |
 
-当前基线没有记录目标板 `.config` 启用 `CONFIG_PROVE_LOCKING` 或 `CONFIG_LOCKDEP` 的证据，因此 Lockdep 专题只核对源码可选分支，不宣称当前板级内核已经运行该检查器。版本化阅读记录见：
+本页记录过启用 `CONFIG_PROVE_LOCKING`、`CONFIG_LOCKDEP` 的开发配置，但配置记录不证明目标板运行了对应镜像，也不证明检查器仍有效或相关路径已经执行。Lockdep 专题按各批次实际证据核对源码分支，不据此宣称目标板已完成动态检查。版本化阅读记录见：
 
 - [Lockdep 总阅读索引](../lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.1_基线与阅读目标)
 - [Lockdep 身份与事件接入模块导读](../lockdep/navigation/P02_Linux_6.12_Lockdep身份与事件接入模块导读.md#2.1_模块问题)

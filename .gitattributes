@@ -14,6 +14,10 @@ research/source_reading/linux/**/Makefile text eol=lf
 research/source_reading/linux/scripts/Makefile.host text eol=lf
 research/source_reading/linux/scripts/kconfig/*.l text eol=lf
 research/source_reading/linux/scripts/kconfig/*.y text eol=lf
+research/source_reading/linux/lib/Kconfig.kasan text eol=lf
+research/source_reading/linux/lib/Kconfig.kcsan text eol=lf
+research/source_reading/linux/rust/kernel/error.rs text eol=lf
+research/source_reading/linux/kernel/locking/lockdep_proc.c whitespace=-blank-at-eof
 # Preserve whitespace in these verified upstream source copies.
 research/source_reading/linux/fs/ext4/file.c whitespace=-blank-at-eof
 research/source_reading/linux/fs/jbd2/journal.c whitespace=-blank-at-eof
