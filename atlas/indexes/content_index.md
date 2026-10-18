@@ -57,7 +57,7 @@ domains:
 | Buildroot | [学习地图](../../knowledge/system_software/buildroot/大纲.md)、[固定资料](../../research/source_reading/buildroot/SOURCE_BASELINE.md) |
 | Kconfig | [基础语法](../../knowledge/system_software/kconfig/基础语法.md) · [固定工具阅读索引](../../research/source_reading/kconfig/navigation/P01_Linux_6.12_配置求值工具阅读索引.md#1.2_从定义输入到输出文件的阅读顺序) |
 | 链接脚本 | [链接脚本与运行布局](../../knowledge/system_software/linker/P01_从目标文件到运行布局的链接脚本.md) |
-| U-Boot | [布局与阶段交接](../../knowledge/system_software/uboot/P01_从链接布局到启动阶段的交接.md)、[ARM32 源码索引](../../research/source_reading/uboot/navigation/P01_ARM32链接布局与启动交接阅读索引.md)、[Makefile](../../knowledge/system_software/uboot/uboot-makefile.md)、[问题记录](../../knowledge/system_software/uboot/uboot提问.md) |
+| U-Boot | [布局与阶段交接](../../knowledge/system_software/uboot/P01_从链接布局到启动阶段的交接.md)、[U-Boot 源码索引](../../research/source_reading/uboot/navigation/README.md)、[Makefile](../../knowledge/system_software/uboot/uboot-makefile.md)、[构建上下文](../../knowledge/system_software/uboot/P02_从构建上下文找到实际进入镜像的函数.md) |
 
 ## 1.5\_平台\_实验\_研究与参考
 

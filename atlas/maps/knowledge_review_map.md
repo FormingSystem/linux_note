@@ -606,7 +606,10 @@ mindmap-plugin: basic
         - 🔴 [ARM32链接布局与启动交接阅读索引](../../research/source_reading/uboot/navigation/P01_ARM32链接布局与启动交接阅读索引.md)
         - 🔴 [ARM32链接布局与启动实现](../../research/source_reading/uboot/source_explanations/P01_ARM32链接布局与启动实现.md)
         - 🟢 [阅读说明](../../knowledge/system_software/uboot/uboot-makefile.md)
-        - 🟢 [SPL和main构建的时候 是如何区分对应的函数不会冲突的](../../knowledge/system_software/uboot/uboot提问.md)
+        - 🟢 [从构建上下文找到实际进入镜像的函数](../../knowledge/system_software/uboot/P02_从构建上下文找到实际进入镜像的函数.md)
+        - 🔴 [U-Boot源码阅读索引](../../research/source_reading/uboot/navigation/README.md)
+        - 🔴 [构建上下文与入口选择导读](../../research/source_reading/uboot/navigation/P02_构建上下文与入口选择导读.md)
+        - 🔴 [构建上下文与入口选择实现](../../research/source_reading/uboot/source_explanations/P02_构建上下文与入口选择实现.md)
 
 ## 1.6\_工程方法与平台实现
 
