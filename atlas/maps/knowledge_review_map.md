@@ -625,6 +625,9 @@ mindmap-plugin: basic
         - 🔴 [镜像搬迁为什么不等于改变内存映射](../../knowledge/system_software/uboot/P07_镜像搬迁为什么不等于改变内存映射.md)
         - 🔴 [地址视图与AArch64重定位导读](../../research/source_reading/uboot/navigation/P07_地址视图与AArch64重定位导读.md)
         - 🔴 [AArch64相对重定位与地址交接实现](../../research/source_reading/uboot/source_explanations/P07_AArch64相对重定位与地址交接实现.md)
+        - 🔴 [命令名怎样找到镜像里的实现函数](../../knowledge/system_software/uboot/P08_命令名怎样找到镜像里的实现函数.md)
+        - 🔴 [命令注册与分派导读](../../research/source_reading/uboot/navigation/P08_命令注册与分派导读.md)
+        - 🔴 [命令记录与查找分派实现](../../research/source_reading/uboot/source_explanations/P08_命令记录与查找分派实现.md)
 
 ## 1.6\_工程方法与平台实现
 
