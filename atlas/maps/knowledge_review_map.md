@@ -765,7 +765,7 @@ mindmap-plugin: basic
 - 研究材料的状态独立于知识正文；特定版本源码结论还必须受其源码基线约束。
 - 🔴 [问题调查入口](../../research/investigations/README.md)
     - 字符设备
-        - 🔴 [字符设备扩展接口历史草稿](../../research/investigations/character_device/字符设备扩展接口历史草稿.md)
+        - 🔴 [字符设备扩展接口历史草稿核对](../../research/investigations/character_device/字符设备扩展接口历史草稿.md)
     - Linux 设备模型
         - 🔴 [设备模型 34 章原始总稿迁移核对源](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
 - 源码阅读
