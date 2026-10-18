@@ -210,7 +210,7 @@ mindmap-plugin: basic
 - 内核子系统
     - 跟踪与观测
         - Linux 内核日志
-            - 🔴 [一条日志是怎样 出现 的](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md)
+            - 🔴 [Linux 内核日志](../../knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md)
     - 🔴 [VFS 子系统](../../knowledge/kernel_subsystems/vfs/大纲.md)
         - 章节评审：25 章未评审
         - 🔴 [P01 为什么需要 VFS](../../knowledge/kernel_subsystems/vfs/P01_为什么需要_VFS.md)
@@ -1104,6 +1104,8 @@ mindmap-plugin: basic
         - 🟢 [版权与免责声明](../../publications/books/running_linux_kernel/copyright_and_disclaimer.md)
     - 🔴 专题月刊
         - 🔴 [RCU MarkBook](../../markbook/topics/rcu/README.md)
+
+- 🔴 [Linux 6.12 日志路径源码阅读索引](../../research/source_reading/printk/navigation/P01_Linux_6.12_日志路径源码阅读索引.md)
 
 - 🔴 [devres固定源码阅读大纲](../../research/source_reading/devres/大纲.md)
     - 🔴 [固定源码索引](../../research/source_reading/devres/navigation/P01_Linux_6.12_devres源码阅读索引.md)

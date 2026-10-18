@@ -1,6 +1,6 @@
 ---
 id: knowledge.kernel_subsystems.tracing.logging.linux_内核日志
-title: "一条日志是怎样 出现 的"
+title: "Linux 内核日志"
 kind: subsystem
 status: evolving
 domains:
@@ -8,672 +8,395 @@ domains:
   - kernel
 ---
 
-# 第1章\_一条日志是怎样\_出现\_的
+# 第1章\_Linux\_内核日志
 
-> 读完本章，你会清楚一条内核日志从函数调用到屏幕/日志文件的**完整旅程**，知道“为什么我打了日志却看不见”。
+驱动执行到了错误分支，串口却一行也没显示。此时不能直接判断分支没有执行：调用点可能根本没有生成输出代码，调试开关可能关闭，消息可能已经保存但没有通过控制台门槛，也可能早已被后来的日志覆盖。
 
-## 1.1\_两个目的地\_Ring\_Buffer\_与\_Console
+本章把一条日志从产生到被观察的过程拆开，再用一个可以反复触发的模块验证这些边界。接口以 Linux 6.12 系列为准，源码核对固定在 NXP Linux 6.12.20 发布提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`；不能把旧版本的创建接口、调试标志或打印路径混成同一套实验。
 
-- **Ring Buffer（内核环形缓冲区）**
-   每条日志都会先写入这里。`dmesg`、`journalctl -k` 读的都是它（或其持久化）。**无论控制台等级如何，Ring Buffer 都会收**。
-- **Console（控制台）**
-   指屏幕/串口等“实时显示”终端。**只有“等级≥门槛”的日志**才会被同时输出到 Console。
+## 1.1\_先分清记录产生与控制台输出
 
-### 1.1.1\_Console\_等级门槛怎么调
+**讲解层次：概念到实现的映射。** `printk()` 是内核的格式化消息接口；`pr_info()`、`pr_err()` 等宏替调用者选择级别，设备日志 `dev_info()`、`dev_err()` 还带上设备身份。它们不是用户态的 `printf()`，也不直接等同于“往当前终端写一行”。
+
+先把正常路径分成四个阶段：L0 调用点决定是否输出，L1 格式化并提交内核记录，L2 不同读取者消费记录，L3 用户或存储端实际得到结果。调用点的动态调试和限流判断发生在前面，控制台等级过滤发生在后面，两者不能互相替代。
+
+```mermaid
+flowchart TB
+    call["L0：代码到达日志调用点"] --> gate{"该调用点是否输出<br/>编译配置、调试开关、限流"}
+    gate -->|"否"| absent["本次没有产生记录"]
+    gate -->|"是"| ring["L1：格式化并提交<br/>内核内存中的环形日志缓冲区"]
+    ring -->|"L2：读取可用记录"| reader["用户态读取者<br/>dmesg 或日志采集服务"]
+    ring -->|"L2：按控制台游标消费"| level{"控制台启用且通过门槛"}
+    reader -->|"L3：显示或按配置保存"| user["终端或日志文件"]
+    level -->|"是"| console["L3：控制台驱动输出<br/>例如串口"]
+    level -->|"否"| skip["该控制台跳过输出<br/>不等于删除缓冲区记录"]
+```
+
+**环形缓冲区（ring buffer）** 位于内核内存，容量有限。生产者提交带级别、时间等信息的记录，读取者按自己的进度读取；旧记录可以被新记录覆盖，所以它不是永久档案。`dmesg` 通常读取内核日志；`journalctl -k` 查询的是 journal 中的内核消息，依赖日志服务已经采集到它们，是否落盘又由服务配置决定。
+
+控制台是串口、显示终端等注册到内核的输出设备。它与 `dmesg` 是不同的观察路径。一个 SSH 窗口里启动 `dmesg -w`，是在读取日志，不会让这个窗口自动成为内核控制台。
+
+| 阶段 | 状态存在哪里、由谁改变 | 下一步怎样得知 | 不能据此证明什么 |
+| --- | --- | --- | --- |
+| L0：调用点筛选 | 编译后的调用点、动态调试描述符或局部限流状态；控制命令和调用路径分别修改它们 | 调用点读取对应条件，决定是否调用记录路径 | 代码经过宏，不等于已经产生消息 |
+| L1：记录提交 | 内核环形缓冲区的记录正文、元信息及提交状态；打印路径写入 | 消费者读取已提交记录，等待者按对应路径被唤醒 | 提交不等于串口已经发送完 |
+| L2：消费记录 | 用户读取者的读取进度与各控制台进度；消费者推进自己的位置 | 读取返回、控制台输出或后续调度 | 一个消费者读过，不证明另一个消费者也看到 |
+| L3：显示或保存 | 终端输出和用户态日志文件；终端、采集服务及存储系统处理 | 用户观察输出，或检查相应文件 | 屏幕显示不等于持久化；没有显示也不等于 L0 未执行 |
+
+这里没有把记录、控制台游标和用户态日志文件当成一个状态机。它们分别推进，覆盖、权限、配置和调度都可能使观察结果不同。具体源码角色与本章阶段的对应见 [日志路径源码阅读索引](../../../../research/source_reading/printk/navigation/P01_Linux_6.12_日志路径源码阅读索引.md#1.2_L0到L3分别由谁推进)。
+
+## 1.2\_等级数字越小为什么越容易显示
+
+严重消息的数字更小。普通控制台过滤的判断是 **消息级别数值 < `console_loglevel`**，不是大于，也不是小于等于。例如门槛为 7 时，INFO 的 6 可以通过，DEBUG 的 7 不通过；要包含 DEBUG，门槛应为 8。
+
+| 级别前缀 | 数值 | 常用宏 | 当前事件含义 |
+| --- | --- | --- | --- |
+| `KERN_EMERG` | 0 | `pr_emerg()` | 系统不可用等级的紧急事件 |
+| `KERN_ALERT` | 1 | `pr_alert()` | 需要立即处理 |
+| `KERN_CRIT` | 2 | `pr_crit()` | 严重条件 |
+| `KERN_ERR` | 3 | `pr_err()` | 错误 |
+| `KERN_WARNING` | 4 | `pr_warn()` | 警告 |
+| `KERN_NOTICE` | 5 | `pr_notice()` | 正常但值得注意 |
+| `KERN_INFO` | 6 | `pr_info()` | 一般信息 |
+| `KERN_DEBUG` | 7 | `pr_debug()` | 调试信息；该宏还受前置开关控制 |
+
+`printk(KERN_INFO "ready\n")` 中，级别宏是与格式串相邻的前缀，不是一个单独整数参数。省略级别时使用默认消息级别。设置 ERROR 等级不会替你返回错误码，设置 EMERG 也不会自动调用 `panic()`；日志描述事件，程序仍须实现实际控制流。
 
 ```bash
-# 查看四元组：current default minimum boot
+# Linux 实验机：只读查看当前四项设置。
 cat /proc/sys/kernel/printk
-
-# 临时允许 INFO(6) 与 DEBUG(7) 也上控制台
-dmesg -n 7
-# 或直接写入四元组（常见形如 6 6 1 7）
-echo 7 7 1 7 | sudo tee /proc/sys/kernel/printk
 ```
 
-## 1.2\_简化的调用链
+四项依次为当前控制台门槛、未显式指定时的默认消息级别、最小控制台门槛、默认控制台门槛。不要为了显示 DEBUG，把四项全部随意改掉。下面只调整第一项，并在同一个 shell 中保存原值：
 
-```text
-你的代码：printk()/pr_info()/dev_err()
-        ↓
-vprintk() / log_store()：拼接级别、时间戳、CPU/线程等元信息
-        ↓
-Ring Buffer：内核统一收集
-        ↓
-Console 驱动（串口tty/显卡framebuffer/虚拟终端）：等级达标才显示
+```bash
+# Linux 实验机：记录原门槛，只让后续控制台打印包含 DEBUG。
+old_console_level=$(awk '{print $1}' /proc/sys/kernel/printk)
+sudo dmesg -n 8
 ```
 
-> 现代内核为避免死锁/长时间持锁打印，还会引入后台线程/延迟打印等机制（如 `printk_deferred()`），但**对使用者的 API 不变**：你只需正确选择 `printk/pr_* / dev_*`，其余交给内核。
+这不重新生成 L0 被抑制的消息，也不保证控制台重放已经跳过的历史记录。实验后用 `sudo dmesg -n "$old_console_level"` 恢复。只看 `dmesg` 时通常不必调整控制台门槛；`ignore_loglevel`、panic 等特殊路径还会改变普通过滤行为。规则与例子可对照 [Linux 6.12 printk 基础说明](https://www.kernel.org/doc/html/v6.12/core-api/printk-basics.html)，本文实验使用普通运行路径。
 
-## 1.3\_本书写法约定
+## 1.3\_先做一个可以反复触发的日志入口
 
-- **示例能跑**：全部按外部模块（out-of-tree）构建。
-- **头文件速查**：每节都会给到“我该 include 谁”。
-- **命令可复制**：`make && insmod && dmesg -w` 即可观察现象。
+只在模块初始化中写一次 `pr_debug()`，加载以后才打开开关，会错过唯一一次调用。这里把输出放在一个可写模块参数的回调里：加载只建立设备身份，写入参数才产生本轮日志。这样可以保持同一个模块实例，先关闭、再开启调试点，然后比较两次触发。
 
-------
+实验面向可加载自己构建模块的 Linux 测试机。需要 `CONFIG_MODULES=y`、`CONFIG_PRINTK=y`、与正在运行内核匹配的构建目录，以及允许装载该模块的系统策略。后面的动态开关实验还要求对应调试点已经接入动态调试。Windows 宿主不能执行这些内核步骤；本仓库已做 ARM 语法分支检查，没有将其记作模块装载或运行验证。
 
-# 第2章\_printk(深入但好用)
+创建空目录 `loglab`，将下面两份文件保存在其中。配套副本为 [loglab.c](../../../../labs/kernel/logging/materials/loglab.c) 与 [Makefile](../../../../labs/kernel/logging/materials/Makefile)，正文展示完整内容，不需要从别处拼片段。
 
-> 这一节你会真正理解 `printk` 的“级别前缀”、常用格式化扩展，以及它与高层封装的关系。
-
-## 2.1\_printk()\_的级别前缀
-
-`printk()` 自身不带级别；用字符串宏做前缀（在 `<linux/printk.h>`）：
-
-| 宏             | 数值 | 语义       | 习惯用法     |
-| -------------- | ---- | ---------- | ------------ |
-| `KERN_EMERG`   | 0    | 崩溃级     | panic 前打印 |
-| `KERN_ALERT`   | 1    | 立刻处理   | 关键硬件异常 |
-| `KERN_CRIT`    | 2    | 严重错误   | 数据损坏     |
-| `KERN_ERR`     | 3    | 错误       | 失败分支     |
-| `KERN_WARNING` | 4    | 警告       | 可继续但异常 |
-| `KERN_NOTICE`  | 5    | 重要但正常 | 启动里程碑   |
-| `KERN_INFO`    | 6    | 一般信息   | 初始化信息   |
-| `KERN_DEBUG`   | 7    | 调试       | 调试噪声     |
-
-**示例（阶段 2-1）**
+`pr_fmt` 必须写在头文件之前，使后续宏使用这个前缀。程序用根设备注册接口取得一个有效 `struct device`；它只提供日志身份，不操作硬件，也不创建可读写的 `/dev/loglab`。
 
 ```c
-// loglab.c
-#include <linux/module.h>
-#include <linux/printk.h>
-
-static int __init loglab_init(void)
-{
-    printk(KERN_INFO  "printk: hello info\n");
-    printk(KERN_ERR   "printk: error=%d\n", -22);
-    printk(KERN_DEBUG "printk: debug (maybe hidden)\n");
-    return 0;
-}
-static void __exit loglab_exit(void)
-{
-    printk(KERN_INFO "printk: bye\n");
-}
-module_init(loglab_init);
-module_exit(loglab_exit);
-MODULE_LICENSE("GPL");
-```
-
-> 看不到 DEBUG？请把控制台等级提到 7：`dmesg -n 7`。即便看不见，它也在 Ring Buffer 里。
-
-## 2.2\_printk\_的\_内核格式化\_小技巧(实用精选)
-
-- **指针**：`%pK` 受 `kptr_restrict` 影响；`%px` 不遮掩（调试用）。
-- **错误码**：`%pe` 会把 `-ENOENT` 转成字符串 `"(-2)"` 且含义。
-- **UUID**：`%pUb/%pUl` 输出 16 字节 UUID（大/小端）。
-- **网络地址**：`%pI4`（IPv4）、`%pI6`（IPv6）、`%pIS`（带端口）。
-- **位掩码**：`%*pb` 按位打印 bitmap。
-- **时长**：`%pM`（MAC），`%pr`（资源区间）等。
-
-> 这些扩展让 `printk` 更像“内核专属 printf”。写驱动时善用它能减少解析压力。
-
-**头文件**
-
-- `#include <linux/printk.h>`（`printk` 与所有级别宏）
-- 一些 `%p` 扩展可能依赖特定子系统头，但常用无需额外 include。
-
-------
-
-# 第3章\_pr\_*(规范与前缀)
-
-> `pr_info/pr_err/...` 是**官方推荐**的高层打印方式：统一级别、易读、可自动加模块前缀。
-
-## 3.1\_pr\_*\_是如何封装的
-
-在 `<linux/printk.h>` 里，`pr_info(x)` 展开为：
-
-```text
-printk(KERN_INFO pr_fmt(x))
-```
-
-其中 `pr_fmt(fmt)` 可自定义“前缀策略”。
-
-## 3.2\_给日志自动带上\_模块名
-
-在每个 `.c` 顶部加：
-
-```c
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-```
-
-- **`KBUILD_MODNAME`** 由 Kbuild 在编译时以 `-D` 注入，取值等于你的**模块目标名**（如 `obj-m += loglab.o` → `"loglab"`）。
-- 多文件模块（`mymod-objs := a.o b.o`）时，**所有 .c 的 `KBUILD_MODNAME` 都是 `"mymod"`**；`KBUILD_BASENAME` 则是各自源文件名（`"a"` / `"b"`）。
-
-**示例（阶段 3-1）**
-
-```c
-#include <linux/module.h>
-#include <linux/printk.h>
+// SPDX-License-Identifier: GPL-2.0-only
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-static int __init loglab_init(void)
-{
-    pr_info("init, MOD=%s\n", KBUILD_MODNAME); // loglab: init, MOD=loglab
-    pr_err("oops\n");                          // loglab: oops
-    return 0;
-}
-static void __exit loglab_exit(void) { pr_info("exit\n"); }
-module_init(loglab_init);
-module_exit(loglab_exit);
-MODULE_LICENSE("GPL");
-```
-
-> 想按“源文件”而非“模块”区分？把 `pr_fmt(fmt)` 改成 `KBUILD_BASENAME ": " fmt`。
->  想稳定可控？自定义常量：`#define DRV_NAME "mydrv"`，再 `#define pr_fmt(fmt) DRV_NAME ": " fmt`。
-
-## 3.3\_pr\_*\_系列与注意点(精要)
-
-| 宏            | 等级       | 用途                    |
-| ------------- | ---------- | ----------------------- |
-| `pr_emerg()`  | EMERG(0)   | 崩溃级                  |
-| `pr_alert()`  | ALERT(1)   | 立刻处理                |
-| `pr_crit()`   | CRIT(2)    | 严重错误                |
-| `pr_err()`    | ERR(3)     | 错误                    |
-| `pr_warn()`   | WARNING(4) | 警告（注意别用老别名）  |
-| `pr_notice()` | NOTICE(5)  | 正常但重要              |
-| `pr_info()`   | INFO(6)    | 一般信息                |
-| `pr_debug()`  | DEBUG(7)   | 调试（第 5 章详解开关） |
-| `pr_cont()`   | 延续行     | 不加级别、不换行，慎用  |
-
-**避免陷阱**：长串拼接用一条日志打印，尽量不要 `pr_cont()` 连续输出，避免与其他 CPU 的日志交叉。
-
-------
-
-# 第4章\_把日志\_绑到设备上\_dev\_*(驱动首选)
-
-> 对驱动来说，最重要的问题不是“谁（模块）说的”，而是“**哪块设备**出了问题”。`dev_info/err/warn/dbg()` 会自动带上设备标识（总线/地址/设备名），**排障效率飞升**。
-
-## 4.1\_dev\_*\_的形式与前缀
-
-原型（`<linux/device.h>`）：
-
-```c
-dev_info(struct device *dev, const char *fmt, ...);
-dev_warn(struct device *dev, const char *fmt, ...);
-dev_err (struct device *dev, const char *fmt, ...);
-dev_dbg (struct device *dev, const char *fmt, ...); // 调试
-```
-
-它们内部相当于 `dev_printk(level, dev, pr_fmt(fmt), ...)`，前缀会包含设备信息（如 `platform foo.0:`、`pci 0000:00:1f.2:`、自建 `class` 的 `/dev` 名称等）。
-
-## 4.2\_我从哪里拿到\_struct\_device\_*
-
-常见驱动类型与“拿 dev 指针”的方法：
-
-| 驱动类型           | 入口/对象                      | 拿到 `dev` 的方式                |
-| ------------------ | ------------------------------ | -------------------------------- |
-| platform 驱动      | `struct platform_device *pdev` | `&pdev->dev`                     |
-| I²C 驱动           | `struct i2c_client *client`    | `&client->dev`                   |
-| SPI 驱动           | `struct spi_device *spi`       | `&spi->dev`                      |
-| PCI 驱动           | `struct pci_dev *pdev`         | `&pdev->dev`                     |
-| net_device（网卡） | `struct net_device *ndev`      | **用 `netdev_\*` 专用宏**        |
-| 字符设备（自建）   | `class_create/device_create`   | `device_create` 的返回值就是 dev |
-
-> **网络驱动建议用**：`netdev_info/err/warn/dbg(ndev, ...)`，会带上接口名（如 `eth0`），更贴切。
-
-## 4.3\_例子\_不引入总线\_造个最小设备来打印
-
-**示例（阶段 4-1）**
-
-```c
-#include <linux/module.h>
-#include <linux/printk.h>
 #include <linux/device.h>
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+#include <linux/err.h>
+#include <linux/init.h>
+#include <linux/kstrtox.h>
+#include <linux/module.h>
+#include <linux/moduleparam.h>
+#include <linux/mutex.h>
+#include <linux/printk.h>
 
-static struct class  *loglab_cls;
 static struct device *loglab_dev;
+static DEFINE_MUTEX(loglab_lock);
+
+static int trigger_set(const char *value, const struct kernel_param *parameter)
+{
+    static const u8 sample[] = {0xde, 0xad, 0xbe, 0xef, 0, 1, 2, 3};
+    unsigned int count, index;
+    int result;
+
+    /* 只接受有限次数，避免把教学触发器变成无限刷屏入口。 */
+    (void)parameter;
+    result = kstrtouint(value, 0, &count);
+    if (result)
+        return result;
+    if (count < 1 || count > 32)
+        return -EINVAL;
+
+    /* 串行化演示，并与退出时的设备撤销互斥。 */
+    mutex_lock(&loglab_lock);
+    if (!loglab_dev) {
+        result = -ENODEV;
+        goto out;
+    }
+    pr_info("trigger count=%u\n", count);
+    printk(KERN_DEBUG "loglab: direct debug\n");
+    dev_info(loglab_dev, "device trigger\n");
+    for (index = 0; index < count; ++index) {
+        pr_debug("debug index=%u\n", index);
+        dev_dbg(loglab_dev, "device debug index=%u\n", index);
+        pr_warn_once("once at this callsite\n");
+        pr_info_ratelimited("limited index=%u\n", index);
+    }
+    /* 直接转储不由动态调试开关控制，仍带 DEBUG 级别。 */
+    print_hex_dump(KERN_DEBUG, "loglab dump: ", DUMP_PREFIX_OFFSET,
+                   16, 1, sample, sizeof(sample), true);
+    result = 0;
+out:
+    mutex_unlock(&loglab_lock);
+    return result;
+}
+
+static const struct kernel_param_ops trigger_ops = {
+    .set = trigger_set,
+};
+module_param_cb(trigger, &trigger_ops, NULL, 0200);
+MODULE_PARM_DESC(trigger, "写入1到32触发日志，模块加载后使用");
 
 static int __init loglab_init(void)
 {
-    pr_info("init\n");
+    struct device *device;
 
-    loglab_cls = class_create(THIS_MODULE, "loglab");
-    if (IS_ERR(loglab_cls)) return PTR_ERR(loglab_cls);
-
-    // 仅作为 dev_* 日志的承载点
-    loglab_dev = device_create(loglab_cls, NULL, MKDEV(0,0), NULL, "loglab0");
-    if (IS_ERR(loglab_dev)) {
-        class_destroy(loglab_cls);
-        return PTR_ERR(loglab_dev);
-    }
-
-    dev_info(loglab_dev, "device online\n");
-    dev_warn(loglab_dev, "temperature high (demo)\n");
-    dev_err (loglab_dev, "allocation failed (demo)\n");
+    /* 根设备仅承载日志身份，不申请硬件，也不创建字符设备接口。 */
+    device = root_device_register("loglab");
+    if (IS_ERR(device))
+        return PTR_ERR(device);
+    mutex_lock(&loglab_lock);
+    loglab_dev = device;
+    mutex_unlock(&loglab_lock);
+    pr_info("ready; write the trigger parameter\n");
     return 0;
 }
 
 static void __exit loglab_exit(void)
 {
-    device_destroy(loglab_cls, MKDEV(0,0));
-    class_destroy(loglab_cls);
+    mutex_lock(&loglab_lock);
+    root_device_unregister(loglab_dev);
+    loglab_dev = NULL;
+    mutex_unlock(&loglab_lock);
     pr_info("exit\n");
 }
+
 module_init(loglab_init);
 module_exit(loglab_exit);
 MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("可重复触发的内核日志教学模块");
 ```
 
-**你会看到**（示例前缀，依平台而异）：
+`trigger_set()` 先解析 1～32 的次数，再持有互斥锁检查设备仍然存在。循环中的 `once` 调用点保持同一份状态，限流调用点也跨触发保留自己的状态；卸载撤销设备时与回调使用同一把锁。若在模块加载参数中提前写 `trigger=...`，初始化尚未建立设备，会返回 `-ENODEV`，所以本实验只在加载成功后通过 sysfs 触发。
 
-```text
-loglab: init
-loglab 0:0: device online
-loglab 0:0: temperature high (demo)
-loglab 0:0: allocation failed (demo)
-loglab: exit
-```
+Makefile 中 `kdir` 是本实验的构建目录变量，默认指向当前运行内核；`M=` 告诉 Kbuild 外部模块源码目录在哪里。两条配方的开头使用制表符。
 
-## 4.4\_最佳实践(设备日志的\_手感)
-
-- **能用 `dev_\*` 就别用 `pr_\*`**：定位更准。
-- `probe/remove/open/close/错误分支`：输出带上下文的 `dev_err/ warn/info`。
-- 高频路径慎重打印（下一章会讲限流/一次性）。
-- 遇到 `-EPROBE_DEFER` 这类常见重试场景，可用 `dev_err_probe()`（自动处理延迟探测、避免刷屏）。
-
-**头文件**
-
-- `#include <linux/device.h>`（`dev_*` 与 `class/device_create`）
-- `#include <linux/printk.h>`（`pr_*`）
-
-------
-
-**本批次到这里**：我们已经把“日志去哪里”“如何写得规范”“如何与设备绑定”完整铺垫好。
- 下一批我会顺着章节继续展开 **第 5～10 章**：`pr_debug/dev_dbg` 的编译期与动态调试、限流与一次性打印、十六进制转储、看不见日志的三连排查、头文件速查与“一次到位的最小工程”。如果你希望我在第 5 章里加入 **Dynamic Debug 控制语法的速查卡**，我就一并放进去，读起来更顺手。
-
-没问题。下面我**继续按我们既定的章节顺序**，把 **第 5～10 章**详细展开。写法仍保持“出版社书籍”的节奏：先铺垫心智，再给可运行例子，最后给到排查与小结。内核版本以 **Linux 6.1** 为准。
-
-------
-
-# 第5章\_调试输出要\_可开可关\_pr\_debug\_/\_dev\_dbg(含\_Dynamic\_Debug\_速查卡)
-
-> 目标：让调试日志**默认安静**，需要时**随时打开**，而且**不用重编译、不用重载模块**。
-
-## 5.1\_两种开启方式的全貌
-
-### 5.1.1\_编译期开关(没有\_Dynamic\_Debug\_时)
-
-- 当 **未启用 CONFIG_DYNAMIC_DEBUG** 时，`pr_debug/dev_dbg` 的行为取决于 `DEBUG`：
-
-  ```c
-  #ifdef DEBUG
-  # define pr_debug(fmt, ...) printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__)
-  #else
-  # define pr_debug(fmt, ...) no_printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__)
-  #endif
-  ```
-
-- 也就是说：**你在源码或编译参数里 `#define DEBUG`**，`pr_debug/dev_dbg` 才会真正打印；否则只是做类型检查（不输出）。
-
-> 外部模块最简单：在 `.c` 顶部 `#define DEBUG`。
->  内核树工程也可 `ccflags-y += -DDEBUG`（此处了解即可）。
-
-### 5.1.2\_运行期开关(Dynamic\_Debug\_强烈推荐)
-
-- 当 **启用 CONFIG_DYNAMIC_DEBUG**（或至少 `CONFIG_DYNAMIC_DEBUG_CORE`）时，`pr_debug/dev_dbg` 自动接入动态调试框架，你可以在**运行时**通过 **debugfs/proc** 接口精确开启：
-
-  ```bash
-  # 先挂载 debugfs（若尚未）
-  sudo mount -t debugfs none /sys/kernel/debug
-
-  # 打开本模块所有 pr_debug/dev_dbg
-  echo 'module loglab +p' | sudo tee /sys/kernel/debug/dynamic_debug/control
-
-  # 关闭
-  echo 'module loglab -p' | sudo tee /sys/kernel/debug/dynamic_debug/control
-  ```
-
-> 好处：**无需重新编译/加载**，还能按**模块/文件/函数/行号/格式串**做精细过滤。
-
-------
-
-## 5.2\_Dynamic\_Debug\_速查卡(Linux\_6.1)
-
-**控制文件**（二选一，通常用 debugfs）
-
-- `/sys/kernel/debug/dynamic_debug/control`
-- `/proc/dynamic_debug/control`
-
-**基本语法**（一条规则一行）：
-
-```text
-# 语法
-<selector> <flags>
-
-# selector（可叠加多种条件）
-module <mod>         # 模块名（不含 .ko）
-file <path>          # 源文件路径（相对内核源码根，或子串匹配）
-func <name>          # 函数名
-line <lineno>        # 行号（可配合 file）
-format "<substr>"    # 匹配格式串中的子串
-
-# flags（对匹配到的调试点进行操作）
-+p   开启打印
--p   关闭打印
-+f   打印函数名
-+F   打印文件与行号
-+t   打印时间戳
-+T   打印线程（task）信息
-```
-
-**常见用法示例**：
-
-```bash
-# 1) 打开某模块全部调试
-echo 'module loglab +p' | sudo tee /sys/kernel/debug/dynamic_debug/control
-
-# 2) 指定文件
-echo 'file drivers/foo/bar.c +p' | sudo tee /sys/kernel/debug/dynamic_debug/control
-
-# 3) 指定函数
-echo 'func probe +p' | sudo tee /sys/kernel/debug/dynamic_debug/control
-
-# 4) 指定行号（需配合 file）
-echo 'file drivers/foo/bar.c line 120 +p' | sudo tee ...
-
-# 5) 按格式串关键字
-echo 'format "rx path" +p' | sudo tee ...
-
-# 6) 叠加更多细节（带函数名与行号）
-echo 'module loglab +pfF' | sudo tee ...
-
-# 7) 一键关闭
-echo 'module loglab -p' | sudo tee ...
-```
-
-**列出当前规则/状态**
-
-```bash
-# 全部调试点（很多，配合 grep）
-cat /sys/kernel/debug/dynamic_debug/control | grep loglab
-```
-
-**内核命令行（可选）**
-
-- 也可以通过 **内核启动参数**一次性启用，比如：
-   `dyndbg="module loglab +p"`
-   （不同发行版传参方式略异，了解即可）
-
-------
-
-## 5.3\_最小范例\_pr\_debug\_/\_dev\_dbg\_联动
-
-```c
-// loglab_dbg.c（节选）
-#include <linux/module.h>
-#include <linux/printk.h>
-#include <linux/device.h>
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-
-static struct class *cls;
-static struct device *dev0;
-
-static int __init demo_init(void)
-{
-    cls = class_create(THIS_MODULE, "loglab");
-    if (IS_ERR(cls)) return PTR_ERR(cls);
-    dev0 = device_create(cls, NULL, MKDEV(0,0), NULL, "loglab0");
-    if (IS_ERR(dev0)) return PTR_ERR(dev0);
-
-    pr_debug("hello from pr_debug\n");       // 默认隐藏
-    dev_dbg(dev0, "hello from dev_dbg\n");   // 默认隐藏
-    return 0;
-}
-static void __exit demo_exit(void)
-{
-    device_destroy(cls, MKDEV(0,0));
-    class_destroy(cls);
-}
-module_init(demo_init);
-module_exit(demo_exit);
-MODULE_LICENSE("GPL");
-```
-
-**开启方式**：
-
-```bash
-# 运行期打开（推荐）
-sudo mount -t debugfs none /sys/kernel/debug
-echo 'module loglab_dbg +p' | sudo tee /sys/kernel/debug/dynamic_debug/control
-dmesg | tail
-```
-
-> 若系统未启用 Dynamic Debug，你也可以在源码顶部 `#define DEBUG`，但**运行期灵活度远不如动态调试**。
-
-------
-
-# 第6章\_控制\_分寸\_限流与\_一次性打印
-
-> 高频路径里直接日志，会把 Ring Buffer 淹没，定位也变困难。本章教你“节制地说话”。
-
-## 6.1\_只说一次\_*\_once
-
-- 模块级：`pr_info_once()` / `pr_warn_once()` / `pr_err_once()` …
-- 设备级：`dev_info_once()` / `dev_warn_once()` / `dev_err_once()` …
-
-**示例**
-
-```c
-pr_warn_once("first warning only once\n");
-dev_info_once(dev0, "device info only once\n");
-```
-
-> 语义：**本次引导期间**只打印一次（每条调用点各记一次）。
-
-## 6.2\_别刷屏\_*\_ratelimited
-
-- 模块级：`pr_info_ratelimited()` / `pr_warn_ratelimited()` …
-- 设备级：`dev_err_ratelimited(dev, ...)` …
-
-**示例**
-
-```c
-if (likely(noise)) {
-    pr_info_ratelimited("too chatty, throttled\n");
-    dev_err_ratelimited(dev0, "error bursts throttled\n");
-}
-```
-
-**系统级限流调节**（全局令牌桶参数）：
-
-```bash
-# 允许多少条/多长时间内的打印
-cat /proc/sys/kernel/printk_ratelimit
-cat /proc/sys/kernel/printk_ratelimit_burst
-
-# 调整（示例值，按需）
-echo 5  | sudo tee /proc/sys/kernel/printk_ratelimit
-echo 20 | sudo tee /proc/sys/kernel/printk_ratelimit_burst
-```
-
-> 内核里具体实现基于令牌桶，超出后会丢弃并统计略过次数（偶尔会见到 “__ratelimit” 提示）。
-
-------
-
-# 第7章\_看\_二进制世界\_十六进制转储
-
-> 抓包、看寄存器、核对报文头最直接的办法就是**十六进制转储**。
-
-## 7.1\_两个接口
-
-- `print_hex_dump(level, prefix_str, prefix_type, rowsize, groupsize, buf, len, ascii)`
-- `print_hex_dump_bytes(prefix_str, prefix_type, buf, len)`（简化版，level 使用 `KERN_DEBUG`）
-
-**参数要点**
-
-- `level`：日志级别，如 `KERN_DEBUG`。
-- `prefix_type`：前缀格式，常用 `DUMP_PREFIX_NONE / DUMP_PREFIX_OFFSET / DUMP_PREFIX_ADDRESS`。
-- `rowsize`：每行多少字节（一般 16）。
-- `groupsize`：按 1/2/4/8 字节分组（例如 2 表示 16 位一组）。
-- `ascii`：是否在行尾显示 ASCII。
-
-**示例**
-
-```c
-#include <linux/printk.h>
-
-static const u8 pkt[] = {0xde,0xad,0xbe,0xef,0,1,2,3,4,5,6,7,8,9,0xaa,0xbb};
-
-print_hex_dump(KERN_DEBUG, "rx: ", DUMP_PREFIX_OFFSET, 16, 1, pkt, sizeof(pkt), true);
-/* 或更简单： */
-print_hex_dump_bytes("rx: ", DUMP_PREFIX_OFFSET, pkt, sizeof(pkt));
-```
-
-> 这是 `DEBUG` 级别；看不到时请 `dmesg -n 7` 或用 Dynamic Debug 打开对应调试点。
-
-------
-
-# 第8章\_为什么看不见\_三连排查
-
-1. **Console 门槛太高**
-
-   - `dmesg -n 6`（允许 INFO）或 `dmesg -n 7`（允许 DEBUG）
-   - 或直接：`echo 7 7 1 7 | sudo tee /proc/sys/kernel/printk`
-
-2. **`pr_debug/dev_dbg` 还没启**
-
-   - 编译期开：`#define DEBUG`；
-
-   - 运行期开：Dynamic Debug
-
-     ```bash
-     sudo mount -t debugfs none /sys/kernel/debug
-     echo 'module <你的模块名> +p' | sudo tee /sys/kernel/debug/dynamic_debug/control
-     ```
-
-3. **设备级日志没出现**
-
-   - 确认你的 `struct device *` 有效（`device_create` 成功，或真实 `probe` 场景里的 `&pdev->dev` 等）。
-   - 若走字符设备路径，也可以保留 `dev` 指针在 `file->private_data` 里，统一用 `dev_*`。
-
-> 额外提示：日志**一定进 Ring Buffer**，只是可能没到 Console。实时看 Ring Buffer：`dmesg -w`。
-
-------
-
-# 第9章\_头文件速查表(够用即止)
-
-| 功能/宏                                         | 头文件                                                       |
-| ----------------------------------------------- | ------------------------------------------------------------ |
-| `printk`, `pr_*`, `pr_fmt`, `KERN_*`            | `<linux/printk.h>`                                           |
-| `pr_*_once`, `*_ratelimited`, `print_hex_dump*` | `<linux/printk.h>`                                           |
-| `dev_*`（`dev_info/err/warn/dbg`）              | `<linux/device.h>`                                           |
-| `netdev_*`（网络设备专用）                      | `<linux/netdevice.h>`                                        |
-| Dynamic Debug 控制接口                          | **无需 include**；操作 `/sys/kernel/debug/dynamic_debug/control` |
-| `KBUILD_MODNAME / KBUILD_BASENAME`              | 由 Kbuild 以 `-D` 注入（无需 include；`make V=1` 可见）      |
-
-------
-
-# 第10章\_一次到位的最小工程(覆盖本书全部要点)
-
-> **你只需要这两个文件**，就能边学边用：`pr_*`、`dev_*`、`pr_fmt`、`pr_debug/dev_dbg`（含 Dynamic Debug）、`*_once`、`*_ratelimited`、十六进制转储、Console 等级调节。
-
-## 10.1\_Makefile(外部模块)
-
-```make
+```makefile
 obj-m += loglab.o
-KDIR := /lib/modules/$(shell uname -r)/build
-PWD  := $(shell pwd)
+kdir ?= /lib/modules/$(shell uname -r)/build
+module_dir := $(CURDIR)
+
+.PHONY: all clean
 all:
-	$(MAKE) -C $(KDIR) M=$(PWD) modules
+	$(MAKE) -C $(kdir) M=$(module_dir) modules
+
 clean:
-	$(MAKE) -C $(KDIR) M=$(PWD) clean
+	$(MAKE) -C $(kdir) M=$(module_dir) clean
 ```
-
-## 10.2\_loglab.c(整合版\_可直接编译运行)
-
-```c
-// SPDX-License-Identifier: GPL-2.0
-#include <linux/module.h>
-#include <linux/printk.h>
-#include <linux/device.h>
-
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-
-static struct class  *loglab_cls;
-static struct device *loglab_dev;
-
-static int __init loglab_init(void)
-{
-    static const u8 demo_bin[] = {0xde,0xad,0xbe,0xef,0,1,2,3,4,5,6,7,0xaa,0xbb};
-
-    pr_info("init, MOD=%s\n", KBUILD_MODNAME);
-    pr_err("example error (info for contrast follows)\n");
-
-    /* 设备级日志：用于真实驱动更合适 */
-    loglab_cls = class_create(THIS_MODULE, "loglab");
-    if (IS_ERR(loglab_cls)) {
-        pr_err("class_create failed: %ld\n", PTR_ERR(loglab_cls));
-        return PTR_ERR(loglab_cls);
-    }
-    loglab_dev = device_create(loglab_cls, NULL, MKDEV(0,0), NULL, "loglab0");
-    if (IS_ERR(loglab_dev)) {
-        pr_err("device_create failed: %ld\n", PTR_ERR(loglab_dev));
-        class_destroy(loglab_cls);
-        return PTR_ERR(loglab_dev);
-    }
-
-    dev_info(loglab_dev, "device online\n");
-    dev_warn(loglab_dev, "warn demo\n");
-    dev_err (loglab_dev, "err demo\n");
-
-    /* 调试输出：默认静默，运行期可通过 Dynamic Debug 打开 */
-    pr_debug("pr_debug (maybe hidden)\n");
-    dev_dbg (loglab_dev, "dev_dbg (maybe hidden)\n");
-
-    /* 一次性与限流 */
-    pr_info_once("printed once\n");
-    dev_warn_once(loglab_dev, "device warn once\n");
-    pr_info_ratelimited("ratelimited info (may be throttled)\n");
-    dev_err_ratelimited(loglab_dev, "ratelimited error (throttled)\n");
-
-    /* 十六进制转储（DEBUG 级别） */
-    print_hex_dump(KERN_DEBUG, "dump: ", DUMP_PREFIX_OFFSET,
-                   16, 1, demo_bin, sizeof(demo_bin), true);
-
-    return 0;
-}
-
-static void __exit loglab_exit(void)
-{
-    device_destroy(loglab_cls, MKDEV(0,0));
-    class_destroy(loglab_cls);
-    pr_info("exit\n");
-}
-
-module_init(loglab_init);
-module_exit(loglab_exit);
-MODULE_LICENSE("GPL");
-```
-
-**运行与体验**
 
 ```bash
+# Linux 测试机，loglab 目录：使用匹配当前运行内核的构建目录。
 make
-sudo insmod loglab.ko
-dmesg -w   # 开一个窗口实时看
+```
 
-# 打开动态调试（若内核启用了 CONFIG_DYNAMIC_DEBUG）
-sudo mount -t debugfs none /sys/kernel/debug
-echo 'module loglab +p' | sudo tee /sys/kernel/debug/dynamic_debug/control
+成功时得到 `loglab.ko`。交叉编译时需要完整匹配目标内核的构建输出和 `ARCH`、`CROSS_COMPILE`，不能用宿主 `uname -r` 推断目标配置。本章不把一次编译成功当成签名、版本及装载条件全部成立。
 
-# 如需看 DEBUG 级别到控制台
-dmesg -n 7
+先在终端 A 开始观察，再在终端 B 加载和触发：
 
+```bash
+# 终端 A，Linux 测试机：读取内核日志并跟随新记录。
+sudo dmesg -w
+```
+
+它可能先显示缓冲区中已有的日志，再等待新记录。使用 `sudo` 是为了满足常见的日志读取权限要求；若仍被系统策略拒绝，应先解决读取权限，不能通过调高控制台门槛修复。
+
+```bash
+# 终端 B，loglab 目录：建立模块与设备身份，然后触发一次。
+sudo insmod ./loglab.ko
+printf '1\n' | sudo tee /sys/module/loglab/parameters/trigger
+```
+
+`tee` 回显的 `1` 只是用户态工具输出。终端 A 应寻找 `loglab: trigger count=1`、`loglab: direct debug`、设备身份开头的 `device trigger`、一次性提示、限流消息和八字节转储。`pr_debug` 与 `dev_dbg` 是否出现，取决于下一节的配置与开关。直接 `printk(KERN_DEBUG ...)` 与 `print_hex_dump(KERN_DEBUG, ...)` 没有使用这两个动态调试调用点，不能因为同为 DEBUG 级别就认为开关完全相同。
+
+## 1.4\_让调试点开启以后再走一次路径
+
+**动态调试（dynamic debug）** 给已登记的调用点保存可改变的输出标志。控制文件中的一行对应一个调用点，不是日志缓冲区中的一条历史消息。改变标志影响下一次调用，不把过去被跳过的参数重新计算一遍。
+
+| 编译条件 | 普通 `pr_debug()` / `dev_dbg()` 的行为 |
+| --- | --- |
+| `CONFIG_DYNAMIC_DEBUG=y` | 接入动态调试，按调用点标志决定是否输出 |
+| 只有 `CONFIG_DYNAMIC_DEBUG_CORE=y`，并对该编译单元定义 `DYNAMIC_DEBUG_MODULE` | 选择性接入动态调试；仅打开 CORE 并不会自动登记所有模块 |
+| 没有接入动态调试，但定义了 `DEBUG` | 生成 DEBUG 级别输出 |
+| 两者都没有 | 不产生这条调试记录；保留相应编译检查并不等于执行输出 |
+
+`DEBUG` 也应在包含相关头文件以前定义，或作为相应编译单元的编译选项。动态调试分支下它还可能影响初始标志；本实验源文件没有定义它，因此先查询实际调用点状态，不把“默认关闭”强加给任何发行版配置。
+
+```bash
+# 终端 B：在已加载 loglab 的测试内核中选择实际存在的控制文件。
+if test -e /proc/dynamic_debug/control; then
+    control_file=/proc/dynamic_debug/control
+elif test -e /sys/kernel/debug/dynamic_debug/control; then
+    control_file=/sys/kernel/debug/dynamic_debug/control
+else
+    printf '没有可用的动态调试控制文件，请先核对内核配置和挂载。\n'
+fi
+```
+
+只有找到了文件才继续使用 `control_file`。若内核支持 debugfs 而该文件系统尚未挂载，可按实验机挂载策略将 debugfs 挂到 `/sys/kernel/debug`；不能仅看到目录存在就反复执行 mount，也不能把挂载操作当成编译打开了动态调试。
+
+```bash
+# 终端 B：查询本模块的两个调试调用点。
+sudo grep '\[loglab\]' "$control_file"
+```
+
+记录包含源码位置、模块、函数、标志和格式串。若没有本模块条目，先核对模块是否成功加载以及上述配置组合，不要直接向全系统下发无选择条件的 `+p`。
+
+```bash
+# 终端 B：先关闭再触发，随后打开并重新触发。
+printf 'module loglab -p\n' | sudo tee "$control_file"
+printf '1\n' | sudo tee /sys/module/loglab/parameters/trigger
+printf 'module loglab +p\n' | sudo tee "$control_file"
+printf '1\n' | sudo tee /sys/module/loglab/parameters/trigger
+```
+
+第二次触发才应该新增 `debug index=0` 与 `device debug index=0`。两次都有的 direct debug 说明“消息级别”与“调用点开关”确实是两个条件。没有重走回调，单独开启 `+p` 不会凭空补出这两行。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as 控制终端
+    participant D as 调试点描述符
+    participant C as trigger_set回调
+    participant R as 日志缓冲区
+    participant V as dmesg读取者
+    U->>D: L0 设置 module loglab -p
+    U->>C: 写 trigger=1
+    C->>D: 读取调试点标志
+    Note over C,R: pr_debug 不提交记录<br/>普通日志仍可进入 L1
+    U->>D: 设置 module loglab +p
+    U->>C: 再次写 trigger=1
+    C->>D: 读取已开启标志
+    C->>R: L1 提交新的 DEBUG 记录
+    R-->>V: L2 读取新记录，L3 在终端显示
+```
+
+步骤 4 只改变未来调用的条件，步骤 5 才重新执行。步骤 7 与步骤 8 分离，正是“记录产生”与“观察结果”的区别；图没有要求当前写参数的线程同步完成所有控制台输出。
+
+更细的选择条件和标志如下。多种选择条件叠加时要求同时匹配，具体格式串、函数名和源码位置以控制文件中的条目为准。
+
+| 选择或标志 | 含义 | 本实验例子 |
+| --- | --- | --- |
+| `module` / `func` | 模块名或函数名 | `module loglab func trigger_set +p` |
+| `file` / `line` | 按支持的文件名模式、行号或范围选择 | 先读取条目，再填写实际文件与行号，避免沿用改写前行号 |
+| `format` | 匹配格式串子串 | `module loglab format "debug index" +p` |
+| `+p` / `-p` | 开启或关闭输出 | 只修改打印标志 |
+| `+f` / `+s` / `+l` | 增加函数名、源文件名、行号 | `module loglab +pfsl` |
+| `+m` / `+t` | 增加模块名、线程 ID 或中断标识 | `module loglab +pmt` |
+| `=_` | 清除全部标志 | `module loglab =_` |
+
+这里 `t` 不是时间戳，不存在旧笔记中的通用 `+F`、`+T` 选项。带 dynamic debug 的十六进制转储只使用 `p` 标志。需要模块初始化期间的动态日志时，还可在已接入的模块加载时使用 `sudo insmod ./loglab.ko dyndbg=+p`；这使开关在初始化调用前生效，本实验仍通过 trigger 比较重复调用。完整语法依据 [Linux 6.12 动态调试说明](https://www.kernel.org/doc/html/v6.12/admin-guide/dynamic-debug-howto.html)。
+
+## 1.5\_设备前缀回答的是哪个对象
+
+现在再看 `pr_info` 与 `dev_info` 的差别。前者可以通过 `pr_fmt` 带上编译模块名，回答“哪个模块说的”；同一模块可能驱动多个设备，所以设备路径中的日志还需要一个有效 `struct device *`，回答“哪个设备发生了这件事”。
+
+实验的 `KBUILD_MODNAME` 由 Kbuild 提供，对应 `loglab` 模块目标。多源文件组成一个模块时，各源文件可以共享模块名；需要区分源文件时，可使用相应的 `KBUILD_BASENAME` 或明确的自定义前缀。不要把这些构建时提供的名字误当作运行期设备名称。
+
+设备日志通常根据驱动或总线信息与设备名称构造前缀，具体形式取决于设备身份。`dev_*` 使用自己的 `dev_fmt` 约定，不能把它们一概展开成带 `pr_fmt` 的调用。实验根设备没有真实总线实例，所以不要拿它的输出前缀当作 platform、PCI 或 I²C 的固定格式。
+
+| 已在当前驱动中持有的对象 | 日志使用的设备指针 | 边界 |
+| --- | --- | --- |
+| `struct platform_device *pdev` | `&pdev->dev` | 指针必须在当前执行路径仍然有效 |
+| `struct i2c_client *client` | `&client->dev` | 日志不替代客户端生命周期管理 |
+| `struct spi_device *spi` | `&spi->dev` | 同上 |
+| `struct pci_dev *pdev` | `&pdev->dev` | 设备名通常能帮助区分实例 |
+| 成功的 `device_create()` 返回值 | 返回的 `struct device *` | 先检查错误指针，不能把失败返回值交给日志宏 |
+| `struct net_device *ndev` | 使用 `netdev_info/err/warn/dbg` 等 | 网络接口专用宏带上网络设备上下文 |
+
+`dev_err_probe(dev, err, ...)` 适合 probe 失败返回路径：它返回传入的错误码，对 `-EPROBE_DEFER` 使用调试日志并记录延迟原因；本次固定版本对 `-ENOMEM` 不再输出，其他错误走错误日志。它不是所有错误的自动限流器。日志参数也必须保持有效，例如将裸指针塞进 `file->private_data` 并不能自动阻止设备被释放。
+
+本章不用 `class_create()` 建类只为打印，避免把字符设备注册流程变成日志前提。若阅读其他 Linux 6.12 示例，该版本 `class_create()` 的调用签名已经不接受旧的 `THIS_MODULE` 参数，不能直接照抄旧版两参数代码。
+
+## 1.6\_控制输出量为什么要保留调用点状态
+
+如果错误在每个数据包上重复发生，日志量可能比原始业务更大。格式化、内存写入和慢速串口都会耗时；旧消息也会更快被覆盖。限流解决的是这类观测成本，代价是主动不记录部分事件，所以日志条数不能再当作事件总数。
+
+`pr_info_ratelimited()` 等宏在调用点保存自己的限流状态，包含时间窗口、允许数量等信息。固定 6.12.20 中的默认间隔为 `5 * HZ`，默认突发数量为 10；`HZ` 是内核计时节拍频率。它按经过的时间与计数判断是否允许本次输出，不应把它解释成每条日志都排队等待以后补发。
+
+```bash
+# 终端 B：同一调用点连续尝试32次，再立即尝试32次。
+printf '32\n' | sudo tee /sys/module/loglab/parameters/trigger
+printf '32\n' | sudo tee /sys/module/loglab/parameters/trigger
+```
+
+查找 `limited index=`，通常不会每轮看到 32 条；第二轮也不会因重新写一次参数就取得全新额度。机器速度、控制台耗时和两次操作间隔会影响跨越窗口的位置，因此不要把固定输出条数写成所有环境的断言。等待超过窗口再触发，可观察后续调用重新获得输出机会。
+
+`/proc/sys/kernel/printk_ratelimit` 与 `printk_ratelimit_burst` 控制共享的 `printk_ratelimit()` 状态，**不会统一改写每个 `pr_*_ratelimited` 或 `dev_*_ratelimited` 调用点自己的静态状态**。需要设备级策略时，应设计属于设备的限流状态；同一个 `dev_*_ratelimited` 调用点处理多个设备，也可能共享那个调用点的额度。
+
+`pr_warn_once()` 则在调用点保存“已经输出”的状态。本实验通过互斥锁串行触发，后续写参数不会重复输出该条 once 提示；卸载再加载模块会重建模块静态状态，不能说它永远按整次系统启动只打印一次。`dev_*_once` 的状态同样通常属于调用点，不属于每个设备对象；这些便利宏也不能代替多 CPU 下业务操作的严格执行一次协议。
+
+`pr_cont()` 用于延续已有消息，但多执行者和记录拼接使它不适合作为组装普通日志的默认方式。能够写成一条完整、带换行的格式串时，优先一条完成。日志里的顺序也不是跨 CPU 业务同步证据；不要用“先打印后打印”替代锁、内存屏障或真实完成条件。
+
+## 1.7\_格式化参数必须与数据类型相符
+
+日志函数仍是可变参数接口。编译器能检查一部分类型，不代表任何指针都能交给任何 `%p` 扩展。先知道参数是整数错误码、错误指针、字节数组还是设备地址，才能选择格式。先核对接口的包含入口，避免靠其他头文件偶然间接引入声明：
+
+| 当前用途 | 包含入口或来源 |
+| --- | --- |
+| `printk`、`pr_*`、级别与十六进制转储 | `<linux/printk.h>` |
+| `dev_*`、设备注册接口 | `<linux/device.h>` |
+| `netdev_*` | `<linux/netdevice.h>` |
+| 错误指针判断与转换 | `<linux/err.h>` |
+| 模块参数回调 | `<linux/moduleparam.h>` |
+| `KBUILD_MODNAME`、`KBUILD_BASENAME` | 构建系统提供，不通过另一个专用头文件获得 |
+| 动态调试控制命令 | 用户态写控制文件，不需要向模块添加头文件来执行命令 |
+
+| 想观察的数据 | 格式与参数 | 应避免的误解 |
+| --- | --- | --- |
+| 整数错误码 `int ret` | `%d`，传 `ret` | `%pe` 接受错误指针，不接受一个裸 `int` |
+| 错误指针 | `%pe`，传错误指针 | 已知错误通常输出符号名，如 `-ENOENT`；不能保证固定为括号数字 |
+| 普通指针身份 | `%p`，传指针 | 默认可能哈希，不等于原始虚拟地址 |
+| 确实需要原始地址 | `%px`，传指针 | 会暴露实际地址，只在明确需要的诊断中使用 |
+| proc/sysfs 虚拟文件中的受限地址 | `%pK`，配合对应文件输出路径与策略 | 不应将它当成 printk 的通用安全替代格式 |
+| UUID 的16字节数据 | `%pUb` / `%pUl`，传缓冲区指针 | 区分字节排列，不传字符串指针来冒充原始16字节 |
+| IPv4 / IPv6 地址 | `%pI4` / `%pI6`，传地址数据指针 | 需要地址结构中的实际地址数据 |
+| socket 地址 | `%pIS`，传 sockaddr 指针；`%pISp` 请求包含端口 | 不能把 `%pIS` 一概说成默认含端口 |
+| MAC 地址 | `%pM`，传6字节数据指针 | 它不是时长格式 |
+| 资源区间 | `%pr`，传 `struct resource *` | 不是任意两个整数的地址范围 |
+| 位图 | `%*pb`，先传位数，再传位图指针 | 星号需要对应的宽度参数 |
+
+这些扩展的类型和边界依据 [Linux 6.12 格式化说明](https://www.kernel.org/doc/html/v6.12/core-api/printk-formats.html)。普通数值也要匹配类型，例如 `size_t` 使用 `%zu`。`printk` 不提供通用浮点输出；不要把用户空间 printf 的所有格式能力直接移植进内核。
+
+实验中的 `print_hex_dump()` 将八个已知字节按十六进制与可打印字符展示，适合核对包头或内存中的协议数据。其参数依次为级别、前缀、前缀类型、每行字节数、分组字节数、缓冲区、长度和 ASCII 开关。`DUMP_PREFIX_OFFSET` 使用偏移，`DUMP_PREFIX_ADDRESS` 使用地址，`DUMP_PREFIX_NONE` 不加这类前缀；常见行宽为 16 或 32，分组为 1、2、4、8。
+
+直接 `print_hex_dump(KERN_DEBUG, ...)` 与可受动态调试/DEBUG 配置影响的 `print_hex_dump_debug()`、`print_hex_dump_bytes()` 要区分。后者的简化形式采用16字节行宽、单字节分组和 ASCII 栏。转储之前还要保证缓冲区有效且长度正确；日志不会替调用者验证对象寿命。
+
+## 1.8\_沿丢失位置排查并结束实验
+
+现在“看不到”已经能拆成可检查的问题：
+
+| 观察 | 优先检查 | 为什么不是先调控制台门槛 |
+| --- | --- | --- |
+| 模块加载失败，没有 ready | 编译身份、装载错误、设备注册是否成功 | 输出路径可能根本没建立 |
+| ready 有，trigger 日志没有 | sysfs 写入是否成功、次数是否有效 | 写入错误或未执行回调属于 L0 以前的问题 |
+| 普通日志有，两个动态 debug 没有 | 调试点是否登记、是否开启、开启后是否重新触发 | 门槛不改变调用点生成条件 |
+| dmesg 有，串口没有 | 实际 console 注册、门槛与串口输出条件 | 此时才有 L1 已成立的证据 |
+| 两处都缺少很早的记录 | 缓冲区覆盖、读取时机、限流及异常抑制路径 | 历史记录未必仍然存在 |
+| journalctl 与 dmesg 不一致 | 采集服务、查询启动范围、存储配置与权限 | 两个工具查询的保存链不同 |
+
+即便直接调用 `printk()`，也不能作“永远成功记录”的保证：`CONFIG_PRINTK`、递归保护、panic 期间抑制、记录预留失败或截断等都有边界；后续覆盖又是另一类丢失。源码中的控制台输出还区分传统直接输出、延后输出及支持条件下的新控制台路径，不能把所有配置都写成固定后台线程，或承诺打印对时序完全没有影响。
+
+```bash
+# 终端 B：若本次设置了动态标志，先清除本实验模块标志。
+printf 'module loglab =_\n' | sudo tee "$control_file"
+# 若本次修改了控制台门槛，在同一个 shell 中恢复保存值。
+sudo dmesg -n "$old_console_level"
+# 等触发命令结束后，卸载本实验模块。
 sudo rmmod loglab
 ```
 
-------
+前两行只在本次确实设置过对应变量和状态时执行；未做动态实验或未改门槛时跳过相应步骤。终端 A 用 Ctrl+C 停止跟随。卸载撤销实验根设备和模块参数，既有日志不会因此自动从内核缓冲区删除。
 
-## 10.3\_小结(第\_5～10\_章)
+最后做三次预测：门槛为 7 时 INFO 能否上控制台？动态调试关闭时 raw DEBUG 与 `pr_debug` 是否一样？卸载重载以后 once 提示能否再次出现？答案分别是：INFO 的 6 小于 7，可以通过普通门槛；两者不同，raw DEBUG 没有那一层调用点开关；模块重载重建静态状态，可以再次出现。每个答案都对应一个不同状态位置，不能用一句“日志等级不够”覆盖所有故障。
 
-- **调试输出策略**：默认静默 → Dynamic Debug 精准开启；没有再用 `#define DEBUG`。
-- **日志粒度选择**：模块级用 `pr_*`，设备路径用 `dev_*`（或网卡用 `netdev_*`）。
-- **节制**：`*_once` / `*_ratelimited`；必要时调整 `/proc/sys/kernel/printk_ratelimit*`。
-- **可见性**：Ring Buffer 一定收；Console 由 `dmesg -n` 门槛控制。
-- **工具化**：十六进制转储 `print_hex_dump*` 让你“看见”二进制。
-
-------
-
-如果你需要，我可以把 **netdev_\*（网络设备专用日志）**、**早期打印（early/bootconsole）**、**trace_printk 与 ftrace 配合做高频诊断** 写成后续章节，用同样的风格继续往下铺。
+高频时间测量、启动早期输出和断电后的留存需要进一步选择跟踪设施、早期控制台或持久化机制；本章建立的是普通运行期日志的产生与观察边界，不用大量 printk 替代这些工具。

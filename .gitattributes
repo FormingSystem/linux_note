@@ -30,6 +30,7 @@ research/source_reading/linux/Documentation/filesystems/sharedsubtree.rst whites
 markbook/topics/*/releases/** text eol=lf
 
 research/source_reading/linux/fs/eventfd.c whitespace=-blank-at-eof
+research/source_reading/linux/kernel/params.c whitespace=-space-before-tab
 research/source_reading/linux/include/linux/anon_inodes.h whitespace=-blank-at-eof
 research/source_reading/linux/include/linux/eventfd.h whitespace=-blank-at-eof
 research/source_reading/linux/Documentation/trace/ftrace.rst whitespace=-blank-at-eol,-space-before-tab

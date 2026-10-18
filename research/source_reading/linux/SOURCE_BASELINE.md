@@ -3481,3 +3481,31 @@ WARN条件中的list_lru操作、count错误分支、Sparse解锁注解、Lockde
 重命名的WARN告警与功能分支分别说明，尤其WARN_ON内的旧父引用递减不能整体删除。普通移动与交换维护的父引用、名字存储和两套索引不同；目标并行查询的完成仍要求持d_lock完成唤醒后等待者才能退出。源码中的锁序与随树文档概括差异继续按原证据保留。
 
 本次未运行Linux名称替换程序、并发目录修改、委托等待、锁依赖负载或后端错误注入；静态源码和图文核对不冒充目标运行结果。
+
+## 1.313\_内核日志产生消费与调用点控制复核
+
+2026-10-18，核对 NXP 固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的打印宏、环形记录、动态调试、限流与设备接口。入口见 [日志路径源码阅读索引](../printk/navigation/P01_Linux_6.12_日志路径源码阅读索引.md#1.2_L0到L3分别由谁推进)，正文按 L0 筛选、L1 提交、L2 消费和 L3 显示区分状态。
+
+重新确认开发工作树HEAD为 `7b60e547d2783f8fee61ff7d7be3e066825b9c3a`，版本6.12.20；启用PRINTK、MODULES、PROC_FS、DEBUG_FS、TINY_RCU与PREEMPT_NONE，未启用SMP和两项DYNAMIC_DEBUG配置。本次均读取固定对象，不修改外部工作树。配套模块普通、DEBUG与显式动态分支的ARM语法检查通过，366个使用头与固定提交无差异；动态分支是检查时定义选择条件，不是实际构建配置或运行证据。未进行完整Kbuild、模块链接装载、console/dmesg或日志服务实测。
+
+| 固定源码相对路径 | Git blob |
+| --- | --- |
+| `include/linux/printk.h` | `eca9bb2ee637b6d4206bb8827893d6eb7a2709e5` |
+| `include/linux/dev_printk.h` | `ca32b5bb28eb57383b3ed97096a5fe13d7ef816f` |
+| `include/linux/ratelimit.h` | `b17e0cd0a30cfb9fc15c23bad511ef82007f7414` |
+| `include/linux/ratelimit_types.h` | `765232ce0b5e9986bbf686155c1237edd6bb0a96` |
+| `include/linux/dynamic_debug.h` | `ff44ec346162a164cbaf42c7df6f3894505d0654` |
+| `kernel/printk/printk.c` | `3b75f6e8410b9d71418cb6644b012fbb10ffe156` |
+| `lib/dynamic_debug.c` | `5a007952f7f24ede6bae7ef3c73b6cc0613215ca` |
+| `lib/ratelimit.c` | `ce945c17980b9b8addd4c044e1080f73f21a4f3d` |
+| `Documentation/core-api/printk-basics.rst` | `2dde24ca7d9f679a77b376c2a37f860e30a564c8` |
+| `Documentation/core-api/printk-formats.rst` | `14e093da3ccd934230d89fd4a69800d1e6b3edcd` |
+| `Documentation/admin-guide/dynamic-debug-howto.rst` | `7c036590cd07c15565717146bbeb3f1aacf92430` |
+| `include/linux/device.h` | `667cb6db9019349c9db0233acf9e78ff6a6d9625` |
+| `include/linux/moduleparam.h` | `bfb85fd13e1fae572276339f17ca423320ef92bd` |
+| `kernel/params.c` | `2e447f8ae183e7ec6d1815c862e0cec6572099d4` |
+| `include/linux/once_lite.h` | `27de7bc32a0610afe39ad2d920d1adc141370f51` |
+| `kernel/printk/printk_ringbuffer.h` | `4ef81349d9fbe1e03e321e73685ae5c2837f46c6` |
+| `include/linux/device/class.h` | `518c9c83d64bdf85bb5607cea6ea640884ec3460` |
+| `drivers/base/core.c` | `ec0ef6a0de942742215862206ea2aee8a65199b7` |
+| `lib/hexdump.c` | `c3db7c3a764365b01e78f8ed0b7f782f33a5ce34` |
