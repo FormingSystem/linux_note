@@ -56,3 +56,4 @@ research/source_reading/buildroot/tools/genimage-18/image-hd.c whitespace=-blank
 # Fixed U-Boot source evidence; preserve the upstream byte representation.
 research/source_reading/uboot/upstream/v2022.10/** text eol=lf
 research/source_reading/uboot/upstream/v2022.10/README conflict-marker-size=1000
+research/source_reading/uboot/upstream/v2022.10/scripts/Makefile.host whitespace=-space-before-tab

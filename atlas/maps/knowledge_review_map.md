@@ -610,6 +610,9 @@ mindmap-plugin: basic
         - 🔴 [U-Boot源码阅读索引](../../research/source_reading/uboot/navigation/README.md)
         - 🔴 [构建上下文与入口选择导读](../../research/source_reading/uboot/navigation/P02_构建上下文与入口选择导读.md)
         - 🔴 [构建上下文与入口选择实现](../../research/source_reading/uboot/source_explanations/P02_构建上下文与入口选择实现.md)
+        - 🔴 [从板配置到可核对的构建产物](../../knowledge/system_software/uboot/P03_从板配置到可核对的构建产物.md)
+        - 🔴 [配置工具与镜像产物导读](../../research/source_reading/uboot/navigation/P03_配置工具与镜像产物导读.md)
+        - 🔴 [配置求值与构建产物实现](../../research/source_reading/uboot/source_explanations/P03_配置求值与构建产物实现.md)
 
 ## 1.6\_工程方法与平台实现
 
