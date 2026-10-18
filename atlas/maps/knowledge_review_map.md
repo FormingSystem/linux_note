@@ -594,7 +594,7 @@ mindmap-plugin: basic
         - 🔴 [P10 从文件系统镜像到存储布局与部署验证](../../knowledge/system_software/buildroot/P10_从文件系统镜像到存储布局与部署验证.md)
         - 🔴 [P11 沿失败交接点定位构建与运行问题](../../knowledge/system_software/buildroot/P11_沿失败交接点定位构建与运行问题.md)
         - 🔴 [P12 让多套配置和版本升级保持可追溯](../../knowledge/system_software/buildroot/P12_让多套配置和版本升级保持可追溯.md)
-        - 🔴 [P13 附录](../../knowledge/system_software/buildroot/P13_附录.md)
+        - 🔴 [P13 命令边界与资料查询](../../knowledge/system_software/buildroot/P13_命令边界与资料查询.md)
         - 🔴 [固定资料与验证边界](../../research/source_reading/buildroot/SOURCE_BASELINE.md)
     - Kconfig
         - 🔴 [基本结构与类型定义](../../knowledge/system_software/kconfig/基础语法.md)

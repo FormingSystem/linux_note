@@ -131,6 +131,8 @@ genimage 18原件保存在 [tools/genimage-18](tools/genimage-18/source_manifest
 
 长期维护章节增加 [迁移说明](2025.02/docs/manual/migrating.adoc)、[许可资料收集说明](2025.02/docs/manual/legal-notice.adoc) 和 [utils/brmake](2025.02/utils/brmake)，分别核对候选升级、收集结果边界，以及brmake仅包装make和日志而不创建外部树的事实。两套配置的教学矩阵脚本属于仓库原创，不是上游提供的接口；脚本控制流测试与真实构建结果分开登记。
 
+查询附录补 [包阶段目标表](2025.02/docs/manual/package-make-target.adoc) 与 [常规使用说明](2025.02/docs/manual/common-usage.adoc)，核对局部重建、独立输出、目录用途及包内/顶层并行的不同边界；SDK归档位置和整体清理范围继续按固定Makefile核对。
+
 ## 1.3\_静态核对与实际运行分别登记
 
 2026-10-18已下载并解出所列原件，计算归档与各文件摘要，阅读入门配置、打包脚本、Make目标及对应手册。知识正文中的构建和QEMU命令依据这些原件编写。

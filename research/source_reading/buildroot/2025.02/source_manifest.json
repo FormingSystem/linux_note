@@ -442,6 +442,14 @@
     {
       "path": "utils/brmake",
       "sha256": "576ad3ccbdbd18052ea30619015f93a95c0fb7a8b076c659a1d39b3bff6bd591"
+    },
+    {
+      "path": "docs/manual/common-usage.adoc",
+      "sha256": "623a4ac8d0fd4a3f2e1291b5071835de2d602d157e46b80e505d6ac20a801d8e"
+    },
+    {
+      "path": "docs/manual/package-make-target.adoc",
+      "sha256": "11f28f771aa30f56356bf9d4e4a866e4b6e59e0121340e73feb3eca911169ebd"
     }
   ]
 }
