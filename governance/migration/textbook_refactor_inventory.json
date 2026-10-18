@@ -35,7 +35,8 @@
       "knowledge/system_software/buildroot/P05_文件系统构建与定制.md": "knowledge/system_software/buildroot/P05_从安装目录到可验证的根文件系统.md",
       "knowledge/system_software/buildroot/P06_包集成与系统服务.md": "knowledge/system_software/buildroot/P06_把应用接入构建并交给初始化系统.md",
       "knowledge/system_software/buildroot/P07_镜像生成与部署.md": "knowledge/system_software/buildroot/P07_把构建产物整理为可核对的交付包.md",
-      "knowledge/system_software/buildroot/P08_高级定制与集成.md": "knowledge/system_software/buildroot/P08_把项目输入迁到外部树并隔离构建.md"
+      "knowledge/system_software/buildroot/P08_高级定制与集成.md": "knowledge/system_software/buildroot/P08_把项目输入迁到外部树并隔离构建.md",
+      "knowledge/system_software/buildroot/P09_包开发与维护.md": "knowledge/system_software/buildroot/P09_把源码身份依赖和补丁接成包维护闭环.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -9719,6 +9720,18 @@
           "两图渲染目视，Bash语法、连续性长度格式锚点与全仓909篇链接通过。"
         ],
         "limits": "未执行Linux全量构建、真实Kconfig解析或AArch64运行；替身验证仅覆盖CI脚本控制流。"
+      },
+      "knowledge/system_software/buildroot/P09_把源码身份依赖和补丁接成包维护闭环.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "用真实zlib提供者与完整C调用闭合归档身份、双层依赖、补丁和升级证据，纠正原文伪配方与保证。",
+        "validation": [
+          "88份固定原件逐字节和摘要一致；zlib官方镜像归档匹配配方摘要。",
+          "MinGW严格警告O2四类输入、补丁后运行、file复制和四类哈希行为通过。",
+          "两图渲染目视，Bash语法、连续性长度格式锚点及909篇链接通过。"
+        ],
+        "limits": "未执行Linux Buildroot、Kconfig或AArch64启动；原件尾空格用精确路径属性保留。"
       }
     },
     "additional_documents": [
