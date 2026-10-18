@@ -10529,6 +10529,50 @@
           "固定头文件DTS预处理、命令语法、正文材料一致、4图渲染目视、格式元数据长度锚点及952篇全仓链接通过。"
         ],
         "limits": "无完整Kbuild、目标用户态ABI编译及开发板真实事件、断开、溢出和电气测试；237行模块节与210行读取器节按完整程序保留，未宣称连续性审计零提示。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "原有交错模型、同步/异步区别与领域边界完整，全文冷读后保留，维护异步专题新标题锚点。",
+        "validation": [
+          "全文冷读；核对现有RCU、workqueue、设备树、中断和GIC范围，四图渲染目视。",
+          "标题入出链、格式元数据及952篇全仓链接通过；同步中断大纲GIC实际17章范围。"
+        ],
+        "limits": "导航按阅读任务验收，不重复运行目标板实验，不把现有实现缺口或人工评审状态升级。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/synchronization/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "把分类图改成由观察顺序、互斥到等待/快照/回收的选择链，说明各专题前提、保证和剩余责任，RCU按当前因果路线进入。",
+        "validation": [
+          "全文冷读；核对现有RCU、workqueue、设备树、中断和GIC范围，四图渲染目视。",
+          "标题入出链、格式元数据及952篇全仓链接通过；同步中断大纲GIC实际17章范围。"
+        ],
+        "limits": "导航按阅读任务验收，不重复运行目标板实验，不把现有实现缺口或人工评审状态升级。"
+      },
+      "knowledge/linux/synchronization_and_asynchrony/asynchrony/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从原现场的执行限制进入后续执行者与时机，澄清WQ_BH与线程队列、提示与数据、时间到期与完成，保留硬件和领域边界。",
+        "validation": [
+          "全文冷读；核对现有RCU、workqueue、设备树、中断和GIC范围，四图渲染目视。",
+          "标题入出链、格式元数据及952篇全仓链接通过；同步中断大纲GIC实际17章范围。"
+        ],
+        "limits": "导航按阅读任务验收，不重复运行目标板实验，不把现有实现缺口或人工评审状态升级。"
+      },
+      "atlas/tracks/linux_driver_track.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "补模块、共享状态、设备实例、外设协议与平台验证的阶段因果链，直达设备树权威大纲并接入已重构LED/按键/Input路线。",
+        "validation": [
+          "全文冷读；核对现有RCU、workqueue、设备树、中断和GIC范围，四图渲染目视。",
+          "标题入出链、格式元数据及952篇全仓链接通过；同步中断大纲GIC实际17章范围。"
+        ],
+        "limits": "导航按阅读任务验收，不重复运行目标板实验，不把现有实现缺口或人工评审状态升级。"
       }
     },
     "additional_documents": [
