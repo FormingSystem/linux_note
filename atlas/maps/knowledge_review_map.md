@@ -592,7 +592,7 @@ mindmap-plugin: basic
         - 🔴 [P08 把项目输入迁到外部树并隔离构建](../../knowledge/system_software/buildroot/P08_把项目输入迁到外部树并隔离构建.md)
         - 🔴 [P09 把源码身份依赖和补丁接成包维护闭环](../../knowledge/system_software/buildroot/P09_把源码身份依赖和补丁接成包维护闭环.md)
         - 🔴 [P10 从文件系统镜像到存储布局与部署验证](../../knowledge/system_software/buildroot/P10_从文件系统镜像到存储布局与部署验证.md)
-        - 🔴 [P11 调试与问题排查](../../knowledge/system_software/buildroot/P11_调试与问题排查.md)
+        - 🔴 [P11 沿失败交接点定位构建与运行问题](../../knowledge/system_software/buildroot/P11_沿失败交接点定位构建与运行问题.md)
         - 🔴 [P12 高级主题](../../knowledge/system_software/buildroot/P12_高级主题.md)
         - 🔴 [P13 附录](../../knowledge/system_software/buildroot/P13_附录.md)
         - 🔴 [固定资料与验证边界](../../research/source_reading/buildroot/SOURCE_BASELINE.md)

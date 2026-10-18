@@ -402,6 +402,34 @@
     {
       "path": "fs/ubifs/ubifs.mk",
       "sha256": "9249cbf328f1427962c649bddd68cd27f7234448f133bcbd4c4c88d61cb43a52"
+    },
+    {
+      "path": "docs/manual/debugging-buildroot.adoc",
+      "sha256": "5a3456486d49032f6137342d46bde541d2df36fff50d428eeb84788c7a10cc90"
+    },
+    {
+      "path": "package/pkg-kconfig.mk",
+      "sha256": "b1a8cd5d083f9a492f3fc1eaddaf48ff4ac681ff57b74300df13764a0211d436"
+    },
+    {
+      "path": "package/gdb/Config.in",
+      "sha256": "d2834732adc9cd8c2dfa2f283dce661a2dfff360a2146e46079729118c215b71"
+    },
+    {
+      "path": "package/gdb/Config.in.host",
+      "sha256": "1927b50911513278a124b55077dffdf8f0fd1636f03289bb3080861286ca1da6"
+    },
+    {
+      "path": "package/strace/Config.in",
+      "sha256": "898b47fd8d63e882968b03faf777d7ba1b2f6b6f0db0b104c829dd61179b72da"
+    },
+    {
+      "path": "support/download/wget",
+      "sha256": "30f576d00aba3420f1d7efbe6d7680a5399f20fca84de1183de883d240b426fe"
+    },
+    {
+      "path": "support/scripts/apply-patches.sh",
+      "sha256": "0238931a6e6b0c51bbb6c756c6ae596acaad6ae65dff43888f4f7e41d373e9a5"
     }
   ]
 }

@@ -116,6 +116,19 @@ domains: [linux, buildroot, source_reading]
 
 genimage 18原件保存在 [tools/genimage-18](tools/genimage-18/source_manifest.json)：[README.rst](tools/genimage-18/README.rst) 解释配置语法，[image-hd.c](tools/genimage-18/image-hd.c) 核对分区表、对齐与布局实现，[COPYING](tools/genimage-18/COPYING) 保留许可原文。2026-10-18从 [官方v18发布归档](https://github.com/pengutronix/genimage/releases/download/v18/genimage-18.tar.xz) 取得，SHA-256为 `ebc3f886c4d80064dd6c6d5e3c2e98e5a670078264108ce2f89ada8a2e13fedd`，与Buildroot配方摘要相同。未把工具源码核对宣称为Linux工具构建或实际镜像生成。
 
+调试章节将阶段记录与实际运行证据分开，补充以下固定原件：
+
+| 上游相对位置及原件 | 本轮核对的事实 |
+| --- | --- |
+| [support/download/wget](2025.02/support/download/wget) | 下载后端调用与代理环境的职责边界 |
+| [support/scripts/apply-patches.sh](2025.02/support/scripts/apply-patches.sh) | 补丁列表先登记再调用patch，列表不等于成功凭据 |
+| [package/pkg-kconfig.mk](2025.02/package/pkg-kconfig.mk) | 包配置编辑、标记失效与配置写回 |
+| [package/strace/Config.in](2025.02/package/strace/Config.in) | 目标跟踪工具选择及工具链条件 |
+| [docs/manual/using-buildroot-debugger.adoc](2025.02/docs/manual/using-buildroot-debugger.adoc)、[目标GDB配置](2025.02/package/gdb/Config.in)、[宿主GDB配置](2025.02/package/gdb/Config.in.host) | 两端调试职责、未剥离程序与依赖 |
+| [docs/manual/debugging-buildroot.adoc](2025.02/docs/manual/debugging-buildroot.adoc) | 构建阶段开始/结束的记录接口 |
+
+宿主前置条件继续以 [prerequisite.adoc](2025.02/docs/manual/prerequisite.adoc) 为准。原件中的配置规则和本轮脚本反例不代替Linux完整构建、目标跟踪或真实板启动。
+
 ## 1.3\_静态核对与实际运行分别登记
 
 2026-10-18已下载并解出所列原件，计算归档与各文件摘要，阅读入门配置、打包脚本、Make目标及对应手册。知识正文中的构建和QEMU命令依据这些原件编写。
