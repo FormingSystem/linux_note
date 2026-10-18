@@ -9973,6 +9973,42 @@
           "六原件工作树与索引SHA一致，三篇格式元数据长度锚点及严格连续审计通过，图渲染目视，920篇链接零缺失。"
         ],
         "limits": "未执行完整U-Boot交叉构建和QEMU启动；原八千行长稿仍待其余单元迁移，未登记完成。"
+      },
+      "knowledge/system_software/uboot/P04_先建立栈与GD再进入可用的C环境.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从有限C环境的实际缺口推导栈与GD，按地址计算解释先返回再切栈清零，并连接早期分配和后期完整堆。",
+        "validation": [
+          "宿主C默认布局、32字节成功、16字节分配失败及8192字节预算越界实测，内嵌代码一致。",
+          "九原件工作树与索引SHA一致；五图渲染目视；格式元数据长度和精确锚点通过，923篇全仓链接零缺失。",
+          "正文和实现严格连续审计通过；导航21链接含九原件和四阶段定位，人工复核保留追溯作用。"
+        ],
+        "limits": "未执行目标ARM切栈或板级启动；模型增加范围检查，不冒充上游逐句复刻；旧长稿仍待其余单元迁移。"
+      },
+      "research/source_reading/uboot/navigation/P04_栈与GD及分配器交接导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按公共S0/S1/S2/S5阶段追踪状态地址、写入者和消费者，登记九份新增原件摘要。",
+        "validation": [
+          "宿主C默认布局、32字节成功、16字节分配失败及8192字节预算越界实测，内嵌代码一致。",
+          "九原件工作树与索引SHA一致；五图渲染目视；格式元数据长度和精确锚点通过，923篇全仓链接零缺失。",
+          "正文和实现严格连续审计通过；导航21链接含九原件和四阶段定位，人工复核保留追溯作用。"
+        ],
+        "limits": "未执行目标ARM切栈或板级启动；模型增加范围检查，不冒充上游逐句复刻；旧长稿仍待其余单元迁移。"
+      },
+      "research/source_reading/uboot/source_explanations/P04_早期运行环境与GD交接实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "逐簇解释预留函数与汇编交接、分配游标与标志窗口、GD复制及initcall失败，并提供可修改性边界。",
+        "validation": [
+          "宿主C默认布局、32字节成功、16字节分配失败及8192字节预算越界实测，内嵌代码一致。",
+          "九原件工作树与索引SHA一致；五图渲染目视；格式元数据长度和精确锚点通过，923篇全仓链接零缺失。",
+          "正文和实现严格连续审计通过；导航21链接含九原件和四阶段定位，人工复核保留追溯作用。"
+        ],
+        "limits": "未执行目标ARM切栈或板级启动；模型增加范围检查，不冒充上游逐句复刻；旧长稿仍待其余单元迁移。"
       }
     },
     "additional_documents": [
@@ -10166,7 +10202,10 @@
       "research/source_reading/uboot/source_explanations/P02_构建上下文与入口选择实现.md",
       "knowledge/system_software/uboot/P03_从板配置到可核对的构建产物.md",
       "research/source_reading/uboot/navigation/P03_配置工具与镜像产物导读.md",
-      "research/source_reading/uboot/source_explanations/P03_配置求值与构建产物实现.md"
+      "research/source_reading/uboot/source_explanations/P03_配置求值与构建产物实现.md",
+      "knowledge/system_software/uboot/P04_先建立栈与GD再进入可用的C环境.md",
+      "research/source_reading/uboot/navigation/P04_栈与GD及分配器交接导读.md",
+      "research/source_reading/uboot/source_explanations/P04_早期运行环境与GD交接实现.md"
     ],
     "language_review": {
       "status": "complete",
