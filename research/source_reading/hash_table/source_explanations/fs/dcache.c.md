@@ -22,43 +22,14 @@ domains: [linux, source_reading]
  */
 static inline struct hlist_bl_head *d_hash(unsigned long hashlen)
 {
+	/* 桶指针与右移量在dcache初始化后固定；本函数只定位桶。 */
 	return runtime_const_ptr(dentry_hashtable) +
 		runtime_const_shift_right_32(hashlen, d_hash_shift);
 }
 
-/**
- * __d_lookup_rcu - 仓库补充阅读说明：在调用者的 RCU 路径保护内扫描，返回候选并写出序列样本。
- */
-struct dentry *__d_lookup_rcu(const struct dentry *parent,
-				const struct qstr *name,
-				unsigned *seqp)
-{
-	u64 hashlen = name->hash_len;
-	const unsigned char *str = name->name;
-	struct hlist_bl_head *b = d_hash(hashlen);
-	struct hlist_bl_node *node;
-	struct dentry *dentry;
-	if (unlikely(parent->d_flags & DCACHE_OP_COMPARE))
-		return __d_lookup_rcu_op_compare(parent, name, seqp);
-	hlist_bl_for_each_entry_rcu(dentry, node, b, d_hash) {
-		unsigned seq;
-		seq = raw_seqcount_begin(&dentry->d_seq);
-		if (dentry->d_parent != parent)
-			continue;
-		if (d_unhashed(dentry))
-			continue;
-		if (dentry->d_name.hash_len != hashlen)
-			continue;
-		if (dentry_cmp(dentry, str, hashlen_len(hashlen)) != 0)
-			continue;
-		*seqp = seq;
-		return dentry;
-	}
-	return NULL;
-}
 ```
 
-d_hash 使用已经初始化的全局桶地址与位移，runtime_const 系列并非随机种子接口。普通分支中 d_parent 检查父目录身份，d_unhashed 排除已撤下项，hash_len 同时筛选哈希与长度，dentry_cmp 最后比较名字；前面筛选不能省略最后一步。seqp 是输出到调用者栈变量的样本，不是给对象加引用。
+`__d_lookup_rcu`的完整函数体统一在 [VFS候选与序列交接](../../../vfs/source_explanations/P16_候选读取与快速路径验证.md#16.1_返回候选时同时交出尚待验证的序列) 展开；本页保留选桶和自定义名字比较的唯一实现。d_hash 使用已经初始化的全局桶地址与位移，runtime_const 系列并非随机种子接口。普通分支中 d_parent 检查父目录身份，d_unhashed 排除已撤下项，hash_len 同时筛选哈希与长度，dentry_cmp 最后比较名字；前面筛选不能省略最后一步。seqp 是输出到调用者栈变量的样本，不是给对象加引用。
 
 raw_seqcount_begin 不等待写者稳定，但仍有相应读屏障；调用者必须再验证序列。源码明确该入口只供核心 VFS 的 RCU 路径遍历使用，不能提取成任意驱动的“无锁名称服务”。
 
@@ -71,6 +42,7 @@ static noinline struct dentry *__d_lookup_rcu_op_compare(
 	const struct qstr *name,
 	unsigned *seqp)
 {
+	/* 保留输入哈希与长度，完整身份仍需父目录及名字比较。 */
 	u64 hashlen = name->hash_len;
 	struct hlist_bl_head *b = d_hash(hashlen);
 	struct hlist_bl_node *node;
@@ -80,21 +52,27 @@ static noinline struct dentry *__d_lookup_rcu_op_compare(
 		const char *tname;
 		unsigned seq;
 seqretry:
+		/* 记录候选序列，不在这里等待写侧稳定。 */
 		seq = raw_seqcount_begin(&dentry->d_seq);
+		/* 同名不同父不能复用。 */
 		if (dentry->d_parent != parent)
 			continue;
 		if (d_unhashed(dentry))
 			continue;
 		if (dentry->d_name.hash != hashlen_hash(hashlen))
 			continue;
+		/* 名字长度与指针必须来自同一可验证样本。 */
 		tlen = dentry->d_name.len;
 		tname = dentry->d_name.name;
+		/* 样本变化就在当前候选重采，不能把混合指针/长度交给回调。 */
 		if (read_seqcount_retry(&dentry->d_seq, seq)) {
 			cpu_relax();
 			goto seqretry;
 		}
+		/* 由文件系统解释名字相等，不以普通字节比较强行替换。 */
 		if (parent->d_op->d_compare(dentry, tlen, tname, name) != 0)
 			continue;
+		/* 局部比较成功后仍需上层验证，不在此增加引用。 */
 		*seqp = seq;
 		return dentry;
 	}

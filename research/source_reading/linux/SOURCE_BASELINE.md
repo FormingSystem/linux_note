@@ -3451,3 +3451,18 @@ WARN条件中的list_lru操作、count错误分支、Sparse解锁注解、Lockde
 当前ARM配置DCACHE_WORD_ACCESS开启、CPU_BIG_ENDIAN/SMP/SECURITY/AUDIT关闭；名字扫描的字/逐字节分支、安全hook及审计桩不混写为同一执行路径。set_root的WARN条件控制ENOTRECOVERABLE返回，不能只当纯日志删除。LOOKUP_CACHED在最终持有交接时清除，不授权此前的后端慢查询。
 
 本轮没有Linux路径实验新运行记录，也未执行并发rename、受限路径逃逸压力、链接栈分配失败或安全模块组合测试。
+
+
+## 1.311\_快速观察引用交接与同名等待复核
+
+2026-10-18，复核VFS实现P16～P18，补齐二十四段函数中文行内注释、候选序列地址、部分引用失败清理表、进行中哈希与栈上等待项关系、配置及修改边界；固定代码token保持不变。__d_lookup_rcu重复函数体收拢到VFS，哈希专题保留桶定位和自定义比较唯一实现及原阅读入口。
+
+| 上游位置 | Git blob |
+| --- | --- |
+| include/linux/preempt.h | `ce76f1a45722529832a5eaefc077356cc0124c9f` |
+
+新增原件取自固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。preempt_disable_nested在RT配置增加禁抢占，非RT检查已有前提；当前PREEMPT_NONE不能描述为无条件多加一层抢占计数。mount合法化的0/1/-1、dentry零引用重新取得与dead拒绝、链接及root部分失败分别落实清理责任。
+
+等待队列头来自工作者栈，等待项来自等待者栈且使用default_wake_function；该特例依靠持d_lock完成全部唤醒后等待者才能退出、自己的队列只发布一次且之后不再遍历的寿命边界，不能套用autoremove或长期队列模型。失效对象还可能处理子树和挂载，不等同于仅清有效位。
+
+本次未执行目标快速路径追踪、并发同名未命中、管理挂载、部分引用取得故障或RT配置运行，静态协议核对不作为实测结果。

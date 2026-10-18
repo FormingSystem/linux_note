@@ -44,7 +44,7 @@ flowchart LR
     shared -->|"退出后按RCU协议延迟最终释放"| reclaim["回收路径"]
 ```
 
-__d_lookup_rcu 返回候选和序列样本，不为结果增加普通引用，也不替所有调用者完成最终验证。路径层先核对父的观察，再在进入候选等位置验证子序列；相邻步骤的验证相互衔接，使结果对应协议允许的遍历。它不是在某一时刻复制整棵目录树的快照。
+固定版本入口见 [VFS源码索引](../../../research/source_reading/vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)。[__d_lookup_rcu](../../../research/source_reading/vfs/source_explanations/P16_候选读取与快速路径验证.md#16.1_返回候选时同时交出尚待验证的序列) 返回候选和序列样本，不为结果增加普通引用，也不替所有调用者完成最终验证。路径层先核对父的观察，再在进入候选等位置验证子序列；相邻步骤的验证相互衔接，使结果对应协议允许的遍历。它不是在某一时刻复制整棵目录树的快照。
 
 ref-walk 也可以命中 dcache。两种模式的区别不是“缓存与磁盘”，而是当前如何保护、验证和持有路径对象；函数名带 fast 也不证明当前一定处于 RCU-walk。
 
@@ -52,7 +52,7 @@ ref-walk 也可以命中 dcache。两种模式的区别不是“缓存与磁盘�
 
 假设当前已用 RCU 观察到目录，但下一步需要睡眠查询。若先退出 RCU，再尝试对原指针增加引用，对象可能在这两步之间被回收。正确交接必须在保护仍有效时尝试取得相应引用，并验证取得的对象仍对应此前可接受的观察。
 
-try_to_unlazy 按顺序处理已保存链接、当前位置和需要的 root。成功后才 leave_rcu，后续以 ref-walk 继续；如果验证失败，也会整理状态并退出，由 terminate_walk 归还实际取得的部分，再让上层按协议重新查找。失败的 nameidata 不能继续当成一个正常位置推进。
+[try_to_unlazy](../../../research/source_reading/vfs/source_explanations/P17_从RCU观察交接到路径引用.md#17.4_全部必要持有取得后才退出RCU) 按顺序处理已保存链接、当前位置和需要的 root。成功后才 leave_rcu，后续以 ref-walk 继续；如果验证失败，也会整理状态并退出，由 terminate_walk 归还实际取得的部分，再让上层按协议重新查找。失败的 nameidata 不能继续当成一个正常位置推进。
 
 ```mermaid
 sequenceDiagram
@@ -73,7 +73,7 @@ sequenceDiagram
     end
 ```
 
-如果已经选中了下一个 dentry，try_to_unlazy_next 还要接住它；不能只固定父目录就把子候选当成自动安全。挂载持有的验证也不是一次加计数：__legitimize_mnt 先检查序列、增加持有并配对屏障，再复查；不同失败返回说明是否仍有一份持有需要调用者归还。
+如果已经选中了下一个 dentry，[try_to_unlazy_next](../../../research/source_reading/vfs/source_explanations/P17_从RCU观察交接到路径引用.md#17.5_已经选出的下一候选需要额外持有) 还要接住它；不能只固定父目录就把子候选当成自动安全。挂载持有的验证也不是一次加计数：[__legitimize_mnt](../../../research/source_reading/vfs/source_explanations/P17_从RCU观察交接到路径引用.md#17.1_挂载引用的取得与序列检查必须配对) 先检查序列、增加持有并配对屏障，再复查；不同失败返回说明是否仍有一份持有需要调用者归还。
 
 L5 成功交付最终结果同样需要引用持有。RCU-walk 节省的是许多中间步骤的反复取放，并没有让成功 path 变成一个在退出 RCU 后可随意使用的裸指针。
 
@@ -90,15 +90,15 @@ L5 成功交付最终结果同样需要引用持有。RCU-walk 节省的是许�
 | 真正的权限、非目录等失败 | 按具体错误返回 | 不能为了“查到为止”无限重试 |
 | 请求RESOLVE_CACHED却必须做不允许的慢查询 | 失败并向调用者报告相应EAGAIN | 不能悄悄违背缓存限定 |
 
-RESOLVE_CACHED 限制需要完成的查找工作，并不禁止在 L5 为已找到结果取得最后的合法持有。complete_walk 在相应完成路径清除 LOOKUP_CACHED 再执行交接；这与未命中后去后端查找是不同阶段。
+RESOLVE_CACHED 限制需要完成的查找工作，并不禁止在 L5 为已找到结果取得最后的合法持有。[complete_walk](../../../research/source_reading/vfs/source_explanations/P13_路径起点与结果持有的交接.md#13.3_结束验证把快速观察变成可交付结果) 在相应完成路径清除 LOOKUP_CACHED 再执行交接；这与未命中后去后端查找是不同阶段。
 
-固定实现和返回值清理从 [快慢遍历导读](../../../research/source_reading/vfs/navigation/P09_快速观察怎样转为引用并协调慢查询.md#9.1_把观察凭据与持有交接分开) 进入。上一章已有普通入口的有限重试链，此处继续核对每条转换到底取得了哪些资源。
+候选验证、跨挂载与权限检查分别见 [lookup_fast](../../../research/source_reading/vfs/source_explanations/P16_候选读取与快速路径验证.md#16.2_快速查询按当前模式解释同一个返回形态)、[挂载回退](../../../research/source_reading/vfs/source_explanations/P16_候选读取与快速路径验证.md#16.3_跨挂载失败后先恢复候选再交接模式) 和 [may_lookup](../../../research/source_reading/vfs/source_explanations/P16_候选读取与快速路径验证.md#16.5_权限检查也必须说明能否阻塞)。固定实现和返回值清理从 [快慢遍历导读](../../../research/source_reading/vfs/navigation/P09_快速观察怎样转为引用并协调慢查询.md#9.1_把观察凭据与持有交接分开) 进入。上一章已有普通入口的有限重试链，此处继续核对每条转换到底取得了哪些资源。
 
 ## 10.5\_切到慢路径后同名查询为什么还要协调
 
 两个任务可能几乎同时发现同一父目录下的名字没有缓存结果。父目录共享锁允许多个读查询并行，不能只靠它保证同一个名字只有一个执行者调用文件系统 lookup。如果两边各创建候选、独立发布，就会重复后端工作并使结果交接复杂化。
 
-Linux 为正在查询的名称维护单独的 in-lookup 哈希。对象带 DCACHE_PAR_LOOKUP，并暂存 d_wait 指向发起查询路径的等待队列；正常结果仍进入普通名称哈希。发起者保存状态，其他同名查询者取得候选持有后等待完成，不把“尚无inode”当作已完成的负结果。
+Linux 为正在查询的名称维护单独的 in-lookup 哈希。[d_alloc_parallel登记](../../../research/source_reading/vfs/source_explanations/P18_并行查询的登记等待与结果发布.md#18.2_先查正常结果再争取进行中登记) 的对象带 DCACHE_PAR_LOOKUP，并暂存 d_wait 指向发起查询路径的等待队列；正常结果仍进入普通名称哈希。发起者保存状态，其他同名查询者取得候选持有后等待完成，不把“尚无inode”当作已完成的负结果。
 
 | 承载位置 | 写入与读取者 | 对应通信 |
 | --- | --- | --- |
@@ -130,7 +130,7 @@ sequenceDiagram
     end
 ```
 
-上图选择文件系统正常发布结果的分支。错误或替代结果也必须结束进行中登记，等待者可能重查而不能复用原候选。醒来只意味着应重新检查条件；它不证明原名字永远没变，也不保证每个等待者得到同一个最终返回值。
+上图选择文件系统正常发布结果的分支，对应 [目录序列](../../../research/source_reading/vfs/source_explanations/P18_并行查询的登记等待与结果发布.md#18.4_目录序列把两个哈希之间的转换连接起来) 与 [完成交接](../../../research/source_reading/vfs/source_explanations/P18_并行查询的登记等待与结果发布.md#18.5_完成先撤销进行中身份再交付结果或重查机会)。等待者的栈上记录和队列寿命见 [d_wait_lookup](../../../research/source_reading/vfs/source_explanations/P18_并行查询的登记等待与结果发布.md#18.3_等待者睡眠前登记并在醒来后重查)。错误或替代结果也必须结束进行中登记，等待者可能重查而不能复用原候选。醒来只意味着应重新检查条件；它不证明原名字永远没变，也不保证每个等待者得到同一个最终返回值。
 
 这套流程用共享候选、桶锁、目录发布序列、引用和等待队列替代重复后端查询。不同名字仍可并行；热点同名缺失则可能排队。它付出的状态和唤醒成本是明确的，不是“慢路径加一把锁”就可以省略全部通信。
 
