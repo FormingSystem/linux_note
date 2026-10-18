@@ -10153,6 +10153,45 @@
           "六份上游原件工作树与Git索引SHA一致，嵌入实验代码与实际材料一致。"
         ],
         "limits": "未执行完整U-Boot构建或目标命令；字符串解析留待下一单元，旧长稿未登记完成。"
+      },
+      "knowledge/system_software/uboot/P09_命令字符串怎样跨过缓冲区与失败边界.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从环境借用和原地切分的缺口推导不同层副本，追踪展开结果、argv及返回后的有效期。",
+        "validation": [
+          "C模型分号、换行、混合、空行成功、非法模式和内层停止修改均实测。",
+          "从固定原件摘取函数，配替身环境与回调，验证失败传播、展开不重分隔、引号参数、截断仍调用、输入副本、标志、长度和重复能力。",
+          "七份原件工作树与索引SHA一致；三图渲染并目视，修复分号文本的Mermaid解析问题。",
+          "三篇格式元数据长度、精确锚点及严格连续审计通过；938篇Markdown链接零缺失。"
+        ],
+        "limits": "未执行完整U-Boot或硬件启动，摘取测试的环境/命令回调是替身。 Hush仅核对公共配置分支和官方语法说明，未展开完整内部状态机；旧长稿尚待全量迁移核对。"
+      },
+      "research/source_reading/uboot/navigation/P09_命令字符串解析与失败边界导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "以同参与者两张时间线解释分号继续与换行停止，再解释run的环境变量循环。",
+        "validation": [
+          "C模型分号、换行、混合、空行成功、非法模式和内层停止修改均实测。",
+          "从固定原件摘取函数，配替身环境与回调，验证失败传播、展开不重分隔、引号参数、截断仍调用、输入副本、标志、长度和重复能力。",
+          "七份原件工作树与索引SHA一致；三图渲染并目视，修复分号文本的Mermaid解析问题。",
+          "三篇格式元数据长度、精确锚点及严格连续审计通过；938篇Markdown链接零缺失。"
+        ],
+        "limits": "未执行完整U-Boot或硬件启动，摘取测试的环境/命令回调是替身。 Hush仅核对公共配置分支和官方语法说明，未展开完整内部状态机；旧长稿尚待全量迁移核对。"
+      },
+      "research/source_reading/uboot/source_explanations/P09_命令解析缓冲区与失败传播实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "逐项核对截断返回未检查、参数上限非拒绝、标志丢弃、重复能力归一化及配置边界。",
+        "validation": [
+          "C模型分号、换行、混合、空行成功、非法模式和内层停止修改均实测。",
+          "从固定原件摘取函数，配替身环境与回调，验证失败传播、展开不重分隔、引号参数、截断仍调用、输入副本、标志、长度和重复能力。",
+          "七份原件工作树与索引SHA一致；三图渲染并目视，修复分号文本的Mermaid解析问题。",
+          "三篇格式元数据长度、精确锚点及严格连续审计通过；938篇Markdown链接零缺失。"
+        ],
+        "limits": "未执行完整U-Boot或硬件启动，摘取测试的环境/命令回调是替身。 Hush仅核对公共配置分支和官方语法说明，未展开完整内部状态机；旧长稿尚待全量迁移核对。"
       }
     },
     "additional_documents": [
@@ -10361,7 +10400,10 @@
       "research/source_reading/uboot/source_explanations/P07_AArch64相对重定位与地址交接实现.md",
       "knowledge/system_software/uboot/P08_命令名怎样找到镜像里的实现函数.md",
       "research/source_reading/uboot/navigation/P08_命令注册与分派导读.md",
-      "research/source_reading/uboot/source_explanations/P08_命令记录与查找分派实现.md"
+      "research/source_reading/uboot/source_explanations/P08_命令记录与查找分派实现.md",
+      "knowledge/system_software/uboot/P09_命令字符串怎样跨过缓冲区与失败边界.md",
+      "research/source_reading/uboot/navigation/P09_命令字符串解析与失败边界导读.md",
+      "research/source_reading/uboot/source_explanations/P09_命令解析缓冲区与失败传播实现.md"
     ],
     "language_review": {
       "status": "complete",
