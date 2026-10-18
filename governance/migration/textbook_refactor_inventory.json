@@ -10712,6 +10712,61 @@
           "完整练习文件检查；basic结构、模式/视图/导出职责冷读；格式、元数据、长度和链接检查"
         ],
         "limits": "未运行Obsidian界面往返测试、未安装登录或修改插件设置"
+      },
+      "tools/ai/topic_summary_requirements/P01_主题章节的要求.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "逐篇保留历史条款并增加适用审查，校正固定表格数量、禁止问题驱动、一一映射、屏障示意、Typora版本和强制devres的误用；历史提示词不作为执行指令。",
+        "validation": [
+          "全部五份历史原稿逐行读完；当前AGENTS与skill规则；已核对版本的MMIO、pinctrl、等待和devres权威正文。",
+          "原有效正文逐行保留（示意代码围栏改为text）；五篇格式、元数据、长度通过；精确入链与出链检查，P05的三个skill GitHub slug人工及脚本复核。955篇全仓链接零缺失。"
+        ],
+        "limits": "历史资料按来源职责验收，不将旧模板重新变成现行要求；历史未定义代码只保留文本，不称为已运行示例。"
+      },
+      "tools/ai/topic_summary_requirements/P02_主题章节的要求.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "逐篇保留历史条款并增加适用审查，校正固定表格数量、禁止问题驱动、一一映射、屏障示意、Typora版本和强制devres的误用；历史提示词不作为执行指令。",
+        "validation": [
+          "全部五份历史原稿逐行读完；当前AGENTS与skill规则；已核对版本的MMIO、pinctrl、等待和devres权威正文。",
+          "原有效正文逐行保留（示意代码围栏改为text）；五篇格式、元数据、长度通过；精确入链与出链检查，P05的三个skill GitHub slug人工及脚本复核。955篇全仓链接零缺失。"
+        ],
+        "limits": "历史资料按来源职责验收，不将旧模板重新变成现行要求；历史未定义代码只保留文本，不称为已运行示例。"
+      },
+      "tools/ai/topic_summary_requirements/P03_主题章节的要求.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "逐篇保留历史条款并增加适用审查，校正固定表格数量、禁止问题驱动、一一映射、屏障示意、Typora版本和强制devres的误用；历史提示词不作为执行指令。",
+        "validation": [
+          "全部五份历史原稿逐行读完；当前AGENTS与skill规则；已核对版本的MMIO、pinctrl、等待和devres权威正文。",
+          "原有效正文逐行保留（示意代码围栏改为text）；五篇格式、元数据、长度通过；精确入链与出链检查，P05的三个skill GitHub slug人工及脚本复核。955篇全仓链接零缺失。"
+        ],
+        "limits": "历史资料按来源职责验收，不将旧模板重新变成现行要求；历史未定义代码只保留文本，不称为已运行示例。"
+      },
+      "tools/ai/topic_summary_requirements/P04_主题章节的要求.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "逐篇保留历史条款并增加适用审查，校正固定表格数量、禁止问题驱动、一一映射、屏障示意、Typora版本和强制devres的误用；历史提示词不作为执行指令。",
+        "validation": [
+          "全部五份历史原稿逐行读完；当前AGENTS与skill规则；已核对版本的MMIO、pinctrl、等待和devres权威正文。",
+          "原有效正文逐行保留（示意代码围栏改为text）；五篇格式、元数据、长度通过；精确入链与出链检查，P05的三个skill GitHub slug人工及脚本复核。955篇全仓链接零缺失。"
+        ],
+        "limits": "历史资料按来源职责验收，不将旧模板重新变成现行要求；历史未定义代码只保留文本，不称为已运行示例。"
+      },
+      "tools/ai/topic_summary_requirements/P05_主题章节的要求.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "逐篇保留历史条款并增加适用审查，校正固定表格数量、禁止问题驱动、一一映射、屏障示意、Typora版本和强制devres的误用；历史提示词不作为执行指令。",
+        "validation": [
+          "全部五份历史原稿逐行读完；当前AGENTS与skill规则；已核对版本的MMIO、pinctrl、等待和devres权威正文。",
+          "原有效正文逐行保留（示意代码围栏改为text）；五篇格式、元数据、长度通过；精确入链与出链检查，P05的三个skill GitHub slug人工及脚本复核。955篇全仓链接零缺失。"
+        ],
+        "limits": "历史资料按来源职责验收，不将旧模板重新变成现行要求；历史未定义代码只保留文本，不称为已运行示例。"
       }
     },
     "additional_documents": [
