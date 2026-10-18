@@ -54,7 +54,7 @@ domains:
 | 领域 | 当前内容入口 |
 | --- | --- |
 | 用户态设备策略 | [事件、规则与访问结果](../../knowledge/system_software/P01_设备事件与用户态策略.md#1.1_定义与分层位置) |
-| Buildroot | [学习地图](../../knowledge/system_software/buildroot/P00_全书学习地图.md) |
+| Buildroot | [学习地图](../../knowledge/system_software/buildroot/P00_全书学习地图.md)、[固定资料](../../research/source_reading/buildroot/SOURCE_BASELINE.md) |
 | Kconfig | [基础语法](../../knowledge/system_software/kconfig/基础语法.md) |
 | 链接脚本 | [LDS 基础语法](../../knowledge/system_software/linker/lds_基础语法.md) |
 | U-Boot | [Makefile](../../knowledge/system_software/uboot/uboot-makefile.md)、[问题记录](../../knowledge/system_software/uboot/uboot提问.md) |

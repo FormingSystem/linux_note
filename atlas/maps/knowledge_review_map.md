@@ -582,7 +582,7 @@ mindmap-plugin: basic
     - 🔴 [设备事件与用户态策略](../../knowledge/system_software/P01_设备事件与用户态策略.md)
     - 🔴 [Buildroot](../../knowledge/system_software/buildroot/P00_全书学习地图.md)
         - 章节评审：13 章未评审
-        - 🔴 [P01 引言与基础](../../knowledge/system_software/buildroot/P01_引言与基础.md)
+        - 🔴 [P01 从手工拼系统到可重复的构建输入](../../knowledge/system_software/buildroot/P01_从手工拼系统到可重复的构建输入.md)
         - 🔴 [P02 工具链的构建流程概览](../../knowledge/system_software/buildroot/P02_工具链的构建流程概览.md)
         - 🔴 [P03 外部工具链的使用](../../knowledge/system_software/buildroot/P03_外部工具链的使用.md)
         - 🔴 [P04 工具链的调试与问题排查](../../knowledge/system_software/buildroot/P04_工具链的调试与问题排查.md)
@@ -595,6 +595,7 @@ mindmap-plugin: basic
         - 🔴 [P11 调试与问题排查](../../knowledge/system_software/buildroot/P11_调试与问题排查.md)
         - 🔴 [P12 高级主题](../../knowledge/system_software/buildroot/P12_高级主题.md)
         - 🔴 [P13 附录](../../knowledge/system_software/buildroot/P13_附录.md)
+        - 🔴 [固定资料与验证边界](../../research/source_reading/buildroot/SOURCE_BASELINE.md)
     - Kconfig
         - 🔴 [基本结构与类型定义](../../knowledge/system_software/kconfig/基础语法.md)
     - 链接脚本

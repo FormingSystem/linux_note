@@ -1,0 +1,60 @@
+---
+id: research.source_reading.buildroot.baseline
+title: "Buildroot固定资料与验证边界"
+kind: source
+status: evolving
+domains: [linux, buildroot, source_reading]
+---
+
+# 第1章\_Buildroot固定资料与验证边界
+
+[Buildroot入门正文](../../../knowledge/system_software/buildroot/P01_从手工拼系统到可重复的构建输入.md) 用系统交付问题建立构建模型；本页负责固定实际核对的发布包、原件与运行边界。这里的文件不是独立可构建的Buildroot副本，也不应作为产品源码发行包使用。原件按上游路径保留在2025.02子目录，解释正文在知识专题中维护。
+
+## 1.1\_解释版本与归档身份
+
+本轮采用2025.02发布包，目的是让规则、配置与例子可回到同一历史版本核对。选择历史版本作为解释基线，不意味着推荐在新设备上直接使用该初始补丁状态；维护状态从 [官方发布页](https://buildroot.org/download.html) 取得。
+
+| 项目 | 固定值或依据 |
+| --- | --- |
+| 官方项目仓库 | https://gitlab.com/buildroot.org/buildroot |
+| 版本标识 | 2025.02 |
+| 发布身份 | [2025.02公告](https://lists.buildroot.org/pipermail/buildroot/2025-March/775550.html)，2025-03-18；公告列出同名Git标签与归档 |
+| 取得入口 | [官方tar.xz归档](https://buildroot.org/downloads/buildroot-2025.02.tar.xz) |
+| 取得日期 | 2026-10-18 |
+| 本次归档SHA-256 | `889249bdc79b0a32f2911c3f7c0049c60eb90b9c9ad75aab367022fb3e216e41` |
+| 文件记录 | [source_manifest.json](2025.02/source_manifest.json)，各原件SHA-256 |
+| 原件许可入口 | [COPYING](2025.02/COPYING)，保留上游文本；其他文件内声明照原件 |
+
+摘要用于核对本次所用字节，不把自行计算摘要当作发布者签名验证。本次从官方HTTPS入口取得归档，未执行PGP签名验证，也未把Git标签解析成已核实的提交号。引用源码时使用“版本、归档摘要、上游相对路径”这一身份组合，不虚构提交哈希。
+
+## 1.2\_每份原件承担哪个证据任务
+
+| 上游相对位置及原件 | 本轮核对的事实 |
+| --- | --- |
+| [README](2025.02/README) | 普通用户构建、配置和镜像入口 |
+| [Makefile](2025.02/Makefile) | 输出目录、配置目标、savedefconfig保存目的、构建与镜像阶段入口 |
+| [Config.in](2025.02/Config.in) | 全局构建选项及可复现相关选择，不当作逐字节保证 |
+| [docs/manual/introduction.adoc](2025.02/docs/manual/introduction.adoc) | 工具链、内核、引导程序、rootfs可按需要组合 |
+| [docs/manual/quickstart.adoc](2025.02/docs/manual/quickstart.adoc) | 主要输出目录，staging链接和target不能直接部署的限制 |
+| [docs/manual/prerequisite.adoc](2025.02/docs/manual/prerequisite.adoc) | 本版本Linux宿主必需/可选工具与界面依赖 |
+| [docs/manual/getting.adoc](2025.02/docs/manual/getting.adoc) | 取得发布包与版本命名的背景 |
+| [docs/manual/customize-configuration.adoc](2025.02/docs/manual/customize-configuration.adoc) | Buildroot精简配置与组件配置要分别保存 |
+| [docs/manual/rebuilding-packages.adoc](2025.02/docs/manual/rebuilding-packages.adoc) | 增量记录不自动处理全部变更，取消包不自动卸载 |
+| [docs/manual/how-buildroot-works.adoc](2025.02/docs/manual/how-buildroot-works.adoc) | Make和包基础设施组织，后续章节的调用入口 |
+| [docs/manual/configure.adoc](2025.02/docs/manual/configure.adoc) | 内外工具链选择、外部工具链限制及目标配置 |
+| [docs/manual/release-engineering.adoc](2025.02/docs/manual/release-engineering.adoc) | 当时随包说明；不替代当前维护公告 |
+| [configs/qemu_aarch64_virt_defconfig](2025.02/configs/qemu_aarch64_virt_defconfig) | 入门实验的目标、内核6.12.9、ext4和宿主QEMU选择 |
+| [board/qemu/aarch64-virt/linux.config](2025.02/board/qemu/aarch64-virt/linux.config) | 该实验配套内核配置 |
+| [board/qemu/aarch64-virt/readme.txt](2025.02/board/qemu/aarch64-virt/readme.txt) | virt机器、内核和磁盘参数的上游启动说明 |
+| [board/qemu/post-image.sh](2025.02/board/qemu/post-image.sh) | 从配置及板说明生成start-qemu.sh |
+| [board/qemu/start-qemu.sh.in](2025.02/board/qemu/start-qemu.sh.in) | serial-only参数、host工具PATH与模拟器执行方式 |
+
+不同来源说法冲突时先保留时间和具体字段。比如2025.02随包release-engineering仍用较早的LTS周期举例，2025.02发布公告讨论延长维护，当前下载页再给出系列维护终止时间；它们不能拼成一个没有日期的永久承诺。教程介绍发布模型，产品选择则核对当时有效公告。
+
+## 1.3\_静态核对与实际运行分别登记
+
+2026-10-18已下载并解出所列原件，计算归档与各文件摘要，阅读入门配置、打包脚本、Make目标及对应手册。知识正文中的构建和QEMU命令依据这些原件编写。
+
+本次环境未运行Linux Buildroot配置、工具链构建、rootfs制作或QEMU启动，没有构建时长、产物大小或实际登录日志。正文预期与实测严格区分；当前Windows工具环境不作为Linux构建通过证据。此QEMU示例也不覆盖任何真实板卡的烧写或启动验证。
+
+仓库中的NXP Linux 6.12.20源码研究有自己的固定提交和配置。本实验所选Linux 6.12.9仅属于Buildroot随包模拟机配置，二者不共用源码身份或运行结论。

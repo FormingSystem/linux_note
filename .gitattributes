@@ -34,3 +34,8 @@ research/source_reading/linux/include/linux/anon_inodes.h whitespace=-blank-at-e
 research/source_reading/linux/include/linux/eventfd.h whitespace=-blank-at-eof
 research/source_reading/linux/Documentation/trace/ftrace.rst whitespace=-blank-at-eol,-space-before-tab
 research/source_reading/linux/include/trace/events/syscalls.h whitespace=-blank-at-eof
+
+# Preserve byte-identical text evidence from the Buildroot release archive.
+research/source_reading/buildroot/2025.02/** text eol=lf
+research/source_reading/buildroot/2025.02/docs/manual/customize-configuration.adoc whitespace=-blank-at-eof
+research/source_reading/buildroot/2025.02/docs/manual/how-buildroot-works.adoc whitespace=-blank-at-eof

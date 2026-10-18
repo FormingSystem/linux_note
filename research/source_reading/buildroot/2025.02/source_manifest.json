@@ -1,0 +1,79 @@
+{
+  "version": "2025.02",
+  "url": "https://buildroot.org/downloads/buildroot-2025.02.tar.xz",
+  "sha256": "889249bdc79b0a32f2911c3f7c0049c60eb90b9c9ad75aab367022fb3e216e41",
+  "files": [
+    {
+      "path": "COPYING",
+      "sha256": "9755181e27175cb3510b4da8629caa406fb355a19aa8e7d55f06bf8ab33323c4"
+    },
+    {
+      "path": "README",
+      "sha256": "3c28bda2aa7aef006c772e3edf1128be456251712dbc9d9415529fe60a549f71"
+    },
+    {
+      "path": "Makefile",
+      "sha256": "801da8e5d6f9e5a5132fc1bbd1070432d2596a651669cd4d12c11e8cc3e03392"
+    },
+    {
+      "path": "Config.in",
+      "sha256": "2584c801ac1b2443fd899d97d46fbf889f1238eb6cde3efedae7a986a69505bb"
+    },
+    {
+      "path": "configs/qemu_aarch64_virt_defconfig",
+      "sha256": "1b887f7585024e4e69743501c00cd339bf799444a630dc7a0b5253351602eb61"
+    },
+    {
+      "path": "board/qemu/aarch64-virt/readme.txt",
+      "sha256": "137bdf417443612400aca4381c24c333224932773cb23647d9793dee9b69e4a5"
+    },
+    {
+      "path": "board/qemu/aarch64-virt/linux.config",
+      "sha256": "611884f4165dbed7c9757350c3f668c66097afce82edd64a192be7d0cc66455b"
+    },
+    {
+      "path": "board/qemu/post-image.sh",
+      "sha256": "385d1faa4db014e09388aed0f008ac1a4ee042bde05a6d839f358a1468d33917"
+    },
+    {
+      "path": "board/qemu/start-qemu.sh.in",
+      "sha256": "b115de2f6faad2c95752d908422264a6e9f79f287dba2a78720c950ef4f29741"
+    },
+    {
+      "path": "docs/manual/introduction.adoc",
+      "sha256": "7453ab5fd77b516ba4ce65daf41ba1e182df0505c4c9e1a393d8e1e11248fde8"
+    },
+    {
+      "path": "docs/manual/quickstart.adoc",
+      "sha256": "0a7da530cea1a359835c96e2964bd3136e767d0a2d3d662831d13993163f2adb"
+    },
+    {
+      "path": "docs/manual/prerequisite.adoc",
+      "sha256": "f0e66c4ef39627828111c94eefea6eead5d13948864a0fcce1ab22ed2aece37f"
+    },
+    {
+      "path": "docs/manual/getting.adoc",
+      "sha256": "cf6e5ecfd639b733392ee0938dec920b4cb4e1c4534e306c6a53cf68bcfcbb82"
+    },
+    {
+      "path": "docs/manual/rebuilding-packages.adoc",
+      "sha256": "d8efdb193515cc0961f1863733b4554981f3cded5510a128110f66b023e90fb5"
+    },
+    {
+      "path": "docs/manual/customize-configuration.adoc",
+      "sha256": "68d3dede54067b1454c282cf629302882ad0e58a2fffb533efac9739593f8097"
+    },
+    {
+      "path": "docs/manual/how-buildroot-works.adoc",
+      "sha256": "a78d2d524f1c1b47bb6528edd5e3a2d3366f5f917dc8dd41d3e384da3b48bed4"
+    },
+    {
+      "path": "docs/manual/configure.adoc",
+      "sha256": "946d4cf311ba27a93f7b9c1333734beb67eca44c462c4c8ad92181899dab4c7b"
+    },
+    {
+      "path": "docs/manual/release-engineering.adoc",
+      "sha256": "a4e4da7f35fa093e78c177097a718f593493c6a3bf913881acedd6d7a0415421"
+    }
+  ]
+}
