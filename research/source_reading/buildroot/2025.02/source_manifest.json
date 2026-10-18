@@ -302,6 +302,22 @@
     {
       "path": "package/pkg-utils.mk",
       "sha256": "ead55d7e8b52806844c97d13d95896dcafacad870771a822abed0b1f4c5e31dc"
+    },
+    {
+      "path": "docs/manual/customize-outside-br.adoc",
+      "sha256": "52bea3893a7ad45804464f81b23d17b376e057f291d25b211af07e8bf8da665e"
+    },
+    {
+      "path": "docs/manual/customize-patches.adoc",
+      "sha256": "98a629da699ea111eb3a6c9161563cb9df29c4938f16a55e00abccd252809ed6"
+    },
+    {
+      "path": "support/scripts/br2-external",
+      "sha256": "526006ce84725c1511591585d9b373a70f6abb4b6b23bef42c0261f7e30f813b"
+    },
+    {
+      "path": "support/scripts/setlocalversion",
+      "sha256": "261cea41ba0341e0a09019d453ad819b90d81071396b1890e7792a0c33493a02"
     }
   ]
 }

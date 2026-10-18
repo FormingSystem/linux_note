@@ -83,6 +83,15 @@ domains: [linux, buildroot, source_reading]
 
 第六章补 [包目录、Kconfig与hash规则](2025.02/docs/manual/adding-packages-directory.adoc)、[通用包契约](2025.02/docs/manual/adding-packages-generic.adoc)、[开发提示](2025.02/docs/manual/adding-packages-tips.adoc)、[包菜单](2025.02/package/Config.in) 和 [包工具函数](2025.02/package/pkg-utils.mk)，用于核对发现、依赖、local同步及阶段目标；运行交接由 [BusyBox inittab](2025.02/package/busybox/inittab)、[SysV inittab](2025.02/package/sysvinit/inittab)、[rcS](2025.02/package/initscripts/init.d/rcS)、[rcK](2025.02/package/initscripts/init.d/rcK) 与 [systemd配方](2025.02/package/systemd/systemd.mk) 定位。systemd包为256.7，在线256系列接口说明与此配方版本分别标识；未执行目标初始化验证。
 
+外部树章节把项目发现契约与构建状态分开，增加下面的固定原件；原件查询不替代正文中的迁移过程。
+
+| 上游相对位置及原件 | 本轮核对的事实 |
+| --- | --- |
+| [docs/manual/customize-outside-br.adoc](2025.02/docs/manual/customize-outside-br.adoc) | 三个必需文件、名称、路径变量、多树和defconfig选择 |
+| [support/scripts/br2-external](2025.02/support/scripts/br2-external) | 输入验证以及输出目录中的Make与Kconfig入口生成 |
+| [support/scripts/setlocalversion](2025.02/support/scripts/setlocalversion) | 外部树版本记录的辅助查询，不代替源码归档 |
+| [docs/manual/customize-patches.adoc](2025.02/docs/manual/customize-patches.adoc) | 全局补丁与哈希目录的包名、版本和查找次序 |
+
 ## 1.3\_静态核对与实际运行分别登记
 
 2026-10-18已下载并解出所列原件，计算归档与各文件摘要，阅读入门配置、打包脚本、Make目标及对应手册。知识正文中的构建和QEMU命令依据这些原件编写。
