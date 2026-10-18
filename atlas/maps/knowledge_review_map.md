@@ -1162,3 +1162,7 @@ mindmap-plugin: basic
     - 🔴 [映射包装与返回值实现](../../research/source_reading/devres/source_explanations/lib/devres.c.md)
     - 🔴 [句柄启停与注册契约导读](../../research/source_reading/devres/navigation/P04_句柄启停与注册契约导读.md)
     - 🔴 [托管时钟获取与启停实现](../../research/source_reading/devres/source_explanations/drivers/clk/clk-devres.c.md)
+
+## 1.10\_阅读工具说明
+
+- 🔴 **未校正** [MarkMind的基本导图与正文维护](../../tools/obsidian/markmind/markmind使用技巧.md)
