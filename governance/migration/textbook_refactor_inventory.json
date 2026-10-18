@@ -30,7 +30,8 @@
       "research/source_reading/linux/drivers/input/README.md": "research/source_reading/input/navigation/P01_Linux_6.12_Input源码阅读索引.md",
       "knowledge/system_software/buildroot/P01_引言与基础.md": "knowledge/system_software/buildroot/P01_从手工拼系统到可重复的构建输入.md",
       "knowledge/system_software/buildroot/P02_工具链的构建流程概览.md": "knowledge/system_software/buildroot/P02_从最小编译器到完整目标工具链.md",
-      "knowledge/system_software/buildroot/P03_外部工具链的使用.md": "knowledge/system_software/buildroot/P03_把现成工具链接入受控构建.md"
+      "knowledge/system_software/buildroot/P03_外部工具链的使用.md": "knowledge/system_software/buildroot/P03_把现成工具链接入受控构建.md",
+      "knowledge/system_software/buildroot/P04_工具链的调试与问题排查.md": "knowledge/system_software/buildroot/P04_沿编译链接与运行边界定位失败.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -9656,6 +9657,18 @@
           "标题、元数据、长度、精确锚点及全仓909篇链接无缺失。"
         ],
         "limits": "未执行Linux生产方与消费方构建、目标程序运行；资料索引LINK_DENSITY按查询职责人工保留。"
+      },
+      "knowledge/system_software/buildroot/P04_沿编译链接与运行边界定位失败.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按D0至D5交接重写工具链诊断，完整三文件实验区分头文件搜索、目标符号与归档链接，纠正运行依赖和宿主污染误判。",
+        "validation": [
+          "53份固定归档原件逐字节及摘要一致。",
+          "七项MinGW实验验证失败及修复，两个Mermaid图渲染目视，Bash语法通过。",
+          "正文连续性、长度、标题元数据及锚点通过；909篇链接无缺失。"
+        ],
+        "limits": "未执行Linux构建、AArch64运行或目标调试；资料索引链接密度按查询职责保留。"
       }
     },
     "additional_documents": [
