@@ -11,6 +11,9 @@ research/source_reading/linux/**/*.h text eol=lf
 research/source_reading/linux/**/*.rst text eol=lf
 research/source_reading/linux/**/Kconfig text eol=lf
 research/source_reading/linux/**/Makefile text eol=lf
+research/source_reading/linux/scripts/Makefile.host text eol=lf
+research/source_reading/linux/scripts/kconfig/*.l text eol=lf
+research/source_reading/linux/scripts/kconfig/*.y text eol=lf
 # Preserve whitespace in these verified upstream source copies.
 research/source_reading/linux/fs/ext4/file.c whitespace=-blank-at-eof
 research/source_reading/linux/fs/jbd2/journal.c whitespace=-blank-at-eof
@@ -31,6 +34,9 @@ markbook/topics/*/releases/** text eol=lf
 
 research/source_reading/linux/fs/eventfd.c whitespace=-blank-at-eof
 research/source_reading/linux/kernel/params.c whitespace=-space-before-tab
+research/source_reading/linux/scripts/kconfig/expr.c whitespace=-space-before-tab
+research/source_reading/linux/Documentation/kbuild/kconfig.rst conflict-marker-size=1000
+research/source_reading/linux/Documentation/kbuild/makefiles.rst conflict-marker-size=1000
 research/source_reading/linux/include/linux/anon_inodes.h whitespace=-blank-at-eof
 research/source_reading/linux/include/linux/eventfd.h whitespace=-blank-at-eof
 research/source_reading/linux/Documentation/trace/ftrace.rst whitespace=-blank-at-eol,-space-before-tab

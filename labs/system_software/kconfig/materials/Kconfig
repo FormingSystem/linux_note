@@ -1,0 +1,69 @@
+mainmenu "Kconfig 状态与构建输入实验"
+
+config MODULES
+    bool "允许模块状态"
+    modules
+    default y
+
+config BUS
+    tristate "示例总线支持"
+    default m
+
+menuconfig DRIVER
+    tristate "示例驱动"
+    depends on BUS
+    select CHECKSUM
+    imply TRACE
+    help
+      本实验只观察配置结果，不编译或加载真实驱动。
+      驱动取值受到总线依赖限制。
+
+if DRIVER
+
+config BUFFER_SIZE
+    int "缓冲区字节数"
+    range 64 4096
+    default 256
+
+config DEVICE_LABEL
+    string "设备标签"
+    default "lesson"
+
+config REGISTER_BASE
+    hex "示例地址数值"
+    range 0x1000 0xffff
+    default 0x1000
+
+choice
+    prompt "完成通知方式"
+    default MODE_POLL
+
+config MODE_POLL
+    bool "轮询"
+
+config MODE_IRQ
+    bool "中断"
+
+endchoice
+
+endif
+
+config CHECKSUM
+    bool
+
+config TRACE
+    bool "额外跟踪输出"
+
+config SHOW_ADVANCED
+    bool "显示高级菜单"
+
+menu "高级菜单"
+    visible if SHOW_ADVANCED
+
+config ADVANCED_DEFAULT
+    bool "菜单隐藏时仍可求值"
+    default y
+
+endmenu
+
+source "extra/Kconfig"

@@ -597,7 +597,7 @@ mindmap-plugin: basic
         - 🔴 [P13 命令边界与资料查询](../../knowledge/system_software/buildroot/P13_命令边界与资料查询.md)
         - 🔴 [固定资料与验证边界](../../research/source_reading/buildroot/SOURCE_BASELINE.md)
     - Kconfig
-        - 🔴 [基本结构与类型定义](../../knowledge/system_software/kconfig/基础语法.md)
+        - 🔴 [Kconfig 基础语法](../../knowledge/system_software/kconfig/基础语法.md)
     - 链接脚本
         - 🔴 [链接脚本基础结构与核心语法](../../knowledge/system_software/linker/lds_基础语法.md)
     - 🟢 U-Boot
@@ -1106,6 +1106,8 @@ mindmap-plugin: basic
         - 🔴 [RCU MarkBook](../../markbook/topics/rcu/README.md)
 
 - 🔴 [Linux 6.12 日志路径源码阅读索引](../../research/source_reading/printk/navigation/P01_Linux_6.12_日志路径源码阅读索引.md)
+
+- 🔴 [Linux 6.12 配置求值工具阅读索引](../../research/source_reading/kconfig/navigation/P01_Linux_6.12_配置求值工具阅读索引.md)
 
 - 🔴 [devres固定源码阅读大纲](../../research/source_reading/devres/大纲.md)
     - 🔴 [固定源码索引](../../research/source_reading/devres/navigation/P01_Linux_6.12_devres源码阅读索引.md)

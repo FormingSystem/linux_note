@@ -1,0 +1,10 @@
+comment "默认值按声明顺序选择"
+
+config DEFAULT_ORDER
+    int
+    default 10 if BUS
+    default 20
+
+config COPIED_DEFAULT
+    int
+    default DEFAULT_ORDER

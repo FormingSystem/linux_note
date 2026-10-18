@@ -3509,3 +3509,35 @@ WARN条件中的list_lru操作、count错误分支、Sparse解锁注解、Lockde
 | `include/linux/device/class.h` | `518c9c83d64bdf85bb5607cea6ea640884ec3460` |
 | `drivers/base/core.c` | `ec0ef6a0de942742215862206ea2aee8a65199b7` |
 | `lib/hexdump.c` | `c3db7c3a764365b01e78f8ed0b7f782f33a5ce34` |
+
+## 1.314\_Kconfig规则求值与宿主工具实验
+
+2026-10-18，从NXP固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 导出配置工具源码与公共宿主头，新增 [配置求值工具阅读索引](../kconfig/navigation/P01_Linux_6.12_配置求值工具阅读索引.md#1.2_从定义输入到输出文件的阅读顺序)。MSYS2 GCC15.3.0、Bison3.8.2和Flex2.6.4实际生成并构建conf，未修改上游C实现，也未改外部工作树。七组普通输入、三个负例、同步生成头、C读取程序和最小种子输出均已执行；此证据不外推到交互菜单、完整内核构建或目标驱动运行。
+
+| 固定源码相对路径 | Git blob |
+| --- | --- |
+| `scripts/kconfig/conf.c` | `3d7d454c54da3c01df7a4a0b488b114be132e7b1` |
+| `scripts/kconfig/confdata.c` | `3b55e7a4131d9a4fb87499617158dfe906f79164` |
+| `scripts/kconfig/expr.c` | `16f92c4a775a13f053c636598df70702b8fe7c4d` |
+| `scripts/kconfig/expr.h` | `21578dcd4292407ea7280766151db6297c9f8658` |
+| `scripts/kconfig/internal.h` | `d0ffce2dfbba3800973b5f3b4bf56b87e596aa86` |
+| `scripts/kconfig/lkc.h` | `b8ebc3094a2347d609bece1caf7278f3d61e1303` |
+| `scripts/kconfig/lkc_proto.h` | `63519cd24bc7fa8e30c03b712e85e1a22fe0984d` |
+| `scripts/kconfig/lexer.l` | `9c2cdfc33c6f06a0f93e0c6ebe9b217dc3280150` |
+| `scripts/kconfig/menu.c` | `6587ac86d0d52b53e14d619770a23de924fa62cd` |
+| `scripts/kconfig/parser.y` | `bc43fb67c7c41e6db263a636ae165dbfa22e99d5` |
+| `scripts/kconfig/preprocess.c` | `783abcaa5cc5eed162b73d32dcdd7b9678a2a176` |
+| `scripts/kconfig/symbol.c` | `453721e66c4ebc3744fee7076e0ffe3087050677` |
+| `scripts/kconfig/util.c` | `5cdcee144b58126dcfab50fd709be9fc40e99423` |
+| `scripts/kconfig/Makefile` | `fb50bd4f4103f2e058ed04d48602ac7d03ca69b6` |
+| `scripts/include/xalloc.h` | `cdadb07d05922e21242ad5657983be0c12730d9e` |
+| `scripts/include/array_size.h` | `26ba78d867d160dbb7e8280bfcae5ce511b3429f` |
+| `scripts/include/hash.h` | `efa904368a62e479839b9f73186d328bb67238fc` |
+| `scripts/include/hashtable.h` | `45abcb12bfcef73cffe825f38ced99d250614b93` |
+| `scripts/include/list.h` | `8bdcaadca709d2a83cf55e756aba0de87a870b29` |
+| `scripts/include/list_types.h` | `d935b7c5aa8137f4b7faba0293839bec912f3e67` |
+| `Documentation/kbuild/kconfig-language.rst` | `43037be96a16f1dbd58cf003eafa364036bd0c98` |
+| `Documentation/kbuild/kconfig.rst` | `fc4e845bc249ba87b5ce045186683848f424bced` |
+| `Documentation/kbuild/makefiles.rst` | `7964e0c245aebe71be607dfaefcb0f052ec86674` |
+| `scripts/kconfig/preprocess.h` | `a7e4a550638c047f7599e1475e0639b8586c5aaa` |
+| `scripts/Makefile.host` | `e01c13a588ddd9257902b6d8e772574394189c1f` |
