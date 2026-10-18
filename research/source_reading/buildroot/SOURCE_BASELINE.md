@@ -129,6 +129,8 @@ genimage 18原件保存在 [tools/genimage-18](tools/genimage-18/source_manifest
 
 宿主前置条件继续以 [prerequisite.adoc](2025.02/docs/manual/prerequisite.adoc) 为准。原件中的配置规则和本轮脚本反例不代替Linux完整构建、目标跟踪或真实板启动。
 
+长期维护章节增加 [迁移说明](2025.02/docs/manual/migrating.adoc)、[许可资料收集说明](2025.02/docs/manual/legal-notice.adoc) 和 [utils/brmake](2025.02/utils/brmake)，分别核对候选升级、收集结果边界，以及brmake仅包装make和日志而不创建外部树的事实。两套配置的教学矩阵脚本属于仓库原创，不是上游提供的接口；脚本控制流测试与真实构建结果分开登记。
+
 ## 1.3\_静态核对与实际运行分别登记
 
 2026-10-18已下载并解出所列原件，计算归档与各文件摘要，阅读入门配置、打包脚本、Make目标及对应手册。知识正文中的构建和QEMU命令依据这些原件编写。

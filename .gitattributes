@@ -42,5 +42,6 @@ research/source_reading/buildroot/2025.02/docs/manual/how-buildroot-works.adoc w
 research/source_reading/buildroot/2025.02/package/initscripts/init.d/rcS whitespace=-blank-at-eof
 research/source_reading/buildroot/2025.02/package/initscripts/init.d/rcK whitespace=-blank-at-eof
 research/source_reading/buildroot/2025.02/docs/manual/patch-policy.adoc whitespace=-blank-at-eol
+research/source_reading/buildroot/2025.02/docs/manual/migrating.adoc whitespace=-blank-at-eol
 research/source_reading/buildroot/tools/genimage-18/** text eol=lf
 research/source_reading/buildroot/tools/genimage-18/image-hd.c whitespace=-blank-at-eof

@@ -430,6 +430,18 @@
     {
       "path": "support/scripts/apply-patches.sh",
       "sha256": "0238931a6e6b0c51bbb6c756c6ae596acaad6ae65dff43888f4f7e41d373e9a5"
+    },
+    {
+      "path": "docs/manual/migrating.adoc",
+      "sha256": "1a18c2f0fb2eae7ffa8e2235d4c8b8bd6ca7f6ed82150bac67519e6576780160"
+    },
+    {
+      "path": "docs/manual/legal-notice.adoc",
+      "sha256": "2826635a8aa673958336b5e277bacc86495cc9550a02667e7c49ccce5a449a68"
+    },
+    {
+      "path": "utils/brmake",
+      "sha256": "576ad3ccbdbd18052ea30619015f93a95c0fb7a8b076c659a1d39b3bff6bd591"
     }
   ]
 }
