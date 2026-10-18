@@ -58,3 +58,8 @@ research/source_reading/uboot/upstream/v2022.10/** text eol=lf
 research/source_reading/uboot/upstream/v2022.10/README conflict-marker-size=1000
 research/source_reading/uboot/upstream/v2022.10/scripts/Makefile.host whitespace=-space-before-tab
 research/source_reading/uboot/upstream/v2022.10/common/dlmalloc.c whitespace=-blank-at-eol
+
+# Keep archived original text hashes stable across Windows checkouts.
+assets/archives/device_model/legacy_34_chapters_original.txt text eol=lf
+assets/archives/character_device/extended_interfaces_original.txt text eol=lf
+assets/archives/imx6ull_porting/porting_original.txt text eol=lf

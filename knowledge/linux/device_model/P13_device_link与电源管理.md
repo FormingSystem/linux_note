@@ -110,6 +110,8 @@ device_link_add 的调用顺序是 consumer、supplier、flags。此时供应者
 
 添加或删除链接还应与系统睡眠转换互斥，通常利用能够提供这种保证的现有调用上下文。链接可能改变 PM 的处理顺序；在正在进行的暂停序列中随意改变依赖，就可能破坏该序列已经依赖的先后关系。重复添加同一对设备还可能复用已有链接并调整标志与引用，不能把每次成功返回都理解成一块完全独立、可随意释放的关系。
 
+还有一种容易混淆的“接入”：设备需要多个电源域时，dev_pm_domain_attach_by_id 可按索引创建并返回接入某个电源域的虚拟 device。这个返回对象能供调用者建立所需的 device link，但 **该接口本身不代替调用者建好链接**。它成功返回 struct device 指针，无需电源域时可返回 NULL，错误为 ERR_PTR；不能把结果装进 int，再按普通零成功处理。成功取得的虚拟设备还需按契约调用 dev_pm_domain_detach，链接寿命则依据另外选择的策略处理。可见“得到电源域承载对象”和“登记消费者到它的依赖”仍是两个动作；固定依据见 [drivers/base/power/common.c](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/drivers/base/power/common.c) 的该函数说明与 [drivers/pmdomain/core.c](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/drivers/pmdomain/core.c) 的 genpd_dev_pm_attach_by_id。
+
 练习：A 可在没有 S 时用较慢的替代功能运行，是否应该无条件建立要求 S 驱动在场的链接？不能仅凭“更完整”这样选择，否则 S 永不出现时 A 也可能一直无法 probe。应先确定该依赖是必需还是可选，以及降级路径如何保证正确。再问：只设置 STATELESS 是否能阻止 A 在 S 未绑定时 probe？不能，它恰好没有要求这一保证。
 
 ## 13.5\_谁执行电源回调与谁规定设备顺序是两件事

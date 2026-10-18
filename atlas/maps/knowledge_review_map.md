@@ -767,7 +767,7 @@ mindmap-plugin: basic
     - 字符设备
         - 🔴 [字符设备扩展接口历史草稿核对](../../research/investigations/character_device/字符设备扩展接口历史草稿.md)
     - Linux 设备模型
-        - 🔴 [设备模型 34 章原始总稿迁移核对源](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
+        - 🔴 [设备模型34章历史总稿核对](../../research/investigations/device_model/legacy_设备模型34章原始总稿.md)
 - 源码阅读
     - 🔴 **未校正** kref 普通引用
         - 🔴 **未校正** [types.h原子成员初始化](../../research/source_reading/kref/source_explanations/include/linux/types.h.md)

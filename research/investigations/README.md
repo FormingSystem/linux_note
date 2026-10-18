@@ -27,7 +27,7 @@ domains:
 | --- | --- | --- |
 | [旧U-Boot材料的版本身份与平台差量](uboot_vendor_baselines.md) | 区分附件、截图和配置各自证明的版本，记录不能混用的分支 | 记录内链接到固定版本源码索引与机制正文 |
 | [字符设备扩展接口历史草稿核对](character_device/字符设备扩展接口历史草稿.md) | 解释发布、复制、等待、映射与DMA旧例中的错误，逐节指向现行正文并保存完整原稿 | [字符设备专题](../../knowledge/driver_model/character_device/大纲.md) |
-| [设备模型原始总稿迁移核对源](device_model/legacy_设备模型34章原始总稿.md) | 检查旧示例和知识点是否已经归入维护中的正文 | [设备模型专题](../../knowledge/linux/device_model/大纲.md) |
+| [设备模型34章历史总稿核对](device_model/legacy_设备模型34章原始总稿.md) | 从发布、绑定、寿命和属性语义反例核对旧稿，并查全部34章去向及完整原稿 | [设备模型专题](../../knowledge/linux/device_model/大纲.md) |
 
 ## 1.3\_怎样让调查结束而不抹去来路
 
