@@ -10283,6 +10283,39 @@
           "三原件工作树与提交SHA一致；六篇格式元数据长度锚点通过，新增三篇严格连续审计通过；三图渲染目视，943篇链接零缺失。"
         ],
         "limits": "仅宿主模型及源码控制流验证，未执行目标板启动；旧读书P03仍待独有内容迁移。"
+      },
+      "knowledge/system_software/uboot/P11_内存镜像如何变成Linux入口现场.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "以M0-M5区分设备读取、容器解析、载荷安置、DTB修订和最终交接，补范围练习、角色图及时序。",
+        "validation": [
+          "三个直接提取原件函数的16个宿主分支及头部字段偏移通过；15份原件工作树与索引SHA一致。",
+          "六篇格式元数据长度锚点通过；正文和实现严格连续审计通过，导读22链接/2节告警人工复核为原件索引与精确入口，保留职责；三图目视通过，946篇链接零缺失。"
+        ],
+        "limits": "未实际执行解压、设备树修改、缓存维护、特权切换或目标板启动；旧读书P03仍待其他独有单元迁移。"
+      },
+      "research/source_reading/uboot/navigation/P11_镜像解析与Linux交接导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "连接描述对象和镜像内存的读写所有权，登记固定版本原件和唯一实现入口。",
+        "validation": [
+          "三个直接提取原件函数的16个宿主分支及头部字段偏移通过；15份原件工作树与索引SHA一致。",
+          "六篇格式元数据长度锚点通过；正文和实现严格连续审计通过，导读22链接/2节告警人工复核为原件索引与精确入口，保留职责；三图目视通过，946篇链接零缺失。"
+        ],
+        "limits": "未实际执行解压、设备树修改、缓存维护、特权切换或目标板启动；旧读书P03仍待其他独有单元迁移。"
+      },
+      "research/source_reading/uboot/source_explanations/P11_镜像范围与Linux交接实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按阶段位、Image头、设备树地址及OS回调说明实际控制流，纠正状态位成功证明与假交接无副作用等误解。",
+        "validation": [
+          "三个直接提取原件函数的16个宿主分支及头部字段偏移通过；15份原件工作树与索引SHA一致。",
+          "六篇格式元数据长度锚点通过；正文和实现严格连续审计通过，导读22链接/2节告警人工复核为原件索引与精确入口，保留职责；三图目视通过，946篇链接零缺失。"
+        ],
+        "limits": "未实际执行解压、设备树修改、缓存维护、特权切换或目标板启动；旧读书P03仍待其他独有单元迁移。"
       }
     },
     "additional_documents": [
@@ -10499,7 +10532,10 @@
       "governance/migration/uboot_textbook_migration.md",
       "knowledge/system_software/uboot/P10_自动引导如何选择命令与保留维护入口.md",
       "research/source_reading/uboot/navigation/P10_自动引导选择与交互退路导读.md",
-      "research/source_reading/uboot/source_explanations/P10_自动引导选择与执行门实现.md"
+      "research/source_reading/uboot/source_explanations/P10_自动引导选择与执行门实现.md",
+      "knowledge/system_software/uboot/P11_内存镜像如何变成Linux入口现场.md",
+      "research/source_reading/uboot/navigation/P11_镜像解析与Linux交接导读.md",
+      "research/source_reading/uboot/source_explanations/P11_镜像范围与Linux交接实现.md"
     ],
     "language_review": {
       "status": "complete",
