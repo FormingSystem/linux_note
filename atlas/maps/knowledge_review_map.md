@@ -735,9 +735,10 @@ mindmap-plugin: basic
                 - P02 BEEP
                     - 🟢 [P01 beep+dts](../../labs/platforms/nxp/imx6ull/drivers/P02_BEEP/P01_beep+dts.md)
                 - P03 KEY LED interrupt
+                    - 🔴 [按键中断与唤醒实验路线](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/大纲.md)
                     - 🟢 [P01 从按键电平变化到GPIO中断](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_从按键电平变化到GPIO中断.md)
                     - 🟢 [P02 确认稳定按键状态再翻转LED](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_确认稳定按键状态再翻转LED.md)
-                    - 🟢 [P03 key interrupt wakeup kernel](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md)
+                    - 🟢 [P03 从运行中断到按键唤醒](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_从运行中断到按键唤醒.md)
                 - P04 Input子系统
                     - 🟢 [功能说明](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md)
 

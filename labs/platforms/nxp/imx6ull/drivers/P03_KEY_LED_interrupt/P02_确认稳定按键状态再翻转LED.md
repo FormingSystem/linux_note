@@ -392,6 +392,6 @@ dmesg | tail -n 40
 
 练习：删去采样后 `generation` 比较会发生什么？若读 GPIO 期间收到新边沿，旧采样可能在新的安静期限之前提交。再把停止动作登记到 IRQ 之后，逆序释放时会先取消工作、后释放 IRQ，新 IRQ 就可能在两者之间再次排队。两项问题分别发生在运行阶段和退出阶段，需要不同的交接顺序，不能靠一把锁或“都用了 devm”概括解决。
 
-现在已经能从一次边沿追到稳定按下，再追到退出时最后一次硬件访问。下一章 [系统休眠与按键唤醒](P03_key_interrupt_wakeup_kernel.md) 会增加电源状态与唤醒路由；本章运行态模块先退出，避免把两套消费者同时绑到同一线路。
+现在已经能从一次边沿追到稳定按下，再追到退出时最后一次硬件访问。下一章 [系统休眠与按键唤醒](P03_从运行中断到按键唤醒.md) 会增加电源状态与唤醒路由；本章运行态模块先退出，避免把两套消费者同时绑到同一线路。
 
 > 版本依据：NXP Linux 6.12.20，固定提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。延迟工作接口和同一工作项的执行约束核对 [workqueue.c](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/kernel/workqueue.c) 与 [workqueue.h](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/include/linux/workqueue.h)；GPIO 与 IRQ 接口从 [GPIO 源码阅读索引](../../../../../../research/source_reading/gpiolib/navigation/P01_Linux_6.12_GPIO源码阅读索引.md) 进入。检查记录区分实际函数分支模型、ARM 前端检查与尚未执行的目标 Kbuild/板级测试，不把它们混作一种验收。

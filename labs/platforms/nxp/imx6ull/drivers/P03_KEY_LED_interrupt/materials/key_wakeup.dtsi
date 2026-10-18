@@ -1,0 +1,30 @@
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/input/gpio-keys.h>
+
+/ {
+    note_keys: note-keys {
+        compatible = "gpio-keys";
+        label = "note-wakeup-key";
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_note_wakeup_key>;
+
+        key-wakeup {
+            label = "KEY0";
+            linux,code = <KEY_F13>;
+            gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
+            debounce-interval = <30>;
+            wakeup-source;
+            wakeup-event-action = <EV_ACT_ASSERTED>;
+        };
+    };
+};
+
+&iomuxc {
+    pinctrl_note_wakeup_key: note-wakeup-key-grp {
+        fsl,pins = <
+            /* GPIO输入的电气参数须与实际板卡核对。 */
+            MX6UL_PAD_UART1_CTS_B__GPIO1_IO18 0x1b0b0
+        >;
+    };
+};
