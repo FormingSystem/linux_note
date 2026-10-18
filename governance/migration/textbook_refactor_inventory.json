@@ -11072,7 +11072,18 @@
       "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/大纲.md",
       "platforms/arm/rockchip/rk3566/environment/P02_从板级配置到系统镜像.md",
       "platforms/arm/rockchip/rk3566/environment/P03_从构建首错定位宿主工具与输出状态.md",
-      "platforms/arm/rockchip/rk3566/environment/大纲.md"
+      "platforms/arm/rockchip/rk3566/environment/大纲.md",
+      "knowledge/driver_model/gpio_consumers/P03_GPIO按键怎样接入输入事件.md",
+      "knowledge/driver_model/gpio_consumers/P04_GPIO指示与背光怎样接入亮度接口.md",
+      "knowledge/driver_model/gpio_consumers/P05_GPIO供电怎样进入电源依赖.md",
+      "knowledge/driver_model/gpio_consumers/P06_GPIO选择线怎样保护一段事务.md",
+      "knowledge/driver_model/gpio_consumers/P07_GPIO关机与重启为何要核对最后阶段.md",
+      "research/source_reading/gpiolib/navigation/P06_标准功能驱动怎样承接GPIO状态.md",
+      "research/source_reading/gpiolib/source_explanations/P08_按键取样与输入报告.md",
+      "research/source_reading/gpiolib/source_explanations/P09_指示灯与背光的GPIO适配.md",
+      "research/source_reading/gpiolib/source_explanations/P10_固定电源的使能计数与GPIO交接.md",
+      "research/source_reading/gpiolib/source_explanations/P11_选择器占用与GPIO编码.md",
+      "research/source_reading/gpiolib/source_explanations/P12_系统末期GPIO回调与通知链.md"
     ],
     "language_review": {
       "status": "complete",
