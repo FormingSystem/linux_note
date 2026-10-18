@@ -36,7 +36,8 @@
       "knowledge/system_software/buildroot/P06_包集成与系统服务.md": "knowledge/system_software/buildroot/P06_把应用接入构建并交给初始化系统.md",
       "knowledge/system_software/buildroot/P07_镜像生成与部署.md": "knowledge/system_software/buildroot/P07_把构建产物整理为可核对的交付包.md",
       "knowledge/system_software/buildroot/P08_高级定制与集成.md": "knowledge/system_software/buildroot/P08_把项目输入迁到外部树并隔离构建.md",
-      "knowledge/system_software/buildroot/P09_包开发与维护.md": "knowledge/system_software/buildroot/P09_把源码身份依赖和补丁接成包维护闭环.md"
+      "knowledge/system_software/buildroot/P09_包开发与维护.md": "knowledge/system_software/buildroot/P09_把源码身份依赖和补丁接成包维护闭环.md",
+      "knowledge/system_software/buildroot/P10_镜像生成与部署.md": "knowledge/system_software/buildroot/P10_从文件系统镜像到存储布局与部署验证.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -9732,6 +9733,18 @@
           "两图渲染目视，Bash语法、连续性长度格式锚点及909篇链接通过。"
         ],
         "limits": "未执行Linux Buildroot、Kconfig或AArch64启动；原件尾空格用精确路径属性保留。"
+      },
+      "knowledge/system_software/buildroot/P10_从文件系统镜像到存储布局与部署验证.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从根设备定位推导分区布局，闭合生成交付和部署证据，纠正闪存及上游退出状态假设。",
+        "validation": [
+          "100份Buildroot及3份genimage原件逐字节摘要一致。",
+          "包装失败传播、重复摘要、i.MX模板替换及普通文件偏移比较正反例通过。",
+          "四图渲染目视，格式、长度、连续性、锚点和909篇链接通过。"
+        ],
+        "limits": "未执行Linux genimage、真实文件系统检查、QEMU或实体烧写；替身仅验证控制流。"
       }
     },
     "additional_documents": [
