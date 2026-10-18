@@ -37,7 +37,8 @@
       "knowledge/system_software/buildroot/P07_镜像生成与部署.md": "knowledge/system_software/buildroot/P07_把构建产物整理为可核对的交付包.md",
       "knowledge/system_software/buildroot/P08_高级定制与集成.md": "knowledge/system_software/buildroot/P08_把项目输入迁到外部树并隔离构建.md",
       "knowledge/system_software/buildroot/P09_包开发与维护.md": "knowledge/system_software/buildroot/P09_把源码身份依赖和补丁接成包维护闭环.md",
-      "knowledge/system_software/buildroot/P10_镜像生成与部署.md": "knowledge/system_software/buildroot/P10_从文件系统镜像到存储布局与部署验证.md"
+      "knowledge/system_software/buildroot/P10_镜像生成与部署.md": "knowledge/system_software/buildroot/P10_从文件系统镜像到存储布局与部署验证.md",
+      "knowledge/system_software/buildroot/P11_调试与问题排查.md": "knowledge/system_software/buildroot/P11_沿失败交接点定位构建与运行问题.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -9745,6 +9746,18 @@
           "四图渲染目视，格式、长度、连续性、锚点和909篇链接通过。"
         ],
         "limits": "未执行Linux genimage、真实文件系统检查、QEMU或实体烧写；替身仅验证控制流。"
+      },
+      "knowledge/system_software/buildroot/P11_沿失败交接点定位构建与运行问题.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按失败交接点重建诊断主线，纠正从单条日志跳到唯一根因及清理丢配置等问题。",
+        "validation": [
+          "107份原件逐字节摘要一致。",
+          "实际补丁脚本、make -n加号例外和日志管道成功失败反例通过。",
+          "两图逐项目视，格式、长度、连续性、锚点和909篇链接通过。"
+        ],
+        "limits": "未执行Linux Buildroot、目标strace、GDB或硬件启动，示例预期与宿主测试分开。"
       }
     },
     "additional_documents": [
