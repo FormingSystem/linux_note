@@ -76,7 +76,7 @@ Linux 内核结构、模块与数据结构
 
 ## 1.6\_平台与证据
 
-- 平台实现记录：[i.MX6ULL 移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)、[RK3566 Linux SDK 编译](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)。
+- 平台实现记录：[i.MX6ULL 移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)、[RK3566 Linux SDK 编译](../../platforms/arm/rockchip/rk3566/environment/P01_从SDK归档到可追溯构建环境.md)。
 - 外部规范与芯片资料：[Arm、GIC、RK3588 与 i.MX6ULL 版本选择](../../reference/external_resources/arm/README.md#1.4_版本选择与阅读顺序)。该入口提供原始资料身份和取得方式，不替代通用机制正文或平台实现记录。
 - GIC 硬件学习：[GICv3 物理中断专题](../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)。从零建立概念并沿官方目录查证，先学 GIC-600 r1p6 / GICv3.0，不以 GICv2 或 GICv4 为前置，也不并入 Linux IRQ 管理正文。
 - 最小验证实验：[i.MX6ULL 驱动实验](../../labs/platforms/nxp/imx6ull/drivers)。

@@ -1,0 +1,8 @@
+diff --git a/squashfs-tools/mksquashfs.h b/squashfs-tools/mksquashfs.h
+--- a/squashfs-tools/mksquashfs.h
++++ b/squashfs-tools/mksquashfs.h
+@@ -135,3 +135,3 @@
+ extern struct cache *reader_buffer, *fragment_buffer, *reserve_cache;
+-struct cache *bwriter_buffer, *fwriter_buffer;
++extern struct cache *bwriter_buffer, *fwriter_buffer;
+ extern struct queue *to_reader, *to_deflate, *to_writer, *from_writer,

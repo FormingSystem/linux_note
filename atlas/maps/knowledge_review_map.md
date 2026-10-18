@@ -686,7 +686,10 @@ mindmap-plugin: basic
                 - 🔴 [GIC-600 集成与手册核对](../../platforms/arm/rockchip/rk3588/P01_RK3588的GIC-600集成与手册核对.md#1.1_通用规则没有告诉我们这颗芯片接了什么)
             - RK3566
                 - 构建环境
-                    - 🟢 [资料下载](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md)
+                    - 🟢 [从SDK归档到可追溯构建环境](../../platforms/arm/rockchip/rk3566/environment/P01_从SDK归档到可追溯构建环境.md)
+                    - 🔴 **未校正** [从板级配置到系统镜像](../../platforms/arm/rockchip/rk3566/environment/P02_从板级配置到系统镜像.md)
+                    - 🔴 **未校正** [从构建首错定位宿主工具与输出状态](../../platforms/arm/rockchip/rk3566/environment/P03_从构建首错定位宿主工具与输出状态.md)
+                    - 🔴 **未校正** [旧版SDK构建路线](../../platforms/arm/rockchip/rk3566/environment/大纲.md)
 
 ## 1.7\_最小验证实验
 - 🟢 全部 14 篇个人实验材料已完成评审
