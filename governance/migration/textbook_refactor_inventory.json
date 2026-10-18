@@ -9828,6 +9828,28 @@
           "格式元数据、长度和全仓链接检查通过。"
         ],
         "limits": "LINK_DENSITY提示按源码索引职责保留；没有实际系统运行证明。"
+      },
+      "knowledge/system_software/kconfig/基础语法.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从请求与有效值建立语法，以总线驱动例子验证depends、select、imply、隐藏项、菜单和生成头，补完整工具及C实验。",
+        "validation": [
+          "25固定源码blob；固定conf构建，7普通输入3负例、同步生成C程序与savedefconfig实测。",
+          "构建脚本成功及3拒绝路径，材料一致、Bash语法、图目视与911篇链接零缺失。"
+        ],
+        "limits": "167行实验准备小节略超连续性阈值，因完整规则与首次求值闭环人工保留；无交互菜单、完整内核或目标驱动验收。"
+      },
+      "research/source_reading/kconfig/navigation/P01_Linux_6.12_配置求值工具阅读索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "新增固定Kconfig工具索引，按输入模式、语法解析、菜单关系、求值和输出组织源码入口与验证边界。",
+        "validation": [
+          "25固定原件身份及20处本地链接核对。",
+          "格式元数据、长度和全仓链接检查通过。"
+        ],
+        "limits": "不将宿主工具构建推广为Linux内核或目标板验证，不提升人工评审。"
       }
     },
     "additional_documents": [
@@ -10011,7 +10033,8 @@
       "research/source_reading/vfs/source_explanations/P74_伪路径file的建立与失败归还.md",
       "research/source_reading/vfs/source_explanations/P75_匿名inode的共享与私有对象交接.md",
       "research/source_reading/buildroot/SOURCE_BASELINE.md",
-      "research/source_reading/printk/navigation/P01_Linux_6.12_日志路径源码阅读索引.md"
+      "research/source_reading/printk/navigation/P01_Linux_6.12_日志路径源码阅读索引.md",
+      "research/source_reading/kconfig/navigation/P01_Linux_6.12_配置求值工具阅读索引.md"
     ],
     "language_review": {
       "status": "complete",
