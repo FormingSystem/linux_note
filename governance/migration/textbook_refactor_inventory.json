@@ -41,7 +41,8 @@
       "knowledge/system_software/buildroot/P11_调试与问题排查.md": "knowledge/system_software/buildroot/P11_沿失败交接点定位构建与运行问题.md",
       "knowledge/system_software/buildroot/P12_高级主题.md": "knowledge/system_software/buildroot/P12_让多套配置和版本升级保持可追溯.md",
       "knowledge/system_software/buildroot/P13_附录.md": "knowledge/system_software/buildroot/P13_命令边界与资料查询.md",
-      "knowledge/system_software/buildroot/P00_全书学习地图.md": "knowledge/system_software/buildroot/大纲.md"
+      "knowledge/system_software/buildroot/P00_全书学习地图.md": "knowledge/system_software/buildroot/大纲.md",
+      "knowledge/system_software/linker/lds_基础语法.md": "knowledge/system_software/linker/P01_从目标文件到运行布局的链接脚本.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -9850,6 +9851,50 @@
           "格式元数据、长度和全仓链接检查通过。"
         ],
         "limits": "不将宿主工具构建推广为Linux内核或目标板验证，不提升人工评审。"
+      },
+      "knowledge/system_software/linker/P01_从目标文件到运行布局的链接脚本.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "用ROM初值与RAM运行区间建立链接语法，实测ELF/map/bin、KEEP与归档、容量失败，原U-Boot段迁入连续章与实现证据。",
+        "validation": [
+          "GNU Arm GCC10.3与ld2.36.1实验及正文Bash命令实测，17固定源码摘要核对。",
+          "五图渲染目视，格式元数据长度与精确锚点通过，914篇全仓链接零缺失。"
+        ],
+        "limits": "源码导航25链接告警按17原始证据与查询入口职责保留；未完整构建U-Boot或进行目标硬件运行，不提升人工评审。"
+      },
+      "knowledge/system_software/uboot/P01_从链接布局到启动阶段的交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从早期内存限制推导可选启动阶段，以ARM32固定版本S0-S5说明GD、主体复制、源记录修正和目标BSS，纠正SPL与FIT身份。",
+        "validation": [
+          "GNU Arm GCC10.3与ld2.36.1实验及正文Bash命令实测，17固定源码摘要核对。",
+          "五图渲染目视，格式元数据长度与精确锚点通过，914篇全仓链接零缺失。"
+        ],
+        "limits": "源码导航25链接告警按17原始证据与查询入口职责保留；未完整构建U-Boot或进行目标硬件运行，不提升人工评审。"
+      },
+      "research/source_reading/uboot/navigation/P01_ARM32链接布局与启动交接阅读索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "建立固定U-Boot标签提交、17原始文件摘要和按状态交接组织的精确实现入口。",
+        "validation": [
+          "GNU Arm GCC10.3与ld2.36.1实验及正文Bash命令实测，17固定源码摘要核对。",
+          "五图渲染目视，格式元数据长度与精确锚点通过，914篇全仓链接零缺失。"
+        ],
+        "limits": "源码导航25链接告警按17原始证据与查询入口职责保留；未完整构建U-Boot或进行目标硬件运行，不提升人工评审。"
+      },
+      "research/source_reading/uboot/source_explanations/P01_ARM32链接布局与启动实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按唯一实现标题展开脚本预处理、布局边界、复制和REL修正、crt0清零、链接数组协议。",
+        "validation": [
+          "GNU Arm GCC10.3与ld2.36.1实验及正文Bash命令实测，17固定源码摘要核对。",
+          "五图渲染目视，格式元数据长度与精确锚点通过，914篇全仓链接零缺失。"
+        ],
+        "limits": "源码导航25链接告警按17原始证据与查询入口职责保留；未完整构建U-Boot或进行目标硬件运行，不提升人工评审。"
       }
     },
     "additional_documents": [
@@ -10034,7 +10079,10 @@
       "research/source_reading/vfs/source_explanations/P75_匿名inode的共享与私有对象交接.md",
       "research/source_reading/buildroot/SOURCE_BASELINE.md",
       "research/source_reading/printk/navigation/P01_Linux_6.12_日志路径源码阅读索引.md",
-      "research/source_reading/kconfig/navigation/P01_Linux_6.12_配置求值工具阅读索引.md"
+      "research/source_reading/kconfig/navigation/P01_Linux_6.12_配置求值工具阅读索引.md",
+      "knowledge/system_software/uboot/P01_从链接布局到启动阶段的交接.md",
+      "research/source_reading/uboot/navigation/P01_ARM32链接布局与启动交接阅读索引.md",
+      "research/source_reading/uboot/source_explanations/P01_ARM32链接布局与启动实现.md"
     ],
     "language_review": {
       "status": "complete",
