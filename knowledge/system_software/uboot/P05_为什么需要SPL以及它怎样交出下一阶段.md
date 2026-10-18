@@ -21,6 +21,8 @@ domains:
 
 先区分三个对象。**Boot ROM** 是芯片启动固件的存放位置，CPU 从其中执行指令；**SRAM** 通常提供无需按外部 DDR 那样训练的片内工作空间，但可访问范围、保留区和电源条件仍由平台规定；**DDR/DRAM** 提供较大的主存，需要先满足控制器与器件的初始化条件。Boot ROM 不是另一颗替 CPU 执行初始化的处理器，流程图中的“ROM 做某事”通常是“CPU 正在执行 ROM 中的代码”。
 
+这些内存名称还来自不同分类角度。**静态随机存取存储器（Static Random-Access Memory，SRAM）** 与 **动态随机存取存储器（Dynamic Random-Access Memory，DRAM）** 区分存储单元的保持方式；DRAM 需要刷新。**双倍数据率（Double Data Rate，DDR）** 描述相应接口在时钟两沿传输数据的方式，本专题谈到的 DDR 内存属于 DRAM。于是“初始化 DRAM”说的是使这类主存可用，“DDR 初始化”更具体地指控制器、接口和器件相关设置；它们不是先初始化两块不同内存，也不意味着每条 CPU 指令都因此快一倍。
+
 再把存储介质放进来：SD/eMMC、NAND 和 SPI Flash 里的镜像字节不一定能直接作为 CPU 指令读取。ROM 可能只能从有限介质、固定格式和有限初始区域取数据；加载器需要把选定镜像复制到可执行位置。某些平台支持 **XIP（execute in place，原地执行）**，程序直接从可取指的映射存储执行，但其可写数据和栈仍须另有可靠位置。可取指地址与可写 RAM 不是同一个条件。
 
 假设某平台的 ROM 能把一个小程序放进可用 SRAM。最小可行方案就是：小程序在 SRAM 中运行，用自己的栈和数据准备 DDR；确认 DDR 可用后，再把较大的程序装进去。建立 DDR 可用性的那段代码及其必要工作数据必须先放在 **已经可靠的环境**，不能把自己唯一依赖的存储前提留到执行之后才成立。这个环境常是 ROM 加片内 SRAM，也可能是平台明确支持的其他存储组合；“只能在 SRAM 执行”同样过于绝对。
@@ -99,7 +101,7 @@ sequenceDiagram
 
 依据为手册 §8.3.3（p.259）、§8.7.1.1～8.7.2（pp.310～312）；版本、摘要与取得入口见 [ARM 资料索引](../../../reference/external_resources/arm/README.md)，官方入口为 [NXP i.MX6ULL 文档页](https://www.nxp.com/products/i.MX6ULL)。固定 U-Boot 原件中，`board/freescale/mx6ullevk/imximage.cfg` 的非插件分支提供 DCD 数据，`configs/seeed_npi_imx6ull_defconfig` 则明确启用 SPL。它们已经说明，同属 i.MX6ULL 不能代替对实际板级方案的核对；配置模板还须求值得到实际 `.config`，不能仅凭另一个模板没写 SPL 就断言所有相关分支都关闭。
 
-Rockchip 同样不能按品牌作绝对判断。本版 [Rockchip 文档](../../../research/source_reading/uboot/upstream/v2022.10/doc/board/rockchip/rockchip.rst) 分开描述 U-Boot TPL/SPL 打包与厂商 miniloader 组织，还给出选定平台的 SPL 单独打包和 TPL+SPL 组合。旧稿中没有不可变提交身份的 RK3566 厂商配置片段，只能保留为待定位的历史记录，不能据其某个宏推广“RK3566 永远不需要 TPL”。
+Rockchip 同样不能按品牌作绝对判断。本版 [Rockchip 文档](../../../research/source_reading/uboot/upstream/v2022.10/doc/board/rockchip/rockchip.rst) 分开描述 U-Boot TPL/SPL 打包与厂商 miniloader 组织，还给出选定平台的 SPL 单独打包和 TPL+SPL 组合。旧稿中没有不可变提交身份的厂商配置片段，已经在 [历史身份核对](../../../research/investigations/uboot_vendor_baselines.md#1.1_先拆开附件身份再比较启动方案) 保留；其中目录名、板字段和阶段选项需分别读取，不能据某个名称推广“RK3566 永远不需要 TPL”。
 
 ## 5.4\_SPL的完整周期是准备环境\_装载\_检查与交接
 

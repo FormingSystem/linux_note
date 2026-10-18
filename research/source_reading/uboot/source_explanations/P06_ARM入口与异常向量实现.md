@@ -152,7 +152,11 @@ ARMv7 的模式处理裁剪如下：
 
 `cpu_init_cp15` 对 SCTLR 先清 V 和 M/C/A，随后设置 A、Z，并按 `SYS_ICACHE_OFF` 清除或设置 I。这说明此路径最后的指令缓存不一定关闭。前面的 TLB、指令缓存、分支预测维护与 DSB/ISB 也属于执行过程，不能删除后只留下控制位写入。
 
-AArch64 入口的 `Initial State` 注释则声明预期环境，并不等于刚执行了一段对应清理代码。其 `CONFIG_ARMV8_SET_SMPEN` 分支访问实现定义的 `S3_1_c15_c2_1`，设置 bit 6；源码注释限定 A53/A57/A72，且当前代码只在 EL3 路径执行。这里只记录该版本的访问行为，不把这项非架构寄存器的编码或位定义当成所有 Arm 核的通用接口。
+AArch64 入口的 `Initial State` 注释则声明预期环境，并不等于刚执行了一段对应清理代码。对浮点/SIMD，入口按当前 EL 设置相应的访问陷入控制：EL3 写 `CPTR_EL3=0`；普通 EL2 分支写 `CPTR_EL2=0x33ff`；EL1 分支写 `CPACR_EL1=3<<20`。这三处分别落实 [正文的访问许可](../../../../knowledge/system_software/uboot/P06_从复位入口到异常向量与主核交接.md#6.2.2_允许执行浮点指令与关闭异常屏蔽不是同一件事)，不是开启 IRQ/FIQ 的别名。
+
+`0x33ff` 中 TFP bit 10 为 0；它同时保留非 E2H 格式中要求为 1 的 `[13:12]`、bit 9 和 `[7:0]`，bit 8 在没有 SVE 时也是 RES1，有 SVE 时作为 TZ 置 1。因而把它机械改成全零，不能当作“更彻底地打开功能”。EL3 写零也不等于开放全部扩展：存在 SVE 时 `CPTR_EL3.EZ=0` 仍是其陷入控制。依据为 DDI0487 G.b，D13.2.30～D13.2.32，pp.3118、3125～3127、3133；此处只解释入口实际使用的 FP/SIMD 控制及写值边界。
+
+另一个独立分支 `CONFIG_ARMV8_SET_SMPEN` 访问实现定义的 `S3_1_c15_c2_1`，设置 bit 6；源码注释限定 A53/A57/A72，且当前代码只在 EL3 路径执行。这里只记录该版本的访问行为，不把这项非架构寄存器的编码或位定义当成所有 Arm 核的通用接口。
 
 | 额外条件或接口 | 本版作用 | 阅读边界 |
 | --- | --- | --- |
@@ -167,6 +171,10 @@ AArch64 入口的 `Initial State` 注释则声明预期环境，并不等于刚�
 上游位置为 `start.S` 的主从分派、`macro.h` 的 `branch_if_master`、`spin_table_v8.S` 的等待桩，以及 `spin_table.c` 的设备树更新。它们属于 E2，随后主核在 E3 选择 SP_ELx 并进入 `_main`，由 crt0 建立实际栈和 GD。
 
 `branch_if_master` 在 `ARMV8_MULTIENTRY` 生效时读取 MPIDR，移除非亲和性字段，只把 Aff3:Aff2:Aff1:Aff0 全零作为当前宏的主核选择。配置不生效时宏直接跳向主核标签。这是该实现的选核规则，不是任何异构 SoC 都可以无条件照搬的架构结论。
+
+这次分派前还有 `start.S` 中的弱 `lowlevel_init`，不能只凭函数名把它讲成“必然建立临时栈并调用 s_init”。在本版默认实现里，x29 暂存 LR；启用 GICv2 或 GICv3 时，`branch_if_slave` 让从核跳过共享的 `gic_init_secure`，各核随后调用 `gic_init_secure_percpu`。传入的 `GICD_BASE/GICR_BASE/GICC_BASE` 是该配置的控制器接口基址，具体寄存器职责应接到 [GIC 专题](../../../../platforms/arm/architecture/gic/大纲.md)，不能由这些名字推导芯片已经正确集成。
+
+在 `ARMV8_MULTIENTRY` 分支中，主核跳过从核准备路径；从核按 GIC 配置先调用 `gic_wait_for_interrupt`，再给 x4 指定继续执行标签、给 x5 指定 AArch64 状态，通过 `armv8_switch_to_el2`，以及可选的 `armv8_switch_to_el1` 建立后续权限。真正降级仍遵守 [6.1 节的 ELR/SPSR 与 ERET 交接](#6.1_读取当前异常级与改变异常级是两种操作)，不能把 `branch_if_master` 自己说成降级指令。最后恢复 LR 并返回入口，再进入下面的释放地址等待。这里的 GIC 等待用于避免过早读取尚未准备好的释放状态，不是把每次 WFE 返回都视为有效入口发布。
 
 ```asm
 /*!

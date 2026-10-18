@@ -605,7 +605,7 @@ mindmap-plugin: basic
         - 🔴 [从链接布局到启动阶段的交接](../../knowledge/system_software/uboot/P01_从链接布局到启动阶段的交接.md)
         - 🔴 [ARM32链接布局与启动交接阅读索引](../../research/source_reading/uboot/navigation/P01_ARM32链接布局与启动交接阅读索引.md)
         - 🔴 [ARM32链接布局与启动实现](../../research/source_reading/uboot/source_explanations/P01_ARM32链接布局与启动实现.md)
-        - 🟢 [阅读说明](../../knowledge/system_software/uboot/uboot-makefile.md)
+        - 🟢 [U-Boot从构建到启动与命令执行](../../knowledge/system_software/uboot/大纲.md)
         - 🟢 [从构建上下文找到实际进入镜像的函数](../../knowledge/system_software/uboot/P02_从构建上下文找到实际进入镜像的函数.md)
         - 🔴 [U-Boot源码阅读索引](../../research/source_reading/uboot/navigation/README.md)
         - 🔴 [构建上下文与入口选择导读](../../research/source_reading/uboot/navigation/P02_构建上下文与入口选择导读.md)
@@ -631,6 +631,7 @@ mindmap-plugin: basic
         - 🔴 [命令字符串怎样跨过缓冲区与失败边界](../../knowledge/system_software/uboot/P09_命令字符串怎样跨过缓冲区与失败边界.md)
         - 🔴 [命令字符串解析与失败边界导读](../../research/source_reading/uboot/navigation/P09_命令字符串解析与失败边界导读.md)
         - 🔴 [命令解析缓冲区与失败传播实现](../../research/source_reading/uboot/source_explanations/P09_命令解析缓冲区与失败传播实现.md)
+        - 🔴 [旧U-Boot材料的版本身份与平台差量](../../research/investigations/uboot_vendor_baselines.md)
 
 ## 1.6\_工程方法与平台实现
 
