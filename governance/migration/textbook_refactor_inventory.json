@@ -10690,6 +10690,17 @@
           "官方扩展package.json声明2.8.2，正文列出的命令ID全部存在；Mermaid官方语法核对；7张图渲染目视（3新例+4标签一致性更新），8份正式文档格式元数据长度与6入口锚点通过，955篇全仓链接无缺失。两份.github配置按宿主原生格式维护。"
         ],
         "limits": "未安装运行Mermaid Chart或调用其云服务；未宣称Typora/VSCode/GitHub全部验证；调查页导航不能代替两份历史长稿的后续事实审查。"
+      },
+      "reference/standards/gpl/GPL协议说明.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "GPL3并非内核以外专用；AGPL修改和网络交互前提；用户产品定义与交易和ROM例外；v2任何第三方/v3目标码持有者及备件支持期间；LGPL逆向工程与重链接条件；GPL-only符号与版权授权分别判断；兼容方向与BSD具体变种；SPDX文件名和SBOM均非自动合规证明。",
+        "validation": [
+          "GNU站多数页面及txt超时；使用SPDX许可列表中的GPL2/3、LGPL2.1/3、AGPL3完整文本，GNU LGPL3文本直接取得；另核对FSF FAQ/兼容性资料、Apache官方说明和Linux许可规则。",
+          "固定许可条款逐项对照；正文图渲染目视、格式元数据长度及入链检查、955篇全仓链接通过。无代码构建要求，唯一C围栏为SPDX注释语法。"
+        ],
+        "limits": "工程参考，不裁定具体商业组合或法域争议；没有为仓库/第三方重新许可，未将检查结果冒充法律意见或发行合规认证。"
       }
     },
     "additional_documents": [
