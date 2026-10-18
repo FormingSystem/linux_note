@@ -10009,6 +10009,42 @@
           "正文和实现严格连续审计通过；导航21链接含九原件和四阶段定位，人工复核保留追溯作用。"
         ],
         "limits": "未执行目标ARM切栈或板级启动；模型增加范围检查，不冒充上游逐句复刻；旧长稿仍待其余单元迁移。"
+      },
+      "knowledge/system_software/uboot/P05_为什么需要SPL以及它怎样交出下一阶段.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从取指和工作内存约束推导阶段拆分，以DCD反例限定ROM能力，再用L0-L5和宿主实验解释装载与交接。",
+        "validation": [
+          "宿主加载模型的默认回退、全部失败、RAM不可用、非法参数、入口越界与主来源成功停止均实测。",
+          "十原件工作树与索引SHA一致；NXP手册摘要和两页目视核对；五图渲染目视。",
+          "三篇格式元数据长度、精确锚点和严格连续审计通过；926篇链接零缺失。"
+        ],
+        "limits": "未执行真实ROM、DDR初始化、存储介质读取或目标机器码；旧长稿其余单元仍待迁移。"
+      },
+      "research/source_reading/uboot/navigation/P05_SPL装载与下一阶段交接导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "沿同一镜像描述组织候选、记录、回调和消费者，分别登记上游与NXP手册证据。",
+        "validation": [
+          "宿主加载模型的默认回退、全部失败、RAM不可用、非法参数、入口越界与主来源成功停止均实测。",
+          "十原件工作树与索引SHA一致；NXP手册摘要和两页目视核对；五图渲染目视。",
+          "三篇格式元数据长度、精确锚点和严格连续审计通过；926篇链接零缺失。"
+        ],
+        "limits": "未执行真实ROM、DDR初始化、存储介质读取或目标机器码；旧长稿其余单元仍待迁移。"
+      },
+      "research/source_reading/uboot/source_explanations/P05_SPL装载与下一阶段交接实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "解释注册与首次匹配、失败非回滚、检查配置、入口ABI和公共初始化边界，并保留局部修改约束。",
+        "validation": [
+          "宿主加载模型的默认回退、全部失败、RAM不可用、非法参数、入口越界与主来源成功停止均实测。",
+          "十原件工作树与索引SHA一致；NXP手册摘要和两页目视核对；五图渲染目视。",
+          "三篇格式元数据长度、精确锚点和严格连续审计通过；926篇链接零缺失。"
+        ],
+        "limits": "未执行真实ROM、DDR初始化、存储介质读取或目标机器码；旧长稿其余单元仍待迁移。"
       }
     },
     "additional_documents": [
@@ -10205,7 +10241,10 @@
       "research/source_reading/uboot/source_explanations/P03_配置求值与构建产物实现.md",
       "knowledge/system_software/uboot/P04_先建立栈与GD再进入可用的C环境.md",
       "research/source_reading/uboot/navigation/P04_栈与GD及分配器交接导读.md",
-      "research/source_reading/uboot/source_explanations/P04_早期运行环境与GD交接实现.md"
+      "research/source_reading/uboot/source_explanations/P04_早期运行环境与GD交接实现.md",
+      "knowledge/system_software/uboot/P05_为什么需要SPL以及它怎样交出下一阶段.md",
+      "research/source_reading/uboot/navigation/P05_SPL装载与下一阶段交接导读.md",
+      "research/source_reading/uboot/source_explanations/P05_SPL装载与下一阶段交接实现.md"
     ],
     "language_review": {
       "status": "complete",
