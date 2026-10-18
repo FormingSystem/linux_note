@@ -14,7 +14,9 @@ domains:
 
 ## 1.1\_范围与基线
 
-2026-10-16，本页随教材历史恢复进入当前工作基线，并接入本次 GIC 专项修订；恢复来源、修订源提交和范围见[历史恢复与 GIC 修订记录](../../governance/migration/repository_textbook_refactor.md#1.1.1_20261016历史恢复与GIC修订)。下列批次、计数和续接安排保留其原记录时点，本次恢复不表示重新启动旧全仓任务，也不改变质量复审与人工评审结论。
+2026-10-16，教材历史恢复后，开发者明确将本轮范围确认为 **全仓现有说明文档**，要求采用补全后的 skill 持续重构至完成。本轮独立盘点以提交 `393e2e5f02e0794f81bacd5d954865cdbd245fed` 为起点，并继续纳入新增与拆分文档；这是长时间执行的当前任务。历史恢复过程见[恢复与 GIC 修订记录](../../governance/migration/repository_textbook_refactor.md#1.1.1_20261016历史恢复与GIC修订)。
+
+本页保留学习依赖和旧批次摘要；**当前逐篇状态只看清单的 `current_pass`**，当前工作与验证见[重构记录](../../governance/migration/repository_textbook_refactor.md#1.1_范围与恢复入口)。下文旧批次的 `validated`、剩余数量和“下一项”仅描述当时进度，不是当前续接指令，更不能替代本轮完整冷读与改写。
 
 **2026-09-25 质量结论更正：此前批次中的“完成”、`validated` 与“剩余328项”保留为历史工作记录，暂停作为教材质量完成度使用。** 开发者指出class_sysfs的卡片化问题后，跨批次抽查又发现Maple游标的字段/状态集中引入、Lockdep成本章的工具与核对清单堆叠等讲解断点。全量清单现增加独立的质量复审要求，覆盖全部条目并按文档职责判断；已通过的源码和技术验证保留，不能代替可学性验收。先修复class_sysfs，再回查此前已标完成批次。尚未逐篇复核，不能给出新的教材完成百分比或把全部旧文一概判坏。
 
@@ -26,18 +28,18 @@ domains:
 
 ## 1.2\_全量阅读依赖与批次
 
-各批描述未来工作范围，不预建尚不存在的章节链接。表内入口均指向现有材料；“待进入”表示尚未完成本轮重写，与人工评审状态无关。
+下表保留按认识依赖组织的工作分组。范围中的篇数是初始盘点规模，后续拆分会改变文档数；本表不重复维护执行状态。表内入口指向真实材料，具体章节顺序由对应大纲维护。
 
-| 批次与范围 | 读者带入的认识 | 本批需要获得的能力 | 现有入口与执行状态 |
+| 批次与范围 | 读者带入的认识 | 本批需要获得的能力 | 现有阅读入口 |
 | --- | --- | --- | --- |
-| B01 基础入口：architecture 中的概貌、源码树及 Atlas 路线 | 能读变量、函数、数组与循环；尚不认识内核对象 | 从读文件区分应用、内核、硬件；按问题找源码，区分源文件与产物 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md)；本批实施，验证结果见 1.5 |
-| B02 模块与设备节点：architecture 其余 3 篇、error_handling 初始 2 篇、驱动 fundamentals 与 misc | 用户与内核边界、源码身份 | 区分装入代码、注册服务和建立访问入口；能恢复一个失败的最小模块实验 | [模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes)、[错误处理](../../knowledge/linux/error_handling)、[驱动基础](../../knowledge/driver_model/fundamentals)；分批推进，已完成组与下一项见 1.5 |
-| B03 对象组织：data_structures 33 篇 | C 指针、对象与资源 | 从查找和更新需求选择链表、哈希表或树，解释节点与容器关系 | [数据结构](../../knowledge/linux/data_structures)；链表、哈希及子系统应用、综合模块、树原章节和依赖拆分单元已完成本轮逐篇审查与适用验证；教学语言复核已完成，目标未运行与研究算法边界逐批记录。继续 B04，不表示全仓完成 |
-| B04 生命周期：object_lifetime 初始20篇 | 能辨别对象、入口和使用者 | 解释引用何时取得、由谁放弃、什么时候可销毁 | [对象生命周期](../../knowledge/linux/object_lifetime)；P01～P15及其实际拆分单元已逐单元完成本轮作者审查、必要正文重构及适用验证，内容覆盖首次取得、交付、关闭、集合、RCU、框架与诊断；各批固定证据、实验和未执行项见工作记录。devres资源族、退出依赖、用户态跨层分工和生命周期集成也已完成对应批次；清单中object_lifetime范围无待办，人工评审状态独立 |
-| B05 并发与事件：synchronization_and_asynchrony 125 篇 | 单个操作及对象生命期 | 从两条交错路径推出同步、等待、通知、延迟执行与回收；以具体状态完成证明 | [同步与异步总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)；已完成执行路径先修、总纲及内存顺序P01～P10及其大纲，余下正文继续按依赖拆批；kernel_subsystems/irq 当前无正式文件，不建立占位入口 |
-| B06 文件与观测：io_model 5 篇、kernel_subsystems/vfs 与 tracing | 读文件主线、等待与对象持有 | 串起路径、打开实例、数据、阻塞、缓存及日志证据 | [VFS](../../knowledge/kernel_subsystems/vfs/大纲.md)、[I/O 模型](../../knowledge/linux/io_model)、[观测](../../knowledge/kernel_subsystems/tracing)；待进入 |
-| B07 设备与驱动：device_model 17 篇，driver_model 中 character_device、device_tree、gpio、gpio_consumers、input、platform_bus | 内核公共机制、文件入口 | 区分硬件描述、注册、匹配、请求处理和拆除，完成一个有恢复路径的设备实例 | [设备模型](../../knowledge/linux/device_model/大纲.md)、[驱动路线](../tracks/linux_driver_track.md)；待进入，各设备家族单独校准 |
-| B08 系统构建扩展：system_software 18 篇及实际依赖的工程、平台记录 | 代码、配置、产物和运行系统的区别 | 解释引导程序、内核、根文件系统怎样接力，并能判断运行物是否来自预期构建 | [系统软件](../../knowledge/system_software)、[系统地图](../maps/linux_system_map.md#1.5_系统启动与构建)；待进入 |
+| B01 基础入口：architecture 中的概貌、源码树及 Atlas 路线 | 能读变量、函数、数组与循环；尚不认识内核对象 | 从读文件区分应用、内核、硬件；按问题找源码，区分源文件与产物 | [内核概貌](../../knowledge/linux/architecture/kernel_composition/linux内核概貌.md)、[源码树](../../knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md) |
+| B02 模块与设备节点：architecture 其余 3 篇、error_handling 初始 2 篇、驱动 fundamentals 与 misc | 用户与内核边界、源码身份 | 区分装入代码、注册服务和建立访问入口；能恢复一个失败的最小模块实验 | [模块与设备节点](../../knowledge/linux/architecture/modules_and_device_nodes)、[错误处理](../../knowledge/linux/error_handling)、[驱动基础](../../knowledge/driver_model/fundamentals) |
+| B03 对象组织：data_structures 33 篇 | C 指针、对象与资源 | 从查找和更新需求选择链表、哈希表或树，解释节点与容器关系 | [数据结构](../../knowledge/linux/data_structures) |
+| B04 生命周期：object_lifetime 初始20篇 | 能辨别对象、入口和使用者 | 解释引用何时取得、由谁放弃、什么时候可销毁 | [对象生命周期](../../knowledge/linux/object_lifetime) |
+| B05 并发与事件：synchronization_and_asynchrony 125 篇 | 单个操作及对象生命期 | 从两条交错路径推出同步、等待、通知、延迟执行与回收；以具体状态完成证明 | [同步与异步总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md) |
+| B06 文件与观测：io_model 5 篇、kernel_subsystems/vfs 与 tracing | 读文件主线、等待与对象持有 | 串起路径、打开实例、数据、阻塞、缓存及日志证据 | [VFS](../../knowledge/kernel_subsystems/vfs/大纲.md)、[I/O 模型](../../knowledge/linux/io_model)、[观测](../../knowledge/kernel_subsystems/tracing) |
+| B07 设备与驱动：device_model 17 篇，driver_model 中 character_device、device_tree、gpio、gpio_consumers、input、platform_bus | 内核公共机制、文件入口 | 区分硬件描述、注册、匹配、请求处理和拆除，完成一个有恢复路径的设备实例 | [设备模型](../../knowledge/linux/device_model/大纲.md)、[驱动路线](../tracks/linux_driver_track.md) |
+| B08 系统构建扩展：system_software 18 篇及实际依赖的工程、平台记录 | 代码、配置、产物和运行系统的区别 | 解释引导程序、内核、根文件系统怎样接力，并能判断运行物是否来自预期构建 | [系统软件](../../knowledge/system_software)、[系统地图](../maps/linux_system_map.md#1.5_系统启动与构建) |
 
 ```mermaid
 flowchart LR
@@ -75,6 +77,8 @@ flowchart LR
 术语顺序：程序 → 正在运行的进程 → 用户态与内核态 → 库函数与系统调用 → 路径与打开状态 → 缓存与设备 → 源文件与构建产物。源码追踪止于当前章节所需的目录、身份及契约，不提前展开 RCU 或文件系统内部算法。
 
 ## 1.5\_批次结果与续接点
+
+以下按原批次顺序保存历史结果，便于追查某条推导、拆分和验证从何处进入教材。每段末尾的续接安排仅属于该记录时点；当前任务按 1.1 所述 `current_pass` 推进，不回退到这些旧待办。未运行目标实验的限制仍有效，除非后续记录提供了对应环境与实际结果。
 
 B01 的两篇正文与阅读路线已重写。概貌从短文本读取进入应用、内核与设备的边界；源码树从同一次读取的问题进入目录定位。两章均包含预测、操作、解释、练习和解答。保留原文件路径与稳定 ID，已同步首页、Atlas 导航、系统地图、内容索引及评审地图的显示名称；原有出版物与 RCU 入链仍有效，无需为不变路径改写调用方。没有改写出版快照，也没有改变人工评审结论。
 
