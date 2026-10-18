@@ -10844,6 +10844,105 @@
           "八个临时消息文件验证钩子接受与拒绝条件；Shell片段语法检查；两图Mermaid 11.17渲染目视；七篇格式元数据长度与精确入链检查；955篇全仓链接零缺失。"
         ],
         "limits": "未执行文中fetch/rebase/merge/revert、安装或发布；只校正文档与只读/临时文件检查。没有把建设现状变为人工评审完成，也未重演历史全仓迁移。"
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/SKILL.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "完整复核主入口并将三种状态回路限定为实际存在，不为清单虚构共享状态或后台线程；保留已有图表/寄存器自足及因果先行规则。",
+        "validation": [
+          "九份现行文档完整逐篇阅读，对照当前AGENTS、历史要求、Mermaid规范、RCU实验与Lockdep固定源码记录；核对保存的lockdep.c新链缓存和验证次序。",
+          "全部skill的108个本地链接/片段检查、九份长度、955篇全仓链接与diff空白检查通过；quick_validate通过，仓库到安装镜像apply后check changes=0。"
+        ],
+        "limits": "作者规则一致性与场景推演自查，不称为独立用户试读或新内核实验。初始两个Python均缺PyYAML，6.0.2仅安装到任务缓存供验证，未修改全局环境。只提交本轮隔离增量，其他既有GIC/skill工作保持原样。"
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/explanation-quality.md": {
+        "state": "reviewed",
+        "result": "retained",
+        "date": "2026-10-18",
+        "reason": "完整复核讲解、命令、工程前提、实验、冷读、章节衔接与样章标准，与本轮授权和当前读者契约一致，保留原文。",
+        "validation": [
+          "九份现行文档完整逐篇阅读，对照当前AGENTS、历史要求、Mermaid规范、RCU实验与Lockdep固定源码记录；核对保存的lockdep.c新链缓存和验证次序。",
+          "全部skill的108个本地链接/片段检查、九份长度、955篇全仓链接与diff空白检查通过；quick_validate通过，仓库到安装镜像apply后check changes=0。"
+        ],
+        "limits": "作者规则一致性与场景推演自查，不称为独立用户试读或新内核实验。初始两个Python均缺PyYAML，6.0.2仅安装到任务缓存供验证，未修改全局环境。只提交本轮隔离增量，其他既有GIC/skill工作保持原样。"
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/lockdep-case-study.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "修正held_locks与功能取得混淆及全局缓存先写入的时序，案例回指已核对版本导读。",
+        "validation": [
+          "九份现行文档完整逐篇阅读，对照当前AGENTS、历史要求、Mermaid规范、RCU实验与Lockdep固定源码记录；核对保存的lockdep.c新链缓存和验证次序。",
+          "全部skill的108个本地链接/片段检查、九份长度、955篇全仓链接与diff空白检查通过；quick_validate通过，仓库到安装镜像apply后check changes=0。"
+        ],
+        "limits": "作者规则一致性与场景推演自查，不称为独立用户试读或新内核实验。初始两个Python均缺PyYAML，6.0.2仅安装到任务缓存供验证，未修改全局环境。只提交本轮隔离增量，其他既有GIC/skill工作保持原样。"
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/mechanism-reasoning.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "明确状态载体不是执行者、同步完成无需后台角色，反例由既有不变量覆盖时无需强造新状态。",
+        "validation": [
+          "九份现行文档完整逐篇阅读，对照当前AGENTS、历史要求、Mermaid规范、RCU实验与Lockdep固定源码记录；核对保存的lockdep.c新链缓存和验证次序。",
+          "全部skill的108个本地链接/片段检查、九份长度、955篇全仓链接与diff空白检查通过；quick_validate通过，仓库到安装镜像apply后check changes=0。"
+        ],
+        "limits": "作者规则一致性与场景推演自查，不称为独立用户试读或新内核实验。初始两个Python均缺PyYAML，6.0.2仅安装到任务缓存供验证，未修改全局环境。只提交本轮隔离增量，其他既有GIC/skill工作保持原样。"
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/rcu-case-study.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "补读侧入口与指针取得边界、非抢占配置差异、退休内存近似条件及真实实验要求，避免把案例当已执行结果。",
+        "validation": [
+          "九份现行文档完整逐篇阅读，对照当前AGENTS、历史要求、Mermaid规范、RCU实验与Lockdep固定源码记录；核对保存的lockdep.c新链缓存和验证次序。",
+          "全部skill的108个本地链接/片段检查、九份长度、955篇全仓链接与diff空白检查通过；quick_validate通过，仓库到安装镜像apply后check changes=0。"
+        ],
+        "limits": "作者规则一致性与场景推演自查，不称为独立用户试读或新内核实验。初始两个Python均缺PyYAML，6.0.2仅安装到任务缓存供验证，未修改全局环境。只提交本轮隔离增量，其他既有GIC/skill工作保持原样。"
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/repository-topic-requirements.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "配置与对象不强制一一映射，Mermaid标签合法转义与整块HTML转义区分；全文按题型适用性核对。",
+        "validation": [
+          "九份现行文档完整逐篇阅读，对照当前AGENTS、历史要求、Mermaid规范、RCU实验与Lockdep固定源码记录；核对保存的lockdep.c新链缓存和验证次序。",
+          "全部skill的108个本地链接/片段检查、九份长度、955篇全仓链接与diff空白检查通过；quick_validate通过，仓库到安装镜像apply后check changes=0。"
+        ],
+        "limits": "作者规则一致性与场景推演自查，不称为独立用户试读或新内核实验。初始两个Python均缺PyYAML，6.0.2仅安装到任务缓存供验证，未修改全局环境。只提交本轮隔离增量，其他既有GIC/skill工作保持原样。"
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/review-checklist.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "逐项复核验收规则，先按正文/参考/历史/skill职责选择适用项，状态回路绑定实际机制。",
+        "validation": [
+          "九份现行文档完整逐篇阅读，对照当前AGENTS、历史要求、Mermaid规范、RCU实验与Lockdep固定源码记录；核对保存的lockdep.c新链缓存和验证次序。",
+          "全部skill的108个本地链接/片段检查、九份长度、955篇全仓链接与diff空白检查通过；quick_validate通过，仓库到安装镜像apply后check changes=0。"
+        ],
+        "limits": "作者规则一致性与场景推演自查，不称为独立用户试读或新内核实验。初始两个Python均缺PyYAML，6.0.2仅安装到任务缓存供验证，未修改全局环境。只提交本轮隔离增量，其他既有GIC/skill工作保持原样。"
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/source-evidence.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "明确官方仓库与不可变提交、当前HEAD和配置/镜像的区别，BSP事实不以本地目录命名为身份。",
+        "validation": [
+          "九份现行文档完整逐篇阅读，对照当前AGENTS、历史要求、Mermaid规范、RCU实验与Lockdep固定源码记录；核对保存的lockdep.c新链缓存和验证次序。",
+          "全部skill的108个本地链接/片段检查、九份长度、955篇全仓链接与diff空白检查通过；quick_validate通过，仓库到安装镜像apply后check changes=0。"
+        ],
+        "limits": "作者规则一致性与场景推演自查，不称为独立用户试读或新内核实验。初始两个Python均缺PyYAML，6.0.2仅安装到任务缓存供验证，未修改全局环境。只提交本轮隔离增量，其他既有GIC/skill工作保持原样。"
+      },
+      "tools/ai/codex/skills/build-linux-note-topic/references/topic-design.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "避免把教学因果推演当产品唯一设计或历史起因；连续教材实验就地展开，集中综合练习不替代正文。",
+        "validation": [
+          "九份现行文档完整逐篇阅读，对照当前AGENTS、历史要求、Mermaid规范、RCU实验与Lockdep固定源码记录；核对保存的lockdep.c新链缓存和验证次序。",
+          "全部skill的108个本地链接/片段检查、九份长度、955篇全仓链接与diff空白检查通过；quick_validate通过，仓库到安装镜像apply后check changes=0。"
+        ],
+        "limits": "作者规则一致性与场景推演自查，不称为独立用户试读或新内核实验。初始两个Python均缺PyYAML，6.0.2仅安装到任务缓存供验证，未修改全局环境。只提交本轮隔离增量，其他既有GIC/skill工作保持原样。"
       }
     },
     "additional_documents": [
