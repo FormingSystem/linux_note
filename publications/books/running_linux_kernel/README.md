@@ -57,7 +57,7 @@ P04 是对启动前半段的第二遍细读，不表示真实机器先运行 Lin
 | 混淆文件、路径、inode、超级块与操作表 | [VFS](../../../knowledge/kernel_subsystems/vfs/大纲.md) 沿打开、引用、读写与关闭解释对象关系；用户 fd 与内核对象分开 |
 | 不知道设备注册后怎样出现在模型与用户接口中 | [设备模型](../../../knowledge/linux/device_model/大纲.md) 和 [class/sysfs](../../../knowledge/linux/device_model/class_sysfs/大纲.md) 解释 `device`、驱动、总线与 kobject/ktype/kset；需要硬件描述时再进入 [设备树](../../../knowledge/driver_model/device_tree/大纲.md) |
 | 不知道中断后续工作和定时动作由谁执行 | [中断](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/大纲.md)、[工作队列](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/大纲.md)、[定时器](../../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/大纲.md) 各自说明执行上下文、对象状态及退出；jiffies、`ktime_t` 等时间表示随所选机制阅读 |
-| 想把抽象关系落到板上 | 原 [i.MX8 ARM64构建记录](../../../platforms/arm/nxp/imx8/P01_imx_v8配置与ARM64内核构建.md) 与 [U-Boot/内核移植记录](../../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md) 提供各自环境线索；执行前仍须确认实际源码、板卡和存储布局 |
+| 想把抽象关系落到板上 | 原 [i.MX8 ARM64构建记录](../../../platforms/arm/nxp/imx8/P01_imx_v8配置与ARM64内核构建.md) 与 [U-Boot/内核移植记录](../../../platforms/arm/nxp/imx6ull/porting/大纲.md) 提供各自环境线索；执行前仍须确认实际源码、板卡和存储布局 |
 
 原计划还包含网络和调试扩展。网络部分先用 P02 区分 socket、`sock`、`sk_buff` 与 `net_device`，再选择一条收发路径追对象交接；不把报文缓存、设备队列与协议状态合并成一个结构。调试部分应先提出可验证的问题，例如“是否执行到回调”“返回值是什么”“哪个持有者没有释放”，再选择日志、tracepoint、ftrace 或其他观测工具。procfs、sysfs、debugfs、BPF 映射也各有用途，不能因都能显示或保存信息就视为同一种调试接口。
 

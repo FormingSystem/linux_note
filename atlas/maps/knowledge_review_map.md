@@ -678,7 +678,14 @@ mindmap-plugin: basic
         - NXP
             - i.MX6ULL
                 - 移植与构建
-                    - 🟢 [阅读人群](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)
+                    - 🔴 [i.MX6ULL 移植阅读路线](../../platforms/arm/nxp/imx6ull/porting/大纲.md)
+                        - 🔴 [P01_移植基线与交叉编译环境](../../platforms/arm/nxp/imx6ull/porting/P01_移植基线与交叉编译环境.md)
+                        - 🔴 [P02_从参考板派生U-Boot配置](../../platforms/arm/nxp/imx6ull/porting/P02_从参考板派生U-Boot配置.md)
+                        - 🔴 [P03_DDR初始化与镜像封装](../../platforms/arm/nxp/imx6ull/porting/P03_DDR初始化与镜像封装.md)
+                        - 🔴 [P04_LCD与双网口的板级适配](../../platforms/arm/nxp/imx6ull/porting/P04_LCD与双网口的板级适配.md)
+                        - 🔴 [P05_Linux配置与板级设备树](../../platforms/arm/nxp/imx6ull/porting/P05_Linux配置与板级设备树.md)
+                        - 🔴 [P06_BusyBox根文件系统与网络启动](../../platforms/arm/nxp/imx6ull/porting/P06_BusyBox根文件系统与网络启动.md)
+                        - 🔴 [P07_Buildroot工具与运行时依赖](../../platforms/arm/nxp/imx6ull/porting/P07_Buildroot工具与运行时依赖.md)
             - i.MX8
                 - 🟢 [imx_v8配置与ARM64内核构建](../../platforms/arm/nxp/imx8/P01_imx_v8配置与ARM64内核构建.md)
         - Rockchip
