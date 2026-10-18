@@ -206,7 +206,7 @@ mindmap-plugin: basic
             - 🔴 [P07 反汇编、压力测试与形式化验证边界](../../knowledge/foundations/computer_architecture/memory_ordering/P07_反汇编_压力测试与形式化验证边界.md)
     - 操作系统
         - 基本概念
-            - 🔴 [详细介绍下宏内核和微内核](../../knowledge/foundations/operating_systems/concepts/宏内核和微内核.md)
+            - 🔴 [宏内核和微内核](../../knowledge/foundations/operating_systems/concepts/宏内核和微内核.md)
 - 内核子系统
     - 跟踪与观测
         - Linux 内核日志
