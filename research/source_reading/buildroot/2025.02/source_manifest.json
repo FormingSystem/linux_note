@@ -214,6 +214,54 @@
     {
       "path": "support/misc/toolchainfile.cmake.in",
       "sha256": "3c751cffebfd6335423dd989be47ba819544da6b82b63bf1324dd7c485dbf364"
+    },
+    {
+      "path": "fs/common.mk",
+      "sha256": "de2ab19b76a2a647ed518f558a459f8892a0a08518c80489ee3b78ade09257f5"
+    },
+    {
+      "path": "fs/ext2/ext2.mk",
+      "sha256": "0c4c988f1843ae98766d416f84ba2b8fa75d2d2b6f3b0c250b5ad6e00d90d297"
+    },
+    {
+      "path": "fs/ext2/Config.in",
+      "sha256": "14b1707358163c75bac5eedfac8308b4a31c587234d6773d76a055295a5e4370"
+    },
+    {
+      "path": "fs/cpio/cpio.mk",
+      "sha256": "443e91bd6de9cf07faa7649b23cac3e93d8a91cdee143e63549a778c56236f4f"
+    },
+    {
+      "path": "fs/cpio/Config.in",
+      "sha256": "a94cad555b31cd58a8a08d512bc7cfc60a83fc517e6d633a5084b243904cc428"
+    },
+    {
+      "path": "docs/manual/customize-rootfs.adoc",
+      "sha256": "33e6b4f7b19293ac70801938e6b7d54c1ed265ddd69cb21f5df24f66ad32c05e"
+    },
+    {
+      "path": "docs/manual/customize-post-image.adoc",
+      "sha256": "74e616600f425ca7645ee7d1ece8e3067e266a1e70639449abd89bb68b944f30"
+    },
+    {
+      "path": "docs/manual/customize-device-permission-tables.adoc",
+      "sha256": "5f8dceb2814ff210570e98133caa7463f273d6f67e94a58633dcc79443b2bccf"
+    },
+    {
+      "path": "docs/manual/faq-troubleshooting.adoc",
+      "sha256": "4602064ef1485ecaf21c942b681b0ac23499597ec5b546180cdada89748eaa5e"
+    },
+    {
+      "path": "package/busybox/busybox.mk",
+      "sha256": "b324f9b6df59a5792201e6507ad5c0eb6a8ad5e40c6c334bc376c398deed7093"
+    },
+    {
+      "path": "package/busybox/Config.in",
+      "sha256": "37b61bdcb3708b024bc06942b342dd2b3dc2b004b5746ac30e7ea83031b1e55a"
+    },
+    {
+      "path": "docs/manual/makedev-syntax.adoc",
+      "sha256": "527b2dd03a10fcece1e8b8e989c0ecc667a2e36d77d49dfe597627fef8b9cdd6"
     }
   ]
 }

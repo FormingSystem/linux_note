@@ -79,6 +79,8 @@ domains: [linux, buildroot, source_reading]
 
 不同来源说法冲突时先保留时间和具体字段。比如2025.02随包release-engineering仍用较早的LTS周期举例，2025.02发布公告讨论延长维护，当前下载页再给出系列维护终止时间；它们不能拼成一个没有日期的永久承诺。教程介绍发布模型，产品选择则核对当时有效公告。
 
+第五章把文件内容、权限与镜像生成分开，新增 [fs/common.mk](2025.02/fs/common.mk)、[ext2配方](2025.02/fs/ext2/ext2.mk) 与 [配置](2025.02/fs/ext2/Config.in)、[cpio配方](2025.02/fs/cpio/cpio.mk) 与 [配置](2025.02/fs/cpio/Config.in)、[tar配置](2025.02/fs/tar/Config.in)，以及 [rootfs定制](2025.02/docs/manual/customize-rootfs.adoc)、[post-image](2025.02/docs/manual/customize-post-image.adoc)、[权限表](2025.02/docs/manual/customize-device-permission-tables.adoc)、[表语法](2025.02/docs/manual/makedev-syntax.adoc)、[FAQ](2025.02/docs/manual/faq-troubleshooting.adoc)、[BusyBox配方](2025.02/package/busybox/busybox.mk) 和 [配置](2025.02/package/busybox/Config.in)。这些原件定位阶段顺序、安装副本与配置契约，不能代替实际镜像和目标系统的验收。
+
 ## 1.3\_静态核对与实际运行分别登记
 
 2026-10-18已下载并解出所列原件，计算归档与各文件摘要，阅读入门配置、打包脚本、Make目标及对应手册。知识正文中的构建和QEMU命令依据这些原件编写。

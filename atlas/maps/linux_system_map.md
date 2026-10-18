@@ -72,7 +72,7 @@ Linux 内核结构、模块与数据结构
 1. [U-Boot 启动流程](../../publications/books/running_linux_kernel/P04_uboot启动流程说明.md)。
 2. [内核引导和初始化](../../publications/books/running_linux_kernel/P03_内核引导和初始化.md)。
 3. [Buildroot 从手工拼系统到可重复的构建输入](../../knowledge/system_software/buildroot/P01_从手工拼系统到可重复的构建输入.md)。
-4. [文件系统构建与定制](../../knowledge/system_software/buildroot/P05_文件系统构建与定制.md)。
+4. [从安装目录到可验证的根文件系统](../../knowledge/system_software/buildroot/P05_从安装目录到可验证的根文件系统.md)。
 
 ## 1.6\_平台与证据
 

@@ -586,7 +586,7 @@ mindmap-plugin: basic
         - 🔴 [P02 从最小编译器到完整目标工具链](../../knowledge/system_software/buildroot/P02_从最小编译器到完整目标工具链.md)
         - 🔴 [P03 把现成工具链接入受控构建](../../knowledge/system_software/buildroot/P03_把现成工具链接入受控构建.md)
         - 🔴 [P04 沿编译链接与运行边界定位失败](../../knowledge/system_software/buildroot/P04_沿编译链接与运行边界定位失败.md)
-        - 🔴 [P05 文件系统构建与定制](../../knowledge/system_software/buildroot/P05_文件系统构建与定制.md)
+        - 🔴 [P05 文件系统构建与定制](../../knowledge/system_software/buildroot/P05_从安装目录到可验证的根文件系统.md)
         - 🔴 [P06 包集成与系统服务](../../knowledge/system_software/buildroot/P06_包集成与系统服务.md)
         - 🔴 [P07 镜像生成与部署](../../knowledge/system_software/buildroot/P07_镜像生成与部署.md)
         - 🔴 [P08 高级定制与集成](../../knowledge/system_software/buildroot/P08_高级定制与集成.md)
