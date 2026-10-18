@@ -17,7 +17,19 @@ domains:
 
 开始前建议先在[知识库专题阅读与评审地图](../maps/knowledge_review_map.md)查看各专题和章节的人工确认程度；路线中的阶段验收是学习目标，不等同于内容评审状态。
 
+读者沿默认路线逐步增加约束：先让代码与文件接口可用，再处理并发和退出，随后把设备实例与资源交给框架，最后接通实际外设。各阶段链接的是现有权威正文，不要求为了一个接口先读完整个内核。
+
+```mermaid
+flowchart LR
+    A[模块和文件入口可用] -->|并发与退出暴露对象责任| B[同步等待与生命周期]
+    B -->|多实例需要分离描述和代码| C[设备模型与设备树资源]
+    C -->|真实输入输出需要提供者协议| D[GPIO 中断 Input]
+    D -->|软件合同还要对照接线和启动配置| E[平台实验与分层验证]
+```
+
 ## 1.2\_第一阶段\_模块与字符设备
+
+先用最小模块确认构建、装入和退出，再让用户通过文件接口访问一份内核状态。此时的重点是代码、设备号、路径和打开实例的区别，还不急于操作真实寄存器。
 
 1. 先完成[内核模块构建与部署](../../engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)，从 Hello 模块建立目标身份、构建和装卸闭环，再学习多文件与配置集成。
 2. 阅读[模块装载与设备访问入口](../../knowledge/linux/architecture/modules_and_device_nodes/Linux_内核模块与设备节点操作入门.md)，观察 Hello 模块与现有文件，区分代码、服务和路径；沿[模块入口大纲](../../knowledge/linux/architecture/modules_and_device_nodes/大纲.md#1.1_沿三个问题进入正文)进入号码登记与多实例身份。
@@ -25,9 +37,11 @@ domains:
 4. 按序完成[字符设备专题](../../knowledge/driver_model/character_device/大纲.md)。
 5. 用[有限窗口模板](../../knowledge/driver_model/character_device/P10_字符设备驱动模板.md)和[运行验证](../../knowledge/driver_model/character_device/P11_构建运行与验证.md)观察位置、内容与节点关系；再以[环形流模板](../../knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md)引入消费、等待和 poll，不把两种 EOF 规则混用。
 
-阶段验收：能独立完成模块装卸、设备号分配、`cdev` 注册、设备节点创建和基础文件操作。
+阶段验收：能独立完成模块装卸、设备号分配、`cdev` 注册、设备节点创建和基础文件操作，并区分有限窗口与消费型流。尚不能据此证明并发和卸载安全。
 
 ## 1.3\_第二阶段\_驱动所需通用机制
+
+文件接口可以工作以后，多个打开者、延迟回调和卸载会同时接触对象。这一阶段补足它们的共享状态、等待、失败回滚和最后一次访问规则；按具体缺口选择分支，不把所有锁和通知方式装进同一个驱动。
 
 1. [Linux 同步和异步机制总纲](../../knowledge/linux/synchronization_and_asynchrony/大纲.md)。
 2. [错误指针专题](../../knowledge/linux/error_handling/error_pointer/大纲.md#1.1_四次认识变化)。
@@ -35,21 +49,25 @@ domains:
 4. [驱动中的时间问题](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P01_驱动中的_时间问题_概述.md)，再按需要学习睡眠、timer、hrtimer 和 delayed work。
 5. [poll 与 epoll](../../knowledge/linux/io_model/blocking_io/大纲.md)及[异步通知阅读地图](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/大纲.md#1.1_先看到数据与提示的区别_再进入实现)，先确定数据消费协议，再选择等待或信号提示。
 
-阶段验收：能为共享状态选择同步方法，正确管理失败路径和卸载路径，并为设备事件选择用户态通知方式。
+阶段验收：能为共享状态选择同步方法，说明失败路径和卸载时谁必须先停止，并为设备事件选择用户态等待或通知方式。真实设备的枚举、资源归属和绑定仍留给下一阶段。
 
 ## 1.4\_第三阶段\_设备模型与Platform
+
+有了单个对象的访问与退出协议，下一问是怎样复用一份驱动代码服务多个设备实例。设备模型负责登记、匹配和绑定，设备树描述板级连接；本阶段把这些职责接到资源取得和释放。
 
 1. 从[驱动框架学习地图](../../knowledge/driver_model/fundamentals/framework_model/大纲.md#1.1_四个问题怎样接起来)进入：先分离实例和代码，再观察登记与绑定，完成只读 sysfs 属性和 misc 字符入口，区分对象引用、活动回调和旧打开者。
    完成 misc 后，沿[文件操作教材](../../knowledge/driver_model/file_operations/大纲.md#1.1_沿对象寿命逐步增加约束)观察 dup 与独立打开、readv 与 pread、关闭 fd 后的映射引用；不要把 file_operations 当作必须全部填写的成员清单。
 2. 按序完成[Linux 设备模型专题](../../knowledge/linux/device_model/大纲.md)，继续研究匹配、依赖、热拔插和完整生命周期；小型入口不能代替这部分协议。
    第 11 章进入[class 与 sysfs 分支](../../knowledge/linux/device_model/class_sysfs/大纲.md#1.1_从分类观察到可控数据入口)，先观察无节点的两个分类实例，再运行属性控制字符读取，解释输入失败、权限和撤销边界。
-3. 按序完成[设备树与 Platform 开发](../../knowledge/driver_model/device_tree/设备树+platform开发)。
+3. 按序完成[设备树与平台资源学习大纲](../../knowledge/driver_model/device_tree/大纲.md#1.1_沿描述怎样成为可用资源逐步阅读)。
 4. 选读[GPIO输入与按键事件](../../knowledge/driver_model/device_tree/P05_GPIO输入怎样成为中断与按键事件.md)。
 5. 从[无线模块启动](../../knowledge/driver_model/device_tree/P06_从供电复位到SDIO无线设备枚举.md#6.1_模块还没出现时谁来准备它的电源与复位)进入复杂外设组合，继续摄像头、扩展GPIO、RS-485及换板诊断；需要修改能力时进入[组合外设源码索引](../../research/source_reading/peripheral_integration/navigation/P01_组合外设源码阅读索引.md#1.1_版本与证据范围)。
 
-阶段验收：能解释 device、driver、bus 的匹配过程，并把寄存器、中断和 GPIO 等硬件资源从设备树传递给驱动。
+阶段验收：能解释 device、driver、bus 的匹配过程，并把寄存器、中断和 GPIO 等硬件资源从设备树传递给驱动。取得句柄尚不等于电气条件和硬件操作已经成功。
 
 ## 1.5\_第四阶段\_GPIO\_中断与Input
+
+资源描述能被驱动取得以后，还要证明电平怎样成为逻辑状态、中断怎样保存来源、事件怎样交给用户。先理解已有提供者和标准消费者，再决定哪一层确实需要自写代码。
 
 1. 按序完成 [GPIO 专题](../../knowledge/driver_model/gpio/大纲.md)。
 2. 阅读 [标准 GPIO Consumer 专题](../../knowledge/driver_model/gpio_consumers/大纲.md)，理解何时复用 `gpio-keys`、`gpio-leds`、regulator 等领域驱动。
@@ -57,11 +75,11 @@ domains:
 4. 阅读[GPIO 与触发语义](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/interrupts/P05_GPIO_与触发语义_电平_边沿_DTS_与_只来一次一直来_为何出现.md)。
 5. 按序完成 [Input 子系统](../../knowledge/driver_model/input/大纲.md)。
 
-阶段验收：能实现 GPIO 输入输出、中断与去抖，并能说明 Input 事件从驱动上报到用户态读取的路径。
+阶段验收：能实现 GPIO 输入输出、中断与去抖，说明 Input 状态、客户端队列和用户副本的区别；之后再用板级实验区分模型正确、接口建立与硬件现象。
 
 ## 1.6\_第五阶段\_平台验证
 
-建议依次完成现有 i.MX6ULL 实验：
+前面得到的是软件协议；本阶段把它放到有版本、接线和启动配置的目标上验证。建议依次完成现有 i.MX6ULL 实验：
 
 开始实验前，先从[Arm、GIC、RK3588 与 i.MX6ULL 外部资料索引](../../reference/external_resources/arm/README.md#1.4_版本选择与阅读顺序)确认处理器架构、GIC 代际和芯片手册版本。外部资料给出硬件契约，下面的实验记录区分模型观察、源码核对、目标板操作步骤与实际运行结果，二者不能互相替代。面向 RK3588 的控制器学习按 [GICv3 独立专题](../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)，先学 GIC-600 r1p6 / GICv3.0；不要求先掌握 GIC 代际差异。
 
