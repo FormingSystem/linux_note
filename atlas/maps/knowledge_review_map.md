@@ -619,6 +619,9 @@ mindmap-plugin: basic
         - 🔴 [为什么需要SPL以及它怎样交出下一阶段](../../knowledge/system_software/uboot/P05_为什么需要SPL以及它怎样交出下一阶段.md)
         - 🔴 [SPL装载与下一阶段交接导读](../../research/source_reading/uboot/navigation/P05_SPL装载与下一阶段交接导读.md)
         - 🔴 [SPL装载与下一阶段交接实现](../../research/source_reading/uboot/source_explanations/P05_SPL装载与下一阶段交接实现.md)
+        - 🔴 [从复位入口到异常向量与主核交接](../../knowledge/system_software/uboot/P06_从复位入口到异常向量与主核交接.md)
+        - 🔴 [ARM入口与异常向量导读](../../research/source_reading/uboot/navigation/P06_ARM入口与异常向量导读.md)
+        - 🔴 [ARM入口与异常向量实现](../../research/source_reading/uboot/source_explanations/P06_ARM入口与异常向量实现.md)
 
 ## 1.6\_工程方法与平台实现
 
