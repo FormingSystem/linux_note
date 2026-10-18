@@ -318,6 +318,42 @@
     {
       "path": "support/scripts/setlocalversion",
       "sha256": "261cea41ba0341e0a09019d453ad819b90d81071396b1890e7792a0c33493a02"
+    },
+    {
+      "path": "package/zlib/Config.in",
+      "sha256": "aeb5a8a7967e5eec416592363e8cc79c8441a97d1d7734140ba2d7192fb43b30"
+    },
+    {
+      "path": "package/zlib/zlib.mk",
+      "sha256": "f22fe3c0d244a4f4a152d26d576b3c1f516f8768ba8be23fff04d24538946fb3"
+    },
+    {
+      "path": "package/libzlib/libzlib.mk",
+      "sha256": "d782ab47726a37015bbbaa88dd2300813c199d454cf6b62505d364a83d1b728f"
+    },
+    {
+      "path": "package/libzlib/libzlib.hash",
+      "sha256": "373bfa0cf7917dccb6360dd8441cd7828ab61d11d6f1e98d7ef38c8c893b6b05"
+    },
+    {
+      "path": "package/pkg-virtual.mk",
+      "sha256": "3cd4ffc517b077adce08e8d4f05ece9c64931424cd7602c364ba91b2b71ae2c9"
+    },
+    {
+      "path": "support/download/file",
+      "sha256": "5f89f9f85d56f2f0e8ec63d824764e34e317bf540ddaef9a0da1822f138fee5c"
+    },
+    {
+      "path": "support/download/check-hash",
+      "sha256": "d4dddd2d38d19651df9b35b161771c77d382ef0d9c4bbc3776ffe375a61d691c"
+    },
+    {
+      "path": "docs/manual/patch-policy.adoc",
+      "sha256": "66e88729a40feace897d8908d74b5ae85f9c6f31b55074c0145dad80685ab989"
+    },
+    {
+      "path": "docs/manual/adding-packages-hooks.adoc",
+      "sha256": "a3675ccf81b3ee24f77cc7b4f532b462317edc1bbf0c92492f2d08071a3db403"
     }
   ]
 }

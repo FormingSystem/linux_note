@@ -590,7 +590,7 @@ mindmap-plugin: basic
         - 🔴 [P06 包集成与系统服务](../../knowledge/system_software/buildroot/P06_把应用接入构建并交给初始化系统.md)
         - 🔴 [P07 镜像生成与部署](../../knowledge/system_software/buildroot/P07_把构建产物整理为可核对的交付包.md)
         - 🔴 [P08 把项目输入迁到外部树并隔离构建](../../knowledge/system_software/buildroot/P08_把项目输入迁到外部树并隔离构建.md)
-        - 🔴 [P09 包开发与维护](../../knowledge/system_software/buildroot/P09_包开发与维护.md)
+        - 🔴 [P09 把源码身份依赖和补丁接成包维护闭环](../../knowledge/system_software/buildroot/P09_把源码身份依赖和补丁接成包维护闭环.md)
         - 🔴 [P10 镜像生成与部署](../../knowledge/system_software/buildroot/P10_镜像生成与部署.md)
         - 🔴 [P11 调试与问题排查](../../knowledge/system_software/buildroot/P11_调试与问题排查.md)
         - 🔴 [P12 高级主题](../../knowledge/system_software/buildroot/P12_高级主题.md)

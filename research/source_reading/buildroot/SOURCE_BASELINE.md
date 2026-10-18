@@ -92,6 +92,17 @@ domains: [linux, buildroot, source_reading]
 | [support/scripts/setlocalversion](2025.02/support/scripts/setlocalversion) | 外部树版本记录的辅助查询，不代替源码归档 |
 | [docs/manual/customize-patches.adoc](2025.02/docs/manual/customize-patches.adoc) | 全局补丁与哈希目录的包名、版本和查找次序 |
 
+包维护章节用真实zlib依赖连接菜单、提供者与安装路径，并以教学归档验证输入和补丁阶段。
+
+| 上游相对位置及原件 | 本轮核对的事实 |
+| --- | --- |
+| [package/zlib/Config.in](2025.02/package/zlib/Config.in)、[zlib.mk](2025.02/package/zlib/zlib.mk) | zlib接口选择、默认libzlib提供者与虚拟入口 |
+| [package/libzlib/libzlib.mk](2025.02/package/libzlib/libzlib.mk)、[libzlib.hash](2025.02/package/libzlib/libzlib.hash) | 实际1.3.1配方、通用基础设施、开发/运行安装及归档摘要 |
+| [package/pkg-virtual.mk](2025.02/package/pkg-virtual.mk) | 虚拟包向实际提供者建立依赖 |
+| [support/download/file](2025.02/support/download/file)、[check-hash](2025.02/support/download/check-hash) | 本地归档复制与摘要成功、拒绝及缺少哈希的边界 |
+| [docs/manual/patch-policy.adoc](2025.02/docs/manual/patch-policy.adoc) | 补丁位置、顺序、来源记录及适用范围 |
+| [docs/manual/adding-packages-hooks.adoc](2025.02/docs/manual/adding-packages-hooks.adoc) | 主要阶段动作与附加HOOKS列表的区别 |
+
 ## 1.3\_静态核对与实际运行分别登记
 
 2026-10-18已下载并解出所列原件，计算归档与各文件摘要，阅读入门配置、打包脚本、Make目标及对应手册。知识正文中的构建和QEMU命令依据这些原件编写。

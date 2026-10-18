@@ -41,3 +41,4 @@ research/source_reading/buildroot/2025.02/docs/manual/customize-configuration.ad
 research/source_reading/buildroot/2025.02/docs/manual/how-buildroot-works.adoc whitespace=-blank-at-eof
 research/source_reading/buildroot/2025.02/package/initscripts/init.d/rcS whitespace=-blank-at-eof
 research/source_reading/buildroot/2025.02/package/initscripts/init.d/rcK whitespace=-blank-at-eof
+research/source_reading/buildroot/2025.02/docs/manual/patch-policy.adoc whitespace=-blank-at-eol
