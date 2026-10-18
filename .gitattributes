@@ -39,3 +39,5 @@ research/source_reading/linux/include/trace/events/syscalls.h whitespace=-blank-
 research/source_reading/buildroot/2025.02/** text eol=lf
 research/source_reading/buildroot/2025.02/docs/manual/customize-configuration.adoc whitespace=-blank-at-eof
 research/source_reading/buildroot/2025.02/docs/manual/how-buildroot-works.adoc whitespace=-blank-at-eof
+research/source_reading/buildroot/2025.02/package/initscripts/init.d/rcS whitespace=-blank-at-eof
+research/source_reading/buildroot/2025.02/package/initscripts/init.d/rcK whitespace=-blank-at-eof

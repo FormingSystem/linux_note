@@ -81,6 +81,8 @@ domains: [linux, buildroot, source_reading]
 
 第五章把文件内容、权限与镜像生成分开，新增 [fs/common.mk](2025.02/fs/common.mk)、[ext2配方](2025.02/fs/ext2/ext2.mk) 与 [配置](2025.02/fs/ext2/Config.in)、[cpio配方](2025.02/fs/cpio/cpio.mk) 与 [配置](2025.02/fs/cpio/Config.in)、[tar配置](2025.02/fs/tar/Config.in)，以及 [rootfs定制](2025.02/docs/manual/customize-rootfs.adoc)、[post-image](2025.02/docs/manual/customize-post-image.adoc)、[权限表](2025.02/docs/manual/customize-device-permission-tables.adoc)、[表语法](2025.02/docs/manual/makedev-syntax.adoc)、[FAQ](2025.02/docs/manual/faq-troubleshooting.adoc)、[BusyBox配方](2025.02/package/busybox/busybox.mk) 和 [配置](2025.02/package/busybox/Config.in)。这些原件定位阶段顺序、安装副本与配置契约，不能代替实际镜像和目标系统的验收。
 
+第六章补 [包目录、Kconfig与hash规则](2025.02/docs/manual/adding-packages-directory.adoc)、[通用包契约](2025.02/docs/manual/adding-packages-generic.adoc)、[开发提示](2025.02/docs/manual/adding-packages-tips.adoc)、[包菜单](2025.02/package/Config.in) 和 [包工具函数](2025.02/package/pkg-utils.mk)，用于核对发现、依赖、local同步及阶段目标；运行交接由 [BusyBox inittab](2025.02/package/busybox/inittab)、[SysV inittab](2025.02/package/sysvinit/inittab)、[rcS](2025.02/package/initscripts/init.d/rcS)、[rcK](2025.02/package/initscripts/init.d/rcK) 与 [systemd配方](2025.02/package/systemd/systemd.mk) 定位。systemd包为256.7，在线256系列接口说明与此配方版本分别标识；未执行目标初始化验证。
+
 ## 1.3\_静态核对与实际运行分别登记
 
 2026-10-18已下载并解出所列原件，计算归档与各文件摘要，阅读入门配置、打包脚本、Make目标及对应手册。知识正文中的构建和QEMU命令依据这些原件编写。

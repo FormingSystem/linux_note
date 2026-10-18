@@ -262,6 +262,46 @@
     {
       "path": "docs/manual/makedev-syntax.adoc",
       "sha256": "527b2dd03a10fcece1e8b8e989c0ecc667a2e36d77d49dfe597627fef8b9cdd6"
+    },
+    {
+      "path": "docs/manual/adding-packages-directory.adoc",
+      "sha256": "c7518fa939c2e7c3fb548242c7a09c8f66fc4d6507d6a0252f4d0bda47218aa5"
+    },
+    {
+      "path": "docs/manual/adding-packages-generic.adoc",
+      "sha256": "8b5f670b2cc85a8c1adf809b1d9c68c2cc7229af4fbde7775ead9d987881d5cb"
+    },
+    {
+      "path": "docs/manual/adding-packages-tips.adoc",
+      "sha256": "918ccdf1332f0fc128892d99c1b583c6a5487f741da95e6b87581fc2f9ed3c68"
+    },
+    {
+      "path": "package/initscripts/init.d/rcS",
+      "sha256": "dc1615df9f2012b20b81ffad8e07e16293039ba7fd897854ca3646d6cfea0c0f"
+    },
+    {
+      "path": "package/initscripts/init.d/rcK",
+      "sha256": "29f26aa195e47ceaf9b505961f47227675127ce9837ff1b0139a5b49ba43e266"
+    },
+    {
+      "path": "package/busybox/inittab",
+      "sha256": "de610f2a6dc06ede3e56add231db99b45a11f221f0dab11957b6199a6654f22e"
+    },
+    {
+      "path": "package/sysvinit/inittab",
+      "sha256": "6f26af4be3976562a4a268b29a20d102f7128f7bc4477b52e43031630a00dc3c"
+    },
+    {
+      "path": "package/systemd/systemd.mk",
+      "sha256": "582b300d0e848d3f33490db4fcef1ebc6bc962705946b6ce68704b88469dcd69"
+    },
+    {
+      "path": "package/Config.in",
+      "sha256": "6ce721ee4c1c9249dbd2e7ab477e1227961ade48f7e789a1a6bba54af8e86827"
+    },
+    {
+      "path": "package/pkg-utils.mk",
+      "sha256": "ead55d7e8b52806844c97d13d95896dcafacad870771a822abed0b1f4c5e31dc"
     }
   ]
 }
