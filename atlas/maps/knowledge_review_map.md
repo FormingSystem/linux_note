@@ -26,6 +26,7 @@ mindmap-plugin: basic
         - 这是我阅读完，完整体系之后觉得问题不大的专题，可放心阅读。在标记该专题的时候，我会需要做到2-3次人工阅读专题，确定阅读方式，源码追踪，知识点标记等完善之后才会标记。如你所见，哪怕我已经看过很多专题，但是都还在处于 🔴 阶段。
 
 ## 1.2\_状态管理规则
+- 现有节点的人工记录不因 AI 重构自动升级。旧专题扩展时，原已确认章节保留历史记录，新增章节另列为未校正；没有新的人工确认，不把原专题完成结论覆盖到新范围。
 - 新专题、新章节和新支撑材料默认使用 🔴 **未校正**，不得根据篇幅、目录完整度或 AI 自检自动升级。
 - 博主明确开始评审某章时，把该章改为 🟡；完成阅读、修正和整理后，才改为 🟢。
 - 专题状态由其真实章节人工汇总
@@ -54,13 +55,14 @@ mindmap-plugin: basic
     - [知识库建设路线图](../roadmaps/content_roadmap.md)
 
 ## 1.4\_全量覆盖基线
-- 本次盘点覆盖 308 篇 `knowledge/` Markdown：28 个正式专题入口、240 个正式 `PXX` 章节及 40 篇尚未统一成正式大纲的知识材料。
+- 以下为原盘点快照，保留当时范围和人工记录；它不代表当前全仓统计。本轮重构的逐篇核对与验证另见[工作记录](../../governance/migration/repository_textbook_refactor.md)，不能替代这里的人工状态。
+- 原盘点覆盖 308 篇 `knowledge/` Markdown：28 个正式专题入口、240 个正式 `PXX` 章节及 40 篇尚未统一成正式大纲的知识材料。
 - 原盘点另纳入 68 篇支撑材料：工程方法 1 篇、平台实现 16 篇（包括 GIC 大纲、10 篇主线正文、1 篇 UART 综合复盘与 1 篇 RK3588 集成记录）、实验 16 篇、研究 25 篇、参考 3 篇、出版物 7 篇。2026-09-21 新增内核模块构建与部署大纲及 4 篇工程正文，均从 🔴 开始；本行保留原盘点边界，不把历史计数冒充当前全仓实时统计。
-- 正式章节人工进度
+- 原盘点时的正式章节人工进度
     - 🟢 30 章：Kref P01～P15、红黑树 P01～P15。
     - 🟡 9 章：Lockdep P01～P09，已完成人工通读和批注，重构后待复核。
     - 🔴 201 章：其余正式 `PXX` 章节。
-- 其他已确认材料
+- 原盘点时的其他材料状态
     - 🟢 1 篇：GNU C 扩展材料。
     - 🟢 2 篇：U-Boot 个人实验材料。
     - 🟢 1 篇：`engineering/` 下的工程方法材料。
@@ -77,7 +79,7 @@ mindmap-plugin: basic
 ## 1.5\_知识正文
 - 驱动模型
     - 🔴 [字符设备专题](../../knowledge/driver_model/character_device/大纲.md)
-        - 章节评审：12 章未评审
+        - 章节评审：13 章未评审
         - 🔴 [P01 字符设备最小模型](../../knowledge/driver_model/character_device/P01_字符设备最小模型.md)
         - 🔴 [P02 设备号登记、cdev 映射与设备节点](../../knowledge/driver_model/character_device/P02_设备号_注册与设备节点.md)
         - 🔴 [P03 VFS 打开路径与字符设备分派](../../knowledge/driver_model/character_device/P03_打开路径与文件操作.md)
@@ -277,8 +279,8 @@ mindmap-plugin: basic
             - P04 内核实战与应用
                 - 🔴 [P06 哈希表在内核子系统中的影子(深度拆解篇)](../../knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P06_哈希表在内核子系统中的影子%28深度拆解篇%29.md)
                 - 🔴 [P07 内核模块实战指南](../../knowledge/linux/data_structures/哈希表_Hash_Table/P04_内核实战与应用/P07_内核模块实战指南.md)
-        - 🟢 [红黑树学习路线](../../knowledge/linux/data_structures/红黑树_rb-tree/大纲.md)
-            - 章节评审：15 章完成
+        - 🟢 原 15 章评审记录：[红黑树学习路线](../../knowledge/linux/data_structures/红黑树_rb-tree/大纲.md)
+            - 章节评审：原 P01～P15 共 15 章的人工完成记录保留；P16～P54 共 39 章未校正，不能将旧专题标记推广到扩展章
             - 🟢 [P01 树的基本概念](../../knowledge/linux/data_structures/红黑树_rb-tree/P01_树的基本概念.md)
             - 🔴 [P16 普通树的表示与构建实验](../../knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md)
             - 🟢 [P02 二叉树](../../knowledge/linux/data_structures/红黑树_rb-tree/P02_二叉树.md)
@@ -387,7 +389,7 @@ mindmap-plugin: basic
         - 🔴 [Linux 对象生命周期集成专题](../../knowledge/linux/object_lifetime/integration/大纲.md)
             - 章节评审：1 章未评审
             - 🔴 [P01 kobject device devres kref 生命周期集成](../../knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md)
-        - 🟢 [kref 引用计数机制](../../knowledge/linux/object_lifetime/kref/大纲.md)
+        - 🟢 原 15 章评审记录：[kref 引用计数机制](../../knowledge/linux/object_lifetime/kref/大纲.md)
             - 章节评审：原15章评审完成；新增25章未校正
             - 🟢 [P01 kref 要解决什么问题](../../knowledge/linux/object_lifetime/kref/P01_kref_要解决什么问题.md)
             - 🟢 [P02 源码入口与结构定义](../../knowledge/linux/object_lifetime/kref/P02_源码入口与结构定义.md)
@@ -550,7 +552,7 @@ mindmap-plugin: basic
                 - 🔴 [P07 unbound、rescuer 与回收前进性](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P07_unbound_rescuer与回收前进性.md)
                 - 🔴 [P08 CPU 热插拔、电源管理与生命周期](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/workqueue/P08_CPU热插拔电源管理与生命周期.md)
             - 🔴 [定时与延迟执行阅读路线](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/大纲.md)
-                - 章节评审：13 章未评审
+                - 章节评审：14 章未评审
                 - 🔴 [P01 驱动中的 时间问题 概述](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P01_驱动中的_时间问题_概述.md)
                 - 🔴 [P02 Linux 时间基础与 timekeeping 框架速览](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P02_Linux_时间基础与_timekeeping_框架速览.md)
                 - 🔴 [P03 时间表示与转换接口详解](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/timers/P03_时间表示与转换接口详解.md)
@@ -602,8 +604,8 @@ mindmap-plugin: basic
         - 🔴 [Kconfig 基础语法](../../knowledge/system_software/kconfig/基础语法.md)
     - 链接脚本
         - 🔴 [从目标文件到运行布局的链接脚本](../../knowledge/system_software/linker/P01_从目标文件到运行布局的链接脚本.md)
-    - 🟢 U-Boot
-        - 材料评审：2 篇完成
+    - U-Boot
+        - 🟢 原 2 篇材料的人工完成记录保留；新增正文与源码导读按下面各节点记录，不表示完整专题已评审
         - 🔴 [从链接布局到启动阶段的交接](../../knowledge/system_software/uboot/P01_从链接布局到启动阶段的交接.md)
         - 🔴 [ARM32链接布局与启动交接阅读索引](../../research/source_reading/uboot/navigation/P01_ARM32链接布局与启动交接阅读索引.md)
         - 🔴 [ARM32链接布局与启动实现](../../research/source_reading/uboot/source_explanations/P01_ARM32链接布局与启动实现.md)
@@ -643,7 +645,7 @@ mindmap-plugin: basic
 
 ## 1.6\_工程方法与平台实现
 
-分组评审标记：🟢
+历史分组评审记录：🟢，仅对应原盘点已确认的工程方法与平台材料；新增材料逐项看下方节点，不继承旧结论。
 - 工程方法
     - 🔴 [Tiny RCU 配置与构建证据核对](../../engineering/build/P01_Tiny_RCU配置与构建证据核对.md#1.1_源码能跳转不代表镜像用了这条路径)
     - 🔴 内核模块构建与部署
@@ -699,7 +701,7 @@ mindmap-plugin: basic
                     - 🔴 **未校正** [旧版SDK构建路线](../../platforms/arm/rockchip/rk3566/environment/大纲.md)
 
 ## 1.7\_最小验证实验
-- 🟢 全部 14 篇个人实验材料已完成评审
+- 🟢 原盘点的 14 篇个人实验材料及观测结果已完成评审；新增实验和补充观测按各节点记录，不包含在这项历史结论中。
 - 基础理论
     - C 语言
         - 🔴 [Sparse 地址空间与上下文记账实验](../../labs/foundations/c_language/P01_Sparse地址空间与上下文记账/README.md#1.1_实验目标)
@@ -1136,26 +1138,6 @@ mindmap-plugin: basic
             - 🔴 [P18 Linux 6.12 RCU 早期请求与执行模式交接源码实现](../../research/source_reading/rcu/source_explanations/P18_Linux_6.12_RCU早期请求与执行模式交接源码实现.md#18.1_没有执行者时登记的请求由谁接管)
             - 🔴 [P19 Linux 6.12 ARM 中断状态保存与 Tiny 队列互斥](../../research/source_reading/rcu/source_explanations/P19_Linux_6.12_ARM中断状态保存与Tiny队列互斥源码实现.md#19.1_两次指针写入之间为什么不能插入IRQ)
 
-## 1.9\_参考与出版物
-
-分组评审标记：🟡
-- 🟡 参考资料
-    - 🔴 [参考资料导航](../../reference/README.md#1.1_定位与使用边界)
-    - 标准
-        - GPL
-            - 🟢 [GPL 协议说明(总论)](../../reference/standards/gpl/GPL协议说明.md)
-    - 外部资料
-        - 🔴 [Arm、RK3588 与 i.MX6ULL 外部资料索引](../../reference/external_resources/arm/README.md#1.1_索引定位与存储边界)
-- 🟡 出版物
-    - 🟢 [奔跑吧 Linux 内核](../../publications/books/running_linux_kernel/README.md)
-        - 🟢 [P01 linux系统基础知识](../../publications/books/running_linux_kernel/P01_linux系统基础知识.md)
-        - 🟢 [P02 Linux内核中常用的数据结构和算法](../../publications/books/running_linux_kernel/P02_Linux内核中常用的数据结构和算法.md)
-        - 🟢 [P03 内核引导和初始化](../../publications/books/running_linux_kernel/P03_内核引导和初始化.md)
-        - 🟢 [P04 uboot启动流程说明](../../publications/books/running_linux_kernel/P04_uboot启动流程说明.md)
-        - 🟢 [版权与免责声明](../../publications/books/running_linux_kernel/copyright_and_disclaimer.md)
-    - 🔴 专题月刊
-        - 🔴 [RCU MarkBook](../../markbook/topics/rcu/README.md)
-
 - 🔴 [Linux 6.12 日志路径源码阅读索引](../../research/source_reading/printk/navigation/P01_Linux_6.12_日志路径源码阅读索引.md)
 
 - 🔴 [Linux 6.12 配置求值工具阅读索引](../../research/source_reading/kconfig/navigation/P01_Linux_6.12_配置求值工具阅读索引.md)
@@ -1169,6 +1151,27 @@ mindmap-plugin: basic
     - 🔴 [映射包装与返回值实现](../../research/source_reading/devres/source_explanations/lib/devres.c.md)
     - 🔴 [句柄启停与注册契约导读](../../research/source_reading/devres/navigation/P04_句柄启停与注册契约导读.md)
     - 🔴 [托管时钟获取与启停实现](../../research/source_reading/devres/source_explanations/drivers/clk/clk-devres.c.md)
+
+## 1.9\_参考与出版物
+
+分组评审标记：🟡
+- 🟡 参考资料
+    - 🔴 [参考资料导航](../../reference/README.md#1.1_定位与使用边界)
+    - 标准
+        - GPL
+            - 🟢 [GPL 协议说明(总论)](../../reference/standards/gpl/GPL协议说明.md)
+    - 外部资料
+        - 🔴 [Arm、RK3588 与 i.MX6ULL 外部资料索引](../../reference/external_resources/arm/README.md#1.1_索引定位与存储边界)
+- 🟡 出版物
+    - 🔴 [MarkBook编排与阅读入口](../../markbook/README.md)
+    - 🟢 [奔跑吧 Linux 内核](../../publications/books/running_linux_kernel/README.md)
+        - 🟢 [P01 linux系统基础知识](../../publications/books/running_linux_kernel/P01_linux系统基础知识.md)
+        - 🟢 [P02 Linux内核中常用的数据结构和算法](../../publications/books/running_linux_kernel/P02_Linux内核中常用的数据结构和算法.md)
+        - 🟢 [P03 内核引导和初始化](../../publications/books/running_linux_kernel/P03_内核引导和初始化.md)
+        - 🟢 [P04 uboot启动流程说明](../../publications/books/running_linux_kernel/P04_uboot启动流程说明.md)
+        - 🟢 [版权与免责声明](../../publications/books/running_linux_kernel/copyright_and_disclaimer.md)
+    - 🔴 专题月刊
+        - 🔴 [RCU MarkBook](../../markbook/topics/rcu/README.md)
 
 ## 1.10\_阅读工具说明
 
