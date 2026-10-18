@@ -26,7 +26,7 @@ domains:
 
 阅读本章涉及的硬件契约时，从[资料索引](../../../../../reference/external_resources/arm/README.md#1.4_版本选择与阅读顺序)选择对应版本：NXP i.MX 6UltraLite（i.MX6ULL，片上系统产品型号）主要对照 ARMv7-A 与 GICv2；Rockchip RK3588 实际集成 GIC-600 r1p6，实现 GICv3.0，型号证据见[手册核对表](../../../../../reference/external_resources/arm/README.md#1.4.2_型号判断的证据与适用边界)。GIC（Generic Interrupt Controller，通用中断控制器）是硬件；`irq_chip`、`irq_domain`、`irq_desc` 及其驱动是 Linux 软件对象，Linux IRQ 号也属于软件编号空间。
 
-控制器自身的角色、状态与编程从 [GICv3 独立专题](../../../../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)从零建立，再由[软件交接章节](../../../../../platforms/arm/architecture/gic/P10_软件交接_部署与分层排障.md#10.2_固件_控制器驱动与设备驱动怎样交接)回到本章。这里讲解 Linux 6.12 官方文档所描述的通用机制，不把某棵厂商源码树中的函数调用顺序当作所有平台的固定流程。
+控制器自身的角色、状态与编程从 [GICv3 独立专题](../../../../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)从零建立，再由[软件交接章节](../../../../../platforms/arm/architecture/gic/P16_软件交接_部署与分层排障.md#16.2_固件_控制器驱动与设备驱动怎样交接)回到本章。这里讲解 Linux 6.12 官方文档所描述的通用机制，不把某棵厂商源码树中的函数调用顺序当作所有平台的固定流程。
 
 ------
 

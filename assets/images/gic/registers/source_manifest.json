@@ -1,0 +1,1548 @@
+{
+  "schema_version": 1,
+  "description": "Original manual register, encoding, integration and topology excerpts; crop coordinates are PDF points in the top-left origin coordinate system.",
+  "assets": [
+    {
+      "document_id": "Arm DDI 0487",
+      "revision": "M.c",
+      "official_url": "https://developer.arm.com/documentation/ddi0487/mc",
+      "pdf_sha256": "b5f9daa7ec0446777c8f848aa6431c99e5ab6554e5aa171b28b9016771494f8c",
+      "asset": "daif_layout.png",
+      "symbol": "DAIF",
+      "view": "Architectural register layout",
+      "pdf_page": 942,
+      "printed_page": "C5-942",
+      "section": "C5.2.3",
+      "crop_rect_pdf_points": [
+        69.746,
+        269.78,
+        525.523,
+        338.735
+      ],
+      "image_sha256": "57c2efeba3731d21a09e32aed099f7d310f2b705a34aaade17edf04887ac3d88"
+    },
+    {
+      "document_id": "Arm DDI 0487",
+      "revision": "M.c",
+      "official_url": "https://developer.arm.com/documentation/ddi0487/mc",
+      "pdf_sha256": "b5f9daa7ec0446777c8f848aa6431c99e5ab6554e5aa171b28b9016771494f8c",
+      "asset": "elr_el1_layout.png",
+      "symbol": "ELR_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 953,
+      "printed_page": "C5-953",
+      "section": "C5.2.5",
+      "crop_rect_pdf_points": [
+        69.746,
+        269.78,
+        525.523,
+        338.735
+      ],
+      "image_sha256": "28c10cdca4b0318981dfa6d761f6d13ddfd95b56edbba9a160197cb9e404887d"
+    },
+    {
+      "document_id": "Arm 100336",
+      "revision": "0106_00_en; r1p6",
+      "official_url": "https://developer.arm.com/documentation/100336/0106",
+      "pdf_sha256": "500c1d7d733d576ca8de8c3bc4592bfcaf102267a5ddeff01d9e4ef997a7050f",
+      "asset": "gic600_gicr_waker_fields.png",
+      "symbol": "GICR_WAKER",
+      "view": "Bit assignments table, two original page fragments joined vertically",
+      "pdf_page": 130,
+      "printed_page": "4-130",
+      "section": "4.4.3; Table 4-24",
+      "crop_rect_pdf_points": [
+        48,
+        580,
+        550,
+        697
+      ],
+      "image_sha256": "5f62645b48a69e7e676153e3ee814d34ca417e13d255db7fe896c915c3beaa25",
+      "source_parts": [
+        {
+          "pdf_page": 130,
+          "printed_page": "4-130",
+          "crop_rect_pdf_points": [
+            48,
+            580,
+            550,
+            697
+          ]
+        },
+        {
+          "pdf_page": 131,
+          "printed_page": "4-131",
+          "crop_rect_pdf_points": [
+            48,
+            54,
+            550,
+            242
+          ]
+        }
+      ]
+    },
+    {
+      "document_id": "Arm 100336",
+      "revision": "0106_00_en; r1p6",
+      "official_url": "https://developer.arm.com/documentation/100336/0106",
+      "pdf_sha256": "500c1d7d733d576ca8de8c3bc4592bfcaf102267a5ddeff01d9e4ef997a7050f",
+      "asset": "gic600_gicr_waker_layout.png",
+      "symbol": "GICR_WAKER",
+      "view": "GIC-600 r1p6 implementation view",
+      "pdf_page": 130,
+      "printed_page": "4-130",
+      "section": "4.4.3; Figure 4-19",
+      "crop_rect_pdf_points": [
+        172,
+        450,
+        551,
+        558
+      ],
+      "image_sha256": "bd8bf742ee1a0dfd69a893740dfd807570baa3cf2f8596fbc5e4084216288b8a"
+    },
+    {
+      "document_id": "Arm 100336",
+      "revision": "0106_00_en; r1p6",
+      "official_url": "https://developer.arm.com/documentation/100336/0106",
+      "pdf_sha256": "500c1d7d733d576ca8de8c3bc4592bfcaf102267a5ddeff01d9e4ef997a7050f",
+      "asset": "gic600_redistributor_block.png",
+      "symbol": "GIC-600 Redistributor",
+      "view": "Original implementation block diagram showing Distributor, Redistributor and GIC Stream interfaces",
+      "pdf_page": 29,
+      "printed_page": "2-29",
+      "section": "2.2; Figure 2-2",
+      "crop_rect_pdf_points": [
+        211,
+        138,
+        551,
+        464
+      ],
+      "image_sha256": "6bf97208ad4bf9bf137603689f8785c9caea61e4c09e11d5f685d5aaa7c44ef4"
+    },
+    {
+      "document_id": "Arm 100336",
+      "revision": "0106_00_en; r1p6",
+      "official_url": "https://developer.arm.com/documentation/100336/0106",
+      "pdf_sha256": "500c1d7d733d576ca8de8c3bc4592bfcaf102267a5ddeff01d9e4ef997a7050f",
+      "asset": "gic600_redistributor_configuration_table.png",
+      "symbol": "GIC-600 Redistributor configuration",
+      "view": "Complete configurable options table and ECC footnote; two original page fragments joined vertically",
+      "pdf_page": 31,
+      "printed_page": "2-31",
+      "section": "2.2.6; Table 2-9",
+      "crop_rect_pdf_points": [
+        316,
+        503,
+        551,
+        639
+      ],
+      "image_sha256": "f0bde80b499ecca59190c3472f21b7dd5938d74772ca502cfaf27fe8780b4036",
+      "source_parts": [
+        {
+          "pdf_page": 31,
+          "printed_page": "2-31",
+          "crop_rect_pdf_points": [
+            316,
+            503,
+            551,
+            639
+          ]
+        },
+        {
+          "pdf_page": 31,
+          "printed_page": "2-31",
+          "crop_rect_pdf_points": [
+            60,
+            720,
+            335,
+            739
+          ]
+        }
+      ]
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_ctlr_access.png",
+      "symbol": "GICD_CTLR",
+      "view": "MMIO access table",
+      "pdf_page": 549,
+      "printed_page": "12-549",
+      "section": "12.9.4",
+      "crop_rect_pdf_points": [
+        322,
+        158,
+        549,
+        206
+      ],
+      "image_sha256": "572acea3d63d93a15b06c72405000352219adfb95a2b49b2b595c35997b669b2"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_ctlr_nonsecure_layout.png",
+      "symbol": "GICD_CTLR",
+      "view": "nonsecure",
+      "pdf_page": 546,
+      "printed_page": "12-546",
+      "section": "12.9.4",
+      "crop_rect_pdf_points": [
+        94.384,
+        490.32,
+        546.842,
+        596.009
+      ],
+      "image_sha256": "3317aee93a74b878671cdacb8403da4cf8ea331d43f97ede9a7000d30c92f72d"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_ctlr_secure_layout.png",
+      "symbol": "GICD_CTLR",
+      "view": "secure",
+      "pdf_page": 544,
+      "printed_page": "12-544",
+      "section": "12.9.4",
+      "crop_rect_pdf_points": [
+        93.882,
+        246.105,
+        546.34,
+        379.285
+      ],
+      "image_sha256": "b153f6cb0c47ad1c3c614f2a96640bb2cdb5bec11308a03bf5a6a366ce1dd881"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_ctlr_single_security_layout.png",
+      "symbol": "GICD_CTLR",
+      "view": "single_security",
+      "pdf_page": 547,
+      "printed_page": "12-547",
+      "section": "12.9.4",
+      "crop_rect_pdf_points": [
+        93.882,
+        199.101,
+        546.34,
+        313.947
+      ],
+      "image_sha256": "5f7f1b3dd8e880b9488a4f3dca5c525d0cdd889cf7f1bc02a67e1d03602b899b"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_icenabler_layout.png",
+      "symbol": "GICD_ICENABLER<n>",
+      "view": "Architectural register layout",
+      "pdf_page": 554,
+      "printed_page": "12-554",
+      "section": "12.9.7",
+      "crop_rect_pdf_points": [
+        47.617,
+        370.721,
+        546.842,
+        602.82
+      ],
+      "image_sha256": "ff9e86fda6d0cc813d314875a68cfef529b2ef2fb56c0a09817490bf680909ba"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_icfgr_layout.png",
+      "symbol": "GICD_ICFGR<n>",
+      "view": "Architectural register layout",
+      "pdf_page": 558,
+      "printed_page": "12-558",
+      "section": "12.9.9",
+      "crop_rect_pdf_points": [
+        48.838,
+        497.726,
+        545.62,
+        619.8
+      ],
+      "image_sha256": "8f44069280ae8e6035621c6282e6b74c79f96448e9b0affef1d26e6499a267f0"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_igroupr_layout.png",
+      "symbol": "GICD_IGROUPR<n>",
+      "view": "Architectural register layout",
+      "pdf_page": 566,
+      "printed_page": "12-566",
+      "section": "12.9.13",
+      "crop_rect_pdf_points": [
+        47.115,
+        360.221,
+        546.34,
+        592.32
+      ],
+      "image_sha256": "dc4950182b57b8ce4685fbb1c4f3d463ab62138fec8eefeb75c6c3b14ef611a1"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_igrpmodr_encoding.png",
+      "symbol": "GICD_IGRPMODR<n> / GICD_IGROUPR<n>",
+      "view": "Group modifier and group status encoding table",
+      "pdf_page": 571,
+      "printed_page": "12-571",
+      "section": "12.9.15",
+      "crop_rect_pdf_points": [
+        149,
+        129,
+        545,
+        231
+      ],
+      "image_sha256": "ea055f0645c8723bc1feb806a8592c85a0e4b55eedb84c68ddd4e91d92ef36e5"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_igrpmodr_layout.png",
+      "symbol": "GICD_IGRPMODR<n>",
+      "view": "Architectural register layout",
+      "pdf_page": 570,
+      "printed_page": "12-570",
+      "section": "12.9.15",
+      "crop_rect_pdf_points": [
+        47.115,
+        359.721,
+        546.34,
+        600.989
+      ],
+      "image_sha256": "92e7b8a5a802d2aad93aa39f1152d6b5c4cbc14ba84ba3f466ca5feedb030e0d"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_ipriorityr_layout.png",
+      "symbol": "GICD_IPRIORITYR<n>",
+      "view": "Architectural register layout",
+      "pdf_page": 580,
+      "printed_page": "12-580",
+      "section": "12.9.20",
+      "crop_rect_pdf_points": [
+        56.169,
+        370.723,
+        538.285,
+        437.784
+      ],
+      "image_sha256": "1e2335fe5384d3f16d9fdf43b37dcb7c18c78e9b35b32759f4c06203e7b9bfcf"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_irouter_layout.png",
+      "symbol": "GICD_IROUTER<n>",
+      "view": "Architectural register layout",
+      "pdf_page": 584,
+      "printed_page": "12-584",
+      "section": "12.9.22",
+      "crop_rect_pdf_points": [
+        93.882,
+        288.72,
+        499.581,
+        368.006
+      ],
+      "image_sha256": "906069055015bf9708a88d89e63fb51b9eed641041b05adac51fafb246e1e809"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_isactiver_layout.png",
+      "symbol": "GICD_ISACTIVER<n>",
+      "view": "Architectural register layout",
+      "pdf_page": 589,
+      "printed_page": "12-589",
+      "section": "12.9.24",
+      "crop_rect_pdf_points": [
+        47.617,
+        370.722,
+        546.842,
+        593.651
+      ],
+      "image_sha256": "83c3d4d5e6d4ccafeae3743e5f378afab9994b9d16295964ddaca5b1b0e2bcbf"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_isenabler_layout.png",
+      "symbol": "GICD_ISENABLER<n>",
+      "view": "Architectural register layout",
+      "pdf_page": 593,
+      "printed_page": "12-593",
+      "section": "12.9.26",
+      "crop_rect_pdf_points": [
+        46.616,
+        370.722,
+        545.841,
+        593.651
+      ],
+      "image_sha256": "c1750932a290ce8ed475b31254f17a86d6a60b310d8e827328e604f2b52bf540"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_ispendr_layout.png",
+      "symbol": "GICD_ISPENDR<n>",
+      "view": "Architectural register layout",
+      "pdf_page": 597,
+      "printed_page": "12-597",
+      "section": "12.9.28",
+      "crop_rect_pdf_points": [
+        47.617,
+        359.722,
+        546.842,
+        582.652
+      ],
+      "image_sha256": "003240d9c14d70db1a4c9c2120426f131954cb242e36be8ee5f02d462bbb8b1a"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicd_typer_layout.png",
+      "symbol": "GICD_TYPER",
+      "view": "Architectural register layout",
+      "pdf_page": 618,
+      "printed_page": "12-618",
+      "section": "12.9.38",
+      "crop_rect_pdf_points": [
+        94.384,
+        307.72,
+        541.952,
+        383.95
+      ],
+      "image_sha256": "04d39907461d288ba7710aed6ef99f3ce542314dda7467877bda7f077f9c21ce"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_ctlr_layout.png",
+      "symbol": "GICR_CTLR",
+      "view": "Architectural register layout",
+      "pdf_page": 641,
+      "printed_page": "12-641",
+      "section": "12.11.2",
+      "crop_rect_pdf_points": [
+        76.961,
+        263.217,
+        546.842,
+        330.279
+      ],
+      "image_sha256": "05aff92d6ef87a2cd89cac7c7c95b4fea9e3ca7f3a587104abdeaee585f795c8"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_ctlr_participation.png",
+      "symbol": "GICR_CTLR",
+      "view": "PE participation table",
+      "pdf_page": 644,
+      "printed_page": "12-644",
+      "section": "12.11.2",
+      "crop_rect_pdf_points": [
+        54,
+        146,
+        547,
+        259
+      ],
+      "image_sha256": "823bc09d3a55aeeffa4f0fe3c2ebad86e1f60d639f121412869516e1c42455a1"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_icenabler0_layout.png",
+      "symbol": "GICR_ICENABLER0",
+      "view": "Architectural register layout",
+      "pdf_page": 649,
+      "printed_page": "12-649",
+      "section": "12.11.5",
+      "crop_rect_pdf_points": [
+        47.617,
+        251.717,
+        546.842,
+        483.815
+      ],
+      "image_sha256": "338de4ebfd9cc4ba97badfd8a08a0ff1e708f24cc50416a7d3d10628c04e2bdb"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_igroupr0_layout.png",
+      "symbol": "GICR_IGROUPR0",
+      "view": "Architectural register layout",
+      "pdf_page": 662,
+      "printed_page": "12-662",
+      "section": "12.11.12",
+      "crop_rect_pdf_points": [
+        47.617,
+        277.719,
+        546.842,
+        610.674
+      ],
+      "image_sha256": "ffc451b75b5ae9367baf171805e66d47472cf470e6f0181af59c489f1158339e"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_igrpmodr0_layout.png",
+      "symbol": "GICR_IGRPMODR0",
+      "view": "Architectural register layout",
+      "pdf_page": 666,
+      "printed_page": "12-666",
+      "section": "12.11.14",
+      "crop_rect_pdf_points": [
+        47.617,
+        322.72,
+        546.842,
+        563.988
+      ],
+      "image_sha256": "8bc21d152943858ae262f2b6decb8811bbd00996ee37c1b44a49914953fcc9af"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_ipriorityr_layout.png",
+      "symbol": "GICR_IPRIORITYR<n>",
+      "view": "Architectural register layout",
+      "pdf_page": 680,
+      "printed_page": "12-680",
+      "section": "12.11.21",
+      "crop_rect_pdf_points": [
+        55.667,
+        296.719,
+        537.783,
+        363.78
+      ],
+      "image_sha256": "29e14ade98baa565fa1aa8718d36cf6f7c587142c5634803757b90e8bda0571a"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_isactiver0_layout.png",
+      "symbol": "GICR_ISACTIVER0",
+      "view": "Architectural register layout",
+      "pdf_page": 684,
+      "printed_page": "12-684",
+      "section": "12.11.23",
+      "crop_rect_pdf_points": [
+        47.617,
+        262.717,
+        546.842,
+        485.646
+      ],
+      "image_sha256": "3941e4f2292f6f87fc87c56dfa3534fea19d053f195779cce5c58c3bdc871a20"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_isenabler0_layout.png",
+      "symbol": "GICR_ISENABLER0",
+      "view": "Architectural register layout",
+      "pdf_page": 688,
+      "printed_page": "12-688",
+      "section": "12.11.25",
+      "crop_rect_pdf_points": [
+        47.617,
+        251.718,
+        546.842,
+        474.647
+      ],
+      "image_sha256": "33bba5f47d08d95ee7411952523df736e88adc2b307d1e05ef21b1aebbfa1829"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_nsacr_encoding.png",
+      "symbol": "GICR_NSACR",
+      "view": "NS_access encoding values and reserved-value constraint",
+      "pdf_page": 697,
+      "printed_page": "12-697",
+      "section": "12.11.30",
+      "crop_rect_pdf_points": [
+        185,
+        467,
+        547,
+        619
+      ],
+      "image_sha256": "fcdf41754a6c6c0ef86a3c8afcfe0eff6e70dce56c86aafc7265afbedb958824"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_nsacr_layout.png",
+      "symbol": "GICR_NSACR",
+      "view": "Architectural register layout",
+      "pdf_page": 697,
+      "printed_page": "12-697",
+      "section": "12.11.30",
+      "crop_rect_pdf_points": [
+        48.337,
+        288.72,
+        545.118,
+        410.794
+      ],
+      "image_sha256": "7da941739f8ae5603cde883cea05fdcd780b90a86954cdb7629ef74b2f047ac3"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_pendbaser_layout.png",
+      "symbol": "GICR_PENDBASER",
+      "view": "Architectural register layout",
+      "pdf_page": 700,
+      "printed_page": "12-700",
+      "section": "12.11.32",
+      "crop_rect_pdf_points": [
+        72.071,
+        262.718,
+        500.083,
+        360.342
+      ],
+      "image_sha256": "26b88bc012bc2da99d346750d39941d403ee505d7b47fad46cdacdbb00745c31"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_propbaser_innercache_encoding.png",
+      "symbol": "GICR_PROPBASER",
+      "view": "InnerCache field and encoding values",
+      "pdf_page": 704,
+      "printed_page": "12-704",
+      "section": "12.11.33",
+      "crop_rect_pdf_points": [
+        129,
+        249,
+        548,
+        402
+      ],
+      "image_sha256": "2218f0b46063fd85174665dc2b5fb4aa078dd7758b4867c5dcd7812ae4ed9899"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_propbaser_layout.png",
+      "symbol": "GICR_PROPBASER",
+      "view": "Architectural register layout",
+      "pdf_page": 703,
+      "printed_page": "12-703",
+      "section": "12.11.33",
+      "crop_rect_pdf_points": [
+        94.384,
+        288.72,
+        500.083,
+        377.175
+      ],
+      "image_sha256": "69ce5247fb8786e9ed05c306f677d009abda9e55f36907fd53a087abe813ee1d"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_propbaser_outercache_encoding.png",
+      "symbol": "GICR_PROPBASER",
+      "view": "OuterCache field and encoding values",
+      "pdf_page": 703,
+      "printed_page": "12-703",
+      "section": "12.11.33",
+      "crop_rect_pdf_points": [
+        129,
+        413,
+        548,
+        579
+      ],
+      "image_sha256": "168c48ca0dee68fe3120551464aa6ba0e6defac84ceeaccb805a04a298200f61"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_propbaser_shareability_encoding.png",
+      "symbol": "GICR_PROPBASER",
+      "view": "Shareability field and encoding values",
+      "pdf_page": 704,
+      "printed_page": "12-704",
+      "section": "12.11.33",
+      "crop_rect_pdf_points": [
+        129,
+        99,
+        548,
+        192
+      ],
+      "image_sha256": "6150dd8d7b5752661030237bd53a8dec04c5ce499a21356d4ac7b9f98b7bc18c"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_typer_layout.png",
+      "symbol": "GICR_TYPER",
+      "view": "Architectural register layout",
+      "pdf_page": 711,
+      "printed_page": "12-711",
+      "section": "12.11.37",
+      "crop_rect_pdf_points": [
+        94.384,
+        251.718,
+        527.282,
+        358.511
+      ],
+      "image_sha256": "94bc242e12614da3fc6ebacae0cb2dffb23ab4f3ea7d1a5ec9ffdc026994fcd9"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gicr_waker_layout.png",
+      "symbol": "GICR_WAKER",
+      "view": "Architectural register layout",
+      "pdf_page": 728,
+      "printed_page": "12-728",
+      "section": "12.11.42",
+      "crop_rect_pdf_points": [
+        94.384,
+        273.217,
+        546.842,
+        358.616
+      ],
+      "image_sha256": "ea4e669ff5ac07bc865520c162603333ce11a759abd4953ed70ab133aeb55d63"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gits_baser_layout.png",
+      "symbol": "GITS_BASER<n>",
+      "view": "Architectural register layout",
+      "pdf_page": 826,
+      "printed_page": "12-826",
+      "section": "12.19.1",
+      "crop_rect_pdf_points": [
+        64.732,
+        308.219,
+        500.079,
+        405.843
+      ],
+      "image_sha256": "49fab31a89685838e1bef2e04e836bb109188d12d268d11739015dbe3ccfce60"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gits_cbaser_layout.png",
+      "symbol": "GITS_CBASER",
+      "view": "Architectural register layout",
+      "pdf_page": 830,
+      "printed_page": "12-830",
+      "section": "12.19.2",
+      "crop_rect_pdf_points": [
+        66.678,
+        251.718,
+        499.582,
+        358.511
+      ],
+      "image_sha256": "00c3a2ed7ddc728cc149c60737e07a3e4a56cfdec68482db03555ad60bccecbb"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gits_creadr_layout.png",
+      "symbol": "GITS_CREADR",
+      "view": "Architectural register layout",
+      "pdf_page": 833,
+      "printed_page": "12-833",
+      "section": "12.19.3",
+      "crop_rect_pdf_points": [
+        94.384,
+        266.719,
+        537.062,
+        346.006
+      ],
+      "image_sha256": "386262815587f53d9de1a2fc2c3e7dd7e90ed852d7de790ef604459f29675ddc"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gits_ctlr_layout.png",
+      "symbol": "GITS_CTLR",
+      "view": "Architectural register layout",
+      "pdf_page": 834,
+      "printed_page": "12-834",
+      "section": "12.19.4",
+      "crop_rect_pdf_points": [
+        94.384,
+        262.718,
+        537.062,
+        320.611
+      ],
+      "image_sha256": "a5d3bee38bd8904cf1c68ef3bfeabb8459cc05c767ac6e675457e0a15e78b6ac"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gits_cwriter_layout.png",
+      "symbol": "GITS_CWRITER",
+      "view": "Architectural register layout",
+      "pdf_page": 836,
+      "printed_page": "12-836",
+      "section": "12.19.5",
+      "crop_rect_pdf_points": [
+        93.882,
+        251.717,
+        526.78,
+        331.003
+      ],
+      "image_sha256": "d0ad413ded04fdd7fe2f858ffd49c2111665d564446b22c9823677752710b10d"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gits_translater_layout.png",
+      "symbol": "GITS_TRANSLATER",
+      "view": "Architectural register layout",
+      "pdf_page": 846,
+      "printed_page": "12-846",
+      "section": "12.19.12",
+      "crop_rect_pdf_points": [
+        94.384,
+        262.217,
+        498.398,
+        294.387
+      ],
+      "image_sha256": "8188ce8a6e5ef4f3971b61c024c64de6feb1add721932b28ed496ccc7c5bf2c5"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "gits_typer_layout.png",
+      "symbol": "GITS_TYPER",
+      "view": "Architectural register layout",
+      "pdf_page": 848,
+      "printed_page": "12-848",
+      "section": "12.19.13",
+      "crop_rect_pdf_points": [
+        93.882,
+        251.717,
+        541.45,
+        395.184
+      ],
+      "image_sha256": "c9655f3567cd7f486af57bb8bcc2541b417a4edfe47a91df47b57ac482e31e9d"
+    },
+    {
+      "document_id": "Arm DDI 0487",
+      "revision": "M.c",
+      "official_url": "https://developer.arm.com/documentation/ddi0487/mc",
+      "pdf_sha256": "b5f9daa7ec0446777c8f848aa6431c99e5ab6554e5aa171b28b9016771494f8c",
+      "asset": "hcr_el2_layout.png",
+      "symbol": "HCR_EL2",
+      "view": "Architectural register layout",
+      "pdf_page": 8917,
+      "printed_page": "D24-8917",
+      "section": "D24.2.61",
+      "crop_rect_pdf_points": [
+        69.539,
+        368.624,
+        531.869,
+        538.996
+      ],
+      "image_sha256": "e6b101c3cfa1361a849f73023be476a639f34d2eea3f8d5f6984d2702ee2902d"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_ap0r_el1_layout.png",
+      "symbol": "ICC_AP0R<n>_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 216,
+      "printed_page": "12-216",
+      "section": "12.2.1",
+      "crop_rect_pdf_points": [
+        95.397,
+        289.232,
+        501.092,
+        351.963
+      ],
+      "image_sha256": "4a4042b837a162bbac9863fdec347ac6afbfe8ff5c5220b0c37084ef431fdf8c"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_ap1r_el1_layout.png",
+      "symbol": "ICC_AP1R<n>_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 219,
+      "printed_page": "12-219",
+      "section": "12.2.2",
+      "crop_rect_pdf_points": [
+        95.397,
+        400.723,
+        501.096,
+        472.624
+      ],
+      "image_sha256": "c04e12037ff3fe1cab48022b645c218721d9b9b1280f2af3b0090602279fb6f8"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_bpr0_el1_layout.png",
+      "symbol": "ICC_BPR0_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 226,
+      "printed_page": "12-226",
+      "section": "12.2.4",
+      "crop_rect_pdf_points": [
+        95.383,
+        314.077,
+        545.4,
+        383.103
+      ],
+      "image_sha256": "e604e71680f895cc84d0ac026d2158dd90cb09426a1b6d30edd860d00305e663"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_bpr1_el1_encoding.png",
+      "symbol": "ICC_BPR1_EL1",
+      "view": "Secure and Non-secure binary-point encoding; original page fragments joined vertically",
+      "pdf_page": 74,
+      "printed_page": "4-74",
+      "section": "4.8.3; Tables 4-10 and 4-11",
+      "crop_rect_pdf_points": [
+        132,
+        600,
+        546,
+        727
+      ],
+      "image_sha256": "217b93003bd36f480d217907cb676ffe7124fe9ac5ee1a080a5efb13656766b5",
+      "source_parts": [
+        {
+          "pdf_page": 74,
+          "printed_page": "4-74",
+          "crop_rect_pdf_points": [
+            132,
+            600,
+            546,
+            727
+          ]
+        },
+        {
+          "pdf_page": 75,
+          "printed_page": "4-75",
+          "crop_rect_pdf_points": [
+            132,
+            64,
+            546,
+            228
+          ]
+        },
+        {
+          "pdf_page": 75,
+          "printed_page": "4-75",
+          "crop_rect_pdf_points": [
+            132,
+            252,
+            546,
+            474
+          ]
+        }
+      ]
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_bpr1_el1_layout.png",
+      "symbol": "ICC_BPR1_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 229,
+      "printed_page": "12-229",
+      "section": "12.2.5",
+      "crop_rect_pdf_points": [
+        94.883,
+        425.581,
+        544.901,
+        494.607
+      ],
+      "image_sha256": "56c90b6aa46bb2bd364ca99f7af36e46ee2d13b70b319b877170265cacbefeef"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_ctlr_el1_layout.png",
+      "symbol": "ICC_CTLR_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 233,
+      "printed_page": "12-233",
+      "section": "12.2.6",
+      "crop_rect_pdf_points": [
+        95.382,
+        412.724,
+        525.835,
+        528.685
+      ],
+      "image_sha256": "ce9c23364a5c26864c1043c7863f791c7396acbea776f9c5f149bb2ea3528e25"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_dir_el1_layout.png",
+      "symbol": "ICC_DIR_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 243,
+      "printed_page": "12-243",
+      "section": "12.2.8",
+      "crop_rect_pdf_points": [
+        95.382,
+        299.72,
+        501.077,
+        362.451
+      ],
+      "image_sha256": "d34978bce268e893f1da83c08a4d60ef41373b13a7dce33e8fb510e3994258bc"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_eoir1_el1_layout.png",
+      "symbol": "ICC_EOIR1_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 247,
+      "printed_page": "12-247",
+      "section": "12.2.10",
+      "crop_rect_pdf_points": [
+        94.883,
+        300.72,
+        500.578,
+        363.452
+      ],
+      "image_sha256": "185e95a91144fdfa4b94691f06d35c868b1924c287d05dbf8a4afa7d9e2a92ef"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_iar1_el1_access.png",
+      "symbol": "ICC_IAR1_EL1",
+      "view": "MRS system register encoding table",
+      "pdf_page": 256,
+      "printed_page": "12-256",
+      "section": "12.2.14",
+      "crop_rect_pdf_points": [
+        128,
+        101,
+        549,
+        192
+      ],
+      "image_sha256": "8ab48d5f96397e69184b8e061ae1a2e9b982835932ca2d14687fbcc34b52a931"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_iar1_el1_layout.png",
+      "symbol": "ICC_IAR1_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 255,
+      "printed_page": "12-255",
+      "section": "12.2.14",
+      "crop_rect_pdf_points": [
+        94.384,
+        380.722,
+        500.079,
+        443.454
+      ],
+      "image_sha256": "db93c1c029c962894e6c9ca520b2942a02e75415881f232a94d21a98512ba6d6"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_igrpen0_el1_layout.png",
+      "symbol": "ICC_IGRPEN0_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 257,
+      "printed_page": "12-257",
+      "section": "12.2.15",
+      "crop_rect_pdf_points": [
+        94.384,
+        289.219,
+        532.172,
+        368.506
+      ],
+      "image_sha256": "70df2f0cc06cc50e826b622fe8457adfed98643f9823bcb8835f4cdcab0bb313"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_igrpen1_el1_layout.png",
+      "symbol": "ICC_IGRPEN1_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 260,
+      "printed_page": "12-260",
+      "section": "12.2.16",
+      "crop_rect_pdf_points": [
+        94.384,
+        401.222,
+        532.172,
+        480.509
+      ],
+      "image_sha256": "774a77fec2d594d641fc2becbe11ca77d86d1323b0802cd4011c5cc2dd33b428"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_igrpen1_el3_layout.png",
+      "symbol": "ICC_IGRPEN1_EL3",
+      "view": "Architectural register layout",
+      "pdf_page": 263,
+      "printed_page": "12-263",
+      "section": "12.2.17",
+      "crop_rect_pdf_points": [
+        93.882,
+        262.718,
+        546.34,
+        351.173
+      ],
+      "image_sha256": "b20a86c63179aaea45017af8f13dff233f9464055d1684814b6b264f6c08205b"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_pmr_el1_layout.png",
+      "symbol": "ICC_PMR_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 267,
+      "printed_page": "12-267",
+      "section": "12.2.19",
+      "crop_rect_pdf_points": [
+        93.882,
+        384.723,
+        499.577,
+        447.455
+      ],
+      "image_sha256": "a6c9825031d2708caa02bb188ab09950d45f7f3ffb762b12eac0f788d5482c3a"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_rpr_el1_layout.png",
+      "symbol": "ICC_RPR_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 270,
+      "printed_page": "12-270",
+      "section": "12.2.20",
+      "crop_rect_pdf_points": [
+        76.961,
+        288.72,
+        500.082,
+        360.62
+      ],
+      "image_sha256": "61047c057398d6050372a2c93c205927855382b1085f85ea2c8c95a5abeefd13"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_sgi1r_el1_layout.png",
+      "symbol": "ICC_SGI1R_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 276,
+      "printed_page": "12-276",
+      "section": "12.2.22",
+      "crop_rect_pdf_points": [
+        94.384,
+        314.719,
+        500.082,
+        386.62
+      ],
+      "image_sha256": "05e6cf182c2a2c8ce3daddae3df03b60807a51fb26f37ef747828d6ebbf2682f"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_sre_el1_layout.png",
+      "symbol": "ICC_SRE_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 279,
+      "printed_page": "12-279",
+      "section": "12.2.23",
+      "crop_rect_pdf_points": [
+        94.384,
+        412.224,
+        517.502,
+        500.679
+      ],
+      "image_sha256": "e21f2433abafad59dd5784ece48b59302bfdcb85bff931e4bb108189a389dcd0"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_sre_el2_layout.png",
+      "symbol": "ICC_SRE_EL2",
+      "view": "Architectural register layout",
+      "pdf_page": 283,
+      "printed_page": "12-283",
+      "section": "12.2.24",
+      "crop_rect_pdf_points": [
+        94.883,
+        329.721,
+        518.001,
+        418.176
+      ],
+      "image_sha256": "bda2df235ca8f3f0ac5a82452b0bf01f21b5a564a0235e61e7cdc116e738f89e"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "icc_sre_el3_layout.png",
+      "symbol": "ICC_SRE_EL3",
+      "view": "Architectural register layout",
+      "pdf_page": 286,
+      "printed_page": "12-286",
+      "section": "12.2.25",
+      "crop_rect_pdf_points": [
+        94.384,
+        274.219,
+        517.502,
+        362.674
+      ],
+      "image_sha256": "50a9ff4a2a28f262918554c99045998b3739fa339bf4d3e4435a86f3f47fe933"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "its_mapti_layout.png",
+      "symbol": "MAPTI",
+      "view": "Complete four-doubleword command encoding",
+      "pdf_page": 115,
+      "printed_page": "5-115",
+      "section": "5.3.12; Figure 5-15",
+      "crop_rect_pdf_points": [
+        125,
+        575,
+        550,
+        669
+      ],
+      "image_sha256": "238c0902761c147eb44dfc44a1f36fe2d8c22769b7a603cd8be9e0babcf6c17c"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "lpi_configuration_fields.png",
+      "symbol": "LPI Configuration table entry",
+      "view": "Original bit assignments table including priority field and reserved bit",
+      "pdf_page": 90,
+      "printed_page": "5-90",
+      "section": "5.1.1; Table 5-1",
+      "crop_rect_pdf_points": [
+        53,
+        183,
+        548,
+        435
+      ],
+      "image_sha256": "d6f20d79ba4fb36ac32d01b43ee6f81c4e6cef49f201dfe8ca3f064da053e4c4"
+    },
+    {
+      "document_id": "Arm IHI 0069",
+      "revision": "H.b",
+      "official_url": "https://developer.arm.com/documentation/ihi0069/hb",
+      "pdf_sha256": "1fb7c2ab781241532ede15632aec61d4bc31612757fdccff728ad12450f81ea2",
+      "asset": "lpi_configuration_layout.png",
+      "symbol": "LPI Configuration table entry",
+      "view": "Complete 8-bit entry layout",
+      "pdf_page": 90,
+      "printed_page": "5-90",
+      "section": "5.1.1; Figure 5-3",
+      "crop_rect_pdf_points": [
+        370,
+        68,
+        550,
+        164
+      ],
+      "image_sha256": "a0c9f8d90ee44a7f1e57fc201e69220ebfd45d4104a239ae94fd9c2e8624dd8c"
+    },
+    {
+      "document_id": "Arm DDI 0487",
+      "revision": "M.c",
+      "official_url": "https://developer.arm.com/documentation/ddi0487/mc",
+      "pdf_sha256": "b5f9daa7ec0446777c8f848aa6431c99e5ab6554e5aa171b28b9016771494f8c",
+      "asset": "mpidr_el1_layout.png",
+      "symbol": "MPIDR_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 9484,
+      "printed_page": "D24-9484",
+      "section": "D24.2.137",
+      "crop_rect_pdf_points": [
+        69.746,
+        299.075,
+        525.523,
+        386.704
+      ],
+      "image_sha256": "fd385a6ae4658211b52cbf2340a9d108bebfb0f8913fba2396ada72d17a3d06a"
+    },
+    {
+      "document_id": "Rockchip RK3588 TRM Part1",
+      "revision": "V1.0; 2022-03-09",
+      "official_url": "https://www.rock-chips.com/a/en/products/RK35_Series/2022/0926/1660.html",
+      "pdf_sha256": "52fd969a33c0cfc4b14e90fb395c7bc71ac0132a1f65ab0e827e9b63c3404bc3",
+      "asset": "rk3588_cpu_cluster.png",
+      "symbol": "RK3588 CPU cluster",
+      "view": "Complete CPU block diagram showing four Cortex-A55 cores, four Cortex-A76 cores and one DSU-L3",
+      "pdf_page": 363,
+      "printed_page": "363",
+      "section": "3.2; Figure 3-1",
+      "crop_rect_pdf_points": [
+        53,
+        51,
+        541,
+        366
+      ],
+      "image_sha256": "26760b4dbc3fd60a9ccf29cc058197b50385361bd18dc7d4bf90da5dbf7ce4d5"
+    },
+    {
+      "document_id": "Rockchip RK3588 TRM Part1",
+      "revision": "V1.0; 2022-03-09",
+      "official_url": "https://www.rock-chips.com/a/en/products/RK35_Series/2022/0926/1660.html",
+      "pdf_sha256": "52fd969a33c0cfc4b14e90fb395c7bc71ac0132a1f65ab0e827e9b63c3404bc3",
+      "asset": "rk3588_gic600_address.png",
+      "symbol": "GIC600 MMIO window",
+      "view": "Right-hand table column headers and GIC600 row; intervening unrelated rows omitted",
+      "pdf_page": 18,
+      "printed_page": "18",
+      "section": "Chapter 1 address mapping table",
+      "crop_rect_pdf_points": [
+        287,
+        54,
+        488,
+        71
+      ],
+      "image_sha256": "f49f0be636e224334a47ebc44c655f94f28f59c978e8aad0162687956af3ff13",
+      "source_parts": [
+        {
+          "pdf_page": 18,
+          "printed_page": "18",
+          "crop_rect_pdf_points": [
+            287,
+            54,
+            488,
+            71
+          ]
+        },
+        {
+          "pdf_page": 18,
+          "printed_page": "18",
+          "crop_rect_pdf_points": [
+            287,
+            247,
+            488,
+            264
+          ]
+        }
+      ]
+    },
+    {
+      "document_id": "Rockchip RK3588 TRM Part1",
+      "revision": "V1.0; 2022-03-09",
+      "official_url": "https://www.rock-chips.com/a/en/products/RK35_Series/2022/0926/1660.html",
+      "pdf_sha256": "52fd969a33c0cfc4b14e90fb395c7bc71ac0132a1f65ab0e827e9b63c3404bc3",
+      "asset": "rk3588_gic600_block.png",
+      "symbol": "RK3588 GIC600",
+      "view": "Original GIC block diagram including Cluster0, GICR, GICD and ITS",
+      "pdf_page": 1313,
+      "printed_page": "1313",
+      "section": "11.2; Figure 11-1",
+      "crop_rect_pdf_points": [
+        150,
+        233,
+        380,
+        493
+      ],
+      "image_sha256": "e4a0a40ea39b17bd9b5017d899ff64555673b5a5c6657f3265f8cbef6e0601f2"
+    },
+    {
+      "document_id": "Rockchip RK3588 TRM Part1",
+      "revision": "V1.0; 2022-03-09",
+      "official_url": "https://www.rock-chips.com/a/en/products/RK35_Series/2022/0926/1660.html",
+      "pdf_sha256": "52fd969a33c0cfc4b14e90fb395c7bc71ac0132a1f65ab0e827e9b63c3404bc3",
+      "asset": "rk3588_gic600_configuration.png",
+      "symbol": "GIC600 configuration",
+      "view": "RK3588 GIC600 configuration table",
+      "pdf_page": 1312,
+      "printed_page": "1312",
+      "section": "11.1; Table 11-1",
+      "crop_rect_pdf_points": [
+        49,
+        178,
+        545,
+        540
+      ],
+      "image_sha256": "8ba5b9d67217155aa807fd1de3aa7534246a4d1d064d14754ee1de7d56961b9a"
+    },
+    {
+      "document_id": "Arm DDI 0487",
+      "revision": "M.c",
+      "official_url": "https://developer.arm.com/documentation/ddi0487/mc",
+      "pdf_sha256": "b5f9daa7ec0446777c8f848aa6431c99e5ab6554e5aa171b28b9016771494f8c",
+      "asset": "scr_el3_layout.png",
+      "symbol": "SCR_EL3",
+      "view": "Architectural register layout",
+      "pdf_page": 9616,
+      "printed_page": "D24-9616",
+      "section": "D24.2.168",
+      "crop_rect_pdf_points": [
+        49.609,
+        301.538,
+        527.524,
+        596.024
+      ],
+      "image_sha256": "beb66e033a4b563bb4f939201c91697819694abb383bf9a03c89b45878c60dea"
+    },
+    {
+      "document_id": "Arm DDI 0487",
+      "revision": "M.c",
+      "official_url": "https://developer.arm.com/documentation/ddi0487/mc",
+      "pdf_sha256": "b5f9daa7ec0446777c8f848aa6431c99e5ab6554e5aa171b28b9016771494f8c",
+      "asset": "spsr_el1_layout.png",
+      "symbol": "SPSR_EL1",
+      "view": "Exception taken from AArch64 state",
+      "pdf_page": 1013,
+      "printed_page": "C5-1013",
+      "section": "C5.2.21",
+      "crop_rect_pdf_points": [
+        69.746,
+        254,
+        531.869,
+        389.705
+      ],
+      "image_sha256": "01e879e0d7bcc8b8705d4171ddc4e819ed5695b1a67cb95bd0c45bae52c20ec5"
+    },
+    {
+      "document_id": "Arm DDI 0487",
+      "revision": "M.c",
+      "official_url": "https://developer.arm.com/documentation/ddi0487/mc",
+      "pdf_sha256": "b5f9daa7ec0446777c8f848aa6431c99e5ab6554e5aa171b28b9016771494f8c",
+      "asset": "vbar_el1_layout.png",
+      "symbol": "VBAR_EL1",
+      "view": "Architectural register layout",
+      "pdf_page": 10087,
+      "printed_page": "D24-10087",
+      "section": "D24.2.213",
+      "crop_rect_pdf_points": [
+        69.746,
+        279.258,
+        525.523,
+        348.213
+      ],
+      "image_sha256": "dbe415d85cec6d4bbcb27220de4525b1b7fb89a92f4760aa029c7fe769ec14b4"
+    }
+  ]
+}

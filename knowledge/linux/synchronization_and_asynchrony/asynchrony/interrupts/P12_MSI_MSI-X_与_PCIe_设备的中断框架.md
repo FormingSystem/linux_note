@@ -127,7 +127,7 @@ MSI 的事务顺序可避免传统引脚通知先于此前有序设备写到达�
 
 也不能说所有 Linux MSI 实现都强制具有同一层数。固定 `pci_msi_setup_msi_irqs()` 在具备层级域时走相应域分配，否则保留架构旧分配入口；本文介绍的是现代常见层级路径，不抹掉源码中的配置分支。
 
-平台落点由硬件决定。Arm 的 GICv2m 可把消息转为 SPI，GICv3 ITS 则处理设备事件与 LPI 的关联；二者不能因为都接收写事务就当成同一种控制器。x86 的 **高级可编程中断控制器 APIC（Advanced Programmable Interrupt Controller）** 体系中，MSI涉及处理器本地APIC目的地与可选中断重映射；负责外部引脚汇聚的IO-APIC并不是所有MSI的必经入口。接收角色建立后，再读[GIC消息状态](../../../../../platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md#8.1_来源越来越多_为什么让设备发送一条消息)和[ITS事件翻译](../../../../../platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md#9.1_两个设备都发事件0_怎样区分)，其中有控制器自身的寄存器和表项说明。
+平台落点由硬件决定。Arm 的 GICv2m 可把消息转为 SPI，GICv3 ITS 则处理设备事件与 LPI 的关联；二者不能因为都接收写事务就当成同一种控制器。x86 的 **高级可编程中断控制器 APIC（Advanced Programmable Interrupt Controller）** 体系中，MSI涉及处理器本地APIC目的地与可选中断重映射；负责外部引脚汇聚的IO-APIC并不是所有MSI的必经入口。接收角色建立后，再读[GIC消息状态](../../../../../platforms/arm/architecture/gic/P13_从消息请求到内存中的中断状态.md#13.1_来源越来越多_为什么让设备发送一条消息)、[ITS 设备事件身份](../../../../../platforms/arm/architecture/gic/P14_设备事件身份与ITS实现映射.md#14.1_两个设备都发事件0_怎样区分)及[翻译表与命令队列](../../../../../platforms/arm/architecture/gic/P15_ITS翻译表_命令队列与完成.md#15.1_三个查找层次怎样闭合一次翻译)，其中有控制器自身的寄存器和表项说明。
 
 ## 12.4\_先确定允许的退化再申请资源
 

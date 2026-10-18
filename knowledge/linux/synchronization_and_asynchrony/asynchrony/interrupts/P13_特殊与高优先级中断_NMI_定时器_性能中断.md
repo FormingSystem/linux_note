@@ -51,7 +51,7 @@ arm64固定实现中的 **伪NMI pseudo-NMI** 则利用GICv3中断优先级：�
 
 固定Kconfig描述了 `irqchip.gicv3_pseudo_nmi=1` 启用参数；正文将它作为核对已有系统的依据，不要求为实验修改启动配置。GIC驱动还会拒绝不支持或集成有问题的情况。实际开启后，入口代码区分普通IRQ和NMI上下文，GIC路径调用 `generic_handle_domain_nmi()` 分发，直接反驳“只要是NMI就不会有irq_domain”的绝对说法。
 
-此处介绍的是这版内核的GIC优先级方案，不代表所有Arm架构代际只有这种能力，也不把它套到ARM32/GICv2的板上。FIQ是处理器接口的异常信号类别，Linux NMI还涉及入口和软件上下文约定；两者的关系要看平台实现。安全分组、IRQ/FIQ与异常层的关系见[GIC权限与异常进入](../../../../../platforms/arm/architecture/gic/P06_权限_安全分组与初始化闭环.md#6.3.3_安全组怎样影响IRQ与FIQ_又怎样到达EL)。
+此处介绍的是这版内核的GIC优先级方案，不代表所有Arm架构代际只有这种能力，也不把它套到ARM32/GICv2的板上。FIQ是处理器接口的异常信号类别，Linux NMI还涉及入口和软件上下文约定；两者的关系要看平台实现。安全分组、IRQ/FIQ与异常层的关系见[GIC权限与异常进入](../../../../../platforms/arm/architecture/gic/P09_权限_安全分组与异常路由.md#9.3.3_安全组怎样影响IRQ与FIQ_又怎样到达EL)。
 
 ### 13.2.2\_专用申请接口也不能把任意IRQ升级成NMI
 

@@ -14,7 +14,7 @@ domains:
 
 这属于对称多处理 **SMP（Symmetric Multiprocessing）** 的协作问题，系统模型见[多处理与缓存一致性](../../../../foundations/computer_architecture/cache_coherence/P01_缓存一致性问题与缓存行.md#1.1.1_SMP的中英文全称与系统模型)。本章先讨论外设 IRQ 的目标选择，再让一个 CPU 主动通知另一个 CPU，推导 **处理器间中断 IPI（Inter-Processor Interrupt）** 背后的工作状态。路由和通知都不是数据搬运，也不保证目标立刻执行。
 
-Linux 机制按 6.12.20、NXP 固定提交核对，[证据记录](../../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.189_中断亲和性与IPI工作状态)列出通用层、GICv3 驱动及 ARM/ARM64 分支。历史 i.MX6ULL 配置未启用 SMP，不能在那份单核配置上宣称验证了本章多核实验；下文实验需要另行确认目标系统确实有多个在线 CPU。GICv3 的硬件规则继续以[目标选择与核间通知](../../../../../platforms/arm/architecture/gic/P07_目标选择_核间通知与电源交接.md)为依据，不把 Linux 掩码当成处理器硬件坐标。
+Linux 机制按 6.12.20、NXP 固定提交核对，[证据记录](../../../../../research/source_reading/linux/SOURCE_BASELINE.md#1.189_中断亲和性与IPI工作状态)列出通用层、GICv3 驱动及 ARM/ARM64 分支。历史 i.MX6ULL 配置未启用 SMP，不能在那份单核配置上宣称验证了本章多核实验；下文实验需要另行确认目标系统确实有多个在线 CPU。GICv3 的硬件规则继续以[SPI 目标选择](../../../../../platforms/arm/architecture/gic/P11_SPI目标选择与每PE状态.md#11.2_怎样取得目标PE的硬件亲和坐标)和[SGI 核间通知](../../../../../platforms/arm/architecture/gic/P12_SGI核间通知与电源交接.md#12.1_核间中断传的是提醒_工作内容存在哪里)为依据，不把 Linux 掩码当成处理器硬件坐标。
 
 ## 10.1\_把入口分出去以前先看数据归谁处理
 
@@ -71,7 +71,7 @@ flowchart LR
 | `GICD_IROUTER<n>` | Distributor MMIO；64 位路由寄存器，n 为 SPI 的 INTID，普通 SPI 以 `0x6000 + 8 × n` 定位 | Aff3/Aff2/Aff1/Aff0 为硬件目标坐标，IRM 为路由模式；此驱动路径写单目标路由，不写 Linux CPU 掩码 |
 | `ICC_SGI1R_EL1` | AArch64 CPU Interface 系统寄存器；64 位只写生成入口 | SGI 编号与硬件目标字段生成通知，不包含 C 函数地址、参数或完成结果；后面的 IPI 流程使用它 |
 
-这些寄存器不是普通外设消费者驱动应该自行写入的地址。完整字段表分别见[路由字段](../../../../../platforms/arm/architecture/gic/P07_目标选择_核间通知与电源交接.md#7.2.1_固定目标与1-of-N_一次选择几个接收者)和[SGI 生成字段](../../../../../platforms/arm/architecture/gic/P07_目标选择_核间通知与电源交接.md#7.3.2_目标列表与广播_同名IRM为什么有不同含义)。ARM32 的系统寄存器指令形式不能照抄 AArch64；本节明确描述 GICv3 驱动与 AArch64 接口的对应。
+这些寄存器不是普通外设消费者驱动应该自行写入的地址。完整字段表分别见[路由字段](../../../../../platforms/arm/architecture/gic/P11_SPI目标选择与每PE状态.md#11.2.1_固定目标与1-of-N_一次选择几个接收者)和[SGI 生成字段](../../../../../platforms/arm/architecture/gic/P12_SGI核间通知与电源交接.md#12.1.2_目标列表与广播_同名IRM为什么有不同含义)。ARM32 的系统寄存器指令形式不能照抄 AArch64；本节明确描述 GICv3 驱动与 AArch64 接口的对应。
 
 ## 10.3\_先观察三份证据再做一次可恢复的迁移试验
 
