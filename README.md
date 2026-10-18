@@ -17,7 +17,7 @@ domains:
 
 完整设计见：[仓库信息架构设计](governance/architecture/repository_information_architecture.md)。
 
-每篇 Markdown 都包含 `id`、`title`、`kind`、`status` 和 `domains` 元数据。`id` 用于长期引用，正文继续采用统一章节序号保证阅读定位。可用 `./format.sh check all --summary` 同时检查标题、元数据、路径和链接。
+正式知识库文档包含 `id`、`title`、`kind`、`status` 和 `domains` 元数据。`id` 用于长期引用，正文继续采用统一章节序号保证阅读定位。可用 `./format.sh check all --summary` 同时检查标题、元数据、路径和链接。可安装的 skill 按自身格式维护，不套用知识正文元数据。
 
 ## 1.1\_仓库定位
 
@@ -56,80 +56,47 @@ https://github.com/FormingSystem/linux_note.git
 
 ### 1.3.1\_专题评审状态
 
-评审状态使用三种标识：🔴 **未校正**（默认）、🟡 **人工评审中**、🟢 **评审完成**。这套状态是面向读者的内容可信度提示，与 Front Matter 中表示维护阶段的 `draft`、`evolving`、`maintained`、`archived` 不是同一套状态。
-
-🔴 **未校正**（默认）：
-
-- 内容可能来自个人笔记、资料摘录和实验记录，也可能包含部分 AI 生成或辅助整理；红色不表示整篇内容都是 AI 生成。
-- 内容入库前至少经过一次基础人工筛选，但尚未完成系统性的阅读、核对和校正，准确性、观察视角、组织方式及已有批注都可能存在偏差。
-- 这些材料仍可用于了解专题范围、建立初步观察视角和发现后续线索；关键结论应结合官方文档、源码或实验继续复核。
-
-🟡 **人工评审中**：
-
-- 当前正在阅读和更新的章节。由于我很多时候会遇到一些新信息而为了了解这些信息做跳跃阅读，保证做到系统化阅读和理解，而非跳过这些旁支理解问题。所以可能会有各种评审记录。
-
-🟢 **评审完成**：
-
-- 这是我阅读完，完整体系之后觉得问题不大的专题，可放心阅读。在标记该专题的时候，我会需要做到2-3次人工阅读专题，确定阅读方式，源码追踪，知识点标记等完善之后才会标记。如你所见，哪怕我已经看过很多专题，但是都还在处于 🔴 阶段。
-
-新专题和新章节一律从 🔴 开始，只有博主明确开始或完成人工评审后才能升级。专题状态由章节状态人工汇总，详细定义与当前进度只在独立地图维护，避免 README、专题元数据和多份表格相互漂移。
+地图使用 🔴 **未校正**、🟡 **人工评审中**、🟢 **评审完成**。具体定义与升级依据只在[地图说明](atlas/maps/knowledge_review_map.md)维护；它们表示博主的人工阅读进度，与 Front Matter 的维护阶段不同。AI 核对、脚本通过或正文重写不会自动升级人工状态。
 
 ### 1.3.2\_打开交互式地图
 
 - [知识库专题阅读与评审地图](atlas/maps/knowledge_review_map.md)：在 Obsidian 中使用 MarkMind 打开后，可以折叠、缩放，并直接点击领域、专题、章节或支撑材料节点跳转；评审状态只在这份地图中维护。
 - 普通 Markdown 阅读器会把同一文件显示为层级大纲，不依赖插件也能阅读和点击。
-- 地图已经展开所有正式专题的真实 `PXX` 章节；当前 🟢 **kref** 和 🟢 **红黑树** 各 15 章、🟢 **GNU C 扩展**、🟢 **U-Boot** 的 2 篇个人实验材料，以及地图 1.6、1.7、1.9 下已确认的工程方法、平台实现、14 篇个人实验、参考与出版物材料均保持原状态；🟡 **Lockdep** 的 P01～P09 已完成人工通读和批注，重构后仍处于待复核的人工评审中，新增加的 Lockdep 与 Sparse 实验从 🔴 **未校正** 开始，其余地图节点保持 🔴 默认状态。
+- 地图中的真实节点记录当前进度；新增章节从 🔴 开始，原有人工评审记录按开发者确认维护。
 
 ## 1.4\_阅读方式
 
-本仓库从零建立专题概念，不默认读者知道模块、平台、架构或代际之间的关系。阅读先沿“现实问题 → 朴素方案 → 缺口 → 新角色及其关系 → 一次完整过程 → 具体实现”推进，再比较已经分别讲清的对象；不必先背分类表。写作与冷读检查遵循[专题结构从零建立的方法](tools/ai/codex/skills/build-linux-note-topic/references/topic-design.md#12-让专题结构本身也从零建立)。
+本仓库从具体问题进入机制：先看到旧方案能做什么、何时出现缺口，再推导角色、状态和通信，最后核对实现与操作接口。已解释的先修知识只作回顾；需要理解当前结论的图、表、寄存器字段及运行步骤保留在正文，来源链接供进一步追溯。写作方法见[专题结构从零建立](tools/ai/codex/skills/build-linux-note-topic/references/topic-design.md#12-让专题结构本身也从零建立)。
 
-推荐使用 Typora 或 Obsidian 阅读。
+从下面选择当前任务，再沿对应大纲连续阅读。完整专题范围见[内容索引](atlas/indexes/content_index.md)，章节人工进度见[阅读与评审地图](atlas/maps/knowledge_review_map.md)；首页不重复维护每一节的修改记录。
 
-准备运行第一个内核模块时，从[内核模块构建与部署](engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)建立目标身份、构建与装载闭环，再沿[模块与设备入口](knowledge/linux/architecture/modules_and_device_nodes/大纲.md#1.1_沿三个问题进入正文)区分代码、服务、路径与多实例身份，进入字符设备和 I/O。
+| 当前想解决的问题 | 起点与后续路线 |
+| --- | --- |
+| 第一次理解内核怎样为应用工作 | [读取文件的小程序](knowledge/linux/architecture/kernel_composition/linux内核概貌.md#1.1_先让程序读到几个字) → [从问题定位源码](knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md#1.1_先区分源码目录与正在运行的系统) → [内核学习路线](atlas/tracks/linux_kernel_track.md) |
+| 编译、装载第一个模块，并区分模块与设备 | [模块工程](engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来) → [模块与设备入口](knowledge/linux/architecture/modules_and_device_nodes/大纲.md#1.1_沿三个问题进入正文) → [驱动框架](knowledge/driver_model/fundamentals/framework_model/大纲.md#1.1_四个问题怎样接起来) |
+| 为应用提供可读写的设备服务 | [错误指针](knowledge/linux/error_handling/error_pointer/大纲.md#1.1_四次认识变化) → [字符设备](knowledge/driver_model/character_device/大纲.md) → [文件操作与映射](knowledge/driver_model/file_operations/大纲.md#1.1_沿对象寿命逐步增加约束)；[分类与属性实验](knowledge/linux/device_model/class_sysfs/大纲.md#1.1_从分类观察到可控数据入口)解释可见入口和撤销 |
+| 理解设备登记、探测、依赖与移除 | [设备模型](knowledge/linux/device_model/大纲.md) → [设备树与平台资源](knowledge/driver_model/device_tree/大纲.md) → [GPIO Consumer](knowledge/driver_model/gpio_consumers/大纲.md)及对应子系统 |
+| 为查找、排序和范围操作选择容器 | [链表](knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择) → [哈希表](knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md#1.1_沿问题增加约束)；[树结构路线](knowledge/linux/data_structures/红黑树_rb-tree/大纲.md#1.1_沿问题进入现有章节)串起普通树、BST、旋转、多路树、红黑树、页级索引与 Maple 范围结构 |
+| 判断多条执行路径怎样安全共享状态 | [执行路径交错模型](knowledge/linux/synchronization_and_asynchrony/P01_同一对象的多条执行路径.md#1.2_运行所有允许的交错) → [消息发布](knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P01_READ_WRITE_ONCE_与_SMP_内存顺序原语.md#1.2.1_从准备到使用的四个阶段) → [同步与异步总纲](knowledge/linux/synchronization_and_asynchrony/大纲.md)，再按约束选择锁、等待、RCU 或工作队列 |
+| 证明查找返回的对象何时可以释放 | [kref](knowledge/linux/object_lifetime/kref/大纲.md) → [devres](knowledge/linux/object_lifetime/devres/大纲.md) → [跨层寿命集成](knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md#1.9_用六条轨迹串起组合退出)；已有故障可从[诊断流程](knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.10.2_最小审查流程)回查 |
+| 理解系统启动与板级移植 | [U-Boot](knowledge/system_software/uboot/大纲.md) → [i.MX6ULL 移植](platforms/arm/nxp/imx6ull/porting/大纲.md)或[RK3566 SDK](platforms/arm/rockchip/rk3566/environment/大纲.md)；根文件系统继续进入[Buildroot](knowledge/system_software/buildroot/大纲.md) |
+| 从某个结论追到固定版本代码 | [Linux 源码基线](research/source_reading/linux/SOURCE_BASELINE.md#1.1_当前来源) → 专题 navigation 总索引与模块导读 → source_explanations 中唯一实现标题 |
 
-[错误指针专题](knowledge/linux/error_handling/error_pointer/大纲.md#1.1_四次认识变化)从普通 C 的返回契约进入编码、可选资源与失败回收，并用无硬件依赖的模块观察四条路径；[固定版本源码索引](research/source_reading/error_pointer/navigation/P01_Linux_6.12_错误指针源码阅读索引.md#1.2_按问题进入源码)将值转换与驱动清理分开核对。
+正文中的完整宿主模型用于观察规则和反例，内核模块与板级步骤则注明目标环境。源代码可跳转、主机程序通过、目标模块编译通过和板上运行通过是不同证据；具体检查结果及未执行项见[重构工作记录](governance/migration/repository_textbook_refactor.md)，后续建设范围见[重构蓝图](atlas/roadmaps/linux_textbook_refactor.md)。
 
-[驱动框架入门](knowledge/driver_model/fundamentals/framework_model/大纲.md#1.1_四个问题怎样接起来)从多个实例共用一份代码进入登记、探测与解绑，再用完整的 sysfs 属性和 misc 字符设备实验区分可见入口、对象引用和模块寿命。
+推荐使用 Typora 或 Obsidian 阅读。[Typora Code](https://github.com/FormingSystem/typora_code) 面向多文档、标题跳转与源码阅读提供工作台增强，配置、实现、测试和开发历史在独立仓库维护。正文图片可适配宽度、放大或全屏查看；图示保留理解所需内容，不靠删减关系迁就窗口。Obsidian 可用于维护链接，移动后仍需运行仓库链接检查。
 
-[文件操作教材](knowledge/driver_model/file_operations/大纲.md#1.1_沿对象寿命逐步增加约束)以 dup/关闭、readv/pread 和只读映射三个完整实验，区分打开上下文、请求位置与后备页寿命；原成员清单保留为固定版本查询页。
+需要按一本书连续阅读时，从[MarkBook 专题电子书](markbook/README.md#1.2_当前刊物)进入。它是按月冻结的编排快照，正文修订在知识、研究和实验的权威位置维护；当期来源哈希用于还原当时内容。
 
-[class 与 sysfs 教材](knowledge/linux/device_model/class_sysfs/大纲.md#1.1_从分类观察到可控数据入口)从两个无设备节点的分类对象开始，再让属性控制字符读取，解释节点发布、权限、并发与撤销；配套完整模块及固定版本源码导读。
 
-[Linux 链表教材](knowledge/linux/data_structures/单链表_linked_list/大纲.md#1.1_从一组任务走到容器选择)从三个任务的成员连接进入双向循环、共享修改、初始化发布和失败回滚，再比较子系统封装与容器代价；配有可运行的宿主模型、完整模块和[固定版本源码索引](research/source_reading/linked_list/navigation/P01_Linux_6.12_链表源码阅读索引.md#1.2_由结论进入唯一实现)。
-
-[哈希表路线](knowledge/linux/data_structures/哈希表_Hash_Table/大纲.md#1.1_沿问题增加约束)从按编号查找进入桶与冲突；完整 C 程序观察键比较、重新分桶、位宽和 hlist 入口槽，RCU 模块追踪旧路径、回调与卸载边界，并由[计算源码索引](research/source_reading/hash_table/navigation/P01_Linux_6.12_哈希计算源码阅读索引.md#1.2_从问题选择入口)核对当前版本。动态表继续用 C 模型解释跨链重扫，并提供独立的[接口回收实验](knowledge/linux/data_structures/哈希表_Hash_Table/P03_高级进阶与性能调优/P08_rhashtable接口与回收实验.md#8.1_先固定本例的拥有者)。[子系统导读](research/source_reading/hash_table/navigation/P05_子系统索引身份与寿命导读.md#5.1_先区分索引任务与业务结论)继续比较候选、引用和业务状态，固定桶模块补齐增删查改与失败回滚。目标模块运行仍待验证，全仓其他专题继续逐项审查。
-
-[树结构入门](knowledge/linux/data_structures/红黑树_rb-tree/大纲.md#1.1_沿问题进入现有章节)先建立父子、路径与子树，再用[普通树 C 实验](knowledge/linux/data_structures/红黑树_rb-tree/P16_普通树的表示与构建实验.md#16.7_运行预测与资源回收)比较存储表示并核对分配失败和递归回收。随后沿[四种遍历与查询路线](knowledge/linux/data_structures/红黑树_rb-tree/大纲.md#1.1_沿问题进入现有章节)运行完整 C/C++ 程序，比较处理时机、所有权及队列容量。[搜索树实验](knowledge/linux/data_structures/红黑树_rb-tree/P03_二叉搜索树_BST.md#3.7_运行查找与插入)继续检验查重、删除回接与全局排序；[退化计数实验](knowledge/linux/data_structures/红黑树_rb-tree/P04_为什么_BST_会退化.md#4.2.4_用节点访问次数观察退化)进一步区分键序与高度保证；[左右旋实验](knowledge/linux/data_structures/红黑树_rb-tree/P05_旋转的作用与局部重排.md#5.4.11_用根引用运行一对互逆动作)继续观察根槽、父链和中间子树；[组合旋转](knowledge/linux/data_structures/红黑树_rb-tree/P24_组合旋转与形状判断.md#24.11_内部子树上的_LR_重排反例)再区分方向识别与真实失衡，[AVL 高度实验](knowledge/linux/data_structures/红黑树_rb-tree/P25_AVL高度诊断与更新传播.md#25.23_运行完整高度维护程序)补齐状态更新与停止条件。[查找路径实验](knowledge/linux/data_structures/红黑树_rb-tree/P10_Linux_6.12_内核_rbtree_查找与返回边界.md#10.2.10_用完整C程序观察相等节点和旧路径)继续区分重复键、旧入口漏查和对象寿命，具体语句沿[固定源码索引](research/source_reading/rbtree/navigation/P01_Linux_6.12_rbtree源码阅读索引.md#1.2_按问题选择源码入口)核对；[五组插入模块](knowledge/linux/data_structures/红黑树_rb-tree/P26_Linux红叶接入与插入修复.md#26.3.15_在内核模块中观察五组插入)与[修复源码导读](research/source_reading/rbtree/navigation/P03_红叶接入与冲突修复导读.md#3.2_一轮插入怎样推进)进一步解释红叶、颜色上推和回调中间态；随后用[取消模块](knowledge/linux/data_structures/红黑树_rb-tree/P11_Linux_6.12_内核_rbtree_删除与缺黑修复.md#11.3.12_用完整模块观察取消请求)区分对象身份、缺黑与游离标记；[遍历与销毁模块](knowledge/linux/data_structures/红黑树_rb-tree/P27_Linux有序遍历与整树销毁.md#27.2.9_运行完整遍历与销毁模块)接着解释中序 next 与后序 safe 的修改边界。[同键替换](knowledge/linux/data_structures/红黑树_rb-tree/P28_Linux同键替换与旧对象退出.md#28.2.7_运行同键替换观察模块)进一步区分树位置、旧地址与回收条件。三项任务已分别组织为 P11 删除、P27 遍历、P28 替换，按大纲连续阅读。随后以[普通旋转与内核完成边界](knowledge/linux/data_structures/红黑树_rb-tree/P29_普通旋转与Linux修复的完成边界.md#29.1_为什么没有一一对应的旋转调用)回看父链、回调与版本差异。[多路节点查找实验](knowledge/linux/data_structures/红黑树_rb-tree/P06_2-3-4_树_从多路平衡到红黑树的结构桥梁.md#6.4.7_用完整C程序观察区间下行)补齐容量、区间和节点/键比较的区别。[多路插入实验](knowledge/linux/data_structures/红黑树_rb-tree/P30_2-3-4树插入与分裂时机.md#30.3_运行完整的两种插入)进一步比较溢出上推与预分裂，检查重复键和容量不足。[多路预修复删除](knowledge/linux/data_structures/红黑树_rb-tree/P31_2-3-4树预修复删除.md#31.3_运行完整预修复删除)继续观察借位、合并、根收缩和失败不改树。[下溢回溯实验](knowledge/linux/data_structures/红黑树_rb-tree/P32_2-3-4树下溢回溯与根收缩.md#32.4_运行完整回溯删除)再追踪内部零键节点、逐层报告与孩子移交。[多路与红黑缺口对照](knowledge/linux/data_structures/红黑树_rb-tree/P33_从多路删除到红黑缺口.md#33.3_用黑高收支检查父层是否仍有缺口)在性质建立后区分局部等高与父层吸收，补齐对象移位边界。[页级索引模型](knowledge/linux/data_structures/红黑树_rb-tree/P34_从多路节点到页级索引.md#34.12_运行页请求与未命中的计数模型)进一步用同一范围区分逻辑请求、驻留状态和物理块位置。[VMA 区间实验](knowledge/linux/data_structures/红黑树_rb-tree/P14_从地址查询到VMA范围修改.md#14.8_运行G与H的区间模型)继续区分精确命中、向后查询、权限切分与空洞，并由[固定查询源码索引](research/source_reading/maple_tree/navigation/P01_Linux_6.12_Maple范围源码阅读索引.md#1.2_按读者问题进入证据)解释返回指针的期限。[红黑性质实验](knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md#7.3.9_让程序区分三种非法结构)用同一棵树区分红红、黑高和祖先区间错误，并统一 NIL 与高度口径。[红黑插入实验](knowledge/linux/data_structures/红黑树_rb-tree/P35_红黑插入与红红冲突上推.md#35.3_运行完整插入程序)继续把红叶、叔红上推与内外侧旋转落实为完整 C++ 程序。[红黑删除实验](knowledge/linux/data_structures/红黑树_rb-tree/P36_红黑删除与缺黑位置传播.md#36.3_用完整程序删除图中的对象)追踪缺口父槽、后继身份和三种停止条件。[红黑映射实验](knowledge/linux/data_structures/红黑树_rb-tree/P07_红黑树_把_2-3-4_树映射成二叉表示.md#7.5.12_保持键区间的折叠实验)比较同一多路节点的两种二叉编码，保留孩子区间并区分左倾变体。[任务排序实验](knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#8.2.7_把排序契约变成可观察结果)区分复合键、索引与对象，并核对 Linux 比较辅助接口。[根值实验](knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#2%29_观察根值复制与对象存活)观察浅复制、局部清根与缓存入口。[父色编码实验](knowledge/linux/data_structures/红黑树_rb-tree/P08_Linux_6.12_内核_rbtree_基础结构与工程模型.md#8.4.3_为什么颜色可以使用指针低位存储)明确低位、位宽和游离约定，[布局导读](research/source_reading/rbtree/navigation/P07_节点布局与编码状态导读.md#7.2_沿一个节点的成员周期读写字段)连接固定定义与状态周期。[双成员 C 实验](knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个嵌入成员还原同一个任务)继续观察不同节点地址还原同一个任务，以及 const、复制与成员身份的边界。[比较契约实验](knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_让同一个比较规则走两种调用路径)用稳定 ID 与整数边界区分键政策和调用方式，性能结论保留实际测量前提。[双索引寿命模型](knowledge/linux/data_structures/红黑树_rb-tree/P09_Linux_6.12_内核_rbtree_嵌入式节点与使用者接口.md#%281%29_两个入口关闭之后谁还在使用对象)继续追踪入口引用、读者持有与最后回收。[调用者完整框架](knowledge/linux/data_structures/红黑树_rb-tree/P37_构建rbtree调用者接口.md#37.16_运行完整的私有调用者框架)把插入持有权、复制查询、计数和初始化失败清理接成私有模块。[缓存一致性实验](knowledge/linux/data_structures/红黑树_rb-tree/P43_反复取首与最左缓存.md#43.6.1_运行缓存一致性实验)继续比较普通左链与首地址，演示树正确而缓存过时的反例。[区间摘要实验](knowledge/linux/data_structures/红黑树_rb-tree/P44_区间查询与子树摘要.md#44.9.1_运行完整区间摘要实验)接着追踪三个增强回调和不回溯查询的错误分支。[双线程复制实验](knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md#45.3.1_用两个线程观察复制值与删除)区分锁内观察与锁外寿命。[示例回访](knowledge/linux/data_structures/红黑树_rb-tree/P45_完整操作与返回对象的并发保护.md#45.8_回到调用者接口核对持有权)已统一到 P37 完整框架与 P27 遍历材料。[有界检查器](knowledge/linux/data_structures/红黑树_rb-tree/P46_独立验证树形与派生状态.md#46.10.1_运行有界快照检查器)已区分结构、颜色、缓存和摘要故障。[固定调用场景](knowledge/linux/data_structures/红黑树_rb-tree/P47_从内核使用场景选择索引.md#47.1_Linux_rbtree_在内核中的典型使用场景)已核对调度、定时器、块层和 epoll；P12 分批审查收束。[B/B+ 页布局](knowledge/linux/data_structures/红黑树_rb-tree/P13_再扩展到_B_树与_B+_树.md#%281%29_运行等值路由与叶分裂模型)已用完整 C++ 模型核对记录归属、等值路由与分裂。模块待目标装卸，其余章节继续逐篇审查。
-
-[Maple 树根与模式](knowledge/linux/data_structures/红黑树_rb-tree/P51_共享树根怎样确定表示与保护模式.md#51.1_为什么共享入口还要保存模式)进一步区分共享根、外部锁声明和 RCU 节点资源路径，对应[固定源码导读](research/source_reading/maple_tree/navigation/P03_树对象与模式选择.md#3.2_从未发布到受保护使用)；[节点与空洞实验](knowledge/linux/data_structures/红黑树_rb-tree/P38_Maple节点中的范围与空洞.md#38.5_运行包含空槽的分区程序)已补齐 NULL 槽、包含式 pivot 和窗口裁剪；[编码整数模型](knowledge/linux/data_structures/红黑树_rb-tree/P52_按字段区分Maple编码与错误状态.md#52.1.4_用定宽整数观察错误掩码)已区分节点、父关系、entry 与操作状态；[游标暂停与继续](knowledge/linux/data_structures/红黑树_rb-tree/P39_Maple操作游标的暂停与继续.md#39.3_沿S0到S6比较暂停与重置)已用完整私有模块区分 pause/reset 和边界状态；[普通接口范围契约](knowledge/linux/data_structures/红黑树_rb-tree/P40_Maple普通接口中的范围与查询.md#40.2_同一棵树中的覆盖与拒绝覆盖)已补覆盖政策、两种清除与终止游标；[高级写入准备](knowledge/linux/data_structures/红黑树_rb-tree/P41_Maple写入准备与锁边界.md#41.3_沿S0到S5区分位置与资源)已区分资源成功、放锁重试与映射发布；[VMA 边界实验](knowledge/linux/data_structures/红黑树_rb-tree/P53_VMA游标怎样翻译范围请求.md#53.2.4_运行边界等价性实验)已核对局部游标、半开转换与错误映射；[撤销映射中的两棵树](knowledge/linux/data_structures/红黑树_rb-tree/P42_撤销映射中的两棵Maple树.md#42.3_沿S0到S5观察职责转移)进一步区分主索引撤下与对象退出；树专题本轮逐篇审查已收束，继续对象生命周期批次。[kref 阅读主线](knowledge/linux/object_lifetime/kref/大纲.md)中，专题大纲与全部40章已完成本轮逐单元作者审查，相邻[devres资源账本](knowledge/linux/object_lifetime/devres/P01_从失败回滚到设备资源账本.md#1.1_从两条退出路径提取同一份责任)已补核心分组与六条C路径，[devres接口查询](knowledge/linux/object_lifetime/devres/devres_API说明.md#第2章_devm_接口_作用与区别%28按子系统%29)已按固定版本逐族核对，[设备管理层次讨论](knowledge/linux/object_lifetime/devres/P02_托管资源与使用者退出.md#2.3_让中断退出早于时钟和内存结束)已补内核侧退出依赖与七条C轨迹，[用户态章节](knowledge/system_software/P01_设备事件与用户态策略.md#1.1_定义与分层位置)已区分事件、策略与访问结果，[跨层案例](knowledge/linux/object_lifetime/devres/P03_驱动资源与用户态访问的协作.md#3.4_用同一个只读设备追踪发布和打开)已复用完整misc服务连接策略与C读取检查，正文按退出、策略、协作分工收束，[生命周期集成](knowledge/linux/object_lifetime/integration/P01_kobject_device_devres_kref_生命周期集成.md#1.9_用六条轨迹串起组合退出)已用T0～T6和六条C轨迹分开资源退出、私有会话与设备桥接；[固定源码索引](research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)连接模块导读与唯一实现。
-
-对象生命周期从[kref专题阅读地图](knowledge/linux/object_lifetime/kref/大纲.md#第1章_kref_引用计数机制章节大纲)开始：先建立引用责任和查找窗口，再处理异步交付、资源退出与框架边界；工程应用由[P13模板入口](knowledge/linux/object_lifetime/kref/P13_工程模板.md#13.1_本章导读_把规则落成可复制模板)按依赖组织P16～P31。验证从[P14实验入口](knowledge/linux/object_lifetime/kref/P14_源码阅读实验.md#14.1_本章导读_用实验验证生命周期边界)进入P32～P40的引用、窗口、回收与诊断对照，再用[P15最终验收](knowledge/linux/object_lifetime/kref/P15_最终验收标准.md#15.8_最终代码模板验收)检查完整责任账本。已有代码出错时可查[诊断流程](knowledge/linux/object_lifetime/kref/P12_典型错误模式与调试线索.md#12.10.2_最小审查流程)，核对具体实现则进入[固定版本源码索引](research/source_reading/kref/navigation/P01_Linux_6.12_kref源码阅读索引.md#1.2_按问题进入已落地证据)。验证范围与未执行项保存在[重构工作记录](governance/migration/repository_textbook_refactor.md)，不把宿主或前端检查当作目标运行结果。
-
-字符设备的[读写契约](knowledge/driver_model/character_device/P05_文件操作契约与数据路径.md)用字节记录解释短传输、复制失败和提交时机；对应的[版本源码入口](research/source_reading/character_device/navigation/P01_Linux_6.12_字符设备源码阅读索引.md#1.2_由问题进入模块导读)分别组织模块导读与唯一实现讲解。
-
-[有限窗口模板](knowledge/driver_model/character_device/P10_字符设备驱动模板.md)、[构建运行](knowledge/driver_model/character_device/P11_构建运行与验证.md)与[环形流模板](knowledge/driver_model/character_device/P13_流式字符设备与等待通知模板.md)分别落实位置、设备入口和等待通知，附完整材料及渐进实验。
-
-第一次进入 Linux 内核，可以从 [读取一份文件的小程序](knowledge/linux/architecture/kernel_composition/linux内核概貌.md#1.1_先让程序读到几个字)开始，再读 [从问题找到源码文件](knowledge/linux/architecture/source_tree/Linux_kernel_目录结构说明.md#1.1_先区分源码目录与正在运行的系统)。两篇基础正文已采用实例、逐步讲解、预测与练习相结合的教材写法；后续材料沿 [内核学习路线](atlas/tracks/linux_kernel_track.md)阅读，既有改写批次与验证边界见 [重构蓝图](atlas/roadmaps/linux_textbook_refactor.md)。2026-10-16 的历史恢复与 GIC 专项修订范围见[本次恢复记录](governance/migration/repository_textbook_refactor.md#1.1.1_20261016历史恢复与GIC修订)，不据此宣称全仓质量复审完成。
-
-[Typora Code](https://github.com/FormingSystem/typora_code) 是针对本仓库文档跳转链接多、源码阅读与修改频繁的场景制作的 Typora 阅读适配工具，围绕多文档阅读、链接定位、源码查看与编辑提供工作台增强。工具的配置、实现、测试和开发历史均在独立仓库维护，本仓库仅保留此链接与背景介绍。
-
-Obsidian 主要用于维护 Markdown 链接。移动文件、重排目录时，优先使用 Obsidian 内部操作，让链接能够自动跟踪更新。
-
-专题阅读从 [知识库导航](atlas/home.md#1.1_按目标进入)或 [仓库内容索引](atlas/indexes/content_index.md#1.2_Linux通用机制)进入。内核并发与事件先运行[执行路径交错模型](knowledge/linux/synchronization_and_asynchrony/P01_同一对象的多条执行路径.md#1.2_运行所有允许的交错)，再读[消息发布入门](knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P01_READ_WRITE_ONCE_与_SMP_内存顺序原语.md#1.2.1_从准备到使用的四个阶段)，通过[七函数C实验](knowledge/linux/synchronization_and_asynchrony/synchronization/memory_ordering/P02_编译器共享访问与READ_WRITE_ONCE.md#2.3.1_完整编译材料)检查编译器生成的访问，沿[同步和异步机制总纲](knowledge/linux/synchronization_and_asynchrony/大纲.md)进入各类保证；锁、序列计数器、等待/完成量、RCU、Lockdep 与工作队列都在各自权威专题保存跨版本正文。需要核对 Linux 6.12.20 实现时，从[内存顺序](research/source_reading/memory_ordering/navigation/P01_Linux_6.12_LKMM_源码与模型导读.md#1.2_从源码接口到模型判定的完整链)、[锁](research/source_reading/locking/navigation/P01_Linux_6.12_锁源码总阅读索引.md#1.6_建议阅读顺序)、[序列计数器](research/source_reading/sequence_counters/navigation/P01_Linux_6.12_序列计数器源码总阅读索引.md#1.5_建议阅读顺序)、[等待与完成量](research/source_reading/waiting_notification/navigation/P01_Linux_6.12_等待与完成量源码总阅读索引.md#1.5_建议阅读顺序)、[工作队列](research/source_reading/workqueue/navigation/P01_Linux_6.12_工作队列源码总阅读索引.md#1.6_建议阅读顺序)、[Lockdep](research/source_reading/lockdep/navigation/P01_Linux_6.12_Lockdep源码导读.md#1.6_建议阅读顺序)或 [RCU](research/source_reading/rcu/navigation/P01_Linux_6.12_RCU源码总阅读索引.md#1.6_建议的源码阅读顺序)的总阅读索引进入，再从模块导读跳到唯一函数实现标题。
-
-需要连续阅读一个完整专题时，从 [MarkBook 专题电子书](markbook/README.md#1.2_当前刊物)进入。MarkBook 只做月度快照和出版编排，不替代上述权威正文；书中显示的版本、来源哈希和工作树状态用于还原当期内容。
 
 面向 RK3588 的硬件中断控制器学习，从 [GICv3 物理中断专题大纲](platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)进入：十一篇连续教材从外设事件逐步讲到状态、配置、消息翻译与软件交接，最后以 UART 完成综合复盘，另有 RK3588 集成记录。各章配有纸面推演、主机算例或目标板观察步骤，关键概念附中英文术语与官方章节对照；GICv3 虚拟化、GICv4、逐函数源码与板上实验后续展开。与 Linux IRQ 管理的分工见[交叉阅读入口](atlas/roadmaps/gic_learning_plan.md#1.7_与现有中断章节的交叉阅读)。
 
 ## 1.5\_内容说明
 
-- 任何以 Markdown 存在的文件，都可以视为笔记雏形。
-- 如果某些章节以“第 1-n 章”组织，并带有明显引言、总结或分层结构，通常说明它经过 AI 辅助整理。
-- AI 生成或辅助整理的痕迹不一定全部删除，因为它有时能作为阅读节奏点，提醒读者在某个模块处停下来总结。
-- 专题或章节是否已经由博主完整阅读和整理，以[知识库专题阅读与评审地图](atlas/maps/knowledge_review_map.md)中的评审状态为准；没有标为 🟢 **评审完成** 的内容，不应被理解为已经通过人工正确性确认。
-- 已完成评审的笔记会尽量保证自己读过、理解过、能复用，但仍不保证所有主题都覆盖到足够宽或足够深。
-- 如果某个主题不够细，可以继续把相关 Markdown 交给 AI 或资料源二次扩展。
+知识正文建立机制，源码导读核对固定实现，实验记录保存条件与观察结果，调查和归档保留尚待消解的旧说法。阅读时先看文档身份与适用边界；不能仅凭标题编号、引言或总结判断内容是否由 AI 生成。
+
+AI 可协助整理、扩写和核对，人工确认程度仍以[评审地图](atlas/maps/knowledge_review_map.md)为准。已通过自动检查的文档也可能存在解释遗漏；引用、模型结果和硬件实测分别标明证据范围。发现缺口时，回到相应权威正文补充问题、推导及依据，避免另建一份互相漂移的教程。
 
 ## 1.6\_Git\_提交规则
 
@@ -213,58 +180,19 @@ AI 主要用于主题拆解、章节扩写、概念对比、代码解释和结�
 
 ### 1.9.1\_Linux\_kernel\_源码相关内容说明
 
-本仓库的部分目录中可能包含基于 Linux kernel 源码整理的阅读材料，例如：
-
-```text
-research/source_reading/linux/
-```
-
-该目录名称保留为当前仓库历史结构，不代表其中内容是 Linux kernel 官方源码仓库，也不代表该目录下所有文件都是未经加工的原始源码文件。
-
-其中以 `.md` 形式存在的文件，通常是基于 Linux kernel 源码文件整理出来的源码阅读笔记、源码摘录、源码注释、结构说明或个人理解记录。它们可能包含 Linux kernel 原始源码内容，也可能包含仓库作者添加的阅读注释、解释文字、章节标题、Markdown 排版和学习总结。
-
-因此，这类文件应理解为：
-
-```text
-Linux kernel 源码阅读注释文档
-```
-
-而不是 Linux kernel 官方发布的原始源码文件。
+[Linux 源码基线](research/source_reading/linux/SOURCE_BASELINE.md#1.1_当前来源)记录官方仓库、不可变提交、配置边界和上游相对路径。`research/source_reading/linux/` 中按上游路径保存的源码材料用于核对；各专题的 `navigation/` 组织模块导读，`source_explanations/` 解释唯一的宏、字段和函数实现。阅读说明、裁剪代码和仓库补充注释均不代表上游官方原文。
 
 ### 1.9.2\_Linux\_kernel\_源码版权与许可证
 
-Linux kernel 原始源码版权归其原作者和 Linux kernel contributors 所有。
+Linux kernel 整体采用 GPL-2.0-only；具体文件仍须查看 SPDX 标识、版权声明以及 `COPYING`、`LICENSES/`。`Linux-syscall-note` 是特定用户空间 API 头文件的系统调用例外，不能把 `GPL-2.0-only WITH Linux-syscall-note` 泛化为全部内核源码的许可证。依据见[内核官方许可规则](https://docs.kernel.org/process/license-rules.html)，概念和条件见[本仓库 GPL 说明](reference/standards/gpl/GPL协议说明.md)。
 
-Linux kernel 源码部分遵循其原始许可证声明，通常为：
-
-```text
-GPL-2.0-only WITH Linux-syscall-note
-```
-
-具体许可证应以 Linux kernel 原始源码中的以下信息为准：
-
-```text
-COPYING
-LICENSES/
-各源码文件中的 SPDX-License-Identifier
-各源码文件中的 copyright 声明
-```
-
-本仓库不会通过根目录许可证重新授权 Linux kernel 原始源码内容，也不会将 Linux kernel 原始源码内容声明为本仓库作者原创内容。
+上游源码的版权归其原权利人所有。仓库根目录许可证不会替第三方源码重新授权，也不会使这些代码变成本仓库原创内容。
 
 ### 1.9.3\_关于源码注释和改写
 
-如果某些 `.md` 文件中包含 Linux kernel 源码内容，并在源码附近加入了个人阅读注释、解释性文字、Markdown 标题或结构化说明，则这些新增内容属于本仓库作者的学习整理内容。
+新增解释、图示和学习总结属于仓库整理工作；引用或改写的源码仍保留原有权利和许可条件。独立原创部分适用仓库许可证，不意味着混合文档、衍生作品或其中的第三方材料可以忽略上游条件。分发时应保留来源、版权、许可证和修改说明，并按实际文件组合判断适用条件。
 
-但被引用、摘录或改写排版的 Linux kernel 源码本身，仍然保持其原始版权和许可证属性，不因出现在本仓库中而改变。
-
-对于这类文件，应按以下方式理解：
-
-```text
-原始 Linux kernel 源码部分：遵循 Linux kernel 原始许可证；
-新增阅读注释、解释、图示和学习总结：遵循本仓库原创内容许可证；
-整体文档不得被理解为 Linux kernel 官方文件。
-```
+带有仓库补充注释的实现文档用于辅助阅读，不能当作上游原始文件进行逐字或摘要比较。
 
 ### 1.9.4\_非官方声明
 
