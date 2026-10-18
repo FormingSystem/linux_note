@@ -17,33 +17,64 @@ Git 历史必须直接表达“哪个项目的哪个模块产生了什么可验�
 
 ## 1.2\_分支与工作区
 
-`master` 是可发布主线，只接受通过验证的提交。任务使用短生命周期分支：
-
-```text
-feat/publication-export
-refactor/repository-validation
-security/source-download
-content/rcu-grace-period
-docs/repository-git
-```
-
-并行任务优先使用独立 worktree，避免多个进程共享索引和工作区：
+`master` 是可发布主线，只接受验证通过的快进提交。先确认当前目录属于目标仓库，再检查分支和未提交内容；不要在同名旧副本中修改，也不要把其他任务的差量直接暂存进来。
 
 ```bash
-git worktree add ../work-repository-validation \
-  -b refactor/repository-validation
+# 当前目录：用户指定的 linux-note 仓库根目录。
+git rev-parse --show-toplevel
+git status --short --branch
 ```
 
-任务完成后基于远端主线整理：
+第一条确认根目录，第二条显示当前分支与工作区差量。路径不符先处理路径问题；已有修改要先辨认归属。后续示例假定 `origin` 是已核对的远端、远端主线为 `master`，示例分支和相邻目录尚不存在。
+
+任务使用有意义的短生命周期分支。Codex 创建的分支默认采用 `codex/` 前缀，例如 `codex/repository-validation`；分支名不是提交类型，不要求两者相同。并行任务若需要隔离索引与文件，可以使用独立 worktree：
 
 ```bash
+# 当前目录：linux-note 仓库根目录；先取得远端引用。
 git fetch origin
-git rebase origin/master
-git switch master
-git merge --ff-only <任务分支>
 ```
 
-主线只允许快进更新。已经确认或推送的提交不得用 `git reset` 改写；撤销使用格式化的 `revert` 提交。未推送的临时修正可以使用 `git commit --fixup` 和 `git rebase --autosquash`。
+`fetch` 更新远端跟踪引用，不把工作区切到远端。确认起点后再创建工作树：
+
+```bash
+# 当前目录：linux-note 仓库根目录；目标相邻目录尚不存在。
+git worktree add ../work-repository-validation \
+  -b codex/repository-validation origin/master
+```
+
+新目录具有自己的工作区和索引，起点显式为 `origin/master`；它不会复制当前目录未提交的修改。需要延续已有提交时应明确使用相应起点，而不是误以为任何新工作树都会继承当前文件。
+
+任务准备合入时，先在任务工作树取得最新主线。**只有未推送、未交付、由自己独占的提交** 才可整理历史：
+
+```bash
+# 当前目录：任务工作树；任务分支干净且尚未共享。
+git fetch origin
+```
+
+检查取得的主线差异后，把私人任务提交重放到该起点：
+
+```bash
+# 当前目录：同一任务工作树；上一项条件仍成立。
+git rebase origin/master
+```
+
+若冲突无法可靠解决，先保留诊断，再用 `git rebase --abort` 回到重放前的状态。已经推送或交付的分支不能照搬这一步；应保留已共享提交，按合入方案把主线合并进任务分支并重新验证，或采用开发者明确授权的迁移方案。
+
+完成适用检查后，在承载主线的工作树中切换并快进；工作树有未提交差量时先处理归属，不带着它们切换：
+
+```bash
+# 当前目录：用于主线合入的 linux-note 工作树，索引与工作区干净。
+git switch master
+```
+
+核对主线身份后执行：
+
+```bash
+# 当前目录：同一主线工作树，当前分支为 master。
+git merge --ff-only codex/repository-validation
+```
+
+`--ff-only` 失败说明当前主线不是任务分支的祖先，应回到分支关系检查，不能改用强制移动来掩盖分叉。此动作只更新本地分支，推送或发布仍按本次授权执行。
 
 ## 1.3\_提交标题
 
@@ -109,6 +140,7 @@ docs: 更新仓库级使用说明
 
 ```text
 refactor(repository/format): 统一文档检查入口
+
 - 集中标题、元数据与链接检查
 - 保持检查模式只读
 - 验证中文路径与标题锚点
@@ -116,7 +148,7 @@ refactor(repository/format): 统一文档检查入口
 
 明细是给审查者看的 **修改总结**：说明原来有什么问题、关键修改是什么，以及改后行为、阅读理解或适用边界有什么变化。按实际改动选择必要信息，不为凑条数机械拆句。
 
-不得用文件路径清单、文件数量或增删行数代替总结；只有定位关键实现确有必要时才附带路径。不得使用“描述1”之类占位内容、重复标题或编造验证结果。钩子只能检查语法，说明是否准确仍须对照实际差异审查。
+不得用文件路径清单、文件数量或增删行数代替总结；只有定位关键实现确有必要时才附带路径。不得使用“描述1”之类占位内容、重复标题或编造验证结果。当前钩子对中文结果采用非 ASCII 字符粗筛，并不真正识别语言或核实内容；语法通过后仍要人工确认中文说明准确，并对照实际差异审查。
 
 例如，修改引用计数说明时，应写“区分借用指针与独立引用，明确查找成功后由调用方承担最终 put”，而不是“修改 kref 章节及大纲，共三个文件”。
 
@@ -132,20 +164,24 @@ refactor(repository/format): 统一文档检查入口
 
 不得按文件类型机械拆分“代码提交”“文档提交”“信息更新提交”。也不得把多个无关模块塞进一个笼统提交。
 
-长任务中的临时修复使用 `fixup!` 提交，合入主线前 autosquash；主线不保留“补一下”“再修一次”式噪声历史。
+长任务中的修正仍使用符合本页格式的提交。当前 `commit-msg` 钩子不接受 Git 自动生成的 `fixup!` 标题，所以不能把 `git commit --fixup` 当作已支持的默认流程。确有整理必要且全部提交尚未推送、尚未交付时，可在私人分支上用交互式 rebase 的 squash/fixup 动作合并提交，并为最终结果编写合规信息；不要为省事关闭钩子或重写已经交付的历史。
 
 ## 1.6\_提交前验证
 
-先启用版本化配置：
+在仓库根目录启用本仓库的版本化配置；这些命令写当前仓库配置，不使用 `--global`：
 
 ```bash
+# 当前目录：linux-note 仓库根目录。
 git config core.hooksPath .githooks
 git config commit.template governance/templates/git_commit_message.txt
 ```
 
-知识库通用检查：
+首次使用或运行环境改变后执行 `doctor`。Windows 的统一入口需在 MSYS2 Bash 中运行；安装依赖使用 `./format.sh install`，不能把 Git Bash 或 PowerShell 当作支持的安装环境。
+
+下面是知识库通用检查。`check all` 检查路径、标题、元数据和链接，不能替代正文冷读、源码核对、示例运行或完整 Mermaid 渲染：
 
 ```bash
+# 当前目录：linux-note 仓库根目录；Linux Bash 或 MSYS2 Bash。
 ./format.sh doctor
 ./format.sh check all --summary
 git diff --check
@@ -157,7 +193,8 @@ git diff
 提交前必须检查暂存区，而不是只看工作区：
 
 ```bash
-git add <明确文件>
+# 当前目录：linux-note 仓库根目录；把路径替换为本次明确修改的文件。
+git add -- path/to/changed_file.md
 git diff --cached --check
 git diff --cached
 ```
@@ -167,9 +204,9 @@ git diff --cached
 ## 1.7\_撤销与历史修改
 
 - 工作区修改错误：直接编辑修正。
-- 未推送的最后一次提交：允许 `git commit --amend`。
-- 未推送分支中的临时提交：使用 `fixup` 和 `autosquash`。
-- 已推送或已交付提交：使用 `revert(<范围>): <中文结果>`。
+- 未推送且未交付的最后一次私人提交：可以 `git commit --amend`，仍需重新验证最终差异。
+- 未推送且未交付分支中的临时提交：按上文约束用交互式 rebase 整理，不生成钩子拒绝的临时标题。
+- 已推送或已交付提交：保留历史，用 `git revert --no-commit <提交>` 准备反向差量，检查后提交为 `revert(<范围>): <中文结果>` 并附明细；Git 自动生成的英文 Revert 标题不符合本仓库格式。合并提交的撤销还须先确认主线父提交，不能盲目指定。
 - 主分支禁止 `git reset`、强制移动分支和普通强推。
 - 只有经过开发者明确授权的仓库级历史迁移才能使用 `--force-with-lease`，执行前必须创建并验证完整 bundle 备份。
 
@@ -181,7 +218,7 @@ git diff --cached
 
 - 临时测试输出、编辑器缓存和构建产物。
 - `.local`、`node_modules`、`dist` 和日志。
-- 本机绝对路径、个人凭据和访问令牌。
+- 长期技术正文中的本机绝对路径、个人凭据和访问令牌。`AGENTS.md` 经明确约定的工作树发现入口属于环境说明，不是源码身份；不可据此把机器路径写进技术证据。
 - 未确认来源或授权的大体积资料。
 - 没有入口说明、环境说明和验证结论的零散实验。
 - 可由构建过程重新生成的中间文件。
