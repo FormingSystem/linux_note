@@ -9940,6 +9940,39 @@
           "十九原件工作树与索引摘要一致；五组实际规则求值、图目视、格式元数据长度锚点通过；917篇链接零缺失。"
         ],
         "limits": "源码模块26链接按十九原始证据与精确入口职责保留；未完整构建或运行 U-Boot，不提升人工评审。"
+      },
+      "knowledge/system_software/uboot/P03_从板配置到可核对的构建产物.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "以B0-B4连接源码工具身份、配置求值、Make依赖和ELF/DTB/封装产物，补完整C增量实验及真实构建命令边界。",
+        "validation": [
+          "宿主C/Make依赖、增量、头文件变化、伪目标对照与缺头失败恢复均实测。",
+          "六原件工作树与索引SHA一致，三篇格式元数据长度锚点及严格连续审计通过，图渲染目视，920篇链接零缺失。"
+        ],
+        "limits": "未执行完整U-Boot交叉构建和QEMU启动；原八千行长稿仍待其余单元迁移，未登记完成。"
+      },
+      "research/source_reading/uboot/navigation/P03_配置工具与镜像产物导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按相同B0-B4阶段连接配置工具、链接输入、打包与QEMU消费者，登记固定原件及唯一实现。",
+        "validation": [
+          "宿主C/Make依赖、增量、头文件变化、伪目标对照与缺头失败恢复均实测。",
+          "六原件工作树与索引SHA一致，三篇格式元数据长度锚点及严格连续审计通过，图渲染目视，920篇链接零缺失。"
+        ],
+        "limits": "未执行完整U-Boot交叉构建和QEMU启动；原八千行长稿仍待其余单元迁移，未登记完成。"
+      },
+      "research/source_reading/uboot/source_explanations/P03_配置求值与构建产物实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按真实规则解释宿主conf链接、库目录到ELF、INPUTS/binman与设备树分支，纠正跨版本变量套用。",
+        "validation": [
+          "宿主C/Make依赖、增量、头文件变化、伪目标对照与缺头失败恢复均实测。",
+          "六原件工作树与索引SHA一致，三篇格式元数据长度锚点及严格连续审计通过，图渲染目视，920篇链接零缺失。"
+        ],
+        "limits": "未执行完整U-Boot交叉构建和QEMU启动；原八千行长稿仍待其余单元迁移，未登记完成。"
       }
     },
     "additional_documents": [
@@ -10130,7 +10163,10 @@
       "research/source_reading/uboot/source_explanations/P01_ARM32链接布局与启动实现.md",
       "research/source_reading/uboot/navigation/README.md",
       "research/source_reading/uboot/navigation/P02_构建上下文与入口选择导读.md",
-      "research/source_reading/uboot/source_explanations/P02_构建上下文与入口选择实现.md"
+      "research/source_reading/uboot/source_explanations/P02_构建上下文与入口选择实现.md",
+      "knowledge/system_software/uboot/P03_从板配置到可核对的构建产物.md",
+      "research/source_reading/uboot/navigation/P03_配置工具与镜像产物导读.md",
+      "research/source_reading/uboot/source_explanations/P03_配置求值与构建产物实现.md"
     ],
     "language_review": {
       "status": "complete",
