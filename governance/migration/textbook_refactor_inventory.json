@@ -48,7 +48,8 @@
       "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_key_led_interrupt.md": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_从按键电平变化到GPIO中断.md",
       "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_key_led_interrupt_move_shake_01.md": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_确认稳定按键状态再翻转LED.md",
       "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_从运行中断到按键唤醒.md",
-      "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md": "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/P01_从稳定按键到Input事件.md"
+      "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md": "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/P01_从稳定按键到Input事件.md",
+      "platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md": "platforms/arm/nxp/imx8/P01_imx_v8配置与ARM64内核构建.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -10573,6 +10574,17 @@
           "标题入出链、格式元数据及952篇全仓链接通过；同步中断大纲GIC实际17章范围。"
         ],
         "limits": "导航按阅读任务验收，不重复运行目标板实验，不把现有实现缺口或人工评审状态升级。"
+      },
+      "platforms/arm/nxp/imx8/P01_imx_v8配置与ARM64内核构建.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "将误归i.MX6ULL的ARM64构建记录移入i.MX8，固定历史NXP提交并分开宿主/目标编译器、配置、独立输出、Image头与解压责任；保留原截图，纠正问答推测。",
+        "validation": [
+          "官方ls-remote及7个固定源码文件核对5.4.70配置与镜像规则，分版本核对Linux启动协议与U-Boot主机工具/booti文档。",
+          "命令语法、构造镜像头与gzip检查、图和历史截图目视、元数据格式长度严格连续及锚点通过；952篇全仓链接无缺失。"
+        ],
+        "limits": "未下载运行完整工具链、整核构建或目标板启动；通用imx_v8配置不确定具体板型，构造头不是真实内核产物；未改动通用6.12.20源码基线。"
       }
     },
     "additional_documents": [
