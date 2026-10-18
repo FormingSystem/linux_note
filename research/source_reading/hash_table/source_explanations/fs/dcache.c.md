@@ -110,23 +110,7 @@ seqretry:
 
 前一节返回候选和序列，供 RCU 路径遍历者继续验证。带引用的普通查找还有一个不同的失败现场：扫描期间发生改名，可能让本应匹配的对象换了桶，扫描却返回未命中。下面包装在未命中时检查覆盖改名的序列；只有排除这次干扰，才能接受该次扫描结果。
 
-```c
-/**
- * d_lookup - 仓库补充阅读说明：在 __d_lookup 未命中时检查 rename_lock 序列，必要时重试。
- */
-struct dentry *d_lookup(const struct dentry *parent, const struct qstr *name)
-{
-	struct dentry *dentry;
-	unsigned seq;
-	do {
-		seq = read_seqbegin(&rename_lock);
-		dentry = __d_lookup(parent, name);
-		if (dentry)
-			break;
-	} while (read_seqretry(&rename_lock, seq));
-	return dentry;
-}
-```
+`d_lookup` 的函数体与锁内持有交接统一在 [VFS持引用查找](../../../vfs/source_explanations/P11_名称候选的建立发布与持有.md#11.5_查找候选时在锁内核对身份并取得持有) 展开，完整入口见 [VFS源码索引](../../../vfs/navigation/P01_Linux_6.12_VFS源码阅读索引.md)。本节保留哈希读者需要的比较边界。
 
 改名可能改变名字、父目录与桶归属。一次快速扫描漏掉候选时，不能立即推出磁盘中不存在；d_lookup 用 rename_lock 的序列检查排除相应改名干扰。__d_lookup 的成功结果已带引用，调用者用 dput 释放；__d_lookup_rcu 交接的是受路径保护的候选和序列，两种结果不可混用。
 

@@ -3425,3 +3425,14 @@ mount_api.rst的历史字段示意与实际头文件差异已在索引和导读�
 既有fs/namespace.c、fs/pnode.c、fs/pnode.h、fs/mount.h、fs/proc_namespace.c及task_work证据沿用固定版本。当前非SMP直接计数与源码SMP每CPU汇总分支分别说明；mnt_rcu先作task_work存储、cleanup后再交RCU，不把两种用途并列成同时登记。延后工作参数1为jiffy，不是固定一毫秒完成承诺。
 
 本轮未执行跨namespace传播、poll时序、并发卸载、task_work拒绝或分配故障注入；图和代码核对不替代运行证据。
+
+
+## 1.309\_名称发布与退出的状态及配置复核
+
+2026-10-18，复核VFS实现P11、P12，补充二十段函数中文行内注释、父子链/名称哈希/inode别名的具体节点、并行查询到正常发布的交接图、零引用保留及延后回收状态图。完整函数非注释token保持固定版本；正文增加精确实现入口，哈希专题的重复d_lookup函数体收拢到VFS唯一标题，原哈希入口保留比较任务。
+
+固定提交仍为 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。既有fs/dcache.c、include/linux/dcache.h、lib/lockref.c、include/linux/lockref.h、fsnotify_backend.h与security.h原件重新核对；本次无新增原件。当前SMP与SECURITY关闭、FSNOTIFY与锁依赖检查开启。lockref_put_return在USE_CMPXCHG_LOCKREF不成立时返回-1且未递减，由fast_dput持锁完成；不能将目标配置描述成无锁递减。
+
+WARN条件中的list_lru操作、count错误分支、Sparse解锁注解、Lockdep嵌套类别与真实状态修改分别解释。d_wait和d_lru、查询节点/别名/RCU回调的存储复用要求旧角色先退出；负化不自动重新发布原本unhashed的对象。
+
+本次未执行并发rename、名字快照压力、回收压力、内存分配失败注入或内核告警测试。
