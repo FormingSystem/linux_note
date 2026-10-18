@@ -56,3 +56,21 @@ domains:
 | 排障建议、启动选择与总结 | 本篇 4.2 的 H0～H3、4.6 判断题及解析；把无条件关缓存/刷缓存改为按入口协议定位，未执行硬件启动不作成功证明 |
 
 本次没有从旧稿继承未经来源支持的 Android 产品要求，也没有用别的架构地址数值替代 ARM 配置。Linux 协议和配置原件保存到既有源码基线，Falcon 文档保存到固定 U-Boot 原件目录；原稿可由上述提交恢复用于逐项比较。
+
+## 1.5\_内核引导旧长稿的独有信息逐项归位
+
+[读书笔记 P03](../../publications/books/running_linux_kernel/P03_内核引导和初始化.md) 原件以提交 `773dd8312cc738b54589f05166186f083e61fd65` 为界，共 4031 行，SHA-256 为 `876646157e7ec59dcc9ec1f1928e90515beecc01b951a1e8bd920ce4ebb5280e`。重构保留文件、文档 ID 与既有人工评审状态；正文承担从复位到 PID 1 的桥接，独有内容先落地再收拢重复问答。
+
+| 原稿行区间与内容 | 完整说明去向 | 本次处理 |
+| --- | --- | --- |
+| 1～625、1709～2455：入口、异常级、早期 C 与 GD | U-Boot [P02](../../knowledge/system_software/uboot/P02_从构建上下文找到实际进入镜像的函数.md)、[P04](../../knowledge/system_software/uboot/P04_先建立栈与GD再进入可用的C环境.md)、[P06](../../knowledge/system_software/uboot/P06_从复位入口到异常向量与主核交接.md) | 固定源码和配置语境；不继承未证实的 2018 年版本归属、固定零入口、伪造打印或不受支持的返回流程 |
+| 626～1363、3337～4031：地址空间、搬迁与 GD 重复讨论 | U-Boot [P05](../../knowledge/system_software/uboot/P05_为什么需要SPL以及它怎样交出下一阶段.md)、[P07](../../knowledge/system_software/uboot/P07_镜像搬迁为什么不等于改变内存映射.md)、读书 [P04](../../publications/books/running_linux_kernel/P04_uboot启动流程说明.md) | 区分装载另一镜像、自身复制、重定位、地址映射与内存生命周期；固定 RELA 数值模型验证重复加偏移错误 |
+| 1364～1708：32 位地址范围、Windows、GPU、多进程与窗口 | [地址空间与容量](../../knowledge/foundations/computer_architecture/address_space_and_capacity.md) | 独立说明并提供 C 窗口模型；纠正固定 3 GiB、虚拟范围与物理容量混用等结论 |
+| 2456～2860：主循环、延时、命令选择与执行 | U-Boot [P10](../../knowledge/system_software/uboot/P10_自动引导如何选择命令与保留维护入口.md) 及对应源码单元 | 保留无人值守与维护窗口的问题，核对负延时、零延时、菜单键、控制树及 CLI 返回边界 |
+| 2861～2916：bootm 与内核交接调用图 | U-Boot [P11](../../knowledge/system_software/uboot/P11_内存镜像如何变成Linux入口现场.md)、[历史图说明](../../research/investigations/uboot_vendor_baselines.md#1.6_读书笔记的旧启动图能证明到哪一步) | 新增镜像范围、设备树修订、清理与跳转的完整周期；保留原图并限定版本证据 |
+| 2917～2941：未展开的内核初始化标题 | 读书 P03 的 K0～K4 | 补公共初始化、完成量交接、initcall、初始化内存生命周期及用户入口选择；不是用新提纲替代原空缺 |
+| 2942～3036：NOR、NAND、eMMC、DDR 比较 | [存储介质与取指路径](../../knowledge/foundations/computer_architecture/boot_storage_paths.md) | 从接口与访问过程推出 XIP、装载和工作内存，补协议条件，不保留无依据的绝对速度及成本排行 |
+| 3037～3244：PIC、PIE、GOT、PLT、REL/RELA | [7.3.1 位置无关构建的责任边界](../../knowledge/system_software/uboot/P07_镜像搬迁为什么不等于改变内存映射.md#7.3.1_PIC与PIE减少哪些固定引用_又留下哪些修正责任) 与 7.4 | 分开代码生成、链接产物、相对寻址与槽内地址；补内核 RELOCATABLE 和 RANDOMIZE_BASE 的能力/策略区别 |
+| 3245～3336：WFI/WFE 与旧空闲代码 | U-Boot [P06](../../knowledge/system_software/uboot/P06_从复位入口到异常向量与主核交接.md) | 按等待条件、事件和允许的实现行为解释，不把指令名直接当作固定睡眠深度、缓存关闭或功耗保证 |
+
+新正文的启动时序明确分开 PID 1 先等待和完成先发布两条交错。Linux 公共流程使用仓库固定 `init/main.c`，未重复维护既有 RCU 单元中相同函数的实现裁剪。模型、局部源码用例和文档检查不替代真实板上的固件、驱动或用户空间启动验证。
