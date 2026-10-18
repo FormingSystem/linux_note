@@ -180,6 +180,8 @@ flowchart LR
 
 > 配置证据：[ARM Kconfig](../../../research/source_reading/linux/arch/arm/Kconfig) 的 Memory split、[ARM MM Kconfig](../../../research/source_reading/linux/arch/arm/mm/Kconfig) 的 ARM_LPAE、[ARM64 Kconfig](../../../research/source_reading/linux/arch/arm64/Kconfig) 的 Virtual address space size；布局证据：[同提交 memory.rst](../../../research/source_reading/linux/Documentation/arch/arm64/memory.rst) 及 [Linux 6.12 官方布局页](https://docs.kernel.org/6.12/arch/arm64/memory.html)。配置用于约束结论，不从某个示例推断所有处理器的地址宽度。
 
+窗口化、进程拆分、Windows 的 LAA/4GT 条件以及 GPU 资源的访问预算，另见 [地址空间与容量](../../../knowledge/foundations/computer_architecture/address_space_and_capacity.md)。这些机制各自改变不同限制，不会把一个有限地址空间自动变成完整物理内存的直接视图。
+
 ## 4.6\_用交接条件检查一段启动描述
 
 现在把观察对象收回到启动本身。读一份新板日志或源码时，先确认当前 CPU 正在执行哪段固件、它可以访问哪块内存，再记录 H0～H3 的证据。执行位置、镜像位置、参数位置和映射规则分别记录，便不会再把“到了 DDR”“进行了重定位”“进入 Linux”当成同一动作。
