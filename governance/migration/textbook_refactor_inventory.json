@@ -10045,6 +10045,42 @@
           "三篇格式元数据长度、精确锚点和严格连续审计通过；926篇链接零缺失。"
         ],
         "limits": "未执行真实ROM、DDR初始化、存储介质读取或目标机器码；旧长稿其余单元仍待迁移。"
+      },
+      "knowledge/system_software/uboot/P06_从复位入口到异常向量与主核交接.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从前级交接引出权限、向量、环境和主核选择；表格提供字段增量，主线无需手册外链。",
+        "validation": [
+          "Clang AArch64汇编成功；16槽符号偏移、0x800节大小和2048对齐逐项匹配；人为越界正确失败。",
+          "三篇格式、元数据、长度、精确锚点和严格连续审计通过；五张图渲染目视；929篇链接零缺失。",
+          "两版Arm原件相关页核对，A64表D1-5渲染目视；五份新原件工作树与索引SHA一致。"
+        ],
+        "limits": "没有运行ARM目标异常、缓存、降级或多核释放；实验仅验证对象布局。；旧长稿地址视图、重定位差异、命令与平台历史内容仍待完整迁移。"
+      },
+      "research/source_reading/uboot/navigation/P06_ARM入口与异常向量导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "区分CurrentEL分支与ERET降级、SError与IRQ屏蔽、架构16槽与本版8槽、SPSR保存与实际恢复。",
+        "validation": [
+          "Clang AArch64汇编成功；16槽符号偏移、0x800节大小和2048对齐逐项匹配；人为越界正确失败。",
+          "三篇格式、元数据、长度、精确锚点和严格连续审计通过；五张图渲染目视；929篇链接零缺失。",
+          "两版Arm原件相关页核对，A64表D1-5渲染目视；五份新原件工作树与索引SHA一致。"
+        ],
+        "limits": "没有运行ARM目标异常、缓存、降级或多核释放；实验仅验证对象布局。；旧长稿地址视图、重定位差异、命令与平台历史内容仍待完整迁移。"
+      },
+      "research/source_reading/uboot/source_explanations/P06_ARM入口与异常向量实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按E0-E3回链S0/L0；共享释放单元、生产者和等待消费者明确，通知不替代可见性。",
+        "validation": [
+          "Clang AArch64汇编成功；16槽符号偏移、0x800节大小和2048对齐逐项匹配；人为越界正确失败。",
+          "三篇格式、元数据、长度、精确锚点和严格连续审计通过；五张图渲染目视；929篇链接零缺失。",
+          "两版Arm原件相关页核对，A64表D1-5渲染目视；五份新原件工作树与索引SHA一致。"
+        ],
+        "limits": "没有运行ARM目标异常、缓存、降级或多核释放；实验仅验证对象布局。；旧长稿地址视图、重定位差异、命令与平台历史内容仍待完整迁移。"
       }
     },
     "additional_documents": [
@@ -10244,7 +10280,10 @@
       "research/source_reading/uboot/source_explanations/P04_早期运行环境与GD交接实现.md",
       "knowledge/system_software/uboot/P05_为什么需要SPL以及它怎样交出下一阶段.md",
       "research/source_reading/uboot/navigation/P05_SPL装载与下一阶段交接导读.md",
-      "research/source_reading/uboot/source_explanations/P05_SPL装载与下一阶段交接实现.md"
+      "research/source_reading/uboot/source_explanations/P05_SPL装载与下一阶段交接实现.md",
+      "knowledge/system_software/uboot/P06_从复位入口到异常向量与主核交接.md",
+      "research/source_reading/uboot/navigation/P06_ARM入口与异常向量导读.md",
+      "research/source_reading/uboot/source_explanations/P06_ARM入口与异常向量实现.md"
     ],
     "language_review": {
       "status": "complete",
