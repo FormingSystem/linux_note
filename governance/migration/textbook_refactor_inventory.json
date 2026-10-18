@@ -28,7 +28,8 @@
       "research/source_reading/linux/gpio/linux_6.12_gpio_核心路径.md": "research/source_reading/gpiolib/navigation/P01_Linux_6.12_GPIO源码阅读索引.md",
       "knowledge/driver_model/gpio_consumers/P02_输入_指示_电源与控制类_GPIO_Consumer.md": "knowledge/driver_model/gpio_consumers/P02_按设备功能选择GPIO实现.md",
       "research/source_reading/linux/drivers/input/README.md": "research/source_reading/input/navigation/P01_Linux_6.12_Input源码阅读索引.md",
-      "knowledge/system_software/buildroot/P01_引言与基础.md": "knowledge/system_software/buildroot/P01_从手工拼系统到可重复的构建输入.md"
+      "knowledge/system_software/buildroot/P01_引言与基础.md": "knowledge/system_software/buildroot/P01_从手工拼系统到可重复的构建输入.md",
+      "knowledge/system_software/buildroot/P02_工具链的构建流程概览.md": "knowledge/system_software/buildroot/P02_从最小编译器到完整目标工具链.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -9627,7 +9628,20 @@
           "两图渲染目视，命令Bash -n、标题元数据、长度和锚点检查通过。",
           "全仓909篇Markdown链接无缺失，导航和人工评审入口同步。"
         ],
-        "limits": "未运行Linux Buildroot配置、构建或QEMU；未执行归档PGP验证，摘要不等于发布者签名。"
+        "limits": "未运行Linux Buildroot配置、构建或QEMU；未执行归档PGP验证，摘要不等于发布者签名。",
+        "followup_20261018_toolchain": "补入14份工具链配置与配方，共32份原件逐字节核对；资料索引链接密度提示按职责保留。"
+      },
+      "knowledge/system_software/buildroot/P02_从最小编译器到完整目标工具链.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按宿主与目标身份、初始编译能力、libc与UAPI汇合及逐步填充sysroot重建工具链因果链。",
+        "validation": [
+          "32份固定归档原件逐字节及摘要核对，依赖和安装规则检查。",
+          "三图渲染目视，完整C编译链接观察命令Bash语法检查，四张原菜单图标明2022.02.1。",
+          "标题、元数据、长度、精确锚点及全仓909篇链接无缺失。"
+        ],
+        "limits": "未执行Linux Buildroot或交叉C构建及目标运行；固定资料索引LINK_DENSITY按查询职责人工复核保留。"
       }
     },
     "additional_documents": [
