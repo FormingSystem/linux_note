@@ -10,349 +10,171 @@ domains:
 
 # 第2章\_LED点灯+dts
 
-此处为便于记忆框架的简写版本。完整的平台实验见：[i.MX6ULL字符设备LED与设备树完整实验](P03_字符设备_LED与设备树完整实验.md)。字符设备通用模型见：[字符设备专题大纲](../../../../../../knowledge/driver_model/character_device/大纲.md)。
+上一章已经解释，一根 GPIO 输出背后有时钟、方向、数据和引脚复用几种责任。Linux 已经有管理这些硬件的提供者，LED 应怎样声明自己的线路，而不再自己写一组共享寄存器？本章先用内核已有的 `gpio-leds` 驱动完成连接。下一章才增加自定义字符设备协议，比较它额外承担的生命周期责任。
 
+本例仍假设板级原理图确认 LED 通过限流电路接到 GPIO1_IO03，且低电平点亮。**这一接线是实验前提，不是根据 SoC 名称推测出的事实。** GPIO1_IO03 还可以承载其他功能；必须检查当前板文件及实际用途，不能让 LED 与 I²C、串口或其他消费者同时占用该 PAD。
 
+## 2.1\_把一颗LED的需求交给已有的状态所有者
 
-#### (1)\_i.MX6ULL\_基于设备树的\_LED\_驱动开发示例
+对应用而言，需求是“点亮这颗灯”。GPIO 提供者负责控制器寄存器访问，pinctrl 提供者负责复用和 PAD 配置，时钟框架与控制器驱动负责所需时钟。LED 驱动在这些能力之上维护亮度和触发器接口。它不需要复制 GPIO bank 的寄存器影子，也不需要知道 CCGR1 的物理地址。
 
+设备树保存硬件连接描述。启动时，内核根据节点匹配驱动；驱动取得已注册 GPIO 提供者的描述符，后续将逻辑值交给描述符接口。描述符是内核管理对象，设备树节点并不内嵌一个 `gpiod` 成员，应用也不能把 DT 中的三个数字当作用户指针。
 
-##### 1)\_设备树配置
-需修改 `imx6ul-14x14-test.dtsi` 文件，完成引脚复用配置和 LED 节点定义。
-
-1. **引脚复用配置（添加到 `&iomuxc` 节点）**
-   定义 LED 引脚（GPIO1_IO03）的复用功能和电气属性：
-
-   ```dts
-   &iomuxc {
-       pinctrl-names = "default";
-
-       // LED 引脚配置组：复用为 GPIO 功能
-       pinctrl_dt_led: dtledgrp {
-           fsl,pins = <
-               // 引脚复用宏：物理引脚 → GPIO1_IO03 功能
-               // 电气属性 0x10B0：配置驱动能力和上拉/下拉（参考芯片手册）
-               MX6UL_PAD_GPIO1_IO03__GPIO1_IO03    0x10B0
-           >;
-       };
-   };
-   ```
-
-2. **LED 设备节点（添加到根节点 `/` 下）**
-   定义 LED 设备的硬件信息，关联 GPIO 控制器和引脚配置：
-
-   ```dts
-   / {
-       dt_led: led@0 {
-           compatible = "nxp,imx6ull-dt-led"; // 与驱动匹配的标识
-           status = "okay";                  // 启用节点
-           gpios = <&gpio1 3 GPIO_ACTIVE_LOW>; // 关联 GPIO1_IO03，低电平点亮
-           pinctrl-names = "default";        // 引脚配置名称
-           pinctrl-0 = <&pinctrl_dt_led>;    // 关联上述引脚配置组
-       };
-   };
-   ```
-
-3. **冲突处理**
-   若引脚被其他设备（如 `tsc`）占用，注释冲突配置：
-   ```dts
-   // arch/arm/boot/dts/imx6ul-14x14-test.dtsi：
-   &tsc {
-   	pinctrl-names = "default";
-   	pinctrl-0 = <&pinctrl_tsc>;
-   	// xnur-gpio = <&gpio1 3 GPIO_ACTIVE_LOW>;		// 注释掉冲突的引脚。重新加载即可
-   	measure-delay-time = <0xffff>;
-   	pre-charge-time = <0xfff>;
-   	status = "disabled";
-   };
-   ```
-
-
-##### 2)\_驱动代码实现(dt\_led.c)
-通过平台驱动框架匹配设备树节点，使用 GPIO 子系统 API 控制 LED。
-
-```c
-// dt_led.c
-
-#include <linux/module.h>
-#include <linux/platform_device.h>
-#include <linux/cdev.h>
-#include <linux/device.h>
-#include <linux/mutex.h>
-#include <linux/uaccess.h>
-#include <linux/gpio/consumer.h>
-#include <linux/of.h>
-#include <linux/of_device.h>
-
-#include <linux/kernel.h>    /* pr_info/pr_warn/pr_err */
-#include <linux/string.h>    /* strim, strncpy, strlen */
-#include <linux/err.h>       /* IS_ERR, PTR_ERR */
-#include <linux/kstrtox.h>   /* kstrtobool */
-
-// 驱动常量定义
-#define DRIVER_NAME  "imx6ull-dt-led"
-#define DEVICE_NAME  "dt_led"
-#define BUFFER_SIZE  16
-
-// LED设备私有数据结构
-#include <linux/fs.h>        /* struct file, file_operations */
-#include <linux/minmax.h>    /* min() */
-#include <linux/init.h>      /* module init/exit helpers */
-struct dt_led_dev {
-    struct class *led_class;    // 设备类（用于/sys/class）
-    struct device *led_device;  // 设备节点（用于/dev）
-    struct cdev led_cdev;       // 字符设备核心结构
-    dev_t dev_num;              // 设备号
-    char buffer[BUFFER_SIZE];   // 用户输入缓冲区
-    struct mutex led_mutex;     // 互斥锁（保证多线程安全）
-    struct gpio_desc *gpiod;    // GPIO描述符（从设备树获取）
-};
-static struct dt_led_dev led_dev;
-
-// ---------------- 硬件抽象：GPIO电平控制 ----------------
-// 逻辑控制：on=true → 点亮（低电平）；on=false → 熄灭（高电平）
-static inline void led_set_state(bool on) {
-    // gpiod_set_value：内核GPIO子系统API，设置GPIO电平
-    // 因设备树配置GPIO_ACTIVE_LOW，on=true对应输出0（低电平）
-    gpiod_set_value(led_dev.gpiod, on ? 0 : 1);
-}
-
-// ---------------- 业务逻辑：解析用户输入 ----------------
-// 解析用户输入字符串，返回LED动作（点亮/熄灭/保持）
-enum led_action {
-    LED_ACT_KEEP = 0,  // 保持现状
-    LED_ACT_ON,        // 点亮
-    LED_ACT_OFF        // 熄灭
-};
-
-static enum led_action parse_user_input(const char *input, size_t len) {
-    char trimmed[BUFFER_SIZE];
-    strncpy(trimmed, input, len);
-    trimmed[len] = '\0';
-    strim(trimmed); // 去除前后空格/换行
-    len = strlen(trimmed);
-    // 1. 单字符解析：'0'→点亮，'1'→熄灭
-    if (len == 1) {
-        if (trimmed[0] == '0') return LED_ACT_ON;
-        if (trimmed[0] == '1') return LED_ACT_OFF;
-    }
-
-    // 2. 字符串解析：on/true/yes→点亮；off/false/no→熄灭（大小写不敏感）
-    bool on;
-    if (!kstrtobool(trimmed, &on)) {
-        return on ? LED_ACT_ON : LED_ACT_OFF;
-    }
-
-    // 3. 无法识别的输入→保持现状
-    return LED_ACT_KEEP;
-}
-
-// ---------------- 文件操作接口：与用户空间交互 ----------------
-static int led_open(struct inode *inode, struct file *file) {
-    struct dt_led_dev *dev = container_of(inode->i_cdev, struct dt_led_dev, led_cdev);
-    file->private_data = dev;
-    pr_info("[%s] device opened\n", DRIVER_NAME);
-    return 0;
-}
-
-static int led_release(struct inode *inode, struct file *file) {
-    pr_info("[%s] device closed\n", DRIVER_NAME);
-    return 0;
-}
-
-// 写入接口：用户通过echo写入控制命令（如echo 0 > /dev/dt_led）
-static ssize_t led_write(struct file *file, const char __user *ubuf,
-                         size_t count, loff_t *ppos) {
-    struct dt_led_dev *dev = file->private_data;
-    size_t copy_len;
-    enum led_action act;
-
-    if (count == 0) return 0;
-
-    // 互斥锁保护：避免多线程同时写入
-    mutex_lock(&dev->led_mutex);
-
-    // 1. 拷贝用户输入到内核缓冲区
-    copy_len = min(count, (size_t)(BUFFER_SIZE - 1));
-    if (copy_from_user(dev->buffer, ubuf, copy_len)) {
-        mutex_unlock(&dev->led_mutex);
-        return -EFAULT; // 拷贝失败（用户空间地址非法）
-    }
-
-    // 2. 解析输入并执行动作
-    act = parse_user_input(dev->buffer, copy_len);
-    switch (act) {
-        case LED_ACT_ON:
-            led_set_state(true);
-            pr_info("[%s] LED turned ON (input: %.*s)\n",
-                    DRIVER_NAME, (int)copy_len, dev->buffer);
-            break;
-        case LED_ACT_OFF:
-            led_set_state(false);
-            pr_info("[%s] LED turned OFF (input: %.*s)\n",
-                    DRIVER_NAME, (int)copy_len, dev->buffer);
-            break;
-        case LED_ACT_KEEP:
-            pr_warn("[%s] unknown input: %.*s (keep state)\n",
-                    DRIVER_NAME, (int)copy_len, dev->buffer);
-            break;
-    }
-
-    mutex_unlock(&dev->led_mutex);
-    return copy_len; // 返回实际写入字节数
-}
-
-// 文件操作结构体：关联用户空间接口
-static const struct file_operations led_fops = {
-    .owner   = THIS_MODULE,
-    .open    = led_open,
-    .release = led_release,
-    .write   = led_write,
-};
-
-// ---------------- 平台驱动接口：与设备树匹配 ----------------
-// probe函数：设备树节点与驱动匹配成功后执行（初始化核心逻辑）
-static int dt_led_probe(struct platform_device *pdev) {
-    struct device *dev = &pdev->dev;
-    int ret;
-
-    // 1. 初始化私有数据
-    memset(&led_dev, 0, sizeof(struct dt_led_dev));
-    mutex_init(&led_dev.led_mutex);
-
-    // 2. 从设备树获取GPIO资源（核心步骤）
-    // devm_gpiod_get：自动管理GPIO资源，无需手动释放
-    // 第二个参数NULL：匹配设备树"gpios"属性（无名称时）
-    // GPIOD_OUT_LOW：默认输出低电平（熄灭，因GPIO_ACTIVE_LOW实际为高电平）
-    led_dev.gpiod = devm_gpiod_get(dev, NULL, GPIOD_OUT_LOW);
-    if (IS_ERR(led_dev.gpiod)) {
-        dev_err(dev, "failed to get GPIO from device tree\n");
-        return PTR_ERR(led_dev.gpiod);
-    }
-
-    // 3. 申请设备号（动态分配，避免静态冲突）
-    ret = alloc_chrdev_region(&led_dev.dev_num, 0, 1, DEVICE_NAME);
-    if (ret < 0) {
-        dev_err(dev, "failed to allocate device number\n");
-        return ret;
-    }
-
-    // 4. 初始化并注册字符设备
-    cdev_init(&led_dev.led_cdev, &led_fops);
-    led_dev.led_cdev.owner = THIS_MODULE;
-    ret = cdev_add(&led_dev.led_cdev, led_dev.dev_num, 1);
-    if (ret < 0) {
-        dev_err(dev, "failed to add cdev\n");
-        goto err_unregister_chrdev;
-    }
-
-    // 5. 创建设备类（在/sys/class下生成dt_led_class）
-    led_dev.led_class = class_create(THIS_MODULE, "dt_led_class");
-    if (IS_ERR(led_dev.led_class)) {
-        dev_err(dev, "failed to create class\n");
-        ret = PTR_ERR(led_dev.led_class);
-        goto err_cdev_del;
-    }
-
-    // 6. 创建设备节点（在/dev下生成dt_led）
-    led_dev.led_device = device_create(led_dev.led_class, NULL,
-                                       led_dev.dev_num, NULL, DEVICE_NAME);
-    if (IS_ERR(led_dev.led_device)) {
-        dev_err(dev, "failed to create device node\n");
-        ret = PTR_ERR(led_dev.led_device);
-        goto err_class_destroy;
-    }
-
-    dev_info(dev, "LED driver probe success! Try: echo 0 > /dev/%s (ON), echo 1 > /dev/%s (OFF)\n",
-             DEVICE_NAME, DEVICE_NAME);
-    return 0;
-
-    // 错误处理：反向释放资源
-err_class_destroy:
-    class_destroy(led_dev.led_class);
-err_cdev_del:
-    cdev_del(&led_dev.led_cdev);
-err_unregister_chrdev:
-    unregister_chrdev_region(led_dev.dev_num, 1);
-    return ret;
-}
-
-// remove函数：驱动卸载时执行（释放资源）
-static int dt_led_remove(struct platform_device *pdev) {
-    // 释放字符设备相关资源
-    device_destroy(led_dev.led_class, led_dev.dev_num);
-    class_destroy(led_dev.led_class);
-    cdev_del(&led_dev.led_cdev);
-    unregister_chrdev_region(led_dev.dev_num, 1);
-
-    // GPIO资源由devm_xxx自动释放，无需手动调用gpiod_put()
-    dev_info(&pdev->dev, "LED driver removed\n");
-    return 0;
-}
-
-// 设备树匹配表：驱动与设备树节点的匹配规则
-static const struct of_device_id dt_led_of_match[] = {
-    { .compatible = "nxp,imx6ull-dt-led" }, // 与设备树led节点的compatible一致
-    { /* 终止符：必须添加 */ }
-};
-MODULE_DEVICE_TABLE(of, dt_led_of_match); // 向内核注册匹配表
-
-// 平台驱动结构体：关联probe/remove与匹配表
-static struct platform_driver dt_led_driver = {
-    .probe  = dt_led_probe,
-    .remove = dt_led_remove,
-    .driver = {
-        .name = DRIVER_NAME,
-        .of_match_table = of_match_ptr(dt_led_of_match), // 关联设备树匹配表
-    },
-};
-
-// 模块加载/卸载接口
-module_platform_driver(dt_led_driver);
-
-// 模块信息
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Your Name");
-MODULE_DESCRIPTION("i.MX6ULL LED Driver Based on Device Tree (Linux 6.1)");
-MODULE_ALIAS("imx6ull-dt-led");
+```mermaid
+flowchart TB
+    DT[板级设备树] -->|gpios选择线路及极性| LED[gpio-leds消费者]
+    DT -->|pinctrl-0选择默认引脚组| PIN[pinctrl提供者]
+    U[应用写brightness] -->|LED亮度请求| LED
+    LED -->|描述符逻辑值| GPIO[gpio-mxc提供者]
+    CLK[时钟框架] -->|控制器时钟| GPIO
+    GPIO -->|受控更新DR与GDIR| HW[GPIO1控制器]
+    PIN -->|配置MUX与PAD| PAD[GPIO1_IO03焊盘]
+    HW -->|输出电平| PAD
+    PAD -->|经板级电路产生电流| L[LED]
 ```
 
+这里减少的是消费者自行管理寄存器的责任，并没有消除底层访问。GPIO 提供者仍维护共享状态和锁，框架仍处理资源获取和释放。若另一驱动已经独占线路，后来的申请应失败；这比两者都成功映射后互相覆盖输出更早暴露错误。
 
-##### 3)\_编译与验证
-1. **Makefile（交叉编译配置）**
+## 2.2\_先核对板级连接\_再写两个相互配合的节点
 
-   ```makefile
-   # 编译目标：dt_led.c -> dt_led.ko
-   obj-m := dt_led.o
+下面是加入 **实际板级设备树源文件（DTS）** 的片段，使用 NXP Linux 6.12.20 固定基线中的 i.MX6UL/6ULL 引脚定义。它不是完整板级设备树，不能脱离处理器、内存、电源和板上其余设备单独启动。板文件通常已通过包含链获得 `imx6ul-pinfunc.h`；应沿实际包含链核对，不能凭旧 SDK 文件名选择构建对象。
 
-   # 内核源码路径（改成你自己的）
-   KDIR := /home/lizhaojun/linux/nxp/kernel/linux-imx-6.1
-   PWD  := $(shell pwd)
+先在原理图中核对 LED 极性、GPIO1_IO03 对应封装 PAD、供电与限流电阻，再检查已有节点没有占用它。若实际接线不同，必须一起修改线路、引脚宏和电气配置，不只替换 `gpios` 中的数字。
 
-   # 默认目标：交叉编译 ARM 模块
-   ARCH ?= arm
-   CROSS_COMPILE ?= arm-none-linux-gnueabihf-
+```dts
+#include <dt-bindings/gpio/gpio.h>
 
-   all:
-   	$(MAKE) -C $(KDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) modules
+/ {
+    /* 与下一章的自定义消费者二选一，不能同时申请同一线路。 */
+    leds {
+        compatible = "gpio-leds";
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_note_led>;
 
-   clean:
-   	$(MAKE) -C $(KDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) clean
-   ```
+        led-0 {
+            label = "note:status";
+            gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+            default-state = "off";
+        };
+    };
+};
 
-2. **验证步骤**
+&iomuxc {
+    pinctrl_note_led: noteledgrp {
+        fsl,pins = <
+            MX6UL_PAD_GPIO1_IO03__GPIO1_IO03 0x10b0
+        >;
+    };
+};
+```
 
-   - 编译设备树：`make imx6ul-14x14-test.dtb` 生成 `imx6ul-14x14-test.dtb` 并烧录到开发板。
-   - 编译驱动：`make` 生成 `dt_led.ko`，拷贝到开发板。
-   - 加载驱动：`insmod dt_led.ko`。
-   - 控制 LED：
-     ```bash
-     echo 0 > /dev/dt_led  # 点亮 LED
-     echo 1 > /dev/dt_led  # 熄灭 LED
-     ```
+`default-state = "off"` 是 LED 驱动接管时的逻辑初值，不是从上电起保证绝无闪烁。Boot ROM、引导程序和内核接管前的 PAD 状态仍可能影响 LED。若产品要求上电不闪，要沿整条启动链和外接电路检查，不能只改变这一项属性。
 
+| 属性或对象 | 谁解释它 | 本例具体作用 |
+| --- | --- | --- |
+| `compatible = "gpio-leds"` | 设备匹配与 GPIO LED 驱动 | 选择已有 LED 消费者，不是选择 GPIO 控制器驱动 |
+| `pinctrl-names`、`pinctrl-0` | 设备核心与 pinctrl 框架 | 选择默认复用/电气配置组；数字 0 是状态索引 |
+| `gpios = <&gpio1 3 GPIO_ACTIVE_LOW>` | GPIO 框架与 GPIO1 提供者 | 控制器、控制器内偏移 3、低有效标志；不是三段物理地址 |
+| `label` | LED 命名逻辑 | 本例期望名称 `note:status`；重复名字可能被调整，应查看实际生成的 LED 目录 |
+| `default-state = "off"` | GPIO LED 驱动 | 接管后逻辑关闭；本例对应物理高 |
+| `fsl,pins` 的引脚宏与配置值 | i.MX pinctrl 提供者 | 选择 GPIO 功能并应用 PAD 配置；具体字段须按目标 PAD 手册解释 |
 
-##### 4)\_核心逻辑总结
-1. 设备树：通过 `gpios` 和 `pinctrl` 属性定义 LED 硬件信息（引脚、复用、电平极性），与驱动解耦。
-2. 驱动：通过 `of_device_id` 匹配设备树节点，使用 `devm_gpiod_get` 获取 GPIO 资源，通过 `gpiod_set_value` 控制电平。
-3. 优势：更换 LED 引脚时无需修改驱动，仅需调整设备树配置，提升兼容性和开发效率。
+### 2.2.1\_引脚宏为什么不是一个GPIO号码
+
+基线中的 `MX6UL_PAD_GPIO1_IO03__GPIO1_IO03` 展开为五个单元，再加 `0x10b0` 组成一条六单元配置。它描述 pinctrl 的寄存器位置和选择值，不是 GPIO 描述符编号。
+
+| 单元 | 本例值 | 含义 |
+| --- | --- | --- |
+| mux 寄存器偏移 | `0x0068` | 相对 IOMUXC 区域的复用寄存器位置 |
+| PAD 寄存器偏移 | `0x02f4` | 电气配置寄存器位置 |
+| input select 寄存器偏移 | `0x0000` | 此功能条目没有另列需写的输入选择寄存器，不能据此访问基址零偏移 |
+| mux 模式 | `0x5` | 选择 GPIO1_IO03 |
+| input select 值 | `0x0` | 与上面的 input select 项配合 |
+| PAD 配置 | `0x10b0` | keeper 使能、非开漏、DSE 为 R0/6、慢边沿等，完整拆位见上一章 |
+
+本实验涉及的 MMIO 地址、32 位访问约束与 `0x10b0` 全部字段已经列在 [上一章寄存器与 PAD 表](P01_LED点灯+ioremap.md#1.1.1_把0x10b0拆开以后才能判断电气意图)。这里只比较 DTS 如何引用这些配置；无需打开手册才能继续理解连接关系。
+
+GPIO1 控制器的 `#gpio-cells = <2>` 表示 phandle 后有两个 GPIO 参数单元；这是控制器绑定合同，不能为了“简化 LED”任意改为 1。其 `gpio-ranges = <&iomuxc 0 23 10>` 这一段将 GPIO 偏移 0～9 映射到 pinctrl 引脚 23～32。因此 GPIO1 偏移 3 对应 pinctrl 引脚 26。**23 和 26 都不是本例应写进 `gpios` 的 GPIO 全局编号**，这里的消费者仍写偏移 3。
+
+GPIO 的线路描述与中断描述也有不同合同。按键若使用这个 GPIO 控制器作为中断父级，两个中断单元通常是线路偏移与触发类型，并非“编号与优先级”。普通 `interrupts` 属性通过 `interrupt-parent` 指定父级；把 phandle 直接塞进其中，要改用相应 `interrupts-extended` 格式，而不是混合两种语法。本章 LED 不需要中断属性。
+
+## 2.3\_逻辑点亮只翻译一次\_不要在驱动里再次取反
+
+低有效标志记录在描述符的配置中。LED 消费者请求逻辑 1，GPIO 层将它翻译成物理低；逻辑 0 翻译成物理高。有效极性与电气上的开漏是两个独立属性，低有效 LED 并不自动意味着开漏输出。
+
+| 设备意图 | 描述符逻辑值 | `GPIO_ACTIVE_LOW` 物理电平 | `GPIO_ACTIVE_HIGH` 物理电平 |
+| --- | --- | --- | --- |
+| 关闭 | 0 | 高 | 低 |
+| 点亮 | 1 | 低 | 高 |
+
+所以自定义消费者应写 `gpiod_set_value_cansleep(desc, on)`，而不是在低有效节点上再写 `on ? 0 : 1`。后者把“点亮”翻译成逻辑关闭，造成双重反转。`GPIOD_OUT_LOW` 中的 LOW 也是初始化逻辑 0；在本例应得到关闭对应的物理高，而不能仅凭枚举名称判断引脚电压。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as 应用
+    participant L as LED框架与gpio-leds
+    participant G as GPIO描述符与提供者
+    participant P as PAD及LED
+    A->>L: 写brightness为1
+    L->>G: 请求逻辑1
+    G->>G: 根据active-low翻译成物理0
+    G->>P: 更新GPIO输出为低
+    Note over P: 在约定接线与供电下形成LED电流
+    A->>L: 写brightness为0
+    L->>G: 请求逻辑0
+    G->>P: 更新GPIO输出为高
+```
+
+此图有意没有加入“消费者读回寄存器以确认点亮”。LED 亮度属性保存的是软件请求状态，不是光学检测结果；即使输出电平正确，LED 断路、接反或电源未接仍可能不亮。
+
+## 2.4\_构建和运行分别检查哪一份描述
+
+修改 DTS 后，必须构建启动链实际加载的设备树二进制文件（DTB）。源码文件正确、DTB 构建成功、引导程序加载新 DTB、内核运行时出现预期节点，是四个不同事实。不要把某个旧 SDK 路径当成所有板的固定入口。
+
+在已核定版本、已配置交叉工具链的内核树中，按该板维护的构建流程执行 `make ARCH=arm dtbs`，或构建该树支持的具体 DTB 目标。然后记录目标 DTB 的摘要、部署位置以及引导程序选择 DTB 的变量/命令，按板级部署规程更新。这里不提供一个未经板卡核对的覆盖启动分区命令。
+
+内核需要 GPIO、i.MX GPIO 提供者、i.MX pinctrl 以及 `CONFIG_LEDS_CLASS`、`CONFIG_LEDS_GPIO` 等相关配置。配置为模块时还需加载模块及依赖；配置为内建时无需 `insmod`。驱动加载成功也不证明节点已匹配或 GPIO 申请成功，应查看实际绑定和错误日志。
+
+运行端可按下面顺序观察。命令在目标 Linux 上执行，LED 路径以实际目录为准。
+
+```bash
+# 先确认设备树是此次部署的版本，并观察驱动绑定与日志。
+ls /sys/class/leds
+dmesg | tail -n 80
+
+# 仅在确认此项就是本实验LED后，使用具有写权限的shell执行。
+led=/sys/class/leds/note:status
+cat "$led/max_brightness"
+if [ -e "$led/trigger" ]; then
+    cat "$led/trigger"
+    printf 'none\n' > "$led/trigger"
+fi
+printf '1\n' > "$led/brightness"
+cat "$led/brightness"
+printf '0\n' > "$led/brightness"
+```
+
+先关闭触发器，是为了避免 timer、磁盘活动等机制继续改写亮度；如果内核没有启用 LED 触发器支持，`trigger` 文件可能不存在，此时不执行这两条 trigger 命令。普通 GPIO LED 为二值输出，不把 brightness 的数值当成硬件 PWM 占空比。
+
+| 观察结果 | 已取得的有限证据 | 下一步检查 |
+| --- | --- | --- |
+| 没有 LED 目录 | 尚未建立此 LED 的用户接口 | 运行 DT、驱动配置/加载、匹配、延迟探测和资源申请错误 |
+| 目录存在，写入报错 | 接口存在但本次请求未按预期完成 | 权限、实际错误码、节点身份；不要只凭灯的状态猜 errno |
+| 写入成功，灯反向变化 | 软件请求已被接受 | 有效极性、电路接线及是否有其他控制路径；不要直接增加第二次取反 |
+| 软件亮度变化，灯不变 | 只能证明软件侧请求状态 | pinctrl、资源归属、实际 PAD 电压、供电与 LED 电路 |
+| 周期性自行变化 | 存在其他亮度更新来源的可能 | 当前 trigger、其他应用与系统策略 |
+
+本轮文档核对了固定源码、绑定文件和芯片手册；没有对用户开发板执行烧写或测量。因此这些是待在目标板运行的实验步骤，不是本轮实测日志。
+
+## 2.5\_增加一颗灯时\_先分清连接与接口需求
+
+若原理图确认第二颗 LED 位于另一根可用线路，标准驱动可在 `leds` 下增加第二个子节点，每个节点声明自己的 `gpios`、名称和初始状态，并补齐该 PAD 的 pinctrl 配置。不能只把第一个节点复制后仍占用 GPIO1_IO03，也不能拿“GPIO2_IO10”这个逻辑名称替代该板实际封装 PAD 的宏。
+
+如果应用只需要开关、标准触发器或常规 LED 管理，继续使用本章的 LED 类接口即可。若学习目标是设计字符设备命令、保存打开实例以及处理解绑，才进入下一章。自定义接口会增加解析、并发、对象持有和错误处理责任；它不会因为名字叫 `/dev/led` 就比标准接口更直接地控制硬件。
+
+练习：把有效极性改为 HIGH，而驱动逻辑保持不变，点亮时输出什么？答案是物理高。若板上仍采用低有效接线，灯的实际效果将反向。再把 `default-state` 改为 `on`，能否保证从上电到驱动接管都亮？不能，它只定义驱动接管时的状态；前面的启动阶段仍未被该属性约束。
+
+现在可以沿“板级连接 → 描述符 → GPIO 提供者 → PAD”解释一次点亮，也能区分软件请求与硬件观察。下一章保持同一条硬件路径，增加完整字符设备协议，重点处理用户文件仍打开时设备被解绑的情况。
+
+> 固定源码依据：NXP `linux-imx`，Linux 6.12.20，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 的 [leds-gpio.yaml](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/Documentation/devicetree/bindings/leds/leds-gpio.yaml)、[leds-gpio.c](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/drivers/leds/leds-gpio.c)、[imx6ul-pinfunc.h](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/arch/arm/boot/dts/nxp/imx/imx6ul-pinfunc.h)、[imx6ul.dtsi](https://github.com/nxp-imx/linux-imx/blob/dfaf2136deb2af2e60b994421281ba42f1c087e0/arch/arm/boot/dts/nxp/imx/imx6ul.dtsi)。进一步阅读源码时，从 [GPIO 源码阅读索引](../../../../../../research/source_reading/gpiolib/navigation/P01_Linux_6.12_GPIO源码阅读索引.md) 进入；芯片寄存器依据及字段已经放在上一章。

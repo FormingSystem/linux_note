@@ -728,6 +728,7 @@ mindmap-plugin: basic
         - i.MX6ULL
             - 驱动实验
                 - P01 LED点灯
+                    - 🔴 [LED实验阅读路线](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/大纲.md)
                     - 🟢 [P01 LED点灯+ioremap](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P01_LED点灯+ioremap.md)
                     - 🟢 [P02 LED点灯+dts](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md)
                     - 🟢 [P03 i.MX6ULL字符设备LED与设备树完整实验](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P03_字符设备_LED与设备树完整实验.md)

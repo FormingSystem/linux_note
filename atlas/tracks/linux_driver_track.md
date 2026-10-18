@@ -63,10 +63,10 @@ domains:
 
 建议依次完成现有 i.MX6ULL 实验：
 
-开始实验前，先从[Arm、GIC、RK3588 与 i.MX6ULL 外部资料索引](../../reference/external_resources/arm/README.md#1.4_版本选择与阅读顺序)确认处理器架构、GIC 代际和芯片手册版本。外部资料给出硬件契约，下面的实验记录给出特定板卡与软件版本上的观测结果，二者不能互相替代。面向 RK3588 的控制器学习按 [GICv3 独立专题](../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)，先学 GIC-600 r1p6 / GICv3.0；不要求先掌握 GIC 代际差异。
+开始实验前，先从[Arm、GIC、RK3588 与 i.MX6ULL 外部资料索引](../../reference/external_resources/arm/README.md#1.4_版本选择与阅读顺序)确认处理器架构、GIC 代际和芯片手册版本。外部资料给出硬件契约，下面的实验记录区分模型观察、源码核对、目标板操作步骤与实际运行结果，二者不能互相替代。面向 RK3588 的控制器学习按 [GICv3 独立专题](../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)，先学 GIC-600 r1p6 / GICv3.0；不要求先掌握 GIC 代际差异。
 
-1. [LED 的 ioremap 实现](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P01_LED点灯+ioremap.md)。
-2. [LED 的设备树实现](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md)。
+1. [LED 实验路线](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/大纲.md)：先看寄存器与资源归属，运行宿主位更新模型。
+2. [标准 GPIO LED 设备树集成](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md)，再按学习需要完成 [自定义字符设备与解绑实验](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P03_字符设备_LED与设备树完整实验.md)。
 3. [BEEP 的设备树实现](../../labs/platforms/nxp/imx6ull/drivers/P02_BEEP/P01_beep+dts.md)。
 4. [KEY 中断](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_key_led_interrupt.md)及[中断唤醒内核](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md)。
 5. [Input 按键实验](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md)。
