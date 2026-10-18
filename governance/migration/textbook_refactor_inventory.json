@@ -322,7 +322,8 @@
         "date": "2026-10-16",
         "validation": [
           "本轮逐篇作者冷读；不等同于开发者人工评审",
-          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过"
+          "标题/元数据/命名检查及全仓707篇链接扫描通过；git diff --check 通过",
+          "分类交付前修正GIC十七篇计数；格式、5条出链及27条标题入链通过。"
         ],
         "limits": "未执行目标板、裸机或内核运行实验；本次没有据历史 validated 自动认定完成。"
       },
@@ -11695,7 +11696,26 @@
       "snapshot_branch": "codex/backup-full-document-refactor-20261018",
       "snapshot_scope": "完整已复审工作区文档、关联图资产和规则，包含既有GIC与skill差量；原工作区状态保留，不纳入无关未跟踪U-Boot原件。",
       "validation": "正式文档标题元数据、唯一ID、路径、全仓链接及标题片段通过；历史材料摘要不变；skill安装镜像零差异。具体实验与图示验证按逐篇记录，不重复声称目标运行。",
-      "limits": "本轮作者复审及必要重构完成，不是人工评审或全部目标环境实验通过；未推送远端或再次移动master。"
+      "limits": "本轮作者复审及必要重构完成，不是人工评审或全部目标环境实验通过；随后按追加授权分类提交、快进master并推送，见delivery中的已核对交付时点。",
+      "delivery": {
+        "date": "2026-10-18",
+        "remote": "git@github.com:FormingSystem/linux_note.git",
+        "content_commit": "cb8e5aae4e7335cb42ca64e67a10c453355235c4",
+        "categories": {
+          "skill": "e23118a8",
+          "gic_content": "9fa68941",
+          "navigation_and_review": "7637282d",
+          "source_preservation": "cb8e5aae"
+        },
+        "integration": "master快进，保留此前逐批提交，不重写历史",
+        "remote_verified": {
+          "master": "cb8e5aae4e7335cb42ca64e67a10c453355235c4",
+          "codex/full-document-refactor-20261016": "cb8e5aae4e7335cb42ca64e67a10c453355235c4",
+          "codex/backup-full-document-refactor-20261018": "52d6630a17c24df5abec890aa30918d081fb550e"
+        },
+        "scope": "正文、图资产、规则及全部真实入口与复审记录；无关的8份未跟踪U-Boot原件保留",
+        "note": "这是正文与规则推送成功后的已核对回执，本回执自身的记录提交接续其后。"
+      }
     }
   },
   "quality_reassessment": {
