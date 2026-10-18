@@ -10327,6 +10327,17 @@
           "Microsoft与Linux6.12官方资料核对；格式元数据长度锚点和严格连续审计通过，两图渲染目视，947篇链接零缺失。"
         ],
         "limits": "未运行真实mmap、多进程或GPU程序；Windows限制来自2026-10-18核对官方说明，实际版本仍须检查。"
+      },
+      "knowledge/foundations/computer_architecture/boot_storage_paths.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从取指需求推出XIP与先装载路径，再按介质、控制器和协议解释NOR/NAND/eMMC/DDR，保留旧长稿存储对比问题并纠正速度、可执行性和初始化的绝对化结论。",
+        "validation": [
+          "核对Micron、Infineon、ST AN4760 Rev5及缓存NXP RM Rev1；旧Linux NAND资料只用于介质操作边界。",
+          "格式元数据长度锚点及严格连续审计通过，两图渲染目视通过，948篇链接零缺失。"
+        ],
+        "limits": "教学拓扑不代表某块实板；未执行Flash写入、DDR初始化或板级启动。"
       }
     },
     "additional_documents": [
@@ -10547,7 +10558,8 @@
       "knowledge/system_software/uboot/P11_内存镜像如何变成Linux入口现场.md",
       "research/source_reading/uboot/navigation/P11_镜像解析与Linux交接导读.md",
       "research/source_reading/uboot/source_explanations/P11_镜像范围与Linux交接实现.md",
-      "knowledge/foundations/computer_architecture/address_space_and_capacity.md"
+      "knowledge/foundations/computer_architecture/address_space_and_capacity.md",
+      "knowledge/foundations/computer_architecture/boot_storage_paths.md"
     ],
     "language_review": {
       "status": "complete",
