@@ -634,6 +634,9 @@ mindmap-plugin: basic
         - 🔴 [自动引导如何选择命令与保留维护入口](../../knowledge/system_software/uboot/P10_自动引导如何选择命令与保留维护入口.md)
         - 🔴 [自动引导选择与交互退路导读](../../research/source_reading/uboot/navigation/P10_自动引导选择与交互退路导读.md)
         - 🔴 [自动引导选择与执行门实现](../../research/source_reading/uboot/source_explanations/P10_自动引导选择与执行门实现.md)
+        - 🔴 [内存镜像如何变成Linux入口现场](../../knowledge/system_software/uboot/P11_内存镜像如何变成Linux入口现场.md)
+        - 🔴 [镜像解析与Linux交接导读](../../research/source_reading/uboot/navigation/P11_镜像解析与Linux交接导读.md)
+        - 🔴 [镜像范围与Linux交接实现](../../research/source_reading/uboot/source_explanations/P11_镜像范围与Linux交接实现.md)
         - 🔴 [旧U-Boot材料的版本身份与平台差量](../../research/investigations/uboot_vendor_baselines.md)
 
 ## 1.6\_工程方法与平台实现
