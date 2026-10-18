@@ -50,7 +50,8 @@
       "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_从运行中断到按键唤醒.md",
       "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md": "labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/P01_从稳定按键到Input事件.md",
       "platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md": "platforms/arm/nxp/imx8/P01_imx_v8配置与ARM64内核构建.md",
-      "platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md": "platforms/arm/rockchip/rk3566/environment/P01_从SDK归档到可追溯构建环境.md"
+      "platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md": "platforms/arm/rockchip/rk3566/environment/P01_从SDK归档到可追溯构建环境.md",
+      "platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md": "platforms/arm/nxp/imx6ull/porting/P01_移植基线与交叉编译环境.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -10943,6 +10944,102 @@
           "全部skill的108个本地链接/片段检查、九份长度、955篇全仓链接与diff空白检查通过；quick_validate通过，仓库到安装镜像apply后check changes=0。"
         ],
         "limits": "作者规则一致性与场景推演自查，不称为独立用户试读或新内核实验。初始两个Python均缺PyYAML，6.0.2仅安装到任务缓存供验证，未修改全局环境。只提交本轮隔离增量，其他既有GIC/skill工作保持原样。"
+      },
+      "platforms/arm/nxp/imx6ull/porting/P01_移植基线与交叉编译环境.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "区分原实验与固定核对版本，建立启动交接与工具链身份。",
+        "validation": [
+          "原稿3918行完整阅读后改写，八份新文完整冷读；61/61原图保留，9幅Mermaid渲染并目视检查，修正mdev图与正文顺序不一致。",
+          "21个Shell块通过bash语法；固定版本参考树加文中DTS片段预处理/dtc通过，两树均无新增警告；SNVS引脚元组已反编译核对。",
+          "八份标题、元数据、路径、章节链接及长度通过；962篇全仓链接缺失/歧义为0；提交差异检查通过。P05链接密度提示由19张保留图片和3个导航构成，冷读确认解释在本地闭合。"
+        ],
+        "limits": "未执行完整ARM构建、烧录或实板实验；DDR颗粒/工况及原imxdownload协议材料不足，正文明确复现输入。官方固定提交核对不冒充原实验HEAD，原始全文逐字保留。图示与连续阅读由作者自查，不称独立用户试读。"
+      },
+      "platforms/arm/nxp/imx6ull/porting/P02_从参考板派生U-Boot配置.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "重建配置选择链、输入输出所有权及板级派生方法。",
+        "validation": [
+          "原稿3918行完整阅读后改写，八份新文完整冷读；61/61原图保留，9幅Mermaid渲染并目视检查，修正mdev图与正文顺序不一致。",
+          "21个Shell块通过bash语法；固定版本参考树加文中DTS片段预处理/dtc通过，两树均无新增警告；SNVS引脚元组已反编译核对。",
+          "八份标题、元数据、路径、章节链接及长度通过；962篇全仓链接缺失/歧义为0；提交差异检查通过。P05链接密度提示由19张保留图片和3个导航构成，冷读确认解释在本地闭合。"
+        ],
+        "limits": "未执行完整ARM构建、烧录或实板实验；DDR颗粒/工况及原imxdownload协议材料不足，正文明确复现输入。官方固定提交核对不冒充原实验HEAD，原始全文逐字保留。图示与连续阅读由作者自查，不称独立用户试读。"
+      },
+      "platforms/arm/nxp/imx6ull/porting/P03_DDR初始化与镜像封装.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "解释ROM/DCD、DDR几何与校准边界，加入寄存器表及镜像工具协议。",
+        "validation": [
+          "原稿3918行完整阅读后改写，八份新文完整冷读；61/61原图保留，9幅Mermaid渲染并目视检查，修正mdev图与正文顺序不一致。",
+          "21个Shell块通过bash语法；固定版本参考树加文中DTS片段预处理/dtc通过，两树均无新增警告；SNVS引脚元组已反编译核对。",
+          "八份标题、元数据、路径、章节链接及长度通过；962篇全仓链接缺失/歧义为0；提交差异检查通过。P05链接密度提示由19张保留图片和3个导航构成，冷读确认解释在本地闭合。"
+        ],
+        "limits": "未执行完整ARM构建、烧录或实板实验；DDR颗粒/工况及原imxdownload协议材料不足，正文明确复现输入。官方固定提交核对不冒充原实验HEAD，原始全文逐字保留。图示与连续阅读由作者自查，不称独立用户试读。"
+      },
+      "platforms/arm/nxp/imx6ull/porting/P04_LCD与双网口的板级适配.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按LCD数据流和双MAC/PHY连接解释板级适配，修正SNVS控制器与复位所有权。",
+        "validation": [
+          "原稿3918行完整阅读后改写，八份新文完整冷读；61/61原图保留，9幅Mermaid渲染并目视检查，修正mdev图与正文顺序不一致。",
+          "21个Shell块通过bash语法；固定版本参考树加文中DTS片段预处理/dtc通过，两树均无新增警告；SNVS引脚元组已反编译核对。",
+          "八份标题、元数据、路径、章节链接及长度通过；962篇全仓链接缺失/歧义为0；提交差异检查通过。P05链接密度提示由19张保留图片和3个导航构成，冷读确认解释在本地闭合。"
+        ],
+        "limits": "未执行完整ARM构建、烧录或实板实验；DDR颗粒/工况及原imxdownload协议材料不足，正文明确复现输入。官方固定提交核对不冒充原实验HEAD，原始全文逐字保留。图示与连续阅读由作者自查，不称独立用户试读。"
+      },
+      "platforms/arm/nxp/imx6ull/porting/P05_Linux配置与板级设备树.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "独立建立Linux配置、DTB、固件与构建诊断，修正多平台及依赖文件误解。",
+        "validation": [
+          "原稿3918行完整阅读后改写，八份新文完整冷读；61/61原图保留，9幅Mermaid渲染并目视检查，修正mdev图与正文顺序不一致。",
+          "21个Shell块通过bash语法；固定版本参考树加文中DTS片段预处理/dtc通过，两树均无新增警告；SNVS引脚元组已反编译核对。",
+          "八份标题、元数据、路径、章节链接及长度通过；962篇全仓链接缺失/歧义为0；提交差异检查通过。P05链接密度提示由19张保留图片和3个导航构成，冷读确认解释在本地闭合。"
+        ],
+        "limits": "未执行完整ARM构建、烧录或实板实验；DDR颗粒/工况及原imxdownload协议材料不足，正文明确复现输入。官方固定提交核对不冒充原实验HEAD，原始全文逐字保留。图示与连续阅读由作者自查，不称独立用户试读。"
+      },
+      "platforms/arm/nxp/imx6ull/porting/P06_BusyBox根文件系统与网络启动.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "完整建立ELF运行依赖、PID1、设备节点及条件网络启动路径。",
+        "validation": [
+          "原稿3918行完整阅读后改写，八份新文完整冷读；61/61原图保留，9幅Mermaid渲染并目视检查，修正mdev图与正文顺序不一致。",
+          "21个Shell块通过bash语法；固定版本参考树加文中DTS片段预处理/dtc通过，两树均无新增警告；SNVS引脚元组已反编译核对。",
+          "八份标题、元数据、路径、章节链接及长度通过；962篇全仓链接缺失/歧义为0；提交差异检查通过。P05链接密度提示由19张保留图片和3个导航构成，冷读确认解释在本地闭合。"
+        ],
+        "limits": "未执行完整ARM构建、烧录或实板实验；DDR颗粒/工况及原imxdownload协议材料不足，正文明确复现输入。官方固定提交核对不冒充原实验HEAD，原始全文逐字保留。图示与连续阅读由作者自查，不称独立用户试读。"
+      },
+      "platforms/arm/nxp/imx6ull/porting/P07_Buildroot工具与运行时依赖.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "解释Buildroot外部工具链能力、GPIO ABI与增量部署的验证层次。",
+        "validation": [
+          "原稿3918行完整阅读后改写，八份新文完整冷读；61/61原图保留，9幅Mermaid渲染并目视检查，修正mdev图与正文顺序不一致。",
+          "21个Shell块通过bash语法；固定版本参考树加文中DTS片段预处理/dtc通过，两树均无新增警告；SNVS引脚元组已反编译核对。",
+          "八份标题、元数据、路径、章节链接及长度通过；962篇全仓链接缺失/歧义为0；提交差异检查通过。P05链接密度提示由19张保留图片和3个导航构成，冷读确认解释在本地闭合。"
+        ],
+        "limits": "未执行完整ARM构建、烧录或实板实验；DDR颗粒/工况及原imxdownload协议材料不足，正文明确复现输入。官方固定提交核对不冒充原实验HEAD，原始全文逐字保留。图示与连续阅读由作者自查，不称独立用户试读。"
+      },
+      "platforms/arm/nxp/imx6ull/porting/大纲.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "建立七章因果阅读地图与版本/实测边界，连接现有驱动及Buildroot专题。",
+        "validation": [
+          "原稿3918行完整阅读后改写，八份新文完整冷读；61/61原图保留，9幅Mermaid渲染并目视检查，修正mdev图与正文顺序不一致。",
+          "21个Shell块通过bash语法；固定版本参考树加文中DTS片段预处理/dtc通过，两树均无新增警告；SNVS引脚元组已反编译核对。",
+          "八份标题、元数据、路径、章节链接及长度通过；962篇全仓链接缺失/歧义为0；提交差异检查通过。P05链接密度提示由19张保留图片和3个导航构成，冷读确认解释在本地闭合。"
+        ],
+        "limits": "未执行完整ARM构建、烧录或实板实验；DDR颗粒/工况及原imxdownload协议材料不足，正文明确复现输入。官方固定提交核对不冒充原实验HEAD，原始全文逐字保留。图示与连续阅读由作者自查，不称独立用户试读。"
       }
     },
     "additional_documents": [
@@ -11182,7 +11279,14 @@
       "research/source_reading/gpiolib/source_explanations/P09_指示灯与背光的GPIO适配.md",
       "research/source_reading/gpiolib/source_explanations/P10_固定电源的使能计数与GPIO交接.md",
       "research/source_reading/gpiolib/source_explanations/P11_选择器占用与GPIO编码.md",
-      "research/source_reading/gpiolib/source_explanations/P12_系统末期GPIO回调与通知链.md"
+      "research/source_reading/gpiolib/source_explanations/P12_系统末期GPIO回调与通知链.md",
+      "platforms/arm/nxp/imx6ull/porting/P02_从参考板派生U-Boot配置.md",
+      "platforms/arm/nxp/imx6ull/porting/P03_DDR初始化与镜像封装.md",
+      "platforms/arm/nxp/imx6ull/porting/P04_LCD与双网口的板级适配.md",
+      "platforms/arm/nxp/imx6ull/porting/P05_Linux配置与板级设备树.md",
+      "platforms/arm/nxp/imx6ull/porting/P06_BusyBox根文件系统与网络启动.md",
+      "platforms/arm/nxp/imx6ull/porting/P07_Buildroot工具与运行时依赖.md",
+      "platforms/arm/nxp/imx6ull/porting/大纲.md"
     ],
     "language_review": {
       "status": "complete",
