@@ -580,7 +580,7 @@ mindmap-plugin: basic
                 - 🔴 [P13 工程实践案例与编码核对表](../../knowledge/linux/synchronization_and_asynchrony/asynchrony/async_notification/P13_工程实践案例与编码核对表.md)
 - 系统软件
     - 🔴 [设备事件与用户态策略](../../knowledge/system_software/P01_设备事件与用户态策略.md)
-    - 🔴 [Buildroot](../../knowledge/system_software/buildroot/P00_全书学习地图.md)
+    - 🔴 [Buildroot](../../knowledge/system_software/buildroot/大纲.md)
         - 章节评审：13 章未评审
         - 🔴 [P01 从手工拼系统到可重复的构建输入](../../knowledge/system_software/buildroot/P01_从手工拼系统到可重复的构建输入.md)
         - 🔴 [P02 从最小编译器到完整目标工具链](../../knowledge/system_software/buildroot/P02_从最小编译器到完整目标工具链.md)

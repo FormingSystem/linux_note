@@ -75,4 +75,4 @@ domains:
 
 ## 1.7\_扩展方向
 
-完成主线后，可进入[i.MX6ULL 的 U-Boot 与内核移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)和[Buildroot](../../knowledge/system_software/buildroot/P00_全书学习地图.md)，把单个驱动放回完整嵌入式 Linux 系统中理解。
+完成主线后，可进入[i.MX6ULL 的 U-Boot 与内核移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)和[Buildroot](../../knowledge/system_software/buildroot/大纲.md)，把单个驱动放回完整嵌入式 Linux 系统中理解。
