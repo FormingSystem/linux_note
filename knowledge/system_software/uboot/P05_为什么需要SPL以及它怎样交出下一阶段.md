@@ -15,6 +15,8 @@ domains:
 
 本章先从存储和执行条件推导加载阶段，再沿一个 **SPL 初始化内存、装入 U-Boot proper 并交出控制权** 的场景走完流程。具体函数继续固定上游 v2022.10、提交 `4debc57a3da6c3f4d3f89a637e99206f4cea0a96`，入口见 [源码总索引](../../../research/source_reading/uboot/navigation/README.md) 与 [加载交接导读](../../../research/source_reading/uboot/navigation/P05_SPL装载与下一阶段交接导读.md)。平台反例会标明芯片与资料版本，不能用一个板的路径定义全部 ARM 启动。
 
+存储芯片的身份、CPU 能否直接取指，以及为何要先有代码驱动加载通路，可先对照 [存储与执行路径](../../foundations/computer_architecture/boot_storage_paths.md)。本章在这一区分上继续推导阶段划分。
+
 ## 5.1\_先有一小块可靠环境\_才能建立更大的环境
 
 **讲解层次：概念层。** 处理器执行一条指令之前，取指地址必须已经能提供正确内容；C 函数还可能需要可靠的栈和工作数据。外部 DDR 的控制器、时钟、引脚、电气参数和必要训练尚未就绪时，不能仅因为地址图给它分配了范围，就把它当作可靠工作区。

@@ -16,7 +16,7 @@ domains:
 
 | 领域 | 当前内容 |
 | --- | --- |
-| 计算机体系结构 | [地址空间有限为什么仍能处理更大的数据集](../../knowledge/foundations/computer_architecture/address_space_and_capacity.md)、[缓存一致性专题](../../knowledge/foundations/computer_architecture/cache_coherence/大纲.md)、[体系结构内存顺序专题](../../knowledge/foundations/computer_architecture/memory_ordering/大纲.md) |
+| 计算机体系结构 | [存着程序的芯片为什么不一定能直接取指](../../knowledge/foundations/computer_architecture/boot_storage_paths.md)、[地址空间有限为什么仍能处理更大的数据集](../../knowledge/foundations/computer_architecture/address_space_and_capacity.md)、[缓存一致性专题](../../knowledge/foundations/computer_architecture/cache_coherence/大纲.md)、[体系结构内存顺序专题](../../knowledge/foundations/computer_architecture/memory_ordering/大纲.md) |
 | 操作系统概念 | [宏内核和微内核](../../knowledge/foundations/operating_systems/concepts/宏内核和微内核.md) |
 | C 语言扩展与分析注解 | [GNU C 扩展](../../knowledge/foundations/c_language/gnu_extensions/C_language_extension.md)、[Linux 内核编译器与静态分析注解专题](../../knowledge/foundations/c_language/kernel_static_annotations/大纲.md#1.1_专题定位) |
 

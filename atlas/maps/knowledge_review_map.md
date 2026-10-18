@@ -183,6 +183,7 @@ mindmap-plugin: basic
             - 🔴 [P05 普通编译、BTF 与运行时边界](../../knowledge/foundations/c_language/kernel_static_annotations/P05_普通编译_BTF与运行时边界.md)
             - 🔴 [P06 在 Linux 内核中使用 Sparse 与设计注解](../../knowledge/foundations/c_language/kernel_static_annotations/P06_在Linux内核中使用Sparse与设计注解.md)
     - 计算机体系结构
+        - 🔴 [存着程序的芯片为什么不一定能直接取指](../../knowledge/foundations/computer_architecture/boot_storage_paths.md)
         - 🔴 [地址空间有限为什么仍能处理更大的数据集](../../knowledge/foundations/computer_architecture/address_space_and_capacity.md)
         - 🔴 [缓存一致性专题](../../knowledge/foundations/computer_architecture/cache_coherence/大纲.md)
             - 章节评审：10 章未评审
