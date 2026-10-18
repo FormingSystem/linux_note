@@ -740,7 +740,9 @@ mindmap-plugin: basic
                     - 🟢 [P02 确认稳定按键状态再翻转LED](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_确认稳定按键状态再翻转LED.md)
                     - 🟢 [P03 从运行中断到按键唤醒](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_从运行中断到按键唤醒.md)
                 - P04 Input子系统
-                    - 🟢 [功能说明](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md)
+                    - 🔴 [Input实验路线](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/大纲.md)
+                    - 🟢 [P01 从稳定按键到Input事件](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/P01_从稳定按键到Input事件.md)
+                    - 🔴 [P02 读取Input事件并恢复丢失状态](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/P02_读取Input事件并恢复丢失状态.md)
 
 ## 1.8\_源码研究与问题调查
 

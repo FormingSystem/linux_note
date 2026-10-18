@@ -69,7 +69,7 @@ domains:
 2. [标准 GPIO LED 设备树集成](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P02_LED点灯+dts.md)，再按学习需要完成 [自定义字符设备与解绑实验](../../labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/P03_字符设备_LED与设备树完整实验.md)。
 3. [蜂鸣器类型判断与条件实验](../../labs/platforms/nxp/imx6ull/drivers/P02_BEEP/P01_beep+dts.md)。
 4. [按键中断与唤醒实验路线](../../labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/大纲.md)：由边沿与去抖进入稳定状态，再验证受支持睡眠状态下的唤醒与恢复。
-5. [Input 按键实验](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/key-input.md)。
+5. [Input 按键实验路线](../../labs/platforms/nxp/imx6ull/drivers/P04_Input子系统/大纲.md)。
 
 每个实验都应核对加载与卸载、失败清理、并发访问、设备树绑定和用户态验证，不只以“现象出现”作为完成标准。
 
