@@ -62,6 +62,19 @@ domains: [linux, buildroot, source_reading]
 | [toolchain/toolchain-buildroot/toolchain-buildroot.mk](2025.02/toolchain/toolchain-buildroot/toolchain-buildroot.mk)、[Config.in](2025.02/toolchain/toolchain-buildroot/Config.in) | 内部工具链与libc配置关系 |
 | [toolchain/Config.in](2025.02/toolchain/Config.in)、[package/Makefile.in](2025.02/package/Makefile.in) | 工具链公共能力和宿主/目标编译变量 |
 
+外部工具链接入另核对以下原件。知识正文解释生产、声明、校验与导入的边界，不把现成工具链的能力声明当作重编配置。
+
+| 上游相对位置及原件 | 本轮核对的事实 |
+| --- | --- |
+| [toolchain/toolchain-external/Config.in](2025.02/toolchain/toolchain-external/Config.in)、[Custom选项](2025.02/toolchain/toolchain-external/toolchain-external-custom/Config.in.options) | 接入方式、路径、无末尾连字符的前缀与真实能力声明 |
+| [pkg-toolchain-external.mk](2025.02/toolchain/toolchain-external/pkg-toolchain-external.mk)、[toolchain-external.mk](2025.02/toolchain/toolchain-external/toolchain-external.mk)、[Custom配方](2025.02/toolchain/toolchain-external/toolchain-external-custom/toolchain-external-custom.mk) | 实际检查入口、sysroot与目标库导入、包装入口及虚拟包 |
+| [toolchain/helpers.mk](2025.02/toolchain/helpers.mk)、[check-kernel-headers.sh](2025.02/support/scripts/check-kernel-headers.sh) | 版本、libc、语言及头文件系列检查范围 |
+| [toolchain/toolchain-wrapper.c](2025.02/toolchain/toolchain-wrapper.c) | 参数包装和BR2_DEBUG_WRAPPER观察入口 |
+| [package/pkg-generic.mk](2025.02/package/pkg-generic.mk) | show-info输出包元数据，不是能力校验执行入口 |
+| [Bootlin配置](2025.02/toolchain/toolchain-external/toolchain-external-bootlin/Config.in) | 此版本内一个具体预定义工具链来源及宿主限制 |
+| [docs/manual/using-buildroot-toolchain.adoc](2025.02/docs/manual/using-buildroot-toolchain.adoc)、[relocate-sdk.sh](2025.02/support/misc/relocate-sdk.sh) | SDK内容、移位脚本与应用开发用途 |
+| [system/Config.in](2025.02/system/Config.in)、[fs/tar/Config.in](2025.02/fs/tar/Config.in) | 纯工具链生产配置关闭init、shell和rootfs tar的选项 |
+
 不同来源说法冲突时先保留时间和具体字段。比如2025.02随包release-engineering仍用较早的LTS周期举例，2025.02发布公告讨论延长维护，当前下载页再给出系列维护终止时间；它们不能拼成一个没有日期的永久承诺。教程介绍发布模型，产品选择则核对当时有效公告。
 
 ## 1.3\_静态核对与实际运行分别登记

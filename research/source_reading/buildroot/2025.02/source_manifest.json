@@ -130,6 +130,62 @@
     {
       "path": "package/Makefile.in",
       "sha256": "1f817dc50e6dc83658fb7383b60618d7cfc963da65730c3c9a8ed2c6a28ca0c0"
+    },
+    {
+      "path": "toolchain/toolchain-external/Config.in",
+      "sha256": "7ecbcd1cd2cd283d45821e3f3826a81855ddee7014f49f60da798c836bbaa2af"
+    },
+    {
+      "path": "toolchain/toolchain-external/pkg-toolchain-external.mk",
+      "sha256": "9ad83af8a4a1e702edff08747b57bd08c48b4770b3f1527c8cdf54e60addc70a"
+    },
+    {
+      "path": "toolchain/toolchain-external/toolchain-external.mk",
+      "sha256": "cd518cd087bee5fb29ab4ce70358fa9f089a202683e425a6ac7062317f14588e"
+    },
+    {
+      "path": "toolchain/toolchain-external/toolchain-external-custom/Config.in.options",
+      "sha256": "72e61f283bbfc9fce332941fa4175e1aca0c1fcfd6eb60d79469412ef92f2421"
+    },
+    {
+      "path": "toolchain/toolchain-external/toolchain-external-custom/toolchain-external-custom.mk",
+      "sha256": "f5cf8d9a206f7695cfd9d6f1e1f48883d0962469900f66e228a02b5533a2fe7d"
+    },
+    {
+      "path": "toolchain/toolchain-external/toolchain-external-bootlin/Config.in",
+      "sha256": "1eba4e8d5127c6842c12b222b66f74bc1eb2e7c4c96f569510ddb8b85442e764"
+    },
+    {
+      "path": "toolchain/helpers.mk",
+      "sha256": "75929af453279c4ba3b2d892efbfa039f317ed77bb56fe2d53308992b0dd533a"
+    },
+    {
+      "path": "toolchain/toolchain-wrapper.c",
+      "sha256": "563b7336cabbdffb894b0a1c1a018745afb74921636a7d7bd7027b2f6342a1ba"
+    },
+    {
+      "path": "support/scripts/check-kernel-headers.sh",
+      "sha256": "65a3e99b4c41e39da23060b9c7abb721f1f0758a6f23b2000472d69a10015088"
+    },
+    {
+      "path": "support/misc/relocate-sdk.sh",
+      "sha256": "4a984aad6c85a2e06620a134763f070ac31ab96a15f7a1403207896716c0feb1"
+    },
+    {
+      "path": "docs/manual/using-buildroot-toolchain.adoc",
+      "sha256": "66861b54f66f23684ced9247b940b977133308d103dd2777ce4f63239a5d714c"
+    },
+    {
+      "path": "system/Config.in",
+      "sha256": "33885eae7853cdb2c190deaac10d5e1221c1618b80a226c3b49ae78ac6d379aa"
+    },
+    {
+      "path": "fs/tar/Config.in",
+      "sha256": "de1ed82dcd076c7d4084d4e00eba023e70934efbe0bc2b1b93367e0075838a41"
+    },
+    {
+      "path": "package/pkg-generic.mk",
+      "sha256": "ae93d19cab6c39a38f5a5dd8d2694efda3da18798b6949684cc653a069cba265"
     }
   ]
 }

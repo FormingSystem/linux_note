@@ -584,7 +584,7 @@ mindmap-plugin: basic
         - 章节评审：13 章未评审
         - 🔴 [P01 从手工拼系统到可重复的构建输入](../../knowledge/system_software/buildroot/P01_从手工拼系统到可重复的构建输入.md)
         - 🔴 [P02 从最小编译器到完整目标工具链](../../knowledge/system_software/buildroot/P02_从最小编译器到完整目标工具链.md)
-        - 🔴 [P03 外部工具链的使用](../../knowledge/system_software/buildroot/P03_外部工具链的使用.md)
+        - 🔴 [P03 把现成工具链接入受控构建](../../knowledge/system_software/buildroot/P03_把现成工具链接入受控构建.md)
         - 🔴 [P04 工具链的调试与问题排查](../../knowledge/system_software/buildroot/P04_工具链的调试与问题排查.md)
         - 🔴 [P05 文件系统构建与定制](../../knowledge/system_software/buildroot/P05_文件系统构建与定制.md)
         - 🔴 [P06 包集成与系统服务](../../knowledge/system_software/buildroot/P06_包集成与系统服务.md)
