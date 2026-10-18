@@ -46,7 +46,8 @@
       "knowledge/system_software/uboot/uboot提问.md": "knowledge/system_software/uboot/P02_从构建上下文找到实际进入镜像的函数.md",
       "knowledge/system_software/uboot/uboot-makefile.md": "knowledge/system_software/uboot/大纲.md",
       "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_key_led_interrupt.md": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P01_从按键电平变化到GPIO中断.md",
-      "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_key_led_interrupt_move_shake_01.md": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_确认稳定按键状态再翻转LED.md"
+      "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_key_led_interrupt_move_shake_01.md": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P02_确认稳定按键状态再翻转LED.md",
+      "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_key_interrupt_wakeup_kernel.md": "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_从运行中断到按键唤醒.md"
     },
     "completion_rule": "每篇须有本轮具体冷读结论、必要修改与适用验证；旧 state、旧 validated、脚本通过均不自动构成本轮完成。先按 path_migrations 解析历史基线路径，再检查 reviews；其中未出现的当前路径仍为待复审，人工评审地图状态不得自动升级。",
     "reading_order": [
@@ -10472,6 +10473,28 @@
           "ARM实际403头文件前端通过；正文材料一致，4图渲染目视，格式元数据与锚点通过；949篇全仓链接无缺失。"
         ],
         "limits": "未完整Kbuild或目标板、电气和真实并发压力测试。P02完整模块节239行保留可复制闭环，未宣称连续审计零提示。"
+      },
+      "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/P03_从运行中断到按键唤醒.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从运行IRQ到系统唤醒建立能力、策略、实际IRQ配置与恢复的阶段关系；以标准gpio-keys替换不完整PM实验，保留旧图和日志；阅读路线按边沿、稳定态、电源交接推进。",
+        "validation": [
+          "核对固定gpio-keys、GPIO、PM源码、绑定与Kconfig，真实固定头文件预处理确认PAD与事件码。",
+          "全部命令块语法、三幅图渲染目视、格式元数据长度严格连续及锚点检查通过，950篇全仓链接无缺失。"
+        ],
+        "limits": "未完整板级dtc/schema构建、部署、挂起或唤醒实测；旧日志不作为本版gpio-keys结果，人工评审不升级。"
+      },
+      "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/大纲.md": {
+        "state": "reviewed",
+        "result": "added",
+        "date": "2026-10-18",
+        "reason": "从运行IRQ到系统唤醒建立能力、策略、实际IRQ配置与恢复的阶段关系；以标准gpio-keys替换不完整PM实验，保留旧图和日志；阅读路线按边沿、稳定态、电源交接推进。",
+        "validation": [
+          "核对固定gpio-keys、GPIO、PM源码、绑定与Kconfig，真实固定头文件预处理确认PAD与事件码。",
+          "全部命令块语法、三幅图渲染目视、格式元数据长度严格连续及锚点检查通过，950篇全仓链接无缺失。"
+        ],
+        "limits": "未完整板级dtc/schema构建、部署、挂起或唤醒实测；旧日志不作为本版gpio-keys结果，人工评审不升级。"
       }
     },
     "additional_documents": [
@@ -10694,7 +10717,8 @@
       "research/source_reading/uboot/source_explanations/P11_镜像范围与Linux交接实现.md",
       "knowledge/foundations/computer_architecture/address_space_and_capacity.md",
       "knowledge/foundations/computer_architecture/boot_storage_paths.md",
-      "labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/大纲.md"
+      "labs/platforms/nxp/imx6ull/drivers/P01_LED点灯/大纲.md",
+      "labs/platforms/nxp/imx6ull/drivers/P03_KEY_LED_interrupt/大纲.md"
     ],
     "language_review": {
       "status": "complete",
