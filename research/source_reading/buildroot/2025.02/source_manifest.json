@@ -186,6 +186,34 @@
     {
       "path": "package/pkg-generic.mk",
       "sha256": "ae93d19cab6c39a38f5a5dd8d2694efda3da18798b6949684cc653a069cba265"
+    },
+    {
+      "path": "docs/manual/make-tips.adoc",
+      "sha256": "e60cd22037e9a08f195bcd094a8e8838436d5646b01871897d0bc7eb5d9d942e"
+    },
+    {
+      "path": "docs/manual/using-buildroot-debugger.adoc",
+      "sha256": "369fbec275eac8c010bcb398b350c1b8dd8e729759958b810d250a96efa4312b"
+    },
+    {
+      "path": "package/pkg-autotools.mk",
+      "sha256": "b8f60ac9d3ee89014a4fb67cfc47d38c08009f53e346ca07a53e5b871c0df635"
+    },
+    {
+      "path": "package/pkg-cmake.mk",
+      "sha256": "5b2e3a9553d41a12119384eb4cdf8ec0ff07582fd4f40f7b347493e49d81f2ac"
+    },
+    {
+      "path": "package/pkgconf/pkg-config.in",
+      "sha256": "b5ee606248ca34187f2d4c696c6e394ab72e45a885243d0e5f394d70fa123b59"
+    },
+    {
+      "path": "package/pkgconf/pkgconf.mk",
+      "sha256": "619883625dcdee7fa17ce1845a3a42ac5213b4fd3cd8cae0c53e702610ab56fe"
+    },
+    {
+      "path": "support/misc/toolchainfile.cmake.in",
+      "sha256": "3c751cffebfd6335423dd989be47ba819544da6b82b63bf1324dd7c485dbf364"
     }
   ]
 }

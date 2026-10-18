@@ -75,6 +75,8 @@ domains: [linux, buildroot, source_reading]
 | [docs/manual/using-buildroot-toolchain.adoc](2025.02/docs/manual/using-buildroot-toolchain.adoc)、[relocate-sdk.sh](2025.02/support/misc/relocate-sdk.sh) | SDK内容、移位脚本与应用开发用途 |
 | [system/Config.in](2025.02/system/Config.in)、[fs/tar/Config.in](2025.02/fs/tar/Config.in) | 纯工具链生产配置关闭init、shell和rootfs tar的选项 |
 
+排障章补入 [make-tips](2025.02/docs/manual/make-tips.adoc)、[GDB说明](2025.02/docs/manual/using-buildroot-debugger.adoc)、[Autotools配方](2025.02/package/pkg-autotools.mk)、[CMake配方](2025.02/package/pkg-cmake.mk)、[pkg-config包装](2025.02/package/pkgconf/pkg-config.in)、[pkgconf配方](2025.02/package/pkgconf/pkgconf.mk) 与 [CMake工具链模板](2025.02/support/misc/toolchainfile.cmake.in)，分别核对详细日志、宿主/目标调试分工、交叉配置环境与依赖查找路径。GCC、GNU ld/readelf和Linux系统调用手册按正文就近外链定位；不把这些在线接口说明冒充本发布包的原件。
+
 不同来源说法冲突时先保留时间和具体字段。比如2025.02随包release-engineering仍用较早的LTS周期举例，2025.02发布公告讨论延长维护，当前下载页再给出系列维护终止时间；它们不能拼成一个没有日期的永久承诺。教程介绍发布模型，产品选择则核对当时有效公告。
 
 ## 1.3\_静态核对与实际运行分别登记
