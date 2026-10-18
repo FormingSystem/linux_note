@@ -48,5 +48,8 @@ i.MX6ULL 手册身份为 `IMX6ULLRM` Rev.1、11/2017，原件 SHA-256 为 `4dd7f
 | [configs/seeed_npi_imx6ull_defconfig](../upstream/v2022.10/configs/seeed_npi_imx6ull_defconfig) | `da2aaeea1c249855d000d4bbf21ae66f33ea90de946126a2063c90405c7c06d0` |
 | [include/spl.h](../upstream/v2022.10/include/spl.h) | `956b293a5557fc7ca64014a44a7a0cb6b286aafaa71a7804f75be6069143ce2a` |
 | [arch/arm/mach-rockchip/spl.c](../upstream/v2022.10/arch/arm/mach-rockchip/spl.c) | `1ba847adf38a13663c15656e4ef8a0b94dedbf349f925c142cb3afe3f11ccb77` |
+| [doc/README.falcon](../upstream/v2022.10/doc/README.falcon) | `9f768bdfd7996c813fe84af99a483341c76c35d5edc4a1c68439a21a8e405f04` |
+
+Falcon 文档补充“跳过正常 proper 路径后由谁准备参数”的设计模型；`spl export` 不自动持久化结果，文档的旧板示例及 FDT 未测试说明也应保留其边界。[读书笔记中的 Linux 交接比较](../../../../publications/books/running_linux_kernel/P04_uboot启动流程说明.md#4.4_Falcon减少了一段正常路径_准备责任去了哪里) 将参数快照、正常启动和维护回退分开，不把它们当作所有 SPL 加载器共有的已验证行为。
 
 已有 `common/spl/spl.c`、`doc/develop/spl.rst` 和链接列表文件在前面模块登记。正文 C 模型实际可验证回退、全失败不交接以及失败后目标数组已改变；它没有执行存储驱动、DDR 初始化、ROM DCD 解释或目标机器码，也没有进行完整 U-Boot 构建。后续移植时需补所选板的最终配置、镜像打包身份、内存范围和实际启动结果。

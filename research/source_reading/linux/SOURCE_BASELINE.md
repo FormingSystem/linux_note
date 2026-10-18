@@ -3541,3 +3541,18 @@ WARN条件中的list_lru操作、count错误分支、Sparse解锁注解、Lockde
 | `Documentation/kbuild/makefiles.rst` | `7964e0c245aebe71be607dfaefcb0f052ec86674` |
 | `scripts/kconfig/preprocess.h` | `a7e4a550638c047f7599e1475e0639b8586c5aaa` |
 | `scripts/Makefile.host` | `e01c13a588ddd9257902b6d8e772574394189c1f` |
+
+## 1.315\_ARM内核入口与地址范围的交接证据
+
+2026-10-18，重新核对既有官方工作树，远端使用同一 NXP GitHub 仓库的 SSH 形式，分支为 `lf-6.12.y`，HEAD 仍为 `7b60e547d2783f8fee61ff7d7be3e066825b9c3a`，Makefile 为 Linux 6.12.20。本次只从固定发布提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0` 导出以下原件，不使用分支头差量。当前工作配置为 ARM、Tiny RCU、无 SMP，并采用 `VMSPLIT_2G`；它不是 ARM64 配置，也不是所有 ARM 用户区固定大小的证据。
+
+[启动桥接笔记](../../../publications/books/running_linux_kernel/P04_uboot启动流程说明.md#4.3_Linux接手的是一组条件_不只是一个入口地址) 区分 ARM32/AArch64 的主 CPU 入口、DTB/镜像位置、缓存与 DMA 交接；地址范围一节使用配置和布局文档校正固定 3 GiB、固定 128 TiB 等旧结论。原件用于核对协议，未据此宣称硬件启动成功。另只读同提交 `arch/arm/include/asm/pgtable-3level.h`，核对三级页表、8 字节表项、四个顶层输入项与 40 位物理范围，正文链接该固定上游文件。
+
+| 原件相对路径 | Git blob |
+| --- | --- |
+| `Documentation/arch/arm/booting.rst` | `5974e37b3d2029eab0eb92a45818cf5f976e0690` |
+| `Documentation/arch/arm64/booting.rst` | `b57776a68f156d0be28a73c6036073494f3961e0` |
+| `Documentation/arch/arm64/memory.rst` | `8a658984b8bb67ce59d8198ee3be35c0d75091e9` |
+| `arch/arm/mm/Kconfig` | `2b6f50dd547840adecbe08e684ed8f1a032cd7c2` |
+| `arch/arm64/Kconfig` | `57a56500c79593f3fbd46bf5f1d778ad3a742e4b` |
+| `arch/arm/Kconfig` | `202397be76d8037b531b34dee16c7dfcfd0124ef` |
