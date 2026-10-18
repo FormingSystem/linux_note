@@ -10767,6 +10767,83 @@
           "原有效正文逐行保留（示意代码围栏改为text）；五篇格式、元数据、长度通过；精确入链与出链检查，P05的三个skill GitHub slug人工及脚本复核。955篇全仓链接零缺失。"
         ],
         "limits": "历史资料按来源职责验收，不将旧模板重新变成现行要求；历史未定义代码只保留文本，不称为已运行示例。"
+      },
+      "atlas/home.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "全篇核对入口与职责，移除陈旧GIC篇数，真实阅读入口与章节锚点匹配。",
+        "validation": [
+          "七篇完整阅读与真实目录、源码导读入口、format脚本、提交钩子、MarkBook workflow核对。",
+          "八个临时消息文件验证钩子接受与拒绝条件；Shell片段语法检查；两图Mermaid 11.17渲染目视；七篇格式元数据长度与精确入链检查；955篇全仓链接零缺失。"
+        ],
+        "limits": "未执行文中fetch/rebase/merge/revert、安装或发布；只校正文档与只读/临时文件检查。没有把建设现状变为人工评审完成，也未重演历史全仓迁移。"
+      },
+      "atlas/roadmaps/content_roadmap.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "建设描述对应现有VFS、系统软件、平台及源码材料；补全因果解释与证据层次的完成边界，不复制人工状态。",
+        "validation": [
+          "七篇完整阅读与真实目录、源码导读入口、format脚本、提交钩子、MarkBook workflow核对。",
+          "八个临时消息文件验证钩子接受与拒绝条件；Shell片段语法检查；两图Mermaid 11.17渲染目视；七篇格式元数据长度与精确入链检查；955篇全仓链接零缺失。"
+        ],
+        "limits": "未执行文中fetch/rebase/merge/revert、安装或发布；只校正文档与只读/临时文件检查。没有把建设现状变为人工评审完成，也未重演历史全仓迁移。"
+      },
+      "atlas/roadmaps/linux_io_driver_subsystems.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "将无动作的依赖箭头重写为交接关系，补现有权威入口及后续真实缺口，避免把已落地专题继续写成空白计划。",
+        "validation": [
+          "七篇完整阅读与真实目录、源码导读入口、format脚本、提交钩子、MarkBook workflow核对。",
+          "八个临时消息文件验证钩子接受与拒绝条件；Shell片段语法检查；两图Mermaid 11.17渲染目视；七篇格式元数据长度与精确入链检查；955篇全仓链接零缺失。"
+        ],
+        "limits": "未执行文中fetch/rebase/merge/revert、安装或发布；只校正文档与只读/临时文件检查。没有把建设现状变为人工评审完成，也未重演历史全仓迁移。"
+      },
+      "governance/conventions/git_guide.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "按真实钩子纠正fixup与英文Revert示例、提交空行、私有未交付历史和快进操作；说明工作树与索引归属及实际检查边界。",
+        "validation": [
+          "七篇完整阅读与真实目录、源码导读入口、format脚本、提交钩子、MarkBook workflow核对。",
+          "八个临时消息文件验证钩子接受与拒绝条件；Shell片段语法检查；两图Mermaid 11.17渲染目视；七篇格式元数据长度与精确入链检查；955篇全仓链接零缺失。"
+        ],
+        "limits": "未执行文中fetch/rebase/merge/revert、安装或发布；只校正文档与只读/临时文件检查。没有把建设现状变为人工评审完成，也未重演历史全仓迁移。"
+      },
+      "governance/architecture/repository_information_architecture.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "校正稳定ID和路径关系、Arm目录规划、专题大纲职责、实验和源码两层立意，以及规划能力与现有工具的区分。",
+        "validation": [
+          "七篇完整阅读与真实目录、源码导读入口、format脚本、提交钩子、MarkBook workflow核对。",
+          "八个临时消息文件验证钩子接受与拒绝条件；Shell片段语法检查；两图Mermaid 11.17渲染目视；七篇格式元数据长度与精确入链检查；955篇全仓链接零缺失。"
+        ],
+        "limits": "未执行文中fetch/rebase/merge/revert、安装或发布；只校正文档与只读/临时文件检查。没有把建设现状变为人工评审完成，也未重演历史全仓迁移。"
+      },
+      "governance/migration/P01_全量目录重构记录.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "保留历史归属决定，澄清后续迁移和目标检查值，不把旧结论冒充本次执行报告。",
+        "validation": [
+          "七篇完整阅读与真实目录、源码导读入口、format脚本、提交钩子、MarkBook workflow核对。",
+          "八个临时消息文件验证钩子接受与拒绝条件；Shell片段语法检查；两图Mermaid 11.17渲染目视；七篇格式元数据长度与精确入链检查；955篇全仓链接零缺失。"
+        ],
+        "limits": "未执行文中fetch/rebase/merge/revert、安装或发布；只校正文档与只读/临时文件检查。没有把建设现状变为人工评审完成，也未重演历史全仓迁移。"
+      },
+      "governance/migration/P02_并发与竞争专题迁移地图.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "保留迁移目的与新入口，关系图用带动作边说明内容归属而非运行流水线。",
+        "validation": [
+          "七篇完整阅读与真实目录、源码导读入口、format脚本、提交钩子、MarkBook workflow核对。",
+          "八个临时消息文件验证钩子接受与拒绝条件；Shell片段语法检查；两图Mermaid 11.17渲染目视；七篇格式元数据长度与精确入链检查；955篇全仓链接零缺失。"
+        ],
+        "limits": "未执行文中fetch/rebase/merge/revert、安装或发布；只校正文档与只读/临时文件检查。没有把建设现状变为人工评审完成，也未重演历史全仓迁移。"
       }
     },
     "additional_documents": [
