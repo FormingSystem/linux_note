@@ -631,6 +631,9 @@ mindmap-plugin: basic
         - 🔴 [命令字符串怎样跨过缓冲区与失败边界](../../knowledge/system_software/uboot/P09_命令字符串怎样跨过缓冲区与失败边界.md)
         - 🔴 [命令字符串解析与失败边界导读](../../research/source_reading/uboot/navigation/P09_命令字符串解析与失败边界导读.md)
         - 🔴 [命令解析缓冲区与失败传播实现](../../research/source_reading/uboot/source_explanations/P09_命令解析缓冲区与失败传播实现.md)
+        - 🔴 [自动引导如何选择命令与保留维护入口](../../knowledge/system_software/uboot/P10_自动引导如何选择命令与保留维护入口.md)
+        - 🔴 [自动引导选择与交互退路导读](../../research/source_reading/uboot/navigation/P10_自动引导选择与交互退路导读.md)
+        - 🔴 [自动引导选择与执行门实现](../../research/source_reading/uboot/source_explanations/P10_自动引导选择与执行门实现.md)
         - 🔴 [旧U-Boot材料的版本身份与平台差量](../../research/investigations/uboot_vendor_baselines.md)
 
 ## 1.6\_工程方法与平台实现
