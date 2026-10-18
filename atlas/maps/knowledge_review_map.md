@@ -679,7 +679,8 @@ mindmap-plugin: basic
             - i.MX6ULL
                 - 移植与构建
                     - 🟢 [阅读人群](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)
-                    - 🟢 [下载编译器](../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md)
+            - i.MX8
+                - 🟢 [imx_v8配置与ARM64内核构建](../../platforms/arm/nxp/imx8/P01_imx_v8配置与ARM64内核构建.md)
         - Rockchip
             - RK3588
                 - 🔴 [GIC-600 集成与手册核对](../../platforms/arm/rockchip/rk3588/P01_RK3588的GIC-600集成与手册核对.md#1.1_通用规则没有告诉我们这颗芯片接了什么)

@@ -64,7 +64,8 @@ domains:
 | 类型 | 当前内容入口 |
 | --- | --- |
 | 内核模块工程 | [构建与部署专题](../../engineering/build/kernel_modules/大纲.md#1.1_四章怎样连起来)：目标身份、多文件组织、Kconfig 集成、部署与符号排错 |
-| i.MX6ULL 平台 | [U-Boot 与内核移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md)、[内核配置编译](../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md) |
+| i.MX6ULL 平台 | [U-Boot 与内核移植](../../platforms/arm/nxp/imx6ull/porting/imx6ull-移植u-boot-2025.04_and_kernel-6.1.md) |
+| i.MX8 ARM64平台 | [imx_v8配置与历史5.4.70构建](../../platforms/arm/nxp/imx8/P01_imx_v8配置与ARM64内核构建.md) |
 | RK3566 平台 | [Linux SDK 编译](../../platforms/arm/rockchip/rk3566/environment/linux_sdk编译说明.md) |
 | RK3588 与 Arm 中断控制器 | [GICv3 物理中断专题](../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)、[RK3588 集成与手册核对](../../platforms/arm/rockchip/rk3588/P01_RK3588的GIC-600集成与手册核对.md#1.2_怎样确认控制器身份)；十篇主线正文与[UART 综合复盘](../../platforms/arm/architecture/gic/P11_UART中断的端到端流程复盘.md#11.1_阶段导航)已入库，配有章内练习与主机模型；源码与板上实验仍需固定目标环境 |
 | 内存顺序实验 | [访问宽度与 ARM 反汇编](../../labs/foundations/computer_architecture/memory_ordering/P01_访问宽度_对齐与ARM反汇编/README.md)、[READ_ONCE 编译器访问](../../labs/kernel/memory_ordering/P01_READ_ONCE_编译器访问实验/README.md)、[LKMM Litmus](../../labs/kernel/memory_ordering/P02_LKMM_Litmus_消息传递与屏障/README.md) |

@@ -56,7 +56,7 @@ flowchart LR
 
 ## 1.4\_把旧编译记录和固定源码基线分开
 
-本组早期笔记使用过 NXP `imx_5.4.70_2.3.0` 和 Ubuntu 22.04 的环境记录，原 [i.MX 内核编译说明](../../../platforms/arm/nxp/imx6ull/porting/imx_v8_config_kernel编译说明.md) 保留板级操作线索。它说明一次历史环境，不能作为所有后续章节共用的版本身份，也不能仅凭文件名中的 5.4 或 6.1 判断实际检出的提交。
+本组早期笔记使用过 NXP `imx_5.4.70_2.3.0` 和 Ubuntu 22.04 的环境记录，原 [i.MX8 ARM64内核编译说明](../../../platforms/arm/nxp/imx8/P01_imx_v8配置与ARM64内核构建.md) 保留板级操作线索。它说明一次历史环境，不能作为所有后续章节共用的版本身份，也不能仅凭文件名中的 5.4 或 6.1 判断实际检出的提交。
 
 本轮涉及固定实现的说明采用 [Linux 源码基线](../../../research/source_reading/linux/SOURCE_BASELINE.md)：NXP 官方 `linux-imx`，发布标签 `lf-6.12.20-2.0.0`，提交 `dfaf2136deb2af2e60b994421281ba42f1c087e0`。通用机制与板级实践仍要分别声明配置和平台；一个 ARM32 的运行结果不能证明 ARM64 的入口协议已经验证。
 
