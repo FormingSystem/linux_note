@@ -622,6 +622,9 @@ mindmap-plugin: basic
         - 🔴 [从复位入口到异常向量与主核交接](../../knowledge/system_software/uboot/P06_从复位入口到异常向量与主核交接.md)
         - 🔴 [ARM入口与异常向量导读](../../research/source_reading/uboot/navigation/P06_ARM入口与异常向量导读.md)
         - 🔴 [ARM入口与异常向量实现](../../research/source_reading/uboot/source_explanations/P06_ARM入口与异常向量实现.md)
+        - 🔴 [镜像搬迁为什么不等于改变内存映射](../../knowledge/system_software/uboot/P07_镜像搬迁为什么不等于改变内存映射.md)
+        - 🔴 [地址视图与AArch64重定位导读](../../research/source_reading/uboot/navigation/P07_地址视图与AArch64重定位导读.md)
+        - 🔴 [AArch64相对重定位与地址交接实现](../../research/source_reading/uboot/source_explanations/P07_AArch64相对重定位与地址交接实现.md)
 
 ## 1.6\_工程方法与平台实现
 
