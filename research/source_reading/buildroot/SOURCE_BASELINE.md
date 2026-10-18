@@ -49,6 +49,19 @@ domains: [linux, buildroot, source_reading]
 | [board/qemu/post-image.sh](2025.02/board/qemu/post-image.sh) | 从配置及板说明生成start-qemu.sh |
 | [board/qemu/start-qemu.sh.in](2025.02/board/qemu/start-qemu.sh.in) | serial-only参数、host工具PATH与模拟器执行方式 |
 
+工具链章节进一步核对下面这些配方。它们记录构建依赖和安装行为，不把源码中的设置扩大成所有工具链必须遵循的唯一实现。
+
+| 上游相对位置及原件 | 本轮核对的事实 |
+| --- | --- |
+| [package/gcc/gcc.mk](2025.02/package/gcc/gcc.mk) | 公共宿主依赖、sysroot设置及短工具前缀别名 |
+| [package/gcc/gcc-initial/gcc-initial.mk](2025.02/package/gcc/gcc-initial/gcc-initial.mk) | 初始GCC构建范围和libgcc |
+| [package/gcc/gcc-final/gcc-final.mk](2025.02/package/gcc/gcc-final/gcc-final.mk) | 完整GCC依赖目标libc，宿主编译环境与目标运行库安装分工 |
+| [package/gcc/Config.in.host](2025.02/package/gcc/Config.in.host)、[package/binutils/Config.in.host](2025.02/package/binutils/Config.in.host) | 固定版本的工具版本及语言选择条件 |
+| [package/glibc/glibc.mk](2025.02/package/glibc/glibc.mk)、[package/musl/musl.mk](2025.02/package/musl/musl.mk)、[package/uclibc/uclibc.mk](2025.02/package/uclibc/uclibc.mk) | 各libc的初始编译器与内核头文件依赖，开发/运行安装边界 |
+| [package/linux-headers/linux-headers.mk](2025.02/package/linux-headers/linux-headers.mk)、[Config.in.host](2025.02/package/linux-headers/Config.in.host) | UAPI导出、安装及来源选择 |
+| [toolchain/toolchain-buildroot/toolchain-buildroot.mk](2025.02/toolchain/toolchain-buildroot/toolchain-buildroot.mk)、[Config.in](2025.02/toolchain/toolchain-buildroot/Config.in) | 内部工具链与libc配置关系 |
+| [toolchain/Config.in](2025.02/toolchain/Config.in)、[package/Makefile.in](2025.02/package/Makefile.in) | 工具链公共能力和宿主/目标编译变量 |
+
 不同来源说法冲突时先保留时间和具体字段。比如2025.02随包release-engineering仍用较早的LTS周期举例，2025.02发布公告讨论延长维护，当前下载页再给出系列维护终止时间；它们不能拼成一个没有日期的永久承诺。教程介绍发布模型，产品选择则核对当时有效公告。
 
 ## 1.3\_静态核对与实际运行分别登记

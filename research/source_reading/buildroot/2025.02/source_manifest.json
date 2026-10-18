@@ -74,6 +74,62 @@
     {
       "path": "docs/manual/release-engineering.adoc",
       "sha256": "a4e4da7f35fa093e78c177097a718f593493c6a3bf913881acedd6d7a0415421"
+    },
+    {
+      "path": "package/gcc/gcc.mk",
+      "sha256": "cef05c326405ca77b8e172ac49b61cb5e113cb765118570b29441109c8fb4db9"
+    },
+    {
+      "path": "package/gcc/gcc-initial/gcc-initial.mk",
+      "sha256": "f009c2f787cecd14baf0d21c8012e4aa382a7d132dbd870b22754538fd4eecbc"
+    },
+    {
+      "path": "package/gcc/gcc-final/gcc-final.mk",
+      "sha256": "d278dbd1b2e2987dd9046266e0143194f34743a415a62331665662b090892069"
+    },
+    {
+      "path": "package/gcc/Config.in.host",
+      "sha256": "3300d04d0dfebb2877fc0042ff5074b089cab5c9d4e900b3a22c9645315dbe4d"
+    },
+    {
+      "path": "package/binutils/Config.in.host",
+      "sha256": "3dee2fbf6b7611ebc39d6eed741cf0b4e835c3104dc68f24996ab597725f1ca6"
+    },
+    {
+      "path": "package/glibc/glibc.mk",
+      "sha256": "e83beed3669f5451d4cd4fd10758ce70adc549073ad9e551fddcbe7acec773c9"
+    },
+    {
+      "path": "package/musl/musl.mk",
+      "sha256": "7151cabcbe4c294031df39dd43247572850b3b518450b7775dcf244aa07fb3f9"
+    },
+    {
+      "path": "package/uclibc/uclibc.mk",
+      "sha256": "f8f5de627b99a677e6d2d2bf06d2f6e09550d762dacc46764ef9b53b5754e5da"
+    },
+    {
+      "path": "package/linux-headers/linux-headers.mk",
+      "sha256": "8c4440ad0bf2cac211658f8444e8c47619fdda9033e97d74e098d7136ff01526"
+    },
+    {
+      "path": "package/linux-headers/Config.in.host",
+      "sha256": "c0830cf1eda85e82b18f24e433e9cbb0cf47a556271f15d216fbc6f798f594f1"
+    },
+    {
+      "path": "toolchain/toolchain-buildroot/toolchain-buildroot.mk",
+      "sha256": "beebfbddf33240753f71ed2c2b0e7f6365d6e235db77d2ee0080a69adcc9b08e"
+    },
+    {
+      "path": "toolchain/toolchain-buildroot/Config.in",
+      "sha256": "d69a9eeeed43bdcb53209a923f58b2e5b89673bf709d2a53ca97608f6fb953f8"
+    },
+    {
+      "path": "toolchain/Config.in",
+      "sha256": "29e42cb78114d64d126eb795bb4a154e86350274ed6daed1e35810c8eeb06f36"
+    },
+    {
+      "path": "package/Makefile.in",
+      "sha256": "1f817dc50e6dc83658fb7383b60618d7cfc963da65730c3c9a8ed2c6a28ca0c0"
     }
   ]
 }
