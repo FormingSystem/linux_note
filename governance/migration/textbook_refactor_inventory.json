@@ -10117,6 +10117,42 @@
           "三篇格式元数据长度精确链接及严格连续审计通过；932篇链接零缺失。"
         ],
         "limits": "数值模型没有执行ARM机器码、MMU修改、真实缓存维护或板级内存验证。；旧稿命令单元和平台历史材料仍待迁移。"
+      },
+      "knowledge/system_software/uboot/P08_命令名怎样找到镜像里的实现函数.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "从名字与函数地址间缺失的登记关系推导命令表，再说明构建选择、链接与运行期查找。",
+        "validation": [
+          "宿主C模型完整名、缩写、歧义、参数不足、参数过多、未知命令和重复能力均验证；增加竞争前缀后验证歧义变化。",
+          "三篇严格连续审计零风险，格式元数据长度与精确锚点通过，三图渲染目视；935篇Markdown链接零缺失。",
+          "六份上游原件工作树与Git索引SHA一致，嵌入实验代码与实际材料一致。"
+        ],
+        "limits": "未执行完整U-Boot构建或目标命令；字符串解析留待下一单元，旧长稿未登记完成。"
+      },
+      "research/source_reading/uboot/navigation/P08_命令注册与分派导读.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "完整匹配、唯一缩写、参数上限与回调最低参数检查分开；成功结果与重复能力分开。",
+        "validation": [
+          "宿主C模型完整名、缩写、歧义、参数不足、参数过多、未知命令和重复能力均验证；增加竞争前缀后验证歧义变化。",
+          "三篇严格连续审计零风险，格式元数据长度与精确锚点通过，三图渲染目视；935篇Markdown链接零缺失。",
+          "六份上游原件工作树与Git索引SHA一致，嵌入实验代码与实际材料一致。"
+        ],
+        "limits": "未执行完整U-Boot构建或目标命令；字符串解析留待下一单元，旧长稿未登记完成。"
+      },
+      "research/source_reading/uboot/source_explanations/P08_命令记录与查找分派实现.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "当前cmd_rep回调契约与旧版整数repeatable区分，宏字段、帮助字符串、配置边界均本地解释。",
+        "validation": [
+          "宿主C模型完整名、缩写、歧义、参数不足、参数过多、未知命令和重复能力均验证；增加竞争前缀后验证歧义变化。",
+          "三篇严格连续审计零风险，格式元数据长度与精确锚点通过，三图渲染目视；935篇Markdown链接零缺失。",
+          "六份上游原件工作树与Git索引SHA一致，嵌入实验代码与实际材料一致。"
+        ],
+        "limits": "未执行完整U-Boot构建或目标命令；字符串解析留待下一单元，旧长稿未登记完成。"
       }
     },
     "additional_documents": [
@@ -10322,7 +10358,10 @@
       "research/source_reading/uboot/source_explanations/P06_ARM入口与异常向量实现.md",
       "knowledge/system_software/uboot/P07_镜像搬迁为什么不等于改变内存映射.md",
       "research/source_reading/uboot/navigation/P07_地址视图与AArch64重定位导读.md",
-      "research/source_reading/uboot/source_explanations/P07_AArch64相对重定位与地址交接实现.md"
+      "research/source_reading/uboot/source_explanations/P07_AArch64相对重定位与地址交接实现.md",
+      "knowledge/system_software/uboot/P08_命令名怎样找到镜像里的实现函数.md",
+      "research/source_reading/uboot/navigation/P08_命令注册与分派导读.md",
+      "research/source_reading/uboot/source_explanations/P08_命令记录与查找分派实现.md"
     ],
     "language_review": {
       "status": "complete",
