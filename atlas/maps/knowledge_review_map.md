@@ -616,6 +616,9 @@ mindmap-plugin: basic
         - 🔴 [先建立栈与GD再进入可用的C环境](../../knowledge/system_software/uboot/P04_先建立栈与GD再进入可用的C环境.md)
         - 🔴 [栈与GD及分配器交接导读](../../research/source_reading/uboot/navigation/P04_栈与GD及分配器交接导读.md)
         - 🔴 [早期运行环境与GD交接实现](../../research/source_reading/uboot/source_explanations/P04_早期运行环境与GD交接实现.md)
+        - 🔴 [为什么需要SPL以及它怎样交出下一阶段](../../knowledge/system_software/uboot/P05_为什么需要SPL以及它怎样交出下一阶段.md)
+        - 🔴 [SPL装载与下一阶段交接导读](../../research/source_reading/uboot/navigation/P05_SPL装载与下一阶段交接导读.md)
+        - 🔴 [SPL装载与下一阶段交接实现](../../research/source_reading/uboot/source_explanations/P05_SPL装载与下一阶段交接实现.md)
 
 ## 1.6\_工程方法与平台实现
 
