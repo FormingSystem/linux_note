@@ -103,6 +103,19 @@ domains: [linux, buildroot, source_reading]
 | [docs/manual/patch-policy.adoc](2025.02/docs/manual/patch-policy.adoc) | 补丁位置、顺序、来源记录及适用范围 |
 | [docs/manual/adding-packages-hooks.adoc](2025.02/docs/manual/adding-packages-hooks.adoc) | 主要阶段动作与附加HOOKS列表的区别 |
 
+镜像布局章节另外保存以下Buildroot原件，并把其调用的genimage工具身份分开记录。
+
+| 上游相对位置及原件 | 本轮核对的事实 |
+| --- | --- |
+| [package/genimage/genimage.mk](2025.02/package/genimage/genimage.mk)、[genimage.hash](2025.02/package/genimage/genimage.hash)、[Config.in.host](2025.02/package/genimage/Config.in.host) | 选定genimage 18、宿主工具入口与归档摘要 |
+| [support/scripts/genimage.sh](2025.02/support/scripts/genimage.sh) | 已有rootfs镜像的组合入口、临时空rootpath与错误返回 |
+| [configs/imx6ullevk_defconfig](2025.02/configs/imx6ullevk_defconfig) | 该板方案的内核6.6.4、U-Boot 2023.10及工具选择 |
+| [i.MX公共模板](2025.02/board/freescale/common/imx/genimage.cfg.template)、[post-image.sh](2025.02/board/freescale/common/imx/post-image.sh) | 裸放引导组件、FAT内容、分区位置与实际失败传播边界 |
+| [fs/ubifs/Config.in](2025.02/fs/ubifs/Config.in)、[ubifs.mk](2025.02/fs/ubifs/ubifs.mk) | UBIFS几何参数与mkfs.ubifs调用 |
+| [fs/ubi/Config.in](2025.02/fs/ubi/Config.in)、[ubi.mk](2025.02/fs/ubi/ubi.mk)、[ubinize.cfg](2025.02/fs/ubi/ubinize.cfg) | UBI封装、参数和默认单卷布局 |
+
+genimage 18原件保存在 [tools/genimage-18](tools/genimage-18/source_manifest.json)：[README.rst](tools/genimage-18/README.rst) 解释配置语法，[image-hd.c](tools/genimage-18/image-hd.c) 核对分区表、对齐与布局实现，[COPYING](tools/genimage-18/COPYING) 保留许可原文。2026-10-18从 [官方v18发布归档](https://github.com/pengutronix/genimage/releases/download/v18/genimage-18.tar.xz) 取得，SHA-256为 `ebc3f886c4d80064dd6c6d5e3c2e98e5a670078264108ce2f89ada8a2e13fedd`，与Buildroot配方摘要相同。未把工具源码核对宣称为Linux工具构建或实际镜像生成。
+
 ## 1.3\_静态核对与实际运行分别登记
 
 2026-10-18已下载并解出所列原件，计算归档与各文件摘要，阅读入门配置、打包脚本、Make目标及对应手册。知识正文中的构建和QEMU命令依据这些原件编写。

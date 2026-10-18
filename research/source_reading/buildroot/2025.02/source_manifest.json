@@ -354,6 +354,54 @@
     {
       "path": "docs/manual/adding-packages-hooks.adoc",
       "sha256": "a3675ccf81b3ee24f77cc7b4f532b462317edc1bbf0c92492f2d08071a3db403"
+    },
+    {
+      "path": "package/genimage/genimage.mk",
+      "sha256": "bc24226ff377e941569718bafe5b114d67d6f82de088f3b1b32fbb3cf9730d61"
+    },
+    {
+      "path": "package/genimage/genimage.hash",
+      "sha256": "8aaabe210cb3fd2b0cc0250978a74cf7df3e05df30b4439cfc76d0510c6a992f"
+    },
+    {
+      "path": "package/genimage/Config.in.host",
+      "sha256": "74cf4eaced3dc85bffde46294c2769b68c75621c4efc0201ed10297b77dc4dc3"
+    },
+    {
+      "path": "support/scripts/genimage.sh",
+      "sha256": "2c48273fd2a138a042579d33f10c319849c5b6a1147e8cbf3f3c629a7af40e24"
+    },
+    {
+      "path": "configs/imx6ullevk_defconfig",
+      "sha256": "20df454700cd3f5f99937622870db1635d0128b7ae7b7ed2c0653f7dc35ced70"
+    },
+    {
+      "path": "board/freescale/common/imx/genimage.cfg.template",
+      "sha256": "b23b70c890399cf9ce68d16ad2dce4429fc9293d76bb74e2472728894c5975cc"
+    },
+    {
+      "path": "board/freescale/common/imx/post-image.sh",
+      "sha256": "b47ce0209ce43c39ce539e6c5f77b514d5e75fb9918b8cdab0ce55bed8564285"
+    },
+    {
+      "path": "fs/ubi/Config.in",
+      "sha256": "a1fd4d79c59abd659f4e2d47321373d62fde5eb1960ed966befdb9636ecb88ec"
+    },
+    {
+      "path": "fs/ubi/ubi.mk",
+      "sha256": "46ef20306cfe435dfcba93e047df7f48c0ad3b6dfe28aedbec91921112cc63a3"
+    },
+    {
+      "path": "fs/ubi/ubinize.cfg",
+      "sha256": "72a9b5f694ab68a876d4c83476820af65304525198b8192cf56f06130219f011"
+    },
+    {
+      "path": "fs/ubifs/Config.in",
+      "sha256": "526315d4e6b87800837398b782288972d2144624c6a0da06a7aac6d680f26a6c"
+    },
+    {
+      "path": "fs/ubifs/ubifs.mk",
+      "sha256": "9249cbf328f1427962c649bddd68cd27f7234448f133bcbd4c4c88d61cb43a52"
     }
   ]
 }

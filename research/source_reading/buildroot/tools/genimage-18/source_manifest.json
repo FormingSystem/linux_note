@@ -1,0 +1,19 @@
+{
+  "version": "18",
+  "url": "https://github.com/pengutronix/genimage/releases/download/v18/genimage-18.tar.xz",
+  "sha256": "ebc3f886c4d80064dd6c6d5e3c2e98e5a670078264108ce2f89ada8a2e13fedd",
+  "files": [
+    {
+      "path": "README.rst",
+      "sha256": "30449e19844f8a0dbe2d366bcab3a65a7270549e3e625d28e1992f3465d5d3b5"
+    },
+    {
+      "path": "image-hd.c",
+      "sha256": "fcfe096718cda32f3b5fa0517eafaecde8faa35354d2cc85e30b9213823f1cfe"
+    },
+    {
+      "path": "COPYING",
+      "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+    }
+  ]
+}

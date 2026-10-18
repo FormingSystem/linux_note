@@ -591,7 +591,7 @@ mindmap-plugin: basic
         - 🔴 [P07 镜像生成与部署](../../knowledge/system_software/buildroot/P07_把构建产物整理为可核对的交付包.md)
         - 🔴 [P08 把项目输入迁到外部树并隔离构建](../../knowledge/system_software/buildroot/P08_把项目输入迁到外部树并隔离构建.md)
         - 🔴 [P09 把源码身份依赖和补丁接成包维护闭环](../../knowledge/system_software/buildroot/P09_把源码身份依赖和补丁接成包维护闭环.md)
-        - 🔴 [P10 镜像生成与部署](../../knowledge/system_software/buildroot/P10_镜像生成与部署.md)
+        - 🔴 [P10 从文件系统镜像到存储布局与部署验证](../../knowledge/system_software/buildroot/P10_从文件系统镜像到存储布局与部署验证.md)
         - 🔴 [P11 调试与问题排查](../../knowledge/system_software/buildroot/P11_调试与问题排查.md)
         - 🔴 [P12 高级主题](../../knowledge/system_software/buildroot/P12_高级主题.md)
         - 🔴 [P13 附录](../../knowledge/system_software/buildroot/P13_附录.md)
