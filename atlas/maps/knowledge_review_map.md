@@ -599,9 +599,12 @@ mindmap-plugin: basic
     - Kconfig
         - 🔴 [Kconfig 基础语法](../../knowledge/system_software/kconfig/基础语法.md)
     - 链接脚本
-        - 🔴 [链接脚本基础结构与核心语法](../../knowledge/system_software/linker/lds_基础语法.md)
+        - 🔴 [从目标文件到运行布局的链接脚本](../../knowledge/system_software/linker/P01_从目标文件到运行布局的链接脚本.md)
     - 🟢 U-Boot
         - 材料评审：2 篇完成
+        - 🔴 [从链接布局到启动阶段的交接](../../knowledge/system_software/uboot/P01_从链接布局到启动阶段的交接.md)
+        - 🔴 [ARM32链接布局与启动交接阅读索引](../../research/source_reading/uboot/navigation/P01_ARM32链接布局与启动交接阅读索引.md)
+        - 🔴 [ARM32链接布局与启动实现](../../research/source_reading/uboot/source_explanations/P01_ARM32链接布局与启动实现.md)
         - 🟢 [阅读说明](../../knowledge/system_software/uboot/uboot-makefile.md)
         - 🟢 [SPL和main构建的时候 是如何区分对应的函数不会冲突的](../../knowledge/system_software/uboot/uboot提问.md)
 

@@ -52,3 +52,7 @@ research/source_reading/buildroot/2025.02/docs/manual/patch-policy.adoc whitespa
 research/source_reading/buildroot/2025.02/docs/manual/migrating.adoc whitespace=-blank-at-eol
 research/source_reading/buildroot/tools/genimage-18/** text eol=lf
 research/source_reading/buildroot/tools/genimage-18/image-hd.c whitespace=-blank-at-eof
+
+# Fixed U-Boot source evidence; preserve the upstream byte representation.
+research/source_reading/uboot/upstream/v2022.10/** text eol=lf
+research/source_reading/uboot/upstream/v2022.10/README conflict-marker-size=1000
