@@ -10316,6 +10316,17 @@
           "六篇格式元数据长度锚点通过；正文和实现严格连续审计通过，导读22链接/2节告警人工复核为原件索引与精确入口，保留职责；三图目视通过，946篇链接零缺失。"
         ],
         "limits": "未实际执行解压、设备树修改、缓存维护、特权切换或目标板启动；旧读书P03仍待其他独有单元迁移。"
+      },
+      "knowledge/foundations/computer_architecture/address_space_and_capacity.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "将旧启动长稿的大资源问题独立成因果说明，区分虚拟范围、物理驻留、窗口、多进程通信和GPU资源；修正Windows LAA/4GT条件和highmem用途。",
+        "validation": [
+          "C11窗口模型、1MiB尾块及512MiB窗口三组通过；正文代码与材料一致。",
+          "Microsoft与Linux6.12官方资料核对；格式元数据长度锚点和严格连续审计通过，两图渲染目视，947篇链接零缺失。"
+        ],
+        "limits": "未运行真实mmap、多进程或GPU程序；Windows限制来自2026-10-18核对官方说明，实际版本仍须检查。"
       }
     },
     "additional_documents": [
@@ -10535,7 +10546,8 @@
       "research/source_reading/uboot/source_explanations/P10_自动引导选择与执行门实现.md",
       "knowledge/system_software/uboot/P11_内存镜像如何变成Linux入口现场.md",
       "research/source_reading/uboot/navigation/P11_镜像解析与Linux交接导读.md",
-      "research/source_reading/uboot/source_explanations/P11_镜像范围与Linux交接实现.md"
+      "research/source_reading/uboot/source_explanations/P11_镜像范围与Linux交接实现.md",
+      "knowledge/foundations/computer_architecture/address_space_and_capacity.md"
     ],
     "language_review": {
       "status": "complete",
