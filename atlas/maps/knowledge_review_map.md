@@ -628,6 +628,9 @@ mindmap-plugin: basic
         - 🔴 [命令名怎样找到镜像里的实现函数](../../knowledge/system_software/uboot/P08_命令名怎样找到镜像里的实现函数.md)
         - 🔴 [命令注册与分派导读](../../research/source_reading/uboot/navigation/P08_命令注册与分派导读.md)
         - 🔴 [命令记录与查找分派实现](../../research/source_reading/uboot/source_explanations/P08_命令记录与查找分派实现.md)
+        - 🔴 [命令字符串怎样跨过缓冲区与失败边界](../../knowledge/system_software/uboot/P09_命令字符串怎样跨过缓冲区与失败边界.md)
+        - 🔴 [命令字符串解析与失败边界导读](../../research/source_reading/uboot/navigation/P09_命令字符串解析与失败边界导读.md)
+        - 🔴 [命令解析缓冲区与失败传播实现](../../research/source_reading/uboot/source_explanations/P09_命令解析缓冲区与失败传播实现.md)
 
 ## 1.6\_工程方法与平台实现
 
