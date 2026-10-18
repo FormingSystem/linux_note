@@ -9795,6 +9795,17 @@
           "内容索引、评审入口和驱动路线同步，格式长度及909篇链接通过。"
         ],
         "limits": "大纲是导航，不宣称Linux完整构建或目标启动已执行；人工评审状态保持原样。"
+      },
+      "knowledge/foundations/operating_systems/concepts/宏内核和微内核.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "以同一次读取展开保护域与S0-S4状态交接，补齐驱动隔离动机、IPC状态与恢复代价，校正模块化和实时性绝对断言。",
+        "validation": [
+          "7份官方资料核对，五幅Mermaid渲染目视，格式长度及连续性检查。",
+          "保留稳定ID和路径，评审图标签同步，909篇链接零缺失。"
+        ],
+        "limits": "概念教学模型，未运行实际系统、硬件恢复或性能测试；人工评审不升级。"
       }
     },
     "additional_documents": [
