@@ -9806,6 +9806,28 @@
           "保留稳定ID和路径，评审图标签同步，909篇链接零缺失。"
         ],
         "limits": "概念教学模型，未运行实际系统、硬件恢复或性能测试；人工评审不升级。"
+      },
+      "knowledge/kernel_subsystems/tracing/logging/Linux_内核日志.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "将聊天式拼接改为L0-L3日志产生消费链和可重复触发实验，修正门槛、动态调试、格式参数、once与限流归属。",
+        "validation": [
+          "19份固定源码blob核对；模块3种ARM语法分支及366个头文件身份检查。",
+          "正文材料一致、Bash语法、两图目视及910篇链接零缺失。"
+        ],
+        "limits": "未完整Kbuild、链接装载或目标运行；动态分支是语法检查条件，人工状态不升级。"
+      },
+      "research/source_reading/printk/navigation/P01_Linux_6.12_日志路径源码阅读索引.md": {
+        "state": "reviewed",
+        "result": "revised",
+        "date": "2026-10-18",
+        "reason": "新增固定版本日志源码索引，按正文L0-L3组织调用点、状态存储、消费者与查询入口，不重复展开函数体。",
+        "validation": [
+          "19份固定源码身份与24处本地链接核对，版本及配置边界明确。",
+          "格式元数据、长度和全仓链接检查通过。"
+        ],
+        "limits": "LINK_DENSITY提示按源码索引职责保留；没有实际系统运行证明。"
       }
     },
     "additional_documents": [
@@ -9988,7 +10010,8 @@
       "research/source_reading/vfs/source_explanations/P73_特殊inode的类型选择与打开分派.md",
       "research/source_reading/vfs/source_explanations/P74_伪路径file的建立与失败归还.md",
       "research/source_reading/vfs/source_explanations/P75_匿名inode的共享与私有对象交接.md",
-      "research/source_reading/buildroot/SOURCE_BASELINE.md"
+      "research/source_reading/buildroot/SOURCE_BASELINE.md",
+      "research/source_reading/printk/navigation/P01_Linux_6.12_日志路径源码阅读索引.md"
     ],
     "language_review": {
       "status": "complete",
