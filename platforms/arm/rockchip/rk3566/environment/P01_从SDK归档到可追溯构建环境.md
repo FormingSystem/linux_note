@@ -50,11 +50,11 @@ Git 的对象数据与可编辑工作树不是同一份东西。repo 是管理�
 
 ```mermaid
 flowchart LR
-    A[SDK归档及发布说明] -->|解压到空目录| B[.repo<br/>清单与本地Git对象]
-    B -->|sync -l检出已有对象| C[kernel / u-boot / buildroot<br/>可编辑工作树]
-    C -->|manifest -r记录实际版本| D[版本清单]
-    E[dl缓存归档] -->|按原目录结构解压| F[buildroot/dl]
-    C -->|提供源码和构建规则| G[后续构建]
+    A["SDK归档及发布说明"] -->|解压到空目录| B[".repo<br/>清单与本地Git对象"]
+    B -->|sync -l检出已有对象| C["kernel / u-boot / buildroot<br/>可编辑工作树"]
+    C -->|manifest -r记录实际版本| D["版本清单"]
+    E["dl缓存归档"] -->|按原目录结构解压| F["buildroot/dl"]
+    C -->|提供源码和构建规则| G["后续构建"]
     F -->|提供所需下载文件| G
 ```
 

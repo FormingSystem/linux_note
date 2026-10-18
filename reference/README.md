@@ -23,7 +23,7 @@ domains:
 | --- | --- | --- |
 | 许可证说明 | [GPL 协议说明（总论）](standards/gpl/GPL协议说明.md) | GPL 家族在常见工程场景中的适用边界与合规检查点是什么 |
 | 架构、GIC 与 SoC 外部资料 | [Arm、RK3588 与 i.MX6ULL 外部资料索引](external_resources/arm/README.md#1.1_索引定位与存储边界) | 按对象存放、按学习资料组选取；当前优先 RK3588 的 GIC-600 r1p6 / GICv3.0 |
-| GIC 学习组织 | [GICv3 物理中断专题](../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图) | 十篇独立概念讲解，术语中英文对照并追溯官方章节；虚拟化与 GICv4 后学 |
+| GIC 学习组织 | [GICv3 物理中断专题](../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图) | 沿外设事件、控制器身份、状态与软件交接连续阅读；寄存器表和必要原图在正文，虚拟化与 GICv4 后学 |
 
 ## 1.3\_外部资料取得与维护
 
