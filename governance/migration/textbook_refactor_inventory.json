@@ -11,7 +11,8 @@
     "baseline_commit": "393e2e5f02e0794f81bacd5d954865cdbd245fed",
     "baseline_markdown_count": 707,
     "scope_rule": "该提交中全部已跟踪 Markdown，新增或拆分正文继续纳入；历史记录按证据职责保留，治理、导航与参考按各自用途审查，不回写冻结出版物或第三方原始证据。",
-    "skill": "tools/ai/codex/skills/build-linux-note-topic/SKILL.md",
+    "skill": "https://github.com/FormingSystem/ai_agent_skill/blob/main/skills/build-linux-note-topic/SKILL.md",
+    "skill_path_at_baseline": "tools/ai/codex/skills/build-linux-note-topic/SKILL.md",
     "default_review_state": "pending",
     "path_migrations": {
       "knowledge/linux/object_lifetime/kref/P05_基础_API_源码逐行讲解.md": "knowledge/linux/object_lifetime/kref/P05_基础_API_调用前提与状态转换.md",

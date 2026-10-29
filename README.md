@@ -66,7 +66,7 @@ https://github.com/FormingSystem/linux_note.git
 
 ## 1.4\_阅读方式
 
-本仓库从具体问题进入机制：先看到旧方案能做什么、何时出现缺口，再推导角色、状态和通信，最后核对实现与操作接口。已解释的先修知识只作回顾；需要理解当前结论的图、表、寄存器字段及运行步骤保留在正文，来源链接供进一步追溯。写作方法见[专题结构从零建立](tools/ai/codex/skills/build-linux-note-topic/references/topic-design.md#12-让专题结构本身也从零建立)。
+本仓库从具体问题进入机制：先看到旧方案能做什么、何时出现缺口，再推导角色、状态和通信，最后核对实现与操作接口。已解释的先修知识只作回顾；需要理解当前结论的图、表、寄存器字段及运行步骤保留在正文，来源链接供进一步追溯。写作方法见[专题结构从零建立](https://github.com/FormingSystem/ai_agent_skill/blob/main/skills/build-linux-note-topic/references/topic-design.md#12-让专题结构本身也从零建立)。
 
 从下面选择当前任务，再沿对应大纲连续阅读。完整专题范围见[内容索引](atlas/indexes/content_index.md)，章节人工进度见[阅读与评审地图](atlas/maps/knowledge_review_map.md)；首页不重复维护每一节的修改记录。
 

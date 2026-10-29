@@ -48,7 +48,6 @@ from pathlib import Path
 APPLY = sys.argv[1] == "apply"
 DETAIL = sys.argv[2] == "true"
 SELECTIONS = [item.replace("\\", "/").removeprefix("./").rstrip("/") for item in sys.argv[3:]]
-CODEX_SKILL_PREFIX = "tools/ai/codex/skills/"
 VALID_KINDS = {"concept", "mechanism", "subsystem", "interface", "engineering", "platform", "lab", "project", "source", "investigation", "reference", "track", "publication"}
 VALID_STATUS = {"draft", "evolving", "maintained", "archived"}
 
@@ -63,7 +62,6 @@ def git_markdown() -> list[str]:
         path for path in (item.decode("utf-8") for item in raw.split(b"\0") if item)
         if Path(path).exists()
         and Path(path).suffix.casefold() in {".md", ".markdown"}
-        and not path.startswith(CODEX_SKILL_PREFIX)
     )
 
 
