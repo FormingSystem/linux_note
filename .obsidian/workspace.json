@@ -48,9 +48,21 @@
               "icon": "lucide-file",
               "title": "P06_Tree_RCU_读侧执行模型与配置差异"
             }
+          },
+          {
+            "id": "87836f2954beecb1",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.14.4"
+              },
+              "icon": "lucide-book-up",
+              "title": "版本说明 1.14.4"
+            }
           }
         ],
-        "currentTab": 2
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -188,7 +200,6 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "knowledge/linux/synchronization_and_asynchrony/synchronization/rcu/P06_Tree_RCU_读侧执行模型与配置差异.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -218,7 +229,7 @@
       "pdf-plus:PDF++: Toggle auto-paste": false
     }
   },
-  "active": "9d9e278db59e8146",
+  "active": "87836f2954beecb1",
   "lastOpenFiles": [
     "atlas/maps/knowledge_review_map.md",
     "research/source_reading/lockdep/source_explanations/P04_Linux_6.12_Lockdep查询注解与配置源码实现.md",

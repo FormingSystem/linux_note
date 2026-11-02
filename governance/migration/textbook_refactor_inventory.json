@@ -22,12 +22,12 @@
       "platforms/arm/architecture/gic/P03_多核控制器的角色_寄存器与编号.md": "platforms/arm/architecture/gic/P03_多核角色与架构编程接口.md",
       "platforms/arm/architecture/gic/P04_一次中断的状态转换与完成协议.md": "platforms/arm/architecture/gic/P06_一次中断的状态转换与完成协议.md",
       "platforms/arm/architecture/gic/P05_优先级_屏蔽与嵌套处理.md": "platforms/arm/architecture/gic/P07_优先级数值_门槛与分组.md",
-      "platforms/arm/architecture/gic/P06_权限_安全分组与初始化闭环.md": "platforms/arm/architecture/gic/P09_权限_安全分组与异常路由.md",
-      "platforms/arm/architecture/gic/P07_目标选择_核间通知与电源交接.md": "platforms/arm/architecture/gic/P11_SPI目标选择与每PE状态.md",
-      "platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md": "platforms/arm/architecture/gic/P13_从消息请求到内存中的中断状态.md",
-      "platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md": "platforms/arm/architecture/gic/P14_设备事件身份与ITS实现映射.md",
-      "platforms/arm/architecture/gic/P10_软件交接_部署与分层排障.md": "platforms/arm/architecture/gic/P16_软件交接_部署与分层排障.md",
-      "platforms/arm/architecture/gic/P11_UART中断的端到端流程复盘.md": "platforms/arm/architecture/gic/P17_UART中断的端到端流程复盘.md",
+      "platforms/arm/architecture/gic/P06_权限_安全分组与初始化闭环.md": "platforms/arm/architecture/gic/P10_权限_安全分组与异常路由.md",
+      "platforms/arm/architecture/gic/P07_目标选择_核间通知与电源交接.md": "platforms/arm/architecture/gic/P12_SPI目标选择与每PE状态.md",
+      "platforms/arm/architecture/gic/P08_从消息请求到内存中的中断状态.md": "platforms/arm/architecture/gic/P14_从消息请求到内存中的中断状态.md",
+      "platforms/arm/architecture/gic/P09_设备事件翻译与命令完成.md": "platforms/arm/architecture/gic/P15_设备事件身份与ITS实现映射.md",
+      "platforms/arm/architecture/gic/P10_软件交接_部署与分层排障.md": "platforms/arm/architecture/gic/P17_软件交接_部署与分层排障.md",
+      "platforms/arm/architecture/gic/P11_UART中断的端到端流程复盘.md": "platforms/arm/architecture/gic/P18_UART中断的端到端流程复盘.md",
       "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调与NOCB源码实现.md": "research/source_reading/rcu/source_explanations/P09_Linux_6.12_Tree_RCU_回调分段与批处理源码实现.md",
       "knowledge/driver_model/device_tree/设备树语法专题-01-gpio.md": "knowledge/driver_model/device_tree/P01_GPIO连接命名占用与按键事件.md",
       "knowledge/driver_model/device_tree/设备树语法专题-02-pinctrl.md": "knowledge/driver_model/device_tree/P02_引脚配置怎样连接外设与焊盘.md",
@@ -159,7 +159,7 @@
         ],
         "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P08_处理器屏蔽与嵌套恢复.md": {
+      "platforms/arm/architecture/gic/P09_处理器屏蔽与嵌套恢复.md": {
         "state": "reviewed",
         "result": "revised",
         "reason": "明确控制器资格与处理器屏蔽的关系，按嵌套周期说明现场和完成义务。",
@@ -171,7 +171,7 @@
         ],
         "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P09_权限_安全分组与异常路由.md": {
+      "platforms/arm/architecture/gic/P10_权限_安全分组与异常路由.md": {
         "state": "reviewed",
         "result": "revised",
         "reason": "将安全归属、配置对象、组许可和异常目标连成完整推导；实际配置图明确物理端点和读返回。",
@@ -184,7 +184,7 @@
         "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。",
         "length_review": "初始化已独立；来源安全归属、组控制和IRQ/FIQ到异常级构成一条连续路由推导，保留原图对照及就地字段。"
       },
-      "platforms/arm/architecture/gic/P10_初始化顺序与硬件完成握手.md": {
+      "platforms/arm/architecture/gic/P11_初始化顺序与硬件完成握手.md": {
         "state": "reviewed",
         "result": "revised",
         "reason": "独立组织全局、每PE和每来源初始化，区分写入顺序、可见性和硬件完成。",
@@ -196,7 +196,7 @@
         ],
         "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P11_SPI目标选择与每PE状态.md": {
+      "platforms/arm/architecture/gic/P12_SPI目标选择与每PE状态.md": {
         "state": "reviewed",
         "result": "revised",
         "reason": "围绕硬件亲和坐标、SPI固定目标和1-of-N解释选择条件，不混入Linux CPU编号管理。",
@@ -208,7 +208,7 @@
         ],
         "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P12_SGI核间通知与电源交接.md": {
+      "platforms/arm/architecture/gic/P13_SGI核间通知与电源交接.md": {
         "state": "reviewed",
         "result": "revised",
         "reason": "以真实发送端、共享PPI块与目标PE说明SGI；区分通知和共享工作、逐PE握手和块级电源协议。",
@@ -220,7 +220,7 @@
         ],
         "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P13_从消息请求到内存中的中断状态.md": {
+      "platforms/arm/architecture/gic/P14_从消息请求到内存中的中断状态.md": {
         "state": "reviewed",
         "result": "revised",
         "reason": "先讲LPI内存状态契约再映射GIC-600集中处理功能，明确状态与缓存交接。",
@@ -233,7 +233,7 @@
         "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。",
         "length_review": "约10331字词，只略超阈值；属性表、Pending和缓存同步属于同一协议，不拆少量尾部说明。"
       },
-      "platforms/arm/architecture/gic/P14_设备事件身份与ITS实现映射.md": {
+      "platforms/arm/architecture/gic/P15_设备事件身份与ITS实现映射.md": {
         "state": "reviewed",
         "result": "revised",
         "reason": "设备身份与ITS职责建立后再映射产品与芯片互连；请求、编程入口和返回方向分别说明。",
@@ -245,7 +245,7 @@
         ],
         "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P15_ITS翻译表_命令队列与完成.md": {
+      "platforms/arm/architecture/gic/P16_ITS翻译表_命令队列与完成.md": {
         "state": "reviewed",
         "result": "revised",
         "reason": "独立闭合翻译表、命令发布与完成、迁移和队列绕回，保留原图与就地字段解释。",
@@ -258,7 +258,7 @@
         "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。",
         "length_review": "约10619字词，命令发布、消费和目标同步闭合同一映射及迁移周期，不将完成条件移到另一篇。"
       },
-      "platforms/arm/architecture/gic/P16_软件交接_部署与分层排障.md": {
+      "platforms/arm/architecture/gic/P17_软件交接_部署与分层排障.md": {
         "state": "reviewed",
         "result": "revised",
         "reason": "在软件交接边界明确固件、控制器驱动与设备驱动职责及负责专题入口，保留目标板只读观察与证明边界。",
@@ -270,7 +270,7 @@
         ],
         "limits": "未执行RK3588板上、裸机或内核实验；未新增Linux源码实现结论，未把机械术语扫描非零误报宣称为严格扫描全通过。"
       },
-      "platforms/arm/architecture/gic/P17_UART中断的端到端流程复盘.md": {
+      "platforms/arm/architecture/gic/P18_UART中断的端到端流程复盘.md": {
         "state": "reviewed",
         "result": "revised",
         "reason": "保留同一UART事件的完整S0-S6复盘，修正拆章后的精确回链；物理路径与必要软件动作不混成Linux管理教程。",
@@ -11345,10 +11345,10 @@
       "tools/ai/codex/skills/build-linux-note-topic/references/concept_implementation_mapping.md",
       "platforms/arm/architecture/gic/P04_GIC600的物理实现_从逻辑映射到输入输出.md",
       "platforms/arm/architecture/gic/P05_寄存器位图与编号索引.md",
-      "platforms/arm/architecture/gic/P08_处理器屏蔽与嵌套恢复.md",
-      "platforms/arm/architecture/gic/P10_初始化顺序与硬件完成握手.md",
-      "platforms/arm/architecture/gic/P12_SGI核间通知与电源交接.md",
-      "platforms/arm/architecture/gic/P15_ITS翻译表_命令队列与完成.md",
+      "platforms/arm/architecture/gic/P09_处理器屏蔽与嵌套恢复.md",
+      "platforms/arm/architecture/gic/P11_初始化顺序与硬件完成握手.md",
+      "platforms/arm/architecture/gic/P13_SGI核间通知与电源交接.md",
+      "platforms/arm/architecture/gic/P16_ITS翻译表_命令队列与完成.md",
       "tools/ai/codex/skills/build-linux-note-topic/references/delivery_validation.md",
       "tools/ai/codex/skills/build-linux-note-topic/references/official_source_reading.md",
       "tools/ai/codex/skills/build-linux-note-topic/references/reader_continuity_review.md",

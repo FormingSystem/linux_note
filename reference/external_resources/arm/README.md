@@ -36,7 +36,9 @@ domains:
 │   ├── specifications/    # v2、v3/v4 规范，每份只存一处
 │   ├── guides/            # 概览、消息中断、虚拟化及历史指南
 │   └── implementations/
-│       └── gic600/        # 与 RK3588 对应的 r1p6 实现手册
+│       ├── gic400/        # GICv2 同优先级选择的实现对照
+│       ├── gic600/        # 与 RK3588 对应的 r1p6 实现手册
+│       └── gic700/        # r4p0 实时仲裁协作的实现对照
 ├── soc/
 │   ├── nxp/imx6ull/
 │   └── rockchip/rk3588/
@@ -80,7 +82,7 @@ domains:
 
 ### 1.4.1\_先锁定\_RK3588\_实际使用的控制器
 
-当前目标是 **RK3588 上的 GIC-600 r1p6，所实现的架构为 GICv3.0**。不是先遍历所有 Arm 架构，也不要求先读完 GICv2，再把 GICv3/v4 混合比较。已落地的十七篇物理中断教材见 [GIC 专题大纲](../../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)：按前置依赖连续阅读，每节旁边提供官方目录对照。后续虚拟化、源码与板上验证由[建设路线](../../../atlas/roadmaps/gic_learning_plan.md#1.6_建设落点与当前交付边界)维护。
+当前目标是 **RK3588 上的 GIC-600 r1p6，所实现的架构为 GICv3.0**。不是先遍历所有 Arm 架构，也不要求先读完 GICv2，再把 GICv3/v4 混合比较。已落地的十八篇物理中断教材见 [GIC 专题大纲](../../../platforms/arm/architecture/gic/大纲.md#1.2_因果阅读地图)：按前置依赖连续阅读，每节旁边提供官方目录对照。后续虚拟化、源码与板上验证由[建设路线](../../../atlas/roadmaps/gic_learning_plan.md#1.6_建设落点与当前交付边界)维护。
 
 | 名称 | 它是什么 | 能回答什么，不能回答什么 |
 | --- | --- | --- |
@@ -136,6 +138,11 @@ domains:
 | DDI0608 B.a | 已退役的早期 Armv9 增量资料，不纳入 RK3588 中断入门必修 |
 | Cortex-A55、Cortex-A76 TRM | 核对 RK3588 处理器核侧接口；核的版本与 GIC 的版本分开记录 |
 | DDI0406 C.d、Cortex-A7 TRM、IHI0048 B.b、i.MX6ULL 手册 | 供原有 ARMv7/GICv2 平台路线使用，不作为当前主线前置 |
+| [GIC Stream Protocol interface，ARM-ECM-0495013 Version B](https://documentation-service.arm.com/static/5f2aceb660a93e65927bbf01) | 3.1、4.4～4.5 解释 CPU Interface 与 Redistributor 的核侧消息；不说明 Distributor 与 Redistributor 内部报文格式 |
+| [GIC-400 r0p0，DDI0471A](https://documentation-service.arm.com/static/5f0434f6cafe527e86f5d6ce) | 2.6（2-11）核对该 GICv2 产品的同优先级选择；不外推成 GICv3 通则 |
+| [GIC-700 r4p0，101516_0400_11_en](https://documentation-service.arm.com/static/6686941f9082ad344b14c154) | 3.2（第 39～40 页）、4.8（第 72～73 页）核对实时配置下 GCI 与 Distributor 的协同仲裁及快速路径；不替代 GIC-600 实现证据 |
+
+追踪 GIC-600 内部 SPI/SGI 拥挤策略时，公开 TRM 2.1.1 能确认块间信用流控、同端点对的传输保序与不交织要求，但没有给出所需的完整消息编码和多入口选择算法。TRM 前言第 9 页另列 **Configuration and Integration Manual（100337）**，属于需要许可或 Arm 注册访问的资料；本次未取得正文，也未将它登记为已下载来源，不能保证其中公开完整仲裁算法。专题中的已证实机制、设计推演与待查边界见[第八章的公开规则与实现边界](../../../platforms/arm/architecture/gic/P08_中断候选的传递与拥挤仲裁.md#8.5_公开产品规则能够确认到哪一步)。
 
 Linux IRQ 子系统讲软件如何管理、映射和分派中断；独立 GIC 专题讲硬件如何接收、排队、路由、确认和完成中断。二者在 Linux 控制器驱动边界对齐，不互相复制完整正文。`irqchip` 是 Linux 中控制器驱动的源码目录名称，不是另一代 GIC。
 
